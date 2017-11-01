@@ -28,6 +28,9 @@ addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 // https://github.com/xerial/sbt-sonatype
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.0")
 
+// https://github.com/sbt/sbt-release
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.6")
+
 // https://github.com/sksamuel/sbt-scapegoat
 //addSbtPlugin("com.sksamuel.scapegoat" %% "sbt-scapegoat" % "1.0.7")
 

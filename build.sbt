@@ -3,6 +3,7 @@ import _root_.org.bitbucket.pshirshov.izumi.sbt.definitions.ExtendedProjects._
 import _root_.org.bitbucket.pshirshov.izumi.sbt.definitions.ExtendedProjectsGlobalDefs._
 import _root_.org.bitbucket.pshirshov.izumi.sbt.definitions._
 import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion, version}
+import ReleaseTransformations._
 
 // conditionals in plugins: release settings, integration tests -- impossible
 // config
@@ -38,6 +39,20 @@ val settings = new GlobalSettings {
           <url>http://pshirshov.me</url>
         </developer>
       </developers>
+
+     , releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,              // : ReleaseStep
+      inquireVersions,                        // : ReleaseStep
+      runClean,                               // : ReleaseStep
+      runTest,                                // : ReleaseStep
+      setReleaseVersion,                      // : ReleaseStep
+      commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
+      tagRelease,                             // : ReleaseStep
+      publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
+      setNextVersion,                         // : ReleaseStep
+      commitNextVersion,                      // : ReleaseStep
+      pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
+    )
   )
 
   override val sharedDeps = Set(
