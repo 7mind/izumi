@@ -9,13 +9,13 @@ import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion, version}
 
 name := "izumi-r2"
 
+
 val settings = new GlobalSettings {
   override val globalSettings: Seq[sbt.Setting[_]] = Seq(
     organization := "org.bitbucket.pshirshov.izumi"
-    , version := "0.1.0"
     , scalaVersion := "2.12.4"
     , publishMavenStyle in Global := true
-    , sonatypeProfileName in Global := "org.bitbucket.pshirshov"
+    , sonatypeProfileName := "org.bitbucket.pshirshov"
     , publishTo := Some(
       if (isSnapshot.value)
         Opts.resolver.sonatypeSnapshots
@@ -31,10 +31,6 @@ val settings = new GlobalSettings {
           <distribution>repo</distribution>
         </license>
       </licenses>
-      <scm>
-        <url>git@bitbucket.org:pshirshov/izumi-r2.git</url>
-        <connection>scm:git@bitbucket.org:pshirshov/izumi-r2.git</connection>
-      </scm>
       <developers>
         <developer>
           <id>pshirshov</id>

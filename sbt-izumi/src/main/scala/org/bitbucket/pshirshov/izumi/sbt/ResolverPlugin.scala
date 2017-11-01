@@ -9,7 +9,7 @@ object ResolverPlugin extends AutoPlugin {
     updateOptions := updateOptions
       .value
       .withCachedResolution(true)
-      .withGigahorse(true)
+      //.withGigahorse(true)
     , pomIncludeRepository := (_ => false)
   )
 
