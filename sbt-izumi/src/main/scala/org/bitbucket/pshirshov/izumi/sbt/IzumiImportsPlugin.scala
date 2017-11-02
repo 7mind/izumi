@@ -9,11 +9,11 @@ object IzumiImportsPlugin extends AutoPlugin {
   object autoImport {
     val IzumiDsl = definitions.IzumiDsl
     val IzumiScopes = definitions.IzumiScopes
+    val IzumiProperties = definitions.Properties
 
     val GitStampPlugin = org.bitbucket.pshirshov.izumi.sbt.GitStampPlugin
 
     type GlobalDefs = definitions.GlobalDefs
     type GlobalSettings = definitions.GlobalSettings
-    type TwinRepo = org.bitbucket.pshirshov.izumi.sbt.TwinRepo
   }
 }
