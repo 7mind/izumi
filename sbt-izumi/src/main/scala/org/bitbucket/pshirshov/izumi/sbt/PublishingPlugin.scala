@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter
 
 import org.bitbucket.pshirshov.izumi.sbt.definitions.Properties._
 import sbt.Keys._
-import sbt.{AutoPlugin, Package}
+import sbt.{AutoPlugin, Package, ThisBuild}
 import com.typesafe.sbt.pgp.PgpKeys._
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.PublishConfiguration
@@ -21,7 +21,7 @@ object PublishingPlugin extends AutoPlugin {
       val attributes = Map(
         "X-Built-By" -> System.getProperty("user.name")
         , "X-Build-JDK" -> System.getProperty("java.version")
-        , "X-Version" -> version.value
+        , "X-Version" -> (version in ThisBuild).value
         , "X-Build-Timestamp" -> DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(ZonedDateTime.now())
       )
       attributes.foreach {
