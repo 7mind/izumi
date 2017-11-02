@@ -1,9 +1,7 @@
-import _root_.org.bitbucket.pshirshov.izumi.sbt.GitStampPlugin
-import _root_.org.bitbucket.pshirshov.izumi.sbt.definitions.ExtendedProjects._
-import _root_.org.bitbucket.pshirshov.izumi.sbt.definitions.ExtendedProjectsGlobalDefs._
-import _root_.org.bitbucket.pshirshov.izumi.sbt.definitions._
-import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion, version}
+import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion}
 import ReleaseTransformations._
+import IzumiDsl._
+import IzumiScopes._
 
 // TODO: better analyzer for "exposed" scope
 // TODO: library descriptor generator

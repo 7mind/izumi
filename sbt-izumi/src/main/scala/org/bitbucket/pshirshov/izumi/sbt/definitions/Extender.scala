@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.sbt.definitions
 
-import org.bitbucket.pshirshov.izumi.sbt.definitions.ExtendedProjects.ProjectReferenceEx
+import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiScopes.ProjectReferenceEx
 import sbt.Keys._
 import sbt.Project
 import sbt.internal.util.ConsoleLogger
@@ -31,7 +31,7 @@ class GlobalExclusionsExtender(settings: GlobalSettings) extends Extender {
 
 class SharedModulesExtender(sharedLibs: Set[ProjectReferenceEx]) extends Extender {
   override def extend(p: Project) = {
-    import ExtendedProjects._
+    import IzumiScopes._
 
     if (!sharedLibs.contains(p)) {
       logger.debug(s"Adding ${sharedLibs} into $p")

@@ -7,7 +7,7 @@ object ExtendedProjectMacro {
     import c.universe._
     val name: c.Expr[String] = extractName(c)
     reify {
-      import org.bitbucket.pshirshov.izumi.sbt.definitions.ExtendedProjectsGlobalDefs._
+      import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl._
       Project(name.splice, new File(s"${directory.splice}/${name.splice}"))
         .extend
         .registered
@@ -18,7 +18,7 @@ object ExtendedProjectMacro {
     import c.universe._
     val name: c.Expr[String] = extractName(c)
     reify {
-      import org.bitbucket.pshirshov.izumi.sbt.definitions.ExtendedProjectsGlobalDefs._
+      import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl._
       Project(name.splice, new File(s"${directory.splice}/${name.splice}"))
         .globalSettings
     }
@@ -28,7 +28,7 @@ object ExtendedProjectMacro {
     import c.universe._
     val name: c.Expr[String] = extractName(c)
     reify {
-      import org.bitbucket.pshirshov.izumi.sbt.definitions.ExtendedProjectsGlobalDefs._
+      import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl._
       Project(name.splice, new File(s"${directory.splice}"))
         .defaultRoot
     }

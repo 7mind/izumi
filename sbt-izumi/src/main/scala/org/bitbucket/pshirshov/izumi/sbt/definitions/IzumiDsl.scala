@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.sbt.definitions
 
 import org.bitbucket.pshirshov.izumi.sbt._
-import org.bitbucket.pshirshov.izumi.sbt.definitions.ExtendedProjects.ProjectReferenceEx
+import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiScopes.ProjectReferenceEx
 import sbt._
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.syntax
@@ -9,7 +9,7 @@ import sbt.librarymanagement.syntax
 import scala.collection.mutable
 import scala.language.experimental.macros
 
-trait ExtendedProjectsGlobalDefs {
+trait IzumiDsl {
   protected val logger: ConsoleLogger = ConsoleLogger()
 
   protected val extenders: mutable.HashSet[Extender] = scala.collection.mutable.HashSet[Extender]()
@@ -24,10 +24,10 @@ trait ExtendedProjectsGlobalDefs {
   override def toString: String = super.toString + s" [$allProjects ; $extenders]"
 
   protected def setup(): Unit = {
-    ExtendedProjectsGlobalDefs.instance = this
+    IzumiDsl.instance = this
   }
 
-  def withSharedLibs(libs: ProjectReferenceEx*): ExtendedProjectsGlobalDefs = {
+  def withSharedLibs(libs: ProjectReferenceEx*): IzumiDsl = {
     val copy = new GlobalDefsCopy(this.globalSettings)
     copy.allProjects ++= this.allProjects
     copy.extenders ++= this.extenders
@@ -41,23 +41,9 @@ trait ExtendedProjectsGlobalDefs {
   }
 }
 
-class GlobalDefs(override protected val globalSettings: GlobalSettings) extends ExtendedProjectsGlobalDefs {
-  protected def init(): Unit = {
-    addExtender(new GlobalSettingsExtender(globalSettings))
-    addExtender(new SharedDepsExtender(globalSettings))
-    addExtender(new GlobalSettingsExtender(globalSettings))
-    super.setup()
-  }
-
-  init()
-}
-
-class GlobalDefsCopy(override protected val globalSettings: GlobalSettings) extends ExtendedProjectsGlobalDefs {
-}
-
-object ExtendedProjectsGlobalDefs {
+object IzumiDsl {
   private val logger: ConsoleLogger = ConsoleLogger()
-  private var instance: ExtendedProjectsGlobalDefs = new GlobalDefs(new GlobalSettings {})
+  private var instance: IzumiDsl = new GlobalDefs(new GlobalSettings {})
 
   implicit class ProjectExtensions(project: Project) {
     def registered: Project = {
@@ -83,13 +69,13 @@ object ExtendedProjectsGlobalDefs {
 
     def globalSettings: Project = {
       project
-        .settings(getInstance.globalSettings.globalSettings :_*)
+        .settings(getInstance.globalSettings.globalSettings: _*)
     }
 
     def defaultRoot: Project = {
       project
         .globalSettings
-        .enablePlugins(getInstance.globalSettings.rootPlugins.toSeq :_*)
+        .enablePlugins(getInstance.globalSettings.rootPlugins.toSeq: _*)
     }
 
     def withIt: Project = {
@@ -102,7 +88,7 @@ object ExtendedProjectsGlobalDefs {
     def transitiveAggregate(refs: ProjectReference*): Project = {
       logger.info(s"Project ${project.id} is aggregating ${refs.size} projects and ${getInstance.allProjects.size} transitive projects...")
       project
-        .aggregate(refs ++ getInstance.allProjects :_*)
+        .aggregate(refs ++ getInstance.allProjects: _*)
     }
 
 
@@ -115,7 +101,7 @@ object ExtendedProjectsGlobalDefs {
       }
     }
 
-    private def getInstance: ExtendedProjectsGlobalDefs = {
+    private def getInstance: IzumiDsl = {
       if (instance == null) {
         val message = s"Cannot extend project ${project.id}: ExtendedProjectsGlobalDefs trait was not instantiated in build"
         logger.error(message)
@@ -140,5 +126,6 @@ object ExtendedProjectsGlobalDefs {
   object RootModule {
     def in(directory: String): Project = macro ExtendedProjectMacro.projectExRootMacroImpl
   }
+
 }
 

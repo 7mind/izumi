@@ -6,7 +6,7 @@ import sbt.{ClasspathDep, Project, ProjectReference}
 
 import scala.language.implicitConversions
 
-object ExtendedProjects {
+object IzumiScopes {
   sealed trait ProjectReferenceEx
   case class ClasspathRef(ref: ClasspathDep[ProjectReference]) extends ProjectReferenceEx
   case class ImprovedProjectRef(ref: Project) extends ProjectReferenceEx

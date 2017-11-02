@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter
 
 import org.bitbucket.pshirshov.izumi.sbt.definitions.Properties._
 import sbt.Keys._
-import sbt.{AutoPlugin, Def, Package}
+import sbt.{AutoPlugin, Package}
 import com.typesafe.sbt.pgp.PgpKeys._
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.PublishConfiguration
