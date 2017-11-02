@@ -41,6 +41,8 @@ object PublishingPlugin extends AutoPlugin {
   )
 
   private def withOverwrite(config: PublishConfiguration) = {
-      config.withOverwrite(sys.props.getBoolean("build.publish.overwrite", config.overwrite))
+    val doOverwrite = sys.props.getBoolean("build.publish.overwrite", config.overwrite)
+    // in case overwrite is already enabled (snapshots) we should not disable it
+    config.withOverwrite(doOverwrite || config.overwrite)
   }
 }
