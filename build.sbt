@@ -7,6 +7,7 @@ import IzumiScopes._
 // TODO: library descriptor generator
 // TODO: travis build
 // TODO: config
+// TODO: move test deps into sbt-test
 // TODO: conditionals in plugins: release settings, integration tests -- impossible
 
 name := "izumi-r2"
