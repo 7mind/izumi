@@ -55,6 +55,6 @@ object CompilerOptionsPlugin extends AutoPlugin {
         , "-Xdoclint:all"
         , "-XDignore.symbol.file"
       )
-  ) //++ releaseSettings(!isSnapshot.value)
+  )
 
 }

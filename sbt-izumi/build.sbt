@@ -34,7 +34,3 @@ addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.6")
 // https://github.com/sksamuel/sbt-scapegoat
 //addSbtPlugin("com.sksamuel.scapegoat" %% "sbt-scapegoat" % "1.0.7")
 
-// https://github.com/coursier/coursier#sbt-plugin
-val withCoursier = if (sys.props.get("build.coursier.use").contains("true")) {
-  addSbtPlugin("io.get-coursier" % "sbt-coursier" % sys.props.get("build.coursier.version").getOrElse("1.0.0-RC13"))
-}
