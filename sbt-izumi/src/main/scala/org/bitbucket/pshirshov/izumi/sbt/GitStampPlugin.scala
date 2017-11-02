@@ -9,12 +9,17 @@ import org.eclipse.jgit.lib._
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import sbt.Keys._
 import sbt._
+import sbt.internal.util.ConsoleLogger
 
 object GitStampPlugin extends AutoPlugin {
+  protected val logger: ConsoleLogger = ConsoleLogger()
 
   object Keys {
     lazy val gitObject = settingKey[Git]("Git object")
     lazy val gitRepositoryObject = settingKey[Repository]("Git repository object")
+    lazy val gitRevision = settingKey[String]("Git revision")
+    lazy val gitBranch = settingKey[String]("Git branch")
+    lazy val gitIsClean = settingKey[Boolean]("Git working dir status")
   }
 
   import Keys._
@@ -27,20 +32,33 @@ object GitStampPlugin extends AutoPlugin {
       val builder = new FileRepositoryBuilder
       builder.readEnvironment.findGitDir.build
     }
-    , packageOptions += Def.task {
+    , gitRevision := {
       val repository = gitRepositoryObject.value
       val head = repository.exactRef(Constants.HEAD)
-      val branch = repository.getBranch
-
+      ObjectId.toString(head.getObjectId)
+    }
+    , gitBranch := {
+      val repository = gitRepositoryObject.value
+      repository.getBranch
+    }
+    , gitIsClean := {
       val git = gitObject.value
       val status = git.status.call
-      val isClean = status.isClean
-
-      Package.ManifestAttributes(
-        "X-Git-Branch" -> branch
-        , "X-Git-Repo-Is-Clean" -> isClean.toString
-        , "X-Git-Head-Rev" -> ObjectId.toString(head.getObjectId)
+      status.isClean
+    }
+    , packageOptions += Def.task {
+      val gitValues = Map(
+        "X-Git-Branch" -> gitBranch.value
+        , "X-Git-Repo-Is-Clean" -> gitIsClean.value.toString
+        , "X-Git-Head-Rev" -> gitRevision.value
       )
+
+      gitValues.foreach {
+        case (k, v) =>
+          logger.info(s"Manifest value: $k = $v")
+      }
+
+      Package.ManifestAttributes(gitValues.toSeq :_*)
     }.value
   )
 

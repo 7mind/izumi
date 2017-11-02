@@ -5,8 +5,11 @@ import _root_.org.bitbucket.pshirshov.izumi.sbt.definitions._
 import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion, version}
 import ReleaseTransformations._
 
-// conditionals in plugins: release settings, integration tests -- impossible
-// config
+// TODO: better analyzer for "exposed" scope
+// TODO: library descriptor generator
+// TODO: travis build
+// TODO: config
+// TODO: conditionals in plugins: release settings, integration tests -- impossible
 
 name := "izumi-r2"
 
@@ -36,7 +39,7 @@ val settings = new GlobalSettings {
         <developer>
           <id>pshirshov</id>
           <name>Pavel Shirshov</name>
-          <url>http://pshirshov.me</url>
+          <url>https://github.com/pshirshov</url>
         </developer>
       </developers>
 

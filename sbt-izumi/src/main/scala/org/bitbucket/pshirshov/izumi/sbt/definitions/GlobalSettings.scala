@@ -15,7 +15,6 @@ trait GlobalSettings {
   def rootPlugins: Set[Plugins] = Set(
     BuildPlugin
     , CompilerOptionsPlugin
-    , PublishingPlugin
     , ResolverPlugin
     , TestingPlugin
   )
