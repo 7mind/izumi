@@ -3,6 +3,7 @@ cache:
   directories:
   - $HOME/.sbt
   - $HOME/.ivy2
+  - $HOME/.coursier
 scala:
   - 2.12.4
 jdk:
