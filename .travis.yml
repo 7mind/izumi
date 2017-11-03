@@ -13,7 +13,7 @@ before_install:
 jobs:
   include:
     - stage: versionate
-      script: sbt ++$TRAVIS_SCALA_VERSION clean
+      script: sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"
     - stage: build
       script: sbt ++$TRAVIS_SCALA_VERSION clean test publishSigned
     - stage: release

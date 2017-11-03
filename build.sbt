@@ -2,6 +2,7 @@ import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion}
 import ReleaseTransformations._
 import IzumiDsl._
 import IzumiScopes._
+import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl.RootModule
 
 // TODO: better analyzer for "exposed" scope
 // TODO: library descriptor generator
@@ -9,6 +10,8 @@ import IzumiScopes._
 // TODO: config
 // TODO: move test deps into sbt-test
 // TODO: conditionals in plugins: release settings, integration tests -- impossible
+
+enablePlugins(ConvenienceTasksPlugin)
 
 name := "izumi-r2"
 
@@ -93,5 +96,4 @@ lazy val root = RootModule.in(".")
     `test-util`
     , `sbt-izumi`
   )
-
 
