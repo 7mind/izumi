@@ -1,4 +1,5 @@
 language: scala
+cache: bundler
 scala:
   - 2.12.4
 jdk:
