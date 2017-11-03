@@ -1,5 +1,8 @@
 language: scala
-cache: bundler
+cache:
+  directories:
+  - $HOME/.sbt
+  - $HOME/.ivy2
 scala:
   - 2.12.4
 jdk:
@@ -9,11 +12,15 @@ before_install:
   - tar xvf secrets.tar
 jobs:
   include:
+    - stage: versionate
+      script: sbt ++$TRAVIS_SCALA_VERSION clean
     - stage: build
       script: sbt ++$TRAVIS_SCALA_VERSION clean test publishSigned
     - stage: release
       script: sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease
 stages:
+  - name: versionate
+    if: NOT ((branch = master) OR (branch = develop))
   - name: build
   - name: release
     if: tag =~ ^v
