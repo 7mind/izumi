@@ -4,6 +4,8 @@ import IzumiDsl._
 import IzumiScopes._
 import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl.RootModule
 
+// TODO: migrate to gh
+// TODO: git rid of `` in names (decamel)
 // TODO: move test deps into sbt-test
 // TODO: library descriptor generator
 // TODO: better analyzer for "exposed" scope

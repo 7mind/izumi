@@ -28,3 +28,14 @@ Travis notice
     
     tar cvf secrets.tar .gnupg credentials.sonatype-nexus.properties local.sbt
     travis encrypt-file secrets.tar
+
+Multiple origins
+----------------
+
+Modify `.git/config`:
+
+    [remote "origin"]
+        url = git@github.com:pshirshov/izumi-r2.git
+        pushurl = git@github.com:pshirshov/izumi-r2.git
+        pushurl = git@bitbucket.org:pshirshov/izumi-r2.git
+        fetch = +refs/heads/*:refs/remotes/origin/*
