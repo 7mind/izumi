@@ -4,6 +4,7 @@ cache:
   - $HOME/.sbt
   - $HOME/.ivy2
   - $HOME/.coursier
+  - $HOME/.m2
 scala:
   - 2.12.4
 jdk:
