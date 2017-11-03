@@ -1,11 +1,18 @@
 language: scala
 scala:
 - 2.12.4
-script:
-- sbt ++$TRAVIS_SCALA_VERSION clean test publishSigned
 jdk:
 - oraclejdk8
 before_install:
 - openssl aes-256-cbc -K $encrypted_b9da041c62db_key -iv $encrypted_b9da041c62db_iv -in secrets.tar.enc -out secrets.tar -d
 - tar xvf secrets.tar
-
+jobs:
+  include:
+    - stage: build
+          script: sbt ++$TRAVIS_SCALA_VERSION clean test publishSigned
+    - stage: release
+          script: sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease
+stages:
+  - name: build
+  - name: release
+    if: tag =~ ^v
