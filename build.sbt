@@ -19,10 +19,10 @@ name := "izumi-r2"
 
 val settings = new GlobalSettings {
   override val globalSettings: Seq[sbt.Setting[_]] = Seq(
-    organization := "org.bitbucket.pshirshov.izumi"
+    organization := "com.github.pshirshov"
     , scalaVersion := "2.12.4"
     , publishMavenStyle in Global := true
-    , sonatypeProfileName := "org.bitbucket.pshirshov"
+    , sonatypeProfileName := "com.github.pshirshov"
     , publishTo := Some(
       if (isSnapshot.value)
         Opts.resolver.sonatypeSnapshots
