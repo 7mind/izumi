@@ -1,7 +1,11 @@
 language: scala
 scala:
-  - 2.12.4
+- 2.12.4
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION clean test 
+- sbt ++$TRAVIS_SCALA_VERSION clean test
 jdk:
-  - oraclejdk8
+- oraclejdk8
+before_install:
+- openssl aes-256-cbc -K $encrypted_b9da041c62db_key -iv $encrypted_b9da041c62db_iv
+  -in credentials.sonatype-nexus.properties.enc -out credentials.sonatype-nexus.properties
+  -d
