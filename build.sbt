@@ -4,11 +4,10 @@ import IzumiDsl._
 import IzumiScopes._
 import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl.RootModule
 
-// TODO: better analyzer for "exposed" scope
-// TODO: library descriptor generator
-// TODO: travis build
-// TODO: config
 // TODO: move test deps into sbt-test
+// TODO: library descriptor generator
+// TODO: better analyzer for "exposed" scope
+// TODO: config -- probably we don't need it
 // TODO: conditionals in plugins: release settings, integration tests -- impossible
 
 enablePlugins(ConvenienceTasksPlugin)
