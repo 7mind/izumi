@@ -39,8 +39,15 @@ object ExtendedProjectMacro {
     val enclosingValName = std.KeyMacro.definingValName(
       c,
       methodName =>
-        s"""$methodName must be directly assigned to a val, such as `val x = $methodName`. Alternatively, you can use `sbt.Project.apply`""")
-    val name = c.Expr[String](Literal(Constant(enclosingValName)))
+        s"""$methodName must be directly assigned to a val, such as `val x = $methodName`. Alternatively, you can use `sbt.Project.apply`"""
+    )
+    val normalized = enclosingValName.map {
+      case chr if chr.isUpper =>
+        s"-${chr.toLower}"
+      case chr =>
+        s"$chr"
+    }
+    val name = c.Expr[String](Literal(Constant(normalized.mkString)))
     name
   }
 

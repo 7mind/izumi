@@ -4,8 +4,6 @@ import IzumiDsl._
 import IzumiScopes._
 import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl.RootModule
 
-// TODO: migrate to gh
-// TODO: git rid of `` in names (decamel)
 // TODO: move test deps into sbt-test
 // TODO: library descriptor generator
 // TODO: better analyzer for "exposed" scope
@@ -70,7 +68,7 @@ val settings = new GlobalSettings {
 val globalDefs = new GlobalDefs(settings)
 // --------------------------------------------
 
-lazy val `sbt-izumi` = ConfiguredModule.in(".")
+lazy val sbtIzumi = ConfiguredModule.in(".")
   .settings(
     target ~= { t => t.toPath.resolve("primary").toFile }
   )
@@ -87,14 +85,14 @@ val sharedDefs = globalDefs.withSharedLibs(
 lazy val testlib = Module.in("lib")
   .settings(publishArtifact := false)
 
-lazy val `test-util` = Module.in("lib")
+lazy val testUtil = Module.in("lib")
   .depends(testlib)
   .settings(publishArtifact := false)
 
 lazy val root = RootModule.in(".")
   .enablePlugins(GitStampPlugin)
   .transitiveAggregate(
-    `test-util`
-    , `sbt-izumi`
+    testUtil
+    , sbtIzumi
   )
 
