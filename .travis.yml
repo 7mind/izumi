@@ -10,11 +10,12 @@ jdk:
 before_install:
   - openssl aes-256-cbc -K $encrypted_b9da041c62db_key -iv $encrypted_b9da041c62db_iv -in secrets.tar.enc -out secrets.tar -d
   - tar xvf secrets.tar
-script: sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"
-  if: NOT ((branch = master) OR (branch = develop))
-script: sbt ++$TRAVIS_SCALA_VERSION clean test publishSigned
-script: sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease
-  if: tag =~ ^v
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"
+    if: NOT ((branch = master) OR (branch = develop))
+  - sbt ++$TRAVIS_SCALA_VERSION clean test publishSigned
+  - sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease
+    if: tag =~ ^v
 
 #jobs:
 #  include:
