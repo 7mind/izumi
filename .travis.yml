@@ -13,6 +13,6 @@ before_install:
   - openssl aes-256-cbc -K $encrypted_b9da041c62db_key -iv $encrypted_b9da041c62db_iv -in secrets.tar.enc -out secrets.tar -d
   - tar xvf secrets.tar
 script:
-  - if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" ]] ; then sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"; fi 
+  - if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && $TRAVIS_BRANCH !=~ ^v.*$]] ; then sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"; fi
   - sbt ++$TRAVIS_SCALA_VERSION clean test publishSigned
   - if [[ $TRAVIS_TAG =~ ^v.*$ ]] ; then sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease; fi
