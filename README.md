@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/pshirshov/izumi-r2.svg?branch=develop)](https://travis-ci.org/pshirshov/izumi-r2)
+
 Build options
 -------------
 
@@ -11,3 +13,11 @@ Releases
 1. Use `release release-version 1.0.99 next-version 1.2.0-SNAPSHOT` or `release release-version 1.0.99 next-version 1.2.0-SNAPSHOT skip-tests`  
 2. `git checkout v1.0.99`
 3. `sbt publishSigned sonatypeRelease` 
+
+
+Travis notice
+-------------
+
+    gpg --homedir ./.gnupg --full-generate-key
+    gpg --homedir .gnupg --export-secret-keys > .gnupg/secring.gpg
+    gpg --homedir .gnupg --export > .gnupg/pubring.gpg

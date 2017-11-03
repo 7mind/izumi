@@ -3,12 +3,13 @@ package org.bitbucket.pshirshov.izumi.sbt
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
+import com.typesafe.sbt.pgp.PgpKeys._
 import org.bitbucket.pshirshov.izumi.sbt.definitions.Properties._
 import sbt.Keys._
-import sbt.{AutoPlugin, Package, ThisBuild}
-import com.typesafe.sbt.pgp.PgpKeys._
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.PublishConfiguration
+import sbt.sbtpgp.Compat.publishSignedConfigurationTask
+import sbt.{AutoPlugin, Package, ThisBuild}
 
 object PublishingPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()
@@ -28,21 +29,24 @@ object PublishingPlugin extends AutoPlugin {
         case (k, v) =>
           logger.info(s"Manifest value: $k = $v")
       }
-      Package.ManifestAttributes(attributes.toSeq :_*)
+      Package.ManifestAttributes(attributes.toSeq: _*)
     }
   )
 
   override lazy val projectSettings = Seq(
-    publishConfiguration ~= withOverwrite
-    , publishLocalConfiguration ~= withOverwrite
-
-    , publishSignedConfiguration ~= withOverwrite
-    , publishLocalSignedConfiguration ~= withOverwrite
+    publishConfiguration := withOverwrite(publishConfiguration.value, isSnapshot.value)
+    , publishSignedConfiguration := withOverwrite(publishSignedConfigurationTask.value, isSnapshot.value)
+    , publishLocalConfiguration ~= withOverwriteEnabled
+    , publishLocalSignedConfiguration ~= withOverwriteEnabled
   )
 
-  private def withOverwrite(config: PublishConfiguration) = {
+  private def withOverwriteEnabled(config: PublishConfiguration) = {
+    config.withOverwrite(true)
+  }
+
+  private def withOverwrite(config: PublishConfiguration, isSnapshot: Boolean) = {
     val doOverwrite = sys.props.getBoolean("build.publish.overwrite", config.overwrite)
-    // in case overwrite is already enabled (snapshots) we should not disable it
-    config.withOverwrite(doOverwrite || config.overwrite)
+    // in case overwrite is already enabled (snapshots, smth else) we should not disable it
+    config.withOverwrite(doOverwrite || config.overwrite || isSnapshot)
   }
 }

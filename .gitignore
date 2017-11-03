@@ -2,6 +2,8 @@
 build/project
 local.sbt
 credentials.sonatype-nexus.properties
+.gnupg
+secrets.tar
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Scala template

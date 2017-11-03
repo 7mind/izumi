@@ -1,1 +1,1 @@
-pgpPassphrase := Some("password".toArray)
+pgpPassphrase := Some("password".toCharArray)
