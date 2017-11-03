@@ -7,16 +7,19 @@ Build options
 2. `build.coursier.use` - enable Coursier resolver (not available in dependent projects)
 3. `build.coursier.version` - override Coursier version (not available in dependent projects)
 
+Project flow
+============
+
 Releases
 --------
 
-1. Use `release release-version 1.0.99 next-version 1.2.0-SNAPSHOT` or `release release-version 1.0.99 next-version 1.2.0-SNAPSHOT skip-tests`  
+1. Use `sbt "release release-version 0.4.2 next-version 0.4.3-SNAPSHOT"`. You may use `skip-tests` flag in case you need it
 2. `git checkout v1.0.99`
 3. `sbt publishSigned sonatypeRelease` 
 
 
-Travis notice
--------------
+Travis notes
+------------
 
     gpg --homedir ./.gnupg.home --full-generate-key
     gpg --homedir ./.gnupg.home --edit-key <email> addkey save
