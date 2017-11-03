@@ -2,7 +2,7 @@
 build/project
 local.sbt
 credentials.sonatype-nexus.properties
-.gnupg
+.gnupg*
 secrets.tar
 
 # Created by .ignore support plugin (hsz.mobi)

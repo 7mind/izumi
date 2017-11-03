@@ -18,6 +18,13 @@ Releases
 Travis notice
 -------------
 
-    gpg --homedir ./.gnupg --full-generate-key
-    gpg --homedir .gnupg --export-secret-keys > .gnupg/secring.gpg
-    gpg --homedir .gnupg --export > .gnupg/pubring.gpg
+    gpg --homedir ./.gnupg.home --full-generate-key
+    gpg --homedir ./.gnupg.home --edit-key <email> addkey save
+    gpg --homedir ./.gnupg.home --list-keys
+    gpg --homedir ./.gnupg.home --export-secret-keys > .gnupg/secring.gpg
+    gpg --homedir ./.gnupg.home --export > .gnupg/pubring.gpg
+    gpg --homedir ./.gnupg.home --keyserver hkp://ipv4.pool.sks-keyservers.net --send-keys <keyid>
+    gpg --homedir ./.gnupg.home --keyserver hkp://ipv4.pool.sks-keyservers.net --send-keys <subkeyid>
+    
+    tar cvf secrets.tar .gnupg credentials.sonatype-nexus.properties local.sbt
+    travis encrypt-file secrets.tar
