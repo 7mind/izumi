@@ -13,6 +13,4 @@ before_install:
 script:
   - if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" ]] ; then sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"; fi 
   - sbt ++$TRAVIS_SCALA_VERSION clean test publishSigned
-  - sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease
-
-#    if: tag =~ ^v
+  - if [[ $TRAVIS_TAG =~ ^v.*$ ]] ; then sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease; fi
