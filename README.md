@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/pshirshov/izumi-r2.svg?branch=develop)](https://travis-ci.org/pshirshov/izumi-r2)
+
 Build options
 -------------
 
