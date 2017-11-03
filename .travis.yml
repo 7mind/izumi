@@ -14,5 +14,5 @@ before_install:
   - tar xvf secrets.tar
 script:
   - if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"; fi
-  - sbt ++$TRAVIS_SCALA_VERSION clean test publishSigned
+  - sbt ++$TRAVIS_SCALA_VERSION clean test scripted publishSigned
   - if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease; fi

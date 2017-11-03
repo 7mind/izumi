@@ -2,9 +2,9 @@ import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion}
 import ReleaseTransformations._
 import IzumiDsl._
 import IzumiScopes._
-import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl.RootModule
 
-// TODO: move test deps into sbt-test
+import sbt.ScriptedPlugin._
+
 // TODO: library descriptor generator
 // TODO: better analyzer for "exposed" scope
 // TODO: config -- probably we don't need it
@@ -17,7 +17,7 @@ name := "izumi-r2"
 
 val settings = new GlobalSettings {
   override val globalSettings: Seq[sbt.Setting[_]] = Seq(
-    organization := "com.github.pshirshov"
+    organization := "com.github.pshirshov.izumi"
     , scalaVersion := "2.12.4"
     , publishMavenStyle in Global := true
     , sonatypeProfileName := "com.github.pshirshov"
@@ -44,18 +44,18 @@ val settings = new GlobalSettings {
         </developer>
       </developers>
 
-     , releaseProcess := Seq[ReleaseStep](
-      checkSnapshotDependencies,              // : ReleaseStep
-      inquireVersions,                        // : ReleaseStep
-      runClean,                               // : ReleaseStep
-      runTest,                                // : ReleaseStep
-      setReleaseVersion,                      // : ReleaseStep
-      commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
-      tagRelease,                             // : ReleaseStep
+    , releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies, // : ReleaseStep
+      inquireVersions, // : ReleaseStep
+      runClean, // : ReleaseStep
+      runTest, // : ReleaseStep
+      setReleaseVersion, // : ReleaseStep
+      commitReleaseVersion, // : ReleaseStep, performs the initial git checks
+      tagRelease, // : ReleaseStep
       //publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
-      setNextVersion,                         // : ReleaseStep
-      commitNextVersion,                      // : ReleaseStep
-      pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
+      setNextVersion, // : ReleaseStep
+      commitNextVersion, // : ReleaseStep
+      pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
     )
   )
 
@@ -69,30 +69,19 @@ val globalDefs = new GlobalDefs(settings)
 // --------------------------------------------
 
 lazy val sbtIzumi = ConfiguredModule.in(".")
+  .enablePlugins(ScriptedPlugin)
   .settings(
     target ~= { t => t.toPath.resolve("primary").toFile }
+    , scriptedLaunchOpts := {
+      scriptedLaunchOpts.value ++
+        Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+    }
+    , scriptedBufferLog := false
   )
-
-lazy val corelib = Module.in("lib")
-  .settings(publishArtifact := false)
-
-// --------------------------------------------
-val sharedDefs = globalDefs.withSharedLibs(
-  corelib.defaultRef
-)
-// --------------------------------------------
-
-lazy val testlib = Module.in("lib")
-  .settings(publishArtifact := false)
-
-lazy val testUtil = Module.in("lib")
-  .depends(testlib)
-  .settings(publishArtifact := false)
 
 lazy val root = RootModule.in(".")
   .enablePlugins(GitStampPlugin)
   .transitiveAggregate(
-    testUtil
-    , sbtIzumi
+    sbtIzumi
   )
 

@@ -1,0 +1,2 @@
+> ;clean;test;publishLocal
+$ exists lib/test-util/target/scala-2.12/test-classes-exposed

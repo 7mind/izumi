@@ -2,7 +2,6 @@ package org.bitbucket.pshirshov.izumi.sbt
 
 import sbt.Keys.version
 import sbt._
-import sbt.complete._
 import complete.DefaultParsers._
 import sbt.internal.util.complete.Parser.token
 import sbtrelease.Version
