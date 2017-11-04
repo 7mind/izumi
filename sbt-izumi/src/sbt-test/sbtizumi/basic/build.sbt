@@ -2,7 +2,6 @@ import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion}
 import ReleaseTransformations._
 import IzumiDsl._
 import IzumiScopes._
-import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl.RootModule
 
 enablePlugins(ConvenienceTasksPlugin)
 
@@ -24,7 +23,11 @@ val settings = new GlobalSettings {
 val globalDefs = new GlobalDefs(settings)
 // --------------------------------------------
 
-lazy val corelib = Module.in("lib")
+val inRoot = In(".")
+val inLib = In("lib")
+
+
+lazy val corelib = inLib.as.module
 
 // --------------------------------------------
 val sharedDefs = globalDefs.withSharedLibs(
@@ -32,12 +35,12 @@ val sharedDefs = globalDefs.withSharedLibs(
 )
 // --------------------------------------------
 
-lazy val testlib = Module.in("lib")
+lazy val testlib = inLib.as.module
 
-lazy val testUtil = Module.in("lib")
+lazy val testUtil = inLib.as.module
   .depends(testlib)
 
-lazy val root = RootModule.in(".")
+lazy val root = inRoot.as.root
   .transitiveAggregate(
     testUtil
   )

@@ -115,17 +115,20 @@ object IzumiDsl {
 
   }
 
-  object Module {
-    def in(directory: String): Project = macro ExtendedProjectMacro.projectExFullMacroImpl
+  class WithBase(name: String, base: File) {
+    private val project = Project(name, base)
+
+    def configured: Project = project.globalSettings
+    def root: Project = project.defaultRoot
+    def module: Project = project.extend.registered
   }
 
-  object ConfiguredModule {
-    def in(directory: String): Project = macro ExtendedProjectMacro.projectExConfiguredMacroImpl
+  class In(val directory: String) {
+    def as: WithBase = macro ExtendedProjectMacro.projectUnifiedDslMacro
   }
 
-  object RootModule {
-    def in(directory: String): Project = macro ExtendedProjectMacro.projectExRootMacroImpl
+  object In {
+    def apply(directory: String): In = new In(directory)
   }
-
 }
 

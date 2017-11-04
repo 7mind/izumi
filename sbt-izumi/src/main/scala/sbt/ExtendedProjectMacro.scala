@@ -1,36 +1,17 @@
 package sbt
 
+import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl.WithBase
+
 import scala.reflect.macros._
 
 object ExtendedProjectMacro {
-  def projectExFullMacroImpl(c: blackbox.Context)(directory: c.Expr[String]): c.Expr[Project] = {
+  def projectUnifiedDslMacro(c: blackbox.Context): c.Expr[WithBase] = {
     import c.universe._
     val name: c.Expr[String] = extractName(c)
     reify {
       import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl._
-      Project(name.splice, new File(s"${directory.splice}/${name.splice}"))
-        .extend
-        .registered
-    }
-  }
-
-  def projectExConfiguredMacroImpl(c: blackbox.Context)(directory: c.Expr[String]): c.Expr[Project] = {
-    import c.universe._
-    val name: c.Expr[String] = extractName(c)
-    reify {
-      import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl._
-      Project(name.splice, new File(s"${directory.splice}/${name.splice}"))
-        .globalSettings
-    }
-  }
-
-  def projectExRootMacroImpl(c: blackbox.Context)(directory: c.Expr[String]): c.Expr[Project] = {
-    import c.universe._
-    val name: c.Expr[String] = extractName(c)
-    reify {
-      import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl._
-      Project(name.splice, new File(s"${directory.splice}"))
-        .defaultRoot
+      val directory = c.prefix.splice.asInstanceOf[In].directory
+      new WithBase(name.splice, new File(s"$directory/${name.splice}"))
     }
   }
 

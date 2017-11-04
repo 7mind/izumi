@@ -68,7 +68,10 @@ val settings = new GlobalSettings {
 val globalDefs = new GlobalDefs(settings)
 // --------------------------------------------
 
-lazy val sbtIzumi = ConfiguredModule.in(".")
+val inRoot = In(".")
+
+lazy val sbtIzumi = inRoot.as
+  .configured
   .enablePlugins(ScriptedPlugin)
   .settings(
     target ~= { t => t.toPath.resolve("primary").toFile }
@@ -79,7 +82,8 @@ lazy val sbtIzumi = ConfiguredModule.in(".")
     , scriptedBufferLog := false
   )
 
-lazy val root = RootModule.in(".")
+lazy val root = inRoot.as
+  .root
   .enablePlugins(GitStampPlugin)
   .transitiveAggregate(
     sbtIzumi
