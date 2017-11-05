@@ -115,12 +115,13 @@ object IzumiDsl {
 
   }
 
-  class WithBase(name: String, base: File) {
-    private val project = Project(name, base)
+  class WithBase(name: String, base: String) {
+    private def project = Project(name, new File(s"$base/$name"))
+    private def dirProject = Project(name, new File(base))
 
     def configured: Project = project.globalSettings
-    def root: Project = project.defaultRoot
     def module: Project = project.extend.registered
+    def root: Project = dirProject.defaultRoot
   }
 
   class In(val directory: String) {

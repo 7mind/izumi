@@ -11,7 +11,7 @@ object ExtendedProjectMacro {
     reify {
       import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl._
       val directory = c.prefix.splice.asInstanceOf[In].directory
-      new WithBase(name.splice, new File(s"$directory/${name.splice}"))
+      new WithBase(name.splice, directory)
     }
   }
 
