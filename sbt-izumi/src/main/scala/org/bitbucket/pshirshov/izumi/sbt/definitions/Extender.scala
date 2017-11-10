@@ -11,21 +11,21 @@ trait Extender {
   def extend(p: Project): Project
 }
 
-class GlobalSettingsExtender(settings: GlobalSettings) extends Extender {
+class GlobalSettingsExtender(settings: ProjectSettings) extends Extender {
   override def extend(p: Project) = {
-    p.settings(settings.globalSettings: _*)
+    p.settings(settings.settings: _*)
   }
 }
 
-class SharedDepsExtender(settings: GlobalSettings) extends Extender {
+class SharedDepsExtender(settings: ProjectSettings) extends Extender {
   override def extend(p: Project) = {
     p.settings(libraryDependencies ++= settings.sharedDeps.toSeq)
   }
 }
 
-class GlobalExclusionsExtender(settings: GlobalSettings) extends Extender {
+class GlobalExclusionsExtender(settings: ProjectSettings) extends Extender {
   override def extend(p: Project) = {
-    p.settings(excludeDependencies ++= settings.globalExclusions.toSeq)
+    p.settings(excludeDependencies ++= settings.exclusions.toSeq)
   }
 }
 
@@ -34,7 +34,7 @@ class SharedModulesExtender(sharedLibs: Set[ProjectReferenceEx]) extends Extende
     import IzumiScopes._
 
     if (!sharedLibs.contains(p)) {
-      logger.debug(s"Adding ${sharedLibs} into $p")
+      logger.debug(s"Adding $sharedLibs into $p")
       p.depends(sharedLibs.toSeq: _*)
     } else {
       p

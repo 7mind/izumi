@@ -1,16 +1,21 @@
 package org.bitbucket.pshirshov.izumi.sbt.definitions
 
 import org.bitbucket.pshirshov.izumi.sbt._
-import sbt.librarymanagement.InclExclRule
-import sbt.{ModuleID, Plugins}
+import sbt.Plugins
 
 
 trait GlobalSettings {
-  def globalExclusions: Set[InclExclRule] = Set.empty
+  protected def customSettings: Map[SettingsGroupId, ProjectSettings] = Map()
 
-  def globalSettings: Seq[sbt.Setting[_]] = Seq.empty
+  protected def globalSettings: ProjectSettings = ProjectSettings.empty
 
-  def sharedDeps: Set[ModuleID] = Set.empty
+  private final def settings: Map[SettingsGroupId, ProjectSettings] = customSettings ++ Map(
+    SettingsGroupId.GlobalSettingsGroup -> globalSettings
+  )
+
+  def settingsGroup(id: SettingsGroupId): ProjectSettings = settings.getOrElse(id, ProjectSettings.empty)
+  def globalSettingsGroup: ProjectSettings = settingsGroup(SettingsGroupId.GlobalSettingsGroup)
+
 
   def rootPlugins: Set[Plugins] = Set(
     BuildPlugin

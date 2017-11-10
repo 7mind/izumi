@@ -3,24 +3,35 @@ import ReleaseTransformations._
 import IzumiDsl._
 import IzumiScopes._
 
+
 enablePlugins(ConvenienceTasksPlugin)
 
 name := "izumi-r2-test"
 version in ThisBuild := "0.1.0-SNAPSHOT"
 
-val settings = new GlobalSettings {
-  override val globalSettings: Seq[sbt.Setting[_]] = Seq(
-    organization := "com.github.pshirshov.izumi.test"
-    , scalaVersion := "2.12.4"
-  )
+val AppSettings = new SettingsGroupId {}
 
-  override val sharedDeps = Set(
-    "com.typesafe" % "config" % "1.3.2"
+val baseSettings = new GlobalSettings {
+  override protected val globalSettings: ProjectSettings = new ProjectSettings {
+    override val settings: Seq[sbt.Setting[_]] = Seq(
+      organization := "com.github.pshirshov.izumi.test"
+      , scalaVersion := "2.12.4"
+    )
+
+    override val sharedDeps = Set(
+      "com.typesafe" % "config" % "1.3.2"
+    )
+  }
+
+  override protected val customSettings: Map[SettingsGroupId, ProjectSettings] = Map(
+    AppSettings -> new ProjectSettings {
+
+    }
   )
 }
 
 // --------------------------------------------
-val globalDefs = new GlobalDefs(settings)
+val globalDefs = new GlobalDefs(baseSettings)
 // --------------------------------------------
 
 val inRoot = In(".")
@@ -39,6 +50,7 @@ lazy val testlib = inLib.as.module
 
 lazy val testUtil = inLib.as.module
   .depends(testlib)
+  .customSettings(AppSettings)
 
 lazy val root = inRoot.as.root
   .transitiveAggregate(

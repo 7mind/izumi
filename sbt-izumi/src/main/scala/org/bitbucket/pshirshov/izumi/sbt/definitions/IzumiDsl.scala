@@ -28,7 +28,12 @@ trait IzumiDsl {
   }
 
   def withSharedLibs(libs: ProjectReferenceEx*): IzumiDsl = {
-    val copy = new GlobalDefsCopy(this.globalSettings)
+    val settings = globalSettings
+
+    val copy = new IzumiDsl {
+      override protected def globalSettings: GlobalSettings = settings
+    }
+
     copy.allProjects ++= this.allProjects
     copy.extenders ++= this.extenders
     copy.addExtender(new SharedModulesExtender(libs.toSet))
@@ -39,6 +44,10 @@ trait IzumiDsl {
   def allRefs: Seq[ProjectReference] = {
     allProjects.toSeq
   }
+}
+
+trait ProjectExtensions {
+
 }
 
 object IzumiDsl {
@@ -67,10 +76,12 @@ object IzumiDsl {
         .defaultRoot
     }
 
-    def globalSettings: Project = {
+    def customSettings(groupId: SettingsGroupId): Project = {
       project
-        .settings(getInstance.globalSettings.globalSettings: _*)
+        .settings(getInstance.globalSettings.settingsGroup(groupId).settings: _*)
     }
+
+    def globalSettings: Project = customSettings(SettingsGroupId.GlobalSettingsGroup)
 
     def defaultRoot: Project = {
       project
@@ -112,7 +123,6 @@ object IzumiDsl {
 
       instance
     }
-
   }
 
   class WithBase(name: String, base: String) {

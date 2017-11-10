@@ -16,5 +16,7 @@ object IzumiImportsPlugin extends AutoPlugin {
 
     type GlobalDefs = definitions.GlobalDefs
     type GlobalSettings = definitions.GlobalSettings
+    type ProjectSettings = definitions.ProjectSettings
+    type SettingsGroupId = definitions.SettingsGroupId
   }
 }
