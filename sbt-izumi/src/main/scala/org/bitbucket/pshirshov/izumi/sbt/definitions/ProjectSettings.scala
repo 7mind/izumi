@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.sbt.definitions
 
-import sbt.{ModuleID, Plugins}
+import sbt.{AutoPlugin, ModuleID, Plugins}
 import sbt.librarymanagement.InclExclRule
 
 case class ProjectSettings
@@ -9,13 +9,15 @@ case class ProjectSettings
   , sharedDeps: Set[ModuleID] = Set.empty
   , exclusions: Set[InclExclRule] = Set.empty
   , plugins: Set[Plugins] = Set.empty
-  , moreExtenders: ProjectSettings => Set[Extender] = (_) => Set.empty
+  , disabledPlugins: Set[AutoPlugin] = Set.empty
+  , moreExtenders: (ProjectSettings, Set[Extender]) => Set[Extender] = (self, extenders) => extenders
 ) {
-  def extenders: Set[Extender] = moreExtenders(this) ++ Set(
+  def extenders: Set[Extender] = moreExtenders(this, Set(
     new GlobalSettingsExtender(this)
     , new SharedDepsExtender(this)
     , new GlobalExclusionsExtender(this)
-  )
+    , new PluginsExtender(this)
+  ))
 }
 
 object ProjectSettings {

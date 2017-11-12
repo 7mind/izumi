@@ -32,8 +32,8 @@ trait IzumiDsl {
 
           override def globalSettings: ProjectSettings = original.globalSettings
             .copy(moreExtenders = {
-              s =>
-                original.globalSettings.moreExtenders(s) ++ extenders
+              case (self, existing) =>
+                original.globalSettings.extenders ++ existing ++ extenders
             })
         }
     }
@@ -63,7 +63,6 @@ object IzumiDsl {
   }
 
   def setup(settings: GlobalSettings): IzumiDsl = {
-    val projectSettings = settings.globalSettingsGroup
     instance
       .withTransformedSettings(_ => settings)
   }
@@ -98,7 +97,7 @@ object IzumiDsl {
     def extend(groupId: SettingsGroupId): Project = {
       val settings = getInstance.globalSettings.settingsGroup(groupId)
       val extenders = settings.extenders
-      logger.debug(s"Applying ${extenders.size} transformers to ${project.id}...")
+      logger.info(s"Applying ${extenders.size} transformers to ${project.id}...")
 
       extenders.foldLeft(project) {
         case (acc, t) =>

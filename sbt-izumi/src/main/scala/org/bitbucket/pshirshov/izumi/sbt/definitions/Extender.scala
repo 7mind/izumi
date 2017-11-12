@@ -29,6 +29,15 @@ class GlobalExclusionsExtender(settings: ProjectSettings) extends Extender {
   }
 }
 
+
+class PluginsExtender(settings: ProjectSettings) extends Extender {
+  override def extend(p: Project) = {
+    p
+      .enablePlugins(settings.plugins.toSeq :_*)
+      .disablePlugins(settings.disabledPlugins.toSeq :_*)
+  }
+}
+
 class SharedModulesExtender(sharedLibs: Set[ProjectReferenceEx]) extends Extender {
   override def extend(p: Project) = {
     import IzumiScopes._

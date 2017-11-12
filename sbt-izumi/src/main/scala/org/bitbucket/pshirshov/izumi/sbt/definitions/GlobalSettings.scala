@@ -28,12 +28,13 @@ trait GlobalSettings {
     )
     , SettingsGroupId.ItSettingsGroup -> ProjectSettings(
       settings = Seq(Defaults.itSettings, NestedTestScopesPlugin.itSettings).flatten
-      , moreExtenders = { s =>
-        Set(
-          new Extender {
-            override def extend(p: Project) = p.configs(syntax.IntegrationTest)
-          }
-        )
+      , moreExtenders = {
+        (self, existing) =>
+          existing ++ Set(
+            new Extender {
+              override def extend(p: Project) = p.configs(syntax.IntegrationTest)
+            }
+          )
       }
     )
   )
