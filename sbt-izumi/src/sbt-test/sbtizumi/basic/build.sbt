@@ -12,7 +12,7 @@ version in ThisBuild := "0.1.0-SNAPSHOT"
 val AppSettings = new SettingsGroupId {}
 
 val baseSettings = new GlobalSettings {
-  override protected val globalSettings: ProjectSettings = new ProjectSettings {
+  override val globalSettings: ProjectSettings = new ProjectSettings {
     override val settings: Seq[sbt.Setting[_]] = Seq(
       organization := "com.github.pshirshov.izumi.test"
       , scalaVersion := "2.12.4"
@@ -23,7 +23,7 @@ val baseSettings = new GlobalSettings {
     )
   }
 
-  override protected val customSettings: Map[SettingsGroupId, ProjectSettings] = Map(
+  override val customSettings: Map[SettingsGroupId, ProjectSettings] = Map(
     AppSettings -> new ProjectSettings {
 
     }
@@ -31,7 +31,7 @@ val baseSettings = new GlobalSettings {
 }
 
 // --------------------------------------------
-val globalDefs = new GlobalDefs(baseSettings)
+val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 val inRoot = In(".")
@@ -50,7 +50,7 @@ lazy val testlib = inLib.as.module
 
 lazy val testUtil = inLib.as.module
   .depends(testlib)
-  .customSettings(AppSettings)
+  .extend(AppSettings)
 
 lazy val root = inRoot.as.root
   .transitiveAggregate(
