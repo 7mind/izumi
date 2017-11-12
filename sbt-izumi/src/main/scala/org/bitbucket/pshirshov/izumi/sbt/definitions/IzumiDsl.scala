@@ -73,17 +73,10 @@ object IzumiDsl {
       project
     }
 
-    def customSettings(groupId: SettingsGroupId): Project = {
-      project
-        .settings(getInstance.globalSettings.settingsGroup(groupId).settings: _*)
-    }
-
-    def globalSettings: Project = {
-      customSettings(SettingsGroupId.GlobalSettingsGroup)
-    }
-
     def defaultRoot: Project = {
-      project.extend(SettingsGroupId.RootSettingsGroup)
+      project
+        .extend(SettingsGroupId.GlobalSettingsGroup)
+        .extend(SettingsGroupId.RootSettingsGroup)
     }
 
     def withIt: Project = {
@@ -128,8 +121,6 @@ object IzumiDsl {
     private def project = Project(name, new File(s"$base/$name"))
 
     private def dirProject = Project(name, new File(base))
-
-    def configured: Project = project.globalSettings
 
     def module: Project = project.extend.registered
 

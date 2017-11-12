@@ -69,7 +69,7 @@ val globalDefs = setup(baseSettings)
 val inRoot = In(".")
 
 lazy val sbtIzumi = inRoot.as
-  .configured
+  .module
   .enablePlugins(ScriptedPlugin)
   .settings(
     target ~= { t => t.toPath.resolve("primary").toFile }
