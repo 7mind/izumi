@@ -17,10 +17,6 @@ name := "izumi-r2"
 
 val baseSettings = new GlobalSettings {
   override val globalSettings: ProjectSettings = new ProjectSettings {
-      override val sharedDeps = Set(
-        "com.typesafe" % "config" % "1.3.2"
-      )
-
       override val settings = Seq(
         organization := "com.github.pshirshov.izumi"
         , scalaVersion := "2.12.4"
