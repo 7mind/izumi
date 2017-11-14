@@ -90,7 +90,7 @@ object IzumiDsl {
     def extend(groupId: SettingsGroupId): Project = {
       val settings = getInstance.globalSettings.settingsGroup(groupId)
       val extenders = settings.extenders
-      logger.info(s"Applying ${extenders.size} transformers to ${project.id}...")
+      logger.debug(s"Applying ${extenders.size} transformers to ${project.id}...")
 
       extenders.foldLeft(project) {
         case (acc, t) =>
