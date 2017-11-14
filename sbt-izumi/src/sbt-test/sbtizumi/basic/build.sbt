@@ -9,7 +9,7 @@ enablePlugins(ConvenienceTasksPlugin)
 name := "izumi-r2-test"
 version in ThisBuild := "0.1.0-SNAPSHOT"
 
-val AppSettings = new SettingsGroupId {}
+val AppSettings = SettingsGroupId()
 
 val baseSettings = new GlobalSettings {
   override val globalSettings: ProjectSettings = new ProjectSettings {

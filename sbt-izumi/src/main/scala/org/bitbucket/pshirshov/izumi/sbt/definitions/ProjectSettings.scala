@@ -21,5 +21,7 @@ case class ProjectSettings
 }
 
 object ProjectSettings {
-  def empty: ProjectSettings = ProjectSettings()
+  def empty: ProjectSettings = new ProjectSettings() {
+    override def extenders: Set[Extender] = Set.empty
+  }
 }

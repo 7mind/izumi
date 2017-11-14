@@ -10,6 +10,7 @@ object IzumiImportsPlugin extends AutoPlugin {
     val IzumiDsl = definitions.IzumiDsl
     val IzumiScopes = definitions.IzumiScopes
     val IzumiProperties = definitions.Properties
+    val SettingsGroupId = definitions.SettingsGroupId
 
     val GitStampPlugin = org.bitbucket.pshirshov.izumi.sbt.GitStampPlugin
     val ConvenienceTasksPlugin = org.bitbucket.pshirshov.izumi.sbt.ConvenienceTasksPlugin
