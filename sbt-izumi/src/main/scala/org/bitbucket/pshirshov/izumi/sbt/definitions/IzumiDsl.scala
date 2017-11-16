@@ -118,11 +118,13 @@ object IzumiDsl {
   }
 
   class WithBase(name: String, base: String) {
-    private def project = Project(name, new File(s"$base/$name"))
+    private def moduleProject = Project(name, new File(s"$base/$name"))
 
     private def dirProject = Project(name, new File(base))
 
-    def module: Project = project.extend.registered
+    def module: Project = moduleProject.extend.registered
+
+    def project: Project = moduleProject.registered
 
     def root: Project = dirProject.defaultRoot
   }
