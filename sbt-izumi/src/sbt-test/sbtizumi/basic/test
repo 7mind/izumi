@@ -1,2 +1,6 @@
 > ;clean;test;publishLocal;plugins
 $ exists lib/test-util/target/scala-2.12/test-classes-exposed
+> newStub lib/xxx something
+$ exists lib/xxx
+> newStub lib/yyy
+$ exists lib/yyy
