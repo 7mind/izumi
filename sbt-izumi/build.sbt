@@ -35,7 +35,7 @@ addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.6")
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
 
 // https://github.com/sbt/sbt-bintray
-addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.1")
+//addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.1")
 
 // https://github.com/sksamuel/sbt-scapegoat
 //addSbtPlugin("com.sksamuel.scapegoat" %% "sbt-scapegoat" % "1.0.7")
