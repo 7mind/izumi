@@ -4,9 +4,6 @@ libraryDependencies ++= Seq(
 
 sbtPlugin := true
 
-// https://github.com/xerial/sbt-pack
-addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.9.1")
-
 // https://github.com/scoverage/sbt-scoverage
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 
@@ -44,3 +41,5 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.3")
 // https://github.com/sksamuel/sbt-scapegoat
 //addSbtPlugin("com.sksamuel.scapegoat" %% "sbt-scapegoat" % "1.0.7")
 
+// https://github.com/xerial/sbt-pack // failing on sbt 1.1.0
+//addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.9.1")
