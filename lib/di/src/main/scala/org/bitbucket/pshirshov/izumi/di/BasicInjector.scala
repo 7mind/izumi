@@ -1,20 +1,16 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.PlanTransformation.{Duplicated, Leave, Replace, UnsolvableConflict}
+import org.bitbucket.pshirshov.izumi.di.model.plan.PlanTransformation._
+import org.bitbucket.pshirshov.izumi.di.model.plan.PlanMetaStep._
 import org.bitbucket.pshirshov.izumi.di.definition.DIDef
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.plan.Op.PullDependency
-import org.bitbucket.pshirshov.izumi.di.plan.{Association, DIPlan, ImmutablePlan, Op}
+import org.bitbucket.pshirshov.izumi.di.model.plan.Op.PullDependency
+import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict._
+import org.bitbucket.pshirshov.izumi.di.model.plan._
 
-trait PlanningConflict
 
-object PlanningConflict {
 
-  case class NoConflict(newOp: Op) extends PlanningConflict
 
-  case class Conflict(newOp: Op, existingOp: Op) extends PlanningConflict
-
-}
 
 class BasicInjector extends Injector {
   override def plan(context: DIDef): DIPlan = {
@@ -38,11 +34,12 @@ class BasicInjector extends Injector {
         val nextPlan = extendPlan(currentPlan, toPull, toProvision)
 
 
-        val next = new ImmutablePlan(nextPlan.collect { case Leave(op) => op })
+        val next = new ImmutablePlan(nextPlan.collect { case Statement(op) => op })
 
         System.err.println("-" * 120)
         System.err.println(s"> ${nextPlan}")
         System.err.println(s"Next plan:\n${next}")
+        // TODO: make sure circular deps are gone
         assertSanity(next.getPlan)
         next
     }
@@ -50,14 +47,53 @@ class BasicInjector extends Injector {
 
 
   private def extendPlan(currentPlan: DIPlan, toPull: Seq[Op], toProvision: Seq[Op]) = {
-    import PlanningConflict._
     val withConflicts = findConflicts(currentPlan, toProvision)
 
-    val currentPlanBlock = currentPlan.getPlan.map(Leave)
-    val insertAt  = withConflicts
+    val (before, after) = splitCurrentPlan(currentPlan, withConflicts)
+
+    val transformations = withConflicts.map {
+      case NoConflict(newOp) =>
+        Put(newOp)
+
+        // TODO: here we may check for circular deps
+      case Conflict(newOp, existing: PullDependency) =>
+        Replace(existing, newOp)
+
+      case Conflict(newOp, existing) if newOp == existing =>
+        SolveRedefinition(newOp)
+
+      case Conflict(newOp, existing) =>
+        SolveUnsolvable(newOp, existing)
+    }
+
+    val replacements = transformations.collect { case t: Replace => Put(t.op) }.toSet
+
+    val beforeReplaced = before.filterNot(replacements.contains)
+    val afterReplaced = after.filterNot(replacements.contains)
+
+    // TODO: separate ADT for this case?..
+    val updatedPlan = beforeReplaced ++
+      transformations ++
+      afterReplaced
+
+    val transformationsWithoutReplacements = updatedPlan.map {
+      case t: Replace => PlanMetaStep.Statement(t.replacement)
+      case t: Put => PlanMetaStep.Statement(t.op)
+      case t: SolveRedefinition => PlanMetaStep.Duplicate(t.op)
+      case t: SolveUnsolvable => PlanMetaStep.ConflictingStatement(t.op, t.existing)
+    }
+
+    toPull.map(PlanMetaStep.Statement) ++ transformationsWithoutReplacements
+
+  }
+
+  private def splitCurrentPlan(currentPlan: DIPlan, withConflicts: Seq[PlanningConflict]): (Seq[Put], Seq[Put]) = {
+    import PlanningConflict._
+    val currentPlanBlock = currentPlan.getPlan.map(Put)
+    val insertAt = withConflicts
       .map {
         case Conflict(_, existingOp) =>
-          currentPlanBlock.indexOf(Leave(existingOp))
+          currentPlanBlock.indexOf(Put(existingOp))
 
         case _: NoConflict =>
           currentPlanBlock.length
@@ -65,35 +101,7 @@ class BasicInjector extends Injector {
       .min
 
     val (before, after) = currentPlanBlock.splitAt(insertAt)
-
-    val transformations = withConflicts.map {
-      case NoConflict(newOp) =>
-        Leave(newOp)
-
-        // TODO: here we may check for circular deps
-      case Conflict(newOp, existing: PullDependency) =>
-        Replace(existing, newOp)
-
-      case Conflict(newOp, existing) if newOp == existing =>
-        Duplicated(newOp)
-
-      case Conflict(newOp, existing) =>
-        UnsolvableConflict(newOp, existing)
-    }
-
-    val replacements = transformations.collect { case t: Replace => Leave(t.op) }.toSet
-
-    val beforeReplaced = before.filterNot(replacements.contains)
-    val afterReplaced = after.filterNot(replacements.contains)
-    val transformationsWithoutReplacements = transformations.map {
-      case t: Replace => Leave(t.replacement)
-      case v => v
-    }
-
-    toPull.map(Leave) ++
-      beforeReplaced ++
-      transformationsWithoutReplacements ++
-      afterReplaced
+    (before, after)
   }
 
   private def findConflicts(currentPlan: DIPlan, toProvision: Seq[Op]): Seq[PlanningConflict] = {
@@ -164,8 +172,6 @@ class BasicInjector extends Injector {
       throw new IllegalArgumentException(s"Duplicate keys: $keys!")
     }
   }
-
-  private def isSane(keys: Seq[DIKey]): Boolean = keys.lengthCompare(keys.distinct.size) == 0
 
   private def isConcrete(Symb: Symb) = {
     Symb.isClass && !Symb.isAbstract
