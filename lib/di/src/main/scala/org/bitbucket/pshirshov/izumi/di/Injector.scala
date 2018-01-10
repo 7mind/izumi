@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di
 
 import org.bitbucket.pshirshov.izumi.di.definition.DIDef
-import org.bitbucket.pshirshov.izumi.di.plan._
+import org.bitbucket.pshirshov.izumi.di.model.plan._
 
 
 

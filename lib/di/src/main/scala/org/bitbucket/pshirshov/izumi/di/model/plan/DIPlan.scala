@@ -1,4 +1,4 @@
-package org.bitbucket.pshirshov.izumi.di.plan
+package org.bitbucket.pshirshov.izumi.di.model.plan
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 

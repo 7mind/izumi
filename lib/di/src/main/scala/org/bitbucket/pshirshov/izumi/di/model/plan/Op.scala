@@ -1,7 +1,7 @@
-package org.bitbucket.pshirshov.izumi.di.plan
+package org.bitbucket.pshirshov.izumi.di.model.plan
 
 import org.bitbucket.pshirshov.izumi.di.Symb
-import org.bitbucket.pshirshov.izumi.di.model.DIKey
+import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Formattable}
 
 sealed trait Op extends Formattable{
   def target: DIKey

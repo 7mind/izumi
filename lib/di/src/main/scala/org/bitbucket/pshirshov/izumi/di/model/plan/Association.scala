@@ -1,16 +1,10 @@
-package org.bitbucket.pshirshov.izumi.di.plan
+package org.bitbucket.pshirshov.izumi.di.model.plan
 
 import org.bitbucket.pshirshov.izumi.di.Symb
-import org.bitbucket.pshirshov.izumi.di.model.DIKey
+import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Formattable}
 
-// traits: typeTag[T2].tpe.decls.head.getClass
-// classes: typeTag[C3].tpe.decls.last.info.paramLists
-// names are available: typeTag[C3].tpe.decls.last.info.paramLists.head.head.name
-trait Formattable {
-  def format: String
-}
 
-sealed trait Association extends Formattable{
+sealed trait Association extends Formattable {
   def wireWith: DIKey
 }
 
