@@ -17,7 +17,7 @@ object Op {
       val sb = new StringBuilder()
       sb.append(f"$target := new ${target.symbol.fullName}")
       if (args.nonEmpty) {
-        sb.append(args.map(_.format).mkString(" (\n    ", ",\n    ", "\n  )"))
+        sb.append(args.map(_.format).mkString(" (\n    ", ",\n    ", "\n)"))
       }
       sb.toString()
     }
@@ -28,7 +28,7 @@ object Op {
       val sb = new StringBuilder()
       sb.append(f"$target := impl ${target.symbol.fullName}")
       if (args.nonEmpty) {
-        sb.append(args.map(_.format).mkString(" {\n    ", ",\n    ", "\n  }"))
+        sb.append(args.map(_.format).mkString(" {\n    ", ",\n    ", "\n}"))
       }
       sb.toString()
     }

@@ -9,9 +9,13 @@ sealed trait DIKey {
 
 object DIKey {
 
-  case class TypeKey(symbol: Symb) extends DIKey
+  case class TypeKey(symbol: Symb) extends DIKey {
+    override def toString: String = s"${symbol.toString.replace(" ", ":")}"
+  }
 
-  case class IdKey[InstanceId](symbol: Symb, id: InstanceId) extends DIKey
+  case class IdKey[InstanceId](symbol: Symb, id: InstanceId)  extends DIKey {
+    override def toString: String = s"${symbol.toString.replace(" ", ":")}#$id"
+  }
 
   def get[K: Tag]: TypeKey = TypeKey(typeTag[K].tpe.typeSymbol)
 }
