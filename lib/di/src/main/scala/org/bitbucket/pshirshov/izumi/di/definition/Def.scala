@@ -1,16 +1,14 @@
 package org.bitbucket.pshirshov.izumi.di.definition
 
-import org.bitbucket.pshirshov.izumi.di.Tag
+import org.bitbucket.pshirshov.izumi.di.model.DIKey
 
 import scala.reflect.runtime.universe._
 
 sealed trait Def {
+  def target: DIKey
+  def implementation: Symbol
 }
 
 object Def {
-  case class SingletonBinding[BType: Tag, IType <: BType: Tag]() extends Def {
-    def bindingType: Tag[BType] = typeTag[BType]
-    def implementingType: Tag[IType] = typeTag[IType]
-  }
-
+  case class SingletonBinding(target: DIKey, implementation: Symbol) extends Def
 }
