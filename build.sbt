@@ -4,6 +4,7 @@ import IzumiDsl._
 import IzumiScopes._
 import org.bitbucket.pshirshov.izumi.sbt.definitions.{ProjectSettings, SettingsGroupId}
 import sbt.ScriptedPlugin._
+import D._
 
 // TODO: library descriptor generator
 // TODO: better analyzer for "exposed" scope
@@ -14,7 +15,7 @@ enablePlugins(ConvenienceTasksPlugin)
 
 name := "izumi-r2"
 
-val AppSettings = SettingsGroupId()
+val LibSettings = SettingsGroupId()
 
 
 val baseSettings = new GlobalSettings {
@@ -62,6 +63,17 @@ val baseSettings = new GlobalSettings {
         )
       )
     }
+
+  override val customSettings: Map[SettingsGroupId, ProjectSettings] = Map(
+    LibSettings -> new ProjectSettings {
+      override val settings: Seq[sbt.Setting[_]] = Seq(
+        Seq(
+          libraryDependencies ++= R.essentials
+          , libraryDependencies ++= T.essentials
+        )
+      ).flatten
+    }
+  )
 }
 
 // --------------------------------------------
@@ -69,6 +81,7 @@ val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 val inRoot = In(".")
+val inLib = In("lib")
 
 lazy val sbtIzumi = inRoot.as
   .module
@@ -82,10 +95,16 @@ lazy val sbtIzumi = inRoot.as
     , scriptedBufferLog := false
   )
 
+lazy val di = inLib.as.module
+    .settings(
+      libraryDependencies += R.scala_reflect
+    )
+    .extend(LibSettings)
+
 lazy val root = inRoot.as
   .root
   .enablePlugins(GitStampPlugin)
   .transitiveAggregate(
-    sbtIzumi
+    sbtIzumi, di
   )
 
