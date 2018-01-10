@@ -2,8 +2,8 @@ package org.bitbucket.pshirshov.izumi.di.model.plan
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 
-trait DIPlan {
-  def getPlan: Seq[Op]
+trait ReadyPlan {
+  def getPlan: Seq[ExecutableOp]
   def contains(dependency: DIKey): Boolean
 
   override def toString: String = {
@@ -11,13 +11,13 @@ trait DIPlan {
   }
 }
 
-object DIPlan {
-  def empty: DIPlan = new ImmutablePlan(Seq.empty)
+object ReadyPlan {
+  def empty: ReadyPlan = new ReadyPlanImmutableImpl(Seq.empty)
 }
 
-class ImmutablePlan(ops: Seq[Op]) extends DIPlan {
+class ReadyPlanImmutableImpl(ops: Seq[ExecutableOp]) extends ReadyPlan {
   //private val
-  override def getPlan: Seq[Op] = ops
+  override def getPlan: Seq[ExecutableOp] = ops
 
   override def contains(dependency: DIKey): Boolean = {
     ops.exists(_.target == dependency)
