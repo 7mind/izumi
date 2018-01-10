@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.Statement
+import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{Nop, Statement}
 import org.bitbucket.pshirshov.izumi.di.model.plan.{DodgyOp, DodgyPlan, ReadyPlan, ReadyPlanImmutableImpl}
 
 class UntranslatablePlanException(message: String, val badSteps: Seq[DodgyOp]) extends RuntimeException(message)
@@ -8,7 +8,7 @@ class UntranslatablePlanException(message: String, val badSteps: Seq[DodgyOp]) e
 
 class DefaultPlanResolver extends PlanResolver {
   override def resolve(steps: DodgyPlan): ReadyPlan = {
-    val (goodSteps, badSteps) = steps.steps.partition(_.isInstanceOf[Statement])
+    val (goodSteps, badSteps) = steps.steps.filterNot(_.isInstanceOf[Nop]).partition(_.isInstanceOf[Statement])
 
     if (badSteps.nonEmpty) {
       throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy, feel free to jerk at this point): $badSteps", badSteps)

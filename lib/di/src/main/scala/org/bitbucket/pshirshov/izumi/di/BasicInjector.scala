@@ -1,19 +1,13 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, ImplDef}
+import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.PullDependency
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp._
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp._
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 
-sealed trait Provisioning
-
-object Provisioning {
-  case class Possible(ops: Seq[ExecutableOp]) extends Provisioning
-  case class Impossible(implDef: ImplDef) extends Provisioning
-}
 
 class BasicInjector
   extends Injector
@@ -23,23 +17,31 @@ class BasicInjector
   // todo: provide from outside
   protected def resolver: PlanResolver = new DefaultPlanResolver()
 
+  case class CurrentOp(definition: Def, toImport: Seq[ExecutableOp.ImportDependency], toProvision: Seq[ExecutableOp])
+
   override def plan(context: DIDef): ReadyPlan = {
     System.err.println(s"Planning on context $context")
 
     val metaPlan = context.bindings.foldLeft(DodgyPlan(Seq.empty[DodgyOp])) {
       case (currentPlan, definition) =>
-        val knowsTargets = currentPlan.steps.map(_.op.target).toSet
+        val knowsTargets = currentPlan.steps.flatMap {
+          case Statement(op) =>
+            Seq(op.target)
+          case _ =>
+            Seq()
+        }.toSet
+
         val deps = enumerateDeps(definition.implementation)
         val (resolved, unresolved) = deps.partition(d => knowsTargets.contains(d.wireWith))
         // we don't need resolved deps, we already have them in plan
 
-        val toPull = unresolved.map(dep => ExecutableOp.PullDependency(dep.wireWith))
+        val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith))
         provisioning(definition.target, definition.implementation, deps) match {
           case Provisioning.Possible(toProvision) =>
-            System.err.println(s"toPull = $toPull, toProvision=$toProvision")
+            System.err.println(s"toImport = $toImport, toProvision=$toProvision")
 
-            assertSanity(toPull ++ toProvision)
-            val nextPlan = extendPlan(currentPlan, toPull, toProvision)
+            assertSanity(toImport ++ toProvision)
+            val nextPlan = extendPlan(currentPlan, CurrentOp(definition, toImport, toProvision))
 
             val next = DodgyPlan(nextPlan)
             System.err.println("-" * 60 + " Next Plan " + "-" * 60)
@@ -79,7 +81,8 @@ class BasicInjector
     }
   }
 
-  private def extendPlan(currentPlan: DodgyPlan, toPull: Seq[ExecutableOp.PullDependency], toProvision: Seq[ExecutableOp]) = {
+  private def extendPlan(currentPlan: DodgyPlan, currentOp: CurrentOp) = {
+    import currentOp._
     val withConflicts = findConflicts(currentPlan, toProvision)
 
     val (before, after) = splitCurrentPlan(currentPlan, withConflicts)
@@ -89,14 +92,14 @@ class BasicInjector
         Put(newOp)
 
       // TODO: here we may check for circular deps
-      case Conflict(newOp, Statement(existing: PullDependency)) =>
+      case Conflict(newOp, Statement(existing: ImportDependency)) =>
         Replace(existing, newOp)
 
       case Conflict(newOp, existing) if Statement(newOp) == existing =>
         SolveRedefinition(newOp)
 
       case Conflict(newOp, existing) =>
-        SolveUnsolvable(newOp, existing.op)
+        SolveUnsolvable(newOp, existing)
     }
 
     val replacements = transformations.collect { case t: Replace => Statement(t.op): DodgyOp }.toSet
@@ -112,11 +115,15 @@ class BasicInjector
       case t: SolveRedefinition => DodgyOp.DuplicatedStatement(t.op)
       case t: SolveUnsolvable => DodgyOp.UnsolvableConflict(t.op, t.existing)
     }
-
-    toPull.map(DodgyOp.Statement) ++ beforeReplaced ++
+    Seq(Nop(s"//  imp: ${currentOp.definition}")) ++
+      toImport.map(DodgyOp.Statement) ++
+      Seq(Nop(s"// head: ${currentOp.definition}")) ++
+      beforeReplaced ++
+      Seq(Nop(s"// tran: ${currentOp.definition}")) ++
       transformationsWithoutReplacements ++
-      afterReplaced
-
+      Seq(Nop(s"// tail: ${currentOp.definition}")) ++
+      afterReplaced ++
+      Seq(Nop(s"//  end: ${currentOp.definition}"))
   }
 
   private def splitCurrentPlan(currentPlan: DodgyPlan, withConflicts: Seq[PlanningConflict]): (Seq[DodgyOp], Seq[DodgyOp]) = {
@@ -124,10 +131,10 @@ class BasicInjector
     val currentPlanBlock = currentPlan.steps
     val insertAt = withConflicts
       .map {
-        case Conflict(_, existingOp) =>
-          currentPlanBlock.indexOf(Put(existingOp.op))
+        case Conflict(_, Statement(op)) =>
+          currentPlanBlock.indexOf(op)
 
-        case _: NoConflict =>
+        case _ => // we don't consider all other cases
           currentPlanBlock.length
       }
       .min
@@ -138,7 +145,7 @@ class BasicInjector
 
   private def findConflicts(currentPlan: DodgyPlan, toProvision: Seq[ExecutableOp]): Seq[PlanningConflict] = {
     import PlanningConflict._
-    val currentUnwrapped = currentPlan.steps.toSet
+    val currentUnwrapped = currentPlan.steps.collect { case s: Statement => s }.toSet
 
     val withConflicts = toProvision.map {
       newOp =>

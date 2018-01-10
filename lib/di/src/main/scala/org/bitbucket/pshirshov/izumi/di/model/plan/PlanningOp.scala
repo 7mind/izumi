@@ -7,7 +7,7 @@ object PlanningOp {
 
   case class Replace(op: ExecutableOp, replacement: ExecutableOp) extends PlanningOp
 
-  case class SolveUnsolvable(op: ExecutableOp, existing: ExecutableOp) extends PlanningOp
+  case class SolveUnsolvable(op: ExecutableOp, existing: DodgyOp) extends PlanningOp
 
   case class SolveRedefinition(op: ExecutableOp) extends PlanningOp
 }

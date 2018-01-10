@@ -46,8 +46,8 @@ object ExecutableOp {
     override def toString: String = format
   }
 
-  case class PullDependency(target: DIKey) extends ExecutableOp {
-    override def format: String = f"""$target := pull $target"""
+  case class ImportDependency(target: DIKey) extends ExecutableOp {
+    override def format: String = f"""$target := import $target"""
   }
 
   case class MakeProxy(target: DIKey, op: InstantiationOp) extends ExecutableOp {
