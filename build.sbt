@@ -15,6 +15,7 @@ enablePlugins(GitStampPlugin)
 name := "izumi-r2"
 
 val AppSettings = SettingsGroupId()
+val LibSettings = SettingsGroupId()
 
 val scala_212 = "2.12.4"
 val scala_213 = "2.13.0-M2"
@@ -75,6 +76,7 @@ val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 val inRoot = In(".")
+val inLib = In("lib")
 
 lazy val sbtIzumi = inRoot.as
   .module
@@ -91,9 +93,15 @@ lazy val sbtIzumi = inRoot.as
         )
   )
 
+lazy val di = inLib.as.module
+    .settings(
+      libraryDependencies += R.scala_reflect
+    )
+    .settings(LibSettings)
+
 lazy val root = inRoot.as
   .root
   .transitiveAggregate(
-    sbtIzumi
+    sbtIzumi, di
   )
 
