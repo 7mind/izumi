@@ -1,6 +1,8 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-sealed trait PlanMetaStep
+sealed trait PlanMetaStep {
+  def op: Op
+}
 
 object PlanMetaStep {
 

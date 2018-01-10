@@ -11,7 +11,7 @@ sealed trait Association extends Formattable {
 object Association {
 
   case class Parameter(symbol: Symb, wireWith: DIKey) extends Association {
-    override def format: String = s"""${symbol.name} = lookup($wireWith)"""
+    override def format: String = s"""${symbol.name}: ${symbol.info} = lookup($wireWith)"""
   }
 
   case class Method(symbol: Symb, wireWith: DIKey) extends Association {

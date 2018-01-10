@@ -9,44 +9,56 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 
 
-
+case class PlanSteps(steps: Seq[PlanMetaStep]) {
+  override def toString: String = steps.collect {
+    case Statement(op) =>
+      op.format
+    case v => v.toString
+  }.mkString("\n")
+}
 
 
 class BasicInjector extends Injector {
   override def plan(context: DIDef): DIPlan = {
-
-    context.bindings.foldLeft(DIPlan.empty) {
+    val metaPlan = context.bindings.foldLeft(PlanSteps(Seq.empty[PlanMetaStep])) {
       case (currentPlan, definition) =>
         if (!definition.implementation.asClass.baseClasses.contains(definition.target.symbol.asClass)) {
           throw new IllegalStateException(s"Cannot bind unbindable: $definition") // TODO: specific exception
         }
 
+        val knowsTargets = currentPlan.steps.map(_.op.target).toSet
         val deps = allDeps(definition.implementation)
-        val (resolved, unresolved) = deps.partition(d => currentPlan.contains(d.wireWith))
+        val (resolved, unresolved) = deps.partition(d => knowsTargets.contains(d.wireWith))
         // we don't need resolved deps, we already have them in plan
 
-        val toPull = unresolved.map(dep => Op.PullDependency(dep.wireWith): Op)
+        val toPull = unresolved.map(dep => Op.PullDependency(dep.wireWith))
         val toProvision = provisioning(definition.target, definition.implementation, deps)
 
         assertSanity(toPull)
         assertSanity(toProvision)
 
         val nextPlan = extendPlan(currentPlan, toPull, toProvision)
-
-
-        val next = new ImmutablePlan(nextPlan.collect { case Statement(op) => op })
-
-        System.err.println("-" * 120)
-        System.err.println(s"> ${nextPlan}")
-        System.err.println(s"Next plan:\n${next}")
-        // TODO: make sure circular deps are gone
-        assertSanity(next.getPlan)
+        val next = PlanSteps(nextPlan)
+        System.err.println("-" * 60 + " Next Plan " + "-" * 60)
+        System.err.println(next)
         next
     }
+
+    val plan = new ImmutablePlan(metaPlan.steps.collect { case Statement(op) => op })
+
+    System.err.println("=" * 60 + " Final Plan " + "=" * 60)
+    System.err.println(s"$plan")
+    System.err.println("\n")
+
+    // TODO: make sure circular deps are gone
+    assertSanity(plan.getPlan)
+
+    plan
+
   }
 
 
-  private def extendPlan(currentPlan: DIPlan, toPull: Seq[Op], toProvision: Seq[Op]) = {
+  private def extendPlan(currentPlan: PlanSteps, toPull: Seq[Op.PullDependency], toProvision: Seq[Op]) = {
     val withConflicts = findConflicts(currentPlan, toProvision)
 
     val (before, after) = splitCurrentPlan(currentPlan, withConflicts)
@@ -55,45 +67,44 @@ class BasicInjector extends Injector {
       case NoConflict(newOp) =>
         Put(newOp)
 
-        // TODO: here we may check for circular deps
-      case Conflict(newOp, existing: PullDependency) =>
+      // TODO: here we may check for circular deps
+      case Conflict(newOp, Statement(existing: PullDependency)) =>
         Replace(existing, newOp)
 
       case Conflict(newOp, existing) if newOp == existing =>
         SolveRedefinition(newOp)
 
       case Conflict(newOp, existing) =>
-        SolveUnsolvable(newOp, existing)
+        SolveUnsolvable(newOp, existing.op)
     }
 
-    val replacements = transformations.collect { case t: Replace => Put(t.op) }.toSet
+    val replacements = transformations.collect { case t: Replace => Statement(t.op): PlanMetaStep }.toSet
 
     val beforeReplaced = before.filterNot(replacements.contains)
     val afterReplaced = after.filterNot(replacements.contains)
 
     // TODO: separate ADT for this case?..
-    val updatedPlan = beforeReplaced ++
-      transformations ++
-      afterReplaced
 
-    val transformationsWithoutReplacements = updatedPlan.map {
+    val transformationsWithoutReplacements = transformations.map {
       case t: Replace => PlanMetaStep.Statement(t.replacement)
       case t: Put => PlanMetaStep.Statement(t.op)
       case t: SolveRedefinition => PlanMetaStep.Duplicate(t.op)
       case t: SolveUnsolvable => PlanMetaStep.ConflictingStatement(t.op, t.existing)
     }
 
-    toPull.map(PlanMetaStep.Statement) ++ transformationsWithoutReplacements
+    toPull.map(PlanMetaStep.Statement) ++ beforeReplaced ++
+      transformationsWithoutReplacements ++
+      afterReplaced
 
   }
 
-  private def splitCurrentPlan(currentPlan: DIPlan, withConflicts: Seq[PlanningConflict]): (Seq[Put], Seq[Put]) = {
+  private def splitCurrentPlan(currentPlan: PlanSteps, withConflicts: Seq[PlanningConflict]): (Seq[PlanMetaStep], Seq[PlanMetaStep]) = {
     import PlanningConflict._
-    val currentPlanBlock = currentPlan.getPlan.map(Put)
+    val currentPlanBlock = currentPlan.steps
     val insertAt = withConflicts
       .map {
         case Conflict(_, existingOp) =>
-          currentPlanBlock.indexOf(Put(existingOp))
+          currentPlanBlock.indexOf(Put(existingOp.op))
 
         case _: NoConflict =>
           currentPlanBlock.length
@@ -104,15 +115,15 @@ class BasicInjector extends Injector {
     (before, after)
   }
 
-  private def findConflicts(currentPlan: DIPlan, toProvision: Seq[Op]): Seq[PlanningConflict] = {
+  private def findConflicts(currentPlan: PlanSteps, toProvision: Seq[Op]): Seq[PlanningConflict] = {
     import PlanningConflict._
-    val currentUnwrapped = currentPlan.getPlan.toSet
+    val currentUnwrapped = currentPlan.steps.toSet
 
     val withConflicts = toProvision.map {
       newOp =>
-        // safe to use .find, plan cannot contain conflicts
+        // safe to use .find, plan itself cannot contain conflicts
         // TODO: ineffective!
-        currentUnwrapped.find(_.target == newOp.target) match {
+        currentUnwrapped.find(_.op.target == newOp.target) match {
           case Some(existing) =>
             Conflict(newOp, existing)
           case _ =>
