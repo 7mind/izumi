@@ -11,6 +11,10 @@ trait DIPlan {
   }
 }
 
+object DIPlan {
+  def empty: DIPlan = new ImmutablePlan(Seq.empty)
+}
+
 class ImmutablePlan(ops: Seq[Op]) extends DIPlan {
   //private val
   override def getPlan: Seq[Op] = ops
@@ -20,6 +24,3 @@ class ImmutablePlan(ops: Seq[Op]) extends DIPlan {
   }
 }
 
-object DIPlan {
-  def empty: DIPlan = new ImmutablePlan(Seq.empty)
-}
