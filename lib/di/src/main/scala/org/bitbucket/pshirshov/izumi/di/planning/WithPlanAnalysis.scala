@@ -1,12 +1,12 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp
+import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, RefTable}
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.DependentOp
 
 import scala.collection.mutable
 
-case class RefTable(dependencies: Map[DIKey, Set[DIKey]], dependants: Map[DIKey, Set[DIKey]])
+
 
 trait WithPlanAnalysis {
   private type Accumulator = mutable.HashMap[DIKey, mutable.Set[DIKey]]
