@@ -80,11 +80,15 @@ object Case5 {
   class AssistedTestClass(val a: Int, b: Dependency)
 
   trait Factory {
+    def x(): TestClass
+  }
+
+  trait OverridingFactory {
     def x(b: Dependency): TestClass
   }
 
   trait AssistedFactory {
-    def x(a: Int, b: Dependency): TestClass
+    def x(a: Int): TestClass
   }
 
 }
@@ -222,6 +226,7 @@ class BasicTest extends WordSpec {
 
         override def bindings: Seq[Def] = Seq(
           SingletonBinding(DIKey.get[Factory], symbol[Factory])
+          , SingletonBinding(DIKey.get[OverridingFactory], symbol[OverridingFactory])
           , SingletonBinding(DIKey.get[AssistedFactory], symbol[AssistedFactory])
         )
       }

@@ -35,12 +35,13 @@ trait WithReflection {
           m =>
             val paramLists = m.asMethod.info.paramLists
             val selectedParamList = paramLists.head
+            
             val unrequiredMaterials = parametersToMaterials(selectedParamList).toSet
             val allDeps = symbolDeps(m.asMethod.returnType.typeSymbol)
-            val filtered = allDeps.filterNot(unrequiredMaterials.contains)
-            allDeps
-        }
+            val filtered = allDeps.filterNot(d => unrequiredMaterials.exists(m => d.wireWith.symbol == m.wireWith.symbol))
 
+            filtered
+        }
 
       case _ =>
         Seq()
