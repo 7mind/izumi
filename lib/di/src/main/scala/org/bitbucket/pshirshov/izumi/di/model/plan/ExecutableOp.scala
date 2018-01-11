@@ -1,53 +1,46 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.{CustomDef, Symb}
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Formattable}
+import org.bitbucket.pshirshov.izumi.di.{CustomDef, Symb}
 
-sealed trait ExecutableOp extends Formattable{
+// TODO: typeclass?..
+sealed trait ExecutableOp extends Formattable {
   def target: DIKey
 }
 
 
 object ExecutableOp {
+  sealed trait FormattableOp extends Formattable {
+    this: DependentOp =>
+
+    protected def doFormat(impl: Symb, opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
+      val sb = new StringBuilder()
+      sb.append(s"$target := $opName${opFormat._1}${impl.fullName}${opFormat._2}")
+      if (deps.nonEmpty) {
+        sb.append(deps.map(_.format).mkString(s" ${delim._1}\n    ", ",\n    ", s"\n${delim._2}"))
+      }
+      sb.toString()
+    }
+  }
 
   sealed trait InstantiationOp extends ExecutableOp
 
-  case class InstantiateClass(target: DIKey, impl: Symb, args: Seq[Association]) extends InstantiationOp {
-    override def format: String = {
-      val sb = new StringBuilder()
-      sb.append(f"$target := make[${impl.fullName}]")
-      if (args.nonEmpty) {
-        sb.append(args.map(_.format).mkString(" (\n    ", ",\n    ", "\n)"))
-      }
-      sb.toString()
-    }
+  sealed trait DependentOp extends ExecutableOp {
+    def deps: Seq[Association]
+  }
 
+  case class InstantiateClass(target: DIKey, impl: Symb, deps: Seq[Association]) extends InstantiationOp with DependentOp with FormattableOp {
+    override def format: String = doFormat(impl, "make", ('[', ']'), ('(', ')'))
     override def toString: String = format
   }
 
-  case class InstantiateTrait(target: DIKey, impl: Symb, args: Seq[Association]) extends InstantiationOp {
-    override def format: String = {
-      val sb = new StringBuilder()
-      sb.append(f"$target := impl[${impl.fullName}]")
-      if (args.nonEmpty) {
-        sb.append(args.map(_.format).mkString(" {\n    ", ",\n    ", "\n}"))
-      }
-      sb.toString()
-    }
-
+  case class InstantiateTrait(target: DIKey, impl: Symb, deps: Seq[Association]) extends InstantiationOp with DependentOp with FormattableOp {
+    override def format: String = doFormat(impl, "impl", ('[', ']'), ('{', '}'))
     override def toString: String = format
   }
 
-  case class InstantiateFactory(target: DIKey, impl: Symb, materials: Seq[Association]) extends InstantiationOp {
-    override def format: String = {
-      val sb = new StringBuilder()
-      sb.append(f"$target := mkft[${impl.fullName}]")
-      if (materials.nonEmpty) {
-        sb.append(materials.map(_.format).mkString(" {\n    ", ",\n    ", "\n}"))
-      }
-      sb.toString()
-    }
-
+  case class InstantiateFactory(target: DIKey, impl: Symb, deps: Seq[Association]) extends InstantiationOp with DependentOp with FormattableOp {
+    override def format: String = doFormat(impl, "fact", ('[', ']'), ('{', '}'))
     override def toString: String = format
   }
 
@@ -67,12 +60,14 @@ object ExecutableOp {
     override def format: String = f"""$target := custom($target)"""
   }
 
-  case class MakeProxy(target: DIKey, op: InstantiationOp) extends ExecutableOp {
-    override def format: String = ???
+  case class MakeProxy(op: ExecutableOp, forwardRefs: Set[DIKey]) extends ExecutableOp  {
+    override def target: DIKey = op.target
+    override def format: String = f"""$target := proxy($op, $forwardRefs)"""
   }
 
-  case class InitProxy(target: DIKey) extends ExecutableOp {
-    override def format: String = ???
+  case class InitProxies(op: ExecutableOp, proxies: Set[DIKey]) extends ExecutableOp {
+    override def target: DIKey = op.target
+    override def format: String = f"""$target := init($proxies, $op)"""
   }
 
 }
