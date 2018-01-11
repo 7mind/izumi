@@ -1,6 +1,5 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
-import org.bitbucket.pshirshov.izumi.di.Planner
 import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp._
@@ -9,34 +8,33 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict._
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.reflection.WithReflection
-
+import org.bitbucket.pshirshov.izumi.di.{DIContext, Planner}
 
 /**
-TODO:
-- identified (named) bindings
-- strategies as parent injector values
+  * TODO:
+  * - identified (named) bindings
+  * - strategies as parent injector values
+  *
+  * + sanity check: reference completeness
+  * + sanity checks: partial order
+  * + circulars: outside of resolver
+  * + extension point: custom op
+  * + factories: filtei parameters out of products
+  */
 
-+ sanity check: reference completeness
-+ sanity checks: partial order
-+ circulars: outside of resolver
-+ extension point: custom op
-+ factories: filtei parameters out of products
-*/
-
-
-class DefaultPlannerImpl
+class DefaultPlannerImpl(bootstrapContext: DIContext)
   extends Planner
     with WithSanityChecks
     with WithReflection {
 
-  // todo: provide from outside
-  protected def planResolver: PlanResolver = new PlanResolverDefaultImpl()
-  protected def forwardingRefResolver: ForwardingRefResolver = new ForwardingRefResolverDefaultImpl()
+  protected def planResolver: PlanResolver = bootstrapContext.get[PlanResolver]
+
+  protected def forwardingRefResolver: ForwardingRefResolver = bootstrapContext.get[ForwardingRefResolver]
 
   case class CurrentOp(definition: Def, toImport: Seq[ExecutableOp.ImportDependency], toProvision: Seq[ExecutableOp])
 
   override def plan(context: DIDef): ReadyPlan = {
-//    System.err.println(s"Planning on context $context")
+    //    System.err.println(s"Planning on context $context")
 
     val plan = context.bindings.foldLeft(DodgyPlan(Seq.empty[DodgyOp])) {
       case (currentPlan, definition) =>
@@ -54,25 +52,26 @@ class DefaultPlannerImpl
         val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith))
         provisioning(definition.target, definition.implementation, deps) match {
           case Provisioning.Possible(toProvision) =>
-//            System.err.println(s"toImport = $toImport, toProvision=$toProvision")
+            //            System.err.println(s"toImport = $toImport, toProvision=$toProvision")
 
             assertNoDuplicateOps(toImport ++ toProvision)
             val nextPlan = extendPlan(currentPlan, CurrentOp(definition, toImport, toProvision))
 
             val next = DodgyPlan(nextPlan)
-//            System.err.println("-" * 60 + " Next Plan " + "-" * 60)
-//            System.err.println(next)
+            //            System.err.println("-" * 60 + " Next Plan " + "-" * 60)
+            //            System.err.println(next)
             next
 
           case Provisioning.Impossible(implDef) =>
             val next = DodgyPlan(currentPlan.steps :+ UnbindableBinding(definition))
-//            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
-//            System.err.println(next)
+            //            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
+            //            System.err.println(next)
             next
         }
     }
 
     def withoutForwardingRefs = forwardingRefResolver.resolve(plan)
+
     val finalPlan = planResolver.resolve(withoutForwardingRefs)
     assertSanity(finalPlan)
     finalPlan
