@@ -11,11 +11,11 @@ import org.bitbucket.pshirshov.izumi.di.model.plan._
 
 /**
 TODO:
-- circulars: outside of resolver
-
 - sanity checks/partial order/nulls
-- strategies as parent values
+- identified (named) bindings
+- strategies as parent injector values
 
++ circulars: outside of resolver
 + extension point: custom op
 + factories: filtei parameters out of products
 */
