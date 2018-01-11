@@ -2,17 +2,18 @@ package org.bitbucket.pshirshov.izumi.di
 
 import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp._
-import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp._
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict._
+import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 
 
 /**
 TODO:
-- sanity checks/partial order/nulls
 - circulars: outside of resolver
+
+- sanity checks/partial order/nulls
 - strategies as parent values
 
 + extension point: custom op
@@ -26,14 +27,15 @@ class BasicInjector
     with WithReflection {
 
   // todo: provide from outside
-  protected def resolver: PlanResolver = new DefaultPlanResolver()
+  protected def planResolver: PlanResolver = new PlanResolverDefaultImpl()
+  protected def forwardingRefResolver: ForwardingRefResolver = new ForwardingRefResolverDefaultImpl()
 
   case class CurrentOp(definition: Def, toImport: Seq[ExecutableOp.ImportDependency], toProvision: Seq[ExecutableOp])
 
   override def plan(context: DIDef): ReadyPlan = {
-    System.err.println(s"Planning on context $context")
+//    System.err.println(s"Planning on context $context")
 
-    val metaPlan = context.bindings.foldLeft(DodgyPlan(Seq.empty[DodgyOp])) {
+    val plan = context.bindings.foldLeft(DodgyPlan(Seq.empty[DodgyOp])) {
       case (currentPlan, definition) =>
         val knowsTargets = currentPlan.steps.flatMap {
           case Statement(op) =>
@@ -44,34 +46,33 @@ class BasicInjector
 
         val deps = enumerateDeps(definition.implementation)
         val (resolved, unresolved) = deps.partition(d => knowsTargets.contains(d.wireWith))
-        // we don't need resolved deps, we already have them in plan
+        // we don't need resolved deps, we already have them in finalPlan
 
         val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith))
         provisioning(definition.target, definition.implementation, deps) match {
           case Provisioning.Possible(toProvision) =>
-            System.err.println(s"toImport = $toImport, toProvision=$toProvision")
+//            System.err.println(s"toImport = $toImport, toProvision=$toProvision")
 
             assertSanity(toImport ++ toProvision)
             val nextPlan = extendPlan(currentPlan, CurrentOp(definition, toImport, toProvision))
 
             val next = DodgyPlan(nextPlan)
-            System.err.println("-" * 60 + " Next Plan " + "-" * 60)
-            System.err.println(next)
+//            System.err.println("-" * 60 + " Next Plan " + "-" * 60)
+//            System.err.println(next)
             next
 
           case Provisioning.Impossible(implDef) =>
             val next = DodgyPlan(currentPlan.steps :+ UnbindableBinding(definition))
-            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
-            System.err.println(next)
+//            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
+//            System.err.println(next)
             next
         }
-
     }
 
-
-    val plan = resolver.resolve(metaPlan)
-    assertSanity(plan)
-    plan
+    def withoutForwardingRefs = forwardingRefResolver.resolve(plan)
+    val finalPlan = planResolver.resolve(withoutForwardingRefs)
+    assertSanity(finalPlan)
+    finalPlan
   }
 
 
