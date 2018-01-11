@@ -4,6 +4,7 @@ import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.UntranslatablePlanException
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{DuplicatedStatement, UnbindableBinding, UnsolvableConflict}
+import org.bitbucket.pshirshov.izumi.di.planning.DefaultPlannerImpl
 import org.scalatest.WordSpec
 
 import scala.reflect.runtime.universe._
@@ -93,7 +94,8 @@ object Case5 {
   }
 
 }
-class BasicTest extends WordSpec {
+
+class BasicPlannerTest extends WordSpec {
 
   def symbol[T: Tag]: ImplDef = ImplDef.TypeImpl(typeTag[T].tpe.typeSymbol)
 
@@ -112,7 +114,7 @@ class BasicTest extends WordSpec {
           , SingletonBinding(DIKey.get[TestCaseClass], symbol[TestCaseClass])
         )
       }
-      val injector: Injector = new BasicInjector()
+      val injector: Planner = new DefaultPlannerImpl()
       val plan = injector.plan(definition)
 
 
@@ -136,7 +138,7 @@ class BasicTest extends WordSpec {
         )
       }
 
-      val injector: Injector = new BasicInjector()
+      val injector: Planner = new DefaultPlannerImpl()
       val plan = injector.plan(definition)
     }
 
@@ -154,7 +156,7 @@ class BasicTest extends WordSpec {
         )
       }
 
-      val injector: Injector = new BasicInjector()
+      val injector: Planner = new DefaultPlannerImpl()
       val plan = injector.plan(definition)
     }
 
@@ -170,7 +172,7 @@ class BasicTest extends WordSpec {
         )
       }
 
-      val injector: Injector = new BasicInjector()
+      val injector: Planner = new DefaultPlannerImpl()
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
@@ -190,7 +192,7 @@ class BasicTest extends WordSpec {
         )
       }
 
-      val injector: Injector = new BasicInjector()
+      val injector: Planner = new DefaultPlannerImpl()
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
@@ -210,7 +212,7 @@ class BasicTest extends WordSpec {
         )
       }
 
-      val injector: Injector = new BasicInjector()
+      val injector: Planner = new DefaultPlannerImpl()
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
@@ -232,7 +234,7 @@ class BasicTest extends WordSpec {
         )
       }
 
-      val injector: Injector = new BasicInjector()
+      val injector: Planner = new DefaultPlannerImpl()
       injector.plan(definition)
     }
   }
