@@ -70,6 +70,24 @@ object Case4 {
 
 }
 
+
+object Case5 {
+
+  trait Dependency
+
+  class TestClass(b: Dependency)
+
+  class AssistedTestClass(val a: Int, b: Dependency)
+
+  trait Factory {
+    def x(b: Dependency): TestClass
+  }
+
+  trait AssistedFactory {
+    def x(a: Int, b: Dependency): TestClass
+  }
+
+}
 class BasicTest extends WordSpec {
 
   def symbol[T: Tag]: ImplDef = ImplDef.TypeImpl(typeTag[T].tpe.typeSymbol)
@@ -193,6 +211,23 @@ class BasicTest extends WordSpec {
       }
       assert(exc.badSteps.lengthCompare(1) == 0 && exc.badSteps.exists(_.isInstanceOf[DuplicatedStatement]))
 
+    }
+
+    "handle factory injections" in {
+      import Case5._
+
+      val definition: DIDef = new DIDef {
+
+        import Def._
+
+        override def bindings: Seq[Def] = Seq(
+          SingletonBinding(DIKey.get[Factory], symbol[Factory])
+          , SingletonBinding(DIKey.get[AssistedFactory], symbol[AssistedFactory])
+        )
+      }
+
+      val injector: Injector = new BasicInjector()
+      injector.plan(definition)
     }
   }
 
