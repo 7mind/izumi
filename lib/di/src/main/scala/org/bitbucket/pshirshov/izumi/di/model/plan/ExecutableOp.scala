@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.Symb
+import org.bitbucket.pshirshov.izumi.di.{CustomDef, Symb}
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Formattable}
 
 sealed trait ExecutableOp extends Formattable{
@@ -61,6 +61,10 @@ object ExecutableOp {
 
   case class ImportDependency(target: DIKey) extends ExecutableOp {
     override def format: String = f"""$target := import $target"""
+  }
+
+  case class CustomOp(target: DIKey, data: CustomDef) extends ExecutableOp {
+    override def format: String = f"""$target := custom($target)"""
   }
 
   case class MakeProxy(target: DIKey, op: InstantiationOp) extends ExecutableOp {
