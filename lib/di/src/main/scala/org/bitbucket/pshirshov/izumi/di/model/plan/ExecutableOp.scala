@@ -38,6 +38,19 @@ object ExecutableOp {
     override def toString: String = format
   }
 
+  case class InstantiateFactory(target: DIKey, impl: Symb, materials: Seq[Association]) extends InstantiationOp {
+    override def format: String = {
+      val sb = new StringBuilder()
+      sb.append(f"$target := mkft[${impl.fullName}]")
+      if (materials.nonEmpty) {
+        sb.append(materials.map(_.format).mkString(" {\n    ", ",\n    ", "\n}"))
+      }
+      sb.toString()
+    }
+
+    override def toString: String = format
+  }
+
   case class ReferenceInstance(target: DIKey, instance: AnyRef) extends InstantiationOp {
     override def format: String = {
       s"$target := ${instance.getClass.getCanonicalName}#${instance.hashCode()}"

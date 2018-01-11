@@ -66,12 +66,16 @@ class BasicInjector
 
   private def provisioning(target: DIKey, impl: ImplDef, deps: Seq[Association]): Provisioning = {
     import Provisioning._
+    import WithReflection._
     impl match {
       case ImplDef.TypeImpl(symb) if isConcrete(symb) =>
         Possible(Seq(ExecutableOp.InstantiateClass(target, symb, deps)))
 
       case ImplDef.TypeImpl(symb) if isWireableAbstract(symb) =>
         Possible(Seq(ExecutableOp.InstantiateTrait(target, symb, deps)))
+
+      case ImplDef.TypeImpl(symb) if isFactory(symb) =>
+        Possible(Seq(ExecutableOp.InstantiateFactory(target, symb, deps)))
 
       case ImplDef.InstanceImpl(instance) =>
         Possible(Seq(ExecutableOp.ReferenceInstance(target, instance)))
