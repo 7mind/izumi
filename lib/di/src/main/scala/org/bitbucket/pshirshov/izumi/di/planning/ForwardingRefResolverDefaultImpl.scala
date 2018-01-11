@@ -1,6 +1,5 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
-import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.Statement
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyPlan
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{InitProxies, MakeProxy}
@@ -9,7 +8,7 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{InitProxies, Ma
 
 class ForwardingRefResolverDefaultImpl extends ForwardingRefResolver with WithPlanAnalysis {
   override def resolve(plan: DodgyPlan): DodgyPlan = {
-    val reftable = computeFwdRefTable(plan)
+    val reftable = computeFwdRefTable(plan.steps.collect { case Statement(op) => op }.toStream)
 
     import reftable._
 
