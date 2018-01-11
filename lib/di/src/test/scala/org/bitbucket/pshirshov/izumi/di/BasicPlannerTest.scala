@@ -4,7 +4,7 @@ import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.UntranslatablePlanException
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{DuplicatedStatement, UnbindableBinding, UnsolvableConflict}
-import org.bitbucket.pshirshov.izumi.di.planning.DefaultPlannerImpl
+import org.bitbucket.pshirshov.izumi.di.planning.{DefaultBootstrapContext, DefaultPlannerImpl, PlanResolver, PlanResolverDefaultImpl}
 import org.scalatest.WordSpec
 
 import scala.reflect.runtime.universe._
@@ -99,6 +99,15 @@ class BasicPlannerTest extends WordSpec {
 
   def symbol[T: Tag]: ImplDef = ImplDef.TypeImpl(typeTag[T].tpe.typeSymbol)
 
+  def mkInjector() = new DefaultPlannerImpl(DefaultBootstrapContext)
+
+  "DI Context" should {
+    "support cute api calls :3" in {
+      val context = DefaultBootstrapContext
+      assert(context.get[PlanResolver].isInstanceOf[PlanResolverDefaultImpl])
+    }
+  }
+
   "DI planner" should {
     "maintain correct operation order" in {
       import Case1._
@@ -114,7 +123,7 @@ class BasicPlannerTest extends WordSpec {
           , SingletonBinding(DIKey.get[TestCaseClass], symbol[TestCaseClass])
         )
       }
-      val injector: Planner = new DefaultPlannerImpl()
+      val injector: Planner = mkInjector()
       val plan = injector.plan(definition)
 
 
@@ -138,7 +147,7 @@ class BasicPlannerTest extends WordSpec {
         )
       }
 
-      val injector: Planner = new DefaultPlannerImpl()
+      val injector: Planner = mkInjector()
       val plan = injector.plan(definition)
     }
 
@@ -156,7 +165,7 @@ class BasicPlannerTest extends WordSpec {
         )
       }
 
-      val injector: Planner = new DefaultPlannerImpl()
+      val injector: Planner = mkInjector()
       val plan = injector.plan(definition)
     }
 
@@ -172,7 +181,7 @@ class BasicPlannerTest extends WordSpec {
         )
       }
 
-      val injector: Planner = new DefaultPlannerImpl()
+      val injector: Planner = mkInjector()
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
@@ -192,7 +201,7 @@ class BasicPlannerTest extends WordSpec {
         )
       }
 
-      val injector: Planner = new DefaultPlannerImpl()
+      val injector: Planner = mkInjector()
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
@@ -212,7 +221,7 @@ class BasicPlannerTest extends WordSpec {
         )
       }
 
-      val injector: Planner = new DefaultPlannerImpl()
+      val injector: Planner = mkInjector()
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
@@ -234,7 +243,7 @@ class BasicPlannerTest extends WordSpec {
         )
       }
 
-      val injector: Planner = new DefaultPlannerImpl()
+      val injector: Planner = mkInjector()
       injector.plan(definition)
     }
   }
