@@ -13,10 +13,10 @@ import org.bitbucket.pshirshov.izumi.di.reflection.WithReflection
 
 /**
 TODO:
-- sanity check: reference completeness
 - identified (named) bindings
 - strategies as parent injector values
 
++ sanity check: reference completeness
 + sanity checks: partial order
 + circulars: outside of resolver
 + extension point: custom op

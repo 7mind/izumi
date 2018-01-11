@@ -1,28 +1,41 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.Statement
-import org.bitbucket.pshirshov.izumi.di.model.plan.{DodgyPlan, ExecutableOp, ReadyPlan}
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.DependentOp
 
 import scala.collection.mutable
 
-case class FdwRefTable(dependencies: Map[DIKey, Set[DIKey]], dependants: Map[DIKey, Set[DIKey]])
+case class RefTable(dependencies: Map[DIKey, Set[DIKey]], dependants: Map[DIKey, Set[DIKey]])
 
 trait WithPlanAnalysis {
-  protected def computeFwdRefTable(plan: DodgyPlan): FdwRefTable = {
-    computeFwdRefTable(plan.steps.collect { case Statement(op) => op }.toStream)
+  private type Accumulator = mutable.HashMap[DIKey, mutable.Set[DIKey]]
+
+  protected def computeFwdRefTable(plan: Stream[ExecutableOp]): RefTable = {
+    computeFwdRefTable(
+      plan
+      , (acc) => (key) => acc.contains(key)
+      , _._2.nonEmpty
+    )
   }
 
-  protected def computeFwdRefTable(plan: ReadyPlan): FdwRefTable = {
-    computeFwdRefTable(plan.getPlan.toStream)
+  protected def computeFullRefTable(plan: Stream[ExecutableOp]): RefTable = {
+    computeFwdRefTable(
+      plan
+      , (acc) => (key) => false
+      , _ => true
+    )
   }
 
-  protected def computeFwdRefTable(plan: Stream[ExecutableOp]): FdwRefTable = {
+  protected def computeFwdRefTable(
+                                    plan: Stream[ExecutableOp]
+                                    , refFilter: Accumulator => DIKey => Boolean
+                                    , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
+                                  ): RefTable = {
     // TODO: make it immu
-    val dependencies = plan.foldLeft(new mutable.HashMap[DIKey, mutable.Set[DIKey]]) {
+    val dependencies = plan.foldLeft(new Accumulator) {
       case (acc, op: DependentOp) =>
-        val forwardRefs = op.deps.map(_.wireWith).filterNot(acc.contains).toSet
+        val forwardRefs = op.deps.map(_.wireWith).filterNot(refFilter(acc)).toSet
         acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= forwardRefs
         acc
 
@@ -30,15 +43,15 @@ trait WithPlanAnalysis {
         acc.getOrElseUpdate(op.target, mutable.Set.empty)
         acc
     }
-      .filter(_._2.nonEmpty)
+      .filter(postFilter)
       .mapValues(_.toSet).toMap
 
     val dependants = reverseReftable(dependencies)
-    FdwRefTable(dependencies, dependants)
+    RefTable(dependencies, dependants)
   }
 
   protected def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {
-    val dependants = dependencies.foldLeft(new mutable.HashMap[DIKey, mutable.Set[DIKey]] with mutable.MultiMap[DIKey, DIKey]) {
+    val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[DIKey, DIKey]) {
       case (acc, (reference, referencee)) =>
         referencee.foreach(acc.addBinding(_, reference))
         acc
