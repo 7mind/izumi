@@ -1,5 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
+import org.bitbucket.pshirshov.izumi.di.Planner
 import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp._
@@ -7,8 +8,7 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict._
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
-import org.bitbucket.pshirshov.izumi.di.reflection.WithReflection
-import org.bitbucket.pshirshov.izumi.di.{DIContext, Planner}
+import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProvider
 
 /**
   * TODO:
@@ -22,14 +22,13 @@ import org.bitbucket.pshirshov.izumi.di.{DIContext, Planner}
   * + factories: filtei parameters out of products
   */
 
-class DefaultPlannerImpl(bootstrapContext: DIContext)
+class DefaultPlannerImpl(
+                          protected val planResolver: PlanResolver,
+                          protected val forwardingRefResolver: ForwardingRefResolver,
+                          protected val reflectionProvider: ReflectionProvider
+                        )
   extends Planner
-    with WithSanityChecks
-    with WithReflection {
-
-  protected def planResolver: PlanResolver = bootstrapContext.get[PlanResolver]
-
-  protected def forwardingRefResolver: ForwardingRefResolver = bootstrapContext.get[ForwardingRefResolver]
+    with WithSanityChecks {
 
   case class CurrentOp(definition: Def, toImport: Seq[ExecutableOp.ImportDependency], toProvision: Seq[ExecutableOp])
 
@@ -80,15 +79,14 @@ class DefaultPlannerImpl(bootstrapContext: DIContext)
 
   private def provisioning(target: DIKey, impl: ImplDef, deps: Seq[Association]): Provisioning = {
     import Provisioning._
-    import WithReflection._
     impl match {
-      case ImplDef.TypeImpl(symb) if isConcrete(symb) =>
+      case ImplDef.TypeImpl(symb) if reflectionProvider.isConcrete(symb) =>
         Possible(Seq(ExecutableOp.InstantiateClass(target, symb, deps)))
 
-      case ImplDef.TypeImpl(symb) if isWireableAbstract(symb) =>
+      case ImplDef.TypeImpl(symb) if reflectionProvider.isWireableAbstract(symb) =>
         Possible(Seq(ExecutableOp.InstantiateTrait(target, symb, deps)))
 
-      case ImplDef.TypeImpl(symb) if isFactory(symb) =>
+      case ImplDef.TypeImpl(symb) if reflectionProvider.isFactory(symb) =>
         Possible(Seq(ExecutableOp.InstantiateFactory(target, symb, deps)))
 
       case ImplDef.InstanceImpl(instance) =>
@@ -185,7 +183,7 @@ class DefaultPlannerImpl(bootstrapContext: DIContext)
   private def enumerateDeps(impl: ImplDef): Seq[Association] = {
     impl match {
       case i: ImplDef.TypeImpl =>
-        symbolDeps(i.impl)
+        reflectionProvider.symbolDeps(i.impl)
       case i: ImplDef.InstanceImpl =>
         Seq()
     }
