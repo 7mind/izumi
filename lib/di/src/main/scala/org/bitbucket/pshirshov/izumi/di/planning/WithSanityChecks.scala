@@ -1,20 +1,28 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.model.exceptions.{DuplicateKeysException, ForwardRefException}
+import org.bitbucket.pshirshov.izumi.di.model.exceptions.{DuplicateKeysException, ForwardRefException, MissingRefException}
 import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, ReadyPlan}
 
 trait WithSanityChecks
   extends WithPlanAnalysis {
   protected def assertSanity(plan: ReadyPlan): Unit = {
-    assertNoDuplicateOps(plan.getPlan)
+    assertNoDuplicateOps(plan.steps)
 
-    val reftable = computeFwdRefTable(plan)
+    val reftable = computeFwdRefTable(plan.steps.toStream)
     if (reftable.dependants.nonEmpty) {
       throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependants}!", reftable)
     }
 
-    // TODO: make sure circular deps are gone
+    val fullRefTable = computeFullRefTable(plan.steps.toStream)
+
+    val allAvailableRefs = fullRefTable.dependencies.keySet
+    val fullDependenciesSet = fullRefTable.dependencies.flatMap(_._2).toSet
+    val missingRefs = fullDependenciesSet -- allAvailableRefs
+    if (missingRefs.nonEmpty) {
+      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependants}!", missingRefs, fullRefTable)
+    }
+
   }
 
 
