@@ -1,5 +1,6 @@
-package org.bitbucket.pshirshov.izumi.di
+package org.bitbucket.pshirshov.izumi.di.planning
 
+import org.bitbucket.pshirshov.izumi.di.Planner
 import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp._
@@ -7,22 +8,24 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict._
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
+import org.bitbucket.pshirshov.izumi.di.reflection.WithReflection
 
 
 /**
 TODO:
-- sanity checks/partial order/nulls
+- sanity check: reference completeness
 - identified (named) bindings
 - strategies as parent injector values
 
++ sanity checks: partial order
 + circulars: outside of resolver
 + extension point: custom op
 + factories: filtei parameters out of products
 */
 
 
-class BasicInjector
-  extends Injector
+class DefaultPlannerImpl
+  extends Planner
     with WithSanityChecks
     with WithReflection {
 
@@ -53,7 +56,7 @@ class BasicInjector
           case Provisioning.Possible(toProvision) =>
 //            System.err.println(s"toImport = $toImport, toProvision=$toProvision")
 
-            assertSanity(toImport ++ toProvision)
+            assertNoDuplicateOps(toImport ++ toProvision)
             val nextPlan = extendPlan(currentPlan, CurrentOp(definition, toImport, toProvision))
 
             val next = DodgyPlan(nextPlan)
@@ -188,8 +191,6 @@ class BasicInjector
         Seq()
     }
   }
-
-  override def produce(dIPlan: ReadyPlan): DIContext = ???
 }
 
 
