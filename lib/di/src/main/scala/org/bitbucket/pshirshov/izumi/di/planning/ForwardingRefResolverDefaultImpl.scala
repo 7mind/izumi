@@ -5,7 +5,6 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.Statement
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyPlan
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{InitProxies, MakeProxy}
 
-case class FdwRefTable(dependencies: Map[DIKey, Set[DIKey]], dependants: Map[DIKey, Set[DIKey]])
 
 
 class ForwardingRefResolverDefaultImpl extends ForwardingRefResolver with WithPlanAnalysis {
