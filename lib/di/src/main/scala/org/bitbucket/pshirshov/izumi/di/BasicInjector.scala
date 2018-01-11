@@ -9,6 +9,17 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 
 
+/**
+TODO:
+- sanity checks/partial order/nulls
+- circulars: outside of resolver
+- strategies as parent values
+
++ extension point: custom op
++ factories: filtei parameters out of products
+*/
+
+
 class BasicInjector
   extends Injector
     with WithSanityChecks
@@ -79,6 +90,9 @@ class BasicInjector
 
       case ImplDef.InstanceImpl(instance) =>
         Possible(Seq(ExecutableOp.ReferenceInstance(target, instance)))
+
+      case ImplDef.CustomImpl(instance) =>
+        Possible(Seq(ExecutableOp.CustomOp(target, instance)))
 
       case other =>
         Impossible(other)
