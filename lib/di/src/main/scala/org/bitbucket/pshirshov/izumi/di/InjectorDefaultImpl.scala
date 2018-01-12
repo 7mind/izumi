@@ -8,7 +8,9 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ReadyPlan
   * - identified (named) bindings => DependencyKeyProviderDefaultImpl
   * - instantiation logic => InjectorDefaultImpl#produce
   * - full test coverage
-  * 
+  * - expose Definitions and Plans in Contexts
+  * - Context enumeration
+  *
   * - multibindings
   *
   * + identified (named) bindings => getters
