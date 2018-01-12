@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.definition.Def
+import org.bitbucket.pshirshov.izumi.di.definition.Binding
 
 
 sealed trait DodgyOp {
@@ -16,5 +16,5 @@ object DodgyOp {
 
   case class Nop(message: String) extends DodgyOp
 
-  case class UnbindableBinding(implDef: Def) extends DodgyOp 
+  case class UnbindableBinding(implDef: Binding) extends DodgyOp
 }

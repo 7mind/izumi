@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, TrivialDIDef}
+import org.bitbucket.pshirshov.izumi.di.definition.{ContextDefinition, Binding, TrivialDIDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{MissingInstanceException, UntranslatablePlanException}
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{DuplicatedStatement, UnbindableBinding, UnsolvableConflict}
@@ -137,7 +137,7 @@ class BasicPlannerTest extends WordSpec {
   "Basic DSL" should {
     "allow to define contexts" in {
       import Case1._
-      val definition: DIDef = TrivialDIDef
+      val definition: ContextDefinition = TrivialDIDef
         .empty
         .nameless[TestClass]
         .nameless[TestDependency0, TestImpl0]
@@ -163,7 +163,7 @@ class BasicPlannerTest extends WordSpec {
 
     "maintain correct operation order" in {
       import Case1._
-      val definition: DIDef = TrivialDIDef
+      val definition: ContextDefinition = TrivialDIDef
         .empty
         .nameless[TestClass]
         .nameless[TestDependency3]
@@ -182,7 +182,7 @@ class BasicPlannerTest extends WordSpec {
 
     "support multiple bindings" in {
       import Case1._
-      val definition: DIDef = TrivialDIDef
+      val definition: ContextDefinition = TrivialDIDef
         .empty
         .namedEmptySet[JustTrait]("named.empty.set")
         .namelessEmptySet[JustTrait]
@@ -200,7 +200,7 @@ class BasicPlannerTest extends WordSpec {
 
     "support named bindings" in {
       import Case1._
-      val definition: DIDef = TrivialDIDef
+      val definition: ContextDefinition = TrivialDIDef
         .empty
         .named[TestClass]("named.test.class")
         .named[TestDependency0, TestImpl0]("named.test.dependency.0")
@@ -215,7 +215,7 @@ class BasicPlannerTest extends WordSpec {
     "support circular dependencies" in {
       import Case2._
 
-      val definition: DIDef = TrivialDIDef
+      val definition: ContextDefinition = TrivialDIDef
         .empty
         .nameless[Circular2]
         .nameless[Circular1]
@@ -228,7 +228,7 @@ class BasicPlannerTest extends WordSpec {
     "support complex circular dependencies" in {
       import Case3._
 
-      val definition: DIDef = TrivialDIDef
+      val definition: ContextDefinition = TrivialDIDef
         .empty
         .nameless[Circular3]
         .nameless[Circular1]
@@ -242,12 +242,12 @@ class BasicPlannerTest extends WordSpec {
     "fail on unbindable" in {
       import Case4._
 
-      val definition: DIDef = new DIDef {
+      val definition: ContextDefinition = new ContextDefinition {
 
-        import Def._
+        import Binding._
         import TrivialDIDef._
 
-        override def bindings: Seq[Def] = Seq(
+        override def bindings: Seq[Binding] = Seq(
           SingletonBinding(DIKey.get[Dependency], symbolDef[Long])
         )
       }
@@ -262,7 +262,7 @@ class BasicPlannerTest extends WordSpec {
     "fail on unsolvable conflicts" in {
       import Case4._
 
-      val definition: DIDef = TrivialDIDef
+      val definition: ContextDefinition = TrivialDIDef
         .empty
         .nameless[Dependency, Impl1]
         .nameless[Dependency, Impl2]
@@ -278,7 +278,7 @@ class BasicPlannerTest extends WordSpec {
     "handle exactly the same ops" in {
       import Case4._
 
-      val definition: DIDef = TrivialDIDef
+      val definition: ContextDefinition = TrivialDIDef
         .empty
         .nameless[Dependency, Impl1]
         .nameless[Dependency, Impl1]
@@ -295,7 +295,7 @@ class BasicPlannerTest extends WordSpec {
     "handle factory injections" in {
       import Case5._
 
-      val definition: DIDef = TrivialDIDef
+      val definition: ContextDefinition = TrivialDIDef
         .empty
         .nameless[Factory]
         .nameless[OverridingFactory]

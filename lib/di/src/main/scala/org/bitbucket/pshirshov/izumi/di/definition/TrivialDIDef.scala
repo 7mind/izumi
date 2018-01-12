@@ -1,10 +1,10 @@
 package org.bitbucket.pshirshov.izumi.di.definition
 
-import org.bitbucket.pshirshov.izumi.di.definition.Def.{EmptySetBinding, SetBinding, SingletonBinding}
+import org.bitbucket.pshirshov.izumi.di.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.{TypeFull, Tag}
 
-case class TrivialDIDef(bindings: Seq[Def]) extends DIDef
+case class TrivialDIDef(bindings: Seq[Binding]) extends ContextDefinition
 
 object TrivialDIDef {
 
@@ -15,7 +15,7 @@ object TrivialDIDef {
     typeTag[T].tpe
   }
 
-  class BindingSupport(bindings: Seq[Def]) {
+  class BindingSupport(bindings: Seq[Binding]) {
     def nameless[T: Tag]: BindingSupport = {
       new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], symbolDef[T]))
     }
@@ -69,7 +69,7 @@ object TrivialDIDef {
     }
 
 
-    def finish: DIDef = TrivialDIDef(bindings)
+    def finish: ContextDefinition = TrivialDIDef(bindings)
   }
 
   final val empty: BindingSupport = new BindingSupport(Seq.empty)

@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di.definition
 
-trait DIDef {
-  def bindings: Seq[Def]
+trait ContextDefinition {
+  def bindings: Seq[Binding]
 }
 
 
