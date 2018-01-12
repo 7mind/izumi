@@ -40,6 +40,7 @@ object Case1 {
 
   case class TestCaseClass(a1: TestClass, a2: TestDependency3)
 
+  class TestInstanceBinding()
 }
 
 object Case2 {
@@ -119,6 +120,7 @@ class BasicPlannerTest extends WordSpec {
           .add[TestDependency0, TestImpl0]
           .add[TestDependency1]
           .add[TestCaseClass]
+          .add(new TestInstanceBinding())
           .finish
       }
       val injector = mkInjector()
