@@ -40,21 +40,27 @@ class DefaultPlannerImpl
             val nextPlan = extendPlan(currentPlan, CurrentOp(definition, toImport, possible))
 
             val next = DodgyPlan(nextPlan)
-            System.err.println("-" * 60 + " Next Plan " + "-" * 60)
-            System.err.println(next)
+//            System.err.println("-" * 60 + " Next Plan " + "-" * 60)
+//            System.err.println(next)
             next
 
           case NextOps(_, Provisioning.Impossible(_)) =>
             val next = DodgyPlan(currentPlan.steps :+ UnbindableBinding(definition))
-            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
-            System.err.println(next)
+//            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
+//            System.err.println(next)
             next
         }
     }
 
-    val setDefinitions = plan.steps.collect { case s@Statement(_: ExecutableOp.CreateSet) => s:DodgyOp}.toSet
-    System.err.println(setDefinitions)
-    val withSetsAhead = DodgyPlan(setDefinitions.toSeq ++ plan.steps.filterNot(setDefinitions.contains))
+    val (justOps, setDefinitions) = plan.steps.foldLeft((scala.collection.mutable.ArrayBuffer[DodgyOp](), scala.collection.mutable.HashSet[Statement]())) {
+      case ((ops, createSetOps), s@Statement(_:ExecutableOp.CreateSet)) =>
+        (ops, createSetOps += s)
+
+      case ((ops, createSetOps), op) =>
+        (ops += op, createSetOps)
+    }
+
+    val withSetsAhead = DodgyPlan(setDefinitions.toSeq ++ justOps)
 
     Option(withSetsAhead)
       .map(forwardingRefResolver.resolve)
@@ -162,14 +168,13 @@ class DefaultPlannerImpl
     val beforeReplaced = before.filterNot(replacements.contains)
     val afterReplaced = after.filterNot(replacements.contains)
 
-    // TODO: separate ADT for this case?..
-
     val transformationsWithoutReplacements = transformations.map {
       case t: Replace => DodgyOp.Statement(t.replacement)
       case t: Put => DodgyOp.Statement(t.op)
       case t: SolveRedefinition => DodgyOp.DuplicatedStatement(t.op)
       case t: SolveUnsolvable => DodgyOp.UnsolvableConflict(t.op, t.existing)
     }
+    
     Seq(Nop(s"//  imp: ${currentOp.definition}")) ++
       toImport.map(DodgyOp.Statement) ++
       Seq(Nop(s"// head: ${currentOp.definition}")) ++
