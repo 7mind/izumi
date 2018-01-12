@@ -42,6 +42,16 @@ object Case1 {
 
   class TestInstanceBinding()
 
+  trait JustTrait {}
+
+  class Impl0 extends JustTrait
+
+  class Impl1 extends JustTrait
+
+  class Impl2 extends JustTrait
+
+  class Impl3 extends JustTrait
+
 }
 
 object Case2 {
@@ -132,9 +142,19 @@ class BasicPlannerTest extends WordSpec {
         .nameless[TestClass]
         .nameless[TestDependency0, TestImpl0]
         .nameless(new TestInstanceBinding())
+
         .named[TestClass]("named.test.class")
         .named[TestDependency0, TestImpl0]("named.test.dependency.0")
-        .named(new TestInstanceBinding(), "named.test.")
+        .named(new TestInstanceBinding(), "named.test")
+
+        .namedEmptySet[JustTrait]("named.empty.set")
+        .namelessEmptySet[JustTrait]
+
+        .namelessSet[JustTrait, Impl0]
+        .namelessSet[JustTrait](new Impl1)
+        .namedSet[JustTrait](new Impl2(), "named.set")
+        .namedSet[JustTrait, Impl3]("named.set")
+
         .finish
     }
   }
@@ -161,6 +181,37 @@ class BasicPlannerTest extends WordSpec {
       //        val instance = context.instance[TestClass](DIKey.TypeKey(typeTag[TestClass].tpe.typeSymbol))
       //
       //        System.err.println(s"${instance}")
+    }
+
+    "support multiple bindings" in {
+      import Case1._
+      val definition: DIDef = TrivialDIDef
+        .empty
+        .namedEmptySet[JustTrait]("named.empty.set")
+        .namelessEmptySet[JustTrait]
+
+        .namelessSet[JustTrait, Impl0]
+        .namelessSet[JustTrait](new Impl1)
+        .namedSet[JustTrait](new Impl2(), "named.set")
+        .namedSet[JustTrait, Impl3]("named.set")
+
+        .finish
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+    }
+
+    "support named bindings" in {
+      import Case1._
+      val definition: DIDef = TrivialDIDef
+        .empty
+        .named[TestClass]("named.test.class")
+        .named[TestDependency0, TestImpl0]("named.test.dependency.0")
+        .named(new TestInstanceBinding(), "named.test")
+        .finish
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
     }
 
 
@@ -195,6 +246,7 @@ class BasicPlannerTest extends WordSpec {
       import Case4._
 
       val definition: DIDef = new DIDef {
+
         import Def._
         import TrivialDIDef._
 

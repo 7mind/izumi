@@ -8,6 +8,7 @@ import org.bitbucket.pshirshov.izumi.di.reflection.{DependencyKeyProvider, Depen
 trait DefaultBootstrapContext extends Locator {
   override def parent: Option[Locator] = None
 
+  // TODO: may we improve it somehow?..
   private val lookupInterceptor = NullLookupInterceptor.instance
 
   private val factoryOfFactories = new TheFactoryOfAllTheFactoriesDefaultImpl()

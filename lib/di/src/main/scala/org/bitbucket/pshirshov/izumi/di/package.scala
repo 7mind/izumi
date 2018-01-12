@@ -5,6 +5,7 @@ import scala.reflect.runtime.universe._
 
 package object di {
   type Tag[T] = TypeTag[T]
-  type Symb = universe.Symbol
+  type TypeFull = universe.Type
+  type TypeSymb = universe.Symbol
   type CustomDef = Map[String, AnyRef]
 }

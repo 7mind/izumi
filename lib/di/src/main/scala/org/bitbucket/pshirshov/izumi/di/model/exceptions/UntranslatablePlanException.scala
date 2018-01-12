@@ -4,5 +4,3 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp
 
 
 class UntranslatablePlanException(message: String, val badSteps: Seq[DodgyOp]) extends DIException(message, null)
-
-
