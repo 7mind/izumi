@@ -1,16 +1,20 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.definition.DIDef
-import org.bitbucket.pshirshov.izumi.di.model.plan.ReadyPlan
+import org.bitbucket.pshirshov.izumi.di.definition.ContextDefinition
+import org.bitbucket.pshirshov.izumi.di.model.plan.FinalPlan
 
 /**
   * TODO:
   * - identified (named) bindings => DependencyKeyProviderDefaultImpl
-  * - instantiation logic => InjectorDefaultImpl#produce
-  * - full test coverage
-  * - expose Definitions and Plans in Contexts
-  * - Context enumeration
   *
+  * - instantiation logic => InjectorDefaultImpl#produce
+  * - instantiation logic: provide classloader policies from outside
+  *
+  * - full test coverage
+  *
+  * - expose Definitions and Plans in Contexts
+  *
+  * + Context enumeration
   * + multibindings
   * + identified (named) bindings => getters
   * + identified (named) bindings => DSL
@@ -25,11 +29,11 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ReadyPlan
   */
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
-  override def plan(context: DIDef): ReadyPlan = {
+  override def plan(context: ContextDefinition): FinalPlan = {
     parentContext.get[Planner].plan(context)
   }
 
-  override def produce(diPlan: ReadyPlan): Locator = {
+  override def produce(diPlan: FinalPlan): Locator = {
     parentContext.get[TheFactoryOfAllTheFactories].produce(diPlan, parentContext)
   }
 }

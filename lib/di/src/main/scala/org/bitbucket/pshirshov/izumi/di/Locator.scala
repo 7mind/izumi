@@ -2,12 +2,15 @@ package org.bitbucket.pshirshov.izumi.di
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.MissingInstanceException
+import org.bitbucket.pshirshov.izumi.di.model.plan.FinalPlan
 
 import scala.reflect.runtime.universe._
 
 case class TypedRef[+T:Tag](value: T) {
   def symbol: TypeFull = typeTag[T].tpe
 }
+
+case class IdentifiedRef(key: DIKey, value: Any)
 
 trait Locator {
   final def find[T: Tag]: Option[T] = lookupInstance(DIKey.get[T])
@@ -17,6 +20,10 @@ trait Locator {
   final def get[T: Tag]: T = lookupInstanceOrThrow(DIKey.get[T])
 
   final def get[T: Tag](id: String): T = lookupInstanceOrThrow(DIKey.get[T].named(id))
+
+  def enumerate: Stream[IdentifiedRef]
+
+  def plan: FinalPlan
 
   def parent: Option[Locator]
 

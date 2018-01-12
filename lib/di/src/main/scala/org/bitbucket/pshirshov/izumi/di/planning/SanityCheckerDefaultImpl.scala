@@ -3,7 +3,7 @@ package org.bitbucket.pshirshov.izumi.di.planning
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{DuplicateKeysException, ForwardRefException, MissingRefException}
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.SetOp
-import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, ReadyPlan}
+import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, FinalPlan}
 
 import scala.collection.mutable
 
@@ -12,7 +12,7 @@ class SanityCheckerDefaultImpl
   protected val planAnalyzer: PlanAnalyzer
 )
   extends SanityChecker {
-  override def assertSanity(plan: ReadyPlan): Unit = {
+  override def assertSanity(plan: FinalPlan): Unit = {
     assertNoDuplicateOps(plan.steps)
 
     val reftable = planAnalyzer.computeFwdRefTable(plan.steps.toStream)
