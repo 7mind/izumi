@@ -32,7 +32,7 @@ trait IzumiDsl {
 
           override def globalSettings: ProjectSettings = original.globalSettings
             .copy(moreExtenders = {
-              case (self, existing) =>
+              case (self@_, existing) =>
                 original.globalSettings.extenders ++ existing ++ extenders
             })
         }

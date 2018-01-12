@@ -6,9 +6,12 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{InitProxies, Ma
 
 
 
-class ForwardingRefResolverDefaultImpl extends ForwardingRefResolver with WithPlanAnalysis {
+class ForwardingRefResolverDefaultImpl
+(
+  protected val planAnalyzer: PlanAnalyzer
+) extends ForwardingRefResolver {
   override def resolve(plan: DodgyPlan): DodgyPlan = {
-    val reftable = computeFwdRefTable(plan.steps.collect { case Statement(op) => op }.toStream)
+    val reftable = planAnalyzer.computeFwdRefTable(plan.steps.collect { case Statement(op) => op }.toStream)
 
     import reftable._
 
@@ -16,9 +19,8 @@ class ForwardingRefResolverDefaultImpl extends ForwardingRefResolver with WithPl
       case Statement(step) if dependencies.contains(step.target) =>
         Seq(Statement(MakeProxy(step, dependencies(step.target))))
 
-      case s@Statement(step) if dependants.contains(step.target) =>
+      case Statement(step) if dependants.contains(step.target) =>
         Seq(Statement(InitProxies(step, dependants(step.target))))
-
 
       case step =>
         Seq(step)

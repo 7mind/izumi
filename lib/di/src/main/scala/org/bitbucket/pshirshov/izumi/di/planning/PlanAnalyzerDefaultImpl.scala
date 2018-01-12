@@ -7,10 +7,9 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.DependentOp
 import scala.collection.mutable
 
 
-trait WithPlanAnalysis {
-  private type Accumulator = mutable.HashMap[DIKey, mutable.Set[DIKey]]
+class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
 
-  protected def computeFwdRefTable(plan: Stream[ExecutableOp]): RefTable = {
+  override def computeFwdRefTable(plan: Stream[ExecutableOp]): RefTable = {
     computeFwdRefTable(
       plan
       , (acc) => (key) => acc.contains(key)
@@ -18,7 +17,7 @@ trait WithPlanAnalysis {
     )
   }
 
-  protected def computeFullRefTable(plan: Stream[ExecutableOp]): RefTable = {
+  override def computeFullRefTable(plan: Stream[ExecutableOp]): RefTable = {
     computeFwdRefTable(
       plan
       , (acc) => (key) => false
@@ -26,11 +25,11 @@ trait WithPlanAnalysis {
     )
   }
 
-  protected def computeFwdRefTable(
-                                    plan: Stream[ExecutableOp]
-                                    , refFilter: Accumulator => DIKey => Boolean
-                                    , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
-                                  ): RefTable = {
+  override def computeFwdRefTable(
+                                             plan: Stream[ExecutableOp]
+                                             , refFilter: Accumulator => DIKey => Boolean
+                                             , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
+                                           ): RefTable = {
     // TODO: make it immu
     val dependencies = plan.foldLeft(new Accumulator) {
       case (acc, op: DependentOp) =>
@@ -49,7 +48,7 @@ trait WithPlanAnalysis {
     RefTable(dependencies, dependants)
   }
 
-  protected def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {
+  override def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {
     val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[DIKey, DIKey]) {
       case (acc, (reference, referencee)) =>
         referencee.foreach(acc.addBinding(_, reference))
