@@ -17,7 +17,7 @@ trait DefaultBootstrapContext extends Locator {
   private val planAnalyzer = new PlanAnalyzerDefaultImpl()
   private val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(planAnalyzer)
   private val sanityChecker = new SanityCheckerDefaultImpl(planAnalyzer)
-  
+
   private val reflectionProviderDefaultImpl = new ReflectionProviderDefaultImpl(dependencyKeyProvider)
   private val customOpHandler = CustomOpHandler.NullCustomOpHander
 
@@ -41,7 +41,7 @@ trait DefaultBootstrapContext extends Locator {
     , DIKey.get[CustomOpHandler] -> customOpHandler
   )
 
-  def lookup(key: DIKey): Option[AnyRef] = defaultImpls.get(key)
+  protected def unsafeLookup(key:DIKey): Option[AnyRef] = defaultImpls.get(key)
 }
 
 object DefaultBootstrapContext {

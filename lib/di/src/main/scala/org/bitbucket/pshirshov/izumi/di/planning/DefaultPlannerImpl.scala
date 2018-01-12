@@ -83,8 +83,8 @@ class DefaultPlannerImpl
       case ImplDef.TypeImpl(symb) if reflectionProvider.isFactory(symb) =>
         Possible(Seq(ExecutableOp.InstantiateFactory(target, symb, deps)))
 
-      case ImplDef.InstanceImpl(instance) =>
-        Possible(Seq(ExecutableOp.ReferenceInstance(target, instance)))
+      case ImplDef.InstanceImpl(symb, instance) =>
+        Possible(Seq(ExecutableOp.ReferenceInstance(target, symb, instance)))
 
       case ImplDef.CustomImpl(instance) =>
         Possible(Seq(ExecutableOp.CustomOp(target, instance)))
