@@ -44,7 +44,7 @@ object ExecutableOp {
     override def toString: String = format
   }
 
-  case class ReferenceInstance(target: DIKey, instance: AnyRef) extends InstantiationOp {
+  case class ReferenceInstance(target: DIKey, instance: Any) extends InstantiationOp {
     override def format: String = {
       s"$target := ${instance.getClass.getCanonicalName}#${instance.hashCode()}"
     }
