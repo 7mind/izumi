@@ -1,6 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
+import org.bitbucket.pshirshov.izumi.di.model.plan.FinalPlan
 import org.bitbucket.pshirshov.izumi.di.planning._
 import org.bitbucket.pshirshov.izumi.di.reflection.{DependencyKeyProvider, DependencyKeyProviderDefaultImpl, ReflectionProvider, ReflectionProviderDefaultImpl}
 
@@ -30,6 +31,9 @@ trait DefaultBootstrapContext extends Locator {
     , customOpHandler
   )
 
+  // TODO: may we bootstrap ourself somehow?
+  override def plan: FinalPlan = throw new UnsupportedOperationException(s"Bootstrap context is provisioned manually, not planned.")
+
   protected def defaultImpls: Map[DIKey, AnyRef] = Map[DIKey, AnyRef](
     DIKey.get[PlanResolver] -> planResolver
     , DIKey.get[ForwardingRefResolver] -> forwardingRefResolver
@@ -42,7 +46,11 @@ trait DefaultBootstrapContext extends Locator {
     , DIKey.get[CustomOpHandler] -> customOpHandler
   )
 
-  protected def unsafeLookup(key:DIKey): Option[AnyRef] = defaultImpls.get(key)
+  protected def unsafeLookup(key: DIKey): Option[AnyRef] = defaultImpls.get(key)
+
+  override def enumerate: Stream[IdentifiedRef] = defaultImpls.map {
+    case (k, v) => IdentifiedRef(k, v)
+  }.toStream
 }
 
 object DefaultBootstrapContext {

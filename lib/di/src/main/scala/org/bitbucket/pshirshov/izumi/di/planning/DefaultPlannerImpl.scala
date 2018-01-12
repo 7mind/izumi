@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
-import org.bitbucket.pshirshov.izumi.di.definition.Def.{EmptySetBinding, SetBinding, SingletonBinding}
-import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
+import org.bitbucket.pshirshov.izumi.di.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
+import org.bitbucket.pshirshov.izumi.di.definition.{ContextDefinition, Binding, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp._
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{ImportDependency, SetOp}
@@ -13,6 +13,11 @@ import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProvider
 import org.bitbucket.pshirshov.izumi.di.{Planner, TypeFull}
 
 
+case class Value[A](value: A) {
+  @inline final def map[B](f: A => B): Value[B] =
+    Value(f(this.value))
+}
+
 class DefaultPlannerImpl
 (
   protected val planResolver: PlanResolver
@@ -23,9 +28,11 @@ class DefaultPlannerImpl
 )
   extends Planner {
 
-  case class CurrentOp(definition: Def, toImport: Seq[ExecutableOp.ImportDependency], toProvision: Seq[ExecutableOp])
+  case class CurrentOp(definition: Binding, toImport: Seq[ExecutableOp.ImportDependency], toProvision: Seq[ExecutableOp])
+  
   case class NextOps(toImport: Seq[ImportDependency], toProvision: Provisioning)
-  override def plan(context: DIDef): ReadyPlan = {
+
+  override def plan(context: ContextDefinition): FinalPlan = {
     //    System.err.println(s"Planning on context $context")
 
     val plan = context.bindings.foldLeft(DodgyPlan(Seq.empty[DodgyOp])) {
@@ -62,18 +69,17 @@ class DefaultPlannerImpl
 
     val withSetsAhead = DodgyPlan(setDefinitions.toSeq ++ justOps)
 
-    Option(withSetsAhead)
+    val finalPlan = Value(withSetsAhead)
       .map(forwardingRefResolver.resolve)
-      .map(planResolver.resolve)
-      .get
+      .map(planResolver.resolve(_, context))
+      .value
 
-    def withoutForwardingRefs = forwardingRefResolver.resolve(withSetsAhead)
-    val finalPlan = planResolver.resolve(withoutForwardingRefs)
     sanityChecker.assertSanity(finalPlan)
+    
     finalPlan
   }
 
-  private def computeProvisioning(currentPlan: DodgyPlan, definition: Def): NextOps = {
+  private def computeProvisioning(currentPlan: DodgyPlan, definition: Binding): NextOps = {
     definition match {
       case c: SingletonBinding =>
         val deps = enumerateDeps(c)
@@ -231,7 +237,7 @@ class DefaultPlannerImpl
   }
 
 
-  private def enumerateDeps(definition: Def): Seq[Association] = {
+  private def enumerateDeps(definition: Binding): Seq[Association] = {
     definition match {
       case c: SingletonBinding =>
         enumerateDeps(c.implementation)
