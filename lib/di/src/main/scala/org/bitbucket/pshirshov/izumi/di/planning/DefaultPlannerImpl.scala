@@ -10,17 +10,6 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProvider
 
-/**
-  * TODO:
-  * - identified (named) bindings
-  * - strategies as parent injector values
-  *
-  * + sanity check: reference completeness
-  * + sanity checks: partial order
-  * + circulars: outside of resolver
-  * + extension point: custom op
-  * + factories: filtei parameters out of products
-  */
 
 class DefaultPlannerImpl(
                           protected val planResolver: PlanResolver,
