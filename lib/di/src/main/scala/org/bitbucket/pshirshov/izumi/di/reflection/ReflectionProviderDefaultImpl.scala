@@ -9,7 +9,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
   override def symbolDeps(symbl: TypeFull): Seq[Association] = {
     symbl match {
       case ConcreteSymbol(symb) =>
-        val constructors = symb.decls.filter(_.isConstructor)
+        val constructors = symb.members.filter(_.isConstructor)
         // TODO: list should not be empty (?) and should has only one element (?)
         val selectedConstructor = constructors.head
 
@@ -21,7 +21,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
 
       case AbstractSymbol(symb) =>
         // empty paramLists means parameterless method, List(List()) means nullarg method()
-        val declaredAbstractMethods = symb.decls.filter(d => isWireableMethod(symb, d))
+        val declaredAbstractMethods = symb.members.filter(d => isWireableMethod(symb, d))
         declaredAbstractMethods.map(m => Association.Method(m, keyProvider.keyFromMethod(m))).toSeq
 
       case FactorySymbol(_, factoryMethods) =>
@@ -55,11 +55,11 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
   }
 
   override def isWireableAbstract(symb: TypeFull): Boolean = {
-    symb.typeSymbol.isClass && symb.typeSymbol.isAbstract && symb.decls.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
+    symb.typeSymbol.isClass && symb.typeSymbol.isAbstract && symb.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
   }
 
   override def isFactory(symb: TypeFull): Boolean = {
-    symb.typeSymbol.isClass && symb.typeSymbol.isAbstract && symb.decls.filter(_.isAbstract).forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
+    symb.typeSymbol.isClass && symb.typeSymbol.isAbstract && symb.members.filter(_.isAbstract).forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
   }
 
   private def isWireableMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
@@ -86,7 +86,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
 
   private object FactorySymbol {
     def unapply(arg: TypeFull): Option[(TypeFull, Seq[TypeSymb])] = {
-      Some(arg).filter(isFactory).map(f => (f, f.decls.filter(m => isFactoryMethod(f, m)).toSeq))
+      Some(arg).filter(isFactory).map(f => (f, f.members.filter(m => isFactoryMethod(f, m)).toSeq))
     }
   }
 

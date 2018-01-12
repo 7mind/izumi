@@ -178,9 +178,6 @@ class BasicPlannerTest extends WordSpec {
 
 
       //        val context = injector.produce(plan)
-      //        val instance = context.instance[TestClass](DIKey.TypeKey(typeTag[TestClass].tpe.typeSymbol))
-      //
-      //        System.err.println(s"${instance}")
     }
 
     "support multiple bindings" in {
