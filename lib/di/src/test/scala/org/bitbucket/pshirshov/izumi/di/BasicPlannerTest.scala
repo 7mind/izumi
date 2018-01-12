@@ -1,8 +1,8 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def}
+import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, TrivialDIDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.model.exceptions.UntranslatablePlanException
+import org.bitbucket.pshirshov.izumi.di.model.exceptions.{MissingInstanceException, UntranslatablePlanException}
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{DuplicatedStatement, UnbindableBinding, UnsolvableConflict}
 import org.bitbucket.pshirshov.izumi.di.planning.{PlanResolver, PlanResolverDefaultImpl}
 import org.scalatest.WordSpec
@@ -41,6 +41,7 @@ object Case1 {
   case class TestCaseClass(a1: TestClass, a2: TestDependency3)
 
   class TestInstanceBinding()
+
 }
 
 object Case2 {
@@ -97,8 +98,6 @@ object Case5 {
 
 class BasicPlannerTest extends WordSpec {
 
-  import org.bitbucket.pshirshov.izumi.di.definition.BasicBindingDsl._
-
 
   def mkInjector(): Injector = Injector.emerge()
 
@@ -109,26 +108,51 @@ class BasicPlannerTest extends WordSpec {
       val context = new DefaultBootstrapContext() {
         def publicLookup[T: Tag](key: DIKey): Option[TypedRef[T]] = super.lookup(key)
       }
+
+      assert(context.find[PlanResolver].exists(_.isInstanceOf[PlanResolverDefaultImpl]))
+      assert(context.find[PlanResolver]("another.one").isEmpty)
+
       assert(context.get[PlanResolver].isInstanceOf[PlanResolverDefaultImpl])
+      intercept[MissingInstanceException] {
+        context.get[PlanResolver]("another.one")
+      }
+
       assert(context.publicLookup[PlanResolver](DIKey.get[PlanResolver]).exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
       assert(context.publicLookup[AnyRef](DIKey.get[PlanResolver]).exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
       assert(context.publicLookup[Long](DIKey.get[PlanResolver]).isEmpty)
+
+    }
+  }
+
+  "Basic DSL" should {
+    "allow to define contexts" in {
+      import Case1._
+      val definition: DIDef = TrivialDIDef
+        .empty
+        .nameless[TestClass]
+        .nameless[TestDependency0, TestImpl0]
+        .nameless(new TestInstanceBinding())
+        .named[TestClass]("named.test.class")
+        .named[TestDependency0, TestImpl0]("named.test.dependency.0")
+        .named(new TestInstanceBinding(), "named.test.")
+        .finish
     }
   }
 
   "DI planner" should {
+
     "maintain correct operation order" in {
       import Case1._
-      val definition: DIDef = new DIDef {
-        override def bindings: Seq[Def] = start
-          .add[TestClass]
-          .add[TestDependency3]
-          .add[TestDependency0, TestImpl0]
-          .add[TestDependency1]
-          .add[TestCaseClass]
-          .add(new TestInstanceBinding())
-          .finish
-      }
+      val definition: DIDef = TrivialDIDef
+        .empty
+        .nameless[TestClass]
+        .nameless[TestDependency3]
+        .nameless[TestDependency0, TestImpl0]
+        .nameless[TestDependency1]
+        .nameless[TestCaseClass]
+        .nameless(new TestInstanceBinding())
+        .finish
+
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
@@ -143,12 +167,11 @@ class BasicPlannerTest extends WordSpec {
     "support circular dependencies" in {
       import Case2._
 
-      val definition: DIDef = new DIDef {
-        override def bindings: Seq[Def] = start
-          .add[Circular2]
-          .add[Circular1]
-          .finish
-      }
+      val definition: DIDef = TrivialDIDef
+        .empty
+        .nameless[Circular2]
+        .nameless[Circular1]
+        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -157,13 +180,12 @@ class BasicPlannerTest extends WordSpec {
     "support complex circular dependencies" in {
       import Case3._
 
-      val definition: DIDef = new DIDef {
-        override def bindings: Seq[Def] = start
-          .add[Circular3]
-          .add[Circular1]
-          .add[Circular2]
-          .finish
-      }
+      val definition: DIDef = TrivialDIDef
+        .empty
+        .nameless[Circular3]
+        .nameless[Circular1]
+        .nameless[Circular2]
+        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -173,8 +195,8 @@ class BasicPlannerTest extends WordSpec {
       import Case4._
 
       val definition: DIDef = new DIDef {
-
         import Def._
+        import TrivialDIDef._
 
         override def bindings: Seq[Def] = Seq(
           SingletonBinding(DIKey.get[Dependency], symbolDef[Long])
@@ -191,12 +213,11 @@ class BasicPlannerTest extends WordSpec {
     "fail on unsolvable conflicts" in {
       import Case4._
 
-      val definition: DIDef = new DIDef {
-        override def bindings: Seq[Def] = start
-          .add[Dependency, Impl1]
-          .add[Dependency, Impl2]
-          .finish
-      }
+      val definition: DIDef = TrivialDIDef
+        .empty
+        .nameless[Dependency, Impl1]
+        .nameless[Dependency, Impl2]
+        .finish
 
       val injector = mkInjector()
       val exc = intercept[UntranslatablePlanException] {
@@ -208,12 +229,11 @@ class BasicPlannerTest extends WordSpec {
     "handle exactly the same ops" in {
       import Case4._
 
-      val definition: DIDef = new DIDef {
-        override def bindings: Seq[Def] = start
-          .add[Dependency, Impl1]
-          .add[Dependency, Impl1]
-          .finish
-      }
+      val definition: DIDef = TrivialDIDef
+        .empty
+        .nameless[Dependency, Impl1]
+        .nameless[Dependency, Impl1]
+        .finish
 
       val injector = mkInjector()
       val exc = intercept[UntranslatablePlanException] {
@@ -226,13 +246,12 @@ class BasicPlannerTest extends WordSpec {
     "handle factory injections" in {
       import Case5._
 
-      val definition: DIDef = new DIDef {
-        override def bindings: Seq[Def] = start
-          .add[Factory]
-          .add[OverridingFactory]
-          .add[AssistedFactory]
-          .finish
-      }
+      val definition: DIDef = TrivialDIDef
+        .empty
+        .nameless[Factory]
+        .nameless[OverridingFactory]
+        .nameless[AssistedFactory]
+        .finish
 
       val injector = mkInjector()
       injector.plan(definition)
