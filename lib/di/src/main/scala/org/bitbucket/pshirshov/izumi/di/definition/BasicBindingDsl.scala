@@ -1,14 +1,17 @@
 package org.bitbucket.pshirshov.izumi.di.definition
 
-import org.bitbucket.pshirshov.izumi.di.Tag
 import org.bitbucket.pshirshov.izumi.di.definition.Def.SingletonBinding
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
+import org.bitbucket.pshirshov.izumi.di.{Symb, Tag}
+
 import scala.reflect.runtime.universe._
 
 object BasicBindingDsl {
   val start: Seq[Def] = Seq.empty
 
-  def symbolDef[T: Tag]: ImplDef = ImplDef.TypeImpl(typeTag[T].tpe.typeSymbol)
+  def symbolDef[T: Tag]: ImplDef = ImplDef.TypeImpl(typeSymbol)
+
+  def typeSymbol[T: Tag]: Symb = typeTag[T].tpe.typeSymbol
 
   implicit class BindingSupport(bindings: Seq[Def]) {
     def add[T:Tag]: BindingSupport = {
@@ -20,7 +23,7 @@ object BasicBindingDsl {
     }
 
     def add[T:Tag](instance: T): BindingSupport = {
-      BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(instance)))
+      BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(typeSymbol[T], instance)))
     }
 
     def finish: Seq[Def] = bindings

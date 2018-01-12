@@ -105,8 +105,14 @@ class BasicPlannerTest extends WordSpec {
 
   "DI Context" should {
     "support cute api calls :3" in {
-      val context = DefaultBootstrapContext.instance
+      import scala.language.reflectiveCalls
+      val context = new DefaultBootstrapContext() {
+        def publicLookup[T: Tag](key: DIKey): Option[TypedRef[T]] = super.lookup(key)
+      }
       assert(context.get[PlanResolver].isInstanceOf[PlanResolverDefaultImpl])
+      assert(context.publicLookup[PlanResolver](DIKey.get[PlanResolver]).exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
+      assert(context.publicLookup[AnyRef](DIKey.get[PlanResolver]).exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
+      assert(context.publicLookup[Long](DIKey.get[PlanResolver]).isEmpty)
     }
   }
 

@@ -3,18 +3,13 @@ package org.bitbucket.pshirshov.izumi.di
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.MissingInstanceException
 
-import scala.reflect.runtime.universe
+import scala.reflect.runtime.universe._
 
+case class TypedRef[+T:Tag](value: T) {
+  def symbol: Symb = typeTag[T].tpe.typeSymbol
+}
 
 trait Locator {
-  def parent: Option[Locator]
-
-  protected def lookup(key: DIKey): Option[AnyRef]
-
-  final def interceptor: LookupInterceptor = lookup(DIKey.get[LookupInterceptor])
-    .map(_.asInstanceOf[LookupInterceptor])
-    .getOrElse(NullLookupInterceptor.instance)
-
   final def find[T: Tag]: Option[T] = lookupInstance(DIKey.get[T])
 
   final def find[T: Tag, Id](id: Id): Option[T] = lookupInstance(DIKey.get[T].narrow(id))
@@ -23,17 +18,17 @@ trait Locator {
 
   final def get[T: Tag, Id](id: Id): T = lookupInstanceOrThrow(DIKey.get[T].narrow(id))
 
-  protected def mirror: universe.Mirror = universe.runtimeMirror(getClass.getClassLoader)
+  def parent: Option[Locator]
 
-  protected def isInstanceOf[T: Tag](key: DIKey, t: AnyRef): Boolean = {
-    mirror.runtimeClass(key.symbol.asClass).isAssignableFrom(t.getClass)
-  }
+  protected def unsafeLookup(key:DIKey): Option[AnyRef]
 
-  protected final def recursiveLookup(key: DIKey): Option[AnyRef] = {
-    interceptor.interceptLookup(key, this).orElse(
-      lookup(key)
-        .orElse(parent.flatMap(_.lookup(key)))
-    )
+  protected def lookup[T: Tag](key: DIKey): Option[TypedRef[T]] = {
+    unsafeLookup(key)
+      .filter(_ => key.symbol.info.baseClasses.contains(typeTag[T].tpe.typeSymbol))
+      .map {
+        value =>
+          TypedRef[T](value.asInstanceOf[T])
+      }
   }
 
   protected final def lookupInstanceOrThrow[T: Tag](key: DIKey): T = {
@@ -48,7 +43,18 @@ trait Locator {
 
   protected final def lookupInstance[T: Tag](key: DIKey): Option[T] = {
     recursiveLookup(key)
-      .filter(t => isInstanceOf(key, t))
-      .map(_.asInstanceOf[T])
+      .map(_.value)
+    //.filter(t => isInstanceOf(key, t))
   }
+
+  protected final def recursiveLookup[T:Tag](key: DIKey): Option[TypedRef[T]] = {
+    interceptor.interceptLookup[T](key, this).orElse(
+      lookup(key)
+        .orElse(parent.flatMap(_.lookup(key)))
+    )
+  }
+
+  protected final def interceptor: LookupInterceptor = lookup[LookupInterceptor](DIKey.get[LookupInterceptor])
+    .map(_.value)
+    .getOrElse(NullLookupInterceptor.instance)
 }
