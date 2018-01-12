@@ -6,7 +6,7 @@ import org.bitbucket.pshirshov.izumi.di.model.exceptions.MissingInstanceExceptio
 import scala.reflect.runtime.universe._
 
 case class TypedRef[+T:Tag](value: T) {
-  def symbol: Symb = typeTag[T].tpe.typeSymbol
+  def symbol: TypeFull = typeTag[T].tpe
 }
 
 trait Locator {
@@ -24,7 +24,7 @@ trait Locator {
 
   protected def lookup[T: Tag](key: DIKey): Option[TypedRef[T]] = {
     unsafeLookup(key)
-      .filter(_ => key.symbol.info.baseClasses.contains(typeTag[T].tpe.typeSymbol))
+      .filter(_ => key.symbol.baseClasses.contains(typeTag[T].tpe.typeSymbol))
       .map {
         value =>
           TypedRef[T](value.asInstanceOf[T])

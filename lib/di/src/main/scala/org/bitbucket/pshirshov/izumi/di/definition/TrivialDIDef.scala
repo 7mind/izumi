@@ -1,8 +1,8 @@
 package org.bitbucket.pshirshov.izumi.di.definition
 
-import org.bitbucket.pshirshov.izumi.di.definition.Def.SingletonBinding
+import org.bitbucket.pshirshov.izumi.di.definition.Def.{EmptySetBinding, SetBinding, SingletonBinding}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.{Symb, Tag}
+import org.bitbucket.pshirshov.izumi.di.{TypeFull, Tag}
 
 case class TrivialDIDef(bindings: Seq[Def]) extends DIDef
 
@@ -10,9 +10,9 @@ object TrivialDIDef {
 
   def symbolDef[T: Tag]: ImplDef = ImplDef.TypeImpl(typeSymbol)
 
-  def typeSymbol[T: Tag]: Symb = {
+  def typeSymbol[T: Tag]: TypeFull = {
     import scala.reflect.runtime.universe._
-    typeTag[T].tpe.typeSymbol
+    typeTag[T].tpe
   }
 
   class BindingSupport(bindings: Seq[Def]) {
@@ -39,6 +39,33 @@ object TrivialDIDef {
 
     def named[T: Tag](instance: T, name: String): BindingSupport = {
       new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T].named(name), ImplDef.InstanceImpl(typeSymbol[T], instance)))
+    }
+
+
+    def namelessEmptySet[T: Tag]: BindingSupport = {
+      new BindingSupport(bindings :+ EmptySetBinding(DIKey.get[Set[T]]))
+
+    }
+
+    def namedEmptySet[T: Tag](name: String): BindingSupport = {
+      new BindingSupport(bindings :+ EmptySetBinding(DIKey.get[Set[T]].named(name)))
+
+    }
+
+    def namelessSet[T: Tag, I <: T : Tag]: BindingSupport = {
+      new BindingSupport(bindings :+ SetBinding(DIKey.get[Set[T]], symbolDef[I]))
+    }
+
+    def namelessSet[T: Tag](instance: T): BindingSupport = {
+      new BindingSupport(bindings :+ SetBinding(DIKey.get[Set[T]], ImplDef.InstanceImpl(typeSymbol[T], instance)))
+    }
+
+    def namedSet[T: Tag, I <: T : Tag](name: String): BindingSupport = {
+      new BindingSupport(bindings :+ SetBinding(DIKey.get[Set[T]].named(name), symbolDef[I]))
+    }
+
+    def namedSet[T: Tag](instance: T, name: String): BindingSupport = {
+      new BindingSupport(bindings :+ SetBinding(DIKey.get[Set[T]].named(name), ImplDef.InstanceImpl(typeSymbol[T], instance)))
     }
 
 

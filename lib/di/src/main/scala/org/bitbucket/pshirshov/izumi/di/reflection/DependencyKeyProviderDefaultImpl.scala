@@ -1,11 +1,11 @@
 package org.bitbucket.pshirshov.izumi.di.reflection
 
-import org.bitbucket.pshirshov.izumi.di.Symb
+import org.bitbucket.pshirshov.izumi.di.TypeSymb
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 
 class DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
-  // TODO: anno support
-  override def keyFromMethod(methodSymbol: Symb): DIKey = DIKey.TypeKey(methodSymbol.info.resultType.typeSymbol)
 
-  override def keyFromParameter(parameterSymbol: Symb): DIKey = DIKey.TypeKey(parameterSymbol.info.typeSymbol)
+  override def keyFromMethod(methodSymbol: TypeSymb): DIKey = DIKey.TypeKey(methodSymbol.info.resultType)
+
+  override def keyFromParameter(parameterSymbol: TypeSymb): DIKey = DIKey.TypeKey(parameterSymbol.info)
 }

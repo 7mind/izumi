@@ -1,17 +1,16 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
-import org.bitbucket.pshirshov.izumi.di.Planner
+import org.bitbucket.pshirshov.izumi.di.definition.Def.{EmptySetBinding, SetBinding, SingletonBinding}
 import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp._
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{ImportDependency, SetOp}
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict._
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp._
+import org.bitbucket.pshirshov.izumi.di.model.plan.Provisioning.{Impossible, Possible}
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProvider
-
-
-
+import org.bitbucket.pshirshov.izumi.di.{Planner, TypeFull}
 
 
 class DefaultPlannerImpl
@@ -31,49 +30,91 @@ class DefaultPlannerImpl
 
     val plan = context.bindings.foldLeft(DodgyPlan(Seq.empty[DodgyOp])) {
       case (currentPlan, definition) =>
-        val knowsTargets = currentPlan.steps.flatMap {
-          case Statement(op) =>
-            Seq(op.target)
-          case _ =>
-            Seq()
-        }.toSet
+        val (toImport: Seq[ImportDependency], toProvision: Provisioning) = computeProvisioning(currentPlan, definition)
 
-        val deps = enumerateDeps(definition.implementation)
-        val (resolved@_, unresolved) = deps.partition(d => knowsTargets.contains(d.wireWith))
-        // we don't need resolved deps, we already have them in finalPlan
-
-        val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith))
-        provisioning(definition.target, definition.implementation, deps) match {
-          case Provisioning.Possible(toProvision) =>
+        toProvision match {
+          case Provisioning.Possible(possible) =>
             //            System.err.println(s"toImport = $toImport, toProvision=$toProvision")
 
-            sanityChecker.assertNoDuplicateOps(toImport ++ toProvision)
-            val nextPlan = extendPlan(currentPlan, CurrentOp(definition, toImport, toProvision))
+            //sanityChecker.assertNoDuplicateOps(toImport ++ possible)
+            val nextPlan = extendPlan(currentPlan, CurrentOp(definition, toImport, possible))
 
             val next = DodgyPlan(nextPlan)
-            //            System.err.println("-" * 60 + " Next Plan " + "-" * 60)
-            //            System.err.println(next)
+            System.err.println("-" * 60 + " Next Plan " + "-" * 60)
+            System.err.println(next)
             next
 
           case Provisioning.Impossible(_) =>
             val next = DodgyPlan(currentPlan.steps :+ UnbindableBinding(definition))
-            //            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
-            //            System.err.println(next)
+            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
+            System.err.println(next)
             next
         }
     }
 
-    def withoutForwardingRefs = forwardingRefResolver.resolve(plan)
+    val setDefinitions = plan.steps.collect { case s@Statement(_: ExecutableOp.CreateSet) => s:DodgyOp}.toSet
+    System.err.println(setDefinitions)
+    val withSetsAhead = DodgyPlan(setDefinitions.toSeq ++ plan.steps.filterNot(setDefinitions.contains))
 
+    Option(withSetsAhead)
+      .map(forwardingRefResolver.resolve)
+      .map(planResolver.resolve)
+      .get
+
+    def withoutForwardingRefs = forwardingRefResolver.resolve(withSetsAhead)
     val finalPlan = planResolver.resolve(withoutForwardingRefs)
-    sanityChecker.assertSanity(finalPlan)
+    //sanityChecker.assertSanity(finalPlan)
     finalPlan
   }
 
+  private def computeProvisioning(currentPlan: DodgyPlan, definition: Def): (Seq[ImportDependency], Provisioning) = {
+    definition match {
+      case c: SingletonBinding =>
+        val deps = enumerateDeps(c)
+        val toImport = computeImports(currentPlan, deps)
+        val toProvision = provisioning(c, deps)
+        (toImport, toProvision)
 
-  private def provisioning(target: DIKey, impl: ImplDef, deps: Seq[Association]): Provisioning = {
+      case s: SetBinding =>
+        val target = s.target
+        val elementKey = DIKey.SetElementKey(target, getSymbol(s.implementation))
+
+        computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation)) match {
+          case (imports, Possible(ops)) =>
+            (imports, Possible(
+              Seq(ExecutableOp.CreateSet(target, target.symbol)) ++
+                ops ++
+                Seq(ExecutableOp.AddToSet(target, elementKey))
+            ))
+
+          case (imports, other@_) =>
+            (imports, Impossible(s.implementation))
+        }
+
+      case s: EmptySetBinding =>
+        (Seq.empty, Possible(Seq(ExecutableOp.CreateSet(s.target, s.target.symbol))))
+
+    }
+  }
+
+  private def computeImports(currentPlan: DodgyPlan, deps: Seq[Association]): Seq[ImportDependency] = {
+    val knownTargets = currentPlan.steps.flatMap {
+      case Statement(op) =>
+        Seq(op.target)
+      case _ =>
+        Seq()
+    }.toSet
+    val (resolved@_, unresolved) = deps.partition(d => knownTargets.contains(d.wireWith))
+    // we don't need resolved deps, we already have them in finalPlan
+    val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith))
+    toImport
+  }
+
+  private def provisioning(binding: SingletonBinding, deps: Seq[Association]): Provisioning = {
     import Provisioning._
-    impl match {
+    val target = binding.target
+
+    binding.implementation match {
       case ImplDef.TypeImpl(symb) if reflectionProvider.isConcrete(symb) =>
         Possible(Seq(ExecutableOp.InstantiateClass(target, symb, deps)))
 
@@ -164,7 +205,7 @@ class DefaultPlannerImpl
       newOp =>
         // safe to use .find, plan itself cannot contain conflicts
         // TODO: ineffective!
-        currentUnwrapped.find(_.op.target == newOp.target) match {
+        currentUnwrapped.find(dop => areConflicting(newOp, dop.op)) match {
           case Some(existing) =>
             Conflict(newOp, existing)
           case _ =>
@@ -172,6 +213,27 @@ class DefaultPlannerImpl
         }
     }
     withConflicts
+  }
+
+  def areConflicting(newOp: ExecutableOp, existingOp: ExecutableOp): Boolean = {
+    (existingOp, newOp) match {
+      case (eop: SetOp, nop: SetOp) if eop.target == nop.target =>
+        false
+      case (eop, nop) =>
+        eop.target == nop.target
+    }
+  }
+
+
+  private def enumerateDeps(definition: Def): Seq[Association] = {
+    definition match {
+      case c: SingletonBinding =>
+        enumerateDeps(c.implementation)
+      case c: SetBinding =>
+        enumerateDeps(c.implementation)
+      case _ =>
+        Seq()
+    }
   }
 
   private def enumerateDeps(impl: ImplDef): Seq[Association] = {
@@ -182,6 +244,17 @@ class DefaultPlannerImpl
         Seq()
       case c: ImplDef.CustomImpl =>
         customOpHandler.getDeps(c)
+    }
+  }
+
+  private def getSymbol(impl: ImplDef): TypeFull = {
+    impl match {
+      case i: ImplDef.TypeImpl =>
+        i.impl
+      case i: ImplDef.InstanceImpl =>
+        i.tpe
+      case c: ImplDef.CustomImpl =>
+        customOpHandler.getSymbol(c)
     }
   }
 }
