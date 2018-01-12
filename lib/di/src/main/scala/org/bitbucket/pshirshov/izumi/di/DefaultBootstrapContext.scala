@@ -13,6 +13,7 @@ trait DefaultBootstrapContext extends Locator {
   private val dependencyKeyProviderDefaultImpl = new DependencyKeyProviderDefaultImpl()
   private val reflectionProviderDefaultImpl = new ReflectionProviderDefaultImpl(dependencyKeyProviderDefaultImpl)
   private val factoryOfFactories = new TheFactoryOfAllTheFactoriesDefaultImpl()
+  private val lookupInterceptor = NullLookupInterceptor.instance
   private val planner = new DefaultPlannerImpl(
     planResolverDefaultImpl
     , forwardingRefResolverDefaultImpl
@@ -26,6 +27,7 @@ trait DefaultBootstrapContext extends Locator {
     , DIKey.get[TheFactoryOfAllTheFactories] -> factoryOfFactories
     , DIKey.get[ReflectionProvider] -> reflectionProviderDefaultImpl
     , DIKey.get[Planner] -> planner
+    , DIKey.get[LookupInterceptor] -> lookupInterceptor
   )
 
   def lookup(key: DIKey): Option[AnyRef] = defaultImpls.get(key)

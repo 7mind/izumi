@@ -5,14 +5,19 @@ import org.bitbucket.pshirshov.izumi.di.model.exceptions.MissingInstanceExceptio
 
 import scala.reflect.runtime.universe
 
+
 trait Locator {
   def parent: Option[Locator]
 
   protected def lookup(key: DIKey): Option[AnyRef]
 
-  final def find[T:Tag]: Option[T] = lookupInstance(DIKey.get[T])
+  final def interceptor: LookupInterceptor = lookup(DIKey.get[LookupInterceptor])
+    .map(_.asInstanceOf[LookupInterceptor])
+    .getOrElse(NullLookupInterceptor.instance)
 
-  final def find[T:Tag, Id](id: Id): Option[T] = lookupInstance(DIKey.get[T].narrow(id))
+  final def find[T: Tag]: Option[T] = lookupInstance(DIKey.get[T])
+
+  final def find[T: Tag, Id](id: Id): Option[T] = lookupInstance(DIKey.get[T].narrow(id))
 
   final def get[T: Tag]: T = lookupInstanceOrThrow(DIKey.get[T])
 
@@ -25,8 +30,10 @@ trait Locator {
   }
 
   protected final def recursiveLookup(key: DIKey): Option[AnyRef] = {
-    lookup(key)
-      .orElse(parent.flatMap(_.lookup(key)))
+    interceptor.interceptLookup(key, this).orElse(
+      lookup(key)
+        .orElse(parent.flatMap(_.lookup(key)))
+    )
   }
 
   protected final def lookupInstanceOrThrow[T: Tag](key: DIKey): T = {
