@@ -11,8 +11,7 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ReadyPlan
   * - expose Definitions and Plans in Contexts
   * - Context enumeration
   *
-  * - multibindings
-  *
+  * + multibindings
   * + identified (named) bindings => getters
   * + identified (named) bindings => DSL
   * + remove mirror ref
