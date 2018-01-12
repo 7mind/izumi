@@ -7,7 +7,6 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.DependentOp
 import scala.collection.mutable
 
 
-
 trait WithPlanAnalysis {
   private type Accumulator = mutable.HashMap[DIKey, mutable.Set[DIKey]]
 

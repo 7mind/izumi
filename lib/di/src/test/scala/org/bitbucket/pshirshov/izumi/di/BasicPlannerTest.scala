@@ -99,11 +99,11 @@ class BasicPlannerTest extends WordSpec {
 
   def symbol[T: Tag]: ImplDef = ImplDef.TypeImpl(typeTag[T].tpe.typeSymbol)
 
-  def mkInjector(): Injector = Injector.make()
+  def mkInjector(): Injector = Injector.emerge()
 
   "DI Context" should {
     "support cute api calls :3" in {
-      val context = DefaultBootstrapContext
+      val context = DefaultBootstrapContext.instance
       assert(context.get[PlanResolver].isInstanceOf[PlanResolverDefaultImpl])
     }
   }

@@ -12,8 +12,6 @@ class ForwardingRefResolverDefaultImpl extends ForwardingRefResolver with WithPl
 
     import reftable._
 
-    System.err.println(s"Forward refs: $dependencies, inversed: $dependants")
-
     val resolvedSteps = plan.steps.flatMap {
       case Statement(step) if dependencies.contains(step.target) =>
         Seq(Statement(MakeProxy(step, dependencies(step.target))))
