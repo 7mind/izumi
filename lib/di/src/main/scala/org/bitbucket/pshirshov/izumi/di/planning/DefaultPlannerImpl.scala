@@ -24,19 +24,19 @@ class DefaultPlannerImpl
   extends Planner {
 
   case class CurrentOp(definition: Def, toImport: Seq[ExecutableOp.ImportDependency], toProvision: Seq[ExecutableOp])
-
+  case class NextOps(toImport: Seq[ImportDependency], toProvision: Provisioning)
   override def plan(context: DIDef): ReadyPlan = {
     //    System.err.println(s"Planning on context $context")
 
     val plan = context.bindings.foldLeft(DodgyPlan(Seq.empty[DodgyOp])) {
       case (currentPlan, definition) =>
-        val (toImport: Seq[ImportDependency], toProvision: Provisioning) = computeProvisioning(currentPlan, definition)
+        val nextOps = computeProvisioning(currentPlan, definition)
 
-        toProvision match {
-          case Provisioning.Possible(possible) =>
+        nextOps match {
+          case NextOps(toImport, Provisioning.Possible(possible)) =>
             //            System.err.println(s"toImport = $toImport, toProvision=$toProvision")
 
-            //sanityChecker.assertNoDuplicateOps(toImport ++ possible)
+            sanityChecker.assertNoDuplicateOps(toImport ++ possible)
             val nextPlan = extendPlan(currentPlan, CurrentOp(definition, toImport, possible))
 
             val next = DodgyPlan(nextPlan)
@@ -44,7 +44,7 @@ class DefaultPlannerImpl
             System.err.println(next)
             next
 
-          case Provisioning.Impossible(_) =>
+          case NextOps(_, Provisioning.Impossible(_)) =>
             val next = DodgyPlan(currentPlan.steps :+ UnbindableBinding(definition))
             System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
             System.err.println(next)
@@ -63,36 +63,37 @@ class DefaultPlannerImpl
 
     def withoutForwardingRefs = forwardingRefResolver.resolve(withSetsAhead)
     val finalPlan = planResolver.resolve(withoutForwardingRefs)
-    //sanityChecker.assertSanity(finalPlan)
+    sanityChecker.assertSanity(finalPlan)
     finalPlan
   }
 
-  private def computeProvisioning(currentPlan: DodgyPlan, definition: Def): (Seq[ImportDependency], Provisioning) = {
+  private def computeProvisioning(currentPlan: DodgyPlan, definition: Def): NextOps = {
     definition match {
       case c: SingletonBinding =>
         val deps = enumerateDeps(c)
         val toImport = computeImports(currentPlan, deps)
         val toProvision = provisioning(c, deps)
-        (toImport, toProvision)
+        NextOps(toImport, toProvision)
 
       case s: SetBinding =>
         val target = s.target
         val elementKey = DIKey.SetElementKey(target, getSymbol(s.implementation))
 
         computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation)) match {
-          case (imports, Possible(ops)) =>
-            (imports, Possible(
+          case NextOps(imports, Possible(ops)) =>
+            NextOps(imports, Possible(
               Seq(ExecutableOp.CreateSet(target, target.symbol)) ++
                 ops ++
                 Seq(ExecutableOp.AddToSet(target, elementKey))
             ))
 
-          case (imports, other@_) =>
-            (imports, Impossible(s.implementation))
+          case NextOps(imports, other@_) =>
+            // TODO: some data is lost here, we need to stack it
+            NextOps(imports, Impossible(s.implementation))
         }
 
       case s: EmptySetBinding =>
-        (Seq.empty, Possible(Seq(ExecutableOp.CreateSet(s.target, s.target.symbol))))
+        NextOps(Seq.empty, Possible(Seq(ExecutableOp.CreateSet(s.target, s.target.symbol))))
 
     }
   }
