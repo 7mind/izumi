@@ -11,13 +11,18 @@ import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProvider
 
 
-class DefaultPlannerImpl(
-                          protected val planResolver: PlanResolver,
-                          protected val forwardingRefResolver: ForwardingRefResolver,
-                          protected val reflectionProvider: ReflectionProvider
-                        )
-  extends Planner
-    with WithSanityChecks {
+
+
+
+class DefaultPlannerImpl
+(
+  protected val planResolver: PlanResolver
+  , protected val forwardingRefResolver: ForwardingRefResolver
+  , protected val reflectionProvider: ReflectionProvider
+  , protected val sanityChecker: SanityChecker
+  , protected val customOpHandler: CustomOpHandler
+)
+  extends Planner {
 
   case class CurrentOp(definition: Def, toImport: Seq[ExecutableOp.ImportDependency], toProvision: Seq[ExecutableOp])
 
@@ -34,7 +39,7 @@ class DefaultPlannerImpl(
         }.toSet
 
         val deps = enumerateDeps(definition.implementation)
-        val (resolved, unresolved) = deps.partition(d => knowsTargets.contains(d.wireWith))
+        val (resolved@_, unresolved) = deps.partition(d => knowsTargets.contains(d.wireWith))
         // we don't need resolved deps, we already have them in finalPlan
 
         val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith))
@@ -42,7 +47,7 @@ class DefaultPlannerImpl(
           case Provisioning.Possible(toProvision) =>
             //            System.err.println(s"toImport = $toImport, toProvision=$toProvision")
 
-            assertNoDuplicateOps(toImport ++ toProvision)
+            sanityChecker.assertNoDuplicateOps(toImport ++ toProvision)
             val nextPlan = extendPlan(currentPlan, CurrentOp(definition, toImport, toProvision))
 
             val next = DodgyPlan(nextPlan)
@@ -50,7 +55,7 @@ class DefaultPlannerImpl(
             //            System.err.println(next)
             next
 
-          case Provisioning.Impossible(implDef) =>
+          case Provisioning.Impossible(_) =>
             val next = DodgyPlan(currentPlan.steps :+ UnbindableBinding(definition))
             //            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
             //            System.err.println(next)
@@ -61,7 +66,7 @@ class DefaultPlannerImpl(
     def withoutForwardingRefs = forwardingRefResolver.resolve(plan)
 
     val finalPlan = planResolver.resolve(withoutForwardingRefs)
-    assertSanity(finalPlan)
+    sanityChecker.assertSanity(finalPlan)
     finalPlan
   }
 
@@ -173,8 +178,10 @@ class DefaultPlannerImpl(
     impl match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolDeps(i.impl)
-      case i: ImplDef.InstanceImpl =>
+      case _: ImplDef.InstanceImpl =>
         Seq()
+      case c: ImplDef.CustomImpl =>
+        customOpHandler.getDeps(c)
     }
   }
 }
