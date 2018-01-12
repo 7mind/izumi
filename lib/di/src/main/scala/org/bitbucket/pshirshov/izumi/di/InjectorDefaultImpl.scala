@@ -7,6 +7,8 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ReadyPlan
   * TODO:
   * - identified (named) bindings => DependencyKeyProviderDefaultImpl
   * - multibindings
+  * - remove mirror ref
+  * - refactor the rest of the traits
   * 
   * + strategies as parent injector values
   * + sanity check: reference completeness

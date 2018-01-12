@@ -4,17 +4,20 @@ import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{DuplicateKeysException, ForwardRefException, MissingRefException}
 import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, ReadyPlan}
 
-trait WithSanityChecks
-  extends WithPlanAnalysis {
-  protected def assertSanity(plan: ReadyPlan): Unit = {
+class SanityCheckerDefaultImpl
+(
+  protected val planAnalyzer: PlanAnalyzer
+)
+  extends SanityChecker {
+  override def assertSanity(plan: ReadyPlan): Unit = {
     assertNoDuplicateOps(plan.steps)
 
-    val reftable = computeFwdRefTable(plan.steps.toStream)
+    val reftable = planAnalyzer.computeFwdRefTable(plan.steps.toStream)
     if (reftable.dependants.nonEmpty) {
       throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependants}!", reftable)
     }
 
-    val fullRefTable = computeFullRefTable(plan.steps.toStream)
+    val fullRefTable = planAnalyzer.computeFullRefTable(plan.steps.toStream)
 
     val allAvailableRefs = fullRefTable.dependencies.keySet
     val fullDependenciesSet = fullRefTable.dependencies.flatMap(_._2).toSet
@@ -26,11 +29,11 @@ trait WithSanityChecks
   }
 
 
-  protected def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit = {
+  override def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit = {
     assertNoDuplicateKeys(ops.map(_.target))
   }
 
-  protected def assertNoDuplicateKeys(keys: Seq[DIKey]): Unit = {
+  override def assertNoDuplicateKeys(keys: Seq[DIKey]): Unit = {
     if (duplicates(keys).nonEmpty) {
       throw new DuplicateKeysException(s"Cannot finish the plan, there are duplicates: $keys!", keys)
     }
