@@ -12,11 +12,11 @@ case class TypedRef[+T:Tag](value: T) {
 trait Locator {
   final def find[T: Tag]: Option[T] = lookupInstance(DIKey.get[T])
 
-  final def find[T: Tag, Id](id: Id): Option[T] = lookupInstance(DIKey.get[T].narrow(id))
+  final def find[T: Tag](id: String): Option[T] = lookupInstance(DIKey.get[T].named(id))
 
   final def get[T: Tag]: T = lookupInstanceOrThrow(DIKey.get[T])
 
-  final def get[T: Tag, Id](id: Id): T = lookupInstanceOrThrow(DIKey.get[T].narrow(id))
+  final def get[T: Tag](id: String): T = lookupInstanceOrThrow(DIKey.get[T].named(id))
 
   def parent: Option[Locator]
 
@@ -44,7 +44,6 @@ trait Locator {
   protected final def lookupInstance[T: Tag](key: DIKey): Option[T] = {
     recursiveLookup(key)
       .map(_.value)
-    //.filter(t => isInstanceOf(key, t))
   }
 
   protected final def recursiveLookup[T:Tag](key: DIKey): Option[TypedRef[T]] = {

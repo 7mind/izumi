@@ -12,7 +12,7 @@ object DIKey {
   case class TypeKey(symbol: Symb) extends DIKey {
     override def toString: String = s"${symbol.toString.replace(" ", ":")}"
 
-    def narrow[Id](id: Id): IdKey[Id] = IdKey(symbol, id)
+    def named[Id](id: Id): IdKey[Id] = IdKey(symbol, id)
   }
 
   case class IdKey[InstanceId](symbol: Symb, id: InstanceId)  extends DIKey {
