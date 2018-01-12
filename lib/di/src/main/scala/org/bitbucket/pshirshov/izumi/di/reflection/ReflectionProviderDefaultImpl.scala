@@ -7,7 +7,6 @@ import org.bitbucket.pshirshov.izumi.di.{TypeFull, TypeSymb}
 class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends ReflectionProvider {
 
   override def symbolDeps(symbl: TypeFull): Seq[Association] = {
-    // TODO: use extractors
     symbl match {
       case ConcreteSymbol(symb) =>
         val constructors = symb.decls.filter(_.isConstructor)

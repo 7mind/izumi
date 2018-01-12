@@ -2,7 +2,10 @@ package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{DuplicateKeysException, ForwardRefException, MissingRefException}
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.SetOp
 import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, ReadyPlan}
+
+import scala.collection.mutable
 
 class SanityCheckerDefaultImpl
 (
@@ -30,10 +33,18 @@ class SanityCheckerDefaultImpl
 
 
   override def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit = {
-    assertNoDuplicateKeys(ops.map(_.target))
+
+    val (uniqOps, nonUniqueOps) = ops.foldLeft((mutable.ArrayBuffer[DIKey](), mutable.HashSet[DIKey]())) {
+      case ((unique, nonunique), s: SetOp) =>
+        (unique, nonunique += s.target)
+      case ((unique, nonunique), s) =>
+        (unique += s.target, nonunique)
+    }
+
+    assertNoDuplicateKeys(uniqOps ++ nonUniqueOps)
   }
 
-  override def assertNoDuplicateKeys(keys: Seq[DIKey]): Unit = {
+  private def assertNoDuplicateKeys(keys: Seq[DIKey]): Unit = {
     if (duplicates(keys).nonEmpty) {
       throw new DuplicateKeysException(s"Cannot finish the plan, there are duplicates: $keys!", keys)
     }
