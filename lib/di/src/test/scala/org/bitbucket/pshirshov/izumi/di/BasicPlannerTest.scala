@@ -1,13 +1,11 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def, ImplDef}
+import org.bitbucket.pshirshov.izumi.di.definition.{DIDef, Def}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.UntranslatablePlanException
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{DuplicatedStatement, UnbindableBinding, UnsolvableConflict}
 import org.bitbucket.pshirshov.izumi.di.planning.{PlanResolver, PlanResolverDefaultImpl}
 import org.scalatest.WordSpec
-
-import scala.reflect.runtime.universe._
 
 object Case1 {
 
@@ -95,11 +93,14 @@ object Case5 {
 
 }
 
+
 class BasicPlannerTest extends WordSpec {
 
-  def symbol[T: Tag]: ImplDef = ImplDef.TypeImpl(typeTag[T].tpe.typeSymbol)
+  import org.bitbucket.pshirshov.izumi.di.definition.BasicBindingDsl._
+
 
   def mkInjector(): Injector = Injector.emerge()
+
 
   "DI Context" should {
     "support cute api calls :3" in {
@@ -112,16 +113,13 @@ class BasicPlannerTest extends WordSpec {
     "maintain correct operation order" in {
       import Case1._
       val definition: DIDef = new DIDef {
-
-        import Def._
-
-        override def bindings: Seq[Def] = Seq(
-          SingletonBinding(DIKey.get[TestClass], symbol[TestClass])
-          , SingletonBinding(DIKey.get[TestDependency3], symbol[TestDependency3])
-          , SingletonBinding(DIKey.get[TestDependency0], symbol[TestImpl0])
-          , SingletonBinding(DIKey.get[TestDependency1], symbol[TestDependency1])
-          , SingletonBinding(DIKey.get[TestCaseClass], symbol[TestCaseClass])
-        )
+        override def bindings: Seq[Def] = start
+          .add[TestClass]
+          .add[TestDependency3]
+          .add[TestDependency0, TestImpl0]
+          .add[TestDependency1]
+          .add[TestCaseClass]
+          .finish
       }
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -138,13 +136,10 @@ class BasicPlannerTest extends WordSpec {
       import Case2._
 
       val definition: DIDef = new DIDef {
-
-        import Def._
-
-        override def bindings: Seq[Def] = Seq(
-          SingletonBinding(DIKey.get[Circular2], symbol[Circular2])
-          , SingletonBinding(DIKey.get[Circular1], symbol[Circular1])
-        )
+        override def bindings: Seq[Def] = start
+          .add[Circular2]
+          .add[Circular1]
+          .finish
       }
 
       val injector = mkInjector()
@@ -155,14 +150,11 @@ class BasicPlannerTest extends WordSpec {
       import Case3._
 
       val definition: DIDef = new DIDef {
-
-        import Def._
-
-        override def bindings: Seq[Def] = Seq(
-          SingletonBinding(DIKey.get[Circular3], symbol[Circular3])
-          , SingletonBinding(DIKey.get[Circular1], symbol[Circular1])
-          , SingletonBinding(DIKey.get[Circular2], symbol[Circular2])
-        )
+        override def bindings: Seq[Def] = start
+          .add[Circular3]
+          .add[Circular1]
+          .add[Circular2]
+          .finish
       }
 
       val injector = mkInjector()
@@ -177,7 +169,7 @@ class BasicPlannerTest extends WordSpec {
         import Def._
 
         override def bindings: Seq[Def] = Seq(
-          SingletonBinding(DIKey.get[Dependency], symbol[Long])
+          SingletonBinding(DIKey.get[Dependency], symbolDef[Long])
         )
       }
 
@@ -192,13 +184,10 @@ class BasicPlannerTest extends WordSpec {
       import Case4._
 
       val definition: DIDef = new DIDef {
-
-        import Def._
-
-        override def bindings: Seq[Def] = Seq(
-          SingletonBinding(DIKey.get[Dependency], symbol[Impl1])
-          , SingletonBinding(DIKey.get[Dependency], symbol[Impl2])
-        )
+        override def bindings: Seq[Def] = start
+          .add[Dependency, Impl1]
+          .add[Dependency, Impl2]
+          .finish
       }
 
       val injector = mkInjector()
@@ -212,13 +201,10 @@ class BasicPlannerTest extends WordSpec {
       import Case4._
 
       val definition: DIDef = new DIDef {
-
-        import Def._
-
-        override def bindings: Seq[Def] = Seq(
-          SingletonBinding(DIKey.get[Dependency], symbol[Impl1])
-          , SingletonBinding(DIKey.get[Dependency], symbol[Impl1])
-        )
+        override def bindings: Seq[Def] = start
+          .add[Dependency, Impl1]
+          .add[Dependency, Impl1]
+          .finish
       }
 
       val injector = mkInjector()
@@ -233,14 +219,11 @@ class BasicPlannerTest extends WordSpec {
       import Case5._
 
       val definition: DIDef = new DIDef {
-
-        import Def._
-
-        override def bindings: Seq[Def] = Seq(
-          SingletonBinding(DIKey.get[Factory], symbol[Factory])
-          , SingletonBinding(DIKey.get[OverridingFactory], symbol[OverridingFactory])
-          , SingletonBinding(DIKey.get[AssistedFactory], symbol[AssistedFactory])
-        )
+        override def bindings: Seq[Def] = start
+          .add[Factory]
+          .add[OverridingFactory]
+          .add[AssistedFactory]
+          .finish
       }
 
       val injector = mkInjector()
