@@ -19,6 +19,10 @@ object BasicBindingDsl {
       BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], symbolDef[I]))
     }
 
+    def add[T:Tag](instance: T): BindingSupport = {
+      BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(instance)))
+    }
+
     def finish: Seq[Def] = bindings
   }
 }
