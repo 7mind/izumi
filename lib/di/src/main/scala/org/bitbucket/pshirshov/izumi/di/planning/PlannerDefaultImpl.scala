@@ -32,17 +32,12 @@ class PlannerDefaultImpl
           case Possible(ops) =>
             sanityChecker.assertNoDuplicateOps(ops.flatten)
             val next = planMergingPolicy.extendPlan(currentPlan, binding, ops)
-            //sanityChecker.assertNoDuplicateOps(next.statements)
+            sanityChecker.assertNoDuplicateOps(next.statements)
             planningObsever.onSuccessfulStep(next)
             next
 
           case Impossible(implDefs) =>
-            val next = DodgyPlan(
-              currentPlan.imports
-              , currentPlan.sets
-              , currentPlan.steps
-              , currentPlan.issues :+ UnbindableBinding(binding, implDefs)
-            )
+            val next = currentPlan.copy(issues = currentPlan.issues :+ UnbindableBinding(binding, implDefs))
             planningObsever.onFailedStep(next)
             next
         }
@@ -50,10 +45,12 @@ class PlannerDefaultImpl
 
     val finalPlan = Value(plan)
       .map(forwardingRefResolver.resolve)
+      .eff(planningObsever.onReferencesResolved)
       .map(planResolver.resolve(_, context))
-      .value
-
-    sanityChecker.assertSanity(finalPlan)
+      .eff(planningObsever.onResolvingFinished)
+      .eff(sanityChecker.assertSanity)
+      .eff(planningObsever.onFinalPlan)
+      .get
 
     finalPlan
   }

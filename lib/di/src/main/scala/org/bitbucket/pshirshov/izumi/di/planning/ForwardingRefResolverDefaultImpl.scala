@@ -26,6 +26,6 @@ class ForwardingRefResolverDefaultImpl
         Seq(step)
     }
 
-    DodgyPlan(plan.imports, plan.sets, resolvedSteps, plan.issues)
+    plan.copy(steps = resolvedSteps)
   }
 }
