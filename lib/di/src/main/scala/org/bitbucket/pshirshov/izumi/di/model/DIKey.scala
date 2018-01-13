@@ -9,6 +9,9 @@ sealed trait DIKey {
 }
 
 case class EqualitySafeType(symbol: TypeFullX) {
+
+  override def toString: String = symbol.toString
+
   override def hashCode(): Int = symbol.toString.hashCode
 
   override def equals(obj: scala.Any): Boolean = obj match {

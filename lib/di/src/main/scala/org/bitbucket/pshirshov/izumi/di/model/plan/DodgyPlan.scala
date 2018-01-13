@@ -1,6 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{Nop, Statement}
+import org.bitbucket.pshirshov.izumi.di.model.DIKey
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 
 /**
   * ***********,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,***./((%%&&&%%##((//////((((((((((((((((((((((///(((((((((//////(((
@@ -116,24 +117,19 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{Nop, Statement}
   * &&&&&&&&&&&&&&&&&&&&&&&&&&&%#&&&&&&@@@@&&&&&&&&&&&&&@@@&&&&&%%%%%%&&&&&&&&&&@@@@@@@@&@@@&&@@&&&&&&&&&&&&&&&&&&&&&&&&&&&
   **/
 case class DodgyPlan(
-                      imports: Set[Statement]
-                     , sets: Set[Statement]
-                     , steps: Seq[DodgyOp]
+                      imports: Map[DIKey, ExecutableOp.ImportDependency]
+                     , sets: Set[CreateSet]
+                     , steps: Seq[InstantiationOp]
+                     , issues: Seq[PlanningFailure]
                     ) {
-  def flatten: Seq[DodgyOp] = imports.toSeq ++ sets.toSeq ++ steps
+  def statements: Seq[ExecutableOp] =  imports.values.toSeq ++ sets.toStream ++ steps
 
-  def statements: Seq[ExecutableOp] = flatten.collect {case s: Statement => s.op}
+  override def toString: String = {
+    (issues.map(_.toString) ++ statements.map(_.format)).mkString("\n")
+  }
 
-  override def toString: String = flatten.collect {
-    case Statement(op) =>
-      op.format
-    case Nop(message) =>
-      message
-    case v =>
-      v.toString
-  }.mkString("\n")
 }
 
 object DodgyPlan {
-  def empty: DodgyPlan = DodgyPlan(Set.empty, Set.empty, Seq.empty)
+  def empty: DodgyPlan = DodgyPlan(Map.empty, Set.empty, Seq.empty, Seq.empty)
 }
