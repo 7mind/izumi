@@ -1,5 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di.reflection
 
+import org.bitbucket.pshirshov.izumi.di.model.EqualitySafeType
 import org.bitbucket.pshirshov.izumi.di.model.plan.Association
 import org.bitbucket.pshirshov.izumi.di.{TypeFull, TypeSymb}
 
@@ -9,7 +10,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
   override def symbolDeps(symbl: TypeFull): Seq[Association] = {
     symbl match {
       case ConcreteSymbol(symb) =>
-        val constructors = symb.members.filter(_.isConstructor)
+        val constructors = symb.symbol.members.filter(_.isConstructor)
         // TODO: list should not be empty (?) and should has only one element (?)
         val selectedConstructor = constructors.head
 
@@ -21,7 +22,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
 
       case AbstractSymbol(symb) =>
         // empty paramLists means parameterless method, List(List()) means nullarg method()
-        val declaredAbstractMethods = symb.members.filter(d => isWireableMethod(symb, d))
+        val declaredAbstractMethods = symb.symbol.members.filter(d => isWireableMethod(symb, d))
         declaredAbstractMethods.map(m => Association.Method(m, keyProvider.keyFromMethod(m))).toSeq
 
       case FactorySymbol(_, factoryMethods) =>
@@ -31,8 +32,8 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
             val selectedParamList = paramLists.head
 
             val unrequiredMaterials = parametersToMaterials(selectedParamList).toSet
-            val allDeps = symbolDeps(m.asMethod.returnType)
-            val filtered = allDeps.filterNot(d => unrequiredMaterials.exists(m => d.wireWith.symbol =:= m.wireWith.symbol))
+            val allDeps = symbolDeps(EqualitySafeType(m.asMethod.returnType))
+            val filtered = allDeps.filterNot(d => unrequiredMaterials.exists(m => d.wireWith.symbol == m.wireWith.symbol))
 
             filtered
         }
@@ -51,20 +52,20 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
   }
 
   override def isConcrete(symb: TypeFull): Boolean = {
-    symb.typeSymbol.isClass && !symb.typeSymbol.isAbstract
+    symb.symbol.typeSymbol.isClass && !symb.symbol.typeSymbol.isAbstract
   }
 
   override def isWireableAbstract(symb: TypeFull): Boolean = {
-    symb.typeSymbol.isClass && symb.typeSymbol.isAbstract && symb.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
+    symb.symbol.typeSymbol.isClass && symb.symbol.typeSymbol.isAbstract && symb.symbol.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
   }
 
   override def isFactory(symb: TypeFull): Boolean = {
-    symb.typeSymbol.isClass && symb.typeSymbol.isAbstract && symb.members.filter(_.isAbstract).forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
+    symb.symbol.typeSymbol.isClass && symb.symbol.typeSymbol.isAbstract && symb.symbol.members.filter(_.isAbstract).forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
   }
 
   private def isWireableMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
-      decl.info.paramLists.isEmpty && decl.asMethod.returnType != tpe
+      decl.info.paramLists.isEmpty && EqualitySafeType(decl.asMethod.returnType) != tpe
     }
   }
 
@@ -86,7 +87,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
 
   private object FactorySymbol {
     def unapply(arg: TypeFull): Option[(TypeFull, Seq[TypeSymb])] = {
-      Some(arg).filter(isFactory).map(f => (f, f.members.filter(m => isFactoryMethod(f, m)).toSeq))
+      Some(arg).filter(isFactory).map(f => (f, f.symbol.members.filter(m => isFactoryMethod(f, m)).toSeq))
     }
   }
 

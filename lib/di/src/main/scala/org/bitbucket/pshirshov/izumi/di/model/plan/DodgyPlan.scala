@@ -1,7 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{Nop, Statement}
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{CreateSet, ImportDependency}
 
 /**
   * ***********,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,***./((%%&&&%%##((//////((((((((((((((((((((((///(((((((((//////(((
