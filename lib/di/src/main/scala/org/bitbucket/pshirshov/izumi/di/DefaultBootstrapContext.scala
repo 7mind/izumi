@@ -13,7 +13,9 @@ trait DefaultBootstrapContext extends Locator {
   private val lookupInterceptor = NullLookupInterceptor.instance
 
   private val factoryOfFactories = new TheFactoryOfAllTheFactoriesDefaultImpl()
-  private val planResolver = new PlanResolverDefaultImpl()
+  private val planningObsever = new PlanningObserverDefaultImpl()
+
+  private val planResolver = new PlanResolverDefaultImpl(planningObsever)
   private val dependencyKeyProvider = new DependencyKeyProviderDefaultImpl()
 
   private val planAnalyzer = new PlanAnalyzerDefaultImpl()
@@ -23,12 +25,14 @@ trait DefaultBootstrapContext extends Locator {
   private val reflectionProviderDefaultImpl = new ReflectionProviderDefaultImpl(dependencyKeyProvider)
   private val customOpHandler = CustomOpHandler.NullCustomOpHander
 
-  private val planner = new DefaultPlannerImpl(
+
+  private val planner = new PlannerDefaultImpl(
     planResolver
     , forwardingRefResolver
     , reflectionProviderDefaultImpl
     , sanityChecker
     , customOpHandler
+    , planningObsever
   )
 
   // TODO: may we bootstrap ourself somehow?

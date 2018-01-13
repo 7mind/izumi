@@ -8,7 +8,7 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.{DodgyPlan, FinalPlan, FinalP
 
 
 
-class PlanResolverDefaultImpl extends PlanResolver {
+class PlanResolverDefaultImpl(planningObsever: PlanningObsever) extends PlanResolver {
   override def resolve(plan: DodgyPlan, definition: ContextDefinition): FinalPlan = {
     val (goodSteps, badSteps) = plan.flatten.filterNot(_.isInstanceOf[Nop]).partition(_.isInstanceOf[Statement])
 
@@ -18,10 +18,7 @@ class PlanResolverDefaultImpl extends PlanResolver {
 
     val ops = goodSteps.collect { case op: Statement => op.op }
     val finalPlan = new FinalPlanImmutableImpl(ops, definition)
-
-    System.err.println("=" * 60 + " Final Plan " + "=" * 60)
-    System.err.println(s"$finalPlan")
-    System.err.println("\n")
+    planningObsever.onFinalPlan(finalPlan)
     finalPlan
   }
 }
