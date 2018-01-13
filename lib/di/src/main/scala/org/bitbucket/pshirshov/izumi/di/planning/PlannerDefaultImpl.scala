@@ -39,8 +39,6 @@ class DefaultPlannerImpl
   extends Planner {
 
   override def plan(context: ContextDefinition): FinalPlan = {
-    //    System.err.println(s"Planning on context $context")
-
     val plan = context.bindings.foldLeft(DodgyPlan.empty) {
       case (currentPlan, binding) =>
         val nextOps = computeProvisioning(currentPlan, binding)
@@ -50,9 +48,6 @@ class DefaultPlannerImpl
             sanityChecker.assertNoDuplicateOps(ops.flatten)
             val next = extendPlan(currentPlan, binding, ops)
             sanityChecker.assertNoDuplicateOps(next.statements)
-
-            //            System.err.println("-" * 60 + " Next Plan " + "-" * 60)
-            //            System.err.println(next)
             next
 
           case Impossible(implDefs) =>
@@ -61,21 +56,9 @@ class DefaultPlannerImpl
               , currentPlan.sets
               , currentPlan.steps :+ UnbindableBinding(binding, implDefs)
             )
-            //            System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
-            //            System.err.println(next)
             next
         }
     }
-
-    //    val (justOps, setDefinitions) = plan.steps.foldLeft((scala.collection.mutable.ArrayBuffer[DodgyOp](), scala.collection.mutable.HashSet[Statement]())) {
-    //      case ((ops, createSetOps), s@Statement(_:ExecutableOp.CreateSet)) =>
-    //        (ops, createSetOps += s)
-    //
-    //      case ((ops, createSetOps), op) =>
-    //        (ops += op, createSetOps)
-    //    }
-
-    //val withSetsAhead = DodgyPlan(setDefinitions.toSeq ++ justOps)
 
     val finalPlan = Value(plan)
       .map(forwardingRefResolver.resolve)
@@ -172,10 +155,6 @@ class DefaultPlannerImpl
       case NoConflict(newOp) =>
         Put(newOp)
 
-      //            // TODO: here we may check for circular deps
-      //            case Conflict(newOp, Statement(existing: ImportDependency)) =>
-      //              Replace(existing, newOp)
-
       case Conflict(newOp, existing) if Statement(newOp) == existing =>
         SolveRedefinition(newOp)
 
@@ -183,13 +162,7 @@ class DefaultPlannerImpl
         SolveUnsolvable(newOp, existing)
     }
 
-    //          val replacements = transformations.collect { case t: Replace => Statement(t.op): DodgyOp }.toSet
-    //
-    //          val beforeReplaced = before.filterNot(replacements.contains)
-    //          val afterReplaced = after.filterNot(replacements.contains)
-
     val transformationsWithoutReplacements = transformations.map {
-      //            case t: Replace => DodgyOp.Statement(t.replacement)
       case t: Put => DodgyOp.Statement(t.op)
       case t: SolveRedefinition => DodgyOp.DuplicatedStatement(t.op)
       case t: SolveUnsolvable => DodgyOp.UnsolvableConflict(t.op, t.existing)
@@ -212,94 +185,6 @@ class DefaultPlannerImpl
       , safeNewProvisions
     )
   }
-
-  //  private def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
-  //    import currentOp._
-  //    val withConflicts = findConflicts(currentPlan, provisions)
-  //
-  //    val (before, after) = splitCurrentPlan(currentPlan, withConflicts)
-  //
-  //    val transformations = withConflicts.map {
-  //      case NoConflict(newOp) =>
-  //        Put(newOp)
-  //
-  //      // TODO: here we may check for circular deps
-  //      case Conflict(newOp, Statement(existing: ImportDependency)) =>
-  //        Replace(existing, newOp)
-  //
-  //      case Conflict(newOp, existing) if Statement(newOp) == existing =>
-  //        SolveRedefinition(newOp)
-  //
-  //      case Conflict(newOp, existing) =>
-  //        SolveUnsolvable(newOp, existing)
-  //    }
-  //
-  //    val replacements = transformations.collect { case t: Replace => Statement(t.op): DodgyOp }.toSet
-  //
-  //    val beforeReplaced = before.filterNot(replacements.contains)
-  //    val afterReplaced = after.filterNot(replacements.contains)
-  //
-  //    val transformationsWithoutReplacements = transformations.map {
-  //      case t: Replace => DodgyOp.Statement(t.replacement)
-  //      case t: Put => DodgyOp.Statement(t.op)
-  //      case t: SolveRedefinition => DodgyOp.DuplicatedStatement(t.op)
-  //      case t: SolveUnsolvable => DodgyOp.UnsolvableConflict(t.op, t.existing)
-  //    }
-  //
-  //    Seq(Nop(s"//  imp: $binding")) ++
-  //      imports.map(DodgyOp.Statement) ++
-  //      Seq(Nop(s"// head: $binding")) ++
-  //      beforeReplaced ++
-  //      Seq(Nop(s"// tran: $binding")) ++
-  //      transformationsWithoutReplacements ++
-  //      Seq(Nop(s"// tail: $binding")) ++
-  //      afterReplaced ++
-  //      Seq(Nop(s"//  end: $binding"))
-  //  }
-  //
-  //  private def splitCurrentPlan(currentPlan: DodgyPlan, withConflicts: Seq[PlanningConflict]): (Seq[DodgyOp], Seq[DodgyOp]) = {
-  //    import PlanningConflict._
-  //    val currentPlanBlock = currentPlan.flatten
-  //    val insertAt = withConflicts
-  //      .map {
-  //        case Conflict(_, Statement(op)) =>
-  //          currentPlanBlock.indexOf(op)
-  //
-  //        case _ => // we don't consider all other cases
-  //          currentPlanBlock.length
-  //      }
-  //      .min
-  //
-  //    val (before, after) = currentPlanBlock.splitAt(insertAt)
-  //    (before, after)
-  //  }
-  //
-  //  private def findConflicts(currentPlan: DodgyPlan, toProvision: Seq[ExecutableOp]): Seq[PlanningConflict] = {
-  //    import PlanningConflict._
-  //    val currentUnwrapped = currentPlan.flatten.collect { case s: Statement => s }.toSet
-  //
-  //    val withConflicts = toProvision.map {
-  //      newOp =>
-  //        // safe to use .find, plan itself cannot contain conflicts
-  //        // TODO: ineffective!
-  //        currentUnwrapped.find(dop => areConflicting(newOp, dop.op)) match {
-  //          case Some(existing) =>
-  //            Conflict(newOp, existing)
-  //          case _ =>
-  //            NoConflict(newOp)
-  //        }
-  //    }
-  //    withConflicts
-  //  }
-  //
-  //  def areConflicting(newOp: ExecutableOp, existingOp: ExecutableOp): Boolean = {
-  //    (existingOp, newOp) match {
-  //      case (eop: SetOp, nop: SetOp) if eop.target == nop.target =>
-  //        false
-  //      case (eop, nop) =>
-  //        eop.target == nop.target
-  //    }
-  //  }
 
   private def splitCurrentPlan(currentPlan: Seq[DodgyOp], withConflicts: Seq[PlanningConflict]): (Seq[DodgyOp], Seq[DodgyOp]) = {
     import PlanningConflict._
@@ -380,5 +265,3 @@ class DefaultPlannerImpl
     }
   }
 }
-
-
