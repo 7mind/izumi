@@ -10,11 +10,11 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.FinalPlan
   * - instantiation logic => InjectorDefaultImpl#produce
   * - instantiation logic: provide classloader policies from outside
   * - use producer interpreter in bootstrap context
-  * - planbuilder to => simplify planning
-  * - import comments
-  * 
-  * - full test coverage
   *
+  * - full test coverage
+  * 
+  * + planbuilder => simplify planning
+  * + import comments
   * + expose Definitions and Plans in Contexts
   * + Context enumeration
   * + multibindings

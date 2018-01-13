@@ -30,11 +30,13 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
       , currentPlan.issues
     )
 
-    val issues: Seq[PlanningFailure] = newPlan
+    val issuesMap = newPlan
       .statements
       .groupBy(_.target)
       .filter(_._2.lengthCompare(1) > 0)
       .filterNot(_._2.forall(_.isInstanceOf[SetOp]))
+
+    val issues: Seq[PlanningFailure] = issuesMap
       .map {
         case (key, values) if values.toSet.size == 1 =>
           PlanningFailure.DuplicatedStatements(key, values)
@@ -43,7 +45,7 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
       }
       .toSeq
 
-    newPlan.copy(issues = newPlan.issues ++ issues)
+    newPlan.copy(issues = newPlan.issues ++ issues, steps = newPlan.steps.filterNot(step => issuesMap.contains(step.target)))
   }
 
   private def computeNewImports(currentPlan: DodgyPlan, currentOp: NextOps) = {

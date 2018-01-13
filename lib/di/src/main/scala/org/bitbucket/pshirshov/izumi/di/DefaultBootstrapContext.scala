@@ -15,7 +15,7 @@ trait DefaultBootstrapContext extends Locator {
   private val factoryOfFactories = new TheFactoryOfAllTheFactoriesDefaultImpl()
   private val planningObsever = new PlanningObserverDefaultImpl()
 
-  private val planResolver = new PlanResolverDefaultImpl(planningObsever)
+  private val planResolver = new PlanResolverDefaultImpl()
   private val dependencyKeyProvider = new DependencyKeyProviderDefaultImpl()
 
   private val planAnalyzer = new PlanAnalyzerDefaultImpl()

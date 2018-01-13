@@ -125,7 +125,8 @@ case class DodgyPlan(
   def statements: Seq[ExecutableOp] =  imports.values.toSeq ++ sets.toStream ++ steps
 
   override def toString: String = {
-    (issues.map(_.toString) ++ statements.map(_.format)).mkString("\n")
+    val repr = issues.map(_.toString) ++ statements.map(_.format)
+    repr.mkString("\n")
   }
 
 }
