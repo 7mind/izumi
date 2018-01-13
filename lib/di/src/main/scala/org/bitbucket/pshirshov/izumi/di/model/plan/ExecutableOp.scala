@@ -29,6 +29,17 @@ object ExecutableOp {
     def deps: Seq[Association]
   }
 
+  sealed trait SetOp extends ExecutableOp {
+  }
+
+  case class ImportDependency(target: DIKey) extends ExecutableOp {
+    override def format: String = f"""$target := import $target"""
+  }
+
+  case class CreateSet(target: DIKey, tpe: TypeFull) extends ExecutableOp with SetOp {
+    override def format: String = f"""$target := newset[$tpe]"""
+  }
+
   case class InstantiateClass(target: DIKey, impl: TypeFull, deps: Seq[Association]) extends InstantiationOp with DependentOp with FormattableOp {
     override def format: String = doFormat(impl, "make", ('[', ']'), ('(', ')'))
     override def toString: String = format
@@ -52,32 +63,20 @@ object ExecutableOp {
     override def toString: String = format
   }
 
-  case class ImportDependency(target: DIKey) extends ExecutableOp {
-    override def format: String = f"""$target := import $target"""
-  }
-
-  trait SetOp extends ExecutableOp {
-
-  }
-
-  case class CreateSet(target: DIKey, tpe: TypeFull) extends SetOp {
-    override def format: String = f"""$target := make[$tpe]"""
-  }
-
-  case class AddToSet(target: DIKey, element: DIKey) extends SetOp {
+  case class AddToSet(target: DIKey, element: DIKey) extends InstantiationOp with SetOp {
     override def format: String = f"""$target += $element"""
   }
 
-  case class CustomOp(target: DIKey, data: CustomDef) extends ExecutableOp {
+  case class CustomOp(target: DIKey, data: CustomDef) extends InstantiationOp {
     override def format: String = f"""$target := custom($target)"""
   }
 
-  case class MakeProxy(op: ExecutableOp, forwardRefs: Set[DIKey]) extends ExecutableOp  {
+  case class MakeProxy(op: ExecutableOp, forwardRefs: Set[DIKey]) extends InstantiationOp  {
     override def target: DIKey = op.target
     override def format: String = f"""$target := proxy($op, $forwardRefs)"""
   }
 
-  case class InitProxies(op: ExecutableOp, proxies: Set[DIKey]) extends ExecutableOp {
+  case class InitProxies(op: ExecutableOp, proxies: Set[DIKey]) extends InstantiationOp {
     override def target: DIKey = op.target
     override def format: String = f"""$target := init($proxies, $op)"""
   }

@@ -11,7 +11,8 @@ class ForwardingRefResolverDefaultImpl
   protected val planAnalyzer: PlanAnalyzer
 ) extends ForwardingRefResolver {
   override def resolve(plan: DodgyPlan): DodgyPlan = {
-    val reftable = planAnalyzer.computeFwdRefTable(plan.steps.collect { case Statement(op) => op }.toStream)
+    val statements = plan.statements
+    val reftable = planAnalyzer.computeFwdRefTable(statements)
 
     import reftable._
 
@@ -25,6 +26,7 @@ class ForwardingRefResolverDefaultImpl
       case step =>
         Seq(step)
     }
-    DodgyPlan(resolvedSteps)
+
+    DodgyPlan(plan.imports, plan.sets, resolvedSteps)
   }
 }

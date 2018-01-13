@@ -9,7 +9,7 @@ import scala.collection.mutable
 
 class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
 
-  override def computeFwdRefTable(plan: Stream[ExecutableOp]): RefTable = {
+  override def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable = {
     computeFwdRefTable(
       plan
       , (acc) => (key) => acc.contains(key)
@@ -17,7 +17,7 @@ class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
     )
   }
 
-  override def computeFullRefTable(plan: Stream[ExecutableOp]): RefTable = {
+  override def computeFullRefTable(plan: Iterable[ExecutableOp]): RefTable = {
     computeFwdRefTable(
       plan
       , (acc) => (key) => false
@@ -26,7 +26,7 @@ class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
   }
 
   override def computeFwdRefTable(
-                                             plan: Stream[ExecutableOp]
+                                             plan: Iterable[ExecutableOp]
                                              , refFilter: Accumulator => DIKey => Boolean
                                              , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
                                            ): RefTable = {

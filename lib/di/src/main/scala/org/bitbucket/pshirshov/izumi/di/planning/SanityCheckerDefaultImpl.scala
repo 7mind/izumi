@@ -41,7 +41,7 @@ class SanityCheckerDefaultImpl
         (unique += s.target, nonunique)
     }
 
-    assertNoDuplicateKeys(uniqOps ++ nonUniqueOps)
+    assertNoDuplicateKeys(uniqOps ++ nonUniqueOps.toSeq)
   }
 
   private def assertNoDuplicateKeys(keys: Seq[DIKey]): Unit = {
