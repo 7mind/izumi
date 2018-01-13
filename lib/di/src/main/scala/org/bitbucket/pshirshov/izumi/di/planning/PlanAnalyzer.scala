@@ -8,12 +8,12 @@ import scala.collection.mutable
 trait PlanAnalyzer {
   type Accumulator = mutable.HashMap[DIKey, mutable.Set[DIKey]]
 
-  def computeFwdRefTable(plan: Stream[ExecutableOp]): RefTable
+  def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable
 
-  def computeFullRefTable(plan: Stream[ExecutableOp]): RefTable
+  def computeFullRefTable(plan: Iterable[ExecutableOp]): RefTable
 
   def computeFwdRefTable(
-                          plan: Stream[ExecutableOp]
+                          plan: Iterable[ExecutableOp]
                           , refFilter: Accumulator => DIKey => Boolean
                           , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
                         ): RefTable
