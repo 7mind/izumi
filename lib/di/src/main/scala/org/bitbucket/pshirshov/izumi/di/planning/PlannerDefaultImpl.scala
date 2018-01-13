@@ -2,39 +2,25 @@ package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, ImplDef}
-import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp._
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{AddToSet, CreateSet, ImportDependency, InstantiationOp}
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{AddToSet, ImportDependency}
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict.{Conflict, NoConflict}
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp.{Put, SolveRedefinition, SolveUnsolvable}
-import org.bitbucket.pshirshov.izumi.di.model.plan.Provisioning.{Impossible, Possible}
+import org.bitbucket.pshirshov.izumi.di.model.plan.Provisioning.{Impossible, InstanceProvisioning, Possible, StepProvisioning}
 import org.bitbucket.pshirshov.izumi.di.model.plan._
+import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Value}
 import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProvider
 import org.bitbucket.pshirshov.izumi.di.{Planner, TypeFull}
 
 
-case class Value[A](value: A) {
-  @inline final def map[B](f: A => B): Value[B] =
-    Value(f(this.value))
-}
-
-case class NextOps(
-                    imports: Set[ImportDependency]
-                    , sets: Set[CreateSet]
-                    , provisions: Seq[InstantiationOp]
-                  ) {
-  def flatten: Seq[ExecutableOp] = {
-    imports.toSeq ++ sets.toSeq ++ provisions
-  }
-}
-
-class DefaultPlannerImpl
+class PlannerDefaultImpl
 (
   protected val planResolver: PlanResolver
   , protected val forwardingRefResolver: ForwardingRefResolver
   , protected val reflectionProvider: ReflectionProvider
   , protected val sanityChecker: SanityChecker
   , protected val customOpHandler: CustomOpHandler
+  , protected val planningObsever: PlanningObsever
 )
   extends Planner {
 
@@ -48,6 +34,7 @@ class DefaultPlannerImpl
             sanityChecker.assertNoDuplicateOps(ops.flatten)
             val next = extendPlan(currentPlan, binding, ops)
             sanityChecker.assertNoDuplicateOps(next.statements)
+            planningObsever.onSuccessfulStep(next)
             next
 
           case Impossible(implDefs) =>
@@ -56,6 +43,7 @@ class DefaultPlannerImpl
               , currentPlan.sets
               , currentPlan.steps :+ UnbindableBinding(binding, implDefs)
             )
+            planningObsever.onFailedStep(next)
             next
         }
     }
@@ -70,7 +58,7 @@ class DefaultPlannerImpl
     finalPlan
   }
 
-  private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): Provisioning[NextOps, Seq[ImplDef]] = {
+  private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): StepProvisioning = {
     binding match {
       case c: SingletonBinding =>
         val deps = enumerateDeps(c)
@@ -116,7 +104,7 @@ class DefaultPlannerImpl
     toImport.toSet
   }
 
-  private def provisioning(binding: SingletonBinding, deps: Seq[Association]): Provisioning[Seq[InstantiationOp], Seq[ImplDef]] = {
+  private def provisioning(binding: SingletonBinding, deps: Seq[Association]): InstanceProvisioning = {
     import Provisioning._
     val target = binding.target
 
