@@ -15,7 +15,7 @@ object ExecutableOp {
 
     protected def doFormat(impl: TypeFull, opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
       val sb = new StringBuilder()
-      sb.append(s"$target := $opName${opFormat._1}${impl.typeSymbol.fullName}${opFormat._2}")
+      sb.append(s"$target := $opName${opFormat._1}${impl.symbol.typeSymbol.fullName}${opFormat._2}")
       if (deps.nonEmpty) {
         sb.append(deps.map(_.format).mkString(s" ${delim._1}\n    ", ",\n    ", s"\n${delim._2}"))
       }
