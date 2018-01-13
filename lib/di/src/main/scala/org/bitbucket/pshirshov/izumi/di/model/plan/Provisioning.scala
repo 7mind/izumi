@@ -1,10 +1,17 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.definition.ImplDef
-
-sealed trait Provisioning
+sealed trait Provisioning[G, B] {
+  @inline def map[G1](f: G => G1): Provisioning[G1, B]
+}
 
 object Provisioning {
-  case class Possible(ops: Seq[ExecutableOp]) extends Provisioning
-  case class Impossible(implDef: ImplDef) extends Provisioning
+
+  case class Possible[G, B](possible: G) extends Provisioning[G, B] {
+    @inline override def map[G1](f: G => G1): Provisioning[G1, B] = Possible(f(possible))
+  }
+
+  case class Impossible[G, B](impossible: B) extends Provisioning[G, B] {
+    @inline override def map[G1](f: G => G1): Provisioning[G1, B] = Impossible(impossible)
+  }
+
 }
