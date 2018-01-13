@@ -112,6 +112,13 @@ class BasicPlannerTest extends WordSpec {
   def mkInjector(): Injector = Injector.emerge()
 
 
+  "DI Keys" should {
+    "support equality checks" in {
+      assert(DIKey.get[PlanResolver] == DIKey.get[PlanResolver])
+      assert(DIKey.get[PlanResolver].named("xxx") == DIKey.get[PlanResolver].named("xxx"))
+    }
+  }
+
   "DI Context" should {
     "support cute api calls :3" in {
       import scala.language.reflectiveCalls

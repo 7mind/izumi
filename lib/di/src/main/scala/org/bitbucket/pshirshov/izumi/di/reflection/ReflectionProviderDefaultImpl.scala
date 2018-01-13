@@ -32,7 +32,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
 
             val unrequiredMaterials = parametersToMaterials(selectedParamList).toSet
             val allDeps = symbolDeps(m.asMethod.returnType)
-            val filtered = allDeps.filterNot(d => unrequiredMaterials.exists(m => d.wireWith.symbol == m.wireWith.symbol))
+            val filtered = allDeps.filterNot(d => unrequiredMaterials.exists(m => d.wireWith.symbol =:= m.wireWith.symbol))
 
             filtered
         }
