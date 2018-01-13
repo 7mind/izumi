@@ -1,13 +1,13 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.model.DIKey
+import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.MissingInstanceException
 import org.bitbucket.pshirshov.izumi.di.model.plan.FinalPlan
 
 import scala.reflect.runtime.universe._
 
 case class TypedRef[+T:Tag](value: T) {
-  def symbol: TypeFull = typeTag[T].tpe
+  def symbol: TypeFull = EqualitySafeType.get[T]
 }
 
 case class IdentifiedRef(key: DIKey, value: Any)
@@ -31,7 +31,7 @@ trait Locator {
 
   protected def lookup[T: Tag](key: DIKey): Option[TypedRef[T]] = {
     unsafeLookup(key)
-      .filter(_ => key.symbol.baseClasses.contains(typeTag[T].tpe.typeSymbol))
+      .filter(_ => key.symbol.symbol.baseClasses.contains(typeTag[T].tpe.typeSymbol))
       .map {
         value =>
           TypedRef[T](value.asInstanceOf[T])

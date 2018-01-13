@@ -1,19 +1,14 @@
 package org.bitbucket.pshirshov.izumi.di.definition
 
+import org.bitbucket.pshirshov.izumi.di.Tag
 import org.bitbucket.pshirshov.izumi.di.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
-import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.{TypeFull, Tag}
+import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 
 case class TrivialDIDef(bindings: Seq[Binding]) extends ContextDefinition
 
 object TrivialDIDef {
 
-  def symbolDef[T: Tag]: ImplDef = ImplDef.TypeImpl(typeSymbol)
-
-  def typeSymbol[T: Tag]: TypeFull = {
-    import scala.reflect.runtime.universe._
-    typeTag[T].tpe
-  }
+  def symbolDef[T: Tag]: ImplDef = ImplDef.TypeImpl(EqualitySafeType.get[T])
 
   class BindingSupport(bindings: Seq[Binding]) {
     def nameless[T: Tag]: BindingSupport = {
@@ -25,7 +20,7 @@ object TrivialDIDef {
     }
 
     def nameless[T: Tag](instance: T): BindingSupport = {
-      new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(typeSymbol[T], instance)))
+      new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
 
 
@@ -38,7 +33,7 @@ object TrivialDIDef {
     }
 
     def named[T: Tag](instance: T, name: String): BindingSupport = {
-      new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T].named(name), ImplDef.InstanceImpl(typeSymbol[T], instance)))
+      new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T].named(name), ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
 
 
@@ -57,7 +52,7 @@ object TrivialDIDef {
     }
 
     def namelessSet[T: Tag](instance: T): BindingSupport = {
-      new BindingSupport(bindings :+ SetBinding(DIKey.get[Set[T]], ImplDef.InstanceImpl(typeSymbol[T], instance)))
+      new BindingSupport(bindings :+ SetBinding(DIKey.get[Set[T]], ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
 
     def namedSet[T: Tag, I <: T : Tag](name: String): BindingSupport = {
@@ -65,7 +60,7 @@ object TrivialDIDef {
     }
 
     def namedSet[T: Tag](instance: T, name: String): BindingSupport = {
-      new BindingSupport(bindings :+ SetBinding(DIKey.get[Set[T]].named(name), ImplDef.InstanceImpl(typeSymbol[T], instance)))
+      new BindingSupport(bindings :+ SetBinding(DIKey.get[Set[T]].named(name), ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
 
 
