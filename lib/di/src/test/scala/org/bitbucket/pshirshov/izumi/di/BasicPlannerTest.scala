@@ -3,7 +3,7 @@ package org.bitbucket.pshirshov.izumi.di
 import org.bitbucket.pshirshov.izumi.di.definition.{ContextDefinition, Binding, TrivialDIDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{MissingInstanceException, UntranslatablePlanException}
-import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{DuplicatedStatement, UnbindableBinding, UnsolvableConflict}
+import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.{DuplicatedStatements, UnbindableBinding, UnsolvableConflict}
 import org.bitbucket.pshirshov.izumi.di.planning.{PlanResolver, PlanResolverDefaultImpl}
 import org.scalatest.WordSpec
 
@@ -295,7 +295,7 @@ class BasicPlannerTest extends WordSpec {
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
-      assert(exc.badSteps.lengthCompare(1) == 0 && exc.badSteps.exists(_.isInstanceOf[DuplicatedStatement]))
+      assert(exc.badSteps.lengthCompare(1) == 0 && exc.badSteps.exists(_.isInstanceOf[DuplicatedStatements]))
 
     }
 

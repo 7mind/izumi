@@ -2,7 +2,7 @@ package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, ImplDef}
-import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp._
+import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.UnbindableBinding
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.di.model.plan.Provisioning.{Impossible, InstanceProvisioning, Possible, StepProvisioning}
 import org.bitbucket.pshirshov.izumi.di.model.plan._
@@ -32,7 +32,7 @@ class PlannerDefaultImpl
           case Possible(ops) =>
             sanityChecker.assertNoDuplicateOps(ops.flatten)
             val next = planMergingPolicy.extendPlan(currentPlan, binding, ops)
-            sanityChecker.assertNoDuplicateOps(next.statements)
+            //sanityChecker.assertNoDuplicateOps(next.statements)
             planningObsever.onSuccessfulStep(next)
             next
 
@@ -40,7 +40,8 @@ class PlannerDefaultImpl
             val next = DodgyPlan(
               currentPlan.imports
               , currentPlan.sets
-              , currentPlan.steps :+ UnbindableBinding(binding, implDefs)
+              , currentPlan.steps
+              , currentPlan.issues :+ UnbindableBinding(binding, implDefs)
             )
             planningObsever.onFailedStep(next)
             next
@@ -61,10 +62,14 @@ class PlannerDefaultImpl
     binding match {
       case c: SingletonBinding =>
         val deps = enumerateDeps(c)
-        val toImport = computeImports(currentPlan, deps)
+        val toImport = computeImports(currentPlan, binding, deps)
         val toProvision = provisioning(c, deps)
         toProvision
-          .map(newOps => NextOps(toImport, Set.empty, newOps))
+          .map(newOps => NextOps(
+            toImport
+            , Set.empty
+            , newOps
+          ))
 
       case s: SetBinding =>
         val target = s.target
@@ -80,20 +85,19 @@ class PlannerDefaultImpl
           }
 
       case s: EmptySetBinding =>
-        Possible(NextOps(Set.empty, Set(ExecutableOp.CreateSet(s.target, s.target.symbol)), Seq.empty))
+        Possible(NextOps(
+          Set.empty
+          , Set(ExecutableOp.CreateSet(s.target, s.target.symbol))
+          , Seq.empty
+        ))
     }
   }
 
-  private def computeImports(currentPlan: DodgyPlan, deps: Seq[Association]): Set[ImportDependency] = {
-    val knownTargets = currentPlan.flatten.flatMap {
-      case Statement(op) =>
-        Seq(op.target)
-      case _ =>
-        Seq()
-    }.toSet
+  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: Seq[Association]): Set[ImportDependency] = {
+    val knownTargets = currentPlan.statements.map(_.target).toSet
     val (resolved@_, unresolved) = deps.partition(d => knownTargets.contains(d.wireWith))
     // we don't need resolved deps, we already have them in finalPlan
-    val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith))
+    val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith, Set(binding.target)))
     toImport.toSet
   }
 

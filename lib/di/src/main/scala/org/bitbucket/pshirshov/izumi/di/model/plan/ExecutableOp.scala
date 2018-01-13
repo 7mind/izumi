@@ -32,8 +32,8 @@ object ExecutableOp {
   sealed trait SetOp extends ExecutableOp {
   }
 
-  case class ImportDependency(target: DIKey) extends ExecutableOp {
-    override def format: String = f"""$target := import $target"""
+  case class ImportDependency(target: DIKey, references: Set[DIKey]) extends ExecutableOp {
+    override def format: String = f"""$target := import $target // required for $references"""
   }
 
   case class CreateSet(target: DIKey, tpe: TypeFull) extends ExecutableOp with SetOp {

@@ -1,101 +1,71 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.definition.Binding
-import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyOp.{Nop, Statement}
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.AddToSet
-import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningConflict.{Conflict, NoConflict}
-import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningOp.{Put, SolveRedefinition, SolveUnsolvable}
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{ImportDependency, SetOp}
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 
 class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
   def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
-    val newProvisions = currentOp
+    val oldImports = currentPlan.imports.keySet
+
+    val newProvisionKeys = currentOp
       .provisions
-      .map(op => Statement(ExecutableOp.ImportDependency(op.target))).toSet
+      .map(op => op.target)
+      .toSet
 
-
-    val withConflicts = findConflicts(currentPlan.steps, currentOp.provisions)
-
-    val (before, after) = splitCurrentPlan(currentPlan.steps, withConflicts)
-    System.err.println(before.size, after.size)
-
-    val transformations = withConflicts.map {
-      case NoConflict(newOp) =>
-        Put(newOp)
-
-      case Conflict(newOp, existing) if Statement(newOp) == existing =>
-        SolveRedefinition(newOp)
-
-      case Conflict(newOp, existing) =>
-        SolveUnsolvable(newOp, existing)
+    val safeNewProvisions = if (oldImports.intersect(newProvisionKeys).isEmpty) {
+      currentPlan.steps ++ currentOp.provisions
+    } else {
+      currentOp.provisions ++ currentPlan.steps
     }
 
-    val transformationsWithoutReplacements = transformations.map {
-      case t: Put => DodgyOp.Statement(t.op)
-      case t: SolveRedefinition => DodgyOp.DuplicatedStatement(t.op)
-      case t: SolveUnsolvable => DodgyOp.UnsolvableConflict(t.op, t.existing)
-    }
+    val newImports = computeNewImports(currentPlan, currentOp)
+    val newSets = currentPlan.sets ++ currentOp.sets
 
-    val safeNewProvisions: Seq[DodgyOp] = Seq(Nop(s"// head: $binding")) ++
-      before ++
-      Seq(Nop(s"// tran: $binding")) ++
-      transformationsWithoutReplacements ++
-      Seq(Nop(s"// tail: $binding")) ++
-      after ++
-      Seq(Nop(s"//  end: $binding"))
 
-    val newImports = (currentPlan.imports ++ currentOp.imports.map(Statement)) -- newProvisions
-    val newSets = currentPlan.sets ++ currentOp.sets.map(Statement)
-
-    DodgyPlan(
+    val newPlan = DodgyPlan(
       newImports
       , newSets
       , safeNewProvisions
+      , currentPlan.issues
     )
-  }
 
-  private def splitCurrentPlan(currentPlan: Seq[DodgyOp], withConflicts: Seq[PlanningConflict]): (Seq[DodgyOp], Seq[DodgyOp]) = {
-    import PlanningConflict._
-    val currentPlanBlock = currentPlan
-    val insertAt = Seq(Seq(currentPlanBlock.length), withConflicts
+    val issues: Seq[PlanningFailure] = newPlan
+      .statements
+      .groupBy(_.target)
+      .filter(_._2.lengthCompare(1) > 0)
+      .filterNot(_._2.forall(_.isInstanceOf[SetOp]))
       .map {
-        case Conflict(_, op) =>
-          currentPlanBlock.indexOf(op)
+        case (key, values) if values.toSet.size == 1 =>
+          PlanningFailure.DuplicatedStatements(key, values)
+        case (key, values) =>
+          PlanningFailure.UnsolvableConflict(key, values)
+      }
+      .toSeq
 
-        case _ => // we don't consider all other cases
-          currentPlanBlock.length
-      })
-      .flatten
-      .min
-
-    val (before, after) = currentPlanBlock.splitAt(insertAt)
-    (before, after)
+    newPlan.copy(issues = newPlan.issues ++ issues)
   }
 
-  private def findConflicts(currentPlan: Seq[DodgyOp], toProvision: Seq[ExecutableOp]): Seq[PlanningConflict] = {
-    import PlanningConflict._
-    val currentUnwrapped = currentPlan.collect { case s: Statement => s }.toSet
+  private def computeNewImports(currentPlan: DodgyPlan, currentOp: NextOps) = {
+    val newProvisionKeys = currentOp
+      .provisions
+      .map(op => op.target)
+      .toSet
 
-    val withConflicts = toProvision.map {
-      newOp =>
-        // safe to use .find, plan itself cannot contain conflicts
-        // TODO: ineffective!
-        currentUnwrapped.find(dop => areConflicting(newOp, dop.op)) match {
-          case Some(existing) =>
-            Conflict(newOp, existing)
-          case _ =>
-            NoConflict(newOp)
-        }
-    }
-    withConflicts
-  }
+    val currentImportsMap = currentPlan.imports
+      .values
+      .filterNot(imp => newProvisionKeys.contains(imp.target))
+      .map(imp => (imp.target, imp))
 
-  private def areConflicting(newOp: ExecutableOp, existingOp: ExecutableOp): Boolean = {
-    (existingOp, newOp) match {
-      case (eop: AddToSet, nop: AddToSet) if eop.target == nop.target =>
-        false
-      case (eop, nop) =>
-        eop.target == nop.target
+    val newImportsMap = currentOp.imports
+      .filterNot(imp => newProvisionKeys.contains(imp.target))
+      .map(imp => (imp.target, imp))
+
+    val newImports = newImportsMap.foldLeft(currentImportsMap.toMap) {
+      case (acc, (target, op)) =>
+        val importOp = acc.getOrElse(target, op)
+        acc.updated(target, ImportDependency(target, importOp.references ++ op.references))
     }
+    newImports
   }
 }
