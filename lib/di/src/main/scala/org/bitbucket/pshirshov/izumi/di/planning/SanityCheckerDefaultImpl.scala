@@ -45,14 +45,25 @@ class SanityCheckerDefaultImpl
   }
 
   private def assertNoDuplicateKeys(keys: Seq[DIKey]): Unit = {
-    if (duplicates(keys).nonEmpty) {
-      throw new DuplicateKeysException(s"Cannot finish the plan, there are duplicates: $keys!", keys)
+    val dupes = duplicates(keys)
+    if (dupes.nonEmpty) {
+      throw new DuplicateKeysException(s"Cannot finish the plan, there are duplicates: $dupes!", dupes)
     }
   }
 
-  // TODO: quadratic
-  private def duplicates(keys: Seq[DIKey]): Seq[DIKey] = keys.map {
-    k => (k, keys.count(_ == k))
-  }.filter(_._2 > 1).map(_._1)
+  private def duplicates(keys: Seq[DIKey]): Map[DIKey, Int] = {
+    val counted = keys
+      .groupBy(k => k)
+      .map(t => (t._1, t._2.length))
+    
+//    System.err.println("---")
+//    counted.foreach {
+//      case (t, c) =>
+//        System.err.println((t, t.hashCode(), c))
+//
+//    }
+
+    counted.filter(_._2 > 1)
+  }
 
 }

@@ -25,6 +25,7 @@ trait DefaultBootstrapContext extends Locator {
   private val reflectionProviderDefaultImpl = new ReflectionProviderDefaultImpl(dependencyKeyProvider)
   private val customOpHandler = CustomOpHandler.NullCustomOpHander
 
+  private val planMergingPolicy = new PlanMergingPolicyDefaultImpl()
 
   private val planner = new PlannerDefaultImpl(
     planResolver
@@ -33,6 +34,7 @@ trait DefaultBootstrapContext extends Locator {
     , sanityChecker
     , customOpHandler
     , planningObsever
+    , planMergingPolicy
   )
 
   // TODO: may we bootstrap ourself somehow?
