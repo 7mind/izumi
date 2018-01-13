@@ -71,23 +71,17 @@ class PlannerDefaultImpl
         val target = s.target
         val elementKey = DIKey.SetElementKey(target, getSymbol(s.implementation))
 
-        computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation)) match {
-          case Possible(NextOps(imports, sets, ops)) =>
-            Possible(NextOps(
-              imports
-              , sets + ExecutableOp.CreateSet(target, target.symbol)
-              , ops :+ ExecutableOp.AddToSet(target, elementKey)
-            ))
-
-          case Impossible(broken) =>
-            // TODO: some data is lost here, we need to stack it
-            Impossible(broken)
-          //NextOps(imports, Impossible(s.implementation))
-        }
+        computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
+          .map { next =>
+            NextOps(
+              next.imports
+              , next.sets + ExecutableOp.CreateSet(target, target.symbol)
+              , next.provisions :+ ExecutableOp.AddToSet(target, elementKey)
+            )
+          }
 
       case s: EmptySetBinding =>
         Possible(NextOps(Set.empty, Set(ExecutableOp.CreateSet(s.target, s.target.symbol)), Seq.empty))
-
     }
   }
 
