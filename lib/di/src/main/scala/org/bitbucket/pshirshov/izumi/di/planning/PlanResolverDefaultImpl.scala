@@ -7,7 +7,7 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.{DodgyPlan, FinalPlan, FinalP
 
 
 
-class PlanResolverDefaultImpl(planningObsever: PlanningObsever) extends PlanResolver {
+class PlanResolverDefaultImpl extends PlanResolver {
   override def resolve(plan: DodgyPlan, definition: ContextDefinition): FinalPlan = {
     val issues = plan.issues
 
@@ -16,8 +16,6 @@ class PlanResolverDefaultImpl(planningObsever: PlanningObsever) extends PlanReso
     }
 
     val ops = plan.statements
-    val finalPlan = new FinalPlanImmutableImpl(ops, definition)
-    planningObsever.onFinalPlan(finalPlan)
-    finalPlan
+    new FinalPlanImmutableImpl(ops, definition)
   }
 }
