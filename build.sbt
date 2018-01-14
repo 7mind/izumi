@@ -16,12 +16,16 @@ name := "izumi-r2"
 
 val AppSettings = SettingsGroupId()
 
+val scala_212 = "2.12.4"
+val scala_213 = "2.13.0-M2"
 
 val baseSettings = new GlobalSettings {
   override val globalSettings: ProjectSettings = new ProjectSettings {
       override val settings = Seq(
         organization := "com.github.pshirshov.izumi"
-        , scalaVersion := "2.12.4"
+        , crossScalaVersions := Seq(
+          scala_212
+        )
         , publishMavenStyle in Global := true
         , sonatypeProfileName := "com.github.pshirshov"
         , publishTo := Some(
@@ -80,6 +84,9 @@ lazy val sbtIzumi = inRoot.as
         Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
     }
     , scriptedBufferLog := false
+    , crossScalaVersions := Seq(
+      scala_212
+        )
   )
 
 lazy val root = inRoot.as
