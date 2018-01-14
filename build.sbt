@@ -22,7 +22,7 @@ val scala_213 = "2.13.0-M2"
 val baseSettings = new GlobalSettings {
   override val globalSettings: ProjectSettings = new ProjectSettings {
       override val settings = Seq(
-        organization := "com.github.pshirshov.izumi"
+        organization := "com.github.pshirshov.izumi.r2"
         , crossScalaVersions := Seq(
           scala_212
         )
