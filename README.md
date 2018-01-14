@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/pshirshov/izumi-r2.svg?branch=develop)](https://travis-ci.org/pshirshov/izumi-r2)
+[![Maven Central](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/com/github/pshirshov/izumi/izumi-r2_2.12/maven-metadata.xml.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.github.pshirshov.izumi%22)
 
 Build options
 -------------
