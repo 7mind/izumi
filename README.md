@@ -53,4 +53,4 @@ Modify `.git/config`:
 Legacy Framework
 ================
 
-You may find legacy framework [here](https://github.com/pshirshov/izumi-legacy).
+You may find the legacy framework [here](https://github.com/pshirshov/izumi-legacy).
