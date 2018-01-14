@@ -4,6 +4,8 @@
 [![Latest Release](https://img.shields.io/github/tag/pshirshov/izumi-r2.svg)](https://github.com/pshirshov/izumi-r2/releases)
 [![License](https://img.shields.io/github/license/pshirshov/izumi-r2.svg)](https://github.com/pshirshov/izumi-r2/blob/develop/LICENSE)
 
+Build notes
+===========
 
 Build options
 -------------
@@ -47,3 +49,8 @@ Modify `.git/config`:
         pushurl = git@github.com:pshirshov/izumi-r2.git
         pushurl = git@bitbucket.org:pshirshov/izumi-r2.git
         fetch = +refs/heads/*:refs/remotes/origin/*
+
+Legacy Framework
+================
+
+You may find legacy framework [here](https://github.com/pshirshov/izumi-legacy).
