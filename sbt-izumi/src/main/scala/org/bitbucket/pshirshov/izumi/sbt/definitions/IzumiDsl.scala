@@ -70,28 +70,29 @@ object IzumiDsl {
   }
 
   implicit class ProjectExtensions(project: Project) {
-    def registered: Project = {
+    def remember: Project = {
       getInstance.allProjects += project
       project
     }
 
-    def defaultRoot: Project = {
+    def rootSettings: Project = {
       project
-        .extend(SettingsGroupId.GlobalSettingsGroup)
-        .extend(SettingsGroupId.RootSettingsGroup)
+        .settings(SettingsGroupId.GlobalSettingsGroup)
+        .settings(SettingsGroupId.RootSettingsGroup)
     }
 
-    def withIt: Project = {
-      project.extend(SettingsGroupId.ItSettingsGroup)
+    def itSettings: Project = {
+      project
+        .settings(SettingsGroupId.ItSettingsGroup)
     }
 
-    def extend: Project = {
-      extend(SettingsGroupId.GlobalSettingsGroup)
+    def globalSettings: Project = {
+      settings(SettingsGroupId.GlobalSettingsGroup)
     }
 
-    def extend(groupId: SettingsGroupId): Project = {
-      val settings = getInstance.globalSettings.allSettings(groupId)
-      val extenders = settings.extenders
+    def settings(groupId: SettingsGroupId): Project = {
+      val groupSettings = getInstance.globalSettings.allSettings(groupId)
+      val extenders = groupSettings.extenders
       logger.debug(s"Applying ${extenders.size} transformers to ${project.id}...")
 
       extenders.foldLeft(project) {
@@ -124,11 +125,11 @@ object IzumiDsl {
 
     private def dirProject = Project(name, new File(base))
 
-    def module: Project = moduleProject.extend.registered
+    def project: Project = moduleProject.remember
 
-    def project: Project = moduleProject.registered
+    def module: Project = moduleProject.globalSettings.remember
 
-    def root: Project = dirProject.defaultRoot
+    def root: Project = dirProject.rootSettings
   }
 
   class In(val directory: String) {
