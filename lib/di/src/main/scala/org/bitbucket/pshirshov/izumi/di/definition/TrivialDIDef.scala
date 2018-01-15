@@ -23,7 +23,6 @@ object TrivialDIDef {
       new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
 
-
     def named[T: Tag](name: String): BindingSupport = {
       new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T].named(name), symbolDef[T]))
     }
@@ -36,10 +35,8 @@ object TrivialDIDef {
       new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T].named(name), ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
 
-
     def namelessEmptySet[T: Tag]: BindingSupport = {
       new BindingSupport(bindings :+ EmptySetBinding(DIKey.get[Set[T]]))
-
     }
 
     def namedEmptySet[T: Tag](name: String): BindingSupport = {
@@ -62,7 +59,6 @@ object TrivialDIDef {
     def namedSet[T: Tag](instance: T, name: String): BindingSupport = {
       new BindingSupport(bindings :+ SetBinding(DIKey.get[Set[T]].named(name), ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
-
 
     def finish: ContextDefinition = TrivialDIDef(bindings)
   }
