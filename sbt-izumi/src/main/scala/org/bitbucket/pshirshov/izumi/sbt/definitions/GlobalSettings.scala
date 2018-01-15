@@ -6,17 +6,7 @@ import sbt.{Defaults, Project}
 
 
 trait GlobalSettings {
-//  def customSettings: Map[SettingsGroupId, ProjectSettings] = Map()
-
-//  def globalSettings: ProjectSettings = ProjectSettings.empty
-
-//  def settingsGroup(id: SettingsGroupId): ProjectSettings = settings.getOrElse(id, ProjectSettings.empty)
-//
-//  def globalSettingsGroup: ProjectSettings = settingsGroup(SettingsGroupId.GlobalSettingsGroup)
-//
-//  def rootSettingsGroup: ProjectSettings = settingsGroup(SettingsGroupId.RootSettingsGroup)
-
-  def allSettings: Map[SettingsGroupId, ProjectSettings] = defaultSettings ++ settings
+  final def allSettings: Map[SettingsGroupId, ProjectSettings] = defaultSettings ++ settings
 
   protected def settings: Map[SettingsGroupId, ProjectSettings] = Map()
 
