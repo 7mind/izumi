@@ -1,6 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di.provisioning
+
 import org.bitbucket.pshirshov.izumi.di.Locator
-import org.bitbucket.pshirshov.izumi.di.model.exceptions.{DIException, IncompatibleTypesException, MissingInstanceException}
+import org.bitbucket.pshirshov.izumi.di.model.exceptions.{DIException, DuplicateInstancesException, IncompatibleTypesException, MissingInstanceException}
 import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, FinalPlan}
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 
@@ -8,7 +9,6 @@ import scala.collection.{mutable, _}
 import scala.reflect.runtime._
 
 class ProvisionerDefaultImpl extends Provisioner {
-
   override def provision(dIPlan: FinalPlan, parentContext: Locator): Map[DIKey, Any] =
     dIPlan.steps.foldLeft(mutable.HashMap[DIKey, Any]()) {
       case (map, step) => step match {
@@ -16,7 +16,7 @@ class ProvisionerDefaultImpl extends Provisioner {
         case ExecutableOp.ImportDependency(target, references) =>
           parentContext.lookupInstance[Any](target) match {
             case Some(v) =>
-              map += (target -> v)
+              updateContext(map, target, v)
             case _ =>
               throw new MissingInstanceException(s"Instance is not available in the context: $target. " +
                 s"required by refs: $references", target)
@@ -26,7 +26,7 @@ class ProvisionerDefaultImpl extends Provisioner {
           // target is guaranteed to be a Set
           val scalaCollectionSetType = EqualitySafeType.get[scala.collection.Set[_]]
           if (targetType.symbol.baseClasses.contains(scalaCollectionSetType.symbol)) {
-            map += (target -> mutable.HashSet[Any]())
+            updateContext(map, target, mutable.HashSet[Any]())
           } else {
             throw new IncompatibleTypesException("Tried to create make a Set with a non-Set type! " +
               s"For $target expected $targetType to be a sub-class of $scalaCollectionSetType, but it isn't!"
@@ -56,20 +56,21 @@ class ProvisionerDefaultImpl extends Provisioner {
           }
 
         case ExecutableOp.ReferenceInstance(target, _, instance) =>
-          map += (target -> instance)
+          updateContext(map, target, instance)
 
         case ExecutableOp.CustomOp(target, customDef) =>
           throw new DIException(s"No handle for CustomOp for $target, defs: $customDef", null)
 
         case ExecutableOp.InstantiateClass(target, targetType, associations) =>
           val depMap = associations.map {
-            key => map.get(key.wireWith) match {
-              case Some(dep) =>
-                key.symbol -> dep
-              case _ =>
-                throw new DIException(s"The impossible happened! Tried to instantiate class," +
-                  s" but the dependency has not been initialized: Class: $target, dependency: $key", null)
-            }
+            key =>
+              map.get(key.wireWith) match {
+                case Some(dep) =>
+                  key.symbol -> dep
+                case _ =>
+                  throw new DIException(s"The impossible happened! Tried to instantiate class," +
+                    s" but the dependency has not been initialized: Class: $target, dependency: $key", null)
+              }
           }.toMap
           val refUniverse = currentMirror
           val refClass = refUniverse.reflectClass(targetType.symbol.typeSymbol.asClass)
@@ -82,7 +83,7 @@ class ProvisionerDefaultImpl extends Provisioner {
 
           val instance = refCtor.apply(orderedArgs: _*)
 
-          map += (target -> instance)
+          updateContext(map, target, instance)
 
         case _: ExecutableOp.InstantiateTrait =>
           ???
@@ -98,4 +99,10 @@ class ProvisionerDefaultImpl extends Provisioner {
       }
     }
 
+  private def updateContext(context: mutable.HashMap[DIKey, Any], target: DIKey, value: Any) = {
+    if (context.contains(target)) {
+      throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
+    }
+    context += (target -> value)
+  }
 }

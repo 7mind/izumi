@@ -14,25 +14,22 @@ trait DefaultBootstrapContext extends Locator {
   // TODO: it's possible to make this safe with a macro
   
   private val ops = Seq(
-    ExecutableOp.ReferenceInstance(DIKey.get[CustomOpHandler], EqualitySafeType.get[CustomOpHandler.NullCustomOpHander.type], CustomOpHandler.NullCustomOpHander)
-    , ExecutableOp.ReferenceInstance(DIKey.get[LookupInterceptor], EqualitySafeType.get[NullLookupInterceptor], NullLookupInterceptor.instance)
+    bindInstance[CustomOpHandler, CustomOpHandler.NullCustomOpHander.type](CustomOpHandler.NullCustomOpHander)
+    , bindInstance[LookupInterceptor, NullLookupInterceptor](NullLookupInterceptor.instance)
 
-    , makeOp[CustomOpHandler, CustomOpHandler.NullCustomOpHander.type](CustomOpHandler.NullCustomOpHander)
-    , makeOp[LookupInterceptor, NullLookupInterceptor](NullLookupInterceptor.instance)
+    , bindSubclass[Provisioner, ProvisionerDefaultImpl]
+    , bindSubclass[PlanningObsever, PlanningObserverDefaultImpl]
+    , bindSubclass[PlanResolver, PlanResolverDefaultImpl]
+    , bindSubclass[DependencyKeyProvider, DependencyKeyProviderDefaultImpl]
+    , bindSubclass[PlanAnalyzer, PlanAnalyzerDefaultImpl]
+    , bindSubclass[PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
 
-    , makeOp[Provisioner, ProvisionerDefaultImpl](Seq.empty)
-    , makeOp[PlanningObsever, PlanningObserverDefaultImpl](Seq.empty)
-    , makeOp[PlanResolver, PlanResolverDefaultImpl](Seq.empty)
-    , makeOp[DependencyKeyProvider, DependencyKeyProviderDefaultImpl](Seq.empty)
-    , makeOp[PlanAnalyzer, PlanAnalyzerDefaultImpl](Seq.empty)
-    , makeOp[PlanMergingPolicy, PlanMergingPolicyDefaultImpl](Seq.empty)
+    , bindSubclass[TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl](Seq(DIKey.get[Provisioner]))
+    , bindSubclass[ForwardingRefResolver, ForwardingRefResolverDefaultImpl](Seq(DIKey.get[PlanAnalyzer]))
+    , bindSubclass[SanityChecker, SanityCheckerDefaultImpl](Seq(DIKey.get[PlanAnalyzer]))
+    , bindSubclass[ReflectionProvider, ReflectionProviderDefaultImpl](Seq(DIKey.get[DependencyKeyProvider]))
 
-    , makeOp[TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl](Seq(DIKey.get[Provisioner]))
-    , makeOp[ForwardingRefResolver, ForwardingRefResolverDefaultImpl](Seq(DIKey.get[PlanAnalyzer]))
-    , makeOp[SanityChecker, SanityCheckerDefaultImpl](Seq(DIKey.get[PlanAnalyzer]))
-    , makeOp[ReflectionProvider, ReflectionProviderDefaultImpl](Seq(DIKey.get[DependencyKeyProvider]))
-
-    , makeOp[Planner, PlannerDefaultImpl](Seq(
+    , bindSubclass[Planner, PlannerDefaultImpl](Seq(
       DIKey.get[PlanResolver]
       , DIKey.get[ForwardingRefResolver]
       , DIKey.get[ReflectionProvider]
@@ -54,11 +51,13 @@ trait DefaultBootstrapContext extends Locator {
   override protected def unsafeLookup(key: DIKey): Option[Any] = bootstrappedContext.get(key)
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.map(IdentifiedRef.tupled).toStream
 
-  private def makeOp[Key:Tag, I: Tag](instance: I): ExecutableOp = {
+  private def bindInstance[Key:Tag, I: Tag](instance: I): ExecutableOp = {
     ExecutableOp.ReferenceInstance(DIKey.get[Key], EqualitySafeType.get[I], instance)
   }
 
-  private def makeOp[Key:Tag, Target:Tag](paramKeys: Seq[DIKey]): ExecutableOp = {
+  private def bindSubclass[Key:Tag, Target:Tag]: ExecutableOp =  bindSubclass[Key, Target](Seq.empty)
+  
+  private def bindSubclass[Key:Tag, Target:Tag](paramKeys: Seq[DIKey]): ExecutableOp = {
     val targetType = EqualitySafeType.get[Target]
     val constructor = ReflectionProviderDefaultImpl.selectConstructor(targetType).toSet
     val associations = paramKeys.map {
