@@ -12,6 +12,7 @@ trait Extender {
   def extend(p: Project): Project
 }
 
+// TODO: technically we may get rid of this fragile concept and definitely get rid of settings extender
 class GlobalSettingsExtender(settings: ProjectSettings) extends Extender {
   override def extend(p: Project) = {
     p.settings(settings.settings: _*)
