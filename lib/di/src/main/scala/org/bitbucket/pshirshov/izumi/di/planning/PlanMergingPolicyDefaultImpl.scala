@@ -8,6 +8,7 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
   def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
     val oldImports = currentPlan.imports.keySet
 
+    // TODO duplicate: currentOp.provisions.map(_.target).toSet
     val newProvisionKeys = currentOp
       .provisions
       .map(op => op.target)

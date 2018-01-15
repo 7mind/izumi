@@ -18,7 +18,7 @@ class PlannerDefaultImpl
   , protected val reflectionProvider: ReflectionProvider
   , protected val sanityChecker: SanityChecker
   , protected val customOpHandler: CustomOpHandler
-  , protected val planningObsever: PlanningObsever
+  , protected val planningObserver: PlanningObsever
   , protected val planMergingPolicy: PlanMergingPolicy
 )
   extends Planner {
@@ -33,23 +33,23 @@ class PlannerDefaultImpl
             sanityChecker.assertNoDuplicateOps(ops.flatten)
             val next = planMergingPolicy.extendPlan(currentPlan, binding, ops)
             sanityChecker.assertNoDuplicateOps(next.statements)
-            planningObsever.onSuccessfulStep(next)
+            planningObserver.onSuccessfulStep(next)
             next
 
           case Impossible(implDefs) =>
             val next = currentPlan.copy(issues = currentPlan.issues :+ UnbindableBinding(binding, implDefs))
-            planningObsever.onFailedStep(next)
+            planningObserver.onFailedStep(next)
             next
         }
     }
 
     val finalPlan = Value(plan)
       .map(forwardingRefResolver.resolve)
-      .eff(planningObsever.onReferencesResolved)
+      .eff(planningObserver.onReferencesResolved)
       .map(planResolver.resolve(_, context))
-      .eff(planningObsever.onResolvingFinished)
+      .eff(planningObserver.onResolvingFinished)
       .eff(sanityChecker.assertSanity)
-      .eff(planningObsever.onFinalPlan)
+      .eff(planningObserver.onFinalPlan)
       .get
 
     finalPlan
@@ -92,7 +92,7 @@ class PlannerDefaultImpl
 
   private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: Seq[Association]): Set[ImportDependency] = {
     val knownTargets = currentPlan.statements.map(_.target).toSet
-    val (resolved@_, unresolved) = deps.partition(d => knownTargets.contains(d.wireWith))
+    val (_, unresolved) = deps.partition(dep => knownTargets.contains(dep.wireWith))
     // we don't need resolved deps, we already have them in finalPlan
     val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith, Set(binding.target)))
     toImport.toSet
@@ -104,10 +104,11 @@ class PlannerDefaultImpl
 
     binding.implementation match {
       case ImplDef.TypeImpl(symb) if reflectionProvider.isConcrete(symb) =>
-        Possible(Seq(ExecutableOp.InstantiateClass(target, symb, deps)))
+        // TODO make type safe
+        Possible(Seq(ExecutableOp.InstantiateClass(target, symb, deps.asInstanceOf[Seq[Association.Parameter]])))
 
       case ImplDef.TypeImpl(symb) if reflectionProvider.isWireableAbstract(symb) =>
-        Possible(Seq(ExecutableOp.InstantiateTrait(target, symb, deps)))
+        Possible(Seq(ExecutableOp.InstantiateTrait(target, symb, deps.asInstanceOf[Seq[Association.Method]])))
 
       case ImplDef.TypeImpl(symb) if reflectionProvider.isFactory(symb) =>
         Possible(Seq(ExecutableOp.InstantiateFactory(target, symb, deps)))
