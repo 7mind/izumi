@@ -1,6 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.definition.{ContextDefinition, Binding, TrivialDIDef}
+import org.bitbucket.pshirshov.izumi.di.Case1.{TestCaseClass2, TestInstanceBinding}
+import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, TrivialDIDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{MissingInstanceException, UntranslatablePlanException}
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.{DuplicatedStatements, UnbindableBinding, UnsolvableConflict}
@@ -20,6 +21,7 @@ object Case1 {
   trait NotInContext {}
 
   trait TestDependency1 {
+    // TODO: plan API to let user provide importDefs
     def unresolved: NotInContext
   }
 
@@ -40,7 +42,11 @@ object Case1 {
 
   case class TestCaseClass(a1: TestClass, a2: TestDependency3)
 
-  class TestInstanceBinding()
+  case class TestInstanceBinding(z: String =
+                            """R-r-rollin' down the window, white widow, fuck fame
+Forest fire, climbin' higher, real life, it can wait""")
+
+  case class TestCaseClass2(a: TestInstanceBinding)
 
   trait JustTrait {}
 
@@ -135,7 +141,7 @@ class BasicPlannerTest extends WordSpec {
       }
 
       assert(context.publicLookup[PlanResolver](DIKey.get[PlanResolver]).exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
-      assert(context.publicLookup[AnyRef](DIKey.get[PlanResolver]).exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
+      assert(context.publicLookup[Any](DIKey.get[PlanResolver]).exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
       assert(context.publicLookup[Long](DIKey.get[PlanResolver]).isEmpty)
 
     }
@@ -163,6 +169,8 @@ class BasicPlannerTest extends WordSpec {
         .namedSet[JustTrait, Impl3]("named.set")
 
         .finish
+
+      assert(definition != null)
     }
   }
 
@@ -182,9 +190,6 @@ class BasicPlannerTest extends WordSpec {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-
-
-      //        val context = injector.produce(plan)
     }
 
     "support multiple bindings" in {
@@ -311,6 +316,23 @@ class BasicPlannerTest extends WordSpec {
 
       val injector = mkInjector()
       injector.plan(definition)
+    }
+
+    // BasicProvisionerTest
+    "instantiate simple class" in {
+      val definition: ContextDefinition = TrivialDIDef
+        .empty
+        .nameless[TestCaseClass2]
+        .nameless(new TestInstanceBinding)
+        .finish
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+      val instantiated = context.get[TestCaseClass2]
+
+      println(s"Got instance: ${instantiated.toString}!")
     }
   }
 

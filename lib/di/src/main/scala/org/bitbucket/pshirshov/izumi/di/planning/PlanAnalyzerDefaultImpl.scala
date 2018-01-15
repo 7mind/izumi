@@ -26,10 +26,10 @@ class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
   }
 
   override def computeFwdRefTable(
-                                             plan: Iterable[ExecutableOp]
-                                             , refFilter: Accumulator => DIKey => Boolean
-                                             , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
-                                           ): RefTable = {
+                                   plan: Iterable[ExecutableOp]
+                                 , refFilter: Accumulator => DIKey => Boolean
+                                 , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
+                                 ): RefTable = {
     // TODO: make it immu
     val dependencies = plan.foldLeft(new Accumulator) {
       case (acc, op: DependentOp) =>

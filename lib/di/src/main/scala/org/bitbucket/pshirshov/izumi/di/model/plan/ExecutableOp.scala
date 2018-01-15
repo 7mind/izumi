@@ -8,7 +8,6 @@ sealed trait ExecutableOp extends Formattable {
   def target: DIKey
 }
 
-
 object ExecutableOp {
   sealed trait FormattableOp extends Formattable {
     this: DependentOp =>
@@ -40,12 +39,12 @@ object ExecutableOp {
     override def format: String = f"""$target := newset[$tpe]"""
   }
 
-  case class InstantiateClass(target: DIKey, impl: TypeFull, deps: Seq[Association]) extends InstantiationOp with DependentOp with FormattableOp {
+  case class InstantiateClass(target: DIKey, impl: TypeFull, deps: Seq[Association.Parameter]) extends InstantiationOp with DependentOp with FormattableOp {
     override def format: String = doFormat(impl, "make", ('[', ']'), ('(', ')'))
     override def toString: String = format
   }
 
-  case class InstantiateTrait(target: DIKey, impl: TypeFull, deps: Seq[Association]) extends InstantiationOp with DependentOp with FormattableOp {
+  case class InstantiateTrait(target: DIKey, impl: TypeFull, deps: Seq[Association.Method]) extends InstantiationOp with DependentOp with FormattableOp {
     override def format: String = doFormat(impl, "impl", ('[', ']'), ('{', '}'))
     override def toString: String = format
   }
