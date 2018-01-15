@@ -12,16 +12,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
   override def symbolDeps(symbl: TypeFull): Seq[Association] = {
     symbl match {
       case ConcreteSymbol(symb) =>
-        // val constructors = symb.symbol.members.filter(_.isConstructor)
-        // TODO: list should not be empty (?) and should has only one element (?)
-
-        // TODO: only considers scala constructors
-        val selectedConstructor = symb.symbol.decl(universe.termNames.CONSTRUCTOR)
-
-        val paramLists = selectedConstructor.info.paramLists
-        // TODO: param list should not be empty (?), what to do with multiple lists?..
-        val selectedParamList = paramLists.head
-
+        val selectedParamList = ReflectionProviderDefaultImpl.selectConstructor(symb)
         parametersToMaterials(selectedParamList)
 
       case AbstractSymbol(symb) =>
@@ -45,8 +36,8 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
       case _ =>
         Seq()
     }
-
   }
+
 
   private def methodsToMaterials(declaredAbstractMethods: Iterable[universe.Symbol]): Seq[Association.Method] = {
     declaredAbstractMethods.map {
@@ -99,6 +90,22 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
     def unapply(arg: TypeFull): Option[(TypeFull, Seq[TypeSymb])] =
       Some(arg).filter(isFactory)
         .map(f => (f, f.symbol.members.filter(m => isFactoryMethod(f, m)).toSeq))
+  }
+
+}
+
+object ReflectionProviderDefaultImpl {
+  def selectConstructor(symb: TypeFull): List[TypeSymb] = {
+    // val constructors = symb.symbol.members.filter(_.isConstructor)
+    // TODO: list should not be empty (?) and should has only one element (?)
+
+    // TODO: only considers scala constructors
+    val selectedConstructor = symb.symbol.decl(universe.termNames.CONSTRUCTOR)
+
+    val paramLists = selectedConstructor.info.paramLists
+    // TODO: param list should not be empty (?), what to do with multiple lists?..
+    paramLists.head
+
   }
 
 }
