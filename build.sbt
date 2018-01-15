@@ -2,6 +2,7 @@ import sbt.Keys.{pomExtra, publishMavenStyle}
 import ReleaseTransformations._
 import sbt.ScriptedPlugin._
 import SettingsGroupId._
+import D._
 
 // TODO: library descriptor generator
 // TODO: better analyzer for "exposed" scope
@@ -68,6 +69,14 @@ val baseSettings = new GlobalSettings {
         )
       )
     }
+    ,  LibSettings -> new ProjectSettings {
+            override val settings: Seq[sbt.Setting[_]] = Seq(
+                Seq(
+                    libraryDependencies ++= R.essentials
+                      , libraryDependencies ++= T.essentials
+                    )
+                ).flatten
+          }
   )
 }
 
