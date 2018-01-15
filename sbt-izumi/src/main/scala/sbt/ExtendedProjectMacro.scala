@@ -1,6 +1,6 @@
 package sbt
 
-import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl.WithBase
+import org.bitbucket.pshirshov.izumi.sbt.IzumiDslPlugin.autoImport.{In, WithBase}
 
 import scala.reflect.macros._
 
@@ -9,7 +9,6 @@ object ExtendedProjectMacro {
     import c.universe._
     val name: c.Expr[String] = extractName(c)
     reify {
-      import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiDsl._
       val directory = c.prefix.splice.asInstanceOf[In].directory
       new WithBase(name.splice, directory)
     }

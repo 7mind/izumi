@@ -1,9 +1,10 @@
 package org.bitbucket.pshirshov.izumi.sbt.definitions
 
-import org.bitbucket.pshirshov.izumi.sbt.definitions.IzumiScopes.ProjectReferenceEx
+import org.bitbucket.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import sbt.Keys._
 import sbt.Project
 import sbt.internal.util.ConsoleLogger
+import org.bitbucket.pshirshov.izumi.sbt.IzumiScopesPlugin.autoImport._
 
 trait Extender {
   protected val logger: ConsoleLogger = ConsoleLogger()
@@ -40,7 +41,6 @@ class PluginsExtender(settings: ProjectSettings) extends Extender {
 
 class SharedModulesExtender(sharedLibs: Set[ProjectReferenceEx]) extends Extender {
   override def extend(p: Project) = {
-    import IzumiScopes._
 
     if (!sharedLibs.contains(p)) {
       logger.debug(s"Adding $sharedLibs into $p")

@@ -1,5 +1,6 @@
 package org.bitbucket.pshirshov.izumi.sbt.definitions
 
+import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
 import org.bitbucket.pshirshov.izumi.sbt._
 import sbt.librarymanagement.syntax
 import sbt.{Defaults, Project}
@@ -13,16 +14,9 @@ trait GlobalSettings {
   protected def defaultSettings: Map[SettingsGroupId, ProjectSettings] = {
     Map(
       SettingsGroupId.GlobalSettingsGroup -> ProjectSettings.empty
-      , SettingsGroupId.RootSettingsGroup -> ProjectSettings(
-        plugins = Set(
-          BuildPlugin
-          , CompilerOptionsPlugin
-          , ResolverPlugin
-          , TestingPlugin
-        )
-      )
+      , SettingsGroupId.RootSettingsGroup -> ProjectSettings.empty
       , SettingsGroupId.ItSettingsGroup -> ProjectSettings(
-        settings = Seq(Defaults.itSettings, NestedTestScopesPlugin.itSettings).flatten
+        settings = Seq(Defaults.itSettings, InheritedTestScopesPlugin.itSettings).flatten
         , moreExtenders = {
           (self, existing) =>
             existing ++ Set(

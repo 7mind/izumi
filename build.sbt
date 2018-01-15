@@ -1,16 +1,16 @@
-import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion}
+import sbt.Keys.{pomExtra, publishMavenStyle}
 import ReleaseTransformations._
-import IzumiDsl._
-import IzumiScopes._
-import SettingsGroupId._
 import sbt.ScriptedPlugin._
+import SettingsGroupId._
 
 // TODO: library descriptor generator
 // TODO: better analyzer for "exposed" scope
 // TODO: config -- probably we don't need it
 // TODO: conditionals in plugins: release settings, integration tests -- impossible
 
-enablePlugins(ConvenienceTasksPlugin)
+enablePlugins(IzumiEnvironmentPlugin)
+enablePlugins(IzumiDslPlugin)
+enablePlugins(GitStampPlugin)
 
 name := "izumi-r2"
 
@@ -93,7 +93,6 @@ lazy val sbtIzumi = inRoot.as
 
 lazy val root = inRoot.as
   .root
-  .enablePlugins(GitStampPlugin)
   .transitiveAggregate(
     sbtIzumi
   )

@@ -4,7 +4,6 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 import com.typesafe.sbt.pgp.PgpKeys._
-import org.bitbucket.pshirshov.izumi.sbt.definitions.Properties._
 import sbt.Keys._
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.PublishConfiguration
@@ -13,8 +12,6 @@ import sbt.{AutoPlugin, Package, ThisBuild}
 
 object PublishingPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()
-
-  override def trigger = allRequirements
 
   override lazy val globalSettings = Seq(
     pomIncludeRepository := (_ => false)
@@ -45,6 +42,7 @@ object PublishingPlugin extends AutoPlugin {
   }
 
   private def withOverwrite(config: PublishConfiguration, isSnapshot: Boolean) = {
+    import IzumiPropertiesPlugin.autoImport._
     val doOverwrite = sys.props.getBoolean("build.publish.overwrite", config.overwrite)
     // in case overwrite is already enabled (snapshots, smth else) we should not disable it
     config.withOverwrite(doOverwrite || config.overwrite || isSnapshot)

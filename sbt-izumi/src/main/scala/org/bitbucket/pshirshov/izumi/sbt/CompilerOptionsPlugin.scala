@@ -20,7 +20,6 @@ object CompilerOptionsPlugin extends AutoPlugin {
         "-opt-warnings:_"
         , "-Ywarn-extra-implicit"
         , "-Ywarn-unused:_"
-
         , "-Ypartial-unification"
       )
       case _ =>
@@ -28,7 +27,7 @@ object CompilerOptionsPlugin extends AutoPlugin {
     }
 
   override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
-    scalacOptions ++= releaseSettings(isSnapshot.value)
+    scalacOptions in ThisBuild ++= releaseSettings(isSnapshot.value)
   )
 
   override lazy val globalSettings: Seq[Def.Setting[_]] = Seq(

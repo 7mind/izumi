@@ -1,11 +1,9 @@
 import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion}
 import ReleaseTransformations._
-import IzumiDsl._
-import IzumiScopes._
 import SettingsGroupId._
 
-// addVersionSuffix, preserveTargets, rmDirs, newModule, newStub
-enablePlugins(ConvenienceTasksPlugin)
+enablePlugins(IzumiEnvironmentPlugin)
+enablePlugins(IzumiDslPlugin)
 
 // -- build settings, root artifact settings, etc
 name := "izumi-r2-test"
@@ -20,7 +18,6 @@ val baseSettings = new GlobalSettings {
       // these settings will be added into each project handled by Izumi
       override val settings: Seq[sbt.Setting[_]] = Seq(
         organization := "com.github.pshirshov.izumi.test"
-        , scalaVersion := "2.12.4"
       )
 
       // these dependencies will be added into each project handled by Izumi

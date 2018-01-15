@@ -11,13 +11,12 @@ import scala.util.control.NonFatal
 
 
 
-object NestedTestScopesPlugin extends AutoPlugin {
+object InheritedTestScopesPlugin extends AutoPlugin {
   import Keys._
-
-  protected val logger: ConsoleLogger = ConsoleLogger()
 
   override def trigger = allRequirements
 
+  protected val logger: ConsoleLogger = ConsoleLogger()
 
   val testSettings: Seq[Def.Setting[_]] =  Seq(
     compile in Test := Def.task {
