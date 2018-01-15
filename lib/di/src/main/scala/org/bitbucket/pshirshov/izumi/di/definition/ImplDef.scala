@@ -9,6 +9,6 @@ object ImplDef {
 
   case class InstanceImpl(tpe: TypeFull, instance: Any) extends ImplDef
 
-  // not sure if it's required though why not to have it?..
+  // not sure if it's required though why not have it?..
   case class CustomImpl(data: CustomDef) extends ImplDef
 }

@@ -3,6 +3,7 @@ package org.bitbucket.pshirshov.izumi.di
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.FinalPlan
 import org.bitbucket.pshirshov.izumi.di.planning._
+import org.bitbucket.pshirshov.izumi.di.provisioning.ProvisionerDefaultImpl
 import org.bitbucket.pshirshov.izumi.di.reflection.{DependencyKeyProvider, DependencyKeyProviderDefaultImpl, ReflectionProvider, ReflectionProviderDefaultImpl}
 
 
@@ -12,7 +13,8 @@ trait DefaultBootstrapContext extends Locator {
   // TODO: may we improve it somehow?..
   private val lookupInterceptor = NullLookupInterceptor.instance
 
-  private val factoryOfFactories = new TheFactoryOfAllTheFactoriesDefaultImpl()
+  private val provisioner = new ProvisionerDefaultImpl
+  private val factoryOfFactories = new TheFactoryOfAllTheFactoriesDefaultImpl(provisioner)
   private val planningObsever = new PlanningObserverDefaultImpl()
 
   private val planResolver = new PlanResolverDefaultImpl()
@@ -38,9 +40,10 @@ trait DefaultBootstrapContext extends Locator {
   )
 
   // TODO: may we bootstrap ourself somehow?
-  override def plan: FinalPlan = throw new UnsupportedOperationException(s"Bootstrap context is provisioned manually, not planned.")
+  override def plan: FinalPlan =
+    throw new UnsupportedOperationException(s"Bootstrap context is provisioned manually, not planned.")
 
-  protected def defaultImpls: Map[DIKey, AnyRef] = Map[DIKey, AnyRef](
+  protected def defaultImpls: Map[DIKey, Any] = Map[DIKey, Any](
     DIKey.get[PlanResolver] -> planResolver
     , DIKey.get[ForwardingRefResolver] -> forwardingRefResolver
     , DIKey.get[DependencyKeyProvider] -> dependencyKeyProvider
@@ -52,13 +55,14 @@ trait DefaultBootstrapContext extends Locator {
     , DIKey.get[CustomOpHandler] -> customOpHandler
   )
 
-  protected def unsafeLookup(key: DIKey): Option[AnyRef] = defaultImpls.get(key)
+  override protected def unsafeLookup(key: DIKey): Option[Any] =
+    defaultImpls.get(key)
 
   override def enumerate: Stream[IdentifiedRef] = defaultImpls.map {
-    case (k, v) => IdentifiedRef(k, v)
+    IdentifiedRef.tupled
   }.toStream
 }
 
 object DefaultBootstrapContext {
-  final val instance = new DefaultBootstrapContext {}
+  final val instance: DefaultBootstrapContext = new DefaultBootstrapContext {}
 }
