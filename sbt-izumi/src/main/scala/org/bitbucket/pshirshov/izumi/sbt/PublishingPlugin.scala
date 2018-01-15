@@ -8,10 +8,12 @@ import sbt.Keys._
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.PublishConfiguration
 import sbt.sbtpgp.Compat.publishSignedConfigurationTask
-import sbt.{AutoPlugin, Package, ThisBuild}
+import sbt.{AutoPlugin, Def, Package, ThisBuild}
 
 object PublishingPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()
+
+  override def trigger = allRequirements
 
   override lazy val globalSettings = Seq(
     pomIncludeRepository := (_ => false)
