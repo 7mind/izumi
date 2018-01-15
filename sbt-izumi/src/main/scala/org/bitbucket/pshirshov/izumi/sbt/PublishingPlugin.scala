@@ -8,7 +8,7 @@ import sbt.Keys._
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.PublishConfiguration
 import sbt.sbtpgp.Compat.publishSignedConfigurationTask
-import sbt.{AutoPlugin, Def, Package, ThisBuild}
+import sbt.{AutoPlugin, Package, ThisBuild}
 
 object PublishingPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()
