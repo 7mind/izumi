@@ -2,7 +2,7 @@ import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion}
 import ReleaseTransformations._
 import IzumiDsl._
 import IzumiScopes._
-import org.bitbucket.pshirshov.izumi.sbt.definitions.{ProjectSettings, SettingsGroupId}
+import SettingsGroupId._
 import sbt.ScriptedPlugin._
 
 // TODO: library descriptor generator
@@ -20,8 +20,9 @@ val scala_212 = "2.12.4"
 val scala_213 = "2.13.0-M2"
 
 val baseSettings = new GlobalSettings {
-  override val globalSettings: ProjectSettings = new ProjectSettings {
-      override val settings = Seq(
+  override protected val settings: Map[SettingsGroupId, ProjectSettings] = Map(
+    GlobalSettingsGroup -> new ProjectSettings {
+      override val settings: Seq[sbt.Setting[_]] = Seq(
         organization := "com.github.pshirshov.izumi.r2"
         , crossScalaVersions := Seq(
           scala_212
@@ -66,6 +67,7 @@ val baseSettings = new GlobalSettings {
         )
       )
     }
+  )
 }
 
 // --------------------------------------------

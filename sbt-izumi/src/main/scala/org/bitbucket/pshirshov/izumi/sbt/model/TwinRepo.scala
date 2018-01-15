@@ -1,15 +1,7 @@
-package org.bitbucket.pshirshov.izumi.sbt
+package org.bitbucket.pshirshov.izumi.sbt.model
 
 import sbt.librarymanagement.Resolver
 
-case class Repo(resolver: Resolver, isSnaphot: Boolean)
-
-trait Repositories {
-  def get(filter: Repo => Boolean): Seq[Resolver]
-  def get(snapshots: Boolean): Seq[Resolver] = {
-    get(r => !r.isSnaphot || r.isSnaphot == snapshots)
-  }
-}
 
 case class TwinRepo(name: String, base: String, releases: String, snapshots: String) extends Repositories {
   override def get(filter: Repo => Boolean): Seq[Resolver] = {

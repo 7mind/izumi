@@ -26,7 +26,7 @@ addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.0")
 
 // https://github.com/sbt/sbt-release
-addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.6")
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.7")
 
 // https://github.com/jrudolph/sbt-dependency-graph
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
