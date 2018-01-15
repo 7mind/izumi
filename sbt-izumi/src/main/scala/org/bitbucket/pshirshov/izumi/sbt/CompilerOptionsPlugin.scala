@@ -6,7 +6,7 @@ import sbt.{Def, _}
 object CompilerOptionsPlugin extends AutoPlugin {
   def releaseSettings(scalaVersion: String, isSnapshot: Boolean): Seq[String] = {
     CrossVersion.partialVersion(scalaVersion) match {
-      case Some((2, 12)) if isSnapshot => Seq(
+      case Some((2, 12)) if !isSnapshot => Seq(
         "-opt:_"
       )
       case _ =>
