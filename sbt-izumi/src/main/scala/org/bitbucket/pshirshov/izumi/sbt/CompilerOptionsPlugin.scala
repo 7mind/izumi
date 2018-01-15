@@ -4,7 +4,7 @@ import sbt.Keys._
 import sbt.{Def, _}
 
 object CompilerOptionsPlugin extends AutoPlugin {
-  def releaseSettings(isSnapshot: Boolean): Seq[String] = {
+  def releaseSettings(scalaVersion: String, isSnapshot: Boolean): Seq[String] = {
     CrossVersion.partialVersion(scalaVersion) match {
       case Some((2, 12)) if isSnapshot => Seq(
         "-opt:_"
@@ -27,7 +27,7 @@ object CompilerOptionsPlugin extends AutoPlugin {
     }
 
   override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
-    scalacOptions in ThisBuild ++= releaseSettings(isSnapshot.value)
+    scalacOptions in ThisBuild ++= releaseSettings(scalaVersion.value, isSnapshot.value)
   )
 
   override lazy val globalSettings: Seq[Def.Setting[_]] = Seq(
