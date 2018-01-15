@@ -1,14 +1,10 @@
+import D._
 import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import sbt.Keys.{pomExtra, publishMavenStyle}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
-import sbt.ScriptedPlugin._
-import SettingsGroupId._
-import D._
 
 // TODO: library descriptor generator
 // TODO: better analyzer for "exposed" scope
-// TODO: config -- probably we don't need it
-// TODO: conditionals in plugins: release settings, integration tests -- impossible
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
