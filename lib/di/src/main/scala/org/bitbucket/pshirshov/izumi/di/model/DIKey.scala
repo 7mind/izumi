@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di.model
 
-import org.bitbucket.pshirshov.izumi.di.{Tag, TypeFull, TypeFullX}
+import org.bitbucket.pshirshov.izumi.di.{Tag, TypeFull, TypeNative}
 
 import scala.reflect.runtime.universe._
 
@@ -8,7 +8,7 @@ sealed trait DIKey {
   def symbol: TypeFull
 }
 
-case class EqualitySafeType(symbol: TypeFullX) {
+case class EqualitySafeType(symbol: TypeNative) {
 
   override def toString: String = symbol.toString
 
@@ -37,7 +37,7 @@ object DIKey {
     override def toString: String = s"${symbol.toString}#$id"
   }
 
-  case class SetElementKey[InstanceId](set: DIKey, symbol: TypeFull) extends DIKey {
+  case class SetElementKey(set: DIKey, symbol: TypeFull) extends DIKey {
     override def toString: String = s"Set[${symbol.toString}]#$set"
 
     override def hashCode(): Int = toString.hashCode()
