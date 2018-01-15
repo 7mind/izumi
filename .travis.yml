@@ -10,9 +10,8 @@ scala:
 jdk:
   - oraclejdk8
 before_install:
-  - openssl aes-256-cbc -K $encrypted_b9da041c62db_key -iv $encrypted_b9da041c62db_iv -in secrets.tar.enc -out secrets.tar -d
-  - tar xvf secrets.tar
+  - ( openssl aes-256-cbc -K $encrypted_b9da041c62db_key -iv $encrypted_b9da041c62db_iv -in secrets.tar.enc -out secrets.tar -d && tar xvf secrets.tar ) || true
 script:
   - if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"; fi
-  - sbt +clean +test +scripted +publishSigned
-  - if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease; fi
+  - if [[ -f secrets.tar ]] ; then sbt +clean +test +scripted +publishSigned ; else sbt +clean +test +scripted +package ; fi
+  - if [[ -f secrets.tar && "$TRAVIS_TAG" =~ ^v.*$ ]] ; then sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease; fi
