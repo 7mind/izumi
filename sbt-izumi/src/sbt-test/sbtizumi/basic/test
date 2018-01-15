@@ -9,8 +9,12 @@ $ exists lib/yyy
 # version updater
 > addVersionSuffix test
 
+# dump compiler options
+> ++show scalacOptions
+
+
 # build
-> ;clean;test;publishLocal;plugins
+> ;+clean;+test;+publishLocal;+plugins
 $ exists app/just-app/target/scala-2.12/test-classes-exposed
 
 # check convenience helpers

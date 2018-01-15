@@ -4,17 +4,22 @@ import sbt.Keys._
 import sbt.{Def, _}
 
 object CompilerOptionsPlugin extends AutoPlugin {
-  def releaseSettings(scalaVersion: String, isSnapshot: Boolean): Seq[String] = {
+  def dynamicSettings(scalaVersion: String, isSnapshot: Boolean): Seq[String] = {
+    scalacOptionsVersion(scalaVersion) ++ releaseSettings(scalaVersion, isSnapshot)
+  }
+  
+  protected def releaseSettings(scalaVersion: String, isSnapshot: Boolean): Seq[String] = {
     CrossVersion.partialVersion(scalaVersion) match {
       case Some((2, 12)) if !isSnapshot => Seq(
-        "-opt:_"
+        "-opt:l:inline"
+        , "-opt-inline-from"
       )
       case _ =>
         Seq()
     }
   }
 
-  def scalacOptionsVersion(scalaVersion: String): Seq[String] =
+  protected def scalacOptionsVersion(scalaVersion: String): Seq[String] = {
     CrossVersion.partialVersion(scalaVersion) match {
       case Some((2, 12)) => Seq(
         "-opt-warnings:_"
@@ -25,13 +30,15 @@ object CompilerOptionsPlugin extends AutoPlugin {
       case _ =>
         Seq()
     }
+  }
 
-  override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
-    scalacOptions in ThisBuild ++= releaseSettings(scalaVersion.value, isSnapshot.value)
-  )
+  // TODO: conditionals in plugins don't work o_O
+  //  override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
+//    scalacOptions ++= releaseSettings(scalaVersion.value, isSnapshot.value)
+//  )
 
   override lazy val globalSettings: Seq[Def.Setting[_]] = Seq(
-      scalacOptions ++= Seq(
+      scalacOptions := Seq(
         "-encoding", "UTF-8"
         , "-target:jvm-1.8"
 
@@ -65,10 +72,11 @@ object CompilerOptionsPlugin extends AutoPlugin {
         , "-deprecation"
         , "-parameters"
         , "-Xlint:all"
-        //, "-Xdoclint:all" // causes hard to track NPEs
         , "-XDignore.symbol.file"
-      )
-      , scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
+      //, "-Xdoclint:all" // causes hard to track NPEs
+    )
+    // TODO: conditionals in plugins don't work o_O
+//      , scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
   )
 
 }

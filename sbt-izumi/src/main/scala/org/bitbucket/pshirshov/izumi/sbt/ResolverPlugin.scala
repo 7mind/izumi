@@ -12,8 +12,4 @@ object ResolverPlugin extends AutoPlugin {
       .withGigahorse(true)
     , pomIncludeRepository := (_ => false)
   )
-
-  override def projectSettings = Seq(
-    //aggregate in update := false
-  )
 }

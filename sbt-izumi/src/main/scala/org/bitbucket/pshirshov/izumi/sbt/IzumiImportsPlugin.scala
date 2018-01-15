@@ -7,16 +7,14 @@ object IzumiImportsPlugin extends AutoPlugin {
 
   //noinspection TypeAnnotation
   object autoImport {
-    val IzumiEnvironmentPlugin = org.bitbucket.pshirshov.izumi.sbt.BuildPlugin
+    val IzumiEnvironmentPlugin = org.bitbucket.pshirshov.izumi.sbt.IzumiEnvironmentPlugin
 
-    val BuildPlugin = org.bitbucket.pshirshov.izumi.sbt.BuildPlugin
     val CompilerOptionsPlugin = org.bitbucket.pshirshov.izumi.sbt.CompilerOptionsPlugin
     val ConvenienceTasksPlugin = org.bitbucket.pshirshov.izumi.sbt.ConvenienceTasksPlugin
     val IzumiPropertiesPlugin = org.bitbucket.pshirshov.izumi.sbt.IzumiPropertiesPlugin
     val PublishingPlugin = org.bitbucket.pshirshov.izumi.sbt.PublishingPlugin
     val ResolverPlugin = org.bitbucket.pshirshov.izumi.sbt.ResolverPlugin
-    val TestingPlugin = org.bitbucket.pshirshov.izumi.sbt.TestingPlugin
-    
+
     val GitStampPlugin = org.bitbucket.pshirshov.izumi.sbt.GitStampPlugin
 
     val InheritedTestScopesPlugin = org.bitbucket.pshirshov.izumi.sbt.InheritedTestScopesPlugin

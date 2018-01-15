@@ -1,7 +1,6 @@
+import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import sbt.Keys.{pomExtra, publishMavenStyle}
-import ReleaseTransformations._
-import sbt.ScriptedPlugin._
-import SettingsGroupId._
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 // TODO: library descriptor generator
 // TODO: better analyzer for "exposed" scope
@@ -18,6 +17,8 @@ val AppSettings = SettingsGroupId()
 
 val scala_212 = "2.12.4"
 val scala_213 = "2.13.0-M2"
+
+scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaVersion.value, isSnapshot.value)
 
 val baseSettings = new GlobalSettings {
   override protected val settings: Map[SettingsGroupId, ProjectSettings] = Map(

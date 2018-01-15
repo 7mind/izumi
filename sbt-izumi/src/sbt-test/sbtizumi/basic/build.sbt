@@ -1,12 +1,17 @@
-import sbt.Keys.{pomExtra, publishMavenStyle, scalaVersion}
-import ReleaseTransformations._
-import SettingsGroupId._
+import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
 
 // -- build settings, root artifact settings, etc
 name := "izumi-r2-test"
+crossScalaVersions in ThisBuild := Seq(
+  "2.12.4"
+  , "2.11.12"
+)
+
+// unfortunately we have to use this bcs conditional settings in plugins don't work
+scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaVersion.value, isSnapshot.value)
 
 // -- settings groups identifiers
 val AppSettings = SettingsGroupId()
