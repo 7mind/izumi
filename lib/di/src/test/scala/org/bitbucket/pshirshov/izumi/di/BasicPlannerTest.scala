@@ -44,7 +44,7 @@ object Case1 {
 
   case class TestInstanceBinding(z: String =
                             """R-r-rollin' down the window, white widow, fuck fame
-Forest fire, climbin' higher, real life, it can wait"""it)
+Forest fire, climbin' higher, real life, it can wait""")
 
   case class TestCaseClass2(a: TestInstanceBinding)
 

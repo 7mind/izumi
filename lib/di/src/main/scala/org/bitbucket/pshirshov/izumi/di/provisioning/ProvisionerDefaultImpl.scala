@@ -24,13 +24,13 @@ class ProvisionerDefaultImpl extends Provisioner {
 
         case ExecutableOp.CreateSet(target, targetType) =>
           // target is guaranteed to be a Set
-          val `scala.collection.Set` = EqualitySafeType.get[Set[_]] // typeTag[Set[_]].tpe.typeSymbol
-          if (targetType.symbol.baseClasses.contains(`scala.collection.Set`.symbol)) {
+          val scalaCollectionSetType = EqualitySafeType.get[scala.collection.Set[_]]
+          if (targetType.symbol.baseClasses.contains(scalaCollectionSetType.symbol)) {
             map += (target -> mutable.HashSet[Any]())
           } else {
             throw new IncompatibleTypesException("Tried to create make a Set with a non-Set type! " +
-              s"For $target expected $targetType to be a sub-class of ${`scala.collection.Set`}, but it isn't!"
-              , `scala.collection.Set`
+              s"For $target expected $targetType to be a sub-class of $scalaCollectionSetType, but it isn't!"
+              , scalaCollectionSetType
               , targetType)
           }
 

@@ -11,7 +11,7 @@ class TheFactoryOfAllTheFactoriesDefaultImpl(
     val dependencyMap = provisioner.provision(finalPlan, parentContext)
 
     new Locator {
-      override val parent: Option[Locator] = Some(parentContext)
+      override val parent: Option[Locator] = Option(parentContext)
 
       override protected def unsafeLookup(key: DIKey): Option[Any] =
         dependencyMap.get(key)
