@@ -3,8 +3,6 @@ import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.Settings
 import sbt.Keys.{pomExtra, publishMavenStyle}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
-// TODO: library descriptor generator
-// TODO: better analyzer for "exposed" scope
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)

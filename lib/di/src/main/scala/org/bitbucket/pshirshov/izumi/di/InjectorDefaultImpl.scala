@@ -3,33 +3,6 @@ package org.bitbucket.pshirshov.izumi.di
 import org.bitbucket.pshirshov.izumi.di.definition.ContextDefinition
 import org.bitbucket.pshirshov.izumi.di.model.plan.FinalPlan
 
-/**
-  * TODO:
-  * - identified (named) bindings => DependencyKeyProviderDefaultImpl
-  *
-  * - instantiation logic => InjectorDefaultImpl#produce
-  * - instantiation logic: provide classloader policies from outside
-  * - don't enumerate parent values
-  *
-  * - full test coverage
-  *
-  * + use producer interpreter in bootstrap context
-  * + planbuilder => simplify planning
-  * + import comments
-  * + expose Definitions and Plans in Contexts
-  * + Context enumeration
-  * + multibindings
-  * + identified (named) bindings => getters
-  * + identified (named) bindings => DSL
-  * + remove mirror ref
-  * + refactor the rest of the traits
-  * + strategies as parent injector values
-  * + sanity check: reference completeness
-  * + sanity checks: partial order
-  * + circulars: outside of resolver
-  * + extension point: custom op
-  * + factories: filter parameters out of products
-  */
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
   override def plan(context: ContextDefinition): FinalPlan = {
