@@ -165,17 +165,16 @@ class BasicPlannerTest extends WordSpec {
         .nameless[TestDependency0, TestImpl0]
         .nameless(new TestInstanceBinding())
 
-        .named[TestClass]("named.test.class")
-        .named[TestDependency0, TestImpl0]("named.test.dependency.0")
-        .named(new TestInstanceBinding(), "named.test")
-
-        .namedEmptySet[JustTrait]("named.empty.set")
+        .named("named.test.class").named[TestClass]
+        .named("named.test.dependency.0").named[TestDependency0]
+        .named("named.test").named(TestInstanceBinding())
+        .named("named.empty.set").namedEmptySet[JustTrait]
         .namelessEmptySet[JustTrait]
 
         .namelessSet[JustTrait, Impl0]
         .namelessSet[JustTrait](new Impl1)
-        .namedSet[JustTrait](new Impl2(), "named.set")
-        .namedSet[JustTrait, Impl3]("named.set")
+        .named("named.set").namedSet[JustTrait](new Impl2())
+        .named("named.set").namedSet[JustTrait, Impl3]
 
         .finish
 
@@ -205,15 +204,15 @@ class BasicPlannerTest extends WordSpec {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .namedEmptySet[JustTrait]("named.empty.set")
+        .named("named.empty.set").namedEmptySet[JustTrait]
         .namelessEmptySet[JustTrait]
 
         .namelessSet[JustTrait, Impl0]
         .namelessSet[JustTrait](new Impl1)
-        .namedSet[JustTrait](new Impl2(), "named.set")
-        .namedSet[JustTrait, Impl3]("named.set")
-
+        .named("named.set").namedSet[JustTrait](new Impl2())
+        .named("named.set").namedSet[JustTrait, Impl3]
         .finish
+      
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
@@ -223,9 +222,9 @@ class BasicPlannerTest extends WordSpec {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .named[TestClass]("named.test.class")
-        .named[TestDependency0, TestImpl0]("named.test.dependency.0")
-        .named(new TestInstanceBinding(), "named.test")
+        .named("named.test.class").named[TestClass]
+        .named("named.test.dependency.0").named[TestDependency0, TestImpl0]
+        .named("named.test").named(TestInstanceBinding())
         .finish
       val injector = mkInjector()
       val plan = injector.plan(definition)
