@@ -161,20 +161,20 @@ class BasicPlannerTest extends WordSpec {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .nameless[TestClass]
-        .nameless[TestDependency0, TestImpl0]
-        .nameless(new TestInstanceBinding())
+        .binding[TestClass]
+        .binding[TestDependency0, TestImpl0]
+        .instance(new TestInstanceBinding())
 
-        .named("named.test.class").named[TestClass]
-        .named("named.test.dependency.0").named[TestDependency0]
-        .named("named.test").named(TestInstanceBinding())
-        .named("named.empty.set").namedEmptySet[JustTrait]
-        .namelessEmptySet[JustTrait]
+        .named("named.test.class").binding[TestClass]
+        .named("named.test.dependency.0").binding[TestDependency0]
+        .named("named.test").instance(TestInstanceBinding())
+        .named("named.empty.set").set[JustTrait]
+        .set[JustTrait]
 
-        .namelessSet[JustTrait, Impl0]
-        .namelessSet[JustTrait](new Impl1)
-        .named("named.set").namedSet[JustTrait](new Impl2())
-        .named("named.set").namedSet[JustTrait, Impl3]
+        .element[JustTrait, Impl0]
+        .element[JustTrait](new Impl1)
+        .named("named.set").element[JustTrait](new Impl2())
+        .named("named.set").element[JustTrait, Impl3]
 
         .finish
 
@@ -188,12 +188,12 @@ class BasicPlannerTest extends WordSpec {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .nameless[TestClass]
-        .nameless[TestDependency3]
-        .nameless[TestDependency0, TestImpl0]
-        .nameless[TestDependency1]
-        .nameless[TestCaseClass]
-        .nameless(new TestInstanceBinding())
+        .binding[TestClass]
+        .binding[TestDependency3]
+        .binding[TestDependency0, TestImpl0]
+        .binding[TestDependency1]
+        .binding[TestCaseClass]
+        .instance(new TestInstanceBinding())
         .finish
 
       val injector = mkInjector()
@@ -204,13 +204,13 @@ class BasicPlannerTest extends WordSpec {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .named("named.empty.set").namedEmptySet[JustTrait]
-        .namelessEmptySet[JustTrait]
+        .named("named.empty.set").set[JustTrait]
+        .set[JustTrait]
 
-        .namelessSet[JustTrait, Impl0]
-        .namelessSet[JustTrait](new Impl1)
-        .named("named.set").namedSet[JustTrait](new Impl2())
-        .named("named.set").namedSet[JustTrait, Impl3]
+        .element[JustTrait, Impl0]
+        .element[JustTrait](new Impl1)
+        .named("named.set").element[JustTrait](new Impl2())
+        .named("named.set").element[JustTrait, Impl3]
         .finish
       
       val injector = mkInjector()
@@ -222,9 +222,9 @@ class BasicPlannerTest extends WordSpec {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .named("named.test.class").named[TestClass]
-        .named("named.test.dependency.0").named[TestDependency0, TestImpl0]
-        .named("named.test").named(TestInstanceBinding())
+        .named("named.test.class").binding[TestClass]
+        .named("named.test.dependency.0").binding[TestDependency0, TestImpl0]
+        .named("named.test").instance(TestInstanceBinding())
         .finish
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -237,8 +237,8 @@ class BasicPlannerTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .nameless[Circular2]
-        .nameless[Circular1]
+        .binding[Circular2]
+        .binding[Circular1]
         .finish
 
       val injector = mkInjector()
@@ -250,9 +250,9 @@ class BasicPlannerTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .nameless[Circular3]
-        .nameless[Circular1]
-        .nameless[Circular2]
+        .binding[Circular3]
+        .binding[Circular1]
+        .binding[Circular2]
         .finish
 
       val injector = mkInjector()
@@ -284,8 +284,8 @@ class BasicPlannerTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .nameless[Dependency, Impl1]
-        .nameless[Dependency, Impl2]
+        .binding[Dependency, Impl1]
+        .binding[Dependency, Impl2]
         .finish
 
       val injector = mkInjector()
@@ -300,8 +300,8 @@ class BasicPlannerTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .nameless[Dependency, Impl1]
-        .nameless[Dependency, Impl1]
+        .binding[Dependency, Impl1]
+        .binding[Dependency, Impl1]
         .finish
 
       val injector = mkInjector()
@@ -317,9 +317,9 @@ class BasicPlannerTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .nameless[Factory]
-        .nameless[OverridingFactory]
-        .nameless[AssistedFactory]
+        .binding[Factory]
+        .binding[OverridingFactory]
+        .binding[AssistedFactory]
         .finish
 
       val injector = mkInjector()
@@ -331,8 +331,8 @@ class BasicPlannerTest extends WordSpec {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .nameless[TestCaseClass2]
-        .nameless(new TestInstanceBinding)
+        .binding[TestCaseClass2]
+        .instance(new TestInstanceBinding)
         .finish
 
       val injector = mkInjector()
@@ -349,8 +349,8 @@ class BasicPlannerTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .namelessProvider[TestClass]( (a: Dependency1) => new TestClass(null) )
-        .namelessProvider[Dependency1]( () => new Dependency1Sub {} )
+        .provider[TestClass]((a: Dependency1) => new TestClass(null) )
+        .provider[Dependency1](() => new Dependency1Sub {} )
         .finish
 
       val injector = mkInjector()

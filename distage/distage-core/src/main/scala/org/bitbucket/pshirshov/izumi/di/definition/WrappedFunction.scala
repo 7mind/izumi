@@ -9,11 +9,15 @@ import org.bitbucket.pshirshov.izumi.di.{Tag, TypeFull}
 sealed trait WrappedFunction[+R] extends Callable {
   def ret: TypeFull
   def argTypes: Seq[TypeFull]
+  protected def fun: Any
+  override def toString: String = {
+    s"$fun(${argTypes.mkString(", ")}): $ret"
+  }
 }
 
 object WrappedFunction {
 
-  implicit class W0[R: Tag, T1: Tag](fun: () => R) extends WrappedFunction[R] {
+  implicit class W0[R: Tag, T1: Tag](override protected val fun: () => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def argTypes: Seq[TypeFull] = Seq.empty
@@ -21,7 +25,7 @@ object WrappedFunction {
     override protected def call(args: Any*): Any = fun()
   }
 
-  implicit class W1[R: Tag, T1: Tag](fun: (T1) => R) extends WrappedFunction[R] {
+  implicit class W1[R: Tag, T1: Tag](override protected val fun: (T1) => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def argTypes: Seq[TypeFull] = Seq(
@@ -33,7 +37,7 @@ object WrappedFunction {
     )
   }
 
-  implicit class W2[R: Tag, T1: Tag, T2: Tag](fun: (T1, T2) => R) extends WrappedFunction[R] {
+  implicit class W2[R: Tag, T1: Tag, T2: Tag](override protected val fun: (T1, T2) => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def argTypes: Seq[TypeFull] = Seq(
@@ -47,7 +51,7 @@ object WrappedFunction {
     )
   }
 
-  implicit class W3[R: Tag, T1: Tag, T2: Tag, T3: Tag](fun: (T1, T2, T3) => R) extends WrappedFunction[R] {
+  implicit class W3[R: Tag, T1: Tag, T2: Tag, T3: Tag](override protected val fun: (T1, T2, T3) => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def argTypes: Seq[TypeFull] = Seq(
@@ -63,7 +67,7 @@ object WrappedFunction {
     )
   }
 
-  implicit class W4[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag](fun: (T1, T2, T3, T4) => R) extends WrappedFunction[R] {
+  implicit class W4[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag](override protected val fun: (T1, T2, T3, T4) => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def argTypes: Seq[TypeFull] = Seq(
@@ -81,7 +85,7 @@ object WrappedFunction {
     )
   }
 
-  implicit class W5[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag](fun: (T1, T2, T3, T4, T5) => R) extends WrappedFunction[R] {
+  implicit class W5[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag](override protected val fun: (T1, T2, T3, T4, T5) => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def argTypes: Seq[TypeFull] = Seq(
@@ -101,7 +105,7 @@ object WrappedFunction {
     )
   }
 
-  implicit class W6[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag](fun: (T1, T2, T3, T4, T5, T6) => R) extends WrappedFunction[R] {
+  implicit class W6[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6) => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def argTypes: Seq[TypeFull] = Seq(
