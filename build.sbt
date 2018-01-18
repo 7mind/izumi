@@ -82,7 +82,7 @@ val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 val inRoot = In(".")
-val inLib = In("lib")
+val inDiStage = In("distage")
 
 lazy val sbtIzumi = inRoot.as
   .module
@@ -99,15 +99,18 @@ lazy val sbtIzumi = inRoot.as
         )
   )
 
-lazy val di = inLib.as.module
+lazy val distageCore = inDiStage.as.module
     .settings(
-      libraryDependencies += R.scala_reflect
+      libraryDependencies ++= Seq(
+        R.scala_reflect
+        , R.scala_asm
+      )
     )
     .settings(LibSettings)
 
 lazy val root = inRoot.as
   .root
   .transitiveAggregate(
-    sbtIzumi, di
+    sbtIzumi, distageCore
   )
 
