@@ -6,7 +6,7 @@ import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 
 case class TrivialDIDef(bindings: Seq[Binding]) extends ContextDefinition
 
-sealed trait WrappedFunction {
+sealed trait WrappedFunction[+R] {
   def ret: TypeFull
 
   def args: Seq[TypeFull]
@@ -17,7 +17,7 @@ sealed trait WrappedFunction {
 
 object WrappedFunction {
 
-  case class W0[R: Tag, T1: Tag](f: () => R) extends WrappedFunction {
+  case class W0[R: Tag, T1: Tag](f: () => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def args: Seq[TypeFull] = Seq.empty
@@ -25,7 +25,7 @@ object WrappedFunction {
     override def call(args: Seq[Any]): R = f()
   }
 
-  case class W1[R: Tag, T1: Tag](f: (T1) => R) extends WrappedFunction {
+  case class W1[R: Tag, T1: Tag](f: (T1) => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def args: Seq[TypeFull] = Seq(EqualitySafeType.get[T1])
@@ -33,7 +33,7 @@ object WrappedFunction {
     override def call(args: Seq[Any]): R = f(args.head.asInstanceOf[T1])
   }
 
-  case class W2[R: Tag, T1: Tag, T2: Tag](f: (T1, T2) => R) extends WrappedFunction {
+  case class W2[R: Tag, T1: Tag, T2: Tag](f: (T1, T2) => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def args: Seq[TypeFull] = Seq(EqualitySafeType.get[T1], EqualitySafeType.get[T2])
@@ -44,7 +44,7 @@ object WrappedFunction {
     )
   }
 
-  case class W3[R: Tag, T1: Tag, T2: Tag, T3: Tag](f: (T1, T2, T3) => R) extends WrappedFunction {
+  case class W3[R: Tag, T1: Tag, T2: Tag, T3: Tag](f: (T1, T2, T3) => R) extends WrappedFunction[R] {
     def ret: TypeFull = EqualitySafeType.get[R]
 
     def args: Seq[TypeFull] = Seq(EqualitySafeType.get[T1], EqualitySafeType.get[T2], EqualitySafeType.get[T3])
@@ -67,7 +67,7 @@ object TrivialDIDef {
       new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], symbolDef[T]))
     }
 
-    def namelessProvider[T: Tag](f: WrappedFunction): BindingSupport = {
+    def namelessProvider[T: Tag](f: WrappedFunction[T]): BindingSupport = {
       new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(f.ret, f)))
     }
 
@@ -84,7 +84,7 @@ object TrivialDIDef {
       new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T].named(name), symbolDef[T]))
     }
 
-    def namedProvider[T: Tag](name: String)(f: WrappedFunction): BindingSupport = {
+    def namedProvider[T: Tag](name: String)(f: WrappedFunction[T]): BindingSupport = {
       new BindingSupport(bindings :+ SingletonBinding(DIKey.get[T].named(name), ImplDef.ProviderImpl(f.ret, f)))
     }
 

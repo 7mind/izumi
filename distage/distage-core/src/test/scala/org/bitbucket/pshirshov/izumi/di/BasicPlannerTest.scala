@@ -112,6 +112,7 @@ object Case5 {
 
 object Case6 {
   trait Dependency1
+  trait Dependency1Sub extends Dependency1
 
   class TestClass(b: Dependency1)
 
@@ -349,8 +350,8 @@ class BasicPlannerTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .namelessProvider[TestClass](WrappedFunction.W1((a: Dependency1) => new TestClass(a)))
-        .namelessProvider[Dependency1](WrappedFunction.W0(() => new Dependency1 {}))
+        .namelessProvider[TestClass](WrappedFunction.W1((a: Dependency1) => new TestClass(null)))
+        .namelessProvider[Dependency1](WrappedFunction.W0(() => new Dependency1Sub {}))
         .finish
 
       val injector = mkInjector()

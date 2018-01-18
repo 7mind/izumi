@@ -9,7 +9,7 @@ object ImplDef {
 
   case class InstanceImpl(tpe: TypeFull, instance: Any) extends ImplDef
 
-  case class ProviderImpl(tpe: TypeFull, function: WrappedFunction) extends ImplDef
+  case class ProviderImpl(tpe: TypeFull, function: WrappedFunction[_]) extends ImplDef
 
   // not sure if it's required though why not have it?..
   case class CustomImpl(data: CustomDef) extends ImplDef

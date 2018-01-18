@@ -39,7 +39,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
     }
   }
 
-  override def providerDeps(function: WrappedFunction): Seq[Association] = {
+  override def providerDeps(function: WrappedFunction[_]): Seq[Association] = {
     function.args.map {
       parameter =>
         Association.Parameter(parameter.symbol.typeSymbol, keyProvider.keyFromType(parameter))

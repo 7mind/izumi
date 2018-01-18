@@ -63,7 +63,7 @@ object ExecutableOp {
     }
   }
 
-  case class CallProvider(target: DIKey, tpe: TypeFull, deps: Seq[Association.Parameter], function: WrappedFunction) extends InstantiationOp with DependentOp with FormattableOp {
+  case class CallProvider(target: DIKey, tpe: TypeFull, deps: Seq[Association.Parameter], function: WrappedFunction[_]) extends InstantiationOp with DependentOp with FormattableOp {
     override def format: String = doFormat(function.toString, "call", ('(', ')'), ('{', '}'))
   }
 

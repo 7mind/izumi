@@ -6,7 +6,7 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.Association
 trait ReflectionProvider {
   def symbolDeps(symbl: TypeFull): Seq[Association]
 
-  def providerDeps(function: WrappedFunction): Seq[Association]
+  def providerDeps(function: WrappedFunction[_]): Seq[Association]
 
   def isConcrete(symb: TypeFull): Boolean
 
