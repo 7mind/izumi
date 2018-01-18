@@ -142,7 +142,7 @@ class PlannerDefaultImpl
   private def enumerateDeps(impl: ImplDef): Seq[Association] = {
     impl match {
       case i: ImplDef.TypeImpl =>
-        reflectionProvider.symbolDeps(i.impl)
+        reflectionProvider.symbolDeps(i.implType)
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerDeps(p.function)
       case _: ImplDef.InstanceImpl =>
@@ -155,11 +155,11 @@ class PlannerDefaultImpl
   private def getSymbol(impl: ImplDef): TypeFull = {
     impl match {
       case i: ImplDef.TypeImpl =>
-        i.impl
+        i.implType
       case i: ImplDef.InstanceImpl =>
-        i.tpe
+        i.implType
       case p: ImplDef.ProviderImpl =>
-        p.tpe
+        p.implType
       case c: ImplDef.CustomImpl =>
         customOpHandler.getSymbol(c)
     }

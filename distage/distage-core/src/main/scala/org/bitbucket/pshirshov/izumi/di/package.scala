@@ -10,5 +10,6 @@ package object di {
   type TypeFull = EqualitySafeType
   type TypeNative = universe.Type
   type TypeSymb = universe.Symbol
+  type MethodSymb = universe.MethodSymbol
   type CustomDef = Map[String, Any]
 }

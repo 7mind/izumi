@@ -23,7 +23,7 @@ trait Locator {
 
   protected def lookup[T: Tag](key: DIKey): Option[TypedRef[T]] = {
     unsafeLookup(key)
-      .filter(_ => key.symbol.symbol.baseClasses.contains(typeTag[T].tpe.typeSymbol))
+      .filter(_ => key.symbol.tpe.baseClasses.contains(typeTag[T].tpe.typeSymbol))
       .map {
         value =>
           TypedRef[T](value.asInstanceOf[T])

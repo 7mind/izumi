@@ -8,15 +8,15 @@ sealed trait DIKey {
   def symbol: TypeFull
 }
 
-case class EqualitySafeType(symbol: TypeNative) {
+case class EqualitySafeType(tpe: TypeNative) {
 
-  override def toString: String = symbol.toString
+  override def toString: String = tpe.toString
 
-  override def hashCode(): Int = symbol.toString.hashCode
+  override def hashCode(): Int = tpe.toString.hashCode
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case EqualitySafeType(otherSymbol) =>
-      symbol =:= otherSymbol
+      tpe =:= otherSymbol
     case _ =>
       false
   }

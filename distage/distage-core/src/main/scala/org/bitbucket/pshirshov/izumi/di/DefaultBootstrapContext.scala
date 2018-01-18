@@ -62,7 +62,9 @@ trait DefaultBootstrapContext extends Locator {
     val constructor = ReflectionProviderDefaultImpl.selectConstructor(targetType).toSet
     val associations = paramKeys.map {
       param =>
-        Association.Parameter(constructor.find(_.info.baseClasses.contains(param.symbol.symbol.typeSymbol)).head, param)
+        System.err.println(constructor.toList)
+        val head = constructor.find(_.typeSignature.baseClasses.contains(param.symbol.tpe.typeSymbol)).head
+        Association.Parameter(head, param)
     }
 
     ExecutableOp.InstantiateClass(DIKey.get[Key], targetType, associations)

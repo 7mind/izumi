@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, TrivialDIDef, WrappedFunction}
+import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, TrivialDIDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{MissingInstanceException, UntranslatablePlanException}
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.{DuplicatedStatements, UnbindableBinding, UnsolvableConflict}
@@ -350,8 +350,8 @@ class BasicPlannerTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .namelessProvider[TestClass](WrappedFunction.W1((a: Dependency1) => new TestClass(null)))
-        .namelessProvider[Dependency1](WrappedFunction.W0(() => new Dependency1Sub {}))
+        .namelessProvider[TestClass]( (a: Dependency1) => new TestClass(null) )
+        .namelessProvider[Dependency1]( () => new Dependency1Sub {} )
         .finish
 
       val injector = mkInjector()

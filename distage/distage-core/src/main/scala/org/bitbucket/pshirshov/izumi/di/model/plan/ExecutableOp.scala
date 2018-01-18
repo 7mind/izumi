@@ -1,7 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.definition.WrappedFunction
-import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Formattable}
+import org.bitbucket.pshirshov.izumi.di.model.{Callable, DIKey, Formattable}
 import org.bitbucket.pshirshov.izumi.di.{CustomDef, TypeFull}
 
 // TODO: typeclass?..
@@ -15,7 +14,7 @@ object ExecutableOp {
     this: DependentOp =>
 
     protected def doFormat(impl: TypeFull, opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
-      doFormat(impl.symbol.typeSymbol.fullName, opName, opFormat, delim)
+      doFormat(impl.tpe.typeSymbol.fullName, opName, opFormat, delim)
     }
 
     protected def doFormat(impl: String, opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
@@ -63,7 +62,7 @@ object ExecutableOp {
     }
   }
 
-  case class CallProvider(target: DIKey, tpe: TypeFull, deps: Seq[Association.Parameter], function: WrappedFunction[_]) extends InstantiationOp with DependentOp with FormattableOp {
+  case class CallProvider(target: DIKey, tpe: TypeFull, deps: Seq[Association.Parameter], function: Callable) extends InstantiationOp with DependentOp with FormattableOp {
     override def format: String = doFormat(function.toString, "call", ('(', ')'), ('{', '}'))
   }
 

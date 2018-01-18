@@ -1,10 +1,10 @@
 package org.bitbucket.pshirshov.izumi.di.reflection
 
-import org.bitbucket.pshirshov.izumi.di.{TypeFull, TypeSymb}
+import org.bitbucket.pshirshov.izumi.di.{MethodSymb, TypeFull, TypeSymb}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 
 trait DependencyKeyProvider {
-  def keyFromMethod(methodSymbol: TypeSymb): DIKey
+  def keyFromMethod(methodSymbol: MethodSymb): DIKey
 
   def keyFromParameter(parameterSymbol: TypeSymb): DIKey
 

@@ -1,62 +1,11 @@
 package org.bitbucket.pshirshov.izumi.di.definition
 
-import org.bitbucket.pshirshov.izumi.di.{Tag, TypeFull}
+import org.bitbucket.pshirshov.izumi.di.Tag
 import org.bitbucket.pshirshov.izumi.di.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 
 case class TrivialDIDef(bindings: Seq[Binding]) extends ContextDefinition
 
-sealed trait WrappedFunction[+R] {
-  def ret: TypeFull
-
-  def args: Seq[TypeFull]
-
-  //def f: Any
-  def call(args: Seq[Any]): Any
-}
-
-object WrappedFunction {
-
-  case class W0[R: Tag, T1: Tag](f: () => R) extends WrappedFunction[R] {
-    def ret: TypeFull = EqualitySafeType.get[R]
-
-    def args: Seq[TypeFull] = Seq.empty
-
-    override def call(args: Seq[Any]): R = f()
-  }
-
-  case class W1[R: Tag, T1: Tag](f: (T1) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = EqualitySafeType.get[R]
-
-    def args: Seq[TypeFull] = Seq(EqualitySafeType.get[T1])
-
-    override def call(args: Seq[Any]): R = f(args.head.asInstanceOf[T1])
-  }
-
-  case class W2[R: Tag, T1: Tag, T2: Tag](f: (T1, T2) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = EqualitySafeType.get[R]
-
-    def args: Seq[TypeFull] = Seq(EqualitySafeType.get[T1], EqualitySafeType.get[T2])
-
-    override def call(args: Seq[Any]): R = f(
-      args.head.asInstanceOf[T1]
-      , args(1).asInstanceOf[T2]
-    )
-  }
-
-  case class W3[R: Tag, T1: Tag, T2: Tag, T3: Tag](f: (T1, T2, T3) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = EqualitySafeType.get[R]
-
-    def args: Seq[TypeFull] = Seq(EqualitySafeType.get[T1], EqualitySafeType.get[T2], EqualitySafeType.get[T3])
-
-    override def call(args: Seq[Any]): R = f(
-      args.head.asInstanceOf[T1]
-      , args(1).asInstanceOf[T2]
-      , args(2).asInstanceOf[T3]
-    )
-  }
-
-}
 
 object TrivialDIDef {
 

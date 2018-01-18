@@ -1,9 +1,8 @@
 package org.bitbucket.pshirshov.izumi.di.reflection
 
-import org.bitbucket.pshirshov.izumi.di.definition.WrappedFunction
-import org.bitbucket.pshirshov.izumi.di.model.EqualitySafeType
+import org.bitbucket.pshirshov.izumi.di.model.{Callable, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.di.model.plan.Association
-import org.bitbucket.pshirshov.izumi.di.{TypeFull, TypeSymb}
+import org.bitbucket.pshirshov.izumi.di.{MethodSymb, TypeFull, TypeSymb}
 
 import scala.reflect.runtime.universe
 
@@ -18,13 +17,13 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
 
       case AbstractSymbol(symb) =>
         // empty paramLists means parameterless method, List(List()) means nullarg method()
-        val declaredAbstractMethods = symb.symbol.members.filter(d => isWireableMethod(symb, d))
+        val declaredAbstractMethods = symb.tpe.members.filter(d => isWireableMethod(symb, d)).map(_.asMethod)
         methodsToMaterials(declaredAbstractMethods)
 
       case FactorySymbol(_, factoryMethods) =>
         factoryMethods.flatMap {
           m =>
-            val paramLists = m.asMethod.info.paramLists
+            val paramLists = m.asMethod.paramLists
             val selectedParamList = paramLists.head
 
             val unrequiredMaterials = parametersToMaterials(selectedParamList).map(_.wireWith.symbol).toSet
@@ -39,14 +38,14 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
     }
   }
 
-  override def providerDeps(function: WrappedFunction[_]): Seq[Association] = {
-    function.args.map {
+  override def providerDeps(function: Callable): Seq[Association] = {
+    function.argTypes.map {
       parameter =>
-        Association.Parameter(parameter.symbol.typeSymbol, keyProvider.keyFromType(parameter))
+        Association.Parameter(parameter.tpe.typeSymbol, keyProvider.keyFromType(parameter))
     }
   }
 
-  private def methodsToMaterials(declaredAbstractMethods: Iterable[TypeSymb]): Seq[Association.Method] = {
+  private def methodsToMaterials(declaredAbstractMethods: Iterable[MethodSymb]): Seq[Association.Method] = {
     declaredAbstractMethods.map {
       method =>
         Association.Method(method, keyProvider.keyFromMethod(method))
@@ -61,26 +60,26 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
   }
 
   override def isConcrete(symb: TypeFull): Boolean = {
-    symb.symbol.typeSymbol.isClass && !symb.symbol.typeSymbol.isAbstract
+    symb.tpe.typeSymbol.isClass && !symb.tpe.typeSymbol.isAbstract
   }
 
   override def isWireableAbstract(symb: TypeFull): Boolean = {
-    symb.symbol.typeSymbol.isClass && symb.symbol.typeSymbol.isAbstract && symb.symbol.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
+    symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && symb.tpe.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
   }
 
   override def isFactory(symb: TypeFull): Boolean = {
-    symb.symbol.typeSymbol.isClass && symb.symbol.typeSymbol.isAbstract && symb.symbol.members.filter(_.isAbstract).forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
+    symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && symb.tpe.members.filter(_.isAbstract).forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
   }
 
   private def isWireableMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
-      decl.info.paramLists.isEmpty && EqualitySafeType(decl.asMethod.returnType) != tpe
+      decl.asMethod.paramLists.isEmpty && EqualitySafeType(decl.asMethod.returnType) != tpe
     }
   }
 
   private def isFactoryMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
-      val paramLists = decl.info.paramLists
+      val paramLists = decl.asMethod.paramLists
       paramLists.nonEmpty && paramLists.forall(list => !list.contains(decl.asMethod.returnType) && !list.contains(tpe))
     }
   }
@@ -96,7 +95,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
   private object FactorySymbol {
     def unapply(arg: TypeFull): Option[(TypeFull, Seq[TypeSymb])] =
       Some(arg).filter(isFactory)
-        .map(f => (f, f.symbol.members.filter(m => isFactoryMethod(f, m)).toSeq))
+        .map(f => (f, f.tpe.members.filter(m => isFactoryMethod(f, m)).toSeq))
   }
 
 }
@@ -107,9 +106,9 @@ object ReflectionProviderDefaultImpl {
     // TODO: list should not be empty (?) and should has only one element (?)
 
     // TODO: only considers scala constructors
-    val selectedConstructor = symb.symbol.decl(universe.termNames.CONSTRUCTOR)
+    val selectedConstructor = symb.tpe.decl(universe.termNames.CONSTRUCTOR)
 
-    val paramLists = selectedConstructor.info.paramLists
+    val paramLists = selectedConstructor.asMethod.paramLists
     // TODO: param list should not be empty (?), what to do with multiple lists?..
     paramLists.head
 

@@ -50,7 +50,7 @@ class ProvisionerDefaultImpl extends Provisioner {
       case ExecutableOp.CreateSet(target, targetType) =>
         // target is guaranteed to be a Set
         val scalaCollectionSetType = EqualitySafeType.get[scala.collection.Set[_]]
-        if (targetType.symbol.baseClasses.contains(scalaCollectionSetType.symbol)) {
+        if (targetType.tpe.baseClasses.contains(scalaCollectionSetType.tpe)) {
           StepResult.NewInstance(target, mutable.HashSet[Any]())
         } else {
           throw new IncompatibleTypesException("Tried to create make a Set with a non-Set type! " +
@@ -99,7 +99,8 @@ class ProvisionerDefaultImpl extends Provisioner {
             }
         }
 
-        StepResult.NewInstance(target, function.call(args))
+        val instance = function.apply(args :_*)
+        StepResult.NewInstance(target, instance)
 
       case ExecutableOp.InstantiateClass(target, targetType, associations) =>
         val depMap = associations.map {
@@ -114,8 +115,8 @@ class ProvisionerDefaultImpl extends Provisioner {
         }.toMap
 
         val refUniverse = currentMirror
-        val refClass = refUniverse.reflectClass(targetType.symbol.typeSymbol.asClass)
-        val ctor = targetType.symbol.decl(universe.termNames.CONSTRUCTOR).asMethod
+        val refClass = refUniverse.reflectClass(targetType.tpe.typeSymbol.asClass)
+        val ctor = targetType.tpe.decl(universe.termNames.CONSTRUCTOR).asMethod
         val refCtor = refClass.reflectConstructor(ctor)
 
         val orderedArgs = ctor.paramLists.head.map {
