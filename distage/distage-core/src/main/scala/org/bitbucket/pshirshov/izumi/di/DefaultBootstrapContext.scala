@@ -3,8 +3,8 @@ package org.bitbucket.pshirshov.izumi.di
 import org.bitbucket.pshirshov.izumi.di.definition.Binding.SingletonBinding
 import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ImplDef, TrivialDIDef}
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.DIException
-import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.di.model.plan._
+import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.di.planning._
 import org.bitbucket.pshirshov.izumi.di.provisioning._
 import org.bitbucket.pshirshov.izumi.di.reflection._
@@ -19,7 +19,7 @@ trait DefaultBootstrapContext extends Locator {
   private val introspector = ProvisionerIntrospectorDefaultImpl.instance
   private val hook = ProvisionerHookDefaultImpl.instance
 
-  private val ops = Seq(
+  private val contextBindings = Seq(
     bind[CustomOpHandler, CustomOpHandler.NullCustomOpHander.type](CustomOpHandler.NullCustomOpHander)
     , bind[LookupInterceptor, NullLookupInterceptor](NullLookupInterceptor.instance)
     , bind[PlanningHook, PlanningHookDefaultImpl](PlanningHookDefaultImpl.instance)
@@ -40,15 +40,23 @@ trait DefaultBootstrapContext extends Locator {
     , bind[Planner, PlannerDefaultImpl]
   )
 
-  private val contextBindings = ops.foldLeft(List.empty[Binding]) {
-    case (acc, op: ExecutableOp.WiringOp.ReferenceInstance) =>
-      acc :+ SingletonBinding(op.target, ImplDef.InstanceImpl(op.wiring.instanceType, op.wiring.instance))
+  private val ops = contextBindings.foldLeft(Seq.empty[ExecutableOp]) {
+    case (acc, SingletonBinding(target, ImplDef.TypeImpl(impl))) =>
+      val ctr = symbolIntrospector.selectConstructor(impl)
+      val context = DependencyContext.ConstructorParameterContext(target.symbol, ctr)
 
-    case (acc, op: ExecutableOp.WiringOp.InstantiateClass) =>
-      acc :+ SingletonBinding(op.target, ImplDef.TypeImpl(op.wiring.instanceType))
+      val associations = ctr.arguments.map {
+        param =>
+          Association.Parameter(context, param, DIKey.TypeKey(EqualitySafeType(param.info)))
+
+      }
+      acc :+ ExecutableOp.WiringOp.InstantiateClass(target, UnaryWiring.Constructor(impl, ctr.constructorSymbol, associations))
+
+    case (acc, SingletonBinding(target, ImplDef.InstanceImpl(impl, instance))) =>
+      acc :+ ExecutableOp.WiringOp.ReferenceInstance(target, UnaryWiring.Instance(impl, instance))
 
     case op =>
-      throw new DIException(s"It's a bug! Bootstrap failed on unsupported operation $op", null)
+      throw new DIException(s"It's a bug! Bootstrap failed on unsupported definition: $op", null)
   }
 
   private val contextDefinition = new TrivialDIDef(contextBindings)
@@ -61,22 +69,12 @@ trait DefaultBootstrapContext extends Locator {
   override protected def unsafeLookup(key: DIKey): Option[Any] = bootstrappedContext.get(key)
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
 
-  private def bind[Key:Tag, I: Tag](instance: I): ExecutableOp = {
-    ExecutableOp.WiringOp.ReferenceInstance(DIKey.get[Key], UnaryWiring.Instance(EqualitySafeType.get[I], instance))
+  private def bind[Key:Tag, I: Tag](instance: I): Binding= {
+    SingletonBinding(DIKey.get[Key], ImplDef.InstanceImpl(EqualitySafeType.get[I], instance))
   }
 
-  private def bind[Key:Tag, Target:Tag]: ExecutableOp = {
-    val targetType = EqualitySafeType.get[Target]
-    val ctr = symbolIntrospector.selectConstructor(targetType)
-    val context = DependencyContext.ConstructorParameterContext(targetType, ctr)
-
-    val associations = ctr.arguments.map {
-      param =>
-        Association.Parameter(context, param, DIKey.TypeKey(EqualitySafeType(param.info)))
-
-    }
-
-    ExecutableOp.WiringOp.InstantiateClass(DIKey.get[Key], UnaryWiring.Constructor(targetType, ctr.constructorSymbol, associations))
+  private def bind[Key:Tag, Target:Tag]: Binding = {
+    SingletonBinding(DIKey.get[Key], ImplDef.TypeImpl(EqualitySafeType.get[Target]))
   }
 }
 
