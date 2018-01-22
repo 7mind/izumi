@@ -357,6 +357,7 @@ class BasicPlannerTest extends WordSpec {
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan)
+      println(context.parent.get.plan)
       val instantiated = context.get[TestClass]
 
       println(s"Got instance: ${instantiated.toString}!")
