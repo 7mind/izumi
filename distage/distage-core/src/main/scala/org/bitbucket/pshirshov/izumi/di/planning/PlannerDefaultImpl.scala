@@ -2,9 +2,10 @@ package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, ImplDef}
-import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.UnbindableBinding
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
+import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.UnbindableBinding
 import org.bitbucket.pshirshov.izumi.di.model.plan.Provisioning.{Impossible, InstanceProvisioning, Possible, StepProvisioning}
+import org.bitbucket.pshirshov.izumi.di.model.plan.Wireable._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Value}
 import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProvider
@@ -58,9 +59,9 @@ class PlannerDefaultImpl
   private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): StepProvisioning = {
     binding match {
       case c: SingletonBinding =>
-        val deps = enumerateDeps(c)
-        val toImport = computeImports(currentPlan, binding, deps)
-        val toProvision = provisioning(c, deps)
+        val wireable = bindingToWireable(c)
+        val toImport = computeImports(currentPlan, binding, wireable)
+        val toProvision = provisioning(c, wireable)
         toProvision
           .map(newOps => NextOps(
             toImport
@@ -99,46 +100,50 @@ class PlannerDefaultImpl
   }
 
   private def provisioning(binding: SingletonBinding, deps: Wireable): InstanceProvisioning = {
-    import Provisioning._
     val target = binding.target
 
-    binding.implementation match {
-      case ImplDef.TypeImpl(symb) if reflectionProvider.isConcrete(symb) =>
-        // TODO make type safe
-        Possible(Seq(ExecutableOp.WiringOp.InstantiateClass(target, deps.asInstanceOf[Wireable.Constructor])))
+    deps match {
+      case w@Constructor(instanceType, _, associations) =>
+        Possible(Seq(ExecutableOp.WiringOp.InstantiateClass(target, w)))
 
-      case ImplDef.TypeImpl(symb) if reflectionProvider.isWireableAbstract(symb) => Possible(Seq(ExecutableOp.WiringOp.InstantiateTrait(target, deps.asInstanceOf[Wireable.Abstract])))
+      case w@Abstract(instanceType, associations) =>
+        Possible(Seq(ExecutableOp.WiringOp.InstantiateTrait(target, w)))
 
-      case ImplDef.TypeImpl(symb) if reflectionProvider.isFactory(symb) =>
-        Possible(Seq(ExecutableOp.WiringOp.InstantiateFactory(target, deps.asInstanceOf[Wireable.FactoryMethod])))
+      case w@FactoryMethod(factoryType, unaryWireables) =>
+        Possible(Seq(ExecutableOp.WiringOp.InstantiateFactory(target, w)))
 
-      case ImplDef.InstanceImpl(symb, instance) =>
-        Possible(Seq(ExecutableOp.ReferenceInstance(target, symb, instance)))
+      case w@Function(instanceType, associations) =>
+        Possible(Seq(ExecutableOp.WiringOp.CallProvider(target, w)))
 
-      case ImplDef.ProviderImpl(symb, function) =>
-        Possible(Seq(ExecutableOp.WiringOp.CallProvider(target, symb, deps.asInstanceOf[Wireable.Function])))
+      case _ =>
+        binding.implementation match {
+          case ImplDef.InstanceImpl(symb, instance) =>
+            Possible(Seq(ExecutableOp.ReferenceInstance(target, symb, instance)))
 
-      case ImplDef.CustomImpl(instance) =>
-        Possible(Seq(ExecutableOp.CustomOp(target, instance)))
+          case ImplDef.CustomImpl(instance) =>
+            Possible(Seq(ExecutableOp.CustomOp(target, instance)))
 
-      case other =>
-        Impossible(Seq(other))
+          case other =>
+            Impossible(Seq(other))
+        }
+
     }
+
   }
 
 
-  private def enumerateDeps(definition: Binding): Wireable = {
+  private def bindingToWireable(definition: Binding): Wireable = {
     definition match {
       case c: SingletonBinding =>
-        enumerateDeps(c.implementation)
+        implToWireable(c.implementation)
       case c: SetBinding =>
-        enumerateDeps(c.implementation)
+        implToWireable(c.implementation)
       case _: EmptySetBinding =>
         Wireable.Empty()
     }
   }
 
-  private def enumerateDeps(impl: ImplDef): Wireable = {
+  private def implToWireable(impl: ImplDef): Wireable = {
     impl match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolDeps(i.implType)

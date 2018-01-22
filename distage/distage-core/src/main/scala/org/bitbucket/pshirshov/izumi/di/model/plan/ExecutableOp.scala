@@ -108,7 +108,7 @@ object ExecutableOp {
       override def format: String = doFormat(target, deps)
     }
 
-    case class CallProvider(target: DIKey, tpe: TypeFull, deps: Wireable.Function) extends InstantiationOp with FormattableOp {
+    case class CallProvider(target: DIKey, deps: Wireable.Function) extends InstantiationOp with FormattableOp {
       override def format: String = doFormat(target, deps)
     }
 

@@ -35,7 +35,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
   override def symbolDeps(symbl: TypeFull): Wireable = {
     symbl match {
       case FactorySymbol(_, factoryMethods) =>
-
+        System.err.println(factoryMethods.toSeq)
         val mw = factoryMethods.map {
           m =>
             val paramLists = m.asMethod.paramLists
@@ -70,7 +70,11 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
   }
 
   override def isFactory(symb: TypeFull): Boolean = {
-    symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && symb.tpe.members.filter(_.isAbstract).forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
+    symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && {
+      val abstracts = symb.tpe.members.filter(_.isAbstract)
+      abstracts.exists(isFactoryMethod(symb, _)) &&
+        abstracts.forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
+    }
   }
 
 
@@ -113,7 +117,8 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
 
   private object FactorySymbol {
     def unapply(arg: TypeFull): Option[(TypeFull, Seq[TypeSymb])] =
-      Some(arg).filter(isFactory)
+      Some(arg)
+        .filter(isFactory)
         .map(f => (f, f.tpe.members.filter(m => isFactoryMethod(f, m)).toSeq))
   }
 
