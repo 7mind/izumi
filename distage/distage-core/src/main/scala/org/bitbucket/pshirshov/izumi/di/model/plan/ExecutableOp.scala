@@ -23,6 +23,7 @@ object ExecutableOp {
     }
 
     private def doFormat(deps: Wiring, shift: Int): String = {
+      import UnaryWiring._
       deps match {
         case Constructor(instanceType, _, associations) =>
           doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'), shift)
@@ -33,7 +34,7 @@ object ExecutableOp {
           doFormat(instanceType.toString, associations.map(_.format), "call", ('(', ')'), ('{', '}'), shift)
 
         case FactoryMethod(factoryType, unaryWireables) =>
-          val wirings = unaryWireables.map(w => s"${w.toWire} ~= ${doFormat(w.wireWith, shift+1)}")
+          val wirings = unaryWireables.map(w => s"${w.factoryMethod} ~= ${doFormat(w.wireWith, shift+1)}")
 
           doFormat(
             factoryType.toString
@@ -89,11 +90,11 @@ object ExecutableOp {
 
   object WiringOp {
 
-    case class InstantiateClass(target: DIKey, wiring: Wiring.Constructor) extends InstantiationOp with FormattableOp {
+    case class InstantiateClass(target: DIKey, wiring: UnaryWiring.Constructor) extends InstantiationOp with FormattableOp {
       override def format: String = doFormat(target, wiring)
     }
 
-    case class InstantiateTrait(target: DIKey, wiring: Wiring.Abstract) extends InstantiationOp with FormattableOp {
+    case class InstantiateTrait(target: DIKey, wiring: UnaryWiring.Abstract) extends InstantiationOp with FormattableOp {
       override def format: String = doFormat(target, wiring)
     }
 
@@ -101,11 +102,11 @@ object ExecutableOp {
       override def format: String = doFormat(target, wiring)
     }
 
-    case class CallProvider(target: DIKey, wiring: Wiring.Function) extends InstantiationOp with FormattableOp {
+    case class CallProvider(target: DIKey, wiring: UnaryWiring.Function) extends InstantiationOp with FormattableOp {
       override def format: String = doFormat(target, wiring)
     }
 
-    case class ReferenceInstance(target: DIKey, wiring: Wiring.Instance) extends InstantiationOp {
+    case class ReferenceInstance(target: DIKey, wiring: UnaryWiring.Instance) extends InstantiationOp {
       override def format: String = {
         s"$target := ${wiring.instance.getClass.getCanonicalName}#${wiring.instance.hashCode()}"
       }

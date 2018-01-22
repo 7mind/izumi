@@ -3,26 +3,64 @@ package org.bitbucket.pshirshov.izumi.di.reflection
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.UnsupportedWiringException
 import org.bitbucket.pshirshov.izumi.di.model.plan.{Association, UnaryWiring, Wiring}
 import org.bitbucket.pshirshov.izumi.di.model.{Callable, EqualitySafeType}
-import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProviderDefaultImpl.SelectedConstructor
 import org.bitbucket.pshirshov.izumi.di.{MethodSymb, TypeFull, TypeSymb}
 
 import scala.reflect.runtime.universe
 
+case class SelectedConstructor(constructorSymbol: TypeSymb, arguments: Seq[TypeSymb])
 
 class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends ReflectionProvider {
+  override def symbolToWiring(symbl: TypeFull): Wiring = {
+    symbl match {
+      case FactorySymbol(_, factoryMethods) =>
+        val mw = factoryMethods.map(_.asMethod).map {
+          factoryMethod =>
+            val selectedParamList = selectParameters(factoryMethod)
+            val context = DependencyContext.MethodParameterContext(symbl, factoryMethod)
+            
+            val alreadyInSignature = selectedParamList.map(keyProvider.keyFromParameter(context, _).symbol).toSet
+            val resultType = EqualitySafeType(factoryMethod.returnType)
+            val methodTypeWireable = unarySymbolDeps(resultType, alreadyInSignature)
+            Wiring.FactoryMethod.WithContext(factoryMethod, methodTypeWireable)
+        }
+        
+        Wiring.FactoryMethod(symbl, mw)
 
-  private def unarySymbolDeps(symbl: TypeFull, exclusions: Set[TypeFull]): UnaryWiring = {
+      case o =>
+        unarySymbolDeps(o, Set.empty)
+    }
+  }
+
+  override def providerToWiring(function: Callable): Wiring = {
+    val associations = function.argTypes.map {
+      parameter =>
+        Association.Parameter(DependencyContext.CallableParameterContext(function), parameter.tpe.typeSymbol, keyProvider.keyFromType(parameter))
+    }
+    UnaryWiring.Function(function, associations)
+  }
+
+  protected def unarySymbolDeps(symbl: TypeFull, exclusions: Set[TypeFull]): UnaryWiring = {
     symbl match {
       case ConcreteSymbol(symb) =>
         val selected = selectConstructor(symb)
-        val parameters = parametersToMaterials(selected.arguments).filterNot(d => exclusions.contains(d.wireWith.symbol))
-        Wiring.Constructor(symbl, selected.constructorSymbol, parameters)
+        val context = DependencyContext.ConstructorParameterContext(symbl, selected)
+        val materials = selected.arguments.map {
+          parameter =>
+            Association.Parameter(context, parameter, keyProvider.keyFromParameter(context, parameter))
+        }
+        val parameters = materials.filterNot(d => exclusions.contains(d.wireWith.symbol))
+        UnaryWiring.Constructor(symbl, selected.constructorSymbol, parameters)
 
       case AbstractSymbol(symb) =>
         // empty paramLists means parameterless method, List(List()) means nullarg method()
         val declaredAbstractMethods = symb.tpe.members.filter(d => isWireableMethod(symb, d)).map(_.asMethod)
-        val methods = methodsToMaterials(declaredAbstractMethods).filterNot(d => exclusions.contains(d.wireWith.symbol))
-        Wiring.Abstract(symbl, methods)
+        val context = DependencyContext.MethodContext(symbl)
+        val materials = declaredAbstractMethods.map {
+          method =>
+            Association.Method(context, method, keyProvider.keyFromMethod(context, method))
+        }
+        val methods = materials.filterNot(d => exclusions.contains(d.wireWith.symbol))
+        UnaryWiring.Abstract(symbl, methods.toSeq)
 
       case FactorySymbol(_, _) =>
         throw new UnsupportedWiringException(s"Factory cannot produce factories, it's pointless: $symbl", symbl)
@@ -32,43 +70,23 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
     }
   }
 
-  override def symbolDeps(symbl: TypeFull): Wiring = {
-    symbl match {
-      case FactorySymbol(_, factoryMethods) =>
-        val mw = factoryMethods.map {
-          m =>
-            val paramLists = m.asMethod.paramLists
-            val selectedParamList = paramLists.head
-            val alreadyInSignature = parametersToMaterials(selectedParamList).map(_.wireWith.symbol).toSet
-            val resultType = m.asMethod.returnType
-
-            val methodTypeWireable = unarySymbolDeps(EqualitySafeType(resultType), alreadyInSignature)
-            Wiring.Indirect(m, methodTypeWireable)
-        }
-        Wiring.FactoryMethod(symbl, mw)
-
-      case o =>
-        unarySymbolDeps(o, Set.empty)
-    }
+  protected def selectConstructor(symb: TypeFull): SelectedConstructor = {
+    ReflectionProviderDefaultImpl.selectConstructor(symb)
+  }
+  protected def selectParameters(symb: MethodSymb): List[TypeSymb] = {
+    symb.paramLists.head
   }
 
-  override def providerDeps(function: Callable): Wiring = {
-    val associations = function.argTypes.map {
-      parameter =>
-        Association.Parameter(parameter.tpe.typeSymbol, keyProvider.keyFromType(parameter))
-    }
-    Wiring.Function(function, associations)
-  }
 
-  override def isConcrete(symb: TypeFull): Boolean = {
+  protected def isConcrete(symb: TypeFull): Boolean = {
     symb.tpe.typeSymbol.isClass && !symb.tpe.typeSymbol.isAbstract
   }
 
-  override def isWireableAbstract(symb: TypeFull): Boolean = {
+  protected def isWireableAbstract(symb: TypeFull): Boolean = {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && symb.tpe.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
   }
 
-  override def isFactory(symb: TypeFull): Boolean = {
+  protected def isFactory(symb: TypeFull): Boolean = {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && {
       val abstracts = symb.tpe.members.filter(_.isAbstract)
       abstracts.exists(isFactoryMethod(symb, _)) &&
@@ -76,45 +94,28 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
     }
   }
 
-
-  def selectConstructor(symb: TypeFull): SelectedConstructor = ReflectionProviderDefaultImpl.selectConstructor(symb)
-
-  private def methodsToMaterials(declaredAbstractMethods: Iterable[MethodSymb]): Seq[Association.Method] = {
-    declaredAbstractMethods.map {
-      method =>
-        Association.Method(method, keyProvider.keyFromMethod(method))
-    }.toSeq
-  }
-
-  private def parametersToMaterials(selectedParamList: Seq[TypeSymb]): Seq[Association.Parameter] = {
-    selectedParamList.map {
-      parameter =>
-        Association.Parameter(parameter, keyProvider.keyFromParameter(parameter))
-    }
-  }
-
-  private def isWireableMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
+  protected def isWireableMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       decl.asMethod.paramLists.isEmpty && EqualitySafeType(decl.asMethod.returnType) != tpe
     }
   }
 
-  private def isFactoryMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
+  protected def isFactoryMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       val paramLists = decl.asMethod.paramLists
       paramLists.nonEmpty && paramLists.forall(list => !list.contains(decl.asMethod.returnType) && !list.contains(tpe))
     }
   }
 
-  private object ConcreteSymbol {
+  protected object ConcreteSymbol {
     def unapply(arg: TypeFull): Option[TypeFull] = Some(arg).filter(isConcrete)
   }
 
-  private object AbstractSymbol {
+  protected object AbstractSymbol {
     def unapply(arg: TypeFull): Option[TypeFull] = Some(arg).filter(isWireableAbstract)
   }
 
-  private object FactorySymbol {
+  protected object FactorySymbol {
     def unapply(arg: TypeFull): Option[(TypeFull, Seq[TypeSymb])] =
       Some(arg)
         .filter(isFactory)
@@ -125,9 +126,7 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
 
 
 object ReflectionProviderDefaultImpl {
-
-  case class SelectedConstructor(constructorSymbol: TypeSymb, arguments: Seq[TypeSymb])
-
+  // we need this thing here for bootstrap purposes only
   def selectConstructor(symb: TypeFull): SelectedConstructor = {
     // val constructors = symb.symbol.members.filter(_.isConstructor)
     // TODO: list should not be empty (?) and should has only one element (?)

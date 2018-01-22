@@ -83,7 +83,7 @@ class PlannerDefaultImpl
   private def provisioning(binding: SingletonBinding): Step = {
     val target = binding.target
     val wiring = implToWireable(binding.implementation)
-
+    import UnaryWiring._
     wiring match {
       case w: Constructor =>
         Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateClass(target, w)))
@@ -117,13 +117,13 @@ class PlannerDefaultImpl
   private def implToWireable(impl: ImplDef): Wiring = {
     impl match {
       case i: ImplDef.TypeImpl =>
-        reflectionProvider.symbolDeps(i.implType)
+        reflectionProvider.symbolToWiring(i.implType)
       case p: ImplDef.ProviderImpl =>
-        reflectionProvider.providerDeps(p.function)
+        reflectionProvider.providerToWiring(p.function)
       case c: ImplDef.CustomImpl =>
         customOpHandler.getDeps(c)
       case i: ImplDef.InstanceImpl =>
-        Wiring.Instance(i.implType, i.instance)
+        UnaryWiring.Instance(i.implType, i.instance)
     }
   }
 

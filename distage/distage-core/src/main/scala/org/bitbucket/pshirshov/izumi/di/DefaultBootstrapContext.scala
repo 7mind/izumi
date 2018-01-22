@@ -5,7 +5,7 @@ import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.planning._
 import org.bitbucket.pshirshov.izumi.di.provisioning.{Provisioner, ProvisionerDefaultImpl}
-import org.bitbucket.pshirshov.izumi.di.reflection.{DependencyKeyProvider, DependencyKeyProviderDefaultImpl, ReflectionProvider, ReflectionProviderDefaultImpl}
+import org.bitbucket.pshirshov.izumi.di.reflection._
 
 
 trait DefaultBootstrapContext extends Locator {
@@ -53,7 +53,7 @@ trait DefaultBootstrapContext extends Locator {
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
 
   private def bindInstance[Key:Tag, I: Tag](instance: I): ExecutableOp = {
-    ExecutableOp.WiringOp.ReferenceInstance(DIKey.get[Key], Wiring.Instance(EqualitySafeType.get[I], instance))
+    ExecutableOp.WiringOp.ReferenceInstance(DIKey.get[Key], UnaryWiring.Instance(EqualitySafeType.get[I], instance))
   }
 
   private def bindSubclass[Key:Tag, Target:Tag]: ExecutableOp =  bindSubclass[Key, Target](Seq.empty)
@@ -62,13 +62,15 @@ trait DefaultBootstrapContext extends Locator {
     val targetType = EqualitySafeType.get[Target]
     val ctr = ReflectionProviderDefaultImpl.selectConstructor(targetType)
     val constructor = ctr.arguments.toSet
+    val context = DependencyContext.ConstructorParameterContext(targetType, ctr)
+
     val associations = paramKeys.map {
       param =>
         val head = constructor.find(_.typeSignature.baseClasses.contains(param.symbol.tpe.typeSymbol)).head
-        Association.Parameter(head, param)
+        Association.Parameter(context, head, param)
     }
 
-    ExecutableOp.WiringOp.InstantiateClass(DIKey.get[Key], Wiring.Constructor(targetType, ctr.constructorSymbol, associations))
+    ExecutableOp.WiringOp.InstantiateClass(DIKey.get[Key], UnaryWiring.Constructor(targetType, ctr.constructorSymbol, associations))
   }
 }
 
