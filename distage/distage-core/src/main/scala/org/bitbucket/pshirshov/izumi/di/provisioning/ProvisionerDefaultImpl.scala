@@ -83,13 +83,13 @@ class ProvisionerDefaultImpl extends Provisioner {
               s" but the instance has not been initialized! Set: $target, instance: $key")
         }
 
-      case ExecutableOp.ReferenceInstance(target, _, instance) =>
-        StepResult.NewInstance(target, instance)
+      case ExecutableOp.WiringOp.ReferenceInstance(target, wiring) =>
+        StepResult.NewInstance(target, wiring.instance)
 
       case ExecutableOp.CustomOp(target, customDef) =>
         throw new DIException(s"No handle for CustomOp for $target, defs: $customDef", null)
 
-      case ExecutableOp.WiringOp.CallProvider(target, _, associations) =>
+      case ExecutableOp.WiringOp.CallProvider(target, associations) =>
         // TODO: here we depend on order
         val args = associations.associations.map {
           key =>
@@ -105,8 +105,8 @@ class ProvisionerDefaultImpl extends Provisioner {
         val instance = associations.provider.apply(args: _*)
         StepResult.NewInstance(target, instance)
 
-      case ExecutableOp.WiringOp.InstantiateClass(target, wireable) =>
-        val depMap = wireable.associations.map {
+      case ExecutableOp.WiringOp.InstantiateClass(target, wiring) =>
+        val depMap = wiring.associations.map {
           key =>
             map.get(key.wireWith) match {
               case Some(dep) =>
@@ -117,7 +117,7 @@ class ProvisionerDefaultImpl extends Provisioner {
             }
         }.toMap
 
-        val targetType = wireable.instanceType
+        val targetType = wiring.instanceType
         val refUniverse = currentMirror
         val refClass = refUniverse.reflectClass(targetType.tpe.typeSymbol.asClass)
         val ctor = targetType.tpe.decl(universe.termNames.CONSTRUCTOR).asMethod

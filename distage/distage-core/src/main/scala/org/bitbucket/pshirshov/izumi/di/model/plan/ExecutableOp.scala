@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.{CustomDef, TypeFull}
-import org.bitbucket.pshirshov.izumi.di.model.plan.Wireable._
+import org.bitbucket.pshirshov.izumi.di.TypeFull
+import org.bitbucket.pshirshov.izumi.di.model.plan.Wiring._
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Formattable}
 
 // TODO: typeclass?..
@@ -16,13 +16,13 @@ object ExecutableOp {
   sealed trait FormattableOp extends Formattable {
     //this: WiringOp =>
 
-    protected def doFormat(target: DIKey, deps: Wireable): String = {
+    protected def doFormat(target: DIKey, deps: Wiring): String = {
       val op = doFormat(deps, 0)
       s"$target := $op"
 
     }
 
-    private def doFormat(deps: Wireable, shift: Int): String = {
+    private def doFormat(deps: Wiring, shift: Int): String = {
       deps match {
         case Constructor(instanceType, _, associations) =>
           doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'), shift)
@@ -32,13 +32,12 @@ object ExecutableOp {
         case Function(instanceType, associations) =>
           doFormat(instanceType.toString, associations.map(_.format), "call", ('(', ')'), ('{', '}'), shift)
 
-        case Indirect(toWire, wireWith) =>
-          s"$toWire ~= ${doFormat(wireWith, shift)}"
-
         case FactoryMethod(factoryType, unaryWireables) =>
+          val wirings = unaryWireables.map(w => s"${w.toWire} ~= ${doFormat(w.wireWith, shift+1)}")
+
           doFormat(
             factoryType.toString
-            , unaryWireables.map(w => doFormat(w, shift + 1))
+            , wirings
             , "fact", ('(', ')'), ('{', '}')
             , shift
           )
@@ -66,13 +65,7 @@ object ExecutableOp {
     override def format: String = f"""$target := import $target // required for $references"""
   }
 
-  case class ReferenceInstance(target: DIKey, tpe: TypeFull, instance: Any) extends InstantiationOp {
-    override def format: String = {
-      s"$target := ${instance.getClass.getCanonicalName}#${instance.hashCode()}"
-    }
-  }
-
-  case class CustomOp(target: DIKey, data: CustomDef) extends InstantiationOp {
+  case class CustomOp(target: DIKey, data: CustomWiring) extends InstantiationOp {
     override def format: String = f"""$target := custom($target)"""
   }
 
@@ -91,27 +84,32 @@ object ExecutableOp {
   }
 
   sealed trait WiringOp extends InstantiationOp {
-    def deps: Wireable
+    def wiring: Wiring
   }
 
   object WiringOp {
 
-    case class InstantiateClass(target: DIKey, deps: Wireable.Constructor) extends InstantiationOp with FormattableOp {
-      override def format: String = doFormat(target, deps)
+    case class InstantiateClass(target: DIKey, wiring: Wiring.Constructor) extends InstantiationOp with FormattableOp {
+      override def format: String = doFormat(target, wiring)
     }
 
-    case class InstantiateTrait(target: DIKey, deps: Wireable.Abstract) extends InstantiationOp with FormattableOp {
-      override def format: String = doFormat(target, deps)
+    case class InstantiateTrait(target: DIKey, wiring: Wiring.Abstract) extends InstantiationOp with FormattableOp {
+      override def format: String = doFormat(target, wiring)
     }
 
-    case class InstantiateFactory(target: DIKey, deps: Wireable.FactoryMethod) extends InstantiationOp with FormattableOp {
-      override def format: String = doFormat(target, deps)
+    case class InstantiateFactory(target: DIKey, wiring: Wiring.FactoryMethod) extends InstantiationOp with FormattableOp {
+      override def format: String = doFormat(target, wiring)
     }
 
-    case class CallProvider(target: DIKey, deps: Wireable.Function) extends InstantiationOp with FormattableOp {
-      override def format: String = doFormat(target, deps)
+    case class CallProvider(target: DIKey, wiring: Wiring.Function) extends InstantiationOp with FormattableOp {
+      override def format: String = doFormat(target, wiring)
     }
 
+    case class ReferenceInstance(target: DIKey, wiring: Wiring.Instance) extends InstantiationOp {
+      override def format: String = {
+        s"$target := ${wiring.instance.getClass.getCanonicalName}#${wiring.instance.hashCode()}"
+      }
+    }
   }
 
   sealed trait ProxyOp {}

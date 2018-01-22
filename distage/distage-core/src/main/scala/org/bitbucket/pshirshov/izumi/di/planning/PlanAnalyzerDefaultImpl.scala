@@ -33,7 +33,7 @@ class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
     // TODO: make it immu
     val dependencies = plan.foldLeft(new Accumulator) {
       case (acc, op: WiringOp) =>
-        val forwardRefs = op.deps.associations.map(_.wireWith).filterNot(refFilter(acc)).toSet
+        val forwardRefs = op.wiring.associations.map(_.wireWith).filterNot(refFilter(acc)).toSet
         acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= forwardRefs
         acc
 

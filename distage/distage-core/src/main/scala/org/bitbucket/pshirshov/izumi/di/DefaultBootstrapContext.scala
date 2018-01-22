@@ -51,7 +51,7 @@ trait DefaultBootstrapContext extends Locator {
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
 
   private def bindInstance[Key:Tag, I: Tag](instance: I): ExecutableOp = {
-    ExecutableOp.ReferenceInstance(DIKey.get[Key], EqualitySafeType.get[I], instance)
+    ExecutableOp.WiringOp.ReferenceInstance(DIKey.get[Key], Wiring.Instance(EqualitySafeType.get[I], instance))
   }
 
   private def bindSubclass[Key:Tag, Target:Tag]: ExecutableOp =  bindSubclass[Key, Target](Seq.empty)
@@ -66,7 +66,7 @@ trait DefaultBootstrapContext extends Locator {
         Association.Parameter(head, param)
     }
 
-    ExecutableOp.WiringOp.InstantiateClass(DIKey.get[Key], Wireable.Constructor(targetType, ctr.constructorSymbol, associations))
+    ExecutableOp.WiringOp.InstantiateClass(DIKey.get[Key], Wiring.Constructor(targetType, ctr.constructorSymbol, associations))
   }
 }
 

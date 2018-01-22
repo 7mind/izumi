@@ -2,8 +2,8 @@ package org.bitbucket.pshirshov.izumi.di
 
 import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, TrivialDIDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.model.exceptions.{MissingInstanceException, UntranslatablePlanException}
-import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.{DuplicatedStatements, UnbindableBinding, UnsolvableConflict}
+import org.bitbucket.pshirshov.izumi.di.model.exceptions.{MissingInstanceException, UnsupportedWiringException, UntranslatablePlanException}
+import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.{DuplicatedStatements, UnsolvableConflict}
 import org.bitbucket.pshirshov.izumi.di.planning.{PlanResolver, PlanResolverDefaultImpl}
 import org.scalatest.WordSpec
 
@@ -273,10 +273,10 @@ class BasicPlannerTest extends WordSpec {
       }
 
       val injector = mkInjector()
-      val exc = intercept[UntranslatablePlanException] {
+      intercept[UnsupportedWiringException] {
         injector.plan(definition)
       }
-      assert(exc.badSteps.lengthCompare(1) == 0 && exc.badSteps.exists(_.isInstanceOf[UnbindableBinding]))
+      //assert(exc.badSteps.lengthCompare(1) == 0 && exc.badSteps.exists(_.isInstanceOf[UnbindableBinding]))
     }
 
     "fail on unsolvable conflicts" in {

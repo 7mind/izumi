@@ -5,7 +5,7 @@ import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, 
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.UnbindableBinding
 import org.bitbucket.pshirshov.izumi.di.model.plan.Provisioning.{Impossible, InstanceProvisioning, Possible, StepProvisioning}
-import org.bitbucket.pshirshov.izumi.di.model.plan.Wireable._
+import org.bitbucket.pshirshov.izumi.di.model.plan.Wiring._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Value}
 import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProvider
@@ -56,18 +56,23 @@ class PlannerDefaultImpl
     finalPlan
   }
 
+
   private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): StepProvisioning = {
     binding match {
       case c: SingletonBinding =>
-        val wireable = bindingToWireable(c)
-        val toImport = computeImports(currentPlan, binding, wireable)
-        val toProvision = provisioning(c, wireable)
+        val toProvision = provisioning(c)
+
         toProvision
-          .map(newOps => NextOps(
-            toImport
-            , Set.empty
-            , newOps
-          ))
+          .map {
+            newOps =>
+              val imports = computeImports(currentPlan, binding, newOps.wiring)
+
+              NextOps(
+                imports
+                , Set.empty
+                , newOps.ops
+              )
+          }
 
       case s: SetBinding =>
         val target = s.target
@@ -91,7 +96,33 @@ class PlannerDefaultImpl
     }
   }
 
-  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: Wireable): Set[ImportDependency] = {
+  private def provisioning(binding: SingletonBinding): InstanceProvisioning = {
+    val target = binding.target
+    val wiring = implToWireable(binding.implementation)
+
+    wiring match {
+      case w: Constructor =>
+        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateClass(target, w))))
+
+      case w: Abstract =>
+        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateTrait(target, w))))
+
+      case w: FactoryMethod =>
+        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateFactory(target, w))))
+
+      case w: Function =>
+        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.CallProvider(target, w))))
+
+      case w: Instance =>
+        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.ReferenceInstance(target, w))))
+
+      case w: CustomWiring =>
+        Possible(Step(wiring, Seq(ExecutableOp.CustomOp(target, w))))
+    }
+
+  }
+
+  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: Wiring): Set[ImportDependency] = {
     val knownTargets = currentPlan.statements.map(_.target).toSet
     val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith))
     // we don't need resolved deps, we already have them in finalPlan
@@ -99,60 +130,16 @@ class PlannerDefaultImpl
     toImport.toSet
   }
 
-  private def provisioning(binding: SingletonBinding, deps: Wireable): InstanceProvisioning = {
-    val target = binding.target
-
-    deps match {
-      case w@Constructor(instanceType, _, associations) =>
-        Possible(Seq(ExecutableOp.WiringOp.InstantiateClass(target, w)))
-
-      case w@Abstract(instanceType, associations) =>
-        Possible(Seq(ExecutableOp.WiringOp.InstantiateTrait(target, w)))
-
-      case w@FactoryMethod(factoryType, unaryWireables) =>
-        Possible(Seq(ExecutableOp.WiringOp.InstantiateFactory(target, w)))
-
-      case w@Function(instanceType, associations) =>
-        Possible(Seq(ExecutableOp.WiringOp.CallProvider(target, w)))
-
-      case _ =>
-        binding.implementation match {
-          case ImplDef.InstanceImpl(symb, instance) =>
-            Possible(Seq(ExecutableOp.ReferenceInstance(target, symb, instance)))
-
-          case ImplDef.CustomImpl(instance) =>
-            Possible(Seq(ExecutableOp.CustomOp(target, instance)))
-
-          case other =>
-            Impossible(Seq(other))
-        }
-
-    }
-
-  }
-
-
-  private def bindingToWireable(definition: Binding): Wireable = {
-    definition match {
-      case c: SingletonBinding =>
-        implToWireable(c.implementation)
-      case c: SetBinding =>
-        implToWireable(c.implementation)
-      case _: EmptySetBinding =>
-        Wireable.Empty()
-    }
-  }
-
-  private def implToWireable(impl: ImplDef): Wireable = {
+  private def implToWireable(impl: ImplDef): Wiring = {
     impl match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolDeps(i.implType)
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerDeps(p.function)
-      case _: ImplDef.InstanceImpl =>
-        Wireable.Empty()
       case c: ImplDef.CustomImpl =>
         customOpHandler.getDeps(c)
+      case i: ImplDef.InstanceImpl =>
+        Wiring.Instance(i.implType, i.instance)
     }
   }
 

@@ -1,8 +1,8 @@
 package org.bitbucket.pshirshov.izumi.di.reflection
 
-import org.bitbucket.pshirshov.izumi.di.model.exceptions.DIException
+import org.bitbucket.pshirshov.izumi.di.model.exceptions.UnsupportedWiringException
+import org.bitbucket.pshirshov.izumi.di.model.plan.{Association, UnaryWiring, Wiring}
 import org.bitbucket.pshirshov.izumi.di.model.{Callable, EqualitySafeType}
-import org.bitbucket.pshirshov.izumi.di.model.plan.{Association, UnaryWireable, Wireable}
 import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProviderDefaultImpl.SelectedConstructor
 import org.bitbucket.pshirshov.izumi.di.{MethodSymb, TypeFull, TypeSymb}
 
@@ -11,31 +11,30 @@ import scala.reflect.runtime.universe
 
 class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends ReflectionProvider {
 
-  private def unarySymbolDeps(symbl: TypeFull, exclusions: Set[TypeFull]): UnaryWireable = {
+  private def unarySymbolDeps(symbl: TypeFull, exclusions: Set[TypeFull]): UnaryWiring = {
     symbl match {
       case ConcreteSymbol(symb) =>
         val selected = selectConstructor(symb)
         val parameters = parametersToMaterials(selected.arguments).filterNot(d => exclusions.contains(d.wireWith.symbol))
-        Wireable.Constructor(symbl, selected.constructorSymbol, parameters)
+        Wiring.Constructor(symbl, selected.constructorSymbol, parameters)
 
       case AbstractSymbol(symb) =>
         // empty paramLists means parameterless method, List(List()) means nullarg method()
         val declaredAbstractMethods = symb.tpe.members.filter(d => isWireableMethod(symb, d)).map(_.asMethod)
         val methods = methodsToMaterials(declaredAbstractMethods).filterNot(d => exclusions.contains(d.wireWith.symbol))
-        Wireable.Abstract(symbl, methods)
+        Wiring.Abstract(symbl, methods)
 
       case FactorySymbol(_, _) =>
-        throw new DIException(s"Factory cannot produce factories, it's pointless", null)
+        throw new UnsupportedWiringException(s"Factory cannot produce factories, it's pointless: $symbl", symbl)
 
       case _ =>
-        Wireable.Empty()
+        throw new UnsupportedWiringException(s"Wiring unsupported: $symbl", symbl)
     }
   }
 
-  override def symbolDeps(symbl: TypeFull): Wireable = {
+  override def symbolDeps(symbl: TypeFull): Wiring = {
     symbl match {
       case FactorySymbol(_, factoryMethods) =>
-        System.err.println(factoryMethods.toSeq)
         val mw = factoryMethods.map {
           m =>
             val paramLists = m.asMethod.paramLists
@@ -44,21 +43,21 @@ class ReflectionProviderDefaultImpl(keyProvider: DependencyKeyProvider) extends 
             val resultType = m.asMethod.returnType
 
             val methodTypeWireable = unarySymbolDeps(EqualitySafeType(resultType), alreadyInSignature)
-            Wireable.Indirect(m, methodTypeWireable)
+            Wiring.Indirect(m, methodTypeWireable)
         }
-        Wireable.FactoryMethod(symbl, mw)
+        Wiring.FactoryMethod(symbl, mw)
 
       case o =>
         unarySymbolDeps(o, Set.empty)
     }
   }
 
-  override def providerDeps(function: Callable): Wireable = {
+  override def providerDeps(function: Callable): Wiring = {
     val associations = function.argTypes.map {
       parameter =>
         Association.Parameter(parameter.tpe.typeSymbol, keyProvider.keyFromType(parameter))
     }
-    Wireable.Function(function, associations)
+    Wiring.Function(function, associations)
   }
 
   override def isConcrete(symb: TypeFull): Boolean = {

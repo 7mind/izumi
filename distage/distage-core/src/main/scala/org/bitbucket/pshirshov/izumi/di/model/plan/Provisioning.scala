@@ -7,10 +7,12 @@ sealed trait Provisioning[G, B] {
   @inline def map[G1](f: G => G1): Provisioning[G1, B]
 }
 
-object Provisioning {
+case class Step(wiring: Wiring, ops: Seq[InstantiationOp])
 
-  type StepProvisioning = Provisioning[NextOps, Seq[ImplDef]]
-  type InstanceProvisioning = Provisioning[Seq[InstantiationOp], Seq[ImplDef]]
+object Provisioning {
+  type Diagnostics = Seq[ImplDef]
+  type StepProvisioning = Provisioning[NextOps, Diagnostics]
+  type InstanceProvisioning = Provisioning[Step, Diagnostics]
 
   case class Possible[G, B](possible: G) extends Provisioning[G, B] {
     @inline override def map[G1](f: G => G1): Provisioning[G1, B] = Possible(f(possible))

@@ -1,37 +1,38 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.{TypeFull, TypeSymb}
+import org.bitbucket.pshirshov.izumi.di.{CustomDef, TypeFull, TypeSymb}
 import org.bitbucket.pshirshov.izumi.di.model.plan.Association.{Method, Parameter}
 import org.bitbucket.pshirshov.izumi.di.model.{Callable, DIKey, Formattable}
 
-sealed trait Wireable {
+sealed trait Wiring {
   def associations: Seq[Association]
 }
 
-sealed trait UnaryWireable extends Wireable {
+sealed trait UnaryWiring extends Wiring {
 
 }
 
-object Wireable {
+object Wiring {
 
-  case class Constructor(instanceType: TypeFull, constructor: TypeSymb, associations: Seq[Parameter]) extends UnaryWireable
+  case class Constructor(instanceType: TypeFull, constructor: TypeSymb, associations: Seq[Parameter]) extends UnaryWiring
 
-  case class Abstract(instanceType: TypeFull, associations: Seq[Method]) extends UnaryWireable
+  case class Abstract(instanceType: TypeFull, associations: Seq[Method]) extends UnaryWiring
 
-  case class Function(provider: Callable, associations: Seq[Association]) extends UnaryWireable
+  case class Function(provider: Callable, associations: Seq[Association]) extends UnaryWiring
 
-  case class Empty() extends UnaryWireable {
+  case class Instance(instanceType: TypeFull, instance: Any) extends UnaryWiring {
     override def associations: Seq[Association] = Seq.empty
   }
 
-  case class Indirect(toWire: TypeSymb, wireWith: UnaryWireable) extends UnaryWireable {
-    override def associations: Seq[Association] = wireWith.associations
-  }
-  
-  case class FactoryMethod(factoryType: TypeFull, wireables: Seq[UnaryWireable]) extends Wireable {
-    override def associations: Seq[Association] = wireables.flatMap(_.associations)
+  case class CustomWiring(customDef: CustomDef, associations: Seq[Association]) extends Wiring {
+
   }
 
+  case class Indirect(toWire: TypeSymb, wireWith: UnaryWiring)
+
+  case class FactoryMethod(factoryType: TypeFull, wirings: Seq[Indirect]) extends Wiring {
+    override def associations: Seq[Association] = wirings.flatMap(_.wireWith.associations)
+  }
 }
 
 sealed trait Association extends Formattable {
