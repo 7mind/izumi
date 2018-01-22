@@ -6,7 +6,7 @@ import org.bitbucket.pshirshov.izumi.di.model.exceptions.DIException
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.planning._
-import org.bitbucket.pshirshov.izumi.di.provisioning.{Provisioner, ProvisionerDefaultImpl}
+import org.bitbucket.pshirshov.izumi.di.provisioning._
 import org.bitbucket.pshirshov.izumi.di.reflection._
 
 
@@ -16,39 +16,28 @@ trait DefaultBootstrapContext extends Locator {
   // TODO: it's possible to make this safe with a macro
 
   private val symbolIntrospector = SymbolIntrospectorDefaultImpl.instance
+  private val introspector = ProvisionerIntrospectorDefaultImpl.instance
+  private val hook = ProvisionerHookDefaultImpl.instance
 
   private val ops = Seq(
-    bindInstance[CustomOpHandler, CustomOpHandler.NullCustomOpHander.type](CustomOpHandler.NullCustomOpHander)
-    , bindInstance[LookupInterceptor, NullLookupInterceptor](NullLookupInterceptor.instance)
-    , bindInstance[PlanningHook, PlanningHookDefaultImpl](PlanningHookDefaultImpl.instance)
-    , bindInstance[SymbolIntrospector, SymbolIntrospectorDefaultImpl](symbolIntrospector)
+    bind[CustomOpHandler, CustomOpHandler.NullCustomOpHander.type](CustomOpHandler.NullCustomOpHander)
+    , bind[LookupInterceptor, NullLookupInterceptor](NullLookupInterceptor.instance)
+    , bind[PlanningHook, PlanningHookDefaultImpl](PlanningHookDefaultImpl.instance)
+    , bind[SymbolIntrospector, SymbolIntrospectorDefaultImpl](symbolIntrospector)
+    , bind[ProvisionerHook, ProvisionerHookDefaultImpl](hook)
+    , bind[ProvisionerIntrospector, ProvisionerIntrospectorDefaultImpl](introspector)
 
-    , bindSubclass[Provisioner, ProvisionerDefaultImpl]
-    , bindSubclass[PlanningObsever, PlanningObserverDefaultImpl]
-    , bindSubclass[PlanResolver, PlanResolverDefaultImpl]
-    , bindSubclass[DependencyKeyProvider, DependencyKeyProviderDefaultImpl]
-    , bindSubclass[PlanAnalyzer, PlanAnalyzerDefaultImpl]
-    , bindSubclass[PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
-
-    , bindSubclass[TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl](Seq(DIKey.get[Provisioner]))
-    , bindSubclass[ForwardingRefResolver, ForwardingRefResolverDefaultImpl](Seq(DIKey.get[PlanAnalyzer]))
-    , bindSubclass[SanityChecker, SanityCheckerDefaultImpl](Seq(DIKey.get[PlanAnalyzer]))
-    , bindSubclass[ReflectionProvider, ReflectionProviderDefaultImpl](Seq(
-      DIKey.get[DependencyKeyProvider]
-      , DIKey.get[SymbolIntrospector]
-    ))
-
-    , bindSubclass[Planner, PlannerDefaultImpl](Seq(
-      DIKey.get[PlanResolver]
-      , DIKey.get[ForwardingRefResolver]
-      , DIKey.get[ReflectionProvider]
-      , DIKey.get[SanityChecker]
-      , DIKey.get[CustomOpHandler]
-      , DIKey.get[PlanningObsever]
-      , DIKey.get[PlanMergingPolicy]
-      , DIKey.get[PlanningHook]
-    ))
-
+    , bind[Provisioner, ProvisionerDefaultImpl]
+    , bind[PlanningObsever, PlanningObserverDefaultImpl]
+    , bind[PlanResolver, PlanResolverDefaultImpl]
+    , bind[DependencyKeyProvider, DependencyKeyProviderDefaultImpl]
+    , bind[PlanAnalyzer, PlanAnalyzerDefaultImpl]
+    , bind[PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
+    , bind[TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl]
+    , bind[ForwardingRefResolver, ForwardingRefResolverDefaultImpl]
+    , bind[SanityChecker, SanityCheckerDefaultImpl]
+    , bind[ReflectionProvider, ReflectionProviderDefaultImpl]
+    , bind[Planner, PlannerDefaultImpl]
   )
 
   private val contextBindings = ops.foldLeft(List.empty[Binding]) {
@@ -66,28 +55,25 @@ trait DefaultBootstrapContext extends Locator {
 
   override def plan: FinalPlan = new FinalPlanImmutableImpl(ops, contextDefinition)
 
-  private val bootstrapProducer = new ProvisionerDefaultImpl()
+  private val bootstrapProducer = new ProvisionerDefaultImpl(hook, introspector)
   private val bootstrappedContext = bootstrapProducer.provision(plan, this)
 
   override protected def unsafeLookup(key: DIKey): Option[Any] = bootstrappedContext.get(key)
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
 
-  private def bindInstance[Key:Tag, I: Tag](instance: I): ExecutableOp = {
+  private def bind[Key:Tag, I: Tag](instance: I): ExecutableOp = {
     ExecutableOp.WiringOp.ReferenceInstance(DIKey.get[Key], UnaryWiring.Instance(EqualitySafeType.get[I], instance))
   }
 
-  private def bindSubclass[Key:Tag, Target:Tag]: ExecutableOp =  bindSubclass[Key, Target](Seq.empty)
-  
-  private def bindSubclass[Key:Tag, Target:Tag](paramKeys: Seq[DIKey]): ExecutableOp = {
+  private def bind[Key:Tag, Target:Tag]: ExecutableOp = {
     val targetType = EqualitySafeType.get[Target]
     val ctr = symbolIntrospector.selectConstructor(targetType)
-    val constructor = ctr.arguments.toSet
     val context = DependencyContext.ConstructorParameterContext(targetType, ctr)
 
-    val associations = paramKeys.map {
+    val associations = ctr.arguments.map {
       param =>
-        val head = constructor.find(_.typeSignature.baseClasses.contains(param.symbol.tpe.typeSymbol)).head
-        Association.Parameter(context, head, param)
+        Association.Parameter(context, param, DIKey.TypeKey(EqualitySafeType(param.info)))
+
     }
 
     ExecutableOp.WiringOp.InstantiateClass(DIKey.get[Key], UnaryWiring.Constructor(targetType, ctr.constructorSymbol, associations))

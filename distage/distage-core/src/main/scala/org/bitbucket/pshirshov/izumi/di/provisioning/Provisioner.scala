@@ -6,5 +6,5 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.FinalPlan
 
 
 trait Provisioner {
-  def provision(dIPlan: FinalPlan, parentContext: Locator): ProvisionedContext
+  def provision(dIPlan: FinalPlan, parentContext: Locator): ProvisionImmutable
 }

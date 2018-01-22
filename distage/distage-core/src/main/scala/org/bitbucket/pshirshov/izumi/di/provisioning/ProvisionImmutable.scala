@@ -4,7 +4,7 @@ import org.bitbucket.pshirshov.izumi.di.model.DIKey
 
 import scala.collection.Map
 
-case class ProvisionedContext
+case class ProvisionImmutable
 (
   instances: Map[DIKey, Any]
   , imports: Map[DIKey, Any]

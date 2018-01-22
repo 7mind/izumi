@@ -3,7 +3,7 @@ package org.bitbucket.pshirshov.izumi.di.provisioning
 import org.bitbucket.pshirshov.izumi.di.IdentifiedRef
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 
-import scala.collection.{Map, mutable}
+import scala.collection.Map
 
 trait Provision {
   def instances: Map[DIKey, Any]
@@ -14,9 +14,3 @@ trait Provision {
 
   final def enumerate: Stream[IdentifiedRef] = instances.map(IdentifiedRef.tupled).toStream
 }
-
-case class ActiveProvision
-(
-  instances: mutable.HashMap[DIKey, Any] = mutable.HashMap[DIKey, Any]()
-  , imports: mutable.HashMap[DIKey, Any] = mutable.HashMap[DIKey, Any]()
-) extends Provision

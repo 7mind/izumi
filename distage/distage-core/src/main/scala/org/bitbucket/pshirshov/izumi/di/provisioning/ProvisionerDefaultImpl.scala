@@ -9,42 +9,54 @@ import scala.collection.mutable
 import scala.reflect.runtime._
 
 
+class ProvisionerDefaultImpl(
+                              provisionerHook: ProvisionerHook
+                              , provisionerIntrospector: ProvisionerIntrospector
+                            ) extends Provisioner {
+  override def provision(plan: FinalPlan, parentContext: Locator): ProvisionImmutable = {
+    val activeProvision = ProvisionActive()
 
-class ProvisionerDefaultImpl extends Provisioner {
-  override def provision(dIPlan: FinalPlan, parentContext: Locator): ProvisionedContext = {
-    val provisions = dIPlan.steps.foldLeft(ActiveProvision()) {
+    val provisions = plan.steps.foldLeft(activeProvision) {
       case (active, step) =>
-        val result = stepToUpdate(parentContext, active, step)
+        val immutable = active.toImmutable
+        val result = execute(LocatorContext(active, parentContext), step)
+
         result match {
-          case StepResult.NewImport(target, value) =>
+          case OpResult.NewImport(target, value) =>
             if (active.imports.contains(target)) {
               throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
             }
-            active.imports += (target -> value)
+            plan.synchronized {
+              active.imports += (target -> value)
+            }
             active
 
-          case StepResult.NewInstance(target, value) =>
+          case OpResult.NewInstance(target, value) =>
             if (active.instances.contains(target)) {
               throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
             }
-            active.instances += (target -> value)
+            plan.synchronized {
+              active.instances += (target -> value)
+            }
             active
 
-          case StepResult.SetElement(set, instance) =>
-            set += instance
+          case OpResult.SetElement(set, instance) =>
+            plan.synchronized {
+              set += instance
+            }
             active
         }
     }
 
-    ProvisionedContext(provisions.instances, provisions.imports)
+    ProvisionImmutable(provisions.instances, provisions.imports)
   }
 
-  private def stepToUpdate(parentContext: Locator, map: ActiveProvision, step: ExecutableOp): StepResult = {
+  private def execute(context: ProvisioningContext, step: ExecutableOp): OpResult = {
     step match {
       case ExecutableOp.ImportDependency(target, references) =>
-        parentContext.lookupInstance[Any](target) match {
+        context.importKey(target) match {
           case Some(v) =>
-            StepResult.NewImport(target, v)
+            OpResult.NewImport(target, v)
           case _ =>
             throw new MissingInstanceException(s"Instance is not available in the context: $target. " +
               s"required by refs: $references", target)
@@ -54,7 +66,7 @@ class ProvisionerDefaultImpl extends Provisioner {
         // target is guaranteed to be a Set
         val scalaCollectionSetType = EqualitySafeType.get[scala.collection.Set[_]]
         if (targetType.tpe.baseClasses.contains(scalaCollectionSetType.tpe)) {
-          StepResult.NewInstance(target, mutable.HashSet[Any]())
+          OpResult.NewInstance(target, mutable.HashSet[Any]())
         } else {
           throw new IncompatibleTypesException("Tried to create make a Set with a non-Set type! " +
             s"For $target expected $targetType to be a sub-class of $scalaCollectionSetType, but it isn't!"
@@ -64,12 +76,12 @@ class ProvisionerDefaultImpl extends Provisioner {
 
       case ExecutableOp.SetOp.AddToSet(target, key) =>
         // value is guaranteed to have already been instantiated or imported
-        map.get(key) match {
+        context.fetchKey(key) match {
           case Some(value) =>
             // set is guaranteed to have already been added
-            map.get(target) match {
+            context.fetchKey(target) match {
               case Some(set: mutable.HashSet[_]) =>
-                StepResult.SetElement(set.asInstanceOf[mutable.HashSet[Any]], value)
+                OpResult.SetElement(set.asInstanceOf[mutable.HashSet[Any]], value)
 
               case Some(somethingElse) =>
                 throw new InvalidPlanException(s"The impossible happened! Tried to add instance to Set Binding," +
@@ -84,7 +96,7 @@ class ProvisionerDefaultImpl extends Provisioner {
         }
 
       case ExecutableOp.WiringOp.ReferenceInstance(target, wiring) =>
-        StepResult.NewInstance(target, wiring.instance)
+        OpResult.NewInstance(target, wiring.instance)
 
       case ExecutableOp.CustomOp(target, customDef) =>
         throw new DIException(s"No handle for CustomOp for $target, defs: $customDef", null)
@@ -93,7 +105,7 @@ class ProvisionerDefaultImpl extends Provisioner {
         // TODO: here we depend on order
         val args = associations.associations.map {
           key =>
-            map.get(key.wireWith) match {
+            context.fetchKey(key.wireWith) match {
               case Some(dep) =>
                 dep
               case _ =>
@@ -103,12 +115,12 @@ class ProvisionerDefaultImpl extends Provisioner {
         }
 
         val instance = associations.provider.apply(args: _*)
-        StepResult.NewInstance(target, instance)
+        OpResult.NewInstance(target, instance)
 
       case ExecutableOp.WiringOp.InstantiateClass(target, wiring) =>
         val depMap = wiring.associations.map {
           key =>
-            map.get(key.wireWith) match {
+            context.fetchKey(key.wireWith) match {
               case Some(dep) =>
                 key.symbol -> dep
               case _ =>
@@ -128,20 +140,32 @@ class ProvisionerDefaultImpl extends Provisioner {
         }
 
         val instance = refCtor.apply(orderedArgs: _*)
-        StepResult.NewInstance(target, instance)
+        OpResult.NewInstance(target, instance)
 
       case _: ExecutableOp.WiringOp.InstantiateTrait =>
         ???
 
       case _: ExecutableOp.WiringOp.InstantiateFactory =>
+        val executor = mkExecutor(context)
         ???
 
-      case _: ExecutableOp.ProxyOp.InitProxies =>
-        ???
 
       case _: ExecutableOp.ProxyOp.MakeProxy =>
         ???
+
+      case _: ExecutableOp.ProxyOp.InitProxies =>
+        // at this point we definitely have all the dependencies instantiated
+        val executor = mkExecutor(context)
+        ???
+
     }
   }
 
+  private def mkExecutor(context: ProvisioningContext) = {
+    new OperationExecutor {
+      override def execute(step: ExecutableOp): OpResult = {
+        ProvisionerDefaultImpl.this.execute(context, step)
+      }
+    }
+  }
 }
