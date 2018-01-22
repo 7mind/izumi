@@ -1,7 +1,8 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.InstantiationOp
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.SetOp._
 
 /**
   * ***********,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,***./((%%&&&%%##((//////((((((((((((((((((((((///(((((((((//////(((

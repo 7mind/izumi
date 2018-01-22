@@ -1,6 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp}
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{ImportDependency, InstantiationOp}
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.SetOp._
 
 case class NextOps(
                     imports: Set[ImportDependency]

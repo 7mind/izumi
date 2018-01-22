@@ -2,7 +2,7 @@ package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, RefTable}
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.DependentOp
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.WiringOp
 
 import scala.collection.mutable
 
@@ -32,8 +32,8 @@ class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
                                  ): RefTable = {
     // TODO: make it immu
     val dependencies = plan.foldLeft(new Accumulator) {
-      case (acc, op: DependentOp) =>
-        val forwardRefs = op.deps.map(_.wireWith).filterNot(refFilter(acc)).toSet
+      case (acc, op: WiringOp) =>
+        val forwardRefs = op.deps.associations.map(_.wireWith).filterNot(refFilter(acc)).toSet
         acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= forwardRefs
         acc
 

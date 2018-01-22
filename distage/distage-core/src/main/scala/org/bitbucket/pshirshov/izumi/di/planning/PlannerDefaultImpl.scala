@@ -70,54 +70,53 @@ class PlannerDefaultImpl
 
       case s: SetBinding =>
         val target = s.target
-        val elementKey = DIKey.SetElementKey(target, getSymbol(s.implementation))
+        val elementKey = DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
 
         computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
           .map { next =>
             NextOps(
               next.imports
-              , next.sets + ExecutableOp.CreateSet(target, target.symbol)
-              , next.provisions :+ ExecutableOp.AddToSet(target, elementKey)
+              , next.sets + ExecutableOp.SetOp.CreateSet(target, target.symbol)
+              , next.provisions :+ ExecutableOp.SetOp.AddToSet(target, elementKey)
             )
           }
 
       case s: EmptySetBinding =>
         Possible(NextOps(
           Set.empty
-          , Set(ExecutableOp.CreateSet(s.target, s.target.symbol))
+          , Set(ExecutableOp.SetOp.CreateSet(s.target, s.target.symbol))
           , Seq.empty
         ))
     }
   }
 
-  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: Seq[Association]): Set[ImportDependency] = {
+  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: Wireable): Set[ImportDependency] = {
     val knownTargets = currentPlan.statements.map(_.target).toSet
-    val (_, unresolved) = deps.partition(dep => knownTargets.contains(dep.wireWith))
+    val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith))
     // we don't need resolved deps, we already have them in finalPlan
     val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith, Set(binding.target)))
     toImport.toSet
   }
 
-  private def provisioning(binding: SingletonBinding, deps: Seq[Association]): InstanceProvisioning = {
+  private def provisioning(binding: SingletonBinding, deps: Wireable): InstanceProvisioning = {
     import Provisioning._
     val target = binding.target
 
     binding.implementation match {
       case ImplDef.TypeImpl(symb) if reflectionProvider.isConcrete(symb) =>
         // TODO make type safe
-        Possible(Seq(ExecutableOp.InstantiateClass(target, symb, deps.asInstanceOf[Seq[Association.Parameter]])))
+        Possible(Seq(ExecutableOp.WiringOp.InstantiateClass(target, deps.asInstanceOf[Wireable.Constructor])))
 
-      case ImplDef.TypeImpl(symb) if reflectionProvider.isWireableAbstract(symb) =>
-        Possible(Seq(ExecutableOp.InstantiateTrait(target, symb, deps.asInstanceOf[Seq[Association.Method]])))
+      case ImplDef.TypeImpl(symb) if reflectionProvider.isWireableAbstract(symb) => Possible(Seq(ExecutableOp.WiringOp.InstantiateTrait(target, deps.asInstanceOf[Wireable.Abstract])))
 
       case ImplDef.TypeImpl(symb) if reflectionProvider.isFactory(symb) =>
-        Possible(Seq(ExecutableOp.InstantiateFactory(target, symb, deps)))
+        Possible(Seq(ExecutableOp.WiringOp.InstantiateFactory(target, deps.asInstanceOf[Wireable.FactoryMethod])))
 
       case ImplDef.InstanceImpl(symb, instance) =>
         Possible(Seq(ExecutableOp.ReferenceInstance(target, symb, instance)))
 
       case ImplDef.ProviderImpl(symb, function) =>
-        Possible(Seq(ExecutableOp.CallProvider(target, symb, deps.asInstanceOf[Seq[Association.Parameter]], function)))
+        Possible(Seq(ExecutableOp.WiringOp.CallProvider(target, symb, deps.asInstanceOf[Wireable.Function])))
 
       case ImplDef.CustomImpl(instance) =>
         Possible(Seq(ExecutableOp.CustomOp(target, instance)))
@@ -128,31 +127,31 @@ class PlannerDefaultImpl
   }
 
 
-  private def enumerateDeps(definition: Binding): Seq[Association] = {
+  private def enumerateDeps(definition: Binding): Wireable = {
     definition match {
       case c: SingletonBinding =>
         enumerateDeps(c.implementation)
       case c: SetBinding =>
         enumerateDeps(c.implementation)
-      case _ =>
-        Seq()
+      case _: EmptySetBinding =>
+        Wireable.Empty()
     }
   }
 
-  private def enumerateDeps(impl: ImplDef): Seq[Association] = {
+  private def enumerateDeps(impl: ImplDef): Wireable = {
     impl match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolDeps(i.implType)
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerDeps(p.function)
       case _: ImplDef.InstanceImpl =>
-        Seq()
+        Wireable.Empty()
       case c: ImplDef.CustomImpl =>
         customOpHandler.getDeps(c)
     }
   }
 
-  private def getSymbol(impl: ImplDef): TypeFull = {
+  private def setElementKeySymbol(impl: ImplDef): TypeFull = {
     impl match {
       case i: ImplDef.TypeImpl =>
         i.implType

@@ -2,7 +2,7 @@ package org.bitbucket.pshirshov.izumi.di
 
 import org.bitbucket.pshirshov.izumi.di.definition.TrivialDIDef
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
-import org.bitbucket.pshirshov.izumi.di.model.plan.{Association, ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
+import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.planning._
 import org.bitbucket.pshirshov.izumi.di.provisioning.{Provisioner, ProvisionerDefaultImpl}
 import org.bitbucket.pshirshov.izumi.di.reflection.{DependencyKeyProvider, DependencyKeyProviderDefaultImpl, ReflectionProvider, ReflectionProviderDefaultImpl}
@@ -41,7 +41,6 @@ trait DefaultBootstrapContext extends Locator {
 
   )
 
-
   private val contextDefinition = TrivialDIDef(Seq.empty) // TODO: fill
   override def plan: FinalPlan = new FinalPlanImmutableImpl(ops, definition = contextDefinition)
 
@@ -49,7 +48,7 @@ trait DefaultBootstrapContext extends Locator {
   private val bootstrappedContext = bootstrapProducer.provision(plan, this)
 
   override protected def unsafeLookup(key: DIKey): Option[Any] = bootstrappedContext.get(key)
-  override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.map(IdentifiedRef.tupled).toStream
+  override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
 
   private def bindInstance[Key:Tag, I: Tag](instance: I): ExecutableOp = {
     ExecutableOp.ReferenceInstance(DIKey.get[Key], EqualitySafeType.get[I], instance)
@@ -59,15 +58,15 @@ trait DefaultBootstrapContext extends Locator {
   
   private def bindSubclass[Key:Tag, Target:Tag](paramKeys: Seq[DIKey]): ExecutableOp = {
     val targetType = EqualitySafeType.get[Target]
-    val constructor = ReflectionProviderDefaultImpl.selectConstructor(targetType).toSet
+    val ctr = ReflectionProviderDefaultImpl.selectConstructor(targetType)
+    val constructor = ctr.arguments.toSet
     val associations = paramKeys.map {
       param =>
-        System.err.println(constructor.toList)
         val head = constructor.find(_.typeSignature.baseClasses.contains(param.symbol.tpe.typeSymbol)).head
         Association.Parameter(head, param)
     }
 
-    ExecutableOp.InstantiateClass(DIKey.get[Key], targetType, associations)
+    ExecutableOp.WiringOp.InstantiateClass(DIKey.get[Key], Wireable.Constructor(targetType, ctr.constructorSymbol, associations))
   }
 }
 

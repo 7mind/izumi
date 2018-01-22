@@ -1,12 +1,12 @@
 package org.bitbucket.pshirshov.izumi.di.reflection
 import org.bitbucket.pshirshov.izumi.di.TypeFull
 import org.bitbucket.pshirshov.izumi.di.model.Callable
-import org.bitbucket.pshirshov.izumi.di.model.plan.Association
+import org.bitbucket.pshirshov.izumi.di.model.plan.Wireable
 
 trait ReflectionProvider {
-  def symbolDeps(symbl: TypeFull): Seq[Association]
+  def symbolDeps(symbl: TypeFull): Wireable
 
-  def providerDeps(function:Callable): Seq[Association]
+  def providerDeps(function:Callable): Wireable
 
   def isConcrete(symb: TypeFull): Boolean
 

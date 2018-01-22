@@ -1,27 +1,60 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
-import org.bitbucket.pshirshov.izumi.di.model.{Callable, DIKey, Formattable}
 import org.bitbucket.pshirshov.izumi.di.{CustomDef, TypeFull}
+import org.bitbucket.pshirshov.izumi.di.model.plan.Wireable._
+import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Formattable}
 
 // TODO: typeclass?..
 sealed trait ExecutableOp extends Formattable {
   def target: DIKey
+
   override def toString: String = format
 }
 
 object ExecutableOp {
-  sealed trait FormattableOp extends Formattable {
-    this: DependentOp =>
 
-    protected def doFormat(impl: TypeFull, opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
-      doFormat(impl.tpe.typeSymbol.fullName, opName, opFormat, delim)
+  sealed trait FormattableOp extends Formattable {
+    //this: WiringOp =>
+
+    protected def doFormat(target: DIKey, deps: Wireable): String = {
+      val op = doFormat(deps, 0)
+      s"$target := $op"
+
     }
 
-    protected def doFormat(impl: String, opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
+    private def doFormat(deps: Wireable, shift: Int): String = {
+      deps match {
+        case Constructor(instanceType, _, associations) =>
+          doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'), shift)
+        case Abstract(instanceType, associations) =>
+          doFormat(instanceType.tpe.toString, associations.map(_.format), "impl", ('[', ']'), ('{', '}'), shift)
+
+        case Function(instanceType, associations) =>
+          doFormat(instanceType.toString, associations.map(_.format), "call", ('(', ')'), ('{', '}'), shift)
+
+        case Indirect(toWire, wireWith) =>
+          s"$toWire ~= ${doFormat(wireWith, shift)}"
+
+        case FactoryMethod(factoryType, unaryWireables) =>
+          doFormat(
+            factoryType.toString
+            , unaryWireables.map(w => doFormat(w, shift + 1))
+            , "fact", ('(', ')'), ('{', '}')
+            , shift
+          )
+
+        case other =>
+          s"UNEXPECTED WIREABLE: $other"
+      }
+    }
+
+    private def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char), shift: Int): String = {
       val sb = new StringBuilder()
-      sb.append(s"$target := $opName${opFormat._1}$impl${opFormat._2}")
-      if (deps.nonEmpty) {
-        sb.append(deps.map(_.format).mkString(s" ${delim._1}\n    ", ",\n    ", s"\n${delim._2}"))
+      val curShift = "  " * shift
+      val subshift = "  " * (shift + 1)
+      sb.append(s"$opName${opFormat._1}$impl${opFormat._2}")
+      if (depRepr.nonEmpty) {
+        sb.append(depRepr.mkString(s" ${delim._1}\n$subshift", s",\n$subshift", s"\n$curShift${delim._2}"))
       }
       sb.toString()
     }
@@ -29,31 +62,8 @@ object ExecutableOp {
 
   sealed trait InstantiationOp extends ExecutableOp
 
-  sealed trait DependentOp extends ExecutableOp {
-    def deps: Seq[Association]
-  }
-
-  sealed trait SetOp extends ExecutableOp {
-  }
-
   case class ImportDependency(target: DIKey, references: Set[DIKey]) extends ExecutableOp {
     override def format: String = f"""$target := import $target // required for $references"""
-  }
-
-  case class CreateSet(target: DIKey, tpe: TypeFull) extends ExecutableOp with SetOp {
-    override def format: String = f"""$target := newset[$tpe]"""
-  }
-
-  case class InstantiateClass(target: DIKey, impl: TypeFull, deps: Seq[Association.Parameter]) extends InstantiationOp with DependentOp with FormattableOp {
-    override def format: String = doFormat(impl, "make", ('[', ']'), ('(', ')'))
-  }
-
-  case class InstantiateTrait(target: DIKey, impl: TypeFull, deps: Seq[Association.Method]) extends InstantiationOp with DependentOp with FormattableOp {
-    override def format: String = doFormat(impl, "impl", ('[', ']'), ('{', '}'))
-  }
-
-  case class InstantiateFactory(target: DIKey, impl: TypeFull, deps: Seq[Association]) extends InstantiationOp with DependentOp with FormattableOp {
-    override def format: String = doFormat(impl, "fact", ('[', ']'), ('{', '}'))
   }
 
   case class ReferenceInstance(target: DIKey, tpe: TypeFull, instance: Any) extends InstantiationOp {
@@ -62,28 +72,64 @@ object ExecutableOp {
     }
   }
 
-  case class CallProvider(target: DIKey, tpe: TypeFull, deps: Seq[Association.Parameter], function: Callable) extends InstantiationOp with DependentOp with FormattableOp {
-    override def format: String = doFormat(function.toString, "call", ('(', ')'), ('{', '}'))
-  }
-
-  case class AddToSet(target: DIKey, element: DIKey) extends InstantiationOp with SetOp {
-    override def format: String = f"""$target += $element"""
-  }
-
   case class CustomOp(target: DIKey, data: CustomDef) extends InstantiationOp {
     override def format: String = f"""$target := custom($target)"""
   }
 
-  case class MakeProxy(op: ExecutableOp, forwardRefs: Set[DIKey]) extends InstantiationOp  {
-    override def target: DIKey = op.target
-    override def format: String = f"""$target := proxy($op, $forwardRefs)"""
+  sealed trait SetOp extends ExecutableOp
+
+  object SetOp {
+
+    case class CreateSet(target: DIKey, tpe: TypeFull) extends ExecutableOp with SetOp {
+      override def format: String = f"""$target := newset[$tpe]"""
+    }
+
+    case class AddToSet(target: DIKey, element: DIKey) extends InstantiationOp with SetOp {
+      override def format: String = f"""$target += $element"""
+    }
+
   }
 
-  case class InitProxies(op: ExecutableOp, proxies: Set[DIKey]) extends InstantiationOp {
-    override def target: DIKey = op.target
-    override def format: String = f"""$target := init($proxies, $op)"""
+  sealed trait WiringOp extends InstantiationOp {
+    def deps: Wireable
   }
 
+  object WiringOp {
+
+    case class InstantiateClass(target: DIKey, deps: Wireable.Constructor) extends InstantiationOp with FormattableOp {
+      override def format: String = doFormat(target, deps)
+    }
+
+    case class InstantiateTrait(target: DIKey, deps: Wireable.Abstract) extends InstantiationOp with FormattableOp {
+      override def format: String = doFormat(target, deps)
+    }
+
+    case class InstantiateFactory(target: DIKey, deps: Wireable.FactoryMethod) extends InstantiationOp with FormattableOp {
+      override def format: String = doFormat(target, deps)
+    }
+
+    case class CallProvider(target: DIKey, tpe: TypeFull, deps: Wireable.Function) extends InstantiationOp with FormattableOp {
+      override def format: String = doFormat(target, deps)
+    }
+
+  }
+
+  sealed trait ProxyOp {}
+
+  object ProxyOp {
+    case class MakeProxy(op: ExecutableOp, forwardRefs: Set[DIKey]) extends InstantiationOp {
+      override def target: DIKey = op.target
+
+      override def format: String = f"""$target := proxy($op, $forwardRefs)"""
+    }
+
+    case class InitProxies(op: ExecutableOp, proxies: Set[DIKey]) extends InstantiationOp {
+      override def target: DIKey = op.target
+
+      override def format: String = f"""$target := init($proxies, $op)"""
+    }
+
+  }
 }
 
 
