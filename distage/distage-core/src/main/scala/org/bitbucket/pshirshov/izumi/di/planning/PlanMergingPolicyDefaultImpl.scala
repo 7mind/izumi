@@ -27,6 +27,7 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
     val newPlan = DodgyPlan(
       newImports
       , newSets
+      , currentPlan.proxies
       , safeNewProvisions
       , currentPlan.issues
     )

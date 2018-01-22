@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di.model.plan
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.InstantiationOp
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{InstantiationOp, ProxyOp}
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.SetOp._
 
 /**
@@ -119,11 +119,12 @@ import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.SetOp._
   **/
 case class DodgyPlan(
                       imports: Map[DIKey, ExecutableOp.ImportDependency]
-                     , sets: Set[CreateSet]
-                     , steps: Seq[InstantiationOp]
-                     , issues: Seq[PlanningFailure]
+                      , sets: Set[CreateSet]
+                      , proxies: Seq[ProxyOp.InitProxy]
+                      , steps: Seq[InstantiationOp]
+                      , issues: Seq[PlanningFailure]
                     ) {
-  def statements: Seq[ExecutableOp] =  imports.values.toSeq ++ sets.toStream ++ steps
+  def statements: Seq[ExecutableOp] = imports.values.toSeq ++ sets.toStream ++ steps ++ proxies
 
   override def toString: String = {
     val repr = issues.map(_.toString) ++ statements.map(_.format)
@@ -133,5 +134,5 @@ case class DodgyPlan(
 }
 
 object DodgyPlan {
-  def empty: DodgyPlan = DodgyPlan(Map.empty, Set.empty, Seq.empty, Seq.empty)
+  def empty: DodgyPlan = DodgyPlan(Map.empty, Set.empty, Seq.empty, Seq.empty, Seq.empty)
 }

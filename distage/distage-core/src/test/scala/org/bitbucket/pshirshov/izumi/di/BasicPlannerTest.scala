@@ -73,7 +73,11 @@ object Case3 {
 
   class Circular2(arg: Circular3)
 
-  class Circular3(arg: Circular1)
+  class Circular3(arg: Circular4, arg2: Circular5)
+
+  class Circular4(arg: Circular1)
+  
+  class Circular5(arg: Circular1, arg2: Circular4)
 
 }
 
@@ -253,10 +257,14 @@ class BasicPlannerTest extends WordSpec {
         .binding[Circular3]
         .binding[Circular1]
         .binding[Circular2]
+        .binding[Circular5]
+        .binding[Circular4]
         .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+      println(context.get[Circular3])
     }
 
     "fail on unbindable" in {

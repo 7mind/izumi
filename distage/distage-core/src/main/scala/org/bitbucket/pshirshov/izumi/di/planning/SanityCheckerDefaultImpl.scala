@@ -2,7 +2,7 @@ package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{DuplicateKeysException, ForwardRefException, MissingRefException}
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.SetOp
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{ProxyOp, SetOp}
 import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, FinalPlan}
 
 import scala.collection.mutable
@@ -34,12 +34,14 @@ class SanityCheckerDefaultImpl
 
   override def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit = {
 
-    val (uniqOps, nonUniqueOps) = ops.foldLeft((mutable.ArrayBuffer[DIKey](), mutable.HashSet[DIKey]())) {
-      case ((unique, nonunique), s: SetOp) =>
-        (unique, nonunique += s.target)
-      case ((unique, nonunique), s) =>
-        (unique += s.target, nonunique)
-    }
+    val (uniqOps, nonUniqueOps) = ops
+      .filterNot(_.isInstanceOf[ProxyOp.InitProxy])
+      .foldLeft((mutable.ArrayBuffer[DIKey](), mutable.HashSet[DIKey]())) {
+        case ((unique, nonunique), s: SetOp) =>
+          (unique, nonunique += s.target)
+        case ((unique, nonunique), s) =>
+          (unique += s.target, nonunique)
+      }
 
     assertNoDuplicateKeys(uniqOps ++ nonUniqueOps.toSeq)
   }
@@ -55,13 +57,13 @@ class SanityCheckerDefaultImpl
     val counted = keys
       .groupBy(k => k)
       .map(t => (t._1, t._2.length))
-    
-//    System.err.println("---")
-//    counted.foreach {
-//      case (t, c) =>
-//        System.err.println((t, t.hashCode(), c))
-//
-//    }
+
+    //    System.err.println("---")
+    //    counted.foreach {
+    //      case (t, c) =>
+    //        System.err.println((t, t.hashCode(), c))
+    //
+    //    }
 
     counted.filter(_._2 > 1)
   }

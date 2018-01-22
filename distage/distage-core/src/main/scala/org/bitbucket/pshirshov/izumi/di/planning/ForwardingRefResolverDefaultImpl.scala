@@ -1,7 +1,10 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
+import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyPlan
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{ProxyOp, WiringOp}
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ProxyOp
+
+import scala.collection.mutable
 
 
 
@@ -15,17 +18,32 @@ class ForwardingRefResolverDefaultImpl
 
     import reftable._
 
-    val resolvedSteps = plan.steps.flatMap {
-      case step: WiringOp if dependencies.contains(step.target) =>
-        Seq(ProxyOp.MakeProxy(step, dependencies(step.target), dependants(step.target)))
+    val proxyInits = mutable.HashMap[DIKey, mutable.Set[DIKey]]()
+    val proxies = mutable.HashMap[DIKey, ProxyOp.MakeProxy]()
 
-      case step: WiringOp if dependants.contains(step.target) =>
-        Seq(ProxyOp.InitProxies(step, dependencies(step.target), dependants(step.target)))
+    val resolvedSteps = plan.steps.flatMap {
+      case step if dependencies.contains(step.target) =>
+        val op = ProxyOp.MakeProxy(step, dependencies(step.target))
+        proxies += (step.target -> op)
+        Seq(op)
+
+      case step if dependants.contains(step.target) =>
+        dependants(step.target).foreach {
+          proxy =>
+            proxyInits.getOrElseUpdate(proxy, mutable.Set.empty) += step.target
+        }
+
+        Seq(step)
 
       case step =>
         Seq(step)
     }
 
-    plan.copy(steps = resolvedSteps)
+    val proxyOps = proxyInits.foldLeft(Seq.empty[ProxyOp.InitProxy]) {
+      case (acc, (proxyKey, proxyDep)) =>
+        acc :+ ProxyOp.InitProxy(proxyKey, proxyDep.toSet, proxies(proxyKey))
+    }
+
+    plan.copy(steps = resolvedSteps, proxies  = proxyOps)
   }
 }

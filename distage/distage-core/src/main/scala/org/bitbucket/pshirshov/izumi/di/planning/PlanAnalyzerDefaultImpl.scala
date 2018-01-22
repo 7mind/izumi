@@ -30,8 +30,8 @@ class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
                                  , refFilter: Accumulator => DIKey => Boolean
                                  , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
                                  ): RefTable = {
-    // TODO: make it immu
-    val dependencies = plan.foldLeft(new Accumulator) {
+
+    val dependencies = plan.toList.foldLeft(new Accumulator) {
       case (acc, op: WiringOp) =>
         val forwardRefs = op.wiring.associations.map(_.wireWith).filterNot(refFilter(acc)).toSet
         acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= forwardRefs

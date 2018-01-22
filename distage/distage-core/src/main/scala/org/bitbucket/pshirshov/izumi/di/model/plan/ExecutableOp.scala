@@ -75,11 +75,11 @@ object ExecutableOp {
 
   object SetOp {
 
-    case class CreateSet(target: DIKey, tpe: TypeFull) extends ExecutableOp with SetOp {
+    case class CreateSet(target: DIKey, tpe: TypeFull) extends SetOp {
       override def format: String = f"""$target := newset[$tpe]"""
     }
 
-    case class AddToSet(target: DIKey, element: DIKey) extends InstantiationOp with SetOp {
+    case class AddToSet(target: DIKey, element: DIKey) extends SetOp with InstantiationOp {
       override def format: String = f"""$target += $element"""
     }
 
@@ -91,42 +91,48 @@ object ExecutableOp {
 
   object WiringOp {
 
-    case class InstantiateClass(target: DIKey, wiring: UnaryWiring.Constructor) extends InstantiationOp with FormattableOp {
+    case class InstantiateClass(target: DIKey, wiring: UnaryWiring.Constructor) extends WiringOp with FormattableOp {
       override def format: String = doFormat(target, wiring)
     }
 
-    case class InstantiateTrait(target: DIKey, wiring: UnaryWiring.Abstract) extends InstantiationOp with FormattableOp {
+    case class InstantiateTrait(target: DIKey, wiring: UnaryWiring.Abstract) extends WiringOp with FormattableOp {
       override def format: String = doFormat(target, wiring)
     }
 
-    case class InstantiateFactory(target: DIKey, wiring: Wiring.FactoryMethod) extends InstantiationOp with FormattableOp {
+    case class InstantiateFactory(target: DIKey, wiring: Wiring.FactoryMethod) extends WiringOp with FormattableOp {
       override def format: String = doFormat(target, wiring)
     }
 
-    case class CallProvider(target: DIKey, wiring: UnaryWiring.Function) extends InstantiationOp with FormattableOp {
+    case class CallProvider(target: DIKey, wiring: UnaryWiring.Function) extends WiringOp with FormattableOp {
       override def format: String = doFormat(target, wiring)
     }
 
-    case class ReferenceInstance(target: DIKey, wiring: UnaryWiring.Instance) extends InstantiationOp {
+    case class ReferenceInstance(target: DIKey, wiring: UnaryWiring.Instance) extends WiringOp {
       override def format: String = {
         s"$target := ${wiring.instance.getClass.getCanonicalName}#${wiring.instance.hashCode()}"
       }
     }
   }
 
-  sealed trait ProxyOp {}
+  sealed trait ProxyOp extends ExecutableOp {}
 
   object ProxyOp {
-    case class MakeProxy(op: WiringOp, forwardRefs: Set[DIKey], proxies: Set[DIKey]) extends InstantiationOp {
+    case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey]) extends ProxyOp with InstantiationOp {
       override def target: DIKey = op.target
 
-      override def format: String = f"""$target := proxy($op, $forwardRefs)"""
+      def shift(s: String, delta: Int) = {
+        val shift = " " * delta
+        s.split("\n").map(s => s"$shift$s").mkString("\n")
+      }
+
+      override def format: String =
+        f"""$target := proxy($forwardRefs) {
+           |${shift(op.toString, 4)}
+           |}""".stripMargin
     }
 
-    case class InitProxies(op: WiringOp, forwardRefs: Set[DIKey], proxies: Set[DIKey]) extends InstantiationOp {
-      override def target: DIKey = op.target
-
-      override def format: String = f"""$target := init($proxies, $op)"""
+    case class InitProxy(target: DIKey, dependencies: Set[DIKey], proxy: MakeProxy) extends ProxyOp {
+      override def format: String = f"""$target -> init($dependencies)"""
     }
 
   }

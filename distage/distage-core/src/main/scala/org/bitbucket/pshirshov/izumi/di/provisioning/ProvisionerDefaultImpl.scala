@@ -26,24 +26,21 @@ class ProvisionerDefaultImpl(
             if (active.imports.contains(target)) {
               throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
             }
-            plan.synchronized {
-              active.imports += (target -> value)
-            }
+            active.imports += (target -> value)
             active
 
           case OpResult.NewInstance(target, value) =>
             if (active.instances.contains(target)) {
               throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
             }
-            plan.synchronized {
-              active.instances += (target -> value)
-            }
+            active.instances += (target -> value)
             active
 
           case OpResult.SetElement(set, instance) =>
-            plan.synchronized {
-              set += instance
-            }
+            set += instance
+            active
+            
+          case OpResult.Empty =>
             active
         }
     }
@@ -143,23 +140,28 @@ class ProvisionerDefaultImpl(
         OpResult.NewInstance(target, instance)
 
       case t: ExecutableOp.WiringOp.InstantiateTrait =>
-        ???
+        val instance = null
+        OpResult.NewInstance(t.target, instance)
 
       case f: ExecutableOp.WiringOp.InstantiateFactory =>
         val allRequiredKeys = f.wiring.associations.map(_.wireWith)
         val executor = mkExecutor(context)
-        ???
+        val instance = null
+        OpResult.NewInstance(f.target, instance)
 
 
       case m: ExecutableOp.ProxyOp.MakeProxy =>
-        ???
+        val instance = null
+        OpResult.NewInstance(m.target, instance)
 
-      case i: ExecutableOp.ProxyOp.InitProxies =>
+      case i: ExecutableOp.ProxyOp.InitProxy =>
+        //val instanceResult = execute(context, i.target)
         // at this point we definitely have all the dependencies instantiated
-        val allRequiredKeys = i.op.wiring.associations
+        //val allRequiredKeys = i.op.wiring.associations
         val executor = mkExecutor(context)
-        ???
+        // init here
 
+        OpResult.Empty
     }
   }
 
