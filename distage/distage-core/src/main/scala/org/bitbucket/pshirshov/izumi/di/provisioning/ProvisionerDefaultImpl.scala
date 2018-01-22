@@ -142,19 +142,21 @@ class ProvisionerDefaultImpl(
         val instance = refCtor.apply(orderedArgs: _*)
         OpResult.NewInstance(target, instance)
 
-      case _: ExecutableOp.WiringOp.InstantiateTrait =>
+      case t: ExecutableOp.WiringOp.InstantiateTrait =>
         ???
 
-      case _: ExecutableOp.WiringOp.InstantiateFactory =>
+      case f: ExecutableOp.WiringOp.InstantiateFactory =>
+        val allRequiredKeys = f.wiring.associations.map(_.wireWith)
         val executor = mkExecutor(context)
         ???
 
 
-      case _: ExecutableOp.ProxyOp.MakeProxy =>
+      case m: ExecutableOp.ProxyOp.MakeProxy =>
         ???
 
-      case _: ExecutableOp.ProxyOp.InitProxies =>
+      case i: ExecutableOp.ProxyOp.InitProxies =>
         // at this point we definitely have all the dependencies instantiated
+        val allRequiredKeys = i.op.wiring.associations
         val executor = mkExecutor(context)
         ???
 

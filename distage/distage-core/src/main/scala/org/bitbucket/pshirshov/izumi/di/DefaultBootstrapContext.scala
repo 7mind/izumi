@@ -60,11 +60,10 @@ trait DefaultBootstrapContext extends Locator {
   }
 
   private val contextDefinition = new TrivialDIDef(contextBindings)
-
-  override def plan: FinalPlan = new FinalPlanImmutableImpl(ops, contextDefinition)
-
   private val bootstrapProducer = new ProvisionerDefaultImpl(hook, introspector)
   private val bootstrappedContext = bootstrapProducer.provision(plan, this)
+
+  override val plan: FinalPlan = new FinalPlanImmutableImpl(ops, contextDefinition)
 
   override protected def unsafeLookup(key: DIKey): Option[Any] = bootstrappedContext.get(key)
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate

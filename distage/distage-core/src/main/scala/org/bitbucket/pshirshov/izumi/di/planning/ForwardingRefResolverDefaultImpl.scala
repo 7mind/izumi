@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
 import org.bitbucket.pshirshov.izumi.di.model.plan.DodgyPlan
-import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ProxyOp
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 
 
 
@@ -16,11 +16,11 @@ class ForwardingRefResolverDefaultImpl
     import reftable._
 
     val resolvedSteps = plan.steps.flatMap {
-      case step if dependencies.contains(step.target) =>
-        Seq(ProxyOp.MakeProxy(step, dependencies(step.target)))
+      case step: WiringOp if dependencies.contains(step.target) =>
+        Seq(ProxyOp.MakeProxy(step, dependencies(step.target), dependants(step.target)))
 
-      case step if dependants.contains(step.target) =>
-        Seq(ProxyOp.InitProxies(step, dependants(step.target)))
+      case step: WiringOp if dependants.contains(step.target) =>
+        Seq(ProxyOp.InitProxies(step, dependencies(step.target), dependants(step.target)))
 
       case step =>
         Seq(step)

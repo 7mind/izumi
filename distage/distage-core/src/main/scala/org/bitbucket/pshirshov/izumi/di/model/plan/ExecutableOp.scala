@@ -27,6 +27,7 @@ object ExecutableOp {
       deps match {
         case Constructor(instanceType, _, associations) =>
           doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'), shift)
+
         case Abstract(instanceType, associations) =>
           doFormat(instanceType.tpe.toString, associations.map(_.format), "impl", ('[', ']'), ('{', '}'), shift)
 
@@ -116,13 +117,13 @@ object ExecutableOp {
   sealed trait ProxyOp {}
 
   object ProxyOp {
-    case class MakeProxy(op: ExecutableOp, forwardRefs: Set[DIKey]) extends InstantiationOp {
+    case class MakeProxy(op: WiringOp, forwardRefs: Set[DIKey], proxies: Set[DIKey]) extends InstantiationOp {
       override def target: DIKey = op.target
 
       override def format: String = f"""$target := proxy($op, $forwardRefs)"""
     }
 
-    case class InitProxies(op: ExecutableOp, proxies: Set[DIKey]) extends InstantiationOp {
+    case class InitProxies(op: WiringOp, forwardRefs: Set[DIKey], proxies: Set[DIKey]) extends InstantiationOp {
       override def target: DIKey = op.target
 
       override def format: String = f"""$target := init($proxies, $op)"""
