@@ -3,8 +3,6 @@ package org.bitbucket.pshirshov.izumi.di.planning
 import org.bitbucket.pshirshov.izumi.di.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
-import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.UnbindableBinding
-import org.bitbucket.pshirshov.izumi.di.model.plan.Provisioning.{Impossible, InstanceProvisioning, Possible, StepProvisioning}
 import org.bitbucket.pshirshov.izumi.di.model.plan.Wiring._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
 import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Value}
@@ -21,27 +19,20 @@ class PlannerDefaultImpl
   , protected val customOpHandler: CustomOpHandler
   , protected val planningObserver: PlanningObsever
   , protected val planMergingPolicy: PlanMergingPolicy
+  , protected val planningHook: PlanningHook
 )
   extends Planner {
 
   override def plan(context: ContextDefinition): FinalPlan = {
     val plan = context.bindings.foldLeft(DodgyPlan.empty) {
       case (currentPlan, binding) =>
-        val nextOps = computeProvisioning(currentPlan, binding)
-
-        nextOps match {
-          case Possible(ops) =>
-            sanityChecker.assertNoDuplicateOps(ops.flatten)
-            val next = planMergingPolicy.extendPlan(currentPlan, binding, ops)
-            sanityChecker.assertNoDuplicateOps(next.statements)
-            planningObserver.onSuccessfulStep(next)
-            next
-
-          case Impossible(implDefs) =>
-            val next = currentPlan.copy(issues = currentPlan.issues :+ UnbindableBinding(binding, implDefs))
-            planningObserver.onFailedStep(next)
-            next
-        }
+        Value(computeProvisioning(currentPlan, binding))
+          .eff(sanityChecker.assertNoDuplicateOps)
+          .map(planMergingPolicy.extendPlan(currentPlan, binding, _))
+          .eff(sanityChecker.assertNoDuplicateOps)
+          .map(planningHook.hookStep(context, currentPlan, binding, _))
+          .eff(planningObserver.onSuccessfulStep)
+          .get
     }
 
     val finalPlan = Value(plan)
@@ -57,67 +48,60 @@ class PlannerDefaultImpl
   }
 
 
-  private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): StepProvisioning = {
+  private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
     binding match {
       case c: SingletonBinding =>
-        val toProvision = provisioning(c)
+        val newOps = provisioning(c)
 
-        toProvision
-          .map {
-            newOps =>
-              val imports = computeImports(currentPlan, binding, newOps.wiring)
-
-              NextOps(
-                imports
-                , Set.empty
-                , newOps.ops
-              )
-          }
+        val imports = computeImports(currentPlan, binding, newOps.wiring)
+        NextOps(
+          imports
+          , Set.empty
+          , newOps.ops
+        )
 
       case s: SetBinding =>
         val target = s.target
         val elementKey = DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
 
-        computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
-          .map { next =>
-            NextOps(
-              next.imports
-              , next.sets + ExecutableOp.SetOp.CreateSet(target, target.symbol)
-              , next.provisions :+ ExecutableOp.SetOp.AddToSet(target, elementKey)
-            )
-          }
+        val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
+        NextOps(
+          next.imports
+          , next.sets + ExecutableOp.SetOp.CreateSet(target, target.symbol)
+          , next.provisions :+ ExecutableOp.SetOp.AddToSet(target, elementKey)
+        )
 
       case s: EmptySetBinding =>
-        Possible(NextOps(
+        NextOps(
           Set.empty
           , Set(ExecutableOp.SetOp.CreateSet(s.target, s.target.symbol))
           , Seq.empty
-        ))
+        )
     }
   }
 
-  private def provisioning(binding: SingletonBinding): InstanceProvisioning = {
+  private def provisioning(binding: SingletonBinding): Step = {
     val target = binding.target
     val wiring = implToWireable(binding.implementation)
 
     wiring match {
       case w: Constructor =>
-        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateClass(target, w))))
+        Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateClass(target, w)))
 
       case w: Abstract =>
-        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateTrait(target, w))))
+        Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateTrait(target, w)))
 
       case w: FactoryMethod =>
-        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateFactory(target, w))))
+        Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateFactory(target, w)))
 
       case w: Function =>
-        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.CallProvider(target, w))))
+        Step(wiring, Seq(ExecutableOp.WiringOp.CallProvider(target, w)))
 
       case w: Instance =>
-        Possible(Step(wiring, Seq(ExecutableOp.WiringOp.ReferenceInstance(target, w))))
+        Step(wiring, Seq(ExecutableOp.WiringOp.ReferenceInstance(target, w)))
 
       case w: CustomWiring =>
-        Possible(Step(wiring, Seq(ExecutableOp.CustomOp(target, w))))
+        Step(wiring, Seq(ExecutableOp.CustomOp(target, w)))
     }
 
   }

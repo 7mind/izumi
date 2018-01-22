@@ -22,11 +22,6 @@ class PlanningObserverDefaultImpl extends PlanningObsever {
 //    System.err.println(next)
   }
 
-  override def onFailedStep(next: DodgyPlan): Unit = {
-//    System.err.println("-" * 60 + " Next Plan (failed) " + "-" * 60)
-//    System.err.println(next)
-  }
-
   override def onReferencesResolved(plan: DodgyPlan): Unit = {
     
   }

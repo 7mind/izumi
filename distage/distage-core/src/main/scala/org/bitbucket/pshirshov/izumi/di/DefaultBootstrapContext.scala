@@ -16,6 +16,7 @@ trait DefaultBootstrapContext extends Locator {
   private val ops = Seq(
     bindInstance[CustomOpHandler, CustomOpHandler.NullCustomOpHander.type](CustomOpHandler.NullCustomOpHander)
     , bindInstance[LookupInterceptor, NullLookupInterceptor](NullLookupInterceptor.instance)
+    , bindInstance[PlanningHook, PlanningHookDefaultImpl](PlanningHookDefaultImpl.instance)
 
     , bindSubclass[Provisioner, ProvisionerDefaultImpl]
     , bindSubclass[PlanningObsever, PlanningObserverDefaultImpl]
@@ -37,6 +38,7 @@ trait DefaultBootstrapContext extends Locator {
       , DIKey.get[CustomOpHandler]
       , DIKey.get[PlanningObsever]
       , DIKey.get[PlanMergingPolicy]
+      , DIKey.get[PlanningHook]
     ))
 
   )
