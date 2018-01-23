@@ -1,10 +1,13 @@
 package org.bitbucket.pshirshov.izumi.distage.provisioning
 
-import net.sf.cglib.proxy.Enhancer
+import java.lang.reflect.Method
+import java.util.concurrent.atomic.AtomicReference
+
+import net.sf.cglib.proxy.{Callback, Enhancer, MethodInterceptor, MethodProxy}
 import org.bitbucket.pshirshov.izumi.distage.Locator
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions._
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, SetOp, WiringOp}
-import org.bitbucket.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
+import org.bitbucket.pshirshov.izumi.distage.model.plan.{Association, ExecutableOp, FinalPlan}
 import org.bitbucket.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
 
 import scala.collection.mutable
@@ -90,7 +93,7 @@ class ProvisionerDefaultImpl(
         throw new DIException(s"No handle for CustomOp for $target, defs: $customDef", null)
 
       case t: ExecutableOp.WiringOp.InstantiateTrait =>
-        makeTrait(t)
+        makeTrait(context, t)
 
       case f: WiringOp.InstantiateFactory =>
         makeFactory(context, f)
@@ -103,17 +106,67 @@ class ProvisionerDefaultImpl(
     }
   }
 
-  private def makeTrait(t: WiringOp.InstantiateTrait) = {
-    val instance = null
-    Seq(OpResult.NewInstance(t.target, instance))
+  private def makeTrait(context: ProvisioningContext, t: WiringOp.InstantiateTrait) = {
+    val dispatcher = new MethodInterceptor {
+      val methods = new AtomicReference[Map[String, Association.Method]]()
+
+      override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
+        
+        println(method.getParameterTypes.toList, methods.get(), method.getName)
+        if (method.getParameterTypes.length == 0 && methods.get().contains(method.getName)) {
+          val wireWith = methods.get()(method.getName).wireWith
+          context.fetchKey(wireWith) match {
+            case Some(v) =>
+              v.asInstanceOf[AnyRef]
+            case None =>
+              throw new MissingRefException(s"Cannot return $wireWith from ${method.getName}", Set(wireWith), None)
+          }
+        } else {
+          methodProxy.invokeSuper(o, objects)
+        }
+      }
+    }
+
+    val runtimeClass = currentMirror.runtimeClass(t.wiring.instanceType.tpe)
+
+    mkdynamic(t, dispatcher, runtimeClass) {
+      instance =>
+        val map = t.wiring.associations.map {
+          m =>
+            val method = m.symbol.asMethod
+            //            //val mirror = currentMirror.reflectClass(.typeSymbol.asClass)
+            //            val runtimeClass = currentMirror.runtimeClass(m.context.definingClass.tpe)
+            //            val mirror = universe.runtimeMirror(runtimeClass.getClassLoader)
+            //            val methodMirror = mirror.reflect(instance).reflectMethod()
+
+            // TODO: not the best key possible...
+            method.name.encodedName.toString -> m
+        }.toMap
+        dispatcher.methods.set(map)
+
+        Seq(OpResult.NewInstance(t.target, instance))
+
+    }
   }
 
   private def makeFactory(context: ProvisioningContext, f: WiringOp.InstantiateFactory) = {
     // at this point we definitely have all the dependencies instantiated
     val allRequiredKeys = f.wiring.associations.map(_.wireWith).toSet
     val executor = mkExecutor(context.narrow(allRequiredKeys))
-    val instance = null
-    Seq(OpResult.NewInstance(f.target, instance))
+
+    val dispatcher = new MethodInterceptor {
+      override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
+        if (false) {
+          ???
+        } else {
+          methodProxy.invokeSuper(o, objects)
+        }
+      }
+    }
+
+    val runtimeClass = currentMirror.runtimeClass(f.wiring.factoryType.tpe)
+
+    dynamic(f, dispatcher, runtimeClass)
   }
 
   private def initProxy(context: ProvisioningContext, i: ProxyOp.InitProxy) = {
@@ -151,27 +204,25 @@ class ProvisionerDefaultImpl(
     }
 
 
-    val runtimeClass = currentMirror.runtimeClass(tpe.tpe)
     //val refUniverse = currentMirror
     //val refClass = refUniverse.reflectClass(tpe.tpe.typeSymbol.asClass)
     //val interfaces = runtimeClass.getInterfaces
 
+    val runtimeClass = currentMirror.runtimeClass(tpe.tpe)
     val dispatcher = new CglibRefDispatcher(m.target)
-    val enhancer = new Enhancer()
-    enhancer.setSuperclass(runtimeClass)
-    enhancer.setCallback(dispatcher)
-
-
-    Try(enhancer.create()) match {
-      case Success(proxyInstance) =>
+    mkdynamic(m, dispatcher, runtimeClass) {
+      proxyInstance =>
         Seq(
           OpResult.NewInstance(m.target, proxyInstance)
           , OpResult.NewInstance(proxyKey(m.target), dispatcher)
         )
-      case Failure(f) =>
-        throw new DIException(s"Failed to instantiate proxy. Probably it's a pathologic cycle of concrete classes. Proxy operation: $m. ", f)
     }
+
+    //      case Failure(f) =>
+    //        throw new DIException(s"Failed to instantiate proxy. Probably it's a pathologic cycle of concrete classes. Proxy operation: $m. ", f)
+    //    }
   }
+
 
   private def makeSet(op: ExecutableOp.SetOp.CreateSet) = {
     import op._
@@ -258,6 +309,27 @@ class ProvisionerDefaultImpl(
 
     val instance = refCtor.apply(orderedArgs: _*)
     OpResult.NewInstance(target, instance)
+  }
+
+  private def dynamic(t: ExecutableOp, dispatcher: Callback, runtimeClass: Class[_]): Seq[OpResult] = {
+    mkdynamic(t, dispatcher, runtimeClass) {
+      proxyInstance =>
+        Seq(OpResult.NewInstance(t.target, proxyInstance))
+    }
+  }
+
+  private def mkdynamic(t: ExecutableOp, dispatcher: Callback, runtimeClass: Class[_])(mapper: AnyRef => Seq[OpResult]) = {
+    val enhancer = new Enhancer()
+    enhancer.setSuperclass(runtimeClass)
+    enhancer.setCallback(dispatcher)
+
+    Try(enhancer.create()) match {
+      case Success(proxyInstance) =>
+        mapper(proxyInstance)
+
+      case Failure(f) =>
+        throw new DIException(s"Failed to instantiate abstract class with CGLib. Operation: $t", f)
+    }
   }
 
   private def mkExecutor(context: ProvisioningContext) = {

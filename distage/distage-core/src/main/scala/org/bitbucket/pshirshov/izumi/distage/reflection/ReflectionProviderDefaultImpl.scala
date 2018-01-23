@@ -1,5 +1,6 @@
 package org.bitbucket.pshirshov.izumi.distage.reflection
 
+import org.bitbucket.pshirshov.izumi.distage.commons.AnnotationTools
 import org.bitbucket.pshirshov.izumi.distage.definition.With
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import org.bitbucket.pshirshov.izumi.distage.model.plan.{Association, UnaryWiring, Wiring}
