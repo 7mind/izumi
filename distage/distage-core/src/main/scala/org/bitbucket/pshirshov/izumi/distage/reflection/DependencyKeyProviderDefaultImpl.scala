@@ -1,9 +1,8 @@
 package org.bitbucket.pshirshov.izumi.distage.reflection
 
 import org.bitbucket.pshirshov.izumi.distage.definition.Id
-import org.bitbucket.pshirshov.izumi.distage.{MethodSymb, TypeFull, TypeSymb}
+import org.bitbucket.pshirshov.izumi.distage.{MethodSymb, Tag, TypeFull, TypeSymb}
 import org.bitbucket.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
-
 
 import scala.reflect.runtime.universe
 
@@ -23,9 +22,7 @@ class DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
   }
 
   private def withOptionalName(parameterSymbol: TypeSymb, typeKey: DIKey.TypeKey) = {
-    parameterSymbol
-      .annotations
-      .find(_.tree.tpe =:= universe.typeOf[Id])
+    AnnotationTools.find[Id](parameterSymbol)
       .flatMap {
         ann =>
           ann.tree.children.tail
@@ -48,5 +45,17 @@ class DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
 
   override def keyFromType(parameterType: TypeFull): DIKey = {
     DIKey.TypeKey(parameterType)
+  }
+}
+
+object AnnotationTools {
+  def find[T: Tag](symb: TypeSymb): Option[universe.Annotation] = {
+    symb
+      .annotations
+      .find {
+        ann =>
+          println(ann.tree.tpe, universe.typeOf[T])
+          ann.tree.tpe.erasure =:= universe.typeOf[T].erasure
+      }
   }
 }

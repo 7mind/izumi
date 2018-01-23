@@ -175,10 +175,11 @@ class InjectorTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .binding[Factory]
+//        .binding[Factory]
         .binding[Dependency]
-        .binding[OverridingFactory]
-        .binding[AssistedFactory]
+//        .binding[OverridingFactory]
+//        .binding[AssistedFactory]
+        .binding[AbstractFactory]
         .finish
 
       val injector = mkInjector()

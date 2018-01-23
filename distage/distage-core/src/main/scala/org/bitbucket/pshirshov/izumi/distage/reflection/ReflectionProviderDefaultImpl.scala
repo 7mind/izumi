@@ -1,11 +1,10 @@
 package org.bitbucket.pshirshov.izumi.distage.reflection
 
+import org.bitbucket.pshirshov.izumi.distage.definition.With
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import org.bitbucket.pshirshov.izumi.distage.model.plan.{Association, UnaryWiring, Wiring}
 import org.bitbucket.pshirshov.izumi.distage.model.{Callable, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.distage.{TypeFull, TypeSymb}
-
-
 
 
 class ReflectionProviderDefaultImpl(
@@ -17,12 +16,26 @@ class ReflectionProviderDefaultImpl(
       case FactorySymbol(_, factoryMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
           factoryMethod =>
-            val selectedParamList = symbolIntrospector.selectParameters(factoryMethod)
+            val resultType = AnnotationTools
+              .find[With[_]](factoryMethod)
+              .map(_.tree.tpe.typeArgs.head) match {
+              case Some(tpe) =>
+                EqualitySafeType(tpe)
+
+              case None =>
+                EqualitySafeType(factoryMethod.returnType)
+            }
+
             val context = DependencyContext.MethodParameterContext(symbl, factoryMethod)
 
-            val alreadyInSignature = selectedParamList.map(keyProvider.keyFromParameter(context, _).symbol).toSet
-            val resultType = EqualitySafeType(factoryMethod.returnType)
+
+            val alreadyInSignature = symbolIntrospector
+              .selectParameters(factoryMethod)
+              .map(keyProvider.keyFromParameter(context, _).symbol)
+              .toSet
+            
             val methodTypeWireable = unarySymbolDeps(resultType, alreadyInSignature)
+
             Wiring.FactoryMethod.WithContext(factoryMethod, methodTypeWireable)
         }
 

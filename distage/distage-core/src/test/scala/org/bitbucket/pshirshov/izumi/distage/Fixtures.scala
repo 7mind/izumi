@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.distage
 
-import org.bitbucket.pshirshov.izumi.distage.definition.Id
+import org.bitbucket.pshirshov.izumi.distage.definition.{Id, With}
 
 object Case1 {
 
@@ -147,6 +147,15 @@ object Case5 {
   trait AssistedFactory {
     def x(a: Int): TestClass
   }
+
+  trait AbstractDependency
+  class AbstractDependencyImpl extends AbstractDependency
+
+  trait AbstractFactory {
+    @With[AbstractDependencyImpl]
+    def x(): AbstractDependency
+  }
+
 
 }
 

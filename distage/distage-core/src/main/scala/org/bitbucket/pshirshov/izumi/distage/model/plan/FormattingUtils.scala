@@ -28,7 +28,7 @@ object FormattingUtils {
       case FactoryMethod(factoryType, unaryWireables) =>
         val wirings = unaryWireables.map {
           w =>
-            StringUtils.shift(s"${w.factoryMethod} ~= ${doFormat(w.wireWith)}", 2)
+            StringUtils.shift(s"${w.factoryMethod}: ${w.factoryMethod.returnType} ~= ${doFormat(w.wireWith)}", 2)
         }
 
         doFormat(

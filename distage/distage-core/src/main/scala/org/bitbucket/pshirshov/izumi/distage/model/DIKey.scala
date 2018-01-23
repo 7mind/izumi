@@ -1,32 +1,14 @@
 package org.bitbucket.pshirshov.izumi.distage.model
 
-import org.bitbucket.pshirshov.izumi.distage.{Tag, TypeFull, TypeNative}
-
-import scala.reflect.runtime.universe._
+import org.bitbucket.pshirshov.izumi.distage.{Tag, TypeFull}
 
 sealed trait DIKey {
   def symbol: TypeFull
 }
 
-case class EqualitySafeType(tpe: TypeNative) {
-
-  override def toString: String = tpe.toString
-
-  override def hashCode(): Int = tpe.toString.hashCode
-
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case EqualitySafeType(otherSymbol) =>
-      tpe =:= otherSymbol
-    case _ =>
-      false
-  }
-}
-
-object EqualitySafeType {
-  def get[T:Tag] = EqualitySafeType(typeTag[T].tpe)
-}
 
 object DIKey {
+
   case class TypeKey(symbol: TypeFull) extends DIKey {
     override def toString: String = symbol.toString
 
