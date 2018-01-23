@@ -1,11 +1,12 @@
 package org.bitbucket.pshirshov.izumi.di.planning
 
+import org.bitbucket.pshirshov.izumi.di.commons.Value
 import org.bitbucket.pshirshov.izumi.di.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, ImplDef}
 import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.di.model.plan.Wiring._
 import org.bitbucket.pshirshov.izumi.di.model.plan._
-import org.bitbucket.pshirshov.izumi.di.model.{DIKey, Value}
+import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.reflection.ReflectionProvider
 import org.bitbucket.pshirshov.izumi.di.{Planner, TypeFull}
 

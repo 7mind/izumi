@@ -89,9 +89,3 @@ class ReflectionProviderDefaultImpl(
   }
 
 }
-
-
-object ReflectionProviderDefaultImpl {
-  // we need this thing here for bootstrap purposes only
-
-}

@@ -1,4 +1,4 @@
-package org.bitbucket.pshirshov.izumi.di.model
+package org.bitbucket.pshirshov.izumi.di.commons
 
 class Value[A] private(value: A) {
   @inline final def map[B](f: A => B): Value[B] = {
