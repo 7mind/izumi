@@ -26,16 +26,16 @@ class SanityCheckerDefaultImpl
     val fullDependenciesSet = fullRefTable.dependencies.flatMap(_._2).toSet
     val missingRefs = fullDependenciesSet -- allAvailableRefs
     if (missingRefs.nonEmpty) {
-      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependants}!", missingRefs, fullRefTable)
+      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependants}!", missingRefs, Some(fullRefTable))
     }
 
   }
 
 
   override def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit = {
+    val (proxies, single) = ops.partition(_.isInstanceOf[ProxyOp.InitProxy])
 
-    val (uniqOps, nonUniqueOps) = ops
-      .filterNot(_.isInstanceOf[ProxyOp.InitProxy])
+    val (uniqOps, nonUniqueOps) = single
       .foldLeft((mutable.ArrayBuffer[DIKey](), mutable.HashSet[DIKey]())) {
         case ((unique, nonunique), s: SetOp) =>
           (unique, nonunique += s.target)
@@ -43,7 +43,16 @@ class SanityCheckerDefaultImpl
           (unique += s.target, nonunique)
       }
 
+    val proxyKeys = proxies.map(_.target)
+
     assertNoDuplicateKeys(uniqOps ++ nonUniqueOps.toSeq)
+    assertNoDuplicateKeys(proxyKeys)
+
+    val missingProxies = proxyKeys.toSet -- uniqOps.toSet
+    if (missingProxies.nonEmpty) {
+      throw new MissingRefException(s"Cannot finish the plan, there are missing proxy refs: $missingProxies!", missingProxies, None)
+
+    }
   }
 
   private def assertNoDuplicateKeys(keys: Seq[DIKey]): Unit = {
@@ -57,13 +66,6 @@ class SanityCheckerDefaultImpl
     val counted = keys
       .groupBy(k => k)
       .map(t => (t._1, t._2.length))
-
-    //    System.err.println("---")
-    //    counted.foreach {
-    //      case (t, c) =>
-    //        System.err.println((t, t.hashCode(), c))
-    //
-    //    }
 
     counted.filter(_._2 > 1)
   }
