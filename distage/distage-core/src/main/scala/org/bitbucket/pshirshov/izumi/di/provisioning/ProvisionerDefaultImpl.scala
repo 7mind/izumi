@@ -21,12 +21,20 @@ class ProvisionerDefaultImpl(
 
     val provisions = plan.steps.foldLeft(activeProvision) {
       case (active, step) =>
-        execute(LocatorContext(active, parentContext), step)
-          .foldLeft(active) {
-            case (acc, result) =>
-              interpretResult(active, result)
-              acc
-          }
+        Try(execute(LocatorContext(active, parentContext), step)) match {
+          case Success(s) =>
+            s.foldLeft(active) {
+              case (acc, result) =>
+                Try(interpretResult(active, result)) match {
+                  case Failure(f) =>
+                    throw new DIException(s"Provisioning unexpectedly failed on result handling for $step => $result", f)
+                  case _ =>
+                    acc
+                }
+            }
+          case Failure(f) =>
+            throw new DIException(s"Provisioning unexpectedly failed on step $step", f)
+        }
     }
 
     ProvisionImmutable(provisions.instances, provisions.imports)
@@ -48,6 +56,9 @@ class ProvisionerDefaultImpl(
         active.instances += (target -> value)
 
       case OpResult.SetElement(set, instance) =>
+        if (set == instance) {
+          throw new DIException(s"Pathological case. Tried to add set into itself: $set", null)
+        }
         set += instance
     }
   }
@@ -169,37 +180,42 @@ class ProvisionerDefaultImpl(
     import op._
     // target is guaranteed to be a Set
     val scalaCollectionSetType = EqualitySafeType.get[collection.Set[_]]
-    if (tpe.tpe.baseClasses.contains(scalaCollectionSetType.tpe)) {
-      OpResult.NewInstance(target, mutable.HashSet[Any]())
-    } else {
+    val erasure = scalaCollectionSetType.tpe.typeSymbol
+
+    if (!tpe.tpe.baseClasses.contains(erasure)) {
       throw new IncompatibleTypesException("Tried to create make a Set with a non-Set type! " +
         s"For $target expected $tpe to be a sub-class of $scalaCollectionSetType, but it isn't!"
         , scalaCollectionSetType
         , tpe)
     }
+
+    OpResult.NewInstance(target, mutable.HashSet[Any]())
   }
 
   private def addToSet(context: ProvisioningContext, op: ExecutableOp.SetOp.AddToSet) = {
     // value is guaranteed to have already been instantiated or imported
-    import op._
-    context.fetchKey(target) match {
+    val targetElement = context.fetchKey(op.element) match {
       case Some(value) =>
-        // set is guaranteed to have already been added
-        context.fetchKey(target) match {
-          case Some(set: mutable.HashSet[_]) =>
-            OpResult.SetElement(set.asInstanceOf[mutable.HashSet[Any]], value)
-
-          case Some(somethingElse) =>
-            throw new InvalidPlanException(s"The impossible happened! Tried to add instance to Set Binding," +
-              s" but target Set is not a Set! It's ${somethingElse.getClass.getName}")
-          case _ =>
-            throw new InvalidPlanException(s"The impossible happened! Tried to add instance to Set Binding," +
-              s" but Set has not been initialized! Set: $target, instance: $element")
-        }
+        value
       case _ =>
         throw new InvalidPlanException(s"The impossible happened! Tried to add instance to Set Binding," +
-          s" but the instance has not been initialized! Set: $target, instance: $element")
+          s" but the instance has not been initialized! Set: ${op.target}, instance: ${op.element}")
     }
+
+    // set is guaranteed to have already been added
+    val targetSet = context.fetchKey(op.target) match {
+      case Some(set: mutable.HashSet[_]) =>
+        set
+      case Some(somethingElse) =>
+        throw new InvalidPlanException(s"The impossible happened! Tried to add instance to Set Binding," +
+          s" but target Set is not a Set! It's ${somethingElse.getClass.getName}")
+
+      case _ =>
+        throw new InvalidPlanException(s"The impossible happened! Tried to add instance to Set Binding," +
+          s" but Set has not been initialized! Set: ${op.target}, instance: ${op.element}")
+    }
+
+    OpResult.SetElement(targetSet.asInstanceOf[mutable.HashSet[Any]], targetElement)
   }
 
   private def callProvider(context: ProvisioningContext, op: ExecutableOp.WiringOp.CallProvider) = {
