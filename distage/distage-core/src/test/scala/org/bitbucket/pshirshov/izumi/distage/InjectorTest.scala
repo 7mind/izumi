@@ -113,8 +113,11 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
-      println(context.get[Circular3].arg)
-      assert(context.get[Circular3].arg.isInstanceOf[Circular4])
+      val traitArg = context.get[Circular3].arg
+      assert(traitArg != null && traitArg.isInstanceOf[Circular4])
+      
+      //assert(traitArg.testVal == 1)
+      
       context.enumerate.foreach(println)
     }
 

@@ -107,6 +107,7 @@ object Case3 {
 
   trait Circular4 {
     def arg: Circular1
+    def testVal: Int = 1
   }
 
   trait Circular5 {

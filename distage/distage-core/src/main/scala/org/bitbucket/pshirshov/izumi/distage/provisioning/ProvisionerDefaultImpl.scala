@@ -10,6 +10,7 @@ import org.bitbucket.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan
 import org.bitbucket.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
 
 import scala.collection.mutable
+import scala.language.reflectiveCalls
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 
@@ -27,7 +28,7 @@ class ProvisionerDefaultImpl(
           case (acc, result) =>
             Try(interpretResult(active, result)) match {
               case Failure(f) =>
-                throw new DIException(s"Provisioning unexpectedly failed on result handling for $step => $result", f)
+                throw new DIException(s"Provisioning unexpectedly failed on result handling for $step", f)
               case _ =>
                 acc
             }
@@ -40,16 +41,21 @@ class ProvisionerDefaultImpl(
 
   private def interpretResult(active: ProvisionActive, result: OpResult): Unit = {
     result match {
-
       case OpResult.NewImport(target, value) =>
         if (active.imports.contains(target)) {
           throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
+        }
+        if (value.isInstanceOf[OpResult]) {
+          throw new DIException(s"Pathological case. Tried to add set into itself: $target -> $value", null)
         }
         active.imports += (target -> value)
 
       case OpResult.NewInstance(target, value) =>
         if (active.instances.contains(target)) {
           throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
+        }
+        if (value.isInstanceOf[OpResult]) {
+          throw new DIException(s"Pathological case. Tried to add set into itself: $target -> $value", null)
         }
         active.instances += (target -> value)
 
@@ -106,32 +112,32 @@ class ProvisionerDefaultImpl(
   }
 
 
-  private def makeTrait(context: ProvisioningContext, t: WiringOp.InstantiateTrait) = {
+  private def makeTrait(context: ProvisioningContext, t: WiringOp.InstantiateTrait): Seq[OpResult] = {
     val traitDeps = context.narrow(t.wiring.associations.map(_.wireWith).toSet)
-    val dispatcher = new TraitMethodInterceptor(traitDeps, t.target)
+    val methodIndex = t.wiring.associations.map {
+      m =>
+        // https://stackoverflow.com/questions/16787163/get-a-java-lang-reflect-method-from-a-reflect-runtime-universe-methodsymbol
+        val method = m.symbol.asMethod
+        val runtimeClass = currentMirror.runtimeClass(m.context.definingClass.tpe)
+        val mirror = universe.runtimeMirror(runtimeClass.getClassLoader)
+        val privateMirror = mirror.asInstanceOf[ {
+          def methodToJava(sym: scala.reflect.internal.Symbols#MethodSymbol): java.lang.reflect.Method
+        }]
+        val javaMethod = privateMirror.methodToJava(method.asInstanceOf[scala.reflect.internal.Symbols#MethodSymbol])
+        javaMethod -> m
+
+    }.toMap
+
+    val dispatcher = new TraitMethodInterceptor(methodIndex, traitDeps, t.target)
     val runtimeClass = currentMirror.runtimeClass(t.wiring.instanceType.tpe)
 
     mkdynamic(t, dispatcher, runtimeClass) {
       instance =>
-        val methodIndex = t.wiring.associations.map {
-          m =>
-            val method = m.symbol.asMethod
-            //            //val mirror = currentMirror.reflectClass(.typeSymbol.asClass)
-            //            val runtimeClass = currentMirror.runtimeClass(m.context.definingClass.tpe)
-            //            val mirror = universe.runtimeMirror(runtimeClass.getClassLoader)
-            //            val methodMirror = mirror.reflect(instance).reflectMethod()
-
-            // TODO: not the best key possible...
-            method.name.encodedName.toString -> m
-        }.toMap
-
-        dispatcher.methods.set(methodIndex)
-
         Seq(OpResult.NewInstance(t.target, instance))
     }
   }
 
-  private def makeFactory(context: ProvisioningContext, f: WiringOp.InstantiateFactory) = {
+  private def makeFactory(context: ProvisioningContext, f: WiringOp.InstantiateFactory): Seq[OpResult] = {
     // at this point we definitely have all the dependencies instantiated
     val allRequiredKeys = f.wiring.associations.map(_.wireWith).toSet
     val executor = mkExecutor(context.narrow(allRequiredKeys))
@@ -151,23 +157,25 @@ class ProvisionerDefaultImpl(
     dynamic(f, dispatcher, runtimeClass)
   }
 
-  private def initProxy(context: ProvisioningContext, i: ProxyOp.InitProxy) = {
-    val instance = execute(context, i.proxy.op)
-
+  private def initProxy(context: ProvisioningContext, i: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(i.target)
-
     context.fetchKey(key) match {
       case Some(adapter: CglibRefDispatcher) =>
-        adapter.reference.set(instance)
+        execute(context, i.proxy.op).head match {
+          case OpResult.NewInstance(_, instance) =>
+            adapter.reference.set(instance.asInstanceOf[AnyRef])
+          case r =>
+            throw new DIException(s"Unexpected operation result for $key: $r", null)
+        }
+
       case _ =>
         throw new DIException(s"Cannot get adapter $key for $i", null)
     }
 
-
     Seq()
   }
 
-  private def makeProxy(m: ProxyOp.MakeProxy) = {
+  private def makeProxy(m: ProxyOp.MakeProxy): Seq[OpResult] = {
     val tpe = m.op match {
       case op: WiringOp.InstantiateTrait =>
         op.wiring.instanceType
