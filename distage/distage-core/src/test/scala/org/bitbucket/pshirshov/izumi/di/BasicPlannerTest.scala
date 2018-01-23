@@ -69,15 +69,27 @@ object Case2 {
 
 object Case3 {
 
-  class Circular1(arg: Circular2)
+  trait Circular1 {
+    def arg: Circular2
+  }
 
-  class Circular2(arg: Circular3)
+  trait Circular2 {
+    def arg: Circular3
+  }
 
-  class Circular3(arg: Circular4, arg2: Circular5)
+  trait Circular3 {
+    def arg: Circular4
+    def arg2: Circular5
+  }
 
-  class Circular4(arg: Circular1)
+  trait Circular4 {
+    def arg: Circular1
+  }
   
-  class Circular5(arg: Circular1, arg2: Circular4)
+  trait Circular5 {
+    def arg: Circular1
+    def arg2: Circular4
+  }
 
 }
 
@@ -265,6 +277,7 @@ class BasicPlannerTest extends WordSpec {
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
       println(context.get[Circular3])
+      context.enumerate.foreach(println)
     }
 
     "fail on unbindable" in {

@@ -37,6 +37,12 @@ object DIKey {
     override def toString: String = s"${symbol.toString}#$id"
   }
 
+  case class ProxyElementKey(proxied: DIKey, symbol: TypeFull) extends DIKey {
+    override def toString: String = s"Proxy[${proxied.toString}]"
+
+    override def hashCode(): Int = toString.hashCode()
+  }
+
   case class SetElementKey(set: DIKey, symbol: TypeFull) extends DIKey {
     override def toString: String = s"Set[${symbol.toString}]#$set"
 

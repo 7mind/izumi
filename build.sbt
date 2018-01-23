@@ -103,7 +103,7 @@ lazy val distageCore = inDiStage.as.module
     .settings(
       libraryDependencies ++= Seq(
         R.scala_reflect
-        , R.scala_asm
+        , R.cglib_nodep
       )
     )
     .settings(LibSettings)
