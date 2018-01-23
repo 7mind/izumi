@@ -90,6 +90,18 @@ object Case2 {
 }
 
 object Case3 {
+//
+//  trait A {
+//    println("A")
+//  }
+//
+//  trait B {
+//    println("B")
+//  }
+//
+//  trait C extends A with B {
+//    println("C")
+//  }
 
   trait Circular1 {
     def arg: Circular2
@@ -100,12 +112,16 @@ object Case3 {
   }
 
   trait Circular3 {
+    ???
     def arg: Circular4
 
     def arg2: Circular5
+
+    def method: Long = 2L
   }
 
   trait Circular4 {
+    ???
     def arg: Circular1
     def testVal: Int = 1
   }

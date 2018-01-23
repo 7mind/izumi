@@ -114,7 +114,8 @@ class ProvisionerDefaultImpl(
 
   private def makeTrait(context: ProvisioningContext, t: WiringOp.InstantiateTrait): Seq[OpResult] = {
     val traitDeps = context.narrow(t.wiring.associations.map(_.wireWith).toSet)
-    val methodIndex = t.wiring.associations.map {
+
+    val wiredMethodIndex = t.wiring.associations.map {
       m =>
         // https://stackoverflow.com/questions/16787163/get-a-java-lang-reflect-method-from-a-reflect-runtime-universe-methodsymbol
         val method = m.symbol.asMethod
@@ -128,11 +129,11 @@ class ProvisionerDefaultImpl(
 
     }.toMap
 
-    val dispatcher = new TraitMethodInterceptor(methodIndex, traitDeps, t.target)
     val runtimeClass = currentMirror.runtimeClass(t.wiring.instanceType.tpe)
-
+    val dispatcher = new CgLibTraitMethodInterceptor(wiredMethodIndex, traitDeps, t, runtimeClass)
     mkdynamic(t, dispatcher, runtimeClass) {
       instance =>
+        // TODO: we don't call trait initializer here. But we have to
         Seq(OpResult.NewInstance(t.target, instance))
     }
   }
@@ -192,11 +193,6 @@ class ProvisionerDefaultImpl(
     if (!constructable) {
       throw new DIException(s"Failed to instantiate proxy ${m.target}. All the proxy constructors must be zero-arg though we have $constructors", null)
     }
-
-
-    //val refUniverse = currentMirror
-    //val refClass = refUniverse.reflectClass(tpe.tpe.typeSymbol.asClass)
-    //val interfaces = runtimeClass.getInterfaces
 
     val runtimeClass = currentMirror.runtimeClass(tpe.tpe)
     val dispatcher = new CglibRefDispatcher(m.target)
