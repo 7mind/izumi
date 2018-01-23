@@ -1,6 +1,9 @@
 package org.bitbucket.pshirshov.izumi.distage.model
 
-import org.bitbucket.pshirshov.izumi.distage.{Tag, TypeNative}
+import org.bitbucket.pshirshov.izumi.distage.Tag
+import org.bitbucket.pshirshov.izumi.distage.TypeNative
+
+import scala.reflect.runtime.universe.typeTag
 
 case class EqualitySafeType(tpe: TypeNative) {
 
@@ -17,6 +20,5 @@ case class EqualitySafeType(tpe: TypeNative) {
 }
 
 object EqualitySafeType {
-  import scala.reflect.runtime.universe._
   def get[T:Tag] = EqualitySafeType(typeTag[T].tpe)
 }

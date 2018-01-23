@@ -20,7 +20,6 @@ class InjectorTest extends WordSpec {
     "maintain correct operation order" in {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
-        .empty
         .binding[TestClass]
         .binding[TestDependency3]
         .binding[TestDependency0, TestImpl0]
@@ -53,14 +52,15 @@ class InjectorTest extends WordSpec {
     "support multiple bindings" in {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
-        .empty
-        .named("named.empty.set").set[JustTrait]
         .set[JustTrait]
-
+          .named("named.empty.set")
+        .set[JustTrait]
         .element[JustTrait, Impl0]
         .element[JustTrait](new Impl1)
-        .named("named.set").element[JustTrait](new Impl2())
-        .named("named.set").element[JustTrait, Impl3]
+        .element[JustTrait](new Impl2())
+          .named("named.set")
+        .element[JustTrait, Impl3]
+          .named("named.set")
         .finish
 
       val injector = mkInjector()
@@ -72,10 +72,12 @@ class InjectorTest extends WordSpec {
     "support named bindings" in {
       import Case1_1._
       val definition: ContextDefinition = TrivialDIDef
-        .empty
-        .named("named.test.class").binding[TestClass]
-        .named("named.test.dependency.0").binding[TestDependency0, TestImpl0]
-        .named("named.test").instance(TestInstanceBinding())
+        .binding[TestClass]
+          .named("named.test.class")
+        .binding[TestDependency0, TestImpl0]
+          .named("named.test.dependency.0")
+        .instance(TestInstanceBinding())
+          .named("named.test")
         .finish
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -88,7 +90,6 @@ class InjectorTest extends WordSpec {
       import Case2._
 
       val definition: ContextDefinition = TrivialDIDef
-        .empty
         .binding[Circular2]
         .binding[Circular1]
         .finish
@@ -102,7 +103,6 @@ class InjectorTest extends WordSpec {
       import Case3._
 
       val definition: ContextDefinition = TrivialDIDef
-        .empty
         .binding[Circular3]
         .binding[Circular1]
         .binding[Circular2]
@@ -145,7 +145,6 @@ class InjectorTest extends WordSpec {
       import Case4._
 
       val definition: ContextDefinition = TrivialDIDef
-        .empty
         .binding[Dependency, Impl1]
         .binding[Dependency, Impl2]
         .finish
@@ -161,7 +160,6 @@ class InjectorTest extends WordSpec {
       import Case4._
 
       val definition: ContextDefinition = TrivialDIDef
-        .empty
         .binding[Dependency, Impl1]
         .binding[Dependency, Impl1]
         .finish
@@ -178,7 +176,6 @@ class InjectorTest extends WordSpec {
       import Case5._
 
       val definition: ContextDefinition = TrivialDIDef
-        .empty
         .binding[Factory]
         .binding[Dependency]
         .binding[OverridingFactory]
@@ -195,7 +192,6 @@ class InjectorTest extends WordSpec {
     "instantiate simple class" in {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
-        .empty
         .binding[TestCaseClass2]
         .instance(new TestInstanceBinding)
         .finish
@@ -212,8 +208,7 @@ class InjectorTest extends WordSpec {
       import Case6._
 
       val definition: ContextDefinition = TrivialDIDef
-        .empty
-        .provider[TestClass]((a: Dependency1) => new TestClass(null))
+        .provider[TestClass]((a: Dependency1) => new TestClass(null) )
         .provider[Dependency1](() => new Dependency1Sub {})
         .finish
 
@@ -226,7 +221,93 @@ class InjectorTest extends WordSpec {
 
       println(s"Got instance: ${instantiated.toString}!")
     }
-  }
 
+    "handle one-arg trait" in {
+      import Case7._
+
+      val definition = TrivialDIDef
+        .binding[Dependency1]
+        .magic[TestTrait]
+        .finish
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+      val instantiated = context.get[TestTrait]
+      assert(instantiated.isInstanceOf[TestTrait])
+
+      println(s"Got instance: ${instantiated.toString}!")
+    }
+
+    "handle named one-arg trait" in {
+      import Case7._
+
+      val definition = TrivialDIDef
+        .binding[Dependency1]
+        .magic[TestTrait]
+          .named("named-trait")
+        .finish
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+      val instantiated = context.get[TestTrait]("named-trait")
+      assert(instantiated.isInstanceOf[TestTrait])
+
+      println(s"Got instance: ${instantiated.toString}!")
+    }
+
+    "handle mixed sub-trait with protected autowires" in {
+      import Case8._
+
+      val definition = TrivialDIDef
+        .magic[Trait3]
+        .magic[Trait2]
+        .magic[Trait1]
+        .binding[Dependency3]
+        .binding[Dependency2]
+        .binding[Dependency1]
+        .finish
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+      val instantiated1 = context.get[Trait1]
+      assert(instantiated1.isInstanceOf[Trait1])
+
+      val instantiated2 = context.get[Trait2]
+      assert(instantiated2.isInstanceOf[Trait2])
+
+      val instantiated3 = context.get[Trait3]
+      assert(instantiated3.isInstanceOf[Trait3])
+
+      instantiated3.prr
+    }
+
+    "handle sub-type trait" in {
+      import Case8._
+
+      val definition = TrivialDIDef
+        .magic[Trait2, Trait3]
+        .binding[Dependency3]
+        .binding[Dependency2]
+        .binding[Dependency1]
+        .finish
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+      val instantiated3 = context.get[Trait2]
+      assert(instantiated3.isInstanceOf[Trait2])
+
+      println(s"Got instance: ${instantiated3.toString}!")
+      println(s"Got ${instantiated3.dep1}")
+      instantiated3.asInstanceOf[Trait3].prr
+    }
+  }
 
 }

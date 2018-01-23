@@ -187,3 +187,38 @@ object Case6 {
   class TestClass2(a: TestClass)
 
 }
+
+object Case7 {
+
+  class Dependency1
+
+  trait TestTrait {
+    def dep: Dependency1
+  }
+
+}
+
+object Case8 {
+
+  class Dependency1 {
+    override def toString: String = "Hello World"
+  }
+  class Dependency2
+  class Dependency3
+
+  trait Trait1 {
+    protected def dep1: Dependency1
+  }
+
+  trait Trait2 extends Trait1 {
+    override def dep1: Dependency1
+    def dep2: Dependency2
+  }
+
+  trait Trait3 extends Trait1 with Trait2 {
+    def dep3: Dependency3
+
+    def prr: Unit = println(dep1.toString)
+  }
+
+}
