@@ -13,7 +13,4 @@ object OpResult {
   case class NewImport(key: DIKey, value: Any) extends OpResult
 
   case class SetElement(set: mutable.HashSet[Any], instance: Any) extends OpResult
-  
-  case object Empty extends OpResult
-
 }

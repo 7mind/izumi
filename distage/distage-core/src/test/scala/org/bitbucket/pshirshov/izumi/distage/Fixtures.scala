@@ -152,7 +152,7 @@ object Case5 {
   class AbstractDependencyImpl extends AbstractDependency
 
   trait AbstractFactory {
-    @With[AbstractDependencyImpl]
+    @With[AbstractDependencyImpl]()
     def x(): AbstractDependency
   }
 

@@ -75,7 +75,7 @@ class ProvisionerDefaultImpl(
         Seq(OpResult.NewInstance(target, wiring.instance))
 
       case op: ExecutableOp.SetOp.CreateSet =>
-        Seq(makeSet(context, op))
+        Seq(makeSet(op))
 
       case op: SetOp.AddToSet =>
         Seq(addToSet(context, op))
@@ -124,7 +124,7 @@ class ProvisionerDefaultImpl(
     context.fetchKey(key) match {
       case Some(adapter: CglibRefDispatcher) =>
         adapter.reference.set(instance)
-      case None =>
+      case _ =>
         throw new DIException(s"Cannot get adapter $key for $i", null)
     }
 
@@ -150,10 +150,11 @@ class ProvisionerDefaultImpl(
       throw new DIException(s"Failed to instantiate proxy ${m.target}. All the proxy constructors must be zero-arg though we have $constructors", null)
     }
 
-    val refUniverse = currentMirror
-    val refClass = refUniverse.reflectClass(tpe.tpe.typeSymbol.asClass)
+
     val runtimeClass = currentMirror.runtimeClass(tpe.tpe)
-    val interfaces = runtimeClass.getInterfaces
+    //val refUniverse = currentMirror
+    //val refClass = refUniverse.reflectClass(tpe.tpe.typeSymbol.asClass)
+    //val interfaces = runtimeClass.getInterfaces
 
     val dispatcher = new CglibRefDispatcher(m.target)
     val enhancer = new Enhancer()
@@ -172,7 +173,7 @@ class ProvisionerDefaultImpl(
     }
   }
 
-  private def makeSet(context: ProvisioningContext, op: ExecutableOp.SetOp.CreateSet) = {
+  private def makeSet(op: ExecutableOp.SetOp.CreateSet) = {
     import op._
     // target is guaranteed to be a Set
     val scalaCollectionSetType = EqualitySafeType.get[collection.Set[_]]

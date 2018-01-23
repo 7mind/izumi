@@ -54,7 +54,6 @@ object AnnotationTools {
       .annotations
       .find {
         ann =>
-          println(ann.tree.tpe, universe.typeOf[T])
           ann.tree.tpe.erasure =:= universe.typeOf[T].erasure
       }
   }
