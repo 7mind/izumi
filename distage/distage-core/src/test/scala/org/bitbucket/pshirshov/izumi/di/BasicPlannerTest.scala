@@ -1,8 +1,10 @@
 package org.bitbucket.pshirshov.izumi.di
 
 import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, Id, TrivialDIDef}
-import org.bitbucket.pshirshov.izumi.di.model.DIKey
+import org.bitbucket.pshirshov.izumi.di.model.{DIKey, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{MissingInstanceException, UnsupportedWiringException, UntranslatablePlanException}
+import org.bitbucket.pshirshov.izumi.di.model.plan.{ExecutableOp, UnaryWiring}
+import org.bitbucket.pshirshov.izumi.di.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.{DuplicatedStatements, UnsolvableConflict}
 import org.bitbucket.pshirshov.izumi.di.planning.{PlanResolver, PlanResolverDefaultImpl}
 import org.scalatest.WordSpec
@@ -42,7 +44,7 @@ object Case1 {
   case class TestCaseClass(a1: TestClass, a2: TestDependency3)
 
   case class TestInstanceBinding(z: String =
-                            """R-r-rollin' down the window, white widow, fuck fame
+                                 """R-r-rollin' down the window, white widow, fuck fame
 Forest fire, climbin' higher, real life, it can wait""")
 
   case class TestCaseClass2(a: TestInstanceBinding)
@@ -81,6 +83,7 @@ object Case1_1 {
   case class TestInstanceBinding(z: String =
                                  """R-r-rollin' down the window, white widow, fuck fame
 Forest fire, climbin' higher, real life, it can wait""")
+
 }
 
 object Case2 {
@@ -105,15 +108,17 @@ object Case3 {
 
   trait Circular3 {
     def arg: Circular4
+
     def arg2: Circular5
   }
 
   trait Circular4 {
     def arg: Circular1
   }
-  
+
   trait Circular5 {
     def arg: Circular1
+
     def arg2: Circular4
   }
 
@@ -153,14 +158,16 @@ object Case5 {
 }
 
 object Case6 {
+
   trait Dependency1
+
   trait Dependency1Sub extends Dependency1
 
   class TestClass(b: Dependency1)
 
   class TestClass2(a: TestClass)
-}
 
+}
 
 
 class BasicPlannerTest extends WordSpec {
@@ -240,7 +247,23 @@ class BasicPlannerTest extends WordSpec {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+      assert(plan.steps.exists(_.isInstanceOf[ImportDependency]))
+
+      intercept[MissingInstanceException] {
+        injector.produce(plan)
+      }
+
+      val fixedPlan = plan.flatMap {
+        case ImportDependency(key, references) if key == DIKey.get[NotInContext] =>
+          Seq(ExecutableOp.WiringOp.ReferenceInstance(
+            key
+            , UnaryWiring.Instance(EqualitySafeType.get[NotInContext], new NotInContext {})
+          ))
+
+        case op =>
+          Seq(op)
+      }
+      injector.produce(fixedPlan)
     }
 
     "support multiple bindings" in {
@@ -255,7 +278,7 @@ class BasicPlannerTest extends WordSpec {
         .named("named.set").element[JustTrait](new Impl2())
         .named("named.set").element[JustTrait, Impl3]
         .finish
-      
+
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
@@ -400,8 +423,8 @@ class BasicPlannerTest extends WordSpec {
 
       val definition: ContextDefinition = TrivialDIDef
         .empty
-        .provider[TestClass]((a: Dependency1) => new TestClass(null) )
-        .provider[Dependency1](() => new Dependency1Sub {} )
+        .provider[TestClass]((a: Dependency1) => new TestClass(null))
+        .provider[Dependency1](() => new Dependency1Sub {})
         .finish
 
       val injector = mkInjector()

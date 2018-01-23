@@ -21,20 +21,16 @@ class ProvisionerDefaultImpl(
 
     val provisions = plan.steps.foldLeft(activeProvision) {
       case (active, step) =>
-        Try(execute(LocatorContext(active, parentContext), step)) match {
-          case Success(s) =>
-            s.foldLeft(active) {
-              case (acc, result) =>
-                Try(interpretResult(active, result)) match {
-                  case Failure(f) =>
-                    throw new DIException(s"Provisioning unexpectedly failed on result handling for $step => $result", f)
-                  case _ =>
-                    acc
-                }
+        execute(LocatorContext(active, parentContext), step).foldLeft(active) {
+          case (acc, result) =>
+            Try(interpretResult(active, result)) match {
+              case Failure(f) =>
+                throw new DIException(s"Provisioning unexpectedly failed on result handling for $step => $result", f)
+              case _ =>
+                acc
             }
-          case Failure(f) =>
-            throw new DIException(s"Provisioning unexpectedly failed on step $step", f)
         }
+
     }
 
     ProvisionImmutable(provisions.instances, provisions.imports)
