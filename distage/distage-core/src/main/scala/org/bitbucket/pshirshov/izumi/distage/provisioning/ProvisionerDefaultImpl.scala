@@ -195,7 +195,13 @@ class ProvisionerDefaultImpl(
     }
 
     val runtimeClass = currentMirror.runtimeClass(tpe.tpe)
-    val dispatcher = new CglibRefDispatcher(m.target)
+    val nullDispatcher = new CglibNullMethodInterceptor(m.target)
+    val nullProxy = mkdynamic(m, nullDispatcher, runtimeClass) {
+      proxyInstance =>
+        proxyInstance
+    }
+
+    val dispatcher = new CglibRefDispatcher(m.target, nullProxy)
     mkdynamic(m, dispatcher, runtimeClass) {
       proxyInstance =>
         Seq(
@@ -203,10 +209,6 @@ class ProvisionerDefaultImpl(
           , OpResult.NewInstance(proxyKey(m.target), dispatcher)
         )
     }
-
-    //      case Failure(f) =>
-    //        throw new DIException(s"Failed to instantiate proxy. Probably it's a pathologic cycle of concrete classes. Proxy operation: $m. ", f)
-    //    }
   }
 
 
@@ -304,7 +306,7 @@ class ProvisionerDefaultImpl(
     }
   }
 
-  private def mkdynamic(t: ExecutableOp, dispatcher: Callback, runtimeClass: Class[_])(mapper: AnyRef => Seq[OpResult]) = {
+  private def mkdynamic[T](t: ExecutableOp, dispatcher: Callback, runtimeClass: Class[_])(mapper: AnyRef => T): T = {
     val enhancer = new Enhancer()
     enhancer.setSuperclass(runtimeClass)
     enhancer.setCallback(dispatcher)
