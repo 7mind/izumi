@@ -76,6 +76,19 @@ val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 val inRoot = In(".")
+val inLib = In("lib")
+
+val logger = inLib.as.module.enablePlugins(ScriptedPlugin).settings(
+  target ~= { t => t.toPath.resolve("primary").toFile }
+  , scriptedLaunchOpts := {
+    scriptedLaunchOpts.value ++
+      Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+  }
+  , scriptedBufferLog := false
+  , crossScalaVersions := Seq(
+    scala_212
+  )
+)
 
 lazy val sbtIzumi = inRoot.as
   .module
@@ -89,12 +102,13 @@ lazy val sbtIzumi = inRoot.as
     , scriptedBufferLog := false
     , crossScalaVersions := Seq(
       scala_212
-        )
+    )
   )
 
 lazy val root = inRoot.as
   .root
   .transitiveAggregate(
     sbtIzumi
+    , logger
   )
 
