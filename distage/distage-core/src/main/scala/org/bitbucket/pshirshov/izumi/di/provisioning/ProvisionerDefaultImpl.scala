@@ -137,6 +137,12 @@ class ProvisionerDefaultImpl(
         throw new DIException(s"Operation unsupported by proxy mechanism: $op", null)
     }
 
+    val constructors = tpe.tpe.decls.filter(_.isConstructor)
+    val constructable = constructors.forall(_.asMethod.paramLists.forall(_.isEmpty))
+    if (!constructable) {
+      throw new DIException(s"Failed to instantiate proxy ${m.target}. All the proxy constructors must be zero-arg though we have $constructors", null)
+    }
+
     val refUniverse = currentMirror
     val refClass = refUniverse.reflectClass(tpe.tpe.typeSymbol.asClass)
     val runtimeClass = currentMirror.runtimeClass(tpe.tpe)
@@ -155,7 +161,7 @@ class ProvisionerDefaultImpl(
           , OpResult.NewInstance(proxyKey(m.target), dispatcher)
         )
       case Failure(f) =>
-        throw new DIException(s"Failed to instantiate proxy for $m. Probably it's a pathologic cycle of concrete classes", f)
+        throw new DIException(s"Failed to instantiate proxy. Probably it's a pathologic cycle of concrete classes. Proxy operation: $m. ", f)
     }
   }
 

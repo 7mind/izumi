@@ -11,3 +11,4 @@ object Binding {
   case class SetBinding(target: DIKey, implementation: ImplDef) extends Binding
   case class EmptySetBinding(target: DIKey) extends Binding
 }
+

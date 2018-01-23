@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.di
 
-import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, TrivialDIDef}
+import org.bitbucket.pshirshov.izumi.di.definition.{Binding, ContextDefinition, Id, TrivialDIDef}
 import org.bitbucket.pshirshov.izumi.di.model.DIKey
 import org.bitbucket.pshirshov.izumi.di.model.exceptions.{MissingInstanceException, UnsupportedWiringException, UntranslatablePlanException}
 import org.bitbucket.pshirshov.izumi.di.model.plan.PlanningFailure.{DuplicatedStatements, UnsolvableConflict}
@@ -59,9 +59,35 @@ Forest fire, climbin' higher, real life, it can wait""")
 
 }
 
+object Case1_1 {
+
+  trait TestDependency0 {
+    def boom(): Int = 1
+  }
+
+  class TestClass
+  (
+    @Id("named.test.dependency.0") val fieldArgDependency: TestDependency0
+    , @Id("named.test") argDependency: TestInstanceBinding
+  ) {
+    val x = argDependency
+    val y = fieldArgDependency
+  }
+
+  class TestImpl0 extends TestDependency0 {
+
+  }
+
+  case class TestInstanceBinding(z: String =
+                                 """R-r-rollin' down the window, white widow, fuck fame
+Forest fire, climbin' higher, real life, it can wait""")
+}
+
 object Case2 {
 
-  class Circular1(arg: Circular2)
+  trait Circular1 {
+    def arg: Circular2
+  }
 
   class Circular2(arg: Circular1)
 
@@ -214,6 +240,7 @@ class BasicPlannerTest extends WordSpec {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
+      val context = injector.produce(plan)
     }
 
     "support multiple bindings" in {
@@ -231,11 +258,12 @@ class BasicPlannerTest extends WordSpec {
       
       val injector = mkInjector()
       val plan = injector.plan(definition)
+      val context = injector.produce(plan)
 
     }
 
     "support named bindings" in {
-      import Case1._
+      import Case1_1._
       val definition: ContextDefinition = TrivialDIDef
         .empty
         .named("named.test.class").binding[TestClass]
@@ -244,7 +272,8 @@ class BasicPlannerTest extends WordSpec {
         .finish
       val injector = mkInjector()
       val plan = injector.plan(definition)
-
+      val context = injector.produce(plan)
+      println(context.get[TestClass]("named.test.class"))
     }
 
 
@@ -259,6 +288,7 @@ class BasicPlannerTest extends WordSpec {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
+      val context = injector.produce(plan)
     }
 
     "support complex circular dependencies" in {
@@ -344,7 +374,8 @@ class BasicPlannerTest extends WordSpec {
         .finish
 
       val injector = mkInjector()
-      injector.plan(definition)
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
     }
 
     // BasicProvisionerTest
@@ -358,7 +389,6 @@ class BasicPlannerTest extends WordSpec {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-
       val context = injector.produce(plan)
       val instantiated = context.get[TestCaseClass2]
 
