@@ -1,13 +1,12 @@
 package org.bitbucket.pshirshov.izumi.distage.provisioning
 
 import java.lang.reflect.Method
-import java.util.concurrent.atomic.AtomicReference
 
 import net.sf.cglib.proxy.{Callback, Enhancer, MethodInterceptor, MethodProxy}
 import org.bitbucket.pshirshov.izumi.distage.Locator
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions._
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, SetOp, WiringOp}
-import org.bitbucket.pshirshov.izumi.distage.model.plan.{Association, ExecutableOp, FinalPlan}
+import org.bitbucket.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
 import org.bitbucket.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
 
 import scala.collection.mutable
@@ -106,32 +105,15 @@ class ProvisionerDefaultImpl(
     }
   }
 
+
   private def makeTrait(context: ProvisioningContext, t: WiringOp.InstantiateTrait) = {
-    val dispatcher = new MethodInterceptor {
-      val methods = new AtomicReference[Map[String, Association.Method]]()
-
-      override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
-        
-        println(method.getParameterTypes.toList, methods.get(), method.getName)
-        if (method.getParameterTypes.length == 0 && methods.get().contains(method.getName)) {
-          val wireWith = methods.get()(method.getName).wireWith
-          context.fetchKey(wireWith) match {
-            case Some(v) =>
-              v.asInstanceOf[AnyRef]
-            case None =>
-              throw new MissingRefException(s"Cannot return $wireWith from ${method.getName}", Set(wireWith), None)
-          }
-        } else {
-          methodProxy.invokeSuper(o, objects)
-        }
-      }
-    }
-
+    val traitDeps = context.narrow(t.wiring.associations.map(_.wireWith).toSet)
+    val dispatcher = new TraitMethodInterceptor(traitDeps, t.target)
     val runtimeClass = currentMirror.runtimeClass(t.wiring.instanceType.tpe)
 
     mkdynamic(t, dispatcher, runtimeClass) {
       instance =>
-        val map = t.wiring.associations.map {
+        val methodIndex = t.wiring.associations.map {
           m =>
             val method = m.symbol.asMethod
             //            //val mirror = currentMirror.reflectClass(.typeSymbol.asClass)
@@ -142,10 +124,10 @@ class ProvisionerDefaultImpl(
             // TODO: not the best key possible...
             method.name.encodedName.toString -> m
         }.toMap
-        dispatcher.methods.set(map)
+
+        dispatcher.methods.set(methodIndex)
 
         Seq(OpResult.NewInstance(t.target, instance))
-
     }
   }
 

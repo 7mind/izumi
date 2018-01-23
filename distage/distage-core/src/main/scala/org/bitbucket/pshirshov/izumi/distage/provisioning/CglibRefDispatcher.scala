@@ -7,7 +7,7 @@ import org.bitbucket.pshirshov.izumi.distage.commons.Value
 import org.bitbucket.pshirshov.izumi.distage.model.DIKey
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.MissingRefException
 
-class CglibRefDispatcher(key: DIKey) extends ProxyRefDispatcher {
+protected[distage] class CglibRefDispatcher(key: DIKey) extends ProxyRefDispatcher {
   val reference = new AtomicReference[AnyRef](null)
 
   override def loadObject(o: scala.Any): AnyRef = {
@@ -22,3 +22,5 @@ class CglibRefDispatcher(key: DIKey) extends ProxyRefDispatcher {
     }
   }
 }
+
+
