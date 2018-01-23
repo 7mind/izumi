@@ -66,13 +66,14 @@ object TraitConstructorMacro {
 
     val expr = testImpl[T](c)
 
+    val wrappedFunction = typeOf[WrappedFunction[_]].typeSymbol
+
     c.Expr[WrappedFunction[T]] {
       q"""
           {
-          import org.bitbucket.pshirshov.izumi.distage.definition.WrappedFunction
           val ctor = ${reify(expr.splice)}
 
-          identity[WrappedFunction[${weakTypeTag[T]}]](ctor)
+          identity[$wrappedFunction[${weakTypeTag[T]}]](ctor)
           }
        """
     }
