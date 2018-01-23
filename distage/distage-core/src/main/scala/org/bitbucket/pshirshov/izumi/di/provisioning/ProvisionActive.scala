@@ -10,4 +10,6 @@ case class ProvisionActive
   , imports: mutable.HashMap[DIKey, Any] = mutable.HashMap[DIKey, Any]()
 ) extends Provision {
   def toImmutable: ProvisionImmutable = ProvisionImmutable(instances.toMap, imports.toMap)
+
+  override def narrow(allRequiredKeys: Set[DIKey]): Provision = toImmutable.narrow(allRequiredKeys)
 }

@@ -7,4 +7,8 @@ case class LocatorContext(provision: Provision, locator: Locator) extends Provis
   override def fetchKey(key: DIKey): Option[Any] = provision.get(key)
 
   override def importKey(key: DIKey): Option[Any] = locator.lookupInstance[Any](key)
+
+  override def narrow(allRequiredKeys: Set[DIKey]): ProvisioningContext = {
+    LocatorContext(provision.narrow(allRequiredKeys), locator)
+  }
 }

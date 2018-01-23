@@ -144,8 +144,9 @@ class ProvisionerDefaultImpl(
         OpResult.NewInstance(t.target, instance)
 
       case f: ExecutableOp.WiringOp.InstantiateFactory =>
-        val allRequiredKeys = f.wiring.associations.map(_.wireWith)
-        val executor = mkExecutor(context)
+        // at this point we definitely have all the dependencies instantiated
+        val allRequiredKeys = f.wiring.associations.map(_.wireWith).toSet
+        val executor = mkExecutor(context.narrow(allRequiredKeys))
         val instance = null
         OpResult.NewInstance(f.target, instance)
 
@@ -155,10 +156,9 @@ class ProvisionerDefaultImpl(
         OpResult.NewInstance(m.target, instance)
 
       case i: ExecutableOp.ProxyOp.InitProxy =>
-        //val instanceResult = execute(context, i.target)
         // at this point we definitely have all the dependencies instantiated
-        //val allRequiredKeys = i.op.wiring.associations
-        val executor = mkExecutor(context)
+        val allRequiredKeys = i.dependencies
+        val executor = mkExecutor(context.narrow(allRequiredKeys))
         // init here
 
         OpResult.Empty

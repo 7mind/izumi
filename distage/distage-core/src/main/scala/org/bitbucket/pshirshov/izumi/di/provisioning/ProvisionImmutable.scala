@@ -8,4 +8,11 @@ case class ProvisionImmutable
 (
   instances: Map[DIKey, Any]
   , imports: Map[DIKey, Any]
-) extends Provision
+) extends Provision {
+  override def narrow(allRequiredKeys: Set[DIKey]): Provision = {
+    ProvisionImmutable(
+      instances.filterKeys(allRequiredKeys.contains)
+      , imports.filterKeys(allRequiredKeys.contains)
+    )
+  }
+}

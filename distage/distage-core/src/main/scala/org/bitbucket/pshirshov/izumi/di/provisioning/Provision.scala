@@ -10,6 +10,8 @@ trait Provision {
 
   def imports: Map[DIKey, Any]
 
+  def narrow(allRequiredKeys: Set[DIKey]): Provision
+
   final def get(key: DIKey): Option[Any] = instances.get(key).orElse(imports.get(key))
 
   final def enumerate: Stream[IdentifiedRef] = instances.map(IdentifiedRef.tupled).toStream
