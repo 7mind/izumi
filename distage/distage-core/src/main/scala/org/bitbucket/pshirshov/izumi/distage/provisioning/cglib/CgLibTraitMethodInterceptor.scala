@@ -1,4 +1,4 @@
-package org.bitbucket.pshirshov.izumi.distage.provisioning
+package org.bitbucket.pshirshov.izumi.distage.provisioning.cglib
 
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
@@ -6,24 +6,13 @@ import java.lang.reflect.Method
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.MissingRefException
 import org.bitbucket.pshirshov.izumi.distage.model.plan.Association
-import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
+import org.bitbucket.pshirshov.izumi.distage.provisioning.ProvisioningContext
 
 protected[distage] class CgLibTraitMethodInterceptor
 (
   index: Map[Method, Association.Method]
   , context: ProvisioningContext
-  , op: WiringOp.InstantiateTrait
-  , clazz: Class[_]
 ) extends MethodInterceptor {
-
-//  def init(instance: AnyRef): Unit= {
-//    clazz.getDeclaredMethod("$init$", clazz).invoke(instance, instance)
-////    val handle = CgLibTraitMethodInterceptor
-////      .TRUSTED_METHOD_HANDLES
-////      .findStatic(clazz, "$init$", MethodType.methodType(Void.TYPE, clazz))
-////
-////    handle.invoke(instance)
-//  }
 
   override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
     //premature optimization, all our methods are parameterless

@@ -1,12 +1,10 @@
-package org.bitbucket.pshirshov.izumi.distage.provisioning
+package org.bitbucket.pshirshov.izumi.distage.provisioning.cglib
 
 import java.lang.reflect.Method
-import java.util.concurrent.atomic.AtomicReference
 
-import net.sf.cglib.proxy.{Dispatcher, MethodInterceptor, MethodProxy}
+import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 import org.bitbucket.pshirshov.izumi.distage.model.DIKey
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.MissingRefException
-
 
 // we use this to be able to display something for uninitialized proxies
 protected[distage] class CglibNullMethodInterceptor(key: DIKey) extends MethodInterceptor {
@@ -16,15 +14,5 @@ protected[distage] class CglibNullMethodInterceptor(key: DIKey) extends MethodIn
     } else {
       throw new MissingRefException(s"Proxy $key is not yet initialized", Set(key), None)
     }
-  }
-}
-
-// dynamic dispatching is not optimal, uhu
-protected[distage] class CglibRefDispatcher(key: DIKey, nullProxy: AnyRef) extends Dispatcher {
-  val reference = new AtomicReference[AnyRef](null)
-
-  override def loadObject(): AnyRef = {
-    Option(reference.get())
-      .getOrElse(nullProxy)
   }
 }

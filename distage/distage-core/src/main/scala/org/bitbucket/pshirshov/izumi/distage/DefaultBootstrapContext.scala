@@ -7,27 +7,34 @@ import org.bitbucket.pshirshov.izumi.distage.model.plan._
 import org.bitbucket.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.distage.planning._
 import org.bitbucket.pshirshov.izumi.distage.provisioning._
+import org.bitbucket.pshirshov.izumi.distage.provisioning.strategies._
 import org.bitbucket.pshirshov.izumi.distage.reflection._
 
 
 trait DefaultBootstrapContext extends Locator {
   override def parent: Option[Locator] = None
 
-  // TODO: it's possible to make this safe with a macro
+  private val bootstrapProducer = new ProvisionerDefaultImpl(
+    ProvisionerHookDefaultImpl.instance
+    , ProvisionerIntrospectorDefaultImpl.instance
+    , SetStrategyDefaultImpl.instance
+    , ProxyStrategyDefaultImpl.instance
+    , FactoryStrategyDefaultImpl.instance
+    , TraitStrategyDefaultImpl.instance
+    , ProviderStrategyDefaultImpl.instance
+    , ClassStrategyDefaultImpl.instance
+    , ImportStrategyDefaultImpl.instance
+    , CustomStrategyDefaultImpl.instance
+    , InstanceStrategyDefaultImpl.instance
+  )
 
-  private val symbolIntrospector = SymbolIntrospectorDefaultImpl.instance
-  private val introspector = ProvisionerIntrospectorDefaultImpl.instance
-  private val hook = ProvisionerHookDefaultImpl.instance
-
+  // we don't need to pass all these instances, though why to create a new one in case we have one already?
   private val contextBindings = Seq(
     bind[CustomOpHandler, CustomOpHandler.NullCustomOpHander.type](CustomOpHandler.NullCustomOpHander)
     , bind[LookupInterceptor, NullLookupInterceptor](NullLookupInterceptor.instance)
-    , bind[PlanningHook, PlanningHookDefaultImpl](PlanningHookDefaultImpl.instance)
-    , bind[SymbolIntrospector, SymbolIntrospectorDefaultImpl](symbolIntrospector)
-    , bind[ProvisionerHook, ProvisionerHookDefaultImpl](hook)
-    , bind[ProvisionerIntrospector, ProvisionerIntrospectorDefaultImpl](introspector)
-
-    , bind[Provisioner, ProvisionerDefaultImpl]
+    , bind[SymbolIntrospector, SymbolIntrospectorDefaultImpl](SymbolIntrospectorDefaultImpl.instance)
+    , bind[Provisioner, ProvisionerDefaultImpl](bootstrapProducer)
+    , bind[PlanningHook, PlanningHookDefaultImpl]
     , bind[PlanningObsever, PlanningObserverDefaultImpl]
     , bind[PlanResolver, PlanResolverDefaultImpl]
     , bind[DependencyKeyProvider, DependencyKeyProviderDefaultImpl]
@@ -42,7 +49,7 @@ trait DefaultBootstrapContext extends Locator {
 
   private val ops = contextBindings.foldLeft(Seq.empty[ExecutableOp]) {
     case (acc, SingletonBinding(target, ImplDef.TypeImpl(impl))) =>
-      val ctr = symbolIntrospector.selectConstructor(impl)
+      val ctr = SymbolIntrospectorDefaultImpl.instance.selectConstructor(impl)
       val context = DependencyContext.ConstructorParameterContext(target.symbol, ctr)
 
       val associations = ctr.arguments.map {
@@ -61,8 +68,7 @@ trait DefaultBootstrapContext extends Locator {
 
   private val contextDefinition = new TrivialDIDef(contextBindings)
   override val plan: FinalPlan = new FinalPlanImmutableImpl(ops, contextDefinition)
-  
-  private val bootstrapProducer = new ProvisionerDefaultImpl(hook, introspector)
+
   private val bootstrappedContext = bootstrapProducer.provision(plan, this)
 
   override protected def unsafeLookup(key: DIKey): Option[Any] = bootstrappedContext.get(key)
