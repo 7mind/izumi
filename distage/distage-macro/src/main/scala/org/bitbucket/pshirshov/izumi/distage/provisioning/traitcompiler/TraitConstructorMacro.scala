@@ -64,7 +64,8 @@ trait TraitConstructorMacro {
   private def makeDeclsAndConstructorArgs(c: whitebox.Context)(targetType: c.universe.Type)
     : c.universe.Symbol PartialFunction (c.universe.Tree, c.universe.Tree) = {
     import c.universe._
-    {
+    { // TODO get rid of the cast somehow, by making symbolIntrospector Universe-generic
+      // i.e. https://typelevel.org/blog/2017/03/01/four-ways-to-escape-a-cake.html
       case d if symbolIntrospector.isWireableMethod(
           EqualitySafeType(targetType.asInstanceOf[TypeNative])
           , d.asInstanceOf[TypeSymb]
