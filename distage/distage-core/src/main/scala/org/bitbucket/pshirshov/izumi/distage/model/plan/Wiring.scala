@@ -28,7 +28,7 @@ object Wiring {
   case class CustomWiring(customDef: CustomDef, associations: Seq[Association]) extends Wiring
 
 
-  case class FactoryMethod(factoryType: TypeFull, wirings: Seq[FactoryMethod.WithContext]) extends Wiring {
+  case class FactoryMethod(factoryType: TypeFull, wirings: Seq[FactoryMethod.WithContext], dependencies: Seq[Method]) extends Wiring {
     override def associations: Seq[Association] = wirings.flatMap(_.wireWith.associations)
   }
 

@@ -13,13 +13,15 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
   def makeFactory(context: ProvisioningContext, executor: OperationExecutor, f: WiringOp.InstantiateFactory): Seq[OpResult] = {
     // at this point we definitely have all the dependencies instantiated
     val allRequiredKeys = f.wiring.associations.map(_.wireWith).toSet
-    val narrowed = mkExecutor(executor, context.narrow(allRequiredKeys))
+    val narrowedContext = context.narrow(allRequiredKeys)
+    val justExecutor = mkExecutor(executor, narrowedContext)
 
-    val wiredMethodIndex = makeIndex(f)
+    val factoryMethodIndex = makeFactoryIndex(f)
+    val depMethodIndex = TraitStrategyDefaultImpl.makeIndex(f.wiring.dependencies)
 
     val instanceType = f.wiring.factoryType
     val runtimeClass = currentMirror.runtimeClass(instanceType.tpe)
-    val dispatcher = new CgLibFactoryMethodInterceptor(wiredMethodIndex, narrowed)
+    val dispatcher = new CgLibFactoryMethodInterceptor(factoryMethodIndex, depMethodIndex, justExecutor, narrowedContext, f)
 
     CglibTools.mkdynamic(dispatcher, instanceType, runtimeClass, f) {
       instance =>
@@ -28,20 +30,31 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
     }
   }
 
-  private def makeIndex(f: WiringOp.InstantiateFactory) = {
+  private def makeFactoryIndex(f: WiringOp.InstantiateFactory) = {
     f.wiring.wirings.map {
       wiring =>
         ReflectionUtil.toJavaMethod(f.wiring.factoryType, wiring.factoryMethod) -> wiring
     }.toMap
   }
 
+//  private def makeDependencyIndex(t: WiringOp.InstantiateTrait): Map[Method, Association.Method] = {
+//    t.wiring.associations.map {
+//      m =>
+//        ReflectionUtil.toJavaMethod(m.context.definingClass, m.symbol) -> m
+//    }.toMap
+//  }
+
   private def mkExecutor(executor: OperationExecutor, newContext: ProvisioningContext) = {
-    new OperationExecutor {
-      override def execute(context: ProvisioningContext, step: ExecutableOp): Seq[OpResult] = {
+    new JustExecutor {
+      override def execute(step: ExecutableOp): Seq[OpResult] = {
         executor.execute(newContext, step)
       }
     }
   }
+}
+
+trait JustExecutor {
+  def execute(step: ExecutableOp): Seq[OpResult]
 }
 
 object FactoryStrategyDefaultImpl {

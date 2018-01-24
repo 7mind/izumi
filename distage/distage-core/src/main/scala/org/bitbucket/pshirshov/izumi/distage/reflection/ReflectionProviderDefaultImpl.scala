@@ -5,7 +5,7 @@ import org.bitbucket.pshirshov.izumi.distage.definition.With
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import org.bitbucket.pshirshov.izumi.distage.model.plan.{Association, UnaryWiring, Wiring}
 import org.bitbucket.pshirshov.izumi.distage.model.{Callable, EqualitySafeType}
-import org.bitbucket.pshirshov.izumi.distage.{TypeFull, TypeSymb}
+import org.bitbucket.pshirshov.izumi.distage.{MethodSymb, TypeFull, TypeSymb}
 
 
 class ReflectionProviderDefaultImpl(
@@ -14,7 +14,7 @@ class ReflectionProviderDefaultImpl(
                                    ) extends ReflectionProvider {
   override def symbolToWiring(symbl: TypeFull): Wiring = {
     symbl match {
-      case FactorySymbol(_, factoryMethods) =>
+      case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
           factoryMethod =>
             val resultType = AnnotationTools
@@ -40,7 +40,13 @@ class ReflectionProviderDefaultImpl(
             Wiring.FactoryMethod.WithContext(factoryMethod, methodTypeWireable)
         }
 
-        Wiring.FactoryMethod(symbl, mw)
+        val context = DependencyContext.MethodContext(symbl)
+        val materials = dependencyMethods.map {
+          method =>
+            Association.Method(context, method, keyProvider.keyFromMethod(context, method))
+        }
+
+        Wiring.FactoryMethod(symbl, mw, materials)
 
       case o =>
         unarySymbolDeps(o, Set.empty)
@@ -78,7 +84,7 @@ class ReflectionProviderDefaultImpl(
         val methods = materials.filterNot(d => exclusions.contains(d.wireWith.symbol))
         UnaryWiring.Abstract(symbl, methods.toSeq)
 
-      case FactorySymbol(_, _) =>
+      case FactorySymbol(_, _, _) =>
         throw new UnsupportedWiringException(s"Factory cannot produce factories, it's pointless: $symbl", symbl)
 
       case _ =>
@@ -96,10 +102,14 @@ class ReflectionProviderDefaultImpl(
   }
 
   protected object FactorySymbol {
-    def unapply(arg: TypeFull): Option[(TypeFull, Seq[TypeSymb])] =
+    def unapply(arg: TypeFull): Option[(TypeFull, Seq[TypeSymb], Seq[MethodSymb])] =
       Some(arg)
         .filter(symbolIntrospector.isFactory)
-        .map(f => (f, f.tpe.members.filter(m => symbolIntrospector.isFactoryMethod(f, m)).toSeq))
+        .map(f => (
+          f
+          , f.tpe.members.filter(m => symbolIntrospector.isFactoryMethod(f, m)).toSeq
+          , f.tpe.members.filter(m => symbolIntrospector.isWireableMethod(f, m)).map(_.asMethod).toSeq
+        ))
   }
 
 }

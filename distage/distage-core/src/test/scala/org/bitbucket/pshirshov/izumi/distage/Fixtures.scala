@@ -144,11 +144,15 @@ object Case5 {
 
   trait Dependency
 
-  class TestClass(b: Dependency)
+  case class ConcreteDep() extends Dependency
 
-  class AssistedTestClass(val a: Int, b: Dependency)
+  case class TestClass(b: Dependency)
+
+  case class AssistedTestClass(a: Int, b: Dependency)
 
   trait Factory {
+    def wiringTargetForDependency: Dependency
+    def factoryMethodForDependency(): Dependency
     def x(): TestClass
   }
 
@@ -157,7 +161,7 @@ object Case5 {
   }
 
   trait AssistedFactory {
-    def x(a: Int): TestClass
+    def x(a: Int): AssistedTestClass
   }
 
   trait AbstractDependency

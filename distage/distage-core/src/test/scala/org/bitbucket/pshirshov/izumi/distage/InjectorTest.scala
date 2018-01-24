@@ -219,6 +219,21 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+
+      val factory = context.get[Factory]
+      assert(factory.wiringTargetForDependency != null)
+      assert(factory.factoryMethodForDependency() != factory.wiringTargetForDependency)
+      assert(factory.x().b.isInstanceOf[Dependency])
+
+      val abstractFactory = context.get[AbstractFactory]
+      assert(abstractFactory.x().isInstanceOf[AbstractDependencyImpl])
+
+      val overridingFactory = context.get[OverridingFactory]
+      assert(overridingFactory.x(ConcreteDep()).b.isInstanceOf[ConcreteDep])
+
+      val assistedFactory = context.get[AssistedFactory]
+      assert(assistedFactory.x(1).a == 1)
+      assert(assistedFactory.x(1).b.isInstanceOf[Dependency])
     }
 
     // BasicProvisionerTest

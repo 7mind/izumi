@@ -15,7 +15,7 @@ class TraitStrategyDefaultImpl extends TraitStrategy {
   def makeTrait(context: ProvisioningContext, t: WiringOp.InstantiateTrait): Seq[OpResult] = {
     val traitDeps = context.narrow(t.wiring.associations.map(_.wireWith).toSet)
 
-    val wiredMethodIndex = makeIndex(t)
+    val wiredMethodIndex = TraitStrategyDefaultImpl.makeIndex(t.wiring.associations)
 
     val instanceType = t.wiring.instanceType
     val runtimeClass = currentMirror.runtimeClass(instanceType.tpe)
@@ -28,15 +28,17 @@ class TraitStrategyDefaultImpl extends TraitStrategy {
     }
   }
 
-  private def makeIndex(t: WiringOp.InstantiateTrait): Map[Method, Association.Method] = {
-    t.wiring.associations.map {
-      m =>
-        ReflectionUtil.toJavaMethod(m.context.definingClass, m.symbol) -> m
-    }.toMap
-  }
+
 }
 
 object TraitStrategyDefaultImpl {
   final val instance = new TraitStrategyDefaultImpl()
+
+  def makeIndex(t: Seq[Association.Method]): Map[Method, Association.Method] = {
+    t.map {
+      m =>
+        ReflectionUtil.toJavaMethod(m.context.definingClass, m.symbol) -> m
+    }.toMap
+  }
 }
 
