@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.distage
 
 import org.bitbucket.pshirshov.izumi.distage.definition.{Binding, ContextDefinition, TrivialDIDef}
-import org.bitbucket.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, UnsupportedWiringException, UntranslatablePlanException}
+import org.bitbucket.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, TraitInitializationFailedException, UnsupportedWiringException, UntranslatablePlanException}
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import org.bitbucket.pshirshov.izumi.distage.model.plan.PlanningFailure.{DuplicatedStatements, UnsolvableConflict}
 import org.bitbucket.pshirshov.izumi.distage.model.plan.{ExecutableOp, UnaryWiring}
@@ -119,6 +119,39 @@ class InjectorTest extends WordSpec {
       assert(c3.method == 2L)
       assert(traitArg.testVal == 1)
       context.enumerate.foreach(println)
+    }
+
+    "support trait initialization" in {
+      import Case3._
+
+      val definition: ContextDefinition = TrivialDIDef
+        .binding[CircularBad1]
+        .binding[CircularBad2]
+        .finish
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val exc = intercept[TraitInitializationFailedException] {
+        injector.produce(plan)
+      }
+      assert(exc.getCause.isInstanceOf[NotImplementedError])
+
+    }
+
+    "fail on trait requiring class-level cogen support" in {
+      val definition: ContextDefinition = TrivialDIDef
+        .binding[Case9.UnsupportedTrait]
+        .finish
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val exc = intercept[TraitInitializationFailedException] {
+        injector.produce(plan)
+      }
+      assert(exc.getCause.isInstanceOf[AbstractMethodError])
+
     }
 
     "fail on unbindable" in {
@@ -284,7 +317,7 @@ class InjectorTest extends WordSpec {
       val instantiated3 = context.get[Trait3]
       assert(instantiated3.isInstanceOf[Trait3])
 
-      instantiated3.prr
+      instantiated3.prr()
     }
 
     "handle sub-type trait" in {
@@ -306,7 +339,7 @@ class InjectorTest extends WordSpec {
 
       println(s"Got instance: ${instantiated3.toString}!")
       println(s"Got ${instantiated3.dep1}")
-      instantiated3.asInstanceOf[Trait3].prr
+      instantiated3.asInstanceOf[Trait3].prr()
     }
   }
 

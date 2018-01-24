@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.distage.provisioning.strategies
 
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import org.bitbucket.pshirshov.izumi.distage.provisioning.cglib.{CgLibTraitMethodInterceptor, CglibTools, InitializingEnhancer}
+import org.bitbucket.pshirshov.izumi.distage.provisioning.cglib.{CgLibTraitMethodInterceptor, CglibTools}
 import org.bitbucket.pshirshov.izumi.distage.provisioning.{OpResult, ProvisioningContext}
 
 import scala.language.reflectiveCalls
@@ -25,12 +25,13 @@ class TraitStrategyDefaultImpl extends TraitStrategy {
 
     }.toMap
 
-    val runtimeClass = currentMirror.runtimeClass(t.wiring.instanceType.tpe)
+    val instanceType = t.wiring.instanceType
+    val runtimeClass = currentMirror.runtimeClass(instanceType.tpe)
     val dispatcher = new CgLibTraitMethodInterceptor(wiredMethodIndex, traitDeps)
-    CglibTools.mkdynamic(t, new InitializingEnhancer(runtimeClass), dispatcher, runtimeClass) {
-      instance =>
 
-        
+    CglibTools.mkdynamic(dispatcher, instanceType, runtimeClass, t) {
+      instance =>
+        TraitTools.initTrait(instanceType, runtimeClass, instance)
         Seq(OpResult.NewInstance(t.target, instance))
     }
   }

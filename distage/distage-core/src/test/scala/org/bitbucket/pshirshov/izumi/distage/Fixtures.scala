@@ -90,19 +90,6 @@ object Case2 {
 }
 
 object Case3 {
-//
-//  trait A {
-//    println("A")
-//  }
-//
-//  trait B {
-//    println("B")
-//  }
-//
-//  trait C extends A with B {
-//    println("C")
-//  }
-
   trait Circular1 {
     def arg: Circular2
   }
@@ -113,26 +100,31 @@ object Case3 {
 
 
   trait Circular3 {
-    ???
-    def x(a: Object): Unit = {true}
-    def b(): Boolean = {this.x(this); true}
     def arg: Circular4
-
     def arg2: Circular5
-
     def method: Long = 2L
   }
 
   trait Circular4 {
-    ???
     def arg: Circular1
     def testVal: Int = 1
   }
 
   trait Circular5 {
     def arg: Circular1
-
     def arg2: Circular4
+  }
+
+  trait CircularBad1 {
+    ???
+
+    def arg: CircularBad2
+  }
+
+  trait CircularBad2 {
+    ???
+
+    def arg: CircularBad1
   }
 
 }
@@ -221,7 +213,14 @@ object Case8 {
   trait Trait3 extends Trait1 with Trait2 {
     def dep3: Dependency3
 
-    def prr: Unit = println(dep1.toString)
+    def prr(): Unit = println(dep1.toString)
   }
 
+}
+
+object Case9 {
+  trait UnsupportedTrait {
+    def x: Int = 1
+    val a: Long = 1L
+  }
 }

@@ -1,6 +1,5 @@
 package org.bitbucket.pshirshov.izumi.distage.provisioning.strategies
 
-import net.sf.cglib.proxy.Enhancer
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.DIException
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 import org.bitbucket.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
@@ -48,14 +47,14 @@ class ProxyStrategyDefaultImpl extends ProxyStrategy {
 
     val runtimeClass = currentMirror.runtimeClass(tpe.tpe)
     val nullDispatcher = new CglibNullMethodInterceptor(m.target)
-    val nullProxy = CglibTools.mkdynamic(m, new Enhancer(), nullDispatcher, runtimeClass) {
+    val nullProxy = CglibTools.mkdynamic(nullDispatcher, tpe, runtimeClass, m) {
       proxyInstance =>
         proxyInstance
     }
 
     val dispatcher = new CglibRefDispatcher(nullProxy)
 
-    CglibTools.mkdynamic(m, new Enhancer(), dispatcher, runtimeClass) {
+    CglibTools.mkdynamic(dispatcher, tpe, runtimeClass, m) {
       proxyInstance =>
         Seq(
           OpResult.NewInstance(m.target, proxyInstance)
