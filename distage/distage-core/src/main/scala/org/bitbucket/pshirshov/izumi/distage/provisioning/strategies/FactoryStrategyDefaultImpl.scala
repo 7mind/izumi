@@ -1,11 +1,9 @@
 package org.bitbucket.pshirshov.izumi.distage.provisioning.strategies
 
-import java.lang.reflect.Method
-
-import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
+import org.bitbucket.pshirshov.izumi.distage.commons.{ReflectionUtil, TraitTools}
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import org.bitbucket.pshirshov.izumi.distage.provisioning.cglib.CglibTools
+import org.bitbucket.pshirshov.izumi.distage.provisioning.cglib.{CgLibFactoryMethodInterceptor, CglibTools}
 import org.bitbucket.pshirshov.izumi.distage.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 
 import scala.reflect.runtime._
@@ -17,22 +15,24 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
     val allRequiredKeys = f.wiring.associations.map(_.wireWith).toSet
     val narrowed = mkExecutor(executor, context.narrow(allRequiredKeys))
 
-    val dispatcher = new MethodInterceptor {
-      override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
-        if (false) {
-          ???
-        } else {
-          methodProxy.invokeSuper(o, objects)
-        }
-      }
-    }
+    val wiredMethodIndex = makeIndex(f)
 
-    val runtimeClass = currentMirror.runtimeClass(f.wiring.factoryType.tpe)
+    val instanceType = f.wiring.factoryType
+    val runtimeClass = currentMirror.runtimeClass(instanceType.tpe)
+    val dispatcher = new CgLibFactoryMethodInterceptor(wiredMethodIndex, narrowed)
 
-    CglibTools.mkdynamic(dispatcher, f.wiring.factoryType, runtimeClass, f) {
-      proxyInstance =>
-        Seq(OpResult.NewInstance(f.target, proxyInstance))
+    CglibTools.mkdynamic(dispatcher, instanceType, runtimeClass, f) {
+      instance =>
+        TraitTools.initTrait(instanceType, runtimeClass, instance)
+        Seq(OpResult.NewInstance(f.target, instance))
     }
+  }
+
+  private def makeIndex(f: WiringOp.InstantiateFactory) = {
+    f.wiring.wirings.map {
+      wiring =>
+        ReflectionUtil.toJavaMethod(f.wiring.factoryType, wiring.factoryMethod) -> wiring
+    }.toMap
   }
 
   private def mkExecutor(executor: OperationExecutor, newContext: ProvisioningContext) = {

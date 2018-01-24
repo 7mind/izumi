@@ -1,6 +1,5 @@
 package org.bitbucket.pshirshov.izumi.distage.provisioning.cglib
 
-import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
@@ -28,18 +27,8 @@ protected[distage] class CgLibTraitMethodInterceptor
       }
 
     } else {
-      CgLibTraitMethodInterceptor.TRUSTED_METHOD_HANDLES
-        .in(method.getDeclaringClass)
-        .unreflectSpecial(method, method.getDeclaringClass)
-        .bindTo(o)
-        .invokeWithArguments(objects: _*)
+      CglibTools.invokeExistingMethod(o, method, objects)
     }
   }
-}
 
-object CgLibTraitMethodInterceptor {
-  private val METHOD_HANDLES_WORKAROUND = classOf[MethodHandles.Lookup].getDeclaredField("IMPL_LOOKUP")
-  METHOD_HANDLES_WORKAROUND.setAccessible(true)
-
-  final val TRUSTED_METHOD_HANDLES = METHOD_HANDLES_WORKAROUND.get(null).asInstanceOf[MethodHandles.Lookup]
 }

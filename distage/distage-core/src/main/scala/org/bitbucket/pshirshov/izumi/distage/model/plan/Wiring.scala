@@ -9,7 +9,7 @@ sealed trait Wiring {
 }
 
 sealed trait UnaryWiring extends Wiring {
-
+  def associations: Seq[Association]
 }
 
 object UnaryWiring {

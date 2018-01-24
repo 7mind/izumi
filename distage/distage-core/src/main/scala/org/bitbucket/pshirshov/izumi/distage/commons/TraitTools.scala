@@ -1,4 +1,4 @@
-package org.bitbucket.pshirshov.izumi.distage.provisioning.strategies
+package org.bitbucket.pshirshov.izumi.distage.commons
 
 import java.lang.reflect.InvocationTargetException
 

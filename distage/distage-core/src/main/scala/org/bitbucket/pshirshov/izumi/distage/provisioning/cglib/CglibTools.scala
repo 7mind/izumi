@@ -1,5 +1,8 @@
 package org.bitbucket.pshirshov.izumi.distage.provisioning.cglib
 
+import java.lang.invoke.MethodHandles
+import java.lang.reflect.Method
+
 import net.sf.cglib.proxy.Callback
 import org.bitbucket.pshirshov.izumi.distage.TypeFull
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.DIException
@@ -24,4 +27,18 @@ object CglibTools {
     }
   }
 
+  def invokeExistingMethod(o: Any, method: Method, objects: Array[AnyRef]): AnyRef = {
+    CglibTools.TRUSTED_METHOD_HANDLES
+      .in(method.getDeclaringClass)
+      .unreflectSpecial(method, method.getDeclaringClass)
+      .bindTo(o)
+      .invokeWithArguments(objects: _*)
+  }
+
+
+  final val TRUSTED_METHOD_HANDLES = {
+    val methodHandles = classOf[MethodHandles.Lookup].getDeclaredField("IMPL_LOOKUP")
+    methodHandles.setAccessible(true)
+    methodHandles.get(null).asInstanceOf[MethodHandles.Lookup]
+  }
 }
