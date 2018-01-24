@@ -69,7 +69,7 @@ object TrivialDIDef {
     override def bindings: Seq[Binding] = completed :+ current.asInstanceOf[Binding]
 
     def named(name: String): BindingDSL = {
-      step(completed :+ current.setTarget[DIKey](current.target.named(name)))
+      step(completed :+ current.withTarget[DIKey](current.target.named(name)))
     }
   }
 
