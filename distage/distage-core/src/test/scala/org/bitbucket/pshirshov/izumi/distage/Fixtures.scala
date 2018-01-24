@@ -111,8 +111,11 @@ object Case3 {
     def arg: Circular3
   }
 
+
   trait Circular3 {
     ???
+    def x(a: Object): Unit = {true}
+    def b(): Boolean = {this.x(this); true}
     def arg: Circular4
 
     def arg2: Circular5

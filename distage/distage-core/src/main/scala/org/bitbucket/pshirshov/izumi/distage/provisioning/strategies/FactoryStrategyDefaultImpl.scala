@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import org.bitbucket.pshirshov.izumi.distage.provisioning.cglib.CglibTools
+import org.bitbucket.pshirshov.izumi.distage.provisioning.cglib.{CglibTools, InitializingEnhancer}
 import org.bitbucket.pshirshov.izumi.distage.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 
 import scala.reflect.runtime._
@@ -29,7 +29,10 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
 
     val runtimeClass = currentMirror.runtimeClass(f.wiring.factoryType.tpe)
 
-    CglibTools.dynamic(f, dispatcher, runtimeClass)
+    CglibTools.mkdynamic(f, new InitializingEnhancer(runtimeClass), dispatcher, runtimeClass) {
+      proxyInstance =>
+        Seq(OpResult.NewInstance(f.target, proxyInstance))
+    }
   }
 
   private def mkExecutor(executor: OperationExecutor, newContext: ProvisioningContext) = {
