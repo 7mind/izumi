@@ -1,23 +1,29 @@
 package org.bitbucket.pshirshov.izumi.distage.provisioning.traitcompiler
 
 import org.bitbucket.pshirshov.izumi.distage.definition.WrappedFunction
+import org.bitbucket.pshirshov.izumi.distage.model.EqualitySafeType
+import org.bitbucket.pshirshov.izumi.distage.reflection.{SymbolIntrospector, SymbolIntrospectorDefaultImpl}
+import org.bitbucket.pshirshov.izumi.distage.{TypeNative, TypeSymb}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 
 // TODO: use scala-asm to generate traits at runtime instead.
 
-object TraitConstructorMacro {
+object TraitConstructorMacro extends TraitConstructorMacro {
+  final val symbolIntrospector = SymbolIntrospectorDefaultImpl.instance
 
   def mkWrappedTraitConstructor[T]: WrappedFunction[T] = macro wrappedTestImpl[T]
 
   def mkTraitConstructor[T]: Any = macro testImpl[T]
+}
+
+trait TraitConstructorMacro {
+
+  def symbolIntrospector: SymbolIntrospector
 
   def testImpl[T: c.WeakTypeTag](c: whitebox.Context): c.Expr[Any] = {
     import c.universe._
-
-    // to avoid passing around explicitly in utility functions
-    implicit val context: c.type = c
 
     val className = tq"${weakTypeTag[T]}"
 
@@ -30,13 +36,18 @@ object TraitConstructorMacro {
     val (args, m) = targetType
       .members
       .sorted
-      .collect(makeDeclsAndConstructorArgs)
+      .collect(makeDeclsAndConstructorArgs(c)(targetType))
       .unzip
 
 //    System.err.println(s"GOT ARGSS AND METHODS $args , $m")
 
-    c.Expr {
-      q"""
+    if (args.isEmpty) {
+      c.Expr {
+        q"{ (() => (new $className {}).asInstanceOf[$className]) }"
+      }
+    } else {
+      c.Expr {
+        q"""
       {
 
       def x(..$args): $className = (new $className {
@@ -46,12 +57,18 @@ object TraitConstructorMacro {
       (x _)
       }
       """
+      }
     }
   }
 
-  private def makeDeclsAndConstructorArgs(implicit c: whitebox.Context
-                                 ): c.universe.Symbol PartialFunction (c.universe.Tree, c.universe.Tree) = { import c.universe._; {
-      case d if d.isAbstract && d.isMethod && !d.isConstructor && !d.isJava =>
+  private def makeDeclsAndConstructorArgs(c: whitebox.Context)(targetType: c.universe.Type)
+    : c.universe.Symbol PartialFunction (c.universe.Tree, c.universe.Tree) = {
+    import c.universe._
+    {
+      case d if symbolIntrospector.isWireableMethod(
+          EqualitySafeType(targetType.asInstanceOf[TypeNative])
+          , d.asInstanceOf[TypeSymb]
+      ) =>
 
         val resType = d.typeSignature.resultType
         val argName = TermName(c.freshName())
@@ -59,7 +76,8 @@ object TraitConstructorMacro {
         val ctorArg = q"""$argName: $resType"""
         val method = q"""override def ${d.asMethod.name}: $resType = $argName"""
         (ctorArg, method)
-  }}
+    }
+  }
 
   def wrappedTestImpl[T: c.WeakTypeTag](c: whitebox.Context): c.Expr[WrappedFunction[T]] = {
     import c.universe._

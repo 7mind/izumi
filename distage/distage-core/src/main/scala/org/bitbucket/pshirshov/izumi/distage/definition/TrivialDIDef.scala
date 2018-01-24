@@ -1,9 +1,11 @@
 package org.bitbucket.pshirshov.izumi.distage.definition
 
-import org.bitbucket.pshirshov.izumi.distage.Tag
 import org.bitbucket.pshirshov.izumi.distage.definition.Binding.{SingletonBindingT, _}
+import org.bitbucket.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import org.bitbucket.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.distage.provisioning.traitcompiler.TraitConstructorMacro
+import org.bitbucket.pshirshov.izumi.distage.reflection.{SymbolIntrospector, SymbolIntrospectorDefaultImpl}
+import org.bitbucket.pshirshov.izumi.distage.{Tag, TypeNative}
 
 import scala.Function.const
 import scala.language.experimental.macros
@@ -13,7 +15,9 @@ case class TrivialDIDef(bindings: Seq[Binding]) extends ContextDefinition
 object TrivialDIDef {
 
   implicit def TrivialDIDefStart: TrivialDIDef.type => BindingDSL =
-    const { step(Seq.empty) }
+    const {
+      step(Seq.empty)
+    }
 
   def symbolDef[T: Tag]: ImplDef = ImplDef.TypeImpl(EqualitySafeType.get[T])
 
@@ -43,9 +47,9 @@ object TrivialDIDef {
       namedStep(bindings, SingletonBindingT(DIKey.get[T], ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
 
-    def magic[T]: NameableBinding = macro magicMacro[this.type, T, T]
+    def magic[T]: NameableBinding = macro MagicMacro.magicMacro[this.type, T, T]
 
-    def magic[T, I <: T]: NameableBinding = macro magicMacro[this.type, T, I]
+    def magic[T, I <: T]: NameableBinding = macro MagicMacro.magicMacro[this.type, T, I]
 
     // sets
     def set[T: Tag]: NameableBinding = {
@@ -61,7 +65,7 @@ object TrivialDIDef {
     }
   }
 
-  class NameableBinding private[TrivialDIDef] (private val completed: Seq[Binding], private val current: BindingT[DIKey.TypeKey]) extends BindingDSL {
+  class NameableBinding private[TrivialDIDef](private val completed: Seq[Binding], private val current: BindingT[DIKey.TypeKey]) extends BindingDSL {
     override def bindings: Seq[Binding] = completed :+ current.asInstanceOf[Binding]
 
     def named(name: String): BindingDSL = {
@@ -77,24 +81,57 @@ object TrivialDIDef {
     override protected def bindings: Seq[Binding] = binds
   }
 
+}
+
+object MagicMacro extends MagicMacro {
+  final val symbolIntrospector = SymbolIntrospectorDefaultImpl.instance
+  final val traitConstructorMacro = TraitConstructorMacro
+}
+
+trait MagicMacro {
+  import org.bitbucket.pshirshov.izumi.distage.definition.TrivialDIDef.NameableBinding
+
   import scala.reflect.macros.whitebox
+
+  def symbolIntrospector: SymbolIntrospector
+  def traitConstructorMacro: TraitConstructorMacro
 
   def magicMacro[THIS: c.WeakTypeTag, T: c.WeakTypeTag, I: c.WeakTypeTag](c: whitebox.Context): c.Expr[NameableBinding] = {
     import c.universe._
-    val f = TraitConstructorMacro.wrappedTestImpl[I](c)
-
-    val self = reify(c.prefix.splice.asInstanceOf[THIS]).tree
 
     val tType = weakTypeOf[T]
     val iType = weakTypeOf[I]
+    val iCastedType = EqualitySafeType(iType.asInstanceOf[TypeNative])
 
-    c.Expr[NameableBinding] {
-      if (tType =:= iType) {
-        q"{ $self.provider[$tType]({$f}) }"
-      } else {
-        q"{ $self.provider[$tType, $iType]({$f}) }"
-      }
+    val self = reify(c.prefix.splice.asInstanceOf[THIS]).tree
+
+    () match {
+      case _ if symbolIntrospector.isConcrete(iCastedType) =>
+        c.Expr[NameableBinding] {
+          if (tType =:= iType) {
+            q"{ $self.binding[$tType] }"
+          } else {
+            q"{ $self.binding[$tType, $iType] }"
+          }
+        }
+      case _ if symbolIntrospector.isFactory(iCastedType) =>
+        throw new UnsupportedWiringException(
+          s"""
+             |Class $iCastedType detected as a factory but
+             |Factories are not supported yet! When wiring $tType to $iCastedType"
+           """.stripMargin, iCastedType)
+      case _ if symbolIntrospector.isWireableAbstract(iCastedType) =>
+        val f = traitConstructorMacro.wrappedTestImpl[I](c)
+
+        c.Expr[NameableBinding] {
+          if (tType =:= iType) {
+            q"{ $self.provider[$tType]({$f}) }"
+          } else {
+            q"{ $self.provider[$tType, $iType]({$f}) }"
+          }
+        }
     }
+
   }
 
 }
