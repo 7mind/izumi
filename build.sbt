@@ -99,14 +99,22 @@ lazy val sbtIzumi = inRoot.as
         )
   )
 
+lazy val distageMacro = inDiStage.as.module
+    .settings(
+      libraryDependencies ++= Seq(R.scala_reflect)
+    )
+    .settings(LibSettings)
+
 lazy val distageCore = inDiStage.as.module
+  .depends(distageMacro)
+  .settings(LibSettings)
     .settings(
       libraryDependencies ++= Seq(
         R.scala_reflect
         , R.cglib_nodep
       )
     )
-    .settings(LibSettings)
+
 
 lazy val root = inRoot.as
   .root

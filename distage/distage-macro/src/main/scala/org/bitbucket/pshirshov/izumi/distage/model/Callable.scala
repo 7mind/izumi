@@ -2,6 +2,7 @@ package org.bitbucket.pshirshov.izumi.distage.model
 
 import org.bitbucket.pshirshov.izumi.distage.TypeFull
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.UnsafeCallArgsMismatched
+
 import scala.reflect.runtime.universe._
 trait Callable {
   def argTypes: Seq[TypeFull]
@@ -17,13 +18,13 @@ trait Callable {
   private def verifyArgs(args: Any*) = {
     val countOk = args.size == argTypes.size
 
-    // TODO: 
+    // TODO:
     val typesOk = argTypes.zip(args).forall {
       case (tpe, value) =>
         val valueBases = runtimeMirror(value.getClass.getClassLoader).reflect(value).symbol.baseClasses
         valueBases.contains(tpe.tpe.typeSymbol)
     }
-    
+
     countOk && typesOk
   }
 
