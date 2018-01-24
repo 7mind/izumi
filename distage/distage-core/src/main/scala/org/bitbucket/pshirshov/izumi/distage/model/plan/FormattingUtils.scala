@@ -25,15 +25,17 @@ object FormattingUtils {
       case Function(instanceType, associations) =>
         doFormat(instanceType.toString, associations.map(_.format), "call", ('(', ')'), ('{', '}'))
 
-      case FactoryMethod(factoryType, unaryWireables) =>
+      case FactoryMethod(factoryType, unaryWireables, deps) =>
         val wirings = unaryWireables.map {
           w =>
             StringUtils.shift(s"${w.factoryMethod}: ${w.factoryMethod.returnType} ~= ${doFormat(w.wireWith)}", 2)
         }
 
+        val depsRepr = deps.map(_.format)
+
         doFormat(
           factoryType.toString
-          , wirings
+          , wirings ++ depsRepr
           , "fact", ('(', ')'), ('{', '}')
         )
 
