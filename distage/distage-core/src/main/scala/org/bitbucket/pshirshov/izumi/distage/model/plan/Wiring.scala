@@ -29,7 +29,13 @@ object Wiring {
 
 
   case class FactoryMethod(factoryType: TypeFull, wirings: Seq[FactoryMethod.WithContext], dependencies: Seq[Method]) extends Wiring {
-    override def associations: Seq[Association] = { // TODO: ???
+    /**
+      * this method returns factory dependencies which don't present in any signature of factory methods.
+      * Though it's kind of a heuristic which can be spoiled at the time of plan initialization
+      *
+      * Complete check can only be performed at runtime.
+      */
+    override def associations: Seq[Association] = {
       val signature  = wirings.flatMap(_.signature).toSet
       wirings.flatMap(_.wireWith.associations).filterNot(v => signature.contains(v.wireWith))
     }

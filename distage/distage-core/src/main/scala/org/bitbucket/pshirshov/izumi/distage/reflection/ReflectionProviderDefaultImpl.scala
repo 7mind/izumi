@@ -2,7 +2,7 @@ package org.bitbucket.pshirshov.izumi.distage.reflection
 
 import org.bitbucket.pshirshov.izumi.distage.commons.AnnotationTools
 import org.bitbucket.pshirshov.izumi.distage.definition.With
-import org.bitbucket.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
+import org.bitbucket.pshirshov.izumi.distage.model.exceptions.{DIException, UnsupportedWiringException}
 import org.bitbucket.pshirshov.izumi.distage.model.plan.{Association, UnaryWiring, Wiring}
 import org.bitbucket.pshirshov.izumi.distage.model.{Callable, EqualitySafeType}
 import org.bitbucket.pshirshov.izumi.distage.{MethodSymb, TypeFull, TypeSymb}
@@ -34,8 +34,16 @@ class ReflectionProviderDefaultImpl(
               .selectParameters(factoryMethod)
               .map(keyProvider.keyFromParameter(context, _))
 
-            val symbolsAlreadyInSignature = alreadyInSignature.map(_.symbol).toSet
-            val methodTypeWireable = unarySymbolDeps(resultType, Set.empty)
+            //val symbolsAlreadyInSignature = alreadyInSignature.map(_.symbol).toSet
+
+            val methodTypeWireable = unarySymbolDeps(resultType)
+
+            val excessiveSymbols = alreadyInSignature.toSet -- methodTypeWireable.associations.map(_.wireWith).toSet
+
+            if (excessiveSymbols.nonEmpty) {
+              throw new DIException(s"Factory method signature contains symbols which are not required for target product: $excessiveSymbols", null)
+            }
+
 
             Wiring.FactoryMethod.WithContext(factoryMethod, methodTypeWireable, alreadyInSignature)
         }
@@ -49,7 +57,7 @@ class ReflectionProviderDefaultImpl(
         Wiring.FactoryMethod(symbl, mw, materials)
 
       case o =>
-        unarySymbolDeps(o, Set.empty)
+        unarySymbolDeps(o)
     }
   }
 
@@ -61,7 +69,7 @@ class ReflectionProviderDefaultImpl(
     UnaryWiring.Function(function, associations)
   }
 
-  protected def unarySymbolDeps(symbl: TypeFull, exclusions: Set[TypeFull]): UnaryWiring = {
+  protected def unarySymbolDeps(symbl: TypeFull): UnaryWiring = {
     symbl match {
       case ConcreteSymbol(symb) =>
         val selected = symbolIntrospector.selectConstructor(symb)
@@ -70,8 +78,7 @@ class ReflectionProviderDefaultImpl(
           parameter =>
             Association.Parameter(context, parameter, keyProvider.keyFromParameter(context, parameter))
         }
-        val parameters = materials.filterNot(d => exclusions.contains(d.wireWith.symbol))
-        UnaryWiring.Constructor(symbl, selected.constructorSymbol, parameters)
+        UnaryWiring.Constructor(symbl, selected.constructorSymbol, materials)
 
       case AbstractSymbol(symb) =>
         // empty paramLists means parameterless method, List(List()) means nullarg method()
@@ -81,8 +88,7 @@ class ReflectionProviderDefaultImpl(
           method =>
             Association.Method(context, method, keyProvider.keyFromMethod(context, method))
         }
-        val methods = materials.filterNot(d => exclusions.contains(d.wireWith.symbol))
-        UnaryWiring.Abstract(symbl, methods.toSeq)
+        UnaryWiring.Abstract(symbl, materials.toSeq)
 
       case FactorySymbol(_, _, _) =>
         throw new UnsupportedWiringException(s"Factory cannot produce factories, it's pointless: $symbl", symbl)

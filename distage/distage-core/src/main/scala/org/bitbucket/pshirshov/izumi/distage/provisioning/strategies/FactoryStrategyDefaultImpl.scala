@@ -41,17 +41,9 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
         ReflectionUtil.toJavaMethod(f.wiring.factoryType, wiring.factoryMethod) -> wiring
     }.toMap
   }
-
-  //  private def makeDependencyIndex(t: WiringOp.InstantiateTrait): Map[Method, Association.Method] = {
-  //    t.wiring.associations.map {
-  //      m =>
-  //        ReflectionUtil.toJavaMethod(m.context.definingClass, m.symbol) -> m
-  //    }.toMap
-  //  }
 }
 
 
 object FactoryStrategyDefaultImpl {
   final val instance = new FactoryStrategyDefaultImpl()
 }
-
