@@ -8,6 +8,8 @@ trait ProvisioningContext {
   def importKey(key: DIKey): Option[Any]
 
   def narrow(allRequiredKeys: Set[DIKey]): ProvisioningContext
+
+  def extend(values: Map[DIKey, Any]): ProvisioningContext
 }
 
 

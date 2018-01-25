@@ -32,12 +32,12 @@ class ReflectionProviderDefaultImpl(
 
             val alreadyInSignature = symbolIntrospector
               .selectParameters(factoryMethod)
-              .map(keyProvider.keyFromParameter(context, _).symbol)
-              .toSet
-            
-            val methodTypeWireable = unarySymbolDeps(resultType, alreadyInSignature)
+              .map(keyProvider.keyFromParameter(context, _))
 
-            Wiring.FactoryMethod.WithContext(factoryMethod, methodTypeWireable)
+            val symbolsAlreadyInSignature = alreadyInSignature.map(_.symbol).toSet
+            val methodTypeWireable = unarySymbolDeps(resultType, Set.empty)
+
+            Wiring.FactoryMethod.WithContext(factoryMethod, methodTypeWireable, alreadyInSignature)
         }
 
         val context = DependencyContext.MethodContext(symbl)

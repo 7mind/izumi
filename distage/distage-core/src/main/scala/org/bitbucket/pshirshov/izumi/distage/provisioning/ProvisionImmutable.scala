@@ -15,4 +15,11 @@ case class ProvisionImmutable
       , imports.filterKeys(allRequiredKeys.contains)
     )
   }
+
+  override def extend(values: Map[DIKey, Any]): Provision = {
+    ProvisionImmutable(
+      instances ++ values
+      , imports
+    )
+  }
 }

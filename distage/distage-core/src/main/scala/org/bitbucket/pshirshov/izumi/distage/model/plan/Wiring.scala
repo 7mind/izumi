@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.distage.model.plan
 
-import org.bitbucket.pshirshov.izumi.distage.model.Callable
+import org.bitbucket.pshirshov.izumi.distage.model.{Callable, DIKey}
 import org.bitbucket.pshirshov.izumi.distage.model.plan.Association.{Method, Parameter}
 import org.bitbucket.pshirshov.izumi.distage.{CustomDef, MethodSymb, TypeFull, TypeSymb}
 
@@ -29,10 +29,13 @@ object Wiring {
 
 
   case class FactoryMethod(factoryType: TypeFull, wirings: Seq[FactoryMethod.WithContext], dependencies: Seq[Method]) extends Wiring {
-    override def associations: Seq[Association] = wirings.flatMap(_.wireWith.associations)
+    override def associations: Seq[Association] = { // TODO: ???
+      val signature  = wirings.flatMap(_.signature).toSet
+      wirings.flatMap(_.wireWith.associations).filterNot(v => signature.contains(v.wireWith))
+    }
   }
 
   object FactoryMethod {
-    case class WithContext(factoryMethod: MethodSymb, wireWith: UnaryWiring)
+    case class WithContext(factoryMethod: MethodSymb, wireWith: UnaryWiring, signature: Seq[DIKey])
   }
 }

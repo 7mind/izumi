@@ -11,4 +11,8 @@ case class LocatorContext(provision: Provision, locator: Locator) extends Provis
   override def narrow(allRequiredKeys: Set[DIKey]): ProvisioningContext = {
     LocatorContext(provision.narrow(allRequiredKeys), locator)
   }
+
+  override def extend(values: Map[DIKey, Any]): ProvisioningContext = {
+    LocatorContext(provision.extend(values: Map[DIKey, Any]), locator)
+  }
 }
