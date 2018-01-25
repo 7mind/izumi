@@ -4,7 +4,6 @@ import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 
 import net.sf.cglib.proxy.{Callback, Enhancer}
-import org.bitbucket.pshirshov.izumi.distage.TypeFull
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.DIException
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp
 
@@ -13,7 +12,7 @@ import scala.util.{Failure, Success, Try}
 
 object CglibTools {
 
-  def mkdynamic[T](dispatcher: Callback, fullType: TypeFull, runtimeClass: Class[_], t: ExecutableOp)(mapper: AnyRef => T): T = {
+  def mkdynamic[T](dispatcher: Callback, runtimeClass: Class[_], t: ExecutableOp)(mapper: AnyRef => T): T = {
     val enhancer = new Enhancer()
     enhancer.setSuperclass(runtimeClass)
     enhancer.setCallback(dispatcher)

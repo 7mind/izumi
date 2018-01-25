@@ -30,7 +30,7 @@ class TraitStrategyDefaultImpl extends TraitStrategy {
     val runtimeClass = currentMirror.runtimeClass(instanceType.tpe)
     val dispatcher = new CgLibTraitMethodInterceptor(wiredMethodIndex, traitDeps)
 
-    CglibTools.mkdynamic(dispatcher, instanceType, runtimeClass, t) {
+    CglibTools.mkdynamic(dispatcher, runtimeClass, t) {
       instance =>
         TraitTools.initTrait(instanceType, runtimeClass, instance)
         Seq(OpResult.NewInstance(t.target, instance))

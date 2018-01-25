@@ -28,7 +28,7 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
       , f
     )
 
-    CglibTools.mkdynamic(dispatcher, instanceType, runtimeClass, f) {
+    CglibTools.mkdynamic(dispatcher, runtimeClass, f) {
       instance =>
         TraitTools.initTrait(instanceType, runtimeClass, instance)
         Seq(OpResult.NewInstance(f.target, instance))

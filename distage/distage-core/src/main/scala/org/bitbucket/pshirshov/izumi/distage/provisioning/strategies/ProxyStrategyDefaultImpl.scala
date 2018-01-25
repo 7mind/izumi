@@ -47,14 +47,14 @@ class ProxyStrategyDefaultImpl extends ProxyStrategy {
 
     val runtimeClass = currentMirror.runtimeClass(tpe.tpe)
     val nullDispatcher = new CglibNullMethodInterceptor(m.target)
-    val nullProxy = CglibTools.mkdynamic(nullDispatcher, tpe, runtimeClass, m) {
+    val nullProxy = CglibTools.mkdynamic(nullDispatcher, runtimeClass, m) {
       proxyInstance =>
         proxyInstance
     }
 
     val dispatcher = new CglibRefDispatcher(nullProxy)
 
-    CglibTools.mkdynamic(dispatcher, tpe, runtimeClass, m) {
+    CglibTools.mkdynamic(dispatcher, runtimeClass, m) {
       proxyInstance =>
         Seq(
           OpResult.NewInstance(m.target, proxyInstance)
