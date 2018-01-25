@@ -4,9 +4,9 @@ import java.lang.reflect.Method
 
 import org.bitbucket.pshirshov.izumi.distage.{TypeFull, TypeSymb}
 
+import scala.language.reflectiveCalls
 import scala.reflect.internal.Symbols
 import scala.reflect.runtime.{currentMirror, universe}
-import scala.language.reflectiveCalls
 
 object ReflectionUtil {
   def toJavaMethod(definingClass: TypeFull, methodSymbol: TypeSymb): Method = {
@@ -21,3 +21,4 @@ object ReflectionUtil {
     javaMethod
   }
 }
+
