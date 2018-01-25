@@ -8,11 +8,11 @@ import org.bitbucket.pshirshov.izumi.logger.api.Logger
 // Usage
 import Logger._
 
-trait StrictIzumiLogging extends WithLogContext {
-  val logger = new BoundLogger(StrictIzumiLogging.logging)(this)
+trait Logging extends WithLogContext {
+  val logger = new BoundLogger(Logging.logging)(this)
 }
 
-object StrictIzumiLogging {
+object Logging {
   val logging = new Logger {
     override protected def logConfigService: LogConfigService = new LogConfigService {
       val logFilter = new LogFilter {}
@@ -24,7 +24,7 @@ object StrictIzumiLogging {
 }
 
 
-object LoggedApp extends App with StrictIzumiLogging {
+object LoggedApp extends App with Logging {
 
   implicit def customLoggingContext: Log.CustomContext = new Log.CustomContext {
     override def values = Map("userId" -> "c6b272ae-0206-11e8-ba89-0ed5f89f718b")
