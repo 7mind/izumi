@@ -223,8 +223,8 @@ object Case8 {
 }
 
 object Case9 {
-  trait UnsupportedTrait {
-    def x: Int = 1
-    val a: Long = 1L
+  trait ATraitWithAField {
+    def method: Int = 1
+    val field: Int = 1
   }
 }

@@ -139,19 +139,16 @@ class InjectorTest extends WordSpec {
 
     }
 
-    "fail on trait requiring class-level cogen support" in {
+    "support trait fields" in {
       val definition: ContextDefinition = TrivialDIDef
-        .binding[Case9.UnsupportedTrait]
+        .binding[Case9.ATraitWithAField]
         .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val exc = intercept[TraitInitializationFailedException] {
-        injector.produce(plan)
-      }
-      assert(exc.getCause.isInstanceOf[AbstractMethodError])
-
+      val context = injector.produce(plan)
+      assert(context.get[Case9.ATraitWithAField].field == 1)
     }
 
     "fail on unbindable" in {

@@ -2,79 +2,95 @@ package org.bitbucket.pshirshov.izumi.distage.provisioning.cglib
 
 import java.lang.reflect.InvocationTargetException
 
-import net.sf.cglib.asm.{$ClassVisitor, $Opcodes}
+import net.sf.cglib.asm.{$ClassVisitor, $Opcodes, $Type}
 import net.sf.cglib.core.TypeUtils
 import net.sf.cglib.proxy.Enhancer
 import org.bitbucket.pshirshov.izumi.distage.TypeFull
+import org.bitbucket.pshirshov.izumi.distage.commons.Value
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.DIException
+
+import scala.reflect.runtime.universe._
+import scala.reflect.runtime.currentMirror
 
 class InitializingEnhancer(fullType: TypeFull, runtimeClass: Class[_]) extends Enhancer {
   override def generateClass(v: $ClassVisitor): Unit = {
     super.generateClass(v)
-    //injectTraitSupport(v)
+//    injectTraitSupport(v)
   }
 
+
   private def injectTraitSupport(v: $ClassVisitor): Unit = {
-    import InitializingEnhancer._
-    //    val methods = fullType.tpe.decls.collect {
-    //      case m: MethodSymbol => m
-    //    }
-    //
-    //    System.err.println(methods)
+    val terms = fullType.tpe.decls.collect { case m: TermSymbol => m }
+    terms.foreach {
+      case t if t.isVal =>
 
-    // TODO: in order to support fields we need to generate setter/getter pair
-    /*
-    *   // access flags 0x1
-  public a()I
-   L0
-    LINENUMBER 111 L0
-    ALOAD 0
-    GETFIELD org/bitbucket/pshirshov/izumi/distage/Case3$CircularX.a : I
-    IRETURN
-   L1
-    LOCALVARIABLE this Lorg/bitbucket/pshirshov/izumi/distage/Case3$CircularX; L0 L1 0
-    MAXSTACK = 1
-    MAXLOCALS = 1
+        val runtimeClass = currentMirror.runtimeClass(t.typeSignature.resultType)
+        generateField(t.name.toString, runtimeClass, v)
 
-  // access flags 0x1
-  public org$bitbucket$pshirshov$izumi$distage$Case3$Circular1$_setter_$a_$eq(I)V
-    // parameter final  x$1
-   L0
-    LINENUMBER 111 L0
-    ALOAD 0
-    ILOAD 1
-    PUTFIELD org/bitbucket/pshirshov/izumi/distage/Case3$CircularX.a : I
-    RETURN
-   L1
-    LOCALVARIABLE this Lorg/bitbucket/pshirshov/izumi/distage/Case3$CircularX; L0 L1 0
-    LOCALVARIABLE x$1 I L0 L1 1
-    MAXSTACK = 2
-    MAXLOCALS = 2
-    *
-    *
-    * */
+      case t if t.isVar =>
+        throw new DIException(s"I don't like your `var` in $runtimeClass", null)
+        
+      case _ =>
+    }
 
 
+    addInitializer(v)
+  }
+
+
+  private def addInitializer(v: $ClassVisitor): Unit = {
     val internalName = TypeUtils.getType(runtimeClass.getTypeName).getInternalName
 
     val `call_$init$` = false
 
-    val mv = v.visitMethod($Opcodes.ACC_PUBLIC, IZ_INIT_METHOD_NAME, "()Z", null, null)
+    val mv = v.visitMethod($Opcodes.ACC_PUBLIC, InitializingEnhancer.IZ_INIT_METHOD_NAME, "()Z", null, null)
     mv.visitCode()
-    mv.visitVarInsn($Opcodes.ALOAD, 0) // ALOAD
+    mv.visitVarInsn($Opcodes.ALOAD, 0)
     if (`call_$init$`) {
       mv.visitVarInsn($Opcodes.ALOAD, 0)
-      mv.visitMethodInsn($Opcodes.INVOKESTATIC // invoke static
+      mv.visitMethodInsn($Opcodes.INVOKESTATIC
         , internalName
         , "$init$"
         , s"(L$internalName;)V"
         , false
       )
     }
-    mv.visitInsn($Opcodes.ICONST_1) // ICONST_1
+    mv.visitInsn($Opcodes.ICONST_1)
     mv.visitInsn($Opcodes.IRETURN)
     mv.visitMaxs(2, 1)
     mv.visitEnd()
+  }
+
+  private def generateField(name: String, tpe: Class[_], v: $ClassVisitor): Unit = {
+    val descriptor = $Type.getDescriptor(tpe)
+
+    val (load, ret) = ($Opcodes.ILOAD, $Opcodes.IRETURN)
+
+    val fieldName = s"${$Type.getInternalName(runtimeClass)}.$name"
+
+    Value(v.visitField($Opcodes.ACC_PUBLIC, name, descriptor, null, null))
+      .eff(_.visitEnd())
+
+    Value(v.visitMethod($Opcodes.ACC_PUBLIC, name, s"()$descriptor", null, null))
+      .eff(_.visitCode())
+      .eff(_.visitVarInsn($Opcodes.ALOAD, 0))
+      .eff(_.visitFieldInsn($Opcodes.GETFIELD, fieldName, name, descriptor))
+      .eff(_.visitInsn(ret))
+      .eff(_.visitMaxs(1, 1))
+      .eff(_.visitEnd())
+
+    val setterBase = runtimeClass.getCanonicalName.replace('.', '$')
+    val setterName = s"$setterBase$$_setter_$$${name}_$$eq"
+    
+    Value(v.visitMethod($Opcodes.ACC_PUBLIC, setterName, s"($descriptor)V", null, null))
+      .eff(_.visitCode())
+      .eff(_.visitVarInsn($Opcodes.ALOAD, 0))
+      .eff(_.visitVarInsn(load, 1))
+      .eff(_.visitFieldInsn($Opcodes.PUTFIELD, fieldName, name, descriptor))
+      .eff(_.visitInsn($Opcodes.RETURN))
+      .eff(_.visitMaxs(2, 2))
+      .eff(_.visitEnd())
+    ()
   }
 }
 

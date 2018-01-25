@@ -8,9 +8,9 @@ import org.bitbucket.pshirshov.izumi.distage.model.DIKey
 import org.bitbucket.pshirshov.izumi.distage.model.exceptions.{DIException, UnsupportedWiringException}
 import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import org.bitbucket.pshirshov.izumi.distage.model.plan.Wiring.FactoryMethod
-import org.bitbucket.pshirshov.izumi.distage.model.plan.{Association, ExecutableOp, UnaryWiring, Wiring}
+import org.bitbucket.pshirshov.izumi.distage.model.plan.{ExecutableOp, UnaryWiring, Wiring}
 import org.bitbucket.pshirshov.izumi.distage.provisioning.OpResult.{NewImport, NewInstance}
-import org.bitbucket.pshirshov.izumi.distage.provisioning.strategies.JustExecutor
+import org.bitbucket.pshirshov.izumi.distage.provisioning.strategies.{JustExecutor, TraitIndex}
 import org.bitbucket.pshirshov.izumi.distage.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 
 import scala.reflect.runtime.currentMirror
@@ -18,7 +18,7 @@ import scala.reflect.runtime.currentMirror
 protected[distage] class CgLibFactoryMethodInterceptor
 (
   factoryMethodIndex: Map[Method, Wiring.FactoryMethod.WithContext]
-  , dependencyMethodIndex: Map[Method, Association.Method]
+  , dependencyMethodIndex: TraitIndex
   , narrowedContext: ProvisioningContext
   , executor: OperationExecutor
   , f: WiringOp.InstantiateFactory

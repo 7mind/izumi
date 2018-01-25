@@ -16,7 +16,7 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
     val narrowedContext = context.narrow(allRequiredKeys)
 
     val factoryMethodIndex = makeFactoryIndex(f)
-    val depMethodIndex = TraitStrategyDefaultImpl.makeIndex(f.wiring.dependencies)
+    val depMethodIndex = TraitStrategyDefaultImpl.traitIndex(f.wiring.factoryType, f.wiring.dependencies)
 
     val instanceType = f.wiring.factoryType
     val runtimeClass = currentMirror.runtimeClass(instanceType.tpe)
