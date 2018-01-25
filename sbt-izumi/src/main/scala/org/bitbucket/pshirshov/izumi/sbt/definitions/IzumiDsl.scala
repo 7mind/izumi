@@ -33,7 +33,7 @@ trait IzumiDsl {
             val originalSettings = original.allSettings
             val originalGlobals = originalSettings(SettingsGroupId.GlobalSettingsGroup)
             originalSettings.updated(SettingsGroupId.GlobalSettingsGroup, originalGlobals.copy(moreExtenders = {
-              case (self@_, existing) =>
+              case (_, existing) =>
                 originalGlobals.extenders ++ existing ++ extenders
             }))
           }

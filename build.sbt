@@ -1,11 +1,8 @@
+import D._
 import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import sbt.Keys.{pomExtra, publishMavenStyle}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
-// TODO: library descriptor generator
-// TODO: better analyzer for "exposed" scope
-// TODO: config -- probably we don't need it
-// TODO: conditionals in plugins: release settings, integration tests -- impossible
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -14,6 +11,7 @@ enablePlugins(GitStampPlugin)
 name := "izumi-r2"
 
 val AppSettings = SettingsGroupId()
+val LibSettings = SettingsGroupId()
 
 val scala_212 = "2.12.4"
 val scala_213 = "2.13.0-M2"
@@ -68,6 +66,14 @@ val baseSettings = new GlobalSettings {
         )
       )
     }
+    ,  LibSettings -> new ProjectSettings {
+            override val settings: Seq[sbt.Setting[_]] = Seq(
+                Seq(
+                    libraryDependencies ++= R.essentials
+                      , libraryDependencies ++= T.essentials
+                    )
+                ).flatten
+          }
   )
 }
 
@@ -76,6 +82,7 @@ val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 val inRoot = In(".")
+val inDiStage = In("distage")
 
 lazy val sbtIzumi = inRoot.as
   .module
@@ -92,9 +99,26 @@ lazy val sbtIzumi = inRoot.as
         )
   )
 
+lazy val distageMacro = inDiStage.as.module
+    .settings(
+      libraryDependencies ++= Seq(R.scala_reflect)
+    )
+    .settings(LibSettings)
+
+lazy val distageCore = inDiStage.as.module
+  .depends(distageMacro)
+  .settings(LibSettings)
+    .settings(
+      libraryDependencies ++= Seq(
+        R.scala_reflect
+        , R.cglib_nodep
+      )
+    )
+
+
 lazy val root = inRoot.as
   .root
   .transitiveAggregate(
-    sbtIzumi
+    sbtIzumi, distageCore
   )
 
