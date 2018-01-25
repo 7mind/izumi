@@ -1,7 +1,8 @@
 package org.bitbucket.pshirshov.izumi.logger.api
 
-import org.bitbucket.pshirshov.izumi.logger.Log._
-import org.bitbucket.pshirshov.izumi.logger.{Log, LogConfigService}
+import com.ratoshniuk.izumi.Log
+import com.ratoshniuk.izumi.Log.Message
+import org.bitbucket.pshirshov.izumi.logger.LogConfigService
 
 // SCALA API
 trait Logger {

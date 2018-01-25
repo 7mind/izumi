@@ -2,6 +2,8 @@ package org.bitbucket.pshirshov.izumi.logger
 
 import java.time.LocalDateTime
 
+import com.ratoshniuk.izumi.Log
+
 trait LogSink {
 
   def parseValues(msg: Log.Message): Map[String, Any] = {
