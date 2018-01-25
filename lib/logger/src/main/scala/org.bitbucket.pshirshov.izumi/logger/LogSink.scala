@@ -2,11 +2,9 @@ package org.bitbucket.pshirshov.izumi.logger
 
 import java.time.LocalDateTime
 
-import org.bitbucket.pshirshov.izumi.logger.Log.Message
-
 trait LogSink {
 
-  def messageParser(msg: Log.Message): Map[String, Any] = {
+  def parseValues(msg: Log.Message): Map[String, Any] = {
     def truncateKey(s: String) = {
       "(\\w+)=".r.findFirstIn(s).map(_.dropRight(1))
     }
@@ -43,12 +41,14 @@ trait LogSink {
 
   def flush(e: Log.Entry): Unit = {
 
-    val values = messageParser(e.message)
-    val contextValues = e.context.customContext.values
+    val renderedMessage = renderMessage(e)
+
+    val fullValues = e.context.customContext.values ++
+      parseValues(e.message) ++
+      Map("message" -> renderedMessage, "message_template" -> renderMessage(e, template = true))
 
     val lvl = e.context.dynamic.level
-    val color = GUIUtils.logLevelColor(lvl)
-    val coloredLvl = s"$color$lvl${Console.RESET}"
+    val coloredLvl = s"${GUIUtils.logLevelColor(lvl)}$lvl${Console.RESET}"
 
     val timeStamp = LocalDateTime.now()
     val thread = s"${e.context.dynamic.threadData.threadId}:${e.context.dynamic.threadData.threadName}"
@@ -57,8 +57,8 @@ trait LogSink {
     val renderedSystemOutput = String.format(
       "%-25s%-16s%-8s%-30s", timeStamp, coloredLvl, thread, className
     )
-    println{
-      s"""$renderedSystemOutput : ${renderMessage(e)}"""
+    println {
+      s"""$renderedSystemOutput : ${renderedMessage}"""
     }
   }
 }
