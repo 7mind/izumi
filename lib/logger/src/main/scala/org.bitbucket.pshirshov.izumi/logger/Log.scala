@@ -1,5 +1,7 @@
 package org.bitbucket.pshirshov.izumi.logger
 
+import scala.collection.immutable.HashMap
+
 object Log {
   sealed trait Level {
   } // enum
@@ -8,6 +10,7 @@ object Log {
     case object Debug extends Level
     case object Info extends Level
     case object Warn extends Level
+    case object Error extends Level
   }
 
 

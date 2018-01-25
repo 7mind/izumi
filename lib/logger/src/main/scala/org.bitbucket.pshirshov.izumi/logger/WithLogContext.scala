@@ -24,8 +24,25 @@ class BoundLogger(logger: Logger)(implicit val context: WithLogContext) // api p
   import Log._
 
   def debug(message: Log.Message)(implicit custom: CustomContext = EmptyCustomContext): Unit = {
-    //
-    logger.log(Context(context.context, DynamicContext(Level.Debug, context.thread), custom), message)
+    withLogLevel(message, Log.Level.Debug)(custom)
   }
+
+  def warn(message: Log.Message)(implicit custom: CustomContext = EmptyCustomContext): Unit = {
+    withLogLevel(message, Log.Level.Warn)(custom)
+  }
+
+  def info(message: Log.Message)(implicit custom: CustomContext = EmptyCustomContext): Unit = {
+    withLogLevel(message, Log.Level.Info)(custom)
+  }
+
+  def error(message: Log.Message)(implicit custom: CustomContext = EmptyCustomContext): Unit = {
+    withLogLevel(message, Log.Level.Error)(custom)
+  }
+
+  private def withLogLevel(message: Log.Message, lvl : Log.Level)(implicit custom: CustomContext = EmptyCustomContext): Unit = {
+    logger.log(Context(context.context, DynamicContext(lvl, context.thread), custom), message)
+  }
+
+
 }
 

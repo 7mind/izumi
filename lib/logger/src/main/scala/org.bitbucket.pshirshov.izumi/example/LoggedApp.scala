@@ -8,42 +8,40 @@ import org.bitbucket.pshirshov.izumi.logger.api.Logger
 // Usage
 import Logger._
 
-class Sample(logger: Logger) extends WithLogContext { // this has to be resolved on DI level
-  logger.debug(l"message x=${1} and y=${2}")
-  logger.debug(l"message ${"asdad"} x=${1} and y=${2}, ${4}")
+trait StrictIzumiLogging extends WithLogContext {
+  val logger = new BoundLogger(StrictIzumiLogging.logging)(this)
 }
 
-// or (better, less invasive)
-
-class Sample1(logger: BoundLogger) { // this has to be resolved on DI level
-  implicit def myVeryCustomContext: Log.CustomContext = new Log.CustomContext {
-    override def values = Map("x" -> "y")
-  }
-
-  logger.debug(l"message x=${1} and y=${2}")
-
-}
-
-
-
-object LoggedApp extends App {
+object StrictIzumiLogging {
   val logging = new Logger {
     override protected def logConfigService: LogConfigService = new LogConfigService {
-
-
-      val logFilter = new LogFilter {
-      }
-
-      val sink = new LogSink {
-      }
-
+      val logFilter = new LogFilter {}
+      val sink = new LogSink {}
       val mapping = new LogMapping(filter = logFilter, sink)
-
-
       override def config(e: Log.Entry): Seq[LogMapping] = Seq(mapping)
     }
   }
-
-  val sample = new Sample(logging)
 }
 
+
+object LoggedApp extends App with StrictIzumiLogging {
+
+  implicit def customLoggingContext: Log.CustomContext = new Log.CustomContext {
+    override def values = Map("userId" -> "c6b272ae-0206-11e8-ba89-0ed5f89f718b")
+  }
+
+  logger.info(l"sends to userId=${"user2"}, dollars=${15}")
+  logger.debug(l"should send to userId=${"user2"}, dollars=${4}")
+  logger.warn(l"unused import")
+
+  try {
+    val a  = null
+    a.getClass
+  } catch {
+    case f =>
+      logger.error(l"dunno how to handle exception =${f.getMessage}")
+  }
+
+
+
+}

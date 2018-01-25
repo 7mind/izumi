@@ -29,7 +29,9 @@ trait Logger {
 object Logger {
 
   implicit class LogSC(val sc: StringContext) {
-    def l(args: Any*): Message = Message(sc, args: _*)
+    def l(args: Any*): Message = {
+      Message(sc, args : _*)
+    }
   }
 
 }
