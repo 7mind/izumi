@@ -1,8 +1,6 @@
-package com.github.pshirshov.izumi.logstage.api.example
+package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.api.ArgumentNameExtractionMacro
 import com.github.pshirshov.izumi.logstage.api.logger._
-import com.github.pshirshov.izumi.logstage.api.logger.api.Logger
 
 
 // Usage
@@ -34,7 +32,7 @@ object LoggedApp extends App with Logging with ArgumentNameExtractionMacro {
 
   val amount = 4
 
-  logger.debug(l"should send to ${userId} ${amount} within ${5} minutes")
+  logger.debug(m"should send to ${userId} ${amount} within ${5} minutes")
 //  logger.info(l"should send to ${userId} ${amount} within ${5} minutes")
 //  logger.warn(l"should send to ${userId} ${amount} within ${5} minutes")
 

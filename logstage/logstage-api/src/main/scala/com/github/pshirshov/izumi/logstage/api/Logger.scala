@@ -1,7 +1,6 @@
-package com.github.pshirshov.izumi.logstage.api.logger.api
+package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.logstage.api.logger.{Log, LogConfigService}
-import com.github.pshirshov.izumi.logstage.api.ArgumentNameExtractionMacro
 import com.github.pshirshov.izumi.logstage.model.Message
 
 

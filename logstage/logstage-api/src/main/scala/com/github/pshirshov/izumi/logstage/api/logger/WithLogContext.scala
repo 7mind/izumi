@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api.logger
 
-import com.github.pshirshov.izumi.logstage.api.logger.api.Logger
+import com.github.pshirshov.izumi.logstage.api.Logger
 import com.github.pshirshov.izumi.logstage.model.Message
 
 

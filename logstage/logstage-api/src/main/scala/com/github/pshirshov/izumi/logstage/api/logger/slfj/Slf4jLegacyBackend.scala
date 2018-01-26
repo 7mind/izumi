@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api.logger.slfj
 
-import com.github.pshirshov.izumi.logstage.api.logger.api.Logger
+import com.github.pshirshov.izumi.logstage.api.Logger
 
 
 trait Slf4jLegacyBackend extends Logger {
