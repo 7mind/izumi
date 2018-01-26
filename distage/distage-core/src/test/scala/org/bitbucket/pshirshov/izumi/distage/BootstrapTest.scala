@@ -1,8 +1,8 @@
-package org.bitbucket.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage
 
-import org.bitbucket.pshirshov.izumi.distage.model.DIKey
-import org.bitbucket.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
-import org.bitbucket.pshirshov.izumi.distage.planning.{PlanResolver, PlanResolverDefaultImpl}
+import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
+import com.github.pshirshov.izumi.distage.planning.{PlanResolver, PlanResolverDefaultImpl}
 import org.scalatest.WordSpec
 
 

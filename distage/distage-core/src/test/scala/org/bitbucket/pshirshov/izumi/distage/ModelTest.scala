@@ -1,7 +1,7 @@
-package org.bitbucket.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage
 
-import org.bitbucket.pshirshov.izumi.distage.model.DIKey
-import org.bitbucket.pshirshov.izumi.distage.planning.PlanResolver
+import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.planning.PlanResolver
 import org.scalatest.WordSpec
 
 class ModelTest extends WordSpec {

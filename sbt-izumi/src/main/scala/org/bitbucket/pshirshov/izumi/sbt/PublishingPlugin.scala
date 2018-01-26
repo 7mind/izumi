@@ -1,4 +1,4 @@
-package org.bitbucket.pshirshov.izumi.sbt
+package com.github.pshirshov.izumi.sbt
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter

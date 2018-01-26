@@ -1,8 +1,8 @@
-package org.bitbucket.pshirshov.izumi.sbt.definitions
+package com.github.pshirshov.izumi.sbt.definitions
 
-import org.bitbucket.pshirshov.izumi.sbt.IzumiDslPlugin
-import org.bitbucket.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
-import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
+import com.github.pshirshov.izumi.sbt.IzumiDslPlugin
+import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
+import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
 import sbt._
 import sbt.internal.util.ConsoleLogger
 

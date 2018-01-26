@@ -1,6 +1,6 @@
-package org.bitbucket.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage
 
-import org.bitbucket.pshirshov.izumi.distage.provisioning.traitcompiler.TraitConstructorMacro
+import com.github.pshirshov.izumi.distage.provisioning.traitcompiler.TraitConstructorMacro
 import org.scalatest.WordSpec
 
 class BasicTraitCompilerTest extends WordSpec {

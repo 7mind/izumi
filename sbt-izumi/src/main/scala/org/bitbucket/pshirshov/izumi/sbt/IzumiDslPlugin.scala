@@ -1,7 +1,7 @@
-package org.bitbucket.pshirshov.izumi.sbt
+package com.github.pshirshov.izumi.sbt
 
-import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
-import org.bitbucket.pshirshov.izumi.sbt.definitions.{GlobalSettings, IzumiDsl}
+import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
+import com.github.pshirshov.izumi.sbt.definitions.{GlobalSettings, IzumiDsl}
 import sbt.internal.util.ConsoleLogger
 import sbt.io.syntax.File
 import sbt.{AutoPlugin, ExtendedProjectMacro, Plugins, Project, ProjectReference}

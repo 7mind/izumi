@@ -1,6 +1,6 @@
-package org.bitbucket.pshirshov.izumi
+package com.github.pshirshov.izumi
 
-import org.bitbucket.pshirshov.izumi.distage.model.EqualitySafeType
+import com.github.pshirshov.izumi.distage.model.EqualitySafeType
 
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._

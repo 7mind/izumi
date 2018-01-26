@@ -1,4 +1,4 @@
-package org.bitbucket.pshirshov.izumi.sbt.model
+package com.github.pshirshov.izumi.sbt.model
 
 import sbt.librarymanagement.Resolver
 

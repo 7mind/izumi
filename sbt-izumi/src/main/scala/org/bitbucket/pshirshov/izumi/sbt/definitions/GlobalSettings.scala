@@ -1,7 +1,7 @@
-package org.bitbucket.pshirshov.izumi.sbt.definitions
+package com.github.pshirshov.izumi.sbt.definitions
 
-import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
-import org.bitbucket.pshirshov.izumi.sbt._
+import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
+import com.github.pshirshov.izumi.sbt._
 import sbt.librarymanagement.syntax
 import sbt.{Defaults, Project}
 

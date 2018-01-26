@@ -1,6 +1,6 @@
 package sbt
 
-import org.bitbucket.pshirshov.izumi.sbt.IzumiDslPlugin.autoImport.{In, WithBase}
+import com.github.pshirshov.izumi.sbt.IzumiDslPlugin.autoImport.{In, WithBase}
 
 import scala.reflect.macros._
 

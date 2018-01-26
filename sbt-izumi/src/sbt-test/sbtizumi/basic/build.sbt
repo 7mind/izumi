@@ -1,4 +1,4 @@
-import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)

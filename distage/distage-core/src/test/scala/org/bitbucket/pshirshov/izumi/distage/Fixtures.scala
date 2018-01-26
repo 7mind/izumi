@@ -1,6 +1,6 @@
-package org.bitbucket.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage
 
-import org.bitbucket.pshirshov.izumi.distage.definition.{Id, With}
+import com.github.pshirshov.izumi.distage.definition.{Id, With}
 
 object Case1 {
 

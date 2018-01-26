@@ -1,4 +1,4 @@
-package org.bitbucket.pshirshov.izumi.sbt
+package com.github.pshirshov.izumi.sbt
 
 import sbt.AutoPlugin
 
@@ -7,21 +7,21 @@ object IzumiImportsPlugin extends AutoPlugin {
 
   //noinspection TypeAnnotation
   object autoImport {
-    val IzumiEnvironmentPlugin = org.bitbucket.pshirshov.izumi.sbt.IzumiEnvironmentPlugin
+    val IzumiEnvironmentPlugin = com.github.pshirshov.izumi.sbt.IzumiEnvironmentPlugin
 
-    val CompilerOptionsPlugin = org.bitbucket.pshirshov.izumi.sbt.CompilerOptionsPlugin
-    val ConvenienceTasksPlugin = org.bitbucket.pshirshov.izumi.sbt.ConvenienceTasksPlugin
-    val IzumiPropertiesPlugin = org.bitbucket.pshirshov.izumi.sbt.IzumiPropertiesPlugin
-    val PublishingPlugin = org.bitbucket.pshirshov.izumi.sbt.PublishingPlugin
-    val ResolverPlugin = org.bitbucket.pshirshov.izumi.sbt.ResolverPlugin
+    val CompilerOptionsPlugin = com.github.pshirshov.izumi.sbt.CompilerOptionsPlugin
+    val ConvenienceTasksPlugin = com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin
+    val IzumiPropertiesPlugin = com.github.pshirshov.izumi.sbt.IzumiPropertiesPlugin
+    val PublishingPlugin = com.github.pshirshov.izumi.sbt.PublishingPlugin
+    val ResolverPlugin = com.github.pshirshov.izumi.sbt.ResolverPlugin
 
-    val GitStampPlugin = org.bitbucket.pshirshov.izumi.sbt.GitStampPlugin
+    val GitStampPlugin = com.github.pshirshov.izumi.sbt.GitStampPlugin
 
-    val InheritedTestScopesPlugin = org.bitbucket.pshirshov.izumi.sbt.InheritedTestScopesPlugin
+    val InheritedTestScopesPlugin = com.github.pshirshov.izumi.sbt.InheritedTestScopesPlugin
 
-    val IzumiDslPlugin = org.bitbucket.pshirshov.izumi.sbt.IzumiDslPlugin
-    val IzumiScopesPlugin = org.bitbucket.pshirshov.izumi.sbt.IzumiScopesPlugin
-    val IzumiSettingsGroups = org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups
+    val IzumiDslPlugin = com.github.pshirshov.izumi.sbt.IzumiDslPlugin
+    val IzumiScopesPlugin = com.github.pshirshov.izumi.sbt.IzumiScopesPlugin
+    val IzumiSettingsGroups = com.github.pshirshov.izumi.sbt.IzumiSettingsGroups
 
     type GlobalSettings = definitions.GlobalSettings
     type ProjectSettings = definitions.ProjectSettings

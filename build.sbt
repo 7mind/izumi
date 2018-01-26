@@ -1,5 +1,5 @@
 import D._
-import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import sbt.Keys.{pomExtra, publishMavenStyle}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
@@ -66,14 +66,14 @@ val baseSettings = new GlobalSettings {
         )
       )
     }
-    ,  LibSettings -> new ProjectSettings {
-            override val settings: Seq[sbt.Setting[_]] = Seq(
-                Seq(
-                    libraryDependencies ++= R.essentials
-                      , libraryDependencies ++= T.essentials
-                    )
-                ).flatten
-          }
+    , LibSettings -> new ProjectSettings {
+      override val settings: Seq[sbt.Setting[_]] = Seq(
+        Seq(
+          libraryDependencies ++= R.essentials
+          , libraryDependencies ++= T.essentials
+        )
+      ).flatten
+    }
   )
 }
 
@@ -83,6 +83,8 @@ val globalDefs = setup(baseSettings)
 
 val inRoot = In(".")
 val inDiStage = In("distage")
+val inLogStage = In("logstage")
+val inFundamentals = In("fundamentals")
 
 lazy val sbtIzumi = inRoot.as
   .module
@@ -96,29 +98,48 @@ lazy val sbtIzumi = inRoot.as
     , scriptedBufferLog := false
     , crossScalaVersions := Seq(
       scala_212
-        )
+    )
   )
 
 lazy val distageMacro = inDiStage.as.module
-    .settings(
-      libraryDependencies ++= Seq(R.scala_reflect)
-    )
-    .settings(LibSettings)
+  .settings(
+    libraryDependencies ++= Seq(R.scala_reflect)
+  )
+  .settings(LibSettings)
 
 lazy val distageCore = inDiStage.as.module
   .depends(distageMacro)
   .settings(LibSettings)
-    .settings(
-      libraryDependencies ++= Seq(
-        R.scala_reflect
-        , R.cglib_nodep
-      )
+  .settings(
+    libraryDependencies ++= Seq(
+      R.scala_reflect
+      , R.cglib_nodep
     )
+  )
 
+lazy val logstageMacro = inLogStage.as.module
+  .settings(LibSettings)
+
+lazy val logstageApi = inLogStage.as.module
+  .settings(LibSettings)
+  .depends(logstageMacro)
+
+lazy val logstageCore = inLogStage.as.module
+  .settings(LibSettings)
+  .depends(logstageApi)
+
+lazy val logstageDi = inLogStage.as.module
+  .settings(LibSettings)
+  .depends(logstageApi)
+
+lazy val logstage: Seq[ProjectReference] = Seq(logstageDi, logstageCore)
+lazy val izsbt: Seq[ProjectReference] = Seq(sbtIzumi)
+lazy val distage: Seq[ProjectReference] = Seq(distageCore)
+
+lazy val allProjects = distage ++ logstage ++ izsbt
 
 lazy val root = inRoot.as
   .root
-  .transitiveAggregate(
-    sbtIzumi, distageCore
-  )
+  .transitiveAggregate( allProjects :_* )
+
 

@@ -1,11 +1,11 @@
-package org.bitbucket.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage
 
-import org.bitbucket.pshirshov.izumi.distage.definition.{Binding, ContextDefinition, TrivialDIDef}
-import org.bitbucket.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, TraitInitializationFailedException, UnsupportedWiringException, UntranslatablePlanException}
-import org.bitbucket.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import org.bitbucket.pshirshov.izumi.distage.model.plan.PlanningFailure.{DuplicatedStatements, UnsolvableConflict}
-import org.bitbucket.pshirshov.izumi.distage.model.plan.{ExecutableOp, UnaryWiring}
-import org.bitbucket.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
+import com.github.pshirshov.izumi.distage.definition.{Binding, ContextDefinition, TrivialDIDef}
+import com.github.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, TraitInitializationFailedException, UnsupportedWiringException, UntranslatablePlanException}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
+import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.{DuplicatedStatements, UnsolvableConflict}
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, UnaryWiring}
+import com.github.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
 import org.scalatest.WordSpec
 
 

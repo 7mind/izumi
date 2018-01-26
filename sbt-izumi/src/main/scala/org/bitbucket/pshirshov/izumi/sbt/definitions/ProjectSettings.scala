@@ -1,4 +1,4 @@
-package org.bitbucket.pshirshov.izumi.sbt.definitions
+package com.github.pshirshov.izumi.sbt.definitions
 
 import sbt.{AutoPlugin, ModuleID, Plugins}
 import sbt.librarymanagement.InclExclRule

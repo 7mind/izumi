@@ -1,6 +1,6 @@
-package org.bitbucket.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage
 
-import org.bitbucket.pshirshov.izumi.distage.definition.{ContextDefinition, TrivialDIDef}
+import com.github.pshirshov.izumi.distage.definition.{ContextDefinition, TrivialDIDef}
 import org.scalatest.WordSpec
 
 
