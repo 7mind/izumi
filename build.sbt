@@ -76,15 +76,22 @@ val baseSettings = new GlobalSettings {
     }
   )
 }
-
-// --------------------------------------------
-val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 val inRoot = In(".")
 val inDiStage = In("distage")
 val inLogStage = In("logstage")
 val inFundamentals = In("fundamentals")
+
+// --------------------------------------------
+
+lazy val fundamentalsCollections = inFundamentals.as.module
+  .settings(LibSettings)
+
+// --------------------------------------------
+val globalDefs = setup(baseSettings)
+  .withSharedLibs(fundamentalsCollections)
+// --------------------------------------------
 
 lazy val sbtIzumi = inRoot.as
   .module
@@ -100,6 +107,8 @@ lazy val sbtIzumi = inRoot.as
       scala_212
     )
   )
+
+
 
 lazy val distageMacro = inDiStage.as.module
   .settings(
@@ -117,8 +126,12 @@ lazy val distageCore = inDiStage.as.module
     )
   )
 
+lazy val logstageModel = inLogStage.as.module
+  .settings(LibSettings)
+
 lazy val logstageMacro = inLogStage.as.module
   .settings(LibSettings)
+  .depends(logstageModel)
 
 lazy val logstageApi = inLogStage.as.module
   .settings(LibSettings)
@@ -133,8 +146,8 @@ lazy val logstageDi = inLogStage.as.module
   .depends(logstageApi)
 
 lazy val logstage: Seq[ProjectReference] = Seq(logstageDi, logstageCore)
-lazy val izsbt: Seq[ProjectReference] = Seq(sbtIzumi)
 lazy val distage: Seq[ProjectReference] = Seq(distageCore)
+lazy val izsbt: Seq[ProjectReference] = Seq(sbtIzumi)
 
 lazy val allProjects = distage ++ logstage ++ izsbt
 

@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.logstage.api.logger
 
 import java.time.LocalDateTime
 
-import com.github.pshirshov.izumi.logstage.model.Message
+import com.github.pshirshov.izumi.logstage.model.Log
+import com.github.pshirshov.izumi.logstage.model.Log.Message
 
 
 trait LogSink {
@@ -56,7 +57,7 @@ trait LogSink {
     val coloredLvl = s"${GUIUtils.logLevelColor(e.context.dynamic.level)}${e.context.dynamic.level}${Console.RESET}"
     val thread = s"${e.context.dynamic.threadData.threadId}:${e.context.dynamic.threadData.threadName}"
     val renderedSystemOutput = String.format(
-      "%-25s%-16s%-8s%-30s", LocalDateTime.now(), coloredLvl, thread, e.context.static.id
+      "%-25s%-16s%-8s%-30s", LocalDateTime.now(), coloredLvl, thread, e.context.static.id.id
     )
     println {s"""$renderedSystemOutput : $renderedMessage"""}
   }

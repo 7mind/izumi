@@ -1,7 +1,6 @@
-package com.github.pshirshov.izumi.logstage.model
+package com.github.pshirshov.izumi.fundamentals.collections
 
-// TODO: move to fundamentals
-object ListUtils {
+object SeqEx {
 
   import scala.collection.mutable
 

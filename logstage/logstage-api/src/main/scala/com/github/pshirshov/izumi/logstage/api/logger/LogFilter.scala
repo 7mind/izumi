@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api.logger
 
 import com.github.pshirshov.izumi.logstage.api.config.ConfigLoader
+import com.github.pshirshov.izumi.logstage.model.Log
 
 case class LogMapping(filter: LogFilter, sink: LogSink)
 
