@@ -1,8 +1,6 @@
 package org.bitbucket.pshirshov.izumi.sbt
 
-// copypasted from due to obsolete jgit dependency
-// https://bitbucket.org/atlassianlabs/sbt-git-stamp
-// TODO: port original plugin to newer jgit
+// copypasted https://bitbucket.org/atlassianlabs/sbt-git-stamp from due to obsolete jgit dependency
 
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib._

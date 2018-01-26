@@ -9,3 +9,7 @@ lazy val root = project.in( file(".") ).dependsOn( izumiPlugin )
 
 // 
 libraryDependencies += { "org.scala-sbt" %% "scripted-plugin" % sbtVersion.value }
+
+
+// https://github.com/scoverage/sbt-coveralls
+addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.2")
