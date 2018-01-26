@@ -30,7 +30,7 @@ object ArgumentNameExtractionMacro {
             reifiedPrefixed(c)(param, "UNNAMED")
 
           case v =>
-            reifiedPrefixed(c)(param, v.toString())
+            reifiedPrefixedValue(c)(c.Expr[String](Literal(Constant(v.toString()))), param, "EXPRESSION")
         }
     }
 
@@ -53,12 +53,17 @@ object ArgumentNameExtractionMacro {
   }
 
   private def reifiedPrefixed(c: blackbox.Context)(param: c.Expr[Any], prefix: String) = {
+    reifiedPrefixedValue(c)(param, param, prefix)
+  }
+
+  private def reifiedPrefixedValue(c: blackbox.Context)(param: c.Expr[Any], value: c.Expr[Any], prefix: String) = {
     import c.universe._
-    val paramRepTree = c.Expr[String](Literal(Constant(prefix)))
+    val prefixRepr = c.Expr[String](Literal(Constant(prefix)))
     reify {
-      (s"${paramRepTree.splice}:${param.splice}", param.splice)
+      (s"${prefixRepr.splice}:${param.splice}", value.splice)
     }.tree
   }
+
 
   private def reifiedExtracted(c: blackbox.Context)(param: c.Expr[Any], s: String) = {
     import c.universe._
