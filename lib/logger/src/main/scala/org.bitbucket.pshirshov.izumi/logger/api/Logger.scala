@@ -1,13 +1,17 @@
 package org.bitbucket.pshirshov.izumi.logger.api
 
-import com.ratoshniuk.izumi.Log
-import com.ratoshniuk.izumi.Log.Message
-import org.bitbucket.pshirshov.izumi.logger.LogConfigService
+import org.bitbucket.pshirshov.izumi.InterpolatorMacros
+import org.bitbucket.pshirshov.izumi.logger.{Log, LogConfigService}
 
 // SCALA API
-trait Logger {
+trait Logger extends InterpolatorMacros{
 
   import Log._
+
+  def foo: Unit = {
+    val a : Option[StringContext] = None
+    a.map(_.l_macr())
+  }
 
   def log(context: Log.Context, message: Log.Message): Unit = route(Entry(message, context))
 
@@ -27,15 +31,7 @@ trait Logger {
   }
 }
 
-object Logger {
-
-  implicit class LogSC(val sc: StringContext) {
-    def l(args: Any*): Message = {
-      Message(sc, args : _*)
-    }
-  }
-
-}
+object Logger extends InterpolatorMacros
 
 // don't forget, we need this
 trait MacroLogger extends Logger {

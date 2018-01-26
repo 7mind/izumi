@@ -1,7 +1,7 @@
 package org.bitbucket.pshirshov.izumi.config
 
-import com.ratoshniuk.izumi.Log
-import com.ratoshniuk.izumi.Models.{LoggingConfig, LoggingRule}
+import org.bitbucket.pshirshov.izumi.logger.Log
+import org.bitbucket.pshirshov.izumi.logger.Models.{LoggingConfig, LoggingRule}
 
 
 trait ConfigLoader {

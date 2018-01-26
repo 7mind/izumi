@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.example
 
-import com.ratoshniuk.izumi.{InterpolatorMacros, Log}
+import org.bitbucket.pshirshov.izumi.InterpolatorMacros
 import org.bitbucket.pshirshov.izumi.logger._
 import org.bitbucket.pshirshov.izumi.logger.api.Logger
 
@@ -23,20 +23,23 @@ object Logging {
 }
 
 
-object LoggedApp extends App with Logging with InterpolatorMacros{
+object LoggedApp extends App with Logging with InterpolatorMacros  {
+
+  import Logger._
 
   implicit def customLoggingContext: Log.CustomContext = new Log.CustomContext {
     override def values = Map("userId" -> "c6b272ae-0206-11e8-ba89-0ed5f89f718b")
   }
 
   val userId = "c6b272ae-0206-11e8-ba89-0ed5f89f718b"
-  debug(userId)
-  debug("value")
 
-//  logger.info(l"sends to userId=${"user2"}, dollars=${15}")
-//  debug(l"should send to userId=${"user2"}, dollars=${4}")
-//  logger.warn(l"unused import")
+  val amount = 4
 
+  println(l_macr"should send to ${userId} ${amount}")
+
+
+
+//
 //  try {
 //    val a  = null
 //    a.getClass

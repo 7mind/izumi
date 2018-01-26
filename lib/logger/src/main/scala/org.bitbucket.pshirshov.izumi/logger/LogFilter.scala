@@ -1,6 +1,5 @@
 package org.bitbucket.pshirshov.izumi.logger
 
-import com.ratoshniuk.izumi.Log
 import org.bitbucket.pshirshov.izumi.config.ConfigLoader
 
 case class LogMapping(filter: LogFilter, sink: LogSink)

@@ -94,7 +94,7 @@ lazy val sbtIzumi = inRoot.as
     )
   )
 
-lazy val logMacross: Project = inLib.as.module.enablePlugins(ScriptedPlugin)
+lazy val logMacros: Project = inLib.as.module.enablePlugins(ScriptedPlugin)
 
 val logger = inLib.as.module.enablePlugins(ScriptedPlugin).settings(
   target ~= { t => t.toPath.resolve("primary").toFile }
@@ -106,7 +106,7 @@ val logger = inLib.as.module.enablePlugins(ScriptedPlugin).settings(
   , crossScalaVersions := Seq(
     scala_212
   )
-).dependsOn(logMacross)
+).dependsOn(logMacros)
 
 lazy val root = inRoot.as
   .root
