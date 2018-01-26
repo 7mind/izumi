@@ -1,6 +1,6 @@
 package org.bitbucket.pshirshov.izumi.logger.api
 
-import org.bitbucket.pshirshov.izumi.InterpolatorMacros
+import org.bitbucket.pshirshov.izumi.{InterpolatorMacros, Message}
 import org.bitbucket.pshirshov.izumi.logger.{Log, LogConfigService}
 
 // SCALA API
@@ -8,14 +8,10 @@ trait Logger extends InterpolatorMacros{
 
   import Log._
 
-  def foo: Unit = {
-    val a : Option[StringContext] = None
-    a.map(_.l_macr())
-  }
 
-  def log(context: Log.Context, message: Log.Message): Unit = route(Entry(message, context))
+  def log(context: Log.Context, message: Message): Unit = route(Entry(message, context))
 
-  def debug(message: Log.Message)(implicit context: StaticContext, dynamic: ThreadData, custom: CustomContext = EmptyCustomContext): Unit = {
+  def debug(message: Message)(implicit context: StaticContext, dynamic: ThreadData, custom: CustomContext = EmptyCustomContext): Unit = {
     log(Context(context, DynamicContext(Level.Debug, dynamic), custom), message)
   }
 

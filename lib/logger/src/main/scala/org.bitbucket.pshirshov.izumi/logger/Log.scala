@@ -1,5 +1,7 @@
 package org.bitbucket.pshirshov.izumi.logger
 
+import org.bitbucket.pshirshov.izumi.Message
+
 object Log {
   sealed trait Level {
   } // enum
@@ -28,8 +30,6 @@ object Log {
 
 
   case class NamedArgument(name : String, value : Any)
-
-  case class Message(template: StringContext, args: (String, Any)*)
 
   case class Entry(message: Message, context: Context)
 

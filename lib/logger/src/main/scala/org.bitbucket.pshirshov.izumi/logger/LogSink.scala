@@ -2,18 +2,15 @@ package org.bitbucket.pshirshov.izumi.logger
 
 import java.time.LocalDateTime
 
+import org.bitbucket.pshirshov.izumi.Message
+
 trait LogSink {
 
-  def parseValues(msg: Log.Message): Map[String, Any] = {
-
-    def truncateKey(s: String) = {
-      // TODO : support only when `=` after string (implement correct regex)
-      "(\\w+)=".r.findFirstIn(s).map(_.dropRight(1))
+  def parseValues(msg: Message): Map[String, Any] = {
+    msg.args.foldLeft(Map.empty[String, Any]){
+      case (map, (k, v)) =>
+        map ++ Map(k -> v)
     }
-
-    msg.args.zip(msg.template.parts).map {
-      case (v, k) => Option(k).flatMap(truncateKey).getOrElse(s"unknown_$v") -> v
-    }.toMap
   }
 
   def renderMessage(e: Log.Entry, onlyTemplate: Boolean = false): String = {
@@ -22,14 +19,22 @@ trait LogSink {
 
     val customContext = e.context.customContext.values
 
-    // TODO : macro fetching args names for full text search
-    val builder = if (onlyTemplate) {
-      parts.zip(args).map { case (k, arg) => k + s"{{$arg}}" }
+
+    if (onlyTemplate) {
+      parts.zip(args).map {
+        case (p, (id, value)) =>
+          p + (if (id.startsWith("unnamed")) {s"$${${value}}" } else {s"$${${id}}"})
+      }.foldLeft("")(_ + _)
     } else {
-      (customContext.keys.map(_ + "=") ++ parts).zip(customContext.values.map(_ + ", ") ++ args)
-        .map { case (k, arg) => k + arg }
+      // TODO : improve this one
+      customContext.foldLeft(""){
+        case (acc, (k, v)) => {
+          acc + k + "=" + v
+        }
+      } + " " + parts.zip(args).map {
+        case (p, (id, v)) => p + id + "=" + v
+      }.foldLeft("")(_ + _)
     }
-    builder.foldLeft("")(_ + _)
   }
 
   // here we may:
@@ -40,6 +45,8 @@ trait LogSink {
   // TODO : implement message buffer
 
   def flush(e: Log.Entry): Unit = {
+
+
     val renderedMessage = renderMessage(e)
     val fullValues = e.context.customContext.values ++
       parseValues(e.message) ++
