@@ -29,8 +29,8 @@ object ArgumentNameExtractionMacro {
           case c.universe.Literal(c.universe.Constant(_)) =>
             reifiedPrefixed(c)(param, "UNNAMED")
 
-          case _ =>
-            reifiedPrefixed(c)(param, "CANTEXTRACT")
+          case v =>
+            reifiedPrefixed(c)(param, v.toString())
         }
     }
 

@@ -15,6 +15,8 @@ trait LoggingMacro {
 
   def contextStatic: Log.StaticContext
 
+  def contextCustom: Log.CustomContext
+
   def debug(message: Message): Unit = macro debugMacro
 }
 
@@ -28,7 +30,6 @@ object LoggingMacro {
     import c.universe._
 
     val receiver = reify(c.prefix.splice.asInstanceOf[LoggingMacro].receiver)
-    //val msg = reify(message).tree
 
     val line = c.Expr[Int](c.universe.Literal(Constant(c.enclosingPosition.line)))
     val file = c.Expr[String](c.universe.Literal(Constant(c.enclosingPosition.source.file.name)))
@@ -39,7 +40,7 @@ object LoggingMacro {
       val dynamicContext = Log.DynamicContext(logLevel.splice, ThreadData(thread.getName, thread.getId))
 
       val staticContext = StaticExtendedContext(self.contextStatic, file.splice, line.splice)
-      Log.Context(staticContext, dynamicContext, Log.EmptyCustomContext)
+      Log.Context(staticContext, dynamicContext, self.contextCustom)
     }
 
     c.Expr[Unit] {

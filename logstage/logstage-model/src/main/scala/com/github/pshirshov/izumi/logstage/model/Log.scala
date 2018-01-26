@@ -21,14 +21,17 @@ object Log {
     }
   }
 
+  type LogContext = Map[String, Any]
+  type LogContextEntry = (String, Any)
 
-  trait CustomContext {
-    def values: Map[String, Any]
+
+  case class CustomContext(values: LogContext)
+
+
+  object CustomContext {
+    def empty: CustomContext = CustomContext(Map.empty)
   }
 
-  case object EmptyCustomContext extends CustomContext {
-    override def values: Map[String, Any] = Map.empty
-  }
 
 
   case class StaticContext(id: String) extends AnyVal
@@ -37,13 +40,10 @@ object Log {
   case class DynamicContext(level: Level, threadData: ThreadData)
   case class Context(static: StaticExtendedContext, dynamic: DynamicContext, customContext: CustomContext)
 
-
-  case class NamedArgument(name : String, value : Any)
-
   case class Entry(message: Message, context: Context)
 
 
-  case class Message(template: StringContext, args: List[(String, Any)]) {
+  case class Message(template: StringContext, args: List[LogContextEntry]) {
 
     import com.github.pshirshov.izumi.fundamentals.collections.SeqEx._
 
