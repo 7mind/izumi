@@ -37,7 +37,7 @@ class InjectorTest extends WordSpec {
       }
 
       val fixedPlan = plan.flatMap {
-        case ImportDependency(key, references) if key == DIKey.get[NotInContext] =>
+        case ImportDependency(key, _) if key == DIKey.get[NotInContext] =>
           Seq(ExecutableOp.WiringOp.ReferenceInstance(
             key
             , UnaryWiring.Instance(EqualitySafeType.get[NotInContext], new NotInContext {})
@@ -67,6 +67,7 @@ class InjectorTest extends WordSpec {
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
+      assert(context.get[Set[JustTrait]]("named.set").size == 2)
     }
 
     "support named bindings" in {
@@ -97,6 +98,8 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+      assert(context.get[Circular1] != null)
+      assert(context.get[Circular2] != null)
     }
 
     "support complex circular dependencies" in {
@@ -135,7 +138,7 @@ class InjectorTest extends WordSpec {
       val exc = intercept[TraitInitializationFailedException] {
         injector.produce(plan)
       }
-      assert(exc.getCause.isInstanceOf[NotImplementedError])
+      assert(exc.getCause.isInstanceOf[RuntimeException])
 
     }
 

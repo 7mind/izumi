@@ -2,6 +2,8 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.definition.{Id, With}
 
+import scala.util.Random
+
 object Case1 {
 
   trait TestDependency0 {
@@ -15,7 +17,6 @@ object Case1 {
   trait NotInContext {}
 
   trait TestDependency1 {
-    // TODO: plan API to let user provide importDefs
     def unresolved: NotInContext
   }
 
@@ -85,7 +86,7 @@ object Case2 {
     def arg: Circular2
   }
 
-  class Circular2(arg: Circular1)
+  class Circular2(val arg: Circular1)
 
 }
 
@@ -116,15 +117,25 @@ object Case3 {
   }
 
   trait CircularBad1 {
-    ???
-
     def arg: CircularBad2
+
+    def bad() = {
+      if (Random.nextInt(10) < 100 ) {
+        throw new RuntimeException()
+      }
+    }
+    bad()
   }
 
   trait CircularBad2 {
-    ???
-
     def arg: CircularBad1
+
+    def bad() = {
+      if (Random.nextInt(10) < 100 ) {
+        throw new RuntimeException()
+      }
+    }
+    bad()
   }
 
 }
@@ -181,9 +192,9 @@ object Case6 {
 
   trait Dependency1Sub extends Dependency1
 
-  class TestClass(b: Dependency1)
+  class TestClass(val b: Dependency1)
 
-  class TestClass2(a: TestClass)
+  class TestClass2(val a: TestClass)
 
 }
 
