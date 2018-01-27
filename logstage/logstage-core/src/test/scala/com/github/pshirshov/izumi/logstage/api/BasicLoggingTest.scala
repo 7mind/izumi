@@ -11,7 +11,7 @@ class BasicLoggingTest extends WordSpec {
       val arg1 = 1
       val arg2 = "argument 2"
 
-      import ArgumentNameExtractionMacro._
+      import ExtratingStringInterpolator._
 
       val message = m"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2+2}, ${2+2}"
       assert(message.args == List(("arg1",1), ("arg2","argument 2"), ("arg2","argument 2"), ("UNNAMED:4",4), ("UNNAMED:4",4)))

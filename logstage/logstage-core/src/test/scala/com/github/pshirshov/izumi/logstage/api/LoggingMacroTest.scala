@@ -7,13 +7,13 @@ import org.scalatest.WordSpec
 import scala.util.Random
 
 class AService(logger: MacroLogger) {
-  import logger._
+  //import logger._
 
   def start(): Unit = {
-    val context = Map("userId" -> "xxx")
+    val context = logger("userId" -> "xxx")
 
     val arg = "this is an argument"
-//    context.debug(s"This would be automatically extended")
+    context.debug(s"This would be automatically extended")
 
     logger.log.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
 

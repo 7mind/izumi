@@ -57,7 +57,6 @@ object LoggingMacro {
   private def stringContextSupportMacro(c: blackbox.Context)(message: c.Expr[String], logLevel: c.Expr[Log.Level]): c.Expr[Unit] = {
     import c.universe._
 
-
     val messageTree = message.tree match {
       // qq causes a weird warning here
       //case q"StringContext($stringContext).s(..$args)" =>
@@ -71,6 +70,7 @@ object LoggingMacro {
         reifyContext(c)(sc, emptyArgs)
 
       case other =>
+        c.warning(c.enclosingPosition, s"""Complex expression as an input for a logger: ${other.toString()}. Use string interpolation: s"message with an $${argument}" """)
         val emptyArgs = q"""List("@type" -> "expr", "@expr" -> ${other.toString()})"""
         val sc = q"StringContext($other)"
         reifyContext(c)(sc, c.Expr(emptyArgs))
