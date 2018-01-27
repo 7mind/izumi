@@ -4,7 +4,7 @@ import org.scalatest.WordSpec
 
 import scala.util.Random
 
-class BasicLoggingtest extends WordSpec {
+class BasicLoggingTest extends WordSpec {
 
   "Argument extraction macro" should {
     "extract argument names from an arbitrary string" in {

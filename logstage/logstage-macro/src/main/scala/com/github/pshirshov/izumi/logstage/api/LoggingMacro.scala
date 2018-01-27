@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.api.LoggingMacro.debugMacro
 import com.github.pshirshov.izumi.logstage.model.Log.{Message, StaticExtendedContext, ThreadData}
 import com.github.pshirshov.izumi.logstage.model.{AbstractLogger, Log, LogReceiver}
 
@@ -10,23 +9,87 @@ import scala.reflect.macros.blackbox
 
 trait LoggingMacro {
   self: AbstractLogger =>
-  
+
+  import com.github.pshirshov.izumi.logstage.api.LoggingMacro._
+
   def receiver: LogReceiver
 
   def contextStatic: Log.StaticContext
 
   def contextCustom: Log.CustomContext
 
-  def debug(message: Message): Unit = macro debugMacro
+  //def debug(message: Message): Unit = macro debugMacro
+
+  def debug(message: String): Unit = macro scDebugMacro
 }
 
 object LoggingMacro {
-  def debugMacro(c: blackbox.Context)(message: c.Expr[Message]): c.Expr[Unit] = {
+  def scTraceMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
-    logMacroMacro(c)(message, c.Expr[Log.Level](q"Log.Level.Debug"))
+    stringContextSupportMacro(c)(message, reify(Log.Level.Trace))
   }
 
-  def logMacroMacro(c: blackbox.Context)(message: c.Expr[Message], logLevel: c.Expr[Log.Level]): c.Expr[Unit] = {
+  def scDebugMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Unit] = {
+    import c.universe._
+    stringContextSupportMacro(c)(message, reify(Log.Level.Debug))
+  }
+
+  def scInfoMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Unit] = {
+    import c.universe._
+    stringContextSupportMacro(c)(message, reify(Log.Level.Info))
+  }
+
+  def scWarnMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Unit] = {
+    import c.universe._
+    stringContextSupportMacro(c)(message, reify(Log.Level.Warn))
+  }
+
+  def scErrorMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Unit] = {
+    import c.universe._
+    stringContextSupportMacro(c)(message, reify(Log.Level.Error))
+  }
+
+  def scCritMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Unit] = {
+    import c.universe._
+    stringContextSupportMacro(c)(message, reify(Log.Level.Crit))
+  }
+
+  private def stringContextSupportMacro(c: blackbox.Context)(message: c.Expr[String], logLevel: c.Expr[Log.Level]): c.Expr[Unit] = {
+    import c.universe._
+
+
+    val messageTree = message.tree match {
+      // qq causes a weird warning here
+      //case q"StringContext($stringContext).s(..$args)" =>
+      case c.universe.Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args) =>
+        val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
+        reifyContext(c)(stringContext, namedArgs)
+
+      case c.universe.Literal(c.universe.Constant(s)) =>
+        val emptyArgs = reify(List("@type" -> "const"))
+        val sc = q"StringContext(${s.toString})"
+        reifyContext(c)(sc, emptyArgs)
+
+      case other =>
+        val emptyArgs = q"""List("@type" -> "expr", "@expr" -> ${other.toString()})"""
+        val sc = q"StringContext($other)"
+        reifyContext(c)(sc, c.Expr(emptyArgs))
+    }
+
+    logMacro(c)(messageTree, logLevel)
+  }
+
+  private def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[(String, Any)]]) = {
+    import c.universe._
+    reify {
+      Message(
+        c.Expr[StringContext](stringContext).splice
+        , namedArgs.splice
+      )
+    }
+  }
+
+  private def logMacro(c: blackbox.Context)(message: c.Expr[Message], logLevel: c.Expr[Log.Level]): c.Expr[Unit] = {
     import c.universe._
 
     val receiver = reify(c.prefix.splice.asInstanceOf[LoggingMacro].receiver)
@@ -52,7 +115,11 @@ object LoggingMacro {
     }
   }
 
-
+  //  def debugMacro(c: blackbox.Context)(message: c.Expr[Message]): c.Expr[Unit] = {
+  //    import c.universe._
+  //    logMacro(c)(message, c.Expr[Log.Level](q"Log.Level.Debug"))
+  //  }
+  //
 }
 
 

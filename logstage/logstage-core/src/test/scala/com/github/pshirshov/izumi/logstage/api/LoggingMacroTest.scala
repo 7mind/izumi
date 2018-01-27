@@ -13,9 +13,12 @@ class AService(logger: MacroLogger) {
     val context = Map("userId" -> "xxx")
 
     val arg = "this is an argument"
-    context.debug(m"This would be automatically extended")
+//    context.debug(s"This would be automatically extended")
 
-    log.debug(m"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
+    logger.log.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
+
+    logger.log.debug("Just a string")
+    logger.log.debug("Just " + 1)
   }
 }
 

@@ -7,14 +7,26 @@ import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 
-
-
 object ArgumentNameExtractionMacro {
+
   implicit class LogSC(val sc: StringContext) {
     def m(args: Any*): Message = macro fetchArgsNames
   }
 
   def fetchArgsNames(c: blackbox.Context)(args: c.Expr[Any]*): c.Expr[Message] = {
+    import c.universe._
+    val expressionsList = recoverArgNames(c)(args)
+
+    reify {
+      Message(
+        c.prefix.splice.asInstanceOf[LogSC].sc
+        , expressionsList.splice
+      )
+    }
+
+  }
+
+  protected[api] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[(String, Any)]] = {
     import c.universe._
 
     val expressions = args.map {
@@ -34,43 +46,31 @@ object ArgumentNameExtractionMacro {
         }
     }
 
-    val expressionsList = Apply(
-      Select(
-        reify(List).tree
-        , TermName("apply")
-      )
-      , expressions.toList
-    )
-
-
-    reify {
-      Message(
-        c.prefix.splice.asInstanceOf[LogSC].sc,
-        c.Expr[List[(String, Any)]](expressionsList).splice
-      )
+    c.Expr[List[(String, Any)]] {
+      q"List(..$expressions)"
     }
-
   }
 
-  private def reifiedPrefixed(c: blackbox.Context)(param: c.Expr[Any], prefix: String) = {
+  private def reifiedPrefixed(c: blackbox.Context)(param: c.Expr[Any], prefix: String): c.universe.Expr[(String, Any)] = {
     reifiedPrefixedValue(c)(param, param, prefix)
   }
 
-  private def reifiedPrefixedValue(c: blackbox.Context)(param: c.Expr[Any], value: c.Expr[Any], prefix: String) = {
+  private def reifiedPrefixedValue(c: blackbox.Context)(param: c.Expr[Any], value: c.Expr[Any], prefix: String): c.universe.Expr[(String, Any)] = {
     import c.universe._
     val prefixRepr = c.Expr[String](Literal(Constant(prefix)))
     reify {
       (s"${prefixRepr.splice}:${param.splice}", value.splice)
-    }.tree
+    }
   }
 
 
-  private def reifiedExtracted(c: blackbox.Context)(param: c.Expr[Any], s: String) = {
+  private def reifiedExtracted(c: blackbox.Context)(param: c.Expr[Any], s: String): c.universe.Expr[(String, Any)] = {
     import c.universe._
     val paramRepTree = c.Expr[String](Literal(Constant(s)))
     reify {
       (paramRepTree.splice, param.splice)
-    }.tree
+    }
   }
+
 }
 

@@ -7,6 +7,9 @@ object Log {
   }
 
   object Level {
+    case object Trace extends Level {
+      protected val asInt = 0
+    }
     case object Debug extends Level {
       protected val asInt = 10
     }
@@ -18,6 +21,9 @@ object Log {
     }
     case object Error extends Level {
       protected val asInt = 40
+    }
+    case object Crit extends Level {
+      protected val asInt = 50
     }
   }
 
