@@ -129,10 +129,10 @@ lazy val logstageMacro = inLogStage.as.module
 lazy val logstageApi = inLogStage.as.module
   .depends(logstageMacro)
 
-lazy val logstageCore = inLogStage.as.module
-  .depends(logstageApi)
-
 lazy val logstageDi = inLogStage.as.module
+  .depends(logstageApi, distageModel)
+
+lazy val logstageRouting = inLogStage.as.module
   .depends(logstageApi)
 
 lazy val logstageSinkFile = inLogStage.as.module
@@ -169,7 +169,7 @@ lazy val sbtIzumi = inRoot.as
 
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageDi
-  , logstageCore
+  , logstageRouting
   , logstageSinkConsole
   , logstageSinkFile
   , logstageSinkSlf4j
