@@ -13,12 +13,13 @@ class MacroLogger
   , override val contextCustom: Log.CustomContext
 ) extends LoggingMacro
   with AbstractLogger {
-  implicit def withCustomContext(customContext: CustomContext): MacroLogger = {
-    new MacroLogger(receiver, contextStatic, customContext)
+
+  implicit def withCustomContext(newCustomContext: CustomContext): MacroLogger = {
+    new MacroLogger(receiver, contextStatic, contextCustom + newCustomContext)
   }
 
   implicit def withMapAsCustomContext(map: Map[String, Any]): MacroLogger = {
-    new MacroLogger(receiver, contextStatic, CustomContext(map))
+    withCustomContext(CustomContext(map.toList))
   }
 
   def apply[V](conv: Map[String, V]): MacroLogger = conv

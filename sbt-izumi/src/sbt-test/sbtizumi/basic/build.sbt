@@ -1,4 +1,5 @@
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys._
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -12,6 +13,7 @@ crossScalaVersions in ThisBuild := Seq(
 
 // unfortunately we have to use this bcs conditional settings in plugins don't work
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaVersion.value, isSnapshot.value)
+defaultStubPackage := Some("org.test.project")
 
 // -- settings groups identifiers
 val AppSettings = SettingsGroupId()

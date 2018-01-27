@@ -11,6 +11,9 @@ object ConvenienceTasksPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()
 
   object Keys {
+    val defaultStubPackage = settingKey[Option[String]]("Default stub package")
+    val mkJavaDirs = settingKey[Boolean]("Create java dirs when creating a stub")
+
     val addVersionSuffix = inputKey[Unit]("Add a suffix into version defined in version file")
     val preserveTargets = inputKey[Unit]("Preserve 'target' directories")
     val rmDirs = inputKey[Unit]("Recursively remove directories with a name provided")
@@ -64,7 +67,7 @@ object ConvenienceTasksPlugin extends AutoPlugin {
       val name: String = (token(Space) ~> token(StringBasic, "moduleName"))
         .parsed
 
-      mkDefaultModule(name)
+      mkDefaultModule(name, defaultStubPackage.value, mkJavaDirs.value)
     }
     , newStub := {
       val args = spaceDelimited("<args>").parsed
@@ -72,6 +75,8 @@ object ConvenienceTasksPlugin extends AutoPlugin {
       val stubId = args.tail.headOption.getOrElse("default")
       mkModule(moduleName, stubId)
     }
+    , defaultStubPackage := None
+    , mkJavaDirs := false
   )
 
   private def mkModule(name: String, stubId: String): Unit = {
@@ -89,19 +94,37 @@ object ConvenienceTasksPlugin extends AutoPlugin {
     IO.copyDirectory(stub, target)
   }
 
-  private def mkDefaultModule(name: String): Unit = {
-    val stub = Seq(
+  private def mkDefaultModule(name: String, pkg: Option[String], mkJava: Boolean): Unit = {
+    val scalaDirs = Seq(
       "src/main/scala"
-      , "src/main/java"
-      , "src/test/java"
       , "src/test/scala"
     )
+    val javaDirs = Seq(
+      "src/main/java"
+      , "src/test/java"
+    )
+
+    val stubBases = if (!mkJava) {
+      scalaDirs
+    } else {
+      scalaDirs ++ javaDirs
+    }
+
+
+
+    val stubs = pkg match {
+      case Some(d) => 
+        stubBases.map(s => s"""$s/${d.replace(".", "/")}""")
+      case None =>
+        stubBases
+    }
+
     val base = file(".").toPath.resolve(name)
     if (base.toFile.exists()) {
       throw new IllegalArgumentException(s"Directory $base already exists!")
     }
 
-    stub.foreach {
+    stubs.foreach {
       n =>
         val dir = base.resolve(n)
         val dirOk = dir.toFile.mkdirs()

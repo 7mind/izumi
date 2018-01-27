@@ -27,15 +27,20 @@ object Log {
     }
   }
 
-  type LogContext = Map[String, Any]
   type LogContextEntry = (String, Any)
+  type LogContext = Seq[LogContextEntry]
+  //type LogContext = Map[String, Any]
 
 
-  case class CustomContext(values: LogContext)
+  case class CustomContext(values: LogContext) {
+    def +(that: CustomContext): CustomContext = {
+      CustomContext(values ++ that.values)
+    }
+  }
 
 
   object CustomContext {
-    def empty: CustomContext = CustomContext(Map.empty)
+    def empty: CustomContext = CustomContext(List.empty)
   }
 
 
@@ -49,7 +54,7 @@ object Log {
   case class Entry(message: Message, context: Context)
 
 
-  case class Message(template: StringContext, args: List[LogContextEntry]) {
+  case class Message(template: StringContext, args: LogContext) {
 
     import com.github.pshirshov.izumi.fundamentals.collections.SeqEx._
 
