@@ -4,6 +4,7 @@ local.sbt
 credentials.sonatype-nexus.properties
 .gnupg*
 secrets.tar
+.DS_Store
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Scala template
