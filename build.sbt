@@ -1,4 +1,5 @@
 import D._
+import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import sbt.Keys.{pomExtra, publishMavenStyle}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
@@ -17,6 +18,7 @@ val scala_212 = "2.12.4"
 val scala_213 = "2.13.0-M2"
 
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaVersion.value, isSnapshot.value)
+defaultStubPackage := Some("com.github.pshirshov.izumi")
 
 val baseSettings = new GlobalSettings {
   override protected val settings: Map[SettingsGroupId, ProjectSettings] = Map(
