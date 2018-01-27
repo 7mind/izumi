@@ -9,13 +9,12 @@ import scala.language.implicitConversions
 class MacroLogger
 (
   override val receiver: LogReceiver
-  , override val contextStatic: Log.StaticContext
   , override val contextCustom: Log.CustomContext
 ) extends LoggingMacro
   with AbstractLogger {
 
   implicit def withCustomContext(newCustomContext: CustomContext): MacroLogger = {
-    new MacroLogger(receiver, contextStatic, contextCustom + newCustomContext)
+    new MacroLogger(receiver, contextCustom + newCustomContext)
   }
 
   implicit def withMapAsCustomContext(map: Map[String, Any]): MacroLogger = {
@@ -29,7 +28,7 @@ class MacroLogger
 }
 
 object MacroLogger {
-  def apply(receiver: LogReceiver, contextStatic: Log.StaticContext): MacroLogger = {
-    new MacroLogger(receiver, contextStatic, CustomContext.empty)
+  def apply(receiver: LogReceiver): MacroLogger = {
+    new MacroLogger(receiver, CustomContext.empty)
   }
 }

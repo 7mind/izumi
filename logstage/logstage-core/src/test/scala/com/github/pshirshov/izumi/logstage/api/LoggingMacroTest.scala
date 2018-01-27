@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.model.Log.StaticContext
 import com.github.pshirshov.izumi.logstage.model.{Log, LogReceiver}
 import org.scalatest.WordSpec
 
@@ -13,7 +12,7 @@ class AService(logger: MacroLogger) {
 
     val arg = "this is an argument"
 
-    context.trace(s"This would be automatically extended")
+    context.trace(s"This would be automatically extended") 
     logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
     subcontext.info("Just a string")
     logger.warn("Just " + 1)
@@ -41,8 +40,7 @@ class LoggingMacroTest extends WordSpec {
       override def level: Log.Level = Log.Level.Trace
     }
 
-    val ctx = StaticContext("test")
-    val logger = MacroLogger(recv, ctx)
+    val logger = MacroLogger(recv) 
     logger
   }
 }

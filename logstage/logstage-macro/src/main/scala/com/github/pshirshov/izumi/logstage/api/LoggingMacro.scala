@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.model.Log.{Message, StaticExtendedContext, ThreadData}
+import com.github.pshirshov.izumi.logstage.model.Log.{Message, StaticContext, StaticExtendedContext, ThreadData}
 import com.github.pshirshov.izumi.logstage.model.{AbstractLogger, Log, LogReceiver}
 
 import scala.language.experimental.macros
@@ -13,8 +13,6 @@ trait LoggingMacro {
   import com.github.pshirshov.izumi.logstage.api.LoggingMacro._
 
   def receiver: LogReceiver
-
-  def contextStatic: Log.StaticContext
 
   def contextCustom: Log.CustomContext
 
@@ -100,13 +98,17 @@ object LoggingMacro {
     val line = c.Expr[Int](c.universe.Literal(Constant(c.enclosingPosition.line)))
     val file = c.Expr[String](c.universe.Literal(Constant(c.enclosingPosition.source.file.name)))
 
+    val applicationPointId = c.Expr[String](c.universe.Literal(Constant(c.internal.enclosingOwner.fullName)))
+
     val context = reify {
       val self = c.prefix.splice.asInstanceOf[LoggingMacro]
       val thread = Thread.currentThread()
       val dynamicContext = Log.DynamicContext(logLevel.splice, ThreadData(thread.getName, thread.getId))
 
-      val staticContext = StaticExtendedContext(self.contextStatic, file.splice, line.splice)
-      Log.Context(staticContext, dynamicContext, self.contextCustom)
+
+      val staticContext = StaticContext(applicationPointId.splice)
+      val extendedStaticContext = StaticExtendedContext(staticContext, file.splice, line.splice)
+      Log.Context(extendedStaticContext, dynamicContext, self.contextCustom)
     }
 
     c.Expr[Unit] {
