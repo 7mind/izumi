@@ -15,7 +15,7 @@ class AService(logger: MacroLogger) {
     context.trace(s"This would be automatically extended") 
     logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
     subcontext.info("Just a string")
-    logger.warn("Just " + 1)
+    logger.warn("Just an integer: " + 1)
     logger.crit(s"This is an issue: ${2+2 == 4}")
   }
 }
