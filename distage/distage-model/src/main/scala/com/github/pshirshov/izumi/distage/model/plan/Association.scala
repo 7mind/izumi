@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.fundamentals.reflection._
 import com.github.pshirshov.izumi.distage.model.{DIKey, Formattable}
-import com.github.pshirshov.izumi.distage.reflection.DependencyContext
+import com.github.pshirshov.izumi.fundamentals.reflection._
 
 
 sealed trait Association extends Formattable {

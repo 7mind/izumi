@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.definition.{Id, With}
+import com.github.pshirshov.izumi.distage.model.definition.{Id, With}
 
 import scala.util.Random
 

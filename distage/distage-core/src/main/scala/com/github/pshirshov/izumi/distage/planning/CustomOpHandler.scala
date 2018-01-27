@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.fundamentals.reflection._
-import com.github.pshirshov.izumi.distage.definition.ImplDef
+import com.github.pshirshov.izumi.distage.model.definition.ImplDef
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedDefinitionException
 import com.github.pshirshov.izumi.distage.model.plan.Wiring
 

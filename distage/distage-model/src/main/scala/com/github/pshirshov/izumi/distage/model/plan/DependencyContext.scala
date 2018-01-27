@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.reflection
+package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.functions.Callable
 import com.github.pshirshov.izumi.distage.model.reflection.SelectedConstructor

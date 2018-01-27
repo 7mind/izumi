@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-import com.github.pshirshov.izumi.distage.definition.Id
+import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model.plan.DependencyContext
 import com.github.pshirshov.izumi.fundamentals.reflection._
 import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, EqualitySafeType}
 

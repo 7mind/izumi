@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.definition
+package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.CustomDef
 import com.github.pshirshov.izumi.distage.model.functions.Callable

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.definition.Binding
+import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, SetOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 

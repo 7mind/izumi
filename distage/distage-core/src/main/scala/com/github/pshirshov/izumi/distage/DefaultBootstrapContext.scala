@@ -1,10 +1,12 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.definition.{Binding, ImplDef, TrivialDIDef}
+import com.github.pshirshov.izumi.distage.definition.TrivialDIDef
+import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._

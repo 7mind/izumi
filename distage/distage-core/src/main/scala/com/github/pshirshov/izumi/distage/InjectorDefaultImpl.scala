@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.definition.ContextDefinition
+import com.github.pshirshov.izumi.distage.model.definition.ContextDefinition
 import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
 
 

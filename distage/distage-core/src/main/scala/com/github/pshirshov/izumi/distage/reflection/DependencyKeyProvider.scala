@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.reflection
 
 import com.github.pshirshov.izumi.distage.model.DIKey
-import com.github.pshirshov.izumi.distage.reflection.DependencyContext.{MethodContext, ParameterContext}
+import com.github.pshirshov.izumi.distage.model.plan.DependencyContext.{MethodContext, ParameterContext}
 import com.github.pshirshov.izumi.fundamentals.reflection._
 
 

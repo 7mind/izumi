@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.Planner
-import com.github.pshirshov.izumi.distage.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.definition.{Binding, ContextDefinition, ImplDef}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ContextDefinition, ImplDef}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.Wiring._
 import com.github.pshirshov.izumi.distage.model.plan._

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp._
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp}
 
 case class NextOps(
                     imports: Set[ImportDependency]

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.definition.ContextDefinition
+import com.github.pshirshov.izumi.distage.model.definition.ContextDefinition
 
 trait FinalPlan {
   def definition: ContextDefinition

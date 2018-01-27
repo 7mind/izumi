@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.commons
+package com.github.pshirshov.izumi.distage
 
 object StringUtils {
   def shift(s: String, delta: Int): String = {
