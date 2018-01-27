@@ -1,5 +1,6 @@
-package com.github.pshirshov.izumi.logstage.api 
+package com.github.pshirshov.izumi.logstage
 
+import com.github.pshirshov.izumi.logstage.api.ExtratingStringInterpolator
 import org.scalatest.WordSpec
 
 import scala.util.Random
