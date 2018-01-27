@@ -7,8 +7,6 @@ import org.scalatest.WordSpec
 import scala.util.Random
 
 class AService(logger: MacroLogger) {
-  //import logger._
-
   def start(): Unit = {
     val context = logger("userId" -> "xxx")
 
