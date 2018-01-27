@@ -5,8 +5,6 @@ import com.github.pshirshov.izumi.distage.model.exceptions.{IncompatibleTypesExc
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.provisioning.{OpResult, ProvisioningContext}
 
-import scala.collection.mutable
-
 class SetStrategyDefaultImpl extends SetStrategy {
   def makeSet(context: ProvisioningContext, op: ExecutableOp.SetOp.CreateSet): Seq[OpResult.NewInstance] = {
     import op._
@@ -21,10 +19,10 @@ class SetStrategyDefaultImpl extends SetStrategy {
         , tpe)
     }
 
-    Seq(OpResult.NewInstance(target, mutable.HashSet[Any]()))
+    Seq(OpResult.NewInstance(target, Set[Any]()))
   }
 
-  def addToSet(context: ProvisioningContext, op: ExecutableOp.SetOp.AddToSet): Seq[OpResult.SetElement] = {
+  def addToSet(context: ProvisioningContext, op: ExecutableOp.SetOp.AddToSet): Seq[OpResult.UpdatedSet] = {
     // value is guaranteed to have already been instantiated or imported
     val targetElement = context.fetchKey(op.element) match {
       case Some(value) =>
@@ -36,7 +34,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
 
     // set is guaranteed to have already been added
     val targetSet = context.fetchKey(op.target) match {
-      case Some(set: mutable.HashSet[_]) =>
+      case Some(set: Set[_]) =>
         set
       case Some(somethingElse) =>
         throw new InvalidPlanException(s"The impossible happened! Tried to add instance to Set Binding," +
@@ -47,7 +45,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
           s" but Set has not been initialized! Set: ${op.target}, instance: ${op.element}")
     }
 
-    Seq(OpResult.SetElement(targetSet.asInstanceOf[mutable.HashSet[Any]], targetElement))
+    Seq(OpResult.UpdatedSet(op.target,  targetSet.asInstanceOf[Set[Any]] + targetElement))
   }
 }
 

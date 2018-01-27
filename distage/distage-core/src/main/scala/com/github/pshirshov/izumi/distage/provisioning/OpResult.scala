@@ -2,8 +2,6 @@ package com.github.pshirshov.izumi.distage.provisioning
 
 import com.github.pshirshov.izumi.distage.model.DIKey
 
-import scala.collection.mutable
-
 sealed trait OpResult {}
 
 object OpResult {
@@ -12,5 +10,5 @@ object OpResult {
 
   case class NewImport(key: DIKey, value: Any) extends OpResult
 
-  case class SetElement(set: mutable.HashSet[Any], instance: Any) extends OpResult
+  case class UpdatedSet(key: DIKey, set: Set[Any]) extends OpResult
 }

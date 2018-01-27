@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{SetOp, Wiring
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 
-import scala.collection.mutable
 import scala.util.{Failure, Try}
 
 
@@ -40,15 +39,15 @@ class ProvisionerDefaultImpl
         }
 
     }
+//
+//    val withImmutableSets = provisions.instances.map {
+//      case (key, value: mutable.HashSet[_]) if  =>
+//        (key, value.toSet)
+//      case v =>
+//        v
+//    }
 
-    val withImmutableSets = provisions.instances.map {
-      case (key, value: mutable.HashSet[_]) =>
-        (key, value.toSet)
-      case v =>
-        v
-    }
-
-    ProvisionImmutable(withImmutableSets, provisions.imports)
+    ProvisionImmutable(provisions.instances, provisions.imports)
   }
 
   private def interpretResult(active: ProvisionActive, result: OpResult): Unit = {
@@ -71,11 +70,8 @@ class ProvisionerDefaultImpl
         }
         active.instances += (target -> value)
 
-      case OpResult.SetElement(set, instance) =>
-        if (set == instance) {
-          throw new DIException(s"Pathological case. Tried to add set into itself: $set", null)
-        }
-        set += instance
+      case OpResult.UpdatedSet(target, instance) =>
+        active.instances += (target -> instance)
     }
   }
 
