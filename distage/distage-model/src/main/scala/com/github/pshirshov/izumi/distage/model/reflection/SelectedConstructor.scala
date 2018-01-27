@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.reflection
+package com.github.pshirshov.izumi.distage.model.reflection
 
 import com.github.pshirshov.izumi.fundamentals.reflection._
 

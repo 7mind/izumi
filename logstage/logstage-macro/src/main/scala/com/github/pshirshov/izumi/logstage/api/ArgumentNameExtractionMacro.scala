@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
 
-import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 

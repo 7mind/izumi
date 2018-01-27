@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.reflection
 
+import com.github.pshirshov.izumi.distage.model.reflection.SelectedConstructor
 import com.github.pshirshov.izumi.fundamentals.reflection._
-
 import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
 
 import scala.reflect.runtime.universe

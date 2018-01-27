@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.reflection
 
 import com.github.pshirshov.izumi.distage.model.functions.Callable
+import com.github.pshirshov.izumi.distage.model.reflection.SelectedConstructor
 import com.github.pshirshov.izumi.fundamentals.reflection._
 
 sealed trait DependencyContext {
