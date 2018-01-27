@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api.logger
 
+import com.github.pshirshov.izumi.logstage.api.config.LogConfigService
 import com.github.pshirshov.izumi.logstage.model.Log.{Entry, Message}
 import com.github.pshirshov.izumi.logstage.model.{Log, LogReceiver}
 

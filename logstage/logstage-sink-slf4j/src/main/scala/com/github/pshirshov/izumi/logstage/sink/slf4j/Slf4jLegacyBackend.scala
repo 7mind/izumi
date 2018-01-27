@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.api.logger.slfj
+package com.github.pshirshov.izumi.logstage.sink.slf4j
 
 import com.github.pshirshov.izumi.logstage.api.logger.RoutingLogReceiver
 
