@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.EqualitySafeType
-import com.github.pshirshov.izumi.distage.model.exceptions.{IncompatibleTypesException, InvalidPlanException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, IncompatibleTypesException, InvalidPlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.provisioning.{OpResult, ProvisioningContext}
 
@@ -35,7 +35,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
     // set is guaranteed to have already been added
     val targetSet = context.fetchKey(op.target) match {
       case Some(set: Set[_]) =>
-        set
+        set.asInstanceOf[Set[Any]]
       case Some(somethingElse) =>
         throw new InvalidPlanException(s"The impossible happened! Tried to add instance to Set Binding," +
           s" but target Set is not a Set! It's ${somethingElse.getClass.getName}")
@@ -45,7 +45,11 @@ class SetStrategyDefaultImpl extends SetStrategy {
           s" but Set has not been initialized! Set: ${op.target}, instance: ${op.element}")
     }
 
-    Seq(OpResult.UpdatedSet(op.target,  targetSet.asInstanceOf[Set[Any]] + targetElement))
+    if (targetSet == targetElement) {
+      throw new DIException(s"Pathological case. Tried to add set into itself: $targetSet", null)
+    }
+
+    Seq(OpResult.UpdatedSet(op.target, targetSet + targetElement))
   }
 }
 
