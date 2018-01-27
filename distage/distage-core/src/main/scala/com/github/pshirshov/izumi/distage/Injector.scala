@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.model.{Locator, Planner, Producer}
+
 trait Injector extends Planner with Producer {
 
 }

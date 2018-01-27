@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.model.DIKey
-import com.github.pshirshov.izumi.distage.planning.PlanResolver
+import com.github.pshirshov.izumi.distage.model.planning.PlanResolver
+import com.github.pshirshov.izumi.distage.model.references.DIKey
 import org.scalatest.WordSpec
 
 class ModelTest extends WordSpec {

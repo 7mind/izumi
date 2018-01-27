@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model.references.DIKey
 
 sealed trait BindingT[T] {
   def target: T

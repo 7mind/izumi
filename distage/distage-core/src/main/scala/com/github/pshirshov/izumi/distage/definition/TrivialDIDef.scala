@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.definition
 
-import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{SingletonBindingT, _}
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
+import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, _}
 
 import scala.Function.const

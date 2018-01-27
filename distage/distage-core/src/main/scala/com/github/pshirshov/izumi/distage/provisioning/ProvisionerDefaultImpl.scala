@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.Locator
+import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{SetOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
-import com.github.pshirshov.izumi.distage.provisioning.strategies._
+import com.github.pshirshov.izumi.distage.model.provisioning._
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 
 import scala.util.{Failure, Try}
 

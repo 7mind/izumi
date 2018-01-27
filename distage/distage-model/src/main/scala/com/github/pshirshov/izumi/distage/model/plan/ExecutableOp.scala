@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.StringUtils
 import com.github.pshirshov.izumi.distage.model.plan.Wiring._
-import com.github.pshirshov.izumi.distage.model.{DIKey, Formattable}
+import com.github.pshirshov.izumi.distage.model.references.DIKey
+import com.github.pshirshov.izumi.distage.model.util.Formattable
 import com.github.pshirshov.izumi.fundamentals.reflection._
+import com.github.pshirshov.izumi.fundamentals.strings.StringUtils
 
 // TODO: typeclass?..
 sealed trait ExecutableOp extends Formattable {

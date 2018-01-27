@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model.provisioning.{Provision, ProvisionImmutable}
+import com.github.pshirshov.izumi.distage.model.references.DIKey
 
 import scala.collection.mutable
 

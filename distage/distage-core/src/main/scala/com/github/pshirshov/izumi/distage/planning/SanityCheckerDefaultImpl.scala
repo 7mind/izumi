@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.model.exceptions.{DuplicateKeysException, ForwardRefException, MissingRefException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, SetOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
+import com.github.pshirshov.izumi.distage.model.references.DIKey
 
 import scala.collection.mutable
 

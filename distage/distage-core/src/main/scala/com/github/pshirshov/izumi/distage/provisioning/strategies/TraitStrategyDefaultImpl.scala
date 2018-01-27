@@ -6,20 +6,14 @@ import com.github.pshirshov.izumi.fundamentals.reflection._
 import com.github.pshirshov.izumi.distage.commons.TraitTools
 import com.github.pshirshov.izumi.distage.model.plan.Association
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{TraitField, TraitIndex, TraitStrategy}
+import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibTraitMethodInterceptor, CglibTools}
-import com.github.pshirshov.izumi.distage.provisioning.{OpResult, ProvisioningContext}
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe._
 
-case class TraitField(name: String)
-
-case class TraitIndex(
-                       methods: Map[Method, Association.Method]
-                       , getters: Map[String, TraitField]
-                       , setters: Map[String, TraitField]
-                     )
 
 class TraitStrategyDefaultImpl extends TraitStrategy {
   def makeTrait(context: ProvisioningContext, t: WiringOp.InstantiateTrait): Seq[OpResult] = {
@@ -57,10 +51,10 @@ object TraitStrategyDefaultImpl {
         m
     }
 
-    val getters = vals.map{ v =>
+    val getters = vals.map { v =>
       v.name.toString -> TraitField(v.name.toString)
     }.toMap
-    
+
     val setters = vals.map {
       v =>
         val runtimeClass = tpe.tpe.typeSymbol.asClass.fullName

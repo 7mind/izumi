@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.Locator
-import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.provisioning.{Provision, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.references.DIKey
 
 case class LocatorContext(provision: Provision, locator: Locator) extends ProvisioningContext {
   override def fetchKey(key: DIKey): Option[Any] = provision.get(key)

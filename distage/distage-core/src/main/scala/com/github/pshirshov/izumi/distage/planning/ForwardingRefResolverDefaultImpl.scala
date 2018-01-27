@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
+import com.github.pshirshov.izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
+import com.github.pshirshov.izumi.distage.model.references.DIKey
 
 import scala.collection.mutable
 

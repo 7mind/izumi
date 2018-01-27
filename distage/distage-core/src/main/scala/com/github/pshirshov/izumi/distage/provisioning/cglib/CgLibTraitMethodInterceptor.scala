@@ -4,8 +4,8 @@ import java.lang.reflect.Method
 
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingRefException
-import com.github.pshirshov.izumi.distage.provisioning.ProvisioningContext
-import com.github.pshirshov.izumi.distage.provisioning.strategies.TraitIndex
+import com.github.pshirshov.izumi.distage.model.provisioning.ProvisioningContext
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitIndex
 
 import scala.collection.mutable
 

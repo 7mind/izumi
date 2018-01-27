@@ -2,8 +2,9 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.commons.TraitTools
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryStrategy
+import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibFactoryMethodInterceptor, CglibTools}
-import com.github.pshirshov.izumi.distage.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.runtime._

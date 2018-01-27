@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.{DIKey, Formattable}
+import com.github.pshirshov.izumi.distage.model.references.DIKey
+import com.github.pshirshov.izumi.distage.model.util.Formattable
 import com.github.pshirshov.izumi.fundamentals.reflection._
 
 

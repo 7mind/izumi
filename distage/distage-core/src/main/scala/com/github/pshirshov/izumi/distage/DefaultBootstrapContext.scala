@@ -5,8 +5,12 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBind
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model._
 import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring
+import com.github.pshirshov.izumi.distage.model.planning._
+import com.github.pshirshov.izumi.distage.model.provisioning.Provisioner
+import com.github.pshirshov.izumi.distage.model.references.{DIKey, IdentifiedRef}
+import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider}
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
@@ -16,8 +20,8 @@ import com.github.pshirshov.izumi.fundamentals.reflection._
 
 
 
-trait DefaultBootstrapContext extends Locator {
-  override def parent: Option[Locator] = None
+trait DefaultBootstrapContext extends AbstractLocator {
+  override def parent: Option[AbstractLocator] = None
 
   private val bootstrapProducer = new ProvisionerDefaultImpl(
     ProvisionerHookDefaultImpl.instance

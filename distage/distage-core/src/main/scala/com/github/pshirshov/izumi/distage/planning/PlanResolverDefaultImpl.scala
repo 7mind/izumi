@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.definition.ContextDefinition
 import com.github.pshirshov.izumi.distage.model.exceptions.UntranslatablePlanException
 import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan, FinalPlanImmutableImpl}
+import com.github.pshirshov.izumi.distage.model.planning.PlanResolver
 
 
 

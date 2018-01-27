@@ -3,14 +3,14 @@ package com.github.pshirshov.izumi.distage.provisioning.cglib
 import java.lang.reflect.Method
 
 import net.sf.cglib.proxy.MethodProxy
-import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnsupportedWiringException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.plan.Wiring.{FactoryMethod, UnaryWiring}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, Wiring}
-import com.github.pshirshov.izumi.distage.provisioning.OpResult.{NewImport, NewInstance}
-import com.github.pshirshov.izumi.distage.provisioning.strategies.{JustExecutor, TraitIndex}
-import com.github.pshirshov.izumi.distage.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.provisioning.OpResult.{NewImport, NewInstance}
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExecutor, TraitIndex}
+import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
 
 import scala.reflect.runtime.currentMirror

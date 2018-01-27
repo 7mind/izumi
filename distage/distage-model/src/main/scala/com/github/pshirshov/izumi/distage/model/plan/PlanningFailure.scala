@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
+import com.github.pshirshov.izumi.distage.model.references.DIKey
 
 
 sealed trait PlanningFailure {}

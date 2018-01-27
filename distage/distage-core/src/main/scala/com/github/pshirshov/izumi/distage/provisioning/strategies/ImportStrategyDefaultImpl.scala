@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
-import com.github.pshirshov.izumi.distage.provisioning.{OpResult, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ImportStrategy
+import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
 
 class ImportStrategyDefaultImpl extends ImportStrategy {
   override def importDependency(context: ProvisioningContext, op: ExecutableOp.ImportDependency): Seq[OpResult] = {

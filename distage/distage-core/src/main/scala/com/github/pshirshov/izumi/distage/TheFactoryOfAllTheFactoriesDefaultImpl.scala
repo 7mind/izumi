@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model.{Locator, TheFactoryOfAllTheFactories}
 import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
-import com.github.pshirshov.izumi.distage.provisioning.Provisioner
+import com.github.pshirshov.izumi.distage.model.provisioning.Provisioner
+import com.github.pshirshov.izumi.distage.model.references.{DIKey, IdentifiedRef}
 
 class TheFactoryOfAllTheFactoriesDefaultImpl(
                                               provisioner: Provisioner
@@ -10,7 +11,7 @@ class TheFactoryOfAllTheFactoriesDefaultImpl(
   override def produce(finalPlan: FinalPlan, parentContext: Locator): Locator = {
     val dependencyMap = provisioner.provision(finalPlan, parentContext)
 
-    new Locator {
+    new AbstractLocator {
       override val parent: Option[Locator] = Option(parentContext)
 
       override protected def unsafeLookup(key: DIKey): Option[Any] =

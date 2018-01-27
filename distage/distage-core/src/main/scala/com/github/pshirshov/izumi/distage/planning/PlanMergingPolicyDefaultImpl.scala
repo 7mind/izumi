@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, SetOp}
 import com.github.pshirshov.izumi.distage.model.plan._
+import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 
 class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
   def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {

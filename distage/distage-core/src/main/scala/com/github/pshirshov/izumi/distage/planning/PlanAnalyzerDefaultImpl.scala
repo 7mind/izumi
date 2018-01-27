@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.{DIKey, RefTable}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
+import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
+import com.github.pshirshov.izumi.distage.model.references.{DIKey, RefTable}
 
 import scala.collection.mutable
 

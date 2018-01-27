@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.StringUtils
-import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.model.plan.Wiring._
 import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring._
+import com.github.pshirshov.izumi.distage.model.references.DIKey
+import com.github.pshirshov.izumi.fundamentals.strings.StringUtils
 
 
 object FormattingUtils {
