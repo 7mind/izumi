@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{SetOp, Wiring
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 
+import scala.collection.mutable
 import scala.util.{Failure, Try}
 
 
@@ -40,7 +41,14 @@ class ProvisionerDefaultImpl
 
     }
 
-    ProvisionImmutable(provisions.instances, provisions.imports)
+    val withImmutableSets = provisions.instances.map {
+      case (key, value: mutable.HashSet[_]) =>
+        (key, value.toSet)
+      case v =>
+        v
+    }
+
+    ProvisionImmutable(withImmutableSets, provisions.imports)
   }
 
   private def interpretResult(active: ProvisionActive, result: OpResult): Unit = {

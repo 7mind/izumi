@@ -1,10 +1,9 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
+import com.github.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
 
-import scala.collection.mutable
 import scala.reflect.runtime.universe._
 
 case class TypedRef[+T: Tag](value: T) {
@@ -26,10 +25,7 @@ trait Locator {
     unsafeLookup(key)
       .filter(_ => key.symbol.tpe.baseClasses.contains(typeTag[T].tpe.typeSymbol))
       .map {
-        case value: mutable.HashSet[_] =>
-          TypedRef[T](value.toSet.asInstanceOf[T])
-
-        case value =>
+        value =>
           TypedRef[T](value.asInstanceOf[T])
       }
   }
