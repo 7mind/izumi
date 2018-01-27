@@ -51,9 +51,13 @@ object IzumiDslPlugin extends AutoPlugin {
         settings(SettingsGroupId.GlobalSettingsGroup)
       }
 
-      def settings(groupId: SettingsGroupId): Project = {
-        val groupSettings = getInstance.globalSettings.allSettings(groupId)
-        val extenders = groupSettings.extenders
+      def settings(groupIds: SettingsGroupId*): Project = {
+        val extenders = groupIds.flatMap {
+          groupId =>
+            val groupSettings = getInstance.globalSettings.allSettings(groupId)
+            groupSettings.extenders
+        }
+        
         logger.debug(s"Applying ${extenders.size} transformers to ${project.id}...")
 
         extenders.foldLeft(project) {
@@ -81,24 +85,30 @@ object IzumiDslPlugin extends AutoPlugin {
       }
     }
 
-    class WithBase(name: String, base: String) {
+    class WithBase(name: String, base: String, settingsGroups: Seq[SettingsGroupId]) {
+      private def dirProject = Project(name, new File(base))
+
       private def moduleProject = Project(name, new File(s"$base/$name"))
 
-      private def dirProject = Project(name, new File(base))
+      def just: Project = moduleProject
 
       def project: Project = moduleProject.remember
 
-      def module: Project = moduleProject.globalSettings.remember
-
       def root: Project = dirProject.rootSettings
+
+      def module: Project = moduleProject.globalSettings.settings(settingsGroups: _*).remember
     }
 
-    class In(val directory: String) {
+    class In(val directory: String, val settingsGroups: Seq[SettingsGroupId]) {
+      def withModuleSettings(groupId: SettingsGroupId) = {
+        new In(directory, settingsGroups :+ groupId)
+      }
+
       def as: WithBase = macro ExtendedProjectMacro.projectUnifiedDslMacro
     }
 
     object In {
-      def apply(directory: String): In = new In(directory)
+      def apply(directory: String): In = new In(directory, Seq.empty)
     }
 
   }

@@ -44,7 +44,7 @@ val globalDefs = setup(baseSettings)
 // -- common project directories
 val inRoot = In(".")
 val inLib = In("lib")
-val inApp = In("app")
+val inApp = In("app").withModuleSettings(AppSettings)
 
 // -- shared definitions (will be added into each project extened with Izumi
 lazy val sharedLib = inLib.as.module
@@ -64,7 +64,6 @@ lazy val justLib = inLib.as.module
 
 lazy val justApp = inApp.as.module
   .depends(justLib)
-  .settings(AppSettings)
 
 lazy val root = inRoot.as.root
   .transitiveAggregate(

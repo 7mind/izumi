@@ -9,8 +9,10 @@ object ExtendedProjectMacro {
     import c.universe._
     val name: c.Expr[String] = extractName(c)
     reify {
-      val directory = c.prefix.splice.asInstanceOf[In].directory
-      new WithBase(name.splice, directory)
+      val enclosure = c.prefix.splice.asInstanceOf[In]
+      val directory = enclosure.directory
+      val settingGroups = enclosure.settingsGroups
+      new WithBase(name.splice, directory, settingGroups)
     }
   }
 

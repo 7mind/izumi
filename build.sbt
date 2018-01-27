@@ -82,8 +82,11 @@ val baseSettings = new GlobalSettings {
 
 val inRoot = In(".")
 val inDiStage = In("distage")
+  .withModuleSettings(LibSettings)
 val inLogStage = In("logstage")
+  .withModuleSettings(LibSettings)
 val inFundamentals = In("fundamentals")
+  .withModuleSettings(LibSettings)
 
 // --------------------------------------------
 
@@ -116,11 +119,9 @@ lazy val distageMacro = inDiStage.as.module
   .settings(
     libraryDependencies ++= Seq(R.scala_reflect)
   )
-  .settings(LibSettings)
 
 lazy val distageCore = inDiStage.as.module
   .depends(distageMacro)
-  .settings(LibSettings)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
@@ -129,22 +130,17 @@ lazy val distageCore = inDiStage.as.module
   )
 
 lazy val logstageModel = inLogStage.as.module
-  .settings(LibSettings)
 
 lazy val logstageMacro = inLogStage.as.module
-  .settings(LibSettings)
   .depends(logstageModel)
 
 lazy val logstageApi = inLogStage.as.module
-  .settings(LibSettings)
   .depends(logstageMacro)
 
 lazy val logstageCore = inLogStage.as.module
-  .settings(LibSettings)
   .depends(logstageApi)
 
 lazy val logstageDi = inLogStage.as.module
-  .settings(LibSettings)
   .depends(logstageApi)
 
 lazy val logstage: Seq[ProjectReference] = Seq(logstageDi, logstageCore)
@@ -155,6 +151,6 @@ lazy val allProjects = distage ++ logstage ++ izsbt
 
 lazy val root = inRoot.as
   .root
-  .transitiveAggregate( allProjects :_* )
+  .transitiveAggregate(allProjects: _*)
 
 
