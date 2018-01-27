@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.distage.provisioning.traitcompiler
 
-import com.github.pshirshov.izumi.distage.definition.WrappedFunction
-import com.github.pshirshov.izumi.distage.model.EqualitySafeType
+import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
 import com.github.pshirshov.izumi.distage.reflection.{SymbolIntrospector, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.distage.{TypeNative, TypeSymb}
+import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, TypeNative, TypeSymb}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox

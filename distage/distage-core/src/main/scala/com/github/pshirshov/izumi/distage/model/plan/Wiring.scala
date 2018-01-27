@@ -1,8 +1,10 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.{Callable, DIKey}
+import com.github.pshirshov.izumi.distage.CustomDef
+import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model.functions.Callable
 import com.github.pshirshov.izumi.distage.model.plan.Association.{Method, Parameter}
-import com.github.pshirshov.izumi.distage.{CustomDef, MethodSymb, TypeFull, TypeSymb}
+import com.github.pshirshov.izumi.fundamentals.reflection._
 
 sealed trait Wiring {
   def associations: Seq[Association]

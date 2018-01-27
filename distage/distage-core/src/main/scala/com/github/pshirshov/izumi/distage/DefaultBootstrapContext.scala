@@ -4,11 +4,14 @@ import com.github.pshirshov.izumi.distage.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.definition.{Binding, ImplDef, TrivialDIDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
+import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
+import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
+import com.github.pshirshov.izumi.fundamentals.reflection._
+
 
 
 trait DefaultBootstrapContext extends Locator {

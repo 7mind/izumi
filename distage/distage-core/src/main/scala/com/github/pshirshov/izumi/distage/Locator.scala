@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
-import com.github.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
+import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, Tag, TypeFull}
 
 import scala.reflect.runtime.universe._
 

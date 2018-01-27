@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.TypeSymb
+import com.github.pshirshov.izumi.fundamentals.reflection._
 import com.github.pshirshov.izumi.distage.model.{DIKey, Formattable}
 import com.github.pshirshov.izumi.distage.reflection.DependencyContext
 

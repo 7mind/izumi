@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.reflection
 
 import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.reflection.DependencyContext.{MethodContext, ParameterContext}
-import com.github.pshirshov.izumi.distage.{MethodSymb, TypeFull, TypeSymb}
+import com.github.pshirshov.izumi.fundamentals.reflection._
 
 
 trait DependencyKeyProvider {

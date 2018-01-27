@@ -1,6 +1,5 @@
-package com.github.pshirshov.izumi.distage.commons
+package com.github.pshirshov.izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.distage.{Tag, TypeSymb}
 
 import scala.reflect.runtime.universe
 

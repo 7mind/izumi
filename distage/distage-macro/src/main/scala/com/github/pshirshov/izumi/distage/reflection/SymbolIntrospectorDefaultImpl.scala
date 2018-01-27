@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-import com.github.pshirshov.izumi.distage.model.EqualitySafeType
-import com.github.pshirshov.izumi.distage.{MethodSymb, TypeFull, TypeSymb}
+import com.github.pshirshov.izumi.fundamentals.reflection._
+
+import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
 
 import scala.reflect.runtime.universe
 

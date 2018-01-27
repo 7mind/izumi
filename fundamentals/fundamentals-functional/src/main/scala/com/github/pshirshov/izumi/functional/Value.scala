@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.commons
+package com.github.pshirshov.izumi.functional
 
 class Value[A] private(value: A) {
   @inline final def map[B](f: A => B): Value[B] = {

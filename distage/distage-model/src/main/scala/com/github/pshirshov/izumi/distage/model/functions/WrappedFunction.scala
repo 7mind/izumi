@@ -1,7 +1,6 @@
-package com.github.pshirshov.izumi.distage.definition
+package com.github.pshirshov.izumi.distage.model.functions
 
-import com.github.pshirshov.izumi.distage.{TypeFull, _}
-import com.github.pshirshov.izumi.distage.model.{Callable, EqualitySafeType}
+import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, Tag, TypeFull}
 
 sealed trait WrappedFunction[+R] extends Callable {
   def ret: TypeFull

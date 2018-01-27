@@ -1,5 +1,5 @@
 package com.github.pshirshov.izumi.distage.reflection
-import com.github.pshirshov.izumi.distage.{MethodSymb, TypeFull, TypeSymb}
+import com.github.pshirshov.izumi.fundamentals.reflection._
 
 trait SymbolIntrospector {
 

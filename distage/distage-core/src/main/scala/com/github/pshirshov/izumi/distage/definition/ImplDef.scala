@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.definition
 
-import com.github.pshirshov.izumi.distage.model.Callable
-import com.github.pshirshov.izumi.distage.{CustomDef, TypeFull}
+import com.github.pshirshov.izumi.distage.CustomDef
+import com.github.pshirshov.izumi.distage.model.functions.Callable
+import com.github.pshirshov.izumi.fundamentals.reflection._
 
 sealed trait ImplDef
 

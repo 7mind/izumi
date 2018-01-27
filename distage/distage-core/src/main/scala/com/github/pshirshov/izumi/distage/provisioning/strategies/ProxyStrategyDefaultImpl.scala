@@ -2,9 +2,10 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
-import com.github.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
+import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools}
 import com.github.pshirshov.izumi.distage.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
+import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
 
 import scala.reflect.runtime.currentMirror
 

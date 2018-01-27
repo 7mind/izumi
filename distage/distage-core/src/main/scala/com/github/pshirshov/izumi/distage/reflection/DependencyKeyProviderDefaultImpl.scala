@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-import com.github.pshirshov.izumi.distage.commons.AnnotationTools
 import com.github.pshirshov.izumi.distage.definition.Id
-import com.github.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
-import com.github.pshirshov.izumi.distage.{MethodSymb, TypeFull, TypeSymb}
+import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.fundamentals.reflection._
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, EqualitySafeType}
 
 import scala.reflect.runtime.universe
 

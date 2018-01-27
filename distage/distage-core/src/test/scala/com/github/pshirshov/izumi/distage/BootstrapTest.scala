@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.planning.{PlanResolver, PlanResolverDefaultImpl}
+import com.github.pshirshov.izumi.fundamentals.reflection.Tag
 import org.scalatest.WordSpec
 
 

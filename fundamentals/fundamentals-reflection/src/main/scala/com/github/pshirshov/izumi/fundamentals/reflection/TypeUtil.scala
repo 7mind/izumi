@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.commons
+package com.github.pshirshov.izumi.fundamentals.reflection
 
 object TypeUtil {
   def isAssignableFrom(tpe: Class[_], obj: AnyRef): Boolean = {

@@ -98,6 +98,49 @@ val globalDefs = setup(baseSettings)
   .withSharedLibs(fundamentalsCollections)
 // --------------------------------------------
 
+lazy val fundamentalsReflection = inFundamentals.as.module
+  .settings(LibSettings)
+
+lazy val fundamentalsFunctional = inFundamentals.as.module
+  .settings(LibSettings)
+
+
+lazy val distageModel = inDiStage.as.module
+    .depends(fundamentalsReflection)
+
+lazy val distageMacro = inDiStage.as.module
+  .depends(distageModel)
+  .settings(
+    libraryDependencies ++= Seq(R.scala_reflect)
+  )
+
+lazy val distageCore = inDiStage.as.module
+  .depends(distageMacro, fundamentalsFunctional)
+  .settings(
+    libraryDependencies ++= Seq(
+      R.scala_reflect
+      , R.cglib_nodep
+    )
+  )
+
+
+
+lazy val logstageModel = inLogStage.as.module
+
+lazy val logstageMacro = inLogStage.as.module
+  .depends(logstageModel)
+
+lazy val logstageApi = inLogStage.as.module
+  .depends(logstageMacro)
+
+lazy val logstageCore = inLogStage.as.module
+  .depends(logstageApi)
+
+lazy val logstageDi = inLogStage.as.module
+  .depends(logstageApi)
+
+
+
 lazy val sbtIzumi = inRoot.as
   .module
   .enablePlugins(ScriptedPlugin)
@@ -114,34 +157,6 @@ lazy val sbtIzumi = inRoot.as
   )
 
 
-
-lazy val distageMacro = inDiStage.as.module
-  .settings(
-    libraryDependencies ++= Seq(R.scala_reflect)
-  )
-
-lazy val distageCore = inDiStage.as.module
-  .depends(distageMacro)
-  .settings(
-    libraryDependencies ++= Seq(
-      R.scala_reflect
-      , R.cglib_nodep
-    )
-  )
-
-lazy val logstageModel = inLogStage.as.module
-
-lazy val logstageMacro = inLogStage.as.module
-  .depends(logstageModel)
-
-lazy val logstageApi = inLogStage.as.module
-  .depends(logstageMacro)
-
-lazy val logstageCore = inLogStage.as.module
-  .depends(logstageApi)
-
-lazy val logstageDi = inLogStage.as.module
-  .depends(logstageApi)
 
 lazy val logstage: Seq[ProjectReference] = Seq(logstageDi, logstageCore)
 lazy val distage: Seq[ProjectReference] = Seq(distageCore)

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model
 
-import com.github.pshirshov.izumi.distage.{Tag, TypeFull}
+import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, Tag, TypeFull}
 
 sealed trait DIKey {
   def symbol: TypeFull

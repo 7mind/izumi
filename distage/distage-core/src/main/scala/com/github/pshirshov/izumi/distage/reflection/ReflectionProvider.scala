@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.reflection
-import com.github.pshirshov.izumi.distage.TypeFull
-import com.github.pshirshov.izumi.distage.model.Callable
+import com.github.pshirshov.izumi.distage.model.functions.Callable
+import com.github.pshirshov.izumi.fundamentals.reflection._
 import com.github.pshirshov.izumi.distage.model.plan.Wiring
 
 trait ReflectionProvider {

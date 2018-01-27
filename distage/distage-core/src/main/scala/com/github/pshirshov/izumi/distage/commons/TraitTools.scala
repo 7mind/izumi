@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.commons
 
 import java.lang.reflect.InvocationTargetException
 
-import com.github.pshirshov.izumi.distage.TypeFull
+import com.github.pshirshov.izumi.fundamentals.reflection._
 import com.github.pshirshov.izumi.distage.model.exceptions.TraitInitializationFailedException
 
 object TraitTools {

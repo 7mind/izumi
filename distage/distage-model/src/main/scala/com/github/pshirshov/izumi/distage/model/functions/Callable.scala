@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model
+package com.github.pshirshov.izumi.distage.model.functions
 
-import com.github.pshirshov.izumi.distage.TypeFull
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsafeCallArgsMismatched
+import com.github.pshirshov.izumi.fundamentals.reflection.TypeFull
 
 import scala.reflect.runtime.universe._
 trait Callable {

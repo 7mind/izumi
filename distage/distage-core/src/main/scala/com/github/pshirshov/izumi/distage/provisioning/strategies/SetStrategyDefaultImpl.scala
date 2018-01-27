@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.EqualitySafeType
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, IncompatibleTypesException, InvalidPlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.provisioning.{OpResult, ProvisioningContext}
+import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
 
 class SetStrategyDefaultImpl extends SetStrategy {
   def makeSet(context: ProvisioningContext, op: ExecutableOp.SetOp.CreateSet): Seq[OpResult.NewInstance] = {

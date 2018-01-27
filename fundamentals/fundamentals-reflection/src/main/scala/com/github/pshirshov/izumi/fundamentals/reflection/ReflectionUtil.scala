@@ -1,8 +1,7 @@
-package com.github.pshirshov.izumi.distage.commons
+package com.github.pshirshov.izumi.fundamentals.reflection
 
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.{TypeFull, TypeSymb}
 
 import scala.language.reflectiveCalls
 import scala.reflect.internal.Symbols

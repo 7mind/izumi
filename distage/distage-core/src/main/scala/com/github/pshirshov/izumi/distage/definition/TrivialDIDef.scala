@@ -2,10 +2,12 @@ package com.github.pshirshov.izumi.distage.definition
 
 import com.github.pshirshov.izumi.distage.definition.Binding.{SingletonBindingT, _}
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
-import com.github.pshirshov.izumi.distage.model.{DIKey, EqualitySafeType}
+import com.github.pshirshov.izumi.distage.model.DIKey
+import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
 import com.github.pshirshov.izumi.distage.provisioning.traitcompiler.TraitConstructorMacro
 import com.github.pshirshov.izumi.distage.reflection.{SymbolIntrospector, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.distage.{Tag, TypeNative}
+import com.github.pshirshov.izumi.fundamentals.reflection._
+import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
 
 import scala.Function.const
 import scala.language.experimental.macros

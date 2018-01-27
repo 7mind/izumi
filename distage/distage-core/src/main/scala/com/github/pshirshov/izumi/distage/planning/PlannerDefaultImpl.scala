@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.Planner
-import com.github.pshirshov.izumi.distage.commons.Value
 import com.github.pshirshov.izumi.distage.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.definition.{Binding, ContextDefinition, ImplDef}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
@@ -9,7 +8,8 @@ import com.github.pshirshov.izumi.distage.model.plan.Wiring._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.DIKey
 import com.github.pshirshov.izumi.distage.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.TypeFull
+import com.github.pshirshov.izumi.fundamentals.reflection._
+import com.github.pshirshov.izumi.functional.Value
 
 
 class PlannerDefaultImpl
