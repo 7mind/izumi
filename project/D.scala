@@ -10,6 +10,7 @@ object D {
     // TODO: temporary (I hope) solution, we have to ship our own cglib depending on scala-asm
     val cglib_nodep = "cglib" % "cglib-nodep" % "3.2.6"
 
+    val slf4j_api = "org.slf4j" % "slf4j-api" % "1.7.25"
 
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0"
 

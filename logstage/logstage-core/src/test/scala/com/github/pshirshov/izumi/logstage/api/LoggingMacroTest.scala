@@ -5,7 +5,7 @@ import org.scalatest.WordSpec
 
 import scala.util.Random
 
-class AService(logger: MacroLogger) {
+class AService(logger: IzLogger) {
   def start(): Unit = {
     val context = logger("userId" -> "xxx")
     val subcontext = context("c" -> "d")
@@ -40,7 +40,7 @@ class LoggingMacroTest extends WordSpec {
       override def level: Log.Level = Log.Level.Trace
     }
 
-    val logger = MacroLogger(recv) 
+    val logger = IzLogger(recv)
     logger
   }
 }

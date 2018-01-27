@@ -7,9 +7,27 @@ import com.github.pshirshov.izumi.logstage.model.Log.Message
 
 
 trait LogSink {
+  def flush(e: Log.Entry): Unit
+}
+
+class ConsoleSink extends LogSink {
+  // TODO : implement message buffer
+  def flush(e: Log.Entry): Unit = {
+    val renderedMessage = renderMessage(e)
+    val fullValues = e.context.customContext.values ++
+      parseValues(e.message) ++
+      Map("message" -> renderedMessage, "message_template" -> renderMessage(e, onlyTemplate = true))
+
+    val coloredLvl = s"${GUIUtils.logLevelColor(e.context.dynamic.level)}${e.context.dynamic.level}${Console.RESET}"
+    val thread = s"${e.context.dynamic.threadData.threadId}:${e.context.dynamic.threadData.threadName}"
+    val renderedSystemOutput = String.format(
+      "%-25s%-16s%-8s%-30s", LocalDateTime.now(), coloredLvl, thread, e.context.static.id.id
+    )
+    println {s"""$renderedSystemOutput : $renderedMessage"""}
+  }
 
   def parseValues(msg: Message): Map[String, Any] = {
-    msg.args.foldLeft(Map.empty[String, Any]){
+    msg.args.foldLeft(Map.empty[String, Any]) {
       case (map, (k, v)) =>
         map ++ Map(k -> v)
     }
@@ -25,11 +43,15 @@ trait LogSink {
     if (onlyTemplate) {
       parts.zip(args).map {
         case (p, (id, value)) =>
-          p + (if (id.startsWith("unnamed")) {s"$${${value}}" } else {s"$${${id}}"})
+          p + (if (id.startsWith("unnamed")) {
+            s"$${${value}}"
+          } else {
+            s"$${${id}}"
+          })
       }.foldLeft("")(_ + _)
     } else {
       // TODO : improve this one
-      customContext.foldLeft(""){
+      customContext.foldLeft("") {
         case (acc, (k, v)) => {
           acc + k + "=" + v
         }
@@ -39,38 +61,5 @@ trait LogSink {
     }
   }
 
-  // here we may:
-  // 0) Keep a message buffer
-  // 3) Perform rendering/save values into database/etc
-
-
-  // TODO : implement message buffer
-
-  def flush(e: Log.Entry): Unit = {
-
-
-    val renderedMessage = renderMessage(e)
-    val fullValues = e.context.customContext.values ++
-      parseValues(e.message) ++
-      Map("message" -> renderedMessage, "message_template" -> renderMessage(e, onlyTemplate = true))
-
-    val coloredLvl = s"${GUIUtils.logLevelColor(e.context.dynamic.level)}${e.context.dynamic.level}${Console.RESET}"
-    val thread = s"${e.context.dynamic.threadData.threadId}:${e.context.dynamic.threadData.threadName}"
-    val renderedSystemOutput = String.format(
-      "%-25s%-16s%-8s%-30s", LocalDateTime.now(), coloredLvl, thread, e.context.static.id.id
-    )
-    println {s"""$renderedSystemOutput : $renderedMessage"""}
-  }
 }
 
-
-object GUIUtils {
-  def logLevelColor(lvl: Log.Level): String = lvl match {
-    case Log.Level.Trace => Console.MAGENTA
-    case Log.Level.Debug => Console.BLUE
-    case Log.Level.Info => Console.GREEN
-    case Log.Level.Warn => Console.CYAN
-    case Log.Level.Error => Console.YELLOW
-    case Log.Level.Crit => Console.RED
-  }
-}

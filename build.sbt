@@ -91,18 +91,16 @@ val inFundamentals = In("fundamentals")
 // --------------------------------------------
 
 lazy val fundamentalsCollections = inFundamentals.as.module
-  .settings(LibSettings)
+lazy val fundamentalsStrings = inFundamentals.as.module
 
 // --------------------------------------------
 val globalDefs = setup(baseSettings)
-  .withSharedLibs(fundamentalsCollections)
+  .withSharedLibs(fundamentalsCollections, fundamentalsStrings)
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module
-  .settings(LibSettings)
-
 lazy val fundamentalsFunctional = inFundamentals.as.module
-  .settings(LibSettings)
+lazy val fundamentalsPlatform = inFundamentals.as.module
 
 
 lazy val distageModel = inDiStage.as.module
@@ -123,8 +121,6 @@ lazy val distageCore = inDiStage.as.module
     )
   )
 
-
-
 lazy val logstageModel = inLogStage.as.module
 
 lazy val logstageMacro = inLogStage.as.module
@@ -139,6 +135,19 @@ lazy val logstageCore = inLogStage.as.module
 lazy val logstageDi = inLogStage.as.module
   .depends(logstageApi)
 
+lazy val logstageSinkFile = inLogStage.as.module
+  .depends(logstageApi)
+
+lazy val logstageSinkConsole = inLogStage.as.module
+  .depends(logstageApi)
+
+lazy val logstageSinkSlf4j = inLogStage.as.module
+  .depends(logstageApi)
+  .settings(libraryDependencies += R.slf4j_api)
+
+lazy val logstageAdapterSlf4j = inLogStage.as.module
+  .depends(logstageApi)
+  .settings(libraryDependencies += R.slf4j_api)
 
 
 lazy val sbtIzumi = inRoot.as
@@ -158,9 +167,20 @@ lazy val sbtIzumi = inRoot.as
 
 
 
-lazy val logstage: Seq[ProjectReference] = Seq(logstageDi, logstageCore)
-lazy val distage: Seq[ProjectReference] = Seq(distageCore)
-lazy val izsbt: Seq[ProjectReference] = Seq(sbtIzumi)
+lazy val logstage: Seq[ProjectReference] = Seq(
+  logstageDi
+  , logstageCore
+  , logstageSinkConsole
+  , logstageSinkFile
+  , logstageSinkSlf4j
+  , logstageAdapterSlf4j
+)
+lazy val distage: Seq[ProjectReference] = Seq(
+  distageCore
+)
+lazy val izsbt: Seq[ProjectReference] = Seq(
+  sbtIzumi
+)
 
 lazy val allProjects = distage ++ logstage ++ izsbt
 
