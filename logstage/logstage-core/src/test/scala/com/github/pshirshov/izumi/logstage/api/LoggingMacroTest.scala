@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
+import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.model.Log.StaticContext
 import com.github.pshirshov.izumi.logstage.model.{Log, LogReceiver}
 import org.scalatest.WordSpec
@@ -11,12 +12,12 @@ class AService(logger: MacroLogger) {
     val context = logger("userId" -> "xxx")
 
     val arg = "this is an argument"
-    context.debug(s"This would be automatically extended")
 
-    logger.log.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
-
-    logger.log.debug("Just a string")
-    logger.log.debug("Just " + 1)
+    context.trace(s"This would be automatically extended")
+    logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
+    logger.info("Just a string")
+    logger.warn("Just " + 1)
+    logger.crit(s"This is an issue: ${2+2 == 4}")
   }
 }
 
@@ -33,11 +34,11 @@ class LoggingMacroTest extends WordSpec {
   private def setup() = {
     val recv = new LogReceiver {
       override def log(context: Log.Context, message: Log.Message): Unit = {
-        System.err.println(s"ctx=$context, msg=$message")
-        //new LogSink {}.flush(Log.Entry(message, context))
+        //System.err.println(s"ctx=$context, msg=$message")
+        new LogSink {}.flush(Log.Entry(message, context))
       }
 
-      override def level: Log.Level = Log.Level.Debug
+      override def level: Log.Level = Log.Level.Trace
     }
 
     val ctx = StaticContext("test")

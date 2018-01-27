@@ -18,9 +18,12 @@ trait LoggingMacro {
 
   def contextCustom: Log.CustomContext
 
-  //def debug(message: Message): Unit = macro debugMacro
-
+  def trace(message: String): Unit = macro scTraceMacro
   def debug(message: String): Unit = macro scDebugMacro
+  def info(message: String): Unit = macro scInfoMacro
+  def warn(message: String): Unit = macro scWarnMacro
+  def error(message: String): Unit = macro scErrorMacro
+  def crit(message: String): Unit = macro scCritMacro
 }
 
 object LoggingMacro {
