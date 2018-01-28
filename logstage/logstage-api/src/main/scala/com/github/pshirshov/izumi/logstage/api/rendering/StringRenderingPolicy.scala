@@ -10,18 +10,18 @@ class StringRenderingPolicy(withColors: Boolean) extends RenderingPolicy {
   override def render(entry: Log.Entry): String = {
     val builder = new StringBuilder
 
-    val fullValues = entry.context.customContext.values
+    val context = entry.context
 
-    val level = entry.context.dynamic.level.toString.leftPad(5, ' ')
+    val level = context.dynamic.level.toString.leftPad(5, ' ')
     val coloredLvl = if (withColors) {
-      s"${ConsoleColors.logLevelColor(entry.context.dynamic.level)}$level${Console.RESET}"
+      s"${ConsoleColors.logLevelColor(context.dynamic.level)}$level${Console.RESET}"
     } else {
       level
     }
 
     val ts = {
       import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
-      Instant.ofEpochMilli(entry.context.dynamic.tsMillis).atZone(ZoneId.systemDefault()).isoFormat
+      Instant.ofEpochMilli(context.dynamic.tsMillis).atZone(ZoneId.systemDefault()).isoFormat
     }
     builder.append(ts)
     builder.append(' ')
@@ -29,15 +29,22 @@ class StringRenderingPolicy(withColors: Boolean) extends RenderingPolicy {
     builder.append(coloredLvl)
     builder.append(' ')
 
-    val location = s"${entry.context.static.file}:${entry.context.static.line}"
+    val location = s"${context.static.file}:${context.static.line}"
     builder.append('(')
-    builder.append(location.ellipsedLeftPad(32))
+    builder.append(location.leftPad(32, ' '))
     builder.append(") ")
 
-    val threadName = entry.context.dynamic.threadData.threadName
-    builder.append('{')
+    val threadName = s"${context.dynamic.threadData.threadName}:${context.dynamic.threadData.threadId}"
+    builder.append('[')
     builder.append(threadName.ellipsedLeftPad(15))
-    builder.append("} ")
+    builder.append("] ")
+
+    if (context.customContext.values.nonEmpty) {
+      val customContextString = context.customContext.values.map { case (k, v) => s"$k=$v" }.mkString(", ")
+      builder.append('{')
+      builder.append(customContextString)
+      builder.append("} ")
+    }
 
 
     builder.append(RenderingService.render(entry).message)

@@ -36,7 +36,7 @@ object LoggingMacroTest {
   class AService(logger: IzLogger) {
     def start(): Unit = {
       val loggerWithContext = logger("userId" -> "xxx")
-      val loggerWithSubcontext = loggerWithContext("c" -> "d")
+      val loggerWithSubcontext = loggerWithContext("custom" -> "value")
 
       val arg = "this is an argument"
 
