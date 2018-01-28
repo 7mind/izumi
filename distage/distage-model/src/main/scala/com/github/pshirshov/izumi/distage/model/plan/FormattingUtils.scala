@@ -3,7 +3,8 @@ package com.github.pshirshov.izumi.distage.model.plan
 import com.github.pshirshov.izumi.distage.model.plan.Wiring._
 import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring._
 import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.fundamentals.strings.StringUtils
+import com.github.pshirshov.izumi.fundamentals.strings.IzString
+import IzString._
 
 
 object FormattingUtils {
@@ -28,7 +29,7 @@ object FormattingUtils {
       case FactoryMethod(factoryType, unaryWireables, fmDeps) =>
         val wirings = unaryWireables.map {
           w =>
-            StringUtils.shift(s"${w.factoryMethod}: ${w.factoryMethod.returnType} ~= ${doFormat(w.wireWith)}", 2)
+            s"${w.factoryMethod}: ${w.factoryMethod.returnType} ~= ${doFormat(w.wireWith)}".shift(2)
         }
 
         val depsRepr = fmDeps.map(_.format)
@@ -48,7 +49,7 @@ object FormattingUtils {
     val sb = new StringBuilder()
     sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}\n")
     if (depRepr.nonEmpty) {
-      sb.append(StringUtils.shift(depRepr.mkString(s"\n"), 2))
+      sb.append(depRepr.mkString(s"\n").shift(2))
     }
     sb.append(s"\n${delim._2}")
 

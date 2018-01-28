@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.plan.Wiring._
 import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.distage.model.util.Formattable
 import com.github.pshirshov.izumi.fundamentals.reflection._
-import com.github.pshirshov.izumi.fundamentals.strings.StringUtils
+import com.github.pshirshov.izumi.fundamentals.strings.IzString
 
 // TODO: typeclass?..
 sealed trait ExecutableOp extends Formattable {
@@ -77,10 +77,12 @@ object ExecutableOp {
     case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey]) extends ProxyOp with InstantiationOp {
       override def target: DIKey = op.target
 
-      override def format: String =
+      override def format: String = {
+        import IzString._
         f"""$target := proxy($forwardRefs) {
-           |${StringUtils.shift(op.toString, 2)}
+           |${op.toString.shift(2)}
            |}""".stripMargin
+      }
     }
 
     case class InitProxy(target: DIKey, dependencies: Set[DIKey], proxy: MakeProxy) extends ProxyOp {

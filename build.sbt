@@ -1,5 +1,6 @@
 import D._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
+import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import sbt.Keys.{pomExtra, publishMavenStyle}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
@@ -92,15 +93,21 @@ val inFundamentals = In("fundamentals")
 
 lazy val fundamentalsCollections = inFundamentals.as.module
 lazy val fundamentalsStrings = inFundamentals.as.module
+lazy val fundamentalsPlatform = inFundamentals.as.module
+lazy val fundamentalsFunctional = inFundamentals.as.module
 
+lazy val fundamentals: Seq[ProjectReferenceEx] = Seq(
+  fundamentalsCollections
+  , fundamentalsStrings
+  , fundamentalsPlatform
+  , fundamentalsFunctional
+)
 // --------------------------------------------
 val globalDefs = setup(baseSettings)
-  .withSharedLibs(fundamentalsCollections, fundamentalsStrings)
+  .withSharedLibs(fundamentals :_*)
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module
-lazy val fundamentalsFunctional = inFundamentals.as.module
-lazy val fundamentalsPlatform = inFundamentals.as.module
 
 
 lazy val distageModel = inDiStage.as.module
@@ -132,9 +139,6 @@ lazy val logstageApi = inLogStage.as.module
 lazy val logstageDi = inLogStage.as.module
   .depends(logstageApi, distageModel)
 
-lazy val logstageRouting = inLogStage.as.module
-  .depends(logstageApi)
-
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApi)
 
@@ -149,6 +153,9 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
   .depends(logstageApi)
   .settings(libraryDependencies += R.slf4j_api)
 
+
+lazy val logstageRouting = inLogStage.as.module
+  .depends(logstageApi, logstageSinkConsole.testOnlyRef, logstageSinkSlf4j.testOnlyRef)
 
 lazy val sbtIzumi = inRoot.as
   .module

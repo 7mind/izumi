@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.logstage.sink.console
+package com.github.pshirshov.izumi.logstage.api.rendering
 
 import com.github.pshirshov.izumi.logstage.model.Log
 
-object GUIUtils {
+object ConsoleColors {
   def logLevelColor(lvl: Log.Level): String = lvl match {
     case Log.Level.Trace => Console.MAGENTA
     case Log.Level.Debug => Console.BLUE

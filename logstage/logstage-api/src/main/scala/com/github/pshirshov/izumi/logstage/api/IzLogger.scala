@@ -1,14 +1,15 @@
 package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.logstage.model.Log.CustomContext
-import com.github.pshirshov.izumi.logstage.model.{AbstractLogger, Log, LogReceiver}
+import com.github.pshirshov.izumi.logstage.model.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.model.{AbstractLogger, Log}
 
 import scala.language.implicitConversions
 
 
 class IzLogger
 (
-  override val receiver: LogReceiver
+  override val receiver: LogRouter
   , override val contextCustom: Log.CustomContext
 ) extends LoggingMacro
   with AbstractLogger {
@@ -28,7 +29,7 @@ class IzLogger
 }
 
 object IzLogger {
-  def apply(receiver: LogReceiver): IzLogger = {
+  def apply(receiver: LogRouter): IzLogger = {
     new IzLogger(receiver, CustomContext.empty)
   }
 }

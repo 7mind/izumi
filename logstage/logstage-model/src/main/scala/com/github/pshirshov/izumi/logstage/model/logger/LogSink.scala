@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.api.logger
+package com.github.pshirshov.izumi.logstage.model.logger
 
 import com.github.pshirshov.izumi.logstage.model.Log
 

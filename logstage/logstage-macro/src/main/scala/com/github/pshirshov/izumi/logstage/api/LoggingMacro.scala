@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.model.Log.{Message, StaticContext, StaticExtendedContext, ThreadData}
-import com.github.pshirshov.izumi.logstage.model.{AbstractLogger, Log, LogReceiver}
+import com.github.pshirshov.izumi.logstage.model.Log.{LoggerId, Message, StaticExtendedContext, ThreadData}
+import com.github.pshirshov.izumi.logstage.model.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.model.{AbstractLogger, Log}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
@@ -12,7 +13,7 @@ trait LoggingMacro {
 
   import com.github.pshirshov.izumi.logstage.api.LoggingMacro._
 
-  def receiver: LogReceiver
+  def receiver: LogRouter
 
   def contextCustom: Log.CustomContext
 
@@ -100,21 +101,23 @@ object LoggingMacro {
 
     val applicationPointId = c.Expr[String](c.universe.Literal(Constant(c.internal.enclosingOwner.fullName)))
 
-    val context = reify {
+    val loggerId = reify {
+      LoggerId(applicationPointId.splice)
+    }
+
+    val entry = reify {
       val self = c.prefix.splice.asInstanceOf[LoggingMacro]
       val thread = Thread.currentThread()
-      val dynamicContext = Log.DynamicContext(logLevel.splice, ThreadData(thread.getName, thread.getId))
+      val dynamicContext = Log.DynamicContext(logLevel.splice, ThreadData(thread.getName, thread.getId), System.currentTimeMillis())
 
-
-      val staticContext = StaticContext(applicationPointId.splice)
-      val extendedStaticContext = StaticExtendedContext(staticContext, file.splice, line.splice)
-      Log.Context(extendedStaticContext, dynamicContext, self.contextCustom)
+      val extendedStaticContext = StaticExtendedContext(loggerId.splice, file.splice, line.splice)
+      Log.Entry(message.splice, Log.Context(extendedStaticContext, dynamicContext, self.contextCustom))
     }
 
     c.Expr[Unit] {
       q"""{
-            if ($logLevel >= $receiver.level) {
-              $receiver.log($context, $message)
+            if ($receiver.acceptable($loggerId, $logLevel)) {
+              $receiver.log($entry)
             }
           }"""
     }

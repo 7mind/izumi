@@ -2,8 +2,9 @@ package com.github.pshirshov.izumi.logstage.sink.slf4j
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.pshirshov.izumi.logstage.api.logger.{LogSink, RenderingPolicy}
+import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.model.Log
+import com.github.pshirshov.izumi.logstage.model.logger.LogSink
 import org.slf4j
 import org.slf4j.Marker
 import org.slf4j.helpers.BasicMarkerFactory

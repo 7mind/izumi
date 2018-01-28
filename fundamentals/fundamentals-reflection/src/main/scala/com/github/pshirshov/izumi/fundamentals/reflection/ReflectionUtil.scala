@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.fundamentals.reflection
 
 import java.lang.reflect.Method
 
-
 import scala.language.reflectiveCalls
+import scala.reflect.api.Mirror
 import scala.reflect.internal.Symbols
 import scala.reflect.runtime.{currentMirror, universe}
 
@@ -18,6 +18,21 @@ object ReflectionUtil {
     }]
     val javaMethod = privateMirror.methodToJava(method.asInstanceOf[Symbols#MethodSymbol])
     javaMethod
+  }
+
+
+  def typeToTypeTag[T](
+                        tpe: TypeNative,
+                        mirror: reflect.api.Mirror[reflect.runtime.universe.type]
+                      ): Tag[T] = {
+    val creator = new reflect.api.TypeCreator {
+      def apply[U <: SingletonUniverse](m: Mirror[U]): U#Type = {
+        assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
+        tpe.asInstanceOf[U#Type]
+      }
+    }
+    
+    universe.TypeTag(mirror, creator)
   }
 }
 

@@ -1,6 +1,10 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.model.{Log, LogReceiver}
+import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
+import com.github.pshirshov.izumi.logstage.core.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
+import com.github.pshirshov.izumi.logstage.model.Log
+import com.github.pshirshov.izumi.logstage.model.config.LoggerConfig
+import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
 import org.scalatest.WordSpec
 
 import scala.util.Random
@@ -19,15 +23,10 @@ class LoggingMacroTest extends WordSpec {
   }
 
   private def setupLogger() = {
-    val recv = new LogReceiver {
-      override def log(context: Log.Context, message: Log.Message): Unit = {
-        System.err.println(s"ctx=$context, msg=$message")
-      }
-
-      override def level: Log.Level = Log.Level.Trace
-    }
-
-    IzLogger(recv)
+    val sinks = Seq(new ConsoleSink(new StringRenderingPolicy(true)))
+    val configService = new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(Log.Level.Trace, sinks))
+    val router = new ConfigurableLogRouter(configService)
+    IzLogger(router)
   }
   
 }
