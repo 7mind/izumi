@@ -36,14 +36,14 @@ object LoggingMacroTest {
 
   class AService(logger: IzLogger) {
     def start(): Unit = {
-      val context = logger("userId" -> "xxx")
-      val subcontext = context("c" -> "d")
+      val loggerWithContext = logger("userId" -> "xxx")
+      val loggerWithSubcontext = loggerWithContext("c" -> "d")
 
       val arg = "this is an argument"
 
-      context.trace(s"This would be automatically extended")
+      loggerWithContext.trace(s"This would be automatically extended")
       logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
-      subcontext.info("Just a string")
+      loggerWithSubcontext.info("Just a string")
       logger.warn("Just an integer: " + 1)
       logger.crit(s"This is an issue: ${2 + 2 == 4}")
     }
