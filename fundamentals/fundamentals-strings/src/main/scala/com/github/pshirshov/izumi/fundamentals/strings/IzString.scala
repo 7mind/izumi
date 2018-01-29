@@ -17,6 +17,8 @@ class IzString(s: String) {
     s.split("\n").map(s => s"$shift$s").mkString("\n")
   }
 
+  @inline def leftPad(len: Int): String = leftPad(len, ' ')
+  
   @inline def leftPad(len: Int, elem: Char): String = {
     elem.toString * (len - s.length()) + s
   }

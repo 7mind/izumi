@@ -1,54 +1,108 @@
 package com.github.pshirshov.izumi.logstage.api.rendering
 
+import java.awt.GraphicsEnvironment
 import java.time.{Instant, ZoneId}
 
 import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.fundamentals.strings.IzString._
 
-class StringRenderingPolicy(withColors: Boolean) extends RenderingPolicy {
+class StringRenderingPolicy(suggestedColors: Boolean) extends RenderingPolicy {
+  protected val withColors: Boolean = (suggestedColors && System.getProperty("iz.log.colored").asBoolean(true)) && !GraphicsEnvironment.isHeadless
+
   override def render(entry: Log.Entry): String = {
     val builder = new StringBuilder
 
+
     val context = entry.context
 
-    val level = context.dynamic.level.toString.leftPad(5, ' ')
-    val coloredLvl = if (withColors) {
-      s"${ConsoleColors.logLevelColor(context.dynamic.level)}$level${Console.RESET}"
-    } else {
-      level
+    if (withColors) {
+      builder.append(ConsoleColors.logLevelColor(context.dynamic.level))
+      builder.append(Console.UNDERLINED)
+      builder.append(Console.BOLD)
     }
+
+    val level = context.dynamic.level.toString.substring(0, 1)
+    builder.append(level)
+    builder.append(' ')
 
     val ts = {
       import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
       Instant.ofEpochMilli(context.dynamic.tsMillis).atZone(ZoneId.systemDefault()).isoFormat
     }
     builder.append(ts)
+    if (withColors) {
+      builder.append(Console.RESET)
+    }
+
     builder.append(' ')
 
-    builder.append(coloredLvl)
-    builder.append(' ')
-
-    val location = s"${context.static.file}:${context.static.line}"
-    builder.append('(')
-    builder.append(location.leftPad(32, ' '))
-    builder.append(") ")
+    val location = s"(${context.static.file}:${context.static.line}) "
+    builder.append(location.leftPad(32))
 
     val threadName = s"${context.dynamic.threadData.threadName}:${context.dynamic.threadData.threadId}"
-    builder.append('[')
+    if (withColors) {
+      builder.append(Console.UNDERLINED)
+    }else {
+      builder.append('[')
+    }
     builder.append(threadName.ellipsedLeftPad(15))
-    builder.append("] ")
+    if (withColors) {
+      builder.append(Console.RESET)
+      builder.append(" ")
+    }else {
+      builder.append("] ")
+    }
+
 
     if (context.customContext.values.nonEmpty) {
-      val customContextString = context.customContext.values.map { case (k, v) => s"$k=$v" }.mkString(", ")
+      val customContextString = context.customContext.values.map(formatKv).mkString(", ")
       builder.append('{')
       builder.append(customContextString)
       builder.append("} ")
     }
 
 
-    builder.append(RenderingService.render(entry).message)
+    builder.append(formatMessage(entry).message)
     builder.toString()
+  }
+
+  protected def formatKv(kv: (String, Any)): String = {
+    if (withColors) {
+      s"${Console.GREEN}${kv._1}${Console.RESET}=${Console.CYAN}${kv._2}${Console.RESET}"
+    } else {
+      s"${kv._1}=${kv._2}"
+    }
+  }
+
+  protected def formatMessage(entry: Log.Entry): RenderedMessage = {
+    val templateBuilder = new StringBuilder()
+    val messageBuilder = new StringBuilder()
+    val rawMessageBuilder = new StringBuilder()
+
+    val head = entry.message.template.parts.head
+    templateBuilder.append(head)
+    messageBuilder.append(head)
+    rawMessageBuilder.append(head)
+
+    entry.message.template.parts.tail.zip(entry.message.args).foreach {
+      case (part, (argName, argValue)) =>
+        templateBuilder.append('{')
+        templateBuilder.append(argName)
+        templateBuilder.append('}')
+        templateBuilder.append(part)
+
+        messageBuilder.append(formatKv((argName, argValue.toString)))
+        messageBuilder.append(part)
+
+        rawMessageBuilder.append('{')
+        rawMessageBuilder.append(argName)
+        rawMessageBuilder.append('=')
+        rawMessageBuilder.append(argValue.toString)
+        rawMessageBuilder.append('}')
+
+    }
+    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString())
   }
 
 
