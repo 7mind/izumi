@@ -92,13 +92,11 @@ val inFundamentals = In("fundamentals")
 // --------------------------------------------
 
 lazy val fundamentalsCollections = inFundamentals.as.module
-lazy val fundamentalsStrings = inFundamentals.as.module
 lazy val fundamentalsPlatform = inFundamentals.as.module
 lazy val fundamentalsFunctional = inFundamentals.as.module
 
 lazy val fundamentals: Seq[ProjectReferenceEx] = Seq(
   fundamentalsCollections
-  , fundamentalsStrings
   , fundamentalsPlatform
   , fundamentalsFunctional
 )

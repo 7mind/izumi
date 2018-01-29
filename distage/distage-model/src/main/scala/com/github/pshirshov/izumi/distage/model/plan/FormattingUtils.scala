@@ -3,8 +3,7 @@ package com.github.pshirshov.izumi.distage.model.plan
 import com.github.pshirshov.izumi.distage.model.plan.Wiring._
 import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring._
 import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.fundamentals.strings.IzString
-import IzString._
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 
 object FormattingUtils {

@@ -6,10 +6,16 @@ import java.time.{Instant, ZoneId}
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.logstage.api.logger.{RenderingOptions, RenderingPolicy}
 import com.github.pshirshov.izumi.logstage.model.Log
-import com.github.pshirshov.izumi.fundamentals.strings.IzString._
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
-  protected val withColors: Boolean = (options.withColors && System.getProperty("iz.log.colored").asBoolean(true)) && !GraphicsEnvironment.isHeadless
+  protected val withColors: Boolean = {
+    (
+      options.withColors &&
+        System.getProperty("iz.log.colored").asBoolean(true)
+      ) &&
+      !GraphicsEnvironment.isHeadless
+  }
 
 
   override def render(entry: Log.Entry): String = {
