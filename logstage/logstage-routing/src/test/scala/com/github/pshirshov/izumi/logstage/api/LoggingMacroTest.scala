@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.core.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
 import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.logstage.model.config.LoggerConfig
+import com.github.pshirshov.izumi.logstage.model.logger.LogSink
 import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
 import com.github.pshirshov.izumi.logstage.sink.slf4j.LogSinkLegacySlf4jImpl
 import org.scalatest.WordSpec
@@ -17,23 +18,41 @@ class LoggingMacroTest extends WordSpec {
   import LoggingMacroTest._
 
   "Log macro" should {
-    "work" in {
-      val logger = setupLogger()
+    "support console sink" in {
+      new AService(setupConsoleLogger()).start()
+    }
 
-      new AService(logger).start()
+    "support console sink with json output policy" in {
+      new AService(setupJsonLogger()).start()
+    }
+
+    "support slf4j legacy backend" in {
+      new AService(setupSlf4jLogger()).start()
     }
   }
 
-  private def setupLogger() = {
-    val coloringPolicy = new StringRenderingPolicy(RenderingOptions())
-    val simplePolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false))
-    val jsonPolicy = new JsonRenderingPolicy()
-    val sinks = Seq(new ConsoleSink(coloringPolicy), new ConsoleSink(jsonPolicy), new LogSinkLegacySlf4jImpl(simplePolicy))
+  private val coloringPolicy = new StringRenderingPolicy(RenderingOptions())
+  private val simplePolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false))
+  private val jsonPolicy = new JsonRenderingPolicy()
+
+  private def setupConsoleLogger() = {
+    configureLogger(Seq(new ConsoleSink(coloringPolicy)))
+  }
+
+  private def setupJsonLogger() = {
+    configureLogger(Seq(new ConsoleSink(jsonPolicy)))
+  }
+
+  private def setupSlf4jLogger() = {
+    configureLogger(Seq(new LogSinkLegacySlf4jImpl(simplePolicy)))
+  }
+
+
+  private def configureLogger(sinks: Seq[LogSink]) = {
     val configService = new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(Log.Level.Trace, sinks))
     val router = new ConfigurableLogRouter(configService)
     IzLogger(router)
   }
-  
 }
 
 object LoggingMacroTest {
