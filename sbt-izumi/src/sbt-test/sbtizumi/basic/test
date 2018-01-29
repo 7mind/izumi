@@ -1,3 +1,8 @@
+# create module using stub 'default'
+> newModule lib/module
+$ exists lib/module/src/main/scala/org/test/project
+$ exists lib/module/src/test/scala/org/test/project
+
 # create module using stub 'something'
 > newStub lib/xxx something
 $ exists lib/xxx

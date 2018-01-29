@@ -1,4 +1,5 @@
-import org.bitbucket.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys._
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -12,6 +13,7 @@ crossScalaVersions in ThisBuild := Seq(
 
 // unfortunately we have to use this bcs conditional settings in plugins don't work
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaVersion.value, isSnapshot.value)
+defaultStubPackage := Some("org.test.project")
 
 // -- settings groups identifiers
 val AppSettings = SettingsGroupId()
@@ -42,7 +44,7 @@ val globalDefs = setup(baseSettings)
 // -- common project directories
 val inRoot = In(".")
 val inLib = In("lib")
-val inApp = In("app")
+val inApp = In("app").withModuleSettings(AppSettings)
 
 // -- shared definitions (will be added into each project extened with Izumi
 lazy val sharedLib = inLib.as.module
@@ -62,7 +64,6 @@ lazy val justLib = inLib.as.module
 
 lazy val justApp = inApp.as.module
   .depends(justLib)
-  .settings(AppSettings)
 
 lazy val root = inRoot.as.root
   .transitiveAggregate(
