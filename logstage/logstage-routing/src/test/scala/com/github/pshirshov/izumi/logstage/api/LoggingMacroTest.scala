@@ -25,9 +25,10 @@ class LoggingMacroTest extends WordSpec {
   }
 
   private def setupLogger() = {
-    val coloringPolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = true))
+    val coloringPolicy = new StringRenderingPolicy(RenderingOptions())
     val simplePolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false))
-    val sinks = Seq(new ConsoleSink(coloringPolicy), new LogSinkLegacySlf4jImpl(simplePolicy))
+    val jsonPolicy = new JsonRenderingPolicy()
+    val sinks = Seq(new ConsoleSink(coloringPolicy), new ConsoleSink(jsonPolicy), new LogSinkLegacySlf4jImpl(simplePolicy))
     val configService = new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(Log.Level.Trace, sinks))
     val router = new ConfigurableLogRouter(configService)
     IzLogger(router)

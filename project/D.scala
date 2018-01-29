@@ -13,6 +13,7 @@ object D {
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % "1.7.25"
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % "1.7.25"
+    val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3"
 
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0"
 

@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.logstage.api.logger.{RenderingOptions, Renderi
 import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
+
 class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
   protected val withColors: Boolean = {
     (
@@ -101,15 +102,15 @@ class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
     }
   }
 
-  protected def formatMessage(entry: Log.Entry): RenderedMessage = {
+  def formatMessage(entry: Log.Entry): RenderedMessage = {
     val templateBuilder = new StringBuilder()
     val messageBuilder = new StringBuilder()
-    val rawMessageBuilder = new StringBuilder()
+//    val rawMessageBuilder = new StringBuilder()
 
     val head = entry.message.template.parts.head
     templateBuilder.append(head)
     messageBuilder.append(head)
-    rawMessageBuilder.append(head)
+//    rawMessageBuilder.append(head)
 
     entry.message.template.parts.tail.zip(entry.message.args).foreach {
       case (part, (argName, argValue)) =>
@@ -121,11 +122,11 @@ class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
         messageBuilder.append(formatKv((argName, argToString(argValue))))
         messageBuilder.append(part)
 
-        rawMessageBuilder.append('{')
-        rawMessageBuilder.append(argName)
-        rawMessageBuilder.append('=')
-        rawMessageBuilder.append(argToString(argValue))
-        rawMessageBuilder.append('}')
+//        rawMessageBuilder.append('{')
+//        rawMessageBuilder.append(argName)
+//        rawMessageBuilder.append('=')
+//        rawMessageBuilder.append(argToString(argValue))
+//        rawMessageBuilder.append('}')
 
     }
     RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString())

@@ -146,6 +146,10 @@ lazy val logstageApi = inLogStage.as.module
 lazy val logstageDi = inLogStage.as.module
   .depends(logstageApi, distageModel)
 
+lazy val logstageJsonJson4s = inLogStage.as.module
+  .depends(logstageApi)
+    .settings(libraryDependencies ++= Seq(R.json4s_native))
+
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApi)
 
@@ -162,7 +166,12 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
 
 
 lazy val logstageRouting = inLogStage.as.module
-  .depends(logstageApi, logstageSinkConsole.testOnlyRef, logstageSinkSlf4j.testOnlyRef)
+  .depends(
+    logstageApi
+    , logstageSinkConsole.testOnlyRef
+    , logstageSinkSlf4j.testOnlyRef
+    , logstageJsonJson4s.testOnlyRef
+  )
 
 lazy val sbtIzumi = inRoot.as
   .module
