@@ -63,7 +63,11 @@ object Log {
 
   case class Context(static: StaticExtendedContext, dynamic: DynamicContext, customContext: CustomContext)
 
-  case class Entry(message: Message, context: Context)
+  case class Entry(message: Message, context: Context) {
+    def firstThrowable: Option[Throwable] = {
+      message.args.map(_._2).collectFirst { case t: Throwable => t }
+    }
+  }
 
   case class Message(template: StringContext, args: LogContext) {
 

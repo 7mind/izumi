@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
+import com.github.pshirshov.izumi.logstage.api.logger.RenderingOptions
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.core.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
 import com.github.pshirshov.izumi.logstage.model.Log
@@ -24,8 +25,8 @@ class LoggingMacroTest extends WordSpec {
   }
 
   private def setupLogger() = {
-    val coloringPolicy = new StringRenderingPolicy(true)
-    val simplePolicy = new StringRenderingPolicy(false)
+    val coloringPolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = true))
+    val simplePolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false))
     val sinks = Seq(new ConsoleSink(coloringPolicy), new LogSinkLegacySlf4jImpl(simplePolicy))
     val configService = new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(Log.Level.Trace, sinks))
     val router = new ConfigurableLogRouter(configService)
@@ -47,7 +48,10 @@ object LoggingMacroTest {
       logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
       loggerWithSubcontext.info("Just a string")
       logger.warn("Just an integer: " + 1)
-      logger.crit(s"This is an issue: ${2 + 2 == 4}")
+      val arg1 = 5
+      logger.crit(s"This is an expression: ${2 + 2 == 4} and this is an other one: ${5 * arg1 == 25}")
+      val t = new RuntimeException("Oy vey!")
+      logger.crit(s"A failure happened: $t")
     }
   }
 

@@ -3,12 +3,14 @@ package com.github.pshirshov.izumi.logstage.api.rendering
 import java.awt.GraphicsEnvironment
 import java.time.{Instant, ZoneId}
 
-import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
+import com.github.pshirshov.izumi.logstage.api.logger.{RenderingOptions, RenderingPolicy}
 import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.fundamentals.strings.IzString._
 
-class StringRenderingPolicy(suggestedColors: Boolean) extends RenderingPolicy {
-  protected val withColors: Boolean = (suggestedColors && System.getProperty("iz.log.colored").asBoolean(true)) && !GraphicsEnvironment.isHeadless
+class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
+  protected val withColors: Boolean = (options.withColors && System.getProperty("iz.log.colored").asBoolean(true)) && !GraphicsEnvironment.isHeadless
+
 
   override def render(entry: Log.Entry): String = {
     val builder = new StringBuilder
@@ -43,14 +45,14 @@ class StringRenderingPolicy(suggestedColors: Boolean) extends RenderingPolicy {
     val threadName = s"${context.dynamic.threadData.threadName}:${context.dynamic.threadData.threadId}"
     if (withColors) {
       builder.append(Console.UNDERLINED)
-    }else {
+    } else {
       builder.append('[')
     }
     builder.append(threadName.ellipsedLeftPad(15))
     if (withColors) {
       builder.append(Console.RESET)
       builder.append(" ")
-    }else {
+    } else {
       builder.append("] ")
     }
 
@@ -64,6 +66,24 @@ class StringRenderingPolicy(suggestedColors: Boolean) extends RenderingPolicy {
 
 
     builder.append(formatMessage(entry).message)
+    if (options.withExceptions) {
+      entry.firstThrowable match {
+        case Some(t) =>
+          builder.append('\n')
+          if (withColors) {
+            builder.append(Console.YELLOW)
+          }
+
+          import IzThrowable._
+          builder.append(t.stackTrace)
+
+          if (withColors) {
+            builder.append(Console.RESET)
+          }
+        case None =>
+      }
+    }
+
     builder.toString()
   }
 
@@ -92,19 +112,34 @@ class StringRenderingPolicy(suggestedColors: Boolean) extends RenderingPolicy {
         templateBuilder.append('}')
         templateBuilder.append(part)
 
-        messageBuilder.append(formatKv((argName, argValue.toString)))
+        messageBuilder.append(formatKv((argName, argToString(argValue))))
         messageBuilder.append(part)
 
         rawMessageBuilder.append('{')
         rawMessageBuilder.append(argName)
         rawMessageBuilder.append('=')
-        rawMessageBuilder.append(argValue.toString)
+        rawMessageBuilder.append(argToString(argValue))
         rawMessageBuilder.append('}')
 
     }
     RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString())
   }
 
+
+  protected def argToString(argValue: Any): String = {
+    argValue match {
+      case e: Throwable =>
+        if (withColors) {
+          s"${Console.YELLOW}${e.toString}${Console.RESET}"
+        } else {
+          e.toString
+        }
+
+      case _ =>
+        argValue.toString
+
+    }
+  }
 
 }
 

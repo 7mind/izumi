@@ -11,8 +11,17 @@ class IzThrowable(t: Throwable, acceptedPackages: Set[String]) {
     new IzThrowable(t, this.acceptedPackages ++ acceptedPackages)
   }
 
-  def format: String = {
-    val messages = t.causes.map {
+  def stackTrace: String = {
+    import java.io.PrintWriter
+    import java.io.StringWriter
+    val sw = new StringWriter
+    val pw = new PrintWriter(sw)
+    t.printStackTrace(pw)
+    sw.toString
+  }
+
+  def shortTrace: String = {
+    val messages = t.allCauses.map {
       currentThrowable =>
         val origin = t.stackTop match {
           case Some(frame) =>
@@ -27,14 +36,14 @@ class IzThrowable(t: Throwable, acceptedPackages: Set[String]) {
   }
 
   def allMessages: Seq[String] = {
-    t.causes.map(_.getMessage)
+    t.allCauses.map(_.getMessage)
   }
 
-  def allClasses: Seq[String] = {
-    t.causes.map(_.getClass.getCanonicalName)
+  def allCauseClassNames: Seq[String] = {
+    t.allCauses.map(_.getClass.getCanonicalName)
   }
 
-  def causes: Seq[Throwable] = {
+  def allCauses: Seq[Throwable] = {
     val ret = new ArrayBuffer[Throwable]()
     var currentThrowable = t
     while (currentThrowable != null) {

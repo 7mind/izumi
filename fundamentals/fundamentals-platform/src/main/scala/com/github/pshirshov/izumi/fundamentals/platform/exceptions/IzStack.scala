@@ -5,10 +5,10 @@ object IzStack {
   import IzThrowable._
 
   def currentStack: String = {
-    new RuntimeException().format
+    new RuntimeException().shortTrace
   }
 
   def currentStack(acceptedPackages: Set[String]): String = {
-    new RuntimeException().forPackages(acceptedPackages).format
+    new RuntimeException().forPackages(acceptedPackages).shortTrace
   }
 }
