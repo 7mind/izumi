@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.logstage.core.{ConfigurableLogRouter, LogConfi
 import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.logstage.model.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
+import com.github.pshirshov.izumi.logstage.sink.slf4j.LogSinkLegacySlf4jImpl
 import org.scalatest.WordSpec
 
 import scala.util.Random
@@ -23,7 +24,9 @@ class LoggingMacroTest extends WordSpec {
   }
 
   private def setupLogger() = {
-    val sinks = Seq(new ConsoleSink(new StringRenderingPolicy(true)))
+    val coloringPolicy = new StringRenderingPolicy(true)
+    val simplePolicy = new StringRenderingPolicy(false)
+    val sinks = Seq(new ConsoleSink(coloringPolicy), new LogSinkLegacySlf4jImpl(simplePolicy))
     val configService = new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(Log.Level.Trace, sinks))
     val router = new ConfigurableLogRouter(configService)
     IzLogger(router)

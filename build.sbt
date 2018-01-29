@@ -108,7 +108,11 @@ val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module
-
+  .settings(
+    libraryDependencies ++= Seq(
+      R.scala_reflect
+    )
+  )
 
 lazy val distageModel = inDiStage.as.module
     .depends(fundamentalsReflection)
@@ -132,6 +136,11 @@ lazy val logstageModel = inLogStage.as.module
 
 lazy val logstageMacro = inLogStage.as.module
   .depends(logstageModel)
+  .settings(
+    libraryDependencies ++= Seq(
+      R.scala_reflect
+    )
+  )
 
 lazy val logstageApi = inLogStage.as.module
   .depends(logstageMacro)
@@ -147,7 +156,7 @@ lazy val logstageSinkConsole = inLogStage.as.module
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApi)
-  .settings(libraryDependencies += R.slf4j_api)
+  .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
   .depends(logstageApi)
