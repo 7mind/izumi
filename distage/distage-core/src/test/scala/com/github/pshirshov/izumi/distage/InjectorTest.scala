@@ -1,20 +1,16 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.definition.TrivialDIDef
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ContextDefinition}
+import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.definition.CompileTimeDSL._
+import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, TraitInitializationFailedException, UnsupportedWiringException, UntranslatablePlanException}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.{DuplicatedStatements, UnsolvableConflict}
-import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring
-import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring.UnaryWiring
 import org.scalatest.WordSpec
 
-
-
 class InjectorTest extends WordSpec {
-
 
   def mkInjector(): Injector = Injector.emerge()
 
@@ -29,7 +25,6 @@ class InjectorTest extends WordSpec {
         .binding[TestDependency1]
         .binding[TestCaseClass]
         .instance(TestInstanceBinding())
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -40,8 +35,8 @@ class InjectorTest extends WordSpec {
       }
 
       val fixedPlan = plan.flatMap {
-        case ImportDependency(key, _) if key == DIKey.get[NotInContext] =>
-          Seq(ExecutableOp.WiringOp.ReferenceInstance(
+        case ImportDependency(key, _) if key == RuntimeUniverse.DIKey.get[NotInContext] =>
+          Seq(WiringOp.ReferenceInstance(
             key
             , UnaryWiring.Instance(RuntimeUniverse.SafeType.get[NotInContext], new NotInContext {})
           ))
@@ -64,7 +59,6 @@ class InjectorTest extends WordSpec {
           .named("named.set")
         .element[JustTrait, Impl3]
           .named("named.set")
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -78,17 +72,18 @@ class InjectorTest extends WordSpec {
       val definition: ContextDefinition = TrivialDIDef
         .binding[TestClass]
           .named("named.test.class")
-        .binding[TestDependency0, TestImpl0]
+        .binding[TestDependency0, TestImpl0Bad]
+        .binding[TestDependency0, TestImpl0Good]
           .named("named.test.dependency.0")
         .instance(TestInstanceBinding())
           .named("named.test")
-        .finish
+
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
       println(context.get[TestClass]("named.test.class"))
+      assert(context.get[TestClass]("named.test.class").correctWired())
     }
-
 
     "support circular dependencies" in {
       import Case2._
@@ -96,7 +91,6 @@ class InjectorTest extends WordSpec {
       val definition: ContextDefinition = TrivialDIDef
         .binding[Circular2]
         .binding[Circular1]
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -114,7 +108,6 @@ class InjectorTest extends WordSpec {
         .binding[Circular2]
         .binding[Circular5]
         .binding[Circular4]
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -127,13 +120,59 @@ class InjectorTest extends WordSpec {
       context.enumerate.foreach(println)
     }
 
+    "support generics" in {
+      import Case11._
+
+      val definition = TrivialDIDef
+        .instance[List[Dep]](List(DepA())).named("As")
+        .instance[List[Dep]](List(DepB())).named("Bs")
+        .instance[List[DepA]](List(DepA(), DepA(), DepA()))
+        .binding[TestClass[DepA]]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[List[Dep]]("As").forall(_.isInstanceOf[DepA]))
+      assert(context.get[List[DepA]].forall(_.isInstanceOf[DepA]))
+      assert(context.get[List[Dep]]("Bs").forall(_.isInstanceOf[DepB]))
+      assert(context.get[TestClass[DepA]].inner == context.get[List[DepA]])
+    }
+
+    "support classes with typealiases" in {
+      import Case11._
+
+      val definition = TrivialDIDef
+        .binding[DepA]
+        .binding[TestClass2[TypeAliasDepA]]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestTrait].dep.isInstanceOf[TypeAliasDepA])
+    }
+
+    "support traits with typealiases" in {
+      import Case11._
+
+      val definition = TrivialDIDef
+        .binding[DepA]
+        .binding[TestTrait]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestTrait].dep.isInstanceOf[TypeAliasDepA])
+    }
+
     "support trait initialization" in {
       import Case3._
 
       val definition: ContextDefinition = TrivialDIDef
         .binding[CircularBad1]
         .binding[CircularBad2]
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -148,7 +187,6 @@ class InjectorTest extends WordSpec {
     "support trait fields" in {
       val definition: ContextDefinition = TrivialDIDef
         .binding[Case9.ATraitWithAField]
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -162,11 +200,10 @@ class InjectorTest extends WordSpec {
 
       val definition: ContextDefinition = new ContextDefinition {
 
-        import Binding._
-        import TrivialDIDef._
+        import BindingT._
 
         override def bindings: Seq[Binding] = Seq(
-          SingletonBinding(DIKey.get[Dependency], symbolDef[Long])
+          SingletonBinding(RuntimeUniverse.DIKey.get[Dependency], ImplDef.TypeImpl(RuntimeUniverse.SafeType.get[Long]))
         )
       }
 
@@ -183,7 +220,6 @@ class InjectorTest extends WordSpec {
       val definition: ContextDefinition = TrivialDIDef
         .binding[Dependency, Impl1]
         .binding[Dependency, Impl2]
-        .finish
 
       val injector = mkInjector()
       val exc = intercept[UntranslatablePlanException] {
@@ -198,7 +234,6 @@ class InjectorTest extends WordSpec {
       val definition: ContextDefinition = TrivialDIDef
         .binding[Dependency, Impl1]
         .binding[Dependency, Impl1]
-        .finish
 
       val injector = mkInjector()
       val exc = intercept[UntranslatablePlanException] {
@@ -217,7 +252,6 @@ class InjectorTest extends WordSpec {
         .binding[OverridingFactory]
         .binding[AssistedFactory]
         .binding[AbstractFactory]
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -239,13 +273,129 @@ class InjectorTest extends WordSpec {
       assert(assistedFactory.x(1).b.isInstanceOf[Dependency])
     }
 
+    "handle generic arguments in cglib factory methods" in {
+      import Case5._
+
+      val definition: ContextDefinition = TrivialDIDef
+        .binding[GenericAssistedFactory]
+        .instance[Dependency](ConcreteDep())
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[GenericAssistedFactory]
+      val product = instantiated.x(List(SpecialDep()), List(5))
+      assert(product.a.forall(_.isSpecial))
+      assert(product.b.forall(_ == 5))
+      assert(product.c == ConcreteDep())
+    }
+
+    "handle named assisted dependencies in cglib factory methods" in {
+      import Case5._
+
+      val definition: ContextDefinition = TrivialDIDef
+        .binding[NamedAssistedFactory]
+        .binding[Dependency]
+        .instance[Dependency](SpecialDep()).named("special")
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[NamedAssistedFactory]
+
+      assert(instantiated.x(5).b.isSpecial)
+    }
+
+    // TODO GenericFactory polymorphic arguments in producer methods
+    "handle macro factory injections" in {
+      import Case5._
+
+      val definition: ContextDefinition = TrivialDIDef
+        .magic[Factory]
+        .magic[Dependency]
+        .magic[OverridingFactory]
+        .magic[AssistedFactory]
+        .magic[AbstractFactory]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val factory = context.get[Factory]
+      assert(factory.wiringTargetForDependency != null)
+      assert(factory.factoryMethodForDependency() != factory.wiringTargetForDependency)
+      assert(factory.x().b.isInstanceOf[Dependency])
+
+      val abstractFactory = context.get[AbstractFactory]
+      assert(abstractFactory.x().isInstanceOf[AbstractDependencyImpl])
+
+      val overridingFactory = context.get[OverridingFactory]
+      assert(overridingFactory.x(ConcreteDep()).b.isInstanceOf[ConcreteDep])
+
+      val assistedFactory = context.get[AssistedFactory]
+      assert(assistedFactory.x(1).a == 1)
+      assert(assistedFactory.x(1).b.isInstanceOf[Dependency])
+    }
+
+    "handle generic arguments in macro factory methods" in {
+      import Case5._
+
+      val definition: ContextDefinition = TrivialDIDef
+        .magic[GenericAssistedFactory]
+        .instance[Dependency](ConcreteDep())
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[GenericAssistedFactory]
+      val product = instantiated.x(List(SpecialDep()), List(5))
+      assert(product.a.forall(_.isSpecial))
+      assert(product.b.forall(_ == 5))
+      assert(product.c == ConcreteDep())
+    }
+
+    "handle assisted dependencies in macro factory methods" in {
+      import Case5._
+
+      val definition: ContextDefinition = TrivialDIDef
+        .magic[AssistedFactory]
+        .instance[Dependency](ConcreteDep())
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[AssistedFactory]
+
+      assert(instantiated.x(5).a == 5)
+    }
+
+    "handle named assisted dependencies in macro factory methods" in {
+      import Case5._
+
+      val definition: ContextDefinition = TrivialDIDef
+        .magic[NamedAssistedFactory]
+        .magic[Dependency]
+        .instance[Dependency](SpecialDep()).named("special")
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[NamedAssistedFactory]
+
+      assert(instantiated.x(5).b.isSpecial)
+    }
+
     // BasicProvisionerTest
     "instantiate simple class" in {
       import Case1._
       val definition: ContextDefinition = TrivialDIDef
         .binding[TestCaseClass2]
         .instance(new TestInstanceBinding)
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -261,7 +411,6 @@ class InjectorTest extends WordSpec {
       val definition: ContextDefinition = TrivialDIDef
         .provider[TestClass]((a: Dependency1) => new TestClass(null) )
         .provider[Dependency1](() => new Dependency1Sub {})
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -279,7 +428,6 @@ class InjectorTest extends WordSpec {
       val definition = TrivialDIDef
         .binding[Dependency1]
         .magic[TestTrait]
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -298,7 +446,6 @@ class InjectorTest extends WordSpec {
         .binding[Dependency1]
         .magic[TestTrait]
           .named("named-trait")
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -320,7 +467,6 @@ class InjectorTest extends WordSpec {
         .binding[Dependency3]
         .binding[Dependency2]
         .binding[Dependency1]
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -346,7 +492,6 @@ class InjectorTest extends WordSpec {
         .binding[Dependency3]
         .binding[Dependency2]
         .binding[Dependency1]
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -354,20 +499,16 @@ class InjectorTest extends WordSpec {
       val context = injector.produce(plan)
       val instantiated3 = context.get[Trait2]
       assert(instantiated3.isInstanceOf[Trait2])
-
-      println(s"Got instance: ${instantiated3.toString}!")
-      println(s"Got ${instantiated3.dep1}")
-      instantiated3.asInstanceOf[Trait3].prr()
+      assert(instantiated3.asInstanceOf[Trait3].prr() == "Hello World")
     }
 
     "handle generics" in {
-      import Case10._
+      import Case12._
 
       val definition = TrivialDIDef
         .binding[Parameterized[Dep]]
         .binding[ParameterizedTrait[Dep]]
         .binding[Dep]
-        .finish
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -377,6 +518,92 @@ class InjectorTest extends WordSpec {
       assert(context.get[ParameterizedTrait[Dep]].t.isInstanceOf[Dep])
     }
 
+  }
+
+  "support named bindings in macro traits" in {
+    import Case10._
+
+    val definition = TrivialDIDef
+      .magic[Dep, DepA].named("A")
+      .magic[Dep, DepB].named("B")
+      .magic[Trait]
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+
+    val context = injector.produce(plan)
+    val instantiated = context.get[Trait]
+
+    assert(instantiated.depA.isA)
+    assert(!instantiated.depB.isA)
+  }
+
+  "support named bindings in cglib traits" in {
+    import Case10._
+
+    val definition = TrivialDIDef
+      .binding[Dep, DepA].named("A")
+      .binding[Dep, DepB].named("B")
+      .binding[Trait]
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+
+    val context = injector.produce(plan)
+    val instantiated = context.get[Trait]
+
+    assert(instantiated.depA.isA)
+    assert(!instantiated.depB.isA)
+  }
+
+  "populate implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
+    import Case13._
+
+    val definition = TrivialDIDef
+      .binding[TestClass]
+      .binding[Dep]
+      .binding[DummyImplicit, MyDummyImplicit]
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+
+    val context = injector.produce(plan)
+    val instantiated = context.get[TestClass]
+
+    assert(instantiated.dummyImplicit.isInstanceOf[MyDummyImplicit])
+    assert(instantiated.dummyImplicit.asInstanceOf[MyDummyImplicit].imADummy)
+  }
+
+  "override protected defs in cglib traits" in {
+    import Case14._
+
+    val definition = TrivialDIDef
+      .binding[TestTrait]
+      .binding[Dep]
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+
+    val context = injector.produce(plan)
+    val instantiated = context.get[TestTrait]
+
+    assert(instantiated.rd == Dep().toString)
+  }
+
+  "override protected defs in macro traits" in {
+    import Case14._
+
+    val definition = TrivialDIDef
+      .magic[TestTrait]
+      .magic[Dep]
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+
+    val context = injector.produce(plan)
+    val instantiated = context.get[TestTrait]
+
+    assert(instantiated.rd == Dep().toString)
   }
 
 }

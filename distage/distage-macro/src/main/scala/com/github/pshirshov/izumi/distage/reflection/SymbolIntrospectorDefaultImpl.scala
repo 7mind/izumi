@@ -1,21 +1,21 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-trait SymbolIntrospectorAbstractImpl {
-  this: AbstractSymbolIntrospector =>
-  
+import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
+import com.github.pshirshov.izumi.distage.model.reflection.universe.MacroUniverse
+
+trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
+
   override def selectConstructor(symb: u.TypeFull): u.SelectedConstructor = {
     // val constructors = symb.symbol.members.filter(_.isConstructor)
     // TODO: list should not be empty (?) and should has only one element (?)
-
-    // TODO: only considers scala constructors
-    val selectedConstructor = symb.tpe.decl(u.u.termNames.CONSTRUCTOR).asMethod.typeSignatureIn(symb.tpe)
-
-    val paramLists = selectedConstructor.paramLists
+    val selectedConstructor = symb.tpe.decl(u.u.termNames.CONSTRUCTOR).asMethod
     // TODO: param list should not be empty (?), what to do with multiple lists?..
-    u.SelectedConstructor(selectedConstructor, paramLists.head)
+    // TODO: what to do with implicits
+    val paramLists = selectedConstructor.typeSignatureIn(symb.tpe).paramLists.flatten
+    u.SelectedConstructor(selectedConstructor, paramLists)
   }
 
-  override def selectParameters(symb: u.MethodSymb): List[u.TypeSymb] = {
+  override def selectParameters(symb: u.MethodSymb): List[u.Symb] = {
     symb.paramLists.head
   }
 
@@ -35,16 +35,35 @@ trait SymbolIntrospectorAbstractImpl {
     }
   }
 
-  override def isWireableMethod(tpe: u.TypeFull, decl: u.TypeSymb): Boolean = {
+  override def isWireableMethod(tpe: u.TypeFull, decl: u.Symb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       decl.asMethod.paramLists.isEmpty && u.SafeType(decl.asMethod.returnType) != tpe
     }
   }
 
-  override def isFactoryMethod(tpe: u.TypeFull, decl: u.TypeSymb): Boolean = {
+  override def isFactoryMethod(tpe: u.TypeFull, decl: u.Symb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       val paramLists = decl.asMethod.paramLists
       paramLists.nonEmpty && paramLists.forall(list => !list.contains(decl.asMethod.returnType) && !list.contains(tpe))
     }
   }
+}
+
+object SymbolIntrospectorDefaultImpl {
+
+  class Java
+    extends SymbolIntrospector.Java
+       with SymbolIntrospectorDefaultImpl
+  object Java {
+    final val instance = new SymbolIntrospectorDefaultImpl.Java
+  }
+
+  class Macro[M <: MacroUniverse[_]](macroUniverse: M)
+    extends SymbolIntrospector.Macro[M](macroUniverse)
+       with SymbolIntrospectorDefaultImpl
+  object Macro {
+    def instance[M <: MacroUniverse[_]](macroUniverse: M): SymbolIntrospector.Macro[macroUniverse.type] =
+      new SymbolIntrospectorDefaultImpl.Macro(macroUniverse)
+  }
+
 }

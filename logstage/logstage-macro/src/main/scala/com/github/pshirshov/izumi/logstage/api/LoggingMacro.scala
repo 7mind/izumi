@@ -62,7 +62,7 @@ object LoggingMacro {
     val messageTree = message.tree match {
       // qq causes a weird warning here
       //case q"StringContext($stringContext).s(..$args)" =>
-      case c.universe.Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args) =>
+      case c.universe.Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
         val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
         reifyContext(c)(stringContext, namedArgs)
 
@@ -72,7 +72,8 @@ object LoggingMacro {
         reifyContext(c)(sc, emptyArgs)
 
       case other =>
-        c.warning(c.enclosingPosition, s"""Complex expression as an input for a logger: ${other.toString()}. Use string interpolation: s"message with an $${argument}" """)
+        c.warning(c.enclosingPosition,
+          s"""Complex expression as an input for a logger: ${other.toString()}. Variables won't be bound in context. This may not be what you want, use string interpolation instead: s"message with an $${argument}" """)
         val emptyArgs = q"""List("@type" -> "expr", "@expr" -> ${other.toString()})"""
         val sc = q"StringContext($other)"
         reifyContext(c)(sc, c.Expr(emptyArgs))

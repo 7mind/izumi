@@ -1,15 +1,12 @@
-package com.github.pshirshov.izumi.fundamentals.reflection
-
+package com.github.pshirshov.izumi.distage.model.reflection.universe
 
 import scala.reflect.api.Universe
 
+trait DIUniverseBase { self =>
 
-
-trait DIUniverse {
   val u: Universe
-  val mirror: u.Mirror
 
-  case class SelectedConstructor(constructorSymbol: TypeNative, arguments: Seq[TypeSymb])
+  case class SelectedConstructor(constructorSymbol: MethodSymb, arguments: List[Symb])
 
   case class SafeType(tpe: TypeNative) {
 
@@ -27,6 +24,14 @@ trait DIUniverse {
 
   object SafeType {
     def get[T: Tag]: TypeFull = SafeType(u.typeTag[T].tpe)
+
+    def getWeak[T: u.WeakTypeTag]: TypeFull = SafeType(u.weakTypeTag[T].tpe)
+
+    implicit final val liftableSafeType: u.Liftable[SafeType] =
+      value => {
+        import u._
+        q"{ ${symbolOf[RuntimeUniverse.type].asClass.module}.SafeType.getWeak[${Liftable.liftType(value.tpe)}] }"
+      }
   }
 
 
@@ -34,8 +39,9 @@ trait DIUniverse {
 
   trait Callable {
     def argTypes: Seq[TypeFull]
+    def ret: TypeFull
 
-    final def apply(args: Any*): Any = {
+    final def unsafeApply(args: Any*): Any = {
       if (verifyArgs(args)) {
         throw new UnsafeCallArgsMismatched(s"Mismatched arguments for unsafe call: $argTypes, $args", argTypes, args)
       }
@@ -44,7 +50,7 @@ trait DIUniverse {
     }
 
     private def verifyArgs(args: Any*) = {
-      // TODO: obsiously this method can only work in runtime
+      // TODO: obviously this method can only work at runtime
       import scala.reflect.runtime.universe._
 
       val countOk = args.size == argTypes.size
@@ -62,11 +68,10 @@ trait DIUniverse {
     protected def call(args: Any*): Any
   }
 
-
   type TypeFull = SafeType
   type Tag[T] = u.TypeTag[T]
   type TypeNative = u.Type
-  type TypeSymb = u.Symbol
+  type Symb = u.Symbol
   type MethodSymb = u.MethodSymbol
 
 }

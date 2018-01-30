@@ -12,17 +12,17 @@ import scala.util.{Failure, Success, Try}
 
 object CglibTools {
 
-  def mkdynamic[T](dispatcher: Callback, runtimeClass: Class[_], t: ExecutableOp)(mapper: AnyRef => T): T = {
+  def mkDynamic[T](dispatcher: Callback, runtimeClass: Class[_], op: ExecutableOp)(callback: AnyRef => T): T = {
     val enhancer = new Enhancer()
     enhancer.setSuperclass(runtimeClass)
     enhancer.setCallback(dispatcher)
 
     Try(enhancer.create()) match {
       case Success(proxyInstance) =>
-        mapper(proxyInstance)
+        callback(proxyInstance)
 
       case Failure(f) =>
-        throw new DIException(s"Failed to instantiate abstract class with CGLib. Operation: $t", f)
+        throw new DIException(s"Failed to instantiate abstract class with CGLib. Operation: $op", f)
     }
   }
 

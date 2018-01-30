@@ -4,16 +4,15 @@ import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
-import com.github.pshirshov.izumi.distage.model.references.DIKey
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools}
-import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
 
 class ProxyStrategyDefaultImpl extends ProxyStrategy {
-  def initProxy(context: ProvisioningContext, executor: OperationExecutor, i: ProxyOp.InitProxy): Seq[OpResult] = {
-    val key = proxyKey(i.target)
+  def initProxy(context: ProvisioningContext, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
+    val key = proxyKey(initProxy.target)
     context.fetchKey(key) match {
       case Some(adapter: CglibRefDispatcher) =>
-        executor.execute(context, i.proxy.op).head match {
+        executor.execute(context, initProxy.proxy.op).head match {
           case OpResult.NewInstance(_, instance) =>
             adapter.reference.set(instance.asInstanceOf[AnyRef])
           case r =>
@@ -21,14 +20,14 @@ class ProxyStrategyDefaultImpl extends ProxyStrategy {
         }
 
       case _ =>
-        throw new DIException(s"Cannot get adapter $key for $i", null)
+        throw new DIException(s"Cannot get adapter $key for $initProxy", null)
     }
 
     Seq()
   }
 
-  def makeProxy(context: ProvisioningContext, m: ProxyOp.MakeProxy): Seq[OpResult] = {
-    val tpe = m.op match {
+  def makeProxy(context: ProvisioningContext, makeProxy: ProxyOp.MakeProxy): Seq[OpResult] = {
+    val tpe = makeProxy.op match {
       case op: WiringOp.InstantiateTrait =>
         op.wiring.instanceType
       case op: WiringOp.InstantiateClass =>
@@ -42,29 +41,29 @@ class ProxyStrategyDefaultImpl extends ProxyStrategy {
     val constructors = tpe.tpe.decls.filter(_.isConstructor)
     val constructable = constructors.forall(_.asMethod.paramLists.forall(_.isEmpty))
     if (!constructable) {
-      throw new DIException(s"Failed to instantiate proxy ${m.target}. All the proxy constructors must be zero-arg though we have $constructors", null)
+      throw new DIException(s"Failed to instantiate proxy ${makeProxy.target}. All the proxy constructors must be zero-arg though we have $constructors", null)
     }
 
     val runtimeClass = RuntimeUniverse.mirror.runtimeClass(tpe.tpe)
-    val nullDispatcher = new CglibNullMethodInterceptor(m.target)
-    val nullProxy = CglibTools.mkdynamic(nullDispatcher, runtimeClass, m) {
+    val nullDispatcher = new CglibNullMethodInterceptor(makeProxy.target)
+    val nullProxy = CglibTools.mkDynamic(nullDispatcher, runtimeClass, makeProxy) {
       proxyInstance =>
         proxyInstance
     }
 
     val dispatcher = new CglibRefDispatcher(nullProxy)
 
-    CglibTools.mkdynamic(dispatcher, runtimeClass, m) {
+    CglibTools.mkDynamic(dispatcher, runtimeClass, makeProxy) {
       proxyInstance =>
         Seq(
-          OpResult.NewInstance(m.target, proxyInstance)
-          , OpResult.NewInstance(proxyKey(m.target), dispatcher)
+          OpResult.NewInstance(makeProxy.target, proxyInstance)
+          , OpResult.NewInstance(proxyKey(makeProxy.target), dispatcher)
         )
     }
   }
 
-  private def proxyKey(m: DIKey) = {
-    DIKey.ProxyElementKey(m, RuntimeUniverse.SafeType.get[CglibRefDispatcher])
+  private def proxyKey(m: RuntimeUniverse.DIKey) = {
+    RuntimeUniverse.DIKey.ProxyElementKey(m, RuntimeUniverse.SafeType.get[CglibRefDispatcher])
   }
 
 }

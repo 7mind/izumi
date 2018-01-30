@@ -2,8 +2,7 @@ package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.definition.ContextDefinition
 
-class FinalPlanImmutableImpl
-(
-  override val steps: Seq[ExecutableOp]
-  , override val definition: ContextDefinition
-) extends FinalPlan
+case class FinalPlanImmutableImpl
+(override val definition: ContextDefinition)
+(override val steps: Seq[ExecutableOp])
+  extends FinalPlan

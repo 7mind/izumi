@@ -1,36 +1,68 @@
 package com.github.pshirshov.izumi.distage.model.functions
 
-import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
-import RuntimeUniverse.Callable
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
-sealed trait WrappedFunction[+R] extends Callable {
+import scala.language.experimental.macros
+
+sealed trait WrappedFunction[+R] extends RuntimeUniverse.Callable {
   def ret: RuntimeUniverse.TypeFull
   def argTypes: Seq[RuntimeUniverse.TypeFull]
   protected def fun: Any
   override def toString: String = {
     s"$fun(${argTypes.mkString(", ")}): $ret"
   }
+  def apply(args: Any*): R = unsafeApply(args: _*).asInstanceOf[R]
+}
+
+object DIKeyWrappedFunctionMacroImpl {
+  import WrappedFunction._
+
+  import scala.reflect.macros._
+
+  def impl[R](c: blackbox.Context)(funcExpr: c.Expr[Any]): c.Expr[DIKeyWrappedFunction[R]] = {
+    import c.universe._
+    System.err.println(c.universe.showCode(funcExpr.tree))
+    System.err.println(c.universe.showRaw(funcExpr.tree))
+
+    c.Expr[DIKeyWrappedFunction[R]]{q"???"}
+  }
 }
 
 object WrappedFunction {
   import RuntimeUniverse._
-  
-  def wrap[R]: WrappedFunction[R] => WrappedFunction[R] =
-    identity
 
-  implicit class W0[R: Tag](override protected val fun: () => R) extends WrappedFunction[R] {
-    def ret: RuntimeUniverse.TypeFull = RuntimeUniverse.SafeType.get[R]
+  class DIKeyWrappedFunction[+R](val argsWithKeys: Seq[(DIKey, TypeFull)]
+                               , val ret: TypeFull
+                               , val fun: Seq[Any] => R
+  ) extends WrappedFunction[R] {
+    val argTypes: Seq[TypeFull] = argsWithKeys.unzip._2
+
+    override protected def call(args: Any*): R = {
+      val seq: Seq[Any] = args
+      fun.apply(seq)
+    }
+  }
+
+  object DIKeyWrappedFunction {
+    def apply[R](funcExpr: Any): DIKeyWrappedFunction[R] = macro DIKeyWrappedFunctionMacroImpl.impl[R]
+  }
+
+  def wrap[T, R](fn: T)(implicit conv: T => WrappedFunction[R]): WrappedFunction[R] =
+    conv(fn)
+
+  implicit class W0[R: u.WeakTypeTag](override protected val fun: () => R) extends WrappedFunction[R] {
+    def ret: RuntimeUniverse.TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq.empty
 
     override protected def call(args: Any*): Any = fun()
   }
 
-  implicit class W1[R: Tag, T1: Tag](override protected val fun: (T1) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W1[R: u.WeakTypeTag, T1: u.WeakTypeTag](override protected val fun: (T1) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
+      RuntimeUniverse.SafeType.getWeak[T1]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -38,12 +70,12 @@ object WrappedFunction {
     )
   }
 
-  implicit class W2[R: Tag, T1: Tag, T2: Tag](override protected val fun: (T1, T2) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W2[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag](override protected val fun: (T1, T2) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -52,13 +84,13 @@ object WrappedFunction {
     )
   }
 
-  implicit class W3[R: Tag, T1: Tag, T2: Tag, T3: Tag](override protected val fun: (T1, T2, T3) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W3[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag](override protected val fun: (T1, T2, T3) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -68,14 +100,14 @@ object WrappedFunction {
     )
   }
 
-  implicit class W4[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag](override protected val fun: (T1, T2, T3, T4) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W4[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -86,15 +118,15 @@ object WrappedFunction {
     )
   }
 
-  implicit class W5[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag](override protected val fun: (T1, T2, T3, T4, T5) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W5[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -106,16 +138,16 @@ object WrappedFunction {
     )
   }
 
-  implicit class W6[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W6[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -128,17 +160,17 @@ object WrappedFunction {
     )
   }
 
-  implicit class W7[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W7[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -152,18 +184,18 @@ object WrappedFunction {
     )
   }
 
-  implicit class W8[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W8[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -178,19 +210,19 @@ object WrappedFunction {
     )
   }
 
-  implicit class W9[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W9[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -206,20 +238,20 @@ object WrappedFunction {
     )
   }
 
-  implicit class W10[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W10[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -236,21 +268,21 @@ object WrappedFunction {
     )
   }
 
-  implicit class W11[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W11[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -268,22 +300,22 @@ object WrappedFunction {
     )
   }
 
-  implicit class W12[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W12[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -302,23 +334,23 @@ object WrappedFunction {
     )
   }
 
-  implicit class W13[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W13[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -338,24 +370,24 @@ object WrappedFunction {
     )
   }
 
-  implicit class W14[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag, T14: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W14[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag, T14: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
-      , RuntimeUniverse.SafeType.get[T14]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
+      , RuntimeUniverse.SafeType.getWeak[T14]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -376,25 +408,25 @@ object WrappedFunction {
     )
   }
 
-  implicit class W15[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag, T14: Tag, T15: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W15[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag, T14: u.WeakTypeTag, T15: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
-      , RuntimeUniverse.SafeType.get[T14]
-      , RuntimeUniverse.SafeType.get[T15]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
+      , RuntimeUniverse.SafeType.getWeak[T14]
+      , RuntimeUniverse.SafeType.getWeak[T15]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -415,26 +447,26 @@ object WrappedFunction {
       , args(14).asInstanceOf[T15]
     )
   }
-  implicit class W16[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag, T14: Tag, T15: Tag, T16: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W16[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag, T14: u.WeakTypeTag, T15: u.WeakTypeTag, T16: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
-      , RuntimeUniverse.SafeType.get[T14]
-      , RuntimeUniverse.SafeType.get[T15]
-      , RuntimeUniverse.SafeType.get[T16]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
+      , RuntimeUniverse.SafeType.getWeak[T14]
+      , RuntimeUniverse.SafeType.getWeak[T15]
+      , RuntimeUniverse.SafeType.getWeak[T16]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -457,27 +489,27 @@ object WrappedFunction {
     )
   }
 
-  implicit class W17[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag, T14: Tag, T15: Tag, T16: Tag, T17: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W17[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag, T14: u.WeakTypeTag, T15: u.WeakTypeTag, T16: u.WeakTypeTag, T17: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
-      , RuntimeUniverse.SafeType.get[T14]
-      , RuntimeUniverse.SafeType.get[T15]
-      , RuntimeUniverse.SafeType.get[T16]
-      , RuntimeUniverse.SafeType.get[T17]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
+      , RuntimeUniverse.SafeType.getWeak[T14]
+      , RuntimeUniverse.SafeType.getWeak[T15]
+      , RuntimeUniverse.SafeType.getWeak[T16]
+      , RuntimeUniverse.SafeType.getWeak[T17]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -501,28 +533,28 @@ object WrappedFunction {
     )
   }
 
-  implicit class W18[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag, T14: Tag, T15: Tag, T16: Tag, T17: Tag, T18: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W18[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag, T14: u.WeakTypeTag, T15: u.WeakTypeTag, T16: u.WeakTypeTag, T17: u.WeakTypeTag, T18: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
-      , RuntimeUniverse.SafeType.get[T14]
-      , RuntimeUniverse.SafeType.get[T15]
-      , RuntimeUniverse.SafeType.get[T16]
-      , RuntimeUniverse.SafeType.get[T17]
-      , RuntimeUniverse.SafeType.get[T18]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
+      , RuntimeUniverse.SafeType.getWeak[T14]
+      , RuntimeUniverse.SafeType.getWeak[T15]
+      , RuntimeUniverse.SafeType.getWeak[T16]
+      , RuntimeUniverse.SafeType.getWeak[T17]
+      , RuntimeUniverse.SafeType.getWeak[T18]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -547,29 +579,29 @@ object WrappedFunction {
     )
   }
 
-  implicit class W19[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag, T14: Tag, T15: Tag, T16: Tag, T17: Tag, T18: Tag, T19: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W19[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag, T14: u.WeakTypeTag, T15: u.WeakTypeTag, T16: u.WeakTypeTag, T17: u.WeakTypeTag, T18: u.WeakTypeTag, T19: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
-      , RuntimeUniverse.SafeType.get[T14]
-      , RuntimeUniverse.SafeType.get[T15]
-      , RuntimeUniverse.SafeType.get[T16]
-      , RuntimeUniverse.SafeType.get[T17]
-      , RuntimeUniverse.SafeType.get[T18]
-      , RuntimeUniverse.SafeType.get[T19]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
+      , RuntimeUniverse.SafeType.getWeak[T14]
+      , RuntimeUniverse.SafeType.getWeak[T15]
+      , RuntimeUniverse.SafeType.getWeak[T16]
+      , RuntimeUniverse.SafeType.getWeak[T17]
+      , RuntimeUniverse.SafeType.getWeak[T18]
+      , RuntimeUniverse.SafeType.getWeak[T19]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -595,30 +627,30 @@ object WrappedFunction {
     )
   }
 
-  implicit class W20[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag, T14: Tag, T15: Tag, T16: Tag, T17: Tag, T18: Tag, T19: Tag, T20: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W20[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag, T14: u.WeakTypeTag, T15: u.WeakTypeTag, T16: u.WeakTypeTag, T17: u.WeakTypeTag, T18: u.WeakTypeTag, T19: u.WeakTypeTag, T20: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
-      , RuntimeUniverse.SafeType.get[T14]
-      , RuntimeUniverse.SafeType.get[T15]
-      , RuntimeUniverse.SafeType.get[T16]
-      , RuntimeUniverse.SafeType.get[T17]
-      , RuntimeUniverse.SafeType.get[T18]
-      , RuntimeUniverse.SafeType.get[T19]
-      , RuntimeUniverse.SafeType.get[T20]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
+      , RuntimeUniverse.SafeType.getWeak[T14]
+      , RuntimeUniverse.SafeType.getWeak[T15]
+      , RuntimeUniverse.SafeType.getWeak[T16]
+      , RuntimeUniverse.SafeType.getWeak[T17]
+      , RuntimeUniverse.SafeType.getWeak[T18]
+      , RuntimeUniverse.SafeType.getWeak[T19]
+      , RuntimeUniverse.SafeType.getWeak[T20]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -645,31 +677,31 @@ object WrappedFunction {
     )
   }
 
-  implicit class W21[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag, T14: Tag, T15: Tag, T16: Tag, T17: Tag, T18: Tag, T19: Tag, T20: Tag, T21: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W21[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag, T14: u.WeakTypeTag, T15: u.WeakTypeTag, T16: u.WeakTypeTag, T17: u.WeakTypeTag, T18: u.WeakTypeTag, T19: u.WeakTypeTag, T20: u.WeakTypeTag, T21: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
-      , RuntimeUniverse.SafeType.get[T14]
-      , RuntimeUniverse.SafeType.get[T15]
-      , RuntimeUniverse.SafeType.get[T16]
-      , RuntimeUniverse.SafeType.get[T17]
-      , RuntimeUniverse.SafeType.get[T18]
-      , RuntimeUniverse.SafeType.get[T19]
-      , RuntimeUniverse.SafeType.get[T20]
-      , RuntimeUniverse.SafeType.get[T21]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
+      , RuntimeUniverse.SafeType.getWeak[T14]
+      , RuntimeUniverse.SafeType.getWeak[T15]
+      , RuntimeUniverse.SafeType.getWeak[T16]
+      , RuntimeUniverse.SafeType.getWeak[T17]
+      , RuntimeUniverse.SafeType.getWeak[T18]
+      , RuntimeUniverse.SafeType.getWeak[T19]
+      , RuntimeUniverse.SafeType.getWeak[T20]
+      , RuntimeUniverse.SafeType.getWeak[T21]
     )
 
     override protected def call(args: Any*): Any = fun(
@@ -697,32 +729,32 @@ object WrappedFunction {
     )
   }
 
-  implicit class W22[R: Tag, T1: Tag, T2: Tag, T3: Tag, T4: Tag, T5: Tag, T6: Tag, T7: Tag, T8: Tag, T9: Tag, T10: Tag, T11: Tag, T12: Tag, T13: Tag, T14: Tag, T15: Tag, T16: Tag, T17: Tag, T18: Tag, T19: Tag, T20: Tag, T21: Tag, T22: Tag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R) extends WrappedFunction[R] {
-    def ret: TypeFull = RuntimeUniverse.SafeType.get[R]
+  implicit class W22[R: u.WeakTypeTag, T1: u.WeakTypeTag, T2: u.WeakTypeTag, T3: u.WeakTypeTag, T4: u.WeakTypeTag, T5: u.WeakTypeTag, T6: u.WeakTypeTag, T7: u.WeakTypeTag, T8: u.WeakTypeTag, T9: u.WeakTypeTag, T10: u.WeakTypeTag, T11: u.WeakTypeTag, T12: u.WeakTypeTag, T13: u.WeakTypeTag, T14: u.WeakTypeTag, T15: u.WeakTypeTag, T16: u.WeakTypeTag, T17: u.WeakTypeTag, T18: u.WeakTypeTag, T19: u.WeakTypeTag, T20: u.WeakTypeTag, T21: u.WeakTypeTag, T22: u.WeakTypeTag](override protected val fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R) extends WrappedFunction[R] {
+    def ret: TypeFull = RuntimeUniverse.SafeType.getWeak[R]
 
     def argTypes: Seq[TypeFull] = Seq(
-      RuntimeUniverse.SafeType.get[T1]
-      , RuntimeUniverse.SafeType.get[T2]
-      , RuntimeUniverse.SafeType.get[T3]
-      , RuntimeUniverse.SafeType.get[T4]
-      , RuntimeUniverse.SafeType.get[T5]
-      , RuntimeUniverse.SafeType.get[T6]
-      , RuntimeUniverse.SafeType.get[T7]
-      , RuntimeUniverse.SafeType.get[T8]
-      , RuntimeUniverse.SafeType.get[T9]
-      , RuntimeUniverse.SafeType.get[T10]
-      , RuntimeUniverse.SafeType.get[T11]
-      , RuntimeUniverse.SafeType.get[T12]
-      , RuntimeUniverse.SafeType.get[T13]
-      , RuntimeUniverse.SafeType.get[T14]
-      , RuntimeUniverse.SafeType.get[T15]
-      , RuntimeUniverse.SafeType.get[T16]
-      , RuntimeUniverse.SafeType.get[T17]
-      , RuntimeUniverse.SafeType.get[T18]
-      , RuntimeUniverse.SafeType.get[T19]
-      , RuntimeUniverse.SafeType.get[T20]
-      , RuntimeUniverse.SafeType.get[T21]
-      , RuntimeUniverse.SafeType.get[T22]
+      RuntimeUniverse.SafeType.getWeak[T1]
+      , RuntimeUniverse.SafeType.getWeak[T2]
+      , RuntimeUniverse.SafeType.getWeak[T3]
+      , RuntimeUniverse.SafeType.getWeak[T4]
+      , RuntimeUniverse.SafeType.getWeak[T5]
+      , RuntimeUniverse.SafeType.getWeak[T6]
+      , RuntimeUniverse.SafeType.getWeak[T7]
+      , RuntimeUniverse.SafeType.getWeak[T8]
+      , RuntimeUniverse.SafeType.getWeak[T9]
+      , RuntimeUniverse.SafeType.getWeak[T10]
+      , RuntimeUniverse.SafeType.getWeak[T11]
+      , RuntimeUniverse.SafeType.getWeak[T12]
+      , RuntimeUniverse.SafeType.getWeak[T13]
+      , RuntimeUniverse.SafeType.getWeak[T14]
+      , RuntimeUniverse.SafeType.getWeak[T15]
+      , RuntimeUniverse.SafeType.getWeak[T16]
+      , RuntimeUniverse.SafeType.getWeak[T17]
+      , RuntimeUniverse.SafeType.getWeak[T18]
+      , RuntimeUniverse.SafeType.getWeak[T19]
+      , RuntimeUniverse.SafeType.getWeak[T20]
+      , RuntimeUniverse.SafeType.getWeak[T21]
+      , RuntimeUniverse.SafeType.getWeak[T22]
     )
 
     override protected def call(args: Any*): Any = fun(

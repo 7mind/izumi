@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.{Locator, LoggerHook}
 import com.github.pshirshov.izumi.distage.model.exceptions._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{SetOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
@@ -14,6 +14,7 @@ class ProvisionerDefaultImpl
 (
   provisionerHook: ProvisionerHook
   , provisionerIntrospector: ProvisionerIntrospector
+  , loggerHook: LoggerHook
   , setStrategy: SetStrategy
   , proxyStrategy: ProxyStrategy
   , factoryStrategy: FactoryStrategy
@@ -29,7 +30,7 @@ class ProvisionerDefaultImpl
 
     val provisions = plan.steps.foldLeft(activeProvision) {
       case (active, step) =>
-        execute(LocatorContext(active, parentContext), step).foldLeft(active) {
+        execute(LocatorContext(active.toImmutable, parentContext), step).foldLeft(active) {
           case (acc, result) =>
             Try(interpretResult(active, result)) match {
               case Failure(f) =>
@@ -54,13 +55,13 @@ class ProvisionerDefaultImpl
   private def interpretResult(active: ProvisionActive, result: OpResult): Unit = {
     result match {
       case OpResult.NewImport(target, value) =>
-        if (active.imports.contains(target)) {
-          throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
-        }
-        if (value.isInstanceOf[OpResult]) {
-          throw new DIException(s"Pathological case. Tried to add set into itself: $target -> $value", null)
-        }
-        active.imports += (target -> value)
+          if (active.imports.contains(target)) {
+            throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
+          }
+          if (value.isInstanceOf[OpResult]) {
+            throw new DIException(s"Pathological case. Tried to add set into itself: $target -> $value", null)
+          }
+          active.imports += (target -> value)
 
       case OpResult.NewInstance(target, value) =>
         if (active.instances.contains(target)) {
@@ -73,42 +74,45 @@ class ProvisionerDefaultImpl
 
       case OpResult.UpdatedSet(target, instance) =>
         active.instances += (target -> instance)
+
+      case OpResult.DoNothing() =>
+        ()
     }
   }
 
   def execute(context: ProvisioningContext, step: ExecutableOp): Seq[OpResult] = {
     step match {
-      case op: ExecutableOp.ImportDependency =>
+      case op: ImportDependency =>
         importStrategy.importDependency(context, op)
 
-      case op: ExecutableOp.WiringOp.ReferenceInstance =>
+      case op: WiringOp.ReferenceInstance =>
         instanceStrategy.getInstance(context, op)
 
-      case op: ExecutableOp.WiringOp.CallProvider =>
-        providerStrategy.callProvider(context, op)
+      case op: WiringOp.CallProvider =>
+        providerStrategy.callProvider(context, this, op)
 
-      case op: ExecutableOp.WiringOp.InstantiateClass =>
+      case op: WiringOp.InstantiateClass =>
         classStrategy.instantiateClass(context, op)
 
-      case op: ExecutableOp.SetOp.CreateSet =>
+      case op: SetOp.CreateSet =>
         setStrategy.makeSet(context, op)
 
       case op: SetOp.AddToSet =>
         setStrategy.addToSet(context, op)
 
-      case t: ExecutableOp.WiringOp.InstantiateTrait =>
-        traitStrategy.makeTrait(context, t)
+      case op: WiringOp.InstantiateTrait =>
+        traitStrategy.makeTrait(context, op)
 
-      case f: WiringOp.InstantiateFactory =>
-        factoryStrategy.makeFactory(context, this, f)
+      case op: WiringOp.InstantiateFactory =>
+        factoryStrategy.makeFactory(context, this, op)
 
-      case m: ExecutableOp.ProxyOp.MakeProxy =>
-        proxyStrategy.makeProxy(context, m)
+      case op: ProxyOp.MakeProxy =>
+        proxyStrategy.makeProxy(context, op)
 
-      case i: ExecutableOp.ProxyOp.InitProxy =>
-        proxyStrategy.initProxy(context, this, i)
+      case op: ProxyOp.InitProxy =>
+        proxyStrategy.initProxy(context, this, op)
 
-      case op: ExecutableOp.CustomOp =>
+      case op: CustomOp =>
         customStrategy.handle(context, op)
 
     }

@@ -3,12 +3,13 @@ package com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
-import com.github.pshirshov.izumi.distage.model.references.{DIKey, RefTable}
+import com.github.pshirshov.izumi.distage.model.references.RefTable
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
 import scala.collection.mutable
 
 
-class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
+class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
 
   override def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable = {
     computeFwdRefTable(
@@ -28,8 +29,8 @@ class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
 
   override def computeFwdRefTable(
                                    plan: Iterable[ExecutableOp]
-                                 , refFilter: Accumulator => DIKey => Boolean
-                                 , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
+                                 , refFilter: Accumulator => RuntimeUniverse.DIKey => Boolean
+                                 , postFilter: ((RuntimeUniverse.DIKey, mutable.Set[RuntimeUniverse.DIKey])) => Boolean
                                  ): RefTable = {
 
     val dependencies = plan.toList.foldLeft(new Accumulator) {
@@ -49,8 +50,8 @@ class PlanAnalyzerDefaultImpl() extends PlanAnalyzer {
     RefTable(dependencies, dependants)
   }
 
-  override def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {
-    val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[DIKey, DIKey]) {
+  override def reverseReftable(dependencies: Map[RuntimeUniverse.DIKey, Set[RuntimeUniverse.DIKey]]): Map[RuntimeUniverse.DIKey, Set[RuntimeUniverse.DIKey]] = {
+    val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[RuntimeUniverse.DIKey, RuntimeUniverse.DIKey]) {
       case (acc, (reference, referencee)) =>
         referencee.foreach(acc.addBinding(_, reference))
         acc

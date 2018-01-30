@@ -1,14 +1,20 @@
 package com.github.pshirshov.izumi.distage.model.reflection
 
-import com.github.pshirshov.izumi.distage.model.plan.DependencyContext.{MethodContext, ParameterContext}
-import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.fundamentals.reflection._
-
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, MacroUniverse, RuntimeUniverse}
 
 trait DependencyKeyProvider {
-  def keyFromParameter(context: ParameterContext, parameterSymbol: RuntimeUniverse.TypeSymb): DIKey
+  val u: DIUniverse
 
-  def keyFromMethod(context: MethodContext, methodSymbol: RuntimeUniverse.MethodSymb): DIKey
+  def keyFromParameter(context: u.DependencyContext.ParameterContext, parameterSymbol: u.Symb): u.DIKey
 
-  def keyFromType(parameterSymbol: RuntimeUniverse.TypeFull): DIKey
+  def keyFromMethod(context: u.DependencyContext.MethodContext, methodSymbol: u.MethodSymb): u.DIKey
+}
+
+object DependencyKeyProvider {
+
+  trait Java extends DependencyKeyProvider {
+    val u: RuntimeUniverse.type = RuntimeUniverse
+  }
+
+  abstract class Macro[+M <: MacroUniverse[_]](override val u: M) extends DependencyKeyProvider
 }

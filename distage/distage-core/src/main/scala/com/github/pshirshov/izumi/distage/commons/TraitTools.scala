@@ -1,11 +1,42 @@
 package com.github.pshirshov.izumi.distage.commons
 
-import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.github.pshirshov.izumi.distage.model.exceptions.TraitInitializationFailedException
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{TraitField, TraitIndex}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 import com.github.pshirshov.izumi.fundamentals.reflection._
 
 object TraitTools {
+
+  def traitIndex(tpe: RuntimeUniverse.TypeFull, methods: Seq[RuntimeUniverse.Association.Method]): TraitIndex = {
+    val vals = tpe.tpe.decls.collect {
+      case m: RuntimeUniverse.u.TermSymbolApi if m.isVal || m.isVar =>
+        m
+    }
+
+    val getters = vals.map { v =>
+      v.name.toString -> TraitField(v.name.toString)
+    }.toMap
+
+    val setters = vals.map {
+      v =>
+        val runtimeClass = tpe.tpe.typeSymbol.asClass.fullName
+        val setterBase = runtimeClass.replace('.', '$')
+        val setterName = s"$setterBase$$_setter_$$${v.name.toString}_$$eq"
+        setterName -> TraitField(v.name.toString)
+    }.toMap
+
+    TraitIndex(makeTraitIndex(methods), getters, setters)
+  }
+
+  private def makeTraitIndex(methods: Seq[RuntimeUniverse.Association.Method]): Map[Method, RuntimeUniverse.Association.Method] = {
+    methods.map {
+      m =>
+        ReflectionUtil.toJavaMethod(m.context.definingClass.tpe, m.symbol) -> m
+    }.toMap
+  }
+
   //        try {
   //          CglibTools.initTrait(instance)
   //        } catch {
@@ -40,4 +71,5 @@ object TraitTools {
       case None =>
     }
   }
+
 }

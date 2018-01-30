@@ -13,10 +13,10 @@ class PlanResolverDefaultImpl extends PlanResolver {
     val issues = plan.issues
 
     if (issues.nonEmpty) {
-      throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy, feel free to jerk at this point): $issues", issues)
+      throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy; feel free to jerk off at this point): $issues", issues)
     }
 
     val ops = plan.statements
-    new FinalPlanImmutableImpl(ops, definition)
+    FinalPlanImmutableImpl(definition)(ops)
   }
 }

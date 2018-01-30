@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.model
 
 import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
-import com.github.pshirshov.izumi.distage.model.references.{DIKey, IdentifiedRef, TypedRef}
-import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.references.{IdentifiedRef, TypedRef}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
 trait Locator {
   def enumerate: Stream[IdentifiedRef]
@@ -11,9 +11,9 @@ trait Locator {
 
   def parent: Option[Locator]
 
-  def lookupInstanceOrThrow[T: RuntimeUniverse.Tag](key: DIKey): T
+  def lookupInstanceOrThrow[T: RuntimeUniverse.Tag](key: RuntimeUniverse.DIKey): T
 
-  def lookupInstance[T: RuntimeUniverse.Tag](key: DIKey): Option[T]
+  def lookupInstance[T: RuntimeUniverse.Tag](key: RuntimeUniverse.DIKey): Option[T]
 
   def find[T: RuntimeUniverse.Tag]: Option[T]
 
@@ -23,5 +23,5 @@ trait Locator {
 
   def get[T: RuntimeUniverse.Tag](id: String): T
 
-  protected[distage] def lookup[T: RuntimeUniverse.Tag](key: DIKey): Option[TypedRef[T]]
+  protected[distage] def lookup[T: RuntimeUniverse.Tag](key: RuntimeUniverse.DIKey): Option[TypedRef[T]]
 }
