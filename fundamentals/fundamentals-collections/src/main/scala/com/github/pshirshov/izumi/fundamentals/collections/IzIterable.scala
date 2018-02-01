@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.collections
 
-import scala.collection.IterableLike
+import scala.collection.{IterableLike, mutable}
 import scala.collection.generic.CanBuildFrom
 
 

@@ -88,6 +88,8 @@ val inLogStage = In("logstage")
   .withModuleSettings(LibSettings)
 val inFundamentals = In("fundamentals")
   .withModuleSettings(LibSettings)
+val inIdealingua = In("idealingua")
+  .withModuleSettings(LibSettings)
 
 // --------------------------------------------
 
@@ -102,7 +104,7 @@ lazy val fundamentals: Seq[ProjectReferenceEx] = Seq(
 )
 // --------------------------------------------
 val globalDefs = setup(baseSettings)
-  .withSharedLibs(fundamentals :_*)
+  .withSharedLibs(fundamentals: _*)
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module
@@ -113,7 +115,7 @@ lazy val fundamentalsReflection = inFundamentals.as.module
   )
 
 lazy val distageModel = inDiStage.as.module
-    .depends(fundamentalsReflection)
+  .depends(fundamentalsReflection)
 
 lazy val distageMacro = inDiStage.as.module
   .depends(distageModel)
@@ -148,7 +150,7 @@ lazy val logstageDi = inLogStage.as.module
 
 lazy val logstageJsonJson4s = inLogStage.as.module
   .depends(logstageApi)
-    .settings(libraryDependencies ++= Seq(R.json4s_native))
+  .settings(libraryDependencies ++= Seq(R.json4s_native))
 
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApi)
@@ -172,6 +174,15 @@ lazy val logstageRouting = inLogStage.as.module
     , logstageSinkSlf4j.testOnlyRef
     , logstageJsonJson4s.testOnlyRef
   )
+
+lazy val idealinguaModel = inIdealingua.as.module
+  .settings(libraryDependencies += R.scalameta)
+
+
+lazy val idealinguaCore = inIdealingua.as.module
+  .depends(idealinguaModel)
+  .settings(libraryDependencies ++= Seq(T.scala_compiler, T.scala_library))
+
 
 lazy val sbtIzumi = inRoot.as
   .module
@@ -201,11 +212,14 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 lazy val distage: Seq[ProjectReference] = Seq(
   distageCore
 )
+lazy val idealingua: Seq[ProjectReference] = Seq(
+  idealinguaCore
+)
 lazy val izsbt: Seq[ProjectReference] = Seq(
   sbtIzumi
 )
 
-lazy val allProjects = distage ++ logstage ++ izsbt
+lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 
 lazy val root = inRoot.as
   .root
