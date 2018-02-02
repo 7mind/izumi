@@ -2,12 +2,12 @@ package com.github.pshirshov.izumi.distage.definition
 
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import com.github.pshirshov.izumi.distage.provisioning.traitcompiler.TraitConstructorMacro
-import com.github.pshirshov.izumi.distage.reflection.{SymbolIntrospector, SymbolIntrospectorDefaultImpl}
+import com.github.pshirshov.izumi.distage.reflection.{RuntimeSymbolIntrospector, RuntimeSymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection._
 
 
 object MagicMacro extends MagicMacro {
-  final val symbolIntrospector = SymbolIntrospectorDefaultImpl.instance
+  final val symbolIntrospector = RuntimeSymbolIntrospectorDefaultImpl.instance
   final val traitConstructorMacro = TraitConstructorMacro
 }
 
@@ -17,7 +17,7 @@ trait MagicMacro {
 
   import scala.reflect.macros.whitebox
 
-  def symbolIntrospector: SymbolIntrospector
+  def symbolIntrospector: RuntimeSymbolIntrospector
 
   def traitConstructorMacro: TraitConstructorMacro
 

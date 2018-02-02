@@ -6,6 +6,8 @@ trait DIUniverse {
   val u: Universe
   val mirror: u.Mirror
 
+  case class SelectedConstructor(constructorSymbol: TypeNative, arguments: Seq[TypeSymb])
+
   case class SafeType(tpe: TypeNative) {
 
     override def toString: String = tpe.toString

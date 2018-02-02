@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.traitcompiler
 
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
-import com.github.pshirshov.izumi.distage.reflection.{SymbolIntrospector, SymbolIntrospectorDefaultImpl}
+import com.github.pshirshov.izumi.distage.reflection.{RuntimeSymbolIntrospector, RuntimeSymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
 
 import scala.language.experimental.macros
@@ -10,7 +10,7 @@ import scala.reflect.macros.whitebox
 // TODO: use scala-asm to generate traits at runtime instead.
 
 object TraitConstructorMacro extends TraitConstructorMacro {
-  final val symbolIntrospector = SymbolIntrospectorDefaultImpl.instance
+  final val symbolIntrospector = RuntimeSymbolIntrospectorDefaultImpl.instance
 
   def mkWrappedTraitConstructor[T]: WrappedFunction[T] = macro wrappedTestImpl[T]
 
@@ -19,7 +19,7 @@ object TraitConstructorMacro extends TraitConstructorMacro {
 
 trait TraitConstructorMacro {
 
-  def symbolIntrospector: SymbolIntrospector
+  def symbolIntrospector: RuntimeSymbolIntrospector
 
   def testImpl[T: c.WeakTypeTag](c: whitebox.Context): c.Expr[Any] = {
     import c.universe._

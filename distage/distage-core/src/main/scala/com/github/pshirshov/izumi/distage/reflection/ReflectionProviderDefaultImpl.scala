@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, _}
 
 class ReflectionProviderDefaultImpl(
                                      keyProvider: DependencyKeyProvider
-                                     , symbolIntrospector: SymbolIntrospector
+                                     , symbolIntrospector: RuntimeSymbolIntrospector
                                    ) extends ReflectionProvider {
   override def symbolToWiring(symbl: RuntimeUniverse.TypeFull): Wiring = {
     symbl match {

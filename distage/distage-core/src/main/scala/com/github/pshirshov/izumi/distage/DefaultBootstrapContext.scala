@@ -40,7 +40,7 @@ trait DefaultBootstrapContext extends AbstractLocator {
   private val contextBindings = Seq(
     bind[CustomOpHandler, CustomOpHandler.NullCustomOpHander.type](CustomOpHandler.NullCustomOpHander)
     , bind[LookupInterceptor, NullLookupInterceptor](NullLookupInterceptor.instance)
-    , bind[SymbolIntrospector, SymbolIntrospectorDefaultImpl](SymbolIntrospectorDefaultImpl.instance)
+    , bind[RuntimeSymbolIntrospector, RuntimeSymbolIntrospectorDefaultImpl](RuntimeSymbolIntrospectorDefaultImpl.instance)
     , bind[Provisioner, ProvisionerDefaultImpl](bootstrapProducer)
     , bind[PlanningHook, PlanningHookDefaultImpl]
     , bind[PlanningObsever, PlanningObserverDefaultImpl]
@@ -57,7 +57,7 @@ trait DefaultBootstrapContext extends AbstractLocator {
 
   private val ops = contextBindings.foldLeft(Seq.empty[ExecutableOp]) {
     case (acc, SingletonBinding(target, ImplDef.TypeImpl(impl))) =>
-      val ctr = SymbolIntrospectorDefaultImpl.instance.selectConstructor(impl)
+      val ctr = RuntimeSymbolIntrospectorDefaultImpl.instance.selectConstructor(impl)
       val context = DependencyContext.ConstructorParameterContext(target.symbol, ctr)
 
       val associations = ctr.arguments.map {
