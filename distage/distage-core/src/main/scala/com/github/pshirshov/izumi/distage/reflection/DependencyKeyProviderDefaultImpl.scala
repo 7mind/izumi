@@ -12,29 +12,29 @@ import scala.reflect.runtime.universe
 class DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
   // TODO: named dependencies
 
-  override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: TypeSymb): DIKey = {
-    val typeKey = DIKey.TypeKey(EqualitySafeType(parameterSymbol.typeSignature))
+  override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: RuntimeUniverse.TypeSymb): DIKey = {
+    val typeKey = DIKey.TypeKey(RuntimeUniverse.SafeType(parameterSymbol.typeSignature))
 
     withOptionalName(parameterSymbol, typeKey)
   }
 
-  override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: MethodSymb): DIKey = {
-    val typeKey = DIKey.TypeKey(EqualitySafeType(methodSymbol.typeSignatureIn(context.definingClass.tpe).finalResultType))
+  override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: RuntimeUniverse.MethodSymb): DIKey = {
+    val typeKey = DIKey.TypeKey(RuntimeUniverse.SafeType(methodSymbol.typeSignatureIn(context.definingClass.tpe).finalResultType))
     withOptionalName(methodSymbol, typeKey)
 
   }
 
-  private def withOptionalName(parameterSymbol: TypeSymb, typeKey: DIKey.TypeKey) = {
+  private def withOptionalName(parameterSymbol: RuntimeUniverse.TypeSymb, typeKey: DIKey.TypeKey) = {
     AnnotationTools.find[Id](parameterSymbol)
       .flatMap {
         ann =>
           ann.tree.children.tail
             .collect {
-              case l: universe.LiteralApi =>
+              case l: RuntimeUniverse.u.LiteralApi =>
                 l.value
             }
             .collectFirst {
-              case universe.Constant(name: String) =>
+              case RuntimeUniverse.u.Constant(name: String) =>
                 name
             }
       } match {
@@ -46,7 +46,7 @@ class DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
     }
   }
 
-  override def keyFromType(parameterType: TypeFull): DIKey = {
+  override def keyFromType(parameterType: RuntimeUniverse.TypeFull): DIKey = {
     DIKey.TypeKey(parameterType)
   }
 }

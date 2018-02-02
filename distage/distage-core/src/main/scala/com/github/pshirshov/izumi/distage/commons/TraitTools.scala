@@ -17,7 +17,7 @@ object TraitTools {
   //
   //        }
 
-  def initTrait(instanceType: TypeFull, runtimeClass: Class[_], instance: AnyRef): Unit = {
+  def initTrait(instanceType: RuntimeUniverse.TypeFull, runtimeClass: Class[_], instance: AnyRef): Unit = {
     instanceType.tpe.decls.find(_.name.decodedName.toString == "$init$") match {
       case Some(_) => // here we have an instance of scala MethodSymbol though we can't reflect it, so let's use java
         try {

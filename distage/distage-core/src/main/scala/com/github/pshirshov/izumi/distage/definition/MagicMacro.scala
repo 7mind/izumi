@@ -26,7 +26,7 @@ trait MagicMacro {
 
     val tType = weakTypeOf[T]
     val iType = weakTypeOf[I]
-    val iCastedType = EqualitySafeType(iType.asInstanceOf[TypeNative])
+    val iCastedType = RuntimeUniverse.SafeType(iType.asInstanceOf[RuntimeUniverse.TypeNative])
 
     val self = reify(c.prefix.splice.asInstanceOf[THIS]).tree
 

@@ -7,31 +7,31 @@ import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
 import scala.reflect.runtime.universe
 
 class SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
-  override def selectConstructor(symb: TypeFull): SelectedConstructor = {
+  override def selectConstructor(symb: RuntimeUniverse.TypeFull): SelectedConstructor = {
     // val constructors = symb.symbol.members.filter(_.isConstructor)
     // TODO: list should not be empty (?) and should has only one element (?)
 
     // TODO: only considers scala constructors
-    val selectedConstructor = symb.tpe.decl(universe.termNames.CONSTRUCTOR).asMethod.typeSignatureIn(symb.tpe)
+    val selectedConstructor = symb.tpe.decl(RuntimeUniverse.u.termNames.CONSTRUCTOR).asMethod.typeSignatureIn(symb.tpe)
 
     val paramLists = selectedConstructor.paramLists
     // TODO: param list should not be empty (?), what to do with multiple lists?..
     SelectedConstructor(selectedConstructor, paramLists.head)
   }
 
-  override def selectParameters(symb: MethodSymb): List[TypeSymb] = {
+  override def selectParameters(symb: RuntimeUniverse.MethodSymb): List[RuntimeUniverse.TypeSymb] = {
     symb.paramLists.head
   }
 
-  override def isConcrete(symb: TypeFull): Boolean = {
+  override def isConcrete(symb: RuntimeUniverse.TypeFull): Boolean = {
     symb.tpe.typeSymbol.isClass && !symb.tpe.typeSymbol.isAbstract
   }
 
-  override def isWireableAbstract(symb: TypeFull): Boolean = {
+  override def isWireableAbstract(symb: RuntimeUniverse.TypeFull): Boolean = {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && symb.tpe.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
   }
 
-  override def isFactory(symb: TypeFull): Boolean = {
+  override def isFactory(symb: RuntimeUniverse.TypeFull): Boolean = {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && {
       val abstracts = symb.tpe.members.filter(_.isAbstract)
       abstracts.exists(isFactoryMethod(symb, _)) &&
@@ -39,13 +39,13 @@ class SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     }
   }
 
-  override def isWireableMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
+  override def isWireableMethod(tpe: RuntimeUniverse.TypeFull, decl: RuntimeUniverse.TypeSymb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
-      decl.asMethod.paramLists.isEmpty && EqualitySafeType(decl.asMethod.returnType) != tpe
+      decl.asMethod.paramLists.isEmpty && RuntimeUniverse.SafeType(decl.asMethod.returnType) != tpe
     }
   }
 
-  override def isFactoryMethod(tpe: TypeFull, decl: TypeSymb): Boolean = {
+  override def isFactoryMethod(tpe: RuntimeUniverse.TypeFull, decl: RuntimeUniverse.TypeSymb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       val paramLists = decl.asMethod.paramLists
       paramLists.nonEmpty && paramLists.forall(list => !list.contains(decl.asMethod.returnType) && !list.contains(tpe))

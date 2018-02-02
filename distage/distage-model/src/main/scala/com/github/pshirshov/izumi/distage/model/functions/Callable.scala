@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.distage.model.functions
 
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsafeCallArgsMismatched
-import com.github.pshirshov.izumi.fundamentals.reflection.TypeFull
+import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
 
 import scala.reflect.runtime.universe._
 trait Callable {
-  def argTypes: Seq[TypeFull]
+  def argTypes: Seq[RuntimeUniverse.TypeFull]
 
   final def apply(args: Any*): Any = {
     if (verifyArgs(args)) {

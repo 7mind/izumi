@@ -10,13 +10,13 @@ sealed trait DependencyContext {
 
 object DependencyContext {
 
-  case class MethodContext(definingClass: TypeFull) extends DependencyContext
+  case class MethodContext(definingClass: RuntimeUniverse.TypeFull) extends DependencyContext
 
   sealed trait ParameterContext extends DependencyContext
 
-  case class ConstructorParameterContext(definingClass: TypeFull, constructor: SelectedConstructor) extends ParameterContext
+  case class ConstructorParameterContext(definingClass: RuntimeUniverse.TypeFull, constructor: SelectedConstructor) extends ParameterContext
 
-  case class MethodParameterContext(factoryClass: TypeFull, factoryMethod: MethodSymb) extends ParameterContext
+  case class MethodParameterContext(factoryClass: RuntimeUniverse.TypeFull, factoryMethod: RuntimeUniverse.MethodSymb) extends ParameterContext
 
   case class CallableParameterContext(definingCallable: Callable) extends ParameterContext
 

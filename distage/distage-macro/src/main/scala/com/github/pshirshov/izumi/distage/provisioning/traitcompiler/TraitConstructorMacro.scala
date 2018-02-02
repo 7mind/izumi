@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.provisioning.traitcompiler
 
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
 import com.github.pshirshov.izumi.distage.reflection.{SymbolIntrospector, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, TypeNative, TypeSymb}
+import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
 
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
@@ -66,8 +66,8 @@ trait TraitConstructorMacro {
     { // TODO get rid of the cast somehow, by making symbolIntrospector Universe-generic
       // i.e. https://typelevel.org/blog/2017/03/01/four-ways-to-escape-a-cake.html
       case d if symbolIntrospector.isWireableMethod(
-          EqualitySafeType(targetType.asInstanceOf[TypeNative])
-          , d.asInstanceOf[TypeSymb]
+        RuntimeUniverse.SafeType(targetType.asInstanceOf[RuntimeUniverse.TypeNative])
+          , d.asInstanceOf[RuntimeUniverse.TypeSymb]
       ) =>
 
         val resType = d.typeSignature.resultType

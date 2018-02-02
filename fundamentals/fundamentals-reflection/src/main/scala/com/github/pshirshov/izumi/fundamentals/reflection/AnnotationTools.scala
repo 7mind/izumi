@@ -1,15 +1,13 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
 
-import scala.reflect.runtime.universe
-
 object AnnotationTools {
-  def find[T: Tag](symb: TypeSymb): Option[universe.Annotation] = {
+  def find[T: RuntimeUniverse.Tag](symb: RuntimeUniverse.TypeSymb): Option[RuntimeUniverse.u.Annotation] = {
     symb
       .annotations
       .find {
         ann =>
-          ann.tree.tpe.erasure =:= universe.typeOf[T].erasure
+          ann.tree.tpe.erasure =:= RuntimeUniverse.u.typeOf[T].erasure
       }
   }
 }

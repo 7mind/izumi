@@ -11,9 +11,6 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, Provisio
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibTraitMethodInterceptor, CglibTools}
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe._
-
 
 class TraitStrategyDefaultImpl extends TraitStrategy {
   def makeTrait(context: ProvisioningContext, t: WiringOp.InstantiateTrait): Seq[OpResult] = {
@@ -22,7 +19,7 @@ class TraitStrategyDefaultImpl extends TraitStrategy {
     val wiredMethodIndex = TraitStrategyDefaultImpl.traitIndex(t.wiring.instanceType, t.wiring.associations)
 
     val instanceType = t.wiring.instanceType
-    val runtimeClass = currentMirror.runtimeClass(instanceType.tpe)
+    val runtimeClass = RuntimeUniverse.mirror.runtimeClass(instanceType.tpe)
     val dispatcher = new CgLibTraitMethodInterceptor(wiredMethodIndex, traitDeps)
 
     CglibTools.mkdynamic(dispatcher, runtimeClass, t) {
@@ -45,9 +42,9 @@ object TraitStrategyDefaultImpl {
     }.toMap
   }
 
-  def traitIndex(tpe: TypeFull, t: Seq[Association.Method]): TraitIndex = {
+  def traitIndex(tpe: RuntimeUniverse.TypeFull, t: Seq[Association.Method]): TraitIndex = {
     val vals = tpe.tpe.decls.collect {
-      case m: TermSymbol if m.isVal || m.isVar =>
+      case m: RuntimeUniverse.u.TermSymbol if m.isVal || m.isVar =>
         m
     }
 

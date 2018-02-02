@@ -8,11 +8,11 @@ import scala.reflect.internal.Symbols
 import scala.reflect.runtime.{currentMirror, universe}
 
 object ReflectionUtil {
-  def toJavaMethod(definingClass: TypeFull, methodSymbol: TypeSymb): Method = {
+  def toJavaMethod(definingClass: RuntimeUniverse.TypeFull, methodSymbol: RuntimeUniverse.TypeSymb): Method = {
     // https://stackoverflow.com/questions/16787163/get-a-java-lang-reflect-method-from-a-reflect-runtime-universe-methodsymbol
     val method = methodSymbol.asMethod
-    val runtimeClass = currentMirror.runtimeClass(definingClass.tpe)
-    val mirror = universe.runtimeMirror(runtimeClass.getClassLoader)
+    val runtimeClass = RuntimeUniverse.mirror.runtimeClass(definingClass.tpe)
+    val mirror = RuntimeUniverse.u.runtimeMirror(runtimeClass.getClassLoader)
     val privateMirror = mirror.asInstanceOf[ {
       def methodToJava(sym: Symbols#MethodSymbol): Method
     }]
@@ -22,9 +22,9 @@ object ReflectionUtil {
 
 
   def typeToTypeTag[T](
-                        tpe: TypeNative,
-                        mirror: reflect.api.Mirror[reflect.runtime.universe.type]
-                      ): Tag[T] = {
+                        tpe: RuntimeUniverse.TypeNative,
+                        mirror: reflect.api.Mirror[RuntimeUniverse.u.type]
+                      ): RuntimeUniverse.Tag[T] = {
     val creator = new reflect.api.TypeCreator {
       def apply[U <: SingletonUniverse](m: Mirror[U]): U#Type = {
         assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
@@ -32,7 +32,7 @@ object ReflectionUtil {
       }
     }
     
-    universe.TypeTag(mirror, creator)
+    RuntimeUniverse.u.TypeTag(mirror, creator)
   }
 }
 

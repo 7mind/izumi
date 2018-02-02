@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.OpResult.{NewImport
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExecutor, TraitIndex}
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
+import com.github.pshirshov.izumi.fundamentals.reflection.{RuntimeUniverse, TypeUtil}
 
 import scala.reflect.runtime.currentMirror
 
@@ -58,7 +58,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val unmatchedTypes = providedValues.filter {
       case (key, value) =>
-        val runtimeClass = currentMirror.runtimeClass(key.symbol.tpe)
+        val runtimeClass = RuntimeUniverse.mirror.runtimeClass(key.symbol.tpe)
         !TypeUtil.isAssignableFrom(runtimeClass, value)
     }
 

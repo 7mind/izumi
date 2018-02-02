@@ -30,7 +30,7 @@ object ExecutableOp {
 
   object SetOp {
 
-    case class CreateSet(target: DIKey, tpe: TypeFull) extends SetOp {
+    case class CreateSet(target: DIKey, tpe: RuntimeUniverse.TypeFull) extends SetOp {
       override def format: String = f"""$target := newset[$tpe]"""
     }
 

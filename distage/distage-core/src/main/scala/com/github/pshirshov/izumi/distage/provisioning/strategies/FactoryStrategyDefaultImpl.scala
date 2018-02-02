@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibFactoryMethodInterceptor, CglibTools}
-import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
+import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, RuntimeUniverse}
 
 import scala.reflect.runtime._
 
@@ -21,7 +21,7 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
     val depMethodIndex = TraitStrategyDefaultImpl.traitIndex(f.wiring.factoryType, f.wiring.dependencies)
 
     val instanceType = f.wiring.factoryType
-    val runtimeClass = currentMirror.runtimeClass(instanceType.tpe)
+    val runtimeClass = RuntimeUniverse.mirror.runtimeClass(instanceType.tpe)
     val dispatcher = new CgLibFactoryMethodInterceptor(
       factoryMethodIndex
       , depMethodIndex

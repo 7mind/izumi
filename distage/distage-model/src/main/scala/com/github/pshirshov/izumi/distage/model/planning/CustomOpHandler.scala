@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection._
 
 trait CustomOpHandler {
   def getDeps(op: ImplDef.CustomImpl): Wiring
-  def getSymbol(op: ImplDef.CustomImpl): TypeFull
+  def getSymbol(op: ImplDef.CustomImpl): RuntimeUniverse.TypeFull
 }
 
 object CustomOpHandler {
@@ -16,7 +16,7 @@ object CustomOpHandler {
       throw new UnsupportedDefinitionException(s"Definition is not supported: $op", op)
     }
 
-    override def getSymbol(op: ImplDef.CustomImpl): TypeFull = {
+    override def getSymbol(op: ImplDef.CustomImpl): RuntimeUniverse.TypeFull = {
       throw new UnsupportedDefinitionException(s"Definition is not supported: $op", op)
     }
   }

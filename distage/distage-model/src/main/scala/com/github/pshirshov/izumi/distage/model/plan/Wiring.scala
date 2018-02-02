@@ -17,13 +17,13 @@ object Wiring {
   }
 
   object UnaryWiring {
-    case class Constructor(instanceType: TypeFull, constructor: TypeNative, associations: Seq[Parameter]) extends UnaryWiring
+    case class Constructor(instanceType: RuntimeUniverse.TypeFull, constructor: RuntimeUniverse.TypeNative, associations: Seq[Parameter]) extends UnaryWiring
 
-    case class Abstract(instanceType: TypeFull, associations: Seq[Method]) extends UnaryWiring
+    case class Abstract(instanceType: RuntimeUniverse.TypeFull, associations: Seq[Method]) extends UnaryWiring
 
     case class Function(provider: Callable, associations: Seq[Association]) extends UnaryWiring
 
-    case class Instance(instanceType: TypeFull, instance: Any) extends UnaryWiring {
+    case class Instance(instanceType: RuntimeUniverse.TypeFull, instance: Any) extends UnaryWiring {
       override def associations: Seq[Association] = Seq.empty
     }
   }
@@ -31,7 +31,7 @@ object Wiring {
   case class CustomWiring(customDef: CustomDef, associations: Seq[Association]) extends Wiring
 
 
-  case class FactoryMethod(factoryType: TypeFull, wirings: Seq[FactoryMethod.WithContext], dependencies: Seq[Method]) extends Wiring {
+  case class FactoryMethod(factoryType: RuntimeUniverse.TypeFull, wirings: Seq[FactoryMethod.WithContext], dependencies: Seq[Method]) extends Wiring {
     /**
       * this method returns factory dependencies which don't present in any signature of factory methods.
       * Though it's kind of a heuristic which can be spoiled at the time of plan initialization
@@ -45,6 +45,6 @@ object Wiring {
   }
 
   object FactoryMethod {
-    case class WithContext(factoryMethod: MethodSymb, wireWith: UnaryWiring, signature: Seq[DIKey])
+    case class WithContext(factoryMethod: RuntimeUniverse.MethodSymb, wireWith: UnaryWiring, signature: Seq[DIKey])
   }
 }

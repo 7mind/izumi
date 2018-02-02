@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.exceptions
 
-import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
+import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, RuntimeUniverse}
 
-class IncompatibleTypesException(message: String, val expected: EqualitySafeType, val got: EqualitySafeType) extends DIException(message, null)
+class IncompatibleTypesException
+(message: String, val expected: RuntimeUniverse.SafeType, val got: RuntimeUniverse.SafeType) extends DIException(message, null)

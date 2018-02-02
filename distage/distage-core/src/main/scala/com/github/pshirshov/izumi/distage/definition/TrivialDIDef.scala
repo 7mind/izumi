@@ -19,7 +19,7 @@ object TrivialDIDef {
       step(Seq.empty)
     }
 
-  def symbolDef[T: Tag]: ImplDef = ImplDef.TypeImpl(EqualitySafeType.get[T])
+  def symbolDef[T: RuntimeUniverse.Tag]: ImplDef = ImplDef.TypeImpl(EqualitySafeType.get[T])
 
   sealed trait BindingDSL {
 
@@ -27,23 +27,23 @@ object TrivialDIDef {
 
     def finish: TrivialDIDef = TrivialDIDef(bindings)
 
-    def binding[T: Tag]: NameableBinding = {
+    def binding[T: RuntimeUniverse.Tag]: NameableBinding = {
       namedStep(bindings, SingletonBindingT(DIKey.get[T], symbolDef[T]))
     }
 
-    def binding[T: Tag, I <: T : Tag]: NameableBinding = {
+    def binding[T: RuntimeUniverse.Tag, I <: T : RuntimeUniverse.Tag]: NameableBinding = {
       namedStep(bindings, SingletonBindingT(DIKey.get[T], symbolDef[I]))
     }
 
-    def provider[T: Tag](f: WrappedFunction[T]): NameableBinding = {
+    def provider[T: RuntimeUniverse.Tag](f: WrappedFunction[T]): NameableBinding = {
       namedStep(bindings, SingletonBindingT(DIKey.get[T], ImplDef.ProviderImpl(f.ret, f)))
     }
 
-    def provider[T: Tag, I <: T : Tag](f: WrappedFunction[I]): NameableBinding = {
+    def provider[T: RuntimeUniverse.Tag, I <: T : RuntimeUniverse.Tag](f: WrappedFunction[I]): NameableBinding = {
       namedStep(bindings, SingletonBindingT(DIKey.get[T], ImplDef.ProviderImpl(f.ret, f)))
     }
 
-    def instance[T: Tag](instance: T): NameableBinding = {
+    def instance[T: RuntimeUniverse.Tag](instance: T): NameableBinding = {
       namedStep(bindings, SingletonBindingT(DIKey.get[T], ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
 
@@ -52,15 +52,15 @@ object TrivialDIDef {
     def magic[T, I <: T]: NameableBinding = macro MagicMacro.magicMacro[this.type, T, I]
 
     // sets
-    def set[T: Tag]: NameableBinding = {
+    def set[T: RuntimeUniverse.Tag]: NameableBinding = {
       namedStep(bindings, EmptySetBindingT(DIKey.get[Set[T]]))
     }
 
-    def element[T: Tag, I <: T : Tag]: NameableBinding = {
+    def element[T: RuntimeUniverse.Tag, I <: T : RuntimeUniverse.Tag]: NameableBinding = {
       namedStep(bindings, SetBindingT(DIKey.get[Set[T]], symbolDef[I]))
     }
 
-    def element[T: Tag](instance: T): NameableBinding = {
+    def element[T: RuntimeUniverse.Tag](instance: T): NameableBinding = {
       namedStep(bindings, SetBindingT(DIKey.get[Set[T]], ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
     }
   }

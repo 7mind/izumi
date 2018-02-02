@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan.Wiring
 import com.github.pshirshov.izumi.fundamentals.reflection._
 
 trait ReflectionProvider {
-  def symbolToWiring(symbl: TypeFull): Wiring
+  def symbolToWiring(symbl: RuntimeUniverse.TypeFull): Wiring
 
   def providerToWiring(function:Callable): Wiring
 }

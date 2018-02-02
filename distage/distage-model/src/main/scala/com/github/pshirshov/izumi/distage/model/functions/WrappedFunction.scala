@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.distage.model.functions
 
-import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, Tag, TypeFull}
+import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, RuntimeUniverse}
 
 sealed trait WrappedFunction[+R] extends Callable {
-  def ret: TypeFull
-  def argTypes: Seq[TypeFull]
+  def ret: RuntimeUniverse.TypeFull
+  def argTypes: Seq[RuntimeUniverse.TypeFull]
   protected def fun: Any
   override def toString: String = {
     s"$fun(${argTypes.mkString(", ")}): $ret"
@@ -12,12 +12,13 @@ sealed trait WrappedFunction[+R] extends Callable {
 }
 
 object WrappedFunction {
-
+  import RuntimeUniverse._
+  
   def wrap[R]: WrappedFunction[R] => WrappedFunction[R] =
     identity
 
   implicit class W0[R: Tag](override protected val fun: () => R) extends WrappedFunction[R] {
-    def ret: TypeFull = EqualitySafeType.get[R]
+    def ret: RuntimeUniverse.TypeFull = EqualitySafeType.get[R]
 
     def argTypes: Seq[TypeFull] = Seq.empty
 

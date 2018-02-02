@@ -6,9 +6,9 @@ import com.github.pshirshov.izumi.fundamentals.reflection._
 
 
 trait DependencyKeyProvider {
-  def keyFromParameter(context: ParameterContext, parameterSymbol: TypeSymb): DIKey
+  def keyFromParameter(context: ParameterContext, parameterSymbol: RuntimeUniverse.TypeSymb): DIKey
 
-  def keyFromMethod(context: MethodContext, methodSymbol: MethodSymb): DIKey
+  def keyFromMethod(context: MethodContext, methodSymbol: RuntimeUniverse.MethodSymb): DIKey
 
-  def keyFromType(parameterSymbol: TypeFull): DIKey
+  def keyFromType(parameterSymbol: RuntimeUniverse.TypeFull): DIKey
 }

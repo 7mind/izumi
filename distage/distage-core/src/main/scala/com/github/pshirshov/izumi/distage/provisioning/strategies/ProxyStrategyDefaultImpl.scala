@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStr
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools}
-import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
+import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, RuntimeUniverse}
 
 import scala.reflect.runtime.currentMirror
 
@@ -47,7 +47,7 @@ class ProxyStrategyDefaultImpl extends ProxyStrategy {
       throw new DIException(s"Failed to instantiate proxy ${m.target}. All the proxy constructors must be zero-arg though we have $constructors", null)
     }
 
-    val runtimeClass = currentMirror.runtimeClass(tpe.tpe)
+    val runtimeClass = RuntimeUniverse.mirror.runtimeClass(tpe.tpe)
     val nullDispatcher = new CglibNullMethodInterceptor(m.target)
     val nullProxy = CglibTools.mkdynamic(nullDispatcher, runtimeClass, m) {
       proxyInstance =>

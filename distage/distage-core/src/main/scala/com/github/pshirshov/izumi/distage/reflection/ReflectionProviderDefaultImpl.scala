@@ -14,7 +14,7 @@ class ReflectionProviderDefaultImpl(
                                      keyProvider: DependencyKeyProvider
                                      , symbolIntrospector: SymbolIntrospector
                                    ) extends ReflectionProvider {
-  override def symbolToWiring(symbl: TypeFull): Wiring = {
+  override def symbolToWiring(symbl: RuntimeUniverse.TypeFull): Wiring = {
     symbl match {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
@@ -23,10 +23,10 @@ class ReflectionProviderDefaultImpl(
               .find[With[_]](factoryMethod)
               .map(_.tree.tpe.typeArgs.head) match {
               case Some(tpe) =>
-                EqualitySafeType(tpe)
+                RuntimeUniverse.SafeType(tpe)
 
               case None =>
-                EqualitySafeType(factoryMethod.returnType)
+                RuntimeUniverse.SafeType(factoryMethod.returnType)
             }
 
             val context = DependencyContext.MethodParameterContext(symbl, factoryMethod)
@@ -71,7 +71,7 @@ class ReflectionProviderDefaultImpl(
     UnaryWiring.Function(function, associations)
   }
 
-  protected def unarySymbolDeps(symbl: TypeFull): UnaryWiring = {
+  protected def unarySymbolDeps(symbl: RuntimeUniverse.TypeFull): UnaryWiring = {
     symbl match {
       case ConcreteSymbol(symb) =>
         val selected = symbolIntrospector.selectConstructor(symb)
@@ -102,15 +102,15 @@ class ReflectionProviderDefaultImpl(
 
 
   protected object ConcreteSymbol {
-    def unapply(arg: TypeFull): Option[TypeFull] = Some(arg).filter(symbolIntrospector.isConcrete)
+    def unapply(arg: RuntimeUniverse.TypeFull): Option[RuntimeUniverse.TypeFull] = Some(arg).filter(symbolIntrospector.isConcrete)
   }
 
   protected object AbstractSymbol {
-    def unapply(arg: TypeFull): Option[TypeFull] = Some(arg).filter(symbolIntrospector.isWireableAbstract)
+    def unapply(arg: RuntimeUniverse.TypeFull): Option[RuntimeUniverse.TypeFull] = Some(arg).filter(symbolIntrospector.isWireableAbstract)
   }
 
   protected object FactorySymbol {
-    def unapply(arg: TypeFull): Option[(TypeFull, Seq[TypeSymb], Seq[MethodSymb])] =
+    def unapply(arg: RuntimeUniverse.TypeFull): Option[(RuntimeUniverse.TypeFull, Seq[RuntimeUniverse.TypeSymb], Seq[RuntimeUniverse.MethodSymb])] =
       Some(arg)
         .filter(symbolIntrospector.isFactory)
         .map(f => (

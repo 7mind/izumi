@@ -63,7 +63,7 @@ trait DefaultBootstrapContext extends AbstractLocator {
 
       val associations = ctr.arguments.map {
         param =>
-          Association.Parameter(context, param, DIKey.TypeKey(EqualitySafeType(param.info)))
+          Association.Parameter(context, param, DIKey.TypeKey(RuntimeUniverse.SafeType(param.info)))
 
       }
       acc :+ ExecutableOp.WiringOp.InstantiateClass(target, UnaryWiring.Constructor(impl, ctr.constructorSymbol, associations))
@@ -83,11 +83,11 @@ trait DefaultBootstrapContext extends AbstractLocator {
   override protected def unsafeLookup(key: DIKey): Option[Any] = bootstrappedContext.get(key)
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
 
-  private def bind[Key:Tag, I: Tag](instance: I): Binding= {
+  private def bind[Key:RuntimeUniverse.Tag, I: RuntimeUniverse.Tag](instance: I): Binding= {
     SingletonBinding(DIKey.get[Key], ImplDef.InstanceImpl(EqualitySafeType.get[I], instance))
   }
 
-  private def bind[Key:Tag, Target:Tag]: Binding = {
+  private def bind[Key:RuntimeUniverse.Tag, Target:RuntimeUniverse.Tag]: Binding = {
     SingletonBinding(DIKey.get[Key], ImplDef.TypeImpl(EqualitySafeType.get[Target]))
   }
 }
