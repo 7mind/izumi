@@ -1,6 +1,10 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-trait SymbolIntrospectorAbstractImpl extends AbstractSymbolIntrospector {
+import com.github.pshirshov.izumi.fundamentals.reflection.DIUniverse
+
+trait SymbolIntrospectorAbstractImpl {
+  this: AbstractSymbolIntrospector =>
+  
   override def selectConstructor(symb: u.TypeFull): u.SelectedConstructor = {
     // val constructors = symb.symbol.members.filter(_.isConstructor)
     // TODO: list should not be empty (?) and should has only one element (?)

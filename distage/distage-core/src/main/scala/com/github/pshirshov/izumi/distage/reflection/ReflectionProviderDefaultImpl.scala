@@ -5,15 +5,22 @@ import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, Unsuppo
 import com.github.pshirshov.izumi.distage.model.functions.Callable
 import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring
 import com.github.pshirshov.izumi.distage.model.plan.{Association, DependencyContext, Wiring}
-import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider}
+import com.github.pshirshov.izumi.distage.model.reflection.{AbstractReflectionProvider, DependencyKeyProvider, ReflectionProvider}
 import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, _}
+
 
 
 class ReflectionProviderDefaultImpl(
                                      keyProvider: DependencyKeyProvider
                                      , symbolIntrospector: RuntimeSymbolIntrospector
                                    ) extends ReflectionProvider {
-  override def symbolToWiring(symbl: RuntimeUniverse.TypeFull): Wiring = {
+
+
+  override def symbolToWiring(symbl: u.TypeFull): Wiring = {
+    symbolToWiringR(symbl.asInstanceOf[RuntimeUniverse.TypeFull])
+  }
+
+  def symbolToWiringR(symbl: RuntimeUniverse.TypeFull): Wiring = {
     symbl match {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {

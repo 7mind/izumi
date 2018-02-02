@@ -1,9 +1,11 @@
 package com.github.pshirshov.izumi.distage.reflection
 
 import com.github.pshirshov.izumi.fundamentals.reflection.DIUniverse
+import sun.jvm.hotspot.memory.Universe
 
 trait AbstractSymbolIntrospector {
-  val u: DIUniverse
+  type Universe <: DIUniverse
+  val u: Universe
 
   def selectConstructor(symb: u.TypeFull): u.SelectedConstructor
 
