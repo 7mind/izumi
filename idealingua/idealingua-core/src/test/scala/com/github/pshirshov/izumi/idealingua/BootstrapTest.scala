@@ -14,12 +14,12 @@ import org.scalatest.WordSpec
 
 class BootstrapTest extends WordSpec {
 
-  val userIdTypeId = model.UserType(Seq("org", "test"), TypeName("UserId"))
-  val testInterfaceId = model.UserType(Seq("org", "test"), TypeName("TestInterface"))
+  val userIdTypeId = model.UserType.parse("org.test.UserId")
+  val testInterfaceId = model.UserType.parse("org.test.TestInterface")
 
-  val testValIdentifier = model.UserType(Seq("org", "test"), TypeName("TestValIdentifer"))
-  val testIdentifier = model.UserType(Seq("org", "test"), TypeName("TestIdentifer"))
-  val serviceIdentifier = model.UserType(Seq("org", "test"), TypeName("UserService"))
+  val testValIdentifier = model.UserType.parse("org.test.TestValIdentifer")
+  val testIdentifier = model.UserType.parse("org.test.TestIdentifer")
+  val serviceIdentifier = model.UserType.parse("org.test.UserService")
 
   val testInterfaceFields = Seq(
     Field(userIdTypeId, "userId")

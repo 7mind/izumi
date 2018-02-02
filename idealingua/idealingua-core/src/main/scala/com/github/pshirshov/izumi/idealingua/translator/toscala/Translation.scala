@@ -2,15 +2,23 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition.{Alias, DTO, Identifier, Interface}
-import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition, Typespace}
+import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition, Service, Typespace}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model._
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.runtime.{IDLGenerated, IDLIdentifier, IDLService}
 
 import scala.collection.mutable
 import scala.meta._
+import scala.reflect._
 
 
 class Translation(domain: DomainDefinition) {
+  final val idtInit = initFor[IDLIdentifier]
+  final val idtGenerated = initFor[IDLGenerated]
+  final val idtService = initFor[IDLService]
+
   protected val typespace = new Typespace(domain)
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
@@ -18,15 +26,21 @@ class Translation(domain: DomainDefinition) {
   def translate(): Seq[Module] = {
     domain
       .types
-      .flatMap(translateDef) ++ packageObjects.map {
-      case (id, content) =>
-        val code =
-          s"""package object ${id.path.last} {
-             |${content.map(_.toString()).mkString("\n\n")}
-             |}
+      .flatMap(translateDef) ++
+      packageObjects.map {
+        case (id, content) =>
+          val code =
+            s"""package object ${id.path.last} {
+               |${content.map(_.toString()).mkString("\n\n")}
+               |}
            """.stripMargin
-        Module(id, withPackage(id.path.init, code))
-    }
+          Module(id, withPackage(id.path.init, code))
+      } ++
+      domain.services.flatMap(translateService)
+  }
+
+  protected def translateService(definition: Service): Seq[Module] = {
+    toSource(definition.id, toModuleId(definition.id), renderService(definition))
   }
 
   protected def translateDef(definition: FinalDefinition): Seq[Module] = {
@@ -44,15 +58,12 @@ class Translation(domain: DomainDefinition) {
       case d: DTO =>
         renderDto(d)
     }
-    toSource(definition, toModuleId(definition), defns)
+    toSource(definition.id, toModuleId(definition), defns)
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
     Seq(Defn.Type(List(), Type.Name(i.id.name.id), List(), toScalaType(i.target)))
   }
-
-  val idtInit = initFor(classOf[Identifier])
-  val idtGenerated = initFor(classOf[IDLGenerated])
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
     //val scalaIfaces = i.interfaces.map(typespace).toList
@@ -94,11 +105,6 @@ class Translation(domain: DomainDefinition) {
     ))
   }
 
-
-  private def initFor(idtClass: Class[_]) = {
-    Init(toSelect(UserType(idtClass.getPackage.getName.split('.'), TypeName(idtClass.getSimpleName))), Name.Anonymous(), List())
-  }
-
   protected def renderInterface(i: Interface): Seq[Defn] = {
     val fields = typespace.fetchFields(i)
     val scalaFields: Seq[ScalaField] = toScala(i, fields)
@@ -123,6 +129,26 @@ class Translation(domain: DomainDefinition) {
       List(),
       Ctor.Primary(List(), Name.Anonymous(), List()),
       Template(List(), ifDecls, Self(Name.Anonymous(), None), decls.toList)
+    ))
+  }
+
+  protected def renderService(i: Service): Seq[Defn] = {
+    val typeName = i.id.name.id
+
+    // TODO: contradictions
+    val decls = i.methods.map {
+      case method: RPCMethod =>
+        q"def ${Term.Name(method.name)}(input: ${toScalaType(method.input)}): ${toScalaType(method.output)}"
+    }
+
+    val scalaIfaces = List()
+
+    Seq(Defn.Trait(
+      List(),
+      Type.Name(typeName),
+      List(),
+      Ctor.Primary(List(), Name.Anonymous(), List()),
+      Template(List(), scalaIfaces, Self(Name.Anonymous(), None), decls.toList)
     ))
   }
 
@@ -159,20 +185,24 @@ class Translation(domain: DomainDefinition) {
     ))
   }
 
-  private def toModuleId(defn: FinalDefinition) = {
+  private def toModuleId(defn: FinalDefinition): ModuleId = {
     defn match {
       case i: Alias =>
         ModuleId(i.id.pkg.init, s"${i.id.pkg.last}.scala")
 
       case other =>
         val id = other.id
-        ModuleId(id.pkg, s"${id.name.id}.scala")
+        toModuleId(id)
     }
   }
 
-  private def toSource(i: FinalDefinition, moduleId: ModuleId, traitDef: Seq[Defn]) = {
+  private def toModuleId(id: TypeId): ModuleId = {
+    ModuleId(id.pkg, s"${id.name.id}.scala")
+  }
+
+  private def toSource(typeId: TypeId, moduleId: ModuleId, traitDef: Seq[Defn]) = {
     val code = traitDef.map(_.toString()).mkString("\n\n")
-    val content: String = withPackage(i.id.pkg, code)
+    val content: String = withPackage(typeId.pkg, code)
     Seq(Module(moduleId, content))
   }
 
@@ -235,4 +265,8 @@ class Translation(domain: DomainDefinition) {
     }
   }
 
+  private def initFor[T: ClassTag] = {
+    val idtClass = classTag[T].runtimeClass
+    Init(toSelect(UserType(idtClass.getPackage.getName.split('.'), TypeName(idtClass.getSimpleName))), Name.Anonymous(), List())
+  }
 }
