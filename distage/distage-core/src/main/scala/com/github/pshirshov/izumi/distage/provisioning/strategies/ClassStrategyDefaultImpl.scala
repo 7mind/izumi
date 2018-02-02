@@ -12,25 +12,25 @@ class ClassStrategyDefaultImpl extends ClassStrategy {
 
     import op._
 
+    val targetType = wiring.instanceType
+
     val depMap = wiring.associations.map {
       key =>
         context.fetchKey(key.wireWith) match {
           case Some(dep) =>
-            key.symbol -> dep
+            key.symbol.typeSignatureIn(targetType.tpe) -> dep
           case _ =>
             throw new InvalidPlanException(s"The impossible happened! Tried to instantiate class," +
               s" but the dependency has not been initialized: Class: $target, dependency: $key")
         }
     }.toMap
-
-    val targetType = wiring.instanceType
     val refUniverse = currentMirror
     val refClass = refUniverse.reflectClass(targetType.tpe.typeSymbol.asClass)
     val ctor = targetType.tpe.decl(universe.termNames.CONSTRUCTOR).asMethod
     val refCtor = refClass.reflectConstructor(ctor)
 
-    val orderedArgs = ctor.paramLists.head.map {
-      key => depMap(key)
+    val orderedArgs = ctor.typeSignatureIn(targetType.tpe).paramLists.head.map {
+      key => depMap(key.typeSignatureIn(targetType.tpe))
     }
 
     val instance = refCtor.apply(orderedArgs: _*)

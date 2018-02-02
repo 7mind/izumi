@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.Case8.{Dependency2, Dependency3, Trait2, Trait3}
 import com.github.pshirshov.izumi.distage.definition.TrivialDIDef
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ContextDefinition}
 import com.github.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, TraitInitializationFailedException, UnsupportedWiringException, UntranslatablePlanException}
@@ -359,6 +360,23 @@ class InjectorTest extends WordSpec {
       println(s"Got ${instantiated3.dep1}")
       instantiated3.asInstanceOf[Trait3].prr()
     }
+
+    "handle generics" in {
+      import Case10._
+
+      val definition = TrivialDIDef
+        .binding[Parameterized[Dep]]
+        .binding[Dep]
+        .finish
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+      val instantiated3 = context.get[Parameterized[Dep]]
+      assert(instantiated3.t.isInstanceOf[Dep])
+    }
+
   }
 
 }

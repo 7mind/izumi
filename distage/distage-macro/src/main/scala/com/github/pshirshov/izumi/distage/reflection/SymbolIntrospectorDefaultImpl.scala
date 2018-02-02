@@ -12,9 +12,9 @@ class SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     // TODO: list should not be empty (?) and should has only one element (?)
 
     // TODO: only considers scala constructors
-    val selectedConstructor = symb.tpe.decl(universe.termNames.CONSTRUCTOR)
+    val selectedConstructor = symb.tpe.decl(universe.termNames.CONSTRUCTOR).asMethod.typeSignatureIn(symb.tpe)
 
-    val paramLists = selectedConstructor.asMethod.paramLists
+    val paramLists = selectedConstructor.paramLists
     // TODO: param list should not be empty (?), what to do with multiple lists?..
     SelectedConstructor(selectedConstructor, paramLists.head)
   }

@@ -17,7 +17,7 @@ object Wiring {
   }
 
   object UnaryWiring {
-    case class Constructor(instanceType: TypeFull, constructor: TypeSymb, associations: Seq[Parameter]) extends UnaryWiring
+    case class Constructor(instanceType: TypeFull, constructor: TypeNative, associations: Seq[Parameter]) extends UnaryWiring
 
     case class Abstract(instanceType: TypeFull, associations: Seq[Method]) extends UnaryWiring
 

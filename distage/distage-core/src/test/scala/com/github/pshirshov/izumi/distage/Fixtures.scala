@@ -239,3 +239,9 @@ object Case9 {
     val field: Int = 1
   }
 }
+
+object Case10 {
+  class Dep()
+  case class Parameterized[T](t: T)
+}
+
