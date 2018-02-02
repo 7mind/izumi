@@ -7,8 +7,6 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, Operatio
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibFactoryMethodInterceptor, CglibTools}
 import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, RuntimeUniverse}
 
-import scala.reflect.runtime._
-
 
 class FactoryStrategyDefaultImpl extends FactoryStrategy {
   def makeFactory(context: ProvisioningContext, executor: OperationExecutor, f: WiringOp.InstantiateFactory): Seq[OpResult] = {

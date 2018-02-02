@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.serialization
 
 import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import java.nio.ByteBuffer
+
 import scala.language.implicitConversions
 
 

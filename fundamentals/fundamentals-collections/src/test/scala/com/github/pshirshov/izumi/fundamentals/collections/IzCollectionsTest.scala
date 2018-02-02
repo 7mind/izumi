@@ -1,8 +1,8 @@
 
 package com.github.pshirshov.izumi.fundamentals.collections
 
+import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 import org.scalatest.WordSpec
-import IzCollections._
 
 import scala.collection.mutable
 

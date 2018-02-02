@@ -3,9 +3,8 @@ package com.github.pshirshov.izumi.fundamentals.platform.futures
 import com.github.pshirshov.izumi.fundamentals.platform.futures.IzFuture.SafeFuture
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
-
 import scala.language.implicitConversions
+import scala.util.{Failure, Success, Try}
 
 class IzFuture[T](value: Future[T]) {
   def safe(implicit ec: ExecutionContext): SafeFuture[T] =

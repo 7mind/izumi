@@ -12,8 +12,7 @@ class IzThrowable(t: Throwable, acceptedPackages: Set[String]) {
   }
 
   def stackTrace: String = {
-    import java.io.PrintWriter
-    import java.io.StringWriter
+    import java.io.{PrintWriter, StringWriter}
     val sw = new StringWriter
     val pw = new PrintWriter(sw)
     t.printStackTrace(pw)

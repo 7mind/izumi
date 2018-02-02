@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.distage.provisioning.cglib
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 
-import net.sf.cglib.proxy.{Callback, Enhancer}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
+import net.sf.cglib.proxy.{Callback, Enhancer}
 
 import scala.util.{Failure, Success, Try}
 

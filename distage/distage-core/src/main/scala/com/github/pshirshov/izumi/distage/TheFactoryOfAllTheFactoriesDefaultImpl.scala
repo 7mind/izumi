@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.model.{Locator, TheFactoryOfAllTheFactories}
 import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
 import com.github.pshirshov.izumi.distage.model.provisioning.Provisioner
 import com.github.pshirshov.izumi.distage.model.references.{DIKey, IdentifiedRef}
+import com.github.pshirshov.izumi.distage.model.{Locator, TheFactoryOfAllTheFactories}
 
 class TheFactoryOfAllTheFactoriesDefaultImpl(
                                               provisioner: Provisioner

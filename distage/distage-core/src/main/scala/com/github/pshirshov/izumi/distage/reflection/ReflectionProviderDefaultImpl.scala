@@ -6,8 +6,7 @@ import com.github.pshirshov.izumi.distage.model.functions.Callable
 import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring
 import com.github.pshirshov.izumi.distage.model.plan.{Association, DependencyContext, Wiring}
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider}
-import com.github.pshirshov.izumi.fundamentals.reflection._
-import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, EqualitySafeType}
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, _}
 
 
 class ReflectionProviderDefaultImpl(

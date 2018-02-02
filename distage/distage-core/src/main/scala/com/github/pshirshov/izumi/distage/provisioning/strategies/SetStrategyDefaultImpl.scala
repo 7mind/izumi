@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, IncompatibleTypesException, InvalidPlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.SetStrategy
+import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
 import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
 
 class SetStrategyDefaultImpl extends SetStrategy {

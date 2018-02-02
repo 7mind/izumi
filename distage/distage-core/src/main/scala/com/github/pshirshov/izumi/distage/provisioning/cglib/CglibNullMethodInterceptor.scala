@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.distage.provisioning.cglib
 
 import java.lang.reflect.Method
 
-import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingRefException
 import com.github.pshirshov.izumi.distage.model.references.DIKey
+import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 // we use this to be able to display something for uninitialized proxies
 protected[distage] class CglibNullMethodInterceptor(key: DIKey) extends MethodInterceptor {

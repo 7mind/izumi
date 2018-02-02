@@ -4,8 +4,8 @@ package com.github.pshirshov.izumi.fundamentals.platform
 import com.github.pshirshov.izumi.fundamentals.platform.futures.IzFuture._
 import org.scalatest.WordSpec
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
 class IzFutureTest extends WordSpec {

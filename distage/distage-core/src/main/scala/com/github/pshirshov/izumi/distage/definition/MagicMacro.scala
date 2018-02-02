@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.definition
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import com.github.pshirshov.izumi.distage.provisioning.traitcompiler.TraitConstructorMacro
 import com.github.pshirshov.izumi.distage.reflection.{SymbolIntrospector, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, _}
+import com.github.pshirshov.izumi.fundamentals.reflection._
 
 
 object MagicMacro extends MagicMacro {

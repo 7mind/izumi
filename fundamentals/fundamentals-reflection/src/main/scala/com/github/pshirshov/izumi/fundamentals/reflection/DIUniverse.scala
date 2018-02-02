@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse.u
-
 import scala.reflect.api.Universe
 
 trait DIUniverse {

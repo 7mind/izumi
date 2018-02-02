@@ -8,8 +8,6 @@ import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools}
 import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, RuntimeUniverse}
 
-import scala.reflect.runtime.currentMirror
-
 class ProxyStrategyDefaultImpl extends ProxyStrategy {
   def initProxy(context: ProvisioningContext, executor: OperationExecutor, i: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(i.target)

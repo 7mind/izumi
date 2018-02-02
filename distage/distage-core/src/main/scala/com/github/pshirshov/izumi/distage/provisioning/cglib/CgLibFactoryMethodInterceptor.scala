@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage.provisioning.cglib
 
 import java.lang.reflect.Method
 
-import net.sf.cglib.proxy.MethodProxy
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnsupportedWiringException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.plan.Wiring.{FactoryMethod, UnaryWiring}
@@ -12,8 +11,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExe
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.fundamentals.reflection.{RuntimeUniverse, TypeUtil}
-
-import scala.reflect.runtime.currentMirror
+import net.sf.cglib.proxy.MethodProxy
 
 protected[distage] class CgLibFactoryMethodInterceptor
 (

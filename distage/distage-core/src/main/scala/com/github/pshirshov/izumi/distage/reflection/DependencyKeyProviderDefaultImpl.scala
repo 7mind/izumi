@@ -4,10 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.plan.DependencyContext
 import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.distage.model.reflection.DependencyKeyProvider
-import com.github.pshirshov.izumi.fundamentals.reflection._
-import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, EqualitySafeType}
-
-import scala.reflect.runtime.universe
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, _}
 
 class DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
   // TODO: named dependencies

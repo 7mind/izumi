@@ -2,14 +2,13 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.fundamentals.reflection._
 import com.github.pshirshov.izumi.distage.commons.TraitTools
 import com.github.pshirshov.izumi.distage.model.plan.Association
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{TraitField, TraitIndex, TraitStrategy}
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibTraitMethodInterceptor, CglibTools}
-import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
+import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, _}
 
 
 class TraitStrategyDefaultImpl extends TraitStrategy {
