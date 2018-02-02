@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.references
 
-import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, RuntimeUniverse}
+import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
 
 sealed trait DIKey {
   def symbol: RuntimeUniverse.TypeFull
@@ -31,7 +31,7 @@ object DIKey {
     override def hashCode(): Int = toString.hashCode()
   }
 
-  def get[K: RuntimeUniverse.Tag]: TypeKey = TypeKey(EqualitySafeType.get[K])
+  def get[K: RuntimeUniverse.Tag]: TypeKey = TypeKey(RuntimeUniverse.SafeType.get[K])
 }
 
 

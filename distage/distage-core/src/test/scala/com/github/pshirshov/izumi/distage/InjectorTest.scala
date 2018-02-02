@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependen
 import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.{DuplicatedStatements, UnsolvableConflict}
 import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring
 import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.fundamentals.reflection.EqualitySafeType
+import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
 import org.scalatest.WordSpec
 
 
@@ -43,7 +43,7 @@ class InjectorTest extends WordSpec {
         case ImportDependency(key, _) if key == DIKey.get[NotInContext] =>
           Seq(ExecutableOp.WiringOp.ReferenceInstance(
             key
-            , UnaryWiring.Instance(EqualitySafeType.get[NotInContext], new NotInContext {})
+            , UnaryWiring.Instance(RuntimeUniverse.SafeType.get[NotInContext], new NotInContext {})
           ))
 
         case op =>

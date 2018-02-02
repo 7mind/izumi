@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.{SingletonBin
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
 import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, _}
+import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
 
 import scala.Function.const
 import scala.language.experimental.macros
@@ -19,7 +19,7 @@ object TrivialDIDef {
       step(Seq.empty)
     }
 
-  def symbolDef[T: RuntimeUniverse.Tag]: ImplDef = ImplDef.TypeImpl(EqualitySafeType.get[T])
+  def symbolDef[T: RuntimeUniverse.Tag]: ImplDef = ImplDef.TypeImpl(RuntimeUniverse.SafeType.get[T])
 
   sealed trait BindingDSL {
 
@@ -44,7 +44,7 @@ object TrivialDIDef {
     }
 
     def instance[T: RuntimeUniverse.Tag](instance: T): NameableBinding = {
-      namedStep(bindings, SingletonBindingT(DIKey.get[T], ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
+      namedStep(bindings, SingletonBindingT(DIKey.get[T], ImplDef.InstanceImpl(RuntimeUniverse.SafeType.get[T], instance)))
     }
 
     def magic[T]: NameableBinding = macro MagicMacro.magicMacro[this.type, T, T]
@@ -61,7 +61,7 @@ object TrivialDIDef {
     }
 
     def element[T: RuntimeUniverse.Tag](instance: T): NameableBinding = {
-      namedStep(bindings, SetBindingT(DIKey.get[Set[T]], ImplDef.InstanceImpl(EqualitySafeType.get[T], instance)))
+      namedStep(bindings, SetBindingT(DIKey.get[Set[T]], ImplDef.InstanceImpl(RuntimeUniverse.SafeType.get[T], instance)))
     }
   }
 

@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStr
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools}
-import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, RuntimeUniverse}
+import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
 
 class ProxyStrategyDefaultImpl extends ProxyStrategy {
   def initProxy(context: ProvisioningContext, executor: OperationExecutor, i: ProxyOp.InitProxy): Seq[OpResult] = {
@@ -64,7 +64,7 @@ class ProxyStrategyDefaultImpl extends ProxyStrategy {
   }
 
   private def proxyKey(m: DIKey) = {
-    DIKey.ProxyElementKey(m, EqualitySafeType.get[CglibRefDispatcher])
+    DIKey.ProxyElementKey(m, RuntimeUniverse.SafeType.get[CglibRefDispatcher])
   }
 
 }

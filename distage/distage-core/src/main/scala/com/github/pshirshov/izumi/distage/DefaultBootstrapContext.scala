@@ -15,7 +15,7 @@ import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
-import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, _}
+import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
 
 
 
@@ -83,11 +83,11 @@ trait DefaultBootstrapContext extends AbstractLocator {
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
 
   private def bind[Key:RuntimeUniverse.Tag, I: RuntimeUniverse.Tag](instance: I): Binding= {
-    SingletonBinding(DIKey.get[Key], ImplDef.InstanceImpl(EqualitySafeType.get[I], instance))
+    SingletonBinding(DIKey.get[Key], ImplDef.InstanceImpl(RuntimeUniverse.SafeType.get[I], instance))
   }
 
   private def bind[Key:RuntimeUniverse.Tag, Target:RuntimeUniverse.Tag]: Binding = {
-    SingletonBinding(DIKey.get[Key], ImplDef.TypeImpl(EqualitySafeType.get[Target]))
+    SingletonBinding(DIKey.get[Key], ImplDef.TypeImpl(RuntimeUniverse.SafeType.get[Target]))
   }
 }
 

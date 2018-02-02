@@ -44,6 +44,7 @@ trait DIUniverse {
     }
 
     private def verifyArgs(args: Any*) = {
+      // TODO: obsiously this method can only work in runtime
       import scala.reflect.runtime.universe._
 
       val countOk = args.size == argTypes.size
