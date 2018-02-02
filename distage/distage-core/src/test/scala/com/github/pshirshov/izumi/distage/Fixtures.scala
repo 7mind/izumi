@@ -243,5 +243,8 @@ object Case9 {
 object Case10 {
   class Dep()
   case class Parameterized[T](t: T)
+  trait ParameterizedTrait[T] {
+    def t: T
+  }
 }
 

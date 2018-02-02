@@ -19,7 +19,7 @@ class DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
   }
 
   override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: MethodSymb): DIKey = {
-    val typeKey = DIKey.TypeKey(EqualitySafeType(methodSymbol.returnType))
+    val typeKey = DIKey.TypeKey(EqualitySafeType(methodSymbol.typeSignatureIn(context.definingClass.tpe).finalResultType))
     withOptionalName(methodSymbol, typeKey)
 
   }

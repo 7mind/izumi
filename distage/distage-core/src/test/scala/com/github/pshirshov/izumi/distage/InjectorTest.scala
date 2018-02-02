@@ -366,6 +366,7 @@ class InjectorTest extends WordSpec {
 
       val definition = TrivialDIDef
         .binding[Parameterized[Dep]]
+        .binding[ParameterizedTrait[Dep]]
         .binding[Dep]
         .finish
 
@@ -373,8 +374,8 @@ class InjectorTest extends WordSpec {
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan)
-      val instantiated3 = context.get[Parameterized[Dep]]
-      assert(instantiated3.t.isInstanceOf[Dep])
+      assert(context.get[Parameterized[Dep]].t.isInstanceOf[Dep])
+      assert(context.get[ParameterizedTrait[Dep]].t.isInstanceOf[Dep])
     }
 
   }
