@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.functions.Callable
 import com.github.pshirshov.izumi.fundamentals.reflection._
 
 sealed trait DependencyContext {
@@ -17,6 +16,6 @@ object DependencyContext {
 
   case class MethodParameterContext(factoryClass: RuntimeUniverse.TypeFull, factoryMethod: RuntimeUniverse.MethodSymb) extends ParameterContext
 
-  case class CallableParameterContext(definingCallable: Callable) extends ParameterContext
+  case class CallableParameterContext(definingCallable: RuntimeUniverse.Callable) extends ParameterContext
 
 }

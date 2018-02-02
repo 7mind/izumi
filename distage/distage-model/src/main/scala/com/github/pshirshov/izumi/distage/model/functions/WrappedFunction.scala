@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.functions
 
 import com.github.pshirshov.izumi.fundamentals.reflection.{EqualitySafeType, RuntimeUniverse}
+import RuntimeUniverse.Callable
 
 sealed trait WrappedFunction[+R] extends Callable {
   def ret: RuntimeUniverse.TypeFull

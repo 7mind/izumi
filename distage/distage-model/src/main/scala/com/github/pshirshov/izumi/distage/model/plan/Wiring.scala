@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.CustomDef
-import com.github.pshirshov.izumi.distage.model.functions.Callable
 import com.github.pshirshov.izumi.distage.model.plan.Association.{Method, Parameter}
 import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.fundamentals.reflection._
@@ -21,13 +20,13 @@ object Wiring {
 
     case class Abstract(instanceType: RuntimeUniverse.TypeFull, associations: Seq[Method]) extends UnaryWiring
 
-    case class Function(provider: Callable, associations: Seq[Association]) extends UnaryWiring
+    case class Function(provider: RuntimeUniverse.Callable, associations: Seq[Association]) extends UnaryWiring
 
     case class Instance(instanceType: RuntimeUniverse.TypeFull, instance: Any) extends UnaryWiring {
       override def associations: Seq[Association] = Seq.empty
     }
   }
-  
+
   case class CustomWiring(customDef: CustomDef, associations: Seq[Association]) extends Wiring
 
 
