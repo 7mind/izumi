@@ -156,8 +156,15 @@ class Translation(domain: DomainDefinition) {
 
     val forwarderCases = i.methods.toList.map {
       case method: RPCMethod =>
-        Case(Pat.Typed(Pat.Var(Term.Name("value"))
-          , toScalaType(method.input))
+        val tpe = toScalaType(method.input)
+        typespace(method.input) match {
+          case _: DTO =>
+
+          case _ =>
+            ???
+        }
+        Case(
+          Pat.Typed(Pat.Var(Term.Name("value")), tpe)
           , None
           , Term.Apply(Term.Select(Term.Name("service"), Term.Name(method.name)), List(Term.Name("value")))
         )
@@ -182,7 +189,7 @@ class Translation(domain: DomainDefinition) {
         List.empty,
         Type.Name(typeName + "AbstractTransport"),
         List.empty,
-        Ctor.Primary(List.empty, Name.Anonymous(), List(List(Term.Param(List(Mod.Override(), Mod.ValParam()), Term.Name("service"), Some(tpe), None))) ),
+        Ctor.Primary(List.empty, Name.Anonymous(), List(List(Term.Param(List(Mod.Override(), Mod.ValParam()), Term.Name("service"), Some(tpe), None)))),
         Template(List.empty, List(init[AbstractTransport[_]](List(tpe))), Self(Name.Anonymous(), None), transportDecls)
       )
 
