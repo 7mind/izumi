@@ -151,7 +151,7 @@ class Translation(domain: DomainDefinition) {
           , Case(
             Pat.Typed(Pat.Var(Term.Name("value")), inputType)
             , None
-            , Term.Apply(Term.Select(Term.Name("service"), Term.Name(method.name)), List(Term.Name("value")))
+            , q"service.${Term.Name(method.name)}(value)"
           )
           , inputComposite ++ outputComposite
         )
