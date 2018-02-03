@@ -4,9 +4,12 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.finaldef.{DefMethod, DomainDefinition, FinalDefinition, Service}
+import com.github.pshirshov.izumi.idealingua.model.finaldef
+import com.github.pshirshov.izumi.idealingua.model.finaldef._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
-import org.scalatest.{WordSpec, path}
+import org.scalatest.WordSpec
+
+import scala.tools.nsc.MainClass
 
 
 class IDLTest extends WordSpec {
@@ -16,7 +19,7 @@ class IDLTest extends WordSpec {
 
   val testValIdentifier = model.common.UserType.parse("izumi.test.TestValIdentifer").toIdentifier
   val testIdentifier = model.common.UserType.parse("izumi.test.TestIdentifer").toIdentifier
-  val serviceIdentifier = model.common.UserType.parse("izumi.test.UserService").toIdentifier
+  val serviceIdentifier = model.common.UserType.parse("izumi.test.UserService").toService
 
   val testInterfaceFields = Seq(
     Field(userIdTypeId, "userId")
@@ -45,32 +48,13 @@ class IDLTest extends WordSpec {
       , Seq(testInterfaceId))
   ), Seq(
     Service(serviceIdentifier, Seq(
-      DefMethod.RPCMethod("createUser", testIdObject, testInterfaceId)
+      DefMethod.RPCMethod("createUser", finaldef.Signature(Seq(testInterfaceId), Seq(testInterfaceId)))
     ))
   ))
 
   "IDL rendered" should {
     "be able to produce scala source code" in {
       val modules = new FinalTranslatorScalaImpl().translate(domain)
-
-
-      //      modules.foreach {
-      //        m =>
-      //
-      //
-      //          import reflect.runtime.currentMirror
-      //          import tools.reflect.ToolBox
-      //          val toolbox = currentMirror.mkToolBox()
-      //          import toolbox.u._
-      //
-      //          //val fileContents = Source.fromString() // fromFile(implFilename).getLines.mkString("\n")
-      //          println(m.content)
-      //          val tree = toolbox.parse(m.content)
-      //          println(tree)
-      ////          val compiledCode = toolbox.compile(tree)
-      ////          println(compiledCode())
-      //      }
-
 
       val top = Seq("target", "idl-" + System.currentTimeMillis())
       val files = modules.map {
@@ -86,26 +70,30 @@ class IDLTest extends WordSpec {
           Files.write(xpath, module.content.getBytes(StandardCharsets.UTF_8))
           mpath
       }
-      import scala.io.Source
-      import scala.tools
-      import scala.tools.nsc.{GenericRunnerSettings, Global, Settings}
-      import scala.tools.nsc
-      import scala.tools.nsc.interpreter.IMain
-
-      val settings = new Settings()
-      settings.usejavacp.value = true
-      println(settings.classpath.value)
-      val g = new Global(settings)
 
       println(files.toList)
       assert(files.toSet.size == files.size)
-      val run = new g.Run
-      run.compile(files.toList)
 
-      //            val settings: Settings = new GenericRunnerSettings(s => {println(s)})
-      //            val global = new tools.nsc.interactive.Global(settings, new scala.tools.nsc.reporters.ConsoleReporter(settings))
-      //            global.
-      //      new scala.tools.nsc.MainClass().newCompiler().newCompilationUnit("object Test {}", "test.scala")
+      {
+        import scala.tools.nsc.{Global, Settings}
+        val settings = new Settings()
+        settings.usejavacp.value = true
+        val g = new Global(settings)
+        val run = new g.Run
+        run.compile(files.toList)
+      }
+
+//      {
+//        import scala.tools.nsc.Settings
+//        import scala.tools.nsc.{Global, Settings}
+//
+//        val settings: Settings = new Settings()
+//        settings.usejavacp.value = true
+//
+//        val global = new Global(settings)
+//        new MainClass().newCompiler().newCompilationUnit("object Test {}", "test.scala")
+//      }
+
     }
   }
 

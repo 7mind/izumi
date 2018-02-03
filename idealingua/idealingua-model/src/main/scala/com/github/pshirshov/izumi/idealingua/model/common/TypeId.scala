@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.common
 
 import com.github.pshirshov.izumi.idealingua.model.common.Primitive.prelude
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AliasId, DTOId, IdentifierId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 
 
 trait TypeId {
@@ -24,6 +24,8 @@ case class UserType(pkg: Package, name: TypeName) extends TypeId {
   def toDTO: DTOId = DTOId(pkg, name)
 
   def toIdentifier: IdentifierId = IdentifierId(pkg, name)
+
+  def toService: ServiceId = ServiceId(pkg, name)
 }
 
 object UserType {
@@ -44,6 +46,8 @@ object TypeId {
   case class IdentifierId(pkg: Package, name: TypeName) extends TypeId with Scalar
 
   case class ServiceId(pkg: Package, name: TypeName) extends TypeId
+  
+  //case class SignatureId(pkg: Package, name: TypeName) extends TypeId
 
 }
 

@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition.{Alias, DTO, Identifier, Interface}
+import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
 import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition, Service, Typespace}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.runtime.{AbstractTransport, IDLGenerated, IDLIdentifier, IDLService}
@@ -77,7 +77,7 @@ class Translation(domain: DomainDefinition) {
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
     //val scalaIfaces = i.interfaces.map(typespace).toList
     val fields = typespace.fetchFields(i)
-    val scalaFields: Seq[ScalaField] = toScala(i, fields)
+    val scalaFields: Seq[ScalaField] = toScala(fields)
     val decls = scalaFields.map {
       f =>
         Term.Param(List.empty, f.name, Some(f.declType), None)
@@ -120,7 +120,7 @@ class Translation(domain: DomainDefinition) {
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
     val fields = typespace.fetchFields(i)
-    val scalaFields: Seq[ScalaField] = toScala(i, fields)
+    val scalaFields: Seq[ScalaField] = toScala(fields)
 
     val typeName = i.id.name
 
@@ -148,58 +148,78 @@ class Translation(domain: DomainDefinition) {
   protected def renderService(i: Service): Seq[Defn] = {
     val typeName = i.id.name
 
-    // TODO: contradictions
-    val decls = i.methods.map {
+    case class ServiceMethodProduct(defn: Stat, routingClause: Case, types: Seq[Defn])
+
+    val decls = i.methods.toList.map {
       case method: RPCMethod =>
-        q"def ${Term.Name(method.name)}(input: ${conv.toScalaType(method.input)}): ${conv.toScalaType(method.output)}"
-    }
+        val inName = s"In${method.name.capitalize}"
+        val outName = s"Out${method.name.capitalize}"
 
+        val inputComposite = renderComposite(inName, method.signature.input)
+        val outputComposite = renderComposite(outName, method.signature.output)
 
-    val forwarderCases = i.methods.toList.map {
-      case method: RPCMethod =>
-        val tpe = conv.toScalaType(method.input)
-        typespace(method.input) match {
-          case _: DTO =>
+        val inputType = Type.Name(inName)
+        val outputType = Type.Name(outName)
 
-          case _ =>
-            ???
-        }
-        Case(
-          Pat.Typed(Pat.Var(Term.Name("value")), tpe)
-          , None
-          , Term.Apply(Term.Select(Term.Name("service"), Term.Name(method.name)), List(Term.Name("value")))
+        ServiceMethodProduct(
+          q"def ${Term.Name(method.name)}(input: $inputType): $outputType"
+          , Case(
+            Pat.Typed(Pat.Var(Term.Name("value")), inputType)
+            , None
+            , Term.Apply(Term.Select(Term.Name("service"), Term.Name(method.name)), List(Term.Name("value")))
+          )
+          , inputComposite ++ outputComposite
         )
     }
 
-    val forwarder = Term.Match(Term.Name("input"), forwarderCases)
+    val forwarder = Term.Match(Term.Name("input"), decls.map(_.routingClause))
+    val tpe = Type.Name(typeName)
+    val tpet = Term.Name(typeName)
 
     val transportDecls = List(
       q"override def process(input: ${idtGenerated.tpe}): ${idtGenerated.tpe} = $forwarder"
     )
 
-    val tpe = Type.Name(typeName)
+    // Import(List(Importer(Term.Name("OLOLO"), List(_))))
+
     Seq(
-      Defn.Trait(
-        List.empty,
-        tpe,
-        List.empty,
-        Ctor.Primary(List.empty, Name.Anonymous(), List.empty),
-        Template(List.empty, List(idtService), Self(Name.Anonymous(), None), decls.toList)
-      )
-      , Defn.Class(
-        List.empty,
-        Type.Name(typeName + "AbstractTransport"),
-        List.empty,
-        Ctor.Primary(List.empty, Name.Anonymous(), List(List(Term.Param(List(Mod.Override(), Mod.ValParam()), Term.Name("service"), Some(tpe), None)))),
-        Template(List.empty, List(conv.init[AbstractTransport[_]](List(tpe))), Self(Name.Anonymous(), None), transportDecls)
-      )
+      q"""trait $tpe extends $idtService {
+          import $tpet._
+
+          ..${decls.map(_.defn)}
+         }"""
+      ,
+        q"""class ${Type.Name(typeName + "AbstractTransport")}
+            (
+              override val service: $tpe
+            ) extends ${conv.init[AbstractTransport[_]](List(tpe))} {
+            import $tpet._
+
+            ..$transportDecls
+           }"""
+
+
+//      , Defn.Class(
+//        List.empty,
+//        Type.Name(typeName + "AbstractTransport"),
+//        List.empty,
+//        Ctor.Primary(List.empty, Name.Anonymous(), List(List(Term.Param(List(Mod.Override(), Mod.ValParam()), Term.Name("service"), Some(tpe), None)))),
+//        Template(List.empty, List(), Self(Name.Anonymous(), None), )
+//      )
+      , q"object ${Term.Name(typeName)} { ..${decls.flatMap(_.types)} }"
     )
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
-    val scalaIfaces = i.interfaces.map(typespace.apply).toList
-    val fields = typespace.fetchFields(i)
-    val scalaFields: Seq[ScalaField] = toScala(i, fields)
+    val typeName = i.id.name
+    val interfaces = i.interfaces
+    renderComposite(typeName, interfaces)
+  }
+
+  private def renderComposite(typeName: TypeName, interfaces: Composite) = {
+    val fields = typespace.fetchFields(interfaces)
+    val scalaIfaces = interfaces.map(typespace.apply).toList
+    val scalaFields: Seq[ScalaField] = toScala(fields)
     val decls = scalaFields.map {
       f =>
         Term.Param(List.empty, f.name, Some(f.declType), None)
@@ -218,7 +238,6 @@ class Translation(domain: DomainDefinition) {
       ifDecls
     }
 
-    val typeName = i.id.name
 
     Seq(Defn.Class(
       List(Mod.Case())
@@ -262,10 +281,10 @@ class Translation(domain: DomainDefinition) {
     content
   }
 
-  protected def toScala(i: FinalDefinition, fields: Seq[Field]): Seq[ScalaField] = {
+  protected def toScala(fields: Seq[Field]): Seq[ScalaField] = {
     val conflictingFields = fields.groupBy(_.name).filter(_._2.lengthCompare(1) > 0)
     if (conflictingFields.nonEmpty) {
-      throw new IDLException(s"Conflicting fields in $i: $conflictingFields")
+      throw new IDLException(s"Conflicting fields: $conflictingFields")
     }
 
     fields.map(toScala)

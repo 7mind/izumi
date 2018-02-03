@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.finaldef
 import com.github.pshirshov.izumi.idealingua.model._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition.{Alias, DTO, Identifier, Interface}
+import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
 
 class Typespace(domain: DomainDefinition) {
   protected val typespace: Map[TypeId, FinalDefinition] = verified(domain.types)
@@ -18,13 +18,17 @@ class Typespace(domain: DomainDefinition) {
 
   def apply(id: TypeId): FinalDefinition = typespace.apply(id)
 
+  def fetchFields(composite: Composite): List[Field] = {
+    composite.flatMap(i => fetchFields(typespace(i))).toList
+  }
+
   def fetchFields(defn: FinalDefinition): List[Field] = {
     defn match {
       case t: Interface =>
-        t.interfaces.flatMap(i => fetchFields(typespace(i))).toList ++ t.ownFields.toList
+        fetchFields(t.interfaces) ++ t.fields.toList
 
       case t: DTO =>
-        t.interfaces.flatMap(i => fetchFields(typespace(i))).toList
+        fetchFields(t.interfaces)
 
       case t: Identifier =>
         t.fields.toList
@@ -48,7 +52,7 @@ class Typespace(domain: DomainDefinition) {
   def explode(defn: FinalDefinition): List[TrivialField] = {
     defn match {
       case t: Interface =>
-        t.interfaces.flatMap(i => explode(typespace(i))).toList ++ t.ownFields.flatMap(explode).toList
+        t.interfaces.flatMap(i => explode(typespace(i))).toList ++ t.fields.flatMap(explode).toList
 
       case t: DTO =>
         t.interfaces.flatMap(i => explode(typespace(i))).toList
