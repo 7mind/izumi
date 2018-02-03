@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.finaldef
 
-import com.github.pshirshov.izumi.idealingua.model.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 
 trait DefMethod
 

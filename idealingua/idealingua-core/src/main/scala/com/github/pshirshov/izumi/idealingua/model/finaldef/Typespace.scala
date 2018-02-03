@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.finaldef
 
 import com.github.pshirshov.izumi.idealingua.model._
+import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition.{Alias, DTO, Identifier, Interface}
 

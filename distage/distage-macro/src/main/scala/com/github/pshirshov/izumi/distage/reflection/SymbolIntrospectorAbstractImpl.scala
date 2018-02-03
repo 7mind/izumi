@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-import com.github.pshirshov.izumi.fundamentals.reflection.DIUniverse
-
 trait SymbolIntrospectorAbstractImpl {
   this: AbstractSymbolIntrospector =>
   

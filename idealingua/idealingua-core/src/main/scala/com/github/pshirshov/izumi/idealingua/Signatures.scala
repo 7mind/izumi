@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua
 
-import com.github.pshirshov.izumi.idealingua.model.Field
+import com.github.pshirshov.izumi.idealingua.model.common.Field
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition.{Alias, Identifier, Interface}
 
 

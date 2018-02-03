@@ -1,9 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.model
+package com.github.pshirshov.izumi.idealingua.model.common
+
+
 
 trait TypeId {
   def pkg: Package
 
   def name: TypeName
+
+  def toJava = JavaType(pkg, name.id)
 }
 
 trait Builtin extends TypeId {

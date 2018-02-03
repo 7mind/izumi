@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.finaldef
 
-import com.github.pshirshov.izumi.idealingua.model.{Field, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{Field, TypeId}
 
 sealed trait FinalDefinition {
   def id: TypeId

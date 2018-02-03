@@ -1,13 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
+import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition.{Alias, DTO, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition, Service, Typespace}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model._
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.runtime.{IDLGenerated, IDLIdentifier, IDLService}
+import com.github.pshirshov.izumi.idealingua.model.runtime.{AbstractTransport, IDLGenerated, IDLIdentifier, IDLService}
 
 import scala.collection.mutable
 import scala.meta._
@@ -29,8 +29,12 @@ class Translation(domain: DomainDefinition) {
       .flatMap(translateDef) ++
       packageObjects.map {
         case (id, content) =>
+          // TODO: dirty!
+          val pkgName = id.name.split('.').head
+
           val code =
-            s"""package object ${id.path.last} {
+            s"""
+               |package object $pkgName {
                |${content.map(_.toString()).mkString("\n\n")}
                |}
            """.stripMargin
@@ -58,11 +62,15 @@ class Translation(domain: DomainDefinition) {
       case d: DTO =>
         renderDto(d)
     }
-    toSource(definition.id, toModuleId(definition), defns)
+    if (defns.nonEmpty) {
+      toSource(definition.id, toModuleId(definition), defns)
+    } else {
+      Seq.empty
+    }
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
-    Seq(Defn.Type(List(), Type.Name(i.id.name.id), List(), toScalaType(i.target)))
+    Seq(Defn.Type(List.empty, Type.Name(i.id.name.id), List.empty, toScalaType(i.target)))
   }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
@@ -71,12 +79,12 @@ class Translation(domain: DomainDefinition) {
     val scalaFields: Seq[ScalaField] = toScala(i, fields)
     val decls = scalaFields.map {
       f =>
-        Term.Param(List(), f.name, Some(f.declType), None)
+        Term.Param(List.empty, f.name, Some(f.declType), None)
     }
 
     val suprerClasses = if (fields.lengthCompare(1) == 0) {
       List(
-        Init(Type.Name("AnyVal"), Name.Anonymous(), List())
+        Init(Type.Name("AnyVal"), Name.Anonymous(), List.empty)
       )
     } else {
       List(idtGenerated, idtInit)
@@ -87,21 +95,25 @@ class Translation(domain: DomainDefinition) {
 
     val typeName = i.id.name.id
 
-    val interp = Term.Interpolate(Term.Name("s"), List(Lit.String(typeName + "#"), Lit.String("")), List(q"""this.productIterator.map(part => Identifier.escape(part.toString)).mkString(":")"""))
+    val idt = toSelectTerm(JavaType.get[IDLIdentifier])
+    val interp = Term.Interpolate(Term.Name("s"), List(Lit.String(typeName + "#"), Lit.String("")), List(Term.Name("suffix")))
     val classDefs = List(
-      q"""override def toString: String = {$interp}"""
+      q"""override def toString: String = {
+         val suffix = this.productIterator.map(part => $idt.escape(part.toString)).mkString(":")
+         $interp
+         }"""
     )
 
     Seq(Defn.Class(
       List(Mod.Case())
       , Type.Name(typeName)
-      , List()
-      , Ctor.Primary(List(), Name.Anonymous(), List(decls.toList))
-      , Template(List(), suprerClasses, Self(Name.Anonymous(), None), classDefs)
+      , List.empty
+      , Ctor.Primary(List.empty, Name.Anonymous(), List(decls.toList))
+      , Template(List.empty, suprerClasses, Self(Name.Anonymous(), None), classDefs)
     ), Defn.Object(
-      List()
+      List.empty
       , Term.Name(typeName)
-      , Template(List(), List(), Self(Name.Anonymous(), None), List())
+      , Template(List.empty, List.empty, Self(Name.Anonymous(), None), List.empty)
     ))
   }
 
@@ -114,21 +126,21 @@ class Translation(domain: DomainDefinition) {
     // TODO: contradictions
     val decls = scalaFields.map {
       f =>
-        Decl.Def(List(), f.name, List(), List(), f.declType)
+        Decl.Def(List.empty, f.name, List.empty, List.empty, f.declType)
     }
 
     val scalaIfaces = i.interfaces.map(typespace.apply).toList
     val ifDecls = idtGenerated +: scalaIfaces.map {
       iface =>
-        Init(toScalaType(iface.id), Name.Anonymous(), List())
+        Init(toScalaType(iface.id), Name.Anonymous(), List.empty)
     }
 
     Seq(Defn.Trait(
-      List(),
+      List.empty,
       Type.Name(typeName),
-      List(),
-      Ctor.Primary(List(), Name.Anonymous(), List()),
-      Template(List(), ifDecls, Self(Name.Anonymous(), None), decls.toList)
+      List.empty,
+      Ctor.Primary(List.empty, Name.Anonymous(), List.empty),
+      Template(List.empty, ifDecls, Self(Name.Anonymous(), None), decls.toList)
     ))
   }
 
@@ -141,15 +153,41 @@ class Translation(domain: DomainDefinition) {
         q"def ${Term.Name(method.name)}(input: ${toScalaType(method.input)}): ${toScalaType(method.output)}"
     }
 
-    val scalaIfaces = List()
 
-    Seq(Defn.Trait(
-      List(),
-      Type.Name(typeName),
-      List(),
-      Ctor.Primary(List(), Name.Anonymous(), List()),
-      Template(List(), scalaIfaces, Self(Name.Anonymous(), None), decls.toList)
-    ))
+    val forwarderCases = i.methods.toList.map {
+      case method: RPCMethod =>
+        Case(Pat.Typed(Pat.Var(Term.Name("value"))
+          , toScalaType(method.input))
+          , None
+          , Term.Apply(Term.Select(Term.Name("service"), Term.Name(method.name)), List(Term.Name("value")))
+        )
+    }
+
+    val forwarder = Term.Match(Term.Name("input"), forwarderCases)
+
+    val transportDecls = List(
+      q"override def process(input: ${idtGenerated.tpe}): ${idtGenerated.tpe} = $forwarder"
+    )
+
+    val tpe = Type.Name(typeName)
+    Seq(
+      Defn.Trait(
+        List.empty,
+        tpe,
+        List.empty,
+        Ctor.Primary(List.empty, Name.Anonymous(), List.empty),
+        Template(List.empty, List(idtService), Self(Name.Anonymous(), None), decls.toList)
+      )
+      , Defn.Class(
+        List.empty,
+        Type.Name(typeName + "AbstractTransport"),
+        List.empty,
+        Ctor.Primary(List.empty, Name.Anonymous(), List(List(Term.Param(List(Mod.Override(), Mod.ValParam()), Term.Name("service"), Some(tpe), None))) ),
+        Template(List.empty, List(init[AbstractTransport[_]](List(tpe))), Self(Name.Anonymous(), None), transportDecls)
+      )
+
+    )
+
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
@@ -158,18 +196,18 @@ class Translation(domain: DomainDefinition) {
     val scalaFields: Seq[ScalaField] = toScala(i, fields)
     val decls = scalaFields.map {
       f =>
-        Term.Param(List(), f.name, Some(f.declType), None)
+        Term.Param(List.empty, f.name, Some(f.declType), None)
     }
 
     val ifDecls = scalaIfaces.map {
       iface =>
-        Init(toScalaType(iface.id), Name.Anonymous(), List())
+        Init(toScalaType(iface.id), Name.Anonymous(), List.empty)
     }
 
     // TODO: contradictions
 
     val suprerClasses = if (fields.lengthCompare(1) == 0) {
-      ifDecls :+ Init(Type.Name("AnyVal"), Name.Anonymous(), List())
+      ifDecls :+ Init(Type.Name("AnyVal"), Name.Anonymous(), List.empty)
     } else {
       ifDecls
     }
@@ -179,16 +217,16 @@ class Translation(domain: DomainDefinition) {
     Seq(Defn.Class(
       List(Mod.Case())
       , Type.Name(typeName)
-      , List()
-      , Ctor.Primary(List(), Name.Anonymous(), List(decls.toList))
-      , Template(List(), suprerClasses, Self(Name.Anonymous(), None), List())
+      , List.empty
+      , Ctor.Primary(List.empty, Name.Anonymous(), List(decls.toList))
+      , Template(List.empty, suprerClasses, Self(Name.Anonymous(), None), List.empty)
     ))
   }
 
   private def toModuleId(defn: FinalDefinition): ModuleId = {
     defn match {
       case i: Alias =>
-        ModuleId(i.id.pkg.init, s"${i.id.pkg.last}.scala")
+        ModuleId(i.id.pkg, s"${i.id.pkg.last}.scala")
 
       case other =>
         val id = other.id
@@ -206,7 +244,7 @@ class Translation(domain: DomainDefinition) {
     Seq(Module(moduleId, content))
   }
 
-  private def withPackage(pkg: idealingua.model.Package, code: String) = {
+  private def withPackage(pkg: idealingua.model.common.Package, code: String) = {
     val content = if (pkg.isEmpty) {
       code
     } else {
@@ -243,11 +281,12 @@ class Translation(domain: DomainDefinition) {
 
       case _ =>
         val typedef = typespace(typeId)
-        toSelect(typedef.id)
+        toSelect(typedef.id.toJava)
     }
   }
 
-  def toSelect(id: TypeId): Type = {
+
+  def toSelectTerm(id: JavaType): Term = {
     val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
       head =>
         id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
@@ -258,15 +297,49 @@ class Translation(domain: DomainDefinition) {
     }
     maybeSelect match {
       case Some(v) =>
-        Type.Select(v, Type.Name(id.name.id))
+        Term.Select(v, Term.Name(id.name))
 
       case None =>
-        Type.Name(id.name.id)
+        Term.Name(id.name)
+    }
+  }
+
+  def toSelect(id: JavaType): Type = {
+    val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
+      head =>
+        id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
+          case (acc, v) =>
+            v(acc)
+        }
+
+    }
+    maybeSelect match {
+      case Some(v) =>
+        Type.Select(v, Type.Name(id.name))
+
+      case None =>
+        Type.Name(id.name)
     }
   }
 
   private def initFor[T: ClassTag] = {
+    init[T](List.empty)
+  }
+
+  private def init[T: ClassTag](typeArgs: List[Type], constructorArgs: Term*) = {
     val idtClass = classTag[T].runtimeClass
-    Init(toSelect(UserType(idtClass.getPackage.getName.split('.'), TypeName(idtClass.getSimpleName))), Name.Anonymous(), List())
+    val select = toSelect(UserType(idtClass.getPackage.getName.split('.'), TypeName(idtClass.getSimpleName)).toJava)
+
+    val cargs = if (constructorArgs.isEmpty) {
+      List.empty
+    } else {
+      List(constructorArgs.toList)
+    }
+
+    if (typeArgs.isEmpty) {
+      Init(select, Name.Anonymous(), cargs)
+    } else {
+      Init(Type.Apply(select, typeArgs), Name.Anonymous(), cargs)
+    }
   }
 }
