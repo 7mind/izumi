@@ -11,7 +11,6 @@ import com.github.pshirshov.izumi.idealingua.model.runtime.{AbstractTransport, I
 
 import scala.collection.mutable
 import scala.meta._
-import scala.reflect._
 
 
 class Translation(domain: DomainDefinition) {
@@ -75,15 +74,13 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
-    //val scalaIfaces = i.interfaces.map(typespace).toList
     val fields = typespace.fetchFields(i)
-    val scalaFields: Seq[ScalaField] = toScala(fields)
-    val decls = scalaFields.map {
+    val decls = toScala(fields).map {
       f =>
         Term.Param(List.empty, f.name, Some(f.declType), None)
     }
 
-    val suprerClasses = if (fields.lengthCompare(1) == 0) {
+    val superClasses = if (fields.lengthCompare(1) == 0) {
       List(
         Init(Type.Name("AnyVal"), Name.Anonymous(), List.empty)
       )
@@ -105,17 +102,10 @@ class Translation(domain: DomainDefinition) {
          }"""
     )
 
-    Seq(Defn.Class(
-      List(Mod.Case())
-      , Type.Name(typeName)
-      , List.empty
-      , Ctor.Primary(List.empty, Name.Anonymous(), List(decls.toList))
-      , Template(List.empty, suprerClasses, Self(Name.Anonymous(), None), classDefs)
-    ), Defn.Object(
-      List.empty
-      , Term.Name(typeName)
-      , Template(List.empty, List.empty, Self(Name.Anonymous(), None), List.empty)
-    ))
+    Seq(
+      q"case class ${Type.Name(typeName)}(..$decls) extends ..$superClasses { ..$classDefs }"
+      , q"object ${Term.Name(typeName)} { }"
+    )
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
@@ -125,7 +115,7 @@ class Translation(domain: DomainDefinition) {
     val typeName = i.id.name
 
     // TODO: contradictions
-    val decls = scalaFields.map {
+    val decls = scalaFields.toList.map {
       f =>
         Decl.Def(List.empty, f.name, List.empty, List.empty, f.declType)
     }
@@ -136,13 +126,8 @@ class Translation(domain: DomainDefinition) {
         Init(conv.toScalaType(iface.id), Name.Anonymous(), List.empty)
     }
 
-    Seq(Defn.Trait(
-      List.empty,
-      Type.Name(typeName),
-      List.empty,
-      Ctor.Primary(List.empty, Name.Anonymous(), List.empty),
-      Template(List.empty, ifDecls, Self(Name.Anonymous(), None), decls.toList)
-    ))
+    Seq(q"trait ${Type.Name(typeName)} extends ..$ifDecls { ..$decls}"
+    )
   }
 
   protected def renderService(i: Service): Seq[Defn] = {
@@ -180,8 +165,6 @@ class Translation(domain: DomainDefinition) {
       q"override def process(input: ${idtGenerated.tpe}): ${idtGenerated.tpe} = $forwarder"
     )
 
-    // Import(List(Importer(Term.Name("OLOLO"), List(_))))
-
     Seq(
       q"""trait $tpe extends $idtService {
           import $tpet._
@@ -189,7 +172,7 @@ class Translation(domain: DomainDefinition) {
           ..${decls.map(_.defn)}
          }"""
       ,
-        q"""class ${Type.Name(typeName + "AbstractTransport")}
+      q"""class ${Type.Name(typeName + "AbstractTransport")}
             (
               override val service: $tpe
             ) extends ${conv.init[AbstractTransport[_]](List(tpe))} {
@@ -197,15 +180,6 @@ class Translation(domain: DomainDefinition) {
 
             ..$transportDecls
            }"""
-
-
-//      , Defn.Class(
-//        List.empty,
-//        Type.Name(typeName + "AbstractTransport"),
-//        List.empty,
-//        Ctor.Primary(List.empty, Name.Anonymous(), List(List(Term.Param(List(Mod.Override(), Mod.ValParam()), Term.Name("service"), Some(tpe), None)))),
-//        Template(List.empty, List(), Self(Name.Anonymous(), None), )
-//      )
       , q"object ${Term.Name(typeName)} { ..${decls.flatMap(_.types)} }"
     )
   }
@@ -220,7 +194,7 @@ class Translation(domain: DomainDefinition) {
     val fields = typespace.fetchFields(interfaces)
     val scalaIfaces = interfaces.map(typespace.apply).toList
     val scalaFields: Seq[ScalaField] = toScala(fields)
-    val decls = scalaFields.map {
+    val decls = scalaFields.toList.map {
       f =>
         Term.Param(List.empty, f.name, Some(f.declType), None)
     }
@@ -239,13 +213,9 @@ class Translation(domain: DomainDefinition) {
     }
 
 
-    Seq(Defn.Class(
-      List(Mod.Case())
-      , Type.Name(typeName)
-      , List.empty
-      , Ctor.Primary(List.empty, Name.Anonymous(), List(decls.toList))
-      , Template(List.empty, suprerClasses, Self(Name.Anonymous(), None), List.empty)
-    ))
+    Seq(
+      q"case class ${Type.Name(typeName)}(..$decls) extends ..$suprerClasses"
+    )
   }
 
   private def toModuleId(defn: FinalDefinition): ModuleId = {
@@ -281,13 +251,13 @@ class Translation(domain: DomainDefinition) {
     content
   }
 
-  protected def toScala(fields: Seq[Field]): Seq[ScalaField] = {
+  protected def toScala(fields: Seq[Field]): List[ScalaField] = {
     val conflictingFields = fields.groupBy(_.name).filter(_._2.lengthCompare(1) > 0)
     if (conflictingFields.nonEmpty) {
       throw new IDLException(s"Conflicting fields: $conflictingFields")
     }
 
-    fields.map(toScala)
+    fields.map(toScala).toList
   }
 
 
