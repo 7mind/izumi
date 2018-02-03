@@ -35,9 +35,10 @@ class Typespace(domain: DomainDefinition) {
   }
 
 
+  // TODO: do we need this?
   def explode(defn: Field): List[TrivialField] = {
     defn.typeId match {
-      case t: Builtin =>
+      case t: Primitive =>
         List(TrivialField(t, defn.name))
       case t: UserType =>
         explode(typespace(t))

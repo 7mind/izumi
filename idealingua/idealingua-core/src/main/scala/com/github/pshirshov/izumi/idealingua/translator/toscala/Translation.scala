@@ -15,11 +15,12 @@ import scala.reflect._
 
 
 class Translation(domain: DomainDefinition) {
-  final val idtInit = initFor[IDLIdentifier]
-  final val idtGenerated = initFor[IDLGenerated]
-  final val idtService = initFor[IDLService]
-
   protected val typespace = new Typespace(domain)
+  protected val conv = new ScalaTypeConverter(typespace)
+
+  final val idtInit = conv.initFor[IDLIdentifier]
+  final val idtGenerated = conv.initFor[IDLGenerated]
+  final val idtService = conv.initFor[IDLService]
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
 
@@ -70,7 +71,7 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
-    Seq(Defn.Type(List.empty, Type.Name(i.id.name.id), List.empty, toScalaType(i.target)))
+    Seq(Defn.Type(List.empty, Type.Name(i.id.name), List.empty, conv.toScalaType(i.target)))
   }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
@@ -93,9 +94,9 @@ class Translation(domain: DomainDefinition) {
     //val exploded = explode(i)
     // TODO: contradictions
 
-    val typeName = i.id.name.id
+    val typeName = i.id.name
 
-    val idt = toSelectTerm(JavaType.get[IDLIdentifier])
+    val idt = conv.toSelectTerm(JavaType.get[IDLIdentifier])
     val interp = Term.Interpolate(Term.Name("s"), List(Lit.String(typeName + "#"), Lit.String("")), List(Term.Name("suffix")))
     val classDefs = List(
       q"""override def toString: String = {
@@ -121,7 +122,7 @@ class Translation(domain: DomainDefinition) {
     val fields = typespace.fetchFields(i)
     val scalaFields: Seq[ScalaField] = toScala(i, fields)
 
-    val typeName = i.id.name.id
+    val typeName = i.id.name
 
     // TODO: contradictions
     val decls = scalaFields.map {
@@ -132,7 +133,7 @@ class Translation(domain: DomainDefinition) {
     val scalaIfaces = i.interfaces.map(typespace.apply).toList
     val ifDecls = idtGenerated +: scalaIfaces.map {
       iface =>
-        Init(toScalaType(iface.id), Name.Anonymous(), List.empty)
+        Init(conv.toScalaType(iface.id), Name.Anonymous(), List.empty)
     }
 
     Seq(Defn.Trait(
@@ -145,18 +146,18 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderService(i: Service): Seq[Defn] = {
-    val typeName = i.id.name.id
+    val typeName = i.id.name
 
     // TODO: contradictions
     val decls = i.methods.map {
       case method: RPCMethod =>
-        q"def ${Term.Name(method.name)}(input: ${toScalaType(method.input)}): ${toScalaType(method.output)}"
+        q"def ${Term.Name(method.name)}(input: ${conv.toScalaType(method.input)}): ${conv.toScalaType(method.output)}"
     }
 
 
     val forwarderCases = i.methods.toList.map {
       case method: RPCMethod =>
-        val tpe = toScalaType(method.input)
+        val tpe = conv.toScalaType(method.input)
         typespace(method.input) match {
           case _: DTO =>
 
@@ -190,11 +191,9 @@ class Translation(domain: DomainDefinition) {
         Type.Name(typeName + "AbstractTransport"),
         List.empty,
         Ctor.Primary(List.empty, Name.Anonymous(), List(List(Term.Param(List(Mod.Override(), Mod.ValParam()), Term.Name("service"), Some(tpe), None)))),
-        Template(List.empty, List(init[AbstractTransport[_]](List(tpe))), Self(Name.Anonymous(), None), transportDecls)
+        Template(List.empty, List(conv.init[AbstractTransport[_]](List(tpe))), Self(Name.Anonymous(), None), transportDecls)
       )
-
     )
-
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
@@ -208,7 +207,7 @@ class Translation(domain: DomainDefinition) {
 
     val ifDecls = scalaIfaces.map {
       iface =>
-        Init(toScalaType(iface.id), Name.Anonymous(), List.empty)
+        Init(conv.toScalaType(iface.id), Name.Anonymous(), List.empty)
     }
 
     // TODO: contradictions
@@ -219,7 +218,7 @@ class Translation(domain: DomainDefinition) {
       ifDecls
     }
 
-    val typeName = i.id.name.id
+    val typeName = i.id.name
 
     Seq(Defn.Class(
       List(Mod.Case())
@@ -242,7 +241,7 @@ class Translation(domain: DomainDefinition) {
   }
 
   private def toModuleId(id: TypeId): ModuleId = {
-    ModuleId(id.pkg, s"${id.name.id}.scala")
+    ModuleId(id.pkg, s"${id.name}.scala")
   }
 
   private def toSource(typeId: TypeId, moduleId: ModuleId, traitDef: Seq[Defn]) = {
@@ -274,79 +273,9 @@ class Translation(domain: DomainDefinition) {
 
 
   protected def toScala(field: Field): ScalaField = {
-    ScalaField(Term.Name(field.name), toScalaType(field.typeId))
-  }
-
-  protected def toScalaType(typeId: TypeId): Type = {
-    typeId match {
-      case TypeId.TString =>
-        t"String"
-      case TypeId.TInt32 =>
-        t"Int"
-      case TypeId.TInt64 =>
-        t"Long"
-
-      case _ =>
-        val typedef = typespace(typeId)
-        toSelect(typedef.id.toJava)
-    }
+    ScalaField(Term.Name(field.name), conv.toScalaType(field.typeId))
   }
 
 
-  def toSelectTerm(id: JavaType): Term = {
-    val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
-      head =>
-        id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
-          case (acc, v) =>
-            v(acc)
-        }
-
-    }
-    maybeSelect match {
-      case Some(v) =>
-        Term.Select(v, Term.Name(id.name))
-
-      case None =>
-        Term.Name(id.name)
-    }
-  }
-
-  def toSelect(id: JavaType): Type = {
-    val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
-      head =>
-        id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
-          case (acc, v) =>
-            v(acc)
-        }
-
-    }
-    maybeSelect match {
-      case Some(v) =>
-        Type.Select(v, Type.Name(id.name))
-
-      case None =>
-        Type.Name(id.name)
-    }
-  }
-
-  private def initFor[T: ClassTag] = {
-    init[T](List.empty)
-  }
-
-  private def init[T: ClassTag](typeArgs: List[Type], constructorArgs: Term*) = {
-    val idtClass = classTag[T].runtimeClass
-    val select = toSelect(UserType(idtClass.getPackage.getName.split('.'), TypeName(idtClass.getSimpleName)).toJava)
-
-    val cargs = if (constructorArgs.isEmpty) {
-      List.empty
-    } else {
-      List(constructorArgs.toList)
-    }
-
-    if (typeArgs.isEmpty) {
-      Init(select, Name.Anonymous(), cargs)
-    } else {
-      Init(Type.Apply(select, typeArgs), Name.Anonymous(), cargs)
-    }
-  }
 }
+

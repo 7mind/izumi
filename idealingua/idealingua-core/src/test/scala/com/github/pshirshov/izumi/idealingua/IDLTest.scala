@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Field, TypeId, TypeName, UserType}
+import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.finaldef.{DefMethod, DomainDefinition, FinalDefinition, Service}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 import org.scalatest.{WordSpec, path}
@@ -11,25 +11,28 @@ import org.scalatest.{WordSpec, path}
 
 class IDLTest extends WordSpec {
 
-  val userIdTypeId = model.common.UserType.parse("izumi.test.UserId")
-  val testInterfaceId = model.common.UserType.parse("izumi.test.TestInterface")
+  val userIdTypeId = model.common.UserType.parse("izumi.test.UserId").toAlias
+  val testInterfaceId = model.common.UserType.parse("izumi.test.TestInterface").toInterface
 
-  val testValIdentifier = model.common.UserType.parse("izumi.test.TestValIdentifer")
-  val testIdentifier = model.common.UserType.parse("izumi.test.TestIdentifer")
-  val serviceIdentifier = model.common.UserType.parse("izumi.test.UserService")
+  val testValIdentifier = model.common.UserType.parse("izumi.test.TestValIdentifer").toIdentifier
+  val testIdentifier = model.common.UserType.parse("izumi.test.TestIdentifer").toIdentifier
+  val serviceIdentifier = model.common.UserType.parse("izumi.test.UserService").toIdentifier
 
   val testInterfaceFields = Seq(
     Field(userIdTypeId, "userId")
-    , Field(TypeId.TInt32, "accountBalance")
-    , Field(TypeId.TInt64, "latestLogin")
+    , Field(Primitive.TInt32, "accountBalance")
+    , Field(Primitive.TInt64, "latestLogin")
+    , Field(Generic.TMap(Primitive.TString, Primitive.TString), "keys")
+    , Field(Generic.TList(Primitive.TString), "nicknames")
   )
 
+
   val testValStructure = Seq(Field(userIdTypeId, "userId"))
-  val testIdStructure = Seq(Field(userIdTypeId, "userId"), Field(TypeId.TString, "context"))
-  val testIdObject = UserType.parse("izumi.test.TestObject")
+  val testIdStructure = Seq(Field(userIdTypeId, "userId"), Field(Primitive.TString, "context"))
+  val testIdObject = UserType.parse("izumi.test.TestObject").toDTO
 
   val domain: DomainDefinition = DomainDefinition(Seq(
-    FinalDefinition.Alias(userIdTypeId, TypeId.TString)
+    FinalDefinition.Alias(userIdTypeId, Primitive.TString)
     , FinalDefinition.Identifier(testValIdentifier, testValStructure)
     , FinalDefinition.Identifier(testIdentifier, testIdStructure)
     , FinalDefinition.Interface(
