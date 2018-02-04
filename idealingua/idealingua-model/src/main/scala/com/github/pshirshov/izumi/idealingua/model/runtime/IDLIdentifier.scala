@@ -4,11 +4,17 @@ import com.github.pshirshov.izumi.idealingua.model.finaldef._
 
 import scala.reflect._
 
-trait IDLGenerated {
-
+trait IDLGenerated extends Any {
+  def companion: IDLTypeCompanion // TODO: it would be great to remove it
 }
 
-trait IDLIdentifier {
+trait IDLService {
+  // TODO: it would be great to remove it
+  def companion: IDLServiceCompanion
+}
+
+
+trait IDLIdentifier extends Any {
   this: IDLGenerated =>
 }
 
@@ -19,14 +25,6 @@ object IDLIdentifier {
   def unescape(s: String): String = s
 }
 
-trait IDLService {
-  type InputType <: IDLInput
-  type OutputType <: IDLOutput
-  def inputTag: ClassTag[InputType]
-  def outputTag: ClassTag[OutputType]
-
-  def companion: IDLServiceCompanion
-}
 
 trait IDLRpc {}
 
@@ -40,6 +38,12 @@ trait IDLOutput extends IDLRpc {
 }
 
 trait IDLServiceCompanion {
+  type InputType <: IDLInput
+  type OutputType <: IDLOutput
+
+  def inputTag: ClassTag[InputType]
+  def outputTag: ClassTag[OutputType]
+  
   def schema: Service
   def domain: IDLDomainCompanion
 }
@@ -50,4 +54,5 @@ trait IDLDomainCompanion {
 
 trait IDLTypeCompanion {
   def definition: FinalDefinition
+  def domain: IDLDomainCompanion
 }

@@ -22,8 +22,9 @@ class Translation(domain: DomainDefinition) {
   final val idtService = conv.initFor[IDLService]
   final val inputInit = conv.initFor[IDLInput]
   final val outputInit = conv.initFor[IDLOutput]
-  final val serviceCompanionInit = conv.initFor[IDLServiceCompanion]
   final val domainCompanionInit = conv.initFor[IDLDomainCompanion]
+  final val typeCompanionInit = conv.initFor[IDLTypeCompanion]
+  final val serviceCompanionInit = conv.initFor[IDLServiceCompanion]
 
   final val domainCompanionType = JavaType(Seq("izumi", "idealingua", "domains"), domain.id.capitalize)
   final val domainCompanion = Term.Name(domainCompanionType.name)
@@ -48,7 +49,7 @@ class Translation(domain: DomainDefinition) {
           Module(id, withPackage(id.path.init, code))
       } ++
       domain.services.flatMap(translateService) ++
-    translateDomain()
+      translateDomain()
   }
 
   protected def translateDomain(): Seq[Module] = {
@@ -61,6 +62,7 @@ class Translation(domain: DomainDefinition) {
     ))
 
   }
+
   protected def translateService(definition: Service): Seq[Module] = {
     toSource(definition.id.pkg, toModuleId(definition.id), renderService(definition))
   }
@@ -101,6 +103,8 @@ class Translation(domain: DomainDefinition) {
     val superClasses = if (fields.lengthCompare(1) == 0) {
       List(
         Init(Type.Name("AnyVal"), Name.Anonymous(), List.empty)
+        , idtGenerated
+        , idtInit
       )
     } else {
       List(idtGenerated, idtInit)
@@ -113,17 +117,33 @@ class Translation(domain: DomainDefinition) {
 
     val idt = conv.toSelectTerm(JavaType.get[IDLIdentifier])
     val interp = Term.Interpolate(Term.Name("s"), List(Lit.String(typeName + "#"), Lit.String("")), List(Term.Name("suffix")))
-    val classDefs = List(
-      q"""override def toString: String = {
-         val suffix = this.productIterator.map(part => $idt.escape(part.toString)).mkString(":")
-         $interp
-         }"""
-    )
+
+    val tpet = Type.Name(typeName)
+    val tpe = Term.Name(typeName)
 
     Seq(
-      q"case class ${Type.Name(typeName)}(..$decls) extends ..$superClasses { ..$classDefs }"
-      , q"object ${Term.Name(typeName)} { }"
+      q"""case class $tpet (..$decls) extends ..$superClasses {
+            override def toString: String = {
+              val suffix = this.productIterator.map(part => $idt.escape(part.toString)).mkString(":")
+              $interp
+            }
+
+            override def companion: $tpe.type = $tpe
+         }"""
+      , makeTypeCompanion(i, typeName)
     )
+  }
+
+  private def makeTypeCompanion(i: FinalDefinition, typeName: TypeName) = {
+    q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
+             override final lazy val definition: ${conv.toSelect(JavaType.get[FinalDefinition])} = {
+              ${SchemaSerializer.toAst(i)}
+             }
+
+             override final def domain: ${conv.toSelect(JavaType.get[IDLDomainCompanion])} = {
+              ${conv.toSelectTerm(domainCompanionType)}
+             }
+         }"""
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
@@ -144,7 +164,16 @@ class Translation(domain: DomainDefinition) {
         Init(conv.toScalaType(iface.id), Name.Anonymous(), List.empty)
     }
 
-    Seq(q"trait ${Type.Name(typeName)} extends ..$ifDecls { ..$decls}"
+    val tpe = Term.Name(typeName)
+    Seq(
+      q"""trait ${Type.Name(typeName)} extends ..$ifDecls {
+          override def companion: $tpe.type = $tpe
+
+          ..$decls
+          }
+
+       """
+      , makeTypeCompanion(i, typeName)
     )
   }
 
@@ -190,11 +219,6 @@ class Translation(domain: DomainDefinition) {
       q"""trait $tpe extends $idtService {
           import $tpet._
 
-          override type InputType = $serviceInputBase
-          override def inputTag: scala.reflect.ClassTag[$serviceInputBase] = scala.reflect.classTag[$serviceInputBase]
-          override type OutputType = $serviceOutputBase
-          override def outputTag: scala.reflect.ClassTag[$serviceOutputBase] = scala.reflect.classTag[$serviceOutputBase]
-
           override def companion: $tpet.type = $tpet
 
           ..${decls.map(_.defn)}
@@ -209,9 +233,16 @@ class Translation(domain: DomainDefinition) {
             ..$transportDecls
            }"""
       ,
-      q"""object $tpet extends ${serviceCompanionInit} {
+      q"""object $tpet extends $serviceCompanionInit {
             trait $serviceInputBase extends $inputInit {}
             trait $serviceOutputBase extends $outputInit {}
+
+            override type InputType = $serviceInputBase
+            override type OutputType = $serviceOutputBase
+
+            override def inputTag: scala.reflect.ClassTag[$serviceInputBase] = scala.reflect.classTag[$serviceInputBase]
+            override def outputTag: scala.reflect.ClassTag[$serviceOutputBase] = scala.reflect.classTag[$serviceOutputBase]
+
 
             override final lazy val schema: ${conv.toSelect(JavaType.get[Service])} = {
               ${SchemaSerializer.toAst(i)}
@@ -228,7 +259,7 @@ class Translation(domain: DomainDefinition) {
   protected def renderDto(i: DTO): Seq[Defn] = {
     val typeName = i.id.name
     val interfaces = i.interfaces
-    renderComposite(typeName, interfaces, List.empty)
+    renderComposite(typeName, interfaces, List.empty) :+ makeTypeCompanion(i, typeName)
   }
 
   private def renderComposite(typeName: TypeName, interfaces: Composite, bases: List[Init]) = {

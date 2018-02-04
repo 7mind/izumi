@@ -11,8 +11,8 @@ trait WireProtocol[OnWire] {
 trait AbstractTransport[Service <: IDLService] {
   def service: Service
 
-  def inAcceptable(in: IDLGenerated): Boolean = service.inputTag.runtimeClass.isAssignableFrom(in.getClass())
-  def outAcceptable(out: IDLGenerated): Boolean = service.outputTag.runtimeClass.isAssignableFrom(out.getClass())
+  def inAcceptable(in: IDLGenerated): Boolean = service.companion.inputTag.runtimeClass.isAssignableFrom(in.getClass())
+  def outAcceptable(out: IDLGenerated): Boolean = service.companion.outputTag.runtimeClass.isAssignableFrom(out.getClass())
 
   def process(request: IDLGenerated): IDLGenerated
 }
