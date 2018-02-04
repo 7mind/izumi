@@ -22,7 +22,11 @@ class Translation(domain: DomainDefinition) {
   final val idtService = conv.initFor[IDLService]
   final val inputInit = conv.initFor[IDLInput]
   final val outputInit = conv.initFor[IDLOutput]
-  final val companionInit = conv.initFor[IDLCompanion]
+  final val serviceCompanionInit = conv.initFor[IDLServiceCompanion]
+  final val domainCompanionInit = conv.initFor[IDLDomainCompanion]
+
+  final val domainCompanionType = JavaType(Seq("izumi", "idealingua", "domains"), domain.id.capitalize)
+  final val domainCompanion = Term.Name(domainCompanionType.name)
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
 
@@ -43,11 +47,22 @@ class Translation(domain: DomainDefinition) {
            """.stripMargin
           Module(id, withPackage(id.path.init, code))
       } ++
-      domain.services.flatMap(translateService)
+      domain.services.flatMap(translateService) ++
+    translateDomain()
   }
 
+  protected def translateDomain(): Seq[Module] = {
+    toSource(domainCompanionType.pkg, ModuleId(domainCompanionType.pkg, domain.id), Seq(
+      q"""object $domainCompanion extends ${domainCompanionInit} {
+                override final lazy val domain: ${conv.toSelect(JavaType.get[DomainDefinition])} = {
+                ${SchemaSerializer.toAst(domain)}
+              }
+             }"""
+    ))
+
+  }
   protected def translateService(definition: Service): Seq[Module] = {
-    toSource(definition.id, toModuleId(definition.id), renderService(definition))
+    toSource(definition.id.pkg, toModuleId(definition.id), renderService(definition))
   }
 
   protected def translateDef(definition: FinalDefinition): Seq[Module] = {
@@ -66,7 +81,7 @@ class Translation(domain: DomainDefinition) {
         renderDto(d)
     }
     if (defns.nonEmpty) {
-      toSource(definition.id, toModuleId(definition), defns)
+      toSource(definition.id.pkg, toModuleId(definition), defns)
     } else {
       Seq.empty
     }
@@ -194,15 +209,15 @@ class Translation(domain: DomainDefinition) {
             ..$transportDecls
            }"""
       ,
-      q"""object $tpet extends ${companionInit} {
+      q"""object $tpet extends ${serviceCompanionInit} {
             trait $serviceInputBase extends $inputInit {}
             trait $serviceOutputBase extends $outputInit {}
 
-            override def schema: ${conv.toSelect(JavaType.get[Service])} = {
+            override final lazy val schema: ${conv.toSelect(JavaType.get[Service])} = {
               ${SchemaSerializer.toAst(i)}
             }
-            override def domain: ${conv.toSelect(JavaType.get[DomainDefinition])} = {
-              ${SchemaSerializer.toAst(domain)}
+            override final def domain: ${conv.toSelect(JavaType.get[IDLDomainCompanion])} = {
+              ${conv.toSelectTerm(domainCompanionType)}
             }
 
             ..${decls.flatMap(_.types)}
@@ -259,9 +274,9 @@ class Translation(domain: DomainDefinition) {
     ModuleId(id.pkg, s"${id.name}.scala")
   }
 
-  private def toSource(typeId: TypeId, moduleId: ModuleId, traitDef: Seq[Defn]) = {
+  private def toSource(pkg: Package, moduleId: ModuleId, traitDef: Seq[Defn]) = {
     val code = traitDef.map(_.toString()).mkString("\n\n")
-    val content: String = withPackage(typeId.pkg, code)
+    val content: String = withPackage(pkg, code)
     Seq(Module(moduleId, content))
   }
 

@@ -34,7 +34,7 @@ class IDLTest extends WordSpec {
   val testIdStructure = Seq(Field(userIdTypeId, "userId"), Field(Primitive.TString, "context"))
   val testIdObject = UserType.parse("izumi.test.TestObject").toDTO
 
-  val domain: DomainDefinition = DomainDefinition(Seq(
+  val domain: DomainDefinition = DomainDefinition("testDomain", Seq(
     FinalDefinition.Alias(userIdTypeId, Primitive.TString)
     , FinalDefinition.Identifier(testValIdentifier, testValStructure)
     , FinalDefinition.Identifier(testIdentifier, testIdStructure)

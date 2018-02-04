@@ -25,7 +25,7 @@ trait IDLService {
   def inputTag: ClassTag[InputType]
   def outputTag: ClassTag[OutputType]
 
-  def companion: IDLCompanion
+  def companion: IDLServiceCompanion
 }
 
 trait IDLRpc {}
@@ -39,8 +39,15 @@ trait IDLOutput extends IDLRpc {
 
 }
 
-trait IDLCompanion {
+trait IDLServiceCompanion {
   def schema: Service
+  def domain: IDLDomainCompanion
+}
+
+trait IDLDomainCompanion {
   def domain: DomainDefinition
 }
 
+trait IDLTypeCompanion {
+  def definition: FinalDefinition
+}
