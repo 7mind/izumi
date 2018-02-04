@@ -176,6 +176,8 @@ class Translation(domain: DomainDefinition) {
 
           override type InputType = $serviceInputBase
           override def inputTag: scala.reflect.ClassTag[$serviceInputBase] = scala.reflect.classTag[$serviceInputBase]
+          override type OutputType = $serviceOutputBase
+          override def outputTag: scala.reflect.ClassTag[$serviceOutputBase] = scala.reflect.classTag[$serviceOutputBase]
           ..${decls.map(_.defn)}
          }"""
       ,

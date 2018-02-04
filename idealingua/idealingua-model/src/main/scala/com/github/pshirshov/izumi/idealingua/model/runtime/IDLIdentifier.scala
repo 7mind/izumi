@@ -20,7 +20,9 @@ object IDLIdentifier {
 
 trait IDLService {
   type InputType <: IDLInput
+  type OutputType <: IDLOutput
   def inputTag: ClassTag[InputType]
+  def outputTag: ClassTag[OutputType]
 }
 
 trait IDLRpc {}
