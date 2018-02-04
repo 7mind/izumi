@@ -1,4 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.model.runtime
+import com.github.pshirshov.izumi.idealingua.model.finaldef._
 
 
 import scala.reflect._
@@ -23,6 +24,8 @@ trait IDLService {
   type OutputType <: IDLOutput
   def inputTag: ClassTag[InputType]
   def outputTag: ClassTag[OutputType]
+
+  def companion: IDLCompanion
 }
 
 trait IDLRpc {}
@@ -34,5 +37,10 @@ trait IDLInput extends IDLRpc {
 
 trait IDLOutput extends IDLRpc {
 
+}
+
+trait IDLCompanion {
+  def schema: Service
+  def domain: DomainDefinition
 }
 

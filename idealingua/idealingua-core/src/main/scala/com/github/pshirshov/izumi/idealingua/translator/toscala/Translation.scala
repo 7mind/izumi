@@ -22,6 +22,7 @@ class Translation(domain: DomainDefinition) {
   final val idtService = conv.initFor[IDLService]
   final val inputInit = conv.initFor[IDLInput]
   final val outputInit = conv.initFor[IDLOutput]
+  final val companionInit = conv.initFor[IDLCompanion]
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
 
@@ -178,6 +179,9 @@ class Translation(domain: DomainDefinition) {
           override def inputTag: scala.reflect.ClassTag[$serviceInputBase] = scala.reflect.classTag[$serviceInputBase]
           override type OutputType = $serviceOutputBase
           override def outputTag: scala.reflect.ClassTag[$serviceOutputBase] = scala.reflect.classTag[$serviceOutputBase]
+
+          override def companion: $tpet.type = $tpet
+
           ..${decls.map(_.defn)}
          }"""
       ,
@@ -190,9 +194,16 @@ class Translation(domain: DomainDefinition) {
             ..$transportDecls
            }"""
       ,
-        q"""object ${Term.Name(typeName)} {
+      q"""object $tpet extends ${companionInit} {
             trait $serviceInputBase extends $inputInit {}
             trait $serviceOutputBase extends $outputInit {}
+
+            override def schema: ${conv.toSelect(JavaType.get[Service])} = {
+              ${SchemaSerializer.toAst(i)}
+            }
+            override def domain: ${conv.toSelect(JavaType.get[DomainDefinition])} = {
+              ${SchemaSerializer.toAst(domain)}
+            }
 
             ..${decls.flatMap(_.types)}
            }"""
