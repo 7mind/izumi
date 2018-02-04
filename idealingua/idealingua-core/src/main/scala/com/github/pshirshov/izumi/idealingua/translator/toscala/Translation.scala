@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
 import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition, Service, Typespace}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.runtime.{AbstractTransport, IDLGenerated, IDLIdentifier, IDLService}
+import com.github.pshirshov.izumi.idealingua.model.runtime._
 
 import scala.collection.mutable
 import scala.meta._
@@ -20,6 +20,8 @@ class Translation(domain: DomainDefinition) {
   final val idtInit = conv.initFor[IDLIdentifier]
   final val idtGenerated = conv.initFor[IDLGenerated]
   final val idtService = conv.initFor[IDLService]
+  final val inputInit = conv.initFor[IDLInput]
+  final val outputInit = conv.initFor[IDLOutput]
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
 
@@ -135,13 +137,16 @@ class Translation(domain: DomainDefinition) {
 
     case class ServiceMethodProduct(defn: Stat, routingClause: Case, types: Seq[Defn])
 
+    val serviceInputBase = Type.Name(s"In${typeName.capitalize}")
+    val serviceOutputBase = Type.Name(s"Out${typeName.capitalize}")
+
     val decls = i.methods.toList.map {
       case method: RPCMethod =>
         val inName = s"In${method.name.capitalize}"
         val outName = s"Out${method.name.capitalize}"
 
-        val inputComposite = renderComposite(inName, method.signature.input)
-        val outputComposite = renderComposite(outName, method.signature.output)
+        val inputComposite = renderComposite(inName, method.signature.input, List(Init(serviceInputBase, Name.Anonymous(), List.empty)))
+        val outputComposite = renderComposite(outName, method.signature.output, List(Init(serviceOutputBase, Name.Anonymous(), List.empty)))
 
         val inputType = Type.Name(inName)
         val outputType = Type.Name(outName)
@@ -169,6 +174,8 @@ class Translation(domain: DomainDefinition) {
       q"""trait $tpe extends $idtService {
           import $tpet._
 
+          override type InputType = $serviceInputBase
+          override def inputTag: scala.reflect.ClassTag[$serviceInputBase] = scala.reflect.classTag[$serviceInputBase]
           ..${decls.map(_.defn)}
          }"""
       ,
@@ -180,17 +187,23 @@ class Translation(domain: DomainDefinition) {
 
             ..$transportDecls
            }"""
-      , q"object ${Term.Name(typeName)} { ..${decls.flatMap(_.types)} }"
+      ,
+        q"""object ${Term.Name(typeName)} {
+            trait $serviceInputBase extends $inputInit {}
+            trait $serviceOutputBase extends $outputInit {}
+
+            ..${decls.flatMap(_.types)}
+           }"""
     )
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
     val typeName = i.id.name
     val interfaces = i.interfaces
-    renderComposite(typeName, interfaces)
+    renderComposite(typeName, interfaces, List.empty)
   }
 
-  private def renderComposite(typeName: TypeName, interfaces: Composite) = {
+  private def renderComposite(typeName: TypeName, interfaces: Composite, bases: List[Init]) = {
     val fields = typespace.fetchFields(interfaces)
     val scalaIfaces = interfaces.map(typespace.apply).toList
     val scalaFields: Seq[ScalaField] = toScala(fields)
@@ -206,11 +219,11 @@ class Translation(domain: DomainDefinition) {
 
     // TODO: contradictions
 
-    val suprerClasses = if (fields.lengthCompare(1) == 0) {
+    val suprerClasses = bases ++ (if (fields.lengthCompare(1) == 0) {
       ifDecls :+ Init(Type.Name("AnyVal"), Name.Anonymous(), List.empty)
     } else {
       ifDecls
-    }
+    })
 
 
     Seq(

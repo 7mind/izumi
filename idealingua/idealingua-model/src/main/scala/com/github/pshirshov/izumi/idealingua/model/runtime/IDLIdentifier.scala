@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.runtime
 
-import scala.util.Try
+
+import scala.reflect._
 
 trait IDLGenerated {
 
@@ -18,8 +19,18 @@ object IDLIdentifier {
 }
 
 trait IDLService {
+  type InputType <: IDLInput
+  def inputTag: ClassTag[InputType]
+}
+
+trait IDLRpc {}
+
+
+trait IDLInput extends IDLRpc {
 
 }
 
+trait IDLOutput extends IDLRpc {
 
+}
 

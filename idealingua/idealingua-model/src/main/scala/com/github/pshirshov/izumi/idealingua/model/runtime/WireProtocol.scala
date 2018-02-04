@@ -14,6 +14,8 @@ trait AbstractTransport[Service <: IDLService] {
   def process(request: IDLGenerated): IDLGenerated
 }
 
+
+
 trait WireTransport[OnWire, Service <: IDLService] {
   def protocol: WireProtocol[OnWire]
 
@@ -32,4 +34,17 @@ class WireTransportDefaultImpl[OnWire, Service <: IDLService]
   , val abstractTransport: AbstractTransport[Service]
 ) extends WireTransport[OnWire, Service] {
 
+}
+
+trait MultiplexingTransport[OnWire] {
+  def services: Seq[WireTransport[_, _]]
+
+  def process(request: OnWire): Try[OnWire]
+}
+
+class MultiplexingTransportDefaultImpl[OnWire]
+(
+  override val services: Seq[WireTransport[_, _]]
+) extends MultiplexingTransport[OnWire] {
+  override def process(request: OnWire): Try[OnWire] = ???
 }
