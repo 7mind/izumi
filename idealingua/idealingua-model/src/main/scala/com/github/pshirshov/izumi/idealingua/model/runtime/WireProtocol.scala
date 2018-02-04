@@ -11,9 +11,11 @@ trait WireProtocol[OnWire] {
 trait AbstractTransport[Service <: IDLService] {
   def service: Service
 
+  def inAcceptable(in: IDLGenerated): Boolean = service.inputTag.runtimeClass.isAssignableFrom(in.getClass())
+  def outAcceptable(out: IDLGenerated): Boolean = service.outputTag.runtimeClass.isAssignableFrom(out.getClass())
+
   def process(request: IDLGenerated): IDLGenerated
 }
-
 
 
 trait WireTransport[OnWire, Service <: IDLService] {
@@ -36,15 +38,22 @@ class WireTransportDefaultImpl[OnWire, Service <: IDLService]
 
 }
 
-trait MultiplexingTransport[OnWire] {
-  def services: Seq[WireTransport[_, _]]
 
-  def process(request: OnWire): Try[OnWire]
+trait MultiplexingWireTransport[OnWire] {
+  def protocol: WireProtocol[OnWire]
+  def services: Seq[AbstractTransport[_]]
+
+  def process(request: OnWire): Try[OnWire] = {
+    Try(protocol.decode(request))
+      .map(r => (r, services.filter(_.inAcceptable(r))) )
+      .map(rs => rs._2.map(_.process(rs._1)))
+      .map(_.map(protocol.encode).head) // by design we have one service per input class
+  }
 }
 
-class MultiplexingTransportDefaultImpl[OnWire]
+class MultiplexingWireTransportDefaultImpl[OnWire]
 (
-  override val services: Seq[WireTransport[_, _]]
-) extends MultiplexingTransport[OnWire] {
-  override def process(request: OnWire): Try[OnWire] = ???
+  val protocol: WireProtocol[OnWire]
+  , override val services: Seq[AbstractTransport[_]]
+) extends MultiplexingWireTransport[OnWire] {
 }
