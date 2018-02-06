@@ -8,16 +8,11 @@ cache:
 scala:
   - 2.12.4
 jdk:
-  - oraclejdk8
+  - oraclejdk9
 before_install:
   - ( openssl aes-256-cbc -K $encrypted_b9da041c62db_key -iv $encrypted_b9da041c62db_iv -in secrets.tar.enc -out secrets.tar -d && tar xvf secrets.tar ) || true
 script:
-  - if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"; fi
-  - if [[ -f credentials.sonatype-nexus.properties ]] ; then sbt +clean +test +scripted +publishSigned ; else sbt +clean +test +scripted +package ; fi
-  - if [[ -f credentials.sonatype-nexus.properties && "$TRAVIS_TAG" =~ ^v.*$ ]] ; then sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease; fi
-  - sbt clean coverage test coverageReport
-#  - sbt clean coverage test coverageReport && sbt coverageAggregate
-#after_success:
-#  - sbt coveralls
+  - bash travis.sh build
+
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - bash travis.sh report
