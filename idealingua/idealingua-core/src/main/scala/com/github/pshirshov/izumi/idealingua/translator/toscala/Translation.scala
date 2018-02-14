@@ -24,6 +24,8 @@ class Translation(domain: DomainDefinition) {
   final val outputInit = conv.initFor[IDLOutput]
   final val domainCompanionInit = conv.initFor[IDLDomainCompanion]
   final val typeCompanionInit = conv.initFor[IDLTypeCompanion]
+  final val enumInit = conv.initFor[IDLEnum]
+  final val enumElInit = conv.initFor[IDLEnumElement]
   final val serviceCompanionInit = conv.initFor[IDLServiceCompanion]
 
   final val domainCompanionType = JavaType(Seq("izumi", "idealingua", "domains"), domain.id.capitalize)
@@ -54,7 +56,7 @@ class Translation(domain: DomainDefinition) {
 
   protected def translateDomain(): Seq[Module] = {
     toSource(domainCompanionType.pkg, ModuleId(domainCompanionType.pkg, domain.id), Seq(
-      q"""object $domainCompanion extends ${domainCompanionInit} {
+      q"""object $domainCompanion extends $domainCompanionInit {
                 override final lazy val domain: ${conv.toSelect(JavaType.get[DomainDefinition])} = {
                 ${SchemaSerializer.toAst(domain)}
               }
@@ -67,11 +69,15 @@ class Translation(domain: DomainDefinition) {
     toSource(definition.id.pkg, toModuleId(definition.id), renderService(definition))
   }
 
+
   protected def translateDef(definition: FinalDefinition): Seq[Module] = {
     val defns = definition match {
       case a: Alias =>
         packageObjects.getOrElseUpdate(toModuleId(a), mutable.ArrayBuffer()) ++= renderAlias(a)
         Seq()
+
+      case i: Enumeration =>
+        renderEnumeration(i)
 
       case i: Identifier =>
         renderIdentifier(i)
@@ -87,6 +93,33 @@ class Translation(domain: DomainDefinition) {
     } else {
       Seq.empty
     }
+  }
+
+  def renderEnumeration(i: Enumeration): Seq[Defn] = {
+    val typeName = i.id.name
+    val tpet = Type.Name(typeName)
+    val tpe = Term.Name(typeName)
+    val init = Init(tpet, Name.Anonymous(), List.empty)
+
+    val members = i.members.map {
+      m =>
+        val mt = Term.Name(m)
+        q"""case object $mt extends $init {
+              override def toString: String = ${Lit.String(m)}
+            }"""
+    }
+
+    Seq(
+      q""" sealed trait $tpet extends $enumElInit {} """
+      , q"""object $tpe extends $enumInit {
+            type Element = $tpet
+
+            override def all: Seq[$tpet] = Seq(..${members.map(_.name)})
+            
+            ..$members
+
+           }"""
+    )
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {

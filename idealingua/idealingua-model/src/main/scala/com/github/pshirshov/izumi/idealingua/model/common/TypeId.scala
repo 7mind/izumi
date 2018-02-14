@@ -18,6 +18,7 @@ trait Scalar extends TypeId {
 
 case class UserType(pkg: Package, name: TypeName) extends TypeId {
   def toAlias: AliasId = AliasId(pkg, name)
+  def toEnum: EnumId = EnumId(pkg, name)
 
   def toInterface: InterfaceId = InterfaceId(pkg, name)
 
@@ -42,6 +43,8 @@ object TypeId {
   case class DTOId(pkg: Package, name: TypeName) extends TypeId
 
   case class AliasId(pkg: Package, name: TypeName) extends TypeId
+  
+  case class EnumId(pkg: Package, name: TypeName) extends TypeId
 
   case class IdentifierId(pkg: Package, name: TypeName) extends TypeId with Scalar
 

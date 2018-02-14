@@ -13,6 +13,8 @@ object FinalDefinition {
   type Composite = Seq[InterfaceId]
   type Aggregate = Seq[Field]
 
+  case class Enumeration(id: EnumId, members: List[String]) extends FinalDefinition
+
   case class Alias(id: AliasId, target: TypeId) extends FinalDefinition
 
   case class Identifier(id: IdentifierId, fields: Aggregate) extends FinalDefinition

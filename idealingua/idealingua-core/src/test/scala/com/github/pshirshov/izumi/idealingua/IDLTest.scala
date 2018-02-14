@@ -15,6 +15,7 @@ import scala.tools.nsc.MainClass
 class IDLTest extends WordSpec {
 
   val userIdTypeId = model.common.UserType.parse("izumi.test.UserId").toAlias
+  val enumId = model.common.UserType.parse("izumi.test.AnEnum").toEnum
   val testInterfaceId = model.common.UserType.parse("izumi.test.TestInterface").toInterface
 
   val testValIdentifier = model.common.UserType.parse("izumi.test.TestValIdentifer").toIdentifier
@@ -36,6 +37,7 @@ class IDLTest extends WordSpec {
 
   val domain: DomainDefinition = DomainDefinition("testDomain", Seq(
     FinalDefinition.Alias(userIdTypeId, Primitive.TString)
+    , FinalDefinition.Enumeration(enumId, List("VALUE1", "VALUE2"))
     , FinalDefinition.Identifier(testValIdentifier, testValStructure)
     , FinalDefinition.Identifier(testIdentifier, testIdStructure)
     , FinalDefinition.Interface(

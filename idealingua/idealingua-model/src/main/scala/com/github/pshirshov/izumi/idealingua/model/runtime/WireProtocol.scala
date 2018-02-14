@@ -11,12 +11,21 @@ trait WireProtocol[OnWire] {
 trait AbstractTransport[Service <: IDLService] {
   def service: Service
 
-  def inAcceptable(in: IDLGenerated): Boolean = service.companion.inputTag.runtimeClass.isAssignableFrom(in.getClass())
-  def outAcceptable(out: IDLGenerated): Boolean = service.companion.outputTag.runtimeClass.isAssignableFrom(out.getClass())
+  def inAcceptable(in: IDLGenerated): Boolean = service.companion.inputTag.runtimeClass.isAssignableFrom(in.getClass)
+  def outAcceptable(out: IDLGenerated): Boolean = service.companion.outputTag.runtimeClass.isAssignableFrom(out.getClass)
 
   def process(request: IDLGenerated): IDLGenerated
 }
 
+object AbstractTransport {
+//  import scala.reflect.runtime.universe._
+//  private lazy val universeMirror = ru.runtimeMirror(getClass.getClassLoader)
+//
+//  def companionOf[T](implicit tt: ru.TypeTag[T])  = {
+//    val companionMirror = universeMirror.reflectModule(ru.typeOf[T].typeSymbol.companionSymbol.asModule)
+//    companionMirror.instance
+//  }
+}
 
 trait WireTransport[OnWire, Service <: IDLService] {
   def protocol: WireProtocol[OnWire]

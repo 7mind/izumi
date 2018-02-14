@@ -52,6 +52,13 @@ trait IDLDomainCompanion {
   def domain: DomainDefinition
 }
 
+trait IDLEnumElement {}
+
+trait IDLEnum {
+  type Element <: IDLEnumElement
+  def all: Seq[Element]
+}
+
 trait IDLTypeCompanion {
   def definition: FinalDefinition
   def domain: IDLDomainCompanion
