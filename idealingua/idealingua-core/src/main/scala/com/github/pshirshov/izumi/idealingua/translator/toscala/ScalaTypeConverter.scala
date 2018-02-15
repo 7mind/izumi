@@ -8,10 +8,15 @@ import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 
 class ScalaTypeConverter(typespace: Typespace) {
+
   implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
     def toScala: List[ScalaField] = {
       fields.map(_.field).toScala
     }
+  }
+
+  implicit class ExtendedFieldOps(field: ExtendedField) {
+    protected def toScala: ScalaField = field.field.toScala
   }
 
   implicit class FieldSeqOps(fields: Seq[Field]) {
@@ -24,93 +29,31 @@ class ScalaTypeConverter(typespace: Typespace) {
       fields.map(_.toScala).toList
     }
   }
-
-
+  
   implicit class FieldOps(field: Field) {
     def toScala: ScalaField = {
-      ScalaField(Term.Name(field.name), toScalaType(field.typeId))
+      ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).tpe)
     }
   }
 
-  implicit class ExtendedFieldOps(field: ExtendedField) {
-    protected def toScala: ScalaField = field.field.toScala
-  }
-
-
-  def toScalaType(typeId: Primitive): Type = {
-    typeId match {
-      case Primitive.TString =>
-        t"String"
-      case Primitive.TInt32 =>
-        t"Int"
-      case Primitive.TInt64 =>
-        t"Long"
-    }
-  }
-
-  def toScalaType(typeId: Generic): Type = {
-    typeId match {
-      case t: Generic.TSet =>
-        t"Set[${toScalaType(t.valueType)}]"
-      case t: Generic.TMap =>
-        t"Map[${toScalaType(t.keyType)}, ${toScalaType(t.valueType)}]"
-      case t: Generic.TList =>
-        t"List[${toScalaType(t.valueType)}]"
-    }
-  }
-
-  def toScalaType(typeId: TypeId): Type = {
-    typeId match {
-      case t: Primitive =>
-        toScalaType(t)
-
-      case t: Generic =>
-        toScalaType(t)
-
-      case _ =>
-        val typedef = typespace(typeId)
-        toSelect(typedef.id.toJava)
-    }
-  }
-
-  private def toSelectTerm(id: JavaType): Term.Ref = {
-    val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
-      head =>
-        id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
-          case (acc, v) =>
-            v(acc)
-        }
-
-    }
-    maybeSelect match {
-      case Some(v) =>
-        Term.Select(v, Term.Name(id.name))
-
-      case None =>
-        Term.Name(id.name)
-    }
-  }
-
-  private def toSelect(id: JavaType): Type.Ref = {
-    val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
-      head =>
-        id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
-          case (acc, v) =>
-            v(acc)
-        }
-
-    }
-    maybeSelect match {
-      case Some(v) =>
-        Type.Select(v, Type.Name(id.name))
-
-      case None =>
-        Type.Name(id.name)
+  implicit class ScalaTypeOps(st: ScalaType) {
+    def within(name: TypeName): ScalaType = {
+      toScala(JavaType(st.javaType.pkg :+ st.javaType.name, name))
     }
   }
 
   def toScala(id: TypeId): ScalaType = {
-    toScala(JavaType(id.pkg, id.name))
+    id match {
+      case t: Primitive =>
+        toScala(toPrimitive(t))
+
+      case t: Generic =>
+        // TODO: looks like shit
+        ScalaType(null, toGeneric(t), null, null, null)
+
+      case _ =>
+        toScala(JavaType(id.pkg, id.name))
+    }
   }
 
   def toScala[T: ClassTag]: ScalaType = {
@@ -129,37 +72,60 @@ class ScalaTypeConverter(typespace: Typespace) {
     )
   }
 
-  implicit class ScalaTypeOps(st: ScalaType) {
-    def within(name: TypeName): ScalaType = {
-      toScala(JavaType(st.javaType.pkg :+ st.javaType.name, name))
-    }
-  }
-}
-
-case class ScalaType(
-                      term: Term.Ref
-                      , tpe: Type.Ref
-                      , termName: Term.Name
-                      , typeName: Type.Name
-                      , javaType: JavaType
-                    ) {
-
-
-  def init(): Init = init(List.empty)
-
-  def init(typeArgs: List[Type], constructorArgs: Term*): Init = {
-    val cargs = if (constructorArgs.isEmpty) {
-      List.empty
-    } else {
-      List(constructorArgs.toList)
-    }
-
-    if (typeArgs.isEmpty) {
-      Init(tpe, Name.Anonymous(), cargs)
-    } else {
-      Init(Type.Apply(tpe, typeArgs), Name.Anonymous(), cargs)
+  private def toPrimitive(id: Primitive): JavaType = {
+    id match {
+      case Primitive.TString =>
+        JavaType(Seq.empty, "String")
+      case Primitive.TInt32 =>
+        JavaType(Seq.empty, "Int")
+      case Primitive.TInt64 =>
+        JavaType(Seq.empty, "Long")
     }
   }
 
+  private def toGeneric(typeId: Generic): Type.Apply = {
+    typeId match {
+      case t: Generic.TSet =>
+        t"Set[${toScala(t.valueType).tpe}]"
+      case t: Generic.TMap =>
+        t"Map[${toScala(t.keyType).tpe}, ${toScala(t.valueType).tpe}]"
+      case t: Generic.TList =>
+        t"List[${toScala(t.valueType).tpe}]"
+    }
+  }
+
+  private def toSelectTerm(id: JavaType): Term.Ref = {
+    selectTerm(id) match {
+      case Some(v) =>
+        Term.Select(v, Term.Name(id.name))
+
+      case None =>
+        Term.Name(id.name)
+    }
+  }
+
+  private def toSelect(id: JavaType): Type.Ref = {
+    selectTerm(id) match {
+      case Some(v) =>
+        Type.Select(v, Type.Name(id.name))
+
+      case None =>
+        Type.Name(id.name)
+    }
+  }
+
+  private def selectTerm(id: JavaType) = {
+    val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
+      head =>
+        id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
+          case (acc, v) =>
+            v(acc)
+        }
+
+    }
+    maybeSelect
+  }
 }
+
+
 

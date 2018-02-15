@@ -133,7 +133,7 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
-    Seq(Defn.Type(List.empty, Type.Name(i.id.name), List.empty, conv.toScalaType(i.target)))
+    Seq(Defn.Type(List.empty, Type.Name(i.id.name), List.empty, conv.toScala(i.target).tpe))
   }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
@@ -197,7 +197,7 @@ class Translation(domain: DomainDefinition) {
     val scalaIfaces = i.interfaces.map(typespace.apply).toList
     val ifDecls = idtGenerated +: scalaIfaces.map {
       iface =>
-        Init(conv.toScalaType(iface.id), Name.Anonymous(), List.empty)
+        conv.toScala(iface.id).init()
     }
 
     val t = conv.toScala(i.id)
@@ -341,7 +341,7 @@ class Translation(domain: DomainDefinition) {
 
     val ifDecls = scalaIfaces.map {
       iface =>
-        Init(conv.toScalaType(iface.id), Name.Anonymous(), List.empty)
+        conv.toScala(iface.id).init()
     }
 
     // TODO: contradictions
@@ -354,7 +354,7 @@ class Translation(domain: DomainDefinition) {
 
     val t = conv.toScala(typeName)
 
-    val constructorSignature = scalaIfaces.map(d => Term.Param(List.empty, definitionToParaName(d), Some(conv.toScalaType(d.id)), None))
+    val constructorSignature = scalaIfaces.map(d => Term.Param(List.empty, definitionToParaName(d), Some(conv.toScala(d.id).tpe), None))
     val constructorCode = fields.map {
       f =>
         q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
