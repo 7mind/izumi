@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
@@ -18,16 +18,16 @@ class Translation(domain: DomainDefinition) {
   protected val typespace = new Typespace(domain)
   protected val conv = new ScalaTypeConverter(typespace)
 
-  final val idtInit = conv.initFor[IDLIdentifier]
-  final val idtGenerated = conv.initFor[IDLGenerated]
-  final val idtService = conv.initFor[IDLService]
-  final val inputInit = conv.initFor[IDLInput]
-  final val outputInit = conv.initFor[IDLOutput]
-  final val domainCompanionInit = conv.initFor[IDLDomainCompanion]
-  final val typeCompanionInit = conv.initFor[IDLTypeCompanion]
-  final val enumInit = conv.initFor[IDLEnum]
-  final val enumElInit = conv.initFor[IDLEnumElement]
-  final val serviceCompanionInit = conv.initFor[IDLServiceCompanion]
+  final val idtInit = conv.toScala[IDLIdentifier].init()
+  final val idtGenerated = conv.toScala[IDLGenerated].init()
+  final val idtService = conv.toScala[IDLService].init()
+  final val inputInit = conv.toScala[IDLInput].init()
+  final val outputInit = conv.toScala[IDLOutput].init()
+  final val domainCompanionInit = conv.toScala[IDLDomainCompanion].init()
+  final val typeCompanionInit = conv.toScala[IDLTypeCompanion].init()
+  final val enumInit = conv.toScala[IDLEnum].init()
+  final val enumElInit = conv.toScala[IDLEnumElement].init()
+  final val serviceCompanionInit = conv.toScala[IDLServiceCompanion].init()
 
   final val domainCompanionType = JavaType(Seq("izumi", "idealingua", "domains"), domain.id.capitalize)
   final val domainCompanion = Term.Name(domainCompanionType.name)
@@ -134,6 +134,7 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
+    import conv._
     val fields = typespace.fetchFields(i)
     val decls = fields.toScala.map {
       f =>
@@ -158,17 +159,16 @@ class Translation(domain: DomainDefinition) {
     val idt = conv.toSelectTerm(JavaType.get[IDLIdentifier])
     val interp = Term.Interpolate(Term.Name("s"), List(Lit.String(typeName + "#"), Lit.String("")), List(Term.Name("suffix")))
 
-    val tpet = Type.Name(typeName)
-    val tpe = Term.Name(typeName)
+    val t = conv.toScala(typeName)
 
     Seq(
-      q"""case class $tpet (..$decls) extends ..$superClasses {
+      q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
             override def toString: String = {
               val suffix = this.productIterator.map(part => $idt.escape(part.toString)).mkString(":")
               $interp
             }
 
-            override def companion: $tpe.type = $tpe
+            override def companion: ${t.term}.type = ${t.term}
          }"""
       ,
       q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
@@ -184,6 +184,7 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
+    import conv._
     val fields = typespace.fetchFields(i)
     val scalaFields: Seq[ScalaField] = fields.toScala
 
@@ -201,7 +202,7 @@ class Translation(domain: DomainDefinition) {
         Init(conv.toScalaType(iface.id), Name.Anonymous(), List.empty)
     }
 
-    val tpe = Term.Name(typeName)
+    val t = conv.toScala(typeName)
     val impl = renderComposite(toDtoName(i.id), Seq(i.id), List.empty).toList
 
     val parents = typespace.implements(i.id)
@@ -215,8 +216,8 @@ class Translation(domain: DomainDefinition) {
         }
 
 
-        q"""def ${Term.Name("to" + p.name.capitalize)}(): $tpe.${Type.Name(toDtoName(p))} = {
-             $tpe.${Term.Name(toDtoName(p))}(..$constructorCode)
+        q"""def ${Term.Name("to" + p.name.capitalize)}(): ${t.term}.${Type.Name(toDtoName(p))} = {
+             ${t.term}.${Term.Name(toDtoName(p))}(..$constructorCode)
             }
           """
     }
@@ -225,7 +226,7 @@ class Translation(domain: DomainDefinition) {
 
     Seq(
       q"""trait ${Type.Name(typeName)} extends ..$ifDecls {
-          override def companion: $tpe.type = $tpe
+          override def companion: ${t.term}.type = ${t.term}
 
           ..$allDecls
           }
@@ -244,16 +245,6 @@ class Translation(domain: DomainDefinition) {
              ..$impl
          }"""
     )
-  }
-
-  private def toDtoName(id: TypeId) = {
-    id match {
-      case _: InterfaceId =>
-        s"${id.name}Impl"
-      case _ =>
-        s"${id.name}"
-
-    }
   }
 
   protected def renderService(i: Service): Seq[Defn] = {
@@ -287,32 +278,32 @@ class Translation(domain: DomainDefinition) {
     }
 
     val forwarder = Term.Match(Term.Name("input"), decls.map(_.routingClause))
-    val tpe = Type.Name(typeName)
-    val tpet = Term.Name(typeName)
+    val t = conv.toScala(typeName)
 
     val transportDecls = List(
       q"override def process(input: ${idtGenerated.tpe}): ${idtGenerated.tpe} = $forwarder"
     )
+    val abstractTransportTpe = conv.toScala[AbstractTransport[_]].init(List(t.tpe))
 
     Seq(
-      q"""trait $tpe extends $idtService {
-          import $tpet._
+      q"""trait ${t.typeName} extends $idtService {
+          import ${t.term}._
 
-          override def companion: $tpet.type = $tpet
+          override def companion: ${t.term}.type = ${t.term}
 
           ..${decls.map(_.defn)}
          }"""
       ,
       q"""class ${Type.Name(typeName + "AbstractTransport")}
             (
-              override val service: $tpe
-            ) extends ${conv.init[AbstractTransport[_]](List(tpe))} {
-            import $tpet._
+              override val service: ${t.tpe}
+            ) extends $abstractTransportTpe {
+            import ${t.term}._
 
             ..$transportDecls
            }"""
       ,
-      q"""object $tpet extends $serviceCompanionInit {
+      q"""object ${t.termName} extends $serviceCompanionInit {
             trait $serviceInputBase extends $inputInit {}
             trait $serviceOutputBase extends $outputInit {}
 
@@ -342,6 +333,7 @@ class Translation(domain: DomainDefinition) {
   }
 
   private def renderComposite(typeName: TypeName, interfaces: Composite, bases: List[Init]): Seq[Defn] = {
+    import conv._
     val fields = typespace.enumFields(interfaces)
     val scalaIfaces = interfaces.map(typespace.apply).toList
     val scalaFields: Seq[ScalaField] = fields.toScala
@@ -363,9 +355,7 @@ class Translation(domain: DomainDefinition) {
       ifDecls
     })
 
-    val tpe = Type.Name(typeName)
-    val tpet = Term.Name(typeName)
-
+    val t = conv.toScala(typeName)
 
     val constructorSignature = scalaIfaces.map(d => Term.Param(List.empty, definitionToParaName(d), Some(conv.toScalaType(d.id)), None))
     val constructorCode = fields.map {
@@ -375,18 +365,18 @@ class Translation(domain: DomainDefinition) {
 
 
     val constructors = List(
-      q"""def apply(..$constructorSignature): $tpe = {
-         $tpet(..$constructorCode)
+      q"""def apply(..$constructorSignature): ${t.tpe} = {
+         ${t.term}(..$constructorCode)
          }"""
     )
 
     Seq(
-      q"""case class $tpe(..$decls) extends ..$superClasses {
+      q"""case class ${t.typeName}(..$decls) extends ..$superClasses {
 
           }
        """
       ,
-      q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
+      q"""object ${t.termName} extends $typeCompanionInit {
              override final lazy val definition: ${conv.toSelect(JavaType.get[FinalDefinition])} = {
                 ???
              }
@@ -400,6 +390,16 @@ class Translation(domain: DomainDefinition) {
     )
 
     //${SchemaSerializer.toAst(i)}
+  }
+
+  private def toDtoName(id: TypeId) = {
+    id match {
+      case _: InterfaceId =>
+        s"${id.name}Impl"
+      case _ =>
+        s"${id.name}"
+
+    }
   }
 
   private def definitionToParaName(d: FinalDefinition) = idToParaName(d.id)
@@ -440,33 +440,6 @@ class Translation(domain: DomainDefinition) {
     content
   }
 
-  implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
-    def toScala: List[ScalaField] = {
-      fields.map(_.field).toScala
-    }
-  }
-
-  implicit class FieldSeqOps(fields: Seq[Field]) {
-    def toScala: List[ScalaField] = {
-      val conflictingFields = fields.groupBy(_.name).filter(_._2.lengthCompare(1) > 0)
-      if (conflictingFields.nonEmpty) {
-        throw new IDLException(s"Conflicting fields: $conflictingFields")
-      }
-
-      fields.map(_.toScala).toList
-    }
-  }
-
-
-  implicit class FieldOps(field: Field) {
-    def toScala: ScalaField = {
-      ScalaField(Term.Name(field.name), conv.toScalaType(field.typeId))
-    }
-  }
-
-  implicit class ExtendedFieldOps(field: ExtendedField) {
-    protected def toScala: ScalaField = field.field.toScala
-  }
 
 }
 

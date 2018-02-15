@@ -1,12 +1,42 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.Typespace
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 
 class ScalaTypeConverter(typespace: Typespace) {
+  implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
+    def toScala: List[ScalaField] = {
+      fields.map(_.field).toScala
+    }
+  }
+
+  implicit class FieldSeqOps(fields: Seq[Field]) {
+    def toScala: List[ScalaField] = {
+      val conflictingFields = fields.groupBy(_.name).filter(_._2.lengthCompare(1) > 0)
+      if (conflictingFields.nonEmpty) {
+        throw new IDLException(s"Conflicting fields: $conflictingFields")
+      }
+
+      fields.map(_.toScala).toList
+    }
+  }
+
+
+  implicit class FieldOps(field: Field) {
+    def toScala: ScalaField = {
+      ScalaField(Term.Name(field.name), toScalaType(field.typeId))
+    }
+  }
+
+  implicit class ExtendedFieldOps(field: ExtendedField) {
+    protected def toScala: ScalaField = field.field.toScala
+  }
+
+
   def toScalaType(typeId: Primitive): Type = {
     typeId match {
       case Primitive.TString =>
@@ -43,7 +73,7 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  def toSelectTerm(id: JavaType): Term = {
+  def toSelectTerm(id: JavaType): Term.Ref = {
     val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
       head =>
         id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
@@ -61,7 +91,7 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  def toSelect(id: JavaType): Type = {
+  def toSelect(id: JavaType): Type.Ref = {
     val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
       head =>
         id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
@@ -79,14 +109,23 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  def initFor[T: ClassTag]: Init = {
-    init[T](List.empty)
+  // TODO: this thing is not safe and does not support packages
+  def toScala(typeName: TypeName): ScalaType = {
+    ScalaType(Term.Name(typeName), Type.Name(typeName), Term.Name(typeName), Type.Name(typeName))
   }
 
-  def init[T: ClassTag](typeArgs: List[Type], constructorArgs: Term*): Init = {
+  def toScala[T: ClassTag]: ScalaType = {
     val idtClass = classTag[T].runtimeClass
-    val select = toSelect(UserType(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName).toJava)
+    val javaType = UserType(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName).toJava
 
+    ScalaType(toSelectTerm(javaType), toSelect(javaType), Term.Name(javaType.name), Type.Name(javaType.name))
+  }
+}
+
+case class ScalaType(term: Term.Ref, tpe: Type.Ref, termName: Term.Name, typeName: Type.Name) {
+  def init(): Init = init(List.empty)
+
+  def init(typeArgs: List[Type], constructorArgs: Term*): Init = {
     val cargs = if (constructorArgs.isEmpty) {
       List.empty
     } else {
@@ -94,9 +133,9 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
 
     if (typeArgs.isEmpty) {
-      Init(select, Name.Anonymous(), cargs)
+      Init(tpe, Name.Anonymous(), cargs)
     } else {
-      Init(Type.Apply(select, typeArgs), Name.Anonymous(), cargs)
+      Init(Type.Apply(tpe, typeArgs), Name.Anonymous(), cargs)
     }
   }
 
