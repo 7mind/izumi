@@ -145,7 +145,7 @@ class Translation(domain: DomainDefinition) {
 
     val superClasses = if (fields.lengthCompare(1) == 0) {
       List(
-        Init(Type.Name("AnyVal"), Name.Anonymous(), List.empty)
+        conv.toScala(JavaType(Seq.empty, "AnyVal")).init()
         , idtGenerated
         , tIDLIdentifier.init()
       )
@@ -214,8 +214,9 @@ class Translation(domain: DomainDefinition) {
             q""" ${Term.Name(f.field.name)} = this.${Term.Name(f.field.name)}  """
         }
 
-        q"""def ${Term.Name("to" + p.name.capitalize)}(): ${t.term}.${Type.Name(toDtoName(p))} = {
-             ${t.term}.${Term.Name(toDtoName(p))}(..$constructorCode)
+        val tt = t.within(toDtoName(p))
+        q"""def ${Term.Name("to" + p.name.capitalize)}(): ${tt.tpe} = {
+             ${tt.term}(..$constructorCode)
             }
           """
     }
@@ -284,7 +285,7 @@ class Translation(domain: DomainDefinition) {
       q"override def process(input: ${idtGenerated.tpe}): ${idtGenerated.tpe} = $forwarder"
     )
     val abstractTransportTpe = tAbstractTransport.init(List(t.tpe))
-
+    val transportTpe = t.sibling(typeName + "AbstractTransport")
     Seq(
       q"""trait ${t.typeName} extends $idtService {
           import ${t.term}._

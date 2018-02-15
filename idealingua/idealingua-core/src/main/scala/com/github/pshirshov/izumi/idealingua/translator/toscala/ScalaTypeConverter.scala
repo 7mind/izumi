@@ -37,6 +37,10 @@ class ScalaTypeConverter(typespace: Typespace) {
   }
 
   implicit class ScalaTypeOps(st: ScalaType) {
+    def sibling(name: TypeName): ScalaType = {
+      toScala(JavaType(st.javaType.pkg, name))
+    }
+
     def within(name: TypeName): ScalaType = {
       toScala(JavaType(st.javaType.pkg :+ st.javaType.name, name))
     }
