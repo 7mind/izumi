@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
@@ -101,6 +102,11 @@ class Translation(domain: DomainDefinition) {
     val tpe = Term.Name(typeName)
     val init = Init(tpet, Name.Anonymous(), List.empty)
 
+    val duplicates = i.members.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
+    if (duplicates.nonEmpty) {
+      throw new IDLException(s"Duplicated enum elements: $duplicates")
+    }
+
     val members = i.members.map {
       m =>
         val mt = Term.Name(m)
@@ -111,11 +117,12 @@ class Translation(domain: DomainDefinition) {
 
     Seq(
       q""" sealed trait $tpet extends $enumElInit {} """
-      , q"""object $tpe extends $enumInit {
+      ,
+      q"""object $tpe extends $enumInit {
             type Element = $tpet
 
             override def all: Seq[$tpet] = Seq(..${members.map(_.name)})
-            
+
             ..$members
 
            }"""
@@ -128,7 +135,7 @@ class Translation(domain: DomainDefinition) {
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
     val fields = typespace.fetchFields(i)
-    val decls = toScala(fields).map {
+    val decls = fields.toScala.map {
       f =>
         Term.Param(List.empty, f.name, Some(f.declType), None)
     }
@@ -163,12 +170,8 @@ class Translation(domain: DomainDefinition) {
 
             override def companion: $tpe.type = $tpe
          }"""
-      , makeTypeCompanion(i, typeName)
-    )
-  }
-
-  private def makeTypeCompanion(i: FinalDefinition, typeName: TypeName) = {
-    q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
+      ,
+      q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
              override final lazy val definition: ${conv.toSelect(JavaType.get[FinalDefinition])} = {
               ${SchemaSerializer.toAst(i)}
              }
@@ -177,11 +180,12 @@ class Translation(domain: DomainDefinition) {
               ${conv.toSelectTerm(domainCompanionType)}
              }
          }"""
+    )
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
     val fields = typespace.fetchFields(i)
-    val scalaFields: Seq[ScalaField] = toScala(fields)
+    val scalaFields: Seq[ScalaField] = fields.toScala
 
     val typeName = i.id.name
 
@@ -198,16 +202,58 @@ class Translation(domain: DomainDefinition) {
     }
 
     val tpe = Term.Name(typeName)
+    val impl = renderComposite(toDtoName(i.id), Seq(i.id), List.empty).toList
+
+    val parents = typespace.implements(i.id)
+    val narrowers = parents.map {
+      p =>
+        val ifields = typespace.enumFields(typespace(p))
+
+        val constructorCode = ifields.map {
+          f =>
+            q""" ${Term.Name(f.field.name)} = this.${Term.Name(f.field.name)}  """
+        }
+
+
+        q"""def ${Term.Name("to" + p.name.capitalize)}(): $tpe.${Type.Name(toDtoName(p))} = {
+             $tpe.${Term.Name(toDtoName(p))}(..$constructorCode)
+            }
+          """
+    }
+
+    val allDecls = decls ++ narrowers
+
     Seq(
       q"""trait ${Type.Name(typeName)} extends ..$ifDecls {
           override def companion: $tpe.type = $tpe
 
-          ..$decls
+          ..$allDecls
           }
 
        """
-      , makeTypeCompanion(i, typeName)
+      ,
+      q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
+             override final lazy val definition: ${conv.toSelect(JavaType.get[FinalDefinition])} = {
+              ${SchemaSerializer.toAst(i)}
+             }
+
+             override final def domain: ${conv.toSelect(JavaType.get[IDLDomainCompanion])} = {
+              ${conv.toSelectTerm(domainCompanionType)}
+             }
+
+             ..$impl
+         }"""
     )
+  }
+
+  private def toDtoName(id: TypeId) = {
+    id match {
+      case _: InterfaceId =>
+        s"${id.name}Impl"
+      case _ =>
+        s"${id.name}"
+
+    }
   }
 
   protected def renderService(i: Service): Seq[Defn] = {
@@ -292,13 +338,13 @@ class Translation(domain: DomainDefinition) {
   protected def renderDto(i: DTO): Seq[Defn] = {
     val typeName = i.id.name
     val interfaces = i.interfaces
-    renderComposite(typeName, interfaces, List.empty) :+ makeTypeCompanion(i, typeName)
+    renderComposite(typeName, interfaces, List.empty) //:+ makeTypeCompanion(i, typeName)
   }
 
-  private def renderComposite(typeName: TypeName, interfaces: Composite, bases: List[Init]) = {
-    val fields = typespace.fetchFields(interfaces)
+  private def renderComposite(typeName: TypeName, interfaces: Composite, bases: List[Init]): Seq[Defn] = {
+    val fields = typespace.enumFields(interfaces)
     val scalaIfaces = interfaces.map(typespace.apply).toList
-    val scalaFields: Seq[ScalaField] = toScala(fields)
+    val scalaFields: Seq[ScalaField] = fields.toScala
     val decls = scalaFields.toList.map {
       f =>
         Term.Param(List.empty, f.name, Some(f.declType), None)
@@ -311,17 +357,55 @@ class Translation(domain: DomainDefinition) {
 
     // TODO: contradictions
 
-    val suprerClasses = bases ++ (if (fields.lengthCompare(1) == 0) {
+    val superClasses = bases ++ (if (fields.lengthCompare(1) == 0) {
       ifDecls :+ Init(Type.Name("AnyVal"), Name.Anonymous(), List.empty)
     } else {
       ifDecls
     })
 
+    val tpe = Type.Name(typeName)
+    val tpet = Term.Name(typeName)
+
+
+    val constructorSignature = scalaIfaces.map(d => Term.Param(List.empty, definitionToParaName(d), Some(conv.toScalaType(d.id)), None))
+    val constructorCode = fields.map {
+      f =>
+        q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
+    }
+
+
+    val constructors = List(
+      q"""def apply(..$constructorSignature): $tpe = {
+         $tpet(..$constructorCode)
+         }"""
+    )
 
     Seq(
-      q"case class ${Type.Name(typeName)}(..$decls) extends ..$suprerClasses"
+      q"""case class $tpe(..$decls) extends ..$superClasses {
+
+          }
+       """
+      ,
+      q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
+             override final lazy val definition: ${conv.toSelect(JavaType.get[FinalDefinition])} = {
+                ???
+             }
+
+             override final def domain: ${conv.toSelect(JavaType.get[IDLDomainCompanion])} = {
+              ${conv.toSelectTerm(domainCompanionType)}
+             }
+
+             ..$constructors
+         }"""
     )
+
+    //${SchemaSerializer.toAst(i)}
   }
+
+  private def definitionToParaName(d: FinalDefinition) = idToParaName(d.id)
+
+  private def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
+
 
   private def toModuleId(defn: FinalDefinition): ModuleId = {
     defn match {
@@ -356,20 +440,33 @@ class Translation(domain: DomainDefinition) {
     content
   }
 
-  protected def toScala(fields: Seq[Field]): List[ScalaField] = {
-    val conflictingFields = fields.groupBy(_.name).filter(_._2.lengthCompare(1) > 0)
-    if (conflictingFields.nonEmpty) {
-      throw new IDLException(s"Conflicting fields: $conflictingFields")
+  implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
+    def toScala: List[ScalaField] = {
+      fields.map(_.field).toScala
     }
+  }
 
-    fields.map(toScala).toList
+  implicit class FieldSeqOps(fields: Seq[Field]) {
+    def toScala: List[ScalaField] = {
+      val conflictingFields = fields.groupBy(_.name).filter(_._2.lengthCompare(1) > 0)
+      if (conflictingFields.nonEmpty) {
+        throw new IDLException(s"Conflicting fields: $conflictingFields")
+      }
+
+      fields.map(_.toScala).toList
+    }
   }
 
 
-  protected def toScala(field: Field): ScalaField = {
-    ScalaField(Term.Name(field.name), conv.toScalaType(field.typeId))
+  implicit class FieldOps(field: Field) {
+    def toScala: ScalaField = {
+      ScalaField(Term.Name(field.name), conv.toScalaType(field.typeId))
+    }
   }
 
+  implicit class ExtendedFieldOps(field: ExtendedField) {
+    protected def toScala: ScalaField = field.field.toScala
+  }
 
 }
 

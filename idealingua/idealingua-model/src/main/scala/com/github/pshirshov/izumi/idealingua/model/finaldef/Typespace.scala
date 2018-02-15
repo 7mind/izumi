@@ -1,9 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.model.finaldef
 
 import com.github.pshirshov.izumi.idealingua.model._
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
+
+import scala.annotation.tailrec
 
 class Typespace(domain: DomainDefinition) {
   protected val typespace: Map[TypeId, FinalDefinition] = verified(domain.types)
@@ -17,25 +20,59 @@ class Typespace(domain: DomainDefinition) {
   }
 
   def apply(id: TypeId): FinalDefinition = typespace.apply(id)
+  def apply(id: InterfaceId): Interface = typespace.apply(id).asInstanceOf[Interface]
+  def apply(id: DTOId): DTO = typespace.apply(id).asInstanceOf[DTO]
 
-  def fetchFields(composite: Composite): List[Field] = {
-    composite.flatMap(i => fetchFields(typespace(i))).toList
+  def implements(id: TypeId): List[InterfaceId] = {
+    id match {
+      case i: InterfaceId =>
+        List(i) ++ apply(i).interfaces.toList.flatMap(implements)
+
+      case i: DTOId =>
+        apply(i).interfaces.toList.flatMap(implements)
+
+      case _ =>
+        List.empty
+    }
   }
 
-  def fetchFields(defn: FinalDefinition): List[Field] = {
+  def whoImplements(id: InterfaceId): List[DTOId] = {
+    typespace.collect {
+      case (tid: DTOId, d: DTO) if d.interfaces.contains(id)=>
+        tid
+    }.toList
+  }
+
+  def enumFields(composite: Composite): List[ExtendedField] = {
+    composite.flatMap(i => enumFields(typespace(i))).toList
+  }
+
+  def enumFields(defn: FinalDefinition): List[ExtendedField] = {
     defn match {
       case t: Interface =>
-        fetchFields(t.interfaces) ++ t.fields.toList
+        enumFields(t.interfaces) ++ toExtendedFields(t.fields, t.id)
 
       case t: DTO =>
-        fetchFields(t.interfaces)
+        enumFields(t.interfaces)
 
       case t: Identifier =>
-        t.fields.toList
+        toExtendedFields(t.fields, t.id)
 
       case t: Alias =>
         List()
     }
+  }
+
+  private def toExtendedFields(fields: Aggregate, id: TypeId) = {
+    fields.map(f => ExtendedField(f, id: TypeId)).toList
+  }
+
+  def fetchFields(composite: Composite): List[Field] = {
+    enumFields(composite).map(_.field)
+  }
+
+  def fetchFields(defn: FinalDefinition): List[Field] = {
+    enumFields(defn).map(_.field)
   }
 
 

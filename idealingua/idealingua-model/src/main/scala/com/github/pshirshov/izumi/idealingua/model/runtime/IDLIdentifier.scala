@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.model.runtime
-import com.github.pshirshov.izumi.idealingua.model.finaldef._
+import java.net.URLDecoder
 
+import com.github.pshirshov.izumi.idealingua.model.finaldef._
+import com.sun.deploy.net.URLEncoder
 
 import scala.reflect._
 
@@ -19,10 +21,9 @@ trait IDLIdentifier extends Any {
 }
 
 object IDLIdentifier {
-  // TODO: here we should escape colons
-  def escape(s: String): String = s
-
-  def unescape(s: String): String = s
+  // TODO: we may need to use a better escaping
+  def escape(s: String): String = URLEncoder.encode(s, "UTF-8")
+  def unescape(s: String): String = URLDecoder.decode(s, "UTF-8")
 }
 
 
