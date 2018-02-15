@@ -9,4 +9,6 @@ object JavaType {
     val clazz = classTag[T].runtimeClass
     JavaType(clazz.getPackage.getName.split('.'), clazz.getSimpleName)
   }
+
+  def apply(typeId: TypeId): JavaType = new JavaType(typeId.pkg, typeId.name)
 }

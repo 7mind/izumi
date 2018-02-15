@@ -73,7 +73,7 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  def toSelectTerm(id: JavaType): Term.Ref = {
+  private def toSelectTerm(id: JavaType): Term.Ref = {
     val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
       head =>
         id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
@@ -91,7 +91,7 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  def toSelect(id: JavaType): Type.Ref = {
+  private def toSelect(id: JavaType): Type.Ref = {
     val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
       head =>
         id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
@@ -109,20 +109,42 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  // TODO: this thing is not safe and does not support packages
-  def toScala(typeName: TypeName): ScalaType = {
-    ScalaType(Term.Name(typeName), Type.Name(typeName), Term.Name(typeName), Type.Name(typeName))
+  def toScala(id: TypeId): ScalaType = {
+    toScala(JavaType(id.pkg, id.name))
   }
 
   def toScala[T: ClassTag]: ScalaType = {
     val idtClass = classTag[T].runtimeClass
     val javaType = UserType(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName).toJava
+    toScala(javaType)
+  }
 
-    ScalaType(toSelectTerm(javaType), toSelect(javaType), Term.Name(javaType.name), Type.Name(javaType.name))
+  def toScala(javaType: JavaType): ScalaType = {
+    ScalaType(
+      toSelectTerm(javaType)
+      , toSelect(javaType)
+      , Term.Name(javaType.name)
+      , Type.Name(javaType.name)
+      , javaType
+    )
+  }
+
+  implicit class ScalaTypeOps(st: ScalaType) {
+    def within(name: TypeName): ScalaType = {
+      toScala(JavaType(st.javaType.pkg :+ st.javaType.name, name))
+    }
   }
 }
 
-case class ScalaType(term: Term.Ref, tpe: Type.Ref, termName: Term.Name, typeName: Type.Name) {
+case class ScalaType(
+                      term: Term.Ref
+                      , tpe: Type.Ref
+                      , termName: Term.Name
+                      , typeName: Type.Name
+                      , javaType: JavaType
+                    ) {
+
+
   def init(): Init = init(List.empty)
 
   def init(typeArgs: List[Type], constructorArgs: Term*): Init = {
@@ -140,3 +162,4 @@ case class ScalaType(term: Term.Ref, tpe: Type.Ref, termName: Term.Name, typeNam
   }
 
 }
+
