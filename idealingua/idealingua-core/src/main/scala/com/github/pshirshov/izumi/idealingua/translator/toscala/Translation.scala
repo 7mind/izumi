@@ -17,24 +17,11 @@ import scala.meta._
 class Translation(domain: DomainDefinition) {
   protected val typespace = new Typespace(domain)
   protected val conv = new ScalaTypeConverter(typespace)
+  protected val runtimeTypes = new IDLRuntimeTypes(conv)
 
+  import runtimeTypes._
   import conv._
-
-  final val idtGenerated = conv.toScala[IDLGenerated].init()
-  final val idtService = conv.toScala[IDLService].init()
-  final val inputInit = conv.toScala[IDLInput].init()
-  final val outputInit = conv.toScala[IDLOutput].init()
-  final val typeCompanionInit = conv.toScala[IDLTypeCompanion].init()
-  final val enumInit = conv.toScala[IDLEnum].init()
-  final val enumElInit = conv.toScala[IDLEnumElement].init()
-  final val serviceCompanionInit = conv.toScala[IDLServiceCompanion].init()
-
-  final val tIDLIdentifier = conv.toScala[IDLIdentifier]
-  final val tFinalDefinition = conv.toScala[FinalDefinition]
-  final val tDomainCompanion = conv.toScala[IDLDomainCompanion]
-  final val tDomainDefinition = conv.toScala[DomainDefinition]
-  final val tService = conv.toScala[Service]
-
+  
   final val tDomain = conv.toScala(JavaType(Seq("izumi", "idealingua", "domains"), domain.id.capitalize))
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
@@ -111,8 +98,8 @@ class Translation(domain: DomainDefinition) {
 
     val members = i.members.map {
       m =>
-        val mt = Term.Name(m)
-        q"""case object $mt extends ${t.init()} {
+        val mt =t.within(m)
+        q"""case object ${mt.termName} extends ${t.init()} {
               override def toString: String = ${Lit.String(m)}
             }"""
     }
@@ -132,7 +119,7 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
-    Seq(Defn.Type(List.empty, Type.Name(i.id.name), List.empty, conv.toScala(i.target).typeFull))
+    Seq(q"type ${conv.toScala(i.id).typeName} = ${conv.toScala(i.target).typeFull}")
   }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
@@ -201,7 +188,7 @@ class Translation(domain: DomainDefinition) {
 
     val t = conv.toScala(i.id)
     val dtoName = toDtoName(i.id)
-    val impl = renderComposite(t.within(dtoName).javaType, Seq(i.id), List.empty).toList
+    val impl = renderComposite(t.within(dtoName).javaType, i, Seq(i.id), List.empty).toList
 
     val parents = typespace.implements(i.id)
     val narrowers = parents.map {
@@ -258,14 +245,16 @@ class Translation(domain: DomainDefinition) {
 
     val decls = i.methods.toList.map {
       case method: RPCMethod =>
-        val inName = t.within(s"In${method.name.capitalize}")
-        val outName = t.within(s"Out${method.name.capitalize}")
+        val in = t.within(s"In${method.name.capitalize}")
+        val out = t.within(s"Out${method.name.capitalize}")
+        val inDef = Interface(InterfaceId(in.javaType.pkg, in.javaType.name), Seq.empty, method.signature.input)
+        val outDef = Interface(InterfaceId(out.javaType.pkg, out.javaType.name), Seq.empty, method.signature.input)
 
-        val inputComposite = renderComposite(inName.javaType, method.signature.input, List(serviceInputBase.init()))
-        val outputComposite = renderComposite(outName.javaType, method.signature.output, List(serviceOutputBase.init()))
+        val inputComposite = renderComposite(in.javaType, inDef, method.signature.input, List(serviceInputBase.init()))
+        val outputComposite = renderComposite(out.javaType, outDef, method.signature.output, List(serviceOutputBase.init()))
 
-        val inputType = inName.typeFull
-        val outputType = outName.typeFull
+        val inputType = in.typeFull
+        val outputType = out.typeFull
 
         ServiceMethodProduct(
           q"def ${Term.Name(method.name)}(input: $inputType): $outputType"
@@ -297,7 +286,7 @@ class Translation(domain: DomainDefinition) {
           ..${decls.map(_.defn)}
          }"""
       ,
-      q"""class ${Type.Name(typeName + "AbstractTransport")}
+      q"""class ${transportTpe.typeName}
             (
               override val service: ${t.typeFull}
             ) extends $abstractTransportTpe {
@@ -330,10 +319,10 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
-    renderComposite(JavaType(i.id), i.interfaces, List.empty)
+    renderComposite(JavaType(i.id), i, i.interfaces, List.empty)
   }
 
-  private def renderComposite(typeName: JavaType, interfaces: Composite, bases: List[Init]): Seq[Defn] = {
+  private def renderComposite(typeName: JavaType, defn: FinalDefinition, interfaces: Composite, bases: List[Init]): Seq[Defn] = {
     val fields = typespace.enumFields(interfaces)
     val scalaIfaces = interfaces.map(typespace.apply).toList
     val scalaFields: Seq[ScalaField] = fields.toScala
@@ -378,7 +367,7 @@ class Translation(domain: DomainDefinition) {
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
              override final lazy val definition: ${tFinalDefinition.typeFull} = {
-                ???
+                ${SchemaSerializer.toAst(defn)}
              }
 
              override final def domain: ${tDomainCompanion.typeFull} = {
@@ -388,8 +377,6 @@ class Translation(domain: DomainDefinition) {
              ..$constructors
          }"""
     )
-
-    //${SchemaSerializer.toAst(i)}
   }
 
   private def toDtoName(id: TypeId) = {
@@ -405,7 +392,6 @@ class Translation(domain: DomainDefinition) {
   private def definitionToParaName(d: FinalDefinition) = idToParaName(d.id)
 
   private def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
-
 
   private def toModuleId(defn: FinalDefinition): ModuleId = {
     defn match {
