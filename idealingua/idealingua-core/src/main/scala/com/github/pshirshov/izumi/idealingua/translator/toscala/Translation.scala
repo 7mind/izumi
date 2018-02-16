@@ -205,7 +205,7 @@ class Translation(domain: DomainDefinition) {
     val constructors = implementors.map {
       impl =>
         val implementor = typespace(impl)
-        val missingInterfaces = implementor.interfaces.toSet -- allParents.toSet
+        val missingInterfaces = (implementor.interfaces.toSet -- allParents.toSet).toSeq
 
         val signature = missingInterfaces.toList.map {
           f =>
@@ -217,7 +217,7 @@ class Translation(domain: DomainDefinition) {
             q""" ${Term.Name(f.field.name)} = this.${Term.Name(f.field.name)}  """
         }
 
-        val otherFields: Seq[ExtendedField] = Seq.empty
+        val otherFields: Seq[ExtendedField] = missingInterfaces.flatMap(mi => typespace.enumFields(typespace(mi)))
 
         val constructorCodeOthers = otherFields.map {
           f =>
@@ -235,7 +235,6 @@ class Translation(domain: DomainDefinition) {
     Seq(
       q"""trait ${t.typeName} extends ..$ifDecls {
           override def companion: ${t.termBase}.type = ${t.termFull}
-
           ..$allDecls
           }
 
