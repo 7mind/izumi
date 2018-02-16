@@ -32,7 +32,7 @@ class ScalaTypeConverter(typespace: Typespace) {
   
   implicit class FieldOps(field: Field) {
     def toScala: ScalaField = {
-      ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).tpe)
+      ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).typeFull)
     }
   }
 
@@ -52,8 +52,7 @@ class ScalaTypeConverter(typespace: Typespace) {
         toScala(toPrimitive(t))
 
       case t: Generic =>
-        // TODO: looks like shit
-        ScalaType(null, toGeneric(t), null, null, null)
+        toScala(toGeneric(t), t.args)
 
       case _ =>
         toScala(JavaType(id.pkg, id.name))
@@ -67,12 +66,18 @@ class ScalaTypeConverter(typespace: Typespace) {
   }
 
   def toScala(javaType: JavaType): ScalaType = {
+    toScala(javaType, List.empty)
+  }
+
+  private def toScala(javaType: JavaType, args: List[TypeId]): ScalaType = {
     ScalaType(
       toSelectTerm(javaType)
       , toSelect(javaType)
       , Term.Name(javaType.name)
       , Type.Name(javaType.name)
       , javaType
+      , args.map(toScala(_).typeFull)
+      , args.map(toScala(_).termFull)
     )
   }
 
@@ -87,14 +92,14 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  private def toGeneric(typeId: Generic): Type.Apply = {
+  private def toGeneric(typeId: Generic): JavaType = {
     typeId match {
-      case t: Generic.TSet =>
-        t"Set[${toScala(t.valueType).tpe}]"
-      case t: Generic.TMap =>
-        t"Map[${toScala(t.keyType).tpe}, ${toScala(t.valueType).tpe}]"
-      case t: Generic.TList =>
-        t"List[${toScala(t.valueType).tpe}]"
+      case _: Generic.TSet =>
+        JavaType(Seq.empty, "Set")
+      case _: Generic.TMap =>
+        JavaType(Seq.empty, "Map")
+      case _: Generic.TList =>
+        JavaType(Seq.empty, "List")
     }
   }
 
@@ -118,8 +123,8 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  private def selectTerm(id: JavaType) = {
-    val maybeSelect: Option[Term.Ref] = id.pkg.headOption.map {
+  private def selectTerm(id: JavaType): Option[Term.Ref] = {
+    id.pkg.headOption.map {
       head =>
         id.pkg.tail.map(v => Term.Select(_: Term, Term.Name(v))).foldLeft(Term.Name(head): Term.Ref) {
           case (acc, v) =>
@@ -127,7 +132,6 @@ class ScalaTypeConverter(typespace: Typespace) {
         }
 
     }
-    maybeSelect
   }
 }
 

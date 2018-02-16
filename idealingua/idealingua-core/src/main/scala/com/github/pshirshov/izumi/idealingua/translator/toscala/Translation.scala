@@ -29,7 +29,6 @@ class Translation(domain: DomainDefinition) {
   final val enumElInit = conv.toScala[IDLEnumElement].init()
   final val serviceCompanionInit = conv.toScala[IDLServiceCompanion].init()
 
-  final val tAbstractTransport = conv.toScala[AbstractTransport[_]]
   final val tIDLIdentifier = conv.toScala[IDLIdentifier]
   final val tFinalDefinition = conv.toScala[FinalDefinition]
   final val tDomainCompanion = conv.toScala[IDLDomainCompanion]
@@ -64,7 +63,7 @@ class Translation(domain: DomainDefinition) {
   protected def translateDomain(): Seq[Module] = {
     toSource(tDomain.javaType.pkg, ModuleId(tDomain.javaType.pkg, domain.id), Seq(
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
-                override final lazy val domain: ${tDomainDefinition.tpe} = {
+                override final lazy val domain: ${tDomainDefinition.typeFull} = {
                 ${SchemaSerializer.toAst(domain)}
               }
              }"""
@@ -122,9 +121,9 @@ class Translation(domain: DomainDefinition) {
       q""" sealed trait ${t.typeName} extends $enumElInit {} """
       ,
       q"""object ${t.termName} extends $enumInit {
-            type Element = ${t.tpe}
+            type Element = ${t.typeFull}
 
-            override def all: Seq[${t.tpe}] = Seq(..${members.map(_.name)})
+            override def all: Seq[${t.typeFull}] = Seq(..${members.map(_.name)})
 
             ..$members
 
@@ -133,7 +132,7 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
-    Seq(Defn.Type(List.empty, Type.Name(i.id.name), List.empty, conv.toScala(i.target).tpe))
+    Seq(Defn.Type(List.empty, Type.Name(i.id.name), List.empty, conv.toScala(i.target).typeFull))
   }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
@@ -164,20 +163,20 @@ class Translation(domain: DomainDefinition) {
     Seq(
       q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
             override def toString: String = {
-              val suffix = this.productIterator.map(part => ${tIDLIdentifier.term}.escape(part.toString)).mkString(":")
+              val suffix = this.productIterator.map(part => ${tIDLIdentifier.termFull}.escape(part.toString)).mkString(":")
               $interp
             }
 
-            override def companion: ${t.term}.type = ${t.term}
+            override def companion: ${t.termBase}.type = ${t.termFull}
          }"""
       ,
       q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
-             override final lazy val definition: ${tFinalDefinition.tpe} = {
+             override final lazy val definition: ${tFinalDefinition.typeFull} = {
               ${SchemaSerializer.toAst(i)}
              }
 
-             override final def domain: ${tDomainCompanion.tpe} = {
-              ${tDomain.term}
+             override final def domain: ${tDomainCompanion.typeFull} = {
+              ${tDomain.termFull}
              }
          }"""
     )
@@ -215,8 +214,8 @@ class Translation(domain: DomainDefinition) {
         }
 
         val tt = t.within(toDtoName(p))
-        q"""def ${Term.Name("to" + p.name.capitalize)}(): ${tt.tpe} = {
-             ${tt.term}(..$constructorCode)
+        q"""def ${Term.Name("to" + p.name.capitalize)}(): ${tt.typeFull} = {
+             ${tt.termFull}(..$constructorCode)
             }
           """
     }
@@ -225,7 +224,7 @@ class Translation(domain: DomainDefinition) {
 
     Seq(
       q"""trait ${t.typeName} extends ..$ifDecls {
-          override def companion: ${t.term}.type = ${t.term}
+          override def companion: ${t.termBase}.type = ${t.termFull}
 
           ..$allDecls
           }
@@ -233,12 +232,12 @@ class Translation(domain: DomainDefinition) {
        """
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
-             override final lazy val definition: ${tFinalDefinition.tpe} = {
+             override final lazy val definition: ${tFinalDefinition.typeFull} = {
               ${SchemaSerializer.toAst(i)}
              }
 
-             override final def domain: ${tDomainCompanion.tpe} = {
-              ${tDomain.term}
+             override final def domain: ${tDomainCompanion.typeFull} = {
+              ${tDomain.termFull}
              }
 
              ..$impl
@@ -265,8 +264,8 @@ class Translation(domain: DomainDefinition) {
         val inputComposite = renderComposite(inName.javaType, method.signature.input, List(serviceInputBase.init()))
         val outputComposite = renderComposite(outName.javaType, method.signature.output, List(serviceOutputBase.init()))
 
-        val inputType = inName.tpe
-        val outputType = outName.tpe
+        val inputType = inName.typeFull
+        val outputType = outName.typeFull
 
         ServiceMethodProduct(
           q"def ${Term.Name(method.name)}(input: $inputType): $outputType"
@@ -284,22 +283,25 @@ class Translation(domain: DomainDefinition) {
     val transportDecls = List(
       q"override def process(input: ${idtGenerated.tpe}): ${idtGenerated.tpe} = $forwarder"
     )
-    val abstractTransportTpe = tAbstractTransport.init(List(t.tpe))
+
+    val tAbstractTransport = conv.toScala[AbstractTransport[_]].copy(typeArgs = List(t.typeFull))
+    val abstractTransportTpe = tAbstractTransport.init()
+
     val transportTpe = t.sibling(typeName + "AbstractTransport")
     Seq(
       q"""trait ${t.typeName} extends $idtService {
-          import ${t.term}._
+          import ${t.termBase}._
 
-          override def companion: ${t.term}.type = ${t.term}
+          override def companion: ${t.termBase}.type = ${t.termFull}
 
           ..${decls.map(_.defn)}
          }"""
       ,
       q"""class ${Type.Name(typeName + "AbstractTransport")}
             (
-              override val service: ${t.tpe}
+              override val service: ${t.typeFull}
             ) extends $abstractTransportTpe {
-            import ${t.term}._
+            import ${t.termBase}._
 
             ..$transportDecls
            }"""
@@ -308,18 +310,18 @@ class Translation(domain: DomainDefinition) {
             trait ${serviceInputBase.typeName} extends $inputInit {}
             trait ${serviceOutputBase.typeName} extends $outputInit {}
 
-            override type InputType = ${serviceInputBase.tpe}
-            override type OutputType = ${serviceOutputBase.tpe}
+            override type InputType = ${serviceInputBase.typeFull}
+            override type OutputType = ${serviceOutputBase.typeFull}
 
-            override def inputTag: scala.reflect.ClassTag[${serviceInputBase.tpe}] = scala.reflect.classTag[${serviceInputBase.tpe}]
-            override def outputTag: scala.reflect.ClassTag[${serviceOutputBase.tpe}] = scala.reflect.classTag[${serviceOutputBase.tpe}]
+            override def inputTag: scala.reflect.ClassTag[${serviceInputBase.typeFull}] = scala.reflect.classTag[${serviceInputBase.typeFull}]
+            override def outputTag: scala.reflect.ClassTag[${serviceOutputBase.typeFull}] = scala.reflect.classTag[${serviceOutputBase.typeFull}]
 
 
-            override final lazy val schema: ${tService.tpe} = {
+            override final lazy val schema: ${tService.typeFull} = {
               ${SchemaSerializer.toAst(i)}
             }
-            override final def domain: ${tDomainCompanion.tpe} = {
-              ${tDomain.term}
+            override final def domain: ${tDomainCompanion.typeFull} = {
+              ${tDomain.termFull}
             }
 
             ..${decls.flatMap(_.types)}
@@ -355,7 +357,7 @@ class Translation(domain: DomainDefinition) {
 
     val t = conv.toScala(typeName)
 
-    val constructorSignature = scalaIfaces.map(d => Term.Param(List.empty, definitionToParaName(d), Some(conv.toScala(d.id).tpe), None))
+    val constructorSignature = scalaIfaces.map(d => Term.Param(List.empty, definitionToParaName(d), Some(conv.toScala(d.id).typeFull), None))
     val constructorCode = fields.map {
       f =>
         q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
@@ -363,8 +365,8 @@ class Translation(domain: DomainDefinition) {
 
 
     val constructors = List(
-      q"""def apply(..$constructorSignature): ${t.tpe} = {
-         ${t.term}(..$constructorCode)
+      q"""def apply(..$constructorSignature): ${t.typeFull} = {
+         ${t.termFull}(..$constructorCode)
          }"""
     )
 
@@ -375,12 +377,12 @@ class Translation(domain: DomainDefinition) {
        """
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
-             override final lazy val definition: ${tFinalDefinition.tpe} = {
+             override final lazy val definition: ${tFinalDefinition.typeFull} = {
                 ???
              }
 
-             override final def domain: ${tDomainCompanion.tpe} = {
-              ${tDomain.term}
+             override final def domain: ${tDomainCompanion.typeFull} = {
+              ${tDomain.termFull}
              }
 
              ..$constructors

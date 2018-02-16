@@ -81,24 +81,31 @@ object Primitive {
 }
 
 trait Generic extends TypeId {
-
+  def args: List[TypeId]
 }
 
 object Generic {
 
   case class TList(valueType: TypeId) extends Generic {
+
+    override def args: List[TypeId] = List(valueType)
+
     override def pkg: Package = prelude
 
     override def name: TypeName = "list"
   }
 
   case class TSet(valueType: TypeId) extends Generic {
+    override def args: List[TypeId] = List(valueType)
+
     override def pkg: Package = prelude
 
     override def name: TypeName = "set"
   }
 
   case class TMap(keyType: Scalar, valueType: TypeId) extends Generic {
+    override def args: List[TypeId] = List(keyType, valueType)
+
     override def pkg: Package = prelude
 
     override def name: TypeName = "map"

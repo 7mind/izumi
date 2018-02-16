@@ -4,29 +4,49 @@ import com.github.pshirshov.izumi.idealingua.model.common.JavaType
 
 import scala.meta.{Init, Name, Term, Type}
 
+trait IScalaType {
+  def termBase: Term.Ref
+  def termName: Term.Name
+  def termArgs: Seq[Term]
+  def termFull: Term
+
+  def typeBase: Type.Ref
+  def typeArgs: Seq[Type]
+  def typeName: Type.Name
+  def typeFull: Type
+
+  def javaType: JavaType
+}
+
 case class ScalaType(
-                      term: Term.Ref
-                      , tpe: Type
+                      termBase: Term.Ref
+                      , typeBase: Type.Ref
                       , termName: Term.Name
                       , typeName: Type.Name
                       , javaType: JavaType
-                    ) {
+                      , typeArgs: List[Type]
+                      , termArgs: List[Term]
+                    ) extends IScalaType {
+  def termFull: Term = if (termArgs.isEmpty) {
+    termBase
+  } else {
+    Term.Apply(termBase, termArgs)
+  }
 
+  def typeFull: Type = if (typeArgs.isEmpty) {
+    typeBase
+  } else {
+    Type.Apply(typeBase, typeArgs)
+  }
 
-  def init(): Init = init(List.empty)
-
-  def init(typeArgs: List[Type], constructorArgs: Term*): Init = {
+  def init(constructorArgs: Term*): Init = {
     val cargs = if (constructorArgs.isEmpty) {
       List.empty
     } else {
       List(constructorArgs.toList)
     }
 
-    if (typeArgs.isEmpty) {
-      Init(tpe, Name.Anonymous(), cargs)
-    } else {
-      Init(Type.Apply(tpe, typeArgs), Name.Anonymous(), cargs)
-    }
+    Init(typeFull, Name.Anonymous(), cargs)
   }
 
 }
