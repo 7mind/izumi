@@ -123,21 +123,13 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
-    val fields = typespace.fetchFields(i)
+    val fields = typespace.enumFields(i)
     val decls = fields.toScala.map {
       f =>
         Term.Param(List.empty, f.name, Some(f.declType), None)
     }
 
-    val superClasses = if (fields.lengthCompare(1) == 0) {
-      List(
-        conv.toScala(JavaType(Seq.empty, "AnyVal")).init()
-        , idtGenerated
-        , tIDLIdentifier.init()
-      )
-    } else {
-      List(idtGenerated, tIDLIdentifier.init())
-    }
+    val superClasses = toSuper(fields, List(idtGenerated, tIDLIdentifier.init()))
 
     // TODO: contradictions
 
@@ -170,7 +162,7 @@ class Translation(domain: DomainDefinition) {
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
-    val fields = typespace.fetchFields(i)
+    val fields = typespace.enumFields(i)
     val scalaFields: Seq[ScalaField] = fields.toScala
 
 
@@ -207,7 +199,38 @@ class Translation(domain: DomainDefinition) {
           """
     }
 
-    val allDecls = decls ++ narrowers
+    val allParents = typespace.implements(i.id)
+    val implementors = typespace.implementingDtos(i.id)
+
+    val constructors = implementors.map {
+      impl =>
+        val implementor = typespace(impl)
+        val missingInterfaces = implementor.interfaces.toSet -- allParents.toSet
+
+        val signature = missingInterfaces.toList.map {
+          f =>
+            Term.Param(List.empty, idToParaName(f), Some(conv.toScala(f).typeFull), None)
+        }
+
+        val constructorCodeThis = fields.map {
+          f =>
+            q""" ${Term.Name(f.field.name)} = this.${Term.Name(f.field.name)}  """
+        }
+
+        val otherFields: Seq[ExtendedField] = Seq.empty
+
+        val constructorCodeOthers = otherFields.map {
+          f =>
+            q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
+        }
+
+        q"""def ${Term.Name("to" + impl.name.capitalize)}(..$signature): ${toScala(impl).typeFull} = {
+            ${toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers})
+            }
+          """
+    }
+
+    val allDecls = decls ++ narrowers ++ constructors
 
     Seq(
       q"""trait ${t.typeName} extends ..$ifDecls {
@@ -338,15 +361,14 @@ class Translation(domain: DomainDefinition) {
 
     // TODO: contradictions
 
-    val superClasses = bases ++ (if (fields.lengthCompare(1) == 0) {
-      ifDecls :+ Init(Type.Name("AnyVal"), Name.Anonymous(), List.empty)
-    } else {
-      ifDecls
-    })
+    val superClasses = toSuper(fields, bases ++ ifDecls)
 
     val t = conv.toScala(typeName)
 
-    val constructorSignature = scalaIfaces.map(d => Term.Param(List.empty, definitionToParaName(d), Some(conv.toScala(d.id).typeFull), None))
+    val constructorSignature = scalaIfaces.map{
+      d =>
+        Term.Param(List.empty, definitionToParaName(d), Some(conv.toScala(d.id).typeFull), None)
+    }
     val constructorCode = fields.map {
       f =>
         q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
@@ -377,6 +399,14 @@ class Translation(domain: DomainDefinition) {
              ..$constructors
          }"""
     )
+  }
+
+  private def toSuper(fields: List[ExtendedField], ifDecls: List[Init]) = {
+    if (fields.lengthCompare(1) == 0) {
+      conv.toScala(JavaType(Seq.empty, "AnyVal")).init() +: ifDecls
+    } else {
+      ifDecls
+    }
   }
 
   private def toDtoName(id: TypeId) = {

@@ -36,7 +36,7 @@ class Typespace(domain: DomainDefinition) {
     }
   }
 
-  def whoImplements(id: InterfaceId): List[DTOId] = {
+  def implementingDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
       case (tid: DTOId, d: DTO) if d.interfaces.contains(id)=>
         tid
