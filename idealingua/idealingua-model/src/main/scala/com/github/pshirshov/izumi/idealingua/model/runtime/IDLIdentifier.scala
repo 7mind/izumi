@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.model.runtime
+import java.net.URLEncoder
 import java.net.URLDecoder
 
 import com.github.pshirshov.izumi.idealingua.model.finaldef._
-import com.sun.deploy.net.URLEncoder
 
 import scala.reflect._
 
