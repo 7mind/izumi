@@ -6,6 +6,7 @@ import java.nio.file.{Files, Paths}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.finaldef
 import com.github.pshirshov.izumi.idealingua.model.finaldef._
+import com.github.pshirshov.izumi.idealingua.model.runtime.IDLIdentifier
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 import org.scalatest.WordSpec
 
@@ -48,22 +49,15 @@ class IDLTest extends WordSpec {
     {
       import scala.tools.nsc.{Global, Settings}
       val settings = new Settings()
-      settings.usejavacp.value = true
+      settings.embeddedDefaults(getClass.getClassLoader)
+      val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
+      if (!isSbt) {
+        settings.usejavacp.value = true
+      }
       val g = new Global(settings)
       val run = new g.Run
       run.compile(files.toList)
       run.runIsAt(run.jvmPhase.next)
     }
-
-    //      {
-    //        import scala.tools.nsc.Settings
-    //        import scala.tools.nsc.{Global, Settings}
-    //
-    //        val settings: Settings = new Settings()
-    //        settings.usejavacp.value = true
-    //
-    //        val global = new Global(settings)
-    //        new MainClass().newCompiler().newCompilationUnit("object Test {}", "test.scala")
-    //      }
   }
 }
