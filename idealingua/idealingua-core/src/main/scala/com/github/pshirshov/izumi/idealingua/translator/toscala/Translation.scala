@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EnumId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
@@ -49,20 +49,20 @@ class Translation(typespace: Typespace) {
   protected def translateDomain(): Seq[Module] = {
     val index = typespace.all.map(id => id -> conv.toScala(id))
 
-    val types = index.map {
+    val exprs = index.map {
+      case (k@EphemeralId(_: EnumId, _), v) =>
+        conv.toAst(k) -> q"${v.termBase}.getClass"
       case (k, v) =>
-        q"${conv.toAst(k)} -> classOf[${v.typeFull}]"
+        conv.toAst(k) -> q"classOf[${v.typeFull}]"
     }
 
-    val reverseTypes = index.map {
-      case (k, v) =>
-        q"classOf[${v.typeFull}] -> ${conv.toAst(k)}"
-    }
+    val types = exprs.map({ case (k, v) => q"$k -> $v" })
+    val reverseTypes = exprs.map({ case (k, v) => q"$v -> $k" })
 
-    toSource(tDomain.javaType.pkg, ModuleId(tDomain.javaType.pkg, typespace.domain.id), Seq(
+    toSource(tDomain.javaType.pkg, ModuleId(tDomain.javaType.pkg, s"${typespace.domain.id}.scala"), Seq(
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
-         def types: Map[${typeId.typeFull}, Class[_]] = Seq(..$types).toMap
-         def classes: Map[Class[_], ${typeId.typeFull}] = Seq(..$reverseTypes).toMap
+         lazy val types: Map[${typeId.typeFull}, Class[_]] = Seq(..$types).toMap
+         lazy val classes: Map[Class[_], ${typeId.typeFull}] = Seq(..$reverseTypes).toMap
        }"""
     ))
 
@@ -98,6 +98,20 @@ class Translation(typespace: Typespace) {
     }
   }
 
+  def withInfo[T <: Defn](id: TypeId, defn: T): T = {
+    val stat = q"def _info: ${typeInfo.typeFull} = ${typeInfo.termFull}(${conv.toAst(id)}, ${tDomain.termFull})"
+
+    val extended = defn match {
+      case o: Defn.Object =>
+        o.copy(templ = o.templ.copy(stats = stat +: o.templ.stats))
+      case o: Defn.Class =>
+        o.copy(templ = o.templ.copy(stats = stat +: o.templ.stats))
+      case o: Defn.Trait =>
+        o.copy(templ = o.templ.copy(stats = stat +: o.templ.stats))
+    }
+    extended.asInstanceOf[T]
+  }
+
   def renderEnumeration(i: Enumeration): Seq[Defn] = {
     val t = conv.toScala(i.id)
 
@@ -109,9 +123,11 @@ class Translation(typespace: Typespace) {
     val members = i.members.map {
       m =>
         val mt = t.within(m)
-        q"""case object ${mt.termName} extends ${t.init()} {
+
+        mt.termName -> withInfo(i.id,
+          q"""case object ${mt.termName} extends ${t.init()} {
               override def toString: String = ${Lit.String(m)}
-            }"""
+            }""")
     }
 
     Seq(
@@ -120,9 +136,9 @@ class Translation(typespace: Typespace) {
       q"""object ${t.termName} extends $enumInit {
             type Element = ${t.typeFull}
 
-            override def all: Seq[${t.typeFull}] = Seq(..${members.map(_.name)})
+            override def all: Seq[${t.typeFull}] = Seq(..${members.map(_._1)})
 
-            ..$members
+            ..${members.map(_._2)}
 
            }"""
     )
@@ -151,13 +167,13 @@ class Translation(typespace: Typespace) {
     val tools = t.within(s"${i.id.name}Extensions")
 
     Seq(
-      q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
+      withInfo(i.id,
+        q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
             override def toString: String = {
               val suffix = this.productIterator.map(part => ${tIDLIdentifier.termFull}.escape(part.toString)).mkString(":")
               $interp
             }
-
-         }"""
+         }""")
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
@@ -338,7 +354,8 @@ class Translation(typespace: Typespace) {
     val tools = t.within(s"${i.id.name}Extensions")
 
     Seq(
-      q"""trait ${t.typeName} extends $idtService {
+      withInfo(i.id,
+        q"""trait ${t.typeName} extends $idtService {
           import ${t.termBase}._
 
           override type InputType = ${serviceInputBase.typeFull}
@@ -347,7 +364,7 @@ class Translation(typespace: Typespace) {
           override def outputTag: scala.reflect.ClassTag[${serviceOutputBase.typeFull}] = scala.reflect.classTag[${serviceOutputBase.typeFull}]
 
           ..${decls.map(_.defn)}
-         }"""
+         }""")
       ,
       q"""class ${transportTpe.typeName}
             (
@@ -421,10 +438,7 @@ class Translation(typespace: Typespace) {
     val tools = t.within(s"${typeName.name}Extensions")
 
     Seq(
-      q"""case class ${t.typeName}(..$decls) extends ..$superClasses {
-
-          }
-       """
+      withInfo(defn.id, q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}""")
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
               implicit class ${tools.typeName}(_value: ${t.typeFull}) {

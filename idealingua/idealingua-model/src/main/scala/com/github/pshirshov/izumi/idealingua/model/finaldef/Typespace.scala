@@ -30,6 +30,7 @@ class Typespace(val domain: DomainDefinition) {
     typespace.keys
     , serviceEphemerals.keys
     , domain.services.map(_.id)
+    , domain.types.collect({case t: Enumeration => t}).flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
   ).flatten
 
   def verify(): Unit = {

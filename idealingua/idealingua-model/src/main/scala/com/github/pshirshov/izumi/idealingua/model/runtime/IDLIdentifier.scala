@@ -1,12 +1,17 @@
 package com.github.pshirshov.izumi.idealingua.model.runtime
 import java.net.{URLDecoder, URLEncoder}
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+
 import scala.reflect._
 
 trait IDLGenerated extends Any
 trait IDLGeneratedCompanion extends IDLGenerated
 
+case class IDLTypeInfo(typeId: TypeId, domain: IDLDomainCompanion)
+
 trait IDLGeneratedType extends Any with IDLGenerated {
+  def _info: IDLTypeInfo
 }
 
 trait IDLIdentifier extends Any {
@@ -33,9 +38,13 @@ trait IDLOutput extends IDLRpc
 
 trait IDLServiceCompanion extends IDLGeneratedCompanion
 trait IDLTypeCompanion extends IDLGeneratedCompanion
-trait IDLDomainCompanion extends IDLGeneratedCompanion
 
-trait IDLEnum extends IDLGeneratedType {
+trait IDLDomainCompanion extends IDLGeneratedCompanion {
+  def types: Map[TypeId, Class[_]]
+  def classes: Map[Class[_], TypeId]
+}
+
+trait IDLEnum extends IDLGenerated {
   type Element <: IDLEnumElement
   def all: Seq[Element]
 }

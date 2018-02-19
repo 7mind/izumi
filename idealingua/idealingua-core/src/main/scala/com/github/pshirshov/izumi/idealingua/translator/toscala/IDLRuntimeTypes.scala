@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.runtime._
 
 class IDLRuntimeTypes(conv: ScalaTypeConverter) {
   final val typeId = conv.toScala[TypeId]
+  final val typeInfo = conv.toScala[IDLTypeInfo]
   final val idtGenerated = conv.toScala[IDLGeneratedType].init()
   final val idtService = conv.toScala[IDLService].init()
   final val inputInit = conv.toScala[IDLInput].init()
