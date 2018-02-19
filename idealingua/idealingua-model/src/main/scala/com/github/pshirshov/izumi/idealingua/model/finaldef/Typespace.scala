@@ -1,14 +1,30 @@
 package com.github.pshirshov.izumi.idealingua.model.finaldef
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
 
+
 class Typespace(val domain: DomainDefinition) {
   protected val typespace: Map[TypeId, FinalDefinition] = verified(domain.types)
 
+  protected val ephemerals: Map[EphemeralId, Composite] = (for {
+    service <- domain.services
+    method <- service.methods
+  } yield {
+    method match {
+      case m: RPCMethod =>
+        val inId = EphemeralId(service.id, s"In${m.name.capitalize}")
+        val outId = EphemeralId(service.id, s"Out${m.name.capitalize}")
+
+        Seq(
+          inId ->  m.signature.input
+          , outId -> m.signature.output
+        )
+    }
+  }).flatten.toMap
 
   def verify(): Unit = {
     import Typespace._
@@ -57,6 +73,7 @@ class Typespace(val domain: DomainDefinition) {
   def apply(id: TypeId): FinalDefinition = typespace.apply(id)
 
   def apply(id: InterfaceId): Interface = typespace.apply(id).asInstanceOf[Interface]
+  def apply(id: EphemeralId): Composite = ephemerals.apply(id)
 
   def apply(id: DTOId): DTO = typespace.apply(id).asInstanceOf[DTO]
 
@@ -68,6 +85,9 @@ class Typespace(val domain: DomainDefinition) {
       case i: DTOId =>
         apply(i).interfaces.toList.flatMap(implements)
 
+      case i: EphemeralId =>
+        ephemerals(i).toList.flatMap(implements)
+
       case _ =>
         List.empty
     }
@@ -77,6 +97,13 @@ class Typespace(val domain: DomainDefinition) {
     typespace.collect {
       case (tid: DTOId, d: DTO) if implements(tid).contains(id) =>
         tid
+    }.toList
+  }
+
+  def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
+    ephemerals.collect {
+      case (eid: EphemeralId, c: Composite) if implements(eid).contains(id) =>
+        eid
     }.toList
   }
 

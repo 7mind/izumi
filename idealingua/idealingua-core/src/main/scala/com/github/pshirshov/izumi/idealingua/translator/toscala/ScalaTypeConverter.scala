@@ -2,12 +2,11 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.finaldef.Typespace
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 
-class ScalaTypeConverter(typespace: Typespace) {
+class ScalaTypeConverter() {
 
   implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
     def toScala: List[ScalaField] = {

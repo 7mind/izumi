@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.{Field, Generic, Primitive, UserType}
-import com.github.pshirshov.izumi.idealingua.model.finaldef
 import com.github.pshirshov.izumi.idealingua.model.finaldef.{DefMethod, DomainDefinition, FinalDefinition, Service}
 
 object Model01 {
@@ -41,7 +40,7 @@ object Model01 {
       , Seq(testInterfaceId))
   ), Seq(
     Service(serviceIdentifier, Seq(
-      DefMethod.RPCMethod("createUser", finaldef.Signature(Seq(testInterfaceId), Seq(testInterfaceId)))
+      DefMethod.RPCMethod("createUser", DefMethod.Signature(Seq(testInterfaceId), Seq(testInterfaceId)))
     ))
   ))
 }

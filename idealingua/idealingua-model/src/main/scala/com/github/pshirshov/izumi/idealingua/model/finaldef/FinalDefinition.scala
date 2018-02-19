@@ -25,8 +25,15 @@ object FinalDefinition {
 
 }
 
-case class Signature(input: Composite, output: Composite)
+trait DefMethod
 
+object DefMethod {
+  case class Signature(input: Composite, output: Composite) {
+    def asList: List[InterfaceId] = (input ++ output).toList
+  }
+  
+  case class RPCMethod(name: String, signature: Signature) extends DefMethod
+}
 
 case class Service(id: ServiceId, methods: Seq[DefMethod])
 

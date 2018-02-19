@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
@@ -10,12 +10,12 @@ import com.github.pshirshov.izumi.idealingua.model.finaldef.{FinalDefinition, Se
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.runtime._
 
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 import scala.meta._
 
 
 class Translation(typespace: Typespace) {
-  protected val conv = new ScalaTypeConverter(typespace)
+  protected val conv = new ScalaTypeConverter()
   protected val runtimeTypes = new IDLRuntimeTypes(conv)
 
   import conv._
@@ -202,12 +202,18 @@ class Translation(typespace: Typespace) {
     }
 
     val allParents = typespace.implements(i.id)
-    val implementors = typespace.implementingDtos(i.id)
+    val implementors = typespace.implementingDtos(i.id) ++ typespace.implementingEphemerals(i.id)
 
     val constructors = implementors.map {
       impl =>
-        val implementor = typespace(impl)
-        val missingInterfaces = (implementor.interfaces.toSet -- allParents.toSet).toSeq
+        val missingInterfaces = impl match {
+          case i: DTOId =>
+            val implementor = typespace(i)
+            (implementor.interfaces.toSet -- allParents.toSet).toSeq
+          case i: EphemeralId =>
+            val implementor = typespace(i)
+            (implementor.toSet -- allParents.toSet).toSeq
+        }
 
         val signature = missingInterfaces.toList.map {
           f =>
@@ -278,8 +284,10 @@ class Translation(typespace: Typespace) {
 
     val decls = i.methods.toList.map {
       case method: RPCMethod =>
+        // TODO: unify with ephemerals in typespace
         val in = t.within(s"In${method.name.capitalize}")
         val out = t.within(s"Out${method.name.capitalize}")
+
         val inDef = Interface(InterfaceId(in.javaType.pkg, in.javaType.name), Seq.empty, method.signature.input)
         val outDef = Interface(InterfaceId(out.javaType.pkg, out.javaType.name), Seq.empty, method.signature.input)
 
