@@ -184,14 +184,14 @@ class Translation(typespace: Typespace) {
     val dtoName = toDtoName(i.id)
     val impl = renderComposite(t.within(dtoName).javaType, i, Seq(i.id), List.empty).toList
 
-    val parents = Seq(i.id) //i.interfaces //typespace.implements(i.id)
+    val parents = List(i.id) //i.interfaces //typespace.implements(i.id)
     val narrowers = parents.map {
       p =>
         val ifields = typespace.enumFields(typespace(p))
 
         val constructorCode = ifields.map {
           f =>
-            q""" ${Term.Name(f.field.name)} = this.${Term.Name(f.field.name)}  """
+            q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
         }
 
         val tt = toScala(p).within(toDtoName(p))
@@ -216,7 +216,7 @@ class Translation(typespace: Typespace) {
 
         val constructorCodeThis = fields.map {
           f =>
-            q""" ${Term.Name(f.field.name)} = this.${Term.Name(f.field.name)}  """
+            q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
         }
 
         val thisFields = fields.map(_.field).toSet
@@ -235,7 +235,10 @@ class Translation(typespace: Typespace) {
           """
     }
 
-    val allDecls = decls ++ narrowers ++ constructors
+    val allDecls = decls
+    val toolDecls = narrowers ++ constructors
+
+    val tools = t.within(s"${i.id.name}Extensions")
 
     //           override def companion: ${t.termBase}.type = ${t.termFull}
 //    override final lazy val definition: ${tFinalDefinition.typeFull} = {
@@ -253,8 +256,10 @@ class Translation(typespace: Typespace) {
        """
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
-
-
+             implicit class ${tools.typeName}(_value: ${t.typeFull}) {
+             ..$toolDecls
+             }
+         
              ..$impl
          }"""
     )
