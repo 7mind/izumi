@@ -11,7 +11,13 @@ class ScalaTypeConverter(typespace: Typespace) {
 
   implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
     def toScala: List[ScalaField] = {
-      fields.map(_.field).toScala
+
+      val conflictingFields = fields.groupBy(_.field.name).filter(_._2.lengthCompare(1) > 0)
+      if (conflictingFields.nonEmpty) {
+        throw new IDLException(s"Conflicting fields: $conflictingFields")
+      }
+
+      fields.map(_.field.toScala).toList
     }
   }
 
@@ -19,17 +25,6 @@ class ScalaTypeConverter(typespace: Typespace) {
     protected def toScala: ScalaField = field.field.toScala
   }
 
-  implicit class FieldSeqOps(fields: Seq[Field]) {
-    def toScala: List[ScalaField] = {
-      val conflictingFields = fields.groupBy(_.name).filter(_._2.lengthCompare(1) > 0)
-      if (conflictingFields.nonEmpty) {
-        throw new IDLException(s"Conflicting fields: $conflictingFields")
-      }
-
-      fields.map(_.toScala).toList
-    }
-  }
-  
   implicit class FieldOps(field: Field) {
     def toScala: ScalaField = {
       ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).typeFull)

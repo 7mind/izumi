@@ -3,14 +3,9 @@ package com.github.pshirshov.izumi.idealingua
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.finaldef
 import com.github.pshirshov.izumi.idealingua.model.finaldef._
-import com.github.pshirshov.izumi.idealingua.model.runtime.IDLIdentifier
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 import org.scalatest.WordSpec
-
-import scala.tools.nsc.MainClass
 
 
 
@@ -22,7 +17,9 @@ class IDLTest extends WordSpec {
       assert(compiles(Model01.domain))
     }
 
-    
+    "support inheritance" in {
+      assert(compiles(Model02.domain))
+    }
   }
 
   private def compiles(d: DomainDefinition): Boolean = {

@@ -6,28 +6,27 @@ import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
-import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition, Service, Typespace}
+import com.github.pshirshov.izumi.idealingua.model.finaldef.{FinalDefinition, Service, Typespace}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.runtime._
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import scala.meta._
 
 
-class Translation(domain: DomainDefinition) {
-  protected val typespace = new Typespace(domain)
+class Translation(typespace: Typespace) {
   protected val conv = new ScalaTypeConverter(typespace)
   protected val runtimeTypes = new IDLRuntimeTypes(conv)
 
-  import runtimeTypes._
   import conv._
+  import runtimeTypes._
   
-  final val tDomain = conv.toScala(JavaType(Seq("izumi", "idealingua", "domains"), domain.id.capitalize))
+  final val tDomain = conv.toScala(JavaType(Seq("izumi", "idealingua", "domains"), typespace.domain.id.capitalize))
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
 
   def translate(): Seq[Module] = {
-    domain
+    typespace.domain
       .types
       .flatMap(translateDef) ++
       packageObjects.map {
@@ -43,16 +42,17 @@ class Translation(domain: DomainDefinition) {
            """.stripMargin
           Module(id, withPackage(id.path.init, code))
       } ++
-      domain.services.flatMap(translateService) ++
+      typespace.domain.services.flatMap(translateService) ++
       translateDomain()
   }
 
+//  override final lazy val domain: ${tDomainDefinition.typeFull} = {
+//    ${SchemaSerializer.toAst(typespace.domain)}
+//  }
   protected def translateDomain(): Seq[Module] = {
-    toSource(tDomain.javaType.pkg, ModuleId(tDomain.javaType.pkg, domain.id), Seq(
+    toSource(tDomain.javaType.pkg, ModuleId(tDomain.javaType.pkg, typespace.domain.id), Seq(
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
-                override final lazy val domain: ${tDomainDefinition.typeFull} = {
-                ${SchemaSerializer.toAst(domain)}
-              }
+
              }"""
     ))
 
@@ -139,6 +139,15 @@ class Translation(domain: DomainDefinition) {
 
     val t = conv.toScala(i.id)
 
+    //             override def companion: ${t.termBase}.type = ${t.termFull}
+
+//    override final lazy val definition: ${tFinalDefinition.typeFull} = {
+//      ${SchemaSerializer.toAst(i)}
+//    }
+//
+//    override final def domain: ${tDomainCompanion.typeFull} = {
+//      ${tDomain.termFull}
+//    }
     Seq(
       q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
             override def toString: String = {
@@ -146,17 +155,10 @@ class Translation(domain: DomainDefinition) {
               $interp
             }
 
-            override def companion: ${t.termBase}.type = ${t.termFull}
          }"""
       ,
       q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
-             override final lazy val definition: ${tFinalDefinition.typeFull} = {
-              ${SchemaSerializer.toAst(i)}
-             }
 
-             override final def domain: ${tDomainCompanion.typeFull} = {
-              ${tDomain.termFull}
-             }
          }"""
     )
   }
@@ -173,16 +175,16 @@ class Translation(domain: DomainDefinition) {
     }
 
     val scalaIfaces = i.interfaces.map(typespace.apply).toList
-    val ifDecls = idtGenerated +: scalaIfaces.map {
+    val ifDecls = toSuper(fields, idtGenerated +: scalaIfaces.map {
       iface =>
         conv.toScala(iface.id).init()
-    }
+    }, "Any")
 
     val t = conv.toScala(i.id)
     val dtoName = toDtoName(i.id)
     val impl = renderComposite(t.within(dtoName).javaType, i, Seq(i.id), List.empty).toList
 
-    val parents = typespace.implements(i.id)
+    val parents = Seq(i.id) //i.interfaces //typespace.implements(i.id)
     val narrowers = parents.map {
       p =>
         val ifields = typespace.enumFields(typespace(p))
@@ -192,7 +194,7 @@ class Translation(domain: DomainDefinition) {
             q""" ${Term.Name(f.field.name)} = this.${Term.Name(f.field.name)}  """
         }
 
-        val tt = t.within(toDtoName(p))
+        val tt = toScala(p).within(toDtoName(p))
         q"""def ${Term.Name("to" + p.name.capitalize)}(): ${tt.typeFull} = {
              ${tt.termFull}(..$constructorCode)
             }
@@ -217,7 +219,10 @@ class Translation(domain: DomainDefinition) {
             q""" ${Term.Name(f.field.name)} = this.${Term.Name(f.field.name)}  """
         }
 
-        val otherFields: Seq[ExtendedField] = missingInterfaces.flatMap(mi => typespace.enumFields(typespace(mi)))
+        val thisFields = fields.map(_.field).toSet
+        val otherFields: Seq[ExtendedField] = missingInterfaces
+          .flatMap(mi => typespace.enumFields(typespace(mi)))
+          .filterNot(f => thisFields.contains(f.field))
 
         val constructorCodeOthers = otherFields.map {
           f =>
@@ -232,22 +237,23 @@ class Translation(domain: DomainDefinition) {
 
     val allDecls = decls ++ narrowers ++ constructors
 
+    //           override def companion: ${t.termBase}.type = ${t.termFull}
+//    override final lazy val definition: ${tFinalDefinition.typeFull} = {
+//      ${SchemaSerializer.toAst(i)}
+//    }
+//
+//    override final def domain: ${tDomainCompanion.typeFull} = {
+//      ${tDomain.termFull}
+//    }
     Seq(
       q"""trait ${t.typeName} extends ..$ifDecls {
-          override def companion: ${t.termBase}.type = ${t.termFull}
           ..$allDecls
           }
 
        """
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
-             override final lazy val definition: ${tFinalDefinition.typeFull} = {
-              ${SchemaSerializer.toAst(i)}
-             }
 
-             override final def domain: ${tDomainCompanion.typeFull} = {
-              ${tDomain.termFull}
-             }
 
              ..$impl
          }"""
@@ -299,11 +305,12 @@ class Translation(domain: DomainDefinition) {
     val abstractTransportTpe = tAbstractTransport.init()
 
     val transportTpe = t.sibling(typeName + "AbstractTransport")
+    //           override def companion: ${t.termBase}.type = ${t.termFull}
+
     Seq(
       q"""trait ${t.typeName} extends $idtService {
           import ${t.termBase}._
 
-          override def companion: ${t.termBase}.type = ${t.termFull}
 
           ..${decls.map(_.defn)}
          }"""
@@ -380,6 +387,14 @@ class Translation(domain: DomainDefinition) {
          }"""
     )
 
+//    override final lazy val definition: ${tFinalDefinition.typeFull} = {
+//      ${SchemaSerializer.toAst(defn)}
+//    }
+//
+//    override final def domain: ${tDomainCompanion.typeFull} = {
+//      ${tDomain.termFull}
+//    }
+
     Seq(
       q"""case class ${t.typeName}(..$decls) extends ..$superClasses {
 
@@ -387,22 +402,17 @@ class Translation(domain: DomainDefinition) {
        """
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
-             override final lazy val definition: ${tFinalDefinition.typeFull} = {
-                ${SchemaSerializer.toAst(defn)}
-             }
-
-             override final def domain: ${tDomainCompanion.typeFull} = {
-              ${tDomain.termFull}
-             }
-
              ..$constructors
          }"""
     )
   }
 
-  private def toSuper(fields: List[ExtendedField], ifDecls: List[Init]) = {
+  private def toSuper(fields: List[ExtendedField], ifDecls: List[Init]): List[Init] = {
+    toSuper(fields, ifDecls, "AnyVal")
+  }
+  private def toSuper(fields: List[ExtendedField], ifDecls: List[Init], base: String): List[Init] = {
     if (fields.lengthCompare(1) == 0) {
-      conv.toScala(JavaType(Seq.empty, "AnyVal")).init() +: ifDecls
+      conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
     } else {
       ifDecls
     }

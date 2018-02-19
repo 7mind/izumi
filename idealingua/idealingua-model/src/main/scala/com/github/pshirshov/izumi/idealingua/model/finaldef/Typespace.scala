@@ -1,15 +1,50 @@
 package com.github.pshirshov.izumi.idealingua.model.finaldef
 
-import com.github.pshirshov.izumi.idealingua.model._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
 
-import scala.annotation.tailrec
-
-class Typespace(domain: DomainDefinition) {
+class Typespace(val domain: DomainDefinition) {
   protected val typespace: Map[TypeId, FinalDefinition] = verified(domain.types)
+
+
+  def verify(): Unit = {
+    import Typespace._
+    val typeDependencies = domain.types.flatMap {
+      case _: Enumeration =>
+        Seq.empty
+      case d: Interface =>
+        d.interfaces.map(i => Dependency.Interface(d.id, i)) ++ d.fields.map(f => Dependency.Field(d.id, f.typeId))
+      case d: DTO =>
+        d.interfaces.map(i => Dependency.Interface(d.id, i))
+      case d: Identifier =>
+        d.fields.map(f => Dependency.Field(d.id, f.typeId))
+      case d: Alias =>
+        Seq(Dependency.Alias(d.id, d.target))
+    }
+
+    val serviceDependencies = for {
+      service <- domain.services
+      method <- service.methods
+    } yield {
+      method match {
+        case m: RPCMethod =>
+          (m.signature.input ++ m.signature.output).map(i => Dependency.Field(service.id, i))
+      }
+    }
+
+    val allDependencies = typeDependencies ++ serviceDependencies.flatten
+
+    val missingTypes = allDependencies
+      .filterNot(_.value.isInstanceOf[Primitive])
+      .filterNot(_.value.isInstanceOf[Generic])
+      .filterNot(d => typespace.contains(d.value))
+    if (missingTypes.nonEmpty) {
+      throw new IDLException(s"Incomplete typespace: $missingTypes")
+    }
+  }
 
   protected def verified(types: Seq[FinalDefinition]): Map[TypeId, FinalDefinition] = {
     val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
@@ -20,7 +55,9 @@ class Typespace(domain: DomainDefinition) {
   }
 
   def apply(id: TypeId): FinalDefinition = typespace.apply(id)
+
   def apply(id: InterfaceId): Interface = typespace.apply(id).asInstanceOf[Interface]
+
   def apply(id: DTOId): DTO = typespace.apply(id).asInstanceOf[DTO]
 
   def implements(id: TypeId): List[InterfaceId] = {
@@ -38,7 +75,7 @@ class Typespace(domain: DomainDefinition) {
 
   def implementingDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
-      case (tid: DTOId, d: DTO) if d.interfaces.contains(id)=>
+      case (tid: DTOId, d: DTO) if implements(tid).contains(id) =>
         tid
     }.toList
   }
@@ -48,33 +85,40 @@ class Typespace(domain: DomainDefinition) {
   }
 
   def enumFields(defn: FinalDefinition): List[ExtendedField] = {
-    defn match {
+    val fields = defn match {
       case t: Interface =>
-        enumFields(t.interfaces) ++ toExtendedFields(t.fields, t.id)
+        val superFields = enumFields(t.interfaces)
+          .map(_.copy(definedBy = t.id)) // in fact super field is defined by this
 
+        val thisFields = toExtendedFields(t.fields, t.id)
+        superFields ++ thisFields
       case t: DTO =>
         enumFields(t.interfaces)
 
       case t: Identifier =>
         toExtendedFields(t.fields, t.id)
 
-      case t: Alias =>
+      case _: Enumeration =>
+        List()
+
+      case _: Alias =>
         List()
     }
+
+    fields.distinct
   }
 
   private def toExtendedFields(fields: Aggregate, id: TypeId) = {
     fields.map(f => ExtendedField(f, id: TypeId)).toList
   }
 
-  def fetchFields(composite: Composite): List[Field] = {
-    enumFields(composite).map(_.field)
-  }
+  //  def fetchFields(composite: Composite): List[Field] = {
+  //    enumFields(composite).map(_.field)
+  //  }
 
-  def fetchFields(defn: FinalDefinition): List[Field] = {
-    enumFields(defn).map(_.field)
-  }
-
+  //  def fetchFields(defn: FinalDefinition): List[Field] = {
+  //    enumFields(defn).map(_.field)
+  //  }
 
   // TODO: do we need this?
   def explode(defn: Field): List[TrivialField] = {
@@ -97,9 +141,32 @@ class Typespace(domain: DomainDefinition) {
       case t: Identifier =>
         t.fields.flatMap(explode).toList
 
-      case t: Alias =>
+      case _: Alias =>
+        List()
+
+      case _: Enumeration =>
         List()
     }
+  }
+
+}
+
+object Typespace {
+
+  trait Dependency {
+    def definedIn: TypeId
+
+    def value: TypeId
+  }
+
+  object Dependency {
+
+    case class Field(definedIn: TypeId, value: TypeId) extends Dependency
+
+    case class Interface(definedIn: TypeId, value: InterfaceId) extends Dependency
+
+    case class Alias(definedIn: TypeId, value: TypeId) extends Dependency
+
   }
 
 }

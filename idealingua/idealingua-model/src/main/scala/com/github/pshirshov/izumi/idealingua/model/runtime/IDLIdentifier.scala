@@ -7,12 +7,12 @@ import com.github.pshirshov.izumi.idealingua.model.finaldef._
 import scala.reflect._
 
 trait IDLGenerated extends Any {
-  def companion: IDLTypeCompanion // TODO: it would be great to remove it
+  //def companion: IDLTypeCompanion // TODO: it would be great to remove it
 }
 
 trait IDLService {
   // TODO: it would be great to remove it
-  def companion: IDLServiceCompanion
+  //def companion: IDLServiceCompanion
 }
 
 
@@ -27,7 +27,7 @@ object IDLIdentifier {
 }
 
 
-trait IDLRpc {}
+trait IDLRpc extends IDLGenerated {}
 
 
 trait IDLInput extends IDLRpc {
@@ -50,17 +50,17 @@ trait IDLServiceCompanion {
 }
 
 trait IDLDomainCompanion {
-  def domain: DomainDefinition
+//  def domain: DomainDefinition
 }
 
-trait IDLEnumElement {}
+trait IDLEnumElement extends IDLGenerated {}
 
-trait IDLEnum {
+trait IDLEnum extends IDLGenerated {
   type Element <: IDLEnumElement
   def all: Seq[Element]
 }
 
 trait IDLTypeCompanion {
-  def definition: FinalDefinition
-  def domain: IDLDomainCompanion
+//  def definition: FinalDefinition
+//  def domain: IDLDomainCompanion
 }
