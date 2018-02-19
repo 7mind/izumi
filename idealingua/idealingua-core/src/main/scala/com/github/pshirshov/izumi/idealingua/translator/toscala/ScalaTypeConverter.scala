@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AliasId, DTOId, EnumId, EphemeralId, IdentifierId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 
@@ -59,6 +60,34 @@ class ScalaTypeConverter() {
 
       case _ =>
         toScala(JavaType(id.pkg, id.name))
+    }
+  }
+
+  private def toIdConstructor[T <: TypeId: ClassTag](t: T): Term.Apply = {
+    q"${toSelectTerm(JavaType.get[T])}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.name)})"
+  }
+
+  def toMethodAst[T <: TypeId: ClassTag](typeId: T): Defn.Def = {
+    val tpe = toSelect(JavaType.get[T])
+    q"def toTypeId: $tpe = ${toAst(typeId)}"
+  }
+
+  def toAst[T <: TypeId](typeId: T): Term.Apply = {
+    typeId match {
+      case i: InterfaceId =>
+        toIdConstructor(i)
+      case i: DTOId =>
+        toIdConstructor(i)
+      case i: AliasId =>
+        toIdConstructor(i)
+      case i: EnumId =>
+        toIdConstructor(i)
+      case i: IdentifierId =>
+        toIdConstructor(i)
+      case i: ServiceId =>
+        toIdConstructor(i)
+      case i: EphemeralId =>
+        q"${toSelectTerm(JavaType.get[EphemeralId])}(${toAst(i.parent)}, ${Lit.String(i.name)})"
     }
   }
 

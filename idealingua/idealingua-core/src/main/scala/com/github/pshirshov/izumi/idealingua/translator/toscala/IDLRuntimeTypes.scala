@@ -1,10 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition, Service}
 import com.github.pshirshov.izumi.idealingua.model.runtime._
 
 class IDLRuntimeTypes(conv: ScalaTypeConverter) {
-  final val idtGenerated = conv.toScala[IDLGenerated].init()
+  final val typeId = conv.toScala[TypeId]
+  final val idtGenerated = conv.toScala[IDLGeneratedType].init()
   final val idtService = conv.toScala[IDLService].init()
   final val inputInit = conv.toScala[IDLInput].init()
   final val outputInit = conv.toScala[IDLOutput].init()

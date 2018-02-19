@@ -46,14 +46,24 @@ class Translation(typespace: Typespace) {
       translateDomain()
   }
 
-  //  override final lazy val domain: ${tDomainDefinition.typeFull} = {
-  //    ${SchemaSerializer.toAst(typespace.domain)}
-  //  }
   protected def translateDomain(): Seq[Module] = {
+    val index = typespace.all.map(id => id -> conv.toScala(id))
+
+    val types = index.map {
+      case (k, v) =>
+        q"${conv.toAst(k)} -> classOf[${v.typeFull}]"
+    }
+
+    val reverseTypes = index.map {
+      case (k, v) =>
+        q"classOf[${v.typeFull}] -> ${conv.toAst(k)}"
+    }
+
     toSource(tDomain.javaType.pkg, ModuleId(tDomain.javaType.pkg, typespace.domain.id), Seq(
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
-
-             }"""
+         def types: Map[${typeId.typeFull}, Class[_]] = Seq(..$types).toMap
+         def classes: Map[Class[_], ${typeId.typeFull}] = Seq(..$reverseTypes).toMap
+       }"""
     ))
 
   }
@@ -138,16 +148,8 @@ class Translation(typespace: Typespace) {
     val interp = Term.Interpolate(Term.Name("s"), List(Lit.String(typeName + "#"), Lit.String("")), List(Term.Name("suffix")))
 
     val t = conv.toScala(i.id)
+    val tools = t.within(s"${i.id.name}Extensions")
 
-    //             override def companion: ${t.termBase}.type = ${t.termFull}
-
-    //    override final lazy val definition: ${tFinalDefinition.typeFull} = {
-    //      ${SchemaSerializer.toAst(i)}
-    //    }
-    //
-    //    override final def domain: ${tDomainCompanion.typeFull} = {
-    //      ${tDomain.termFull}
-    //    }
     Seq(
       q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
             override def toString: String = {
@@ -157,8 +159,10 @@ class Translation(typespace: Typespace) {
 
          }"""
       ,
-      q"""object ${Term.Name(typeName)} extends $typeCompanionInit {
-
+      q"""object ${t.termName} extends $typeCompanionInit {
+             implicit class ${tools.typeName}(_value: ${t.typeFull}) {
+                ${conv.toMethodAst(i.id)}
+             }
          }"""
     )
   }
@@ -185,7 +189,7 @@ class Translation(typespace: Typespace) {
     val dtoName = toDtoName(i.id)
     val impl = renderComposite(t.within(dtoName).javaType, i, Seq(i.id), List.empty).toList
 
-    val parents = List(i.id) //i.interfaces //typespace.implements(i.id)
+    val parents = List(i.id)
     val narrowers = parents.map {
       p =>
         val ifields = typespace.enumFields(typespace(p))
@@ -267,14 +271,6 @@ class Translation(typespace: Typespace) {
 
     val tools = t.within(s"${i.id.name}Extensions")
 
-    //           override def companion: ${t.termBase}.type = ${t.termFull}
-    //    override final lazy val definition: ${tFinalDefinition.typeFull} = {
-    //      ${SchemaSerializer.toAst(i)}
-    //    }
-    //
-    //    override final def domain: ${tDomainCompanion.typeFull} = {
-    //      ${tDomain.termFull}
-    //    }
     Seq(
       q"""trait ${t.typeName} extends ..$ifDecls {
           ..$allDecls
@@ -284,6 +280,7 @@ class Translation(typespace: Typespace) {
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
+             ${conv.toMethodAst(i.id)}
              ..$toolDecls
              }
 
@@ -332,19 +329,22 @@ class Translation(typespace: Typespace) {
     val forwarder = Term.Match(Term.Name("input"), decls.map(_.routingClause))
 
     val transportDecls = List(
-      q"override def process(input: ${idtGenerated.tpe}): ${idtGenerated.tpe} = $forwarder"
+      q"override def process(input: ${serviceInputBase.typeFull}): ${serviceOutputBase.typeFull} = $forwarder"
     )
 
     val tAbstractTransport = conv.toScala[AbstractTransport[_]].copy(typeArgs = List(t.typeFull))
     val abstractTransportTpe = tAbstractTransport.init()
-
     val transportTpe = t.sibling(typeName + "AbstractTransport")
-    //           override def companion: ${t.termBase}.type = ${t.termFull}
+    val tools = t.within(s"${i.id.name}Extensions")
 
     Seq(
       q"""trait ${t.typeName} extends $idtService {
           import ${t.termBase}._
 
+          override type InputType = ${serviceInputBase.typeFull}
+          override type OutputType = ${serviceOutputBase.typeFull}
+          override def inputTag: scala.reflect.ClassTag[${serviceInputBase.typeFull}] = scala.reflect.classTag[${serviceInputBase.typeFull}]
+          override def outputTag: scala.reflect.ClassTag[${serviceOutputBase.typeFull}] = scala.reflect.classTag[${serviceOutputBase.typeFull}]
 
           ..${decls.map(_.defn)}
          }"""
@@ -354,7 +354,6 @@ class Translation(typespace: Typespace) {
               override val service: ${t.typeFull}
             ) extends $abstractTransportTpe {
             import ${t.termBase}._
-
             ..$transportDecls
            }"""
       ,
@@ -362,18 +361,8 @@ class Translation(typespace: Typespace) {
             trait ${serviceInputBase.typeName} extends $inputInit {}
             trait ${serviceOutputBase.typeName} extends $outputInit {}
 
-            override type InputType = ${serviceInputBase.typeFull}
-            override type OutputType = ${serviceOutputBase.typeFull}
-
-            override def inputTag: scala.reflect.ClassTag[${serviceInputBase.typeFull}] = scala.reflect.classTag[${serviceInputBase.typeFull}]
-            override def outputTag: scala.reflect.ClassTag[${serviceOutputBase.typeFull}] = scala.reflect.classTag[${serviceOutputBase.typeFull}]
-
-
-            override final lazy val schema: ${tService.typeFull} = {
-              ${SchemaSerializer.toAst(i)}
-            }
-            override final def domain: ${tDomainCompanion.typeFull} = {
-              ${tDomain.termFull}
+            implicit class ${tools.typeName}(_value: ${t.typeFull}) {
+              ${conv.toMethodAst(i.id)}
             }
 
             ..${decls.flatMap(_.types)}
@@ -429,14 +418,7 @@ class Translation(typespace: Typespace) {
          ${t.termFull}(..${constructorCode ++ constructorCodeNonUnique})
          }"""
     )
-
-    //    override final lazy val definition: ${tFinalDefinition.typeFull} = {
-    //      ${SchemaSerializer.toAst(defn)}
-    //    }
-    //
-    //    override final def domain: ${tDomainCompanion.typeFull} = {
-    //      ${tDomain.termFull}
-    //    }
+    val tools = t.within(s"${typeName.name}Extensions")
 
     Seq(
       q"""case class ${t.typeName}(..$decls) extends ..$superClasses {
@@ -445,6 +427,9 @@ class Translation(typespace: Typespace) {
        """
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
+              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
+              ${conv.toMethodAst(defn.id)}
+              }
              ..$constructors
          }"""
     )

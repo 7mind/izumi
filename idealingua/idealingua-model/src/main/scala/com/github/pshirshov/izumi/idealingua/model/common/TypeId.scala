@@ -9,7 +9,6 @@ trait TypeId {
 
   def name: TypeName
 
-  def toJava = JavaType(pkg, name)
 }
 
 trait Scalar extends TypeId {
@@ -37,6 +36,9 @@ object UserType {
 }
 
 object TypeId {
+  implicit class TypeIdExtensions(tid: TypeId) {
+    def toJava: JavaType = JavaType(tid.pkg, tid.name)
+  }
 
   case class InterfaceId(pkg: Package, name: TypeName) extends TypeId
 

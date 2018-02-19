@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
 class Typespace(val domain: DomainDefinition) {
   protected val typespace: Map[TypeId, FinalDefinition] = verified(domain.types)
 
-  protected val ephemerals: Map[EphemeralId, Composite] = (for {
+  protected val serviceEphemerals: Map[EphemeralId, Composite] = (for {
     service <- domain.services
     method <- service.methods
   } yield {
@@ -25,6 +25,12 @@ class Typespace(val domain: DomainDefinition) {
         )
     }
   }).flatten.toMap
+
+  def all: List[TypeId] = List(
+    typespace.keys
+    , serviceEphemerals.keys
+    , domain.services.map(_.id)
+  ).flatten
 
   def verify(): Unit = {
     import Typespace._
@@ -73,7 +79,7 @@ class Typespace(val domain: DomainDefinition) {
   def apply(id: TypeId): FinalDefinition = typespace.apply(id)
 
   def apply(id: InterfaceId): Interface = typespace.apply(id).asInstanceOf[Interface]
-  def apply(id: EphemeralId): Composite = ephemerals.apply(id)
+  def apply(id: EphemeralId): Composite = serviceEphemerals.apply(id)
 
   def apply(id: DTOId): DTO = typespace.apply(id).asInstanceOf[DTO]
 
@@ -86,7 +92,7 @@ class Typespace(val domain: DomainDefinition) {
         apply(i).interfaces.toList.flatMap(implements)
 
       case i: EphemeralId =>
-        ephemerals(i).toList.flatMap(implements)
+        serviceEphemerals(i).toList.flatMap(implements)
 
       case _ =>
         List.empty
@@ -95,14 +101,14 @@ class Typespace(val domain: DomainDefinition) {
 
   def implementingDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
-      case (tid: DTOId, d: DTO) if implements(tid).contains(id) =>
+      case (tid: DTOId, _: DTO) if implements(tid).contains(id) =>
         tid
     }.toList
   }
 
   def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
-    ephemerals.collect {
-      case (eid: EphemeralId, c: Composite) if implements(eid).contains(id) =>
+    serviceEphemerals.collect {
+      case (eid: EphemeralId, _: Composite) if implements(eid).contains(id) =>
         eid
     }.toList
   }

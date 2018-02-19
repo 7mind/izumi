@@ -3,28 +3,23 @@ package com.github.pshirshov.izumi.idealingua.model.runtime
 import scala.util.Try
 
 trait WireProtocol[OnWire] {
-  def encode(generated: IDLGenerated): OnWire
+  def encode(generated: IDLGeneratedType): OnWire
 
-  def decode(input: OnWire): IDLGenerated
+  def decode(input: OnWire): IDLGeneratedType
 }
 
 trait AbstractTransport[Service <: IDLService] {
   def service: Service
 
-  def inAcceptable(in: IDLGenerated): Boolean = ??? //service.companion.inputTag.runtimeClass.isAssignableFrom(in.getClass)
-  def outAcceptable(out: IDLGenerated): Boolean = ??? //service.companion.outputTag.runtimeClass.isAssignableFrom(out.getClass)
+  def inAcceptable(in: IDLGeneratedType): Boolean = service.inputTag.runtimeClass.isAssignableFrom(in.getClass)
 
-  def process(request: IDLGenerated): IDLGenerated
-}
+  def outAcceptable(out: IDLGeneratedType): Boolean = service.outputTag.runtimeClass.isAssignableFrom(out.getClass)
 
-object AbstractTransport {
-//  import scala.reflect.runtime.universe._
-//  private lazy val universeMirror = ru.runtimeMirror(getClass.getClassLoader)
-//
-//  def companionOf[T](implicit tt: ru.TypeTag[T])  = {
-//    val companionMirror = universeMirror.reflectModule(ru.typeOf[T].typeSymbol.companionSymbol.asModule)
-//    companionMirror.instance
-//  }
+  def process(request: Service#InputType): Service#OutputType
+
+  def processUnsafe(request: IDLGenerated): IDLOutput = {
+    process(request.asInstanceOf[Service#InputType])
+  }
 }
 
 trait WireTransport[OnWire, Service <: IDLService] {
@@ -34,7 +29,7 @@ trait WireTransport[OnWire, Service <: IDLService] {
 
   def process(request: OnWire): Try[OnWire] = {
     Try(protocol.decode(request))
-      .map(abstractTransport.process)
+      .map(abstractTransport.processUnsafe)
       .map(protocol.encode)
   }
 }
@@ -50,13 +45,15 @@ class WireTransportDefaultImpl[OnWire, Service <: IDLService]
 
 trait MultiplexingWireTransport[OnWire] {
   def protocol: WireProtocol[OnWire]
+
   def services: Seq[AbstractTransport[_]]
 
   def process(request: OnWire): Try[OnWire] = {
-    Try(protocol.decode(request))
-      .map(r => (r, services.filter(_.inAcceptable(r))) )
-      .map(rs => rs._2.map(_.process(rs._1)))
-      .map(_.map(protocol.encode).head) // by design we have one service per input class
+    ???
+//    Try(protocol.decode(request))
+//      .map(r => (r, services.filter(_.inAcceptable(r)).head)) // by design we have one service per input class
+//      .map(rs => rs._2.processUnsafe(rs._1))
+//      .map(protocol.encode)
   }
 }
 

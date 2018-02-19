@@ -176,7 +176,7 @@ lazy val logstageRouting = inLogStage.as.module
   )
 
 lazy val idealinguaModel = inIdealingua.as.module
-  .settings(libraryDependencies += R.scalameta)
+  .settings(libraryDependencies ++= Seq(R.scalameta, R.scala_reflect))
 
 
 lazy val idealinguaCore = inIdealingua.as.module

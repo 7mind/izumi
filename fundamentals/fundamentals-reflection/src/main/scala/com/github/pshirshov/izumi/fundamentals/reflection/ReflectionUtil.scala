@@ -30,8 +30,18 @@ object ReflectionUtil {
         tpe.asInstanceOf[U#Type]
       }
     }
-    
+
     RuntimeUniverse.u.TypeTag(mirror, creator)
+  }
+
+
+  import scala.reflect.runtime.universe._
+
+  private lazy val universeMirror = runtimeMirror(getClass.getClassLoader)
+
+  def companionOf[T](implicit tt: TypeTag[T]): Any = {
+    val companionMirror = universeMirror.reflectModule(typeOf[T].typeSymbol.companion.asModule)
+    companionMirror.instance
   }
 }
 
