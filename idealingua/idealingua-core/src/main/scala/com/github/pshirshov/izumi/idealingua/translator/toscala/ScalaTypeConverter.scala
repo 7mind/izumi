@@ -6,26 +6,35 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 
+case class Fields(unique: List[ScalaField], nonUnique: List[ScalaField]) {
+  def all: List[ScalaField] = unique ++ nonUnique
+}
+
 class ScalaTypeConverter() {
 
   implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
-    def toScala: List[ScalaField] = {
+    def toScala: Fields = {
 
-      val conflictingFields = fields.groupBy(_.field.name).filter(_._2.lengthCompare(1) > 0)
-      if (conflictingFields.nonEmpty) {
-        throw new IDLException(s"Conflicting fields: $conflictingFields")
+      val conflicts = fields
+        .groupBy(_.field.name)
+
+      val (goodFields, conflictingFields) = conflicts.partition(_._2.lengthCompare(1) == 0)
+
+      val (softConflicts, hardConflicts) = conflictingFields
+        .map(kv => (kv._1, kv._2.groupBy(_.field)))
+        .partition(_._2.size == 1)
+
+      if (hardConflicts.nonEmpty) {
+        throw new IDLException(s"Conflicting fields: $hardConflicts")
       }
 
-      fields.map(_.field.toScala).toList
+      Fields(
+        goodFields.flatMap(f => f._2.map(ef => toScala(ef.field))).toList
+        , softConflicts.flatMap(_._2).keys.map(f => toScala(f)).toList
+      )
     }
-  }
 
-  implicit class ExtendedFieldOps(field: ExtendedField) {
-    protected def toScala: ScalaField = field.field.toScala
-  }
-
-  implicit class FieldOps(field: Field) {
-    def toScala: ScalaField = {
+    private def toScala(field: Field): ScalaField = {
       ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).typeFull)
     }
   }

@@ -20,7 +20,7 @@ class Translation(typespace: Typespace) {
 
   import conv._
   import runtimeTypes._
-  
+
   final val tDomain = conv.toScala(JavaType(Seq("izumi", "idealingua", "domains"), typespace.domain.id.capitalize))
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
@@ -46,9 +46,9 @@ class Translation(typespace: Typespace) {
       translateDomain()
   }
 
-//  override final lazy val domain: ${tDomainDefinition.typeFull} = {
-//    ${SchemaSerializer.toAst(typespace.domain)}
-//  }
+  //  override final lazy val domain: ${tDomainDefinition.typeFull} = {
+  //    ${SchemaSerializer.toAst(typespace.domain)}
+  //  }
   protected def translateDomain(): Seq[Module] = {
     toSource(tDomain.javaType.pkg, ModuleId(tDomain.javaType.pkg, typespace.domain.id), Seq(
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
@@ -98,7 +98,7 @@ class Translation(typespace: Typespace) {
 
     val members = i.members.map {
       m =>
-        val mt =t.within(m)
+        val mt = t.within(m)
         q"""case object ${mt.termName} extends ${t.init()} {
               override def toString: String = ${Lit.String(m)}
             }"""
@@ -124,9 +124,9 @@ class Translation(typespace: Typespace) {
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
     val fields = typespace.enumFields(i)
-    val decls = fields.toScala.map {
+    val decls = fields.toScala.all.map {
       f =>
-        Term.Param(List.empty, f.name, Some(f.declType), None)
+        Term.Param(List.empty, f.name, Some(f.fieldType), None)
     }
 
     val superClasses = toSuper(fields, List(idtGenerated, tIDLIdentifier.init()))
@@ -141,13 +141,13 @@ class Translation(typespace: Typespace) {
 
     //             override def companion: ${t.termBase}.type = ${t.termFull}
 
-//    override final lazy val definition: ${tFinalDefinition.typeFull} = {
-//      ${SchemaSerializer.toAst(i)}
-//    }
-//
-//    override final def domain: ${tDomainCompanion.typeFull} = {
-//      ${tDomain.termFull}
-//    }
+    //    override final lazy val definition: ${tFinalDefinition.typeFull} = {
+    //      ${SchemaSerializer.toAst(i)}
+    //    }
+    //
+    //    override final def domain: ${tDomainCompanion.typeFull} = {
+    //      ${tDomain.termFull}
+    //    }
     Seq(
       q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
             override def toString: String = {
@@ -165,13 +165,14 @@ class Translation(typespace: Typespace) {
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
     val fields = typespace.enumFields(i)
-    val scalaFields: Seq[ScalaField] = fields.toScala
+    val scalaFieldsEx = fields.toScala
+    val scalaFields: Seq[ScalaField] = scalaFieldsEx.all
 
 
     // TODO: contradictions
     val decls = scalaFields.toList.map {
       f =>
-        Decl.Def(List.empty, f.name, List.empty, List.empty, f.declType)
+        Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
     }
 
     val scalaIfaces = i.interfaces.map(typespace.apply).toList
@@ -206,18 +207,19 @@ class Translation(typespace: Typespace) {
 
     val constructors = implementors.map {
       impl =>
-        val missingInterfaces = impl match {
+        val (missingInterfaces, allDtoFields) = impl match {
           case i: DTOId =>
             val implementor = typespace(i)
-            (implementor.interfaces.toSet -- allParents.toSet).toSeq
+            (
+              (implementor.interfaces.toSet -- allParents.toSet).toSeq
+              , typespace.enumFields(typespace(i)).toScala
+            )
           case i: EphemeralId =>
             val implementor = typespace(i)
-            (implementor.toSet -- allParents.toSet).toSeq
-        }
-
-        val signature = missingInterfaces.toList.map {
-          f =>
-            Term.Param(List.empty, idToParaName(f), Some(conv.toScala(f).typeFull), None)
+            (
+              (implementor.toSet -- allParents.toSet).toSeq
+              , typespace.enumFields(typespace(i)).toScala
+            )
         }
 
         val constructorCodeThis = fields.map {
@@ -225,18 +227,37 @@ class Translation(typespace: Typespace) {
             q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
         }
 
+
         val thisFields = fields.map(_.field).toSet
+          .filterNot(f => allDtoFields.nonUnique.exists(_.name.value == f.name))
+
         val otherFields: Seq[ExtendedField] = missingInterfaces
           .flatMap(mi => typespace.enumFields(typespace(mi)))
           .filterNot(f => thisFields.contains(f.field))
+          .filterNot(f => allDtoFields.nonUnique.exists(_.name.value == f.field.name))
+
+        val constructorCodeNonUnique = scalaFieldsEx.nonUnique.map {
+          f =>
+            q""" ${f.name} = ${f.name}  """
+        }
 
         val constructorCodeOthers = otherFields.map {
           f =>
             q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
         }
 
-        q"""def ${Term.Name("to" + impl.name.capitalize)}(..$signature): ${toScala(impl).typeFull} = {
-            ${toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers})
+        val signature = missingInterfaces.toList.map {
+          f =>
+            Term.Param(List.empty, idToParaName(f), Some(conv.toScala(f).typeFull), None)
+        }
+
+        val fullSignature = signature ++ allDtoFields.nonUnique.map {
+          f =>
+            Term.Param(List.empty, f.name, Some(f.fieldType), None)
+        }
+
+        q"""def ${Term.Name("to" + impl.name.capitalize)}(..$fullSignature): ${toScala(impl).typeFull} = {
+            ${toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers ++ constructorCodeNonUnique})
             }
           """
     }
@@ -247,13 +268,13 @@ class Translation(typespace: Typespace) {
     val tools = t.within(s"${i.id.name}Extensions")
 
     //           override def companion: ${t.termBase}.type = ${t.termFull}
-//    override final lazy val definition: ${tFinalDefinition.typeFull} = {
-//      ${SchemaSerializer.toAst(i)}
-//    }
-//
-//    override final def domain: ${tDomainCompanion.typeFull} = {
-//      ${tDomain.termFull}
-//    }
+    //    override final lazy val definition: ${tFinalDefinition.typeFull} = {
+    //      ${SchemaSerializer.toAst(i)}
+    //    }
+    //
+    //    override final def domain: ${tDomainCompanion.typeFull} = {
+    //      ${tDomain.termFull}
+    //    }
     Seq(
       q"""trait ${t.typeName} extends ..$ifDecls {
           ..$allDecls
@@ -265,7 +286,7 @@ class Translation(typespace: Typespace) {
              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
              ..$toolDecls
              }
-         
+
              ..$impl
          }"""
     )
@@ -367,10 +388,11 @@ class Translation(typespace: Typespace) {
   private def renderComposite(typeName: JavaType, defn: FinalDefinition, interfaces: Composite, bases: List[Init]): Seq[Defn] = {
     val fields = typespace.enumFields(interfaces)
     val scalaIfaces = interfaces.map(typespace.apply).toList
-    val scalaFields: Seq[ScalaField] = fields.toScala
+    val scalaFieldsEx = fields.toScala
+    val scalaFields: Seq[ScalaField] = scalaFieldsEx.all
     val decls = scalaFields.toList.map {
       f =>
-        Term.Param(List.empty, f.name, Some(f.declType), None)
+        Term.Param(List.empty, f.name, Some(f.fieldType), None)
     }
 
     val ifDecls = scalaIfaces.map {
@@ -384,29 +406,37 @@ class Translation(typespace: Typespace) {
 
     val t = conv.toScala(typeName)
 
-    val constructorSignature = scalaIfaces.map{
+    val constructorSignature = scalaIfaces.map {
       d =>
         Term.Param(List.empty, definitionToParaName(d), Some(conv.toScala(d.id).typeFull), None)
+    } ++ scalaFieldsEx.nonUnique.map {
+      f =>
+        Term.Param(List.empty, f.name, Some(f.fieldType), None)
     }
-    val constructorCode = fields.map {
+    val constructorCode = fields.filterNot(f => scalaFieldsEx.nonUnique.exists(_.name.value == f.field.name)).map {
       f =>
         q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
+    }
+
+    val constructorCodeNonUnique = scalaFieldsEx.nonUnique.map {
+      f =>
+        q""" ${f.name} = ${f.name}  """
     }
 
 
     val constructors = List(
       q"""def apply(..$constructorSignature): ${t.typeFull} = {
-         ${t.termFull}(..$constructorCode)
+         ${t.termFull}(..${constructorCode ++ constructorCodeNonUnique})
          }"""
     )
 
-//    override final lazy val definition: ${tFinalDefinition.typeFull} = {
-//      ${SchemaSerializer.toAst(defn)}
-//    }
-//
-//    override final def domain: ${tDomainCompanion.typeFull} = {
-//      ${tDomain.termFull}
-//    }
+    //    override final lazy val definition: ${tFinalDefinition.typeFull} = {
+    //      ${SchemaSerializer.toAst(defn)}
+    //    }
+    //
+    //    override final def domain: ${tDomainCompanion.typeFull} = {
+    //      ${tDomain.termFull}
+    //    }
 
     Seq(
       q"""case class ${t.typeName}(..$decls) extends ..$superClasses {
@@ -423,6 +453,7 @@ class Translation(typespace: Typespace) {
   private def toSuper(fields: List[ExtendedField], ifDecls: List[Init]): List[Init] = {
     toSuper(fields, ifDecls, "AnyVal")
   }
+
   private def toSuper(fields: List[ExtendedField], ifDecls: List[Init], base: String): List[Init] = {
     if (fields.lengthCompare(1) == 0) {
       conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
