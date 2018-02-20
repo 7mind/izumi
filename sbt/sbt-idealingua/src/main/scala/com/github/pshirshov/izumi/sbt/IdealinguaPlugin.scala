@@ -11,8 +11,20 @@ import sbt.plugins._
 
 
 object IdealinguaPlugin extends AutoPlugin {
+
   case class Scope(source: Path, target: Path)
-  case class Invokation(options: CompilerOptions)
+
+  sealed trait Mode
+
+  object Mode {
+
+    case object Sources extends Mode
+
+    case object Artifact extends Mode
+
+  }
+
+  case class Invokation(options: CompilerOptions, mode: Mode)
 
   object Keys {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
@@ -24,30 +36,31 @@ object IdealinguaPlugin extends AutoPlugin {
 
 
   override lazy val projectSettings = Seq(
-    Keys.compilationTargets := Seq(Invokation(CompilerOptions(IDLLanguage.Scala)))
+    Keys.compilationTargets := Seq(Invokation(CompilerOptions(IDLLanguage.Scala), Mode.Sources))
 
     , sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath
       val scopes = Seq(
         Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
       )
-      Keys.compilationTargets.value.filter(_.options.language == IDLLanguage.Scala).flatMap {
-        invokation =>
-          doCompile(scopes, invokation)
-      }
+      compileSources(scopes, Keys.compilationTargets.value)
     }.taskValue
-    
+
     , sourceGenerators in Test += Def.task {
       val src = sourceDirectory.value.toPath
       val scopes = Seq(
         Scope(src.resolve("test/izumi"), (sourceManaged in Test).value.toPath)
       )
-      Keys.compilationTargets.value.filter(_.options.language == IDLLanguage.Scala).flatMap {
-        invokation =>
-          doCompile(scopes, invokation)
-      }
+      compileSources(scopes, Keys.compilationTargets.value)
     }.taskValue
   )
+
+  private def compileSources(scopes: Seq[Scope], ctargets: Seq[Invokation]) = {
+    ctargets.filter(i => i.options.language == IDLLanguage.Scala && i.mode == Mode.Sources).flatMap {
+      invokation =>
+        doCompile(scopes, invokation)
+    }
+  }
 
   private def doCompile(scopes: Seq[Scope], invokation: Invokation) = {
     scopes.flatMap {
