@@ -36,7 +36,10 @@ object IdealinguaPlugin extends AutoPlugin {
 
 
   override lazy val projectSettings = Seq(
-    Keys.compilationTargets := Seq(Invokation(CompilerOptions(IDLLanguage.Scala), Mode.Sources))
+    Keys.compilationTargets := Seq(
+      Invokation(CompilerOptions(IDLLanguage.Scala), Mode.Sources)
+      , Invokation(CompilerOptions(IDLLanguage.Scala), Mode.Artifact)
+    )
 
     , sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath
@@ -53,7 +56,36 @@ object IdealinguaPlugin extends AutoPlugin {
       )
       compileSources(scopes, Keys.compilationTargets.value)
     }.taskValue
+    , artifacts ++= {
+      val ctargets = Keys.compilationTargets.value
+      val pname = name.value
+      artifactTargets(ctargets, pname).map(_._1)
+    }
+    , packagedArtifacts := {
+      val ctargets = Keys.compilationTargets.value
+      val pname = name.value
+      val src = sourceDirectory.value.toPath
+      val scopes = Seq(
+        Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
+      )
+
+      val artifacts = artifactTargets(ctargets, pname)
+      val artifactFiles = artifacts.map {
+        case (a, t) =>
+          a -> doCompile(scopes, t).head
+      }.toMap
+
+      packagedArtifacts.value ++ artifactFiles
+    }
   )
+
+
+  private def artifactTargets(ctargets: Seq[Invokation], pname: String) = {
+    ctargets.filter(i => i.mode == Mode.Artifact).map {
+      target =>
+        Artifact(pname, "src", "zip", target.options.language.toString) -> target
+    }
+  }
 
   private def compileSources(scopes: Seq[Scope], ctargets: Seq[Invokation]) = {
     ctargets.filter(i => i.options.language == IDLLanguage.Scala && i.mode == Mode.Sources).flatMap {
