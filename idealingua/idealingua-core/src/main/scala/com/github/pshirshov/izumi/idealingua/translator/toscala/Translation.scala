@@ -242,21 +242,21 @@ class Translation(typespace: Typespace) {
             )
         }
 
-        val constructorCodeThis = fields.map {
-          f =>
-            q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
-        }
-
-
         val thisFields = fields.map(_.field).toSet
           .filterNot(f => allDtoFields.nonUnique.exists(_.name.value == f.name))
+
+
+        val constructorCodeThis = thisFields.toList.map {
+          f =>
+            q""" ${Term.Name(f.name)} = _value.${Term.Name(f.name)}  """
+        }
 
         val otherFields: Seq[ExtendedField] = missingInterfaces
           .flatMap(mi => typespace.enumFields(typespace(mi)))
           .filterNot(f => thisFields.contains(f.field))
           .filterNot(f => allDtoFields.nonUnique.exists(_.name.value == f.field.name))
 
-        val constructorCodeNonUnique = scalaFieldsEx.nonUnique.map {
+        val constructorCodeNonUnique = allDtoFields.nonUnique.map {
           f =>
             q""" ${f.name} = ${f.name}  """
         }

@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOpt
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 
 
-
 class IDLCompiler(domain: DomainDefinition) {
   def compile(target: Path, options: CompilerOptions): IDLResult = {
     val translator = toTranslator(options)
@@ -43,6 +42,7 @@ class IDLCompiler(domain: DomainDefinition) {
 }
 
 object IDLCompiler {
+
   case class CompilerOptions(language: IDLLanguage)
 
   trait IDLResult
@@ -52,5 +52,3 @@ object IDLCompiler {
   case class IDLFailure() extends IDLResult
 
 }
-
-
