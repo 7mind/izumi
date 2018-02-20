@@ -65,14 +65,15 @@ object IdealinguaPlugin extends AutoPlugin {
       val ctargets = Keys.compilationTargets.value
       val pname = name.value
       val src = sourceDirectory.value.toPath
-      val scopes = Seq(
-        Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
-      )
+      val scope = Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
 
       val artifacts = artifactTargets(ctargets, pname)
       val artifactFiles = artifacts.map {
         case (a, t) =>
-          a -> doCompile(scopes, t).head
+          val result = doCompile(Seq(scope), t)
+          val zipFile = target.value / s"${a.name}-${a.classifier.get}-${version.value}.zip"
+          IO.zip(result.map(r => (r, r.getAbsolutePath)), zipFile)
+          a -> zipFile
       }.toMap
 
       packagedArtifacts.value ++ artifactFiles
