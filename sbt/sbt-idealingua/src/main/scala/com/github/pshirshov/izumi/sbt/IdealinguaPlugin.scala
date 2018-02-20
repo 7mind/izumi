@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.sbt
 
 import java.nio.file.Path
 
-import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
-import com.github.pshirshov.izumi.idealingua.translator.{CompilerOptions, IDLCompiler, IDLLanguage, ModelLoader}
+import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, ModelLoader}
 import sbt.Keys.{sourceGenerators, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger

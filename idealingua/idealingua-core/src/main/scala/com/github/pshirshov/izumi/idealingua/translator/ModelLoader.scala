@@ -2,9 +2,8 @@ package com.github.pshirshov.izumi.idealingua.translator
 
 import java.nio.file.Path
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Field, Primitive}
+import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition}
-import com.github.pshirshov.izumi.sbt.model
 
 class ModelLoader(source: Path) {
   def load(): Seq[DomainDefinition] = {
@@ -14,10 +13,10 @@ class ModelLoader(source: Path) {
 
 object ModelLoader {
   object DummyModel {
-    val if1Id = model.common.UserType.parse("izumi.test.TestInterface1").toInterface
-    val if2Id = model.common.UserType.parse("izumi.test.TestInterface2").toInterface
-    val if3Id = model.common.UserType.parse("izumi.test.TestInterface3").toInterface
-    val dto1Id = model.common.UserType.parse("izumi.test.DTO1").toDTO
+    val if1Id = UserType.parse("izumi.test.TestInterface1").toInterface
+    val if2Id = UserType.parse("izumi.test.TestInterface2").toInterface
+    val if3Id = UserType.parse("izumi.test.TestInterface3").toInterface
+    val dto1Id = UserType.parse("izumi.test.DTO1").toDTO
 
     val if1 = FinalDefinition.Interface(if1Id, Seq(
       Field(Primitive.TInt32, "if1Field_overriden")

@@ -4,16 +4,10 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import com.github.pshirshov.izumi.idealingua.model.finaldef.DomainDefinition
-import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLResult
+import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 
-sealed trait IDLLanguage
 
-object IDLLanguage {
-  case object Scala extends IDLLanguage
-}
-
-case class CompilerOptions(language: IDLLanguage)
 
 class IDLCompiler(domain: DomainDefinition) {
   def compile(target: Path, options: CompilerOptions): IDLResult = {
@@ -38,11 +32,18 @@ class IDLCompiler(domain: DomainDefinition) {
     options.language match {
       case IDLLanguage.Scala =>
         new FinalTranslatorScalaImpl()
+      case IDLLanguage.Go =>
+        ???
+      case IDLLanguage.Typescript =>
+        ???
+      case IDLLanguage.UnityCSharp =>
+        ???
     }
   }
 }
 
 object IDLCompiler {
+  case class CompilerOptions(language: IDLLanguage)
 
   trait IDLResult
 
