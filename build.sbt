@@ -14,6 +14,7 @@ name := "izumi-r2"
 
 val AppSettings = SettingsGroupId()
 val LibSettings = SettingsGroupId()
+val SbtSettings = SettingsGroupId()
 
 val scala_212 = "2.12.4"
 val scala_213 = "2.13.0-M2"
@@ -77,11 +78,33 @@ val baseSettings = new GlobalSettings {
         )
       ).flatten
     }
+    , SbtSettings -> new ProjectSettings {
+      override val plugins: Set[Plugins] = Set(ScriptedPlugin)
+      override val settings: Seq[sbt.Setting[_]] = Seq(
+        Seq(
+          target ~= { t => t.toPath.resolve("primary").toFile }
+          , scriptedLaunchOpts := {
+            scriptedLaunchOpts.value ++
+              Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+          }
+          , scriptedBufferLog := false
+          , crossScalaVersions := Seq(
+            scala_212
+          )
+          , libraryDependencies ++= Seq(
+            "org.scala-sbt" % "sbt" % sbtVersion.value
+          )
+          , sbtPlugin := true
+        )
+      ).flatten
+    }
   )
 }
 // --------------------------------------------
 
 val inRoot = In(".")
+val inSbt = In("sbt")
+  .withModuleSettings(SbtSettings)
 val inDiStage = In("distage")
   .withModuleSettings(LibSettings)
 val inLogStage = In("logstage")
@@ -184,22 +207,12 @@ lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(T.scala_compiler, T.scala_library))
 
 
-lazy val sbtIzumi = inRoot.as
+lazy val sbtIzumi = inSbt.as
   .module
-  .enablePlugins(ScriptedPlugin)
-  .settings(
-    target ~= { t => t.toPath.resolve("primary").toFile }
-    , scriptedLaunchOpts := {
-      scriptedLaunchOpts.value ++
-        Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-    }
-    , scriptedBufferLog := false
-    , crossScalaVersions := Seq(
-      scala_212
-    )
-  )
 
-
+lazy val sbtIdealingua = inSbt.as
+  .module
+  .depends(idealinguaCore, sbtIzumi.testOnlyRef)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageDi
@@ -216,7 +229,7 @@ lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
 )
 lazy val izsbt: Seq[ProjectReference] = Seq(
-  sbtIzumi
+  sbtIzumi, sbtIdealingua
 )
 
 lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt

@@ -4,8 +4,8 @@ scalaVersion := "2.12.4"
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.1")
 
 // bootstrap
-lazy val izumiPlugin = RootProject(file("../sbt-izumi"))
+lazy val izumiPlugin = RootProject(file("../sbt/sbt-izumi"))
 lazy val root = project.in( file(".") ).dependsOn( izumiPlugin )
 
-// 
+//
 libraryDependencies += { "org.scala-sbt" %% "scripted-plugin" % sbtVersion.value }

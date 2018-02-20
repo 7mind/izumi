@@ -1,17 +1,15 @@
 package com.github.pshirshov.izumi.idealingua
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 
 import com.github.pshirshov.izumi.idealingua.model.finaldef._
+import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler
+import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 import org.scalatest.WordSpec
 
 
-
 class IDLTest extends WordSpec {
-
-
   "IDL rendered" should {
     "be able to produce scala source code" in {
       assert(compiles(Model01.domain))
@@ -25,36 +23,28 @@ class IDLTest extends WordSpec {
   private def compiles(d: DomainDefinition): Boolean = {
     val modules = new FinalTranslatorScalaImpl().translate(d)
 
-    val top = Seq("target", "idl-" + System.currentTimeMillis())
-    val files = modules.map {
-      module =>
+    val compiler = new IDLCompiler(d)
+    compiler.compile(Paths.get("target", "idl-" + System.currentTimeMillis())) match {
+      case IDLSuccess(files) =>
+        println(files.toList)
+        assert(files.toSet.size == files.size)
 
-        val path = top ++ module.id.path :+ module.id.name
-        val mpath = path.mkString("/")
-        println(mpath)
-        println(module.content)
-        println()
-        val xpath = Paths.get(path.head, path.tail: _*)
-        xpath.getParent.toFile.mkdirs()
-        Files.write(xpath, module.content.getBytes(StandardCharsets.UTF_8))
-        mpath
-    }
-
-    println(files.toList)
-    assert(files.toSet.size == files.size)
-
-    {
-      import scala.tools.nsc.{Global, Settings}
-      val settings = new Settings()
-      settings.embeddedDefaults(getClass.getClassLoader)
-      val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
-      if (!isSbt) {
-        settings.usejavacp.value = true
+      {
+        import scala.tools.nsc.{Global, Settings}
+        val settings = new Settings()
+        settings.embeddedDefaults(getClass.getClassLoader)
+        val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
+        if (!isSbt) {
+          settings.usejavacp.value = true
+        }
+        val g = new Global(settings)
+        val run = new g.Run
+        run.compile(files.map(_.toFile.getCanonicalPath).toList)
+        run.runIsAt(run.jvmPhase.next)
       }
-      val g = new Global(settings)
-      val run = new g.Run
-      run.compile(files.toList)
-      run.runIsAt(run.jvmPhase.next)
+
     }
+
+
   }
 }
