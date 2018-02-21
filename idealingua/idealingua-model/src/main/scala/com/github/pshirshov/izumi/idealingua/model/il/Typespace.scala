@@ -66,8 +66,14 @@ class Typespace(val domain: DomainDefinition) {
       .filterNot(_.value.isInstanceOf[Primitive])
       .filterNot(_.value.isInstanceOf[Generic])
       .filterNot(d => typespace.contains(d.value))
+
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
+    }
+
+    val martians = all.filterNot(domain.id.contains)
+    if (martians.nonEmpty) {
+      throw new IDLException(s"Martian types: $martians")
     }
   }
 
