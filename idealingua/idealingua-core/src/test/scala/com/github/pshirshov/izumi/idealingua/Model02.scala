@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.{Field, Primitive}
-import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition}
+import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, DomainId, FinalDefinition}
 
 object Model02 {
   val if1Id = model.common.UserType.parse("izumi.test.TestInterface1").toInterface
@@ -33,7 +33,7 @@ object Model02 {
     dto1Id
     , Seq(if2Id, if3Id))
 
-  val domain: DomainDefinition = DomainDefinition("testDomain", Seq(
+  val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain02"), Seq(
     if1
     , if2
     , if3

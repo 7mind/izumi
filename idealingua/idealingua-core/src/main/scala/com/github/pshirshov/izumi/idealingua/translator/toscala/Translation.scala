@@ -21,7 +21,7 @@ class Translation(typespace: Typespace) {
   import conv._
   import runtimeTypes._
 
-  final val tDomain = conv.toScala(JavaType(Seq("izumi", "idealingua", "domains"), typespace.domain.id.capitalize))
+  final val tDomain = conv.toScala(JavaType(Seq("izumi", "idealingua", "domains") ++ typespace.domain.id.pkg, typespace.domain.id.id.capitalize))
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
 

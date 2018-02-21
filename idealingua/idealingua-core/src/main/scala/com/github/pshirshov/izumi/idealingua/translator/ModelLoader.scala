@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator
 import java.nio.file.Path
 
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, FinalDefinition}
+import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, DomainId, FinalDefinition}
 
 class ModelLoader(source: Path) {
   def load(): Seq[DomainDefinition] = {
@@ -42,7 +42,7 @@ object ModelLoader {
       dto1Id
       , Seq(if2Id, if3Id))
 
-    val domain: DomainDefinition = DomainDefinition("testDomain", Seq(
+    val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domainDummy"), Seq(
       if1
       , if2
       , if3

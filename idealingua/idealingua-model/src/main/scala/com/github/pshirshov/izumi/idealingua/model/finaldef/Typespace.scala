@@ -1,10 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.model.finaldef
 
+import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
+
+
 
 
 class Typespace(val domain: DomainDefinition) {

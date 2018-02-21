@@ -3,9 +3,8 @@ package com.github.pshirshov.izumi.idealingua
 import java.nio.file.Paths
 
 import com.github.pshirshov.izumi.idealingua.model.finaldef._
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
-import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
 import org.scalatest.WordSpec
 
 
@@ -21,8 +20,6 @@ class IDLTest extends WordSpec {
   }
 
   private def compiles(d: DomainDefinition): Boolean = {
-    val modules = new FinalTranslatorScalaImpl().translate(d)
-
     val compiler = new IDLCompiler(d)
     compiler.compile(Paths.get("target", "idl-" + System.currentTimeMillis()), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala)) match {
       case IDLSuccess(files) =>

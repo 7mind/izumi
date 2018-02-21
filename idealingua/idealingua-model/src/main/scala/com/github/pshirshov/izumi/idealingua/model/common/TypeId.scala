@@ -45,7 +45,7 @@ object TypeId {
   case class DTOId(pkg: Package, name: TypeName) extends TypeId
 
   case class AliasId(pkg: Package, name: TypeName) extends TypeId
-  
+
   case class EnumId(pkg: Package, name: TypeName) extends TypeId
 
   case class IdentifierId(pkg: Package, name: TypeName) extends TypeId with Scalar
