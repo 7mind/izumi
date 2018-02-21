@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AliasId, DTOId, EnumId, EphemeralId, IdentifierId, InterfaceId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il
-import com.github.pshirshov.izumi.idealingua.model.il.{JavaType, Typespace}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, JavaType}
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
@@ -13,7 +13,7 @@ case class Fields(unique: List[ScalaField], nonUnique: List[ScalaField]) {
   def all: List[ScalaField] = unique ++ nonUnique
 }
 
-class ScalaTypeConverter(typespace: Typespace) {
+class ScalaTypeConverter(domain: DomainId) {
 
   implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
     def toScala: Fields = {
@@ -52,7 +52,7 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  def toImport: Import = q"import ${toSelectTerm(JavaType(typespace.domain.id).parent)}._"
+  def toImport: Import = q"import ${toSelectTerm(JavaType(domain).parent)}._"
 
   def toScala(id: TypeId): ScalaType = {
     id match {
@@ -67,13 +67,9 @@ class ScalaTypeConverter(typespace: Typespace) {
     }
   }
 
-  private def toIdConstructor[T <: TypeId: ClassTag](t: T): Term.Apply = {
-    q"${toSelectTerm(JavaType.get[T])}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.name)})"
-  }
-
-  def toMethodAst[T <: TypeId: ClassTag](typeId: T): Defn.Def = {
-    val tpe = toSelect(JavaType.get[T])
-    q"def toTypeId: $tpe = ${toAst(typeId)}"
+  def toMethodAst[T <: TypeId : ClassTag](typeId: T): Defn.Def = {
+    val tpe = toSelect(JavaType.get[T].minimize(domain))
+    q"def toTypeId: $tpe = { ${toAst(typeId)} }"
   }
 
   def toAst[T <: TypeId](typeId: T): Term.Apply = {
@@ -91,8 +87,12 @@ class ScalaTypeConverter(typespace: Typespace) {
       case i: ServiceId =>
         toIdConstructor(i)
       case i: EphemeralId =>
-        q"${toSelectTerm(JavaType.get[EphemeralId])}(${toAst(i.parent)}, ${Lit.String(i.name)})"
+        q"${toSelectTerm(JavaType.get[EphemeralId].minimize(domain))}(${toAst(i.parent)}, ${Lit.String(i.name)})"
     }
+  }
+
+  private def toIdConstructor[T <: TypeId : ClassTag](t: T): Term.Apply = {
+    q"${toSelectTerm(JavaType.get[T].minimize(domain))}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.name)})"
   }
 
   def toScala[T: ClassTag]: ScalaType = {
@@ -106,7 +106,7 @@ class ScalaTypeConverter(typespace: Typespace) {
   }
 
   private def toScala(javaType: JavaType, args: List[TypeId]): ScalaType = {
-    val minimized = javaType.minimize(typespace.domain.id)
+    val minimized = javaType.minimize(domain)
     ScalaType(
       toSelectTerm(minimized)
       , toSelect(minimized)

@@ -18,9 +18,12 @@ case class JavaType(pkg: Package, name: String) {
 
 object JavaType {
   def get[T:ClassTag]: JavaType = {
-    val clazz = classTag[T].runtimeClass
-    val nameParts = clazz.getCanonicalName.split('$')
-    il.JavaType(nameParts.init, nameParts.last)
+    val clazz = classTag[T].runtimeClass.getCanonicalName
+
+    val parts = clazz.split('.').toSeq
+    val nameParts = parts.last.split('$').toSeq
+    val pkg = parts.init ++ nameParts.init
+    il.JavaType(pkg, nameParts.last)
   }
 
   def apply(typeId: TypeId): JavaType = new JavaType(typeId.pkg, typeId.name)

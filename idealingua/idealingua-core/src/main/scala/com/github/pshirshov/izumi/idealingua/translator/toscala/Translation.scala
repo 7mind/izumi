@@ -16,8 +16,8 @@ import scala.meta._
 
 
 class Translation(typespace: Typespace) {
-  protected val conv = new ScalaTypeConverter(typespace)
-  protected val runtimeTypes = new IDLRuntimeTypes(conv)
+  protected val conv = new ScalaTypeConverter(typespace.domain.id)
+  protected val runtimeTypes = new IDLRuntimeTypes()
 
   import conv._
   import runtimeTypes._
@@ -104,7 +104,7 @@ class Translation(typespace: Typespace) {
   }
 
   def withInfo[T <: Defn](id: TypeId, defn: T): T = {
-    val stat = q"def _info: ${typeInfo.typeFull} = ${typeInfo.termFull}(${conv.toAst(id)}, ${tDomain.termFull})"
+    val stat = q"def _info: ${typeInfo.typeFull} = { ${typeInfo.termFull}(${runtimeTypes.conv.toAst(id)}, ${tDomain.termFull}) }"
 
     val extended = defn match {
       case o: Defn.Object =>
@@ -182,7 +182,7 @@ class Translation(typespace: Typespace) {
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-                ${conv.toMethodAst(i.id)}
+                ${runtimeTypes.conv.toMethodAst(i.id)}
              }
          }"""
     )
@@ -301,7 +301,7 @@ class Translation(typespace: Typespace) {
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-             ${conv.toMethodAst(i.id)}
+             ${runtimeTypes.conv.toMethodAst(i.id)}
              ..$toolDecls
              }
 
@@ -384,7 +384,7 @@ class Translation(typespace: Typespace) {
             trait ${serviceOutputBase.typeName} extends $outputInit {}
 
             implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-              ${conv.toMethodAst(i.id)}
+              ${runtimeTypes.conv.toMethodAst(i.id)}
             }
 
             ..${decls.flatMap(_.types)}
@@ -447,7 +447,7 @@ class Translation(typespace: Typespace) {
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
               implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-              ${conv.toMethodAst(defn.id)}
+              ${runtimeTypes.conv.toMethodAst(defn.id)}
               }
              ..$constructors
          }"""
@@ -506,6 +506,8 @@ class Translation(typespace: Typespace) {
       code
     } else {
       s"""package ${pkg.mkString(".")}
+         |
+         |import ${runtimeTypes.basePkg}._
          |
          |$code
        """.stripMargin

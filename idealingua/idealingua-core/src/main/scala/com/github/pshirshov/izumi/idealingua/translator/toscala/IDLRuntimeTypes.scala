@@ -1,10 +1,16 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, FinalDefinition, Service}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FinalDefinition, Service}
 import com.github.pshirshov.izumi.idealingua.model.runtime.model._
 
-class IDLRuntimeTypes(conv: ScalaTypeConverter) {
+class IDLRuntimeTypes() {
+  private final val commonsPkg = classOf[TypeId].getPackage.getName
+  private final val basePkgParts = commonsPkg.split('.').toSeq.init
+
+  final val basePkg = basePkgParts.mkString(".")
+  final val conv = new ScalaTypeConverter(DomainId(basePkgParts.init, basePkgParts.last))
+
   final val typeId = conv.toScala[TypeId]
   final val typeInfo = conv.toScala[IDLTypeInfo]
   final val idtGenerated = conv.toScala[IDLGeneratedType].init()
