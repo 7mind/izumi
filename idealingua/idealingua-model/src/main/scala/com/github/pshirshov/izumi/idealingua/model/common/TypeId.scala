@@ -2,6 +2,8 @@ package com.github.pshirshov.izumi.idealingua.model.common
 
 import com.github.pshirshov.izumi.idealingua.model.common.Primitive.prelude
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
+import com.github.pshirshov.izumi.idealingua.model.il
+import com.github.pshirshov.izumi.idealingua.model.il.JavaType
 
 
 trait TypeId {
@@ -17,6 +19,7 @@ trait Scalar extends TypeId {
 
 case class UserType(pkg: Package, name: TypeName) extends TypeId {
   def toAlias: AliasId = AliasId(pkg, name)
+
   def toEnum: EnumId = EnumId(pkg, name)
 
   def toInterface: InterfaceId = InterfaceId(pkg, name)
@@ -36,9 +39,6 @@ object UserType {
 }
 
 object TypeId {
-  implicit class TypeIdExtensions(tid: TypeId) {
-    def toJava: JavaType = JavaType(tid.pkg, tid.name)
-  }
 
   case class InterfaceId(pkg: Package, name: TypeName) extends TypeId
 
@@ -53,7 +53,7 @@ object TypeId {
   case class ServiceId(pkg: Package, name: TypeName) extends TypeId
 
   case class EphemeralId(parent: TypeId, name: TypeName) extends TypeId {
-    override def pkg: Package = parent.pkg :+  parent.name
+    override def pkg: Package = parent.pkg :+ parent.name
   }
 
   //case class SignatureId(pkg: Package, name: TypeName) extends TypeId

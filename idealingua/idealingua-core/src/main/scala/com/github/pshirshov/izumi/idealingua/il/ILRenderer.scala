@@ -4,9 +4,9 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
-import com.github.pshirshov.izumi.idealingua.model.finaldef._
+import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il._
 
 class ILRenderer(domain: DomainDefinition) {
   def render(): String = {
@@ -14,18 +14,10 @@ class ILRenderer(domain: DomainDefinition) {
     sb.append(render(domain.id))
 
     sb.append("\n\n")
-    domain.types.foreach {
-      d =>
-        sb.append(render(d))
-        sb.append("\n")
-    }
+    sb.append(domain.types.map(render).map(_.trim).mkString("\n\n"))
 
     sb.append("\n\n")
-    domain.services.foreach {
-      d =>
-        sb.append(render(d))
-        sb.append("\n")
-    }
+    sb.append(domain.services.map(render).map(_.trim).mkString("\n\n"))
 
     sb.toString
   }
@@ -33,14 +25,13 @@ class ILRenderer(domain: DomainDefinition) {
   def render(tpe: FinalDefinition): String = {
     tpe match {
       case d: Enumeration =>
-        s"""enum ${render(d.id)} = ${d.members.map(renderString).mkString(" | ")}
-           |
+        s"""enum ${render(d.id)} {
+           |${d.members.map(renderString).mkString("\n").shift(2)}
+           |}
          """.stripMargin
 
       case d: Alias =>
-        s"""alias ${render(d.id)} = ${render(d.target)}
-           |
-         """.stripMargin
+        s"alias ${render(d.id)} = ${render(d.target)}\n"
 
       case d: Identifier =>
         s"""id ${render(d.id)} {
@@ -73,7 +64,7 @@ class ILRenderer(domain: DomainDefinition) {
   def renderComposite(aggregate: Composite): String = {
     aggregate
       .map(render)
-      .map(t => s": $t")
+      .map(t => s"+ $t")
       .mkString("\n")
   }
 
@@ -99,9 +90,16 @@ class ILRenderer(domain: DomainDefinition) {
       case t: EphemeralId => // TODO: impossible case
         s"${render(t.parent)}#${t.name}"
 
+      case g: Generic =>
+        s"${renderTypeName(g.pkg, g.name)}${g.args.map(render).mkString("[", ", ", "]")}"
+
       case t =>
-        Seq(renderPkg(t.pkg), t.name).filterNot(_.isEmpty).mkString("#")
+        renderTypeName(t.pkg, t.name)
     }
+  }
+
+  private def renderTypeName(pkg: Package, name: TypeName) = {
+    Seq(renderPkg(pkg), name).filterNot(_.isEmpty).mkString("#")
   }
 
   def renderPkg(value: common.Package): String = {
@@ -109,13 +107,11 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def render(id: ServiceId): String = {
-    Seq(renderPkg(id.pkg), id.name).filterNot(_.isEmpty).mkString("#")
+    renderTypeName(id.pkg, id.name)
   }
 
   def minimize(value: common.Package): common.Package = {
-    value.map(Option.apply)
-      .zipAll(domain.id.toPackage.map(Option.apply), None, None)
-      .filter(pair => pair._1 == pair._2).flatMap(_._1)
+    PackageTools.minimize(value, domain.id.toPackage)
   }
 
   def render(domainId: DomainId): String = {

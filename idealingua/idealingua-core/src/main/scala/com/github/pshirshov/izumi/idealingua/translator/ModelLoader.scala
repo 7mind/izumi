@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator
 import java.nio.file.Path
 
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, DomainId, FinalDefinition}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FinalDefinition}
 
 class ModelLoader(source: Path) {
   def load(): Seq[DomainDefinition] = {

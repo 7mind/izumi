@@ -3,6 +3,8 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AliasId, DTOId, EnumId, EphemeralId, IdentifierId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.il
+import com.github.pshirshov.izumi.idealingua.model.il.{JavaType, Typespace}
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
@@ -11,7 +13,7 @@ case class Fields(unique: List[ScalaField], nonUnique: List[ScalaField]) {
   def all: List[ScalaField] = unique ++ nonUnique
 }
 
-class ScalaTypeConverter() {
+class ScalaTypeConverter(typespace: Typespace) {
 
   implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
     def toScala: Fields = {
@@ -50,6 +52,8 @@ class ScalaTypeConverter() {
     }
   }
 
+  def toImport: Import = q"import ${toSelectTerm(JavaType(typespace.domain.id).parent)}._"
+
   def toScala(id: TypeId): ScalaType = {
     id match {
       case t: Primitive =>
@@ -59,7 +63,7 @@ class ScalaTypeConverter() {
         toScala(toGeneric(t), t.args)
 
       case _ =>
-        toScala(JavaType(id.pkg, id.name))
+        toScala(il.JavaType(id.pkg, id.name))
     }
   }
 
@@ -93,7 +97,7 @@ class ScalaTypeConverter() {
 
   def toScala[T: ClassTag]: ScalaType = {
     val idtClass = classTag[T].runtimeClass
-    val javaType = UserType(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName).toJava
+    val javaType = JavaType(UserType(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName))
     toScala(javaType)
   }
 
@@ -102,12 +106,13 @@ class ScalaTypeConverter() {
   }
 
   private def toScala(javaType: JavaType, args: List[TypeId]): ScalaType = {
+    val minimized = javaType.minimize(typespace.domain.id)
     ScalaType(
-      toSelectTerm(javaType)
-      , toSelect(javaType)
-      , Term.Name(javaType.name)
-      , Type.Name(javaType.name)
-      , javaType
+      toSelectTerm(minimized)
+      , toSelect(minimized)
+      , Term.Name(minimized.name)
+      , Type.Name(minimized.name)
+      , minimized
       , args.map(toScala(_).typeFull)
       , args.map(toScala(_).termFull)
     )
@@ -116,22 +121,22 @@ class ScalaTypeConverter() {
   private def toPrimitive(id: Primitive): JavaType = {
     id match {
       case Primitive.TString =>
-        JavaType(Seq.empty, "String")
+        il.JavaType(Seq.empty, "String")
       case Primitive.TInt32 =>
-        JavaType(Seq.empty, "Int")
+        il.JavaType(Seq.empty, "Int")
       case Primitive.TInt64 =>
-        JavaType(Seq.empty, "Long")
+        il.JavaType(Seq.empty, "Long")
     }
   }
 
   private def toGeneric(typeId: Generic): JavaType = {
     typeId match {
       case _: Generic.TSet =>
-        JavaType(Seq.empty, "Set")
+        il.JavaType(Seq.empty, "Set")
       case _: Generic.TMap =>
-        JavaType(Seq.empty, "Map")
+        il.JavaType(Seq.empty, "Map")
       case _: Generic.TList =>
-        JavaType(Seq.empty, "List")
+        il.JavaType(Seq.empty, "List")
     }
   }
 

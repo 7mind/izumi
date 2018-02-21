@@ -4,18 +4,19 @@ import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EnumId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
-import com.github.pshirshov.izumi.idealingua.model.finaldef.{FinalDefinition, Service, Typespace}
+import com.github.pshirshov.izumi.idealingua.model.il
+import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.{FinalDefinition, JavaType, Service, Typespace}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.runtime._
+import com.github.pshirshov.izumi.idealingua.model.runtime.transport.AbstractTransport
 
 import scala.collection.mutable
 import scala.meta._
 
 
 class Translation(typespace: Typespace) {
-  protected val conv = new ScalaTypeConverter()
+  protected val conv = new ScalaTypeConverter(typespace)
   protected val runtimeTypes = new IDLRuntimeTypes(conv)
 
   import conv._
@@ -59,8 +60,12 @@ class Translation(typespace: Typespace) {
     val types = exprs.map({ case (k, v) => q"$k -> $v" })
     val reverseTypes = exprs.map({ case (k, v) => q"$v -> $k" })
 
-    toSource(tDomain.javaType.pkg, ModuleId(tDomain.javaType.pkg, s"${typespace.domain.id}.scala"), Seq(
+    val domainTpe = tDomain.javaType
+
+    toSource(domainTpe.pkg, ModuleId(domainTpe.pkg, s"${typespace.domain.id.id}.scala"), Seq(
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
+         ${conv.toImport}
+
          lazy val types: Map[${typeId.typeFull}, Class[_]] = Seq(..$types).toMap
          lazy val classes: Map[Class[_], ${typeId.typeFull}] = Seq(..$reverseTypes).toMap
        }"""
@@ -455,7 +460,7 @@ class Translation(typespace: Typespace) {
 
   private def toSuper(fields: List[ExtendedField], ifDecls: List[Init], base: String): List[Init] = {
     if (fields.lengthCompare(1) == 0) {
-      conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
+      conv.toScala(il.JavaType(Seq.empty, base)).init() +: ifDecls
     } else {
       ifDecls
     }

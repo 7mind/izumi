@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua
 
 import java.nio.file.Paths
 
-import com.github.pshirshov.izumi.idealingua.model.finaldef._
+import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
 import org.scalatest.WordSpec

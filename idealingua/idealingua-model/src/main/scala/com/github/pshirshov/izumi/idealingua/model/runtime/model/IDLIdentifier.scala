@@ -1,4 +1,5 @@
-package com.github.pshirshov.izumi.idealingua.model.runtime
+package com.github.pshirshov.izumi.idealingua.model.runtime.model
+
 import java.net.{URLDecoder, URLEncoder}
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId

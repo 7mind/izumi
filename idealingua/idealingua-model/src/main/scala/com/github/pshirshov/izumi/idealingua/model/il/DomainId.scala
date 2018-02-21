@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.finaldef
+package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common
 

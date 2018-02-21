@@ -1,11 +1,10 @@
-package com.github.pshirshov.izumi.idealingua.model.finaldef
+package com.github.pshirshov.izumi.idealingua.model.il
 
-import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.finaldef.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
 
 
 

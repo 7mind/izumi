@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.{Field, Generic, Primitive, UserType}
-import com.github.pshirshov.izumi.idealingua.model.finaldef._
+import com.github.pshirshov.izumi.idealingua.model.il._
 
 object Model01 {
   val userIdTypeId = model.common.UserType.parse("izumi.test.UserId").toAlias

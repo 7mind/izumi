@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.model.finaldef
+package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.finaldef.FinalDefinition.Composite
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Composite
 
 sealed trait FinalDefinition {
   def id: TypeId
@@ -31,7 +31,7 @@ object DefMethod {
   case class Signature(input: Composite, output: Composite) {
     def asList: List[InterfaceId] = (input ++ output).toList
   }
-  
+
   case class RPCMethod(name: String, signature: Signature) extends DefMethod
 }
 

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.common.JavaType
+import com.github.pshirshov.izumi.idealingua.model.il.JavaType
 
 import scala.meta.{Init, Name, Term, Type}
 

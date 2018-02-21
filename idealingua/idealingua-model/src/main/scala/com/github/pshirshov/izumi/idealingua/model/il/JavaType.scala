@@ -1,0 +1,28 @@
+package com.github.pshirshov.izumi.idealingua.model.il
+
+import com.github.pshirshov.izumi.idealingua.model.common.{Package, PackageTools, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.il
+
+import scala.reflect._
+
+case class JavaType(pkg: Package, name: String) {
+  def parent: JavaType = {
+    JavaType(pkg.init, pkg.last)
+  }
+
+  def minimize(domainId: DomainId): JavaType = {
+    val minimalPackageRef = PackageTools.minimize(pkg, domainId.toPackage)
+    JavaType(minimalPackageRef, name)
+  }
+}
+
+object JavaType {
+  def get[T:ClassTag]: JavaType = {
+    val clazz = classTag[T].runtimeClass
+    val nameParts = clazz.getCanonicalName.split('$')
+    il.JavaType(nameParts.init, nameParts.last)
+  }
+
+  def apply(typeId: TypeId): JavaType = new JavaType(typeId.pkg, typeId.name)
+  def apply(typeId: DomainId): JavaType = new JavaType(typeId.pkg, typeId.id)
+}

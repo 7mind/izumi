@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.{Field, Primitive}
-import com.github.pshirshov.izumi.idealingua.model.finaldef.{DomainDefinition, DomainId, FinalDefinition}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FinalDefinition}
 
 object Model02 {
   val if1Id = model.common.UserType.parse("izumi.test.TestInterface1").toInterface
