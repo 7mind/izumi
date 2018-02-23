@@ -2,6 +2,7 @@ import D._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.typesafe.sbt.pgp.PgpSettings
 import sbt.Keys.{pomExtra, publishMavenStyle}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
@@ -22,9 +23,24 @@ val scala_213 = "2.13.0-M2"
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("com.github.pshirshov.izumi")
 
+lazy val shading =
+  inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings) ++
+    // Why does this have to be repeated here?
+    // Can't figure out why configuration gets lost without this in particular...
+    _root_.coursier.ShadingPlugin.projectSettings ++
+    Seq(
+      shadingNamespace := "izumi.shaded",
+      publish := publish.in(Shading).value,
+      publishLocal := publishLocal.in(Shading).value,
+      PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value,
+      PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
+    )
+
 val baseSettings = new GlobalSettings {
   override protected val settings: Map[SettingsGroupId, ProjectSettings] = Map(
     GlobalSettingsGroup -> new ProjectSettings {
+      override val plugins: Set[Plugins] = Set(ShadingPlugin)
+
       override val settings: Seq[sbt.Setting[_]] = Seq(
         organization := "com.github.pshirshov.izumi.r2"
         , crossScalaVersions := Seq(
@@ -68,7 +84,11 @@ val baseSettings = new GlobalSettings {
           commitNextVersion, // : ReleaseStep
           pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
         )
-      )
+
+        , shadeNamespaces ++= Set(
+          "fastparse"
+        ),
+      ) ++ shading
     }
     , LibSettings -> new ProjectSettings {
       override val settings: Seq[sbt.Setting[_]] = Seq(
@@ -204,7 +224,7 @@ lazy val idealinguaModel = inIdealingua.as.module
 
 lazy val idealinguaCore = inIdealingua.as.module
   .depends(idealinguaModel)
-  .settings(libraryDependencies ++= Seq(R.fastparse, T.scala_compiler, T.scala_library))
+  .settings(libraryDependencies ++= Seq(R.fastparse % "shaded", T.scala_compiler, T.scala_library))
 
 
 lazy val sbtIzumi = inSbt.as

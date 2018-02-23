@@ -8,7 +8,7 @@ object D {
     val scala_reflect = "org.scala-lang" % "scala-reflect" % scala212
     //val scala_asm = "org.scala-lang.modules" % "scala-asm" % "6.0.0-scala-1"
     //val scala_arm = "com.jsuereth" %% "scala-arm" % "2.0"
-    val scalameta = "org.scalameta" %% "scalameta" % "2.1.7"
+    val scalameta = "org.scalameta" %% "scalameta" % "3.3.1"
 
     val scala_compiler =  "org.scala-lang" % "scala-compiler" % "2.12.4"
     val scala_library =  "org.scala-lang" % "scala-library" % "2.12.4"
