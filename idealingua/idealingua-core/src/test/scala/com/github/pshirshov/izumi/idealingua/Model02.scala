@@ -38,5 +38,5 @@ object Model02 {
     , if2
     , if3
     , dto1
-  ), Seq.empty)
+  ), Seq.empty, Map.empty)
 }

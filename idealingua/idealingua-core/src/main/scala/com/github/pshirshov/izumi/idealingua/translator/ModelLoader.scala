@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path, Paths}
 import com.github.pshirshov.izumi.idealingua.il.{IL, ILParser, ParsedDomain}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FinalDefinition}
+import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinition
 import fastparse.core.{Parsed, Parser}
 
 
@@ -41,7 +41,20 @@ class ModelLoader(source: Path) {
       case (d, i) =>
         d.extend(models(Paths.get(i)))
     }
-    resolveIds(withIncludes)
+      .copy(includes = Seq.empty)
+
+    val imports = domain.imports.map(s => Paths.get(s))
+      .map {
+        p =>
+          val d = domains(p)
+          d.domain.id -> postprocess(p, d, domains, models)
+      }
+      .toMap
+
+    val withImports = withIncludes
+      .copy(imports = Seq.empty, domain = domain.domain.copy(referenced = imports))
+
+    resolveIds(withImports)
   }
 
   def resolveIds(withIncludes: ParsedDomain): DomainDefinition = {

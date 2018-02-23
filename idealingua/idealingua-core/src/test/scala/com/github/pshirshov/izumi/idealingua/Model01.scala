@@ -42,5 +42,5 @@ object Model01 {
     Service(serviceIdentifier, Seq(
       DefMethod.RPCMethod("createUser", DefMethod.Signature(Seq(testInterfaceId), Seq(testInterfaceId)))
     ))
-  ))
+  ), Map.empty)
 }

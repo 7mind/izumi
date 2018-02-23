@@ -21,6 +21,6 @@ object ParsedDomain {
   def apply(did: IL.ILDomainId, imports: Seq[String], defs: Seq[IL.Val]): ParsedDomain = {
     val includes = defs.collect({ case d: ILInclude => d.i })
 
-    ParsedDomain(DomainDefinition(did.v, Seq.empty, Seq.empty), includes, imports).extend(defs)
+    ParsedDomain(DomainDefinition(did.v, Seq.empty, Seq.empty, Map.empty), includes, imports).extend(defs)
   }
 }

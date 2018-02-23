@@ -9,6 +9,7 @@ import org.scalatest.WordSpec
 
 
 class IDLTest extends WordSpec {
+  import IDLTest._
   "IDL renderer" should {
     "be able to produce scala source code" in {
       assert(compiles(Model01.domain))
@@ -19,7 +20,11 @@ class IDLTest extends WordSpec {
     }
   }
 
-  private def compiles(d: DomainDefinition): Boolean = {
+
+}
+
+object IDLTest {
+  def compiles(d: DomainDefinition): Boolean = {
     val compiler = new IDLCompiler(d)
     compiler.compile(Paths.get("target", "idl-" + System.currentTimeMillis()), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala)) match {
       case IDLSuccess(files) =>

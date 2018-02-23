@@ -1,0 +1,28 @@
+domain izumi.test.domain01
+
+include "model01.model"
+
+id TestValIdentifer {
+  userId: UserId
+}
+
+id TestIdentifer {
+  userId: UserId
+  context: str
+}
+
+mixin TestInterface {
+  userId: UserId
+  accountBalance: i32
+  latestLogin: i64
+  keys: map[str, str]
+  nicknames: list[str]
+}
+
+data TestObject {
+  + TestInterface
+}
+
+service UserService {
+  def createUser(TestInterface): (TestInterface)
+}

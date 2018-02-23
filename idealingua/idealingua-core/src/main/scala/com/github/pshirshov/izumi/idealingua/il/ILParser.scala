@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.il
 
-import com.github.pshirshov.izumi.idealingua.il.IL.{ILDef, ILInclude, ILService}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import fastparse.CharPredicates._
