@@ -81,7 +81,7 @@ class ILRenderer(domain: DomainDefinition) {
   def render(tpe: DefMethod): String = {
     tpe match {
       case d: RPCMethod =>
-        s"${d.name}(${d.signature.input.map(render).mkString(", ")}): (${d.signature.output.map(render).mkString(", ")})"
+        s"def ${d.name}(${d.signature.input.map(render).mkString(", ")}): (${d.signature.output.map(render).mkString(", ")})"
     }
   }
 

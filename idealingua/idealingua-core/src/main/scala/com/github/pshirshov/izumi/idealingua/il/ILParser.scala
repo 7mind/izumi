@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.il
 
 import com.github.pshirshov.izumi.idealingua.il.IL.ILDomainId
-import com.github.pshirshov.izumi.idealingua.model.common.{TypeId, UserType}
+import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FinalDefinition, Service}
+import com.github.pshirshov.izumi.idealingua.model.il._
 import fastparse.all._
 import fastparse.CharPredicates._
 import fastparse.{all, core}
@@ -73,17 +73,59 @@ class ILParser {
   final val data = W("data")
   final val service = W("service")
   final val domain = W("domain")
+  final val defm = W("def")
 
   final val identifier = P(symbol.rep(sep = ".")).map(v => AbstractId(v))
 
   final val domainId = P(domain ~/ identifier)
     .map(v => ILDomainId(v.toDomainId))
 
-  final val field = P(wso ~ symbol ~ wso ~ ":" ~/ wso ~ identifier ~ wso)
+  def toScalar(tid: TypeId): Scalar = {
+    tid.name match {
+      case "i32" if tid.pkg.isEmpty =>
+        Primitive.TInt32
+      case "i64" if tid.pkg.isEmpty =>
+        Primitive.TInt64
+      case "str" if tid.pkg.isEmpty =>
+        Primitive.TString
+      case _ =>
+        AbstractId(tid.pkg, tid.name).toIdId
+    }
+  }
+
+  final val fulltype: all.Parser[TypeId] = P(wso ~ identifier ~ wso ~ generic.rep(min = 0, max = 1) ~ wso).map {
+    case (tid, params) if params.isEmpty =>
+      tid.toTypeId
+    case (tid, params) if tid.id == "set" && tid.pkg.isEmpty =>
+      Generic.TSet(params.flatten.head)
+    case (tid, params) if tid.id == "list" && tid.pkg.isEmpty =>
+      Generic.TList(params.flatten.head)
+    case (tid, params) if tid.id == "map" && tid.pkg.isEmpty =>
+      Generic.TMap(toScalar(params.flatten.head), params.flatten.last)
+  }
+
+  final def generic: all.Parser[Seq[TypeId]] = P("[" ~/ wso ~ fulltype.rep(sep = ",") ~ wso ~ "]")
+
+  final val field = P(wso ~ symbol ~ wso ~ ":" ~/ wso ~ fulltype ~ wso)
+    .map {
+      case (name, tpe) =>
+        Field(tpe, name)
+    }
+
   final val aggregate = P(field.rep(sep = Newline))
   final val mixed = P(wso ~ "+" ~/ wso ~ identifier ~ wso)
   final val composite = P(mixed.rep(sep = Newline))
-  final val methods = P(empty)
+
+  final val sigParam = P(wso ~ identifier ~ wso)
+  final val signature = P(sigParam.rep(sep = ","))
+
+
+  val defmethod = P(defm ~/ wso ~ symbol ~ "(" ~ wso ~ signature ~ wso ~ ")" ~ wso ~ ":" ~ wso ~ "(" ~ wso ~ signature ~ wso ~ ")" ~ wso).map {
+    case (name, in, out) =>
+      DefMethod.RPCMethod(name, DefMethod.Signature(in.map(_.toMixinId), out.map(_.toMixinId)))
+  }
+  val method: all.Parser[DefMethod] = P(wso ~ (defmethod) ~ wso)
+  final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = Newline))
 
   final val enumBlock = P(enum ~/ symbol ~ wso ~ "{" ~ (empty ~ symbol ~ empty).rep(1) ~ "}")
     .map(v => ILDef(FinalDefinition.Enumeration(AbstractId(v._1).toEnumId, v._2.toList)))
@@ -92,16 +134,16 @@ class ILParser {
     .map(v => ILDef(FinalDefinition.Alias(AbstractId(v._1).toAliasId, v._2.toTypeId)))
 
   final val idBlock = P(id ~/ symbol ~ wso ~ "{" ~ (empty ~ aggregate ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.Identifier(AbstractId(v._1).toIdId, null)))
+    .map(v => ILDef(FinalDefinition.Identifier(AbstractId(v._1).toIdId, v._2)))
 
   final val mixinBlock = P(mixin ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ aggregate ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.Interface(AbstractId(v._1).toMixinId, null, v._2._1.map(_.toMixinId))))
+    .map(v => ILDef(FinalDefinition.Interface(AbstractId(v._1).toMixinId, v._2._2, v._2._1.map(_.toMixinId))))
 
   final val dtoBlock = P(data ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty) ~ "}")
     .map(v => ILDef(FinalDefinition.DTO(AbstractId(v._1).toDataId, v._2.map(_.toMixinId))))
 
   final val serviceBlock = P(service ~/ symbol ~ wso ~ "{" ~ (empty ~ methods ~ empty) ~ "}")
-    .map(v => ILService(Service(AbstractId(v).toServiceId, null)))
+    .map(v => ILService(Service(AbstractId(v._1).toServiceId, v._2)))
 
   final val anyBlock: core.Parser[Val, Char, String] = enumBlock |
     aliasBlock |
@@ -114,7 +156,6 @@ class ILParser {
 
   final val fullDomainDef = P(domainId ~ Newline ~ empty ~ anyBlock.rep(sep = empty) ~ empty ~ End).map {
     v =>
-      println(v)
       val types = v._2.collect({ case d: ILDef => d.v })
       val services = v._2.collect({ case d: ILService => d.v })
       DomainDefinition(v._1.v, types, services)
