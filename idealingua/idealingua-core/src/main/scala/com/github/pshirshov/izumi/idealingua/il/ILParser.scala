@@ -55,59 +55,64 @@ class ILParser {
 
   import IL._
 
-  val ws = P(" " | "\t")(sourcecode.Name("WS"))
-  val NL = P("\r\n" | "\n" | "\r")
-  val wsm = P(ws.rep(1))
-  val wso = P(ws.rep)
-  val Newline = P(NL.rep(1))
-  val empty = P((ws | NL).rep)
+  final val ws = P(" " | "\t")(sourcecode.Name("WS"))
+  final val NL = P("\r\n" | "\n" | "\r")
+  final val wsm = P(ws.rep(1))
+  final val wso = P(ws.rep)
+  final val Newline = P(NL.rep(1))
+  final val empty = P((ws | NL).rep)
 
-  val symbol = P(CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c)).rep).!
+  final val symbol = P(CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c)).rep).!
+
   def W(s: String) = P(s ~ wsm)(sourcecode.Name(s"`$s`"))
 
-  val enum = W("enum")
-  val alias = W("alias")
-  val id = W("id")
-  val mixin = W("mixin")
-  val data = W("data")
-  val service = W("service")
-  val domain = W("domain")
+  final val enum = W("enum")
+  final val alias = W("alias")
+  final val id = W("id")
+  final val mixin = W("mixin")
+  final val data = W("data")
+  final val service = W("service")
+  final val domain = W("domain")
 
-  val identifier = P(symbol.rep(sep = ".")).map(v => AbstractId(v))
+  final val identifier = P(symbol.rep(sep = ".")).map(v => AbstractId(v))
 
-  val domainId = P(domain ~/ identifier)
+  final val domainId = P(domain ~/ identifier)
     .map(v => ILDomainId(v.toDomainId))
 
-  val aggregate = P(empty)
-  val composite = P(empty)
-  val methods = P(empty)
+  final val field = P(wso ~ symbol ~ wso ~ ":" ~/ wso ~ identifier ~ wso)
+  final val aggregate = P(field.rep(sep = Newline))
+  final val mixed = P(wso ~ "+" ~/ wso ~ identifier ~ wso)
+  final val composite = P(mixed.rep(sep = Newline))
+  final val methods = P(empty)
 
-  val enumBlock = P(enum ~/ symbol ~ wso ~ "{" ~ (empty ~ symbol ~ empty).rep(1) ~ "}")
+  final val enumBlock = P(enum ~/ symbol ~ wso ~ "{" ~ (empty ~ symbol ~ empty).rep(1) ~ "}")
     .map(v => ILDef(FinalDefinition.Enumeration(AbstractId(v._1).toEnumId, v._2.toList)))
 
-  val aliasBlock = P(alias ~/ symbol ~ wso ~ "=" ~ wsm ~ identifier)
+  final val aliasBlock = P(alias ~/ symbol ~ wso ~ "=" ~ wsm ~ identifier)
     .map(v => ILDef(FinalDefinition.Alias(AbstractId(v._1).toAliasId, v._2.toTypeId)))
 
-  val idBlock = P(id ~/ symbol ~ wso ~ "{" ~ (empty ~ aggregate ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.Identifier(AbstractId(v).toIdId, null)))
+  final val idBlock = P(id ~/ symbol ~ wso ~ "{" ~ (empty ~ aggregate ~ empty) ~ "}")
+    .map(v => ILDef(FinalDefinition.Identifier(AbstractId(v._1).toIdId, null)))
 
-  val mixinBlock = P(mixin ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ aggregate ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.Interface(AbstractId(v).toMixinId, null, null)))
+  final val mixinBlock = P(mixin ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ aggregate ~ empty) ~ "}")
+    .map(v => ILDef(FinalDefinition.Interface(AbstractId(v._1).toMixinId, null, v._2._1.map(_.toMixinId))))
 
-  val dtoBlock = P(data ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.DTO(AbstractId(v).toDataId, null)))
+  final val dtoBlock = P(data ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty) ~ "}")
+    .map(v => ILDef(FinalDefinition.DTO(AbstractId(v._1).toDataId, v._2.map(_.toMixinId))))
 
-  val serviceBlock = P(service ~/ symbol ~ wso ~ "{" ~ (empty ~ methods ~ empty) ~ "}")
+  final val serviceBlock = P(service ~/ symbol ~ wso ~ "{" ~ (empty ~ methods ~ empty) ~ "}")
     .map(v => ILService(Service(AbstractId(v).toServiceId, null)))
 
-  val anyBlock: core.Parser[Val, Char, String] = enumBlock |
+  final val anyBlock: core.Parser[Val, Char, String] = enumBlock |
     aliasBlock |
     idBlock |
     mixinBlock |
     dtoBlock |
     serviceBlock
 
-  val expr = P(domainId ~ Newline ~ empty ~ anyBlock.rep(sep = empty) ~ empty ~ End).map {
+  final val modelDef = P(empty ~ anyBlock.rep(sep = empty) ~ empty ~ End)
+
+  final val fullDomainDef = P(domainId ~ Newline ~ empty ~ anyBlock.rep(sep = empty) ~ empty ~ End).map {
     v =>
       println(v)
       val types = v._2.collect({ case d: ILDef => d.v })
@@ -115,41 +120,41 @@ class ILParser {
       DomainDefinition(v._1.v, types, services)
   }
 
-  //  val symbol = P()
+  //final val symbol = P()
   //
-  //  val StringChars = NamedFunction(!"\"\\".contains(_: Char), "StringChars")
+  //final val StringChars = NamedFunction(!"\"\\".contains(_: Char), "StringChars")
   //
-  //  val space         = P( CharsWhileIn(" \r\n").? )
-  //  val digits        = P( CharsWhileIn("0123456789"))
-  //  val exponent      = P( CharIn("eE") ~ CharIn("+-").? ~ digits )
-  //  val fractional    = P( "." ~ digits )
-  //  val integral      = P( "0" | CharIn('1' to '9') ~ digits.? )
+  //final val space         = P( CharsWhileIn(" \r\n").? )
+  //final val digits        = P( CharsWhileIn("0123456789"))
+  //final val exponent      = P( CharIn("eE") ~ CharIn("+-").? ~ digits )
+  //final val fractional    = P( "." ~ digits )
+  //final val integral      = P( "0" | CharIn('1' to '9') ~ digits.? )
   //
-  //  val number = P( CharIn("+-").? ~ integral ~ fractional.? ~ exponent.? ).!.map(
+  //final val number = P( CharIn("+-").? ~ integral ~ fractional.? ~ exponent.? ).!.map(
   //    x => Js.Num(x.toDouble)
   //  )
   //
-  //  val `null`        = P( "null" ).map(_ => Js.Null)
-  //  val `false`       = P( "false" ).map(_ => Js.False)
-  //  val `true`        = P( "true" ).map(_ => Js.True)
+  //final val `null`        = P( "null" ).map(_ => Js.Null)
+  //final val `false`       = P( "false" ).map(_ => Js.False)
+  //final val `true`        = P( "true" ).map(_ => Js.True)
   //
-  //  val hexDigit      = P( CharIn('0'to'9', 'a'to'f', 'A'to'F') )
-  //  val unicodeEscape = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
-  //  val escape        = P( "\\" ~ (CharIn("\"/\\bfnrt") | unicodeEscape) )
+  //final val hexDigit      = P( CharIn('0'to'9', 'a'to'f', 'A'to'F') )
+  //final val unicodeEscape = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
+  //final val escape        = P( "\\" ~ (CharIn("\"/\\bfnrt") | unicodeEscape) )
   //
-  //  val strChars = P( CharsWhile(StringChars) )
-  //  val string =
+  //final val strChars = P( CharsWhile(StringChars) )
+  //final val string =
   //    P( space ~ "\"" ~/ (strChars | escape).rep.! ~ "\"").map(Js.Str)
   //
-  //  val array =
+  //final val array =
   //    P( "[" ~/ jsonExpr.rep(sep=",".~/) ~ space ~ "]").map(Js.Arr(_:_*))
   //
-  //  val pair = P( string.map(_.value) ~/ ":" ~/ jsonExpr )
+  //final val pair = P( string.map(_.value) ~/ ":" ~/ jsonExpr )
   //
-  //  val obj =
+  //final val obj =
   //    P( "{" ~/ pair.rep(sep=",".~/) ~ space ~ "}").map(Js.Obj(_:_*))
   //
-  //  val jsonExpr: P[Js.Val] = P(
+  //final val jsonExpr: P[Js.Val] = P(
   //    space ~ (obj | array | string | `true` | `false` | `null` | number) ~ space
   //  )
 }

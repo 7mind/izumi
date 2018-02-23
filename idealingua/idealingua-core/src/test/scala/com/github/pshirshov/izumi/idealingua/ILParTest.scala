@@ -21,15 +21,26 @@ class ILParTest extends WordSpec {
 
       val domaindef =
         """domain x.y.z
+          |
           |alias x = y
           |enum MyEnum {X Y Zz}
-          |mixin Mixin {}
-          |data Data {}
+          |
+          |mixin Mixin {
+          | + Mixin
+          | a: B
+          | c: x.Y
+          |}
+          |
+          |data Data {
+          |+ Mixin
+          |+Mixin
+          |}
+          |
           |id Id {}
           |service Service {}
           |""".stripMargin
 
-      new ILParser().expr.parse(domaindef) match {
+      new ILParser().fullDomainDef.parse(domaindef) match {
         case Parsed.Success(v, i) =>
           println(v)
         case Parsed.Failure(lp, idx, e) =>
