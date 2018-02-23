@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.common
 
-import com.github.pshirshov.izumi.idealingua.model.common.Primitive.prelude
+import com.github.pshirshov.izumi.idealingua.model.common.Primitive.{TInt32, TInt64, TString, prelude}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 
 
@@ -9,6 +9,9 @@ trait TypeId {
 
   def name: TypeName
 
+  def isBuiltin: Boolean = pkg.isEmpty && (Primitive.all.contains(name) || Generic.all.contains(name))
+
+  override def toString: TypeName = s"${getClass.getSimpleName}:${pkg.mkString(".")}#$name"
 }
 
 trait Scalar extends TypeId {
@@ -30,6 +33,7 @@ case class UserType(pkg: Package, name: TypeName) extends TypeId {
 }
 
 object UserType {
+  def apply(id: TypeId): UserType = new UserType(id.pkg, id.name)
   def parse(s: String): UserType = {
     val parts = s.split('.')
     UserType(parts.toSeq.init, parts.last)
@@ -82,6 +86,7 @@ object Primitive {
     override def name: TypeName = "i64"
   }
 
+  final val all = Set(TString, TInt32, TInt64).map(_.name)
 }
 
 trait Generic extends TypeId {
@@ -115,4 +120,5 @@ object Generic {
     override def name: TypeName = "map"
   }
 
+  final val all = Set("list", "set", "map")
 }

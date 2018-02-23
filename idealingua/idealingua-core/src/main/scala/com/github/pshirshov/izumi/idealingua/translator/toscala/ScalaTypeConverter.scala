@@ -56,11 +56,11 @@ class ScalaTypeConverter(domain: DomainId) {
 
   def toScala(id: TypeId): ScalaType = {
     id match {
-      case t: Primitive =>
-        toScala(toPrimitive(t))
-
       case t: Generic =>
         toScala(toGeneric(t), t.args)
+
+      case t if t.isBuiltin =>
+        toScala(toPrimitive(t))
 
       case _ =>
         toScala(il.JavaType(id.pkg, id.name))
@@ -85,6 +85,8 @@ class ScalaTypeConverter(domain: DomainId) {
       case i: IdentifierId =>
         toIdConstructor(i)
       case i: ServiceId =>
+        toIdConstructor(i)
+      case i: UserType =>
         toIdConstructor(i)
       case i: EphemeralId =>
         q"${toSelectTerm(JavaType.get[EphemeralId].minimize(domain))}(${toAst(i.parent)}, ${Lit.String(i.name)})"
@@ -118,13 +120,13 @@ class ScalaTypeConverter(domain: DomainId) {
     )
   }
 
-  private def toPrimitive(id: Primitive): JavaType = {
-    id match {
-      case Primitive.TString =>
+  private def toPrimitive(id: TypeId): JavaType = {
+    id.name match {
+      case n if n == Primitive.TString.name =>
         il.JavaType(Seq.empty, "String")
-      case Primitive.TInt32 =>
+      case n if n == Primitive.TInt32.name =>
         il.JavaType(Seq.empty, "Int")
-      case Primitive.TInt64 =>
+      case n if n == Primitive.TInt64.name =>
         il.JavaType(Seq.empty, "Long")
     }
   }

@@ -52,15 +52,10 @@ class ModelLoader(source: Path) {
       .toMap
 
     val withImports = withIncludes
-      .copy(imports = Seq.empty, domain = domain.domain.copy(referenced = imports))
+      .copy(imports = Seq.empty, domain = withIncludes.domain.copy(referenced = imports))
 
-    resolveIds(withImports)
+    withImports.domain
   }
-
-  def resolveIds(withIncludes: ParsedDomain): DomainDefinition = {
-    withIncludes.domain
-  }
-
 
   private def collectSuccess[T](files: Map[Path, String], ext: TypeName, p: Parser[T, Char, String]): Map[Path, T] = {
     val domains = files.filter(_._1.getFileName.toString.endsWith(ext))
@@ -80,6 +75,35 @@ class ModelLoader(source: Path) {
         path -> r
     }
   }
+
+
+//  private def resolveIds(withIncludes: ParsedDomain): DomainDefinition = {
+////    withIncludes.domain.copy(
+////      types = resolveTypes(withIncludes.domain.id, withIncludes.domain.types)
+////      , services = resolveServices(withIncludes.domain.id, withIncludes.domain.services)
+////    )
+//  }
+//
+//  def resolveTypes(domainId: DomainId, types: Seq[FinalDefinition]): Seq[FinalDefinition] = {
+//    types.map {
+//      case v: Enumeration =>
+//        Enumeration(resolve(domainId, v.id), v.members)
+//      case v: Alias =>
+//        Enumeration(resolve(domainId, v.id), v.members)
+//
+//      case v: Identifier =>
+//      case v: Interface =>
+//      case v: DTO =>
+//    }
+//  }
+//
+//  def resolveServices(domainId: DomainId, services: Seq[Service]): Seq[Service] = {
+//    services
+//  }
+//
+//  def resolve[T <: TypeId](domainId: DomainId, typeId: T): T = {
+//
+//  }
 
   private def formatFailures[T](failures: Map[Path, Parsed[T, Char, String]]) = {
     failures.map(kv => s"${kv._1}: ${kv._2}").mkString("\n")

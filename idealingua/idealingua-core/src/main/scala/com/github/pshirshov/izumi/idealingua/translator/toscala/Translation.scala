@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il
 import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
-import com.github.pshirshov.izumi.idealingua.model.il.{FinalDefinition, JavaType, Service, Typespace}
+import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.runtime.transport.AbstractTransport
 
@@ -22,7 +22,8 @@ class Translation(typespace: Typespace) {
   import conv._
   import runtimeTypes._
 
-  final val tDomain = conv.toScala(JavaType(Seq("izumi", "idealingua", "domains") ++ typespace.domain.id.pkg, typespace.domain.id.id.capitalize))
+  final val domainsDomain = UserType(Seq("izumi", "idealingua", "domains") ++ typespace.domain.id.pkg, typespace.domain.id.id.capitalize)
+  final val tDomain = conv.toScala(JavaType(domainsDomain))
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
 
@@ -60,9 +61,7 @@ class Translation(typespace: Typespace) {
     val types = exprs.map({ case (k, v) => q"$k -> $v" })
     val reverseTypes = exprs.map({ case (k, v) => q"$v -> $k" })
 
-    val domainTpe = tDomain.javaType
-
-    toSource(domainTpe.pkg, ModuleId(domainTpe.pkg, s"${typespace.domain.id.id}.scala"), Seq(
+    toSource(domainsDomain, ModuleId(domainsDomain.pkg, s"${typespace.domain.id.id}.scala"), Seq(
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
          ${conv.toImport}
 
@@ -74,7 +73,7 @@ class Translation(typespace: Typespace) {
   }
 
   protected def translateService(definition: Service): Seq[Module] = {
-    toSource(definition.id.pkg, toModuleId(definition.id), renderService(definition))
+    toSource(definition.id, toModuleId(definition.id), renderService(definition))
   }
 
 
@@ -97,7 +96,7 @@ class Translation(typespace: Typespace) {
         renderDto(d)
     }
     if (defns.nonEmpty) {
-      toSource(definition.id.pkg, toModuleId(definition), defns)
+      toSource(definition.id, toModuleId(definition), defns)
     } else {
       Seq.empty
     }
@@ -483,7 +482,8 @@ class Translation(typespace: Typespace) {
   private def toModuleId(defn: FinalDefinition): ModuleId = {
     defn match {
       case i: Alias =>
-        ModuleId(i.id.pkg, s"${i.id.pkg.last}.scala")
+        val concrete = typespace.toKey(i.id)
+        ModuleId(concrete.pkg, s"${concrete.pkg.last}.scala")
 
       case other =>
         val id = other.id
@@ -492,12 +492,13 @@ class Translation(typespace: Typespace) {
   }
 
   private def toModuleId(id: TypeId): ModuleId = {
-    ModuleId(id.pkg, s"${id.name}.scala")
+    val concrete = typespace.toKey(id)
+    ModuleId(concrete.pkg, s"${id.name}.scala")
   }
 
-  private def toSource(pkg: Package, moduleId: ModuleId, traitDef: Seq[Defn]) = {
+  private def toSource(id: TypeId, moduleId: ModuleId, traitDef: Seq[Defn]) = {
     val code = traitDef.map(_.toString()).mkString("\n\n")
-    val content: String = withPackage(pkg, code)
+    val content: String = withPackage(typespace.toKey(id).pkg, code)
     Seq(Module(moduleId, content))
   }
 

@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
 
 
 class Typespace(val domain: DomainDefinition) {
-  protected val typespace: Map[TypeId, FinalDefinition] = verified(domain.types)
+  protected val typespace: Map[UserType, FinalDefinition] = verified(domain.types)
 
   protected val serviceEphemerals: Map[EphemeralId, Composite] = (for {
     service <- domain.services
@@ -63,34 +63,43 @@ class Typespace(val domain: DomainDefinition) {
     val allDependencies = typeDependencies ++ serviceDependencies.flatten
 
     val missingTypes = allDependencies
-      .filterNot(_.value.isInstanceOf[Primitive])
-      .filterNot(_.value.isInstanceOf[Generic])
-      .filterNot(d => typespace.contains(d.value))
+      .filterNot(_.value.isBuiltin)
+      .filterNot(d => typespace.contains(toKey(d.value)))
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
     }
 
-    val martians = all.filterNot(domain.id.contains)
-    if (martians.nonEmpty) {
-      throw new IDLException(s"Martian types: $martians")
+//    val martians = all.filterNot(domain.id.contains)
+//    if (martians.nonEmpty) {
+//      throw new IDLException(s"Martian types: $martians")
+//    }
+  }
+
+  def toKey(typeId: TypeId): UserType = {
+    if (typeId.pkg.isEmpty) {
+      UserType(domain.id.toPackage, typeId.name)
+    } else {
+      UserType(typeId)
     }
   }
 
-  protected def verified(types: Seq[FinalDefinition]): Map[TypeId, FinalDefinition] = {
+  protected def verified(types: Seq[FinalDefinition]): Map[UserType, FinalDefinition] = {
     val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
     if (conflictingTypes.nonEmpty) {
       throw new IDLException(s"Conflicting types in: $conflictingTypes")
     }
-    types.groupBy(_.id).mapValues(_.head)
+    types
+      .groupBy(k => toKey(k.id))
+      .mapValues(_.head)
   }
 
-  def apply(id: TypeId): FinalDefinition = typespace.apply(id)
+  def apply(id: TypeId): FinalDefinition = typespace.apply(toKey(id))
 
-  def apply(id: InterfaceId): Interface = typespace.apply(id).asInstanceOf[Interface]
+  def apply(id: InterfaceId): Interface = typespace.apply(toKey(id)).asInstanceOf[Interface]
   def apply(id: EphemeralId): Composite = serviceEphemerals.apply(id)
 
-  def apply(id: DTOId): DTO = typespace.apply(id).asInstanceOf[DTO]
+  def apply(id: DTOId): DTO = typespace.apply(toKey(id)).asInstanceOf[DTO]
 
   def implements(id: TypeId): List[InterfaceId] = {
     id match {
@@ -110,8 +119,8 @@ class Typespace(val domain: DomainDefinition) {
 
   def implementingDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
-      case (tid: DTOId, _: DTO) if implements(tid).contains(id) =>
-        tid
+      case (tid, _: DTO) if implements(tid).contains(id) =>
+        tid.toDTO
     }.toList
   }
 
@@ -123,7 +132,7 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   def enumFields(composite: Composite): List[ExtendedField] = {
-    composite.flatMap(i => enumFields(typespace(i))).toList
+    composite.flatMap(i => enumFields(typespace(toKey(i)))).toList
   }
 
   def enumFields(defn: FinalDefinition): List[ExtendedField] = {
@@ -175,10 +184,10 @@ class Typespace(val domain: DomainDefinition) {
   def explode(defn: FinalDefinition): List[TrivialField] = {
     defn match {
       case t: Interface =>
-        t.interfaces.flatMap(i => explode(typespace(i))).toList ++ t.fields.flatMap(explode).toList
+        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList ++ t.fields.flatMap(explode).toList
 
       case t: DTO =>
-        t.interfaces.flatMap(i => explode(typespace(i))).toList
+        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList
 
       case t: Identifier =>
         t.fields.flatMap(explode).toList
