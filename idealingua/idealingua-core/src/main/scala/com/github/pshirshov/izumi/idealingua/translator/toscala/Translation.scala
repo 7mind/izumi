@@ -22,7 +22,7 @@ class Translation(typespace: Typespace) {
   import conv._
   import runtimeTypes._
 
-  final val domainsDomain = UserType(Seq("izumi", "idealingua", "domains") ++ typespace.domain.id.pkg, typespace.domain.id.id.capitalize)
+  final val domainsDomain = UserType(Seq("izumi", "idealingua", "domains"), typespace.domain.id.id.capitalize)
   final val tDomain = conv.toScala(JavaType(domainsDomain))
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
@@ -53,15 +53,15 @@ class Translation(typespace: Typespace) {
 
     val exprs = index.map {
       case (k@EphemeralId(_: EnumId, _), v) =>
-        conv.toAst(k) -> q"${v.termBase}.getClass"
+        runtimeTypes.conv.toAst(k) -> q"${v.termBase}.getClass"
       case (k, v) =>
-        conv.toAst(k) -> q"classOf[${v.typeFull}]"
+        runtimeTypes.conv.toAst(k) -> q"classOf[${v.typeFull}]"
     }
 
     val types = exprs.map({ case (k, v) => q"$k -> $v" })
     val reverseTypes = exprs.map({ case (k, v) => q"$v -> $k" })
 
-    toSource(domainsDomain, ModuleId(domainsDomain.pkg, s"${typespace.domain.id.id}.scala"), Seq(
+    toSource(domainsDomain, ModuleId(domainsDomain.pkg, s"${domainsDomain.name}.scala"), Seq(
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
          ${conv.toImport}
 
@@ -508,7 +508,7 @@ class Translation(typespace: Typespace) {
     } else {
       s"""package ${pkg.mkString(".")}
          |
-         |import ${runtimeTypes.basePkg}._
+         |import _root_.${runtimeTypes.basePkg}._
          |
          |$code
        """.stripMargin

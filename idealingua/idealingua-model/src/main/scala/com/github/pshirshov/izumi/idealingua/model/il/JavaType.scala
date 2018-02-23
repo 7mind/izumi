@@ -10,6 +10,11 @@ case class JavaType(pkg: Package, name: String) {
     JavaType(pkg.init, pkg.last)
   }
 
+  def withRoot: JavaType = {
+    JavaType("_root_" +: pkg, name)
+  }
+
+
   def minimize(domainId: DomainId): JavaType = {
     val minimalPackageRef = PackageTools.minimize(pkg, domainId.toPackage)
     JavaType(minimalPackageRef, name)
