@@ -52,7 +52,7 @@ class ScalaTypeConverter(domain: DomainId) {
     }
   }
 
-  def toImport: Import = q"import ${toSelectTerm(JavaType(domain).parent)}._"
+  def toImport: Import = q"import ${toSelectTerm(JavaType(domain))}._"
 
   def toScala(id: TypeId): ScalaType = {
     id match {
