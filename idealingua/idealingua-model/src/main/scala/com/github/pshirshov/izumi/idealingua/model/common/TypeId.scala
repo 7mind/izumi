@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.common
 
-import com.github.pshirshov.izumi.idealingua.model.common.Primitive.{TInt32, TInt64, TString, prelude}
+import com.github.pshirshov.izumi.idealingua.model.common.Primitive.prelude
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 
 

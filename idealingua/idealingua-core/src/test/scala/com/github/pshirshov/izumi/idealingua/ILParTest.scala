@@ -9,7 +9,7 @@ import org.scalatest.WordSpec
 class ILParTest extends WordSpec {
   private def assertParses[T](p: Parser[T], str: String): T = {
     p.parse(str) match {
-      case Parsed.Success(v, i) =>
+      case Parsed.Success(v, _) =>
         v
       case Parsed.Failure(lp, idx, e) =>
         println(lp, idx, e, e.traced)
@@ -23,7 +23,6 @@ class ILParTest extends WordSpec {
     val rendered = new ILRenderer(parsed.domain).render()
     assert(rendered.nonEmpty)
     println(rendered)
-    rendered
   }
 
   "IL parser" should {

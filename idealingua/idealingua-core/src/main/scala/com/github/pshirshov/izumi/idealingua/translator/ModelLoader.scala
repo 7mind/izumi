@@ -11,13 +11,18 @@ import fastparse.core.{Parsed, Parser}
 
 
 class ModelLoader(source: Path) {
+  val parser = new ILParser()
+
+  val domainExt = ".domain"
+  val modelExt = ".model"
 
   def load(): Seq[DomainDefinition] = {
     import scala.collection.JavaConverters._
-    val parser = new ILParser()
 
-    val domainExt = ".domain"
-    val modelExt = ".model"
+    val file = source.toFile
+    if (!file.exists() || !file.isDirectory) {
+      return Seq.empty
+    }
 
     val files = java.nio.file.Files.walk(source).iterator().asScala
       .filter {
@@ -75,35 +80,6 @@ class ModelLoader(source: Path) {
         path -> r
     }
   }
-
-
-//  private def resolveIds(withIncludes: ParsedDomain): DomainDefinition = {
-////    withIncludes.domain.copy(
-////      types = resolveTypes(withIncludes.domain.id, withIncludes.domain.types)
-////      , services = resolveServices(withIncludes.domain.id, withIncludes.domain.services)
-////    )
-//  }
-//
-//  def resolveTypes(domainId: DomainId, types: Seq[FinalDefinition]): Seq[FinalDefinition] = {
-//    types.map {
-//      case v: Enumeration =>
-//        Enumeration(resolve(domainId, v.id), v.members)
-//      case v: Alias =>
-//        Enumeration(resolve(domainId, v.id), v.members)
-//
-//      case v: Identifier =>
-//      case v: Interface =>
-//      case v: DTO =>
-//    }
-//  }
-//
-//  def resolveServices(domainId: DomainId, services: Seq[Service]): Seq[Service] = {
-//    services
-//  }
-//
-//  def resolve[T <: TypeId](domainId: DomainId, typeId: T): T = {
-//
-//  }
 
   private def formatFailures[T](failures: Map[Path, Parsed[T, Char, String]]) = {
     failures.map(kv => s"${kv._1}: ${kv._2}").mkString("\n")
