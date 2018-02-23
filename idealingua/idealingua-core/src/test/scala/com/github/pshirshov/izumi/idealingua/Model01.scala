@@ -4,13 +4,13 @@ import com.github.pshirshov.izumi.idealingua.model.common.{Field, Generic, Primi
 import com.github.pshirshov.izumi.idealingua.model.il._
 
 object Model01 {
-  val userIdTypeId = model.common.UserType.parse("izumi.test.UserId").toAlias
-  val enumId = model.common.UserType.parse("izumi.test.AnEnum").toEnum
-  val testInterfaceId = model.common.UserType.parse("izumi.test.TestInterface").toInterface
+  val userIdTypeId = model.common.UserType.parse("izumi.test.domain01.UserId").toAlias
+  val enumId = model.common.UserType.parse("izumi.test.domain01.AnEnum").toEnum
+  val testInterfaceId = model.common.UserType.parse("izumi.test.domain01.TestInterface").toInterface
 
-  val testValIdentifier = model.common.UserType.parse("izumi.test.TestValIdentifer").toIdentifier
-  val testIdentifier = model.common.UserType.parse("izumi.test.TestIdentifer").toIdentifier
-  val serviceIdentifier = model.common.UserType.parse("izumi.test.UserService").toService
+  val testValIdentifier = model.common.UserType.parse("izumi.test.domain01.TestValIdentifer").toIdentifier
+  val testIdentifier = model.common.UserType.parse("izumi.test.domain01.TestIdentifer").toIdentifier
+  val serviceIdentifier = model.common.UserType.parse("izumi.test.domain01.UserService").toService
 
   val testInterfaceFields = Seq(
     Field(userIdTypeId, "userId")
@@ -23,7 +23,7 @@ object Model01 {
 
   val testValStructure = Seq(Field(userIdTypeId, "userId"))
   val testIdStructure = Seq(Field(userIdTypeId, "userId"), Field(Primitive.TString, "context"))
-  val testIdObject = UserType.parse("izumi.test.TestObject").toDTO
+  val testIdObject = UserType.parse("izumi.test.domain01.TestObject").toDTO
 
   val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain01"), Seq(
     FinalDefinition.Alias(userIdTypeId, Primitive.TString)
