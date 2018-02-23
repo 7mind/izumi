@@ -13,17 +13,28 @@ class ILParTest extends WordSpec {
       println(new ILParser().aliasBlock.parse("alias x = y"))
       println(new ILParser().enumBlock.parse("enum MyEnum {X Y Zz}"))
 
+      println(new ILParser().mixinBlock.parse("mixin Mixin {}"))
+      println(new ILParser().dtoBlock.parse("data Data {}"))
+      println(new ILParser().idBlock.parse("id Id {}"))
+      println(new ILParser().serviceBlock.parse("service Service {}"))
+
 
       val domaindef =
         """domain x.y.z
           |alias x = y
           |enum MyEnum {X Y Zz}
-        """.stripMargin
+          |mixin Mixin {}
+          |data Data {}
+          |id Id {}
+          |service Service {}
+          |""".stripMargin
+
       new ILParser().expr.parse(domaindef) match {
         case Parsed.Success(v, i) =>
           println(v)
         case Parsed.Failure(lp, idx, e) =>
-          println(lp, idx, e.traced.traceParsers)
+          println(lp, idx, e, e.traced)
+          println(e.traced.trace)
       }
     }
   }
