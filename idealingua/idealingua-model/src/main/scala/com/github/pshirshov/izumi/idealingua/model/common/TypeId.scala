@@ -2,8 +2,6 @@ package com.github.pshirshov.izumi.idealingua.model.common
 
 import com.github.pshirshov.izumi.idealingua.model.common.Primitive.prelude
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.il
-import com.github.pshirshov.izumi.idealingua.model.il.JavaType
 
 
 trait TypeId {

@@ -204,7 +204,7 @@ lazy val idealinguaModel = inIdealingua.as.module
 
 lazy val idealinguaCore = inIdealingua.as.module
   .depends(idealinguaModel)
-  .settings(libraryDependencies ++= Seq(T.scala_compiler, T.scala_library))
+  .settings(libraryDependencies ++= Seq(R.fastparse, T.scala_compiler, T.scala_library))
 
 
 lazy val sbtIzumi = inSbt.as

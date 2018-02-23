@@ -9,7 +9,7 @@ import org.scalatest.WordSpec
 
 
 class IDLTest extends WordSpec {
-  "IDL rendered" should {
+  "IDL renderer" should {
     "be able to produce scala source code" in {
       assert(compiles(Model01.domain))
     }

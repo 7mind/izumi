@@ -47,7 +47,7 @@ class ILRenderer(domain: DomainDefinition) {
          """.stripMargin
 
       case d: DTO =>
-        s"""dto ${render(d.id)} {
+        s"""data ${render(d.id)} {
            |${renderComposite(d.interfaces).shift(2)}
            |}
          """.stripMargin
