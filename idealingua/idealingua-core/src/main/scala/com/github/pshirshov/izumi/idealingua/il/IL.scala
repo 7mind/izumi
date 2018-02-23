@@ -9,6 +9,7 @@ object IL {
   case class ILDomainId(v: DomainId) extends Val
 
   case class ILService(v: Service) extends Val
+  case class ILInclude(i: String) extends Val
 
   case class ILDef(v: FinalDefinition) extends Val
 

@@ -47,6 +47,12 @@ class ILParTest extends WordSpec {
       val domaindef =
         """domain x.y.z
           |
+          |import "x.domain"
+          |import "y/x.domain"
+          |
+          |include "b/c/d.model"
+          |include "a.model"
+          |
           |alias x = y
           |
           |enum MyEnum {X Y Zz}
@@ -72,6 +78,13 @@ class ILParTest extends WordSpec {
           |""".stripMargin
 
       assertDomainParses(domaindef)
+
+      val domaindef1 =
+        """domain x.y.z
+          |
+          |alias x = y
+          |""".stripMargin
+      assertDomainParses(domaindef1)
     }
   }
 }
