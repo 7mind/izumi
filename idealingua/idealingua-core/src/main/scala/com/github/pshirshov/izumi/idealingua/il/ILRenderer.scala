@@ -111,7 +111,14 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def minimize(value: common.Package): common.Package = {
-    PackageTools.minimize(value, domain.id.toPackage)
+    val domainPkg = domain.id.toPackage
+    if (value == domainPkg) {
+      Seq.empty
+    } else if (value.nonEmpty && domainPkg.last == value.head) {
+      value.tail
+    } else {
+      value
+    }
   }
 
   def render(domainId: DomainId): String = {

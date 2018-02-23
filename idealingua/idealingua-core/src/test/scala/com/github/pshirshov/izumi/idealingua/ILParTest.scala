@@ -1,26 +1,47 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.il.{ILParser, ILRenderer}
+import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinition
 import fastparse.core.Parsed
 import org.scalatest.WordSpec
+import fastparse.all._
 
 
 class ILParTest extends WordSpec {
+  private def assertParses[T](p: Parser[T], str: String): T = {
+    p.parse(str) match {
+      case Parsed.Success(v, i) =>
+        v
+      case Parsed.Failure(lp, idx, e) =>
+        println(lp, idx, e, e.traced)
+        println(e.traced.trace)
+        throw new IllegalStateException()
+    }
+  }
+
+  private def assertDomainParses(str: String): Unit = {
+    val parsed = assertParses(new ILParser().fullDomainDef, str)
+    val rendered = new ILRenderer(parsed.domain).render()
+    assert(rendered.nonEmpty)
+    println(rendered)
+    rendered
+  }
+
   "IL parser" should {
     "parse domain definition" in {
-      println(new ILParser().identifier.parse("x.y.z"))
-      println(new ILParser().domainId.parse("domain x.y.z"))
-      println(new ILParser().field.parse("a: map"))
-      println(new ILParser().field.parse("a: map[str, str]"))
-      println(new ILParser().field.parse("a: map[str, set[x.Y]]"))
+      assertParses(new ILParser().identifier, "x.y.z")
+      assertParses(new ILParser().domainId, "domain x.y.z")
+      assertParses(new ILParser().field, "a: map")
+      assertParses(new ILParser().field, "a: map[str, str]")
+      assertParses(new ILParser().field, "a: map[str, set[x#Y]]")
 
-      println(new ILParser().aliasBlock.parse("alias x = y"))
-      println(new ILParser().enumBlock.parse("enum MyEnum {X Y Zz}"))
+      assertParses(new ILParser().aliasBlock, "alias x = y")
+      assertParses(new ILParser().enumBlock, "enum MyEnum {X Y Zz}")
 
-      println(new ILParser().mixinBlock.parse("mixin Mixin {}"))
-      println(new ILParser().dtoBlock.parse("data Data {}"))
-      println(new ILParser().idBlock.parse("id Id {}"))
-      println(new ILParser().serviceBlock.parse("service Service {}"))
+      assertParses(new ILParser().mixinBlock, "mixin Mixin {}")
+      assertParses(new ILParser().dtoBlock, "data Data {}")
+      assertParses(new ILParser().idBlock, "id Id {}")
+      assertParses(new ILParser().serviceBlock, "service Service {}")
 
 
       val domaindef =
@@ -33,7 +54,7 @@ class ILParTest extends WordSpec {
           |mixin Mixin {
           | + Mixin
           | a: B
-          | c: x.Y
+          | c: x#Y
           |}
           |
           |data Data {
@@ -43,21 +64,14 @@ class ILParTest extends WordSpec {
           |
           |id Id {
           |  a: B
-          |  b: map[str, set[x.Y]]
+          |  b: map[str, set[x#Y]]
           |}
           |service Service {
-          | def testMethod(Mixin1, c.d.Mixin2, x.y.Mixin3): (Mixin1, a.b.Mixin3)
+          | def testMethod(Mixin1, c.d#Mixin2, x.y#Mixin3, x.y.z#Mixin4, z#Mixin5): (Mixin1, a.b#Mixin3)
           |}
           |""".stripMargin
 
-      new ILParser().fullDomainDef.parse(domaindef) match {
-        case Parsed.Success(v, i) =>
-          //println(v)
-          println(new ILRenderer(v).render())
-        case Parsed.Failure(lp, idx, e) =>
-          println(lp, idx, e, e.traced)
-          println(e.traced.trace)
-      }
+      assertDomainParses(domaindef)
     }
   }
 }

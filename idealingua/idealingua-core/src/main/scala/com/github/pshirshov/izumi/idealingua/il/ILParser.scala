@@ -1,56 +1,27 @@
 package com.github.pshirshov.izumi.idealingua.il
 
-import com.github.pshirshov.izumi.idealingua.il.IL.ILDomainId
+import com.github.pshirshov.izumi.idealingua.il.IL.{ILDef, ILService}
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.il._
-import fastparse.all._
 import fastparse.CharPredicates._
+import fastparse.all._
 import fastparse.{all, core}
 
-//case class NamedFunction[T, V](f: T => V, name: String) extends (T => V){
-//  def apply(t: T) = f(t)
-//  override def toString() = name
-//
-//}
 
-object IL {
+case class ParsedDomain(domain: DomainDefinition) {
+  def extend(defs: Seq[IL.Val]): ParsedDomain = {
+    val types = defs.collect({ case d: ILDef => d.v })
+    val services = defs.collect({ case d: ILService => d.v })
 
-  sealed trait Val
+    val extendedDomain = domain.copy(
+      types = domain.types ++ types
+      , services = domain.services ++ services
+    )
 
-  case class ILDomainId(v: DomainId) extends Val
-
-  case class ILService(v: Service) extends Val
-
-  case class ILDef(v: FinalDefinition) extends Val
-
+    this.copy(domain = extendedDomain)
+  }
 }
 
-case class AbstractId(pkg: Seq[String], id: String) {
-  def toDomainId: DomainId = DomainId(pkg, id)
-
-  def toEnumId: EnumId = EnumId(pkg, id)
-
-  def toAliasId: AliasId = AliasId(pkg, id)
-
-  def toIdId: IdentifierId = IdentifierId(pkg, id)
-
-  def toMixinId: InterfaceId = InterfaceId(pkg, id)
-
-  def toDataId: DTOId = DTOId(pkg, id)
-
-  def toTypeId: TypeId = UserType(pkg, id)
-
-  def toServiceId: ServiceId = ServiceId(pkg, id)
-}
-
-object AbstractId {
-  def apply(name: String): AbstractId = new AbstractId(Seq.empty, name)
-
-  def apply(pkg: Seq[String]): AbstractId = new AbstractId(pkg.init, pkg.last)
-}
-
-//noinspection TypeAnnotation
 class ILParser {
 
   import IL._
@@ -75,10 +46,13 @@ class ILParser {
   final val domain = W("domain")
   final val defm = W("def")
 
-  final val identifier = P(symbol.rep(sep = ".")).map(v => AbstractId(v))
+  final val pkgIdentifier = P(symbol.rep(sep = ".")) //.map(v => AbstractId(v))
+  final val fqIdentifier = P(pkgIdentifier ~ "#" ~/ symbol).map(v => AbstractId(v._1, v._2))
+  final val shortIdentifier = P(symbol).map(v => AbstractId(v))
+  final val identifier = P(fqIdentifier | shortIdentifier)
 
-  final val domainId = P(domain ~/ identifier)
-    .map(v => ILDomainId(v.toDomainId))
+  final val domainId = P(domain ~/ pkgIdentifier)
+    .map(v => ILDomainId(DomainId(v.init, v.last)))
 
   def toScalar(tid: TypeId): Scalar = {
     tid.name match {
@@ -154,48 +128,8 @@ class ILParser {
 
   final val modelDef = P(empty ~ anyBlock.rep(sep = empty) ~ empty ~ End)
 
-  final val fullDomainDef = P(domainId ~ Newline ~ empty ~ anyBlock.rep(sep = empty) ~ empty ~ End).map {
-    v =>
-      val types = v._2.collect({ case d: ILDef => d.v })
-      val services = v._2.collect({ case d: ILService => d.v })
-      DomainDefinition(v._1.v, types, services)
+  final val fullDomainDef = P(domainId ~ Newline ~ modelDef).map {
+    case (did, defs) =>
+      ParsedDomain(DomainDefinition(did.v, Seq.empty, Seq.empty)).extend(defs)
   }
-
-  //final val symbol = P()
-  //
-  //final val StringChars = NamedFunction(!"\"\\".contains(_: Char), "StringChars")
-  //
-  //final val space         = P( CharsWhileIn(" \r\n").? )
-  //final val digits        = P( CharsWhileIn("0123456789"))
-  //final val exponent      = P( CharIn("eE") ~ CharIn("+-").? ~ digits )
-  //final val fractional    = P( "." ~ digits )
-  //final val integral      = P( "0" | CharIn('1' to '9') ~ digits.? )
-  //
-  //final val number = P( CharIn("+-").? ~ integral ~ fractional.? ~ exponent.? ).!.map(
-  //    x => Js.Num(x.toDouble)
-  //  )
-  //
-  //final val `null`        = P( "null" ).map(_ => Js.Null)
-  //final val `false`       = P( "false" ).map(_ => Js.False)
-  //final val `true`        = P( "true" ).map(_ => Js.True)
-  //
-  //final val hexDigit      = P( CharIn('0'to'9', 'a'to'f', 'A'to'F') )
-  //final val unicodeEscape = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
-  //final val escape        = P( "\\" ~ (CharIn("\"/\\bfnrt") | unicodeEscape) )
-  //
-  //final val strChars = P( CharsWhile(StringChars) )
-  //final val string =
-  //    P( space ~ "\"" ~/ (strChars | escape).rep.! ~ "\"").map(Js.Str)
-  //
-  //final val array =
-  //    P( "[" ~/ jsonExpr.rep(sep=",".~/) ~ space ~ "]").map(Js.Arr(_:_*))
-  //
-  //final val pair = P( string.map(_.value) ~/ ":" ~/ jsonExpr )
-  //
-  //final val obj =
-  //    P( "{" ~/ pair.rep(sep=",".~/) ~ space ~ "}").map(Js.Obj(_:_*))
-  //
-  //final val jsonExpr: P[Js.Val] = P(
-  //    space ~ (obj | array | string | `true` | `false` | `null` | number) ~ space
-  //  )
 }
