@@ -1,52 +1,74 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
-import java.nio.file.Path
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path, Paths}
 
+import com.github.pshirshov.izumi.idealingua.il.{IL, ILParser, ParsedDomain}
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FinalDefinition}
+import fastparse.core.{Parsed, Parser}
+
 
 class ModelLoader(source: Path) {
+
   def load(): Seq[DomainDefinition] = {
-    Seq(ModelLoader.DummyModel.domain)
+    import scala.collection.JavaConverters._
+    val parser = new ILParser()
+
+    val domainExt = ".domain"
+    val modelExt = ".model"
+
+    val files = java.nio.file.Files.walk(source).iterator().asScala
+      .filter {
+        f => Files.isRegularFile(f) && (f.getFileName.toString.endsWith(modelExt) || f.getFileName.toString.endsWith(domainExt))
+      }
+      .map(f => source.relativize(f) -> new String(Files.readAllBytes(f), StandardCharsets.UTF_8))
+      .toMap
+
+    val domains = collectSuccess(files, domainExt, parser.fullDomainDef)
+    val models = collectSuccess(files, modelExt, parser.modelDef)
+
+    domains.map {
+      case (path, domain) =>
+        postprocess(path, domain, domains, models)
+    }.toSeq
   }
-}
-
-object ModelLoader {
-  object DummyModel {
-    val if1Id = UserType.parse("izumi.test.TestInterface1").toInterface
-    val if2Id = UserType.parse("izumi.test.TestInterface2").toInterface
-    val if3Id = UserType.parse("izumi.test.TestInterface3").toInterface
-    val dto1Id = UserType.parse("izumi.test.DTO1").toDTO
-
-    val if1 = FinalDefinition.Interface(if1Id, Seq(
-      Field(Primitive.TInt32, "if1Field_overriden")
-      , Field(Primitive.TInt32, "if1Field_inherited")
-      , Field(Primitive.TInt64, "sameField")
-      , Field(Primitive.TInt64, "sameEverywhereField")
-    ), Seq.empty)
-
-    val if2 = FinalDefinition.Interface(if2Id, Seq(
-      Field(Primitive.TInt64, "if2Field")
-      , Field(Primitive.TInt64, "sameField")
-      , Field(Primitive.TInt64, "sameEverywhereField")
-    ), Seq.empty)
-
-    val if3 = FinalDefinition.Interface(if3Id, Seq(
-      Field(Primitive.TInt32, "if1Field_overriden")
-      , Field(Primitive.TInt64, "if3Field")
-      , Field(Primitive.TInt64, "sameEverywhereField")
-    ), Seq(if1Id))
 
 
-    val dto1 = FinalDefinition.DTO(
-      dto1Id
-      , Seq(if2Id, if3Id))
+  private def postprocess(path: Path, domain: ParsedDomain, domains: Map[Path, ParsedDomain], models: Map[Path, Seq[IL.Val]]): DomainDefinition = {
+    val withIncludes = domain.includes.foldLeft(domain) {
+      case (d, i) =>
+        d.extend(models(Paths.get(i)))
+    }
+    resolveIds(withIncludes)
+  }
 
-    val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domainDummy"), Seq(
-      if1
-      , if2
-      , if3
-      , dto1
-    ), Seq.empty)
+  def resolveIds(withIncludes: ParsedDomain): DomainDefinition = {
+    withIncludes.domain
+  }
+
+
+  private def collectSuccess[T](files: Map[Path, String], ext: TypeName, p: Parser[T, Char, String]): Map[Path, T] = {
+    val domains = files.filter(_._1.getFileName.toString.endsWith(ext))
+      .mapValues(s => {
+        p.parse(s)
+      })
+      .groupBy(_._2.getClass)
+
+    val failures = domains.getOrElse(classOf[Parsed.Failure[Char, String]], Map.empty)
+    if (failures.nonEmpty) {
+      throw new IDLException(s"Failed to parse definitions: ${formatFailures(failures)}")
+    }
+
+    val success = domains.getOrElse(classOf[Parsed.Success[T, Char, String]], Map.empty)
+    success.collect {
+      case (path, Parsed.Success(r, _)) =>
+        path -> r
+    }
+  }
+
+  private def formatFailures[T](failures: Map[Path, Parsed[T, Char, String]]) = {
+    failures.map(kv => s"${kv._1}: ${kv._2}").mkString("\n")
   }
 }

@@ -34,7 +34,7 @@ class ILParser {
     final val `import` = kw("import")
   }
 
-  final val symbol = P(CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c)).rep).!
+  final val symbol = P(CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c) | c == '_').rep).!
 
 
   final val pkgIdentifier = P(symbol.rep(sep = ".")) //.map(v => AbstractId(v))

@@ -1,10 +1,9 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.il.{ILParser, ILRenderer}
-import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinition
+import fastparse.all._
 import fastparse.core.Parsed
 import org.scalatest.WordSpec
-import fastparse.all._
 
 
 class ILParTest extends WordSpec {

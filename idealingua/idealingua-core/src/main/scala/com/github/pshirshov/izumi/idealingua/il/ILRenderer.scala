@@ -41,7 +41,7 @@ class ILRenderer(domain: DomainDefinition) {
 
       case d: Interface =>
         val body = Seq(renderComposite(d.interfaces), renderAggregate(d.fields)).filterNot(_.isEmpty).mkString("\n\n")
-        s"""trait ${render(d.id)} {
+        s"""mixin ${render(d.id)} {
            |${body.shift(2)}
            |}
          """.stripMargin
