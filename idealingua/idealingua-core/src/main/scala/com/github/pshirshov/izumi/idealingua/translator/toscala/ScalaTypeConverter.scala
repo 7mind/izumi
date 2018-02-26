@@ -62,7 +62,7 @@ class ScalaTypeConverter(domain: DomainId) {
       case t: Generic =>
         toScala(toGeneric(t), t.args)
 
-      case t if t.isBuiltin =>
+      case t: Primitive =>
         toScala(toPrimitive(t))
 
       case _ =>
@@ -123,36 +123,32 @@ class ScalaTypeConverter(domain: DomainId) {
     )
   }
 
-  private def toPrimitive(id: TypeId): JavaType = {
-    id.name match {
-      case n if n == Primitive.TString.name =>
-        il.JavaType(Seq.empty, "String")
 
-      case n if n == Primitive.TInt8.name =>
-        il.JavaType(Seq.empty, "Byte")
-      case n if n == Primitive.TInt16.name =>
-        il.JavaType(Seq.empty, "Short")
-      case n if n == Primitive.TInt32.name =>
-        il.JavaType(Seq.empty, "Int")
-      case n if n == Primitive.TInt64.name =>
-        il.JavaType(Seq.empty, "Long")
-
-      case n if n == Primitive.TFloat.name =>
-        il.JavaType(Seq.empty, "Float")
-      case n if n == Primitive.TDouble.name =>
-        il.JavaType(Seq.empty, "Double")
-
-      case n if n == Primitive.TUUID.name =>
-        il.JavaType.get[UUID]
-      case n if n == Primitive.TTsTz.name =>
-        il.JavaType.get[ZonedDateTime]
-      case n if n == Primitive.TTs.name =>
-        il.JavaType.get[LocalDateTime]
-      case n if n == Primitive.TTime.name =>
-        il.JavaType.get[LocalTime]
-      case n if n == Primitive.TDate.name =>
-        il.JavaType.get[LocalDate]
-    }
+  private def toPrimitive(id: Primitive): JavaType = id match {
+    case Primitive.TString =>
+      il.JavaType(Seq.empty, "String")
+    case Primitive.TInt8 =>
+      il.JavaType(Seq.empty, "Byte")
+    case Primitive.TInt16 =>
+      il.JavaType(Seq.empty, "Short")
+    case Primitive.TInt32 =>
+      il.JavaType(Seq.empty, "Int")
+    case Primitive.TInt64 =>
+      il.JavaType(Seq.empty, "Long")
+    case Primitive.TFloat =>
+      il.JavaType(Seq.empty, "Float")
+    case Primitive.TDouble =>
+      il.JavaType(Seq.empty, "Double")
+    case Primitive.TUUID =>
+      il.JavaType.get[UUID]
+    case Primitive.TTsTz =>
+      il.JavaType.get[ZonedDateTime]
+    case Primitive.TTs =>
+      il.JavaType.get[LocalDateTime]
+    case Primitive.TTime =>
+      il.JavaType.get[LocalTime]
+    case Primitive.TDate =>
+      il.JavaType.get[LocalDate]
   }
 
   private def toGeneric(typeId: Generic): JavaType = {

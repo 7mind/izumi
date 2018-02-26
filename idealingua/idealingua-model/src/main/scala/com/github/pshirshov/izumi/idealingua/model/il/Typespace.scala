@@ -1,12 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
+import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
-
-
 
 
 class Typespace(val domain: DomainDefinition) {
@@ -22,7 +21,7 @@ class Typespace(val domain: DomainDefinition) {
         val outId = EphemeralId(service.id, s"Out${m.name.capitalize}")
 
         Seq(
-          inId ->  m.signature.input
+          inId -> m.signature.input
           , outId -> m.signature.output
         )
     }
@@ -32,7 +31,7 @@ class Typespace(val domain: DomainDefinition) {
     typespace.keys
     , serviceEphemerals.keys
     , domain.services.map(_.id)
-    , domain.types.collect({case t: Enumeration => t}).flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
+    , domain.types.collect({ case t: Enumeration => t }).flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
   ).flatten
 
   def verify(): Unit = {
@@ -41,11 +40,11 @@ class Typespace(val domain: DomainDefinition) {
       case _: Enumeration =>
         Seq.empty
       case d: Interface =>
-        d.interfaces.map(i => Dependency.Interface(d.id, i)) ++ d.fields.map(f => Dependency.Field(d.id, f.typeId))
+        d.interfaces.map(i => Dependency.Interface(d.id, i)) ++ d.fields.map(f => Dependency.Field(d.id, f))
       case d: DTO =>
         d.interfaces.map(i => Dependency.Interface(d.id, i))
       case d: Identifier =>
-        d.fields.map(f => Dependency.Field(d.id, f.typeId))
+        d.fields.map(f => Dependency.Field(d.id, f))
       case d: Alias =>
         Seq(Dependency.Alias(d.id, d.target))
     }
@@ -56,24 +55,24 @@ class Typespace(val domain: DomainDefinition) {
     } yield {
       method match {
         case m: RPCMethod =>
-          (m.signature.input ++ m.signature.output).map(i => Dependency.Field(service.id, i))
+          (m.signature.input ++ m.signature.output).map(i => Dependency.Parameter(service.id, i))
       }
     }
 
     val allDependencies = typeDependencies ++ serviceDependencies.flatten
 
     val missingTypes = allDependencies
-      .filterNot(_.value.isBuiltin)
-      .filterNot(d => typespace.contains(toKey(d.value)))
+      .filterNot(_.typeId.isInstanceOf[Builtin])
+      .filterNot(d => typespace.contains(toKey(d.typeId)))
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
     }
 
-//    val martians = all.filterNot(domain.id.contains)
-//    if (martians.nonEmpty) {
-//      throw new IDLException(s"Martian types: $martians")
-//    }
+    //    val martians = all.filterNot(domain.id.contains)
+    //    if (martians.nonEmpty) {
+    //      throw new IDLException(s"Martian types: $martians")
+    //    }
   }
 
   def toKey(typeId: TypeId): UserType = {
@@ -97,6 +96,7 @@ class Typespace(val domain: DomainDefinition) {
   def apply(id: TypeId): FinalDefinition = typespace.apply(toKey(id))
 
   def apply(id: InterfaceId): Interface = typespace.apply(toKey(id)).asInstanceOf[Interface]
+
   def apply(id: EphemeralId): Composite = serviceEphemerals.apply(id)
 
   def apply(id: DTOId): DTO = typespace.apply(toKey(id)).asInstanceOf[DTO]
@@ -207,16 +207,30 @@ object Typespace {
   trait Dependency {
     def definedIn: TypeId
 
-    def value: TypeId
+    def typeId: TypeId
   }
 
   object Dependency {
 
-    case class Field(definedIn: TypeId, value: TypeId) extends Dependency
+    case class Field(definedIn: TypeId, tpe: common.Field) extends Dependency {
 
-    case class Interface(definedIn: TypeId, value: InterfaceId) extends Dependency
+      override def typeId: TypeId = tpe.typeId
 
-    case class Alias(definedIn: TypeId, value: TypeId) extends Dependency
+      override def toString: TypeName = s"[field $definedIn::${tpe.name} :$typeId]"
+    }
+
+    case class Parameter(definedIn: TypeId, typeId: TypeId) extends Dependency {
+      override def toString: TypeName = s"[param $definedIn::$typeId]"
+    }
+
+
+    case class Interface(definedIn: TypeId, typeId: InterfaceId) extends Dependency {
+      override def toString: TypeName = s"[interface $definedIn::$typeId]"
+    }
+
+    case class Alias(definedIn: TypeId, typeId: TypeId) extends Dependency {
+      override def toString: TypeName = s"[alias $definedIn::$typeId]"
+    }
 
   }
 

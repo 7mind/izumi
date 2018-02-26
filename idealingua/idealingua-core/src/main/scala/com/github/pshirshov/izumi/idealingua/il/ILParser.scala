@@ -37,33 +37,17 @@ class ILParser {
 
 
   final val pkgIdentifier = P(symbol.rep(sep = ".")) //.map(v => AbstractId(v))
-  final val fqIdentifier = P(pkgIdentifier ~ "#" ~/ symbol).map(v => AbstractId(v._1, v._2))
-  final val shortIdentifier = P(symbol).map(v => AbstractId(v))
+  final val fqIdentifier = P(pkgIdentifier ~ "#" ~/ symbol).map(v => ILParsedId(v._1, v._2))
+  final val shortIdentifier = P(symbol).map(v => ILParsedId(v))
   final val identifier = P(fqIdentifier | shortIdentifier)
 
   final val domainId = P(kw.domain ~/ pkgIdentifier)
     .map(v => ILDomainId(DomainId(v.init, v.last)))
 
-  def toScalar(tid: TypeId): Scalar = {
-    val asAbstract = AbstractId(tid.pkg, tid.name).toIdId
+  final val fulltype: all.Parser[TypeId] = P(wso ~ identifier ~ wso ~ generic.rep(min = 0, max = 1) ~ wso)
+    .map(tp => tp._1.toGeneric(tp._2))
 
-    if (tid.pkg.isEmpty) {
-      Primitive.mapping.getOrElse(tid.name, asAbstract)
-    } else {
-      asAbstract
-    }
-  }
 
-  final val fulltype: all.Parser[TypeId] = P(wso ~ identifier ~ wso ~ generic.rep(min = 0, max = 1) ~ wso).map {
-    case (tid, params) if params.isEmpty =>
-      tid.toTypeId
-    case (tid, params) if tid.id == "set" && tid.pkg.isEmpty =>
-      Generic.TSet(params.flatten.head)
-    case (tid, params) if tid.id == "list" && tid.pkg.isEmpty =>
-      Generic.TList(params.flatten.head)
-    case (tid, params) if tid.id == "map" && tid.pkg.isEmpty =>
-      Generic.TMap(toScalar(params.flatten.head), params.flatten.last)
-  }
 
   final def generic: all.Parser[Seq[TypeId]] = P("[" ~/ wso ~ fulltype.rep(sep = ",") ~ wso ~ "]")
 
@@ -91,22 +75,22 @@ class ILParser {
   final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = Newline))
 
   final val enumBlock = P(kw.enum ~/ symbol ~ wso ~ "{" ~ (empty ~ symbol ~ empty).rep(1) ~ "}")
-    .map(v => ILDef(FinalDefinition.Enumeration(AbstractId(v._1).toEnumId, v._2.toList)))
+    .map(v => ILDef(FinalDefinition.Enumeration(ILParsedId(v._1).toEnumId, v._2.toList)))
 
   final val aliasBlock = P(kw.alias ~/ symbol ~ wso ~ "=" ~ wsm ~ identifier)
-    .map(v => ILDef(FinalDefinition.Alias(AbstractId(v._1).toAliasId, v._2.toTypeId)))
+    .map(v => ILDef(FinalDefinition.Alias(ILParsedId(v._1).toAliasId, v._2.toTypeId)))
 
   final val idBlock = P(kw.id ~/ symbol ~ wso ~ "{" ~ (empty ~ aggregate ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.Identifier(AbstractId(v._1).toIdId, v._2)))
+    .map(v => ILDef(FinalDefinition.Identifier(ILParsedId(v._1).toIdId, v._2)))
 
   final val mixinBlock = P(kw.mixin ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ aggregate ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.Interface(AbstractId(v._1).toMixinId, v._2._2, v._2._1.map(_.toMixinId))))
+    .map(v => ILDef(FinalDefinition.Interface(ILParsedId(v._1).toMixinId, v._2._2, v._2._1.map(_.toMixinId))))
 
   final val dtoBlock = P(kw.data ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.DTO(AbstractId(v._1).toDataId, v._2.map(_.toMixinId))))
+    .map(v => ILDef(FinalDefinition.DTO(ILParsedId(v._1).toDataId, v._2.map(_.toMixinId))))
 
   final val serviceBlock = P(kw.service ~/ symbol ~ wso ~ "{" ~ (empty ~ methods ~ empty) ~ "}")
-    .map(v => ILService(Service(AbstractId(v._1).toServiceId, v._2)))
+    .map(v => ILService(Service(ILParsedId(v._1).toServiceId, v._2)))
 
   final val includeBlock = P(kw.include ~/ wso ~ "\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
     .map(v => ILInclude(v))
