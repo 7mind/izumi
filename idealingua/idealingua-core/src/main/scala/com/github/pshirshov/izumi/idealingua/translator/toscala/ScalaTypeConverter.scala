@@ -1,5 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZonedDateTime}
+import java.util.UUID
+
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -124,10 +127,31 @@ class ScalaTypeConverter(domain: DomainId) {
     id.name match {
       case n if n == Primitive.TString.name =>
         il.JavaType(Seq.empty, "String")
+
+      case n if n == Primitive.TInt8.name =>
+        il.JavaType(Seq.empty, "Byte")
+      case n if n == Primitive.TInt16.name =>
+        il.JavaType(Seq.empty, "Short")
       case n if n == Primitive.TInt32.name =>
         il.JavaType(Seq.empty, "Int")
       case n if n == Primitive.TInt64.name =>
         il.JavaType(Seq.empty, "Long")
+
+      case n if n == Primitive.TFloat.name =>
+        il.JavaType(Seq.empty, "Float")
+      case n if n == Primitive.TDouble.name =>
+        il.JavaType(Seq.empty, "Double")
+
+      case n if n == Primitive.TUUID.name =>
+        il.JavaType.get[UUID]
+      case n if n == Primitive.TTsTz.name =>
+        il.JavaType.get[ZonedDateTime]
+      case n if n == Primitive.TTs.name =>
+        il.JavaType.get[LocalDateTime]
+      case n if n == Primitive.TTime.name =>
+        il.JavaType.get[LocalTime]
+      case n if n == Primitive.TDate.name =>
+        il.JavaType.get[LocalDate]
     }
   }
 

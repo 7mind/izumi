@@ -9,7 +9,7 @@ trait TypeId {
 
   def name: TypeName
 
-  def isBuiltin: Boolean = pkg.isEmpty && (Primitive.all.contains(name) || Generic.all.contains(name))
+  def isBuiltin: Boolean = pkg.isEmpty && (Primitive.mapping.contains(name) || Generic.all.contains(name))
 
   override def toString: TypeName = s"${getClass.getSimpleName}:${pkg.mkString(".")}#$name"
 }
@@ -34,6 +34,7 @@ case class UserType(pkg: Package, name: TypeName) extends TypeId {
 
 object UserType {
   def apply(id: TypeId): UserType = new UserType(id.pkg, id.name)
+
   def parse(s: String): UserType = {
     val parts = s.split('.')
     UserType(parts.toSeq.init, parts.last)
@@ -74,6 +75,18 @@ object Primitive {
     override def name: TypeName = "str"
   }
 
+  case object TInt8 extends Primitive {
+    override def pkg: Package = prelude
+
+    override def name: TypeName = "i08"
+  }
+
+  case object TInt16 extends Primitive {
+    override def pkg: Package = prelude
+
+    override def name: TypeName = "i16"
+  }
+
   case object TInt32 extends Primitive {
     override def pkg: Package = prelude
 
@@ -86,7 +99,67 @@ object Primitive {
     override def name: TypeName = "i64"
   }
 
-  final val all = Set(TString, TInt32, TInt64).map(_.name)
+  case object TFloat extends Primitive {
+    override def pkg: Package = prelude
+
+    override def name: TypeName = "flt"
+  }
+
+  case object TDouble extends Primitive {
+    override def pkg: Package = prelude
+
+    override def name: TypeName = "dbl"
+  }
+
+  case object TUUID extends Primitive {
+    override def pkg: Package = prelude
+
+    override def name: TypeName = "uid"
+  }
+
+  case object TTs extends Primitive {
+    override def pkg: Package = prelude
+
+    override def name: TypeName = "tsl"
+  }
+
+
+  case object TTsTz extends Primitive {
+    override def pkg: Package = prelude
+
+    override def name: TypeName = "tsz"
+  }
+
+  case object TTime extends Primitive {
+    override def pkg: Package = prelude
+
+    override def name: TypeName = "time"
+  }
+
+  case object TDate extends Primitive {
+    override def pkg: Package = prelude
+
+    override def name: TypeName = "date"
+  }
+
+
+  final val mapping = Set(
+    TString
+    , TInt8
+    , TInt16
+    , TInt32
+    , TInt64
+    , TDouble
+    , TFloat
+    , TUUID
+    , TTime
+    , TDate
+    , TTsTz
+    , TTs
+    ,
+  )
+    .map(tpe => tpe.name -> tpe)
+    .toMap
 }
 
 trait Generic extends TypeId {

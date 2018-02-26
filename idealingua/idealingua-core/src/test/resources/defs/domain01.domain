@@ -23,6 +23,25 @@ data TestObject {
   + TestInterface
 }
 
+mixin AllTypes {
+  string  : str
+  int8    : i08
+  int16   : i16
+  int32   : i32
+  int64   : i64
+  float   : flt
+  double  : dbl
+  uuid    : uid
+  ts      : tsz
+  tslocal : tsl
+  time    : time
+  date    : date
+}
+
+data AllTypesObject {
+  + AllTypes
+}
+
 service UserService {
   def createUser(TestInterface): (TestInterface)
 }

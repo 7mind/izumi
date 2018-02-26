@@ -35,13 +35,13 @@ class ModelLoader(source: Path) {
     val models = collectSuccess(files, modelExt, parser.modelDef)
 
     domains.map {
-      case (path, domain) =>
-        postprocess(path, domain, domains, models)
+      case (_, domain) =>
+        postprocess(domain, domains, models)
     }.toSeq
   }
 
 
-  private def postprocess(path: Path, domain: ParsedDomain, domains: Map[Path, ParsedDomain], models: Map[Path, Seq[IL.Val]]): DomainDefinition = {
+  private def postprocess(domain: ParsedDomain, domains: Map[Path, ParsedDomain], models: Map[Path, Seq[IL.Val]]): DomainDefinition = {
     val withIncludes = domain.includes.foldLeft(domain) {
       case (d, i) =>
         d.extend(models(Paths.get(i)))
@@ -52,7 +52,7 @@ class ModelLoader(source: Path) {
       .map {
         p =>
           val d = domains(p)
-          d.domain.id -> postprocess(p, d, domains, models)
+          d.domain.id -> postprocess(d, domains, models)
       }
       .toMap
 

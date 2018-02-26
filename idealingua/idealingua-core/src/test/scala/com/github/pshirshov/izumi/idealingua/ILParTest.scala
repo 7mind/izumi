@@ -12,9 +12,7 @@ class ILParTest extends WordSpec {
       case Parsed.Success(v, _) =>
         v
       case Parsed.Failure(lp, idx, e) =>
-        println(lp, idx, e, e.traced)
-        println(e.traced.trace)
-        throw new IllegalStateException()
+        throw new IllegalStateException(s"Parsing failed: $lp, $idx, $e, ${e.traced}, ${e.traced.trace}")
     }
   }
 

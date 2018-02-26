@@ -45,15 +45,12 @@ class ILParser {
     .map(v => ILDomainId(DomainId(v.init, v.last)))
 
   def toScalar(tid: TypeId): Scalar = {
-    tid.name match {
-      case "i32" if tid.pkg.isEmpty =>
-        Primitive.TInt32
-      case "i64" if tid.pkg.isEmpty =>
-        Primitive.TInt64
-      case "str" if tid.pkg.isEmpty =>
-        Primitive.TString
-      case _ =>
-        AbstractId(tid.pkg, tid.name).toIdId
+    val asAbstract = AbstractId(tid.pkg, tid.name).toIdId
+
+    if (tid.pkg.isEmpty) {
+      Primitive.mapping.getOrElse(tid.name, asAbstract)
+    } else {
+      asAbstract
     }
   }
 
