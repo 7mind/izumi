@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 
 
 class Typespace(val domain: DomainDefinition) {
@@ -34,9 +35,8 @@ class Typespace(val domain: DomainDefinition) {
     , domain.types.collect({ case t: Enumeration => t }).flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
   ).flatten
 
-  def verify(): Unit = {
-    import Typespace._
-    val typeDependencies = domain.types.flatMap {
+  def extractDependencies(definition: FinalDefinition): Seq[Dependency] = {
+    definition match {
       case _: Enumeration =>
         Seq.empty
       case d: Interface =>
@@ -45,9 +45,16 @@ class Typespace(val domain: DomainDefinition) {
         d.interfaces.map(i => Dependency.Interface(d.id, i))
       case d: Identifier =>
         d.fields.map(f => Dependency.Field(d.id, f))
+      case d: Adt =>
+        d.alternatives.map(apply).flatMap(extractDependencies)
       case d: Alias =>
         Seq(Dependency.Alias(d.id, d.target))
     }
+  }
+
+  def verify(): Unit = {
+    import Typespace._
+    val typeDependencies = domain.types.flatMap(extractDependencies)
 
     val serviceDependencies = for {
       service <- domain.services
@@ -140,11 +147,14 @@ class Typespace(val domain: DomainDefinition) {
       case t: Interface =>
         val superFields = enumFields(t.interfaces)
           .map(_.copy(definedBy = t.id)) // in fact super field is defined by this
-
         val thisFields = toExtendedFields(t.fields, t.id)
         superFields ++ thisFields
+
       case t: DTO =>
         enumFields(t.interfaces)
+
+      case t: Adt =>
+        t.alternatives.map(apply).flatMap(enumFields)
 
       case t: Identifier =>
         toExtendedFields(t.fields, t.id)
@@ -171,34 +181,37 @@ class Typespace(val domain: DomainDefinition) {
   //    enumFields(defn).map(_.field)
   //  }
 
-  // TODO: do we need this?
-  def explode(defn: Field): List[TrivialField] = {
-    defn.typeId match {
-      case t: Primitive =>
-        List(TrivialField(t, defn.name))
-      case t: UserType =>
-        explode(typespace(t))
-    }
-  }
-
-  def explode(defn: FinalDefinition): List[TrivialField] = {
-    defn match {
-      case t: Interface =>
-        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList ++ t.fields.flatMap(explode).toList
-
-      case t: DTO =>
-        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList
-
-      case t: Identifier =>
-        t.fields.flatMap(explode).toList
-
-      case _: Alias =>
-        List()
-
-      case _: Enumeration =>
-        List()
-    }
-  }
+//  // TODO: do we need this?
+//  def explode(defn: Field): List[TrivialField] = {
+//    defn.typeId match {
+//      case t: Primitive =>
+//        List(TrivialField(t, defn.name))
+//      case t: UserType =>
+//        explode(typespace(t))
+//    }
+//  }
+//
+//  def explode(defn: FinalDefinition): List[TrivialField] = {
+//    defn match {
+//      case t: Interface =>
+//        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList ++ t.fields.flatMap(explode).toList
+//
+//      case t: Adt =>
+//        t.alternatives.map(apply).flatMap(explode).toList
+//
+//      case t: DTO =>
+//        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList
+//
+//      case t: Identifier =>
+//        t.fields.flatMap(explode).toList
+//
+//      case _: Alias =>
+//        List()
+//
+//      case _: Enumeration =>
+//        List()
+//    }
+//  }
 
 }
 

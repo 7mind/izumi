@@ -24,6 +24,12 @@ class ILRenderer(domain: DomainDefinition) {
 
   def render(tpe: FinalDefinition): String = {
     tpe match {
+      case d: Adt =>
+        s"""adt ${render(d.id)} {
+           |${d.alternatives.map(render).mkString("\n").shift(2)}
+           |}
+         """.stripMargin
+
       case d: Enumeration =>
         s"""enum ${render(d.id)} {
            |${d.members.map(renderString).mkString("\n").shift(2)}

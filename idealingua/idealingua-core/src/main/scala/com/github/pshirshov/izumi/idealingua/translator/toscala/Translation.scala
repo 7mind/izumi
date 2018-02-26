@@ -82,19 +82,18 @@ class Translation(typespace: Typespace) {
       case a: Alias =>
         packageObjects.getOrElseUpdate(toModuleId(a), mutable.ArrayBuffer()) ++= renderAlias(a)
         Seq()
-
       case i: Enumeration =>
         renderEnumeration(i)
-
       case i: Identifier =>
         renderIdentifier(i)
-
       case i: Interface =>
         renderInterface(i)
-
       case d: DTO =>
         renderDto(d)
+      case d: Adt =>
+        renderAdt(d)
     }
+
     if (defns.nonEmpty) {
       toSource(definition.id, toModuleId(definition), defns)
     } else {
@@ -114,6 +113,10 @@ class Translation(typespace: Typespace) {
         o.copy(templ = o.templ.copy(stats = stat +: o.templ.stats))
     }
     extended.asInstanceOf[T]
+  }
+
+  def renderAdt(i: Adt): Seq[Defn] = {
+    Seq.empty
   }
 
   def renderEnumeration(i: Enumeration): Seq[Defn] = {
@@ -207,7 +210,7 @@ class Translation(typespace: Typespace) {
 
     val t = conv.toScala(i.id)
     val dtoName = toDtoName(i.id)
-    val impl = renderComposite(t.within(dtoName).javaType, i, Seq(i.id), List.empty).toList
+    val impl = renderComposite(t.within(dtoName).javaType, i, List(i.id), List.empty).toList
 
     val parents = List(i.id)
     val narrowers = parents.map {
@@ -326,8 +329,8 @@ class Translation(typespace: Typespace) {
         val in = t.within(s"In${method.name.capitalize}")
         val out = t.within(s"Out${method.name.capitalize}")
 
-        val inDef = Interface(InterfaceId(in.javaType.pkg, in.javaType.name), Seq.empty, method.signature.input)
-        val outDef = Interface(InterfaceId(out.javaType.pkg, out.javaType.name), Seq.empty, method.signature.input)
+        val inDef = Interface(InterfaceId(in.javaType.pkg, in.javaType.name), List.empty, method.signature.input)
+        val outDef = Interface(InterfaceId(out.javaType.pkg, out.javaType.name), List.empty, method.signature.input)
 
         val inputComposite = renderComposite(in.javaType, inDef, method.signature.input, List(serviceInputBase.init()))
         val outputComposite = renderComposite(out.javaType, outDef, method.signature.output, List(serviceOutputBase.init()))

@@ -36,7 +36,7 @@ case class ILParsedId(pkg: Seq[String], name: String) {
   }
 
   def toGeneric(params: Seq[Seq[TypeId]]): TypeId = {
-    if (params.nonEmpty && pkg.isEmpty) {
+    if (isGeneric) {
       name match {
         case "set" =>
           Generic.TSet(params.flatten.head)

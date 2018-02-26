@@ -9,29 +9,29 @@ object Model02 {
   val if3Id = model.common.UserType.parse("izumi.test.domain02.TestInterface3").toInterface
   val dto1Id = model.common.UserType.parse("izumi.test.domain02.DTO1").toDTO
 
-  val if1 = FinalDefinition.Interface(if1Id, Seq(
+  val if1 = FinalDefinition.Interface(if1Id, List(
     Field(Primitive.TInt32, "if1Field_overriden")
     , Field(Primitive.TInt32, "if1Field_inherited")
     , Field(Primitive.TInt64, "sameField")
     , Field(Primitive.TInt64, "sameEverywhereField")
-  ), Seq.empty)
+  ), List.empty)
 
-  val if2 = FinalDefinition.Interface(if2Id, Seq(
+  val if2 = FinalDefinition.Interface(if2Id, List(
     Field(Primitive.TInt64, "if2Field")
     , Field(Primitive.TInt64, "sameField")
     , Field(Primitive.TInt64, "sameEverywhereField")
-  ), Seq.empty)
+  ), List.empty)
 
-  val if3 = FinalDefinition.Interface(if3Id, Seq(
+  val if3 = FinalDefinition.Interface(if3Id, List(
     Field(Primitive.TInt32, "if1Field_overriden")
     , Field(Primitive.TInt64, "if3Field")
     , Field(Primitive.TInt64, "sameEverywhereField")
-  ), Seq(if1Id))
+  ), List(if1Id))
 
 
   val dto1 = FinalDefinition.DTO(
     dto1Id
-    , Seq(if2Id, if3Id))
+    , List(if2Id, if3Id))
 
   val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain02"), Seq(
     if1

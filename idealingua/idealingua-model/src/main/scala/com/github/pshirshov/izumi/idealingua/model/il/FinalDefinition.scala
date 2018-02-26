@@ -10,8 +10,8 @@ sealed trait FinalDefinition {
 
 
 object FinalDefinition {
-  type Composite = Seq[InterfaceId]
-  type Aggregate = Seq[Field]
+  type Composite = List[InterfaceId]
+  type Aggregate = List[Field]
 
   case class Enumeration(id: EnumId, members: List[String]) extends FinalDefinition
 
@@ -23,7 +23,7 @@ object FinalDefinition {
 
   case class DTO(id: DTOId, interfaces: Composite) extends FinalDefinition
 
-  case class Adt(id: DTOId, interfaces: Composite) extends FinalDefinition
+  case class Adt(id: DTOId, alternatives: List[TypeId]) extends FinalDefinition
 
 }
 
@@ -37,7 +37,7 @@ object DefMethod {
   case class RPCMethod(name: String, signature: Signature) extends DefMethod
 }
 
-case class Service(id: ServiceId, methods: Seq[DefMethod])
+case class Service(id: ServiceId, methods: List[DefMethod])
 
 
 

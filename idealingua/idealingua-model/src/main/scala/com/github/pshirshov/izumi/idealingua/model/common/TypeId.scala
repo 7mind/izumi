@@ -23,6 +23,7 @@ case class UserType(pkg: Package, name: TypeName) extends TypeId {
   def toInterface: InterfaceId = InterfaceId(pkg, name)
 
   def toDTO: DTOId = DTOId(pkg, name)
+
   def toAdtId: AdtId = AdtId(pkg, name)
 
   def toIdentifier: IdentifierId = IdentifierId(pkg, name)
@@ -58,10 +59,12 @@ object TypeId {
   case class EphemeralId(parent: TypeId, name: TypeName) extends TypeId {
     override def pkg: Package = parent.pkg :+ parent.name
   }
+
 }
 
 trait Builtin extends TypeId {
   override def pkg: Package = Builtin.prelude
+
   override def toString: TypeName = s"#$name"
 }
 

@@ -12,7 +12,7 @@ object Model01 {
   val testIdentifier = model.common.UserType.parse("izumi.test.domain01.TestIdentifer").toIdentifier
   val serviceIdentifier = model.common.UserType.parse("izumi.test.domain01.UserService").toService
 
-  val testInterfaceFields = Seq(
+  val testInterfaceFields = List(
     Field(userIdTypeId, "userId")
     , Field(Primitive.TInt32, "accountBalance")
     , Field(Primitive.TInt64, "latestLogin")
@@ -21,8 +21,8 @@ object Model01 {
   )
 
 
-  val testValStructure = Seq(Field(userIdTypeId, "userId"))
-  val testIdStructure = Seq(Field(userIdTypeId, "userId"), Field(Primitive.TString, "context"))
+  val testValStructure = List(Field(userIdTypeId, "userId"))
+  val testIdStructure = List(Field(userIdTypeId, "userId"), Field(Primitive.TString, "context"))
   val testIdObject = UserType.parse("izumi.test.domain01.TestObject").toDTO
 
   val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain01"), Seq(
@@ -33,14 +33,14 @@ object Model01 {
     , FinalDefinition.Interface(
       testInterfaceId
       , testInterfaceFields
-      , Seq.empty
+      , List.empty
     )
     , FinalDefinition.DTO(
       testIdObject
-      , Seq(testInterfaceId))
-  ), Seq(
-    Service(serviceIdentifier, Seq(
-      DefMethod.RPCMethod("createUser", DefMethod.Signature(Seq(testInterfaceId), Seq(testInterfaceId)))
+      , List(testInterfaceId))
+  ), List(
+    Service(serviceIdentifier, List(
+      DefMethod.RPCMethod("createUser", DefMethod.Signature(List(testInterfaceId), List(testInterfaceId)))
     ))
   ), Map.empty)
 }

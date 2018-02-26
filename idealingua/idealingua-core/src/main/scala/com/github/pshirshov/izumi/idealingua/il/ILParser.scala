@@ -6,8 +6,12 @@ import fastparse.CharPredicates._
 import fastparse.all._
 import fastparse.{all, core}
 
+import scala.language.implicitConversions
+
 
 class ILParser {
+
+  private implicit def toList[T](seq: Seq[T]): List[T] = seq.toList
 
   import IL._
 
