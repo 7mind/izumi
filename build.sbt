@@ -25,8 +25,7 @@ defaultStubPackage := Some("com.github.pshirshov.izumi")
 
 lazy val shading =
   inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings) ++
-    // Why does this have to be repeated here?
-    // Can't figure out why configuration gets lost without this in particular...
+    inConfig(_root_.coursier.ShadingPlugin.Shading)(PublishingPlugin.projectSettings) ++
     _root_.coursier.ShadingPlugin.projectSettings ++
     Seq(
       shadingNamespace := "izumi.shaded",
