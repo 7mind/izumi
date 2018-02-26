@@ -20,6 +20,9 @@ class IDLRuntimeTypes() {
   final val typeCompanionInit = conv.toScala[IDLTypeCompanion].init()
   final val enumInit = conv.toScala[IDLEnum].init()
   final val enumElInit = conv.toScala[IDLEnumElement].init()
+  final val adtInit = conv.toScala[IDLAdt].init()
+  final val adtElInit = conv.toScala[IDLAdtElement].init()
+
   final val serviceCompanionInit = conv.toScala[IDLServiceCompanion].init()
 
   final val tIDLIdentifier = conv.toScala[IDLIdentifier]

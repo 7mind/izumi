@@ -116,7 +116,30 @@ class Translation(typespace: Typespace) {
   }
 
   def renderAdt(i: Adt): Seq[Defn] = {
-    Seq.empty
+    val t = conv.toScala(i.id)
+
+    val duplicates = i.alternatives.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
+    if (duplicates.nonEmpty) {
+      throw new IDLException(s"Duplicated adt elements: $duplicates")
+    }
+
+    val members = i.alternatives.map {
+      m =>
+        val mt = t.within(m.name)
+
+        mt.termName -> withInfo(i.id,
+          q"""case class ${mt.typeName}(value: ${mt.typeFull}) extends ..${List(t.init())}""")
+    }
+
+    Seq(
+      q""" sealed trait ${t.typeName} extends $adtElInit{} """
+      ,
+      q"""object ${t.termName} extends $adtInit {
+            type Element = ${t.typeFull}
+
+            ..${members.map(_._2)}
+           }"""
+    )
   }
 
   def renderEnumeration(i: Enumeration): Seq[Defn] = {

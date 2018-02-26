@@ -43,6 +43,11 @@ mixin AllTypes {
   set     : set[AllTypes]
 }
 
+adt AnAdt {
+  AllTypes
+  TestObject
+}
+
 data AllTypesObject {
   + AllTypes
 }

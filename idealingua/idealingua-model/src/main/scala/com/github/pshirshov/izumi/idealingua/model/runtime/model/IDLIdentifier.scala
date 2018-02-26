@@ -53,3 +53,9 @@ trait IDLEnum extends IDLGenerated {
 trait IDLEnumElement extends IDLGeneratedType
 
 
+trait IDLAdt extends IDLGenerated {
+  type Element <: IDLAdtElement
+}
+
+trait IDLAdtElement extends IDLGeneratedType
+

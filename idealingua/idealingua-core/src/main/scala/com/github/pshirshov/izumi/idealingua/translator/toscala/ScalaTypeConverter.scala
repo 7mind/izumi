@@ -91,6 +91,8 @@ class ScalaTypeConverter(domain: DomainId) {
         toIdConstructor(i)
       case i: UserType =>
         toIdConstructor(i)
+      case i: AdtId =>
+        toIdConstructor(i)
       case i: EphemeralId =>
         q"${toSelectTerm(JavaType.get[EphemeralId].minimize(domain))}(${toAst(i.parent)}, ${Lit.String(i.name)})"
     }
