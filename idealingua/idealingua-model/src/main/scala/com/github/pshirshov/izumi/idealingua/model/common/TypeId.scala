@@ -173,13 +173,5 @@ object Generic {
     override def name: TypeName = "map"
   }
 
-  type ToGeneric = Seq[TypeId] => Generic
-
-//  final val mapping: Map[String, ToGeneric] = Map(
-//    "list" -> (v => TList(v.head))
-//    , "set" -> (v => TSet(v.head))
-//    , "map" -> (v => TMap(v.head, v.last))
-//  )
-
   final val all = Set("list", "set", "map", "opt")
 }
