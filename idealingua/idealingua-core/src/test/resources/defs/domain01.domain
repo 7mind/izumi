@@ -36,6 +36,11 @@ mixin AllTypes {
   tslocal : tsl
   time    : time
   date    : date
+
+  list    : list[AllTypes]
+  map     : map[str, AllTypes]
+  option  : opt[AllTypes]
+  set     : set[AllTypes]
 }
 
 data AllTypesObject {

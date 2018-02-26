@@ -154,11 +154,13 @@ class ScalaTypeConverter(domain: DomainId) {
   private def toGeneric(typeId: Generic): JavaType = {
     typeId match {
       case _: Generic.TSet =>
-        il.JavaType(Seq.empty, "Set")
+        il.JavaType.get[Set[_]]
       case _: Generic.TMap =>
-        il.JavaType(Seq.empty, "Map")
+        il.JavaType.get[Map[_, _]]
       case _: Generic.TList =>
-        il.JavaType(Seq.empty, "List")
+        il.JavaType.get[List[_]]
+      case _: Generic.TOption =>
+        il.JavaType.get[Option[_]]
     }
   }
 

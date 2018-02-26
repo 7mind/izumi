@@ -44,6 +44,9 @@ case class ILParsedId(pkg: Seq[String], name: String) {
         case "list" =>
           Generic.TList(params.flatten.head)
 
+        case "opt" =>
+          Generic.TOption(params.flatten.head)
+
         case "map" =>
           Generic.TMap(toScalar(params.flatten.head), params.flatten.last)
       }

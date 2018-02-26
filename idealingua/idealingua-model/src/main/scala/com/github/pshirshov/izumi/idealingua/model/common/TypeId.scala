@@ -158,6 +158,12 @@ object Generic {
     override def name: TypeName = "set"
   }
 
+  case class TOption(valueType: TypeId) extends Generic {
+    override def args: List[TypeId] = List(valueType)
+
+    override def name: TypeName = "opt"
+  }
+
   case class TMap(keyType: Scalar, valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(keyType, valueType)
 
@@ -172,5 +178,5 @@ object Generic {
 //    , "map" -> (v => TMap(v.head, v.last))
 //  )
 
-  final val all = Set("list", "set", "map")
+  final val all = Set("list", "set", "map", "opt")
 }
