@@ -23,6 +23,8 @@ object FinalDefinition {
 
   case class DTO(id: DTOId, interfaces: Composite) extends FinalDefinition
 
+  case class Adt(id: DTOId, interfaces: Composite) extends FinalDefinition
+
 }
 
 trait DefMethod

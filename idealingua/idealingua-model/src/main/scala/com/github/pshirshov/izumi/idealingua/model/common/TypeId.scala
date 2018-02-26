@@ -23,6 +23,7 @@ case class UserType(pkg: Package, name: TypeName) extends TypeId {
   def toInterface: InterfaceId = InterfaceId(pkg, name)
 
   def toDTO: DTOId = DTOId(pkg, name)
+  def toAdtId: AdtId = AdtId(pkg, name)
 
   def toIdentifier: IdentifierId = IdentifierId(pkg, name)
 
@@ -43,6 +44,8 @@ object TypeId {
   case class InterfaceId(pkg: Package, name: TypeName) extends TypeId
 
   case class DTOId(pkg: Package, name: TypeName) extends TypeId
+
+  case class AdtId(pkg: Package, name: TypeName) extends TypeId
 
   case class AliasId(pkg: Package, name: TypeName) extends TypeId
 
