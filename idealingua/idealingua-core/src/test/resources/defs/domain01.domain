@@ -1,0 +1,52 @@
+domain izumi.test.domain01
+
+include "model01.model"
+
+id TestValIdentifer {
+  userId: UserId
+}
+
+id TestIdentifer {
+  userId: UserId
+  context: str
+}
+
+mixin TestInterface {
+  userId: UserId
+  accountBalance: i32
+  latestLogin: i64
+  keys: map[str, str]
+  nicknames: list[str]
+}
+
+data TestObject {
+  + TestInterface
+}
+
+mixin AllTypes {
+  string  : str
+  int8    : i08
+  int16   : i16
+  int32   : i32
+  int64   : i64
+  float   : flt
+  double  : dbl
+  uuid    : uid
+  ts      : tsz
+  tslocal : tsl
+  time    : time
+  date    : date
+
+  list    : list[AllTypes]
+  map     : map[str, AllTypes]
+  option  : opt[AllTypes]
+  set     : set[AllTypes]
+}
+
+data AllTypesObject {
+  + AllTypes
+}
+
+service UserService {
+  def createUser(TestInterface): (TestInterface)
+}

@@ -1,0 +1,3 @@
+# build
+> ;+clean;+test;+package
+$ exists lib/just-lib/target/scala-2.12/src_managed/main/izumi/idealingua/domains/Domain01.scala
