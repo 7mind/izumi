@@ -23,7 +23,7 @@ object FinalDefinition {
 
   case class DTO(id: DTOId, interfaces: Composite) extends FinalDefinition
 
-  case class Adt(id: DTOId, alternatives: List[TypeId]) extends FinalDefinition
+  case class Adt(id: AdtId, alternatives: List[TypeId]) extends FinalDefinition
 
 }
 

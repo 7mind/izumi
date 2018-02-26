@@ -17,6 +17,8 @@ case class ILParsedId(pkg: Seq[String], name: String) {
 
   def toDataId: DTOId = DTOId(pkg, name)
 
+  def toAdtId: AdtId = AdtId(pkg, name)
+
   def toTypeId: TypeId = {
     downcast(UserType(pkg, name))
   }
@@ -24,6 +26,7 @@ case class ILParsedId(pkg: Seq[String], name: String) {
   def toServiceId: ServiceId = ServiceId(pkg, name)
 
   private def isPrimitive: Boolean = pkg.isEmpty && Primitive.mapping.contains(name)
+
   private def isGeneric: Boolean = pkg.isEmpty && Generic.all.contains(name)
 
 

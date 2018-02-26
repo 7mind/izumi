@@ -27,12 +27,12 @@ class ILParTest extends WordSpec {
     "parse domain definition" in {
       assertParses(new ILParser().identifier, "x.y.z")
       assertParses(new ILParser().domainId, "domain x.y.z")
-      assertParses(new ILParser().field, "a: map")
       assertParses(new ILParser().field, "a: map[str, str]")
       assertParses(new ILParser().field, "a: map[str, set[x#Y]]")
 
       assertParses(new ILParser().aliasBlock, "alias x = y")
       assertParses(new ILParser().enumBlock, "enum MyEnum {X Y Zz}")
+      assertParses(new ILParser().adtBlock, "adt MyAdt { X Y a.b.c#D }")
 
       assertParses(new ILParser().mixinBlock, "mixin Mixin {}")
       assertParses(new ILParser().dtoBlock, "data Data {}")

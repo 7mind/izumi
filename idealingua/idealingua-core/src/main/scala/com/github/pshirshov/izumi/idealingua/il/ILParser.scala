@@ -26,6 +26,7 @@ class ILParser {
     def kw(s: String): all.Parser[Unit] = P(s ~ wsm)(sourcecode.Name(s"`$s`"))
 
     final val enum = kw("enum")
+    final val adt = kw("adt")
     final val alias = kw("alias")
     final val id = kw("id")
     final val mixin = kw("mixin")
@@ -81,6 +82,9 @@ class ILParser {
   final val enumBlock = P(kw.enum ~/ symbol ~ wso ~ "{" ~ (empty ~ symbol ~ empty).rep(1) ~ "}")
     .map(v => ILDef(FinalDefinition.Enumeration(ILParsedId(v._1).toEnumId, v._2.toList)))
 
+  final val adtBlock = P(kw.adt ~/ symbol ~ wso ~ "{" ~ (empty ~ identifier ~ empty).rep(1) ~ "}")
+    .map(v => ILDef(FinalDefinition.Adt(ILParsedId(v._1).toAdtId, v._2.map(_.toTypeId).toList)))
+
   final val aliasBlock = P(kw.alias ~/ symbol ~ wso ~ "=" ~ wsm ~ identifier)
     .map(v => ILDef(FinalDefinition.Alias(ILParsedId(v._1).toAliasId, v._2.toTypeId)))
 
@@ -101,6 +105,7 @@ class ILParser {
 
 
   final val anyBlock: core.Parser[Val, Char, String] = enumBlock |
+    adtBlock |
     aliasBlock |
     idBlock |
     mixinBlock |
