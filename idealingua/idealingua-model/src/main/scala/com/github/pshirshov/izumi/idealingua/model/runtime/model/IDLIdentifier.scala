@@ -33,9 +33,9 @@ trait IDLService extends IDLGeneratedType {
   def outputTag: ClassTag[OutputType]
 }
 
-trait IDLRpc extends IDLGeneratedType
-trait IDLInput extends IDLRpc
-trait IDLOutput extends IDLRpc
+trait IDLRpc extends Any with IDLGeneratedType
+trait IDLInput extends Any with IDLRpc
+trait IDLOutput extends Any with IDLRpc
 
 trait IDLServiceCompanion extends IDLGeneratedCompanion
 trait IDLTypeCompanion extends IDLGeneratedCompanion

@@ -54,6 +54,11 @@ data AllTypesObject {
   + AllTypes
 }
 
+mixin AnyValTest {
+  boolean: bool
+}
+
 service UserService {
   def createUser(TestInterface): (TestInterface)
+  def anyvalTest(AnyValTest): (AnyValTest)
 }

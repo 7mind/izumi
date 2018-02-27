@@ -415,8 +415,8 @@ class Translation(typespace: Typespace) {
            }"""
       ,
       q"""object ${t.termName} extends $serviceCompanionInit {
-            trait ${serviceInputBase.typeName} extends $inputInit {}
-            trait ${serviceOutputBase.typeName} extends $outputInit {}
+            trait ${serviceInputBase.typeName} extends Any with $inputInit {}
+            trait ${serviceOutputBase.typeName} extends Any with $outputInit {}
 
             implicit class ${tools.typeName}(_value: ${t.typeFull}) {
               ${runtimeTypes.conv.toMethodAst(i.id)}
