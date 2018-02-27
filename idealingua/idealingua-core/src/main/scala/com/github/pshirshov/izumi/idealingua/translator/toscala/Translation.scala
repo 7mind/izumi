@@ -160,6 +160,12 @@ class Translation(typespace: Typespace) {
             }""")
     }
 
+    val parseMembers = members.map {
+      case (termName, _) =>
+        val termString = termName.value
+        p"""case $termString => $termName"""
+    }
+
     Seq(
       q""" sealed trait ${t.typeName} extends $enumElInit {} """
       ,
@@ -167,6 +173,10 @@ class Translation(typespace: Typespace) {
             type Element = ${t.typeFull}
 
             override def all: Seq[${t.typeFull}] = Seq(..${members.map(_._1)})
+
+            override def parse(value: String) = value match {
+              ..case $parseMembers
+            }
 
             ..${members.map(_._2)}
 
