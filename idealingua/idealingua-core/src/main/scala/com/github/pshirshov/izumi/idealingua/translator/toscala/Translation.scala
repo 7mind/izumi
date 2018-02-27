@@ -65,6 +65,7 @@ class Translation(typespace: Typespace) {
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
          ${conv.toImport}
 
+         lazy val id: ${conv.toScala[DomainId].typeFull} = ${conv.toIdConstructor(typespace.domain.id)}
          lazy val types: Map[${typeId.typeFull}, Class[_]] = Seq(..$types).toMap
          lazy val classes: Map[Class[_], ${typeId.typeFull}] = Seq(..$reverseTypes).toMap
        }"""

@@ -102,6 +102,11 @@ class ScalaTypeConverter(domain: DomainId) {
     q"${toSelectTerm(JavaType.get[T].minimize(domain))}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.name)})"
   }
 
+  def toIdConstructor(t: DomainId): Term.Apply = {
+    q"${toSelectTerm(JavaType.get[DomainId])}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.id)})"
+  }
+
+
   def toScala[T: ClassTag]: ScalaType = {
     val idtClass = classTag[T].runtimeClass
     val javaType = JavaType(UserType(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName))

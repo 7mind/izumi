@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.runtime.model
 import java.net.{URLDecoder, URLEncoder}
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.il.DomainId
 
 import scala.language.higherKinds
 import scala.reflect._
@@ -43,6 +44,7 @@ trait IDLServiceCompanion extends IDLGeneratedCompanion
 trait IDLTypeCompanion extends IDLGeneratedCompanion
 
 trait IDLDomainCompanion extends IDLGeneratedCompanion {
+  def id: DomainId
   def types: Map[TypeId, Class[_]]
   def classes: Map[Class[_], TypeId]
 }
