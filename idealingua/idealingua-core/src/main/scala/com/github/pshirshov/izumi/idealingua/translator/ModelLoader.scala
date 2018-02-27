@@ -8,7 +8,8 @@ import com.github.pshirshov.izumi.idealingua.il.{IL, ILParser, ParsedDomain}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinition
-import fastparse.core.{Parsed, Parser}
+import fastparse.all
+import fastparse.core.Parsed
 
 
 class ModelLoader(source: Path, classpath: Seq[File]) {
@@ -19,6 +20,7 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
 
   type ParsedModel = Seq[IL.Val]
   type InclusionResolver = (Path) => Option[ParsedModel]
+  type DomainResolver = (Path) => Option[ParsedDomain]
 
   def load(): Seq[DomainDefinition] = {
     import scala.collection.JavaConverters._
@@ -40,18 +42,18 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
 
     domains.map {
       case (_, domain) =>
-        postprocess(domain, domains, toResolver(models.get))
+        postprocess(domain, toResolver(domains.get, parser.fullDomainDef), toResolver(models.get, parser.modelDef))
     }.toSeq
   }
 
-  private def postprocess(domain: ParsedDomain, domains: Map[Path, ParsedDomain], resolver: InclusionResolver): DomainDefinition = {
+  private def postprocess(domain: ParsedDomain, domainResolver: DomainResolver, modelResolver: InclusionResolver): DomainDefinition = {
     val withIncludes = domain
       .includes
       .foldLeft(domain) {
         case (d, toInclude) =>
           val incPath = Paths.get(toInclude)
 
-          resolver(incPath) match {
+          modelResolver(incPath) match {
             case Some(inclusion) =>
               d.extend(inclusion)
 
@@ -61,11 +63,17 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
       }
       .copy(includes = Seq.empty)
 
-    val imports = domain.imports.map(s => Paths.get(s))
+    val imports = domain
+      .imports.map(s => Paths.get(s))
       .map {
         p =>
-          val d = domains(p)
-          d.domain.id -> postprocess(d, domains, resolver)
+          domainResolver(p) match {
+            case Some(d) =>
+              d.domain.id -> postprocess(d, domainResolver, modelResolver)
+
+            case None =>
+              throw new IDLException(s"Can't find reference $p in classpath nor filesystem while operating within $source")
+          }
       }
       .toMap
 
@@ -75,7 +83,7 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
     withImports.domain
   }
 
-  private def collectSuccess[T](files: Map[Path, String], ext: TypeName, p: Parser[T, Char, String]): Map[Path, T] = {
+  private def collectSuccess[T](files: Map[Path, String], ext: TypeName, p: all.Parser[T]): Map[Path, T] = {
     val domains = files.filter(_._1.getFileName.toString.endsWith(ext))
       .mapValues(s => {
         p.parse(s)
@@ -94,31 +102,39 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
     }
   }
 
-  private def toResolver(primary: InclusionResolver)(incPath: Path): Option[ParsedModel] = {
+  private def toResolver[T](primary: Path => Option[T], p: all.Parser[T])(incPath: Path): Option[T] = {
     primary(incPath)
       .orElse {
         resolveFromCP(incPath)
+          .orElse(resolveFromJars(incPath))
           .orElse(resolveFromJavaCP(incPath))
           .map {
             src =>
-              collectSuccess(Map(incPath -> readFile(src)), modelExt, parser.modelDef)(incPath)
+              collectSuccess(Map(incPath -> src), modelExt, p)(incPath)
           }
       }
   }
 
-  private def resolveFromCP(incPath: Path) = {
+  private def resolveFromJars(incPath: Path): Option[String] = {
+    classpath
+      .filter(_.isFile)
+      .find(f => false) // TODO: support jars!
+      .map(path => readFile(path.toPath))
+  }
+
+  private def resolveFromCP(incPath: Path): Option[String] = {
     classpath
       .filter(_.isDirectory)
       .map(_.toPath.resolve("idealingua").resolve(incPath).toFile)
       .find(_.exists())
-      .map(_.toPath)
+      .map(path => readFile(path.toPath))
   }
 
-  private def resolveFromJavaCP(incPath: Path): Option[Path] = {
+  private def resolveFromJavaCP(incPath: Path): Option[String] = {
     Option(getClass.getResource(Paths.get("/idealingua/").resolve(incPath).toString))
       .map {
         fallback =>
-          new File(fallback.toURI).toPath
+          readFile(new File(fallback.toURI).toPath)
       }
   }
 
