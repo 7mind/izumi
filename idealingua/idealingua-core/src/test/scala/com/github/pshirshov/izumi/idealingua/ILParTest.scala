@@ -43,8 +43,8 @@ class ILParTest extends WordSpec {
       val domaindef =
         """domain x.y.z
           |
-          |import "x.domain"
-          |import "y/x.domain"
+          |import x.domain
+          |import x.y.domain
           |
           |include "b/c/d.model"
           |include "a.model"

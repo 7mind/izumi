@@ -2,8 +2,9 @@ package com.github.pshirshov.izumi.sbt
 
 import java.nio.file.Path
 
+import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, ModelLoader}
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
 import sbt.Keys.{sourceGenerators, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger
@@ -116,7 +117,7 @@ object IdealinguaPlugin extends AutoPlugin {
         val target = scope.target
         logger.debug(s"""Loading models from $scope...""")
 
-        val toCompile = new ModelLoader(scope.source, cp).load()
+        val toCompile = new LocalModelLoader(scope.source, cp).load()
         if (toCompile.nonEmpty) {
           logger.info(s"""Going to compile the following models: ${toCompile.map(_.id).mkString(",")}""")
         }

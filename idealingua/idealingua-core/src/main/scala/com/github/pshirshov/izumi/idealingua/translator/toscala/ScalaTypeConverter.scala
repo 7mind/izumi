@@ -127,6 +127,8 @@ class ScalaTypeConverter(domain: DomainId) {
 
 
   private def toPrimitive(id: Primitive): JavaType = id match {
+    case Primitive.TBool =>
+      il.JavaType(Seq.empty, "Boolean")
     case Primitive.TString =>
       il.JavaType(Seq.empty, "String")
     case Primitive.TInt8 =>

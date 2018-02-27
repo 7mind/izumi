@@ -1,6 +1,7 @@
 domain izumi.test.domain01
 
 include "model01.model"
+include "model02.model"
 
 id TestValIdentifer {
   userId: UserId
@@ -24,6 +25,7 @@ data TestObject {
 }
 
 mixin AllTypes {
+  boolean : bool
   string  : str
   int8    : i08
   int16   : i16

@@ -46,8 +46,10 @@ class ILParser {
   final val shortIdentifier = P(symbol).map(v => ILParsedId(v))
   final val identifier = P(fqIdentifier | shortIdentifier)
 
-  final val domainId = P(kw.domain ~/ pkgIdentifier)
+
+  final val domainId = P(pkgIdentifier)
     .map(v => ILDomainId(DomainId(v.init, v.last)))
+  final val domainBlock  = P(kw.domain ~/ domainId)
 
   final val fulltype: all.Parser[TypeId] = P(wso ~ identifier ~ wso ~ generic.rep(min = 0, max = 1) ~ wso)
     .map(tp => tp._1.toGeneric(tp._2))
@@ -113,11 +115,11 @@ class ILParser {
     serviceBlock |
     includeBlock
 
-  final val importBlock = P(kw.`import` ~/ wso ~ "\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
+  final val importBlock = P(kw.`import` ~/ wso ~ domainId)
 
   final val modelDef = P(empty ~ anyBlock.rep(sep = empty) ~ empty ~ End)
 
-  final val fullDomainDef = P(domainId ~ Newline ~ importBlock.rep(sep = empty) ~ modelDef).map {
+  final val fullDomainDef = P(domainBlock ~ Newline ~ importBlock.rep(sep = empty) ~ modelDef).map {
     case (did, imports, defs) =>
       ParsedDomain(did, imports, defs)
   }

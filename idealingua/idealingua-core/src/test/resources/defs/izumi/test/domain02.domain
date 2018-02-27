@@ -1,6 +1,9 @@
 domain izumi.test.domain02
 
+import izumi.test.domain01
+
 include "model01.model"
+include "model02.model"
 
 mixin TestInterface1 {
   if1Field_overriden: i32

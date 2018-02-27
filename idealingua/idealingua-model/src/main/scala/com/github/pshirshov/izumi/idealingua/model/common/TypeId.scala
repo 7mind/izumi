@@ -77,6 +77,10 @@ trait Primitive extends Builtin with Scalar {
 
 object Primitive {
 
+  case object TBool extends Primitive {
+    override def name: TypeName = "bool"
+  }
+
   case object TString extends Primitive {
     override def name: TypeName = "str"
   }
@@ -128,7 +132,8 @@ object Primitive {
 
 
   final val mapping = Set(
-    TString
+    TBool
+    , TString
     , TInt8
     , TInt16
     , TInt32
