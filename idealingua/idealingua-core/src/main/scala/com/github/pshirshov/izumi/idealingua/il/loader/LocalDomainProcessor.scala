@@ -83,7 +83,6 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
         fallback.map {
           src =>
             val parsed = parseDomains(Map(asPath -> src))
-            println(parsed.keySet)
             parsed(incPath)
         }
       }
