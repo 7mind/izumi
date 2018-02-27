@@ -3,7 +3,7 @@ domain izumi.test.domain01
 include "model01.model"
 include "model02.model"
 
-id TestValIdentifer {
+id TestValIdentifier {
   userId: UserId
 }
 

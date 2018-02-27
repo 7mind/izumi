@@ -8,7 +8,7 @@ object Model01 {
   val enumId = model.common.UserType.parse("izumi.test.domain01.AnEnum").toEnum
   val testInterfaceId = model.common.UserType.parse("izumi.test.domain01.TestInterface").toInterface
 
-  val testValIdentifier = model.common.UserType.parse("izumi.test.domain01.TestValIdentifer").toIdentifier
+  val testValIdentifier = model.common.UserType.parse("izumi.test.domain01.TestValIdentifier").toIdentifier
   val testIdentifier = model.common.UserType.parse("izumi.test.domain01.TestIdentifer").toIdentifier
   val serviceIdentifier = model.common.UserType.parse("izumi.test.domain01.UserService").toService
 

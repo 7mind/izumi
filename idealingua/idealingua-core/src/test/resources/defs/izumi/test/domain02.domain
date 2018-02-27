@@ -10,6 +10,8 @@ mixin TestInterface1 {
   if1Field_inherited: i32
   sameField: i64
   sameEverywhereField: i64
+
+  fromOtherDomain: izumi.test.domain01#TestValIdentifier
 }
 
 mixin TestInterface2 {

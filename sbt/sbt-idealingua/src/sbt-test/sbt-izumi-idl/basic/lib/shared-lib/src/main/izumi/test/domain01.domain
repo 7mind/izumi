@@ -3,7 +3,7 @@ domain test.domain01
 import shared.sharedDomain
 include "shared/model01.model"
 
-id TestValIdentifer {
+id TestValIdentifier {
   userId: UserId
 }
 

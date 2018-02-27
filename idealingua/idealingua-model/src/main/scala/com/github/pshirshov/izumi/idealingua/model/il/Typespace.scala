@@ -68,9 +68,12 @@ class Typespace(val domain: DomainDefinition) {
 
     val allDependencies = typeDependencies ++ serviceDependencies.flatten
 
+    val referenced = domain.referenced.mapValues(d => new Typespace(d))
+
     val missingTypes = allDependencies
       .filterNot(_.typeId.isInstanceOf[Builtin])
       .filterNot(d => typespace.contains(toKey(d.typeId)))
+      .filterNot(d => referenced.values.exists(_.typespace.contains(toKey(d.typeId))))
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
@@ -147,7 +150,7 @@ class Typespace(val domain: DomainDefinition) {
       case t: Interface =>
         val superFields = enumFields(t.interfaces)
           .map(_.copy(definedBy = t.id)) // in fact super field is defined by this
-        val thisFields = toExtendedFields(t.fields, t.id)
+      val thisFields = toExtendedFields(t.fields, t.id)
         superFields ++ thisFields
 
       case t: DTO =>
@@ -181,37 +184,37 @@ class Typespace(val domain: DomainDefinition) {
   //    enumFields(defn).map(_.field)
   //  }
 
-//  // TODO: do we need this?
-//  def explode(defn: Field): List[TrivialField] = {
-//    defn.typeId match {
-//      case t: Primitive =>
-//        List(TrivialField(t, defn.name))
-//      case t: UserType =>
-//        explode(typespace(t))
-//    }
-//  }
-//
-//  def explode(defn: FinalDefinition): List[TrivialField] = {
-//    defn match {
-//      case t: Interface =>
-//        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList ++ t.fields.flatMap(explode).toList
-//
-//      case t: Adt =>
-//        t.alternatives.map(apply).flatMap(explode).toList
-//
-//      case t: DTO =>
-//        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList
-//
-//      case t: Identifier =>
-//        t.fields.flatMap(explode).toList
-//
-//      case _: Alias =>
-//        List()
-//
-//      case _: Enumeration =>
-//        List()
-//    }
-//  }
+  //  // TODO: do we need this?
+  //  def explode(defn: Field): List[TrivialField] = {
+  //    defn.typeId match {
+  //      case t: Primitive =>
+  //        List(TrivialField(t, defn.name))
+  //      case t: UserType =>
+  //        explode(typespace(t))
+  //    }
+  //  }
+  //
+  //  def explode(defn: FinalDefinition): List[TrivialField] = {
+  //    defn match {
+  //      case t: Interface =>
+  //        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList ++ t.fields.flatMap(explode).toList
+  //
+  //      case t: Adt =>
+  //        t.alternatives.map(apply).flatMap(explode).toList
+  //
+  //      case t: DTO =>
+  //        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList
+  //
+  //      case t: Identifier =>
+  //        t.fields.flatMap(explode).toList
+  //
+  //      case _: Alias =>
+  //        List()
+  //
+  //      case _: Enumeration =>
+  //        List()
+  //    }
+  //  }
 
 }
 
