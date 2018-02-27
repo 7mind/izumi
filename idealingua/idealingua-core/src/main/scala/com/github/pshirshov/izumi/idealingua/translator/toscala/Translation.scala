@@ -359,6 +359,7 @@ class Translation(typespace: Typespace) {
 
     val serviceInputBase = t.within(s"In${typeName.capitalize}")
     val serviceOutputBase = t.within(s"Out${typeName.capitalize}")
+    //val serviceResultBase = t.within(s"Result")
 
     val decls = i.methods.map {
       case method: RPCMethod =>
@@ -376,7 +377,7 @@ class Translation(typespace: Typespace) {
         val outputType = out.typeFull
 
         ServiceMethodProduct(
-          q"def ${Term.Name(method.name)}(input: $inputType): $outputType"
+          q"def ${Term.Name(method.name)}(input: $inputType): Result[$outputType]"
           , Case(
             Pat.Typed(Pat.Var(Term.Name("value")), inputType)
             , None
@@ -389,10 +390,10 @@ class Translation(typespace: Typespace) {
     val forwarder = Term.Match(Term.Name("input"), decls.map(_.routingClause))
 
     val transportDecls = List(
-      q"override def process(input: ${serviceInputBase.typeFull}): ${serviceOutputBase.typeFull} = $forwarder"
+      q"override def process(input: ${serviceInputBase.typeFull}): service.Result[${serviceOutputBase.typeFull}] = $forwarder"
     )
 
-    val tAbstractTransport = conv.toScala[AbstractTransport[_]].copy(typeArgs = List(t.typeFull))
+    val tAbstractTransport = conv.toScala[AbstractTransport[_]].copy(typeArgs = List(Type.Name("S")))
     val abstractTransportTpe = tAbstractTransport.init()
     val transportTpe = t.sibling(typeName + "AbstractTransport")
     val tools = t.within(s"${i.id.name}Extensions")
@@ -410,9 +411,9 @@ class Translation(typespace: Typespace) {
           ..${decls.map(_.defn)}
          }""")
       ,
-      q"""class ${transportTpe.typeName}
+      q"""class ${transportTpe.typeName}[S <: ${t.typeFull}]
             (
-              override val service: ${t.typeFull}
+              override val service: S
             ) extends $abstractTransportTpe {
             import ${t.termBase}._
             ..$transportDecls

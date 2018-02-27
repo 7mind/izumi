@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.model.runtime.transport
 
-import com.github.pshirshov.izumi.idealingua.model.runtime.model.IDLService
+import com.github.pshirshov.izumi.idealingua.model.runtime.model.{IDLInput, IDLService}
 
 import scala.util.Try
 
-trait MultiplexingWireTransport[InWire, OutWire] {
-  def protocol: WireProtocol[InWire, OutWire]
+trait MultiplexingWireTransport[InWire, Response, OutWire] {
+  def protocol: WireProtocol[InWire, IDLInput, Response, OutWire]
 
   def services: Seq[AbstractTransport[IDLService]]
 

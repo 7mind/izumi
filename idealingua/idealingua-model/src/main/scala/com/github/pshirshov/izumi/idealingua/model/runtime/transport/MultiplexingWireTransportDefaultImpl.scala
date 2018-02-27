@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.model.runtime.transport
 
-import com.github.pshirshov.izumi.idealingua.model.runtime.model.IDLService
+import com.github.pshirshov.izumi.idealingua.model.runtime.model.{IDLInput, IDLService}
 
-class MultiplexingWireTransportDefaultImpl[InWire, OutWire]
+class MultiplexingWireTransportDefaultImpl[InWire, Response, OutWire]
 (
-  val protocol: WireProtocol[InWire, OutWire]
+  val protocol: WireProtocol[InWire, IDLInput, Response, OutWire]
   , override val services: Seq[AbstractTransport[IDLService]]
-) extends MultiplexingWireTransport[InWire, OutWire] {
+) extends MultiplexingWireTransport[InWire, Response, OutWire] {
 }

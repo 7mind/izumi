@@ -4,6 +4,7 @@ import java.net.{URLDecoder, URLEncoder}
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 
+import scala.language.higherKinds
 import scala.reflect._
 
 trait IDLGenerated extends Any
@@ -28,6 +29,7 @@ object IDLIdentifier {
 trait IDLService extends IDLGeneratedType {
   type InputType <: IDLInput
   type OutputType <: IDLOutput
+  type Result[+R <: OutputType]
 
   def inputTag: ClassTag[InputType]
   def outputTag: ClassTag[OutputType]

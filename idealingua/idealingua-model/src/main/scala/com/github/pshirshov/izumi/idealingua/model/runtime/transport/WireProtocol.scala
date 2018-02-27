@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.model.runtime.transport
 
-import com.github.pshirshov.izumi.idealingua.model.runtime.model.IDLGeneratedType
+import com.github.pshirshov.izumi.idealingua.model.runtime.model.IDLInput
 
-trait WireProtocol[InWire, OutWire] {
-  def encode(generated: IDLGeneratedType): OutWire
 
-  def decode(input: InWire): IDLGeneratedType
+trait WireProtocol[InWire, Request <: IDLInput, Response, OutWire] {
+  def decode(input: InWire): Request
+
+  def encode(generated: Response): OutWire
 }
