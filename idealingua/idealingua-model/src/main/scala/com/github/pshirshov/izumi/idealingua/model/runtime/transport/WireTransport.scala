@@ -4,12 +4,12 @@ import com.github.pshirshov.izumi.idealingua.model.runtime.model.IDLService
 
 import scala.util.Try
 
-trait WireTransport[OnWire, Service <: IDLService] {
-  def protocol: WireProtocol[OnWire]
+trait WireTransport[InWire, OutWire, Service <: IDLService] {
+  def protocol: WireProtocol[InWire, OutWire]
 
   def abstractTransport: AbstractTransport[Service]
 
-  def process(request: OnWire): Try[OnWire] = {
+  def process(request: InWire): Try[OutWire] = {
     Try(protocol.decode(request))
       .map(abstractTransport.processUnsafe)
       .map(protocol.encode)

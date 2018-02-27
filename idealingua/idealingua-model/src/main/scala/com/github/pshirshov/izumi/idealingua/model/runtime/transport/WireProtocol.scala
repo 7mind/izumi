@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.idealingua.model.runtime.transport
 
 import com.github.pshirshov.izumi.idealingua.model.runtime.model.IDLGeneratedType
 
-trait WireProtocol[OnWire] {
-  def encode(generated: IDLGeneratedType): OnWire
+trait WireProtocol[InWire, OutWire] {
+  def encode(generated: IDLGeneratedType): OutWire
 
-  def decode(input: OnWire): IDLGeneratedType
+  def decode(input: InWire): IDLGeneratedType
 }
