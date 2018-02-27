@@ -15,10 +15,7 @@ class LoaderTest extends WordSpec {
       val loader = new LocalModelLoader(src, Seq.empty)
       val loaded = loader.load()
       assert(loaded.lengthCompare(2) == 0)
-      loaded.foreach {
-        d =>
-        assert(compiles(d))
-      }
+      assert(compiles(loaded))
     }
   }
 }
