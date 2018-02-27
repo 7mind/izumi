@@ -1,4 +1,4 @@
-domain izumi.test.shared
+domain shared.sharedDomain
 
 mixin TestSharedDomainMixin {
     id: uid

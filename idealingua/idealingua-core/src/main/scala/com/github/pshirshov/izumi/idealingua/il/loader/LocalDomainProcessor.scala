@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
 
 protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], domain: ParsedDomain, domains: Map[DomainId, ParsedDomain], models: Map[Path, ParsedModel]) {
+
   import LocalModelLoader._
 
 
@@ -57,14 +58,15 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
   private def toModelResolver(primary: Path => Option[ParsedModel])(incPath: Path): Option[ParsedModel] = {
     primary(incPath)
       .orElse {
-        resolveFromCP(incPath, Some("idealingua"))
-          .orElse(resolveFromCP(incPath, None))
+        val fallback = resolveFromCP(incPath, Some("idealingua"), modelExt)
+          .orElse(resolveFromCP(incPath, None, modelExt))
           .orElse(resolveFromJars(incPath))
           .orElse(resolveFromJavaCP(incPath))
-          .map {
-            src =>
-              parseModels(Map(incPath -> src))(incPath)
-          }
+
+        fallback.map {
+          src =>
+            parseModels(Map(incPath -> src))(incPath)
+        }
       }
   }
 
@@ -73,20 +75,19 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
 
     primary(incPath)
       .orElse {
-        resolveFromCP(asPath, Some("idealingua"))
-          .orElse(resolveFromCP(asPath, None))
+        val fallback = resolveFromCP(asPath, Some("idealingua"), domainExt)
+          .orElse(resolveFromCP(asPath, None, domainExt))
           .orElse(resolveFromJars(asPath))
           .orElse(resolveFromJavaCP(asPath))
-          .map {
-            src =>
-              parseDomains(Map(asPath -> src))(incPath)
-          }
+
+        fallback.map {
+          src =>
+            val parsed = parseDomains(Map(asPath -> src))
+            println(parsed.keySet)
+            parsed(incPath)
+        }
       }
   }
-
-
-
-
 
   private def resolveFromJars(incPath: Path): Option[String] = {
     classpath
@@ -95,23 +96,28 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
       .map(path => readFile(path.toPath))
   }
 
-  private def resolveFromCP(incPath: Path, postfix: Option[String]): Option[String] = {
-    (Seq(root, root.resolve(toPath(domain.domain.id)).getParent).map(_.toFile) ++ classpath )
+  private def resolveFromCP(incPath: Path, prefix: Option[String], ext: String): Option[String] = {
+    val allCandidates = (Seq(root, root.resolve(toPath(domain.domain.id)).getParent).map(_.toFile) ++ classpath)
       .filter(_.isDirectory)
-      .map {
+      .flatMap {
         directory =>
-          val base = postfix match {
+          val base = prefix match {
             case None =>
               directory.toPath
             case Some(v) =>
               directory.toPath.resolve(v)
 
           }
-          println(base.resolve(incPath))
-          base.resolve(incPath).toFile
+
+          val candidatePath = base.resolve(incPath)
+          val candidates = Seq(candidatePath)
+          candidates.map(_.toFile)
       }
-      .find(_.exists())
+
+    val result = allCandidates
+      .find(f => f.exists() && !f.isDirectory)
       .map(path => readFile(path.toPath))
+    result
   }
 
   private def resolveFromJavaCP(incPath: Path): Option[String] = {

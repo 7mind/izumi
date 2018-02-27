@@ -72,7 +72,8 @@ object LocalModelLoader {
   }
 
   def toPath(id: DomainId): Path = {
-    Paths.get(id.toPackage.mkString("/"))
+    val p = Paths.get(id.toPackage.mkString("/"))
+    p.getParent.resolve(s"${p.getFileName.toString}$domainExt")
   }
 
   def formatFailures[T](failures: Map[Path, Parsed[T, Char, String]]): String = {
