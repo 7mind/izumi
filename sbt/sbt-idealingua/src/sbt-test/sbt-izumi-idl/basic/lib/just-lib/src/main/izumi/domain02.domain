@@ -1,6 +1,6 @@
 domain izumi.test.domain02
 
-include "model01.model"
+include "shared/model01.model"
 
 mixin TestInterface1 {
   if1Field_overriden: i32

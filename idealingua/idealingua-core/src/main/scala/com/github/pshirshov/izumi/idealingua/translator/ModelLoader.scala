@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
@@ -10,11 +11,14 @@ import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinition
 import fastparse.core.{Parsed, Parser}
 
 
-class ModelLoader(source: Path) {
+class ModelLoader(source: Path, classpath: Seq[File]) {
   val parser = new ILParser()
 
   val domainExt = ".domain"
   val modelExt = ".model"
+
+  type ParsedModel = Seq[IL.Val]
+  type InclusionResolver = (Path) => Option[ParsedModel]
 
   def load(): Seq[DomainDefinition] = {
     import scala.collection.JavaConverters._
@@ -28,7 +32,7 @@ class ModelLoader(source: Path) {
       .filter {
         f => Files.isRegularFile(f) && (f.getFileName.toString.endsWith(modelExt) || f.getFileName.toString.endsWith(domainExt))
       }
-      .map(f => source.relativize(f) -> new String(Files.readAllBytes(f), StandardCharsets.UTF_8))
+      .map(f => source.relativize(f) -> readFile(f))
       .toMap
 
     val domains = collectSuccess(files, domainExt, parser.fullDomainDef)
@@ -36,23 +40,32 @@ class ModelLoader(source: Path) {
 
     domains.map {
       case (_, domain) =>
-        postprocess(domain, domains, models)
+        postprocess(domain, domains, toResolver(models.get))
     }.toSeq
   }
 
+  private def postprocess(domain: ParsedDomain, domains: Map[Path, ParsedDomain], resolver: InclusionResolver): DomainDefinition = {
+    val withIncludes = domain
+      .includes
+      .foldLeft(domain) {
+        case (d, toInclude) =>
+          val incPath = Paths.get(toInclude)
 
-  private def postprocess(domain: ParsedDomain, domains: Map[Path, ParsedDomain], models: Map[Path, Seq[IL.Val]]): DomainDefinition = {
-    val withIncludes = domain.includes.foldLeft(domain) {
-      case (d, i) =>
-        d.extend(models(Paths.get(i)))
-    }
+          resolver(incPath) match {
+            case Some(inclusion) =>
+              d.extend(inclusion)
+
+            case None =>
+              throw new IDLException(s"Can't find inclusion $incPath in classpath nor filesystem while operating within $source")
+          }
+      }
       .copy(includes = Seq.empty)
 
     val imports = domain.imports.map(s => Paths.get(s))
       .map {
         p =>
           val d = domains(p)
-          d.domain.id -> postprocess(d, domains, models)
+          d.domain.id -> postprocess(d, domains, resolver)
       }
       .toMap
 
@@ -79,6 +92,38 @@ class ModelLoader(source: Path) {
       case (path, Parsed.Success(r, _)) =>
         path -> r
     }
+  }
+
+  private def toResolver(primary: InclusionResolver)(incPath: Path): Option[ParsedModel] = {
+    primary(incPath)
+      .orElse {
+        resolveFromCP(incPath)
+          .orElse(resolveFromJavaCP(incPath))
+          .map {
+            src =>
+              collectSuccess(Map(incPath -> readFile(src)), modelExt, parser.modelDef)(incPath)
+          }
+      }
+  }
+
+  private def resolveFromCP(incPath: Path) = {
+    classpath
+      .filter(_.isDirectory)
+      .map(_.toPath.resolve("idealingua").resolve(incPath).toFile)
+      .find(_.exists())
+      .map(_.toPath)
+  }
+
+  private def resolveFromJavaCP(incPath: Path): Option[Path] = {
+    Option(getClass.getResource(Paths.get("/idealingua/").resolve(incPath).toString))
+      .map {
+        fallback =>
+          new File(fallback.toURI).toPath
+      }
+  }
+
+  private def readFile(f: Path) = {
+    new String(Files.readAllBytes(f), StandardCharsets.UTF_8)
   }
 
   private def formatFailures[T](failures: Map[Path, Parsed[T, Char, String]]) = {

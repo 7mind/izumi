@@ -9,7 +9,6 @@ import sbt._
 import sbt.internal.util.ConsoleLogger
 import sbt.plugins._
 
-
 object IdealinguaPlugin extends AutoPlugin {
 
   case class Scope(source: Path, target: Path)
@@ -46,21 +45,30 @@ object IdealinguaPlugin extends AutoPlugin {
       val scopes = Seq(
         Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
       )
-      compileSources(scopes, Keys.compilationTargets.value)
+      compileSources(scopes, Keys.compilationTargets.value, (dependencyClasspath in Compile).value)
     }.taskValue
 
-    , sourceGenerators in Test += Def.task {
-      val src = sourceDirectory.value.toPath
-      val scopes = Seq(
-        Scope(src.resolve("test/izumi"), (sourceManaged in Test).value.toPath)
-      )
-      compileSources(scopes, Keys.compilationTargets.value)
+    , resourceGenerators in Compile += Def.task {
+      val idlbase = sourceDirectory.value / "main" / "izumi"
+      logger.info(s"""Generating resources: $idlbase ...""")
+      val allModels = (idlbase ** "*.domain").get ++ (idlbase ** "*.model").get
+      val mapped = allModels.map {
+        f =>
+          val relative = idlbase.toPath.relativize(f.toPath)
+          val targetPath = ((resourceManaged in Compile).value / "idealingua").toPath.resolve(relative).toFile
+
+          f -> targetPath
+      }
+      IO.copy(mapped, CopyOptions().withOverwrite(true))
+      mapped.map(_._2)
     }.taskValue
+
     , artifacts ++= {
       val ctargets = Keys.compilationTargets.value
       val pname = name.value
       artifactTargets(ctargets, pname).map(_._1)
     }
+
     , packagedArtifacts := {
       val ctargets = Keys.compilationTargets.value
       val pname = name.value
@@ -76,7 +84,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
           val scope = Scope(src.resolve("main/izumi"), targetDir.toPath)
 
-          val result = doCompile(Seq(scope), t)
+          val result = doCompile(Seq(scope), t, (dependencyClasspath in Compile).value)
           val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip"
           IO.zip(result.map(r => (r, scope.target.relativize(r.toPath).toString )), zipFile)
           a -> zipFile
@@ -94,22 +102,25 @@ object IdealinguaPlugin extends AutoPlugin {
     }
   }
 
-  private def compileSources(scopes: Seq[Scope], ctargets: Seq[Invokation]) = {
+  private def compileSources(scopes: Seq[Scope], ctargets: Seq[Invokation], classpath: Classpath) = {
     ctargets.filter(i => i.options.language == IDLLanguage.Scala && i.mode == Mode.Sources).flatMap {
       invokation =>
-        doCompile(scopes, invokation)
+        doCompile(scopes, invokation, classpath)
     }
   }
 
-  private def doCompile(scopes: Seq[Scope], invokation: Invokation) = {
+  private def doCompile(scopes: Seq[Scope], invokation: Invokation, classpath: Classpath): Seq[File] = {
     scopes.flatMap {
       scope =>
-        val toCompile = new ModelLoader(scope.source).load()
-
+        val cp = classpath.map(_.data)
         val target = scope.target
+        logger.info(s"""Loading models from $scope...""")
+
+        val toCompile = new ModelLoader(scope.source, cp).load()
         if (toCompile.nonEmpty) {
           logger.info(s"""Going to compile the following models: ${toCompile.map(_.id).mkString(",")}""")
         }
+
         toCompile.flatMap {
           domain =>
             logger.info(s"Compiling model ${domain.id} into $target...")

@@ -1,6 +1,6 @@
 domain izumi.test.domain01
 
-include "model01.model"
+include "shared/model01.model"
 
 id TestValIdentifer {
   userId: UserId

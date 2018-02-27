@@ -45,11 +45,13 @@ val inRoot = In(".")
 val inLib = In("lib")
 
 // the rest
-lazy val justLib = inLib.as.module.enablePlugins(IdealinguaPlugin)
+lazy val sharedLib = inLib.as.module.enablePlugins(IdealinguaPlugin)
+lazy val justLib = inLib.as.module.enablePlugins(IdealinguaPlugin).depends(sharedLib)
 
 
 lazy val root = inRoot.as.root
   .transitiveAggregate(
-    justLib
+    sharedLib
+    , justLib
   )
 
