@@ -19,8 +19,6 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
   val modelExt = ".model"
 
   type ParsedModel = Seq[IL.Val]
-  type InclusionResolver = (Path) => Option[ParsedModel]
-  type DomainResolver = (Path) => Option[ParsedDomain]
 
   def load(): Seq[DomainDefinition] = {
     import scala.collection.JavaConverters._
@@ -41,12 +39,16 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
     val models = collectSuccess(files, modelExt, parser.modelDef)
 
     domains.map {
-      case (_, domain) =>
-        postprocess(domain, toResolver(domains.get, parser.fullDomainDef), toResolver(models.get, parser.modelDef))
+      case (path, domain) =>
+        postprocess(path, domain, domains, models)
     }.toSeq
   }
 
-  private def postprocess(domain: ParsedDomain, domainResolver: DomainResolver, modelResolver: InclusionResolver): DomainDefinition = {
+  private def postprocess(path: Path, domain: ParsedDomain, domains: Map[Path, ParsedDomain], models: Map[Path, ParsedModel]): DomainDefinition = {
+    val domainResolver = toResolver(path, domains.get, parser.fullDomainDef, domainExt) _
+    val modelResolver = toResolver(path, models.get, parser.modelDef, modelExt) _
+
+
     val withIncludes = domain
       .includes
       .foldLeft(domain) {
@@ -64,12 +66,13 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
       .copy(includes = Seq.empty)
 
     val imports = domain
-      .imports.map(s => Paths.get(s))
+      .imports
+      .map(s => Paths.get(s))
       .map {
         p =>
           domainResolver(p) match {
             case Some(d) =>
-              d.domain.id -> postprocess(d, domainResolver, modelResolver)
+              d.domain.id -> postprocess(p, d, domains, models)
 
             case None =>
               throw new IDLException(s"Can't find reference $p in classpath nor filesystem while operating within $source")
@@ -102,7 +105,8 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
     }
   }
 
-  private def toResolver[T](primary: Path => Option[T], p: all.Parser[T])(incPath: Path): Option[T] = {
+  private def toResolver[T](domain: Path, primary: Path => Option[T], p: all.Parser[T], ext: String)(incPath: Path): Option[T] = {
+    // TODO: we should try to resolve siblings!
     primary(incPath)
       .orElse {
         resolveFromCP(incPath)
@@ -110,7 +114,7 @@ class ModelLoader(source: Path, classpath: Seq[File]) {
           .orElse(resolveFromJavaCP(incPath))
           .map {
             src =>
-              collectSuccess(Map(incPath -> src), modelExt, p)(incPath)
+              collectSuccess(Map(incPath -> src), ext, p)(incPath)
           }
       }
   }

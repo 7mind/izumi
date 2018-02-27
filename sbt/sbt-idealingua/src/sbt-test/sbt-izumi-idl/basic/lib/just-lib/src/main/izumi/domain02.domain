@@ -1,5 +1,6 @@
 domain izumi.test.domain02
 
+import "shared/shared.domain"
 include "shared/model01.model"
 
 mixin TestInterface1 {

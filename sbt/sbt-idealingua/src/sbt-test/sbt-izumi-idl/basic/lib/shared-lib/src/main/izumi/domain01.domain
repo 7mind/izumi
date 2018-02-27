@@ -1,5 +1,6 @@
 domain izumi.test.domain01
 
+import "shared/shared.domain"
 include "shared/model01.model"
 
 id TestValIdentifer {
