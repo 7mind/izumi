@@ -123,12 +123,16 @@ class Translation(typespace: Typespace) {
       throw new IDLException(s"Duplicated adt elements: $duplicates")
     }
 
-    val members = i.alternatives.map {
+    val members = i.alternatives.flatMap {
       m =>
         val mt = t.within(m.name)
+        val original = conv.toScala(m)
 
-        mt.termName -> withInfo(i.id,
-          q"""case class ${mt.typeName}(value: ${mt.typeFull}) extends ..${List(t.init())}""")
+        Seq(
+          withInfo(i.id, q"""case class ${mt.typeName}(value: ${original.typeFull}) extends ..${List(t.init())}""")
+          , q"""implicit def ${Term.Name("to" + m.name.capitalize)}(value: ${original.typeFull}): ${t.typeFull} = ${mt.termFull}(value) """
+          , q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeFull} = value.value"""
+        )
     }
 
     Seq(
@@ -137,7 +141,7 @@ class Translation(typespace: Typespace) {
       q"""object ${t.termName} extends $adtInit {
             type Element = ${t.typeFull}
 
-            ..${members.map(_._2)}
+            ..$members
            }"""
     )
   }
@@ -235,7 +239,7 @@ class Translation(typespace: Typespace) {
         Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
     }
 
-    val scalaIfaces = i.interfaces.map(typespace.apply).toList
+    val scalaIfaces = i.interfaces.map(typespace.apply)
     val ifDecls = toSuper(fields, idtGenerated +: scalaIfaces.map {
       iface =>
         conv.toScala(iface.id).init()
@@ -356,7 +360,7 @@ class Translation(typespace: Typespace) {
     val serviceInputBase = t.within(s"In${typeName.capitalize}")
     val serviceOutputBase = t.within(s"Out${typeName.capitalize}")
 
-    val decls = i.methods.toList.map {
+    val decls = i.methods.map {
       case method: RPCMethod =>
         // TODO: unify with ephemerals in typespace
         val in = t.within(s"In${method.name.capitalize}")
@@ -433,7 +437,7 @@ class Translation(typespace: Typespace) {
 
   private def renderComposite(typeName: JavaType, defn: FinalDefinition, interfaces: Composite, bases: List[Init]): Seq[Defn] = {
     val fields = typespace.enumFields(interfaces)
-    val scalaIfaces = interfaces.map(typespace.apply).toList
+    val scalaIfaces = interfaces.map(typespace.apply)
     val scalaFieldsEx = fields.toScala
     val scalaFields: Seq[ScalaField] = scalaFieldsEx.all
     val decls = scalaFields.toList.map {
