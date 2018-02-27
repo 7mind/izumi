@@ -50,7 +50,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
     , resourceGenerators in Compile += Def.task {
       val idlbase = sourceDirectory.value / "main" / "izumi"
-      logger.info(s"""Generating resources: $idlbase ...""")
+      logger.debug(s"""Generating resources: $idlbase ...""")
       val allModels = (idlbase ** "*.domain").get ++ (idlbase ** "*.model").get
       val mapped = allModels.map {
         f =>
@@ -114,7 +114,7 @@ object IdealinguaPlugin extends AutoPlugin {
       scope =>
         val cp = classpath.map(_.data)
         val target = scope.target
-        logger.info(s"""Loading models from $scope...""")
+        logger.debug(s"""Loading models from $scope...""")
 
         val toCompile = new ModelLoader(scope.source, cp).load()
         if (toCompile.nonEmpty) {
