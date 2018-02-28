@@ -18,6 +18,7 @@ import scala.meta._
 class Translation(typespace: Typespace) {
   protected val conv = new ScalaTypeConverter(typespace.domain.id)
   protected val runtimeTypes = new IDLRuntimeTypes()
+  protected val sig = new TypeSignature(typespace)
 
   import conv._
   import runtimeTypes._
@@ -108,7 +109,7 @@ class Translation(typespace: Typespace) {
           ${typeInfo.termFull}(
             ${runtimeTypes.conv.toAst(id)}
             , ${tDomain.termFull}
-            , ${Lit.Int(typespace.signature(id))}
+            , ${Lit.Int(sig.signature(id))}
           ) }"""
     )
 

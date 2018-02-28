@@ -8,8 +8,6 @@ import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 
-import scala.util.hashing.MurmurHash3
-
 
 case class InterfaceConstructors(impl: TypeId, missingInterfaces: Composite, allFields: List[ExtendedField])
 
@@ -22,7 +20,7 @@ class Typespace(original: DomainDefinition) {
   protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
 
   protected val serviceEphemerals: Map[EphemeralId, Interface] = (for {
-    service <- domain.services
+    service <- services.values
     method <- service.methods
   } yield {
     method match {
@@ -43,10 +41,10 @@ class Typespace(original: DomainDefinition) {
     typespace
       .values
       .collect {
-      case i: Interface =>
-        val eid =  EphemeralId(i.id, toDtoName(i.id))
-        val iid = InterfaceId(eid.pkg, eid.name)
-        eid -> Interface(iid, List.empty, List(i.id))
+        case i: Interface =>
+          val eid = EphemeralId(i.id, toDtoName(i.id))
+          val iid = InterfaceId(eid.pkg, eid.name)
+          eid -> Interface(iid, List.empty, List(i.id))
       }
       .toMap
   }
@@ -100,12 +98,13 @@ class Typespace(original: DomainDefinition) {
   }
 
 
-
   def all: List[TypeId] = List(
     typespace.keys
     , serviceEphemerals.keys
-    , domain.services.map(_.id)
-    , domain.types.collect({ case t: Enumeration => t }).flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
+    , interfaceEphemerals.keys
+    , services.values.map(_.id)
+    , domain.types.collect({ case t: Enumeration => t })
+      .flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
   ).flatten
 
   def extractDependencies(definition: FinalDefinition): Seq[Dependency] = {
@@ -130,7 +129,7 @@ class Typespace(original: DomainDefinition) {
     val typeDependencies = domain.types.flatMap(extractDependencies)
 
     val serviceDependencies = for {
-      service <- domain.services
+      service <- services.values
       method <- service.methods
     } yield {
       method match {
@@ -165,15 +164,6 @@ class Typespace(original: DomainDefinition) {
     }
   }
 
-  protected def verified(types: Seq[FinalDefinition]): Map[UserType, FinalDefinition] = {
-    val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
-    if (conflictingTypes.nonEmpty) {
-      throw new IDLException(s"Conflicting types in: $conflictingTypes")
-    }
-    types
-      .groupBy(k => toKey(k.id))
-      .mapValues(_.head)
-  }
 
   def apply(id: TypeId): FinalDefinition = {
     val typeDomain = domain.id.toDomainId(id)
@@ -193,10 +183,9 @@ class Typespace(original: DomainDefinition) {
     }
   }
 
-  def apply(id: InterfaceId): Interface = apply(id:TypeId).asInstanceOf[Interface]
+  def apply(id: InterfaceId): Interface = apply(id: TypeId).asInstanceOf[Interface]
 
-  def apply(id: DTOId): DTO = apply(id:TypeId).asInstanceOf[DTO]
-
+  def apply(id: ServiceId): Service = services(id)
 
   def implements(id: TypeId): List[InterfaceId] = {
     id match {
@@ -223,7 +212,7 @@ class Typespace(original: DomainDefinition) {
 
   def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
     serviceEphemerals.collect {
-      case (eid: EphemeralId, _ : Interface) if implements(eid).contains(id) =>
+      case (eid: EphemeralId, _: Interface) if implements(eid).contains(id) =>
         eid
     }.toList
   }
@@ -259,84 +248,21 @@ class Typespace(original: DomainDefinition) {
 
   private def toExtendedFields(fields: Aggregate, id: TypeId) = fields.map(f => ExtendedField(f, id: TypeId))
 
-  //  def fetchFields(composite: Composite): List[Field] = {
-  //    enumFields(composite).map(_.field)
-  //  }
-
-  //  def fetchFields(defn: FinalDefinition): List[Field] = {
-  //    enumFields(defn).map(_.field)
-  //  }
-
-  //  // TODO: do we need this?
-    def explode(defn: Field): List[TrivialField] = {
-      defn.typeId match {
-        case t: Builtin =>
-          List(TrivialField(t, defn.name))
-        case t  =>
-          explode(apply(t))
-      }
+  protected def verified(types: Seq[FinalDefinition]): Map[UserType, FinalDefinition] = {
+    val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
+    if (conflictingTypes.nonEmpty) {
+      throw new IDLException(s"Conflicting types in: $conflictingTypes")
     }
-
-    def explode(defn: FinalDefinition): List[TrivialField] = {
-      defn match {
-        case t: Interface =>
-          t.interfaces.flatMap(i => explode(apply(toKey(i)))) ++ t.fields.flatMap(explode)
-
-        case t: Adt =>
-          t.alternatives.map(apply).flatMap(explode)
-
-        case t: DTO =>
-          t.interfaces.flatMap(i => explode(apply(toKey(i))))
-
-        case t: Identifier =>
-          t.fields.flatMap(explode)
-
-        case _: Alias =>
-          List()
-
-        case _: Enumeration =>
-          List()
-      }
-    }
-
-  def simpleSignature(id: TypeId): Int = {
-    MurmurHash3.orderedHash((id.pkg :+ id.name).map(MurmurHash3.stringHash))
+    types
+      .groupBy(k => toKey(k.id))
+      .mapValues(_.head)
   }
 
-  def signature(id: TypeId): Int = {
-    signature(id, Set.empty)
-  }
+  protected def apply(id: DTOId): DTO = apply(id: TypeId).asInstanceOf[DTO]
 
-  private def signature(id: TypeId, seen: Set[TypeId]): Int = {
-    id match {
-      case b: Primitive =>
-        simpleSignature(b)
 
-      case b: Generic =>
-        val argSig = b.args.map {
-          case v if seen.contains(v) => simpleSignature(v)
-          case argid => signature(argid, seen + argid)
-        }
-        MurmurHash3.orderedHash(simpleSignature(b) +: argSig)
-
-      case s: ServiceId =>
-        val service = services(s)
-        MurmurHash3.orderedHash(simpleSignature(service.id) +: service.methods.flatMap {
-          case r: RPCMethod =>
-            Seq(MurmurHash3.stringHash(r.name), MurmurHash3.orderedHash(r.signature.asList.map(signature)))
-        })
-
-      case _ =>
-        println(id, id.getClass)
-        val primitiveSignature = explode(apply(id))
-        val numbers = primitiveSignature.flatMap {
-          tf =>
-            Seq(simpleSignature(tf.typeId), signature(tf.typeId, seen))
-        }
-        MurmurHash3.orderedHash(numbers)
-    }
-  }
 }
+
 
 object Typespace {
 
