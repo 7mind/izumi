@@ -47,11 +47,11 @@ class ScalaTypeConverter(domain: DomainId) {
 
   implicit class ScalaTypeOps(st: ScalaType) {
     def sibling(name: TypeName): ScalaType = {
-      toScala(JavaType(st.javaType.pkg, name))
+      toScala(JavaType(st.fullJavaType.pkg, name))
     }
 
     def within(name: TypeName): ScalaType = {
-      toScala(JavaType(st.javaType.pkg :+ st.javaType.name, name))
+      toScala(JavaType(st.fullJavaType.pkg :+ st.fullJavaType.name, name))
     }
   }
 
@@ -122,9 +122,10 @@ class ScalaTypeConverter(domain: DomainId) {
     ScalaType(
       toSelectTerm(minimized)
       , toSelect(minimized)
-      , Term.Name(minimized.name)
-      , Type.Name(minimized.name)
+      , Term.Name(javaType.name)
+      , Type.Name(javaType.name)
       , minimized
+      , javaType
       , args.map(toScala(_).typeFull)
       , args.map(toScala(_).termFull)
     )

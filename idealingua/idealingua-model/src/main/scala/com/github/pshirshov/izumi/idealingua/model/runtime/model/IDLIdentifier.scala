@@ -11,7 +11,7 @@ import scala.reflect._
 trait IDLGenerated extends Any
 trait IDLGeneratedCompanion extends IDLGenerated
 
-case class IDLTypeInfo(typeId: TypeId, domain: IDLDomainCompanion)
+case class IDLTypeInfo(typeId: TypeId, domain: IDLDomainCompanion, signature: Int)
 
 trait IDLGeneratedType extends Any with IDLGenerated {
   def _info: IDLTypeInfo

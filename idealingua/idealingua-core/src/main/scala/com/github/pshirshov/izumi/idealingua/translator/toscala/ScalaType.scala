@@ -24,6 +24,7 @@ case class ScalaType(
                       , termName: Term.Name
                       , typeName: Type.Name
                       , javaType: JavaType
+                      , fullJavaType: JavaType
                       , typeArgs: List[Type]
                       , termArgs: List[Term]
                     ) extends IScalaType {

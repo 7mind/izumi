@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
 import java.io.IOException
+import java.lang.management.ManagementFactory
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file._
 
@@ -26,17 +27,18 @@ class IDLTest extends WordSpec {
 object IDLTest {
   def compiles(domains: Seq[DomainDefinition]): Boolean = {
     val tmpdir = Paths.get("target")
+    val runPrefix = s"idl-${ManagementFactory.getRuntimeMXBean.getStartTime}"
+    val runDir = tmpdir.resolve(s"$runPrefix-${System.currentTimeMillis()}")
+
     tmpdir
       .toFile
       .listFiles()
       .toList
-      .filter(f => f.getName.startsWith("idl-") && f.isDirectory)
+      .filter(f => f.isDirectory && f.getName.startsWith("idl-") && !f.getName.startsWith(runPrefix))
       .foreach {
         f =>
           remove(f.toPath)
       }
-
-    val runDir = tmpdir.resolve("idl-" + System.currentTimeMillis())
 
     val allFiles = domains.flatMap {
       domain =>

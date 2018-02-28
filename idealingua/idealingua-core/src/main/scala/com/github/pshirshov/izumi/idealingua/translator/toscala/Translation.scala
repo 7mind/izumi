@@ -103,15 +103,22 @@ class Translation(typespace: Typespace) {
   }
 
   def withInfo[T <: Defn](id: TypeId, defn: T): T = {
-    val stat = q"def _info: ${typeInfo.typeFull} = { ${typeInfo.termFull}(${runtimeTypes.conv.toAst(id)}, ${tDomain.termFull}) }"
+    val stats = List(
+      q"""def _info: ${typeInfo.typeFull} = {
+          ${typeInfo.termFull}(
+            ${runtimeTypes.conv.toAst(id)}
+            , ${tDomain.termFull}
+            , ${Lit.Int(typespace.signature(id))}
+          ) }"""
+    )
 
     val extended = defn match {
       case o: Defn.Object =>
-        o.copy(templ = o.templ.copy(stats = stat +: o.templ.stats))
+        o.copy(templ = o.templ.copy(stats = stats ++ o.templ.stats))
       case o: Defn.Class =>
-        o.copy(templ = o.templ.copy(stats = stat +: o.templ.stats))
+        o.copy(templ = o.templ.copy(stats = stats ++ o.templ.stats))
       case o: Defn.Trait =>
-        o.copy(templ = o.templ.copy(stats = stat +: o.templ.stats))
+        o.copy(templ = o.templ.copy(stats = stats ++ o.templ.stats))
     }
     extended.asInstanceOf[T]
   }
@@ -131,8 +138,10 @@ class Translation(typespace: Typespace) {
 
         Seq(
           withInfo(i.id, q"""case class ${mt.typeName}(value: ${original.typeFull}) extends ..${List(t.init())}""")
-          , q"""implicit def ${Term.Name("to" + m.name.capitalize)}(value: ${original.typeFull}): ${t.typeFull} = ${mt.termFull}(value) """
-          , q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeFull} = value.value"""
+          ,
+          q"""implicit def ${Term.Name("to" + m.name.capitalize)}(value: ${original.typeFull}): ${t.typeFull} = ${mt.termFull}(value) """
+          ,
+          q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeFull} = value.value"""
         )
     }
 
@@ -141,7 +150,7 @@ class Translation(typespace: Typespace) {
       ,
       q"""object ${t.termName} extends $adtInit {
             import scala.language.implicitConversions
-            
+
             type Element = ${t.typeFull}
 
             ..$members
@@ -250,7 +259,7 @@ class Translation(typespace: Typespace) {
 
     val t = conv.toScala(i.id)
     val dtoName = toDtoName(i.id)
-    val impl = renderComposite(t.within(dtoName).javaType, i, List(i.id), List.empty).toList
+    val impl = renderComposite(EphemeralId(i.id, dtoName), List(i.id), List.empty).toList
 
     val parents = List(i.id)
     val narrowers = parents.map {
@@ -370,11 +379,12 @@ class Translation(typespace: Typespace) {
         val in = t.within(s"In${method.name.capitalize}")
         val out = t.within(s"Out${method.name.capitalize}")
 
-        val inDef = Interface(InterfaceId(in.javaType.pkg, in.javaType.name), List.empty, method.signature.input)
-        val outDef = Interface(InterfaceId(out.javaType.pkg, out.javaType.name), List.empty, method.signature.input)
+        val inDef = EphemeralId(i.id, in.fullJavaType.name) //Interface(InterfaceId(in.fullJavaType.pkg, in.fullJavaType.name), List.empty, method.signature.input)
+        val outDef = EphemeralId(i.id, out.fullJavaType.name) //Interface(InterfaceId(out.fullJavaType.pkg, out.fullJavaType.name), List.empty, method.signature.input)
 
-        val inputComposite = renderComposite(in.javaType, inDef, method.signature.input, List(serviceInputBase.init()))
-        val outputComposite = renderComposite(out.javaType, outDef, method.signature.output, List(serviceOutputBase.init()))
+        //System.err.println(i.id, in, out, in.javaType, out.javaType)
+        val inputComposite = renderComposite(inDef, method.signature.input, List(serviceInputBase.init()))
+        val outputComposite = renderComposite(outDef, method.signature.output, List(serviceOutputBase.init()))
 
         val inputType = in.typeFull
         val outputType = out.typeFull
@@ -436,10 +446,10 @@ class Translation(typespace: Typespace) {
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
-    renderComposite(JavaType(i.id), i, i.interfaces, List.empty)
+    renderComposite(i.id, i.interfaces, List.empty)
   }
 
-  private def renderComposite(typeName: JavaType, defn: FinalDefinition, interfaces: Composite, bases: List[Init]): Seq[Defn] = {
+  private def renderComposite(id: TypeId, interfaces: Composite, bases: List[Init]): Seq[Defn] = {
     val fields = typespace.enumFields(interfaces)
     val scalaIfaces = interfaces.map(typespace.apply)
     val scalaFieldsEx = fields.toScala
@@ -458,7 +468,7 @@ class Translation(typespace: Typespace) {
 
     val superClasses = toSuper(fields, bases ++ ifDecls)
 
-    val t = conv.toScala(typeName)
+    val t = conv.toScala(id)
 
     val constructorSignature = scalaIfaces.map {
       d =>
@@ -483,14 +493,14 @@ class Translation(typespace: Typespace) {
          ${t.termFull}(..${constructorCode ++ constructorCodeNonUnique})
          }"""
     )
-    val tools = t.within(s"${typeName.name}Extensions")
+    val tools = t.within(s"${id.name.capitalize}Extensions")
 
     Seq(
-      withInfo(defn.id, q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}""")
-      ,
-      q"""object ${t.termName} extends $typeCompanionInit {
+      withInfo(id
+        , q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}""")
+        , q"""object ${t.termName} extends $typeCompanionInit {
               implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-              ${runtimeTypes.conv.toMethodAst(defn.id)}
+              ${runtimeTypes.conv.toMethodAst(id)}
               }
              ..$constructors
          }"""

@@ -1,17 +1,21 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 
+import scala.util.hashing.MurmurHash3
+
 
 class Typespace(original: DomainDefinition) {
   val domain = DomainDefinition.normalizeTypeIds(original)
   protected val typespace: Map[UserType, FinalDefinition] = verified(domain.types)
+  protected val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new Typespace(d))
+  protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
 
   protected val serviceEphemerals: Map[EphemeralId, Composite] = (for {
     service <- domain.services
@@ -69,12 +73,11 @@ class Typespace(original: DomainDefinition) {
 
     val allDependencies = typeDependencies ++ serviceDependencies.flatten
 
-    val referenced = domain.referenced.mapValues(d => new Typespace(d))
 
     val missingTypes = allDependencies
       .filterNot(_.typeId.isInstanceOf[Builtin])
       .filterNot(d => typespace.contains(toKey(d.typeId)))
-      .filterNot(d => referenced.values.exists(_.typespace.contains(toKey(d.typeId))))
+      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(_.typespace.contains(toKey(d.typeId))))
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
@@ -104,13 +107,29 @@ class Typespace(original: DomainDefinition) {
       .mapValues(_.head)
   }
 
-  def apply(id: TypeId): FinalDefinition = typespace.apply(toKey(id))
+  def apply(id: TypeId): FinalDefinition = {
+    val typeDomain = domain.id.toDomainId(id)
+    if (domain.id == typeDomain) {
+      id match {
+        // TODO: A hack for ephemerals bound to interface. We need to provide consistent view on ephemerals bound to interfaces
+        case e: EphemeralId if serviceEphemerals.contains(e) =>
+          val asInterface = InterfaceId(e.pkg, e.name)
+          Interface(asInterface, List.empty, serviceEphemerals(e))
+        case e: EphemeralId  =>
+          typespace(toKey(e.parent))
+        case o =>
+          typespace(toKey(o))
+      }
+    } else {
+      referenced(typeDomain).apply(id)
+    }
+  }
 
-  def apply(id: InterfaceId): Interface = typespace.apply(toKey(id)).asInstanceOf[Interface]
+  def apply(id: InterfaceId): Interface = apply(id:TypeId).asInstanceOf[Interface]
+
+  def apply(id: DTOId): DTO = apply(id:TypeId).asInstanceOf[DTO]
 
   def apply(id: EphemeralId): Composite = serviceEphemerals.apply(id)
-
-  def apply(id: DTOId): DTO = typespace.apply(toKey(id)).asInstanceOf[DTO]
 
   def implements(id: TypeId): List[InterfaceId] = {
     id match {
@@ -182,37 +201,74 @@ class Typespace(original: DomainDefinition) {
   //  }
 
   //  // TODO: do we need this?
-  //  def explode(defn: Field): List[TrivialField] = {
-  //    defn.typeId match {
-  //      case t: Primitive =>
-  //        List(TrivialField(t, defn.name))
-  //      case t: UserType =>
-  //        explode(typespace(t))
-  //    }
-  //  }
-  //
-  //  def explode(defn: FinalDefinition): List[TrivialField] = {
-  //    defn match {
-  //      case t: Interface =>
-  //        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList ++ t.fields.flatMap(explode).toList
-  //
-  //      case t: Adt =>
-  //        t.alternatives.map(apply).flatMap(explode).toList
-  //
-  //      case t: DTO =>
-  //        t.interfaces.flatMap(i => explode(typespace(toKey(i)))).toList
-  //
-  //      case t: Identifier =>
-  //        t.fields.flatMap(explode).toList
-  //
-  //      case _: Alias =>
-  //        List()
-  //
-  //      case _: Enumeration =>
-  //        List()
-  //    }
-  //  }
+    def explode(defn: Field): List[TrivialField] = {
+      defn.typeId match {
+        case t: Builtin =>
+          List(TrivialField(t, defn.name))
+        case t  =>
+          explode(apply(t))
+      }
+    }
 
+    def explode(defn: FinalDefinition): List[TrivialField] = {
+      defn match {
+        case t: Interface =>
+          t.interfaces.flatMap(i => explode(apply(toKey(i)))) ++ t.fields.flatMap(explode)
+
+        case t: Adt =>
+          t.alternatives.map(apply).flatMap(explode)
+
+        case t: DTO =>
+          t.interfaces.flatMap(i => explode(apply(toKey(i))))
+
+        case t: Identifier =>
+          t.fields.flatMap(explode)
+
+        case _: Alias =>
+          List()
+
+        case _: Enumeration =>
+          List()
+      }
+    }
+
+  def simpleSignature(id: TypeId): Int = {
+    MurmurHash3.orderedHash((id.pkg :+ id.name).map(MurmurHash3.stringHash))
+  }
+
+  def signature(id: TypeId): Int = {
+    signature(id, Set.empty)
+  }
+
+  private def signature(id: TypeId, seen: Set[TypeId]): Int = {
+    id match {
+      case b: Primitive =>
+        simpleSignature(b)
+
+      case b: Generic =>
+        val argSig = b.args.map {
+          case v if seen.contains(v) => simpleSignature(v)
+          case argid => signature(argid, seen + argid)
+        }
+        MurmurHash3.orderedHash(simpleSignature(b) +: argSig)
+
+      case s: ServiceId =>
+        val service = services(s)
+        MurmurHash3.orderedHash(simpleSignature(service.id) +: service.methods.flatMap {
+          case r: RPCMethod =>
+            Seq(MurmurHash3.stringHash(r.name), MurmurHash3.orderedHash(r.signature.asList.map(signature)))
+        })
+
+      case _ =>
+        println(id, id.getClass)
+        val primitiveSignature = explode(apply(id))
+        val numbers = primitiveSignature.flatMap {
+          tf =>
+            Seq(simpleSignature(tf.typeId), signature(tf.typeId, seen))
+        }
+        MurmurHash3.orderedHash(numbers)
+    }
+  }
 }
 
 object Typespace {
