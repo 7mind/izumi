@@ -11,6 +11,9 @@ import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 import scala.util.hashing.MurmurHash3
 
 
+case class InterfaceConstructors(impl: TypeId, missingInterfaces: Composite, allFields: List[ExtendedField])
+
+
 class Typespace(original: DomainDefinition) {
   val domain: DomainDefinition = DomainDefinition.normalizeTypeIds(original)
 
@@ -18,11 +21,7 @@ class Typespace(original: DomainDefinition) {
   protected val typespace: Map[UserType, FinalDefinition] = verified(domain.types)
   protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
 
-//  protected val interfaceEphemerals: Map[EphemeralId, Composite] = {
-//    ???
-//  }
-
-  protected val serviceEphemerals: Map[EphemeralId, Composite] = (for {
+  protected val serviceEphemerals: Map[EphemeralId, Interface] = (for {
     service <- domain.services
     method <- service.methods
   } yield {
@@ -30,13 +29,77 @@ class Typespace(original: DomainDefinition) {
       case m: RPCMethod =>
         val inId = EphemeralId(service.id, s"In${m.name.capitalize}")
         val outId = EphemeralId(service.id, s"Out${m.name.capitalize}")
+        val inIid = InterfaceId(inId.pkg, inId.name)
+        val outIid = InterfaceId(outId.pkg, outId.name)
 
         Seq(
-          inId -> m.signature.input
-          , outId -> m.signature.output
+          inId -> Interface(inIid, List.empty, m.signature.input)
+          , outId -> Interface(outIid, List.empty, m.signature.output)
         )
     }
   }).flatten.toMap
+
+  protected val interfaceEphemerals: Map[EphemeralId, Interface] = {
+    typespace
+      .values
+      .collect {
+      case i: Interface =>
+        val eid =  EphemeralId(i.id, toDtoName(i.id))
+        val iid = InterfaceId(eid.pkg, eid.name)
+        eid -> Interface(iid, List.empty, List(i.id))
+      }
+      .toMap
+  }
+
+  def toDtoName(id: TypeId): String = {
+    id match {
+      case _: InterfaceId =>
+        s"${id.name}Impl"
+      case _ =>
+        s"${id.name}"
+
+    }
+  }
+
+  def getComposite(id: TypeId): Composite = {
+    apply(id) match {
+      case i: Interface =>
+        i.interfaces
+      case i: DTO =>
+        i.interfaces
+      case _ =>
+        throw new IDLException(s"Interface or DTO expected: $id")
+    }
+  }
+
+  def ephemeralImplementors(id: InterfaceId) = {
+    val allParents = implements(id)
+    val implementors = implementingDtos(id) ++ implementingEphemerals(id)
+
+    implementors.map {
+      impl =>
+        val (missingInterfaces, allDtoFields) = impl match {
+          case i: DTOId =>
+            val implementor = apply(i)
+            (
+              implementor.interfaces.toSet -- allParents.toSet
+              , enumFields(apply(i))
+            )
+          case i: EphemeralId =>
+            val implementor = getComposite(i)
+
+            (
+              implementor.toSet -- allParents.toSet
+              , enumFields(apply(i))
+            )
+        }
+
+        InterfaceConstructors(impl, missingInterfaces.toList, allDtoFields)
+
+    }
+  }
+
+
 
   def all: List[TypeId] = List(
     typespace.keys
@@ -116,12 +179,12 @@ class Typespace(original: DomainDefinition) {
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
       id match {
-        // TODO: A hack for ephemerals bound to interface. We need to provide consistent view on ephemerals bound to interfaces
         case e: EphemeralId if serviceEphemerals.contains(e) =>
-          val asInterface = InterfaceId(e.pkg, e.name)
-          Interface(asInterface, List.empty, serviceEphemerals(e))
-        case e: EphemeralId  =>
-          typespace(toKey(e.parent))
+          serviceEphemerals(e)
+
+        case e: EphemeralId if interfaceEphemerals.contains(e) =>
+          interfaceEphemerals(e)
+
         case o =>
           typespace(toKey(o))
       }
@@ -134,7 +197,6 @@ class Typespace(original: DomainDefinition) {
 
   def apply(id: DTOId): DTO = apply(id:TypeId).asInstanceOf[DTO]
 
-  def apply(id: EphemeralId): Composite = serviceEphemerals.apply(id)
 
   def implements(id: TypeId): List[InterfaceId] = {
     id match {
@@ -145,7 +207,7 @@ class Typespace(original: DomainDefinition) {
         apply(i).interfaces.flatMap(implements)
 
       case i: EphemeralId =>
-        serviceEphemerals(i).flatMap(implements)
+        serviceEphemerals(i).interfaces.flatMap(implements)
 
       case _ =>
         List.empty
@@ -161,7 +223,7 @@ class Typespace(original: DomainDefinition) {
 
   def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
     serviceEphemerals.collect {
-      case (eid: EphemeralId, _: Composite) if implements(eid).contains(id) =>
+      case (eid: EphemeralId, _ : Interface) if implements(eid).contains(id) =>
         eid
     }.toList
   }

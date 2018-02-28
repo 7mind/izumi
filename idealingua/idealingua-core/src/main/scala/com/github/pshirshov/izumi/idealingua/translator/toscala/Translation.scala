@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EnumId, EphemeralId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, EphemeralId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il
@@ -258,8 +258,8 @@ class Translation(typespace: Typespace) {
     }, "Any")
 
     val t = conv.toScala(i.id)
-    val dtoName = toDtoName(i.id)
-    val impl = renderComposite(EphemeralId(i.id, dtoName), List(i.id), List.empty).toList
+    val eid = EphemeralId(i.id, typespace.toDtoName(i.id))
+    val impl = renderComposite(eid, List.empty).toList
 
     val parents = List(i.id)
     val narrowers = parents.map {
@@ -271,48 +271,32 @@ class Translation(typespace: Typespace) {
             q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
         }
 
-        val tt = toScala(p).within(toDtoName(p))
+        val tt = toScala(p).within(typespace.toDtoName(p))
         q"""def ${Term.Name("to" + p.name.capitalize)}(): ${tt.typeFull} = {
              ${tt.termFull}(..$constructorCode)
             }
           """
     }
 
-    val allParents = typespace.implements(i.id)
-    val implementors = typespace.implementingDtos(i.id) ++ typespace.implementingEphemerals(i.id)
-
-    val constructors = implementors.map {
-      impl =>
-        val (missingInterfaces, allDtoFields) = impl match {
-          case i: DTOId =>
-            val implementor = typespace(i)
-            (
-              (implementor.interfaces.toSet -- allParents.toSet).toSeq
-              , typespace.enumFields(typespace(i)).toScala
-            )
-          case i: EphemeralId =>
-            val implementor = typespace(i)
-            (
-              (implementor.toSet -- allParents.toSet).toSeq
-              , typespace.enumFields(typespace(i)).toScala
-            )
-        }
+    val constructors = typespace.ephemeralImplementors(i.id).map {
+      t =>
+        val missingInterfaces = t.missingInterfaces
+        val nonUniqueFields = t.allFields.toScala.nonUnique
 
         val thisFields = fields.map(_.field).toSet
-          .filterNot(f => allDtoFields.nonUnique.exists(_.name.value == f.name))
+          .filterNot(f => nonUniqueFields.exists(_.name.value == f.name))
 
+        val otherFields: Seq[ExtendedField] = missingInterfaces
+          .flatMap(mi => typespace.enumFields(typespace(mi)))
+          .filterNot(f => thisFields.contains(f.field))
+          .filterNot(f => nonUniqueFields.exists(_.name.value == f.field.name))
 
         val constructorCodeThis = thisFields.toList.map {
           f =>
             q""" ${Term.Name(f.name)} = _value.${Term.Name(f.name)}  """
         }
 
-        val otherFields: Seq[ExtendedField] = missingInterfaces
-          .flatMap(mi => typespace.enumFields(typespace(mi)))
-          .filterNot(f => thisFields.contains(f.field))
-          .filterNot(f => allDtoFields.nonUnique.exists(_.name.value == f.field.name))
-
-        val constructorCodeNonUnique = allDtoFields.nonUnique.map {
+        val constructorCodeNonUnique = nonUniqueFields.map {
           f =>
             q""" ${f.name} = ${f.name}  """
         }
@@ -327,11 +311,12 @@ class Translation(typespace: Typespace) {
             Term.Param(List.empty, idToParaName(f), Some(conv.toScala(f).typeFull), None)
         }
 
-        val fullSignature = signature ++ allDtoFields.nonUnique.map {
+        val fullSignature = signature ++ nonUniqueFields.map {
           f =>
             Term.Param(List.empty, f.name, Some(f.fieldType), None)
         }
 
+        val impl = t.impl
         q"""def ${Term.Name("to" + impl.name.capitalize)}(..$fullSignature): ${toScala(impl).typeFull} = {
             ${toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers ++ constructorCodeNonUnique})
             }
@@ -382,8 +367,8 @@ class Translation(typespace: Typespace) {
         val inDef = EphemeralId(i.id, in.fullJavaType.name)
         val outDef = EphemeralId(i.id, out.fullJavaType.name)
 
-        val inputComposite = renderComposite(inDef, method.signature.input, List(serviceInputBase.init()))
-        val outputComposite = renderComposite(outDef, method.signature.output, List(serviceOutputBase.init()))
+        val inputComposite = renderComposite(inDef, List(serviceInputBase.init()))
+        val outputComposite = renderComposite(outDef, List(serviceOutputBase.init()))
 
         val inputType = in.typeFull
         val outputType = out.typeFull
@@ -445,10 +430,11 @@ class Translation(typespace: Typespace) {
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
-    renderComposite(i.id, i.interfaces, List.empty)
+    renderComposite(i.id, List.empty)
   }
 
-  private def renderComposite(id: TypeId, interfaces: Composite, bases: List[Init]): Seq[Defn] = {
+  private def renderComposite(id: TypeId, bases: List[Init]): Seq[Defn] = {
+    val interfaces = typespace.getComposite(id)
     val fields = typespace.enumFields(interfaces)
     val scalaIfaces = interfaces.map(typespace.apply)
     val scalaFieldsEx = fields.toScala
@@ -518,15 +504,15 @@ class Translation(typespace: Typespace) {
     }
   }
 
-  private def toDtoName(id: TypeId) = {
-    id match {
-      case _: InterfaceId =>
-        s"${id.name}Impl"
-      case _ =>
-        s"${id.name}"
-
-    }
-  }
+//  private def toDtoName(id: TypeId) = {
+//    id match {
+//      case _: InterfaceId =>
+//        s"${id.name}Impl"
+//      case _ =>
+//        s"${id.name}"
+//
+//    }
+//  }
 
   private def definitionToParaName(d: FinalDefinition) = idToParaName(d.id)
 
