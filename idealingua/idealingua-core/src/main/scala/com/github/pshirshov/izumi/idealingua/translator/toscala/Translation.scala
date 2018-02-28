@@ -249,17 +249,17 @@ class Translation(typespace: Typespace) {
         Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
     }
 
-    val scalaIfaces = i.interfaces.map(typespace.apply)
+    val scalaIfaces = i.interfaces
     val ifDecls = toSuper(fields, idtGenerated +: scalaIfaces.map {
       iface =>
-        conv.toScala(iface.id).init()
+        conv.toScala(iface).init()
     }, "Any")
 
     val t = conv.toScala(i.id)
     val eid = EphemeralId(i.id, typespace.toDtoName(i.id))
     val impl = renderComposite(eid, List.empty).toList
 
-    val parents = List(i.id)
+    val parents = List(i.id) ++ i.concepts
     val narrowers = parents.map {
       p =>
         val ifields = typespace.enumFields(typespace(p))
@@ -448,13 +448,11 @@ class Translation(typespace: Typespace) {
     val superClasses = toSuper(fields, bases ++ ifDecls)
 
     val t = conv.toScala(id)
-    println(id, interfaces, embedded)
 
     val constructorSignature = (interfaces ++ embedded)
-      .map(typespace.apply)
       .map {
         d =>
-          Term.Param(List.empty, definitionToParaName(d), Some(conv.toScala(d.id).typeFull), None)
+          Term.Param(List.empty, idToParaName(d), Some(conv.toScala(d).typeFull), None)
       } ++ scalaFieldsEx.nonUnique.map {
       f =>
         Term.Param(List.empty, f.name, Some(f.fieldType), None)
@@ -503,7 +501,7 @@ class Translation(typespace: Typespace) {
     }
   }
 
-  private def definitionToParaName(d: FinalDefinition) = idToParaName(d.id)
+  //private def definitionToParaName(d: FinalDefinition) = idToParaName(d.id)
 
   private def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
 

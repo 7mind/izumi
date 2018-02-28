@@ -64,7 +64,7 @@ class Typespace(original: DomainDefinition) {
     }
   }
 
-  def apply(id: InterfaceId): Interface = apply(id: TypeId).asInstanceOf[Interface]
+  protected def apply(id: InterfaceId): Interface = apply(id: TypeId).asInstanceOf[Interface]
 
   def apply(id: ServiceId): Service = services(id)
 
@@ -90,7 +90,7 @@ class Typespace(original: DomainDefinition) {
   }
 
   def ephemeralImplementors(id: InterfaceId): List[InterfaceConstructors] = {
-    val allParents = implements(id)
+    val allParents = parents(id)
     val implementors = implementingDtos(id) ++ implementingEphemerals(id)
 
     implementors.map {
@@ -193,32 +193,56 @@ class Typespace(original: DomainDefinition) {
     }
   }
 
-  def implements(id: TypeId): List[InterfaceId] = {
+  def parents(id: TypeId): List[InterfaceId] = {
     id match {
       case i: InterfaceId =>
-        List(i) ++ apply(i).interfaces.flatMap(implements)
+        val defn = apply(i)
+        List(i) ++ defn.interfaces.flatMap(parents)
 
       case i: DTOId =>
-        apply(i).interfaces.flatMap(implements)
+        apply(i).interfaces.flatMap(parents)
 
       case i: EphemeralId =>
-        serviceEphemerals(i).interfaces.flatMap(implements)
+        serviceEphemerals(i).interfaces.flatMap(parents)
+
+      case u: UserType =>
+        parents(apply(u).id)
 
       case _ =>
-        List.empty
+        throw new IDLException(s"Unexpected id: $id")
+    }
+  }
+
+  def compatible(id: TypeId): List[InterfaceId] = {
+    id match {
+      case i: InterfaceId =>
+        val defn = apply(i)
+        List(i) ++ defn.interfaces.flatMap(compatible) ++ defn.concepts.flatMap(compatible)
+
+      case i: DTOId =>
+        apply(i).interfaces.flatMap(compatible)
+
+      case i: EphemeralId =>
+        serviceEphemerals(i).interfaces.flatMap(compatible)
+
+      case u: UserType =>
+        compatible(apply(u).id)
+
+      case _ =>
+        throw new IDLException(s"Unexpected id: $id")
     }
   }
 
   def implementingDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
-      case (tid, _: DTO) if implements(tid).contains(id) =>
+      case (tid, _: DTO) if parents(tid).contains(id) || compatible(tid).contains(id) =>
         tid.toDTO
     }.toList
   }
 
   def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
     serviceEphemerals.collect {
-      case (eid: EphemeralId, _: Interface) if implements(eid).contains(id) =>
+      case (eid: EphemeralId, _: Interface) if parents(eid).contains(id) || compatible(eid).contains(id)=>
         eid
     }.toList
   }
