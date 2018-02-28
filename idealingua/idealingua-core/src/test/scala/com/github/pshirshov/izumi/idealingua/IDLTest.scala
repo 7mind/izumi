@@ -36,11 +36,12 @@ object IDLTest {
           remove(f.toPath)
       }
 
+    val runDir = tmpdir.resolve("idl-" + System.currentTimeMillis())
+
     val allFiles = domains.flatMap {
       domain =>
         val compiler = new IDLCompiler(domain)
-
-        compiler.compile(tmpdir.resolve("idl-" + System.currentTimeMillis()), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala)) match {
+        compiler.compile(runDir.resolve(domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala)) match {
           case IDLSuccess(files) =>
             assert(files.toSet.size == files.size)
             files
@@ -51,13 +52,19 @@ object IDLTest {
     }
 
       {
+        val ctarget = runDir.resolve("scalac")
+        ctarget.toFile.mkdirs()
+
         import scala.tools.nsc.{Global, Settings}
         val settings = new Settings()
+        settings.d.value = ctarget.toString
         settings.embeddedDefaults(this.getClass.getClassLoader)
+
         val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
         if (!isSbt) {
           settings.usejavacp.value = true
         }
+
         val g = new Global(settings)
         val run = new g.Run
         run.compile(allFiles.map(_.toFile.getCanonicalPath).toList)
