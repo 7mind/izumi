@@ -9,7 +9,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 
 
-class Typespace(val domain: DomainDefinition) {
+class Typespace(original: DomainDefinition) {
+  val domain = DomainDefinition.normalizeTypeIds(original)
   protected val typespace: Map[UserType, FinalDefinition] = verified(domain.types)
 
   protected val serviceEphemerals: Map[EphemeralId, Composite] = (for {
@@ -114,13 +115,13 @@ class Typespace(val domain: DomainDefinition) {
   def implements(id: TypeId): List[InterfaceId] = {
     id match {
       case i: InterfaceId =>
-        List(i) ++ apply(i).interfaces.toList.flatMap(implements)
+        List(i) ++ apply(i).interfaces.flatMap(implements)
 
       case i: DTOId =>
-        apply(i).interfaces.toList.flatMap(implements)
+        apply(i).interfaces.flatMap(implements)
 
       case i: EphemeralId =>
-        serviceEphemerals(i).toList.flatMap(implements)
+        serviceEphemerals(i).flatMap(implements)
 
       case _ =>
         List.empty
@@ -141,9 +142,7 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-  def enumFields(composite: Composite): List[ExtendedField] = {
-    composite.flatMap(i => enumFields(typespace(toKey(i)))).toList
-  }
+  def enumFields(composite: Composite): List[ExtendedField] = composite.flatMap(i => enumFields(typespace(toKey(i))))
 
   def enumFields(defn: FinalDefinition): List[ExtendedField] = {
     val fields = defn match {
@@ -172,9 +171,7 @@ class Typespace(val domain: DomainDefinition) {
     fields.distinct
   }
 
-  private def toExtendedFields(fields: Aggregate, id: TypeId) = {
-    fields.map(f => ExtendedField(f, id: TypeId)).toList
-  }
+  private def toExtendedFields(fields: Aggregate, id: TypeId) = fields.map(f => ExtendedField(f, id: TypeId))
 
   //  def fetchFields(composite: Composite): List[Field] = {
   //    enumFields(composite).map(_.field)

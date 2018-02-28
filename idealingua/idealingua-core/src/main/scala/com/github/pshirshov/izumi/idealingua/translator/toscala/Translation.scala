@@ -168,7 +168,7 @@ class Translation(typespace: Typespace) {
     val parseMembers = members.map {
       case (termName, _) =>
         val termString = termName.value
-        p"""case $termString => $termName"""
+        p"""case ${Lit.String(termString)} => $termName"""
     }
 
     Seq(

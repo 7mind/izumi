@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.idealingua
 
-import java.nio.file.Paths
+import java.io.IOException
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file._
 
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
@@ -23,35 +25,63 @@ class IDLTest extends WordSpec {
 
 object IDLTest {
   def compiles(domains: Seq[DomainDefinition]): Boolean = {
+    val tmpdir = Paths.get("target")
+    tmpdir
+      .toFile
+      .listFiles()
+      .toList
+      .filter(f => f.getName.startsWith("idl-") && f.isDirectory)
+      .foreach {
+        f =>
+          remove(f.toPath)
+      }
+
     val allFiles = domains.flatMap {
       domain =>
         val compiler = new IDLCompiler(domain)
-        compiler.compile(Paths.get("target", "idl-" + System.currentTimeMillis()), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala)) match {
+
+        compiler.compile(tmpdir.resolve("idl-" + System.currentTimeMillis()), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala)) match {
           case IDLSuccess(files) =>
             assert(files.toSet.size == files.size)
             files
 
           case f: IDLFailure =>
-            throw new IllegalStateException(s"Does not compile")
+            throw new IllegalStateException(s"Does not compile: $f")
         }
     }
 
-    {
-      import scala.tools.nsc.{Global, Settings}
-      val settings = new Settings()
-      settings.embeddedDefaults(getClass.getClassLoader)
-      val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
-      if (!isSbt) {
-        settings.usejavacp.value = true
+      {
+        import scala.tools.nsc.{Global, Settings}
+        val settings = new Settings()
+        settings.embeddedDefaults(this.getClass.getClassLoader)
+        val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
+        if (!isSbt) {
+          settings.usejavacp.value = true
+        }
+        val g = new Global(settings)
+        val run = new g.Run
+        run.compile(allFiles.map(_.toFile.getCanonicalPath).toList)
+        run.runIsAt(run.jvmPhase.next)
       }
-      val g = new Global(settings)
-      val run = new g.Run
-      run.compile(allFiles.map(_.toFile.getCanonicalPath).toList)
-      run.runIsAt(run.jvmPhase.next)
-    }
 
   }
 
+  def remove(root: Path): Unit = {
+    val _  = Files.walkFileTree(root, new SimpleFileVisitor[Path] {
+      override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+        Files.delete(file)
+        FileVisitResult.CONTINUE
+      }
 
+      override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
+        Files.delete(dir)
+        FileVisitResult.CONTINUE
+      }
+
+    })
+
+
+  }
 }
+
 

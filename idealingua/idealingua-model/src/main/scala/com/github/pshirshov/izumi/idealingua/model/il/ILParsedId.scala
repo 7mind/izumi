@@ -1,8 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.il
+package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.DomainId
 
 case class ILParsedId(pkg: Seq[String], name: String) {
   def toDomainId: DomainId = DomainId(pkg, name)
@@ -30,14 +29,6 @@ case class ILParsedId(pkg: Seq[String], name: String) {
   private def isGeneric: Boolean = pkg.isEmpty && Generic.all.contains(name)
 
 
-  private def downcast(tid: TypeId): TypeId = {
-    if (isPrimitive) {
-      Primitive.mapping(tid.name)
-    } else {
-      tid
-    }
-  }
-
   def toGeneric(params: Seq[Seq[TypeId]]): TypeId = {
     if (isGeneric) {
       name match {
@@ -55,6 +46,14 @@ case class ILParsedId(pkg: Seq[String], name: String) {
       }
     } else {
       toTypeId
+    }
+  }
+
+  private def downcast(tid: TypeId): TypeId = {
+    if (isPrimitive) {
+      Primitive.mapping(tid.name)
+    } else {
+      tid
     }
   }
 
