@@ -140,6 +140,8 @@ class Translation(typespace: Typespace) {
       q""" sealed trait ${t.typeName} extends $adtElInit{} """
       ,
       q"""object ${t.termName} extends $adtInit {
+            import scala.language.implicitConversions
+            
             type Element = ${t.typeFull}
 
             ..$members

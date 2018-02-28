@@ -58,6 +58,7 @@ object IDLTest {
         import scala.tools.nsc.{Global, Settings}
         val settings = new Settings()
         settings.d.value = ctarget.toString
+        settings.feature.value = true
         settings.embeddedDefaults(this.getClass.getClassLoader)
 
         val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
