@@ -5,9 +5,8 @@ import java.util.UUID
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, JavaType}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, FieldConflicts, JavaType}
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
@@ -16,32 +15,24 @@ case class Fields(unique: List[ScalaField], nonUnique: List[ScalaField]) {
   def all: List[ScalaField] = unique ++ nonUnique
 }
 
+
 class ScalaTypeConverter(domain: DomainId) {
-
-  implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
+  implicit class ConflictsOps(conflicts: FieldConflicts) {
     def toScala: Fields = {
-
-      val conflicts = fields
-        .groupBy(_.field.name)
-
-      val (goodFields, conflictingFields) = conflicts.partition(_._2.lengthCompare(1) == 0)
-
-      val (softConflicts, hardConflicts) = conflictingFields
-        .map(kv => (kv._1, kv._2.groupBy(_.field)))
-        .partition(_._2.size == 1)
-
-      if (hardConflicts.nonEmpty) {
-        throw new IDLException(s"Conflicting fields: $hardConflicts")
-      }
-
       Fields(
-        goodFields.flatMap(f => f._2.map(ef => toScala(ef.field))).toList
-        , softConflicts.flatMap(_._2).keys.map(f => toScala(f)).toList
+        conflicts.goodFields.flatMap(f => f._2.map(ef => toScala(ef.field))).toList
+        , conflicts.softConflicts.flatMap(_._2).keys.map(f => toScala(f)).toList
       )
     }
 
     private def toScala(field: Field): ScalaField = {
       ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).typeFull)
+    }
+  }
+
+  implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
+    def toScala: Fields = {
+      FieldConflicts(fields).toScala
     }
   }
 

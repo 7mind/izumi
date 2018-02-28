@@ -9,9 +9,6 @@ import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 
 
-case class InterfaceConstructors(impl: TypeId, missingInterfaces: Composite, allFields: List[ExtendedField])
-
-
 class Typespace(original: DomainDefinition) {
   val domain: DomainDefinition = DomainDefinition.normalizeTypeIds(original)
 
@@ -49,6 +46,28 @@ class Typespace(original: DomainDefinition) {
       .toMap
   }
 
+  def apply(id: TypeId): FinalDefinition = {
+    val typeDomain = domain.id.toDomainId(id)
+    if (domain.id == typeDomain) {
+      id match {
+        case e: EphemeralId if serviceEphemerals.contains(e) =>
+          serviceEphemerals(e)
+
+        case e: EphemeralId if interfaceEphemerals.contains(e) =>
+          interfaceEphemerals(e)
+
+        case o =>
+          typespace(toKey(o))
+      }
+    } else {
+      referenced(typeDomain).apply(id)
+    }
+  }
+
+  def apply(id: InterfaceId): Interface = apply(id: TypeId).asInstanceOf[Interface]
+
+  def apply(id: ServiceId): Service = services(id)
+
   def toDtoName(id: TypeId): String = {
     id match {
       case _: InterfaceId =>
@@ -70,7 +89,7 @@ class Typespace(original: DomainDefinition) {
     }
   }
 
-  def ephemeralImplementors(id: InterfaceId) = {
+  def ephemeralImplementors(id: InterfaceId): List[InterfaceConstructors] = {
     val allParents = implements(id)
     val implementors = implementingDtos(id) ++ implementingEphemerals(id)
 
@@ -92,7 +111,20 @@ class Typespace(original: DomainDefinition) {
             )
         }
 
-        InterfaceConstructors(impl, missingInterfaces.toList, allDtoFields)
+        val fields = enumFields(apply(id))
+        val conflicts = FieldConflicts(fields)
+        val nonUniqueFields = conflicts.softConflicts.keySet
+
+        val thisFields = fields.map(_.field)
+          .toSet
+          .filterNot(f => nonUniqueFields.contains(f.name))
+
+        val otherFields = missingInterfaces
+          .flatMap(mi => enumFields(apply(mi)))
+          .filterNot(f => thisFields.contains(f.field))
+          .filterNot(f => nonUniqueFields.contains(f.field.name))
+
+        InterfaceConstructors(impl, missingInterfaces.toList, allDtoFields, thisFields, otherFields, conflicts)
 
     }
   }
@@ -149,11 +181,6 @@ class Typespace(original: DomainDefinition) {
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
     }
-
-    //    val martians = all.filterNot(domain.id.contains)
-    //    if (martians.nonEmpty) {
-    //      throw new IDLException(s"Martian types: $martians")
-    //    }
   }
 
   def toKey(typeId: TypeId): UserType = {
@@ -163,29 +190,6 @@ class Typespace(original: DomainDefinition) {
       UserType(typeId)
     }
   }
-
-
-  def apply(id: TypeId): FinalDefinition = {
-    val typeDomain = domain.id.toDomainId(id)
-    if (domain.id == typeDomain) {
-      id match {
-        case e: EphemeralId if serviceEphemerals.contains(e) =>
-          serviceEphemerals(e)
-
-        case e: EphemeralId if interfaceEphemerals.contains(e) =>
-          interfaceEphemerals(e)
-
-        case o =>
-          typespace(toKey(o))
-      }
-    } else {
-      referenced(typeDomain).apply(id)
-    }
-  }
-
-  def apply(id: InterfaceId): Interface = apply(id: TypeId).asInstanceOf[Interface]
-
-  def apply(id: ServiceId): Service = services(id)
 
   def implements(id: TypeId): List[InterfaceId] = {
     id match {
@@ -246,8 +250,6 @@ class Typespace(original: DomainDefinition) {
     fields.distinct
   }
 
-  private def toExtendedFields(fields: Aggregate, id: TypeId) = fields.map(f => ExtendedField(f, id: TypeId))
-
   protected def verified(types: Seq[FinalDefinition]): Map[UserType, FinalDefinition] = {
     val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
     if (conflictingTypes.nonEmpty) {
@@ -260,7 +262,7 @@ class Typespace(original: DomainDefinition) {
 
   protected def apply(id: DTOId): DTO = apply(id: TypeId).asInstanceOf[DTO]
 
-
+  protected def toExtendedFields(fields: Aggregate, id: TypeId): List[ExtendedField] = fields.map(f => ExtendedField(f, id: TypeId))
 }
 
 

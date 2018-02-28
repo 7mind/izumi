@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.runtime.transport.AbstractTransport
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import scala.meta._
 
 
@@ -242,12 +242,9 @@ class Translation(typespace: Typespace) {
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
     val fields = typespace.enumFields(i)
-    val scalaFieldsEx = fields.toScala
-    val scalaFields: Seq[ScalaField] = scalaFieldsEx.all
-
 
     // TODO: contradictions
-    val decls = scalaFields.toList.map {
+    val decls = fields.toScala.all.map {
       f =>
         Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
     }
@@ -282,15 +279,9 @@ class Translation(typespace: Typespace) {
     val constructors = typespace.ephemeralImplementors(i.id).map {
       t =>
         val missingInterfaces = t.missingInterfaces
-        val nonUniqueFields = t.allFields.toScala.nonUnique
-
-        val thisFields = fields.map(_.field).toSet
-          .filterNot(f => nonUniqueFields.exists(_.name.value == f.name))
-
-        val otherFields: Seq[ExtendedField] = missingInterfaces
-          .flatMap(mi => typespace.enumFields(typespace(mi)))
-          .filterNot(f => thisFields.contains(f.field))
-          .filterNot(f => nonUniqueFields.exists(_.name.value == f.field.name))
+        val nonUniqueFields: immutable.Seq[ScalaField] = t.conflicts.toScala.nonUnique
+        val thisFields: Set[Field] = t.thisFields
+        val otherFields: Set[ExtendedField] = t.otherFields
 
         val constructorCodeThis = thisFields.toList.map {
           f =>
@@ -357,7 +348,6 @@ class Translation(typespace: Typespace) {
 
     val serviceInputBase = t.within(s"In${typeName.capitalize}")
     val serviceOutputBase = t.within(s"Out${typeName.capitalize}")
-    //val serviceResultBase = t.within(s"Result")
 
     val decls = i.methods.map {
       case method: RPCMethod =>
@@ -504,16 +494,6 @@ class Translation(typespace: Typespace) {
       ifDecls
     }
   }
-
-//  private def toDtoName(id: TypeId) = {
-//    id match {
-//      case _: InterfaceId =>
-//        s"${id.name}Impl"
-//      case _ =>
-//        s"${id.name}"
-//
-//    }
-//  }
 
   private def definitionToParaName(d: FinalDefinition) = idToParaName(d.id)
 
