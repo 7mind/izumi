@@ -381,7 +381,7 @@ class Translation(typespace: Typespace) {
       q"override def process(input: ${serviceInputBase.typeFull}): service.Result[${serviceOutputBase.typeFull}] = $forwarder"
     )
 
-    val tAbstractTransport = conv.toScala[AbstractTransport[_]].copy(typeArgs = List(Type.Name("S")))
+    val tAbstractTransport = conv.toScala[AbstractTransport[_]].parameterize(List(Type.Name("S")))
     val abstractTransportTpe = tAbstractTransport.init()
     val transportTpe = t.sibling(typeName + "AbstractTransport")
     val tools = t.within(s"${i.id.name}Extensions")

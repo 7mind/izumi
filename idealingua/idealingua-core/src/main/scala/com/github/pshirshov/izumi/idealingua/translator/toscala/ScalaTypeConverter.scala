@@ -11,15 +11,12 @@ import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, FieldConflicts,
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 
-case class Fields(unique: List[ScalaField], nonUnique: List[ScalaField]) {
-  def all: List[ScalaField] = unique ++ nonUnique
-}
-
 
 class ScalaTypeConverter(domain: DomainId) {
+
   implicit class ConflictsOps(conflicts: FieldConflicts) {
-    def toScala: Fields = {
-      Fields(
+    def toScala: ScalaFields = {
+      ScalaFields(
         conflicts.goodFields.flatMap(f => f._2.map(ef => toScala(ef.field))).toList
         , conflicts.softConflicts.flatMap(_._2).keys.map(f => toScala(f)).toList
       )
@@ -31,7 +28,7 @@ class ScalaTypeConverter(domain: DomainId) {
   }
 
   implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
-    def toScala: Fields = {
+    def toScala: ScalaFields = {
       FieldConflicts(fields).toScala
     }
   }
@@ -110,7 +107,7 @@ class ScalaTypeConverter(domain: DomainId) {
 
   private def toScala(javaType: JavaType, args: List[TypeId]): ScalaType = {
     val minimized = javaType.minimize(domain)
-    ScalaType(
+    ScalaTypeImpl(
       toSelectTerm(minimized)
       , toSelect(minimized)
       , Term.Name(javaType.name)
