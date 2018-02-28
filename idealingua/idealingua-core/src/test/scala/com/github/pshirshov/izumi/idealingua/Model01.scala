@@ -34,6 +34,7 @@ object Model01 {
       testInterfaceId
       , testInterfaceFields
       , List.empty
+      , List.empty
     )
     , FinalDefinition.DTO(
       testIdObject

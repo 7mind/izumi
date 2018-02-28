@@ -65,8 +65,13 @@ class ILParser {
     }
 
   final val aggregate = P(field.rep(sep = Newline))
+
   final val mixed = P(wso ~ "+" ~/ wso ~ identifier ~ wso)
   final val composite = P(mixed.rep(sep = Newline))
+
+  final val added = P(wso ~ "*" ~/ wso ~ identifier ~ wso)
+  final val embedded = P(added.rep(sep = Newline))
+
 
   final val sigParam = P(wso ~ identifier ~ wso)
   final val signature = P(sigParam.rep(sep = ","))
@@ -93,8 +98,8 @@ class ILParser {
   final val idBlock = P(kw.id ~/ symbol ~ wso ~ "{" ~ (empty ~ aggregate ~ empty) ~ "}")
     .map(v => ILDef(FinalDefinition.Identifier(ILParsedId(v._1).toIdId, v._2)))
 
-  final val mixinBlock = P(kw.mixin ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ aggregate ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.Interface(ILParsedId(v._1).toMixinId, v._2._2, v._2._1.map(_.toMixinId))))
+  final val mixinBlock = P(kw.mixin ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ embedded ~ empty ~ aggregate ~ empty) ~ "}")
+    .map(v => ILDef(FinalDefinition.Interface(ILParsedId(v._1).toMixinId, v._2._3, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
 
   final val dtoBlock = P(kw.data ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty) ~ "}")
     .map(v => ILDef(FinalDefinition.DTO(ILParsedId(v._1).toDataId, v._2.map(_.toMixinId))))

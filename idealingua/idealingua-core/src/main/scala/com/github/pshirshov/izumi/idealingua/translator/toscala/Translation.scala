@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, EphemeralId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il
@@ -298,7 +298,7 @@ class Translation(typespace: Typespace) {
             q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
         }
 
-        val signature = missingInterfaces.toList.map {
+        val signature = missingInterfaces.map {
           f =>
             Term.Param(List.empty, idToParaName(f), Some(conv.toScala(f).typeFull), None)
         }
@@ -427,29 +427,35 @@ class Translation(typespace: Typespace) {
   private def renderComposite(id: TypeId, bases: List[Init]): Seq[Defn] = {
     val interfaces = typespace.getComposite(id)
     val fields = typespace.enumFields(interfaces)
-    val scalaIfaces = interfaces.map(typespace.apply)
+
     val scalaFieldsEx = fields.toScala
-    val scalaFields: Seq[ScalaField] = scalaFieldsEx.all
-    val decls = scalaFields.toList.map {
+    val decls = scalaFieldsEx.all.map {
       f =>
         Term.Param(List.empty, f.name, Some(f.fieldType), None)
     }
 
-    val ifDecls = scalaIfaces.map {
+    val ifDecls = interfaces.map {
       iface =>
-        conv.toScala(iface.id).init()
+        conv.toScala(iface).init()
     }
 
+    val embedded = fields
+      .map(_.definedBy)
+      .collect({ case i: InterfaceId => i })
+      .filterNot(interfaces.contains)
     // TODO: contradictions
 
     val superClasses = toSuper(fields, bases ++ ifDecls)
 
     val t = conv.toScala(id)
+    println(id, interfaces, embedded)
 
-    val constructorSignature = scalaIfaces.map {
-      d =>
-        Term.Param(List.empty, definitionToParaName(d), Some(conv.toScala(d.id).typeFull), None)
-    } ++ scalaFieldsEx.nonUnique.map {
+    val constructorSignature = (interfaces ++ embedded)
+      .map(typespace.apply)
+      .map {
+        d =>
+          Term.Param(List.empty, definitionToParaName(d), Some(conv.toScala(d.id).typeFull), None)
+      } ++ scalaFieldsEx.nonUnique.map {
       f =>
         Term.Param(List.empty, f.name, Some(f.fieldType), None)
     }
@@ -473,8 +479,10 @@ class Translation(typespace: Typespace) {
 
     Seq(
       withInfo(id
-        , q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}""")
-        , q"""object ${t.termName} extends $typeCompanionInit {
+        ,
+        q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}""")
+      ,
+      q"""object ${t.termName} extends $typeCompanionInit {
               implicit class ${tools.typeName}(_value: ${t.typeFull}) {
               ${runtimeTypes.conv.toMethodAst(id)}
               }

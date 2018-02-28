@@ -62,3 +62,17 @@ service UserService {
   def createUser(TestInterface): (TestInterface)
   def anyvalTest(AnyValTest): (AnyValTest)
 }
+
+
+mixin PrivateMixin {
+  embedded: bool
+}
+
+mixin ExtendedMixin {
+  * PrivateMixin
+  own: i08
+}
+
+data PrivateTestObject {
+  + ExtendedMixin
+}

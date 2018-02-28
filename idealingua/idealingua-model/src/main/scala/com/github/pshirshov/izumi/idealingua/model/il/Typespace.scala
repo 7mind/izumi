@@ -28,8 +28,8 @@ class Typespace(original: DomainDefinition) {
         val outIid = InterfaceId(outId.pkg, outId.name)
 
         Seq(
-          inId -> Interface(inIid, List.empty, m.signature.input)
-          , outId -> Interface(outIid, List.empty, m.signature.output)
+          inId -> Interface(inIid, List.empty, m.signature.input, List.empty)
+          , outId -> Interface(outIid, List.empty, m.signature.output, List.empty)
         )
     }
   }).flatten.toMap
@@ -41,7 +41,7 @@ class Typespace(original: DomainDefinition) {
         case i: Interface =>
           val eid = EphemeralId(i.id, toDtoName(i.id))
           val iid = InterfaceId(eid.pkg, eid.name)
-          eid -> Interface(iid, List.empty, List(i.id))
+          eid -> Interface(iid, List.empty, List(i.id), List.empty)
       }
       .toMap
   }
@@ -81,7 +81,7 @@ class Typespace(original: DomainDefinition) {
   def getComposite(id: TypeId): Composite = {
     apply(id) match {
       case i: Interface =>
-        i.interfaces
+        i.interfaces ++ i.concepts
       case i: DTO =>
         i.interfaces
       case _ =>
@@ -144,7 +144,9 @@ class Typespace(original: DomainDefinition) {
       case _: Enumeration =>
         Seq.empty
       case d: Interface =>
-        d.interfaces.map(i => Dependency.Interface(d.id, i)) ++ d.fields.map(f => Dependency.Field(d.id, f))
+        d.interfaces.map(i => Dependency.Interface(d.id, i)) ++
+          d.concepts.flatMap(c => extractDependencies(apply(c))) ++
+          d.fields.map(f => Dependency.Field(d.id, f))
       case d: DTO =>
         d.interfaces.map(i => Dependency.Interface(d.id, i))
       case d: Identifier =>
@@ -228,8 +230,11 @@ class Typespace(original: DomainDefinition) {
       case t: Interface =>
         val superFields = enumFields(t.interfaces)
           .map(_.copy(definedBy = t.id)) // in fact super field is defined by this
+
+      val embeddedFields = t.concepts.flatMap(id => enumFields(apply(id)))
+
       val thisFields = toExtendedFields(t.fields, t.id)
-        superFields ++ thisFields
+        superFields ++ thisFields ++ embeddedFields
 
       case t: DTO =>
         enumFields(t.interfaces)

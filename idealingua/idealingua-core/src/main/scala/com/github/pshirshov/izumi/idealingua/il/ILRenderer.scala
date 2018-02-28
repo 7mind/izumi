@@ -46,7 +46,7 @@ class ILRenderer(domain: DomainDefinition) {
          """.stripMargin
 
       case d: Interface =>
-        val body = Seq(renderComposite(d.interfaces), renderAggregate(d.fields)).filterNot(_.isEmpty).mkString("\n\n")
+        val body = Seq(renderComposite(d.interfaces), renderComposite(d.concepts, '*'), renderAggregate(d.fields)).filterNot(_.isEmpty).mkString("\n\n")
         s"""mixin ${render(d.id)} {
            |${body.shift(2)}
            |}
@@ -68,9 +68,13 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def renderComposite(aggregate: Composite): String = {
+    renderComposite(aggregate, '+')
+  }
+
+  def renderComposite(aggregate: Composite, char: Char): String = {
     aggregate
       .map(render)
-      .map(t => s"+ $t")
+      .map(t => s"$char $t")
       .mkString("\n")
   }
 
