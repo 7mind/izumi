@@ -12,10 +12,15 @@ import scala.util.hashing.MurmurHash3
 
 
 class Typespace(original: DomainDefinition) {
-  val domain = DomainDefinition.normalizeTypeIds(original)
-  protected val typespace: Map[UserType, FinalDefinition] = verified(domain.types)
+  val domain: DomainDefinition = DomainDefinition.normalizeTypeIds(original)
+
   protected val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new Typespace(d))
+  protected val typespace: Map[UserType, FinalDefinition] = verified(domain.types)
   protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
+
+//  protected val interfaceEphemerals: Map[EphemeralId, Composite] = {
+//    ???
+//  }
 
   protected val serviceEphemerals: Map[EphemeralId, Composite] = (for {
     service <- domain.services

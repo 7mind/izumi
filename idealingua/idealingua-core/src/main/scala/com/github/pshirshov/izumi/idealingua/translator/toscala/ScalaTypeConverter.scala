@@ -124,7 +124,6 @@ class ScalaTypeConverter(domain: DomainId) {
       , toSelect(minimized)
       , Term.Name(javaType.name)
       , Type.Name(javaType.name)
-      , minimized
       , javaType
       , args.map(toScala(_).typeFull)
       , args.map(toScala(_).termFull)

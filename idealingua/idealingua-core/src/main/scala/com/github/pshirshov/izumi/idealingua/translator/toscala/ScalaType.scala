@@ -14,8 +14,6 @@ trait IScalaType {
   def typeArgs: Seq[Type]
   def typeName: Type.Name
   def typeFull: Type
-
-  def javaType: JavaType
 }
 
 case class ScalaType(
@@ -23,7 +21,6 @@ case class ScalaType(
                       , typeBase: Type.Ref
                       , termName: Term.Name
                       , typeName: Type.Name
-                      , javaType: JavaType
                       , fullJavaType: JavaType
                       , typeArgs: List[Type]
                       , termArgs: List[Term]

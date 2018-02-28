@@ -379,10 +379,9 @@ class Translation(typespace: Typespace) {
         val in = t.within(s"In${method.name.capitalize}")
         val out = t.within(s"Out${method.name.capitalize}")
 
-        val inDef = EphemeralId(i.id, in.fullJavaType.name) //Interface(InterfaceId(in.fullJavaType.pkg, in.fullJavaType.name), List.empty, method.signature.input)
-        val outDef = EphemeralId(i.id, out.fullJavaType.name) //Interface(InterfaceId(out.fullJavaType.pkg, out.fullJavaType.name), List.empty, method.signature.input)
+        val inDef = EphemeralId(i.id, in.fullJavaType.name)
+        val outDef = EphemeralId(i.id, out.fullJavaType.name)
 
-        //System.err.println(i.id, in, out, in.javaType, out.javaType)
         val inputComposite = renderComposite(inDef, method.signature.input, List(serviceInputBase.init()))
         val outputComposite = renderComposite(outDef, method.signature.output, List(serviceOutputBase.init()))
 
