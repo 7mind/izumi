@@ -12,13 +12,11 @@ import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 class Typespace(original: DomainDefinition) {
   val domain: DomainDefinition = DomainDefinition.normalizeTypeIds(original)
 
-  type KeyType = UserType
-
   protected val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new Typespace(d))
-  protected val typespace: Map[KeyType, FinalDefinition] = verified(domain.types)
+  protected val typespace: Map[TypeId, FinalDefinition] = verified(domain.types)
   protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
 
-  protected val serviceEphemerals: Map[KeyType, DTO] = (for {
+  protected val serviceEphemerals: Map[EphemeralId, DTO] = (for {
     service <- services.values
     method <- service.methods
   } yield {
@@ -30,36 +28,46 @@ class Typespace(original: DomainDefinition) {
         val outIid = DTOId(outId.pkg, outId.name)
 
         Seq(
-          toKey(inId) -> DTO(inIid, m.signature.input, List.empty)
-          , toKey(outId) -> DTO(outIid, m.signature.output, List.empty)
+          inId -> DTO(inIid, m.signature.input, List.empty)
+          , outId -> DTO(outIid, m.signature.output, List.empty)
         )
     }
   }).flatten.toMap
 
-  protected val interfaceEphemerals: Map[KeyType, DTO] = {
+  protected val interfaceEphemerals: Map[EphemeralId, DTO] = {
     typespace
       .values
       .collect {
         case i: Interface =>
           val eid = EphemeralId(i.id, toDtoName(i.id))
           val iid = DTOId(eid.pkg, eid.name)
-          toKey(eid) -> DTO(iid, List(i.id), List.empty)
+          eid -> DTO(iid, List(i.id), List.empty)
       }
       .toMap
   }
 
-  def apply(id: TypeId): FinalDefinition = {
+  protected val mapping: Map[Indefinite, TypeId] = {
+    (interfaceEphemerals.keys ++ typespace.keys ++ serviceEphemerals.keys)
+      .map {
+        kv =>
+          toIndefinite(kv) -> kv
+      }
+      .toMap
+  }
+
+  def apply(typeId: AbstractTypeId): FinalDefinition = {
+    val id = makeDefinite(typeId)
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
       id match {
-        case e if serviceEphemerals.contains(toKey(e)) =>
-          serviceEphemerals(toKey(e))
+        case e: EphemeralId if serviceEphemerals.contains(e) =>
+          serviceEphemerals(e)
 
-        case e if interfaceEphemerals.contains(toKey(e)) =>
-          interfaceEphemerals(toKey(e))
+        case e: EphemeralId if interfaceEphemerals.contains(e) =>
+          interfaceEphemerals(e)
 
         case o =>
-          typespace(toKey(o))
+          typespace(makeDefinite(o))
       }
     } else {
       referenced(typeDomain).apply(id)
@@ -153,15 +161,15 @@ class Typespace(original: DomainDefinition) {
       case d: Interface =>
         d.interfaces.map(i => Dependency.Interface(d.id, i)) ++
           d.concepts.flatMap(c => extractDependencies(apply(c))) ++
-          d.fields.map(f => Dependency.Field(d.id, f))
+          d.fields.map(f => Dependency.Field(d.id, makeDefinite(f.typeId), f))
       case d: DTO =>
         d.interfaces.map(i => Dependency.Interface(d.id, i))
       case d: Identifier =>
-        d.fields.map(f => Dependency.Field(d.id, f))
+        d.fields.map(f => Dependency.Field(d.id, makeDefinite(f.typeId), f))
       case d: Adt =>
         d.alternatives.map(apply).flatMap(extractDependencies)
       case d: Alias =>
-        Seq(Dependency.Alias(d.id, d.target))
+        Seq(Dependency.Alias(d.id, makeDefinite(d.target)))
     }
   }
 
@@ -184,19 +192,23 @@ class Typespace(original: DomainDefinition) {
 
     val missingTypes = allDependencies
       .filterNot(_.typeId.isInstanceOf[Builtin])
-      .filterNot(d => typespace.contains(toKey(d.typeId)))
-      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(_.typespace.contains(toKey(d.typeId))))
+      .filterNot(d => mapping.contains(toIndefinite(d.typeId)))
+      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(_.mapping.contains(toIndefinite(d.typeId))))
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
     }
   }
 
-  def toKey(typeId: TypeId): KeyType = {
+  def makeDefinite(id: AbstractTypeId): TypeId = {
+    mapping(toIndefinite(id))
+  }
+
+  private def toIndefinite(typeId: AbstractTypeId): Indefinite = {
     if (typeId.pkg.isEmpty) {
-      UserType(domain.id.toPackage, typeId.name)
+      Indefinite(domain.id.toPackage, typeId.name)
     } else {
-      UserType(typeId)
+      Indefinite(typeId)
     }
   }
 
@@ -209,13 +221,13 @@ class Typespace(original: DomainDefinition) {
       case i: DTOId =>
         apply(i).interfaces.flatMap(parents)
 
-      case e if serviceEphemerals.contains(toKey(e)) =>
-        serviceEphemerals(toKey(e)).interfaces.flatMap(parents)
+      case e: EphemeralId if serviceEphemerals.contains(e) =>
+        serviceEphemerals(e).interfaces.flatMap(parents)
 
-      case e if interfaceEphemerals.contains(toKey(e)) =>
-        interfaceEphemerals(toKey(e)).interfaces.flatMap(parents)
+      case e: EphemeralId if interfaceEphemerals.contains(e) =>
+        interfaceEphemerals(e).interfaces.flatMap(parents)
 
-      case u: UserType =>
+      case u: Indefinite =>
         parents(apply(u).id)
 
       case _ =>
@@ -232,13 +244,13 @@ class Typespace(original: DomainDefinition) {
       case i: DTOId =>
         apply(i).interfaces.flatMap(compatible)
 
-      case e if serviceEphemerals.contains(toKey(e)) =>
-        serviceEphemerals(toKey(e)).interfaces.flatMap(compatible)
+      case e: EphemeralId if serviceEphemerals.contains(e) =>
+        serviceEphemerals(e).interfaces.flatMap(compatible)
 
-      case e if interfaceEphemerals.contains(toKey(e)) =>
-        interfaceEphemerals(toKey(e)).interfaces.flatMap(compatible)
+      case e: EphemeralId if interfaceEphemerals.contains(e) =>
+        interfaceEphemerals(e).interfaces.flatMap(compatible)
 
-      case u: UserType =>
+      case u: Indefinite =>
         compatible(apply(u).id)
 
       case _ =>
@@ -248,12 +260,12 @@ class Typespace(original: DomainDefinition) {
 
   protected def implementingDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
-      case (tid, _: DTO) if parents(tid).contains(id) || compatible(tid).contains(id) =>
-        tid.toDTO
+      case (tid, d: DTO) if parents(tid).contains(id) || compatible(tid).contains(id) =>
+        d.id
     }.toList
   }
 
-  protected def implementingEphemerals(id: InterfaceId): List[UserType] = {
+  protected def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
     serviceEphemerals.collect {
       case (eid, _: DTO) if parents(eid).contains(id) || compatible(eid).contains(id) =>
         eid
@@ -291,7 +303,7 @@ class Typespace(original: DomainDefinition) {
   }
 
   def enumFields(composite: Composite): List[ExtendedField] = {
-    composite.flatMap(i => enumFields(typespace(toKey(i))))
+    composite.flatMap(i => enumFields(typespace(i)))
   }
 
   def sameSignature(tid: TypeId): List[DTO] = {
@@ -307,7 +319,7 @@ class Typespace(original: DomainDefinition) {
       .filter(another => signature(another) == sig)
       .filterNot {
         id =>
-          toKey(tid) == toKey(id.id) && parents(id.id).map(toKey).contains(toKey(tid))
+          tid == id.id && parents(id.id).contains(tid)
       }
       .distinct
   }
@@ -316,14 +328,13 @@ class Typespace(original: DomainDefinition) {
     enumFields(defn).map(_.field).sortBy(_.name)
   }
 
-  protected def verified(types: Seq[FinalDefinition]): Map[UserType, FinalDefinition] = {
+  protected def verified(types: Seq[FinalDefinition]): Map[TypeId, FinalDefinition] = {
     val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
     if (conflictingTypes.nonEmpty) {
       throw new IDLException(s"Conflicting types in: $conflictingTypes")
     }
-    types
-      .groupBy(k => toKey(k.id))
-      .mapValues(_.head)
+
+    types.map(t => (t.id, t)).toMap
   }
 
   protected def apply(id: DTOId): DTO = {
@@ -346,9 +357,9 @@ object Typespace {
 
   object Dependency {
 
-    case class Field(definedIn: TypeId, tpe: common.Field) extends Dependency {
+    case class Field(definedIn: TypeId, definite: TypeId, tpe: common.Field) extends Dependency {
 
-      override def typeId: TypeId = tpe.typeId
+      override def typeId: TypeId = definite
 
       override def toString: TypeName = s"[field $definedIn::${tpe.name} :$typeId]"
     }
