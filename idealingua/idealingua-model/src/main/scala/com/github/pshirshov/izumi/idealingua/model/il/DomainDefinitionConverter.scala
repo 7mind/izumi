@@ -135,7 +135,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
   protected def fixSignature(signature: ILAstParsed.Service.DefMethod.Signature): ILAst.Service.DefMethod.Signature = {
     ILAst.Service.DefMethod.Signature(input = fixIds(signature.input), output = fixIds(signature.output))
   }
-  
+
   protected def fixPkg(pkg: common.Package): common.Package = {
     if (pkg.isEmpty) {
       domainId.toPackage

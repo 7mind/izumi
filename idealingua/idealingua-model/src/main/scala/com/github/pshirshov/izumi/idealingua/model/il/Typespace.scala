@@ -191,17 +191,17 @@ class Typespace(val domain: DomainDefinition) {
     }
   }
 
-//  def makeDefinite(id: TypeId): TypeId = {
-//    mapping.getOrElse(toIndefinite(id), id)
-//  }
-//
-//  private def toIndefinite(typeId: TypeId): Indefinite = {
-//    if (typeId.pkg.isEmpty) {
-//      Indefinite(domain.id.toPackage, typeId.name)
-//    } else {
-//      Indefinite(typeId)
-//    }
-//  }
+  //  def makeDefinite(id: TypeId): TypeId = {
+  //    mapping.getOrElse(toIndefinite(id), id)
+  //  }
+  //
+  //  private def toIndefinite(typeId: TypeId): Indefinite = {
+  //    if (typeId.pkg.isEmpty) {
+  //      Indefinite(domain.id.toPackage, typeId.name)
+  //    } else {
+  //      Indefinite(typeId)
+  //    }
+  //  }
 
   def parents(id: TypeId): List[InterfaceId] = {
     id match {
@@ -298,19 +298,26 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   def sameSignature(tid: TypeId): List[DTO] = {
+    val ret = filterTypes(tid) {
+      case (thisSig, otherSig) =>
+        thisSig == otherSig
+    }
+      .filterNot(id => parents(id._1).contains(tid))
+      .collect({ case (t, e: DTO) => t -> e })
+
+    ret.map(_._2)
+  }
+
+  protected def filterTypes(tid: TypeId)(pred: (List[ILAst.Field], List[ILAst.Field]) => Boolean): List[(TypeId, ILAst)] = {
     val sig = signature(apply(tid))
 
     allTypes
-      .filterNot {
-        case e: EphemeralId => e.parent == tid
-        case id => id == tid
-      }
-      .map(apply)
-      .collect({ case e: DTO => e })
-      .filter(another => signature(another) == sig)
+      .filterNot(_ == tid)
+      .map(id => id -> apply(id))
+      .filter(another => pred(sig, signature(another._2)))
       .filterNot {
         id =>
-          tid == id.id && parents(id.id).contains(tid)
+          tid == id._1 || tid == id._2.id
       }
       .distinct
   }
