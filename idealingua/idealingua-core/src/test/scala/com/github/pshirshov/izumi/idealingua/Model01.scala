@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.{Field, Generic, Indefinite, Primitive}
-import com.github.pshirshov.izumi.idealingua.model.il.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
 import com.github.pshirshov.izumi.idealingua.model.il._
 
 object Model01 {

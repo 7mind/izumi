@@ -6,7 +6,9 @@ import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il
 import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
-import com.github.pshirshov.izumi.idealingua.model.il.Service.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.runtime.transport.AbstractTransport

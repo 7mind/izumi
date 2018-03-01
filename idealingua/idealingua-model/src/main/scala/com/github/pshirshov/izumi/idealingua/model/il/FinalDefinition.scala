@@ -2,8 +2,7 @@ package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Composite
-import com.github.pshirshov.izumi.idealingua.model.il.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod
 
 sealed trait FinalDefinition {
   def id: TypeId
@@ -25,26 +24,26 @@ object FinalDefinition {
   case class DTO(id: DTOId, interfaces: Composite, concepts: Composite) extends FinalDefinition
 
   case class Adt(id: AdtId, alternatives: List[TypeId]) extends FinalDefinition
-}
 
+  case class Service(id: ServiceId, methods: List[DefMethod])
 
+  object Service {
 
-case class Service(id: ServiceId, methods: List[DefMethod])
+    trait DefMethod
 
-object Service {
-  trait DefMethod
+    object DefMethod {
 
-  object DefMethod {
-    case class Signature(input: Composite, output: Composite) {
-      def asList: List[InterfaceId] = input ++ output
+      case class Signature(input: Composite, output: Composite) {
+        def asList: List[InterfaceId] = input ++ output
+      }
+
+      case class RPCMethod(name: String, signature: Signature) extends DefMethod
+
     }
 
-    case class RPCMethod(name: String, signature: Signature) extends DefMethod
   }
+
 }
-
-
-
 
 
 

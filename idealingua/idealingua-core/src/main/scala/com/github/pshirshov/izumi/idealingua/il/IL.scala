@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il
 
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, FinalDefinition, Service}
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, FinalDefinition}
 
 object IL {
 
