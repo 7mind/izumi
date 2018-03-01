@@ -278,14 +278,30 @@ class Translation(typespace: Typespace) {
 
     val constructors = typespace.ephemeralImplementors(i.id).map {
       t =>
-        val missingInterfaces = t.missingInterfaces
-        val nonUniqueFields: immutable.Seq[ScalaField] = t.conflicts.toScala.nonUnique
-        val thisFields: Set[Field] = t.thisFields
-        val otherFields: Set[ExtendedField] = t.otherFields
+        val requiredParameters = t.requiredParameters
+        val fieldsToCopyFromInterface: Set[Field] = t.fieldsToCopyFromInterface
+        val fieldsToTakeFromParameters: Set[ExtendedField] = t.fieldsToTakeFromParameters
 
-        val constructorCodeThis = thisFields.toList.map {
+        val constructorCodeThis = fieldsToCopyFromInterface.toList.map {
           f =>
             q""" ${Term.Name(f.name)} = _value.${Term.Name(f.name)}  """
+        }
+
+        val constructorCodeOthers = fieldsToTakeFromParameters.map {
+          f =>
+            q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
+        }
+
+        val signature = requiredParameters.map {
+          f =>
+            Term.Param(List.empty, idToParaName(f), Some(conv.toScala(f).typeFull), None)
+        }
+
+        val nonUniqueFields: immutable.Seq[ScalaField] = t.conflicts.toScala.nonUnique
+
+        val fullSignature = signature ++ nonUniqueFields.map {
+          f =>
+            Term.Param(List.empty, f.name, Some(f.fieldType), None)
         }
 
         val constructorCodeNonUnique = nonUniqueFields.map {
@@ -293,22 +309,7 @@ class Translation(typespace: Typespace) {
             q""" ${f.name} = ${f.name}  """
         }
 
-        val constructorCodeOthers = otherFields.map {
-          f =>
-            q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
-        }
-
-        val signature = missingInterfaces.map {
-          f =>
-            Term.Param(List.empty, idToParaName(f), Some(conv.toScala(f).typeFull), None)
-        }
-
-        val fullSignature = signature ++ nonUniqueFields.map {
-          f =>
-            Term.Param(List.empty, f.name, Some(f.fieldType), None)
-        }
-
-        val impl = t.impl
+        val impl = t.typeToConstruct
         q"""def ${Term.Name("to" + impl.name.capitalize)}(..$fullSignature): ${toScala(impl).typeFull} = {
             ${toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers ++ constructorCodeNonUnique})
             }

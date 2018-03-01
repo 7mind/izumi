@@ -90,45 +90,42 @@ class Typespace(original: DomainDefinition) {
   }
 
   def ephemeralImplementors(id: InterfaceId): List[InterfaceConstructors] = {
-    val allParents = parents(id)
+    val compatibleIfs = compatible(id)
     val implementors = implementingDtos(id) ++ implementingEphemerals(id)
 
     val ifaceFields = enumFields(apply(id))
     val ifaceConflicts = FieldConflicts(ifaceFields)
     val ifaceNonUniqueFields = ifaceConflicts.softConflicts.keySet
-    val goodIfaceFields = ifaceFields.map(_.field)
+    val fieldsToCopyFromInterface = ifaceFields.map(_.field)
       .toSet
       .filterNot(f => ifaceNonUniqueFields.contains(f.name))
 
 
     implementors.map {
-      impl =>
-        val allDtoFields = impl match {
-          case i: DTOId =>
-            //val implementor = apply(i)
-            enumFields(apply(i))
-          case i: EphemeralId =>
-            //val implementor = getComposite(i)
-            enumFields(apply(i))
+      typeToConstruct =>
+        val definition = apply(typeToConstruct)
+        val implFields = enumFields(definition)
 
-        }
-
-
-        val implFields = enumFields(apply(impl))
-        val missing = implFields
+        val requiredParameters = implFields
           .map(_.definedBy)
           .collect({ case i: InterfaceId => i })
-          .filterNot(allParents.contains).toSet
+          .filterNot(compatibleIfs.contains)
+          .toSet
 
-        //println(id, impl, missingInterfaces, allParents, missing, implFields)
+        //println(id, typeToConstruct, missingInterfaces, allParents, requiredParameters, implFields)
 
-        val otherFields = missing
+        val fieldsToTakeFromParameters = requiredParameters
           .flatMap(mi => enumFields(apply(mi)))
-          .filterNot(f => goodIfaceFields.contains(f.field))
+          .filterNot(f => fieldsToCopyFromInterface.contains(f.field))
           .filterNot(f => ifaceNonUniqueFields.contains(f.field.name))
 
-        InterfaceConstructors(impl, missing.toList, allDtoFields, goodIfaceFields, otherFields, ifaceConflicts)
-
+        InterfaceConstructors(
+          typeToConstruct
+          , requiredParameters.toList
+          , fieldsToCopyFromInterface
+          , fieldsToTakeFromParameters
+          , ifaceConflicts
+        )
     }
   }
 

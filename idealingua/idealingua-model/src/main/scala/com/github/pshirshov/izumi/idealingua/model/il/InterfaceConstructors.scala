@@ -4,10 +4,9 @@ import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, Field,
 import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Composite
 
 case class InterfaceConstructors(
-                                  impl: TypeId
-                                  , missingInterfaces: Composite
-                                  , allFields: List[ExtendedField]
-                                  , thisFields: Set[Field]
-                                  , otherFields: Set[ExtendedField]
+                                  typeToConstruct: TypeId
+                                  , requiredParameters: Composite
+                                  , fieldsToCopyFromInterface: Set[Field]
+                                  , fieldsToTakeFromParameters: Set[ExtendedField]
                                   , conflicts: FieldConflicts
                                 )
