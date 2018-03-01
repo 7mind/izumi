@@ -32,3 +32,14 @@ data DTO1 {
   + TestInterface2
   + TestInterface3
 }
+
+
+mixin Pair1 {
+  x: str
+  y: str
+}
+
+mixin Pair2 {
+  y: str
+  x: str
+}

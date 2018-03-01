@@ -308,7 +308,9 @@ class Translation(typespace: Typespace) {
     }
 
     val allDecls = decls
-    val toolDecls = narrowers ++ constructors
+    val converters = mkConverters(i.id, fields.toScala)
+
+    val toolDecls = narrowers ++ constructors ++ converters
 
     val tools = t.within(s"${i.id.name}Extensions")
 
@@ -467,6 +469,8 @@ class Translation(typespace: Typespace) {
     )
     val tools = t.within(s"${id.name.capitalize}Extensions")
 
+    val converters: List[Defn.Def] = mkConverters(id, scalaFieldsEx)
+
     Seq(
       withInfo(id
         ,
@@ -474,11 +478,29 @@ class Translation(typespace: Typespace) {
       ,
       q"""object ${t.termName} extends $typeCompanionInit {
               implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-              ${runtimeTypes.conv.toMethodAst(id)}
+                ${runtimeTypes.conv.toMethodAst(id)}
+
+                ..$converters
               }
              ..$constructors
          }"""
     )
+  }
+
+  private def mkConverters(id: TypeId, fields: ScalaFields) = {
+    val converters = typespace.sameSignature(id).map {
+      same =>
+        val code = fields.all.map {
+          f =>
+            q""" ${f.name} = _value.${f.name}  """
+        }
+        q"""def ${Term.Name("into" + same.id.name.capitalize)}(): ${toScala(same.id).typeFull} = {
+              ${toScala(same.id).termFull}(..$code)
+            }
+          """
+
+    }
+    converters
   }
 
   implicit class ScalaFieldsExt(fields: TraversableOnce[ScalaField]) {
