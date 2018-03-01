@@ -4,8 +4,9 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.Service.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il._
 
 class ILRenderer(domain: DomainDefinition) {
