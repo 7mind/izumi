@@ -101,8 +101,8 @@ class ILParser {
   final val mixinBlock = P(kw.mixin ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ embedded ~ empty ~ aggregate ~ empty) ~ "}")
     .map(v => ILDef(FinalDefinition.Interface(ILParsedId(v._1).toMixinId, v._2._3, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
 
-  final val dtoBlock = P(kw.data ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.DTO(ILParsedId(v._1).toDataId, v._2.map(_.toMixinId))))
+  final val dtoBlock = P(kw.data ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ embedded ~ empty) ~ "}")
+    .map(v => ILDef(FinalDefinition.DTO(ILParsedId(v._1).toDataId, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
 
   final val serviceBlock = P(kw.service ~/ symbol ~ wso ~ "{" ~ (empty ~ methods ~ empty) ~ "}")
     .map(v => ILService(Service(ILParsedId(v._1).toServiceId, v._2)))

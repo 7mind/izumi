@@ -87,3 +87,7 @@ mixin ExtendedMixin {
 data PrivateTestObject {
   + ExtendedMixin
 }
+
+data AnotherTestObject {
+  * ExtendedMixin
+}

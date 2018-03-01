@@ -36,10 +36,10 @@ object DomainDefinition {
         d.copy(id = fixId(id, d.id), fields = fixFields(id, d.fields))
 
       case d: Interface =>
-        d.copy(id = fixId(id, d.id), fields = fixFields(id, d.fields), interfaces = fixIds(id, d.interfaces), concepts = fixIds(id, d.concepts) )
+        d.copy(id = fixId(id, d.id), fields = fixFields(id, d.fields), interfaces = fixIds(id, d.interfaces), concepts = fixIds(id, d.concepts))
 
       case d: DTO =>
-        d.copy(id = fixId(id, d.id), interfaces = fixIds(id, d.interfaces))
+        d.copy(id = fixId(id, d.id), interfaces = fixIds(id, d.interfaces), concepts = fixIds(id, d.concepts))
 
       case d: Adt =>
         d.copy(id = fixId(id, d.id), alternatives = fixIds(id, d.alternatives))

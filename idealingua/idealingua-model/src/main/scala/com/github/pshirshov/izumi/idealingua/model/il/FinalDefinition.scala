@@ -21,7 +21,7 @@ object FinalDefinition {
 
   case class Interface(id: InterfaceId, fields: Aggregate, interfaces: Composite, concepts: Composite) extends FinalDefinition
 
-  case class DTO(id: DTOId, interfaces: Composite) extends FinalDefinition
+  case class DTO(id: DTOId, interfaces: Composite, concepts: Composite) extends FinalDefinition
 
   case class Adt(id: AdtId, alternatives: List[TypeId]) extends FinalDefinition
 }

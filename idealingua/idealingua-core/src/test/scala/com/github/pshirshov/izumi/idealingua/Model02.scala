@@ -31,7 +31,9 @@ object Model02 {
 
   val dto1 = FinalDefinition.DTO(
     dto1Id
-    , List(if2Id, if3Id))
+    , List(if2Id, if3Id)
+    , List.empty
+  )
 
   val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain02"), Seq(
     if1

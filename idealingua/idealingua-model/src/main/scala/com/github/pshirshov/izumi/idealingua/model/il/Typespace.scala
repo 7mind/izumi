@@ -28,8 +28,8 @@ class Typespace(original: DomainDefinition) {
         val outIid = DTOId(outId.pkg, outId.name)
 
         Seq(
-          inId -> DTO(inIid, m.signature.input)
-          , outId -> DTO(outIid, m.signature.output)
+          inId -> DTO(inIid, m.signature.input, List.empty)
+          , outId -> DTO(outIid, m.signature.output, List.empty)
         )
     }
   }).flatten.toMap
@@ -41,7 +41,7 @@ class Typespace(original: DomainDefinition) {
         case i: Interface =>
           val eid = EphemeralId(i.id, toDtoName(i.id))
           val iid = DTOId(eid.pkg, eid.name)
-          eid -> DTO(iid, List(i.id))
+          eid -> DTO(iid, List(i.id), List.empty)
       }
       .toMap
   }
@@ -83,7 +83,7 @@ class Typespace(original: DomainDefinition) {
       case i: Interface =>
         i.interfaces ++ i.concepts
       case i: DTO =>
-        i.interfaces
+        i.interfaces ++ i.concepts
       case _ =>
         throw new IDLException(s"Interface or DTO expected: $id")
     }
@@ -261,7 +261,7 @@ class Typespace(original: DomainDefinition) {
         superFields ++ thisFields ++ embeddedFields
 
       case t: DTO =>
-        enumFields(t.interfaces)
+        enumFields(t.interfaces) ++ enumFields(t.concepts)
 
       case t: Adt =>
         t.alternatives.map(apply).flatMap(enumFields)

@@ -38,7 +38,9 @@ object Model01 {
     )
     , FinalDefinition.DTO(
       testIdObject
-      , List(testInterfaceId))
+      , List(testInterfaceId)
+      , List.empty
+    )
   ), List(
     Service(serviceIdentifier, List(
       DefMethod.RPCMethod("createUser", DefMethod.Signature(List(testInterfaceId), List(testInterfaceId)))

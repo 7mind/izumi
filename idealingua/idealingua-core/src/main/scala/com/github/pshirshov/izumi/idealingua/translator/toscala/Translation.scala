@@ -207,10 +207,7 @@ class Translation(typespace: Typespace) {
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
     val fields = typespace.enumFields(i)
-    val decls = fields.toScala.all.map {
-      f =>
-        Term.Param(List.empty, f.name, Some(f.fieldType), None)
-    }
+    val decls = fields.toScala.all.toParams
 
     val superClasses = toSuper(fields, List(idtGenerated, tIDLIdentifier.init()))
 
@@ -292,17 +289,11 @@ class Translation(typespace: Typespace) {
             q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
         }
 
-        val signature = requiredParameters.map {
-          f =>
-            Term.Param(List.empty, idToParaName(f), Some(conv.toScala(f).typeFull), None)
-        }
+        val signature = requiredParameters.map(f => (idToParaName(f), conv.toScala(f).typeFull)).toParams
 
         val nonUniqueFields: immutable.Seq[ScalaField] = t.conflicts.toScala.nonUnique
 
-        val fullSignature = signature ++ nonUniqueFields.map {
-          f =>
-            Term.Param(List.empty, f.name, Some(f.fieldType), None)
-        }
+        val fullSignature = signature ++ nonUniqueFields.toParams
 
         val constructorCodeNonUnique = nonUniqueFields.map {
           f =>
@@ -430,10 +421,7 @@ class Translation(typespace: Typespace) {
     val fields = typespace.enumFields(interfaces)
 
     val scalaFieldsEx = fields.toScala
-    val decls = scalaFieldsEx.all.map {
-      f =>
-        Term.Param(List.empty, f.name, Some(f.fieldType), None)
-    }
+    val decls = scalaFieldsEx.all.toParams
 
     val ifDecls = interfaces.map {
       iface =>
@@ -450,15 +438,17 @@ class Translation(typespace: Typespace) {
 
     val t = conv.toScala(id)
 
-    val constructorSignature = (interfaces ++ embedded)
+    val interfaceParams = (interfaces ++ embedded)
       .distinct
       .map {
         d =>
-          Term.Param(List.empty, idToParaName(d), Some(conv.toScala(d).typeFull), None)
-      } ++ scalaFieldsEx.nonUnique.map {
-      f =>
-        Term.Param(List.empty, f.name, Some(f.fieldType), None)
-    }
+          (idToParaName(d), conv.toScala(d).typeFull)
+      }.toParams
+
+    val fieldParams = scalaFieldsEx.nonUnique.toParams
+
+    val constructorSignature = interfaceParams ++ fieldParams
+
     val constructorCode = fields.filterNot(f => scalaFieldsEx.nonUnique.exists(_.name.value == f.field.name)).map {
       f =>
         q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
@@ -489,6 +479,19 @@ class Translation(typespace: Typespace) {
              ..$constructors
          }"""
     )
+  }
+
+  implicit class ScalaFieldsExt(fields: TraversableOnce[ScalaField]) {
+    def toParams: List[Term.Param] = fields.map(f => (f.name, f.fieldType)).toParams
+  }
+
+  implicit class NamedTypeExt(fields: TraversableOnce[(Term.Name, Type)]) {
+    def toParams: List[Term.Param] = fields.map(f => (f._1, f._2)).map(toParam).toList
+  }
+
+
+  protected def toParam(p: (Term.Name, Type)): Term.Param = {
+    Term.Param(List.empty, p._1, Some(p._2), None)
   }
 
   private def toSuper(fields: List[ExtendedField], ifDecls: List[Init]): List[Init] = {

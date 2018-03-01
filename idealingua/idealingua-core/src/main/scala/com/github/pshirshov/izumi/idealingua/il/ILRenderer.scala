@@ -53,8 +53,10 @@ class ILRenderer(domain: DomainDefinition) {
          """.stripMargin
 
       case d: DTO =>
+        val body = Seq(renderComposite(d.interfaces), renderComposite(d.concepts, '*')).filterNot(_.isEmpty).mkString("\n\n")
+
         s"""data ${render(d.id)} {
-           |${renderComposite(d.interfaces).shift(2)}
+           |${body.shift(2)}
            |}
          """.stripMargin
     }
