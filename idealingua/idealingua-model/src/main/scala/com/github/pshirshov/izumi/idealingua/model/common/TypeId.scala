@@ -187,3 +187,6 @@ object Generic {
 
   final val all = Set("list", "set", "map", "opt")
 }
+
+
+case class IndefiniteGeneric(pkg: Package, name: TypeName,args: List[AbstractTypeId]) extends AbstractTypeId

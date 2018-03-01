@@ -2,38 +2,30 @@ package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, Builtin, Indefinite, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 
 
 class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
-  final val id: DomainId = defn.id
+  final val domainId: DomainId = defn.id
 
   protected val mapping: Map[Indefinite, TypeId] = {
     (defn.types.map(_.id) ++ defn.services.map(_.id))
       .map {
         kv =>
-          toIndefinite(kv) -> kv
+          toIndefinite(kv) -> fixSimpleId[AbstractTypeId, TypeId](kv)
       }
       .toMap
-  }
-
-  def makeDefinite(id: AbstractTypeId): TypeId = {
-    mapping.getOrElse(toIndefinite(id), ???)
-  }
-
-  private def toIndefinite(typeId: AbstractTypeId): Indefinite = {
-    Indefinite(fixId(typeId))
   }
 
   def convert(): DomainDefinition = {
     val mappedTypes = defn.types.map(fixType)
     val mappedServices = defn.services.map(fixService)
     val ref = defn.referenced.map(d => d._1 -> new DomainDefinitionConverter(d._2).convert())
-    DomainDefinition(id = id, types = mappedTypes, services = mappedServices, referenced = ref)
+    DomainDefinition(id = domainId, types = mappedTypes, services = mappedServices, referenced = ref)
   }
 
-  def fixType(defn: ILAstParsed): ILAst = {
+  protected def fixType(defn: ILAstParsed): ILAst = {
     defn match {
       case d: ILAstParsed.Enumeration =>
         ILAst.Enumeration(id = fixId(d.id), members = d.members)
@@ -55,30 +47,96 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }
   }
 
-  def fixService(defn: ILAstParsed.Service): ILAst.Service = {
+  protected def fixService(defn: ILAstParsed.Service): ILAst.Service = {
     ILAst.Service(id = fixId(defn.id), methods = defn.methods.map(fixMethod))
   }
 
-  private def fixIds[T <: AbstractTypeId, R <: TypeId](d: List[T]): List[R] = {
-    d.map(fixId)
+  protected def makeDefinite(id: AbstractTypeId): TypeId = {
+    downcast(id) match {
+      case p: Primitive =>
+        p
+      case g: IndefiniteGeneric =>
+        toGeneric(g)
+      case v if domainId.contains(v) =>
+        mapping.get(toIndefinite(v)) match {
+          case Some(t) =>
+            t
+          case None =>
+            throw new IDLException(s"Type $id is missing from domain $domainId")
+        }
+      case v if !domainId.contains(v) =>
+        val referencedDomain = domainId.toDomainId(v)
+        defn.referenced.get(referencedDomain) match {
+          case Some(d) =>
+            new DomainDefinitionConverter(d).makeDefinite(v)
+          case None =>
+            throw new IDLException(s"Domain $referencedDomain is missing from context of $domainId")
+        }
+
+    }
   }
 
-  def fixFields(fields: ILAstParsed.Aggregate): ILAst.Aggregate = {
-    fields.map(f => ILAst.Field(name = f.name, typeId = fixId(f.typeId)))
+  protected def fixId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
+    (t match {
+      case t: Indefinite =>
+        makeDefinite(t)
+
+      case t: IndefiniteGeneric =>
+        makeDefinite(t)
+
+      case o =>
+        fixSimpleId(o)
+    }).asInstanceOf[R]
   }
 
-  def fixSignature(signature: ILAstParsed.Service.DefMethod.Signature): ILAst.Service.DefMethod.Signature = {
-   ILAst.Service.DefMethod.Signature(input = fixIds(signature.input), output = fixIds(signature.output))
+  protected def fixSimpleId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
+    (t match {
+      case t: DTOId =>
+        t.copy(pkg = fixPkg(t.pkg))
+
+      case t: InterfaceId =>
+        t.copy(pkg = fixPkg(t.pkg))
+
+      case t: AdtId =>
+        t.copy(pkg = fixPkg(t.pkg))
+
+      case t: AliasId =>
+        t.copy(pkg = fixPkg(t.pkg))
+
+      case t: EnumId =>
+        t.copy(pkg = fixPkg(t.pkg))
+
+      case t: IdentifierId =>
+        t.copy(pkg = fixPkg(t.pkg))
+
+      case t: ServiceId =>
+        t.copy(pkg = fixPkg(t.pkg))
+
+      case t: Builtin =>
+        t
+    }).asInstanceOf[R]
   }
 
-  def fixMethod(method: ILAstParsed.Service.DefMethod): ILAst.Service.DefMethod = {
+  protected  def fixIds[T <: AbstractTypeId, R <: TypeId](d: List[T]): List[R] = {
+    d.map(fixId[T, R])
+  }
+
+  protected def fixFields(fields: ILAstParsed.Aggregate): ILAst.Aggregate = {
+    fields.map(f => ILAst.Field(name = f.name, typeId = fixId[AbstractTypeId, TypeId](f.typeId)))
+  }
+
+  protected def fixMethod(method: ILAstParsed.Service.DefMethod): ILAst.Service.DefMethod = {
     method match {
       case m: ILAstParsed.Service.DefMethod.RPCMethod =>
         ILAst.Service.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name)
     }
   }
 
-  def fixPkg(domainId: DomainId, pkg: common.Package): common.Package = {
+  protected def fixSignature(signature: ILAstParsed.Service.DefMethod.Signature): ILAst.Service.DefMethod.Signature = {
+    ILAst.Service.DefMethod.Signature(input = fixIds(signature.input), output = fixIds(signature.output))
+  }
+  
+  protected def fixPkg(pkg: common.Package): common.Package = {
     if (pkg.isEmpty) {
       domainId.toPackage
     } else {
@@ -86,39 +144,48 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }
   }
 
-  def fixId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
-    (t match {
-      case t: DTOId =>
-        t.copy(pkg = fixPkg(id, t.pkg))
-
-      case t: InterfaceId =>
-        t.copy(pkg = fixPkg(id, t.pkg))
-
-      case t: AdtId =>
-        t.copy(pkg = fixPkg(id, t.pkg))
-
-      case t: AliasId =>
-        t.copy(pkg = fixPkg(id, t.pkg))
-
-      case t: EnumId =>
-        t.copy(pkg = fixPkg(id, t.pkg))
-
-      case t: IdentifierId =>
-        t.copy(pkg = fixPkg(id, t.pkg))
-
-      case t: ServiceId =>
-        t.copy(pkg = fixPkg(id, t.pkg))
-
-      case t: Indefinite =>
-        makeDefinite(t)
-
-      case t: Builtin =>
-        t
-
-      case _ =>
-        throw new IDLException(s"Unsupported: $t")
-    }).asInstanceOf[R]
+  protected  def downcast(tid: AbstractTypeId): AbstractTypeId = {
+    if (isPrimitive(tid)) {
+      Primitive.mapping(tid.name)
+    } else {
+      tid
+    }
   }
 
+  protected  def toScalar(typeId: TypeId): Scalar = {
+    typeId match {
+      case p: Primitive =>
+        p
+      case o =>
+        IdentifierId(o.pkg, o.name)
+    }
+  }
 
+  protected def toGeneric(generic: IndefiniteGeneric): Generic = {
+    generic.name match {
+      case "set" =>
+        Generic.TSet(makeDefinite(generic.args.head))
+
+      case "list" =>
+        Generic.TList(makeDefinite(generic.args.head))
+
+      case "opt" =>
+        Generic.TOption(makeDefinite(generic.args.head))
+
+      case "map" =>
+        Generic.TMap(toScalar(makeDefinite(generic.args.head)), makeDefinite(generic.args.last))
+    }
+  }
+
+  protected def toIndefinite(typeId: AbstractTypeId): Indefinite = {
+    Indefinite(fixPkg(typeId.pkg), typeId.name)
+  }
+
+  protected  def isGeneric(abstractTypeId: AbstractTypeId): Boolean = {
+    abstractTypeId.pkg.isEmpty && Generic.all.contains(abstractTypeId.name)
+  }
+
+  protected  def isPrimitive(abstractTypeId: AbstractTypeId): Boolean = {
+    abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
+  }
 }

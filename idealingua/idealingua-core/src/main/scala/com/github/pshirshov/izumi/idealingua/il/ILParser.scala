@@ -53,12 +53,12 @@ class ILParser {
     .map(v => ILDomainId(DomainId(v.init, v.last)))
   final val domainBlock  = P(kw.domain ~/ domainId)
 
-  final val fulltype: all.Parser[TypeId] = P(wso ~ identifier ~ wso ~ generic.rep(min = 0, max = 1) ~ wso)
+  final val fulltype: all.Parser[AbstractTypeId] = P(wso ~ identifier ~ wso ~ generic.rep(min = 0, max = 1) ~ wso)
     .map(tp => tp._1.toGeneric(tp._2))
 
 
 
-  final def generic: all.Parser[Seq[TypeId]] = P("[" ~/ wso ~ fulltype.rep(sep = ",") ~ wso ~ "]")
+  final def generic: all.Parser[Seq[AbstractTypeId]] = P("[" ~/ wso ~ fulltype.rep(sep = ",") ~ wso ~ "]")
 
   final val field = P(wso ~ symbol ~ wso ~ ":" ~/ wso ~ fulltype ~ wso)
     .map {

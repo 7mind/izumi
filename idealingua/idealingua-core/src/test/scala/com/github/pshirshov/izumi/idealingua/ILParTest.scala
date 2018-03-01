@@ -19,9 +19,7 @@ class ILParTest extends WordSpec {
 
   private def assertDomainParses(str: String): Unit = {
     val parsed = assertParses(new ILParser().fullDomainDef, str)
-    val rendered = new ILRenderer(new DomainDefinitionConverter(parsed.domain).convert()).render()
-    assert(rendered.nonEmpty)
-    println(rendered)
+    assert(parsed.domain.types.nonEmpty)
   }
 
   "IL parser" should {
@@ -50,7 +48,8 @@ class ILParTest extends WordSpec {
           |include "b/c/d.model"
           |include "a.model"
           |
-          |alias x = y
+          |alias x = str
+          |alias B = str
           |
           |enum MyEnum {X Y Zz}
           |
