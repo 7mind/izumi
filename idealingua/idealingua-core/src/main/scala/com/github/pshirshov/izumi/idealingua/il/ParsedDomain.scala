@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.il
 
 import com.github.pshirshov.izumi.idealingua.il.IL.{ILDef, ILInclude, ILService}
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinitionParsed, DomainId}
 
-case class ParsedDomain(domain: DomainDefinition, includes: Seq[String], imports: Seq[DomainId]) {
+case class ParsedDomain(domain: DomainDefinitionParsed, includes: Seq[String], imports: Seq[DomainId]) {
   def extend(defs: Seq[IL.Val]): ParsedDomain = {
     val types = defs.collect({ case d: ILDef => d.v })
     val services = defs.collect({ case d: ILService => d.v })
@@ -22,7 +22,7 @@ object ParsedDomain {
     val includes = defs.collect({ case d: ILInclude => d.i })
 
     ParsedDomain(
-      DomainDefinition(did.id, Seq.empty, Seq.empty, Map.empty)
+      DomainDefinitionParsed(did.id, Seq.empty, Seq.empty, Map.empty)
       , includes
       , imports.map(_.id)
     ).extend(defs)

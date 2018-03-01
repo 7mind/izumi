@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 
 import scala.util.hashing.MurmurHash3
 
@@ -45,7 +45,7 @@ class TypeSignature(typespace: Typespace) {
     MurmurHash3.orderedHash((id.pkg :+ id.name).map(MurmurHash3.stringHash))
   }
 
-  protected def explode(defn: FinalDefinition): List[TrivialField] = {
+  protected def explode(defn: ILAst): List[TrivialField] = {
     defn match {
       case t: Interface =>
         t.interfaces.flatMap(i => explode(typespace(i))) ++

@@ -4,9 +4,9 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
 
 class ILRenderer(domain: DomainDefinition) {
@@ -23,7 +23,7 @@ class ILRenderer(domain: DomainDefinition) {
     sb.toString
   }
 
-  def render(tpe: FinalDefinition): String = {
+  def render(tpe: ILAst): String = {
     tpe match {
       case d: Adt =>
         s"""adt ${render(d.id)} {

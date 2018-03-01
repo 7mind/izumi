@@ -6,14 +6,14 @@ import java.nio.file.{Path, Paths}
 import com.github.pshirshov.izumi.idealingua.il.ParsedDomain
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader.ParsedModel
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinitionParsed, DomainId}
 
 protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], domain: ParsedDomain, domains: Map[DomainId, ParsedDomain], models: Map[Path, ParsedModel]) {
 
   import LocalModelLoader._
 
 
-  def postprocess(): DomainDefinition = {
+  def postprocess(): DomainDefinitionParsed = {
     val domainResolver: (DomainId) => Option[ParsedDomain] = toDomainResolver(domains.get)
     val modelResolver: (Path) => Option[ParsedModel] = toModelResolver(models.get)
 

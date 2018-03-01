@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FinalDefinition}
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, ILAst}
 import com.github.pshirshov.izumi.idealingua.model.runtime.model._
 
 class IDLRuntimeTypes() {
@@ -27,7 +27,7 @@ class IDLRuntimeTypes() {
   final val serviceCompanionInit = conv.toScala[IDLServiceCompanion].init()
 
   final val tIDLIdentifier = conv.toScala[IDLIdentifier]
-  final val tFinalDefinition = conv.toScala[FinalDefinition]
+  final val tFinalDefinition = conv.toScala[ILAst]
   final val tDomainCompanion = conv.toScala[IDLDomainCompanion]
   final val tDomainDefinition = conv.toScala[DomainDefinition]
   final val tService = conv.toScala[Service]

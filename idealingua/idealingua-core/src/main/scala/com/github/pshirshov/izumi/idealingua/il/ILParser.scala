@@ -1,10 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.il
 
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod._
-
+import com.github.pshirshov.izumi.idealingua.model.il.ILAstParsed.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ILAstParsed._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import fastparse.CharPredicates._
 import fastparse.all._
@@ -91,22 +89,22 @@ class ILParser {
   final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = Newline))
 
   final val enumBlock = P(kw.enum ~/ symbol ~ wso ~ "{" ~ (empty ~ symbol ~ empty).rep(1) ~ "}")
-    .map(v => ILDef(FinalDefinition.Enumeration(ILParsedId(v._1).toEnumId, v._2.toList)))
+    .map(v => ILDef(Enumeration(ILParsedId(v._1).toEnumId, v._2.toList)))
 
   final val adtBlock = P(kw.adt ~/ symbol ~ wso ~ "{" ~ (empty ~ identifier ~ empty).rep(1) ~ "}")
-    .map(v => ILDef(FinalDefinition.Adt(ILParsedId(v._1).toAdtId, v._2.map(_.toTypeId).toList)))
+    .map(v => ILDef(Adt(ILParsedId(v._1).toAdtId, v._2.map(_.toTypeId).toList)))
 
   final val aliasBlock = P(kw.alias ~/ symbol ~ wso ~ "=" ~ wsm ~ identifier)
-    .map(v => ILDef(FinalDefinition.Alias(ILParsedId(v._1).toAliasId, v._2.toTypeId)))
+    .map(v => ILDef(Alias(ILParsedId(v._1).toAliasId, v._2.toTypeId)))
 
   final val idBlock = P(kw.id ~/ symbol ~ wso ~ "{" ~ (empty ~ aggregate ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.Identifier(ILParsedId(v._1).toIdId, v._2)))
+    .map(v => ILDef(Identifier(ILParsedId(v._1).toIdId, v._2)))
 
   final val mixinBlock = P(kw.mixin ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ embedded ~ empty ~ aggregate ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.Interface(ILParsedId(v._1).toMixinId, v._2._3, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
+    .map(v => ILDef(Interface(ILParsedId(v._1).toMixinId, v._2._3, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
 
   final val dtoBlock = P(kw.data ~/ symbol ~ wso ~ "{" ~ (empty ~ composite ~ empty ~ embedded ~ empty) ~ "}")
-    .map(v => ILDef(FinalDefinition.DTO(ILParsedId(v._1).toDataId, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
+    .map(v => ILDef(DTO(ILParsedId(v._1).toDataId, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
 
   final val serviceBlock = P(kw.service ~/ symbol ~ wso ~ "{" ~ (empty ~ methods ~ empty) ~ "}")
     .map(v => ILService(Service(ILParsedId(v._1).toServiceId, v._2)))

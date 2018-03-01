@@ -7,7 +7,7 @@ import java.nio.file.{Files, Path, Paths}
 import com.github.pshirshov.izumi.idealingua.il.{IL, ILParser, ParsedDomain}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainDefinitionConverter, DomainId}
 import fastparse.all
 import fastparse.core.Parsed
 
@@ -38,6 +38,9 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
     domains.map {
       case (_, domain) =>
         new LocalDomainProcessor(root, classpath, domain, domains, models).postprocess()
+    }.map {
+      d =>
+        new DomainDefinitionConverter(d).convert()
     }.toSeq
   }
 }

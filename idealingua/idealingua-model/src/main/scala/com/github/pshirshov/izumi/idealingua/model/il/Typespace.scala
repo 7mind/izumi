@@ -4,16 +4,14 @@ import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 
 
-class Typespace(original: DomainDefinition) {
-  val domain: DomainDefinition = DomainDefinition.normalizeTypeIds(original)
-
+class Typespace(val domain: DomainDefinition) {
   protected val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new Typespace(d))
-  protected val typespace: Map[TypeId, FinalDefinition] = verified(domain.types)
+  protected val typespace: Map[TypeId, ILAst] = verified(domain.types)
   protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
 
   protected val serviceEphemerals: Map[EphemeralId, DTO] = (for {
@@ -55,7 +53,7 @@ class Typespace(original: DomainDefinition) {
       .toMap
   }
 
-  def apply(typeId: TypeId): FinalDefinition = {
+  def apply(typeId: TypeId): ILAst = {
     val id = makeDefinite(typeId)
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
@@ -154,7 +152,7 @@ class Typespace(original: DomainDefinition) {
       .flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
   ).flatten
 
-  def extractDependencies(definition: FinalDefinition): Seq[Dependency] = {
+  def extractDependencies(definition: ILAst): Seq[Dependency] = {
     definition match {
       case _: Enumeration =>
         Seq.empty
@@ -272,7 +270,7 @@ class Typespace(original: DomainDefinition) {
     }.toList
   }
 
-  def enumFields(defn: FinalDefinition): List[ExtendedField] = {
+  def enumFields(defn: ILAst): List[ExtendedField] = {
     val fields = defn match {
       case t: Interface =>
         val superFields = enumFields(t.interfaces)
@@ -324,11 +322,11 @@ class Typespace(original: DomainDefinition) {
       .distinct
   }
 
-  protected def signature(defn: FinalDefinition): List[Field] = {
+  protected def signature(defn: ILAst): List[Field] = {
     enumFields(defn).map(_.field).sortBy(_.name)
   }
 
-  protected def verified(types: Seq[FinalDefinition]): Map[TypeId, FinalDefinition] = {
+  protected def verified(types: Seq[ILAst]): Map[TypeId, ILAst] = {
     val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
     if (conflictingTypes.nonEmpty) {
       throw new IDLException(s"Conflicting types in: $conflictingTypes")

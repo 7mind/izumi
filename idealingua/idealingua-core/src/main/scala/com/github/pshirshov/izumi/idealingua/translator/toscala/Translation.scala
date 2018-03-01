@@ -5,8 +5,8 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, Epheme
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.runtime.transport.AbstractTransport
@@ -79,7 +79,7 @@ class Translation(typespace: Typespace) {
   }
 
 
-  protected def translateDef(definition: FinalDefinition): Seq[Module] = {
+  protected def translateDef(definition: ILAst): Seq[Module] = {
     val defns = definition match {
       case a: Alias =>
         packageObjects.getOrElseUpdate(toModuleId(a), mutable.ArrayBuffer()) ++= renderAlias(a)
@@ -532,7 +532,7 @@ class Translation(typespace: Typespace) {
 
   private def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
 
-  private def toModuleId(defn: FinalDefinition): ModuleId = {
+  private def toModuleId(defn: ILAst): ModuleId = {
     defn match {
       case i: Alias =>
         val concrete = typespace.makeDefinite(i.id)

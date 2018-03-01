@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.il.{ILParser, ILRenderer}
+import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinitionConverter
 import fastparse.all._
 import fastparse.core.Parsed
 import org.scalatest.WordSpec
@@ -18,7 +19,7 @@ class ILParTest extends WordSpec {
 
   private def assertDomainParses(str: String): Unit = {
     val parsed = assertParses(new ILParser().fullDomainDef, str)
-    val rendered = new ILRenderer(parsed.domain).render()
+    val rendered = new ILRenderer(new DomainDefinitionConverter(parsed.domain).convert()).render()
     assert(rendered.nonEmpty)
     println(rendered)
   }

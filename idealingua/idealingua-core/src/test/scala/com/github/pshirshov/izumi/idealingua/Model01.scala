@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.{Field, Generic, Indefinite, Primitive}
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
 
 object Model01 {
@@ -28,17 +28,17 @@ object Model01 {
   final val testIdObject = Indefinite.parse("izumi.test.domain01.TestObject").toDTO
 
   final val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain01"), Seq(
-    FinalDefinition.Alias(userIdTypeId, Primitive.TString)
-    , FinalDefinition.Enumeration(enumId, List("VALUE1", "VALUE2"))
-    , FinalDefinition.Identifier(testValIdentifier, testValStructure)
-    , FinalDefinition.Identifier(testIdentifier, testIdStructure)
-    , FinalDefinition.Interface(
+    ILAst.Alias(userIdTypeId, Primitive.TString)
+    , ILAst.Enumeration(enumId, List("VALUE1", "VALUE2"))
+    , ILAst.Identifier(testValIdentifier, testValStructure)
+    , ILAst.Identifier(testIdentifier, testIdStructure)
+    , ILAst.Interface(
       testInterfaceId
       , testInterfaceFields
       , List.empty
       , List.empty
     )
-    , FinalDefinition.DTO(
+    , ILAst.DTO(
       testIdObject
       , List(testInterfaceId)
       , List.empty
