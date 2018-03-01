@@ -55,7 +55,7 @@ class Typespace(original: DomainDefinition) {
       .toMap
   }
 
-  def apply(typeId: AbstractTypeId): FinalDefinition = {
+  def apply(typeId: TypeId): FinalDefinition = {
     val id = makeDefinite(typeId)
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
@@ -200,11 +200,11 @@ class Typespace(original: DomainDefinition) {
     }
   }
 
-  def makeDefinite(id: AbstractTypeId): TypeId = {
-    mapping(toIndefinite(id))
+  def makeDefinite(id: TypeId): TypeId = {
+    mapping.getOrElse(toIndefinite(id), id)
   }
 
-  private def toIndefinite(typeId: AbstractTypeId): Indefinite = {
+  private def toIndefinite(typeId: TypeId): Indefinite = {
     if (typeId.pkg.isEmpty) {
       Indefinite(domain.id.toPackage, typeId.name)
     } else {

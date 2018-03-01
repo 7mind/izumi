@@ -4,10 +4,10 @@ import com.github.pshirshov.izumi.idealingua.model.common.{Field, Primitive}
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FinalDefinition}
 
 object Model02 {
-  val if1Id = model.common.UserType.parse("izumi.test.domain02.TestInterface1").toInterface
-  val if2Id = model.common.UserType.parse("izumi.test.domain02.TestInterface2").toInterface
-  val if3Id = model.common.UserType.parse("izumi.test.domain02.TestInterface3").toInterface
-  val dto1Id = model.common.UserType.parse("izumi.test.domain02.DTO1").toDTO
+  val if1Id = model.common.Indefinite.parse("izumi.test.domain02.TestInterface1").toInterface
+  val if2Id = model.common.Indefinite.parse("izumi.test.domain02.TestInterface2").toInterface
+  val if3Id = model.common.Indefinite.parse("izumi.test.domain02.TestInterface3").toInterface
+  val dto1Id = model.common.Indefinite.parse("izumi.test.domain02.DTO1").toDTO
 
   val if1 = FinalDefinition.Interface(if1Id, List(
     Field(Primitive.TInt32, "if1Field_overriden")

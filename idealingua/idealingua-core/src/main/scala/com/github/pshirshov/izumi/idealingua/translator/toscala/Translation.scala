@@ -23,7 +23,7 @@ class Translation(typespace: Typespace) {
   import conv._
   import runtimeTypes._
 
-  final val domainsDomain = UserType(Seq("izumi", "idealingua", "domains"), typespace.domain.id.id.capitalize)
+  final val domainsDomain = Indefinite(Seq("izumi", "idealingua", "domains"), typespace.domain.id.id.capitalize)
   final val tDomain = conv.toScala(JavaType(domainsDomain))
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]] = mutable.HashMap[ModuleId, mutable.ArrayBuffer[Defn]]()
@@ -535,7 +535,7 @@ class Translation(typespace: Typespace) {
   private def toModuleId(defn: FinalDefinition): ModuleId = {
     defn match {
       case i: Alias =>
-        val concrete = typespace.toKey(i.id)
+        val concrete = typespace.makeDefinite(i.id)
         ModuleId(concrete.pkg, s"${concrete.pkg.last}.scala")
 
       case other =>
@@ -545,13 +545,13 @@ class Translation(typespace: Typespace) {
   }
 
   private def toModuleId(id: TypeId): ModuleId = {
-    val concrete = typespace.toKey(id)
+    val concrete = typespace.makeDefinite(id)
     ModuleId(concrete.pkg, s"${id.name}.scala")
   }
 
   private def toSource(id: TypeId, moduleId: ModuleId, traitDef: Seq[Defn]) = {
     val code = traitDef.map(_.toString()).mkString("\n\n")
-    val content: String = withPackage(typespace.toKey(id).pkg, code)
+    val content: String = withPackage(typespace.makeDefinite(id).pkg, code)
     Seq(Module(moduleId, content))
   }
 

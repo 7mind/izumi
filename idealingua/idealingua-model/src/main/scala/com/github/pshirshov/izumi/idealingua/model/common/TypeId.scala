@@ -15,7 +15,7 @@ trait Scalar extends TypeId {
   this: TypeId =>
 }
 
-case class UserType(pkg: Package, name: TypeName) extends TypeId {
+case class Indefinite(pkg: Package, name: TypeName) extends TypeId {
   def toAlias: AliasId = AliasId(pkg, name)
 
   def toEnum: EnumId = EnumId(pkg, name)
@@ -31,12 +31,12 @@ case class UserType(pkg: Package, name: TypeName) extends TypeId {
   def toService: ServiceId = ServiceId(pkg, name)
 }
 
-object UserType {
-  def apply(id: TypeId): UserType = new UserType(id.pkg, id.name)
+object Indefinite {
+  def apply(id: TypeId): Indefinite = new Indefinite(id.pkg, id.name)
 
-  def parse(s: String): UserType = {
+  def parse(s: String): Indefinite = {
     val parts = s.split('.')
-    UserType(parts.toSeq.init, parts.last)
+    Indefinite(parts.toSeq.init, parts.last)
   }
 }
 

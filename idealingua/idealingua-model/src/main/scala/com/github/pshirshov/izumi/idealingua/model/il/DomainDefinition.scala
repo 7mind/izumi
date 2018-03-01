@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId, UserType}
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId, Indefinite}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.DefMethod.RPCMethod
@@ -100,7 +100,7 @@ object DomainDefinition {
       case t: ServiceId =>
         t.copy(pkg = fixPkg(domainId, t.pkg))
 
-      case t: UserType =>
+      case t: Indefinite =>
         t.copy(pkg = fixPkg(domainId, t.pkg))
 
       case t: Builtin =>

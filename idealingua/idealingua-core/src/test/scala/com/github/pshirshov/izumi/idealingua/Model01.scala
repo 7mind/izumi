@@ -1,16 +1,16 @@
 package com.github.pshirshov.izumi.idealingua
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Field, Generic, Primitive, UserType}
+import com.github.pshirshov.izumi.idealingua.model.common.{Field, Generic, Primitive, Indefinite}
 import com.github.pshirshov.izumi.idealingua.model.il._
 
 object Model01 {
-  val userIdTypeId = model.common.UserType.parse("izumi.test.domain01.UserId").toAlias
-  val enumId = model.common.UserType.parse("izumi.test.domain01.AnEnum").toEnum
-  val testInterfaceId = model.common.UserType.parse("izumi.test.domain01.TestInterface").toInterface
+  val userIdTypeId = model.common.Indefinite.parse("izumi.test.domain01.UserId").toAlias
+  val enumId = model.common.Indefinite.parse("izumi.test.domain01.AnEnum").toEnum
+  val testInterfaceId = model.common.Indefinite.parse("izumi.test.domain01.TestInterface").toInterface
 
-  val testValIdentifier = model.common.UserType.parse("izumi.test.domain01.TestValIdentifier").toIdentifier
-  val testIdentifier = model.common.UserType.parse("izumi.test.domain01.TestIdentifer").toIdentifier
-  val serviceIdentifier = model.common.UserType.parse("izumi.test.domain01.UserService").toService
+  val testValIdentifier = model.common.Indefinite.parse("izumi.test.domain01.TestValIdentifier").toIdentifier
+  val testIdentifier = model.common.Indefinite.parse("izumi.test.domain01.TestIdentifer").toIdentifier
+  val serviceIdentifier = model.common.Indefinite.parse("izumi.test.domain01.UserService").toService
 
   val testInterfaceFields = List(
     Field(userIdTypeId, "userId")
@@ -23,7 +23,7 @@ object Model01 {
 
   val testValStructure = List(Field(userIdTypeId, "userId"))
   val testIdStructure = List(Field(userIdTypeId, "userId"), Field(Primitive.TString, "context"))
-  val testIdObject = UserType.parse("izumi.test.domain01.TestObject").toDTO
+  val testIdObject = Indefinite.parse("izumi.test.domain01.TestObject").toDTO
 
   val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain01"), Seq(
     FinalDefinition.Alias(userIdTypeId, Primitive.TString)

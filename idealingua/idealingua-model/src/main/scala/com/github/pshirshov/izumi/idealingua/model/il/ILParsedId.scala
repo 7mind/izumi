@@ -19,7 +19,7 @@ case class ILParsedId(pkg: Seq[String], name: String) {
   def toAdtId: AdtId = AdtId(pkg, name)
 
   def toTypeId: TypeId = {
-    downcast(UserType(pkg, name))
+    downcast(Indefinite(pkg, name))
   }
 
   def toServiceId: ServiceId = ServiceId(pkg, name)

@@ -77,7 +77,7 @@ class ScalaTypeConverter(domain: DomainId) {
         toIdConstructor(i)
       case i: ServiceId =>
         toIdConstructor(i)
-      case i: UserType =>
+      case i: Indefinite =>
         toIdConstructor(i)
       case i: AdtId =>
         toIdConstructor(i)
@@ -97,7 +97,7 @@ class ScalaTypeConverter(domain: DomainId) {
 
   def toScala[T: ClassTag]: ScalaType = {
     val idtClass = classTag[T].runtimeClass
-    val javaType = JavaType(UserType(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName))
+    val javaType = JavaType(Indefinite(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName))
     toScala(javaType)
   }
 
