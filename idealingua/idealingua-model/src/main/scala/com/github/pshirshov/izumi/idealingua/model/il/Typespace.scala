@@ -4,9 +4,8 @@ import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
-import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.FinalDefinition._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 
 
