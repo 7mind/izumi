@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Package, PackageTools, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, Package, PackageTools}
 import com.github.pshirshov.izumi.idealingua.model.il
 
 import scala.reflect._
@@ -31,6 +31,6 @@ object JavaType {
     il.JavaType(pkg, nameParts.last)
   }
 
-  def apply(typeId: TypeId): JavaType = new JavaType(typeId.pkg, typeId.name)
+  def apply(typeId: AbstractTypeId): JavaType = new JavaType(typeId.pkg, typeId.name)
   def apply(typeId: DomainId): JavaType = new JavaType(typeId.pkg, typeId.id)
 }

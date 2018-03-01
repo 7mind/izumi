@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Field, Generic, Indefinite, Primitive}
+import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Indefinite, Primitive}
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._

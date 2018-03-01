@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
-import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -349,7 +348,7 @@ object Typespace {
 
   object Dependency {
 
-    case class Field(definedIn: TypeId, definite: TypeId, tpe: common.Field) extends Dependency {
+    case class Field(definedIn: TypeId, definite: TypeId, tpe: ILAst.Field) extends Dependency {
 
       override def typeId: TypeId = definite
 

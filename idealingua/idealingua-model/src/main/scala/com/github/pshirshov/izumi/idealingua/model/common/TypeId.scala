@@ -19,7 +19,7 @@ trait Scalar extends TypeId {
   this: TypeId =>
 }
 
-case class Indefinite(pkg: Package, name: TypeName) extends TypeId {
+case class Indefinite(pkg: Package, name: TypeName) extends AbstractTypeId {
   def toAlias: AliasId = AliasId(pkg, name)
 
   def toEnum: EnumId = EnumId(pkg, name)

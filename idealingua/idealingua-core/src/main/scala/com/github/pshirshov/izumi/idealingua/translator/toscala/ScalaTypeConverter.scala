@@ -6,7 +6,7 @@ import java.util.UUID
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, FieldConflicts, JavaType}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, FieldConflicts, ILAst, JavaType}
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
@@ -22,7 +22,7 @@ class ScalaTypeConverter(domain: DomainId) {
       )
     }
 
-    private def toScala(field: Field): ScalaField = {
+    private def toScala(field: ILAst.Field): ScalaField = {
       ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).typeFull)
     }
   }

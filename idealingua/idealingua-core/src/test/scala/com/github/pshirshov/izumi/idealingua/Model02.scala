@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Field, Primitive}
+import com.github.pshirshov.izumi.idealingua.model.common.Primitive
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Field
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, ILAst}
 
 object Model02 {

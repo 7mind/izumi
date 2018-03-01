@@ -9,6 +9,8 @@ sealed trait ILAst {
 
 
 object ILAst {
+  case class Field(typeId: TypeId, name: String)
+
   type Composite = List[InterfaceId]
   type Aggregate = List[Field]
 
@@ -50,12 +52,14 @@ sealed trait ILAstParsed {
 
 
 object ILAstParsed {
+  case class Field(typeId: AbstractTypeId, name: String)
+
   type Composite = List[InterfaceId]
   type Aggregate = List[Field]
 
   case class Enumeration(id: EnumId, members: List[String]) extends ILAstParsed
 
-  case class Alias(id: AliasId, target: TypeId) extends ILAstParsed
+  case class Alias(id: AliasId, target: AbstractTypeId) extends ILAstParsed
 
   case class Identifier(id: IdentifierId, fields: Aggregate) extends ILAstParsed
 
@@ -63,7 +67,7 @@ object ILAstParsed {
 
   case class DTO(id: DTOId, interfaces: Composite, concepts: Composite) extends ILAstParsed
 
-  case class Adt(id: AdtId, alternatives: List[TypeId]) extends ILAstParsed
+  case class Adt(id: AdtId, alternatives: List[AbstractTypeId]) extends ILAstParsed
 
   case class Service(id: ServiceId, methods: List[Service.DefMethod])
 

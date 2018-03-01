@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
-import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, Field}
+import com.github.pshirshov.izumi.idealingua.model.common.ExtendedField
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Field
 
 case class FieldConflicts(goodFields: Map[String, Seq[ExtendedField]], softConflicts: Map[String, Map[Field, Seq[ExtendedField]]])
 

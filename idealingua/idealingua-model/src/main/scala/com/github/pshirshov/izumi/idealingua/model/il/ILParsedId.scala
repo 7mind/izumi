@@ -18,7 +18,7 @@ case class ILParsedId(pkg: Seq[String], name: String) {
 
   def toAdtId: AdtId = AdtId(pkg, name)
 
-  def toTypeId: TypeId = {
+  def toTypeId: AbstractTypeId = {
     downcast(Indefinite(pkg, name))
   }
 
@@ -29,27 +29,28 @@ case class ILParsedId(pkg: Seq[String], name: String) {
   private def isGeneric: Boolean = pkg.isEmpty && Generic.all.contains(name)
 
 
-  def toGeneric(params: Seq[Seq[TypeId]]): TypeId = {
-    if (isGeneric) {
-      name match {
-        case "set" =>
-          Generic.TSet(params.flatten.head)
-
-        case "list" =>
-          Generic.TList(params.flatten.head)
-
-        case "opt" =>
-          Generic.TOption(params.flatten.head)
-
-        case "map" =>
-          Generic.TMap(toScalar(params.flatten.head), params.flatten.last)
-      }
-    } else {
-      toTypeId
-    }
+  def toGeneric(params: Seq[Seq[AbstractTypeId]]): TypeId = {
+    ???
+//    if (isGeneric) {
+//      name match {
+//        case "set" =>
+//          Generic.TSet(params.flatten.head)
+//
+//        case "list" =>
+//          Generic.TList(params.flatten.head)
+//
+//        case "opt" =>
+//          Generic.TOption(params.flatten.head)
+//
+//        case "map" =>
+//          Generic.TMap(toScalar(params.flatten.head), params.flatten.last)
+//      }
+//    } else {
+//      toTypeId
+//    }
   }
 
-  private def downcast(tid: TypeId): TypeId = {
+  private def downcast(tid: AbstractTypeId): AbstractTypeId = {
     if (isPrimitive) {
       Primitive.mapping(tid.name)
     } else {

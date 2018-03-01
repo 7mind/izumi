@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, Indefinite, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, Builtin, Indefinite, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 
 
@@ -18,11 +18,11 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
       .toMap
   }
 
-  def makeDefinite(id: TypeId): TypeId = {
-    mapping.getOrElse(toIndefinite(id), id)
+  def makeDefinite(id: AbstractTypeId): TypeId = {
+    mapping.getOrElse(toIndefinite(id), ???)
   }
 
-  private def toIndefinite(typeId: TypeId): Indefinite = {
+  private def toIndefinite(typeId: AbstractTypeId): Indefinite = {
     Indefinite(fixId(typeId))
   }
 
@@ -59,12 +59,12 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     ILAst.Service(id = fixId(defn.id), methods = defn.methods.map(fixMethod))
   }
 
-  private def fixIds[T <: TypeId](d: List[T]): List[T] = {
+  private def fixIds[T <: AbstractTypeId, R <: TypeId](d: List[T]): List[R] = {
     d.map(fixId)
   }
 
   def fixFields(fields: ILAstParsed.Aggregate): ILAst.Aggregate = {
-    fields.map(f => f.copy(typeId = fixId(f.typeId)))
+    fields.map(f => ILAst.Field(name = f.name, typeId = fixId(f.typeId)))
   }
 
   def fixSignature(signature: ILAstParsed.Service.DefMethod.Signature): ILAst.Service.DefMethod.Signature = {
@@ -86,7 +86,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }
   }
 
-  def fixId[T <: TypeId](t: T): T = {
+  def fixId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
     (t match {
       case t: DTOId =>
         t.copy(pkg = fixPkg(id, t.pkg))
@@ -117,7 +117,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
 
       case _ =>
         throw new IDLException(s"Unsupported: $t")
-    }).asInstanceOf[T]
+    }).asInstanceOf[R]
   }
 
 

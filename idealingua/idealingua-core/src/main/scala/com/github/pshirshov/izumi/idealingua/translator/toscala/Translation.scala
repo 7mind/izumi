@@ -75,7 +75,7 @@ class Translation(typespace: Typespace) {
   }
 
   protected def translateService(definition: Service): Seq[Module] = {
-    toSource(definition.id, toModuleId(definition.id), renderService(definition))
+    toSource(Indefinite(definition.id), toModuleId(definition.id), renderService(definition))
   }
 
 
@@ -97,7 +97,7 @@ class Translation(typespace: Typespace) {
     }
 
     if (defns.nonEmpty) {
-      toSource(definition.id, toModuleId(definition), defns)
+      toSource(Indefinite(definition.id), toModuleId(definition), defns)
     } else {
       Seq.empty
     }
@@ -548,7 +548,7 @@ class Translation(typespace: Typespace) {
     ModuleId(id.pkg, s"${id.name}.scala")
   }
 
-  private def toSource(id: TypeId, moduleId: ModuleId, traitDef: Seq[Defn]) = {
+  private def toSource(id: Indefinite, moduleId: ModuleId, traitDef: Seq[Defn]) = {
     val code = traitDef.map(_.toString()).mkString("\n\n")
     val content: String = withPackage(id.pkg, code)
     Seq(Module(moduleId, content))
