@@ -30,7 +30,7 @@ class IDLCompiler(domain: DomainDefinition) {
     IDLCompiler.IDLSuccess(files)
   }
 
-  private def toTranslator(options: CompilerOptions) = {
+  private def toTranslator(options: CompilerOptions): FinalTranslator = {
     options.language match {
       case IDLLanguage.Scala =>
         new FinalTranslatorScalaImpl()

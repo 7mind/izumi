@@ -16,7 +16,7 @@ class Typespace(original: DomainDefinition) {
   protected val typespace: Map[UserType, FinalDefinition] = verified(domain.types)
   protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
 
-  protected val serviceEphemerals: Map[EphemeralId, Interface] = (for {
+  protected val serviceEphemerals: Map[EphemeralId, DTO] = (for {
     service <- services.values
     method <- service.methods
   } yield {
@@ -24,24 +24,24 @@ class Typespace(original: DomainDefinition) {
       case m: RPCMethod =>
         val inId = EphemeralId(service.id, s"In${m.name.capitalize}")
         val outId = EphemeralId(service.id, s"Out${m.name.capitalize}")
-        val inIid = InterfaceId(inId.pkg, inId.name)
-        val outIid = InterfaceId(outId.pkg, outId.name)
+        val inIid = DTOId(inId.pkg, inId.name)
+        val outIid = DTOId(outId.pkg, outId.name)
 
         Seq(
-          inId -> Interface(inIid, List.empty, m.signature.input, List.empty)
-          , outId -> Interface(outIid, List.empty, m.signature.output, List.empty)
+          inId -> DTO(inIid, m.signature.input)
+          , outId -> DTO(outIid, m.signature.output)
         )
     }
   }).flatten.toMap
 
-  protected val interfaceEphemerals: Map[EphemeralId, Interface] = {
+  protected val interfaceEphemerals: Map[EphemeralId, DTO] = {
     typespace
       .values
       .collect {
         case i: Interface =>
           val eid = EphemeralId(i.id, toDtoName(i.id))
-          val iid = InterfaceId(eid.pkg, eid.name)
-          eid -> Interface(iid, List.empty, List(i.id), List.empty)
+          val iid = DTOId(eid.pkg, eid.name)
+          eid -> DTO(iid, List(i.id))
       }
       .toMap
   }
@@ -93,38 +93,41 @@ class Typespace(original: DomainDefinition) {
     val allParents = parents(id)
     val implementors = implementingDtos(id) ++ implementingEphemerals(id)
 
+    val ifaceFields = enumFields(apply(id))
+    val ifaceConflicts = FieldConflicts(ifaceFields)
+    val ifaceNonUniqueFields = ifaceConflicts.softConflicts.keySet
+    val goodIfaceFields = ifaceFields.map(_.field)
+      .toSet
+      .filterNot(f => ifaceNonUniqueFields.contains(f.name))
+
+
     implementors.map {
       impl =>
-        val (missingInterfaces, allDtoFields) = impl match {
+        val allDtoFields = impl match {
           case i: DTOId =>
-            val implementor = apply(i)
-            (
-              implementor.interfaces.toSet -- allParents.toSet
-              , enumFields(apply(i))
-            )
+            //val implementor = apply(i)
+            enumFields(apply(i))
           case i: EphemeralId =>
-            val implementor = getComposite(i)
+            //val implementor = getComposite(i)
+            enumFields(apply(i))
 
-            (
-              implementor.toSet -- allParents.toSet
-              , enumFields(apply(i))
-            )
         }
 
-        val fields = enumFields(apply(id))
-        val conflicts = FieldConflicts(fields)
-        val nonUniqueFields = conflicts.softConflicts.keySet
 
-        val thisFields = fields.map(_.field)
-          .toSet
-          .filterNot(f => nonUniqueFields.contains(f.name))
+        val implFields = enumFields(apply(impl))
+        val missing = implFields
+          .map(_.definedBy)
+          .collect({ case i: InterfaceId => i })
+          .filterNot(allParents.contains).toSet
 
-        val otherFields = missingInterfaces
+        //println(id, impl, missingInterfaces, allParents, missing, implFields)
+
+        val otherFields = missing
           .flatMap(mi => enumFields(apply(mi)))
-          .filterNot(f => thisFields.contains(f.field))
-          .filterNot(f => nonUniqueFields.contains(f.field.name))
+          .filterNot(f => goodIfaceFields.contains(f.field))
+          .filterNot(f => ifaceNonUniqueFields.contains(f.field.name))
 
-        InterfaceConstructors(impl, missingInterfaces.toList, allDtoFields, thisFields, otherFields, conflicts)
+        InterfaceConstructors(impl, missing.toList, allDtoFields, goodIfaceFields, otherFields, ifaceConflicts)
 
     }
   }
@@ -242,7 +245,7 @@ class Typespace(original: DomainDefinition) {
 
   def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
     serviceEphemerals.collect {
-      case (eid: EphemeralId, _: Interface) if parents(eid).contains(id) || compatible(eid).contains(id)=>
+      case (eid: EphemeralId, _: DTO) if parents(eid).contains(id) || compatible(eid).contains(id) =>
         eid
     }.toList
   }
@@ -255,9 +258,9 @@ class Typespace(original: DomainDefinition) {
         val superFields = enumFields(t.interfaces)
           .map(_.copy(definedBy = t.id)) // in fact super field is defined by this
 
-      val embeddedFields = t.concepts.flatMap(id => enumFields(apply(id)))
+        val embeddedFields = t.concepts.flatMap(id => enumFields(apply(id)))
 
-      val thisFields = toExtendedFields(t.fields, t.id)
+        val thisFields = toExtendedFields(t.fields, t.id)
         superFields ++ thisFields ++ embeddedFields
 
       case t: DTO =>

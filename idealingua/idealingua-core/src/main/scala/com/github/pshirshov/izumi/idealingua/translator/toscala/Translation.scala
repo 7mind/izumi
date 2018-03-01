@@ -140,7 +140,7 @@ class Translation(typespace: Typespace) {
         Seq(
           withInfo(i.id, q"""case class ${mt.typeName}(value: ${original.typeFull}) extends ..${List(t.init())}""")
           ,
-          q"""implicit def ${Term.Name("to" + m.name.capitalize)}(value: ${original.typeFull}): ${t.typeFull} = ${mt.termFull}(value) """
+          q"""implicit def ${Term.Name("into" + m.name.capitalize)}(value: ${original.typeFull}): ${t.typeFull} = ${mt.termFull}(value) """
           ,
           q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeFull} = value.value"""
         )
@@ -260,7 +260,7 @@ class Translation(typespace: Typespace) {
     val impl = renderComposite(eid, List.empty).toList
 
     val parents = List(i.id) ++ i.concepts
-    val narrowers = parents.map {
+    val narrowers = parents.distinct.map {
       p =>
         val ifields = typespace.enumFields(typespace(p))
 
@@ -270,7 +270,7 @@ class Translation(typespace: Typespace) {
         }
 
         val tt = toScala(p).within(typespace.toDtoName(p))
-        q"""def ${Term.Name("to" + p.name.capitalize)}(): ${tt.typeFull} = {
+        q"""def ${Term.Name("as" + p.name.capitalize)}(): ${tt.typeFull} = {
              ${tt.termFull}(..$constructorCode)
             }
           """
@@ -450,6 +450,7 @@ class Translation(typespace: Typespace) {
     val t = conv.toScala(id)
 
     val constructorSignature = (interfaces ++ embedded)
+      .distinct
       .map {
         d =>
           Term.Param(List.empty, idToParaName(d), Some(conv.toScala(d).typeFull), None)

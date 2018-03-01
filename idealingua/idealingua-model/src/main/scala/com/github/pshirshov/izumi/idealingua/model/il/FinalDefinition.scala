@@ -30,7 +30,7 @@ trait DefMethod
 
 object DefMethod {
   case class Signature(input: Composite, output: Composite) {
-    def asList: List[InterfaceId] = (input ++ output).toList
+    def asList: List[InterfaceId] = input ++ output
   }
 
   case class RPCMethod(name: String, signature: Signature) extends DefMethod

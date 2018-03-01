@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.translator.FinalTranslator
 class FinalTranslatorScalaImpl extends FinalTranslator {
 
   override def translate(domain: DomainDefinition): Seq[Module] = {
-    val typespace= new Typespace(domain)
+    val typespace = new Typespace(domain)
     typespace.verify()
     val modules = new Translation(typespace).translate()
     postVerify(modules)

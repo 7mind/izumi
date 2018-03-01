@@ -64,7 +64,18 @@ service UserService {
 }
 
 
+mixin PrivateMixinParent {
+  parent: str
+}
+
+mixin PrivateMixinPrivateParent {
+  parent_embedded: str
+}
+
 mixin PrivateMixin {
+  + PrivateMixinParent
+  * PrivateMixinPrivateParent
+
   embedded: bool
 }
 
