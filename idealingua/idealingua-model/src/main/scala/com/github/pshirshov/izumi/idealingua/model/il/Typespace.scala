@@ -44,17 +44,8 @@ class Typespace(val domain: DomainDefinition) {
       .toMap
   }
 
-  protected val mapping: Map[Indefinite, TypeId] = {
-    (interfaceEphemerals.keys ++ typespace.keys ++ serviceEphemerals.keys)
-      .map {
-        kv =>
-          toIndefinite(kv) -> kv
-      }
-      .toMap
-  }
 
-  def apply(typeId: TypeId): ILAst = {
-    val id = makeDefinite(typeId)
+  def apply(id: TypeId): ILAst = {
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
       id match {
@@ -65,7 +56,7 @@ class Typespace(val domain: DomainDefinition) {
           interfaceEphemerals(e)
 
         case o =>
-          typespace(makeDefinite(o))
+          typespace(o)
       }
     } else {
       referenced(typeDomain).apply(id)
@@ -145,12 +136,14 @@ class Typespace(val domain: DomainDefinition) {
   ).flatten
 
 
-  def all: List[TypeId] = List(
+  def all: Set[TypeId] = List(
     allTypes
     , services.values.map(_.id)
     , domain.types.collect({ case t: Enumeration => t })
       .flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
-  ).flatten
+  )
+    .flatten
+    .toSet
 
   def extractDependencies(definition: ILAst): Seq[Dependency] = {
     definition match {
@@ -159,15 +152,15 @@ class Typespace(val domain: DomainDefinition) {
       case d: Interface =>
         d.interfaces.map(i => Dependency.Interface(d.id, i)) ++
           d.concepts.flatMap(c => extractDependencies(apply(c))) ++
-          d.fields.map(f => Dependency.Field(d.id, makeDefinite(f.typeId), f))
+          d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
       case d: DTO =>
         d.interfaces.map(i => Dependency.Interface(d.id, i))
       case d: Identifier =>
-        d.fields.map(f => Dependency.Field(d.id, makeDefinite(f.typeId), f))
+        d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
       case d: Adt =>
         d.alternatives.map(apply).flatMap(extractDependencies)
       case d: Alias =>
-        Seq(Dependency.Alias(d.id, makeDefinite(d.target)))
+        Seq(Dependency.Alias(d.id, d.target))
     }
   }
 
@@ -188,27 +181,28 @@ class Typespace(val domain: DomainDefinition) {
     val allDependencies = typeDependencies ++ serviceDependencies.flatten
 
 
+    // TODO: very ineffective!
     val missingTypes = allDependencies
       .filterNot(_.typeId.isInstanceOf[Builtin])
-      .filterNot(d => mapping.contains(toIndefinite(d.typeId)))
-      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(_.mapping.contains(toIndefinite(d.typeId))))
+      .filterNot(d => all.contains(d.typeId))
+      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(_.all.contains(d.typeId)))
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
     }
   }
 
-  def makeDefinite(id: TypeId): TypeId = {
-    mapping.getOrElse(toIndefinite(id), id)
-  }
-
-  private def toIndefinite(typeId: TypeId): Indefinite = {
-    if (typeId.pkg.isEmpty) {
-      Indefinite(domain.id.toPackage, typeId.name)
-    } else {
-      Indefinite(typeId)
-    }
-  }
+//  def makeDefinite(id: TypeId): TypeId = {
+//    mapping.getOrElse(toIndefinite(id), id)
+//  }
+//
+//  private def toIndefinite(typeId: TypeId): Indefinite = {
+//    if (typeId.pkg.isEmpty) {
+//      Indefinite(domain.id.toPackage, typeId.name)
+//    } else {
+//      Indefinite(typeId)
+//    }
+//  }
 
   def parents(id: TypeId): List[InterfaceId] = {
     id match {

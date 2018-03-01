@@ -9,6 +9,23 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
   final val id: DomainId = defn.id
 
+  protected val mapping: Map[Indefinite, TypeId] = {
+    (defn.types.map(_.id) ++ defn.services.map(_.id))
+      .map {
+        kv =>
+          toIndefinite(kv) -> kv
+      }
+      .toMap
+  }
+
+  def makeDefinite(id: TypeId): TypeId = {
+    mapping.getOrElse(toIndefinite(id), id)
+  }
+
+  private def toIndefinite(typeId: TypeId): Indefinite = {
+    Indefinite(fixId(typeId))
+  }
+
   def convert(): DomainDefinition = {
     val mappedTypes = defn.types.map(fixType)
     val mappedServices = defn.services.map(fixService)
@@ -93,7 +110,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
         t.copy(pkg = fixPkg(id, t.pkg))
 
       case t: Indefinite =>
-        t.copy(pkg = fixPkg(id, t.pkg))
+        makeDefinite(t)
 
       case t: Builtin =>
         t

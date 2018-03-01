@@ -3,12 +3,16 @@ package com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 
 
-trait TypeId {
+trait AbstractTypeId {
   def pkg: Package
 
   def name: TypeName
 
   override def toString: TypeName = s"{${pkg.mkString(".")}#$name :${getClass.getSimpleName}}"
+}
+
+
+trait TypeId extends AbstractTypeId {
 }
 
 trait Scalar extends TypeId {

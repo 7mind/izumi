@@ -50,7 +50,7 @@ class Translation(typespace: Typespace) {
   }
 
   protected def translateDomain(): Seq[Module] = {
-    val index = typespace.all.map(id => id -> conv.toScala(id))
+    val index = typespace.all.map(id => id -> conv.toScala(id)).toList
 
     val exprs = index.map {
       case (k@EphemeralId(_: EnumId, _), v) =>
@@ -535,7 +535,7 @@ class Translation(typespace: Typespace) {
   private def toModuleId(defn: ILAst): ModuleId = {
     defn match {
       case i: Alias =>
-        val concrete = typespace.makeDefinite(i.id)
+        val concrete = i.id
         ModuleId(concrete.pkg, s"${concrete.pkg.last}.scala")
 
       case other =>
@@ -545,13 +545,12 @@ class Translation(typespace: Typespace) {
   }
 
   private def toModuleId(id: TypeId): ModuleId = {
-    val concrete = typespace.makeDefinite(id)
-    ModuleId(concrete.pkg, s"${id.name}.scala")
+    ModuleId(id.pkg, s"${id.name}.scala")
   }
 
   private def toSource(id: TypeId, moduleId: ModuleId, traitDef: Seq[Defn]) = {
     val code = traitDef.map(_.toString()).mkString("\n\n")
-    val content: String = withPackage(typespace.makeDefinite(id).pkg, code)
+    val content: String = withPackage(id.pkg, code)
     Seq(Module(moduleId, content))
   }
 
