@@ -3,10 +3,11 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 import java.time.{LocalDate, LocalDateTime, LocalTime, ZonedDateTime}
 import java.util.UUID
 
+import com.github.pshirshov.izumi.idealingua.model
+import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, FieldConflicts, ILAst, JavaType}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, FieldConflicts, ILAst}
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
@@ -54,7 +55,7 @@ class ScalaTypeConverter(domain: DomainId) {
         toScala(toPrimitive(t))
 
       case _ =>
-        toScala(il.JavaType(id.pkg, id.name))
+        toScala(JavaType(id.pkg, id.name))
     }
   }
 
@@ -121,43 +122,43 @@ class ScalaTypeConverter(domain: DomainId) {
 
   private def toPrimitive(id: Primitive): JavaType = id match {
     case Primitive.TBool =>
-      il.JavaType(Seq.empty, "Boolean")
+      model.JavaType(Seq.empty, "Boolean")
     case Primitive.TString =>
-      il.JavaType(Seq.empty, "String")
+      model.JavaType(Seq.empty, "String")
     case Primitive.TInt8 =>
-      il.JavaType(Seq.empty, "Byte")
+      model.JavaType(Seq.empty, "Byte")
     case Primitive.TInt16 =>
-      il.JavaType(Seq.empty, "Short")
+      model.JavaType(Seq.empty, "Short")
     case Primitive.TInt32 =>
-      il.JavaType(Seq.empty, "Int")
+      model.JavaType(Seq.empty, "Int")
     case Primitive.TInt64 =>
-      il.JavaType(Seq.empty, "Long")
+      model.JavaType(Seq.empty, "Long")
     case Primitive.TFloat =>
-      il.JavaType(Seq.empty, "Float")
+      model.JavaType(Seq.empty, "Float")
     case Primitive.TDouble =>
-      il.JavaType(Seq.empty, "Double")
+      model.JavaType(Seq.empty, "Double")
     case Primitive.TUUID =>
-      il.JavaType.get[UUID]
+      JavaType.get[UUID]
     case Primitive.TTsTz =>
-      il.JavaType.get[ZonedDateTime]
+      JavaType.get[ZonedDateTime]
     case Primitive.TTs =>
-      il.JavaType.get[LocalDateTime]
+      JavaType.get[LocalDateTime]
     case Primitive.TTime =>
-      il.JavaType.get[LocalTime]
+      JavaType.get[LocalTime]
     case Primitive.TDate =>
-      il.JavaType.get[LocalDate]
+      JavaType.get[LocalDate]
   }
 
   private def toGeneric(typeId: Generic): JavaType = {
     typeId match {
       case _: Generic.TSet =>
-        il.JavaType.get[Set[_]]
+        JavaType.get[Set[_]]
       case _: Generic.TMap =>
-        il.JavaType.get[Map[_, _]]
+        JavaType.get[Map[_, _]]
       case _: Generic.TList =>
-        il.JavaType.get[List[_]]
+        JavaType.get[List[_]]
       case _: Generic.TOption =>
-        il.JavaType.get[Option[_]]
+        JavaType.get[Option[_]]
     }
   }
 

@@ -1,7 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.model.il
+package com.github.pshirshov.izumi.idealingua.model
 
+import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, Package, PackageTools}
-import com.github.pshirshov.izumi.idealingua.model.il
+import com.github.pshirshov.izumi.idealingua.model.il.DomainId
 
 import scala.reflect._
 
@@ -28,7 +29,7 @@ object JavaType {
     val parts = clazz.split('.').toSeq
     val nameParts = parts.last.split('$').toSeq
     val pkg = parts.init ++ nameParts.init
-    il.JavaType(pkg, nameParts.last)
+    model.JavaType(pkg, nameParts.last)
   }
 
   def apply(typeId: AbstractTypeId): JavaType = new JavaType(typeId.pkg, typeId.name)

@@ -1,13 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
+import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
+import com.github.pshirshov.izumi.idealingua.model.il.serialization.ILSchemaSerializerJson4sImpl
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.runtime.transport.AbstractTransport
 
@@ -19,6 +20,7 @@ class Translation(typespace: Typespace) {
   protected val conv = new ScalaTypeConverter(typespace.domain.id)
   protected val runtimeTypes = new IDLRuntimeTypes()
   protected val sig = new TypeSignature(typespace)
+  protected val schemaSerializer = ILSchemaSerializerJson4sImpl
 
   import conv._
   import runtimeTypes._
@@ -62,10 +64,13 @@ class Translation(typespace: Typespace) {
     val types = exprs.map({ case (k, v) => q"$k -> $v" })
     val reverseTypes = exprs.map({ case (k, v) => q"$v -> $k" })
 
+    val schema = schemaSerializer.serializeSchema(typespace.domain)
+
     toSource(domainsDomain, ModuleId(domainsDomain.pkg, s"${domainsDomain.name}.scala"), Seq(
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
          ${conv.toImport}
 
+         lazy val serializedSchema: String = ${Lit.String(schema)}
          lazy val id: ${conv.toScala[DomainId].typeFull} = ${conv.toIdConstructor(typespace.domain.id)}
          lazy val types: Map[${typeId.typeFull}, Class[_]] = Seq(..$types).toMap
          lazy val classes: Map[Class[_], ${typeId.typeFull}] = Seq(..$reverseTypes).toMap
@@ -73,6 +78,8 @@ class Translation(typespace: Typespace) {
     ))
 
   }
+
+
 
   protected def translateService(definition: Service): Seq[Module] = {
     toSource(Indefinite(definition.id), toModuleId(definition.id), renderService(definition))
@@ -522,7 +529,7 @@ class Translation(typespace: Typespace) {
 
   private def toSuper(fields: List[ExtendedField], ifDecls: List[Init], base: String): List[Init] = {
     if (fields.lengthCompare(1) == 0) {
-      conv.toScala(il.JavaType(Seq.empty, base)).init() +: ifDecls
+      conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
     } else {
       ifDecls
     }

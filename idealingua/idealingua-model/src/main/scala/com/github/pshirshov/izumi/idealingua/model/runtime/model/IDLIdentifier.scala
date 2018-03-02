@@ -45,6 +45,7 @@ trait IDLTypeCompanion extends IDLGeneratedCompanion
 
 trait IDLDomainCompanion extends IDLGeneratedCompanion {
   def id: DomainId
+  def serializedSchema: String
   def types: Map[TypeId, Class[_]]
   def classes: Map[Class[_], TypeId]
 }
