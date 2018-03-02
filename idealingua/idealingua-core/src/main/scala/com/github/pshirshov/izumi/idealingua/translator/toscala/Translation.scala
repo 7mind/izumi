@@ -20,7 +20,7 @@ class Translation(typespace: Typespace) {
   protected val conv = new ScalaTypeConverter(typespace.domain.id)
   protected val runtimeTypes = new IDLRuntimeTypes()
   protected val sig = new TypeSignature(typespace)
-  protected val schemaSerializer = ILSchemaSerializerJson4sImpl
+  protected val schemaSerializer: ILSchemaSerializerJson4sImpl.type = ILSchemaSerializerJson4sImpl
 
   import conv._
   import runtimeTypes._
@@ -70,10 +70,11 @@ class Translation(typespace: Typespace) {
       q"""object ${tDomain.termName} extends ${tDomainCompanion.init()} {
          ${conv.toImport}
 
-         lazy val serializedSchema: String = ${Lit.String(schema)}
          lazy val id: ${conv.toScala[DomainId].typeFull} = ${conv.toIdConstructor(typespace.domain.id)}
          lazy val types: Map[${typeId.typeFull}, Class[_]] = Seq(..$types).toMap
          lazy val classes: Map[Class[_], ${typeId.typeFull}] = Seq(..$reverseTypes).toMap
+
+         protected lazy val serializedSchema: String = ${Lit.String(schema)}
        }"""
     ))
 

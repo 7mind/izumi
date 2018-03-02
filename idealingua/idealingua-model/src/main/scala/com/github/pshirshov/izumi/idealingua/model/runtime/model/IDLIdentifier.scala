@@ -3,7 +3,8 @@ package com.github.pshirshov.izumi.idealingua.model.runtime.model
 import java.net.{URLDecoder, URLEncoder}
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
+import com.github.pshirshov.izumi.idealingua.model.il.serialization.ILSchemaSerializerJson4sImpl
 
 import scala.language.higherKinds
 import scala.reflect._
@@ -45,9 +46,15 @@ trait IDLTypeCompanion extends IDLGeneratedCompanion
 
 trait IDLDomainCompanion extends IDLGeneratedCompanion {
   def id: DomainId
-  def serializedSchema: String
   def types: Map[TypeId, Class[_]]
   def classes: Map[Class[_], TypeId]
+
+  def schema: DomainDefinition = cachedSchema
+
+  protected def serializedSchema: String
+
+  private lazy val cachedSchema: DomainDefinition = schemaSerializer.parseSchema(serializedSchema)
+  protected val schemaSerializer: ILSchemaSerializerJson4sImpl.type = ILSchemaSerializerJson4sImpl
 }
 
 trait IDLEnum extends IDLGenerated {
