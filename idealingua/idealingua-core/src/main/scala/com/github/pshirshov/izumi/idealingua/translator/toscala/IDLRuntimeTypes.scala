@@ -29,6 +29,7 @@ object IDLRuntimeTypes {
   final val tIDLIdentifier = conv.toScala[IDLIdentifier]
   final val tFinalDefinition = conv.toScala[ILAst]
   final val tDomainCompanion = conv.toScala[IDLDomainCompanion]
+  final val tAdtElementCompanion = conv.toScala[IDLAdtElementCompanion]
   final val tDomainDefinition = conv.toScala[DomainDefinition]
   final val tService = conv.toScala[Service]
 

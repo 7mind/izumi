@@ -4,7 +4,8 @@ import java.nio.file.Path
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.TranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.{CirceTranslatorExtension, IDLCompiler, IDLLanguage}
 import sbt.Keys.{sourceGenerators, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger
@@ -28,6 +29,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
   object Keys {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
+    val idlDefaultExtensionsScala = settingKey[Seq[TranslatorExtension]]("Default list of translator extensions for scala")
   }
 
   private val logger: ConsoleLogger = ConsoleLogger()
@@ -36,9 +38,12 @@ object IdealinguaPlugin extends AutoPlugin {
 
 
   override lazy val projectSettings = Seq(
-    Keys.compilationTargets := Seq(
-      Invokation(CompilerOptions(IDLLanguage.Scala, Seq.empty), Mode.Sources)
-      , Invokation(CompilerOptions(IDLLanguage.Scala, Seq.empty), Mode.Artifact)
+    Keys.idlDefaultExtensionsScala := Seq(
+      CirceTranslatorExtension
+    )
+    , Keys.compilationTargets := Seq(
+      Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Sources)
+      , Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Artifact)
     )
 
     , sourceGenerators in Compile += Def.task {

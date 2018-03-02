@@ -43,6 +43,20 @@ class Typespace(val domain: DomainDefinition) {
       .toMap
   }
 
+  protected val adtEphemerals: Map[EphemeralId, TypeId] = {
+    typespace
+      .values
+      .collect {
+        case i: Adt =>
+          i.alternatives.map {
+            el =>
+            val eid = EphemeralId(i.id, el.name)
+            eid -> el
+          }
+      }
+      .flatten
+      .toMap
+  }
 
   def apply(id: TypeId): ILAst = {
     val typeDomain = domain.id.toDomainId(id)
@@ -53,6 +67,9 @@ class Typespace(val domain: DomainDefinition) {
 
         case e: EphemeralId if interfaceEphemerals.contains(e) =>
           interfaceEphemerals(e)
+
+        case e: EphemeralId if adtEphemerals.contains(e) =>
+          apply(adtEphemerals(e))
 
         case o =>
           typespace(o)

@@ -6,7 +6,7 @@ import fastparse.core.Parsed
 import org.scalatest.WordSpec
 
 
-class ILParTest extends WordSpec {
+class ILParserTest extends WordSpec {
   private def assertParses[T](p: Parser[T], str: String): T = {
     p.parse(str) match {
       case Parsed.Success(v, _) =>

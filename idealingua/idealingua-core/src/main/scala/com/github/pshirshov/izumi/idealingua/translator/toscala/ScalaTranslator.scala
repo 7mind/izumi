@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, EphemeralId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EnumId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
@@ -13,7 +13,6 @@ import com.github.pshirshov.izumi.idealingua.model.runtime.transport.AbstractTra
 
 import scala.collection.{immutable, mutable}
 import scala.meta._
-
 
 
 class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExtension]) {
@@ -125,18 +124,22 @@ class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExte
         val mt = t.within(m.name)
         val original = conv.toScala(m)
 
-        Seq(
-          withInfo(i.id, q"""case class ${mt.typeName}(value: ${original.typeFull}) extends ..${List(t.init())}""")
-          ,
+        val qqElement = q"""case class ${mt.typeName}(value: ${original.typeFull}) extends ..${List(t.init())}"""
+        val qqCompanion = q""" object ${mt.termName} extends ${rt.tAdtElementCompanion.init()} {} """
+
+
+        val converters = Seq(
           q"""implicit def ${Term.Name("into" + m.name.capitalize)}(value: ${original.typeFull}): ${t.typeFull} = ${mt.termFull}(value) """
           ,
           q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeFull} = value.value"""
         )
+
+        val id = EphemeralId(i.id, m.name)
+        withExtensions(id, qqElement, qqCompanion, _.handleAdtElement, _.handleAdtElementCompanion) ++ converters
     }
 
-    Seq(
-      q""" sealed trait ${t.typeName} extends ${rt.adtElInit}{} """
-      ,
+    val qqAdt = q""" sealed trait ${t.typeName} extends ${rt.adtElInit}{} """
+    val qqAdtCompanion =
       q"""object ${t.termName} extends ${rt.adtInit} {
             import scala.language.implicitConversions
 
@@ -144,7 +147,7 @@ class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExte
 
             ..$members
            }"""
-    )
+    withExtensions(i.id, qqAdt, qqAdtCompanion, _.handleAdt, _.handleAdtCompanion)
   }
 
   def renderEnumeration(i: Enumeration): Seq[Defn] = {
@@ -171,9 +174,8 @@ class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExte
         p"""case ${Lit.String(termString)} => $termName"""
     }
 
-    Seq(
-      q""" sealed trait ${t.typeName} extends ${rt.enumElInit} {} """
-      ,
+    val qqEnum = q""" sealed trait ${t.typeName} extends ${rt.enumElInit} {} """
+    val qqEnumCompanion =
       q"""object ${t.termName} extends ${rt.enumInit} {
             type Element = ${t.typeFull}
 
@@ -186,7 +188,8 @@ class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExte
             ..${members.map(_._2)}
 
            }"""
-    )
+
+    withExtensions(i.id, qqEnum, qqEnumCompanion, _.handleEnum, _.handleEnumCompanion)
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
@@ -208,20 +211,46 @@ class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExte
     val t = conv.toScala(i.id)
     val tools = t.within(s"${i.id.name}Extensions")
 
-    Seq(
-      withInfo(i.id,
-        q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
-            override def toString: String = {
-              val suffix = this.productIterator.map(part => ${rt.tIDLIdentifier.termFull}.escape(part.toString)).mkString(":")
-              $interp
-            }
-         }""")
-      ,
+    val qqCompanion =
       q"""object ${t.termName} extends ${rt.typeCompanionInit} {
              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
                 ${rt.conv.toMethodAst(i.id)}
              }
          }"""
+
+
+    val qqIdentifier =
+      q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
+            override def toString: String = {
+              val suffix = this.productIterator.map(part => ${rt.tIDLIdentifier.termFull}.escape(part.toString)).mkString(":")
+              $interp
+            }
+         }"""
+
+
+    withExtensions(i.id, qqIdentifier, qqCompanion, _.handleIdentifier, _.handleIdentifierCompanion)
+  }
+
+  private def withExtensions[I <: TypeId, D <: Defn, C <: Defn]
+  (
+    id: I
+    , entity: D
+    , companion: C
+    , entityTransformer: ScalaTranslatorExtension => (ScalaTranslationContext, I, D) => D
+    , companionTransformer: ScalaTranslatorExtension => (ScalaTranslationContext, I, C) => C
+  ) = {
+    val extendedEntity = extensions.foldLeft(entity) {
+      case (acc, v) =>
+        entityTransformer(v)(context, id, acc)
+    }
+    val extendedCompanion = extensions.foldLeft(companion) {
+      case (acc, v) =>
+        companionTransformer(v)(context, id, acc)
+    }
+
+    Seq(
+      extendedEntity
+      , extendedCompanion
     )
   }
 
@@ -302,13 +331,14 @@ class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExte
 
     val tools = t.within(s"${i.id.name}Extensions")
 
-    Seq(
+    val qqInterface =
       q"""trait ${t.typeName} extends ..$ifDecls {
           ..$allDecls
           }
 
        """
-      ,
+
+    val qqInterfaceCompanion =
       q"""object ${t.termName} extends ${rt.typeCompanionInit} {
              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
              ${rt.conv.toMethodAst(i.id)}
@@ -317,7 +347,8 @@ class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExte
 
              ..$impl
          }"""
-    )
+
+    withExtensions(i.id, qqInterface, qqInterfaceCompanion, _.handleInterface, _.handleInterfaceCompanion)
   }
 
 
@@ -471,17 +502,7 @@ class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExte
              ..$constructors
          }"""
 
-    val extendedCompanion = extensions.foldLeft(qqCompositeCompanion) {
-      case (acc, v) =>
-        v.handleCompositeCompanion(context, id, acc)
-    }
-    val extended = extensions.foldLeft(qqComposite) {
-      case (acc, v) =>
-        v.handleComposite(context, id, acc)
-    }
-
-    // withInfo(id, qqComposite)
-    Seq(extended, extendedCompanion)
+    withExtensions(id, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
   }
 
   private def mkConverters(id: TypeId, fields: ScalaFields) = {

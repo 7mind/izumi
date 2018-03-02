@@ -3,11 +3,12 @@ package com.github.pshirshov.izumi.idealingua
 import java.io.File
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
+import com.github.pshirshov.izumi.idealingua.translator.CirceTranslatorExtension
 import org.scalatest.WordSpec
 
 
-class LoaderTest extends WordSpec {
-  import IDLTest._
+class LoadThenCompileWithCirceTest extends WordSpec {
+  import ILTranslatorTest._
 
   "IL loader" should {
     "load & parse domain definition" in {
@@ -15,7 +16,7 @@ class LoaderTest extends WordSpec {
       val loader = new LocalModelLoader(src, Seq.empty)
       val loaded = loader.load()
       assert(loaded.lengthCompare(2) == 0)
-      assert(compiles(loaded))
+      assert(compiles(loaded, Seq(CirceTranslatorExtension)))
     }
   }
 }

@@ -6,10 +6,11 @@ import com.github.pshirshov.izumi.idealingua.translator.FinalTranslator
 
 class FinalTranslatorScalaImpl extends FinalTranslator {
 
-  override def translate(domain: DomainDefinition, extensions: Seq[ScalaTranslatorExtension]): Seq[Module] = {
+  override def translate(domain: DomainDefinition, extensions: Seq[TranslatorExtension]): Seq[Module] = {
     val typespace = new Typespace(domain)
     typespace.verify()
-    val modules = new ScalaTranslator(typespace, extensions).translate()
+    val scalaExtensions = extensions.collect({ case t: ScalaTranslatorExtension => t })
+    val modules = new ScalaTranslator(typespace, scalaExtensions).translate()
     postVerify(modules)
   }
 

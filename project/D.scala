@@ -27,6 +27,7 @@ object D {
       , "io.circe" %% "circe-generic"
       , "io.circe" %% "circe-generic-extras"
       , "io.circe" %% "circe-parser"
+      , "io.circe" %% "circe-java8"
     ).map(_ % circeVersion)
 
 

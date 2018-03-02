@@ -7,15 +7,16 @@ import java.nio.file._
 
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.TranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
 import org.scalatest.WordSpec
 
 
-class IDLTest extends WordSpec {
+class ILTranslatorTest extends WordSpec {
 
-  import IDLTest._
+  import ILTranslatorTest._
 
-  "IDL renderer" should {
+  "Intermediate language translator" should {
     "be able to produce scala source code" in {
       assert(compiles(Seq(Model01.domain, Model02.domain)))
     }
@@ -24,8 +25,12 @@ class IDLTest extends WordSpec {
 
 }
 
-object IDLTest {
+object ILTranslatorTest {
   def compiles(domains: Seq[DomainDefinition]): Boolean = {
+    compiles(domains, Seq.empty)
+  }
+
+  def compiles(domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension]): Boolean = {
     val tmpdir = Paths.get("target")
     val runPrefix = s"idl-${ManagementFactory.getRuntimeMXBean.getStartTime}"
     val runDir = tmpdir.resolve(s"$runPrefix-${System.currentTimeMillis()}")
@@ -43,7 +48,7 @@ object IDLTest {
     val allFiles = domains.flatMap {
       domain =>
         val compiler = new IDLCompiler(domain)
-        compiler.compile(runDir.resolve(domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala, Seq.empty)) match {
+        compiler.compile(runDir.resolve(domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala, extensions)) match {
           case IDLSuccess(files) =>
             assert(files.toSet.size == files.size)
             files

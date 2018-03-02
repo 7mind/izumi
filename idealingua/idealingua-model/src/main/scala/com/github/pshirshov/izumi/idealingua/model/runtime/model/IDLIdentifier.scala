@@ -40,6 +40,7 @@ trait IDLRpc extends Any with IDLGeneratedType
 trait IDLInput extends Any with IDLRpc
 trait IDLOutput extends Any with IDLRpc
 
+trait IDLAdtElementCompanion extends IDLGeneratedCompanion
 trait IDLServiceCompanion extends IDLGeneratedCompanion
 trait IDLTypeCompanion extends IDLGeneratedCompanion
 

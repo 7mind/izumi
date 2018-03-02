@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path}
 import com.github.pshirshov.izumi.idealingua.il.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{FinalTranslatorScalaImpl, ScalaTranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.{FinalTranslatorScalaImpl, TranslatorExtension}
 
 
 class IDLCompiler(domain: DomainDefinition) {
@@ -46,7 +46,7 @@ class IDLCompiler(domain: DomainDefinition) {
 
 object IDLCompiler {
 
-  case class CompilerOptions(language: IDLLanguage, extensions: Seq[ScalaTranslatorExtension])
+  case class CompilerOptions(language: IDLLanguage, extensions: Seq[TranslatorExtension])
 
   trait IDLResult
 
