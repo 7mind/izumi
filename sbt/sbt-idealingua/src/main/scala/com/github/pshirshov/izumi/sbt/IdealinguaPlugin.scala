@@ -37,8 +37,8 @@ object IdealinguaPlugin extends AutoPlugin {
 
   override lazy val projectSettings = Seq(
     Keys.compilationTargets := Seq(
-      Invokation(CompilerOptions(IDLLanguage.Scala), Mode.Sources)
-      , Invokation(CompilerOptions(IDLLanguage.Scala), Mode.Artifact)
+      Invokation(CompilerOptions(IDLLanguage.Scala, Seq.empty), Mode.Sources)
+      , Invokation(CompilerOptions(IDLLanguage.Scala, Seq.empty), Mode.Artifact)
     )
 
     , sourceGenerators in Compile += Def.task {

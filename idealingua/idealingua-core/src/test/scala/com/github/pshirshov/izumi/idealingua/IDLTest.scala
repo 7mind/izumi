@@ -43,7 +43,7 @@ object IDLTest {
     val allFiles = domains.flatMap {
       domain =>
         val compiler = new IDLCompiler(domain)
-        compiler.compile(runDir.resolve(domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala)) match {
+        compiler.compile(runDir.resolve(domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language = IDLLanguage.Scala, Seq.empty)) match {
           case IDLSuccess(files) =>
             assert(files.toSet.size == files.size)
             files

@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, ILAst}
 import com.github.pshirshov.izumi.idealingua.model.runtime.model._
 
-class IDLRuntimeTypes() {
+object IDLRuntimeTypes {
   private final val commonsPkg = classOf[TypeId].getPackage.getName
   private final val basePkgParts = commonsPkg.split('.').toSeq.init
 

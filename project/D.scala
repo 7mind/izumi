@@ -20,6 +20,16 @@ object D {
     val fastparse = "com.lihaoyi" %% "fastparse" % "1.0.0" % "shaded"
     val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3" % "shaded"
 
+    val circeVersion = "0.9.1"
+
+    val circe: Seq[ModuleID] = Seq(
+      "io.circe" %% "circe-core"
+      , "io.circe" %% "circe-generic"
+      , "io.circe" %% "circe-generic-extras"
+      , "io.circe" %% "circe-parser"
+    ).map(_ % circeVersion)
+
+
     val slf4j_api = "org.slf4j" % "slf4j-api" % "1.7.25"
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % "1.7.25"
   }
