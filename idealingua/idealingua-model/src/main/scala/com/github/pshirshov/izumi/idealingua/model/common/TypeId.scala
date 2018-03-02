@@ -12,10 +12,10 @@ trait AbstractTypeId {
 }
 
 
-trait TypeId extends AbstractTypeId {
+sealed trait TypeId extends AbstractTypeId {
 }
 
-trait Scalar extends TypeId {
+sealed trait Scalar extends TypeId {
   this: TypeId =>
 }
 
@@ -66,7 +66,7 @@ object TypeId {
 
 }
 
-trait Builtin extends TypeId {
+sealed trait Builtin extends TypeId {
   override def pkg: Package = Builtin.prelude
 
   override def toString: TypeName = s"#$name"
@@ -155,7 +155,7 @@ object Primitive {
     .toMap
 }
 
-trait Generic extends Builtin {
+sealed trait Generic extends Builtin {
   def args: List[TypeId]
 }
 

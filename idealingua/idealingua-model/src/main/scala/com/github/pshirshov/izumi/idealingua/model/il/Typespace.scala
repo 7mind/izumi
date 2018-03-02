@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EphemeralId, InterfaceId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
@@ -221,8 +221,24 @@ class Typespace(val domain: DomainDefinition) {
       case u: Indefinite =>
         parents(apply(u).id)
 
-      case _ =>
-        throw new IDLException(s"Unexpected id: $id")
+      case _: IdentifierId =>
+        List()
+
+      case _: EnumId =>
+        List()
+
+      case _: AliasId =>
+        List()
+
+      case _: AdtId =>
+        List()
+
+      case e: Builtin =>
+        throw new IDLException(s"Unexpected id: $e")
+
+      case e: ServiceId =>
+        throw new IDLException(s"Unexpected id: $e")
+
     }
   }
 
@@ -244,8 +260,24 @@ class Typespace(val domain: DomainDefinition) {
       case u: Indefinite =>
         compatible(apply(u).id)
 
-      case _ =>
-        throw new IDLException(s"Unexpected id: $id")
+      case _: IdentifierId =>
+        List()
+
+      case _: EnumId =>
+        List()
+
+      case _: AliasId =>
+        List()
+
+      case _: AdtId =>
+        List()
+
+      case e: Builtin =>
+        throw new IDLException(s"Unexpected id: $e")
+
+      case e: ServiceId =>
+        throw new IDLException(s"Unexpected id: $e")
+
     }
   }
 

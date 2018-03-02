@@ -62,6 +62,8 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
           case Some(t) =>
             t
           case None =>
+            println(mapping)
+            println(toIndefinite(id))
             throw new IDLException(s"Type $id is missing from domain $domainId")
         }
       case v if !domainId.contains(v) =>
