@@ -19,7 +19,7 @@ object D {
     val scalameta = "org.scalameta" %% "scalameta" % "3.3.1" //% "shaded"
     val cglib_nodep = "cglib" % "cglib-nodep" % "3.2.6"  % "shaded"
     val fastparse = "com.lihaoyi" %% "fastparse" % "1.0.0" % "shaded"
-    val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3"// % "shaded"
+    val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3" % "shaded"
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % "1.7.25"
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % "1.7.25"
