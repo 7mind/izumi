@@ -86,8 +86,6 @@ val baseSettings = new GlobalSettings {
 
         , shadeNamespaces ++= Set(
           "fastparse"
-          , "org.json4s"
-          , "org.scalameta"
           , "net.sf.cglib"
         ),
       ) ++ shading
