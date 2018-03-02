@@ -15,9 +15,8 @@ object D {
     val essentials = Seq(scala_java8_compat)
 
 
-    // TODO: temporary (I hope) solution, we have to ship our own cglib depending on scala-asm
-    val scalameta = "org.scalameta" %% "scalameta" % "3.3.1" //% "shaded"
-    val cglib_nodep = "cglib" % "cglib-nodep" % "3.2.6"  % "shaded"
+    val scalameta = "org.scalameta" %% "scalameta" % "3.3.1" //% "shaded" // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
+    val cglib_nodep = "cglib" % "cglib-nodep" % "3.2.6"  % "shaded" // TODO: It would be good to completely get rid of cglib and build our own proxy generator on top of scala-asm
     val fastparse = "com.lihaoyi" %% "fastparse" % "1.0.0" % "shaded"
     val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3" % "shaded"
 

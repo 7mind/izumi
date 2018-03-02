@@ -395,8 +395,8 @@ class Translation(typespace: Typespace) {
 
           override type InputType = ${serviceInputBase.typeFull}
           override type OutputType = ${serviceOutputBase.typeFull}
-          override def inputTag: scala.reflect.ClassTag[${serviceInputBase.typeFull}] = scala.reflect.classTag[${serviceInputBase.typeFull}]
-          override def outputTag: scala.reflect.ClassTag[${serviceOutputBase.typeFull}] = scala.reflect.classTag[${serviceOutputBase.typeFull}]
+          override def inputClass: Class[${serviceInputBase.typeFull}] = classOf[${serviceInputBase.typeFull}]
+          override def outputClass: Class[${serviceOutputBase.typeFull}] = classOf[${serviceOutputBase.typeFull}]
 
           ..${decls.map(_.defn)}
          }""")

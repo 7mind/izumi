@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.runtime.model.{IDLGenerated, 
 trait AbstractTransport[Service <: IDLService] {
   def service: Service
 
-  def inAcceptable(in: IDLGeneratedType): Boolean = service.inputTag.runtimeClass.isAssignableFrom(in.getClass)
+  def inAcceptable(in: IDLGeneratedType): Boolean = service.inputClass.isAssignableFrom(in.getClass)
 
   def process(request: Service#InputType): Service#Result[Service#OutputType]
 

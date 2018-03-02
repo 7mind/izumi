@@ -3,11 +3,10 @@ package com.github.pshirshov.izumi.idealingua.model.runtime.model
 import java.net.{URLDecoder, URLEncoder}
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
 import com.github.pshirshov.izumi.idealingua.model.il.serialization.ILSchemaSerializerJson4sImpl
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
 
 import scala.language.higherKinds
-import scala.reflect._
 
 trait IDLGenerated extends Any
 trait IDLGeneratedCompanion extends IDLGenerated
@@ -33,8 +32,8 @@ trait IDLService extends IDLGeneratedType {
   type OutputType <: IDLOutput
   type Result[+R <: OutputType]
 
-  def inputTag: ClassTag[InputType]
-  def outputTag: ClassTag[OutputType]
+  def inputClass: Class[InputType]
+  def outputClass: Class[OutputType]
 }
 
 trait IDLRpc extends Any with IDLGeneratedType
