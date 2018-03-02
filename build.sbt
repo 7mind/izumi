@@ -225,6 +225,9 @@ lazy val idealinguaCore = inIdealingua.as.module
   .depends(idealinguaModel)
   .settings(libraryDependencies ++= Seq(R.fastparse % "shaded", T.scala_compiler, T.scala_library))
 
+lazy val idealinguaTransportHttp4s = inIdealingua.as.module
+  .depends(idealinguaCore)
+  .settings(libraryDependencies ++= R.http4s_all ++ R.circe_all ++ Seq(R.cats_core))
 
 lazy val sbtIzumi = inSbt.as
   .module
@@ -245,7 +248,7 @@ lazy val distage: Seq[ProjectReference] = Seq(
   distageCore
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
-  idealinguaCore
+  idealinguaCore, idealinguaTransportHttp4s
 )
 lazy val izsbt: Seq[ProjectReference] = Seq(
   sbtIzumi, sbtIdealingua

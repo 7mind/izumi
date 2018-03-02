@@ -24,6 +24,24 @@ object D {
     val fastparse = "com.lihaoyi" %% "fastparse" % "1.0.0"
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0"
 
+    val cats_version = "1.0.1"
+    val cats_core = "org.typelevel" %% "cats-core" % cats_version
+
+    val circe_version = "0.9.1"
+    val circe_all: Seq[ModuleID] = Seq(
+      "io.circe" %% "circe-core"
+      , "io.circe" %% "circe-generic"
+      , "io.circe" %% "circe-generic-extras"
+      , "io.circe" %% "circe-parser"
+    ).map(_ % circe_version)
+
+    val http4s_version = "0.18.0"
+    val http4s_all: Seq[ModuleID] = Seq(
+      "org.http4s" %% "http4s-dsl"
+      , "org.http4s" %% "http4s-circe"
+      , "org.http4s" %% "http4s-blaze-server"
+    ).map(_ % http4s_version)
+
     val essentials = Seq(scala_java8_compat)
   }
 
