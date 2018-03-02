@@ -87,6 +87,8 @@ val baseSettings = new GlobalSettings {
         , shadeNamespaces ++= Set(
           "fastparse"
           , "org.json4s"
+          , "org.scalameta"
+          , "net.sf.cglib"
         ),
       ) ++ shading
     }
@@ -232,7 +234,7 @@ lazy val sbtIzumi = inSbt.as
 
 lazy val sbtIdealingua = inSbt.as
   .module
-  .depends(idealinguaCore, sbtIzumi.testOnlyRef)
+  .depends(idealinguaCore)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageDi

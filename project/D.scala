@@ -16,7 +16,7 @@ object D {
 
 
     // TODO: temporary (I hope) solution, we have to ship our own cglib depending on scala-asm
-    val scalameta = "org.scalameta" %% "scalameta" % "3.3.1"
+    val scalameta = "org.scalameta" %% "scalameta" % "3.3.1" % "shaded"
     val cglib_nodep = "cglib" % "cglib-nodep" % "3.2.6"  % "shaded"
     val fastparse = "com.lihaoyi" %% "fastparse" % "1.0.0" % "shaded"
     val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3" % "shaded"
