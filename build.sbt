@@ -218,12 +218,12 @@ lazy val logstageRouting = inLogStage.as.module
   )
 
 lazy val idealinguaModel = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.scalameta, R.scala_reflect))
+  .settings(libraryDependencies ++= Seq(R.scalameta, R.scala_reflect, R.json4s_native))
 
 
 lazy val idealinguaCore = inIdealingua.as.module
   .depends(idealinguaModel)
-  .settings(libraryDependencies ++= Seq(R.fastparse % "shaded", T.scala_compiler, T.scala_library))
+  .settings(libraryDependencies ++= Seq(R.fastparse, T.scala_compiler, T.scala_library))
 
 
 lazy val sbtIzumi = inSbt.as

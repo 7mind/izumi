@@ -110,8 +110,6 @@ class Typespace(val domain: DomainDefinition) {
           .filterNot(compatibleIfs.contains)
           .toSet
 
-        //println(id, typeToConstruct, missingInterfaces, allParents, requiredParameters, implFields)
-
         val fieldsToTakeFromParameters = requiredParameters
           .flatMap(mi => enumFields(apply(mi)))
           .filterNot(f => fieldsToCopyFromInterface.contains(f.field))
@@ -190,18 +188,6 @@ class Typespace(val domain: DomainDefinition) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
     }
   }
-
-  //  def makeDefinite(id: TypeId): TypeId = {
-  //    mapping.getOrElse(toIndefinite(id), id)
-  //  }
-  //
-  //  private def toIndefinite(typeId: TypeId): Indefinite = {
-  //    if (typeId.pkg.isEmpty) {
-  //      Indefinite(domain.id.toPackage, typeId.name)
-  //    } else {
-  //      Indefinite(typeId)
-  //    }
-  //  }
 
   def parents(id: TypeId): List[InterfaceId] = {
     id match {
