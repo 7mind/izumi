@@ -60,16 +60,15 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
         (q"$argName: $tpe",  q"override val $methodName: $tpe = $argName")
     }.unzip
 
-    val producerArgs = factoryInfo.associations.map {
+    // FIXME transitive dependencies request
+    val transitiveDependenciesArgsHACK = factoryInfo.associations.map {
       assoc =>
         val typeFull = assoc.wireWith.symbol
-        q"${TermName(c.freshName(typeFull.toString))}: ${typeFull.tpe}"
+        q"${TermName(c.freshName("transitive"))}: ${typeFull.tpe}"
     }
 
     val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor].typeSymbol
     val executorArg = q"$executorName: $executorType"
-    // FIXME if unarySymbolDeps are unneded remove singletons
-    // ???
     val factoryTools = symbolOf[FactoryTools.type].asClass.module
 
     // FIXME we can't remove runtime dependency on scala.reflect right now because:
@@ -78,9 +77,9 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
     val producerMethods = wireables.map {
       case FactoryMethod.WithContext(factoryMethod, wireWith, methodArguments) =>
 
-        val (methodArgs, executorArgs)  = methodArguments.map {
+        val (methodArgs, executorArgs) = methodArguments.map {
           dIKey =>
-            val name = TermName(c.freshName(dIKey.symbol.toString))
+            val name = TermName(c.freshName())
             q"$name: ${dIKey.symbol.tpe}" -> q"{ $name }"
         }.unzip
 
@@ -123,7 +122,7 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
         """
     }
 
-    val allArgs = (executorArg +: dependencyArgs) ++ producerArgs
+    val allArgs = (executorArg +: dependencyArgs) ++ transitiveDependenciesArgsHACK
     val allMethods = producerMethods ++ dependencyMethods
     val instantiate = if (allMethods.isEmpty)
       q"new $targetType {}"
