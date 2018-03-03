@@ -106,7 +106,15 @@ class Typespace(val domain: DomainDefinition) {
 
   def implementors(id: InterfaceId): List[InterfaceConstructors] = {
     val implementors = implementingDtos(id) ++ implementingEphemerals(id)
+    compatibleImplementors(implementors, id)
+  }
 
+  def compatibleImplementors(id: InterfaceId): List[InterfaceConstructors] = {
+    val implementors = compatibleDtos(id) ++ compatibleEphemerals(id)
+    compatibleImplementors(implementors, id)
+  }
+
+  protected def compatibleImplementors(implementors: List[TypeId], id: InterfaceId): List[InterfaceConstructors] = {
     val ifaceFields = enumFields(apply(id))
     val ifaceConflicts = FieldConflicts(ifaceFields)
     val ifaceNonUniqueFields = ifaceConflicts.softConflicts.keySet
@@ -287,12 +295,26 @@ class Typespace(val domain: DomainDefinition) {
 
   protected def implementingDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
-      case (tid, d: DTO) if compatible(tid).contains(id) =>
+      case (tid, d: DTO) if parents(tid).contains(id) =>
         d.id
     }.toList
   }
 
   protected def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
+    (serviceEphemerals ++ interfaceEphemerals).collect {
+      case (eid, _: DTO) if parents(eid).contains(id) =>
+        eid
+    }.toList
+  }
+
+  protected def compatibleDtos(id: InterfaceId): List[DTOId] = {
+    typespace.collect {
+      case (tid, d: DTO) if compatible(tid).contains(id) =>
+        d.id
+    }.toList
+  }
+
+  protected def compatibleEphemerals(id: InterfaceId): List[EphemeralId] = {
     (serviceEphemerals ++ interfaceEphemerals).collect {
       case (eid, _: DTO) if compatible(eid).contains(id) =>
         eid

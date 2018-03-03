@@ -290,7 +290,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
           """
     }
 
-    val constructors = typespace.implementors(i.id).map {
+    val constructors = typespace.compatibleImplementors(i.id).map {
       t =>
         val requiredParameters = t.requiredParameters
         val fieldsToCopyFromInterface: Set[Field] = t.fieldsToCopyFromInterface

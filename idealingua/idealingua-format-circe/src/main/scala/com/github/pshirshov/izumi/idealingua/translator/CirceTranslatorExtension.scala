@@ -43,7 +43,7 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     val t = context.conv.toScala(id)
     val tpe = t.typeFull
     val implementors = context.typespace.implementors(id)
-    println(id, implementors)
+
     val enc = implementors.map {
       c =>
         p"""case v: ${context.conv.toScala(c.typeToConstruct).typeFull} => Map(${Lit.String(c.typeToConstruct.name)} -> v).asJson"""
