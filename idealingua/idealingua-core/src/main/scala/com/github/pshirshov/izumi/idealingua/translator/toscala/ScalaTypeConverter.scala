@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainId, FieldConflicts, ILAst}
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FieldConflicts, ILAst}
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
@@ -102,9 +102,18 @@ class ScalaTypeConverter(domain: DomainId) {
     toScala(javaType)
   }
 
+  def toScala(id: Indefinite): ScalaType = {
+    toScala(JavaType(id.pkg, id.name))
+  }
+
   def toScala(javaType: JavaType): ScalaType = {
     toScala(javaType, List.empty)
   }
+
+  def domainCompanionId(domainDefinition: DomainDefinition): Indefinite = {
+    Indefinite(Seq("izumi", "idealingua", "domains"), domainDefinition.id.id.capitalize)
+  }
+
 
   private def toScala(javaType: JavaType, args: List[TypeId]): ScalaType = {
     val minimized = javaType.minimize(domain)

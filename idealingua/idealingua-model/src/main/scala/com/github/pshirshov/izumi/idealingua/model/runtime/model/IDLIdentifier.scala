@@ -52,8 +52,9 @@ trait IDLDomainCompanion extends IDLGeneratedCompanion {
   def schema: DomainDefinition = cachedSchema
 
   protected def serializedSchema: String
+  protected def referencedDomains: Map[DomainId, DomainDefinition]
 
-  private lazy val cachedSchema: DomainDefinition = schemaSerializer.parseSchema(serializedSchema)
+  private lazy val cachedSchema: DomainDefinition = schemaSerializer.parseSchema(serializedSchema).copy(referenced = referencedDomains)
   protected val schemaSerializer: ILSchemaSerializerJson4sImpl.type = ILSchemaSerializerJson4sImpl
 }
 

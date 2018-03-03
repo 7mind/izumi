@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, EnumId, EphemeralId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
@@ -62,6 +62,11 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
     val schema = schemaSerializer.serializeSchema(typespace.domain)
 
+    val references = typespace.domain.referenced.toList.map {
+      case (k, v) =>
+        q"${conv.toIdConstructor(k)} -> ${conv.toScala(conv.domainCompanionId(v)).termFull}.schema"
+    }
+
     toSource(domainsDomain, ModuleId(domainsDomain.pkg, s"${domainsDomain.name}.scala"), Seq(
       q"""object ${tDomain.termName} extends ${rt.tDomainCompanion.init()} {
          ${conv.toImport}
@@ -69,6 +74,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
          lazy val id: ${conv.toScala[DomainId].typeFull} = ${conv.toIdConstructor(typespace.domain.id)}
          lazy val types: Map[${rt.typeId.typeFull}, Class[_]] = Seq(..$types).toMap
          lazy val classes: Map[Class[_], ${rt.typeId.typeFull}] = Seq(..$reverseTypes).toMap
+         lazy val referencedDomains: Map[${rt.tDomainId.typeFull}, ${rt.tDomainDefinition.typeFull}] = Seq(..$references).toMap
 
          protected lazy val serializedSchema: String = ${Lit.String(schema)}
        }"""

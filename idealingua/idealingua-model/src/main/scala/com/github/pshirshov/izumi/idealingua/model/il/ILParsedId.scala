@@ -4,8 +4,6 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 
 case class ILParsedId(pkg: Seq[String], name: String) {
-  def toDomainId: DomainId = DomainId(pkg, name)
-
   def toEnumId: EnumId = EnumId(pkg, name)
 
   def toAliasId: AliasId = AliasId(pkg, name)
@@ -35,6 +33,4 @@ case class ILParsedId(pkg: Seq[String], name: String) {
 
 object ILParsedId {
   def apply(name: String): ILParsedId = new ILParsedId(Seq.empty, name)
-
-  def apply(pkg: Seq[String]): ILParsedId = new ILParsedId(pkg.init, pkg.last)
 }

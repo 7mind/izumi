@@ -230,9 +230,6 @@ class Typespace(val domain: DomainDefinition) {
       case e: EphemeralId if interfaceEphemerals.contains(e) =>
         interfaceEphemerals(e).interfaces.flatMap(parents)
 
-      case u: Indefinite =>
-        parents(apply(u).id)
-
       case _: IdentifierId =>
         List()
 
@@ -268,9 +265,6 @@ class Typespace(val domain: DomainDefinition) {
 
       case e: EphemeralId if interfaceEphemerals.contains(e) =>
         interfaceEphemerals(e).interfaces.flatMap(compatible)
-
-      case u: Indefinite =>
-        compatible(apply(u).id)
 
       case _: IdentifierId =>
         List()
