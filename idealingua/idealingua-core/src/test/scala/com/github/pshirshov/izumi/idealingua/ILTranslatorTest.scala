@@ -5,6 +5,7 @@ import java.lang.management.ManagementFactory
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file._
 
+import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.TranslatorExtension
@@ -25,6 +26,7 @@ class ILTranslatorTest extends WordSpec {
 
 }
 
+@ExposedTestScope
 object ILTranslatorTest {
   def compiles(domains: Seq[DomainDefinition]): Boolean = {
     compiles(domains, Seq.empty)
