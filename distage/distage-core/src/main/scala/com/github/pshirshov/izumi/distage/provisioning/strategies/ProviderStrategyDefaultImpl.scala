@@ -31,6 +31,7 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy  {
 
   private def mkExecutor(context: ProvisioningContext, executor: OperationExecutor): FactoryExecutor =
     (args, step) => {
+      // TOOD: logger in DI
       System.err println s"FactoryExecutor! Executing $step with ${args.values.toList}"
       val narrowedContext = context.narrow(step.wiring.associations.map(_.wireWith).toSet)
       System.err println s"FactoryExecutor! context narrowed to $narrowedContext"
