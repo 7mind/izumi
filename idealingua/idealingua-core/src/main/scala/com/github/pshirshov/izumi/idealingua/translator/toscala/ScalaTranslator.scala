@@ -15,8 +15,8 @@ import scala.collection.{immutable, mutable}
 import scala.meta._
 
 
-class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExtension]) {
-  protected val context: ScalaTranslationContext = new ScalaTranslationContext(typespace)
+class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension]) {
+  protected val context: ScalaTranslationContext = new ScalaTranslationContext(ts)
 
   protected val extensions: Seq[ScalaTranslatorExtension] = _extensions ++ Seq(ScalaTranslatorMetadataExtension)
 
@@ -290,7 +290,7 @@ class ScalaTranslator(typespace: Typespace, _extensions: Seq[ScalaTranslatorExte
           """
     }
 
-    val constructors = typespace.ephemeralImplementors(i.id).map {
+    val constructors = typespace.implementors(i.id).map {
       t =>
         val requiredParameters = t.requiredParameters
         val fieldsToCopyFromInterface: Set[Field] = t.fieldsToCopyFromInterface

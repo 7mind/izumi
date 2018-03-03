@@ -1,27 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
-import java.time.{LocalDate, ZonedDateTime}
-import java.util.UUID
-
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaMetaTools._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{ScalaTranslationContext, ScalaTranslatorExtension}
 
 import scala.meta.{Defn, _}
-//import _root_.io.circe._
-//import _root_.io.circe.generic.semiauto._
-//import _root_.io.circe.generic.auto._
-//import _root_.io.circe.java8.time._
-//
-//case class Z(a: Int, b: UUID, zonedDateTime: LocalDate)
-//object Z {
-//  implicit val decodeFoo: Decoder[Z] = deriveDecoder[Z]
-//}
-//
-//case class X(a: Int, b: Z)
-//object X {
-//  implicit val decodeFoo: Decoder[X] = deriveDecoder[X]
-//}
 
 object CirceTranslatorExtension extends ScalaTranslatorExtension {
   private val imports = List(q""" import _root_.io.circe.{Encoder, Decoder} """)
@@ -59,10 +42,38 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
   override def handleInterfaceCompanion(context: ScalaTranslationContext, id: TypeId.InterfaceId, defn: Defn.Object): Defn.Object = {
     val t = context.conv.toScala(id)
     val tpe = t.typeFull
+    val implementors = context.typespace.implementors(id)
+    println(id, implementors)
+    val enc = implementors.map {
+      c =>
+        p"""case v: ${context.conv.toScala(c.typeToConstruct).typeFull} => Map(${Lit.String(c.typeToConstruct.name)} -> v).asJson"""
+
+    }
+
+    val dec = implementors.map {
+      c =>
+        p"""case ${Lit.String(c.typeToConstruct.name)} => value.as[${context.conv.toScala(c.typeToConstruct).typeFull}]"""
+    }
+
     val circeBoilerplate = java8Imports ++ List(
-      q""" implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = ??? """
+      q""" import _root_.io.circe.syntax._ """
       ,
-      q""" implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = ??? """
+      q""" implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = Encoder.instance {
+        c => {
+          c match {
+            ..case $enc
+          }
+        }
+      } """
+      ,
+      q""" implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = Decoder.instance(c => {
+             val fname = c.keys.flatMap(_.headOption).toSeq.head
+             val value = c.downField(fname)
+             fname match {
+               ..case $dec
+             }
+           })
+       """
     )
     defn.extendDefinition(circeBoilerplate)
   }

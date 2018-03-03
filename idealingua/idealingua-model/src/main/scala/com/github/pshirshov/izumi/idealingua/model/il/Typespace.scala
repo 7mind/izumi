@@ -104,8 +104,7 @@ class Typespace(val domain: DomainDefinition) {
     }
   }
 
-  def ephemeralImplementors(id: InterfaceId): List[InterfaceConstructors] = {
-    val compatibleIfs = compatible(id)
+  def implementors(id: InterfaceId): List[InterfaceConstructors] = {
     val implementors = implementingDtos(id) ++ implementingEphemerals(id)
 
     val ifaceFields = enumFields(apply(id))
@@ -115,6 +114,7 @@ class Typespace(val domain: DomainDefinition) {
       .toSet
       .filterNot(f => ifaceNonUniqueFields.contains(f.name))
 
+    val compatibleIfs = compatible(id)
 
     implementors.map {
       typeToConstruct =>
@@ -132,6 +132,7 @@ class Typespace(val domain: DomainDefinition) {
           .filterNot(f => fieldsToCopyFromInterface.contains(f.field))
           .filterNot(f => ifaceNonUniqueFields.contains(f.field.name))
 
+        // TODO: pass definition instead of id
         InterfaceConstructors(
           typeToConstruct
           , requiredParameters.toList
@@ -286,14 +287,14 @@ class Typespace(val domain: DomainDefinition) {
 
   protected def implementingDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
-      case (tid, d: DTO) if parents(tid).contains(id) || compatible(tid).contains(id) =>
+      case (tid, d: DTO) if compatible(tid).contains(id) =>
         d.id
     }.toList
   }
 
   protected def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
-    serviceEphemerals.collect {
-      case (eid, _: DTO) if parents(eid).contains(id) || compatible(eid).contains(id) =>
+    (serviceEphemerals ++ interfaceEphemerals).collect {
+      case (eid, _: DTO) if compatible(eid).contains(id) =>
         eid
     }.toList
   }

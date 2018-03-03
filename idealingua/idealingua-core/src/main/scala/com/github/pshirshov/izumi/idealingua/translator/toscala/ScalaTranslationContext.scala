@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.serialization.ILSchemaSeri
 import com.github.pshirshov.izumi.idealingua.model.il.{TypeSignature, Typespace}
 
 class ScalaTranslationContext(
-                               typespace: Typespace
+                               val typespace: Typespace
                              ) {
   final val conv = new ScalaTypeConverter(typespace.domain.id)
   final val rt: IDLRuntimeTypes.type = IDLRuntimeTypes
