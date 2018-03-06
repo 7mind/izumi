@@ -13,7 +13,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     (defn.types.map(_.id) ++ defn.services.map(_.id))
       .map {
         kv =>
-          toIndefinite(kv) -> fixSimpleId[AbstractTypeId, TypeId](kv)
+          toIndefinite(kv) -> fixSimpleId[TypeId](kv)
       }
       .toMap
   }
@@ -28,27 +28,27 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
   protected def fixType(defn: ILAstParsed): ILAst = {
     defn match {
       case d: ILAstParsed.Enumeration =>
-        ILAst.Enumeration(id = fixId(d.id), members = d.members)
+        ILAst.Enumeration(id = fixId[EnumId](d.id), members = d.members)
 
       case d: ILAstParsed.Alias =>
-        ILAst.Alias(id = fixId(d.id), target = fixId(d.target))
+        ILAst.Alias(id = fixId[AliasId](d.id), target = fixId[TypeId](d.target))
 
       case d: ILAstParsed.Identifier =>
-        ILAst.Identifier(id = fixId(d.id), fields = fixFields(d.fields))
+        ILAst.Identifier(id = fixId[IdentifierId](d.id), fields = fixFields(d.fields))
 
       case d: ILAstParsed.Interface =>
-        ILAst.Interface(id = fixId(d.id), fields = fixFields(d.fields), interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
+        ILAst.Interface(id = fixId[InterfaceId](d.id), fields = fixFields(d.fields), interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
 
       case d: ILAstParsed.DTO =>
-        ILAst.DTO(id = fixId(d.id), interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
+        ILAst.DTO(id = fixId[DTOId](d.id), interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
 
       case d: ILAstParsed.Adt =>
-        ILAst.Adt(id = fixId(d.id), alternatives = fixIds(d.alternatives))
+        ILAst.Adt(id = fixId[AdtId](d.id), alternatives = fixIds(d.alternatives))
     }
   }
 
   protected def fixService(defn: ILAstParsed.Service): ILAst.Service = {
-    ILAst.Service(id = fixId(defn.id), methods = defn.methods.map(fixMethod))
+    ILAst.Service(id = fixId[ServiceId](defn.id), methods = defn.methods.map(fixMethod))
   }
 
   protected def makeDefinite(id: AbstractTypeId): TypeId = {
@@ -78,7 +78,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }
   }
 
-  protected def fixId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
+  protected def fixId[R <: TypeId](t: AbstractTypeId): R = {
     (t match {
       case t: Indefinite =>
         makeDefinite(t)
@@ -91,7 +91,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }).asInstanceOf[R]
   }
 
-  protected def fixSimpleId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
+  protected def fixSimpleId[R <: TypeId](t: AbstractTypeId): R = {
     (t match {
       case t: DTOId =>
         t.copy(pkg = fixPkg(t.pkg))
@@ -119,12 +119,12 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }).asInstanceOf[R]
   }
 
-  protected  def fixIds[T <: AbstractTypeId, R <: TypeId](d: List[T]): List[R] = {
-    d.map(fixId[T, R])
+  protected  def fixIds[R <: TypeId](d: List[AbstractTypeId]): List[R] = {
+    d.map(fixId[R])
   }
 
   protected def fixFields(fields: ILAstParsed.Aggregate): ILAst.Aggregate = {
-    fields.map(f => ILAst.Field(name = f.name, typeId = fixId[AbstractTypeId, TypeId](f.typeId)))
+    fields.map(f => ILAst.Field(name = f.name, typeId = fixId[TypeId](f.typeId)))
   }
 
   protected def fixMethod(method: ILAstParsed.Service.DefMethod): ILAst.Service.DefMethod = {
