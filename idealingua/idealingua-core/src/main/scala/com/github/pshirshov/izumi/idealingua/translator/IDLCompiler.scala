@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.idealingua.il.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{FinalTranslatorScalaImpl, TranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.tots.FinalTranslatorTSImpl
 
 
 class IDLCompiler(domain: DomainDefinition) {
@@ -37,7 +38,7 @@ class IDLCompiler(domain: DomainDefinition) {
       case IDLLanguage.Go =>
         ???
       case IDLLanguage.Typescript =>
-        ???
+        new FinalTranslatorTSImpl()
       case IDLLanguage.UnityCSharp =>
         ???
     }

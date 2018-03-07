@@ -15,7 +15,7 @@ class LoadThenCompileTest extends WordSpec {
       val loader = new LocalModelLoader(src, Seq.empty)
       val loaded = loader.load()
       assert(loaded.lengthCompare(2) == 0)
-      assert(compiles(loaded))
+      assert(compilesScala(loaded))
     }
   }
 }
