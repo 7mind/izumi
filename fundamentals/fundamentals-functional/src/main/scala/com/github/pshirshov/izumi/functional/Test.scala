@@ -79,8 +79,16 @@ object Test {
       }
     }
 
+    Do {
+      Safe {
+        ???
+      }
+    }
 
-    case class Issue() extends RuntimeException with Problematic
+
+    println()
+    println("for comprehension:")
+    case class Issue(message: String) extends RuntimeException(message) with Problematic
     case class Person(name: String, age: Int)
 
     def parseName(input: String): Safe[String] = Safe {
@@ -88,22 +96,22 @@ object Test {
       if (!trimmed.isEmpty) {
         trimmed
       } else {
-        throw Issue()
+        throw Issue("empty name")
       }
     }
 
-    def parseAge(input: String): Safe[Int] = {
+    def parseAge(input: String): Safe[Int] = Safe {
       try {
         val age = input.trim.toInt
         if (age >= 0) {
-          Safe(age)
+          age
         } else {
-          Safe.problem(new Problematic {})
+          throw Issue("wrong age")
         }
       }
       catch {
         case e: NumberFormatException =>
-          Safe.failure(e)
+          throw e
       }
     }
 

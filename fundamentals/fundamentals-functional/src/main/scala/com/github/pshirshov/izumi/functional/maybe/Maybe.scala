@@ -24,46 +24,43 @@ trait Safe[R] {
 
   protected def mapDo[R0, U0](upstream: Safe[U0])(handler: U0 => Result[R0]): Result[R0] = {
     val upstreamResult = upstream.run()
-    println("map")
 
     upstreamResult match {
       case Success(upstreamV, upstreamT) =>
         handler(upstreamV) match {
-          case s1@Success(sv, _) =>
-            Success(sv, upstreamT.prepend(List(s1).map(Trace.simplify)))
+          case s1@Success(sv, h1) =>
+            Success(sv, upstreamT.prepend(List(s1).map(Trace.simplify) ++ h1.history))
 
           case f1@Problem(ft, h1) =>
-            Problem(ft, upstreamT.prepend(List(f1).map(Trace.simplify) ++ h1.history))
+            Problem(ft, upstreamT.prepend(h1.history))
 
           case f1@Failure(ft, h1) =>
-            Failure(ft, upstreamT.prepend(List(f1).map(Trace.simplify)  ++ h1.history))
+            Failure(ft, upstreamT.prepend(h1.history))
 
         }
 
       case Problem(upstreamV, upstreamT) =>
-        Problem(upstreamV, upstreamT.append(List(TNode.TPending())))
+        Problem(upstreamV, upstreamT.prepend(List(TNode.TPending())))
 
       case Failure(upstreamV, upstreamT) =>
-        Failure(upstreamV, upstreamT.append(List(TNode.TPending())))
+        Failure(upstreamV, upstreamT.prepend(List(TNode.TPending())))
     }
   }
 
   protected def fmapDo[R0, U0](upstream: Safe[U0])(handler: U0 => Result[R0]): Result[R0] = {
     val upstreamResult = upstream.run()
 
-    println("fmap")
     upstreamResult match {
       case Success(upstreamV, upstreamT) =>
         handler(upstreamV) match {
-          case Success(sv, h1) =>
-            Success(sv, upstreamT.prepend(h1.history))
+          case s1@Success(sv, h1) =>
+            Success(sv, upstreamT.prepend(List(s1).map(Trace.simplify)))
 
           case f1@Problem(ft, h1) =>
-            println(f1)
-            Problem(ft, upstreamT.prepend(List(f1).map(Trace.simplify) ++ h1.history))
+            Problem(ft, upstreamT.prepend(h1.history))
 
           case f1@Failure(ft, h1) =>
-            Failure(ft, upstreamT.prepend(List(f1).map(Trace.simplify) ++ h1.history))
+            Failure(ft, upstreamT.prepend(h1.history))
         }
 
       case Problem(upstreamV, upstreamT) =>
@@ -92,8 +89,8 @@ trait Safe[R] {
           value
       }
     } catch {
-      case t: Problematic => Problem(t, Trace.empty)
-      case t: Throwable => Failure(t, Trace.empty)
+      case t: Problematic => Problem(t, Trace(List(TNode.TProblem(t))))
+      case t: Throwable => Failure(t, Trace(List(TNode.TFailure(t))))
     }
   }
 
@@ -103,8 +100,8 @@ trait Safe[R] {
     try {
       Success(f, Trace.empty)
     } catch {
-      case t: Problematic => Problem(t, Trace.empty)
-      case t: Throwable => Failure(t, Trace.empty)
+      case t: Problematic => Problem(t, Trace(List(TNode.TProblem(t))))
+      case t: Throwable => Failure(t, Trace(List(TNode.TFailure(t))))
     }
   }
 }
