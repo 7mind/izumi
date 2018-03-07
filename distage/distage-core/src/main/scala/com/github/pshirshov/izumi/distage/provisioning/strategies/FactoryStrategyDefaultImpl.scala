@@ -4,41 +4,42 @@ import com.github.pshirshov.izumi.distage.commons.TraitTools
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibFactoryMethodInterceptor, CglibTools}
-import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, RuntimeUniverse}
+import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
 
 class FactoryStrategyDefaultImpl extends FactoryStrategy {
-  def makeFactory(context: ProvisioningContext, executor: OperationExecutor, f: WiringOp.InstantiateFactory): Seq[OpResult] = {
+  def makeFactory(context: ProvisioningContext, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
     // at this point we definitely have all the dependencies instantiated
 
-    val allRequiredKeys = f.wiring.associations.map(_.wireWith).toSet
+    val allRequiredKeys = op.wiring.associations.map(_.wireWith).toSet
     val narrowedContext = context.narrow(allRequiredKeys)
 
-    val factoryMethodIndex = makeFactoryIndex(f)
-    val depMethodIndex = TraitStrategyDefaultImpl.traitIndex(f.wiring.factoryType, f.wiring.dependencies)
+    val factoryMethodIndex = makeFactoryIndex(op)
+    val traitIndex = TraitTools.traitIndex(op.wiring.factoryType, op.wiring.dependencies)
 
-    val instanceType = f.wiring.factoryType
+    val instanceType = op.wiring.factoryType
     val runtimeClass = RuntimeUniverse.mirror.runtimeClass(instanceType.tpe)
     val dispatcher = new CgLibFactoryMethodInterceptor(
       factoryMethodIndex
-      , depMethodIndex
+      , traitIndex
       , narrowedContext
       , executor
-      , f
+      , op
     )
 
-    CglibTools.mkdynamic(dispatcher, runtimeClass, f) {
+    CglibTools.mkDynamic(dispatcher, runtimeClass, op) {
       instance =>
         TraitTools.initTrait(instanceType, runtimeClass, instance)
-        Seq(OpResult.NewInstance(f.target, instance))
+        Seq(OpResult.NewInstance(op.target, instance))
     }
   }
 
-  private def makeFactoryIndex(f: WiringOp.InstantiateFactory) = {
-    f.wiring.wirings.map {
+  private def makeFactoryIndex(op: WiringOp.InstantiateFactory) = {
+    op.wiring.wireables.map {
       wiring =>
-        ReflectionUtil.toJavaMethod(f.wiring.factoryType, wiring.factoryMethod) -> wiring
+        ReflectionUtil.toJavaMethod(op.wiring.factoryType.tpe, wiring.factoryMethod) -> wiring
     }.toMap
   }
 }

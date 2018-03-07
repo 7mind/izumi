@@ -1,13 +1,13 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, IncompatibleTypesException, InvalidPlanException}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.SetStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
-import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
 class SetStrategyDefaultImpl extends SetStrategy {
-  def makeSet(context: ProvisioningContext, op: ExecutableOp.SetOp.CreateSet): Seq[OpResult.NewInstance] = {
+  def makeSet(context: ProvisioningContext, op: SetOp.CreateSet): Seq[OpResult.NewInstance] = {
     import op._
     // target is guaranteed to be a Set
     val scalaCollectionSetType = RuntimeUniverse.SafeType.get[collection.Set[_]]
@@ -23,7 +23,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
     Seq(OpResult.NewInstance(target, Set[Any]()))
   }
 
-  def addToSet(context: ProvisioningContext, op: ExecutableOp.SetOp.AddToSet): Seq[OpResult.UpdatedSet] = {
+  def addToSet(context: ProvisioningContext, op: SetOp.AddToSet): Seq[OpResult.UpdatedSet] = {
     // value is guaranteed to have already been instantiated or imported
     val targetElement = context.fetchKey(op.element) match {
       case Some(value) =>

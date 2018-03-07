@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{InstantiationOp, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.references.DIKey
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
 /**
   * ***********,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,***./((%%&&&%%##((//////((((((((((((((((((((((///(((((((((//////(((
@@ -118,7 +118,7 @@ import com.github.pshirshov.izumi.distage.model.references.DIKey
   * &&&&&&&&&&&&&&&&&&&&&&&&&&&%#&&&&&&@@@@&&&&&&&&&&&&&@@@&&&&&%%%%%%&&&&&&&&&&@@@@@@@@&@@@&&@@&&&&&&&&&&&&&&&&&&&&&&&&&&&
   **/
 case class DodgyPlan(
-                      imports: Map[DIKey, ExecutableOp.ImportDependency]
+                      imports: Map[RuntimeUniverse.DIKey, ImportDependency]
                       , sets: Set[CreateSet]
                       , proxies: Seq[ProxyOp.InitProxy]
                       , steps: Seq[InstantiationOp]

@@ -7,7 +7,3 @@ trait PlanningHook {
   def hookStep(context: ContextDefinition, currentPlan: DodgyPlan, binding: Binding, next: DodgyPlan): DodgyPlan
 
 }
-
-
-
-

@@ -1,26 +1,26 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.Planner
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.BindingT.{EmptySetBinding, SetBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ContextDefinition, ImplDef}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.plan.Wiring._
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CustomOp, ImportDependency, SetOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
-import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring.UnaryWiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring._
 import com.github.pshirshov.izumi.functional.Value
-import com.github.pshirshov.izumi.fundamentals.reflection._
 
 
 class PlannerDefaultImpl
 (
   protected val planResolver: PlanResolver
   , protected val forwardingRefResolver: ForwardingRefResolver
-  , protected val reflectionProvider: ReflectionProvider
+  , protected val reflectionProvider: ReflectionProvider.Java
   , protected val sanityChecker: SanityChecker
   , protected val customOpHandler: CustomOpHandler
-  , protected val planningObserver: PlanningObsever
+  , protected val planningObserver: PlanningObserver
   , protected val planMergingPolicy: PlanMergingPolicy
   , protected val planningHook: PlanningHook
 )
@@ -65,19 +65,19 @@ class PlannerDefaultImpl
 
       case s: SetBinding =>
         val target = s.target
-        val elementKey = DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
+        val elementKey = RuntimeUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
 
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
         NextOps(
           next.imports
-          , next.sets + ExecutableOp.SetOp.CreateSet(target, target.symbol)
-          , next.provisions :+ ExecutableOp.SetOp.AddToSet(target, elementKey)
+          , next.sets + SetOp.CreateSet(target, target.symbol)
+          , next.provisions :+ SetOp.AddToSet(target, elementKey)
         )
 
       case s: EmptySetBinding =>
         NextOps(
           Set.empty
-          , Set(ExecutableOp.SetOp.CreateSet(s.target, s.target.symbol))
+          , Set(SetOp.CreateSet(s.target, s.target.symbol))
           , Seq.empty
         )
     }
@@ -86,38 +86,37 @@ class PlannerDefaultImpl
   private def provisioning(binding: SingletonBinding): Step = {
     val target = binding.target
     val wiring = implToWireable(binding.implementation)
-    import UnaryWiring._
     wiring match {
       case w: Constructor =>
-        Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateClass(target, w)))
+        Step(wiring, Seq(WiringOp.InstantiateClass(target, w)))
 
       case w: Abstract =>
-        Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateTrait(target, w)))
+        Step(wiring, Seq(WiringOp.InstantiateTrait(target, w)))
 
       case w: FactoryMethod =>
-        Step(wiring, Seq(ExecutableOp.WiringOp.InstantiateFactory(target, w)))
+        Step(wiring, Seq(WiringOp.InstantiateFactory(target, w)))
 
       case w: Function =>
-        Step(wiring, Seq(ExecutableOp.WiringOp.CallProvider(target, w)))
+        Step(wiring, Seq(WiringOp.CallProvider(target, w)))
 
       case w: Instance =>
-        Step(wiring, Seq(ExecutableOp.WiringOp.ReferenceInstance(target, w)))
+        Step(wiring, Seq(WiringOp.ReferenceInstance(target, w)))
 
       case w: CustomWiring =>
-        Step(wiring, Seq(ExecutableOp.CustomOp(target, w)))
+        Step(wiring, Seq(CustomOp(target, w)))
     }
 
   }
 
-  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: Wiring): Set[ImportDependency] = {
+  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: RuntimeUniverse.Wiring): Set[ImportDependency] = {
     val knownTargets = currentPlan.statements.map(_.target).toSet
     val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith))
     // we don't need resolved deps, we already have them in finalPlan
-    val toImport = unresolved.map(dep => ExecutableOp.ImportDependency(dep.wireWith, Set(binding.target)))
+    val toImport = unresolved.map(dep => ImportDependency(dep.wireWith, Set(binding.target)))
     toImport.toSet
   }
 
-  private def implToWireable(impl: ImplDef): Wiring = {
+  private def implToWireable(impl: ImplDef): RuntimeUniverse.Wiring = {
     impl match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.CustomDef
-import com.github.pshirshov.izumi.fundamentals.reflection._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
 sealed trait ImplDef
 

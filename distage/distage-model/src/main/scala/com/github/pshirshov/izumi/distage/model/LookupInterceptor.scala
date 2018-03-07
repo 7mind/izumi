@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.model
 
-import com.github.pshirshov.izumi.distage.model.references.{DIKey, TypedRef}
-import com.github.pshirshov.izumi.fundamentals.reflection._
+import com.github.pshirshov.izumi.distage.model.references.TypedRef
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
 trait LookupInterceptor {
-  def interceptLookup[T:RuntimeUniverse.Tag](key: DIKey, context: Locator): Option[TypedRef[T]]
+  def interceptLookup[T:RuntimeUniverse.Tag](key: RuntimeUniverse.DIKey, context: Locator): Option[TypedRef[T]]
 }
 

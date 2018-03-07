@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.definition.TrivialDIDef
-import com.github.pshirshov.izumi.distage.model.definition.ContextDefinition
+import com.github.pshirshov.izumi.distage.definition.CompileTimeDSL._
+import com.github.pshirshov.izumi.distage.model.definition.{ContextDefinition, TrivialDIDef}
 import org.scalatest.WordSpec
 
+import Fixtures._
 
 class DSLTest extends WordSpec {
-
 
   "Basic DSL" should {
     "allow to define contexts" in {
@@ -14,7 +14,7 @@ class DSLTest extends WordSpec {
       val definition: ContextDefinition = TrivialDIDef
         .binding[TestClass]
         .binding[TestDependency0, TestImpl0]
-        .instance(new TestInstanceBinding())
+        .instance(TestInstanceBinding())
 
         .binding[TestClass]
           .named("named.test.class")
@@ -33,8 +33,6 @@ class DSLTest extends WordSpec {
         .element[JustTrait, Impl3]
           .named("named.set")
 
-        .finish
-
       assert(definition != null)
     }
 
@@ -43,7 +41,7 @@ class DSLTest extends WordSpec {
       val definition: ContextDefinition = TrivialDIDef
         .magic[TestClass]
         .magic[TestDependency0, TestImpl0]
-        .instance(new TestInstanceBinding())
+        .instance(TestInstanceBinding())
 
         .magic[TestClass]
           .named("named.test.class")
@@ -61,8 +59,6 @@ class DSLTest extends WordSpec {
           .named("named.set")
         .element[JustTrait, Impl3]
           .named("named.set")
-
-        .finish
 
       assert(definition != null)
     }

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.model.provisioning.strategies
 
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.model.plan.Association
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse._
 
 case class TraitIndex(
                        methods: Map[Method, Association.Method]

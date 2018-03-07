@@ -1,18 +1,25 @@
 package com.github.pshirshov.izumi.distage.model.reflection
 
-import com.github.pshirshov.izumi.distage.model.plan.Wiring
-import com.github.pshirshov.izumi.fundamentals.reflection.{RuntimeUniverse, _}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, MacroUniverse, RuntimeUniverse}
 
-trait AbstractReflectionProvider {
-  type Universe <: DIUniverse
-  val u: Universe
+trait ReflectionProvider {
+  val u: DIUniverse
 
-  def symbolToWiring(symbl: u.TypeFull): Wiring
+  def symbolToWiring(symbl: u.TypeFull): u.Wiring
 
-  def providerToWiring(function: RuntimeUniverse.Callable): Wiring
+  def providerToWiring(function: u.Callable): u.Wiring
+
+  def constructorParameters(symbl: u.TypeFull): List[u.Association.Parameter]
 }
 
-trait ReflectionProvider extends AbstractReflectionProvider {
-  override type Universe = RuntimeUniverse.type
-  override val u: RuntimeUniverse.type = RuntimeUniverse
+object ReflectionProvider {
+
+  trait Java extends ReflectionProvider {
+    override val u: RuntimeUniverse.type = RuntimeUniverse
+  }
+
+  trait Macro[+M <: MacroUniverse[_]] extends ReflectionProvider {
+    override val u: M
+  }
+
 }

@@ -1,23 +1,21 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.definition.TrivialDIDef
 import com.github.pshirshov.izumi.distage.model._
-import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
+import com.github.pshirshov.izumi.distage.model.definition.BindingT.SingletonBinding
+import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.distage.model.plan.Wiring.UnaryWiring
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.provisioning.Provisioner
-import com.github.pshirshov.izumi.distage.model.references.{DIKey, IdentifiedRef}
-import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider}
+import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring.UnaryWiring
+import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
-import com.github.pshirshov.izumi.fundamentals.reflection.RuntimeUniverse
-
-
 
 trait DefaultBootstrapContext extends AbstractLocator {
   override def parent: Option[AbstractLocator] = None
@@ -25,6 +23,8 @@ trait DefaultBootstrapContext extends AbstractLocator {
   private val bootstrapProducer = new ProvisionerDefaultImpl(
     ProvisionerHookDefaultImpl.instance
     , ProvisionerIntrospectorDefaultImpl.instance
+    // TODO: add user-controllable logs
+    , LoggerHookDefaultImpl.instance
     , SetStrategyDefaultImpl.instance
     , ProxyStrategyDefaultImpl.instance
     , FactoryStrategyDefaultImpl.instance
@@ -36,59 +36,46 @@ trait DefaultBootstrapContext extends AbstractLocator {
     , InstanceStrategyDefaultImpl.instance
   )
 
-  // we don't need to pass all these instances, though why to create a new one in case we have one already?
-  private val contextBindings = Seq(
-    bind[CustomOpHandler, CustomOpHandler.NullCustomOpHander.type](CustomOpHandler.NullCustomOpHander)
-    , bind[LookupInterceptor, NullLookupInterceptor](NullLookupInterceptor.instance)
-    , bind[RuntimeSymbolIntrospector, RuntimeSymbolIntrospectorDefaultImpl](RuntimeSymbolIntrospectorDefaultImpl.instance)
-    , bind[Provisioner, ProvisionerDefaultImpl](bootstrapProducer)
-    , bind[PlanningHook, PlanningHookDefaultImpl]
-    , bind[PlanningObsever, PlanningObserverDefaultImpl]
-    , bind[PlanResolver, PlanResolverDefaultImpl]
-    , bind[DependencyKeyProvider, DependencyKeyProviderDefaultImpl]
-    , bind[PlanAnalyzer, PlanAnalyzerDefaultImpl]
-    , bind[PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
-    , bind[TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl]
-    , bind[ForwardingRefResolver, ForwardingRefResolverDefaultImpl]
-    , bind[SanityChecker, SanityCheckerDefaultImpl]
-    , bind[ReflectionProvider, ReflectionProviderDefaultImpl]
-    , bind[Planner, PlannerDefaultImpl]
-  )
+  // we don't need to pass all these instances, but why create new ones in case we have them already?
+  private final val contextDefinition: ContextDefinition = TrivialDIDef
+    .instance[CustomOpHandler](CustomOpHandler.NullCustomOpHander)
+    .instance[LookupInterceptor](NullLookupInterceptor.instance)
+    .instance[SymbolIntrospector.Java](SymbolIntrospectorDefaultImpl.Java.instance)
+    .instance[Provisioner](bootstrapProducer)
+    .binding [PlanningHook, PlanningHookDefaultImpl]
+    .binding [PlanningObserver, PlanningObserverDefaultImpl]
+    .binding [PlanResolver, PlanResolverDefaultImpl]
+    .instance[DependencyKeyProvider.Java](DependencyKeyProviderDefaultImpl.Java.instance)
+    .binding [PlanAnalyzer, PlanAnalyzerDefaultImpl]
+    .binding [PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
+    .binding [TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl]
+    .binding [ForwardingRefResolver, ForwardingRefResolverDefaultImpl]
+    .binding [SanityChecker, SanityCheckerDefaultImpl]
+    .instance[ReflectionProvider.Java](ReflectionProviderDefaultImpl.Java.instance)
+    .binding [Planner, PlannerDefaultImpl]
 
-  private val ops = contextBindings.foldLeft(Seq.empty[ExecutableOp]) {
-    case (acc, SingletonBinding(target, ImplDef.TypeImpl(impl))) =>
-      val ctr = RuntimeSymbolIntrospectorDefaultImpl.instance.selectConstructor(impl)
-      val context = DependencyContext.ConstructorParameterContext(target.symbol, ctr)
+  private final val bootstrapPlanner: Planner = {
+    ctxDef => FinalPlanImmutableImpl(ctxDef) {
+      ctxDef.bindings.foldLeft(Seq.empty[ExecutableOp]) {
+        case (acc, SingletonBinding(target, ImplDef.TypeImpl(impl))) =>
+          val materials = ReflectionProviderDefaultImpl.Java.instance.constructorParameters(impl)
+          acc :+ WiringOp.InstantiateClass(target, UnaryWiring.Constructor(impl, materials))
 
-      val associations = ctr.arguments.map {
-        param =>
-          Association.Parameter(context, param, DIKey.TypeKey(RuntimeUniverse.SafeType(param.info)))
+        case (acc, SingletonBinding(target, ImplDef.InstanceImpl(impl, instance))) =>
+          acc :+ WiringOp.ReferenceInstance(target, UnaryWiring.Instance(impl, instance))
 
+        case op =>
+          throw new DIException(s"It's a bug! Bootstrap failed on unsupported definition: $op", null)
       }
-      acc :+ ExecutableOp.WiringOp.InstantiateClass(target, UnaryWiring.Constructor(impl, ctr.constructorSymbol, associations))
-
-    case (acc, SingletonBinding(target, ImplDef.InstanceImpl(impl, instance))) =>
-      acc :+ ExecutableOp.WiringOp.ReferenceInstance(target, UnaryWiring.Instance(impl, instance))
-
-    case op =>
-      throw new DIException(s"It's a bug! Bootstrap failed on unsupported definition: $op", null)
+    }
   }
 
-  private val contextDefinition = new TrivialDIDef(contextBindings)
-  override val plan: FinalPlan = new FinalPlanImmutableImpl(ops, contextDefinition)
+  override val plan: FinalPlan = bootstrapPlanner.plan(contextDefinition)
 
-  private val bootstrappedContext = bootstrapProducer.provision(plan, this)
+  private final val bootstrappedContext = bootstrapProducer.provision(plan, this)
 
-  override protected def unsafeLookup(key: DIKey): Option[Any] = bootstrappedContext.get(key)
+  override protected def unsafeLookup(key: RuntimeUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
-
-  private def bind[Key:RuntimeUniverse.Tag, I: RuntimeUniverse.Tag](instance: I): Binding= {
-    SingletonBinding(DIKey.get[Key], ImplDef.InstanceImpl(RuntimeUniverse.SafeType.get[I], instance))
-  }
-
-  private def bind[Key:RuntimeUniverse.Tag, Target:RuntimeUniverse.Tag]: Binding = {
-    SingletonBinding(DIKey.get[Key], ImplDef.TypeImpl(RuntimeUniverse.SafeType.get[Target]))
-  }
 }
 
 object DefaultBootstrapContext {

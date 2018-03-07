@@ -1,3 +1,5 @@
 package com.github.pshirshov.izumi.distage.model.references
 
-case class RefTable(dependencies: Map[DIKey, Set[DIKey]], dependants: Map[DIKey, Set[DIKey]])
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+
+case class RefTable(dependencies: Map[RuntimeUniverse.DIKey, Set[RuntimeUniverse.DIKey]], dependants: Map[RuntimeUniverse.DIKey, Set[RuntimeUniverse.DIKey]])
