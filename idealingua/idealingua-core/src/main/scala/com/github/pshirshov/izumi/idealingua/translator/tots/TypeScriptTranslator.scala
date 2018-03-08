@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.Generic.{TList, TMap, 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Indefinite, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -42,8 +43,7 @@ class TypeScriptTranslator(typespace: Typespace) {
   protected def translateDef(definition: ILAst): Seq[Module] = {
     val defns = definition match {
       case a: Alias =>
-        packageObjects.getOrElseUpdate(toModuleId(a), mutable.ArrayBuffer()) ++= renderAlias(a)
-        Seq.empty
+        renderAlias(a)
       case i: Enumeration =>
         renderEnumeration(i)
       case i: Identifier =>
@@ -102,6 +102,18 @@ class TypeScriptTranslator(typespace: Typespace) {
   }
 
   private def withImport(t: TypeId, fromPackage: idealingua.model.common.Package, index: Int) = {
+    val nestedDepth = t.pkg.zip(fromPackage).filter(x => x._1 == x._2).size
+
+    if (nestedDepth == t.pkg.size) {
+      s"import { ${t.pkg.head + index} } from ${"\"" + "./" + t.name + "\""};"
+    } else {
+      var importOffset = ""
+      (1 to (t.pkg.size - nestedDepth + 1)).foreach(_ => importOffset += "../")
+      s"import { ${t.pkg.head + index} } from ${"\"" + importOffset + t.pkg.drop(nestedDepth - 1).mkString("/") + t.name + "\""};"
+    }
+  }
+
+  private def withConstImport(t: TypeId, fromPackage: idealingua.model.common.Package, index: Int) = {
     val pkgName = t.pkg.head + index + "." + t.pkg.drop(1).mkString(".")
 
     t match {
@@ -120,12 +132,16 @@ class TypeScriptTranslator(typespace: Typespace) {
   }
 
   private def withPackage(pkg: idealingua.model.common.Package, code: Seq[String], importTypes: Seq[TypeId]) = {
+    val fileHeader = "// This is an auto-generated file, do not modify.\n\n"
+
     val content = if (pkg.isEmpty) {
-      code.mkString("\n")
+      fileHeader + code.mkString("\n")
     } else {
       val distinctImport = importTypes.distinct
-      (distinctImport.zipWithIndex.map{ case (it, index) => s"import { ${it.pkg.head + index} } from ${"\"" + "./" + it.name + "\""};" } ++
-        distinctImport.zipWithIndex.flatMap{ case (it, index) => this.withImport(it, pkg, index)} ++
+      fileHeader +
+      (distinctImport.zipWithIndex.map{ case (it, index) => this.withImport(it, pkg, index)} ++
+      Seq("") ++
+      distinctImport.zipWithIndex.flatMap{ case (it, index) => this.withConstImport(it, pkg, index)} ++
       Seq(
         s"",
         s"export namespace ${pkg.mkString(".")} {"
@@ -175,7 +191,12 @@ class TypeScriptTranslator(typespace: Typespace) {
       // TODO We must add something kind of substitute for a set here
       case _: TSet => this.typeToNative(t.asInstanceOf[TSet].valueType, forInterface) + "[]"
       case _: TOption => this.typeToNative(t.asInstanceOf[TOption].valueType, forInterface) + "?"
-      case _: TMap => "{[key: string]: " + this.typeToNative(t.asInstanceOf[TMap].valueType, forInterface) + "}"
+      case _: TMap => "{[key: " + this.typeToNative(t.asInstanceOf[TMap].keyType, forInterface) + "]: " + this.typeToNative(t.asInstanceOf[TMap].valueType, forInterface) + "}"
+
+//      case _: Composite => t match {
+        case _: List[InterfaceId] => t.asInstanceOf[List[InterfaceId]].map(cv => this.typeToNative(cv, forInterface)).mkString(" | ")
+        case _: List[Field] => t.asInstanceOf[List[Field]].map(cv => this.typeToNative(cv.typeId, forInterface)).mkString(" | ")
+//      }
       case _ => if (forInterface) { "I" + t.name } else { t.name }
     }
   }
@@ -195,10 +216,20 @@ class TypeScriptTranslator(typespace: Typespace) {
       case Primitive.TTs => name
       case Primitive.TTsTz => name
       case Primitive.TUUID => name
-      case _: TList => name + s".map(v => ${this.typeToObject("v", t.asInstanceOf[TList].valueType)})"
+      case _: TList => if (this.isTypeCustom(t.asInstanceOf[TList].valueType)) {
+        name + s".map(v => ${this.typeToObject("v", t.asInstanceOf[TList].valueType)})"
+      } else {
+        name + s".slice()"
+      }
       // TODO We must add something kind of substitute for a set here
-      case _: TSet => name
-      case _: TMap => name
+      case _: TSet => if (this.isTypeCustom(t.asInstanceOf[TSet].valueType)) {
+        name + s".map(v => ${this.typeToObject("v", t.asInstanceOf[TSet].valueType)})"
+      } else {
+        name + s".slice()"
+      }
+
+      // TODO This one is not reliable, we need to look into the values and if they are of custom type - do .toObject for them
+      case _: TMap => s"{...${name}}"
 
       case _: TOption => name + " ? " + this.typeToObject(name, t.asInstanceOf[TOption].valueType) + " : undefined"
       case _ => name + ".toObject()"
@@ -207,19 +238,8 @@ class TypeScriptTranslator(typespace: Typespace) {
 
   protected def isTypeCustom(t: TypeId): Boolean = {
     t match {
-      case Primitive.TInt8 => false
-      case Primitive.TInt16 => false
-      case Primitive.TInt32 => false
-      case Primitive.TInt64 => false
-      case Primitive.TBool => false
-      case Primitive.TDate => false
-      case Primitive.TDouble => false
-      case Primitive.TFloat => false
-      case Primitive.TString => false
-      case Primitive.TTime => false
-      case Primitive.TTs => false
-      case Primitive.TTsTz => false
-      case Primitive.TUUID => false
+      case _: Primitive => false
+
       case _: TList => this.isTypeCustom(t.asInstanceOf[TList].valueType)
       case _: TSet => this.isTypeCustom(t.asInstanceOf[TSet].valueType)
       case _: TMap => this.isTypeCustom(t.asInstanceOf[TMap].valueType)
@@ -250,6 +270,7 @@ class TypeScriptTranslator(typespace: Typespace) {
       s"",
       s"export class ${i.id.name} {"
     ) ++
+    this.renderRuntimeNames(i.id) ++
     i.fields.map(f => s"    public ${f.name}: ${this.typeToNative(f.typeId)};") ++
     Seq(
       s"",
@@ -319,7 +340,8 @@ class TypeScriptTranslator(typespace: Typespace) {
       s"",
       s"export class ${i.id.name} implements ${i.interfaces.map(inf => "I" + inf.name).mkString(", ")} {"
     ) ++
-    distinctFields.map(f => s"    public ${f.name}: ${this.typeToNative(f.typeId, true)};") ++
+    this.renderRuntimeNames(i.id) ++
+    distinctFields.map(f => s"    public ${f.name}: ${this.typeToNative(f.typeId, false)};") ++
     Seq(
       s"",
       s"    constructor(data: ${i.id.name} | I${i.id.name}) {",
@@ -367,22 +389,57 @@ class TypeScriptTranslator(typespace: Typespace) {
     Seq(s"adt ${i.id.name}")
   }
 
-  protected def renderServiceMethod(method: ILAst.Service.DefMethod): Seq[String] = {
-    Seq(
-      s"    public ${method.toString}(): Something {",
-      s"    }"
+  protected def renderServiceMethod(serviceName: String, method: ILAst.Service.DefMethod): Seq[String] = {
+    method match {
+      case m: RPCMethod =>
+        {
+          val inputParams = m.signature.input.map(si => "in" + si.name + ": " + this.typeToNative(si, true)).mkString(", ");
+          val outputParams = m.signature.output.length match {
+            case 0 => "void"
+            case 1 => m.signature.output.map(so => this.typeToNative(so, true))
+            case _ => "{ " + m.signature.output.map(so => "out" + so.name + ": " + this.typeToNative(so, false)).mkString(", ") + " } "
+          }
+
+          Seq(
+            s"    public ${m.name}(${inputParams}): Promise<${outputParams}> {",
+            s"        const data = [ ${m.signature.input.map(si => "param" + si.name).mkString(", ")} ];",
+            s"        return this.transport.send(${"\"" + serviceName + "\""}, ${"\"" + m.name + "\""}, data)",
+            s"            .then(resp => {",
+            s"                })",
+            s"            .catch(err => {",
+            s"                });",
+            s"    }"
+          )
+        }
+      case _ => Seq()
+    }
+  }
+
+  protected def renderRuntimeNames(i: TypeId): Seq[String] = {
+    return Seq(
+      s"    // Runtime identification methods",
+      s"    public static readonly PackageName = ${"\"" + i.pkg.mkString(".") + "\";"}",
+      s"    public static readonly ClassName = ${"\"" + i.name + "\";"}",
+      s"    public getPackageName(): string { return ${i.name}.PackageName; }",
+      s"    public getClassName(): string { return ${i.name}.ClassName; }",
+      s""
     )
   }
 
   protected def renderService(i: Service): Seq[String] = {
     Seq(
-      s"export class ${i.id.name}Service {",
-      s"    constructor() {",
-      s"        // TODO Fill in with transport",
+      s"export class ${i.id.name}Client {"
+    ) ++
+    this.renderRuntimeNames(i.id) ++
+    Seq(
+      s"    protected transport: I${i.id.name}Transport;",
+      s"",
+      s"    constructor(transport: I${i.id.name}Transport) {",
+      s"        this.transport = transport;",
       s"    }",
       s""
     ) ++
-      i.methods.map(m => this.renderServiceMethod(m)).flatten ++
+      i.methods.map(m => this.renderServiceMethod(i.id.name, m)).flatten ++
       Seq(
         s"}"
       )
