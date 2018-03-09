@@ -1,0 +1,6 @@
+alias UserId = str
+
+enum AnEnum {
+  VALUE1
+  VALUE2
+}

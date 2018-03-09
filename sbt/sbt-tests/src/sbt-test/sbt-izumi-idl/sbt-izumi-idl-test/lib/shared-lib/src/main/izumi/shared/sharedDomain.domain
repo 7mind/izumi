@@ -1,0 +1,5 @@
+domain shared.sharedDomain
+
+mixin TestSharedDomainMixin {
+    id: uid
+}
