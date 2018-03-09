@@ -9,9 +9,9 @@ import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 
 import scala.collection.mutable
 import GoLangTypeConverter._
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod.RPCMethod
 
 class GoLangTranslator(typespace: Typespace) {
-
   val padding: String = " " * 4
 
   protected val packageObjects: mutable.HashMap[ModuleId, mutable.ArrayBuffer[String]] = {
@@ -29,7 +29,8 @@ class GoLangTranslator(typespace: Typespace) {
                |${content.map(_.toString()).mkString("\n")}
            """.stripMargin
           Module(id, withPackage(id.path.init, code))
-      }
+      } ++
+      typespace.domain.services.flatMap(translateService)
   }
 
   protected def translateType(definition: ILAst): Seq[Module] = {
@@ -87,11 +88,10 @@ class GoLangTranslator(typespace: Typespace) {
       padding + f.name + " " + f.fieldType.render()
     }.mkString("\n")
 
-    Seq(
-      s"""
-         |type $name struct {
-         |$fieldsStr
-         |}""".stripMargin
+    Seq(s"""
+       |type $name struct {
+       |$fieldsStr
+       |}""".stripMargin
     )
   }
 
@@ -114,8 +114,7 @@ class GoLangTranslator(typespace: Typespace) {
 
   private def renderComposite(id: TypeId): Seq[String] = {
     val implTypeName = id.name
-    val interfaces = typespace.getComposite(id)
-    val fields = typespace.enumFields(interfaces)
+    val fields = typespace.enumFields(typespace.getComposite(id))
 
     val goLangFields = fields.toGoLangFields.all
 
@@ -149,34 +148,61 @@ class GoLangTranslator(typespace: Typespace) {
     structImpl ++ Seq(constructor, implMethods)
   }
 
-  def renderAdt(i: Adt): Seq[String] = {
-    Seq(s"adt: ${i.id.name}")
+  def renderAdt(i: Adt) = Seq(s"adt: ${i.id.name}")
+
+  protected def translateService(definition: Service): Seq[Module] = {
+    toSource(Indefinite(definition.id), toModuleId(definition.id), renderService(definition))
+  }
+
+  protected def renderService(i: Service): Seq[String] = {
+    val (methods, inTypes, outTypes) = i.methods.map {
+      case method: RPCMethod =>
+        // TODO: unify with ephemerals in typespace
+        val in = s"In${method.name.capitalize}"
+        val out = s"Out${method.name.capitalize}"
+
+        val inDef = EphemeralId(i.id, in)
+        val outDef = EphemeralId(i.id, out)
+
+        val inDefSrc = renderStruct(inDef.name, typespace.enumFields(typespace.getComposite(inDef)).toGoLangFields.all)
+        val outDefSrc = renderStruct(outDef.name, typespace.enumFields(typespace.getComposite(outDef)).toGoLangFields.all)
+        val methodSrc = s"${method.name}(${inDef.name}) ${outDef.name}"
+
+        (inDefSrc, outDefSrc, methodSrc)
+    } match {
+      case xs =>  (xs.map(padding + _._3).mkString("\n"), xs.map(_._1), xs.map(_._2))
+    }
+
+    val serviceInterfaceSrc = Seq(
+      s"""type ${i.id.name} interface {
+         |$methods
+         |}""".stripMargin
+    )
+
+    inTypes.flatten ++ outTypes.flatten ++ serviceInterfaceSrc ++ renderServiceTransport(i)
+  }
+
+  private def renderServiceTransport(i: Service): Seq[String] = {
+    Seq.empty
   }
 
   private def toModuleId(defn: ILAst): ModuleId = {
     defn match {
-      case i: Alias =>
-        val concrete = i.id
-        ModuleId(concrete.pkg, s"${concrete.pkg.last}.go")
-
-      case other =>
-        val id = other.id
-        toModuleId(id)
+      case i: Alias => ModuleId(i.id.pkg, s"${i.id.pkg.last}.go")
+      case other => toModuleId(other.id)
     }
   }
 
-  private def toModuleId(id: TypeId): ModuleId = {
-    ModuleId(id.pkg, s"${id.name}.go")
-  }
+  private def toModuleId(id: TypeId) = ModuleId(id.pkg, s"${id.name}.go") // use implicits conv
 
   private def toSource(id: Indefinite, moduleId: ModuleId, traitDef: Seq[String]) = {
     val code = traitDef.mkString("\n\n")
-    val content: String = withPackage(id.pkg, code)
+    val content = withPackage(id.pkg, code)
     Seq(Module(moduleId, content))
   }
 
   private def withPackage(pkg: idealingua.model.common.Package, code: String) = {
-    val content = if (pkg.isEmpty) {
+    if (pkg.isEmpty) {
       code
     } else {
       s"""package ${pkg.last}
@@ -184,6 +210,5 @@ class GoLangTranslator(typespace: Typespace) {
          |$code
        """.stripMargin
     }
-    content
   }
 }
