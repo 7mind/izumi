@@ -27,7 +27,6 @@ object CompilerOptionsPlugin extends AutoPlugin {
         , "-Ywarn-unused:_"
         , "-Ypartial-unification"
         , "-Yno-adapted-args"
-        , "-Xlog-implicits"                   // Show more detail on why some implicits are not applicable.
         , "-explaintypes"                     // Explain type errors in more detail.
         , "-Xlint:adapted-args"               // Warn if an argument list is modified to match the receiver.
         , "-Xlint:by-name-right-associative"  // By-name parameter of right associative operator.
