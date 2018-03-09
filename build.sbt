@@ -2,8 +2,11 @@ import D._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.github.pshirshov.izumi.sbt.definitions.Extender
 import com.typesafe.sbt.pgp.PgpSettings
+import coursier.ShadingPlugin.autoImport.shadingNamespace
 import sbt.Keys.{pomExtra, publishMavenStyle}
+import sbt.librarymanagement.syntax
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 
@@ -16,6 +19,7 @@ name := "izumi-r2"
 val AppSettings = SettingsGroupId()
 val LibSettings = SettingsGroupId()
 val SbtSettings = SettingsGroupId()
+val ShadingSettings = SettingsGroupId()
 
 val scala_212 = "2.12.4"
 val scala_213 = "2.13.0-M2"
@@ -23,23 +27,9 @@ val scala_213 = "2.13.0-M2"
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("com.github.pshirshov.izumi")
 
-lazy val shading =
-  inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings) ++
-    inConfig(_root_.coursier.ShadingPlugin.Shading)(PublishingPlugin.projectSettings) ++
-    _root_.coursier.ShadingPlugin.projectSettings ++
-    Seq(
-      shadingNamespace := "izumi.shaded",
-      publish := publish.in(Shading).value,
-      publishLocal := publishLocal.in(Shading).value,
-      PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value,
-      PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
-    )
-
 val baseSettings = new GlobalSettings {
   override protected val settings: Map[SettingsGroupId, ProjectSettings] = Map(
     GlobalSettingsGroup -> new ProjectSettings {
-      override val plugins: Set[Plugins] = Set(ShadingPlugin)
-
       override val settings: Seq[sbt.Setting[_]] = Seq(
         organization := "com.github.pshirshov.izumi.r2"
         , crossScalaVersions := Seq(
@@ -83,13 +73,7 @@ val baseSettings = new GlobalSettings {
           commitNextVersion, // : ReleaseStep
           pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
         )
-
-        , shadeNamespaces ++= Set(
-          "fastparse"
-          , "net.sf.cglib"
-          , "org.json4s"
-        ),
-      ) ++ shading
+      )
     }
     , LibSettings -> new ProjectSettings {
       override val settings: Seq[sbt.Setting[_]] = Seq(
@@ -97,6 +81,29 @@ val baseSettings = new GlobalSettings {
           libraryDependencies ++= R.essentials
           , libraryDependencies ++= T.essentials
         )
+      ).flatten
+    }
+    , ShadingSettings -> new ProjectSettings {
+      override val plugins: Set[Plugins] = Set(ShadingPlugin)
+
+      override val settings: Seq[sbt.Setting[_]] = Seq(
+        Seq(
+          shadingNamespace := "izumi.shaded"
+          , shadeNamespaces ++= Set(
+            "fastparse"
+            , "sourcecode"
+//            , "net.sf.cglib"
+//            , "org.json4s"
+          )
+        ) ++
+          inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ PublishingPlugin.projectSettings) ++
+          _root_.coursier.ShadingPlugin.projectSettings ++
+          Seq(
+            publish := publish.in(Shading).value,
+            publishLocal := publishLocal.in(Shading).value,
+            PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value,
+            PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
+          )
       ).flatten
     }
     , SbtSettings -> new ProjectSettings {
@@ -124,6 +131,8 @@ val baseSettings = new GlobalSettings {
 // --------------------------------------------
 
 val inRoot = In(".")
+val inShade = In("shade")
+
 val inSbt = In("sbt")
   .withModuleSettings(SbtSettings)
 val inDiStage = In("distage")
@@ -222,10 +231,14 @@ lazy val logstageRouting = inLogStage.as.module
 lazy val idealinguaModel = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.json4s_native))
 
+lazy val fastparseShaded = inShade.as.module
+  .settings(libraryDependencies ++= Seq(R.fastparse))
+  .settings(ShadingSettings)
 
 lazy val idealinguaCore = inIdealingua.as.module
-  .depends(idealinguaModel)
-  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta, R.fastparse) ++ Seq(T.scala_compiler, T.scala_library))
+  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler, T.scala_library))
+  .depends(idealinguaModel, fastparseShaded)
+  .settings(ShadingSettings)
 
 lazy val idealinguaFormatCirce = inIdealingua.as.module
   .depends(idealinguaCore)
