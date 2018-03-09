@@ -87,22 +87,20 @@ val baseSettings = new GlobalSettings {
       override val plugins: Set[Plugins] = Set(ShadingPlugin)
 
       override val settings: Seq[sbt.Setting[_]] = Seq(
-        Seq(
-          shadingNamespace := "izumi.shaded"
-          , shadeNamespaces ++= Set(
-            "fastparse"
-            , "sourcecode"
-//            , "net.sf.cglib"
-//            , "org.json4s"
-          )
-        ) ++
-          inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ PublishingPlugin.projectSettings) ++
+        inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ PublishingPlugin.projectSettings) ++
           _root_.coursier.ShadingPlugin.projectSettings ++
           Seq(
-            publish := publish.in(Shading).value,
-            publishLocal := publishLocal.in(Shading).value,
-            PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value,
-            PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
+            publish := publish.in(Shading).value
+            , publishLocal := publishLocal.in(Shading).value
+            , PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value
+            , PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
+            , shadingNamespace := "izumi.shaded"
+            , shadeNamespaces ++= Set(
+              "fastparse"
+              , "sourcecode"
+              //            , "net.sf.cglib"
+              //            , "org.json4s"
+            )
           )
       ).flatten
     }
@@ -116,6 +114,7 @@ val baseSettings = new GlobalSettings {
               Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
           }
           , scriptedBufferLog := false
+
           , crossScalaVersions := Seq(
             scala_212
           )
@@ -251,6 +250,10 @@ lazy val sbtIdealingua = inSbt.as
   .module
   .depends(idealinguaCore, idealinguaFormatCirce)
 
+lazy val sbtTests = inSbt.as
+  .module
+  .depends(sbtIzumi, sbtIdealingua)
+
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageDi
   , logstageRouting
@@ -266,7 +269,7 @@ lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
 )
 lazy val izsbt: Seq[ProjectReference] = Seq(
-  sbtIzumi, sbtIdealingua
+  sbtIzumi, sbtIdealingua, sbtTests
 )
 
 lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
