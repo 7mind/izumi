@@ -26,7 +26,9 @@ object CompilerOptionsPlugin extends AutoPlugin {
         , "-Ywarn-extra-implicit"
         , "-Ywarn-unused:_"
         , "-Ypartial-unification"
-
+        , "-Yno-adapted-args"
+        , "-Xlog-implicits"                   // Show more detail on why some implicits are not applicable.
+        , "-explaintypes"                     // Explain type errors in more detail.
         , "-Xlint:adapted-args"               // Warn if an argument list is modified to match the receiver.
         , "-Xlint:by-name-right-associative"  // By-name parameter of right associative operator.
         , "-Xlint:constant"                   // Evaluation of a constant arithmetic expression results in an error.
@@ -74,7 +76,6 @@ object CompilerOptionsPlugin extends AutoPlugin {
         //, "-Xfatal-warnings"
 
         , "-Xfuture"
-        , "-Yno-adapted-args"
 
         , "-feature"
         , "-unchecked"
@@ -85,7 +86,6 @@ object CompilerOptionsPlugin extends AutoPlugin {
 
         , "-Xlint:_"
 
-        , "-explaintypes" // Explain type errors in more detail.
 
         , "-Ywarn-adapted-args"          // Warn if an argument list is modified to match the receiver.
         , "-Ywarn-dead-code"             // Warn when dead code is identified.

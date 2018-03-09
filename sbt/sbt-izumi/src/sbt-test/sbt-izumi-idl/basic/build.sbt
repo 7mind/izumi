@@ -11,7 +11,7 @@ crossScalaVersions in ThisBuild := Seq(
 )
 
 // unfortunately we have to use this bcs conditional settings in plugins don't work
-scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaVersion.value, isSnapshot.value)
+scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("org.test.project")
 
 // -- settings groups identifiers
