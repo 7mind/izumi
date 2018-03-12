@@ -151,13 +151,15 @@ class GoLangTranslator(typespace: Typespace) {
   def renderAdt(i: Adt) = Seq(s"adt: ${i.id.name}")
 
   protected def translateService(definition: Service): Seq[Module] = {
-    toSource(Indefinite(definition.id), toModuleId(definition.id), renderService(definition))
+    val transportDef: Service = definition.copy(id = definition.id.copy(name = definition.id.name + "Transport")  )
+
+    toSource(Indefinite(definition.id), toModuleId(definition.id), renderService(definition)) ++
+    toSource(Indefinite(transportDef.id), toModuleId(transportDef.id), renderTransport(transportDef))
   }
 
   protected def renderService(i: Service): Seq[String] = {
     val (methods, inTypes, outTypes) = i.methods.map {
       case method: RPCMethod =>
-        // TODO: unify with ephemerals in typespace
         val in = s"In${method.name.capitalize}"
         val out = s"Out${method.name.capitalize}"
 
@@ -179,11 +181,62 @@ class GoLangTranslator(typespace: Typespace) {
          |}""".stripMargin
     )
 
-    inTypes.flatten ++ outTypes.flatten ++ serviceInterfaceSrc ++ renderServiceTransport(i)
+    inTypes.flatten ++ outTypes.flatten ++ serviceInterfaceSrc ++ renderClient(i)
   }
 
-  private def renderServiceTransport(i: Service): Seq[String] = {
-    Seq.empty
+  protected def renderTransport(i: Service): Seq[String] = {
+    val serviceName = i.id.name
+    val implName = s"${serviceName}Impl"
+
+    val impl = renderStruct(implName, List.empty)
+
+    val interface =  s"""type $serviceName interface {
+      |${padding}send(service string, method string, in interface{}) interface{}
+      |}""".stripMargin
+
+    val constructor =
+      s"""
+         |func New$serviceName() $serviceName {
+         |${padding}return &$implName {
+         |$padding}
+         |}""".stripMargin
+
+    val methods = s"""
+           |func ($implName *$implName) send(service string, method string, in interface{}) interface{} {
+           |${padding}return nil
+           |}
+       """.stripMargin
+
+    Seq(interface) ++ impl ++ Seq(constructor, methods)
+  }
+
+  private def renderClient(i: Service): Seq[String] = {
+    val serviceName = i.id.name
+    val implName = s"${serviceName}Impl"                                                 
+    val transportName = s"${serviceName}Transport"
+
+    val impl = renderStruct(implName, List(GoLangField("transport", GoLangInterface(transportName))))
+
+    val constructor =
+      s"""
+         |func New$serviceName(transport $transportName) $serviceName {
+         |${padding}return &$implName {
+         |$padding${padding}transport: transport,
+         |$padding}
+         |}""".stripMargin
+
+    val methods = i.methods.map {
+      case m: RPCMethod =>
+        val in = s"In${m.name.capitalize}"
+        val out = s"Out${m.name.capitalize}"
+      s"""
+         |func ($implName *$implName) ${m.name}(in $in) $out {
+         |${padding}return $implName.transport.send("$serviceName", "${m.name}", in).($out)
+         |}
+       """.stripMargin
+    }.mkString("\n")
+
+    impl ++ Seq(constructor, methods)
   }
 
   private def toModuleId(defn: ILAst): ModuleId = {

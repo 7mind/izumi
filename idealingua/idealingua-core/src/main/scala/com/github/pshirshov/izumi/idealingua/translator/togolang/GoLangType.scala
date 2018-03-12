@@ -74,3 +74,7 @@ case class MapType(of: Option[(GoLangType, GoLangType)]) extends GoLangGenericTy
     case None => s"map[interface{}]interface{}"
   }
 }
+
+case class GoLangInterface(name: String) extends GoLangRefType {
+  override def render(): String = name
+}
