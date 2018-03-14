@@ -2,12 +2,12 @@ package com.github.pshirshov.izumi.idealingua.translator.togolang
 
 import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.common.{Indefinite, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.EphemeralId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EphemeralId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il.{ILAst, Typespace}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 
-import scala.collection.mutable
+import scala.collection.{GenTraversableOnce, mutable}
 import GoLangTypeConverter._
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod.RPCMethod
 
@@ -18,7 +18,56 @@ class GoLangTranslator(typespace: Typespace) {
     mutable.HashMap[ModuleId, mutable.ArrayBuffer[String]]()
   }
 
+  def renderBaseServicesFunc(): Seq[String] = {
+    Seq(
+      withImports("io", "net/http", "crypto/tls", "time", "io/ioutil", "encoding/json", "fmt"),
+      s"""
+         |func makeHTTPRequest(method string, path string, body io.Reader, dataOut interface{}) (*http.Response, error) {
+         |	url := path
+         |
+         |	req, err := http.NewRequest(method, url, body)
+         |	if err != nil {
+         |		return nil, err
+         |	}
+         |
+         |	if body != nil {
+         |		req.Header.Set("Content-Type", "application/json")
+         |	}
+         |
+         |	tr := &http.Transport{
+         |		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+         |		ExpectContinueTimeout: time.Millisecond * 10000,
+         |		ResponseHeaderTimeout: time.Millisecond * 10000,
+         |	}
+         |
+         |	client := &http.Client{Transport: tr}
+         |	resp, err := client.Do(req)
+         |	if err != nil {
+         |		return resp, err
+         |	}
+         |
+         |	defer resp.Body.Close()
+         |	respBody, err := ioutil.ReadAll(resp.Body)
+         |	if err != nil {
+         |		return resp, err
+         |	}
+         |
+         |	if err := json.Unmarshal(respBody, &dataOut); err != nil {
+         |		return resp, fmt.Errorf("Error: %+v Body: %s", err, string(respBody))
+         |	}
+         |
+         |	return resp, nil
+         |}
+       """.stripMargin)
+  }
+
   def translate(): Seq[Module] = {
+    // if there is some services defined, we put common functions in package object
+    typespace.domain.services.foreach { i =>
+      packageObjects.getOrElseUpdate(ModuleId(i.id.pkg, s"${i.id.pkg.last}.go"), mutable.ArrayBuffer())  ++=
+        renderBaseServicesFunc()
+    }
+
     typespace.domain
       .types
       .flatMap(translateType) ++
@@ -28,7 +77,7 @@ class GoLangTranslator(typespace: Typespace) {
             s"""
                |${content.map(_.toString()).mkString("\n")}
            """.stripMargin
-          Module(id, withPackage(id.path.init, code))
+          Module(id, withPackage(id.path, code))
       } ++
       typespace.domain.services.flatMap(translateService)
   }
@@ -181,7 +230,7 @@ class GoLangTranslator(typespace: Typespace) {
          |}""".stripMargin
     )
 
-    inTypes.flatten ++ outTypes.flatten ++ serviceInterfaceSrc ++ renderClient(i)
+    Seq(withImports("encoding/json")) ++ inTypes.flatten ++ outTypes.flatten ++ serviceInterfaceSrc ++ renderClient(i)
   }
 
   protected def renderTransport(i: Service): Seq[String] = {
@@ -191,7 +240,7 @@ class GoLangTranslator(typespace: Typespace) {
     val impl = renderStruct(implName, List.empty)
 
     val interface =  s"""type $serviceName interface {
-      |${padding}send(service string, method string, in interface{}) interface{}
+      |${padding}send(service string, in map[string]interface{}) interface{}
       |}""".stripMargin
 
     val constructor =
@@ -201,13 +250,28 @@ class GoLangTranslator(typespace: Typespace) {
          |$padding}
          |}""".stripMargin
 
+    val methodBody: String =
+      s"""jsonStr, _ := json.Marshal(in)
+         |body := bytes.NewBuffer(jsonStr)
+         |var responseBody interface{}
+         |_, err := makeHTTPRequest("POST", $implName.servicePath() + "?service=" + service, body, &responseBody)
+         |if err != nil {
+         |${padding}return nil
+         |}
+         |return &responseBody
+       """.stripMargin.split("\n").map(padding + _).mkString("\n")
+
     val methods = s"""
-           |func ($implName *$implName) send(service string, method string, in interface{}) interface{} {
-           |${padding}return nil
+           |func ($implName *$implName) send(service string, in map[string]interface{}) interface{} {
+           |$methodBody
            |}
+           |
+           |func ($implName *$implName) servicePath() string {
+           |${padding}return "TODO"
+           |} 
        """.stripMargin
 
-    Seq(interface) ++ impl ++ Seq(constructor, methods)
+    Seq(withImports("encoding/json", "bytes")) ++ Seq(interface) ++ impl ++ Seq(constructor, methods)
   }
 
   private def renderClient(i: Service): Seq[String] = {
@@ -229,11 +293,21 @@ class GoLangTranslator(typespace: Typespace) {
       case m: RPCMethod =>
         val in = s"In${m.name.capitalize}"
         val out = s"Out${m.name.capitalize}"
-      s"""
+
+        val methodBody =
+          s"""var inInterface map[string]interface{}
+            |inrec, _ := json.Marshal(in)
+            |json.Unmarshal(inrec, &inInterface)
+            |inInterface["inputType"] = "$in"
+            |
+            |return $implName.transport.send("$serviceName", inInterface).($out)
+          """.stripMargin.split("\n").map(padding + _).mkString("\n")
+
+        s"""
          |func ($implName *$implName) ${m.name}(in $in) $out {
-         |${padding}return $implName.transport.send("$serviceName", "${m.name}", in).($out)
+         |$methodBody
          |}
-       """.stripMargin
+        """.stripMargin
     }.mkString("\n")
 
     impl ++ Seq(constructor, methods)
@@ -263,5 +337,13 @@ class GoLangTranslator(typespace: Typespace) {
          |$code
        """.stripMargin
     }
+  }
+
+  private def withImports(imports: String*): String = {
+    val importsStr = imports.map(module => s"""$padding"$module"""").mkString("\n")
+
+    s"""import (
+       |$importsStr
+       |)""".stripMargin
   }
 }
