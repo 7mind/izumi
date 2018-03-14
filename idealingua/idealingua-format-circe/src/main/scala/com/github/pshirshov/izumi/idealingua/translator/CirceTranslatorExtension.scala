@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.{ScalaTranslatio
 
 import scala.meta.{Defn, _}
 
+
 object CirceTranslatorExtension extends ScalaTranslatorExtension {
   private val imports = List(q""" import _root_.io.circe.{Encoder, Decoder} """)
   private val java8Imports = imports ++ List(
