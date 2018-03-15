@@ -113,17 +113,57 @@ class GoLangTranslator(typespace: Typespace) {
 
   def renderEnumeration(i: Enumeration): Seq[String] = {
     val name = i.id.name
+    val firstChar = name.charAt(0).toLower
 
     val values = (i.members match {
       case first :: rest => s"$first $name = iota" +: rest
     }).map(v => padding + v).mkString("\n")
 
-    Seq(s"""
+    val dataTypesId = i.members.map { m =>
+      s"""$m: "$m","""
+    }.map(v => padding + v).mkString("\n")
+
+    val dataTypesName = i.members.map { m =>
+      s""""$m": $m,"""
+    }.map(v => padding + v).mkString("\n")
+
+    Seq(withImports("encoding/json", "bytes"), s"""
        |type $name int8
        |
        |const (
        |$values
        |)
+       |
+       |func ($firstChar $name) String() string {
+       |    return dataTypesId[$firstChar]
+       |}
+       |
+       |var dataTypesId = map[$name]string{
+       |$dataTypesId
+       |}
+       |
+       |var dataTypesName = map[string]$name{
+       |$dataTypesName
+       |}
+       |
+       |func ($firstChar $name) MarshalJSON() ([]byte, error) {
+       |	  buffer := bytes.NewBufferString(`"`)
+       |	  buffer.WriteString(dataTypesId[$firstChar])
+       |	  buffer.WriteString(`"`)
+       |	  return buffer.Bytes(), nil
+       |}
+       |
+       |func ($firstChar *$name) UnmarshalJSON(b []byte) error {
+       |	  // unmarshal as string
+       |	  var s string
+       |	  err := json.Unmarshal(b, &s)
+       |	  if err != nil {
+       |		  return err
+       |	  }
+       |
+       |	  *$firstChar = dataTypesName[s]
+       |	  return nil
+       |}
      """.stripMargin
     )
   }
@@ -305,7 +345,11 @@ class GoLangTranslator(typespace: Typespace) {
             |json.Unmarshal(inrec, &inInterface)
             |inInterface["inputType"] = "$in"
             |
-            |return $implName.Transport.Send("$serviceName", inInterface).($out)
+            |out := $implName.Transport.Send("$serviceName", inInterface)
+            |outByte, _ := json.Marshal(out)
+            |result := $out{}
+            |json.Unmarshal(outByte, &result)
+            |return result
           """.stripMargin.split("\n").map(padding + _).mkString("\n")
 
         s"""
