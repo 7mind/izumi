@@ -9,8 +9,8 @@ trait AbstractTransport[Service <: IDLService] {
 
   def process(request: Service#InputType): Service#Result[Service#OutputType]
 
-  def processUnsafe[R](request: IDLGenerated): R = {
+  def processUnsafe(request: IDLGenerated): Service#Result[Service#OutputType] = {
     val unsafeRequest = request.asInstanceOf[Service#InputType]
-    process(unsafeRequest).asInstanceOf[R]
+    process(unsafeRequest)
   }
 }
