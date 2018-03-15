@@ -94,7 +94,7 @@ class GoLangTranslator(typespace: Typespace) {
       case i: Interface =>
         renderInterface(i)
       case d: DTO =>
-        renderComposite(d.id)
+        renderDTO(d)
       case d: Adt =>
         renderAdt(d)
       case _ => Seq.empty
@@ -132,9 +132,14 @@ class GoLangTranslator(typespace: Typespace) {
     renderStruct(i.id.name, typespace.enumFields(i).toGoLangFields.all)
   }
 
-  private def renderStruct(name: String, fields: List[GoLangField]) = {
+  protected def renderDTO(i: DTO): Seq[String] = {
+    renderStruct(i.id.name, typespace.enumFields(i).toGoLangFields.all)
+  }
+
+  private def renderStruct(name: String, fields: List[GoLangField], withPrivate: Boolean = false) = {
     val fieldsStr = fields.map { f =>
-      padding + f.name + " " + f.fieldType.render()
+      val fieldName = if (withPrivate) f.name else f.name.capitalize
+      s"""$padding$fieldName  ${f.fieldType.render()} `json:"${f.name}"`"""
     }.mkString("\n")
 
     Seq(s"""
@@ -158,16 +163,16 @@ class GoLangTranslator(typespace: Typespace) {
       s"""type ${i.id.name} interface {
          |$methods
          |}""".stripMargin
-    ) ++ renderComposite(implType)
+    ) ++ renderComposite(implType, i)
   }
 
-  private def renderComposite(id: TypeId): Seq[String] = {
-    val implTypeName = id.name
-    val fields = typespace.enumFields(typespace.getComposite(id))
+  private def renderComposite(impl: TypeId, i: Interface): Seq[String] = {
+    val implTypeName = impl.name
+    val fields = typespace.enumFields(typespace.getComposite(impl))
 
     val goLangFields = fields.toGoLangFields.all
 
-    val structImpl = renderStruct(implTypeName, goLangFields)
+    val structImpl = renderStruct(implTypeName, goLangFields, withPrivate = true)
 
     val constructorArgs = goLangFields.map { f =>
       s"${f.name.toLowerCase} ${f.fieldType.render()}"
@@ -183,7 +188,7 @@ class GoLangTranslator(typespace: Typespace) {
          |}""".stripMargin.split("\n").map(padding + _).mkString("\n")
 
     val constructor =
-      s"""func New${id.name}($constructorArgs) $implTypeName {
+      s"""func New${impl.name}($constructorArgs) ${i.id.name} {
          |$constuctorBody
          |}""".stripMargin
 
@@ -217,7 +222,7 @@ class GoLangTranslator(typespace: Typespace) {
 
         val inDefSrc = renderStruct(inDef.name, typespace.enumFields(typespace.getComposite(inDef)).toGoLangFields.all)
         val outDefSrc = renderStruct(outDef.name, typespace.enumFields(typespace.getComposite(outDef)).toGoLangFields.all)
-        val methodSrc = s"${method.name}(${inDef.name}) ${outDef.name}"
+        val methodSrc = s"${method.name.capitalize}(${inDef.name}) ${outDef.name}"
 
         (inDefSrc, outDefSrc, methodSrc)
     } match {
@@ -240,7 +245,7 @@ class GoLangTranslator(typespace: Typespace) {
     val impl = renderStruct(implName, List.empty)
 
     val interface =  s"""type $serviceName interface {
-      |${padding}send(service string, in map[string]interface{}) interface{}
+      |${padding}Send(service string, in map[string]interface{}) interface{}
       |}""".stripMargin
 
     val constructor =
@@ -262,7 +267,7 @@ class GoLangTranslator(typespace: Typespace) {
        """.stripMargin.split("\n").map(padding + _).mkString("\n")
 
     val methods = s"""
-           |func ($implName *$implName) send(service string, in map[string]interface{}) interface{} {
+           |func ($implName *$implName) Send(service string, in map[string]interface{}) interface{} {
            |$methodBody
            |}
            |
@@ -285,7 +290,7 @@ class GoLangTranslator(typespace: Typespace) {
       s"""
          |func New$serviceName(transport $transportName) $serviceName {
          |${padding}return &$implName {
-         |$padding${padding}transport: transport,
+         |$padding${padding}Transport: transport,
          |$padding}
          |}""".stripMargin
 
@@ -300,11 +305,11 @@ class GoLangTranslator(typespace: Typespace) {
             |json.Unmarshal(inrec, &inInterface)
             |inInterface["inputType"] = "$in"
             |
-            |return $implName.transport.send("$serviceName", inInterface).($out)
+            |return $implName.Transport.Send("$serviceName", inInterface).($out)
           """.stripMargin.split("\n").map(padding + _).mkString("\n")
 
         s"""
-         |func ($implName *$implName) ${m.name}(in $in) $out {
+         |func ($implName *$implName) ${m.name.capitalize}(in $in) $out {
          |$methodBody
          |}
         """.stripMargin
