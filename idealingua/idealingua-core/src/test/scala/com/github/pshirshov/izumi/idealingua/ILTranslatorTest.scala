@@ -19,20 +19,28 @@ class ILTranslatorTest extends WordSpec {
 
   "Intermediate language translator" should {
     "be able to produce scala source code" in {
-      assert(compiles(Seq(Model01.domain, Model02.domain)))
+      assert(compilesScala(Seq(Model01.domain, Model02.domain)))
     }
   }
 
-
+  "Intermediate language translator" should {
+    "be able to produce typescript source code" in {
+      assert(compilesTypescript(Seq(Model01.domain, Model02.domain)))
+    }
+  }
 }
 
 @ExposedTestScope
 object ILTranslatorTest {
-  def compiles(domains: Seq[DomainDefinition]): Boolean = {
-    compiles(domains, Seq.empty)
+  def compilesScala(domains: Seq[DomainDefinition]): Boolean = {
+    compilesScala(domains, Seq.empty)
   }
 
-  def compiles(domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension]): Boolean = {
+  def compilesTypescript(domains: Seq[DomainDefinition]): Boolean = {
+    compilesTypescript(domains, Seq.empty)
+  }
+
+  def compilesScala(domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension]): Boolean = {
     val tmpdir = Paths.get("target")
     val runPrefix = s"idl-${ManagementFactory.getRuntimeMXBean.getStartTime}"
     val runDir = tmpdir.resolve(s"$runPrefix-${System.currentTimeMillis()}")
@@ -83,6 +91,36 @@ object ILTranslatorTest {
 
   }
 
+  def compilesTypescript(domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension]): Boolean = {
+    val tmpdir = Paths.get("target")
+    val runPrefix = s"idl-${ManagementFactory.getRuntimeMXBean.getStartTime}"
+    val runDir = tmpdir.resolve(s"$runPrefix-${System.currentTimeMillis()}")
+
+    tmpdir
+      .toFile
+      .listFiles()
+      .toList
+      .filter(f => f.isDirectory && f.getName.startsWith("idl-") && !f.getName.startsWith(runPrefix))
+      .foreach {
+        f =>
+          remove(f.toPath)
+      }
+
+    val allFiles = domains.flatMap {
+      domain =>
+        val compiler = new IDLCompiler(domain)
+        compiler.compile(runDir.resolve(domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language = IDLLanguage.Typescript, extensions)) match {
+          case IDLSuccess(files) =>
+            assert(files.toSet.size == files.size)
+            files
+
+          case f: IDLFailure =>
+            throw new IllegalStateException(s"Does not compile: $f")
+        }
+    }
+    true
+  }
+
   def remove(root: Path): Unit = {
     val _  = Files.walkFileTree(root, new SimpleFileVisitor[Path] {
       override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
@@ -96,8 +134,6 @@ object ILTranslatorTest {
       }
 
     })
-
-
   }
 }
 
