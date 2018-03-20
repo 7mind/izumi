@@ -3,7 +3,7 @@ import sbt._
 object D {
 
   object R {
-    val scala212 = "2.12.4"
+    val scala212 = "2.12.5"
     val scala_compiler =  "org.scala-lang" % "scala-compiler" % scala212
     val scala_library =  "org.scala-lang" % "scala-library" % scala212
     val scala_reflect = "org.scala-lang" % "scala-reflect" % scala212
