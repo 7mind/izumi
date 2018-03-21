@@ -167,7 +167,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     val fields = typespace.enumFields(i).toScala
     val decls = fields.all.toParams
 
-    val superClasses = toSuper(fields.fields, List(rt.idtGenerated, rt.tIDLIdentifier.init()))
+    val superClasses = withAnyval(fields.fields, List(rt.idtGenerated, rt.tIDLIdentifier.init()))
 
     // TODO: contradictions
 
@@ -233,11 +233,10 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
         Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
     }
 
-    val scalaIfaces = i.interfaces
-    val ifDecls = toSuper(fields.fields, rt.idtGenerated +: scalaIfaces.map {
-      iface =>
-        conv.toScala(iface).init()
-    }, "Any")
+    val ifDecls = {
+      val scalaIfaces = rt.idtGenerated +: i.interfaces.map(conv.toScala).map(_.init())
+      withAny(fields.fields, scalaIfaces)
+    }
 
     val t = conv.toScala(i.id)
     val eid = EphemeralId(i.id, typespace.toDtoName(i.id))
@@ -458,12 +457,28 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     Term.Param(List.empty, p._1, Some(p._2), None)
   }
 
-  private def toSuper(fields: Fields, ifDecls: List[Init]): List[Init] = {
-    toSuper(fields, ifDecls, "AnyVal")
+  private def withAnyval(fields: Fields, ifDecls: List[Init]): List[Init] = {
+    addAnyBase(fields, ifDecls, "AnyVal")
   }
 
-  private def toSuper(fields: Fields, ifDecls: List[Init], base: String): List[Init] = {
-    if (fields.size == 0) {
+  private def withAny(fields: Fields, ifDecls: List[Init]): List[Init] = {
+    addAnyBase(fields, ifDecls, "Any")
+  }
+
+
+  private def canBeAnyValField(typeId: TypeId): Boolean = {
+    typeId match {
+      case _: Builtin =>
+        true
+
+      case t =>
+        val fields = typespace.enumFields(typespace.apply(t))
+        (fields.size > 1 ) || (fields.size == 1 && !fields.all.exists(v => canBeAnyValField(v.field.typeId)))
+    }
+  }
+
+  private def addAnyBase(fields: Fields, ifDecls: List[Init], base: String): List[Init] = {
+    if (fields.size == 1 && fields.all.forall(f => canBeAnyValField(f.field.typeId))) {
       conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
     } else {
       ifDecls
@@ -544,7 +559,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
           conv.toScala(iface).init()
       }
 
-      val superClasses = toSuper(fields.fields, bases ++ ifDecls)
+      val superClasses = withAnyval(fields.fields, bases ++ ifDecls)
       val tools = t.within(s"${id.name.capitalize}Extensions")
 
       val converters = mkConverters(id, fields)

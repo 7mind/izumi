@@ -116,3 +116,7 @@ data RTestObject2 {
 service TestService {
     def createUser(RtestMixin2, RTestMixin): (RtestMixin2)
 }
+
+mixin AnyValTest2 {
+ field: AnyValTest
+}
