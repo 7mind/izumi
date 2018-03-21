@@ -18,7 +18,7 @@ import scala.meta._
 class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension]) {
   protected val context: ScalaTranslationContext = new ScalaTranslationContext(ts)
 
-  protected val extensions: Seq[ScalaTranslatorExtension] = _extensions ++ Seq(ScalaTranslatorMetadataExtension)
+  protected val extensions: Seq[ScalaTranslatorExtension] = _extensions //++ Seq(ScalaTranslatorMetadataExtension)
 
   import context._
   import conv._

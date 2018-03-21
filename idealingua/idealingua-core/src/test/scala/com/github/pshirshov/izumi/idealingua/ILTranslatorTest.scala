@@ -19,23 +19,22 @@ class ILTranslatorTest extends WordSpec {
 
   "Intermediate language translator" should {
     "be able to produce scala source code" in {
-      assert(compiles(Seq(Model01.domain, Model02.domain)))
+      assert(compiles(getClass.getSimpleName, Seq(Model01.domain, Model02.domain)))
     }
   }
-
 
 }
 
 @ExposedTestScope
 object ILTranslatorTest {
-  def compiles(domains: Seq[DomainDefinition]): Boolean = {
-    compiles(domains, Seq.empty)
+  def compiles(id: String, domains: Seq[DomainDefinition]): Boolean = {
+    compiles(id, domains, Seq.empty)
   }
 
-  def compiles(domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension]): Boolean = {
+  def compiles(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension]): Boolean = {
     val tmpdir = Paths.get("target")
     val runPrefix = s"idl-${ManagementFactory.getRuntimeMXBean.getStartTime}"
-    val runDir = tmpdir.resolve(s"$runPrefix-${System.currentTimeMillis()}")
+    val runDir = tmpdir.resolve(s"$runPrefix-$id-${System.currentTimeMillis()}")
 
     tmpdir
       .toFile
