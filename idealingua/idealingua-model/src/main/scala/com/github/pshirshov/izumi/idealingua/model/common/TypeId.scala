@@ -19,6 +19,10 @@ sealed trait Scalar extends TypeId {
   this: TypeId =>
 }
 
+sealed trait TimeType {
+  this: Scalar =>
+}
+
 case class Indefinite(pkg: Package, name: TypeName) extends AbstractTypeId {
   def toAlias: AliasId = AliasId(pkg, name)
 
@@ -117,20 +121,20 @@ object Primitive {
     override def name: TypeName = "uid"
   }
 
-  case object TTs extends Primitive {
+  case object TTs extends Primitive with TimeType {
     override def name: TypeName = "tsl"
   }
 
 
-  case object TTsTz extends Primitive {
+  case object TTsTz extends Primitive with TimeType {
     override def name: TypeName = "tsz"
   }
 
-  case object TTime extends Primitive {
+  case object TTime extends Primitive with TimeType {
     override def name: TypeName = "time"
   }
 
-  case object TDate extends Primitive {
+  case object TDate extends Primitive with TimeType {
     override def name: TypeName = "date"
   }
 
@@ -189,4 +193,4 @@ object Generic {
 }
 
 
-case class IndefiniteGeneric(pkg: Package, name: TypeName,args: List[AbstractTypeId]) extends AbstractTypeId
+case class IndefiniteGeneric(pkg: Package, name: TypeName, args: List[AbstractTypeId]) extends AbstractTypeId
