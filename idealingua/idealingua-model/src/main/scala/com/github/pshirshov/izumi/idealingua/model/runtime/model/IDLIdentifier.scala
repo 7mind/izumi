@@ -26,13 +26,13 @@ object IDLIdentifier {
   def unescape(s: String): String = URLDecoder.decode(s, "UTF-8")
 }
 
-trait IDLService extends IDLGeneratedType {
+trait IDLService[R[_]] extends IDLGeneratedType {
+  type Result[T] = R[T]
+
   type InputType <: IDLInput
   type OutputType <: IDLOutput
-  type Result[+R <: OutputType]
 
   def inputClass: Class[InputType]
-
   def outputClass: Class[OutputType]
 }
 

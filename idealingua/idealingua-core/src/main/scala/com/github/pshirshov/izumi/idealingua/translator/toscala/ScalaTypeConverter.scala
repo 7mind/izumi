@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il._
 
+import scala.language.higherKinds
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 
@@ -103,9 +104,18 @@ class ScalaTypeConverter(domain: DomainId) {
   }
 
 
+
   def toScala[T: ClassTag]: ScalaType = {
-    val idtClass = classTag[T].runtimeClass
-    val javaType = JavaType(Indefinite(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName))
+    toScala(classTag[T].runtimeClass)
+  }
+
+  def toScala1[T[_]](implicit ev: ClassTag[T[_]]): ScalaType = {
+    toScala(ev.runtimeClass)
+//    toScala[T[Id]]
+  }
+
+  def toScala(clazz: Class[_]): ScalaType = {
+    val javaType = JavaType(Indefinite(clazz.getPackage.getName.split('.'), clazz.getSimpleName))
     toScala(javaType)
   }
 

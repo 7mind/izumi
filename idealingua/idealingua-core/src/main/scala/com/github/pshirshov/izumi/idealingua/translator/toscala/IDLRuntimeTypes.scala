@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, ILAst}
 import com.github.pshirshov.izumi.idealingua.model.runtime.model._
+import com.github.pshirshov.izumi.idealingua.model.runtime.transport.AbstractTransport
 
 object IDLRuntimeTypes {
   private final val commonsPkg = classOf[TypeId].getPackage.getName
@@ -11,12 +12,13 @@ object IDLRuntimeTypes {
 
   final val basePkg = basePkgParts.mkString(".")
   final val conv = new ScalaTypeConverter(DomainId(basePkgParts.init, basePkgParts.last))
-
+  private type Id[R] = R
+  final val idtService = conv.toScala[IDLService[Id]]
+  final val transport = conv.toScala[AbstractTransport[Id, _]]
   final val typeId = conv.toScala[TypeId]
   final val typeInfo = conv.toScala[IDLTypeInfo]
   final val withTypeInfo = conv.toScala[WithInfo]
   final val idtGenerated = conv.toScala[IDLGeneratedType].init()
-  final val idtService = conv.toScala[IDLService].init()
   final val inputInit = conv.toScala[IDLInput].init()
   final val outputInit = conv.toScala[IDLOutput].init()
   final val typeCompanionInit = conv.toScala[IDLTypeCompanion].init()

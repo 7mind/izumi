@@ -2,11 +2,14 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
+import com.github.pshirshov.izumi.idealingua.model.output.Module
 
 import scala.meta.Defn
 
 
 trait ScalaTranslatorExtension extends TranslatorExtension {
+  def handleModules(context: ScalaTranslationContext, acc: Seq[Module]): Seq[Module] = acc
+
   def handleComposite(context: ScalaTranslationContext, id: TypeId, defn: Defn.Class): Defn.Class = defn
   def handleCompositeCompanion(context: ScalaTranslationContext, id: TypeId, defn: Defn.Object): Defn.Object = defn
 

@@ -6,6 +6,9 @@ import scala.meta.{Init, Term, Type}
 
 trait ScalaType {
   def parameterize(names: List[Type]): ScalaType
+  def parameterize(names: String*): ScalaType = {
+    parameterize(names.map(Type.Name.apply).toList)
+  }
 
   def termBase: Term.Ref
   def termName: Term.Name

@@ -2,12 +2,13 @@ package com.github.pshirshov.izumi.idealingua.model.runtime.transport
 
 import com.github.pshirshov.izumi.idealingua.model.runtime.model.{IDLInput, IDLService}
 
+import scala.language.higherKinds
 import scala.util.Try
 
-trait MultiplexingWireTransport[InWire, Response, OutWire] {
+trait MultiplexingWireTransport[R[_], InWire, Response, OutWire] {
   def protocol: WireProtocol[InWire, IDLInput, Response, OutWire]
 
-  def services: Seq[AbstractTransport[IDLService]]
+  def services: Seq[AbstractTransport[R, IDLService[R]]]
 
   def process(request: InWire): Try[OutWire] = {
     Try(protocol.decode(request))

@@ -2,7 +2,9 @@ package com.github.pshirshov.izumi.idealingua.model.runtime.transport
 
 import com.github.pshirshov.izumi.idealingua.model.runtime.model.{IDLGenerated, IDLGeneratedType, IDLService}
 
-trait AbstractTransport[Service <: IDLService] {
+import scala.language.higherKinds
+
+trait AbstractTransport[R[_], Service <: IDLService[R]] {
   def service: Service
 
   def inAcceptable(in: IDLGeneratedType): Boolean = service.inputClass.isAssignableFrom(in.getClass)

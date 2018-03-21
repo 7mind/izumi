@@ -14,4 +14,5 @@ class ScalaTranslationContext(
   final val domainsDomain = conv.domainCompanionId(typespace.domain)
   final val tDomain = conv.toScala(domainsDomain)
 
+  final val modules = new ModuleTools(rt)
 }
