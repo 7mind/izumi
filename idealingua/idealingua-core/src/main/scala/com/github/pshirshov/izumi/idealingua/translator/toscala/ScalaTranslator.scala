@@ -125,14 +125,14 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
         val mt = t.within(m.name)
         val original = conv.toScala(m)
 
-        val qqElement = q"""case class ${mt.typeName}(value: ${original.typeFull}) extends ..${List(t.init())}"""
+        val qqElement = q"""case class ${mt.typeName}(value: ${original.typeAbsolute}) extends ..${List(t.init())}"""
         val qqCompanion = q""" object ${mt.termName} extends ${rt.tAdtElementCompanion.init()} {} """
 
 
         val converters = Seq(
-          q"""implicit def ${Term.Name("into" + m.name.capitalize)}(value: ${original.typeFull}): ${t.typeFull} = ${mt.termFull}(value) """
+          q"""implicit def ${Term.Name("into" + m.name.capitalize)}(value: ${original.typeAbsolute}): ${t.typeFull} = ${mt.termFull}(value) """
           ,
-          q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeFull} = value.value"""
+          q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeAbsolute} = value.value"""
         )
 
         val id = EphemeralId(i.id, m.name)

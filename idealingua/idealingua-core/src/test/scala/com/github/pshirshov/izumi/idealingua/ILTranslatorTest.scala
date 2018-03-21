@@ -34,7 +34,7 @@ object ILTranslatorTest {
   def compiles(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension]): Boolean = {
     val tmpdir = Paths.get("target")
     val runPrefix = s"idl-${ManagementFactory.getRuntimeMXBean.getStartTime}"
-    val runDir = tmpdir.resolve(s"$runPrefix-$id-${System.currentTimeMillis()}")
+    val runDir = tmpdir.resolve(s"$runPrefix-${System.currentTimeMillis()}-$id")
 
     tmpdir
       .toFile

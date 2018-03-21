@@ -123,13 +123,17 @@ class ScalaTypeConverter(domain: DomainId) {
 
 
   private def toScala(javaType: JavaType, args: List[TypeId]): ScalaType = {
+    val withRoot = javaType.withRoot
     val minimized = javaType.minimize(domain)
     ScalaTypeImpl(
-      toSelectTerm(minimized)
+      toSelectTerm(withRoot)
+      , toSelect(withRoot)
+      , toSelectTerm(minimized)
       , toSelect(minimized)
       , Term.Name(javaType.name)
       , Type.Name(javaType.name)
       , javaType
+      , domain
       , args.map(toScala(_).typeFull)
       , args.map(toScala(_).termFull)
     )
