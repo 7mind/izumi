@@ -20,10 +20,14 @@ trait ScalaTranslatorExtension extends TranslatorExtension {
   def handleAdtElementCompanion(context: ScalaTranslationContext, id: EphemeralId, defn: Defn.Object): Defn.Object = defn
 
   def handleEnum(context: ScalaTranslationContext, id: EnumId, defn: Defn.Trait): Defn.Trait = defn
+  def handleEnumElement(context: ScalaTranslationContext, id: EnumId, defn: Defn): Defn = defn
   def handleEnumCompanion(context: ScalaTranslationContext, id: EnumId, defn: Defn.Object): Defn.Object = defn
 
   def handleInterface(context: ScalaTranslationContext, id: InterfaceId, defn: Defn.Trait): Defn.Trait = defn
   def handleInterfaceCompanion(context: ScalaTranslationContext, id: InterfaceId, defn: Defn.Object): Defn.Object = defn
+
+  def handleService(context: ScalaTranslationContext, id: ServiceId, defn: Defn.Trait): Defn.Trait = defn
+  def handleServiceCompanion(context: ScalaTranslationContext, id: ServiceId, defn: Defn.Object): Defn.Object = defn
 }
 
 

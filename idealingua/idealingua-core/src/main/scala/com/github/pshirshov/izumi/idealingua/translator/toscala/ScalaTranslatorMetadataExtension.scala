@@ -20,23 +20,19 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
     withInfo(context, id, defn)
   }
 
-  override def handleAdt(context: ScalaTranslationContext, id: TypeId.AdtId, defn: Defn.Trait): Defn.Trait = {
-    defn
+  override def handleEnumElement(context: ScalaTranslationContext, id: TypeId.EnumId, defn: Defn): Defn = {
+    withInfo(context, id, defn)
   }
 
-  override def handleEnum(context: ScalaTranslationContext, id: TypeId.EnumId, defn: Defn.Trait): Defn.Trait = {
-    defn
+  override def handleService(context: ScalaTranslationContext, id: TypeId.ServiceId, defn: Defn.Trait): Defn.Trait = {
+    withInfo(context, id, defn)
   }
 
-  override def handleInterface(context: ScalaTranslationContext, id: TypeId.InterfaceId, defn: Defn.Trait): Defn.Trait = {
-    defn
-  }
-
-  def withInfo[T <: Defn](context: ScalaTranslationContext, id: TypeId, defn: T): T = {
+  private def withInfo[T <: Defn](context: ScalaTranslationContext, id: TypeId, defn: T): T = {
     withInfo(context, id, defn, id)
   }
 
-  def withInfo[T <: Defn](context: ScalaTranslationContext, id: TypeId, defn: T, sigId: TypeId): T = {
+  private def withInfo[T <: Defn](context: ScalaTranslationContext, id: TypeId, defn: T, sigId: TypeId): T = {
     import context._
     val stats = List(
       q"""def _info: ${rt.typeInfo.typeFull} = {
@@ -48,7 +44,7 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
     )
 
     import ScalaMetaTools._
-    defn.extendDefinition(stats)
+    defn.extendDefinition(stats).addBase(List(rt.withTypeInfo.init()))
   }
 
 }

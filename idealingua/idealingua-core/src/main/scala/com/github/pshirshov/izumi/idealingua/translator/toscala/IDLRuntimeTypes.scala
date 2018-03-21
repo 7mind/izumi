@@ -14,6 +14,7 @@ object IDLRuntimeTypes {
 
   final val typeId = conv.toScala[TypeId]
   final val typeInfo = conv.toScala[IDLTypeInfo]
+  final val withTypeInfo = conv.toScala[WithInfo]
   final val idtGenerated = conv.toScala[IDLGeneratedType].init()
   final val idtService = conv.toScala[IDLService].init()
   final val inputInit = conv.toScala[IDLInput].init()

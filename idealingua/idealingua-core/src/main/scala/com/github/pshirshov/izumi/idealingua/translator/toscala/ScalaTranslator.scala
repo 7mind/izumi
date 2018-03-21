@@ -112,11 +112,6 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     }
   }
 
-  @deprecated("we should migrate to extensions", "")
-  def withInfo[T <: Defn](id: TypeId, defn: T): T = {
-    ScalaTranslatorMetadataExtension.withInfo(context, id, defn)
-  }
-
   def renderAdt(i: Adt): Seq[Defn] = {
     val t = conv.toScala(i.id)
 
@@ -167,11 +162,12 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     val members = i.members.map {
       m =>
         val mt = t.within(m)
-
-        mt.termName -> withInfo(i.id,
+        val element =
           q"""case object ${mt.termName} extends ${t.init()} {
               override def toString: String = ${Lit.String(m)}
-            }""")
+            }"""
+
+        mt.termName -> withExtensions(i.id, element, _.handleEnumElement)
     }
 
     val parseMembers = members.map {
@@ -192,7 +188,6 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
             }
 
             ..${members.map(_._2)}
-
            }"""
 
     withExtensions(i.id, qqEnum, qqEnumCompanion, _.handleEnum, _.handleEnumCompanion)
@@ -237,6 +232,16 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     withExtensions(i.id, qqIdentifier, qqCompanion, _.handleIdentifier, _.handleIdentifierCompanion)
   }
 
+  private def withExtensions[I <: TypeId, D <: Defn](id: I
+                                                     , entity: D
+                                                     , entityTransformer: ScalaTranslatorExtension => (ScalaTranslationContext, I, D) => D
+                                                    ): D = {
+    extensions.foldLeft(entity) {
+      case (acc, v) =>
+        entityTransformer(v)(context, id, acc)
+    }
+  }
+
   private def withExtensions[I <: TypeId, D <: Defn, C <: Defn]
   (
     id: I
@@ -244,16 +249,9 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     , companion: C
     , entityTransformer: ScalaTranslatorExtension => (ScalaTranslationContext, I, D) => D
     , companionTransformer: ScalaTranslatorExtension => (ScalaTranslationContext, I, C) => C
-  ) = {
-    val extendedEntity = extensions.foldLeft(entity) {
-      case (acc, v) =>
-        entityTransformer(v)(context, id, acc)
-    }
-    val extendedCompanion = extensions.foldLeft(companion) {
-      case (acc, v) =>
-        companionTransformer(v)(context, id, acc)
-    }
-
+  ): Seq[Defn] = {
+    val extendedEntity = withExtensions(id, entity, entityTransformer)
+    val extendedCompanion = withExtensions(id, companion, companionTransformer)
     Seq(
       extendedEntity
       , extendedCompanion
@@ -408,9 +406,8 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     val transportTpe = t.sibling(typeName + "AbstractTransport")
     val tools = t.within(s"${i.id.name}Extensions")
 
-    Seq(
-      withInfo(i.id,
-        q"""trait ${t.typeName} extends ${rt.idtService} {
+    val qqService =
+      q"""trait ${t.typeName} extends ${rt.idtService} {
           import ${t.termBase}._
 
           override type InputType = ${serviceInputBase.typeFull}
@@ -419,16 +416,8 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
           override def outputClass: Class[${serviceOutputBase.typeFull}] = classOf[${serviceOutputBase.typeFull}]
 
           ..${decls.map(_.defn)}
-         }""")
-      ,
-      q"""class ${transportTpe.typeName}[S <: ${t.typeFull}]
-            (
-              override val service: S
-            ) extends $abstractTransportTpe {
-            import ${t.termBase}._
-            ..$transportDecls
-           }"""
-      ,
+         }"""
+    val qqServiceCompanion =
       q"""object ${t.termName} extends ${rt.serviceCompanionInit} {
             sealed trait ${serviceInputBase.typeName} extends Any with ${rt.inputInit} {}
             sealed trait ${serviceOutputBase.typeName} extends Any with ${rt.outputInit} {}
@@ -439,7 +428,19 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
             ..${decls.flatMap(_.types)}
            }"""
+
+
+    val transports = Seq(
+      q"""class ${transportTpe.typeName}[S <: ${t.typeFull}]
+            (
+              override val service: S
+            ) extends $abstractTransportTpe {
+            import ${t.termBase}._
+            ..$transportDecls
+           }"""
     )
+
+    transports ++ withExtensions(i.id, qqService, qqServiceCompanion, _.handleService, _.handleServiceCompanion)
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
