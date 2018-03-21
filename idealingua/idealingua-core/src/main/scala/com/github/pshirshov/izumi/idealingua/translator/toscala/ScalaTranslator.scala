@@ -351,7 +351,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
              ..$toolDecls
              }
 
-             ..${implStructure.constructors}
+             def apply(..${implStructure.decls}) = ${conv.toScala(eid).termName}(..${implStructure.names})
              ..$impl
          }"""
 
@@ -490,6 +490,9 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
     }
 
+    val decls: List[Term.Param] = fields.all.toParams
+    val names: List[Term.Name] = fields.all.toNames
+
     def defns(bases: List[Init]): Seq[Defn] = {
       val ifDecls = composite.map {
         iface =>
@@ -501,10 +504,8 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
       val converters = mkConverters(id, fields)
 
-      val qqComposite = {
-        val decls = fields.all.toParams
-        q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
-      }
+      val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
+
 
       val qqCompositeCompanion =
         q"""object ${t.termName} extends ${rt.typeCompanionInit} {
@@ -513,6 +514,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
                 ..$converters
               }
+
              ..$constructors
          }"""
 
@@ -526,12 +528,9 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
   }
 
   private def mkStructure(id: TypeId) = {
-    val structure = {
-      val interfaces = typespace.getComposite(id)
-      val fields = typespace.enumFields(interfaces).toScala
-      CompositeStructure(id, fields, interfaces)
-    }
-    structure
+    val interfaces = typespace.getComposite(id)
+    val fields = typespace.enumFields(interfaces).toScala
+    CompositeStructure(id, fields, interfaces)
   }
 
   private def mkConverters(id: TypeId, fields: ScalaFields) = {
@@ -552,6 +551,8 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
   implicit class ScalaFieldsExt(fields: TraversableOnce[ScalaField]) {
     def toParams: List[Term.Param] = fields.map(f => (f.name, f.fieldType)).toParams
+
+    def toNames: List[Term.Name] = fields.map(_.name).toList
   }
 
   implicit class NamedTypeExt(fields: TraversableOnce[(Term.Name, Type)]) {
