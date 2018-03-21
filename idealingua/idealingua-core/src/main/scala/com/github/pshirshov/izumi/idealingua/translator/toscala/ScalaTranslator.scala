@@ -277,7 +277,9 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
     val t = conv.toScala(i.id)
     val eid = EphemeralId(i.id, typespace.toDtoName(i.id))
-    val impl = renderComposite(eid, List.empty).toList
+
+    val implStructure = mkStructure(eid)
+    val impl = implStructure.defns(List.empty).toList
 
     val parents = List(i.id) ++ i.concepts
     val narrowers = parents.distinct.map {
@@ -351,6 +353,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
              ..$toolDecls
              }
 
+             ..${implStructure.constructors}
              ..$impl
          }"""
 
@@ -443,61 +446,67 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     renderComposite(i.id, List.empty)
   }
 
-  private def renderComposite(id: TypeId, bases: List[Init]): Seq[Defn] = {
-    val interfaces = typespace.getComposite(id)
-    val fields = typespace.enumFields(interfaces).toScala
-    val decls = fields.all.toParams
+  case class CompositeStructure(id: TypeId, fields: ScalaFields, composite: ILAst.Composite) {
+    val t: ScalaType = conv.toScala(id)
 
-    val ifDecls = interfaces.map {
-      iface =>
-        conv.toScala(iface).init()
+    val constructorSignature: List[Term.Param] = {
+
+      val embedded = fields.fields.all
+        .map(_.definedBy)
+        .collect({ case i: InterfaceId => i })
+        .filterNot(composite.contains)
+      // TODO: contradictions
+
+      val interfaceParams = (composite ++ embedded)
+        .distinct
+        .map {
+          d =>
+            (idToParaName(d), conv.toScala(d).typeFull)
+        }.toParams
+
+      val fieldParams = fields.nonUnique.toParams
+
+      interfaceParams ++ fieldParams
     }
 
-    val embedded = fields.fields.all
-      .map(_.definedBy)
-      .collect({ case i: InterfaceId => i })
-      .filterNot(interfaces.contains)
-    // TODO: contradictions
+    val constructors: List[Defn.Def] = {
+      val constructorCode = fields.fields.all.filterNot(f => fields.nonUnique.exists(_.name.value == f.field.name)).map {
+        f =>
+          q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
+      }
 
-    val superClasses = toSuper(fields.fields, bases ++ ifDecls)
-
-    val t = conv.toScala(id)
-
-    val interfaceParams = (interfaces ++ embedded)
-      .distinct
-      .map {
-        d =>
-          (idToParaName(d), conv.toScala(d).typeFull)
-      }.toParams
-
-    val fieldParams = fields.nonUnique.toParams
-
-    val constructorSignature = interfaceParams ++ fieldParams
-
-    val constructorCode = fields.fields.all.filterNot(f => fields.nonUnique.exists(_.name.value == f.field.name)).map {
-      f =>
-        q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
-    }
-
-    val constructorCodeNonUnique = fields.nonUnique.map {
-      f =>
-        q""" ${f.name} = ${f.name}  """
-    }
+      val constructorCodeNonUnique = fields.nonUnique.map {
+        f =>
+          q""" ${f.name} = ${f.name}  """
+      }
 
 
-    val constructors = List(
-      q"""def apply(..$constructorSignature): ${t.typeFull} = {
+      List(
+        q"""def apply(..$constructorSignature): ${t.typeFull} = {
          ${t.termFull}(..${constructorCode ++ constructorCodeNonUnique})
          }"""
-    )
-    val tools = t.within(s"${id.name.capitalize}Extensions")
+      )
 
-    val converters: List[Defn.Def] = mkConverters(id, fields)
+    }
 
-    val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
+    def defns(bases: List[Init]): Seq[Defn] = {
+      val ifDecls = composite.map {
+        iface =>
+          conv.toScala(iface).init()
+      }
 
-    val qqCompositeCompanion =
-      q"""object ${t.termName} extends ${rt.typeCompanionInit} {
+      val superClasses = toSuper(fields.fields, bases ++ ifDecls)
+      val tools = t.within(s"${id.name.capitalize}Extensions")
+
+      val converters = mkConverters(id, fields)
+
+      val qqComposite = {
+        val decls = fields.all.toParams
+        q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
+      }
+
+      val qqCompositeCompanion =
+        q"""object ${t.termName} extends ${rt.typeCompanionInit} {
               implicit class ${tools.typeName}(_value: ${t.typeFull}) {
                 ${rt.conv.toMethodAst(id)}
 
@@ -506,7 +515,22 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
              ..$constructors
          }"""
 
-    withExtensions(id, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
+      withExtensions(id, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
+    }
+  }
+
+
+  private def renderComposite(id: TypeId, bases: List[Init]): Seq[Defn] = {
+    mkStructure(id).defns(bases)
+  }
+
+  private def mkStructure(id: TypeId) = {
+    val structure = {
+      val interfaces = typespace.getComposite(id)
+      val fields = typespace.enumFields(interfaces).toScala
+      CompositeStructure(id, fields, interfaces)
+    }
+    structure
   }
 
   private def mkConverters(id: TypeId, fields: ScalaFields) = {

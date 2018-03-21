@@ -15,19 +15,31 @@ import scala.reflect.{ClassTag, classTag}
 
 class ScalaTypeConverter(domain: DomainId) {
 
-    implicit class ConflictsOps(fields: Fields) {
-      def toScala: ScalaFields = {
-        ScalaFields(
-          fields.conflicts.goodFields.flatMap(f => f._2.map(ef => toScala(ef.field))).toList
-          , fields.conflicts.softConflicts.flatMap(_._2).keys.map(f => toScala(f)).toList
-          , fields
-        )
-      }
+  implicit class ConflictsOps(fields: Fields) {
+    def toScala: ScalaFields = {
+      val good = fields.conflicts.goodFields
+        .flatMap(f => f._2.map(ef => toScala(ef))).toList
 
-      private def toScala(field: ILAst.Field): ScalaField = {
-        ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).typeFull)
-      }
+      val soft = fields.conflicts.softConflicts
+        .flatMap(_._2).map(kv => toScala(kv._2)).toList
+
+      ScalaFields(good, soft, fields)
     }
+
+    private def toScala(fields: Seq[ExtendedField]): ScalaField = {
+      val primary = fields.head
+      toScala(primary).copy(conflicts = fields.toSet)
+    }
+
+    private def toScala(field: ExtendedField): ScalaField = {
+      ScalaField(
+        Term.Name(field.field.name)
+        , ScalaTypeConverter.this.toScala(field.field.typeId).typeFull
+        , field
+        , Set.empty
+      )
+    }
+  }
 
   implicit class ScalaTypeOps(st: ScalaType) {
     def sibling(name: TypeName): ScalaType = {
