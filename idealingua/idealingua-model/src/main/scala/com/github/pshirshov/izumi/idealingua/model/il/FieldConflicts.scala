@@ -1,10 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common.ExtendedField
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Field
 
-case class FieldConflicts(goodFields: Map[String, Seq[ExtendedField]], softConflicts: Map[String, Map[Field, Seq[ExtendedField]]])
+case class FieldConflicts private(
+                                   all: Seq[ExtendedField]
+                                   , goodFields: Map[String, Seq[ExtendedField]]
+                                   , softConflicts: Map[String, Map[Field, Seq[ExtendedField]]]
+                                   , hardConflicts: Map[String, Map[Field, Seq[ExtendedField]]]
+                                 )
 
 object FieldConflicts {
   def apply(fields: Seq[ExtendedField]): FieldConflicts = {
@@ -17,11 +21,6 @@ object FieldConflicts {
       .map(kv => (kv._1, kv._2.groupBy(_.field)))
       .partition(_._2.size == 1)
 
-    // TODO: shitty side effect
-    if (hardConflicts.nonEmpty) {
-      throw new IDLException(s"Conflicting fields: $hardConflicts")
-    }
-
-    FieldConflicts(goodFields, softConflicts)
+    FieldConflicts(fields, goodFields, softConflicts, hardConflicts)
   }
 }

@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FieldConflicts, ILAst}
+import com.github.pshirshov.izumi.idealingua.model.il._
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
@@ -15,24 +15,19 @@ import scala.reflect.{ClassTag, classTag}
 
 class ScalaTypeConverter(domain: DomainId) {
 
-  implicit class ConflictsOps(conflicts: FieldConflicts) {
-    def toScala: ScalaFields = {
-      ScalaFields(
-        conflicts.goodFields.flatMap(f => f._2.map(ef => toScala(ef.field))).toList
-        , conflicts.softConflicts.flatMap(_._2).keys.map(f => toScala(f)).toList
-      )
-    }
+    implicit class ConflictsOps(fields: Fields) {
+      def toScala: ScalaFields = {
+        ScalaFields(
+          fields.conflicts.goodFields.flatMap(f => f._2.map(ef => toScala(ef.field))).toList
+          , fields.conflicts.softConflicts.flatMap(_._2).keys.map(f => toScala(f)).toList
+          , fields
+        )
+      }
 
-    private def toScala(field: ILAst.Field): ScalaField = {
-      ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).typeFull)
+      private def toScala(field: ILAst.Field): ScalaField = {
+        ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).typeFull)
+      }
     }
-  }
-
-  implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
-    def toScala: ScalaFields = {
-      FieldConflicts(fields).toScala
-    }
-  }
 
   implicit class ScalaTypeOps(st: ScalaType) {
     def sibling(name: TypeName): ScalaType = {

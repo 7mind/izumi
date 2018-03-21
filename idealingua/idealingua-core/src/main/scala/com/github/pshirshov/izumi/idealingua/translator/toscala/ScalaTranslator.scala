@@ -203,10 +203,10 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
   }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
-    val fields = typespace.enumFields(i)
-    val decls = fields.toScala.all.toParams
+    val fields = typespace.enumFields(i).toScala
+    val decls = fields.all.toParams
 
-    val superClasses = toSuper(fields, List(rt.idtGenerated, rt.tIDLIdentifier.init()))
+    val superClasses = toSuper(fields.fields, List(rt.idtGenerated, rt.tIDLIdentifier.init()))
 
     // TODO: contradictions
 
@@ -261,16 +261,16 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
-    val fields = typespace.enumFields(i)
+    val fields = typespace.enumFields(i).toScala
 
     // TODO: contradictions
-    val decls = fields.toScala.all.map {
+    val decls = fields.all.map {
       f =>
         Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
     }
 
     val scalaIfaces = i.interfaces
-    val ifDecls = toSuper(fields, rt.idtGenerated +: scalaIfaces.map {
+    val ifDecls = toSuper(fields.fields, rt.idtGenerated +: scalaIfaces.map {
       iface =>
         conv.toScala(iface).init()
     }, "Any")
@@ -284,7 +284,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
       p =>
         val ifields = typespace.enumFields(typespace(p))
 
-        val constructorCode = ifields.map {
+        val constructorCode = ifields.all.map {
           f =>
             q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
         }
@@ -314,7 +314,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
         val signature = requiredParameters.map(f => (idToParaName(f), conv.toScala(f).typeFull)).toParams
 
-        val nonUniqueFields: immutable.Seq[ScalaField] = t.conflicts.toScala.nonUnique
+        val nonUniqueFields: immutable.Seq[ScalaField] = t.fields.toScala.nonUnique
 
         val fullSignature = signature ++ nonUniqueFields.toParams
 
@@ -331,7 +331,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     }
 
     val allDecls = decls
-    val converters = mkConverters(i.id, fields.toScala)
+    val converters = mkConverters(i.id, fields)
 
     val toolDecls = narrowers ++ constructors ++ converters
 
@@ -445,23 +445,21 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
   private def renderComposite(id: TypeId, bases: List[Init]): Seq[Defn] = {
     val interfaces = typespace.getComposite(id)
-    val fields = typespace.enumFields(interfaces)
-
-    val scalaFieldsEx = fields.toScala
-    val decls = scalaFieldsEx.all.toParams
+    val fields = typespace.enumFields(interfaces).toScala
+    val decls = fields.all.toParams
 
     val ifDecls = interfaces.map {
       iface =>
         conv.toScala(iface).init()
     }
 
-    val embedded = fields
+    val embedded = fields.fields.all
       .map(_.definedBy)
       .collect({ case i: InterfaceId => i })
       .filterNot(interfaces.contains)
     // TODO: contradictions
 
-    val superClasses = toSuper(fields, bases ++ ifDecls)
+    val superClasses = toSuper(fields.fields, bases ++ ifDecls)
 
     val t = conv.toScala(id)
 
@@ -472,16 +470,16 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
           (idToParaName(d), conv.toScala(d).typeFull)
       }.toParams
 
-    val fieldParams = scalaFieldsEx.nonUnique.toParams
+    val fieldParams = fields.nonUnique.toParams
 
     val constructorSignature = interfaceParams ++ fieldParams
 
-    val constructorCode = fields.filterNot(f => scalaFieldsEx.nonUnique.exists(_.name.value == f.field.name)).map {
+    val constructorCode = fields.fields.all.filterNot(f => fields.nonUnique.exists(_.name.value == f.field.name)).map {
       f =>
         q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
     }
 
-    val constructorCodeNonUnique = scalaFieldsEx.nonUnique.map {
+    val constructorCodeNonUnique = fields.nonUnique.map {
       f =>
         q""" ${f.name} = ${f.name}  """
     }
@@ -494,7 +492,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     )
     val tools = t.within(s"${id.name.capitalize}Extensions")
 
-    val converters: List[Defn.Def] = mkConverters(id, scalaFieldsEx)
+    val converters: List[Defn.Def] = mkConverters(id, fields)
 
     val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
 
@@ -540,12 +538,12 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     Term.Param(List.empty, p._1, Some(p._2), None)
   }
 
-  private def toSuper(fields: List[ExtendedField], ifDecls: List[Init]): List[Init] = {
+  private def toSuper(fields: Fields, ifDecls: List[Init]): List[Init] = {
     toSuper(fields, ifDecls, "AnyVal")
   }
 
-  private def toSuper(fields: List[ExtendedField], ifDecls: List[Init], base: String): List[Init] = {
-    if (fields.lengthCompare(1) == 0) {
+  private def toSuper(fields: Fields, ifDecls: List[Init], base: String): List[Init] = {
+    if (fields.size == 0) {
       conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
     } else {
       ifDecls

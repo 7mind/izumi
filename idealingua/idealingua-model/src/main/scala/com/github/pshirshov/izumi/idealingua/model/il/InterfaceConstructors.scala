@@ -8,5 +8,5 @@ case class InterfaceConstructors(
                                   , requiredParameters: Composite
                                   , fieldsToCopyFromInterface: Set[Field]
                                   , fieldsToTakeFromParameters: Set[ExtendedField]
-                                  , conflicts: FieldConflicts
+                                  , fields: Fields
                                 )
