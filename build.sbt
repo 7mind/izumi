@@ -243,6 +243,10 @@ lazy val idealinguaFormatCirce = inIdealingua.as.module
   .depends(idealinguaCore)
   .settings(libraryDependencies ++= R.circe)
 
+lazy val idealinguaRuntimeCats = inIdealingua.as.module
+  .depends(idealinguaModel)
+  .settings(libraryDependencies += R.cats_core)
+
 lazy val sbtIzumi = inSbt.as
   .module
 
@@ -267,6 +271,8 @@ lazy val distage: Seq[ProjectReference] = Seq(
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
+  , idealinguaRuntimeCats
+  , idealinguaFormatCirce
 )
 lazy val izsbt: Seq[ProjectReference] = Seq(
   sbtIzumi, sbtIdealingua, sbtTests

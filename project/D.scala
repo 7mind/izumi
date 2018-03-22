@@ -14,6 +14,8 @@ object D {
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0"
     val essentials = Seq(scala_java8_compat)
 
+    val cats_version = "1.1.0"
+    val cats_core = "org.typelevel" %% "cats-core" % cats_version
 
     val scalameta = "org.scalameta" %% "scalameta" % "3.3.1" // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
     val cglib_nodep = "cglib" % "cglib-nodep" % "3.2.6" // TODO: It would be good to completely get rid of cglib and build our own proxy generator on top of scala-asm
