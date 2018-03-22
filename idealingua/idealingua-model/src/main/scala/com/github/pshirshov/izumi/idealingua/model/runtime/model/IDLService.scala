@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.runtime.model
 
+import scala.language.higherKinds
+
 trait IDLService[R[_]] extends IDLGeneratedType {
   type Result[T] = R[T]
 
@@ -7,5 +9,6 @@ trait IDLService[R[_]] extends IDLGeneratedType {
   type OutputType <: IDLOutput
 
   def inputClass: Class[InputType]
+
   def outputClass: Class[OutputType]
 }

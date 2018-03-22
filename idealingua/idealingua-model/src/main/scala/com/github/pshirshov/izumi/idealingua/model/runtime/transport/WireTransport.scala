@@ -6,7 +6,7 @@ import scala.language.higherKinds
 import scala.util.Try
 
 trait WireTransport[R[_], InWire, OutWire, Service <: IDLService[R]] {
-  def protocol: WireProtocol[InWire, Service#InputType, Service#Result[Service#OutputType], OutWire]
+  def protocol: WireProtocol[InWire, Service#InputType, R[Service#OutputType], OutWire]
 
   def abstractTransport: AbstractTransport[R, Service]
 

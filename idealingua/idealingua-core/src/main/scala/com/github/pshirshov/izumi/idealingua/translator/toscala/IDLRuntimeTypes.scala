@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, ILAst}
 import com.github.pshirshov.izumi.idealingua.model.runtime.model._
-import com.github.pshirshov.izumi.idealingua.model.runtime.model.introspection.IDLDomainCompanion
+import com.github.pshirshov.izumi.idealingua.model.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, WithInfo}
 import com.github.pshirshov.izumi.idealingua.model.runtime.transport.AbstractTransport
 
 object IDLRuntimeTypes {
