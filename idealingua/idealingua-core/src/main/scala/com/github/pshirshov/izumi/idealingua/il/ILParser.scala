@@ -33,6 +33,7 @@ class ILParser {
   final val SepLineBase = P((NLC | ShortComment | (MultilineComment ~ (NLC | End))) ~ wss)
   final val SepLine = P(End | SepLineBase.rep(1))
   final val SepLineOpt = P(End | SepLineBase.rep)
+  final val SepAnyOpt = P(SepInline | SepLineBase.rep)
 
   object kw {
     def kw(s: String): all.Parser[Unit] = P(s ~ SepInline)(sourcecode.Name(s"`$s`"))
@@ -97,10 +98,10 @@ class ILParser {
   final val method: all.Parser[DefMethod] = P(SepInlineOpt ~ defmethod ~ SepInlineOpt)
   final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = SepLine))
 
-  final val enumBlock = P(kw.enum ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepInlineOpt ~ symbol ~ SepInlineOpt).rep(1) ~ "}")
+  final val enumBlock = P(kw.enum ~/ symbol ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~symbol.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
     .map(v => ILDef(Enumeration(ILParsedId(v._1).toEnumId, v._2.toList)))
 
-  final val adtBlock = P(kw.adt ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepInlineOpt ~ identifier ~ SepInlineOpt).rep(1) ~ "}")
+  final val adtBlock = P(kw.adt ~/ symbol ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ identifier.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
     .map(v => ILDef(Adt(ILParsedId(v._1).toAdtId, v._2.map(_.toTypeId).toList)))
 
   final val aliasBlock = P(kw.alias ~/ symbol ~ SepInlineOpt ~ "=" ~ SepInlineOpt ~ identifier)

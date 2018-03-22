@@ -65,6 +65,11 @@ class ILParserTest extends WordSpec {
           |/*test*/
           |alias B = str/*test*/
           |
+          |adt AnAdt {
+          |  AllTypes
+          |  TestObject
+          |}
+          |
           |enum MyEnum {X Y Zz}
           |/*test*/
           |mixin Mixin {/*test*/
