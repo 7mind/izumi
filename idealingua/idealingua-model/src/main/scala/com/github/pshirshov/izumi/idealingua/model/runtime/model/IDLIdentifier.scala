@@ -26,15 +26,6 @@ object IDLIdentifier {
   def unescape(s: String): String = URLDecoder.decode(s, "UTF-8")
 }
 
-trait IDLService[R[_]] extends IDLGeneratedType {
-  type Result[T] = R[T]
-
-  type InputType <: IDLInput
-  type OutputType <: IDLOutput
-
-  def inputClass: Class[InputType]
-  def outputClass: Class[OutputType]
-}
 
 trait IDLRpc extends Any with IDLGeneratedType
 
@@ -48,22 +39,6 @@ trait IDLServiceCompanion extends IDLGeneratedCompanion
 
 trait IDLTypeCompanion extends IDLGeneratedCompanion
 
-trait IDLDomainCompanion extends IDLGeneratedCompanion {
-  def id: DomainId
-
-  def types: Map[TypeId, Class[_]]
-
-  def classes: Map[Class[_], TypeId]
-
-  def schema: DomainDefinition = cachedSchema
-
-  protected def serializedSchema: String
-
-  protected def referencedDomains: Map[DomainId, DomainDefinition]
-
-  private lazy val cachedSchema: DomainDefinition = schemaSerializer.parseSchema(serializedSchema).copy(referenced = referencedDomains)
-  protected val schemaSerializer: ILSchemaSerializerJson4sImpl.type = ILSchemaSerializerJson4sImpl
-}
 
 trait IDLEnum extends IDLGenerated {
   type Element <: IDLEnumElement

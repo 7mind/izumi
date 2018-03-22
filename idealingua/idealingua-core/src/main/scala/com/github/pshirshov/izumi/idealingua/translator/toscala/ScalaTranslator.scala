@@ -23,11 +23,15 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
 
   def translate(): Seq[Module] = {
+    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val aliases = typespace.domain.types
       .collect {
         case a: Alias =>
           toModuleId(a) -> renderAlias(a)
       }
+      .toMultimap
+      .mapValues(_.flatten.toSeq)
+
 
     val packageObjects = aliases.map {
       case (id, content) =>
@@ -473,7 +477,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
       case t =>
         val fields = typespace.enumFields(typespace.apply(t))
-        (fields.size > 1 ) || (fields.size == 1 && !fields.all.exists(v => canBeAnyValField(v.field.typeId)))
+        (fields.size > 1) || (fields.size == 1 && !fields.all.exists(v => canBeAnyValField(v.field.typeId)))
     }
   }
 

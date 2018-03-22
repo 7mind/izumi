@@ -3,8 +3,7 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 import java.io.File
 import java.nio.file.{Path, Paths}
 
-import com.github.pshirshov.izumi.idealingua.il.ParsedDomain
-import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader.ParsedModel
+import com.github.pshirshov.izumi.idealingua.il.{LoadedModel, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinitionParsed, DomainId}
 
@@ -18,21 +17,12 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
     val modelResolver: (Path) => Option[ParsedModel] = toModelResolver(models.get)
 
 
-    val withIncludes = domain
+    val allIncludes = domain
       .includes
-      .foldLeft(domain) {
-        case (d, toInclude) =>
-          val incPath = Paths.get(toInclude)
+      .map(loadModel(modelResolver, _))
+      .fold(LoadedModel.empty)(_ ++ _)
 
-          modelResolver(incPath) match {
-            case Some(inclusion) =>
-              d.extend(inclusion)
-
-            case None =>
-              throw new IDLException(s"Can't find inclusion $incPath in classpath nor filesystem while operating within $root")
-          }
-      }
-      .copy(includes = Seq.empty)
+    val withIncludes = domain.extend(allIncludes).copy(includes = Seq.empty)
 
     val imports = domain
       .imports
@@ -52,6 +42,22 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
       .copy(imports = Seq.empty, domain = withIncludes.domain.copy(referenced = imports))
 
     withImports.domain
+  }
+
+  private def loadModel(modelResolver: Path => Option[ParsedModel], toInclude: String): LoadedModel = {
+    val incPath = Paths.get(toInclude)
+
+    modelResolver(incPath) match {
+      case Some(inclusion) =>
+        inclusion.includes
+          .map(loadModel(modelResolver, _))
+          .fold(LoadedModel(inclusion.definitions)) {
+            case (acc, m) => acc ++ m
+          }
+
+      case None =>
+        throw new IDLException(s"Can't find inclusion $incPath in classpath nor filesystem while operating within $root")
+    }
   }
 
   // TODO: decopypaste?
