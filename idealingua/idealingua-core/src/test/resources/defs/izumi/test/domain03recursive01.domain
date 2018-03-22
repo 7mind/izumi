@@ -1,0 +1,9 @@
+domain izumi.test.domain03
+
+include "model03shared01.model"
+include "model03.model"
+
+alias Test111 = Test11
+alias Test121 = Test12
+
+
