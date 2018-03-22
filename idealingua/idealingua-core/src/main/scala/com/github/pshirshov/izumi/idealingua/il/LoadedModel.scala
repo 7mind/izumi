@@ -6,6 +6,3 @@ case class LoadedModel private(definitions: Seq[IL.Val]) {
   }
 }
 
-object LoadedModel {
-  def empty: LoadedModel = LoadedModel(Seq.empty)
-}

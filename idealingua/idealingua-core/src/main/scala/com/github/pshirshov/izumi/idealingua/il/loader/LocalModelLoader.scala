@@ -92,7 +92,7 @@ object LocalModelLoader {
 
   def parseDomains(files: Map[Path, String]): Map[DomainId, ParsedDomain] = {
     collectSuccess(files, domainExt, new ILParser().fullDomainDef) { (path, parsed) =>
-      parsed.domain.id
+      parsed.did.id
     }
   }
 }
