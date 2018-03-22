@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.runtime.transport
+package com.github.pshirshov.izumi.idealingua.runtime.transport
 
-import com.github.pshirshov.izumi.idealingua.model.runtime.model.IDLInput
+import com.github.pshirshov.izumi.idealingua.runtime.model.IDLInput
 
 
 trait WireProtocol[InWire, Request <: IDLInput, Response, OutWire] {

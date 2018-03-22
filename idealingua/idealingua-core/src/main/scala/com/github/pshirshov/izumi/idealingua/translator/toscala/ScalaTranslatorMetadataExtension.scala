@@ -39,7 +39,7 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
     val stats = List(
       q"""def _info: ${rt.typeInfo.typeFull} = {
           ${rt.typeInfo.termFull}(
-            ${rt.conv.toAst(id)}
+            ${rt.modelConv.toAst(id)}
             , ${tDomain.termFull}
             , ${Lit.Int(sig.signature(sigId))}
           ) }"""
@@ -60,11 +60,11 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
 
     val exprs = index.map {
       case (k@EphemeralId(_: EnumId, _), v) =>
-        rt.conv.toAst(k) -> q"${v.termBase}.getClass"
+        rt.modelConv.toAst(k) -> q"${v.termBase}.getClass"
       case (k@ServiceId(_, _), v) =>
-        rt.conv.toAst(k) -> q"classOf[${v.parameterize("Id").typeFull}]"
+        rt.modelConv.toAst(k) -> q"classOf[${v.parameterize("Id").typeFull}]"
       case (k, v) =>
-        rt.conv.toAst(k) -> q"classOf[${v.typeFull}]"
+        rt.modelConv.toAst(k) -> q"classOf[${v.typeFull}]"
     }
 
     val types = exprs.map({ case (k, v) => q"$k -> $v" })

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.runtime.model.introspection
+package com.github.pshirshov.izumi.idealingua.runtime.model.introspection
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 

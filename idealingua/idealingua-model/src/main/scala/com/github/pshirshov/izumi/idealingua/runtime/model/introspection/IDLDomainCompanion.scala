@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.model.runtime.model.introspection
+package com.github.pshirshov.izumi.idealingua.runtime.model.introspection
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.serialization.ILSchemaSerializerJson4sImpl
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
-import com.github.pshirshov.izumi.idealingua.model.runtime.model.IDLGeneratedCompanion
+import com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedCompanion
 
 trait IDLDomainCompanion extends IDLGeneratedCompanion {
   def id: DomainId

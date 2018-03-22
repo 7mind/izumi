@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.runtime.model
+package com.github.pshirshov.izumi.idealingua.runtime.model
 
 trait IDLGenerated extends Any
 

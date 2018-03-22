@@ -25,7 +25,8 @@ class ModuleTools(rt: IDLRuntimeTypes.type) {
          |
          |import scala.language.higherKinds
          |
-         |import _root_.${rt.basePkg}._
+         |import _root_.${rt.modelPkg}._
+         |import _root_.${rt.runtimePkg}._
          |
          |$code
        """.stripMargin

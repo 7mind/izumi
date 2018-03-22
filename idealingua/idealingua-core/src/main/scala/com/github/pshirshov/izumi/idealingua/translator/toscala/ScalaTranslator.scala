@@ -185,7 +185,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     val qqCompanion =
       q"""object ${t.termName} extends ${rt.typeCompanionInit} {
              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-                ${rt.conv.toMethodAst(i.id)}
+                ${rt.modelConv.toMethodAst(i.id)}
              }
          }"""
 
@@ -316,7 +316,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     val qqInterfaceCompanion =
       q"""object ${t.termName} extends ${rt.typeCompanionInit} {
              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-             ${rt.conv.toMethodAst(i.id)}
+             ${rt.modelConv.toMethodAst(i.id)}
              ..$toolDecls
              }
 
@@ -330,8 +330,6 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
   protected def renderService(i: Service): Seq[Defn] = {
     val typeName = i.id.name
-
-    case class ServiceMethodProduct(defn: Stat, routingClause: Case, types: Seq[Defn])
 
     val t = conv.toScala(i.id)
 
@@ -354,30 +352,18 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
         val outputType = out.typeFull
 
         ServiceMethodProduct(
-          q"def ${Term.Name(method.name)}(input: $inputType): Result[$outputType]"
-          , Case(
-            Pat.Typed(Pat.Var(Term.Name("value")), inputType)
-            , None
-            , q"service.${Term.Name(method.name)}(value)"
-          )
+          method.name
+          , inputType
+          , outputType
           , inputComposite ++ outputComposite
         )
     }
 
-    val forwarder = Term.Match(Term.Name("input"), decls.map(_.routingClause))
 
-    val transportDecls = List(
-      q"override def process(input: ${serviceInputBase.typeFull}): service.Result[${serviceOutputBase.typeFull}] = $forwarder"
-    )
-
-    val abstractTransportTpe = {
-      val tAbstractTransport = rt.transport.parameterize("R", "S")
-      tAbstractTransport.init()
-    }
-    val transportTpe = t.sibling(typeName + "AbstractTransport")
     val tools = t.within(s"${i.id.name}Extensions")
 
-    val fullServiceType = t.parameterize("R").typeFull
+    val fullService = t.parameterize("R")
+    val fullServiceType = fullService.typeFull
     val qqService =
       q"""trait ${t.typeName}[R[_]] extends ${rt.idtService.parameterize("R").init()} {
           import ${t.termBase}._
@@ -395,24 +381,52 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
             sealed trait ${serviceOutputBase.typeName} extends Any with ${rt.outputInit} {}
 
             implicit class ${tools.typeName}[R[_]](_value: $fullServiceType) {
-              ${rt.conv.toMethodAst(i.id)}
+              ${rt.modelConv.toMethodAst(i.id)}
             }
 
             ..${decls.flatMap(_.types)}
            }"""
 
 
-    val transports = Seq(
-      q"""class ${transportTpe.typeName}[R[+_], S <: $fullServiceType]
+    val dispatchers = {
+      val dServer = {
+        val forwarder = Term.Match(Term.Name("input"), decls.map(_.routingClause))
+        val transportDecls =
+          List(
+            q"override def dispatch[I <: S#InputType](input: I): R[S#OutputType] = $forwarder"
+          )
+        val dispatcherInTpe = rt.serverDispatcher.parameterize("R", "S").init()
+        val dispactherTpe = t.sibling(typeName + "ServerDispatcher")
+        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
             (
               override val service: S
-            ) extends $abstractTransportTpe {
+            ) extends $dispatcherInTpe {
             import ${t.termBase}._
             ..$transportDecls
            }"""
-    )
+      }
 
-    transports ++ withExtensions(i.id, qqService, qqServiceCompanion, _.handleService, _.handleServiceCompanion)
+
+      val dClient = {
+        val dispatcherInTpe = rt.clientDispatcher.parameterize("R", "S")
+        val dispactherTpe = t.sibling(typeName + "ClientDispatcher")
+
+        val transportDecls = decls.map(_.defnDispatch)
+
+        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
+            (
+              dispatcher: ${dispatcherInTpe.typeFull}
+            ) extends ${fullService.init()} {
+            import ${t.termBase}._
+           ..$transportDecls
+           }"""
+      }
+
+      Seq(dServer, dClient)
+    }
+
+
+    dispatchers ++ withExtensions(i.id, qqService, qqServiceCompanion, _.handleService, _.handleServiceCompanion)
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
@@ -574,7 +588,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
       val qqCompositeCompanion =
         q"""object ${t.termName} extends ${rt.typeCompanionInit} {
               implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-                ${rt.conv.toMethodAst(id)}
+                ${rt.modelConv.toMethodAst(id)}
 
                 ..$converters
               }
@@ -587,5 +601,6 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
   }
 
 }
+
 
 
