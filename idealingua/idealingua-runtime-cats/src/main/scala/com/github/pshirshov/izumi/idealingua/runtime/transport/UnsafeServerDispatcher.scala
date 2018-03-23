@@ -8,6 +8,8 @@ import scala.language.higherKinds
 trait UnsafeServerDispatcher[R[+_], Service <: IDLService[R]] {
   this: AbstractServerDispatcher[R, Service] =>
 
+  def service: Service
+
 
   def inAcceptable(in: IDLGenerated): Boolean = service.inputClass.isAssignableFrom(in.getClass)
 

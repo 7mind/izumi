@@ -6,8 +6,6 @@ import scala.language.higherKinds
 
 
 trait AbstractServerDispatcher[R[+_], Service <: IDLService[R]] {
-  def service: Service
-
   def dispatch(request: Service#InputType): R[Service#OutputType]
 }
 

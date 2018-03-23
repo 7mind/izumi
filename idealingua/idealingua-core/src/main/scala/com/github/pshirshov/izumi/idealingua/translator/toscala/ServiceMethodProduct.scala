@@ -6,6 +6,8 @@ import scala.meta._
 
 case class ServiceMethodProduct(
                                  name: String
+                                 , in: CompositeStructure
+                                 , out: CompositeStructure
                                  , input: Type
                                  , output: Type
                                  , types: Seq[Defn]
@@ -16,6 +18,14 @@ case class ServiceMethodProduct(
 
   def defnDispatch: Stat = {
     q"def ${Term.Name(name)}(input: $input): Result[$output] = dispatcher.dispatch(input, classOf[$output])"
+  }
+
+  def defnExplode: Stat = {
+    q"def ${Term.Name(name)}(input: $input): Result[$output] = ${Term.Name(name)}()"
+  }
+
+  def defnCompress: Stat = {
+    q"def ${Term.Name(name)}(input: $input): Result[$output] = ${Term.Name(name)}()"
   }
 
   def routingClause: Case = {

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EphemeralId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.EphemeralId
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
@@ -18,6 +18,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
   protected val extensions: Seq[ScalaTranslatorExtension] = _extensions ++ Seq(ScalaTranslatorMetadataExtension)
 
+  import ScalaField._
   import context._
   import conv._
 
@@ -212,7 +213,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     }
   }
 
-  private def withExtensions[I <: TypeId, D <: Defn, C <: Defn]
+  protected[toscala] def withExtensions[I <: TypeId, D <: Defn, C <: Defn]
   (
     id: I
     , entity: D
@@ -359,6 +360,8 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
         ServiceMethodProduct(
           method.name
+          , inputComposite
+          , outputComposite
           , inputType
           , outputType
           , defns
@@ -405,7 +408,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
         val dispactherTpe = t.sibling(typeName + "ServerDispatcher")
         q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
             (
-              override val service: S
+              val service: S
             ) extends $dispatcherInTpe {
             import ${t.termBase}._
             ..$transportDecls
@@ -447,10 +450,10 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
   private def mkStructure(id: TypeId) = {
     val interfaces = typespace.getComposite(id)
     val fields = typespace.enumFields(interfaces).toScala
-    new CompositeStructure(conv, id, fields, interfaces)
+    new CompositeStructure(this, context, conv, id, fields, interfaces)
   }
 
-  private def mkConverters(id: TypeId, fields: ScalaFields) = {
+  protected[toscala] def mkConverters(id: TypeId, fields: ScalaFields): List[Defn.Def] = {
     val converters = typespace.sameSignature(id).map {
       same =>
         val code = fields.all.map {
@@ -466,22 +469,8 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     converters
   }
 
-  implicit class ScalaFieldsExt(fields: TraversableOnce[ScalaField]) {
-    def toParams: List[Term.Param] = fields.map(f => (f.name, f.fieldType)).toParams
 
-    def toNames: List[Term.Name] = fields.map(_.name).toList
-  }
-
-  implicit class NamedTypeExt(fields: TraversableOnce[(Term.Name, Type)]) {
-    def toParams: List[Term.Param] = fields.map(f => (f._1, f._2)).map(toParam).toList
-  }
-
-
-  protected def toParam(p: (Term.Name, Type)): Term.Param = {
-    Term.Param(List.empty, p._1, Some(p._2), None)
-  }
-
-  private def withAnyval(fields: Fields, ifDecls: List[Init]): List[Init] = {
+  protected[toscala] def withAnyval(fields: Fields, ifDecls: List[Init]): List[Init] = {
     addAnyBase(fields, ifDecls, "AnyVal")
   }
 
@@ -511,7 +500,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
   //private def definitionToParaName(d: FinalDefinition) = idToParaName(d.id)
 
-  private def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
+  protected[toscala] def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
 
   private def toModuleId(defn: ILAst): ModuleId = {
     defn match {
@@ -529,82 +518,6 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     ModuleId(id.pkg, s"${id.name}.scala")
   }
 
-
-  // TODO: move it out of the class
-  class CompositeStructure(conv: ScalaTypeConverter, val id: TypeId, val fields: ScalaFields, val composite: ILAst.Composite) {
-    val t: ScalaType = conv.toScala(id)
-
-    val constructorSignature: List[Term.Param] = {
-
-      val embedded = fields.fields.all
-        .map(_.definedBy)
-        .collect({ case i: InterfaceId => i })
-        .filterNot(composite.contains)
-      // TODO: contradictions
-
-      val interfaceParams = (composite ++ embedded)
-        .distinct
-        .map {
-          d =>
-            (idToParaName(d), conv.toScala(d).typeFull)
-        }.toParams
-
-      val fieldParams = fields.nonUnique.toParams
-
-      interfaceParams ++ fieldParams
-    }
-
-    val constructors: List[Defn.Def] = {
-      val constructorCode = fields.fields.all.filterNot(f => fields.nonUnique.exists(_.name.value == f.field.name)).map {
-        f =>
-          q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
-      }
-
-      val constructorCodeNonUnique = fields.nonUnique.map {
-        f =>
-          q""" ${f.name} = ${f.name}  """
-      }
-
-
-      List(
-        q"""def apply(..$constructorSignature): ${t.typeFull} = {
-         ${t.termFull}(..${constructorCode ++ constructorCodeNonUnique})
-         }"""
-      )
-
-    }
-
-    val decls: List[Term.Param] = fields.all.toParams
-    val names: List[Term.Name] = fields.all.toNames
-
-    def defns(bases: List[Init]): Seq[Defn] = {
-      val ifDecls = composite.map {
-        iface =>
-          conv.toScala(iface).init()
-      }
-
-      val superClasses = withAnyval(fields.fields, bases ++ ifDecls)
-      val tools = t.within(s"${id.name.capitalize}Extensions")
-
-      val converters = mkConverters(id, fields)
-
-      val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
-
-
-      val qqCompositeCompanion =
-        q"""object ${t.termName} extends ${rt.typeCompanionInit} {
-              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-                ${rt.modelConv.toMethodAst(id)}
-
-                ..$converters
-              }
-
-             ..$constructors
-         }"""
-
-      withExtensions(id, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
-    }
-  }
 
 }
 
