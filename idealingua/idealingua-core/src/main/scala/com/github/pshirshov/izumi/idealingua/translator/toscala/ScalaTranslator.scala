@@ -448,23 +448,19 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
       }
 
       val dExpl = {
-        val forwarder = decls.map(_.defnExplode)
         val dispatcherInTpe = rt.clientDispatcher.parameterize("R", "S")
-        val dispactherTpe = t.sibling(typeName + "ClientDispatcherX")
+        val dispactherTpe = t.sibling(typeName + "ServerWrapper")
 
-        val transportDecls = decls.map(_.defnDispatch)
+        val transportDecls = decls.flatMap(in => Seq(in.defnExplode, in.defnExploded))
 
-        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
-            (
-              dispatcher: ${dispatcherInTpe.typeFull}
-            ) extends ${fullService.init()} with ${rt.idtGenerated} {
+        q"""trait ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
+              extends ${fullService.init()} with ${rt.idtGenerated} {
             import ${t.termBase}._
            ..$transportDecls
-           ..$forwarder
            }"""
       }
 
-      Seq(dServer, dClient, dCompr)
+      Seq(dServer, dClient, dCompr, dExpl)
     }
 
 

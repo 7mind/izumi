@@ -21,8 +21,13 @@ case class ServiceMethodProduct(
   }
 
   def defnExplode: Stat = {
-    q"def ${Term.Name(name)}(input: $input): Result[$output] = ${Term.Name(name)}()"
+    q"def ${Term.Name(name)}(input: $input): Result[$output] = ???"
   }
+
+  def defnExploded: Stat = {
+    q"def ${Term.Name(name)}(..${in.constructorSignature}): Result[$output]"
+  }
+
 
   def defnCompress: Stat = {
     q"""def ${Term.Name(name)}(..${in.constructorSignature}): Result[$output] = {
