@@ -12,7 +12,7 @@ trait WireTransport[R[+_], InWire, OutWire, Service <: IDLService[R]] {
 
   def process(request: InWire): Try[OutWire] = {
     Try(protocol.decode(request))
-      .map(abstractTransport.dispatch[Service#InputType])
+      .map(abstractTransport.dispatch)
       .map(protocol.encode)
   }
 }

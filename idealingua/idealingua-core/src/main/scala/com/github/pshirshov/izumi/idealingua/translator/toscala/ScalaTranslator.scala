@@ -345,17 +345,23 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
         val inDef = EphemeralId(i.id, in.fullJavaType.name)
         val outDef = EphemeralId(i.id, out.fullJavaType.name)
 
-        val inputComposite = renderComposite(inDef, List(serviceInputBase.init()))
-        val outputComposite = renderComposite(outDef, List(serviceOutputBase.init()))
+        val inputComposite = mkStructure(inDef)
+        val outputComposite = mkStructure(outDef)
 
         val inputType = in.typeFull
         val outputType = out.typeFull
+
+
+        val defns = Seq(
+          inputComposite.defns(List(serviceInputBase.init()))
+          , outputComposite.defns(List(serviceOutputBase.init()))
+        ).flatten
 
         ServiceMethodProduct(
           method.name
           , inputType
           , outputType
-          , inputComposite ++ outputComposite
+          , defns
         )
     }
 
@@ -393,7 +399,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
         val forwarder = Term.Match(Term.Name("input"), decls.map(_.routingClause))
         val transportDecls =
           List(
-            q"override def dispatch[I <: S#InputType](input: I): R[S#OutputType] = $forwarder"
+            q"override def dispatch(input: ${serviceInputBase.typeFull}): R[${serviceOutputBase.typeFull}] = $forwarder"
           )
         val dispatcherInTpe = rt.serverDispatcher.parameterize("R", "S").init()
         val dispactherTpe = t.sibling(typeName + "ServerDispatcher")

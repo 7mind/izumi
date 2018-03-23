@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.runtime.model.{IDLInput, IDLService
 import scala.language.higherKinds
 import scala.util.Try
 
-trait MultiplexingWireTransport[R[_], InWire, Response, OutWire] {
+trait MultiplexingWireTransport[R[+_], InWire, Response, OutWire] {
   def protocol: WireProtocol[InWire, IDLInput, Response, OutWire]
 
   def services: Seq[UnsafeServerDispatcher[R, IDLService[R]]]

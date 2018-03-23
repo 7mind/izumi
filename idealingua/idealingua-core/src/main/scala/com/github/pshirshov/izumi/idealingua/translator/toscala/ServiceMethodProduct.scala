@@ -1,9 +1,15 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
+
 import scala.meta.{Case, Defn, Pat, Stat, Term, Type}
 import scala.meta._
 
-case class ServiceMethodProduct(name: String, input: Type, output: Type, types: Seq[Defn]) {
+case class ServiceMethodProduct(
+                                 name: String
+                                 , input: Type
+                                 , output: Type
+                                 , types: Seq[Defn]
+                               ) {
   def defn: Stat = {
     q"def ${Term.Name(name)}(input: $input): Result[$output]"
   }
