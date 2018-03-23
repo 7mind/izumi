@@ -21,18 +21,20 @@ case class ServiceMethodProduct(
   }
 
   def defnExplode: Stat = {
-    val code = in.constructorSignature.map(p => q"${Term.Name(p.name.value)} = input.${Term.Name(p.name.value)}")
+    val code = in.explodedSignature.map(p => q"${Term.Name(p.name.value)} = input.${Term.Name(p.name.value)}")
     q"def ${Term.Name(name)}(input: $input): Result[$output] = ${Term.Name(name)}(..$code)"
   }
 
   def defnExploded: Stat = {
-    q"def ${Term.Name(name)}(..${in.constructorSignature}): Result[$output]"
+    q"def ${Term.Name(name)}(..${in.explodedSignature}): Result[$output]"
   }
 
 
   def defnCompress: Stat = {
-    q"""def ${Term.Name(name)}(..${in.constructorSignature}): Result[$output] = {
-       service.${Term.Name(name)}(${in.instantiator})
+    val code = in.explodedSignature.map(p => q"${Term.Name(p.name.value)} = ${Term.Name(p.name.value)}")
+
+    q"""def ${Term.Name(name)}(..${in.explodedSignature}): Result[$output] = {
+       service.${Term.Name(name)}(${in.t.termFull}(..$code))
       }
       """
   }

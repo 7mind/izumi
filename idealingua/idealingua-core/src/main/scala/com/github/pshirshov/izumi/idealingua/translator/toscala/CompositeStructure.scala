@@ -15,6 +15,7 @@ class CompositeStructure(translator: ScalaTranslator, context: ScalaTranslationC
   import ScalaField._
   import conv._
 
+  val explodedSignature = fields.all.toParams
   val constructorSignature: List[Term.Param] = {
 
     val embedded = fields.fields.all
