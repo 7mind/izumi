@@ -50,8 +50,8 @@ class Typespace(val domain: DomainDefinition) {
         case i: Adt =>
           i.alternatives.map {
             el =>
-            val eid = EphemeralId(i.id, el.name)
-            eid -> el
+              val eid = EphemeralId(i.id, el.name)
+              eid -> el
           }
       }
       .flatten
@@ -116,9 +116,8 @@ class Typespace(val domain: DomainDefinition) {
 
   protected def compatibleImplementors(implementors: List[TypeId], id: InterfaceId): List[InterfaceConstructors] = {
     val ifaceFields = enumFields(apply(id))
-    val ifaceConflicts = FieldConflicts(ifaceFields)
-    val ifaceNonUniqueFields = ifaceConflicts.softConflicts.keySet
-    val fieldsToCopyFromInterface = ifaceFields.map(_.field)
+    val ifaceNonUniqueFields = ifaceFields.conflicts.softConflicts.keySet
+    val fieldsToCopyFromInterface = ifaceFields.all.map(_.field)
       .toSet
       .filterNot(f => ifaceNonUniqueFields.contains(f.name))
 
@@ -127,7 +126,7 @@ class Typespace(val domain: DomainDefinition) {
     implementors.map {
       typeToConstruct =>
         val definition = apply(typeToConstruct)
-        val implFields = enumFields(definition)
+        val implFields = enumFields(definition).all
 
         val requiredParameters = implFields
           .map(_.definedBy)
@@ -136,7 +135,7 @@ class Typespace(val domain: DomainDefinition) {
           .toSet
 
         val fieldsToTakeFromParameters = requiredParameters
-          .flatMap(mi => enumFields(apply(mi)))
+          .flatMap(mi => enumFields(apply(mi)).all)
           .filterNot(f => fieldsToCopyFromInterface.contains(f.field))
           .filterNot(f => ifaceNonUniqueFields.contains(f.field.name))
 
@@ -146,7 +145,7 @@ class Typespace(val domain: DomainDefinition) {
           , requiredParameters.toList
           , fieldsToCopyFromInterface
           , fieldsToTakeFromParameters
-          , ifaceConflicts
+          , ifaceFields
         )
     }
   }
@@ -315,22 +314,30 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-  def enumFields(defn: ILAst): List[ExtendedField] = {
+  def enumFields(defn: ILAst): Fields = {
+    Fields(extractFields(defn))
+  }
+
+  def enumFields(composite: Composite): Fields = {
+    Fields(extractFields(composite))
+  }
+
+  protected def extractFields(defn: ILAst): List[ExtendedField] = {
     val fields = defn match {
       case t: Interface =>
-        val superFields = enumFields(t.interfaces)
+        val superFields = extractFields(t.interfaces)
           .map(_.copy(definedBy = t.id)) // in fact super field is defined by this
 
-        val embeddedFields = t.concepts.flatMap(id => enumFields(apply(id)))
+        val embeddedFields = t.concepts.flatMap(id => extractFields(apply(id)))
 
         val thisFields = toExtendedFields(t.fields, t.id)
         superFields ++ thisFields ++ embeddedFields
 
       case t: DTO =>
-        enumFields(t.interfaces) ++ enumFields(t.concepts)
+        extractFields(t.interfaces) ++ extractFields(t.concepts)
 
       case t: Adt =>
-        t.alternatives.map(apply).flatMap(enumFields)
+        t.alternatives.map(apply).flatMap(extractFields)
 
       case t: Identifier =>
         toExtendedFields(t.fields, t.id)
@@ -345,8 +352,8 @@ class Typespace(val domain: DomainDefinition) {
     fields.distinct
   }
 
-  def enumFields(composite: Composite): List[ExtendedField] = {
-    composite.flatMap(i => enumFields(typespace(i)))
+  protected def extractFields(composite: Composite): List[ExtendedField] = {
+    composite.flatMap(i => extractFields(typespace(i)))
   }
 
   def sameSignature(tid: TypeId): List[DTO] = {
@@ -375,7 +382,7 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   protected def signature(defn: ILAst): List[Field] = {
-    enumFields(defn).map(_.field).sortBy(_.name)
+    enumFields(defn).all.map(_.field)
   }
 
   protected def verified(types: Seq[ILAst]): Map[TypeId, ILAst] = {

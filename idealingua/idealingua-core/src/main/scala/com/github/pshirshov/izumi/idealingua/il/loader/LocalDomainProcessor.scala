@@ -3,8 +3,8 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 import java.io.File
 import java.nio.file.{Path, Paths}
 
-import com.github.pshirshov.izumi.idealingua.il.ParsedDomain
-import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader.ParsedModel
+import com.github.pshirshov.izumi.idealingua.il.IL.{ILDef, ILService}
+import com.github.pshirshov.izumi.idealingua.il.{LoadedModel, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinitionParsed, DomainId}
 
@@ -18,29 +18,17 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
     val modelResolver: (Path) => Option[ParsedModel] = toModelResolver(models.get)
 
 
-    val withIncludes = domain
-      .includes
-      .foldLeft(domain) {
-        case (d, toInclude) =>
-          val incPath = Paths.get(toInclude)
-
-          modelResolver(incPath) match {
-            case Some(inclusion) =>
-              d.extend(inclusion)
-
-            case None =>
-              throw new IDLException(s"Can't find inclusion $incPath in classpath nor filesystem while operating within $root")
-          }
-      }
-      .copy(includes = Seq.empty)
+    val allIncludes = domain.model.includes
+      .map(loadModel(modelResolver, _))
+      .fold(LoadedModel(domain.model.definitions))(_ ++ _)
 
     val imports = domain
       .imports
       .map {
         p =>
-          domainResolver(p) match {
+          domainResolver(p.id) match {
             case Some(d) =>
-              d.domain.id -> new LocalDomainProcessor(root, classpath, d, domains, models).postprocess() //postprocess(d, domains, models)
+              d.did.id -> new LocalDomainProcessor(root, classpath, d, domains, models).postprocess()
 
             case None =>
               throw new IDLException(s"Can't find reference $p in classpath nor filesystem while operating within $root")
@@ -48,10 +36,25 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
       }
       .toMap
 
-    val withImports = withIncludes
-      .copy(imports = Seq.empty, domain = withIncludes.domain.copy(referenced = imports))
+    val types = allIncludes.definitions.collect({ case d: ILDef => d.v })
+    val services = allIncludes.definitions.collect({ case d: ILService => d.v })
+    DomainDefinitionParsed(domain.did.id, types, services, imports)
+  }
 
-    withImports.domain
+  private def loadModel(modelResolver: Path => Option[ParsedModel], toInclude: String): LoadedModel = {
+    val incPath = Paths.get(toInclude)
+
+    modelResolver(incPath) match {
+      case Some(inclusion) =>
+        inclusion.includes
+          .map(loadModel(modelResolver, _))
+          .fold(LoadedModel(inclusion.definitions)) {
+            case (acc, m) => acc ++ m
+          }
+
+      case None =>
+        throw new IDLException(s"Can't find inclusion $incPath in classpath nor filesystem while operating within $root")
+    }
   }
 
   // TODO: decopypaste?
@@ -96,7 +99,7 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
   }
 
   private def resolveFromCP(incPath: Path, prefix: Option[String], ext: String): Option[String] = {
-    val allCandidates = (Seq(root, root.resolve(toPath(domain.domain.id)).getParent).map(_.toFile) ++ classpath)
+    val allCandidates = (Seq(root, root.resolve(toPath(domain.did.id)).getParent).map(_.toFile) ++ classpath)
       .filter(_.isDirectory)
       .flatMap {
         directory =>

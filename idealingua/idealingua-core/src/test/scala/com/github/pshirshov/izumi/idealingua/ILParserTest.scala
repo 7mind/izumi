@@ -18,7 +18,8 @@ class ILParserTest extends WordSpec {
 
   private def assertDomainParses(str: String): Unit = {
     val parsed = assertParses(new ILParser().fullDomainDef, str)
-    assert(parsed.domain.types.nonEmpty)
+    assert(parsed.model.definitions.nonEmpty)
+    ()
   }
 
   "IL parser" should {

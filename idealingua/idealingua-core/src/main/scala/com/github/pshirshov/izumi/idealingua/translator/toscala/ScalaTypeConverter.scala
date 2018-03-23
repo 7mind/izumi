@@ -7,30 +7,38 @@ import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, FieldConflicts, ILAst}
+import com.github.pshirshov.izumi.idealingua.model.il._
 
+import scala.language.higherKinds
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 
 
 class ScalaTypeConverter(domain: DomainId) {
 
-  implicit class ConflictsOps(conflicts: FieldConflicts) {
+  implicit class ConflictsOps(fields: Fields) {
     def toScala: ScalaFields = {
-      ScalaFields(
-        conflicts.goodFields.flatMap(f => f._2.map(ef => toScala(ef.field))).toList
-        , conflicts.softConflicts.flatMap(_._2).keys.map(f => toScala(f)).toList
+      val good = fields.conflicts.goodFields
+        .flatMap(f => f._2.map(ef => toScala(ef))).toList
+
+      val soft = fields.conflicts.softConflicts
+        .flatMap(_._2).map(kv => toScala(kv._2)).toList
+
+      ScalaFields(good, soft, fields)
+    }
+
+    private def toScala(fields: Seq[ExtendedField]): ScalaField = {
+      val primary = fields.head
+      toScala(primary).copy(conflicts = fields.toSet)
+    }
+
+    private def toScala(field: ExtendedField): ScalaField = {
+      ScalaField(
+        Term.Name(field.field.name)
+        , ScalaTypeConverter.this.toScala(field.field.typeId).typeFull
+        , field
+        , Set.empty
       )
-    }
-
-    private def toScala(field: ILAst.Field): ScalaField = {
-      ScalaField(Term.Name(field.name), ScalaTypeConverter.this.toScala(field.typeId).typeFull)
-    }
-  }
-
-  implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
-    def toScala: ScalaFields = {
-      FieldConflicts(fields).toScala
     }
   }
 
@@ -96,9 +104,18 @@ class ScalaTypeConverter(domain: DomainId) {
   }
 
 
+
   def toScala[T: ClassTag]: ScalaType = {
-    val idtClass = classTag[T].runtimeClass
-    val javaType = JavaType(Indefinite(idtClass.getPackage.getName.split('.'), idtClass.getSimpleName))
+    toScala(classTag[T].runtimeClass)
+  }
+
+  def toScala1[T[_]](implicit ev: ClassTag[T[_]]): ScalaType = {
+    toScala(ev.runtimeClass)
+//    toScala[T[Id]]
+  }
+
+  def toScala(clazz: Class[_]): ScalaType = {
+    val javaType = JavaType(Indefinite(clazz.getPackage.getName.split('.'), clazz.getSimpleName))
     toScala(javaType)
   }
 
@@ -116,13 +133,17 @@ class ScalaTypeConverter(domain: DomainId) {
 
 
   private def toScala(javaType: JavaType, args: List[TypeId]): ScalaType = {
+    val withRoot = javaType.withRoot
     val minimized = javaType.minimize(domain)
     ScalaTypeImpl(
-      toSelectTerm(minimized)
+      toSelectTerm(withRoot)
+      , toSelect(withRoot)
+      , toSelectTerm(minimized)
       , toSelect(minimized)
       , Term.Name(javaType.name)
       , Type.Name(javaType.name)
       , javaType
+      , domain
       , args.map(toScala(_).typeFull)
       , args.map(toScala(_).termFull)
     )

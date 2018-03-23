@@ -134,7 +134,10 @@ class ILParser {
 
   final val importBlock = P(kw.`import` ~/ SepInlineOpt ~ domainId)
 
-  final val modelDef = P(SepLineOpt ~ anyBlock.rep(sep = SepLineOpt) ~ SepLineOpt)
+  final val modelDef = P(SepLineOpt ~ anyBlock.rep(sep = SepLineOpt) ~ SepLineOpt).map {
+    defs =>
+      ParsedModel(defs)
+  }
 
   final val fullDomainDef = P(domainBlock ~ SepLineOpt ~ importBlock.rep(sep = SepLineOpt) ~ modelDef).map {
     case (did, imports, defs) =>
