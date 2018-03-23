@@ -12,3 +12,7 @@ trait IDLService[R[_]] extends IDLGeneratedType {
 
   def outputClass: Class[OutputType]
 }
+
+trait IDLClientWrapper[R[+_], Service <: IDLService[R]] extends IDLGeneratedType {
+  type Result[T] = R[T]
+}

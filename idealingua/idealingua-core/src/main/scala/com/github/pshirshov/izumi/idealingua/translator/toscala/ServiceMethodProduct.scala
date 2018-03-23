@@ -25,7 +25,10 @@ case class ServiceMethodProduct(
   }
 
   def defnCompress: Stat = {
-    q"def ${Term.Name(name)}(input: $input): Result[$output] = ${Term.Name(name)}()"
+    q"""def ${Term.Name(name)}(..${in.constructorSignature}): Result[$output] = {
+       service.${Term.Name(name)}(${in.instantiator})
+      }
+      """
   }
 
   def routingClause: Case = {

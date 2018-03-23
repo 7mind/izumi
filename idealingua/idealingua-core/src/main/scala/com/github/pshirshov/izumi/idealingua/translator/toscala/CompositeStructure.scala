@@ -35,7 +35,7 @@ class CompositeStructure(translator: ScalaTranslator, context: ScalaTranslationC
     interfaceParams ++ fieldParams
   }
 
-  val constructors: List[Defn.Def] = {
+  def instantiator: Term.Apply = {
     val constructorCode = fields.fields.all.filterNot(f => fields.nonUnique.exists(_.name.value == f.field.name)).map {
       f =>
         q""" ${Term.Name(f.field.name)} = ${translator.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
@@ -46,10 +46,17 @@ class CompositeStructure(translator: ScalaTranslator, context: ScalaTranslationC
         q""" ${f.name} = ${f.name}  """
     }
 
+    q"""
+         ${t.termFull}(..${constructorCode ++ constructorCodeNonUnique})
+         """
+
+  }
+
+  val constructors: List[Defn.Def] = {
 
     List(
       q"""def apply(..$constructorSignature): ${t.typeFull} = {
-         ${t.termFull}(..${constructorCode ++ constructorCodeNonUnique})
+         $instantiator
          }"""
     )
 

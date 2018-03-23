@@ -409,7 +409,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
         q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
             (
               val service: S
-            ) extends $dispatcherInTpe {
+            ) extends $dispatcherInTpe with ${rt.idtGenerated} {
             import ${t.termBase}._
             ..$transportDecls
            }"""
@@ -431,7 +431,40 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
            }"""
       }
 
-      Seq(dServer, dClient)
+      val dCompr = {
+        val dispatcherInTpe = rt.clientWrapper.parameterize("R", "S")
+
+        val forwarder = decls.map(_.defnCompress)
+
+        val dispactherTpe = t.sibling(typeName + "ClientWrapper")
+        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
+            (
+              val service: S
+            ) extends ${dispatcherInTpe.init()} with ${rt.idtGenerated} {
+            import ${t.termBase}._
+
+            ..$forwarder
+           }"""
+      }
+
+      val dExpl = {
+        val forwarder = decls.map(_.defnExplode)
+        val dispatcherInTpe = rt.clientDispatcher.parameterize("R", "S")
+        val dispactherTpe = t.sibling(typeName + "ClientDispatcherX")
+
+        val transportDecls = decls.map(_.defnDispatch)
+
+        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
+            (
+              dispatcher: ${dispatcherInTpe.typeFull}
+            ) extends ${fullService.init()} with ${rt.idtGenerated} {
+            import ${t.termBase}._
+           ..$transportDecls
+           ..$forwarder
+           }"""
+      }
+
+      Seq(dServer, dClient, dCompr)
     }
 
 
