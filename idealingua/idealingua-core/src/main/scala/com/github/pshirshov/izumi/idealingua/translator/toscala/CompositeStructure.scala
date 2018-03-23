@@ -28,7 +28,8 @@ class CompositeStructure(translator: ScalaTranslator, context: ScalaTranslationC
       .map {
         d =>
           (translator.idToParaName(d), conv.toScala(d).typeFull)
-      }.toParams
+      }
+      .toParams
 
     val fieldParams = fields.nonUnique.toParams
 
