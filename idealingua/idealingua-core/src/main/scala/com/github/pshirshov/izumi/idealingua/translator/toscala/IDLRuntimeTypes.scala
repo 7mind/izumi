@@ -46,4 +46,5 @@ object IDLRuntimeTypes {
   final val serverDispatcher = runtimeConv.toScala[AbstractServerDispatcher[Id, _]]
   final val clientDispatcher = runtimeConv.toScala[AbstractClientDispatcher[Id, _]]
   final val clientWrapper = runtimeConv.toScala[IDLClientWrapper[Id, _]]
+  final val serverWrapper = runtimeConv.toScala[IDLServiceExploded[Id, _]]
 }

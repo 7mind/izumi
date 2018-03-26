@@ -16,3 +16,7 @@ trait IDLService[R[_]] extends IDLGeneratedType {
 trait IDLClientWrapper[R[+_], Service <: IDLService[R]] extends IDLGeneratedType {
   type Result[T] = R[T]
 }
+
+trait IDLServiceExploded[R[+_], Service <: IDLService[R]] extends IDLGeneratedType {
+  type Result[T] = R[T]
+}

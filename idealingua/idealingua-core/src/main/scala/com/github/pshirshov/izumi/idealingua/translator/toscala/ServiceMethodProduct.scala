@@ -22,7 +22,7 @@ case class ServiceMethodProduct(
 
   def defnExplode: Stat = {
     val code = in.explodedSignature.map(p => q"${Term.Name(p.name.value)} = input.${Term.Name(p.name.value)}")
-    q"def ${Term.Name(name)}(input: $input): Result[$output] = ${Term.Name(name)}(..$code)"
+    q"def ${Term.Name(name)}(input: $input): Result[$output] = service.${Term.Name(name)}(..$code)"
   }
 
   def defnExploded: Stat = {
