@@ -108,7 +108,7 @@ class GoLangTranslator(typespace: Typespace) {
   }
 
   protected def renderAlias(i: Alias): Seq[String] = {
-    Seq(s"type ${i.id.name} = ${toGoLang(i.target).render()}")
+    Seq(s"type ${i.id.name} ${toGoLang(i.target).render()}")
   }
 
   def renderEnumeration(i: Enumeration): Seq[String] = {
@@ -183,6 +183,7 @@ class GoLangTranslator(typespace: Typespace) {
     }.mkString("\n")
 
     Seq(s"""
+       |// $name struct
        |type $name struct {
        |$fieldsStr
        |}""".stripMargin
@@ -282,7 +283,7 @@ class GoLangTranslator(typespace: Typespace) {
     val serviceName = i.id.name
     val implName = s"${serviceName}Impl"
 
-    val impl = renderStruct(implName, List.empty)
+    val impl = renderStruct(implName, List(GoLangField("endpoint", StringType())))
 
     val interface =  s"""type $serviceName interface {
       |${padding}Send(service string, in map[string]interface{}) interface{}
@@ -290,8 +291,10 @@ class GoLangTranslator(typespace: Typespace) {
 
     val constructor =
       s"""
-         |func New$serviceName() $serviceName {
+         |// New$serviceName(endpobint string) impl
+         |func New$serviceName(endpoint string) $serviceName {
          |${padding}return &$implName {
+         |${padding}Endpoint: endpoint,
          |$padding}
          |}""".stripMargin
 
@@ -299,7 +302,7 @@ class GoLangTranslator(typespace: Typespace) {
       s"""jsonStr, _ := json.Marshal(in)
          |body := bytes.NewBuffer(jsonStr)
          |var responseBody interface{}
-         |_, err := makeHTTPRequest("POST", $implName.servicePath() + "?service=" + service, body, &responseBody)
+         |_, err := makeHTTPRequest("POST", $implName.Endpoint + "?service=" + service, body, &responseBody)
          |if err != nil {
          |${padding}return nil
          |}
@@ -307,13 +310,10 @@ class GoLangTranslator(typespace: Typespace) {
        """.stripMargin.split("\n").map(padding + _).mkString("\n")
 
     val methods = s"""
+           |// Send impl
            |func ($implName *$implName) Send(service string, in map[string]interface{}) interface{} {
            |$methodBody
            |}
-           |
-           |func ($implName *$implName) servicePath() string {
-           |${padding}return "TODO"
-           |} 
        """.stripMargin
 
     Seq(withImports("encoding/json", "bytes")) ++ Seq(interface) ++ impl ++ Seq(constructor, methods)

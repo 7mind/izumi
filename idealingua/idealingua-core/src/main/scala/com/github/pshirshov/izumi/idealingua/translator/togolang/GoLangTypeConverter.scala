@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
 import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.{FieldConflicts, ILAst}
+import com.github.pshirshov.izumi.idealingua.model.il.{FieldConflicts, Fields, ILAst}
 
 object GoLangTypeConverter {
   def toGoLang(id: TypeId): GoLangType = id match {
@@ -65,9 +65,9 @@ object GoLangTypeConverter {
     }
   }
 
-  implicit class ExtendedFieldSeqOps(fields: Seq[ExtendedField]) {
+  implicit class ExtendedFieldSeqOps(fields: Fields) {
     def toGoLangFields: GoLangFields = {
-      FieldConflicts(fields).toGoLang
+      FieldConflicts(fields.all).toGoLang
     }
   }
 }
