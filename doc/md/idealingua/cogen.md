@@ -20,7 +20,7 @@ We support the following concepts:
 2. The only difference between structural inheritance and interface inheritance is presence/absence of base interface
 3. Both Data Classes and Mixins support both forms of inheritance 
 4. Services, ADTs, Type Aliases, Identifiers and Enumerations does not support inheritance
-
+5. We provide widening narrowing implicit functions as well as copy constructors for all the generated entities   
 
 ### Example
 
@@ -63,10 +63,97 @@ case class Point(y: Int, name: String, x: Int, id: String) extends Metadata
 
 trait PointLike extends Metadata {
   def y: Int
-  def name: String
   def x: Int
+  def name: String
   def id: String
 }
+
+
+object IntPair {
+  implicit class IntPairExtensions(_value: IntPair) {
+    def asIntPair(): IntPair.IntPairImpl = {
+      IntPair.IntPairImpl(x = _value.x, y = _value.y)
+    }
+    def toIntPairImpl(): IntPair.IntPairImpl = {
+      IntPair.IntPairImpl(x = _value.x, y = _value.y)
+    }
+    def toPointLikeImpl(pointlike: PointLike): PointLike.PointLikeImpl = {
+      PointLike.PointLikeImpl(x = _value.x, y = _value.y, id = pointlike.id, name = pointlike.name)
+    }
+  }
+  def apply(y: Int, x: Int) = IntPairImpl(y, x)
+  case class IntPairImpl(y: Int, x: Int) extends IntPair
+  object IntPairImpl {
+    def apply(intpair: IntPair): IntPair.IntPairImpl = {
+      IntPair.IntPairImpl(x = intpair.x, y = intpair.y)
+    }
+  }
+}
+
+object Metadata {
+  implicit class MetadataExtensions(_value: Metadata) {
+    def asMetadata(): Metadata.MetadataImpl = {
+      Metadata.MetadataImpl(id = _value.id, name = _value.name)
+    }
+    def toPoint(intpair: IntPair): Point = {
+      Point(id = _value.id, name = _value.name, x = intpair.x, y = intpair.y)
+    }
+    def toMetadataImpl(): Metadata.MetadataImpl = {
+      Metadata.MetadataImpl(id = _value.id, name = _value.name)
+    }
+    def toPointLikeImpl(pointlike: PointLike, intpair: IntPair): PointLike.PointLikeImpl = {
+      PointLike.PointLikeImpl(id = _value.id, name = _value.name, x = intpair.x, y = intpair.y)
+    }
+  }
+  def apply(name: String, id: String) = MetadataImpl(name, id)
+  case class MetadataImpl(name: String, id: String) extends Metadata
+  object MetadataImpl {
+    def apply(metadata: Metadata): Metadata.MetadataImpl = {
+      Metadata.MetadataImpl(id = metadata.id, name = metadata.name)
+    }
+  }
+}
+
+object Point {
+  implicit class PointExtensions(_value: Point) {
+    def intoPointLikeImpl(): PointLike.PointLikeImpl = {
+      PointLike.PointLikeImpl(y = _value.y, name = _value.name, x = _value.x, id = _value.id)
+    }
+  }
+  def apply(metadata: Metadata, intpair: IntPair): Point = {
+    Point(id = metadata.id, name = metadata.name, x = intpair.x, y = intpair.y)
+  }
+}
+
+object PointLike {
+  implicit class PointLikeExtensions(_value: PointLike) {
+    def asPointLike(): PointLike.PointLikeImpl = {
+      PointLike.PointLikeImpl(id = _value.id, name = _value.name, x = _value.x, y = _value.y)
+    }
+    def asIntPair(): IntPair.IntPairImpl = {
+      IntPair.IntPairImpl(x = _value.x, y = _value.y)
+    }
+    def toPointLikeImpl(): PointLike.PointLikeImpl = {
+      PointLike.PointLikeImpl(id = _value.id, name = _value.name, x = _value.x, y = _value.y)
+    }
+    def intoPoint(): Point = {
+      Point(y = _value.y, name = _value.name, x = _value.x, id = _value.id)
+    }
+  }
+  def apply(y: Int, name: String, x: Int, id: String) = PointLikeImpl(y, name, x, id)
+  case class PointLikeImpl(y: Int, name: String, x: Int, id: String) extends PointLike
+  object PointLikeImpl {
+    implicit class PointLikeImplExtensions(_value: PointLike.PointLikeImpl) {
+      def intoPoint(): Point = {
+        Point(y = _value.y, name = _value.name, x = _value.x, id = _value.id)
+      }
+    }
+    def apply(pointlike: PointLike, intpair: IntPair): PointLike.PointLikeImpl = {
+      PointLike.PointLikeImpl(id = pointlike.id, name = pointlike.name, x = intpair.x, y = intpair.y)
+    }
+  }
+}
+       
 ``` 
 
 
@@ -82,12 +169,12 @@ trait PointLike extends Metadata {
 ### Scala output
 
 ```scala
-trait Person extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedType {
+trait Person {
   def name: String
   def surname: String
 }
 
-object Person extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLTypeCompanion {
+object Person {
   implicit class PersonExtensions(_value: Person) {
     def asPerson(): Person.PersonImpl = {
       Person.PersonImpl(name = _value.name, surname = _value.surname)
@@ -101,7 +188,7 @@ object Person extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLTyp
   
   case class PersonImpl(name: String, surname: String) extends Person
   
-  object PersonImpl extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLTypeCompanion {
+  object PersonImpl {
     def apply(person: Person): Person.PersonImpl = {
       Person.PersonImpl(name = person.name, surname = person.surname)
     }
@@ -130,7 +217,7 @@ Differences between Mixins and Data Classes:
 ```scala
 case class HumanUser(name: String, surname: String, id: UserId) extends IdentifiedUser with Person
 
-object HumanUser extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLTypeCompanion {
+object HumanUser {
   def apply(identifieduser: IdentifiedUser, person: Person): HumanUser = {
     HumanUser(id = identifieduser.id, name = person.name, surname = person.surname)
   }
@@ -157,35 +244,35 @@ object HumanUser extends com.github.pshirshov.izumi.idealingua.runtime.model.IDL
 ### Scala output
 
 ```scala
-trait Failure extends Any with com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedType { def message: String }
+trait Failure extends Any { def message: String }
 
-trait Success extends Any with com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedType { def values: scala.collection.immutable.Map[String, String] }
+trait Success extends Any { def values: scala.collection.immutable.Map[String, String] }
 
 // companions stripped
 
-sealed trait Result extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLAdtElement
+sealed trait Result 
 
-object Result extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLAdt {
+object Result {
  
   import scala.language.implicitConversions
   
   type Element = Result
   
-  case class Success(value: _root_.shared.rpc.Success) extends Result
+  case class Success(value: Success) extends Result
   
-  object Success extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLAdtElementCompanion {
+  object Success {
   }
 
-  implicit def intoSuccess(value: _root_.shared.rpc.Success): Result = Result.Success(value)
-  implicit def fromSuccess(value: Result.Success): _root_.shared.rpc.Success = value.value
+  implicit def intoSuccess(value: rpc.Success): Result = Result.Success(value)
+  implicit def fromSuccess(value: Result.Success): rpc.Success = value.value
 
-  case class Failure(value: _root_.shared.rpc.Failure) extends Result
+  case class Failure(value: Failure) extends Result
 
-  object Failure extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLAdtElementCompanion {
+  object Failure {
   }
   
-  implicit def intoFailure(value: _root_.shared.rpc.Failure): Result = Result.Failure(value)
-  implicit def fromFailure(value: Result.Failure): _root_.shared.rpc.Failure = value.value
+  implicit def intoFailure(value: rpc.Failure): Result = Result.Failure(value)
+  implicit def fromFailure(value: Result.Failure): rpc.Failure = value.value
 }
        
 ``` 
@@ -216,12 +303,12 @@ enum Gender {
 ### Scala output
 
 ```scala
-sealed trait Gender extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLEnumElement
+sealed trait Gender
 
-object Gender extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLEnum {
+object Gender {
   type Element = Gender
-  override def all: Seq[Gender] = Seq(MALE, FEMALE)
-  override def parse(value: String) = value match {
+  def all: Seq[Gender] = Seq(MALE, FEMALE)
+  def parse(value: String) = value match {
     case "MALE" => MALE
     case "FEMALE" => FEMALE
   }
@@ -244,16 +331,15 @@ Note: implementation is unfinished, we don't provide parsers right now
 ### Scala output
 
 ```scala
-case class RecordId(value: java.util.UUID) extends AnyVal with com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedType with com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier {
+case class RecordId(value: java.util.UUID) extends AnyVal {
   override def toString: String = {
-    val suffix = this.productIterator.map(part => com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier.escape(part.toString)).mkString(":")
+    val suffix = this.productIterator.map(part => IDLIdentifier.escape(part.toString)).mkString(":")
     s"RecordId#$suffix"
   }
 }
 
-object RecordId extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLTypeCompanion {
-}
-      
+object RecordId {
+}      
 ``` 
 
 ## `service`: Service
@@ -300,7 +386,7 @@ Notes:
 import _root_.com.github.pshirshov.izumi.idealingua.model._
 import _root_.com.github.pshirshov.izumi.idealingua.runtime._
 
-class UserServiceServerDispatcher[R[+_], S <: UserService[R]](val service: S) extends transport.AbstractServerDispatcher[R, S] with com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedType {
+class UserServiceServerDispatcher[R[+_], S <: UserService[R]](val service: S) extends transport.AbstractServerDispatcher[R, S] {
   import UserService._
   override def dispatch(input: UserService.InUserService): R[UserService.OutUserService] = input match {
     case value: UserService.InDeleteUser =>
@@ -310,13 +396,13 @@ class UserServiceServerDispatcher[R[+_], S <: UserService[R]](val service: S) ex
   }
 }
 
-class UserServiceClientDispatcher[R[+_], S <: UserService[R]](dispatcher: transport.AbstractClientDispatcher[R, S]) extends UserService[R] with com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedType {
+class UserServiceClientDispatcher[R[+_], S <: UserService[R]](dispatcher: transport.AbstractClientDispatcher[R, S]) extends UserService[R] {
   import UserService._
   def deleteUser(input: UserService.InDeleteUser): Result[UserService.OutDeleteUser] = dispatcher.dispatch(input, classOf[UserService.OutDeleteUser])
   def createUser(input: UserService.InCreateUser): Result[UserService.OutCreateUser] = dispatcher.dispatch(input, classOf[UserService.OutCreateUser])
 }
 
-class UserServiceClientWrapper[R[+_], S <: UserService[R]](val service: S) extends model.IDLClientWrapper[R, S] with com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedType {
+class UserServiceClientWrapper[R[+_], S <: UserService[R]](val service: S) extends model.IDLClientWrapper[R, S] {
   import UserService._
   def deleteUser(id: RecordId): Result[UserService.OutDeleteUser] = {
     service.deleteUser(UserService.InDeleteUser(id = id))
@@ -326,13 +412,13 @@ class UserServiceClientWrapper[R[+_], S <: UserService[R]](val service: S) exten
   }
 }
 
-trait UserServiceUnwrapped[R[+_], S <: UserService[R]] extends model.IDLServiceExploded[R, S] with com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedType {
+trait UserServiceUnwrapped[R[+_], S <: UserService[R]] extends model.IDLServiceExploded[R, S] {
   import UserService._
   def deleteUser(id: RecordId): Result[UserService.OutDeleteUser]
   def createUser(balance: Double, email: String): Result[UserService.OutCreateUser]
 }
 
-class UserServiceServerWrapper[R[+_], S <: UserService[R]](val service: UserServiceUnwrapped[R, S]) extends UserService[R] with com.github.pshirshov.izumi.idealingua.runtime.model.IDLGeneratedType {
+class UserServiceServerWrapper[R[+_], S <: UserService[R]](val service: UserServiceUnwrapped[R, S]) extends UserService[R] {
   import UserService._
   def deleteUser(input: UserService.InDeleteUser): Result[UserService.OutDeleteUser] = service.deleteUser(id = input.id)
   def createUser(input: UserService.InCreateUser): Result[UserService.OutCreateUser] = service.createUser(balance = input.balance, email = input.email)
@@ -355,7 +441,7 @@ object UserService extends com.github.pshirshov.izumi.idealingua.runtime.model.I
   sealed trait OutUserService extends Any with com.github.pshirshov.izumi.idealingua.runtime.model.IDLOutput
 
   case class InDeleteUser(id: RecordId) extends UserService.InUserService with WithRecordId
-  object InDeleteUser extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLTypeCompanion {
+  object InDeleteUser {
     implicit class InDeleteUserExtensions(_value: UserService.InDeleteUser) {
       def intoWithRecordIdImpl(): WithRecordId.WithRecordIdImpl = {
         WithRecordId.WithRecordIdImpl(id = _value.id)
@@ -367,7 +453,7 @@ object UserService extends com.github.pshirshov.izumi.idealingua.runtime.model.I
   }
   
   case class OutDeleteUser(result: shared.rpc.Result) extends AnyVal with UserService.OutUserService with WithResult
-  object OutDeleteUser extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLTypeCompanion {
+  object OutDeleteUser {
     implicit class OutDeleteUserExtensions(_value: UserService.OutDeleteUser) {
       def intoWithResultImpl(): WithResult.WithResultImpl = {
         WithResult.WithResultImpl(result = _value.result)
@@ -379,7 +465,7 @@ object UserService extends com.github.pshirshov.izumi.idealingua.runtime.model.I
   }
   
   case class InCreateUser(balance: Double, email: String) extends UserService.InUserService with UserData with PrivateUserData
-  object InCreateUser extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLTypeCompanion {
+  object InCreateUser {
     def apply(userdata: UserData, privateuserdata: PrivateUserData): UserService.InCreateUser = {
       UserService.InCreateUser(balance = privateuserdata.balance, email = userdata.email)
     }
@@ -387,7 +473,7 @@ object UserService extends com.github.pshirshov.izumi.idealingua.runtime.model.I
 
   case class OutCreateUser(result: shared.rpc.Result, id: RecordId) extends UserService.OutUserService with WithRecordId with WithResult
 
-  object OutCreateUser extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLTypeCompanion {
+  object OutCreateUser {
     def apply(withrecordid: WithRecordId, withresult: WithResult): UserService.OutCreateUser = {
       UserService.OutCreateUser(id = withrecordid.id, result = withresult.result)
     }
