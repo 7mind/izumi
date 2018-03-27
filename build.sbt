@@ -280,7 +280,7 @@ lazy val izsbt: Seq[ProjectReference] = Seq(
 
 lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 
-lazy val root = inRoot.as
+lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregate(allProjects: _*)
 

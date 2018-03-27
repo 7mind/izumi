@@ -1,29 +1,29 @@
 domain test.domain01
 
-import shared.sharedDomain
-include "shared/model01.model"
+import shared.rpc
+include "shared/users.model"
 
-id TestValIdentifier {
-  userId: UserId
+id RecordId {
+  value: uid
 }
 
-id TestIdentifer {
-  userId: UserId
-  context: str
+mixin WithRecordId {
+  id: RecordId
 }
 
-mixin TestInterface {
-  userId: UserId
-  accountBalance: i32
-  latestLogin: i64
-  keys: map[str, str]
-  nicknames: list[str]
+mixin WithResult {
+  result: shared.rpc#Result
 }
 
-data TestObject {
-  + TestInterface
+mixin UserData {
+  email: str
+}
+
+mixin PrivateUserData {
+  balance: dbl
 }
 
 service UserService {
-  def createUser(TestInterface): (TestInterface)
+  def deleteUser(WithRecordId): (WithResult)
+  def createUser(UserData, PrivateUserData): (WithRecordId, WithResult)
 }
