@@ -1,0 +1,14 @@
+domain shared.rpc
+
+mixin Success {
+  values: map[str, str]
+}
+
+mixin Failure {
+  message: str
+}
+
+adt Result {
+  Success
+  Failure
+}
