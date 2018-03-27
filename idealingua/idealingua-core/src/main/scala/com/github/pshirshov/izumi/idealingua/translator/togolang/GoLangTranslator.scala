@@ -11,6 +11,26 @@ import scala.collection.{GenTraversableOnce, mutable}
 import GoLangTypeConverter._
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod.RPCMethod
 
+case class WithPackages(packages: Set[String] = Set.empty, content: Seq[String] = Seq.empty) {
+  def toImports: String = {
+    if (packages.nonEmpty) {
+      val importsStr = packages.map(module => s"""    "$module"""").mkString("\n")
+
+      s"""import (
+         |$importsStr
+
+         |)""".stripMargin
+
+    } else {
+      ""
+    }
+  }
+
+  def render(): Seq[String] = {
+    Seq(toImports) ++ content
+  }
+}
+
 class GoLangTranslator(typespace: Typespace) {
   val padding: String = " " * 4
 
@@ -18,9 +38,9 @@ class GoLangTranslator(typespace: Typespace) {
     mutable.HashMap[ModuleId, mutable.ArrayBuffer[String]]()
   }
 
-  def renderBaseServicesFunc(): Seq[String] = {
+  def renderBaseServicesFunc(): Seq[String] = WithPackages(
+    Set("io", "net/http", "crypto/tls", "time", "io/ioutil", "encoding/json", "fmt"),
     Seq(
-      withImports("io", "net/http", "crypto/tls", "time", "io/ioutil", "encoding/json", "fmt"),
       s"""
          |func makeHTTPRequest(method string, path string, body io.Reader, dataOut interface{}) (*http.Response, error) {
          |	url := path
@@ -59,7 +79,7 @@ class GoLangTranslator(typespace: Typespace) {
          |	return resp, nil
          |}
        """.stripMargin)
-  }
+  ).render()
 
   def translate(): Seq[Module] = {
     // if there is some services defined, we put common functions in package object
@@ -83,10 +103,10 @@ class GoLangTranslator(typespace: Typespace) {
   }
 
   protected def translateType(definition: ILAst): Seq[Module] = {
-    val defns = definition match {
+    val defns: WithPackages = definition match {
       case a: Alias =>
         packageObjects.getOrElseUpdate(toModuleId(a), mutable.ArrayBuffer()) ++= renderAlias(a)
-        Seq()
+        WithPackages()
       case i: Enumeration =>
         renderEnumeration(i)
       case i: Identifier =>
@@ -97,10 +117,10 @@ class GoLangTranslator(typespace: Typespace) {
         renderDTO(d)
       case d: Adt =>
         renderAdt(d)
-      case _ => Seq.empty
+      case _ => WithPackages(Set.empty, Seq.empty)
     }
 
-    if (defns.nonEmpty) {
+    if (defns.content.nonEmpty) {
       toSource(Indefinite(definition.id), toModuleId(definition), defns)
     } else {
       Seq.empty
@@ -111,7 +131,7 @@ class GoLangTranslator(typespace: Typespace) {
     Seq(s"type ${i.id.name} ${toGoLang(i.target).render()}")
   }
 
-  def renderEnumeration(i: Enumeration): Seq[String] = {
+  def renderEnumeration(i: Enumeration): WithPackages = {
     val name = i.id.name
     val firstChar = name.charAt(0).toLower
 
@@ -127,7 +147,7 @@ class GoLangTranslator(typespace: Typespace) {
       s""""$m": $m,"""
     }.map(v => padding + v).mkString("\n")
 
-    Seq(withImports("encoding/json", "bytes"), s"""
+    WithPackages(Set("encoding/json", "bytes"), Seq(s"""
        |type $name int8
        |
        |const (
@@ -138,17 +158,17 @@ class GoLangTranslator(typespace: Typespace) {
        |    return dataTypesId[$firstChar]
        |}
        |
-       |var dataTypesId = map[$name]string{
+       |var ${name}ToString = map[$name]string{
        |$dataTypesId
        |}
        |
-       |var dataTypesName = map[string]$name{
+       |var StringTo$name = map[string]$name{
        |$dataTypesName
        |}
        |
        |func ($firstChar $name) MarshalJSON() ([]byte, error) {
        |	  buffer := bytes.NewBufferString(`"`)
-       |	  buffer.WriteString(dataTypesId[$firstChar])
+       |	  buffer.WriteString(${name}ToString[$firstChar])
        |	  buffer.WriteString(`"`)
        |	  return buffer.Bytes(), nil
        |}
@@ -161,59 +181,61 @@ class GoLangTranslator(typespace: Typespace) {
        |		  return err
        |	  }
        |
-       |	  *$firstChar = dataTypesName[s]
+       |	  *$firstChar = StringTo$name[s]
        |	  return nil
        |}
      """.stripMargin
-    )
+    )  )
   }
 
-  protected def renderIdentifier(i: Identifier): Seq[String] = {
-    renderStruct(i.id.name, typespace.enumFields(i).toGoLangFields.all)
+  protected def renderIdentifier(i: Identifier): WithPackages = {
+    renderStruct(i.id.name, typespace.enumFields(i).toGoLangFields)
   }
 
-  protected def renderDTO(i: DTO): Seq[String] = {
-    renderStruct(i.id.name, typespace.enumFields(i).toGoLangFields.all)
+  protected def renderDTO(i: DTO): WithPackages = {
+    renderStruct(i.id.name, typespace.enumFields(i).toGoLangFields)
   }
 
-  private def renderStruct(name: String, fields: List[GoLangField], withPrivate: Boolean = false) = {
-    val fieldsStr = fields.map { f =>
+  private def renderStruct(name: String, fields: GoLangFields, withPrivate: Boolean = false) = {
+    val fieldsStr = fields.all.map { f =>
       val fieldName = if (withPrivate) f.name else f.name.capitalize
       s"""$padding$fieldName  ${f.fieldType.render()} `json:"${f.name}"`"""
     }.mkString("\n")
 
-    Seq(s"""
+    WithPackages(fields.packageDependencies, Seq(s"""
        |// $name struct
        |type $name struct {
        |$fieldsStr
        |}""".stripMargin
-    )
+    ))
   }
 
-  protected def renderInterface(i: Interface): Seq[String] = {
+  protected def renderInterface(i: Interface): WithPackages = {
     val fields = typespace.enumFields(i)
 
-    val methods = fields.toGoLangFields.all.map {
-      f =>
-        s"$padding${f.name.capitalize}() ${f.fieldType.render()} "
+    val methods = fields.toGoLangFields.all.map { f =>
+      s"$padding${f.name.capitalize}() ${f.fieldType.render()} "
     }.mkString("\n")
 
     val implType = EphemeralId(i.id, typespace.toDtoName(i.id))
 
-    Seq(
+    val interface = Seq(
       s"""type ${i.id.name} interface {
          |$methods
          |}""".stripMargin
-    ) ++ renderComposite(implType, i)
+    )
+    val composite = renderComposite(implType, i)
+
+    composite.copy(content = interface ++ composite.content)
   }
 
-  private def renderComposite(impl: TypeId, i: Interface): Seq[String] = {
+  private def renderComposite(impl: TypeId, i: Interface): WithPackages = {
     val implTypeName = impl.name
     val fields = typespace.enumFields(typespace.getComposite(impl))
 
     val goLangFields = fields.toGoLangFields.all
 
-    val structImpl = renderStruct(implTypeName, goLangFields, withPrivate = true)
+    val structImpl = renderStruct(implTypeName, fields.toGoLangFields, withPrivate = true)
 
     val constructorArgs = goLangFields.map { f =>
       s"${f.name.toLowerCase} ${f.fieldType.render()}"
@@ -229,9 +251,24 @@ class GoLangTranslator(typespace: Typespace) {
          |}""".stripMargin.split("\n").map(padding + _).mkString("\n")
 
     val constructor =
-      s"""func New${impl.name}($constructorArgs) ${i.id.name} {
+      s"""// New${impl.name} impl
+         |func New${impl.name}($constructorArgs) ${i.id.name} {
          |$constuctorBody
          |}""".stripMargin
+
+    val jsonMarshallerFieldsInit = goLangFields.map { f =>
+      s"""${padding * 3}"${f.name}": $implTypeName.${f.name},"""
+    }.mkString("\n")
+
+    val jsonMarshaller =
+      s"""func ($implTypeName $implTypeName) MarshallJSON() ([]byte, error) {
+         |    return json.Marshall(map[string]interface{}{
+         |        "DurationImpl": map[string]interface{}{
+         |$jsonMarshallerFieldsInit
+         |        },
+         |    })
+         |}
+       """.stripMargin
 
     val implMethods = goLangFields.map { f =>
       s"""func ($implTypeName *$implTypeName) ${f.name.capitalize}() ${f.fieldType.render()} {
@@ -240,10 +277,10 @@ class GoLangTranslator(typespace: Typespace) {
        """.stripMargin
     }.mkString("\n")
 
-    structImpl ++ Seq(constructor, implMethods)
+    structImpl.copy(content = structImpl.content ++  Seq(constructor, implMethods, jsonMarshaller))
   }
 
-  def renderAdt(i: Adt) = Seq(s"adt: ${i.id.name}")
+  def renderAdt(i: Adt) = WithPackages(Set.empty, Seq(s"adt: ${i.id.name}"))
 
   protected def translateService(definition: Service): Seq[Module] = {
     val transportDef: Service = definition.copy(id = definition.id.copy(name = definition.id.name + "Transport")  )
@@ -252,7 +289,7 @@ class GoLangTranslator(typespace: Typespace) {
     toSource(Indefinite(transportDef.id), toModuleId(transportDef.id), renderTransport(transportDef))
   }
 
-  protected def renderService(i: Service): Seq[String] = {
+  protected def renderService(i: Service): WithPackages = {
     val (methods, inTypes, outTypes) = i.methods.map {
       case method: RPCMethod =>
         val in = s"In${method.name.capitalize}"
@@ -261,8 +298,8 @@ class GoLangTranslator(typespace: Typespace) {
         val inDef = EphemeralId(i.id, in)
         val outDef = EphemeralId(i.id, out)
 
-        val inDefSrc = renderStruct(inDef.name, typespace.enumFields(typespace.getComposite(inDef)).toGoLangFields.all)
-        val outDefSrc = renderStruct(outDef.name, typespace.enumFields(typespace.getComposite(outDef)).toGoLangFields.all)
+        val inDefSrc = renderStruct(inDef.name, typespace.enumFields(typespace.getComposite(inDef)).toGoLangFields)
+        val outDefSrc = renderStruct(outDef.name, typespace.enumFields(typespace.getComposite(outDef)).toGoLangFields)
         val methodSrc = s"${method.name.capitalize}(${inDef.name}) ${outDef.name}"
 
         (inDefSrc, outDefSrc, methodSrc)
@@ -271,19 +308,23 @@ class GoLangTranslator(typespace: Typespace) {
     }
 
     val serviceInterfaceSrc = Seq(
-      s"""type ${i.id.name} interface {
+      s"""// ${i.id.name} interface
+         |type ${i.id.name} interface {
          |$methods
          |}""".stripMargin
     )
 
-    Seq(withImports("encoding/json")) ++ inTypes.flatten ++ outTypes.flatten ++ serviceInterfaceSrc ++ renderClient(i)
+    val client = renderClient(i)
+    client.copy(
+      packages = client.packages ++ Set("encoding/json") ++ inTypes.flatMap(_.packages) ++ outTypes.flatMap(_.packages),
+      content = inTypes.flatMap(_.content) ++ outTypes.flatMap(_.content) ++ serviceInterfaceSrc ++ client.content)
   }
 
-  protected def renderTransport(i: Service): Seq[String] = {
+  protected def renderTransport(i: Service): WithPackages = {
     val serviceName = i.id.name
     val implName = s"${serviceName}Impl"
 
-    val impl = renderStruct(implName, List(GoLangField("endpoint", StringType())))
+    val impl = renderStruct(implName, GoLangFields(List(GoLangField("endpoint", StringType()))))
 
     val interface =  s"""type $serviceName interface {
       |${padding}Send(service string, in map[string]interface{}) interface{}
@@ -316,15 +357,16 @@ class GoLangTranslator(typespace: Typespace) {
            |}
        """.stripMargin
 
-    Seq(withImports("encoding/json", "bytes")) ++ Seq(interface) ++ impl ++ Seq(constructor, methods)
+    impl.copy(content = Seq(interface) ++ impl.content ++ Seq(constructor, methods))
   }
 
-  private def renderClient(i: Service): Seq[String] = {
+  private def renderClient(i: Service): WithPackages = {
     val serviceName = i.id.name
     val implName = s"${serviceName}Impl"                                                 
     val transportName = s"${serviceName}Transport"
 
-    val impl = renderStruct(implName, List(GoLangField("transport", GoLangInterface(transportName))))
+    val goLangFields = List(GoLangField("transport", GoLangInterface(transportName)))
+    val impl = renderStruct(implName, GoLangFields(goLangFields))
 
     val constructor =
       s"""
@@ -359,7 +401,7 @@ class GoLangTranslator(typespace: Typespace) {
         """.stripMargin
     }.mkString("\n")
 
-    impl ++ Seq(constructor, methods)
+    impl.copy(content = impl.content ++ Seq(constructor, methods))
   }
 
   private def toModuleId(defn: ILAst): ModuleId = {
@@ -371,8 +413,8 @@ class GoLangTranslator(typespace: Typespace) {
 
   private def toModuleId(id: TypeId) = ModuleId(id.pkg, s"${id.name}.go") // use implicits conv
 
-  private def toSource(id: Indefinite, moduleId: ModuleId, traitDef: Seq[String]) = {
-    val code = traitDef.mkString("\n\n")
+  private def toSource(id: Indefinite, moduleId: ModuleId, traitDef: WithPackages) = {
+    val code = traitDef.render().mkString("\n\n")
     val content = withPackage(id.pkg, code)
     Seq(Module(moduleId, content))
   }
@@ -386,13 +428,5 @@ class GoLangTranslator(typespace: Typespace) {
          |$code
        """.stripMargin
     }
-  }
-
-  private def withImports(imports: String*): String = {
-    val importsStr = imports.map(module => s"""$padding"$module"""").mkString("\n")
-
-    s"""import (
-       |$importsStr
-       |)""".stripMargin
   }
 }
