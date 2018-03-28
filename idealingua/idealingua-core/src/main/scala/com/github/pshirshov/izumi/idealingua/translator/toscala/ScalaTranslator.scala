@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.EphemeralId
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -8,18 +7,18 @@ import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, ScalaField, ServiceMethodProduct}
 
 import scala.collection.immutable
 import scala.meta._
 
 
-class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension]) {
-  protected val context: ScalaTranslationContext = new ScalaTranslationContext(ts)
-
-  protected val extensions: Seq[ScalaTranslatorExtension] = _extensions //++ Seq(ScalaTranslatorMetadataExtension)
+class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) {
+  protected val ctx: ScalaTranslationContext = new ScalaTranslationContext(ts, extensions)
 
   import ScalaField._
-  import context._
+  import ctx._
   import conv._
 
 
@@ -44,7 +43,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
              |${content.map(_.toString()).mkString("\n\n")}
              |}
            """.stripMargin
-        Module(id, context.modules.withPackage(id.path.init, code))
+        Module(id, ctx.modules.withPackage(id.path.init, code))
     }
 
     val modules = Seq(
@@ -53,15 +52,12 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
       , packageObjects
     ).flatten
 
-    extensions.foldLeft(modules) {
-      case (acc, ext) =>
-        ext.handleModules(context, acc)
-    }
+    ext.extend(modules)
   }
 
 
   protected def translateService(definition: Service): Seq[Module] = {
-    context.modules.toSource(Indefinite(definition.id), toModuleId(definition.id), renderService(definition))
+    ctx.modules.toSource(Indefinite(definition.id), toModuleId(definition.id), renderService(definition))
   }
 
   protected def translateDef(definition: ILAst): Seq[Module] = {
@@ -80,7 +76,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
         Seq()
     }
 
-    context.modules.toSource(Indefinite(definition.id), toModuleId(definition), defns)
+    ctx.modules.toSource(Indefinite(definition.id), toModuleId(definition), defns)
   }
 
   def renderAdt(i: Adt): Seq[Defn] = {
@@ -107,7 +103,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
         )
 
         val id = EphemeralId(i.id, m.name)
-        withExtensions(id, qqElement, qqCompanion, _.handleAdtElement, _.handleAdtElementCompanion) ++ converters
+        ext.extend(id, qqElement, qqCompanion, _.handleAdtElement, _.handleAdtElementCompanion) ++ converters
     }
 
     val qqAdt = q""" sealed trait ${t.typeName} extends ${rt.adtElInit}{} """
@@ -119,7 +115,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
             ..$members
            }"""
-    withExtensions(i.id, qqAdt, qqAdtCompanion, _.handleAdt, _.handleAdtCompanion)
+    ext.extend(i.id, qqAdt, qqAdtCompanion, _.handleAdt, _.handleAdtCompanion)
   }
 
   def renderEnumeration(i: Enumeration): Seq[Defn] = {
@@ -138,7 +134,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
               override def toString: String = ${Lit.String(m)}
             }"""
 
-        mt.termName -> withExtensions(i.id, element, _.handleEnumElement)
+        mt.termName -> ext.extend(i.id, element, _.handleEnumElement)
     }
 
     val parseMembers = members.map {
@@ -161,7 +157,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
             ..${members.map(_._2)}
            }"""
 
-    withExtensions(i.id, qqEnum, qqEnumCompanion, _.handleEnum, _.handleEnumCompanion)
+    ext.extend(i.id, qqEnum, qqEnumCompanion, _.handleEnum, _.handleEnumCompanion)
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
@@ -172,7 +168,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     val fields = typespace.enumFields(i).toScala
     val decls = fields.all.toParams
 
-    val superClasses = withAnyval(fields.fields, List(rt.idtGenerated, rt.tIDLIdentifier.init()))
+    val superClasses = ctx.tools.withAnyval(fields.fields, List(rt.idtGenerated, rt.tIDLIdentifier.init()))
 
     // TODO: contradictions
 
@@ -200,33 +196,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
          }"""
 
 
-    withExtensions(i.id, qqIdentifier, qqCompanion, _.handleIdentifier, _.handleIdentifierCompanion)
-  }
-
-  private def withExtensions[I <: TypeId, D <: Defn](id: I
-                                                     , entity: D
-                                                     , entityTransformer: ScalaTranslatorExtension => (ScalaTranslationContext, I, D) => D
-                                                    ): D = {
-    extensions.foldLeft(entity) {
-      case (acc, v) =>
-        entityTransformer(v)(context, id, acc)
-    }
-  }
-
-  protected[toscala] def withExtensions[I <: TypeId, D <: Defn, C <: Defn]
-  (
-    id: I
-    , entity: D
-    , companion: C
-    , entityTransformer: ScalaTranslatorExtension => (ScalaTranslationContext, I, D) => D
-    , companionTransformer: ScalaTranslatorExtension => (ScalaTranslationContext, I, C) => C
-  ): Seq[Defn] = {
-    val extendedEntity = withExtensions(id, entity, entityTransformer)
-    val extendedCompanion = withExtensions(id, companion, companionTransformer)
-    Seq(
-      extendedEntity
-      , extendedCompanion
-    )
+    ext.extend(i.id, qqIdentifier, qqCompanion, _.handleIdentifier, _.handleIdentifierCompanion)
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
@@ -240,7 +210,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
     val ifDecls = {
       val scalaIfaces = rt.idtGenerated +: i.interfaces.map(conv.toScala).map(_.init())
-      withAny(fields.fields, scalaIfaces)
+      ctx.tools.withAny(fields.fields, scalaIfaces)
     }
 
     val t = conv.toScala(i.id)
@@ -279,10 +249,10 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
 
         val constructorCodeOthers = fieldsToTakeFromParameters.map {
           f =>
-            q""" ${Term.Name(f.field.name)} = ${idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
+            q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
         }
 
-        val signature = requiredParameters.map(f => (idToParaName(f), conv.toScala(f).typeFull)).toParams
+        val signature = requiredParameters.map(f => (ctx.tools.idToParaName(f), conv.toScala(f).typeFull)).toParams
 
         val nonUniqueFields: immutable.Seq[ScalaField] = t.fields.toScala.nonUnique
 
@@ -300,32 +270,37 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
           """
     }
 
-    val allDecls = decls
-    val converters = mkConverters(i.id, fields)
 
-    val toolDecls = narrowers ++ constructors ++ converters
+    val extensions = {
+      val converters = ctx.tools.mkConverters(i.id, fields)
 
-    val tools = t.within(s"${i.id.name}Extensions")
+      val toolDecls = narrowers ++ constructors ++ converters
+
+      val tools = t.within(s"${i.id.name}Extensions")
+
+      q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) {
+             ${rt.modelConv.toMethodAst(i.id)}
+             ..$toolDecls
+          }"""
+    }
 
     val qqInterface =
       q"""trait ${t.typeName} extends ..$ifDecls {
-          ..$allDecls
+          ..$decls
           }
 
        """
 
     val qqInterfaceCompanion =
       q"""object ${t.termName} extends ${rt.typeCompanionInit} {
-             implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-             ${rt.modelConv.toMethodAst(i.id)}
-             ..$toolDecls
-             }
-
              def apply(..${implStructure.decls}) = ${conv.toScala(eid).termName}(..${implStructure.names})
+
+             $extensions
+
              ..$impl
          }"""
 
-    withExtensions(i.id, qqInterface, qqInterfaceCompanion, _.handleInterface, _.handleInterfaceCompanion)
+    ext.extend(i.id, qqInterface, qqInterfaceCompanion, _.handleInterface, _.handleInterfaceCompanion)
   }
 
 
@@ -478,7 +453,7 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
     }
 
 
-    dispatchers ++ withExtensions(i.id, qqService, qqServiceCompanion, _.handleService, _.handleServiceCompanion)
+    dispatchers ++ ext.extend(i.id, qqService, qqServiceCompanion, _.handleService, _.handleServiceCompanion)
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
@@ -493,57 +468,8 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
   private def mkStructure(id: TypeId) = {
     val interfaces = typespace.getComposite(id)
     val fields = typespace.enumFields(interfaces).toScala
-    new CompositeStructure(this, context, conv, id, fields, interfaces)
+    new CompositeStructure(ctx, id, fields, interfaces)
   }
-
-  protected[toscala] def mkConverters(id: TypeId, fields: ScalaFields): List[Defn.Def] = {
-    val converters = typespace.sameSignature(id).map {
-      same =>
-        val code = fields.all.map {
-          f =>
-            q""" ${f.name} = _value.${f.name}  """
-        }
-        q"""def ${Term.Name("into" + same.id.name.capitalize)}(): ${toScala(same.id).typeFull} = {
-              ${toScala(same.id).termFull}(..$code)
-            }
-          """
-
-    }
-    converters
-  }
-
-
-  protected[toscala] def withAnyval(fields: Fields, ifDecls: List[Init]): List[Init] = {
-    addAnyBase(fields, ifDecls, "AnyVal")
-  }
-
-  private def withAny(fields: Fields, ifDecls: List[Init]): List[Init] = {
-    addAnyBase(fields, ifDecls, "Any")
-  }
-
-
-  private def canBeAnyValField(typeId: TypeId): Boolean = {
-    typeId match {
-      case _: Builtin =>
-        true
-
-      case t =>
-        val fields = typespace.enumFields(typespace.apply(t))
-        (fields.size > 1) || (fields.size == 1 && !fields.all.exists(v => canBeAnyValField(v.field.typeId)))
-    }
-  }
-
-  private def addAnyBase(fields: Fields, ifDecls: List[Init], base: String): List[Init] = {
-    if (fields.size == 1 && fields.all.forall(f => canBeAnyValField(f.field.typeId))) {
-      conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
-    } else {
-      ifDecls
-    }
-  }
-
-  //private def definitionToParaName(d: FinalDefinition) = idToParaName(d.id)
-
-  protected[toscala] def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
 
   private def toModuleId(defn: ILAst): ModuleId = {
     defn match {
@@ -560,9 +486,4 @@ class ScalaTranslator(ts: Typespace, _extensions: Seq[ScalaTranslatorExtension])
   private def toModuleId(id: TypeId): ModuleId = {
     ModuleId(id.pkg, s"${id.name}.scala")
   }
-
-
 }
-
-
-

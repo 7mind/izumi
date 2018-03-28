@@ -314,12 +314,12 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-  def enumFields(defn: ILAst): Fields = {
-    Fields(extractFields(defn))
+  def enumFields(defn: ILAst): ScalaStruct = {
+    ScalaStruct(extractFields(defn))
   }
 
-  def enumFields(composite: Composite): Fields = {
-    Fields(extractFields(composite))
+  def enumFields(composite: Composite): ScalaStruct = {
+    ScalaStruct(extractFields(composite))
   }
 
   protected def extractFields(defn: ILAst): List[ExtendedField] = {

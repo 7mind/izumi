@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainI
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, WithInfo}
 import com.github.pshirshov.izumi.idealingua.runtime.transport.{AbstractClientDispatcher, AbstractServerDispatcher}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaTypeConverter
 
 object IDLRuntimeTypes {
   private final val commonsPkg = classOf[TypeId].getPackage.getName

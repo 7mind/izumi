@@ -8,8 +8,7 @@ import java.nio.file._
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.TranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension}
 import org.scalatest.WordSpec
 
 

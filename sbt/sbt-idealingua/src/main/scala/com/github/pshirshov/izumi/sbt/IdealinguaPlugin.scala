@@ -4,8 +4,7 @@ import java.nio.file.Path
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.TranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.{CirceTranslatorExtension, IDLCompiler, IDLLanguage}
+import com.github.pshirshov.izumi.idealingua.translator.{CirceTranslatorExtension, IDLCompiler, IDLLanguage, TranslatorExtension}
 import sbt.Keys.{sourceGenerators, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger

@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaMetaTools._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{ScalaTranslationContext, ScalaTranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 
 import scala.meta.{Defn, _}
 
