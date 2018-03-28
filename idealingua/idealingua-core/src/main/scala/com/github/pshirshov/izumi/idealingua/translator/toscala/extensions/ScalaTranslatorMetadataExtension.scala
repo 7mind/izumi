@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, EphemeralId, IdentifierId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, IdentifierId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.il.DomainId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
@@ -19,7 +19,7 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
   }
 
 
-  override def handleAdtElement(context: ScalaTranslationContext, id: TypeId.EphemeralId, defn: Defn.Class): Defn.Class = {
+  override def handleAdtElement(context: ScalaTranslationContext, id: TypeId.DTOId, defn: Defn.Class): Defn.Class = {
     withInfo(context, id, defn)
   }
 
@@ -60,8 +60,6 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
     val index = typespace.all.map(id => id -> conv.toScala(id)).toList
 
     val exprs = index.map {
-      case (k@EphemeralId(_: EnumId, _), v) =>
-        rt.modelConv.toAst(k) -> q"${v.termBase}.getClass"
       case (k@ServiceId(_, _), v) =>
         rt.modelConv.toAst(k) -> q"classOf[${v.parameterize("Id").typeFull}]"
       case (k, v) =>

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.EphemeralId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
@@ -102,7 +102,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
           q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeAbsolute} = value.value"""
         )
 
-        val id = EphemeralId(i.id, m.name)
+        val id = DTOId(i.id, m.name)
         ext.extend(id, qqElement, qqCompanion, _.handleAdtElement, _.handleAdtElementCompanion) ++ converters
     }
 
@@ -214,7 +214,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     }
 
     val t = conv.toScala(i.id)
-    val eid = EphemeralId(i.id, typespace.toDtoName(i.id))
+    val eid = DTOId(i.id, typespace.toDtoName(i.id))
 
     val implStructure = ctx.tools.mkStructure(eid)
     val impl = implStructure.defns(List.empty).toList
@@ -318,8 +318,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         val in = t.within(s"In${method.name.capitalize}")
         val out = t.within(s"Out${method.name.capitalize}")
 
-        val inDef = EphemeralId(i.id, in.fullJavaType.name)
-        val outDef = EphemeralId(i.id, out.fullJavaType.name)
+        val inDef = DTOId(i.id, in.fullJavaType.name)
+        val outDef = DTOId(i.id, out.fullJavaType.name)
 
         val inputComposite = ctx.tools.mkStructure(inDef)
         val outputComposite = ctx.tools.mkStructure(outDef)

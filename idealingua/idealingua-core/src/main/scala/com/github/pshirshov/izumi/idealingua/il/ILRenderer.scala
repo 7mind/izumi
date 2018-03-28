@@ -100,9 +100,6 @@ class ILRenderer(domain: DomainDefinition) {
 
   def render(typeId: TypeId): String = {
     typeId match {
-      case t: EphemeralId => // TODO: impossible case
-        s"${render(t.parent)}#${t.name}"
-
       case g: Generic =>
         s"${renderTypeName(g.pkg, g.name)}${g.args.map(render).mkString("[", ", ", "]")}"
 

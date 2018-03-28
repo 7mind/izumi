@@ -54,6 +54,9 @@ object TypeId {
 
   case class DTOId(pkg: Package, name: TypeName) extends TypeId
 
+  object DTOId {
+    def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
+  }
   case class AdtId(pkg: Package, name: TypeName) extends TypeId
 
   case class AliasId(pkg: Package, name: TypeName) extends TypeId
@@ -64,9 +67,9 @@ object TypeId {
 
   case class ServiceId(pkg: Package, name: TypeName) extends TypeId
 
-  case class EphemeralId(parent: TypeId, name: TypeName) extends TypeId {
-    override def pkg: Package = parent.pkg :+ parent.name
-  }
+//  case class EphemeralId(parent: TypeId, name: TypeName) extends TypeId {
+//    override def pkg: Package =
+//  }
 
 }
 

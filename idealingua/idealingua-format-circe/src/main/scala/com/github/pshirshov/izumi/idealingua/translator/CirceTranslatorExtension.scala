@@ -26,7 +26,7 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     withDerived(context, id, defn)
   }
 
-  override def handleAdtElementCompanion(context: ScalaTranslationContext, id: TypeId.EphemeralId, defn: Defn.Object): Defn.Object = {
+  override def handleAdtElementCompanion(context: ScalaTranslationContext, id: TypeId.DTOId, defn: Defn.Object): Defn.Object = {
     withDerived(context, id, defn)
   }
 

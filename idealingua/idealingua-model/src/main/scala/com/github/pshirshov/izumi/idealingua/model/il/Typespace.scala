@@ -10,66 +10,67 @@ import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 
 class Typespace(val domain: DomainDefinition) {
   protected val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new Typespace(d))
-  protected val typespace: Map[TypeId, ILAst] = verified(domain.types)
   protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
 
-  protected val serviceEphemerals: Map[EphemeralId, DTO] = (for {
-    service <- services.values
-    method <- service.methods
-  } yield {
-    method match {
-      case m: RPCMethod =>
-        val inId = EphemeralId(service.id, s"In${m.name.capitalize}")
-        val outId = EphemeralId(service.id, s"Out${m.name.capitalize}")
-        val inIid = DTOId(inId.pkg, inId.name)
-        val outIid = DTOId(outId.pkg, outId.name)
+  protected val typespace: Map[TypeId, ILAst] = {
+    val serviceEphemerals: Map[DTOId, DTO] = (for {
+      service <- services.values
+      method <- service.methods
+    } yield {
+      method match {
+        case m: RPCMethod =>
+          val inIid = DTOId(service.id, s"In${m.name.capitalize}")
+          val outIid = DTOId(service.id, s"Out${m.name.capitalize}")
 
-        Seq(
-          inId -> DTO(inIid, m.signature.input, List.empty)
-          , outId -> DTO(outIid, m.signature.output, List.empty)
-        )
+          Seq(
+            inIid -> DTO(inIid, m.signature.input, List.empty)
+            , outIid-> DTO(outIid, m.signature.output, List.empty)
+          )
+      }
+    }).flatten.toMap
+
+    val interfaceEphemerals: Map[DTOId, DTO] = {
+      domain.types
+        .collect {
+          case i: Interface =>
+            val iid = DTOId(i.id, toDtoName(i.id))
+            iid -> DTO(iid, List(i.id), List.empty)
+        }
+        .toMap
     }
-  }).flatten.toMap
-
-  protected val interfaceEphemerals: Map[EphemeralId, DTO] = {
-    typespace
-      .values
-      .collect {
-        case i: Interface =>
-          val eid = EphemeralId(i.id, toDtoName(i.id))
-          val iid = DTOId(eid.pkg, eid.name)
-          eid -> DTO(iid, List(i.id), List.empty)
-      }
-      .toMap
+    verified(domain.types) ++ serviceEphemerals ++ interfaceEphemerals
   }
 
-  protected val adtEphemerals: Map[EphemeralId, TypeId] = {
-    typespace
-      .values
-      .collect {
-        case i: Adt =>
-          i.alternatives.map {
-            el =>
-              val eid = EphemeralId(i.id, el.name)
-              eid -> el
-          }
-      }
-      .flatten
-      .toMap
-  }
+
+
+//  protected val adtEphemerals: Map[EphemeralId, TypeId] = {
+//    typespace
+//      .values
+//      .collect {
+//        case i: Adt =>
+//          i.alternatives.map {
+//            el =>
+//              val eid = EphemeralId(i.id, el.name)
+//              eid -> el
+//          }
+//      }
+//      .flatten
+//      .toMap
+//  }
 
   def apply(id: TypeId): ILAst = {
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
       id match {
-        case e: EphemeralId if interfaceEphemerals.contains(e) =>
-          interfaceEphemerals(e)
+//        case e: EphemeralId if interfaceEphemerals.contains(e) =>
+//          interfaceEphemerals(e)
+//
+//        case e: EphemeralId if serviceEphemerals.contains(e) =>
+//          serviceEphemerals(e)
 
-        case e: EphemeralId if serviceEphemerals.contains(e) =>
-          serviceEphemerals(e)
-
-        case e: EphemeralId if adtEphemerals.contains(e) =>
-          apply(adtEphemerals(e))
+//        case e: EphemeralId if adtEphemerals.contains(e) =>
+//          ???
+//          apply(adtEphemerals(e))
 
         case o =>
           typespace(o)
@@ -94,27 +95,21 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   def implementors(id: InterfaceId): List[InterfaceConstructors] = {
-    val implementors = implementingDtos(id) ++ implementingEphemerals(id)
+    val implementors = implementingDtos(id) //++ implementingEphemerals(id)
     compatibleImplementors(implementors, id)
   }
 
   def compatibleImplementors(id: InterfaceId): List[InterfaceConstructors] = {
-    val implementors = compatibleDtos(id) ++ compatibleEphemerals(id)
+    val implementors = compatibleDtos(id) //++ compatibleEphemerals(id)
     compatibleImplementors(implementors, id)
   }
 
-  def allTypes: List[TypeId] = List(
-    typespace.keys
-    , serviceEphemerals.keys
-    , interfaceEphemerals.keys
-  ).flatten
+  def allTypes: List[TypeId] = List(typespace.keys).flatten
 
 
   def all: Set[TypeId] = List(
     allTypes
     , services.values.map(_.id)
-    , domain.types.collect({ case t: Enumeration => t })
-      .flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
   )
     .flatten
     .toSet
@@ -156,11 +151,11 @@ class Typespace(val domain: DomainDefinition) {
       case i: DTOId =>
         apply(i).interfaces.flatMap(parents)
 
-      case e: EphemeralId if serviceEphemerals.contains(e) =>
-        serviceEphemerals(e).interfaces.flatMap(parents)
-
-      case e: EphemeralId if interfaceEphemerals.contains(e) =>
-        interfaceEphemerals(e).interfaces.flatMap(parents)
+//      case e: EphemeralId if serviceEphemerals.contains(e) =>
+//        serviceEphemerals(e).interfaces.flatMap(parents)
+//
+//      case e: EphemeralId if interfaceEphemerals.contains(e) =>
+//        interfaceEphemerals(e).interfaces.flatMap(parents)
 
       case _: IdentifierId =>
         List()
@@ -192,11 +187,11 @@ class Typespace(val domain: DomainDefinition) {
       case i: DTOId =>
         apply(i).interfaces.flatMap(compatible)
 
-      case e: EphemeralId if serviceEphemerals.contains(e) =>
-        serviceEphemerals(e).interfaces.flatMap(compatible)
-
-      case e: EphemeralId if interfaceEphemerals.contains(e) =>
-        interfaceEphemerals(e).interfaces.flatMap(compatible)
+//      case e: EphemeralId if serviceEphemerals.contains(e) =>
+//        serviceEphemerals(e).interfaces.flatMap(compatible)
+//
+//      case e: EphemeralId if interfaceEphemerals.contains(e) =>
+//        interfaceEphemerals(e).interfaces.flatMap(compatible)
 
       case _: IdentifierId =>
         List()
@@ -226,12 +221,12 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-  protected def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
-    (serviceEphemerals ++ interfaceEphemerals).collect {
-      case (eid, _: DTO) if parents(eid).contains(id) =>
-        eid
-    }.toList
-  }
+//  protected def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
+//    (serviceEphemerals ++ interfaceEphemerals).collect {
+//      case (eid, _: DTO) if parents(eid).contains(id) =>
+//        eid
+//    }.toList
+//  }
 
   protected def compatibleDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
@@ -240,12 +235,12 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-  protected def compatibleEphemerals(id: InterfaceId): List[EphemeralId] = {
-    (serviceEphemerals ++ interfaceEphemerals).collect {
-      case (eid, _: DTO) if compatible(eid).contains(id) =>
-        eid
-    }.toList
-  }
+//  protected def compatibleEphemerals(id: InterfaceId): List[EphemeralId] = {
+//    (serviceEphemerals ++ interfaceEphemerals).collect {
+//      case (eid, _: DTO) if compatible(eid).contains(id) =>
+//        eid
+//    }.toList
+//  }
 
   def enumFields(defn: ILAst): Struct = {
     Struct(extractFields(defn), null)
