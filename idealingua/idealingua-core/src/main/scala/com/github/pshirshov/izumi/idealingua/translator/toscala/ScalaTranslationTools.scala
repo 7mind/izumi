@@ -1,8 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.Struct
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.il.{ILAst, Struct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, ScalaStruct}
 
 import scala.meta._
@@ -11,7 +13,7 @@ import scala.meta._
 class ScalaTranslationTools(ctx: ScalaTranslationContext) {
   import ctx.conv._
 
-  def mkStructure(id: TypeId): CompositeStructure = {
+  def mkStructure(id: StructureId): CompositeStructure = {
     //val interfaces = ctx.typespace.getComposite(id)
     val fields = ctx.typespace.enumFields(id).toScala
     new CompositeStructure(ctx, id, fields)
@@ -29,7 +31,7 @@ class ScalaTranslationTools(ctx: ScalaTranslationContext) {
     addAnyBase(struct, ifDecls, "Any")
   }
 
-  def mkConverters(id: TypeId, struct: ScalaStruct): List[Defn.Def] = {
+  def mkConverters(id: StructureId, struct: ScalaStruct): List[Defn.Def] = {
     val converters = ctx.typespace.sameSignature(id).map {
       same =>
         val code = struct.all.map {
@@ -58,9 +60,28 @@ class ScalaTranslationTools(ctx: ScalaTranslationContext) {
       case _: Builtin =>
         true
 
-      case t =>
-        val struct = ctx.typespace.enumFields(ctx.typespace.apply(t))
+      case _: EnumId =>
+        true
+
+      case _: AdtId =>
+        false
+
+
+      case a: AliasId =>
+        ctx.typespace(a) match {
+          case alias: ILAst.Alias =>
+            canBeAnyValField(alias.target)
+
+          case v =>
+            throw new IDLException(s"Impossible case: $v cannot be an alias")
+        }
+
+      case t: StructureId =>
+        val struct = ctx.typespace.enumFields(t)
         struct.isComposite || (struct.isScalar && !struct.all.exists(v => canBeAnyValField(v.field.typeId)))
+
+      case s: ServiceId =>
+        throw new IDLException(s"Impossible case: $s cannot be a field")
     }
   }
 }

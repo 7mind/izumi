@@ -44,6 +44,8 @@ class TypeCollection(domain: DomainDefinition) {
     verified(definitions)
   }
 
+  val structures: Seq[ILStructure] = all.collect { case t: ILStructure => t }
+
   def index: Map[TypeId, ILAst] = {
     all.map(t => (t.id, t)).toMap
   }

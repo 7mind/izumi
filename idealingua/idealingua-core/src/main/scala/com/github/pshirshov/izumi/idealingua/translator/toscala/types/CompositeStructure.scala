@@ -2,13 +2,12 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
 
 import scala.meta._
 
 
-class CompositeStructure(ctx: ScalaTranslationContext, val id: TypeId, val fields: ScalaStruct) {
+class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val fields: ScalaStruct) {
   val t: ScalaType = ctx.conv.toScala(id)
 
   import ScalaField._

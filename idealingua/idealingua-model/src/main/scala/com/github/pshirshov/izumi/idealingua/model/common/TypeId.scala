@@ -59,7 +59,7 @@ object TypeId {
     def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
   }
 
-  case class IdentifierId(pkg: Package, name: TypeName) extends TypeId with ScalarId
+  case class IdentifierId(pkg: Package, name: TypeName) extends StructureId with ScalarId
 
   case class AdtId(pkg: Package, name: TypeName) extends TypeId
 
@@ -67,6 +67,7 @@ object TypeId {
 
   case class EnumId(pkg: Package, name: TypeName) extends TypeId
 
+  // TODO: remove superclass?
   case class ServiceId(pkg: Package, name: TypeName) extends TypeId
 
 }

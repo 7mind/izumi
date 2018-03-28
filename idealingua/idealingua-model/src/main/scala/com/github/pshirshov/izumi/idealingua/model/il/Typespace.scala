@@ -26,20 +26,29 @@ class Typespace(val domain: DomainDefinition) {
     }
   }
 
-  protected def apply(id: InterfaceId): Interface = apply(id: TypeId).asInstanceOf[Interface]
-
-  def apply(id: ServiceId): Service = types.services(id)
+  protected def apply(id: InterfaceId): Interface = {
+    apply(id: TypeId).asInstanceOf[Interface]
+  }
+  protected def apply(id: StructureId): ILStructure = {
+    apply(id: TypeId).asInstanceOf[ILStructure]
+  }
+  protected def apply(id: DTOId): DTO = {
+    apply(id: TypeId).asInstanceOf[DTO]
+  }
+  def apply(id: ServiceId): Service = {
+    types.services(id)
+  }
 
   def toDtoName(id: TypeId): String = types.toDtoName(id)
 
 
   def implementors(id: InterfaceId): List[InterfaceConstructors] = {
-    val implementors = implementingDtos(id) //++ implementingEphemerals(id)
+    val implementors = implementingDtos(id)
     compatibleImplementors(implementors, id)
   }
 
   def compatibleImplementors(id: InterfaceId): List[InterfaceConstructors] = {
-    val implementors = compatibleDtos(id) //++ compatibleEphemerals(id)
+    val implementors = compatibleDtos(id)
     compatibleImplementors(implementors, id)
   }
 
@@ -155,44 +164,43 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-  def enumFields(defn: ILAst): Struct = {
-    Struct(extractFields(defn), null)
+  def enumFields(defn: ILStructure): Struct = {
+    Struct(defn.id, extractFields(defn), getComposite(defn.id))
   }
 
-  def enumFields(id: TypeId): Struct = {
-    enumFields(getComposite(id))
+  def enumFields(id: StructureId): Struct = {
+    enumFields(apply(id))
   }
 
-  protected def enumFields(composite: Composite): Struct = {
-    Struct(extractFields(composite), composite)
+  def sameSignature(tid: StructureId): List[DTO] = {
+    val sig = signature(apply(tid))
+
+    types
+      .structures
+      .filterNot(_.id == tid)
+      .filter(another => sig == signature(another))
+      .filterNot(_.id == tid)
+      .distinct
+      .filterNot(id => parents(id.id).contains(tid))
+      .collect({ case t: DTO => t})
+      .toList
   }
 
-  def sameSignature(tid: TypeId): List[DTO] = {
-    val ret = filterTypes(tid) {
-      case (thisSig, otherSig) =>
-        thisSig == otherSig
-    }
-      .filterNot(id => parents(id._1).contains(tid))
-      .collect({ case (t, e: DTO) => t -> e })
-
-    ret.map(_._2)
-  }
-
-  protected def getComposite(id: TypeId): Composite = {
+  protected def getComposite(id: StructureId): Composite = {
     apply(id) match {
       case i: Interface =>
         i.interfaces ++ i.concepts
       case i: DTO =>
         i.interfaces ++ i.concepts
-      case _ =>
-        throw new IDLException(s"Interface or DTO expected: $id")
+      case _: Identifier =>
+        List.empty
     }
   }
 
   protected def extractFields(defn: ILAst): List[ExtendedField] = {
     val fields = defn match {
       case t: Interface =>
-        val superFields = extractFields(t.interfaces)
+        val superFields = compositeFields(t.interfaces)
           .map(_.copy(definedBy = t.id)) // in fact super field is defined by this
 
         val embeddedFields = t.concepts.flatMap(id => extractFields(apply(id)))
@@ -201,7 +209,7 @@ class Typespace(val domain: DomainDefinition) {
         superFields ++ thisFields ++ embeddedFields
 
       case t: DTO =>
-        extractFields(t.interfaces) ++ extractFields(t.concepts)
+        compositeFields(t.interfaces) ++ compositeFields(t.concepts)
 
       case t: Adt =>
         t.alternatives.map(apply).flatMap(extractFields)
@@ -219,31 +227,13 @@ class Typespace(val domain: DomainDefinition) {
     fields.distinct
   }
 
-  protected def extractFields(composite: Composite): List[ExtendedField] = {
+  protected def compositeFields(composite: Composite): List[ExtendedField] = {
     composite.flatMap(i => extractFields(index(i)))
   }
 
-  protected def filterTypes(tid: TypeId)(pred: (List[ILAst.Field], List[ILAst.Field]) => Boolean): List[(TypeId, ILAst)] = {
-    val sig = signature(apply(tid))
 
-    allTypes
-      .filterNot(_ == tid)
-      .map(id => id -> apply(id))
-      .filter(another => pred(sig, signature(another._2)))
-      .filterNot {
-        id =>
-          tid == id._1 || tid == id._2.id
-      }
-      .distinct
-  }
-
-  protected def signature(defn: ILAst): List[Field] = {
+  protected def signature(defn: ILStructure): List[Field] = {
     enumFields(defn).all.map(_.field)
-  }
-
-
-  protected def apply(id: DTOId): DTO = {
-    apply(id: TypeId).asInstanceOf[DTO]
   }
 
   protected def toExtendedFields(fields: Aggregate, id: TypeId): List[ExtendedField] = {
@@ -269,7 +259,7 @@ class Typespace(val domain: DomainDefinition) {
     }
   }
 
-  protected def compatibleImplementors(implementors: List[TypeId], id: InterfaceId): List[InterfaceConstructors] = {
+  protected def compatibleImplementors(implementors: List[StructureId], id: InterfaceId): List[InterfaceConstructors] = {
     val ifaceFields = enumFields(apply(id))
     val ifaceNonUniqueFields = ifaceFields.conflicts.softConflicts.keySet
     val fieldsToCopyFromInterface = ifaceFields.all.map(_.field)

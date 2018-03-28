@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
-import com.github.pshirshov.izumi.idealingua.model.common.ExtendedField
+import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, StructureId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Composite
 
-case class Struct private(all: List[ExtendedField], conflicts: FieldConflicts, interfaces: Composite) {
+case class Struct private(id: StructureId, all: List[ExtendedField], conflicts: FieldConflicts, interfaces: Composite) {
   private def size: Int = all.size
   def isScalar: Boolean = size == 1
   def isComposite: Boolean = size > 1
@@ -13,7 +13,7 @@ case class Struct private(all: List[ExtendedField], conflicts: FieldConflicts, i
 }
 
 object Struct {
-  def apply(all: List[ExtendedField], interfaces: Composite): Struct = {
+  def apply(id: StructureId, all: List[ExtendedField], interfaces: Composite): Struct = {
     val sorted = all.sortBy(_.field.name)
     val conflicts = FieldConflicts(sorted)
 
@@ -22,6 +22,6 @@ object Struct {
       throw new IDLException(s"Conflicting fields: ${conflicts.hardConflicts}")
     }
 
-    new Struct(sorted, conflicts, interfaces)
+    new Struct(id, sorted, conflicts, interfaces)
   }
 }

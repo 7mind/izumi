@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, ScalaField, ServiceMethodProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaField, ServiceMethodProduct}
 
 import scala.collection.immutable
 import scala.meta._
@@ -222,7 +222,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val parents = List(i.id) ++ i.concepts
     val narrowers = parents.distinct.map {
       p =>
-        val ifields = typespace.enumFields(typespace(p))
+        val ifields = typespace.enumFields(p)
 
         val constructorCode = ifields.all.map {
           f =>
@@ -461,7 +461,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   }
 
 
-  private def renderComposite(id: TypeId, bases: List[Init]): Seq[Defn] = {
+  private def renderComposite(id: StructureId, bases: List[Init]): Seq[Defn] = {
     ctx.tools.mkStructure(id).defns(bases)
   }
 }
