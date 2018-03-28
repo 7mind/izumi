@@ -12,15 +12,16 @@ trait AbstractTypeId {
 }
 
 
-sealed trait TypeId extends AbstractTypeId {
-}
+sealed trait TypeId extends AbstractTypeId
 
-sealed trait Scalar extends TypeId {
+sealed trait StructureId extends TypeId
+
+sealed trait ScalarId extends TypeId {
   this: TypeId =>
 }
 
-sealed trait TimeType {
-  this: Scalar =>
+sealed trait TimeTypeId {
+  this: ScalarId =>
 }
 
 case class Indefinite(pkg: Package, name: TypeName) extends AbstractTypeId {
@@ -50,22 +51,24 @@ object Indefinite {
 
 object TypeId {
 
-  case class InterfaceId(pkg: Package, name: TypeName) extends TypeId
+  case class InterfaceId(pkg: Package, name: TypeName) extends StructureId
 
-  case class DTOId(pkg: Package, name: TypeName) extends TypeId
+  case class DTOId(pkg: Package, name: TypeName) extends StructureId
 
   object DTOId {
     def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
   }
+
+  case class IdentifierId(pkg: Package, name: TypeName) extends TypeId with ScalarId
+
   case class AdtId(pkg: Package, name: TypeName) extends TypeId
 
   case class AliasId(pkg: Package, name: TypeName) extends TypeId
 
   case class EnumId(pkg: Package, name: TypeName) extends TypeId
 
-  case class IdentifierId(pkg: Package, name: TypeName) extends TypeId with Scalar
-
   case class ServiceId(pkg: Package, name: TypeName) extends TypeId
+
 }
 
 sealed trait Builtin extends TypeId {
@@ -78,7 +81,7 @@ object Builtin {
   final val prelude: Package = Seq.empty
 }
 
-trait Primitive extends Builtin with Scalar {
+trait Primitive extends Builtin with ScalarId {
 }
 
 object Primitive {
@@ -119,20 +122,20 @@ object Primitive {
     override def name: TypeName = "uid"
   }
 
-  case object TTs extends Primitive with TimeType {
+  case object TTs extends Primitive with TimeTypeId {
     override def name: TypeName = "tsl"
   }
 
 
-  case object TTsTz extends Primitive with TimeType {
+  case object TTsTz extends Primitive with TimeTypeId {
     override def name: TypeName = "tsz"
   }
 
-  case object TTime extends Primitive with TimeType {
+  case object TTime extends Primitive with TimeTypeId {
     override def name: TypeName = "time"
   }
 
-  case object TDate extends Primitive with TimeType {
+  case object TDate extends Primitive with TimeTypeId {
     override def name: TypeName = "date"
   }
 
@@ -181,7 +184,7 @@ object Generic {
     override def name: TypeName = "opt"
   }
 
-  case class TMap(keyType: Scalar, valueType: TypeId) extends Generic {
+  case class TMap(keyType: ScalarId, valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(keyType, valueType)
 
     override def name: TypeName = "map"

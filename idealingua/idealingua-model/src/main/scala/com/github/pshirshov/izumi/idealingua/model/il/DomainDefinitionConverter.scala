@@ -154,7 +154,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }
   }
 
-  protected  def toScalar(typeId: TypeId): Scalar = {
+  protected  def toScalar(typeId: TypeId): ScalarId = {
     typeId match {
       case p: Primitive =>
         p
