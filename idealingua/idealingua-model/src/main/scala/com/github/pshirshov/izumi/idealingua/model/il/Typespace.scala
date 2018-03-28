@@ -10,43 +10,16 @@ import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 
 class Typespace(val domain: DomainDefinition) {
   protected val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new Typespace(d))
-  protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
+  protected val types = new TypeCollection(domain)
+  protected val index: Map[TypeId, ILAst] = types.index
 
-  protected val typespace: Map[TypeId, ILAst] = {
-    val serviceEphemerals: Map[DTOId, DTO] = (for {
-      service <- services.values
-      method <- service.methods
-    } yield {
-      method match {
-        case m: RPCMethod =>
-          val inIid = DTOId(service.id, s"In${m.name.capitalize}")
-          val outIid = DTOId(service.id, s"Out${m.name.capitalize}")
-
-          Seq(
-            inIid -> DTO(inIid, m.signature.input, List.empty)
-            , outIid-> DTO(outIid, m.signature.output, List.empty)
-          )
-      }
-    }).flatten.toMap
-
-    val interfaceEphemerals: Map[DTOId, DTO] = {
-      domain.types
-        .collect {
-          case i: Interface =>
-            val iid = DTOId(i.id, toDtoName(i.id))
-            iid -> DTO(iid, List(i.id), List.empty)
-        }
-        .toMap
-    }
-    verified(domain.types) ++ serviceEphemerals ++ interfaceEphemerals
-  }
 
   def apply(id: TypeId): ILAst = {
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
       id match {
         case o =>
-          typespace(o)
+          index(o)
       }
     } else {
       referenced(typeDomain).apply(id)
@@ -55,17 +28,10 @@ class Typespace(val domain: DomainDefinition) {
 
   protected def apply(id: InterfaceId): Interface = apply(id: TypeId).asInstanceOf[Interface]
 
-  def apply(id: ServiceId): Service = services(id)
+  def apply(id: ServiceId): Service = types.services(id)
 
-  def toDtoName(id: TypeId): String = {
-    id match {
-      case _: InterfaceId =>
-        s"${id.name}Impl"
-      case _ =>
-        s"${id.name}"
+  def toDtoName(id: TypeId): String = types.toDtoName(id)
 
-    }
-  }
 
   def implementors(id: InterfaceId): List[InterfaceConstructors] = {
     val implementors = implementingDtos(id) //++ implementingEphemerals(id)
@@ -77,12 +43,12 @@ class Typespace(val domain: DomainDefinition) {
     compatibleImplementors(implementors, id)
   }
 
-  def allTypes: List[TypeId] = List(typespace.keys).flatten
+  private def allTypes: List[TypeId] = types.all.map(_.id).toList
 
 
   def all: Set[TypeId] = List(
     allTypes
-    , services.values.map(_.id)
+    , types.services.values.map(_.id)
   )
     .flatten
     .toSet
@@ -92,7 +58,7 @@ class Typespace(val domain: DomainDefinition) {
     val typeDependencies = domain.types.flatMap(extractDependencies)
 
     val serviceDependencies = for {
-      service <- services.values
+      service <- types.services.values
       method <- service.methods
     } yield {
       method match {
@@ -176,14 +142,14 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   protected def implementingDtos(id: InterfaceId): List[DTOId] = {
-    typespace.collect {
+    index.collect {
       case (tid, d: DTO) if parents(tid).contains(id) =>
         d.id
     }.toList
   }
 
   protected def compatibleDtos(id: InterfaceId): List[DTOId] = {
-    typespace.collect {
+    index.collect {
       case (tid, d: DTO) if compatible(tid).contains(id) =>
         d.id
     }.toList
@@ -254,7 +220,7 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   protected def extractFields(composite: Composite): List[ExtendedField] = {
-    composite.flatMap(i => extractFields(typespace(i)))
+    composite.flatMap(i => extractFields(index(i)))
   }
 
   protected def filterTypes(tid: TypeId)(pred: (List[ILAst.Field], List[ILAst.Field]) => Boolean): List[(TypeId, ILAst)] = {
@@ -275,14 +241,6 @@ class Typespace(val domain: DomainDefinition) {
     enumFields(defn).all.map(_.field)
   }
 
-  protected def verified(types: Seq[ILAst]): Map[TypeId, ILAst] = {
-    val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
-    if (conflictingTypes.nonEmpty) {
-      throw new IDLException(s"Conflicting types in: $conflictingTypes")
-    }
-
-    types.map(t => (t.id, t)).toMap
-  }
 
   protected def apply(id: DTOId): DTO = {
     apply(id: TypeId).asInstanceOf[DTO]
