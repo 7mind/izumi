@@ -90,8 +90,6 @@ class ScalaTypeConverter(domain: DomainId) {
         toIdConstructor(i)
       case i: AdtId =>
         toIdConstructor(i)
-//      case i: EphemeralId =>
-//        q"${toSelectTerm(JavaType.get[EphemeralId].minimize(domain))}(${toAst(i.parent)}, ${Lit.String(i.name)})"
     }
   }
 
@@ -111,7 +109,6 @@ class ScalaTypeConverter(domain: DomainId) {
 
   def toScala1[T[_]](implicit ev: ClassTag[T[_]]): ScalaType = {
     toScala(ev.runtimeClass)
-//    toScala[T[Id]]
   }
 
   def toScala(clazz: Class[_]): ScalaType = {

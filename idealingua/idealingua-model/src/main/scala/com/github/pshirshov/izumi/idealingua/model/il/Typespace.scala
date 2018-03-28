@@ -41,37 +41,10 @@ class Typespace(val domain: DomainDefinition) {
     verified(domain.types) ++ serviceEphemerals ++ interfaceEphemerals
   }
 
-
-
-//  protected val adtEphemerals: Map[EphemeralId, TypeId] = {
-//    typespace
-//      .values
-//      .collect {
-//        case i: Adt =>
-//          i.alternatives.map {
-//            el =>
-//              val eid = EphemeralId(i.id, el.name)
-//              eid -> el
-//          }
-//      }
-//      .flatten
-//      .toMap
-//  }
-
   def apply(id: TypeId): ILAst = {
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
       id match {
-//        case e: EphemeralId if interfaceEphemerals.contains(e) =>
-//          interfaceEphemerals(e)
-//
-//        case e: EphemeralId if serviceEphemerals.contains(e) =>
-//          serviceEphemerals(e)
-
-//        case e: EphemeralId if adtEphemerals.contains(e) =>
-//          ???
-//          apply(adtEphemerals(e))
-
         case o =>
           typespace(o)
       }
@@ -151,12 +124,6 @@ class Typespace(val domain: DomainDefinition) {
       case i: DTOId =>
         apply(i).interfaces.flatMap(parents)
 
-//      case e: EphemeralId if serviceEphemerals.contains(e) =>
-//        serviceEphemerals(e).interfaces.flatMap(parents)
-//
-//      case e: EphemeralId if interfaceEphemerals.contains(e) =>
-//        interfaceEphemerals(e).interfaces.flatMap(parents)
-
       case _: IdentifierId =>
         List()
 
@@ -187,12 +154,6 @@ class Typespace(val domain: DomainDefinition) {
       case i: DTOId =>
         apply(i).interfaces.flatMap(compatible)
 
-//      case e: EphemeralId if serviceEphemerals.contains(e) =>
-//        serviceEphemerals(e).interfaces.flatMap(compatible)
-//
-//      case e: EphemeralId if interfaceEphemerals.contains(e) =>
-//        interfaceEphemerals(e).interfaces.flatMap(compatible)
-
       case _: IdentifierId =>
         List()
 
@@ -221,26 +182,12 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-//  protected def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
-//    (serviceEphemerals ++ interfaceEphemerals).collect {
-//      case (eid, _: DTO) if parents(eid).contains(id) =>
-//        eid
-//    }.toList
-//  }
-
   protected def compatibleDtos(id: InterfaceId): List[DTOId] = {
     typespace.collect {
       case (tid, d: DTO) if compatible(tid).contains(id) =>
         d.id
     }.toList
   }
-
-//  protected def compatibleEphemerals(id: InterfaceId): List[EphemeralId] = {
-//    (serviceEphemerals ++ interfaceEphemerals).collect {
-//      case (eid, _: DTO) if compatible(eid).contains(id) =>
-//        eid
-//    }.toList
-//  }
 
   def enumFields(defn: ILAst): Struct = {
     Struct(extractFields(defn), null)

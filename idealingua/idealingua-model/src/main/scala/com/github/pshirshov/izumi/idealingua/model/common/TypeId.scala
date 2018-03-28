@@ -66,11 +66,6 @@ object TypeId {
   case class IdentifierId(pkg: Package, name: TypeName) extends TypeId with Scalar
 
   case class ServiceId(pkg: Package, name: TypeName) extends TypeId
-
-//  case class EphemeralId(parent: TypeId, name: TypeName) extends TypeId {
-//    override def pkg: Package =
-//  }
-
 }
 
 sealed trait Builtin extends TypeId {
