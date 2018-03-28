@@ -62,11 +62,11 @@ class Typespace(val domain: DomainDefinition) {
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
       id match {
-        case e: EphemeralId if serviceEphemerals.contains(e) =>
-          serviceEphemerals(e)
-
         case e: EphemeralId if interfaceEphemerals.contains(e) =>
           interfaceEphemerals(e)
+
+        case e: EphemeralId if serviceEphemerals.contains(e) =>
+          serviceEphemerals(e)
 
         case e: EphemeralId if adtEphemerals.contains(e) =>
           apply(adtEphemerals(e))
@@ -93,17 +93,6 @@ class Typespace(val domain: DomainDefinition) {
     }
   }
 
-  def getComposite(id: TypeId): Composite = {
-    apply(id) match {
-      case i: Interface =>
-        i.interfaces ++ i.concepts
-      case i: DTO =>
-        i.interfaces ++ i.concepts
-      case _ =>
-        throw new IDLException(s"Interface or DTO expected: $id")
-    }
-  }
-
   def implementors(id: InterfaceId): List[InterfaceConstructors] = {
     val implementors = implementingDtos(id) ++ implementingEphemerals(id)
     compatibleImplementors(implementors, id)
@@ -113,43 +102,6 @@ class Typespace(val domain: DomainDefinition) {
     val implementors = compatibleDtos(id) ++ compatibleEphemerals(id)
     compatibleImplementors(implementors, id)
   }
-
-  protected def compatibleImplementors(implementors: List[TypeId], id: InterfaceId): List[InterfaceConstructors] = {
-    val ifaceFields = enumFields(apply(id))
-    val ifaceNonUniqueFields = ifaceFields.conflicts.softConflicts.keySet
-    val fieldsToCopyFromInterface = ifaceFields.all.map(_.field)
-      .toSet
-      .filterNot(f => ifaceNonUniqueFields.contains(f.name))
-
-    val compatibleIfs = compatible(id)
-
-    implementors.map {
-      typeToConstruct =>
-        val definition = apply(typeToConstruct)
-        val implFields = enumFields(definition).all
-
-        val requiredParameters = implFields
-          .map(_.definedBy)
-          .collect({ case i: InterfaceId => i })
-          .filterNot(compatibleIfs.contains)
-          .toSet
-
-        val fieldsToTakeFromParameters = requiredParameters
-          .flatMap(mi => enumFields(apply(mi)).all)
-          .filterNot(f => fieldsToCopyFromInterface.contains(f.field))
-          .filterNot(f => ifaceNonUniqueFields.contains(f.field.name))
-
-        // TODO: pass definition instead of id
-        InterfaceConstructors(
-          typeToConstruct
-          , requiredParameters.toList
-          , fieldsToCopyFromInterface
-          , fieldsToTakeFromParameters
-          , ifaceFields
-        )
-    }
-  }
-
 
   def allTypes: List[TypeId] = List(
     typespace.keys
@@ -166,25 +118,6 @@ class Typespace(val domain: DomainDefinition) {
   )
     .flatten
     .toSet
-
-  def extractDependencies(definition: ILAst): Seq[Dependency] = {
-    definition match {
-      case _: Enumeration =>
-        Seq.empty
-      case d: Interface =>
-        d.interfaces.map(i => Dependency.Interface(d.id, i)) ++
-          d.concepts.flatMap(c => extractDependencies(apply(c))) ++
-          d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
-      case d: DTO =>
-        d.interfaces.map(i => Dependency.Interface(d.id, i))
-      case d: Identifier =>
-        d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
-      case d: Adt =>
-        d.alternatives.map(apply).flatMap(extractDependencies)
-      case d: Alias =>
-        Seq(Dependency.Alias(d.id, d.target))
-    }
-  }
 
   def verify(): Unit = {
     import Typespace._
@@ -314,12 +247,38 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-  def enumFields(defn: ILAst): ScalaStruct = {
-    ScalaStruct(extractFields(defn))
+  def enumFields(defn: ILAst): Struct = {
+    Struct(extractFields(defn), null)
   }
 
-  def enumFields(composite: Composite): ScalaStruct = {
-    ScalaStruct(extractFields(composite))
+  def enumFields(id: TypeId): Struct = {
+    enumFields(getComposite(id))
+  }
+
+  protected def enumFields(composite: Composite): Struct = {
+    Struct(extractFields(composite), composite)
+  }
+
+  def sameSignature(tid: TypeId): List[DTO] = {
+    val ret = filterTypes(tid) {
+      case (thisSig, otherSig) =>
+        thisSig == otherSig
+    }
+      .filterNot(id => parents(id._1).contains(tid))
+      .collect({ case (t, e: DTO) => t -> e })
+
+    ret.map(_._2)
+  }
+
+  protected def getComposite(id: TypeId): Composite = {
+    apply(id) match {
+      case i: Interface =>
+        i.interfaces ++ i.concepts
+      case i: DTO =>
+        i.interfaces ++ i.concepts
+      case _ =>
+        throw new IDLException(s"Interface or DTO expected: $id")
+    }
   }
 
   protected def extractFields(defn: ILAst): List[ExtendedField] = {
@@ -356,17 +315,6 @@ class Typespace(val domain: DomainDefinition) {
     composite.flatMap(i => extractFields(typespace(i)))
   }
 
-  def sameSignature(tid: TypeId): List[DTO] = {
-    val ret = filterTypes(tid) {
-      case (thisSig, otherSig) =>
-        thisSig == otherSig
-    }
-      .filterNot(id => parents(id._1).contains(tid))
-      .collect({ case (t, e: DTO) => t -> e })
-
-    ret.map(_._2)
-  }
-
   protected def filterTypes(tid: TypeId)(pred: (List[ILAst.Field], List[ILAst.Field]) => Boolean): List[(TypeId, ILAst)] = {
     val sig = signature(apply(tid))
 
@@ -401,6 +349,62 @@ class Typespace(val domain: DomainDefinition) {
   protected def toExtendedFields(fields: Aggregate, id: TypeId): List[ExtendedField] = {
     fields.map(f => ExtendedField(f, id: TypeId))
   }
+
+  protected def extractDependencies(definition: ILAst): Seq[Dependency] = {
+    definition match {
+      case _: Enumeration =>
+        Seq.empty
+      case d: Interface =>
+        d.interfaces.map(i => Dependency.Interface(d.id, i)) ++
+          d.concepts.flatMap(c => extractDependencies(apply(c))) ++
+          d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
+      case d: DTO =>
+        d.interfaces.map(i => Dependency.Interface(d.id, i))
+      case d: Identifier =>
+        d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
+      case d: Adt =>
+        d.alternatives.map(apply).flatMap(extractDependencies)
+      case d: Alias =>
+        Seq(Dependency.Alias(d.id, d.target))
+    }
+  }
+
+  protected def compatibleImplementors(implementors: List[TypeId], id: InterfaceId): List[InterfaceConstructors] = {
+    val ifaceFields = enumFields(apply(id))
+    val ifaceNonUniqueFields = ifaceFields.conflicts.softConflicts.keySet
+    val fieldsToCopyFromInterface = ifaceFields.all.map(_.field)
+      .toSet
+      .filterNot(f => ifaceNonUniqueFields.contains(f.name))
+
+    val compatibleIfs = compatible(id)
+
+    implementors.map {
+      typeToConstruct =>
+        val definition = apply(typeToConstruct)
+        val implFields = enumFields(definition).all
+
+        val requiredParameters = implFields
+          .map(_.definedBy)
+          .collect({ case i: InterfaceId => i })
+          .filterNot(compatibleIfs.contains)
+          .toSet
+
+        val fieldsToTakeFromParameters = requiredParameters
+          .flatMap(mi => enumFields(apply(mi)).all)
+          .filterNot(f => fieldsToCopyFromInterface.contains(f.field))
+          .filterNot(f => ifaceNonUniqueFields.contains(f.field.name))
+
+        // TODO: pass definition instead of id
+        InterfaceConstructors(
+          typeToConstruct
+          , requiredParameters.toList
+          , fieldsToCopyFromInterface
+          , fieldsToTakeFromParameters
+          , ifaceFields
+        )
+    }
+  }
+
 }
 
 

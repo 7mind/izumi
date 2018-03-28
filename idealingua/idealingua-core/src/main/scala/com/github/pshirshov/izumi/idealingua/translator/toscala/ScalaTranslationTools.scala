@@ -2,28 +2,34 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ScalaStruct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaField, ScalaFields}
+import com.github.pshirshov.izumi.idealingua.model.il.Struct
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, ScalaStruct}
 
 import scala.meta._
 
 
 class ScalaTranslationTools(ctx: ScalaTranslationContext) {
-  import ScalaField._
   import ctx.conv._
+
+  def mkStructure(id: TypeId): CompositeStructure = {
+    //val interfaces = ctx.typespace.getComposite(id)
+    val fields = ctx.typespace.enumFields(id).toScala
+    new CompositeStructure(ctx, id, fields)
+  }
+
 
   def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
 
 
-  def withAnyval(struct: ScalaStruct, ifDecls: List[Init]): List[Init] = {
+  def withAnyval(struct: Struct, ifDecls: List[Init]): List[Init] = {
     addAnyBase(struct, ifDecls, "AnyVal")
   }
 
-  def withAny(struct: ScalaStruct, ifDecls: List[Init]): List[Init] = {
+  def withAny(struct: Struct, ifDecls: List[Init]): List[Init] = {
     addAnyBase(struct, ifDecls, "Any")
   }
 
-  def mkConverters(id: TypeId, struct: ScalaFields): List[Defn.Def] = {
+  def mkConverters(id: TypeId, struct: ScalaStruct): List[Defn.Def] = {
     val converters = ctx.typespace.sameSignature(id).map {
       same =>
         val code = struct.all.map {
@@ -39,7 +45,7 @@ class ScalaTranslationTools(ctx: ScalaTranslationContext) {
     converters
   }
 
-  private def addAnyBase(struct: ScalaStruct, ifDecls: List[Init], base: String): List[Init] = {
+  private def addAnyBase(struct: Struct, ifDecls: List[Init], base: String): List[Init] = {
     if (struct.isScalar && struct.all.forall(f => canBeAnyValField(f.field.typeId))) {
       ctx.conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
     } else {
