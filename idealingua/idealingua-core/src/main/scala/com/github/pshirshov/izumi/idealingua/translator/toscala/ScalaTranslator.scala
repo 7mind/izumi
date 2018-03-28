@@ -179,13 +179,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val t = conv.toScala(i.id)
     val tools = t.within(s"${i.id.name}Extensions")
 
-    val qqCompanion =
-      q"""object ${t.termName} {
-             implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-                ${rt.modelConv.toMethodAst(i.id)}
-             }
-         }"""
+    val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
+    val extended = ext.extend(i.id, qqTools, _.handleIdentifierTools)
 
+    val qqCompanion = q"""object ${t.termName} { $extended}"""
 
     val qqIdentifier =
       q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
@@ -278,10 +275,9 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
       val tools = t.within(s"${i.id.name}Extensions")
 
-      q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-             ${rt.modelConv.toMethodAst(i.id)}
-             ..$toolDecls
-          }"""
+      val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { ..$toolDecls }"""
+
+      ext.extend(i.id, qqTools, _.handleInterfaceTools)
     }
 
     val qqInterface =
@@ -307,7 +303,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   protected def renderService(i: Service): Seq[Defn] = {
     val typeName = i.id.name
 
-    val t = conv.toScala(i.id)
+    val t = conv.toScala(IndefiniteId(i.id))
 
     val serviceInputBase = t.within(s"In${typeName.capitalize}")
     val serviceOutputBase = t.within(s"Out${typeName.capitalize}")
@@ -359,14 +355,15 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
           ..${decls.map(_.defn)}
          }"""
+    val qqTools = q"""implicit class ${tools.typeName}[R[_]](_value: $fullServiceType) {}"""
+    val extTools = ext.extend(i.id, qqTools, _.handleServiceTools)
+
     val qqServiceCompanion =
       q"""object ${t.termName} {
             sealed trait ${serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
             sealed trait ${serviceOutputBase.typeName} extends Any with ${rt.output.init()} {}
 
-            implicit class ${tools.typeName}[R[_]](_value: $fullServiceType) {
-              ${rt.modelConv.toMethodAst(i.id)}
-            }
+            $extTools
 
             ..${decls.flatMap(_.types)}
            }"""

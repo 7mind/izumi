@@ -42,6 +42,7 @@ case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractTypeId {
 
 object IndefiniteId {
   def apply(id: TypeId): IndefiniteId = new IndefiniteId(id.pkg, id.name)
+  def apply(id: ServiceId): IndefiniteId = new IndefiniteId(id.pkg, id.name)
 
   def parse(s: String): IndefiniteId = {
     val parts = s.split('.')
@@ -57,6 +58,7 @@ object TypeId {
 
   object DTOId {
     def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
+    def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
   }
 
   case class IdentifierId(pkg: Package, name: TypeName) extends StructureId with ScalarId
@@ -68,7 +70,7 @@ object TypeId {
   case class EnumId(pkg: Package, name: TypeName) extends TypeId
 
   // TODO: remove superclass?
-  case class ServiceId(pkg: Package, name: TypeName) extends TypeId
+  case class ServiceId(pkg: Package, name: TypeName)
 
 }
 

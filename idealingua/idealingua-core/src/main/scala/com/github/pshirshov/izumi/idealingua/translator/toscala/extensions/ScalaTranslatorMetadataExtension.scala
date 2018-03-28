@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, IdentifierId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.il.DomainId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -10,7 +10,7 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
 
   import scala.meta._
 
-  override def handleComposite(context: ScalaTranslationContext, id: TypeId, defn: Defn.Class): Defn.Class = {
+  override def handleComposite(context: ScalaTranslationContext, id: StructureId, defn: Defn.Class): Defn.Class = {
     withInfo(context, id, defn)
   }
 
@@ -28,19 +28,45 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
   }
 
   override def handleService(context: ScalaTranslationContext, id: TypeId.ServiceId, defn: Defn.Trait): Defn.Trait = {
-    withInfo(context, id, defn)
+    ???
+    //withInfo(context, id, defn)
   }
 
   private def withInfo[T <: Defn](context: ScalaTranslationContext, id: TypeId, defn: T): T = {
     withInfo(context, id, defn, id)
   }
 
-  private def withInfo[T <: Defn](context: ScalaTranslationContext, id: TypeId, defn: T, sigId: TypeId): T = {
+
+  override def handleInterfaceTools(context: ScalaTranslationContext, id: TypeId.InterfaceId, defn: Defn.Class): Defn.Class = {
+    //             ${rt.modelConv.toMethodAst(i.id)}
+    ???
+  }
+
+
+  override def handleServiceTools(context: ScalaTranslationContext, id: ServiceId, defn: Defn.Class): Defn.Class = {
+    // ${rt.modelConv.toMethodAst(IndefiniteId(i.id))}
+    ???
+  }
+
+
+  override def handleIdentifierTools(context: ScalaTranslationContext, id: IdentifierId, defn: Defn.Class): Defn.Class = {
+    // ${rt.modelConv.toMethodAst(i.id)}
+    ???
+  }
+
+
+  override def handleCompositeTools(context: ScalaTranslationContext, id: StructureId, defn: Defn.Class): Defn.Class = {
+    //                 ${ctx.rt.modelConv.toMethodAst(id)}
+    ???
+  }
+
+  private def withInfo[T <: Defn](context: ScalaTranslationContext, id: AbstractTypeId, defn: T, sigId: TypeId): T = {
     import context._
+    //${rt.modelConv.toAst(id)}
     val stats = List(
       q"""def _info: ${rt.typeInfo.typeFull} = {
           ${rt.typeInfo.termFull}(
-            ${rt.modelConv.toAst(id)}
+            ???
             , ${tDomain.termFull}
             , ${Lit.Int(sig.signature(sigId))}
           ) }"""
@@ -56,39 +82,40 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
   }
 
   private def translateDomain(context: ScalaTranslationContext): Seq[Module] = {
-    import context._
-    val index = typespace.all.map(id => id -> conv.toScala(id)).toList
-
-    val exprs = index.map {
-      case (k@ServiceId(_, _), v) =>
-        rt.modelConv.toAst(k) -> q"classOf[${v.parameterize("Id").typeFull}]"
-      case (k, v) =>
-        rt.modelConv.toAst(k) -> q"classOf[${v.typeFull}]"
-    }
-
-    val types = exprs.map({ case (k, v) => q"$k -> $v" })
-    val reverseTypes = exprs.map({ case (k, v) => q"$v -> $k" })
-
-    val schema = schemaSerializer.serializeSchema(typespace.domain)
-
-    val references = typespace.domain.referenced.toList.map {
-      case (k, v) =>
-        q"${conv.toIdConstructor(k)} -> ${conv.toScala(conv.domainCompanionId(v)).termFull}.schema"
-    }
-
-    modules.toSource(domainsDomain, ModuleId(domainsDomain.pkg, s"${domainsDomain.name}.scala"), Seq(
-      q"""object ${tDomain.termName} extends ${rt.tDomainCompanion.init()} {
-         ${conv.toImport}
-
-         type Id[T] = T
-
-         lazy val id: ${conv.toScala[DomainId].typeFull} = ${conv.toIdConstructor(typespace.domain.id)}
-         lazy val types: Map[${rt.typeId.typeFull}, Class[_]] = Seq(..$types).toMap
-         lazy val classes: Map[Class[_], ${rt.typeId.typeFull}] = Seq(..$reverseTypes).toMap
-         lazy val referencedDomains: Map[${rt.tDomainId.typeFull}, ${rt.tDomainDefinition.typeFull}] = Seq(..$references).toMap
-
-         protected lazy val serializedSchema: String = ${Lit.String(schema)}
-       }"""
-    ))
+    //    import context._
+    //    val index = typespace.all.map(id => id -> conv.toScala(id)).toList
+    //
+    //    val exprs = index.map {
+    //      case (k@ServiceId(_, _), v) =>
+    //        rt.modelConv.toAst(k) -> q"classOf[${v.parameterize("Id").typeFull}]"
+    //      case (k, v) =>
+    //        rt.modelConv.toAst(k) -> q"classOf[${v.typeFull}]"
+    //    }
+    //
+    //    val types = exprs.map({ case (k, v) => q"$k -> $v" })
+    //    val reverseTypes = exprs.map({ case (k, v) => q"$v -> $k" })
+    //
+    //    val schema = schemaSerializer.serializeSchema(typespace.domain)
+    //
+    //    val references = typespace.domain.referenced.toList.map {
+    //      case (k, v) =>
+    //        q"${conv.toIdConstructor(k)} -> ${conv.toScala(conv.domainCompanionId(v)).termFull}.schema"
+    //    }
+    //
+    //    modules.toSource(domainsDomain, ModuleId(domainsDomain.pkg, s"${domainsDomain.name}.scala"), Seq(
+    //      q"""object ${tDomain.termName} extends ${rt.tDomainCompanion.init()} {
+    //         ${conv.toImport}
+    //
+    //         type Id[T] = T
+    //
+    //         lazy val id: ${conv.toScala[DomainId].typeFull} = ${conv.toIdConstructor(typespace.domain.id)}
+    //         lazy val types: Map[${rt.typeId.typeFull}, Class[_]] = Seq(..$types).toMap
+    //         lazy val classes: Map[Class[_], ${rt.typeId.typeFull}] = Seq(..$reverseTypes).toMap
+    //         lazy val referencedDomains: Map[${rt.tDomainId.typeFull}, ${rt.tDomainDefinition.typeFull}] = Seq(..$references).toMap
+    //
+    //         protected lazy val serializedSchema: String = ${Lit.String(schema)}
+    //       }"""
+    //    ))
+    ???
   }
 }

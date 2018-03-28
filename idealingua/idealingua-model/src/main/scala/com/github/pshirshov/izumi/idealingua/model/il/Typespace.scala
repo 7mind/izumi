@@ -52,16 +52,6 @@ class Typespace(val domain: DomainDefinition) {
     compatibleImplementors(implementors, id)
   }
 
-  private def allTypes: List[TypeId] = types.all.map(_.id).toList
-
-
-  def all: Set[TypeId] = List(
-    allTypes
-    , types.services.values.map(_.id)
-  )
-    .flatten
-    .toSet
-
   def verify(): Unit = {
     import Typespace._
     val typeDependencies = domain.types.flatMap(extractDependencies)
@@ -72,7 +62,7 @@ class Typespace(val domain: DomainDefinition) {
     } yield {
       method match {
         case m: RPCMethod =>
-          (m.signature.input ++ m.signature.output).map(i => Dependency.Parameter(service.id, i))
+          (m.signature.input ++ m.signature.output).map(i => Dependency.ServiceParameter(service.id, i))
       }
     }
 
@@ -82,8 +72,8 @@ class Typespace(val domain: DomainDefinition) {
     // TODO: very ineffective!
     val missingTypes = allDependencies
       .filterNot(_.typeId.isInstanceOf[Builtin])
-      .filterNot(d => all.contains(d.typeId))
-      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(_.all.contains(d.typeId)))
+      .filterNot(d => types.index.contains(d.typeId))
+      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(_.types.index.contains(d.typeId)))
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
@@ -113,10 +103,6 @@ class Typespace(val domain: DomainDefinition) {
 
       case e: Builtin =>
         throw new IDLException(s"Unexpected id: $e")
-
-      case e: ServiceId =>
-        throw new IDLException(s"Unexpected id: $e")
-
     }
   }
 
@@ -142,9 +128,6 @@ class Typespace(val domain: DomainDefinition) {
         List()
 
       case e: Builtin =>
-        throw new IDLException(s"Unexpected id: $e")
-
-      case e: ServiceId =>
         throw new IDLException(s"Unexpected id: $e")
 
     }
@@ -301,8 +284,6 @@ class Typespace(val domain: DomainDefinition) {
 object Typespace {
 
   trait Dependency {
-    def definedIn: TypeId
-
     def typeId: TypeId
   }
 
@@ -317,6 +298,10 @@ object Typespace {
 
     case class Parameter(definedIn: TypeId, typeId: TypeId) extends Dependency {
       override def toString: TypeName = s"[param $definedIn::$typeId]"
+    }
+
+    case class ServiceParameter(definedIn: ServiceId, typeId: TypeId) extends Dependency {
+      override def toString: TypeName = s"[sparam $definedIn::$typeId]"
     }
 
 

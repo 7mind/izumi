@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
 
@@ -14,7 +13,7 @@ class ScalaTranslatorExtensions(extensions: Seq[ScalaTranslatorExtension], conte
     }
   }
 
-  def extend[I <: TypeId, D <: Defn](id: I
+  def extend[I, D <: Defn](id: I
                                      , entity: D
                                      , entityTransformer: ScalaTranslatorExtension => (ScalaTranslationContext, I, D) => D
                                             ): D = {
@@ -24,7 +23,7 @@ class ScalaTranslatorExtensions(extensions: Seq[ScalaTranslatorExtension], conte
     }
   }
 
-  def extend[I <: TypeId, D <: Defn, C <: Defn]
+  def extend[I, D <: Defn, C <: Defn]
   (
     id: I
     , entity: D

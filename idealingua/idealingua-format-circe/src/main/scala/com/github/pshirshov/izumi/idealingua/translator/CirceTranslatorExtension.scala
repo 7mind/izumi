@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.{StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
@@ -14,7 +14,7 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     q""" import _root_.io.circe.java8.time._ """
   )
 
-  override def handleCompositeCompanion(context: ScalaTranslationContext, id: TypeId, defn: Defn.Object): Defn.Object = {
+  override def handleCompositeCompanion(context: ScalaTranslationContext, id: StructureId, defn: Defn.Object): Defn.Object = {
     withDerived(context, id, defn)
   }
 

@@ -5,7 +5,6 @@ import java.util.UUID
 
 import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il._
 
@@ -68,33 +67,21 @@ class ScalaTypeConverter(domain: DomainId) {
   }
 
   def toMethodAst[T <: TypeId : ClassTag](typeId: T): Defn.Def = {
-    val tpe = toSelect(JavaType.get[T].minimize(domain))
+    toMethodAst(IndefiniteId(typeId))
+  }
+
+  private def toMethodAst(typeId: IndefiniteId): Defn.Def = {
+    val tpe = toSelect(JavaType(typeId).minimize(domain))
     q"def toTypeId: $tpe = { ${toAst(typeId)} }"
   }
 
-  def toAst[T <: TypeId](typeId: T): Term.Apply = {
-    typeId match {
-      case i: InterfaceId =>
-        toIdConstructor(i)
-      case i: DTOId =>
-        toIdConstructor(i)
-      case i: AliasId =>
-        toIdConstructor(i)
-      case i: EnumId =>
-        toIdConstructor(i)
-      case i: IdentifierId =>
-        toIdConstructor(i)
-      case i: ServiceId =>
-        toIdConstructor(i)
-      case i: IndefiniteId =>
-        toIdConstructor(i)
-      case i: AdtId =>
-        toIdConstructor(i)
-    }
+
+  def toAst(typeId: IndefiniteId): Term.Apply = {
+    toIdConstructor(typeId)
   }
 
-  private def toIdConstructor[T <: TypeId : ClassTag](t: T): Term.Apply = {
-    q"${toSelectTerm(JavaType.get[T].minimize(domain))}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.name)})"
+  private def toIdConstructor(t: IndefiniteId): Term.Apply = {
+    q"${toSelectTerm(JavaType(t).minimize(domain))}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.name)})"
   }
 
   def toIdConstructor(t: DomainId): Term.Apply = {

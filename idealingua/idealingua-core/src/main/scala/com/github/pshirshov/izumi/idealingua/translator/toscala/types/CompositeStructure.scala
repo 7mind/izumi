@@ -80,15 +80,13 @@ class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val 
 
     val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
 
+    val qqTools = q""" implicit class ${tools.typeName}(_value: ${t.typeFull}) { ..$converters }"""
+    val extTools = ctx.ext.extend(id, qqTools, _.handleCompositeTools)
+
 
     val qqCompositeCompanion =
       q"""object ${t.termName} {
-              implicit class ${tools.typeName}(_value: ${t.typeFull}) {
-                ${ctx.rt.modelConv.toMethodAst(id)}
-
-                ..$converters
-              }
-
+          $qqTools
              ..$constructors
          }"""
 

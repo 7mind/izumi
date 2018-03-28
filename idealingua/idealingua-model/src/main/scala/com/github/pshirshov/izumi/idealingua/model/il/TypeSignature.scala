@@ -12,6 +12,18 @@ class TypeSignature(typespace: Typespace) {
     signature(id, Set.empty)
   }
 
+  def signature(id: ServiceId): Int = {
+    serviceSignature(id, Set.empty)
+  }
+
+  protected def serviceSignature(id: ServiceId, seen: Set[ServiceId]): Int = {
+    val service = typespace(id)
+    MurmurHash3.orderedHash(simpleSignature(service.id) +: service.methods.flatMap {
+      case r: RPCMethod =>
+        Seq(MurmurHash3.stringHash(r.name), MurmurHash3.orderedHash(r.signature.asList.map(signature)))
+    })
+  }
+
   protected def signature(id: TypeId, seen: Set[TypeId]): Int = {
     id match {
       case b: Primitive =>
@@ -24,12 +36,6 @@ class TypeSignature(typespace: Typespace) {
         }
         MurmurHash3.orderedHash(simpleSignature(b) +: argSig)
 
-      case s: ServiceId =>
-        val service = typespace(s)
-        MurmurHash3.orderedHash(simpleSignature(service.id) +: service.methods.flatMap {
-          case r: RPCMethod =>
-            Seq(MurmurHash3.stringHash(r.name), MurmurHash3.orderedHash(r.signature.asList.map(signature)))
-        })
 
       case _ =>
         val primitiveSignature = explode(typespace.apply(id))
@@ -42,6 +48,10 @@ class TypeSignature(typespace: Typespace) {
   }
 
   protected def simpleSignature(id: TypeId): Int = {
+    MurmurHash3.orderedHash((id.pkg :+ id.name).map(MurmurHash3.stringHash))
+  }
+
+  protected def simpleSignature(id: ServiceId): Int = {
     MurmurHash3.orderedHash((id.pkg :+ id.name).map(MurmurHash3.stringHash))
   }
 

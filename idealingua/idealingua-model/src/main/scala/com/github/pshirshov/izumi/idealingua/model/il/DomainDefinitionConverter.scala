@@ -10,7 +10,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
   final val domainId: DomainId = defn.id
 
   protected val mapping: Map[IndefiniteId, TypeId] = {
-    (defn.types.map(_.id) ++ defn.services.map(_.id))
+    defn.types.map(_.id)
       .map {
         kv =>
           toIndefinite(kv) -> fixSimpleId[AbstractTypeId, TypeId](kv)
@@ -48,7 +48,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
   }
 
   protected def fixService(defn: ILAstParsed.Service): ILAst.Service = {
-    ILAst.Service(id = fixId(defn.id), methods = defn.methods.map(fixMethod))
+    ILAst.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod))
   }
 
   protected def makeDefinite(id: AbstractTypeId): TypeId = {
@@ -62,8 +62,6 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
           case Some(t) =>
             t
           case None =>
-            println(mapping)
-            println(toIndefinite(id))
             throw new IDLException(s"Type $id is missing from domain $domainId")
         }
       case v if !domainId.contains(v) =>
@@ -91,6 +89,10 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }).asInstanceOf[R]
   }
 
+  protected def fixServiceId(t: ServiceId): ServiceId = {
+    t.copy(pkg = fixPkg(t.pkg))
+  }
+
   protected def fixSimpleId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
     (t match {
       case t: DTOId =>
@@ -109,9 +111,6 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
         t.copy(pkg = fixPkg(t.pkg))
 
       case t: IdentifierId =>
-        t.copy(pkg = fixPkg(t.pkg))
-
-      case t: ServiceId =>
         t.copy(pkg = fixPkg(t.pkg))
 
       case t: Builtin =>

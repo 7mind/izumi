@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.tools
 
 import com.github.pshirshov.izumi.idealingua
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Alias
@@ -44,12 +45,15 @@ class ModuleTools(rt: IDLRuntimeTypes.type) {
         ModuleId(concrete.pkg, s"${concrete.pkg.last}.scala")
 
       case other =>
-        val id = other.id
-        toModuleId(id)
+        toModuleId(other.id)
     }
   }
 
   def toModuleId(id: TypeId): ModuleId = {
+    ModuleId(id.pkg, s"${id.name}.scala")
+  }
+
+  def toModuleId(id: ServiceId): ModuleId = {
     ModuleId(id.pkg, s"${id.name}.scala")
   }
 }
