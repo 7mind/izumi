@@ -57,7 +57,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
 
   protected def translateService(definition: Service): Seq[Module] = {
-    ctx.modules.toSource(Indefinite(definition.id), ctx.modules.toModuleId(definition.id), renderService(definition))
+    ctx.modules.toSource(IndefiniteId(definition.id), ctx.modules.toModuleId(definition.id), renderService(definition))
   }
 
   protected def translateDef(definition: ILAst): Seq[Module] = {
@@ -76,7 +76,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         Seq()
     }
 
-    ctx.modules.toSource(Indefinite(definition.id), ctx.modules.toModuleId(definition), defns)
+    ctx.modules.toSource(IndefiniteId(definition.id), ctx.modules.toModuleId(definition), defns)
   }
 
   def renderAdt(i: Adt): Seq[Defn] = {

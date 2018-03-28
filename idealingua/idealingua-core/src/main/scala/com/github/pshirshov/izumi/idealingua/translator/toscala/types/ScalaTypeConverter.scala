@@ -86,7 +86,7 @@ class ScalaTypeConverter(domain: DomainId) {
         toIdConstructor(i)
       case i: ServiceId =>
         toIdConstructor(i)
-      case i: Indefinite =>
+      case i: IndefiniteId =>
         toIdConstructor(i)
       case i: AdtId =>
         toIdConstructor(i)
@@ -112,11 +112,11 @@ class ScalaTypeConverter(domain: DomainId) {
   }
 
   def toScala(clazz: Class[_]): ScalaType = {
-    val javaType = JavaType(Indefinite(clazz.getPackage.getName.split('.'), clazz.getSimpleName))
+    val javaType = JavaType(IndefiniteId(clazz.getPackage.getName.split('.'), clazz.getSimpleName))
     toScala(javaType)
   }
 
-  def toScala(id: Indefinite): ScalaType = {
+  def toScala(id: IndefiniteId): ScalaType = {
     toScala(JavaType(id.pkg, id.name))
   }
 
@@ -124,8 +124,8 @@ class ScalaTypeConverter(domain: DomainId) {
     toScala(javaType, List.empty)
   }
 
-  def domainCompanionId(domainDefinition: DomainDefinition): Indefinite = {
-    Indefinite(Seq("izumi", "idealingua", "domains"), domainDefinition.id.id.capitalize)
+  def domainCompanionId(domainDefinition: DomainDefinition): IndefiniteId = {
+    IndefiniteId(Seq("izumi", "idealingua", "domains"), domainDefinition.id.id.capitalize)
   }
 
 

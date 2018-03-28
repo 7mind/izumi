@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
   final val domainId: DomainId = defn.id
 
-  protected val mapping: Map[Indefinite, TypeId] = {
+  protected val mapping: Map[IndefiniteId, TypeId] = {
     (defn.types.map(_.id) ++ defn.services.map(_.id))
       .map {
         kv =>
@@ -80,7 +80,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
 
   protected def fixId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
     (t match {
-      case t: Indefinite =>
+      case t: IndefiniteId =>
         makeDefinite(t)
 
       case t: IndefiniteGeneric =>
@@ -179,8 +179,8 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }
   }
 
-  protected def toIndefinite(typeId: AbstractTypeId): Indefinite = {
-    Indefinite(fixPkg(typeId.pkg), typeId.name)
+  protected def toIndefinite(typeId: AbstractTypeId): IndefiniteId = {
+    IndefiniteId(fixPkg(typeId.pkg), typeId.name)
   }
 
   protected  def isGeneric(abstractTypeId: AbstractTypeId): Boolean = {

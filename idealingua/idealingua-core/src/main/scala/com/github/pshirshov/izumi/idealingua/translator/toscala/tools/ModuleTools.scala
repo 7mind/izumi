@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.tools
 
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.{Indefinite, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Alias
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime.ID
 import scala.meta.Defn
 
 class ModuleTools(rt: IDLRuntimeTypes.type) {
-  def toSource(id: Indefinite, moduleId: ModuleId, traitDef: Seq[Defn]): Seq[Module] = {
+  def toSource(id: IndefiniteId, moduleId: ModuleId, traitDef: Seq[Defn]): Seq[Module] = {
     if (traitDef.nonEmpty) {
       val code = traitDef.map(_.toString()).mkString("\n\n")
       val content: String = withPackage(id.pkg, code)

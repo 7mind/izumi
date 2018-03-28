@@ -5,10 +5,10 @@ import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Field
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, ILAst}
 
 object Model02 {
-  final val if1Id = model.common.Indefinite.parse("izumi.test.domain02.TestInterface1").toInterface
-  final val if2Id = model.common.Indefinite.parse("izumi.test.domain02.TestInterface2").toInterface
-  final val if3Id = model.common.Indefinite.parse("izumi.test.domain02.TestInterface3").toInterface
-  final val dto1Id = model.common.Indefinite.parse("izumi.test.domain02.DTO1").toDTO
+  final val if1Id = model.common.IndefiniteId.parse("izumi.test.domain02.TestInterface1").toInterface
+  final val if2Id = model.common.IndefiniteId.parse("izumi.test.domain02.TestInterface2").toInterface
+  final val if3Id = model.common.IndefiniteId.parse("izumi.test.domain02.TestInterface3").toInterface
+  final val dto1Id = model.common.IndefiniteId.parse("izumi.test.domain02.DTO1").toDTO
 
   final val if1 = ILAst.Interface(if1Id, List(
     Field(Primitive.TInt32, "if1Field_overriden")

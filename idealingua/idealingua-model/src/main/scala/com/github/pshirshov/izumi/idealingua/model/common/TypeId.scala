@@ -24,7 +24,7 @@ sealed trait TimeTypeId {
   this: ScalarId =>
 }
 
-case class Indefinite(pkg: Package, name: TypeName) extends AbstractTypeId {
+case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractTypeId {
   def toAlias: AliasId = AliasId(pkg, name)
 
   def toEnum: EnumId = EnumId(pkg, name)
@@ -40,12 +40,12 @@ case class Indefinite(pkg: Package, name: TypeName) extends AbstractTypeId {
   def toService: ServiceId = ServiceId(pkg, name)
 }
 
-object Indefinite {
-  def apply(id: TypeId): Indefinite = new Indefinite(id.pkg, id.name)
+object IndefiniteId {
+  def apply(id: TypeId): IndefiniteId = new IndefiniteId(id.pkg, id.name)
 
-  def parse(s: String): Indefinite = {
+  def parse(s: String): IndefiniteId = {
     val parts = s.split('.')
-    Indefinite(parts.toSeq.init, parts.last)
+    IndefiniteId(parts.toSeq.init, parts.last)
   }
 }
 
