@@ -1,10 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, StructureId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.JavaType
+import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, IndefiniteId, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, IdentifierId, ServiceId}
-import com.github.pshirshov.izumi.idealingua.model.il.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
+
+import scala.reflect.ClassTag
 
 object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
 
@@ -60,9 +63,38 @@ object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
     ???
   }
 
+//  def toMethodAst[T <: TypeId : ClassTag](typeId: T): Defn.Def = {
+//    toMethodAst(IndefiniteId(typeId))
+//  }
+//
+//  private def toMethodAst(typeId: IndefiniteId): Defn.Def = {
+//    val tpe = toSelect(JavaType(typeId).minimize(domain))
+//    q"def toTypeId: $tpe = { ${toAst(typeId)} }"
+//  }
+//
+//
+//  def toAst(typeId: IndefiniteId): Term.Apply = {
+//    toIdConstructor(typeId)
+//  }
+//
+//  private def toIdConstructor(t: IndefiniteId): Term.Apply = {
+//    q"${toSelectTerm(JavaType(t).minimize(domain))}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.name)})"
+//  }
+//
+//  def toIdConstructor(t: DomainId): Term.Apply = {
+//    q"${toSelectTerm(JavaType.get[DomainId])}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.id)})"
+//  }
+
+  def domainCompanionId(domainDefinition: DomainDefinition): IndefiniteId = {
+    IndefiniteId(Seq("izumi", "idealingua", "domains"), domainDefinition.id.id.capitalize)
+  }
+
   private def withInfo[T <: Defn](context: ScalaTranslationContext, id: AbstractTypeId, defn: T, sigId: TypeId): T = {
     import context._
     //${rt.modelConv.toAst(id)}
+    val domainsDomain = domainCompanionId(typespace.domain)
+    val tDomain = conv.toScala(domainsDomain)
+
     val stats = List(
       q"""def _info: ${rt.typeInfo.typeFull} = {
           ${rt.typeInfo.termFull}(

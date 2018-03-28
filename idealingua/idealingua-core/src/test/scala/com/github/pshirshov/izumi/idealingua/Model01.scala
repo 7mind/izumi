@@ -35,13 +35,11 @@ object Model01 {
     , ILAst.Interface(
       testInterfaceId
       , testInterfaceFields
-      , List.empty
-      , List.empty
+      , Super.empty
     )
     , ILAst.DTO(
       testIdObject
-      , List(testInterfaceId)
-      , List.empty
+      , Super.interfaces(List(testInterfaceId))
     )
   ), List(
     Service(serviceIdentifier, List(

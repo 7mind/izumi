@@ -1,0 +1,21 @@
+domain shared.inheritance
+
+mixin IntPair {
+  x: i32
+  y: i32
+}
+
+mixin Metadata {
+  id: str
+  name: str
+}
+
+mixin PointLike {
+  + Metadata
+  * IntPair
+}
+
+data Point {
+  + Metadata
+  * IntPair
+}

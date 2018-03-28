@@ -19,11 +19,21 @@ object ILAst {
   type Composite = List[InterfaceId]
   type Aggregate = List[Field]
 
+  case class Super(interfaces: Composite, concepts: Composite) {
+    val all: List[InterfaceId] = interfaces ++ concepts
+  }
+
+  object Super {
+    def empty: Super = Super(List.empty, List.empty)
+
+    def interfaces(ids: List[InterfaceId]): Super = Super(ids, List.empty)
+  }
+
   case class Identifier(id: IdentifierId, fields: Aggregate) extends ILStructure
 
-  case class Interface(id: InterfaceId, fields: Aggregate, interfaces: Composite, concepts: Composite) extends ILStructure
+  case class Interface(id: InterfaceId, fields: Aggregate, superclasses: Super) extends ILStructure
 
-  case class DTO(id: DTOId, interfaces: Composite, concepts: Composite) extends ILStructure
+  case class DTO(id: DTOId, superclasses: Super) extends ILStructure
 
   case class Enumeration(id: EnumId, members: List[String]) extends ILAst
 

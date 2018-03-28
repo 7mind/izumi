@@ -15,7 +15,7 @@ class LoadThenCompileWithCirceTest extends WordSpec {
       val src = new File(getClass.getResource("/defs").toURI).toPath
       val loader = new LocalModelLoader(src, Seq.empty)
       val loaded = loader.load()
-      assert(loaded.lengthCompare(3) == 0)
+      assert(loaded.size == 4)
       assert(compiles(getClass.getSimpleName, loaded, Seq(CirceTranslatorExtension)))
     }
   }

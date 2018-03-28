@@ -206,7 +206,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     }
 
     val ifDecls = {
-      val scalaIfaces = (rt.generated +: i.interfaces.map(conv.toScala)).map(_.init())
+      val scalaIfaces = (rt.generated +: i.superclasses.interfaces.map(conv.toScala)).map(_.init())
       ctx.tools.withAny(fields.fields, scalaIfaces)
     }
 
@@ -216,7 +216,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val implStructure = ctx.tools.mkStructure(eid)
     val impl = implStructure.defns(List.empty).toList
 
-    val parents = List(i.id) ++ i.concepts
+    val parents = List(i.id) ++ i.superclasses.concepts
     val narrowers = parents.distinct.map {
       p =>
         val ifields = typespace.enumFields(p)
@@ -454,11 +454,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   }
 
   protected def renderDto(i: DTO): Seq[Defn] = {
-    renderComposite(i.id, List.empty)
-  }
-
-
-  private def renderComposite(id: StructureId, bases: List[Init]): Seq[Defn] = {
-    ctx.tools.mkStructure(id).defns(bases)
+    ctx.tools.mkStructure(i.id).defns(List.empty)
   }
 }

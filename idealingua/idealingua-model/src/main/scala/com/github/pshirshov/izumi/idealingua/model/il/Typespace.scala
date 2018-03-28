@@ -29,12 +29,15 @@ class Typespace(val domain: DomainDefinition) {
   protected def apply(id: InterfaceId): Interface = {
     apply(id: TypeId).asInstanceOf[Interface]
   }
+
   protected def apply(id: StructureId): ILStructure = {
     apply(id: TypeId).asInstanceOf[ILStructure]
   }
+
   protected def apply(id: DTOId): DTO = {
     apply(id: TypeId).asInstanceOf[DTO]
   }
+
   def apply(id: ServiceId): Service = {
     types.services(id)
   }
@@ -84,10 +87,10 @@ class Typespace(val domain: DomainDefinition) {
     id match {
       case i: InterfaceId =>
         val defn = apply(i)
-        List(i) ++ defn.interfaces.flatMap(parents)
+        List(i) ++ defn.superclasses.interfaces.flatMap(parents)
 
       case i: DTOId =>
-        apply(i).interfaces.flatMap(parents)
+        apply(i).superclasses.interfaces.flatMap(parents)
 
       case _: IdentifierId =>
         List()
@@ -110,10 +113,10 @@ class Typespace(val domain: DomainDefinition) {
     id match {
       case i: InterfaceId =>
         val defn = apply(i)
-        List(i) ++ defn.interfaces.flatMap(compatible) ++ defn.concepts.flatMap(compatible)
+        List(i) ++ defn.superclasses.all.flatMap(compatible)
 
       case i: DTOId =>
-        apply(i).interfaces.flatMap(compatible)
+        apply(i).superclasses.all.flatMap(compatible)
 
       case _: IdentifierId =>
         List()
@@ -148,7 +151,16 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   def enumFields(defn: ILStructure): Struct = {
-    Struct(defn.id, extractFields(defn), getComposite(defn.id))
+    val parts = apply(defn.id) match {
+      case i: Interface =>
+        i.superclasses
+      case i: DTO =>
+        i.superclasses
+      case _: Identifier =>
+        Super.empty
+    }
+
+    Struct(defn.id, parts, extractFields(defn))
   }
 
   def enumFields(id: StructureId): Struct = {
@@ -165,34 +177,28 @@ class Typespace(val domain: DomainDefinition) {
       .filterNot(_.id == tid)
       .distinct
       .filterNot(id => parents(id.id).contains(tid))
-      .collect({ case t: DTO => t})
+      .collect({ case t: DTO => t })
       .toList
   }
 
-  protected def getComposite(id: StructureId): Composite = {
-    apply(id) match {
-      case i: Interface =>
-        i.interfaces ++ i.concepts
-      case i: DTO =>
-        i.interfaces ++ i.concepts
-      case _: Identifier =>
-        List.empty
-    }
-  }
 
   protected def extractFields(defn: ILAst): List[ExtendedField] = {
     val fields = defn match {
       case t: Interface =>
-        val superFields = compositeFields(t.interfaces)
-          .map(_.copy(definedBy = t.id)) // in fact super field is defined by this
-
-        val embeddedFields = t.concepts.flatMap(id => extractFields(apply(id)))
-
+        val superFields = compositeFields(t.superclasses.interfaces)
+        val embeddedFields = t.superclasses.concepts.flatMap(id => extractFields(apply(id)))
         val thisFields = toExtendedFields(t.fields, t.id)
-        superFields ++ thisFields ++ embeddedFields
+
+        superFields.map(_.copy(definedBy = t.id)) ++ // in fact super field is defined by this
+          embeddedFields ++
+          thisFields
 
       case t: DTO =>
-        compositeFields(t.interfaces) ++ compositeFields(t.concepts)
+        val superFields = compositeFields(t.superclasses.interfaces)
+        val embeddedFields = t.superclasses.concepts.flatMap(id => extractFields(apply(id)))
+
+        superFields ++
+          embeddedFields
 
       case t: Adt =>
         t.alternatives.map(apply).flatMap(extractFields)
@@ -228,11 +234,13 @@ class Typespace(val domain: DomainDefinition) {
       case _: Enumeration =>
         Seq.empty
       case d: Interface =>
-        d.interfaces.map(i => Dependency.Interface(d.id, i)) ++
-          d.concepts.flatMap(c => extractDependencies(apply(c))) ++
+        d.superclasses.interfaces.map(i => Dependency.Interface(d.id, i)) ++
+          d.superclasses.concepts.flatMap(c => extractDependencies(apply(c))) ++
           d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
       case d: DTO =>
-        d.interfaces.map(i => Dependency.Interface(d.id, i))
+        d.superclasses.interfaces.map(i => Dependency.Interface(d.id, i)) ++
+          d.superclasses.concepts.flatMap(c => extractDependencies(apply(c)))
+
       case d: Identifier =>
         d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
       case d: Adt =>

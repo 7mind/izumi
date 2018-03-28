@@ -13,7 +13,7 @@ class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val 
   import ScalaField._
   import ctx.conv._
 
-  private val composite = fields.fields.interfaces
+  private val composite = fields.fields.superclasses.interfaces
 
   val explodedSignature: List[Term.Param] = fields.all.toParams
   val constructorSignature: List[Term.Param] = {
@@ -86,8 +86,8 @@ class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val 
 
     val qqCompositeCompanion =
       q"""object ${t.termName} {
-          $qqTools
-             ..$constructors
+          $extTools
+          ..$constructors
          }"""
 
     ctx.ext.extend(id, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)

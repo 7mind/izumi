@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Super
 
 
 class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
@@ -37,10 +38,12 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
         ILAst.Identifier(id = fixId(d.id), fields = fixFields(d.fields))
 
       case d: ILAstParsed.Interface =>
-        ILAst.Interface(id = fixId(d.id), fields = fixFields(d.fields), interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
+        val superclasses = Super(interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
+        ILAst.Interface(id = fixId(d.id), fields = fixFields(d.fields), superclasses = superclasses)
 
       case d: ILAstParsed.DTO =>
-        ILAst.DTO(id = fixId(d.id), interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
+        val superclasses = Super(interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
+        ILAst.DTO(id = fixId(d.id), superclasses)
 
       case d: ILAstParsed.Adt =>
         ILAst.Adt(id = fixId(d.id), alternatives = fixIds(d.alternatives))

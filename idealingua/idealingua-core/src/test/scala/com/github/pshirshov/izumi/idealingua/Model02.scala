@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.Primitive
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Field
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.{Field, Super}
 import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, ILAst}
 
 object Model02 {
@@ -15,25 +15,24 @@ object Model02 {
     , Field(Primitive.TInt32, "if1Field_inherited")
     , Field(Primitive.TInt64, "sameField")
     , Field(Primitive.TInt64, "sameEverywhereField")
-  ), List.empty, List.empty)
+  ), Super.empty)
 
   final val if2 = ILAst.Interface(if2Id, List(
     Field(Primitive.TInt64, "if2Field")
     , Field(Primitive.TInt64, "sameField")
     , Field(Primitive.TInt64, "sameEverywhereField")
-  ), List.empty, List.empty)
+  ), Super.empty)
 
   final val if3 = ILAst.Interface(if3Id, List(
     Field(Primitive.TInt32, "if1Field_overriden")
     , Field(Primitive.TInt64, "if3Field")
     , Field(Primitive.TInt64, "sameEverywhereField")
-  ), List(if1Id), List.empty)
+  ), Super.interfaces(List(if1Id)))
 
 
   final val dto1 = ILAst.DTO(
     dto1Id
-    , List(if2Id, if3Id)
-    , List.empty
+    , Super.interfaces(List(if2Id, if3Id))
   )
 
   final val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain02"), Seq(

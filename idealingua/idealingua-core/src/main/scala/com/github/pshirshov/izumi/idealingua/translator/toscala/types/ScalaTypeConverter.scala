@@ -66,29 +66,6 @@ class ScalaTypeConverter(domain: DomainId) {
     }
   }
 
-  def toMethodAst[T <: TypeId : ClassTag](typeId: T): Defn.Def = {
-    toMethodAst(IndefiniteId(typeId))
-  }
-
-  private def toMethodAst(typeId: IndefiniteId): Defn.Def = {
-    val tpe = toSelect(JavaType(typeId).minimize(domain))
-    q"def toTypeId: $tpe = { ${toAst(typeId)} }"
-  }
-
-
-  def toAst(typeId: IndefiniteId): Term.Apply = {
-    toIdConstructor(typeId)
-  }
-
-  private def toIdConstructor(t: IndefiniteId): Term.Apply = {
-    q"${toSelectTerm(JavaType(t).minimize(domain))}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.name)})"
-  }
-
-  def toIdConstructor(t: DomainId): Term.Apply = {
-    q"${toSelectTerm(JavaType.get[DomainId])}(Seq(..${t.pkg.map(Lit.String.apply).toList}), ${Lit.String(t.id)})"
-  }
-
-
 
   def toScala[T: ClassTag]: ScalaType = {
     toScala(classTag[T].runtimeClass)
@@ -110,11 +87,6 @@ class ScalaTypeConverter(domain: DomainId) {
   def toScala(javaType: JavaType): ScalaType = {
     toScala(javaType, List.empty)
   }
-
-  def domainCompanionId(domainDefinition: DomainDefinition): IndefiniteId = {
-    IndefiniteId(Seq("izumi", "idealingua", "domains"), domainDefinition.id.id.capitalize)
-  }
-
 
   private def toScala(javaType: JavaType, args: List[TypeId]): ScalaType = {
     val withRoot = javaType.withRoot
