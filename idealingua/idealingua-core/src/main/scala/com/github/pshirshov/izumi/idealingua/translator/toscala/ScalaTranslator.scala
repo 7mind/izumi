@@ -216,8 +216,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val implStructure = ctx.tools.mkStructure(eid)
     val impl = implStructure.defns(List.empty).toList
 
-    val parents = List(i.id) ++ i.superclasses.concepts
-    val narrowers = parents.distinct.map {
+    val structuralParents = List(i.id) ++ i.superclasses.concepts // we don't add explicit parents here because their converters are available
+    val narrowers = structuralParents.distinct.map {
       p =>
         val ifields = typespace.enumFields(p)
 
@@ -226,8 +226,9 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
         }
 
-        val tt = toScala(p).within(typespace.toDtoName(p))
-        q"""def ${Term.Name("as" + p.name.capitalize)}(): ${tt.typeFull} = {
+        val parentType = toScala(p)
+        val tt = parentType.within(typespace.toDtoName(p))
+        q"""def ${Term.Name("as" + p.name.capitalize)}(): ${parentType.typeFull} = {
              ${tt.termFull}(..$constructorCode)
             }
           """

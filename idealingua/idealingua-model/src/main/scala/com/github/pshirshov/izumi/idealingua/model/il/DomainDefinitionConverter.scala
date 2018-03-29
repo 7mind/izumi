@@ -35,7 +35,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
         ILAst.Alias(id = fixId(d.id), target = fixId(d.target))
 
       case d: ILAstParsed.Identifier =>
-        ILAst.Identifier(id = fixId(d.id), fields = fixFields(d.fields))
+        ILAst.Identifier(id = fixId(d.id), fields = fixPrimitiveFields(d.fields))
 
       case d: ILAstParsed.Interface =>
         val superclasses = Super(interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
@@ -121,13 +121,18 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }).asInstanceOf[R]
   }
 
-  protected  def fixIds[T <: AbstractTypeId, R <: TypeId](d: List[T]): List[R] = {
+  protected def fixIds[T <: AbstractTypeId, R <: TypeId](d: List[T]): List[R] = {
     d.map(fixId[T, R])
   }
 
-  protected def fixFields(fields: ILAstParsed.Aggregate): ILAst.Aggregate = {
+  protected def fixFields(fields: ILAstParsed.Aggregate): ILAst.Tuple = {
     fields.map(f => ILAst.Field(name = f.name, typeId = fixId[AbstractTypeId, TypeId](f.typeId)))
   }
+
+  protected def fixPrimitiveFields(fields: ILAstParsed.Aggregate): ILAst.PrimitiveTuple = {
+    fields.map(f => ILAst.PrimitiveField(name = f.name, typeId = toPrimitive(f.typeId)))
+  }
+
 
   protected def fixMethod(method: ILAstParsed.Service.DefMethod): ILAst.Service.DefMethod = {
     method match {
@@ -148,7 +153,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }
   }
 
-  protected  def downcast(tid: AbstractTypeId): AbstractTypeId = {
+  protected def downcast(tid: AbstractTypeId): AbstractTypeId = {
     if (isPrimitive(tid)) {
       Primitive.mapping(tid.name)
     } else {
@@ -156,7 +161,16 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     }
   }
 
-  protected  def toScalar(typeId: TypeId): ScalarId = {
+  protected def toPrimitive(typeId: AbstractTypeId): Primitive = {
+    downcast(typeId) match {
+      case p: Primitive =>
+        p
+      case o =>
+        throw new IDLException(s"Unexpected non-primitive id: $o")
+    }
+  }
+
+  protected def toScalar(typeId: TypeId): ScalarId = {
     typeId match {
       case p: Primitive =>
         p
@@ -185,11 +199,11 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     IndefiniteId(fixPkg(typeId.pkg), typeId.name)
   }
 
-  protected  def isGeneric(abstractTypeId: AbstractTypeId): Boolean = {
+  protected def isGeneric(abstractTypeId: AbstractTypeId): Boolean = {
     abstractTypeId.pkg.isEmpty && Generic.all.contains(abstractTypeId.name)
   }
 
-  protected  def isPrimitive(abstractTypeId: AbstractTypeId): Boolean = {
+  protected def isPrimitive(abstractTypeId: AbstractTypeId): Boolean = {
     abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
   }
 }

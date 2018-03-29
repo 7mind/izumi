@@ -42,7 +42,7 @@ class ILRenderer(domain: DomainDefinition) {
 
       case d: Identifier =>
         s"""id ${render(d.id)} {
-           |${renderAggregate(d.fields).shift(2)}
+           |${renderPrimitiveAggregate(d.fields).shift(2)}
            |}
          """.stripMargin
 
@@ -81,13 +81,23 @@ class ILRenderer(domain: DomainDefinition) {
       .mkString("\n")
   }
 
-  def renderAggregate(aggregate: Aggregate): String = {
+  def renderAggregate(aggregate: Tuple): String = {
+    aggregate
+      .map(render)
+      .mkString("\n")
+  }
+
+  def renderPrimitiveAggregate(aggregate: PrimitiveTuple): String = {
     aggregate
       .map(render)
       .mkString("\n")
   }
 
   def render(field: Field): String = {
+    s"${field.name}: ${render(field.typeId)}"
+  }
+
+  def render(field: PrimitiveField): String = {
     s"${field.name}: ${render(field.typeId)}"
   }
 

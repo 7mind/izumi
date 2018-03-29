@@ -14,16 +14,13 @@ class TypeSignature(typespace: Typespace) {
   }
 
   def signature(id: ServiceId): Int = {
-    serviceSignature(id, Set.empty)
-  }
-
-  protected def serviceSignature(id: ServiceId, seen: Set[ServiceId]): Int = {
     val service = typespace(id)
     MurmurHash3.orderedHash(simpleSignature(service.id) +: service.methods.flatMap {
       case r: RPCMethod =>
         Seq(MurmurHash3.stringHash(r.name), MurmurHash3.orderedHash(r.signature.asList.map(signature)))
     })
   }
+
 
   protected def signature(id: TypeId, seen: Set[TypeId]): Int = {
     id match {
@@ -85,6 +82,13 @@ class TypeSignature(typespace: Typespace) {
         List(TrivialField(t, defn.name))
       case t =>
         explode(typespace.apply(t))
+    }
+  }
+
+  protected def explode(defn: PrimitiveField): List[TrivialField] = {
+    defn.typeId match {
+      case t: Primitive =>
+        List(TrivialField(t, defn.name))
     }
   }
 

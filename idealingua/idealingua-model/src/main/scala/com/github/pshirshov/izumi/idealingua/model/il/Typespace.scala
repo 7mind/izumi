@@ -204,7 +204,7 @@ class Typespace(val domain: DomainDefinition) {
         t.alternatives.map(apply).flatMap(extractFields)
 
       case t: Identifier =>
-        toExtendedFields(t.fields, t.id)
+        toExtendedPrimitiveFields(t.fields, t.id)
 
       case _: Enumeration =>
         List()
@@ -216,6 +216,14 @@ class Typespace(val domain: DomainDefinition) {
     fields.distinct
   }
 
+  protected def toExtendedFields(fields: Tuple, id: TypeId): List[ExtendedField] = {
+    fields.map(f => ExtendedField(f, id: TypeId))
+  }
+
+  protected def toExtendedPrimitiveFields(fields: PrimitiveTuple, id: TypeId): List[ExtendedField] = {
+    fields.map(f => ExtendedField(ILAst.Field(f.typeId, f.name), id: TypeId))
+  }
+
   protected def compositeFields(composite: Composite): List[ExtendedField] = {
     composite.flatMap(i => extractFields(index(i)))
   }
@@ -225,9 +233,7 @@ class Typespace(val domain: DomainDefinition) {
     enumFields(defn).all.map(_.field)
   }
 
-  protected def toExtendedFields(fields: Aggregate, id: TypeId): List[ExtendedField] = {
-    fields.map(f => ExtendedField(f, id: TypeId))
-  }
+
 
   protected def extractDependencies(definition: ILAst): Seq[Dependency] = {
     definition match {
@@ -242,9 +248,11 @@ class Typespace(val domain: DomainDefinition) {
           d.superclasses.concepts.flatMap(c => extractDependencies(apply(c)))
 
       case d: Identifier =>
-        d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
+        d.fields.map(f => Dependency.PrimitiveField(d.id, f.typeId, f))
+
       case d: Adt =>
         d.alternatives.map(apply).flatMap(extractDependencies)
+
       case d: Alias =>
         Seq(Dependency.Alias(d.id, d.target))
     }
@@ -297,12 +305,14 @@ object Typespace {
 
   object Dependency {
 
-    case class Field(definedIn: TypeId, definite: TypeId, tpe: ILAst.Field) extends Dependency {
-
-      override def typeId: TypeId = definite
-
+    case class Field(definedIn: TypeId, typeId: TypeId, tpe: ILAst.Field) extends Dependency {
       override def toString: TypeName = s"[field $definedIn::${tpe.name} :$typeId]"
     }
+
+    case class PrimitiveField(definedIn: TypeId, typeId: TypeId, tpe: ILAst.PrimitiveField) extends Dependency {
+      override def toString: TypeName = s"[field $definedIn::${tpe.name} :$typeId]"
+    }
+
 
     case class Parameter(definedIn: TypeId, typeId: TypeId) extends Dependency {
       override def toString: TypeName = s"[param $definedIn::$typeId]"

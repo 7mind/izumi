@@ -4,11 +4,11 @@ include "model01.model"
 include "model02.model"
 
 id TestValIdentifier {
-  userId: UserId
+  userId: str
 }
 
 id TestIdentifer {
-  userId: UserId
+  userId: str
   context: str
 }
 

@@ -15,9 +15,11 @@ sealed trait ILStructure extends ILAst {
 object ILAst {
 
   case class Field(typeId: TypeId, name: String)
+  case class PrimitiveField(typeId: Primitive, name: String)
 
   type Composite = List[InterfaceId]
-  type Aggregate = List[Field]
+  type Tuple = List[Field]
+  type PrimitiveTuple = List[PrimitiveField]
 
   case class Super(interfaces: Composite, concepts: Composite) {
     val all: List[InterfaceId] = interfaces ++ concepts
@@ -29,9 +31,9 @@ object ILAst {
     def interfaces(ids: List[InterfaceId]): Super = Super(ids, List.empty)
   }
 
-  case class Identifier(id: IdentifierId, fields: Aggregate) extends ILStructure
+  case class Identifier(id: IdentifierId, fields: PrimitiveTuple) extends ILStructure
 
-  case class Interface(id: InterfaceId, fields: Aggregate, superclasses: Super) extends ILStructure
+  case class Interface(id: InterfaceId, fields: Tuple, superclasses: Super) extends ILStructure
 
   case class DTO(id: DTOId, superclasses: Super) extends ILStructure
 
