@@ -14,21 +14,21 @@ Notes
 
 ### Scalar types
 
-Type name    | Explanation                                 | Scala mapping                |
------------- | ------------------------------------------- | -----------------------------|
-`bool`       | Boolean                                     | `Boolean`                    |
-`str`        | String                                      | `String`                     |
-`i08`        | 8-bit integer                               | `Byte`                       |
-`i16`        | 16-bit integer                              | `Short`                      |
-`i32`        | 32-bit integer                              | `Int`                        |
-`i64`        | 64-bit integer                              | `Long`                       |
-`flt`        | Floating point                              | `Float`                      |
-`dbl`        | Double accuracy floating point              | `Double`                     |
-`uid`        | UUID                                        | `java.util.UUID`             |
-`tsz`        | Timestamp with timezone                     | `java.time.ZonedDateTime`    |
-`tsl`        | Local timestamp                             | `java.time.LocalDateTime`    |
-`time`       | Time                                        | `java.time.LocalTime`        |
-`date`       | Date                                        | `java.time.LocalDate`        |
+Type name   | Aliases            | Explanation                                 | Scala mapping                |
+------------| ------------------ | ------------------------------------------- | -----------------------------|
+`bool`      | `boolean`          | Boolean                                     | `Boolean`                    |
+`str`       | `string`           | String                                      | `String`                     |
+`i08`       | `byte`, `int8`     | 8-bit integer                               | `Byte`                       |
+`i16`       | `short`, `int16`   | 16-bit integer                              | `Short`                      |
+`i32`       | `int`, `int32`     | 32-bit integer                              | `Int`                        |
+`i64`       | `long`, `int64`    | 64-bit integer                              | `Long`                       |
+`flt`       | `float`            | Floating point                              | `Float`                      |
+`dbl`       | `double`           | Double accuracy floating point              | `Double`                     |
+`uid`       | `uuid`             | UUID                                        | `java.util.UUID`             |
+`tsz`       | `dtl`, `datetimel` | Timestamp with timezone                     | `java.time.ZonedDateTime`    |
+`tsl`       | `dtz`, `datetimez` | Local timestamp                             | `java.time.LocalDateTime`    |
+`time`      | `time`             | Time                                        | `java.time.LocalTime`        |
+`date`      | `date`             | Date                                        | `java.time.LocalDate`        |
 
 ### Generics
 
