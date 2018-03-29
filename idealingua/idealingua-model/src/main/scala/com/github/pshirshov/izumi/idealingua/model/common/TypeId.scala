@@ -77,6 +77,10 @@ object TypeId {
 }
 
 sealed trait Builtin extends TypeId {
+  def aliases: List[TypeName]
+
+  override def name: TypeName = aliases.head
+
   override def pkg: Package = Builtin.prelude
 
   override def toString: TypeName = s"#$name"
@@ -87,9 +91,7 @@ object Builtin {
 }
 
 trait Primitive extends Builtin with ScalarId {
-  def aliases: List[TypeName]
 
-  def name: TypeName = aliases.head
 }
 
 object Primitive {
@@ -174,31 +176,60 @@ sealed trait Generic extends Builtin {
 
 object Generic {
 
+  trait GenericCompanion {
+    def aliases: List[TypeName]
+
+  }
   case class TList(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
-    override def name: TypeName = "list"
+    override def aliases: List[TypeName] = TList.aliases
+  }
+
+  object TList extends GenericCompanion {
+    def aliases: List[TypeName] = List("lst", "list")
   }
 
   case class TSet(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
-    override def name: TypeName = "set"
+    override def aliases: List[TypeName] = TSet.aliases
+  }
+
+  object TSet extends GenericCompanion {
+    def aliases: List[TypeName] = List("set")
   }
 
   case class TOption(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
-    override def name: TypeName = "opt"
+    override def aliases: List[TypeName] = TOption.aliases
   }
+
+  object TOption extends GenericCompanion {
+    def aliases: List[TypeName] = List("opt", "option")
+  }
+
 
   case class TMap(keyType: ScalarId, valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(keyType, valueType)
 
-    override def name: TypeName = "map"
+    override def aliases: List[TypeName] = TMap.aliases
   }
 
-  final val all = Set("list", "set", "map", "opt")
+  object TMap extends GenericCompanion {
+    def aliases: List[TypeName] = List("map", "dict")
+  }
+
+
+  final val all = Set(
+    TList
+    , TSet
+    , TOption
+    , TMap
+  )
+    .flatMap(tpe => tpe.aliases.map(a => a -> tpe))
+    .toMap
 }
 
 

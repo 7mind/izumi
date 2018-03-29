@@ -183,16 +183,16 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
 
   protected def toGeneric(generic: IndefiniteGeneric): Generic = {
     generic.name match {
-      case "set" =>
+      case n if Generic.TSet.aliases.contains(n) =>
         Generic.TSet(makeDefinite(generic.args.head))
 
-      case "list" =>
+      case n if Generic.TList.aliases.contains(n) =>
         Generic.TList(makeDefinite(generic.args.head))
 
-      case "opt" =>
+      case n if Generic.TOption.aliases.contains(n) =>
         Generic.TOption(makeDefinite(generic.args.head))
 
-      case "map" =>
+      case n if Generic.TMap.aliases.contains(n) =>
         Generic.TMap(toScalar(makeDefinite(generic.args.head)), makeDefinite(generic.args.last))
     }
   }
