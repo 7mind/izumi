@@ -79,6 +79,14 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     ctx.modules.toSource(IndefiniteId(definition.id), ctx.modules.toModuleId(definition), defns)
   }
 
+  protected def renderDto(i: DTO): Seq[Defn] = {
+    ctx.tools.mkStructure(i.id).defns(List.empty)
+  }
+
+  protected def renderAlias(i: Alias): Seq[Defn] = {
+    Seq(q"type ${conv.toScala(i.id).typeName} = ${conv.toScala(i.target).typeFull}")
+  }
+
   def renderAdt(i: Adt): Seq[Defn] = {
     val t = conv.toScala(i.id)
 
@@ -160,9 +168,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     ext.extend(i.id, qqEnum, qqEnumCompanion, _.handleEnum, _.handleEnumCompanion)
   }
 
-  protected def renderAlias(i: Alias): Seq[Defn] = {
-    Seq(q"type ${conv.toScala(i.id).typeName} = ${conv.toScala(i.target).typeFull}")
-  }
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
     val fields = typespace.enumFields(i).toScala
@@ -239,6 +244,9 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         val requiredParameters = t.requiredParameters
         val fieldsToCopyFromInterface: Set[Field] = t.fieldsToCopyFromInterface
         val fieldsToTakeFromParameters: Set[ExtendedField] = t.fieldsToTakeFromParameters
+        val signature = requiredParameters.map(f => (ctx.tools.idToParaName(f), conv.toScala(f).typeFull)).toParams
+        val nonUniqueFields: immutable.Seq[ScalaField] = t.fields.toScala.nonUnique
+        val fullSignature = signature ++ nonUniqueFields.toParams
 
         val constructorCodeThis = fieldsToCopyFromInterface.toList.map {
           f =>
@@ -250,18 +258,13 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
         }
 
-        val signature = requiredParameters.map(f => (ctx.tools.idToParaName(f), conv.toScala(f).typeFull)).toParams
-
-        val nonUniqueFields: immutable.Seq[ScalaField] = t.fields.toScala.nonUnique
-
-        val fullSignature = signature ++ nonUniqueFields.toParams
-
         val constructorCodeNonUnique = nonUniqueFields.map {
           f =>
             q""" ${f.name} = ${f.name}  """
         }
 
         val impl = t.typeToConstruct
+
         q"""def ${Term.Name("to" + impl.name.capitalize)}(..$fullSignature): ${toScala(impl).typeFull} = {
             ${toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers ++ constructorCodeNonUnique})
             }
@@ -454,7 +457,5 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     dispatchers ++ ext.extend(i.id, qqService, qqServiceCompanion, _.handleService, _.handleServiceCompanion)
   }
 
-  protected def renderDto(i: DTO): Seq[Defn] = {
-    ctx.tools.mkStructure(i.id).defns(List.empty)
-  }
+
 }

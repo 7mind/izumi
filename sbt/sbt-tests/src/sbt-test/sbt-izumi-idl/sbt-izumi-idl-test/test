@@ -1,4 +1,4 @@
 # build
 > ;+clean;+test;+package
-$ exists lib/shared-lib/target/scala-2.12/src_managed/main/izumi/idealingua/domains/Domain01.scala
-$ exists lib/just-lib/target/scala-2.12/src_managed/main/izumi/idealingua/domains/Domain02.scala
+$ exists lib/shared-lib/target/scala-2.12/src_managed/main/test/domain01/domain01.scala
+$ exists lib/just-lib/target/scala-2.12/src_managed/main/test/domain02/domain02.scala
