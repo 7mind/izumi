@@ -8,14 +8,19 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
 import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.{ConvertersExtension, IfaceConstructorsExtension, IfaceNarrowersExtension, ScalaTranslatorExtension}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaField, ServiceMethodProduct}
 
 import scala.meta._
 
 
 class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) {
-  protected val ctx: ScalaTranslationContext = new ScalaTranslationContext(ts, extensions)
+  protected val allExtensions: Seq[ScalaTranslatorExtension] = extensions ++ Seq(
+    ConvertersExtension
+    , IfaceConstructorsExtension
+    , IfaceNarrowersExtension
+  )
+  protected val ctx: STContext = new STContext(ts, allExtensions)
 
   import ScalaField._
   import ctx._
@@ -123,7 +128,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
             ..$members
            }"""
-    ext.extend(i.id, qqAdt, qqAdtCompanion, _.handleAdt, _.handleAdtCompanion)
+    ext.extend(i, qqAdt, qqAdtCompanion, _.handleAdt, _.handleAdtCompanion)
   }
 
   def renderEnumeration(i: Enumeration): Seq[Defn] = {
@@ -142,7 +147,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
               override def toString: String = ${Lit.String(m)}
             }"""
 
-        mt.termName -> ext.extend(i.id, element, _.handleEnumElement)
+        mt.termName -> ext.extend(i, element, _.handleEnumElement)
     }
 
     val parseMembers = members.map {
@@ -165,7 +170,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             ..${members.map(_._2)}
            }"""
 
-    ext.extend(i.id, qqEnum, qqEnumCompanion, _.handleEnum, _.handleEnumCompanion)
+    ext.extend(i, qqEnum, qqEnumCompanion, _.handleEnum, _.handleEnumCompanion)
   }
 
 
@@ -185,7 +190,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val tools = t.within(s"${i.id.name}Extensions")
 
     val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
-    val extended = ext.extend(i.id, qqTools, _.handleIdentifierTools)
+    val extended = ext.extend(i, qqTools, _.handleIdentifierTools)
 
     val qqCompanion = q"""object ${t.termName} { $extended}"""
 
@@ -198,7 +203,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }"""
 
 
-    ext.extend(i.id, qqIdentifier, qqCompanion, _.handleIdentifier, _.handleIdentifierCompanion)
+    ext.extend(i, qqIdentifier, qqCompanion, _.handleIdentifier, _.handleIdentifierCompanion)
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
@@ -221,70 +226,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val implStructure = ctx.tools.mkStructure(eid)
     val impl = implStructure.defns(List.empty).toList
 
-    val structuralParents = List(i.id) ++ i.superclasses.concepts // we don't add explicit parents here because their converters are available
-    val narrowers = structuralParents.distinct.map {
-      p =>
-        val ifields = typespace.enumFields(p)
-
-        val constructorCode = ifields.all.map {
-          f =>
-            q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
-        }
-
-        val parentType = toScala(p)
-        val tt = parentType.within(typespace.toDtoName(p))
-        q"""def ${Term.Name("as" + p.name.capitalize)}(): ${parentType.typeFull} = {
-             ${tt.termFull}(..$constructorCode)
-            }
-          """
-    }
-
-    val constructors = typespace.compatibleImplementors(i.id).map {
-      t =>
-        val instanceFields = t.parentInstanceFields
-        val childMixinFields = t.mixinsInstancesFields
-        val localFields = t.localFields
-
-        val constructorSignature = Seq(
-          childMixinFields.map(_.definedBy).map(f => (ctx.tools.idToParaName(f), conv.toScala(f).typeFull))
-          , localFields.map(f => (Term.Name(f.name), conv.toScala(f.typeId).typeFull))
-        ).flatten.toParams
-
-        val constructorCodeThis = instanceFields.toList.map {
-          f =>
-            q""" ${Term.Name(f.name)} = _value.${Term.Name(f.name)}  """
-        }
-
-        val constructorCodeOthers = childMixinFields.map {
-          f =>
-            q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
-        }
-
-        val constructorCodeNonUnique = localFields.map {
-          f =>
-            val term = Term.Name(f.name)
-            q""" $term = $term """
-        }
-
-        val impl = t.typeToConstruct
-
-        q"""def ${Term.Name("to" + impl.name.capitalize)}(..$constructorSignature): ${toScala(impl).typeFull} = {
-            ${toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers ++ constructorCodeNonUnique})
-            }
-          """
-    }
-
-
     val extensions = {
-      val converters = ctx.tools.mkConverters(i.id, fields)
-
-      val toolDecls = narrowers ++ constructors ++ converters
-
       val tools = t.within(s"${i.id.name}Extensions")
-
-      val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { ..$toolDecls }"""
-
-      ext.extend(i.id, qqTools, _.handleInterfaceTools)
+      val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
+      ext.extend(i, qqTools, _.handleInterfaceTools)
     }
 
     val qqInterface =
@@ -303,7 +248,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
              ..$impl
          }"""
 
-    ext.extend(i.id, qqInterface, qqInterfaceCompanion, _.handleInterface, _.handleInterfaceCompanion)
+    ext.extend(i, qqInterface, qqInterfaceCompanion, _.handleInterface, _.handleInterfaceCompanion)
   }
 
 
@@ -363,7 +308,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
           ..${decls.map(_.defn)}
          }"""
     val qqTools = q"""implicit class ${tools.typeName}[R[_]](_value: $fullServiceType) {}"""
-    val extTools = ext.extend(i.id, qqTools, _.handleServiceTools)
+    val extTools = ext.extend(i, qqTools, _.handleServiceTools)
 
     val qqServiceCompanion =
       q"""object ${t.termName} {
@@ -457,7 +402,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     }
 
 
-    dispatchers ++ ext.extend(i.id, qqService, qqServiceCompanion, _.handleService, _.handleServiceCompanion)
+    dispatchers ++ ext.extend(i, qqService, qqServiceCompanion, _.handleService, _.handleServiceCompanion)
   }
 
 

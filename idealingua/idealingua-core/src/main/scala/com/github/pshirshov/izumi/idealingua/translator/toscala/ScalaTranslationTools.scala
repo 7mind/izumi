@@ -6,12 +6,12 @@ import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId,
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
 import com.github.pshirshov.izumi.idealingua.model.il.structures.Struct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, ScalaStruct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.CompositeStructure
 
 import scala.meta._
 
 
-class ScalaTranslationTools(ctx: ScalaTranslationContext) {
+class ScalaTranslationTools(ctx: STContext) {
   import ctx.conv._
 
   def mkStructure(id: StructureId): CompositeStructure = {
@@ -31,21 +31,7 @@ class ScalaTranslationTools(ctx: ScalaTranslationContext) {
     addAnyBase(struct, ifDecls, "Any")
   }
 
-  def mkConverters(id: StructureId, struct: ScalaStruct): List[Defn.Def] = {
-    val converters = ctx.typespace.sameSignature(id).map {
-      same =>
-        val code = struct.all.map {
-          f =>
-            q""" ${f.name} = _value.${f.name}  """
-        }
-        q"""def ${Term.Name("cast" + same.id.name.capitalize)}(): ${toScala(same.id).typeFull} = {
-              ${toScala(same.id).termFull}(..$code)
-            }
-          """
 
-    }
-    converters
-  }
 
   private def addAnyBase(struct: Struct, ifDecls: List[Init], base: String): List[Init] = {
     if (struct.isScalar && struct.all.forall(f => canBeAnyValField(f.field.typeId))) {

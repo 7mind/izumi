@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ModuleTool
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaTypeConverter
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime.IDLRuntimeTypes
 
-class ScalaTranslationContext(
+class STContext(
                                val typespace: Typespace
                                , extensions: Seq[ScalaTranslatorExtension]
                              ) {
@@ -21,6 +21,6 @@ class ScalaTranslationContext(
 
   final val tools = new ScalaTranslationTools(this)
   final val ext = {
-    new ScalaTranslatorExtensions(extensions, this)
+    new ScalaTranslatorExtensions(this, extensions)
   }
 }

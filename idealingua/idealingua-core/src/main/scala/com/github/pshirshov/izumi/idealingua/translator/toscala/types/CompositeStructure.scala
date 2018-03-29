@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
-import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
+import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
 import scala.meta._
 
 
-class CompositeStructure(ctx: ScalaTranslationContext, val fields: ScalaStruct) {
+class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val t: ScalaType = ctx.conv.toScala(fields.id)
 
   import ScalaField._
@@ -83,12 +83,10 @@ class CompositeStructure(ctx: ScalaTranslationContext, val fields: ScalaStruct) 
     val superClasses = ctx.tools.withAnyval(fields.fields, bases ++ ifDecls)
     val tools = t.within(s"${fields.id.name.capitalize}Extensions")
 
-    val converters = ctx.tools.mkConverters(fields.id, fields)
-
     val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
 
-    val qqTools = q""" implicit class ${tools.typeName}(_value: ${t.typeFull}) { ..$converters }"""
-    val extTools = ctx.ext.extend(fields.id, qqTools, _.handleCompositeTools)
+    val qqTools = q""" implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
+    val extTools = ctx.ext.extend(fields, qqTools, _.handleCompositeTools)
 
 
     val qqCompositeCompanion =
@@ -97,6 +95,6 @@ class CompositeStructure(ctx: ScalaTranslationContext, val fields: ScalaStruct) 
           ..$constructors
          }"""
 
-    ctx.ext.extend(fields.id, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
+    ctx.ext.extend(fields, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
   }
 }
