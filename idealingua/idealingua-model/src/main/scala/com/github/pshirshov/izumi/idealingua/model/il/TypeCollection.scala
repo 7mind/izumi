@@ -3,8 +3,9 @@ package com.github.pshirshov.izumi.idealingua.model.il
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.{DTO, Interface, Service, Super}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, ILAst, ILStructure}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{DTO, Interface, Service, Super}
 
 class TypeCollection(domain: DomainDefinition) {
   val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)

@@ -3,8 +3,8 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.tools
 import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Alias
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Alias
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime.IDLRuntimeTypes
 

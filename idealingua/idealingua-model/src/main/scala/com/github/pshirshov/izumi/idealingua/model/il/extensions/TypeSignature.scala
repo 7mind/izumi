@@ -2,9 +2,10 @@ package com.github.pshirshov.izumi.idealingua.model.il.extensions
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
-import com.github.pshirshov.izumi.idealingua.model.il.{ILAst, Typespace}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
+import com.github.pshirshov.izumi.idealingua.model.il.Typespace
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
 
 import scala.util.hashing.MurmurHash3
 

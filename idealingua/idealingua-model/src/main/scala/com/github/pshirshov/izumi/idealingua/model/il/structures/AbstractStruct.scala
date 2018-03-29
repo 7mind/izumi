@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.il
+package com.github.pshirshov.izumi.idealingua.model.il.structures
 
 trait AbstractStruct[F] {
   def unambigious: List[F]

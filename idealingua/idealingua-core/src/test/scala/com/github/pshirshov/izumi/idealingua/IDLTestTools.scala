@@ -7,7 +7,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinition
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension}
 

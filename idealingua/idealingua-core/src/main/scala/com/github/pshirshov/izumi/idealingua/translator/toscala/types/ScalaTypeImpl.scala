@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.il.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
 
 import scala.meta.{Init, Name, Term, Type}
 

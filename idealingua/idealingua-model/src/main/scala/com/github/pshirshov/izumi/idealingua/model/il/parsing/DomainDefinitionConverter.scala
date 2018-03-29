@@ -1,10 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.model.il
+package com.github.pshirshov.izumi.idealingua.model.il.parsing
 
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Super
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Super
+import com.github.pshirshov.izumi.idealingua.model.il.{ast, _}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
 
 
 class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
@@ -23,7 +25,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
     val mappedTypes = defn.types.map(fixType)
     val mappedServices = defn.services.map(fixService)
     val ref = defn.referenced.map(d => d._1 -> new DomainDefinitionConverter(d._2).convert())
-    DomainDefinition(id = domainId, types = mappedTypes, services = mappedServices, referenced = ref)
+    ast.DomainDefinition(id = domainId, types = mappedTypes, services = mappedServices, referenced = ref)
   }
 
   protected def fixType(defn: ILAstParsed): ILAst = {

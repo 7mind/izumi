@@ -3,9 +3,11 @@ package com.github.pshirshov.izumi.idealingua.model.il
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
+import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst, ILStructure}
+import com.github.pshirshov.izumi.idealingua.model.il.structures.{ConverterDef, Struct}
 
 
 class Typespace(val domain: DomainDefinition) {
@@ -45,12 +47,12 @@ class Typespace(val domain: DomainDefinition) {
   def toDtoName(id: TypeId): String = types.toDtoName(id)
 
 
-  def implementors(id: InterfaceId): List[InterfaceConstructors] = {
+  def implementors(id: InterfaceId): List[ConverterDef] = {
     val implementors = implementingDtos(id)
     compatibleImplementors(implementors, id)
   }
 
-  def compatibleImplementors(id: InterfaceId): List[InterfaceConstructors] = {
+  def compatibleImplementors(id: InterfaceId): List[ConverterDef] = {
     val implementors = compatibleDtos(id)
     compatibleImplementors(implementors, id)
   }
@@ -260,7 +262,7 @@ class Typespace(val domain: DomainDefinition) {
     }
   }
 
-  protected def compatibleImplementors(implementors: List[StructureId], id: InterfaceId): List[InterfaceConstructors] = {
+  protected def compatibleImplementors(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
     val struct = structure(apply(id))
     val parentInstanceFields = struct.unambigious.map(_.field).toSet
 
@@ -285,7 +287,7 @@ class Typespace(val domain: DomainDefinition) {
 
 
           // TODO: pass definition instead of id
-          InterfaceConstructors(
+          ConverterDef(
             istruct.id
             , filteredParentFields
             , localFields

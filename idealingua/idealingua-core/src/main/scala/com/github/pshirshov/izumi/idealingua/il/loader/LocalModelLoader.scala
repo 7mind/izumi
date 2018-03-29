@@ -4,10 +4,11 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
-import com.github.pshirshov.izumi.idealingua.il.{IL, ILParser, ParsedDomain, ParsedModel}
+import com.github.pshirshov.izumi.idealingua.il.{ILParser, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainDefinitionConverter, DomainId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId}
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.DomainDefinitionConverter
 import fastparse.all
 import fastparse.core.Parsed
 

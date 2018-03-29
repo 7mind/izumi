@@ -1,13 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.JavaType
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{IdentifierId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, IndefiniteId, StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, IdentifierId, ServiceId}
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
-import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
+import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
-
-import scala.reflect.ClassTag
 
 object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
 

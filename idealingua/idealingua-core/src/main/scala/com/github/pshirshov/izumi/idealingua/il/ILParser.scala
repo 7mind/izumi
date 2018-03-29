@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.il
 
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ILAstParsed.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ILAstParsed._
-import com.github.pshirshov.izumi.idealingua.model.il._
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILParsedId
 import fastparse.CharPredicates._
 import fastparse.all._
 import fastparse.{all, core}

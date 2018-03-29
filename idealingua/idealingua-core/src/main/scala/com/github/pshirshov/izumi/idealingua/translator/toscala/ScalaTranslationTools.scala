@@ -4,7 +4,8 @@ import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId}
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.{ILAst, Struct}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
+import com.github.pshirshov.izumi.idealingua.model.il.structures.Struct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, ScalaStruct}
 
 import scala.meta._

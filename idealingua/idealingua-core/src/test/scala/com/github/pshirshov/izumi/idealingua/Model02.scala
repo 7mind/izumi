@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.Primitive
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.{Field, Super}
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId, ILAst}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Field, Super}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
 
 object Model02 {
   final val if1Id = model.common.IndefiniteId.parse("izumi.test.domain02.TestInterface1").toInterface

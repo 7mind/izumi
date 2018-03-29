@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.model.introspection
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.serialization.ILSchemaSerializerJson4sImpl
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinition, DomainId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId}
 
 trait IDLDomainCompanion {
   def id: DomainId
