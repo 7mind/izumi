@@ -83,10 +83,10 @@ class ILParser {
 
   final val aggregate = P(field.rep(sep = SepLine))
 
-  final val mixed = P(SepInlineOpt ~ "+" ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
+  final val mixed = P(SepInlineOpt ~ "+" ~ "++".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
   final val composite = P(mixed.rep(sep = SepLine))
 
-  final val added = P(SepInlineOpt ~ "*" ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
+  final val added = P(SepInlineOpt ~ ("*" | "...") ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
   final val embedded = P(added.rep(sep = SepLine))
 
 

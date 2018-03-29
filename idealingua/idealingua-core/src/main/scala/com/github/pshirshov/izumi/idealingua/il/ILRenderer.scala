@@ -47,14 +47,24 @@ class ILRenderer(domain: DomainDefinition) {
          """.stripMargin
 
       case d: Interface =>
-        val body = Seq(renderComposite(d.superclasses.interfaces), renderComposite(d.superclasses.concepts, '*'), renderAggregate(d.fields)).filterNot(_.isEmpty).mkString("\n\n")
+        val body = Seq(
+          renderComposite(d.superclasses.interfaces)
+          , renderComposite(d.superclasses.concepts, '*')
+          , " "
+          , renderAggregate(d.fields)
+        ).filterNot(_.isEmpty).map(_.trim).mkString("\n")
         s"""mixin ${render(d.id)} {
            |${body.shift(2)}
            |}
          """.stripMargin
 
       case d: DTO =>
-        val body = Seq(renderComposite(d.superclasses.interfaces), renderComposite(d.superclasses.concepts, '*')).filterNot(_.isEmpty).mkString("\n\n")
+        val body = Seq(
+          renderComposite(d.superclasses.interfaces)
+          , renderComposite(d.superclasses.concepts, '*')
+          , " "
+          , renderAggregate(d.fields)
+        ).filterNot(_.isEmpty).map(_.trim).mkString("\n")
 
         s"""data ${render(d.id)} {
            |${body.shift(2)}

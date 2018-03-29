@@ -11,8 +11,8 @@ mixin Metadata {
 }
 
 mixin PointLike {
-  + Metadata
-  * IntPair
+  +++ Metadata
+  ... IntPair
 }
 
 data Point {
