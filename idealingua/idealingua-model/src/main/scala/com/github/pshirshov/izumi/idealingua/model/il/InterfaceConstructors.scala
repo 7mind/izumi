@@ -1,13 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
 import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, StructureId}
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.{Composite, Field}
+import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Field
 
 case class InterfaceConstructors(
                                   typeToConstruct: StructureId
                                   , fields: Struct
-                                  , parentsAsParams: Composite
                                   , parentInstanceFields: Set[Field]
+                                  , localFields: Set[Field]
                                   , mixinsInstancesFields: Set[ExtendedField]
-                                  , localFields: Set[ExtendedField]
                                 )

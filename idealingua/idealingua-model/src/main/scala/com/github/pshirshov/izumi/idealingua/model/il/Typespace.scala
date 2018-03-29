@@ -232,7 +232,7 @@ class Typespace(val domain: DomainDefinition) {
 
 
   protected def signature(defn: ILStructure): List[Field] = {
-    structure(defn).all.map(_.field)
+    structure(defn).all.map(_.field).sortBy(_.name)
   }
 
 
@@ -263,36 +263,24 @@ class Typespace(val domain: DomainDefinition) {
   protected def compatibleImplementors(implementors: List[StructureId], id: InterfaceId): List[InterfaceConstructors] = {
     val struct = structure(apply(id))
     val parentInstanceFields = struct.unambigious.map(_.field).toSet
-    val compatibleIfs = parentsStructural(id)
 
-    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     implementors
       .map(t => structure(apply(t)))
       .map {
         istruct =>
-          val localFields = istruct.localOrAmbigious.distinctBy(_.field)
+          val localFields = istruct.localOrAmbigious
+            .map(_.field)
             .toSet
 
-          val inheritedFields = istruct.inherited
-            .map(_.definedBy)
-            .collect({ case i: StructureId => i })
-            .filterNot(compatibleIfs.contains)
-            .toSet
-
-          val filteredParentFields = parentInstanceFields
-            .filterNot(i => localFields.exists(_.field == i))
-
-          val parentsAsParams = inheritedFields
-            .collect({ case i: InterfaceId => i })
-            .toList
+          val filteredParentFields = parentInstanceFields.diff(localFields)
 
           val mixinInstanceFields = istruct
             .unambigiousInherited
             .map(_.definedBy)
-            .collect({ case i: StructureId => i })
+            .collect({ case i: InterfaceId => i })
             .flatMap(mi => structure(apply(mi)).all)
             .filterNot(f => parentInstanceFields.contains(f.field))
-            .filterNot(localFields.contains)
+            .filterNot(f => localFields.contains(f.field))
             .toSet
 
 
@@ -300,10 +288,9 @@ class Typespace(val domain: DomainDefinition) {
           InterfaceConstructors(
             istruct.id
             , struct
-            , parentsAsParams
             , filteredParentFields
-            , mixinInstanceFields
             , localFields
+            , mixinInstanceFields
           )
       }
   }

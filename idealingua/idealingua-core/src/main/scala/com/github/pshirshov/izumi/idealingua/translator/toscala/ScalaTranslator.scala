@@ -242,11 +242,11 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       t =>
         val instanceFields = t.parentInstanceFields
         val childMixinFields = t.mixinsInstancesFields
-        val localFields = t.localFields.map(_.field)
+        val localFields = t.localFields
 
         val constructorSignature = Seq(
-          t.parentsAsParams.map(f => (ctx.tools.idToParaName(f), conv.toScala(f).typeFull))
-          , t.localFields.map(f => (Term.Name(f.field.name), conv.toScala(f.field.typeId).typeFull))
+          childMixinFields.map(_.definedBy).map(f => (ctx.tools.idToParaName(f), conv.toScala(f).typeFull))
+          , localFields.map(f => (Term.Name(f.name), conv.toScala(f.typeId).typeFull))
         ).flatten.toParams
 
         val constructorCodeThis = instanceFields.toList.map {
