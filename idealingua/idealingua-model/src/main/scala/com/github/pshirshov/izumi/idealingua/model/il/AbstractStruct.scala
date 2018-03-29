@@ -1,11 +1,19 @@
 package com.github.pshirshov.izumi.idealingua.model.il
 
 trait AbstractStruct[F] {
+  def unambigious: List[F]
+
+  def ambigious: List[F]
+
   def all: List[F]
 
   def inherited: List[F] = all.filterNot(isLocal)
 
   def local: List[F] = all.filter(isLocal)
+
+  def unambigiousInherited: List[F] = unambigious.filterNot(isLocal)
+
+  def localOrAmbigious: List[F] = ambigious ++ local
 
   def isScalar: Boolean = size == 1
 

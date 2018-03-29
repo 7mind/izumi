@@ -83,14 +83,14 @@ class Typespace(val domain: DomainDefinition) {
     }
   }
 
-  def parents(id: TypeId): List[InterfaceId] = {
+  def parentsInherited(id: TypeId): List[InterfaceId] = {
     id match {
       case i: InterfaceId =>
         val defn = apply(i)
-        List(i) ++ defn.superclasses.interfaces.flatMap(parents)
+        List(i) ++ defn.superclasses.interfaces.flatMap(parentsInherited)
 
       case i: DTOId =>
-        apply(i).superclasses.interfaces.flatMap(parents)
+        apply(i).superclasses.interfaces.flatMap(parentsInherited)
 
       case _: IdentifierId =>
         List()
@@ -109,14 +109,14 @@ class Typespace(val domain: DomainDefinition) {
     }
   }
 
-  def compatible(id: TypeId): List[InterfaceId] = {
+  def parentsStructural(id: TypeId): List[InterfaceId] = {
     id match {
       case i: InterfaceId =>
         val defn = apply(i)
-        List(i) ++ defn.superclasses.all.flatMap(compatible)
+        List(i) ++ defn.superclasses.all.flatMap(parentsStructural)
 
       case i: DTOId =>
-        apply(i).superclasses.all.flatMap(compatible)
+        apply(i).superclasses.all.flatMap(parentsStructural)
 
       case _: IdentifierId =>
         List()
@@ -138,14 +138,14 @@ class Typespace(val domain: DomainDefinition) {
 
   protected def implementingDtos(id: InterfaceId): List[DTOId] = {
     index.collect {
-      case (tid, d: DTO) if parents(tid).contains(id) =>
+      case (tid, d: DTO) if parentsInherited(tid).contains(id) =>
         d.id
     }.toList
   }
 
   protected def compatibleDtos(id: InterfaceId): List[DTOId] = {
     index.collect {
-      case (tid, d: DTO) if compatible(tid).contains(id) =>
+      case (tid, d: DTO) if parentsStructural(tid).contains(id) =>
         d.id
     }.toList
   }
@@ -176,7 +176,7 @@ class Typespace(val domain: DomainDefinition) {
       .filter(another => sig == signature(another))
       .filterNot(_.id == tid)
       .distinct
-      .filterNot(id => parents(id.id).contains(tid))
+      .filterNot(id => parentsInherited(id.id).contains(tid))
       .collect({ case t: DTO => t })
       .toList
   }
@@ -262,23 +262,15 @@ class Typespace(val domain: DomainDefinition) {
 
   protected def compatibleImplementors(implementors: List[StructureId], id: InterfaceId): List[InterfaceConstructors] = {
     val struct = structure(apply(id))
+    val parentInstanceFields = struct.unambigious.map(_.field).toSet
+    val compatibleIfs = parentsStructural(id)
 
-    val parentInstanceFields = {
-      val baseConflicts = struct.conflicts.softConflicts.keySet
-
-      struct.all.map(_.field)
-        .toSet
-        .filterNot(f => baseConflicts.contains(f.name))
-    }
-
-    val compatibleIfs = compatible(id)
-
+    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     implementors
       .map(t => structure(apply(t)))
       .map {
         istruct =>
-          val localFields = istruct
-            .local
+          val localFields = istruct.localOrAmbigious.distinctBy(_.field)
             .toSet
 
           val inheritedFields = istruct.inherited
@@ -295,23 +287,23 @@ class Typespace(val domain: DomainDefinition) {
             .toList
 
           val mixinInstanceFields = istruct
-            .inherited
+            .unambigiousInherited
             .map(_.definedBy)
             .collect({ case i: StructureId => i })
             .flatMap(mi => structure(apply(mi)).all)
             .filterNot(f => parentInstanceFields.contains(f.field))
-            .filterNot(f => istruct.conflicts.softConflicts.keySet.contains(f.field.name))
+            .filterNot(localFields.contains)
             .toSet
 
 
           // TODO: pass definition instead of id
           InterfaceConstructors(
             istruct.id
+            , struct
             , parentsAsParams
             , filteredParentFields
             , mixinInstanceFields
             , localFields
-            , struct
           )
       }
   }

@@ -6,14 +6,14 @@ import com.github.pshirshov.izumi.idealingua.model.il.{AbstractStruct, Struct}
 class ScalaStruct
 (
   val fields: Struct
-  , unambigious: List[ScalaField]
-  , ambigious: List[ScalaField]
+  , val unambigious: List[ScalaField]
+  , val ambigious: List[ScalaField]
 ) extends AbstractStruct[ScalaField] {
-  def id: StructureId = fields.id
 
-  def all: List[ScalaField] = unambigious ++ ambigious
+  val id: StructureId = fields.id
 
-  def localOrAmbigious: List[ScalaField] = (ambigious ++ local).distinct
+  val all: List[ScalaField] = unambigious ++ ambigious
+
 
   override protected def isLocal(f: ScalaField): Boolean = {
     f.field.definedBy == id

@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.ExtendedField
 
 import scala.meta.{Term, Type}
 
-case class ScalaField(name: Term.Name, fieldType: Type, field: ExtendedField, conflicts: Set[ExtendedField])
+case class ScalaField(name: Term.Name, fieldType: Type, field: ExtendedField)
 
 object ScalaField {
   implicit class ScalaFieldsExt(fields: TraversableOnce[ScalaField]) {

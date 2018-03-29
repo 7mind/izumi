@@ -5,13 +5,18 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Super
 
 
-case class Struct private
+class Struct private
 (
-  id: StructureId
-  , superclasses: Super
-  , all: List[ExtendedField]
+  val id: StructureId
+  , val superclasses: Super
   , conflicts: FieldConflicts
 ) extends AbstractStruct[ExtendedField] {
+  override def all: List[ExtendedField] = conflicts.all.toList
+
+  override def unambigious: List[ExtendedField] = conflicts.goodFields.flatMap(_._2).toList
+
+  override def ambigious: List[ExtendedField] = conflicts.softConflicts.flatMap(_._2).map(_._2.head).toList
+
   override protected def isLocal(f: ExtendedField): Boolean = {
     f.definedBy == id
   }
@@ -26,6 +31,6 @@ object Struct {
       throw new IDLException(s"Conflicting fields: ${conflicts.hardConflicts}")
     }
 
-    new Struct(id, superclasses, all, conflicts)
+    new Struct(id, superclasses, conflicts)
   }
 }

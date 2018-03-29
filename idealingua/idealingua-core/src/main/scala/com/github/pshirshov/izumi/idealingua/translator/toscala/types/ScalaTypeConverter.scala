@@ -17,18 +17,9 @@ class ScalaTypeConverter(domain: DomainId) {
 
   implicit class ConflictsOps(fields: Struct) {
     def toScala: ScalaStruct = {
-      val good = fields.conflicts.goodFields
-        .flatMap(f => f._2.map(ef => toScala(ef))).toList
-
-      val soft = fields.conflicts.softConflicts
-        .flatMap(_._2).map(kv => toScala(kv._2)).toList
-
+      val good = fields.unambigious.map(toScala)
+      val soft = fields.ambigious.map(toScala)
       new ScalaStruct(fields, good, soft)
-    }
-
-    private def toScala(fields: Seq[ExtendedField]): ScalaField = {
-      val primary = fields.head
-      toScala(primary).copy(conflicts = fields.toSet)
     }
 
     private def toScala(field: ExtendedField): ScalaField = {
@@ -36,7 +27,6 @@ class ScalaTypeConverter(domain: DomainId) {
         Term.Name(field.field.name)
         , ScalaTypeConverter.this.toScala(field.field.typeId).typeFull
         , field
-        , Set.empty
       )
     }
   }
