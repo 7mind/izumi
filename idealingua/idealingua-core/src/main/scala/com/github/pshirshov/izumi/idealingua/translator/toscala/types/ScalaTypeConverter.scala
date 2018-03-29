@@ -23,7 +23,7 @@ class ScalaTypeConverter(domain: DomainId) {
       val soft = fields.conflicts.softConflicts
         .flatMap(_._2).map(kv => toScala(kv._2)).toList
 
-      new ScalaStruct(good, soft, fields)
+      new ScalaStruct(fields, good, soft)
     }
 
     private def toScala(fields: Seq[ExtendedField]): ScalaField = {

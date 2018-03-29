@@ -5,21 +5,17 @@ import com.github.pshirshov.izumi.idealingua.model.il.{AbstractStruct, Struct}
 
 class ScalaStruct
 (
-  _unique: List[ScalaField]
-  , _nonUnique: List[ScalaField]
-  , _fields: Struct
+  val fields: Struct
+  , unambigious: List[ScalaField]
+  , ambigious: List[ScalaField]
 ) extends AbstractStruct[ScalaField] {
-  def id: StructureId = _fields.id
+  def id: StructureId = fields.id
 
-  def fields: Struct = _fields
+  def all: List[ScalaField] = unambigious ++ ambigious
 
-  def unique: List[ScalaField] = _unique
-
-  def nonUnique: List[ScalaField] = _nonUnique
-
-  def all: List[ScalaField] = _unique ++ _nonUnique
+  def localOrAmbigious: List[ScalaField] = (ambigious ++ local).distinct
 
   override protected def isLocal(f: ScalaField): Boolean = {
-    f.field.definedBy == _fields.id
+    f.field.definedBy == id
   }
 }

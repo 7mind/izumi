@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId}
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.{ILAst, Struct}
@@ -37,7 +37,7 @@ class ScalaTranslationTools(ctx: ScalaTranslationContext) {
           f =>
             q""" ${f.name} = _value.${f.name}  """
         }
-        q"""def ${Term.Name("into" + same.id.name.capitalize)}(): ${toScala(same.id).typeFull} = {
+        q"""def ${Term.Name("cast" + same.id.name.capitalize)}(): ${toScala(same.id).typeFull} = {
               ${toScala(same.id).termFull}(..$code)
             }
           """

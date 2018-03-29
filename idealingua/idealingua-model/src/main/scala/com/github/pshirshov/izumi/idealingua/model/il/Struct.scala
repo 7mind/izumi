@@ -4,26 +4,6 @@ import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, Struct
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Super
 
-trait AbstractStruct[F] {
-  def all: List[F]
-
-  def inherited: List[F] = all.filterNot(isLocal)
-
-  def local: List[F] = all.filter(isLocal)
-
-  def isScalar: Boolean = size == 1
-
-  def isComposite: Boolean = size > 1
-
-  def isEmpty: Boolean = size == 0
-
-  def nonEmpty: Boolean = !isEmpty
-
-  private def size: Int = all.size
-
-  protected def isLocal(f: F): Boolean
-
-}
 
 case class Struct private
 (
@@ -32,21 +12,20 @@ case class Struct private
   , all: List[ExtendedField]
   , conflicts: FieldConflicts
 ) extends AbstractStruct[ExtendedField] {
-  override def isLocal(f: ExtendedField): Boolean = {
+  override protected def isLocal(f: ExtendedField): Boolean = {
     f.definedBy == id
   }
 }
 
 object Struct {
   def apply(id: StructureId, superclasses: Super, all: List[ExtendedField]): Struct = {
-    val sorted = all.sortBy(_.field.name)
-    val conflicts = FieldConflicts(sorted)
+    val conflicts = FieldConflicts(all)
 
     // TODO: shitty side effect
     if (conflicts.hardConflicts.nonEmpty) {
       throw new IDLException(s"Conflicting fields: ${conflicts.hardConflicts}")
     }
 
-    new Struct(id, superclasses, sorted, conflicts)
+    new Struct(id, superclasses, all, conflicts)
   }
 }

@@ -32,17 +32,14 @@ class CompositeStructure(ctx: ScalaTranslationContext, val fields: ScalaStruct) 
       }.toParams
 
 
-    val fieldParams = List(
-      fields.nonUnique
-      , fields.local
-    ).flatten.toParams
+    val fieldParams = fields.localOrAmbigious.toParams
 
     interfaceParams ++
       fieldParams
   }
 
   def instantiator: Term.Apply = {
-    val local = (fields.nonUnique ++ fields.local).distinct
+    val local = fields.localOrAmbigious
     val localNames = local.map(_.field.field.name).toSet
 
     val constructorCode = fields.fields.all
