@@ -192,7 +192,14 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
     val extended = ext.extend(i, qqTools, _.handleIdentifierTools)
 
-    val qqCompanion = q"""object ${t.termName} { $extended}"""
+    val qqCompanion =
+      q"""object ${t.termName} {
+            def parse(s: String): ${t.typeName} = {
+              ???
+            }
+
+            $extended
+      }"""
 
     val qqIdentifier =
       q"""case class ${t.typeName} (..$decls) extends ..$superClasses {

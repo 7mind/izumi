@@ -20,10 +20,6 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     withDerived(ctx, struct.id, defn)
   }
 
-  override def handleIdentifierCompanion(ctx: STContext, id: Identifier, defn: Defn.Object): Defn.Object = {
-    withDerived(ctx, id.id, defn)
-  }
-
   override def handleAdtCompanion(ctx: STContext, adt: Adt, defn: Defn.Object): Defn.Object = {
     withDerived(ctx, adt.id, defn)
   }
@@ -32,15 +28,12 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     withDerived(ctx, id, defn)
   }
 
+  override def handleIdentifierCompanion(ctx: STContext, id: Identifier, defn: Defn.Object): Defn.Object = {
+    withParseable(ctx, defn, id.id)
+  }
+
   override def handleEnumCompanion(ctx: STContext, enum: Enumeration, defn: Defn.Object): Defn.Object = {
-    val t = ctx.conv.toScala(enum.id)
-    val tpe = t.typeFull
-    val circeBoilerplate = imports ++ List(
-      q""" implicit val ${Pat.Var(Term.Name(s"encode${enum.id.name}"))}: Encoder[$tpe] = Encoder.encodeString.contramap(_.toString) """
-      ,
-      q""" implicit val ${Pat.Var(Term.Name(s"decode${enum.id.name}"))}: Decoder[$tpe] = Decoder.decodeString.map(${t.termFull}.parse) """
-    )
-    defn.extendDefinition(circeBoilerplate)
+    withParseable(ctx, defn, enum.id)
   }
 
   override def handleInterfaceCompanion(ctx: STContext, iface: Interface, defn: Defn.Object): Defn.Object = {
@@ -78,6 +71,17 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
              }
            })
        """
+    )
+    defn.extendDefinition(circeBoilerplate)
+  }
+
+  private def withParseable(ctx: STContext, defn: Defn.Object, id: TypeId) = {
+    val t = ctx.conv.toScala(id)
+    val tpe = t.typeFull
+    val circeBoilerplate = imports ++ List(
+      q""" implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = Encoder.encodeString.contramap(_.toString) """
+      ,
+      q""" implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = Decoder.decodeString.map(${t.termFull}.parse) """
     )
     defn.extendDefinition(circeBoilerplate)
   }
