@@ -1,4 +1,4 @@
-domain shared.inheritance
+domain idltest.dtofields
 
 mixin IntPair {
   x: i32
@@ -18,4 +18,6 @@ mixin PointLike {
 data Point {
   + Metadata
   * IntPair
+  ownfield: str
+  name: str
 }

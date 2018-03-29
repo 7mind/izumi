@@ -150,7 +150,7 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-  def enumFields(defn: ILStructure): Struct = {
+  def structure(defn: ILStructure): Struct = {
     val parts = apply(defn.id) match {
       case i: Interface =>
         i.superclasses
@@ -164,7 +164,7 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   def enumFields(id: StructureId): Struct = {
-    enumFields(apply(id))
+    structure(apply(id))
   }
 
   def sameSignature(tid: StructureId): List[DTO] = {
@@ -196,9 +196,11 @@ class Typespace(val domain: DomainDefinition) {
       case t: DTO =>
         val superFields = compositeFields(t.superclasses.interfaces)
         val embeddedFields = t.superclasses.concepts.flatMap(id => extractFields(apply(id)))
+        val thisFields = toExtendedFields(t.fields, t.id)
 
         superFields ++
-          embeddedFields
+          embeddedFields ++
+          thisFields
 
       case t: Adt =>
         t.alternatives.map(apply).flatMap(extractFields)
@@ -230,9 +232,8 @@ class Typespace(val domain: DomainDefinition) {
 
 
   protected def signature(defn: ILStructure): List[Field] = {
-    enumFields(defn).all.map(_.field)
+    structure(defn).all.map(_.field)
   }
-
 
 
   protected def extractDependencies(definition: ILAst): Seq[Dependency] = {
@@ -245,7 +246,8 @@ class Typespace(val domain: DomainDefinition) {
           d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
       case d: DTO =>
         d.superclasses.interfaces.map(i => Dependency.Interface(d.id, i)) ++
-          d.superclasses.concepts.flatMap(c => extractDependencies(apply(c)))
+          d.superclasses.concepts.flatMap(c => extractDependencies(apply(c))) ++
+          d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
 
       case d: Identifier =>
         d.fields.map(f => Dependency.PrimitiveField(d.id, f.typeId, f))
@@ -259,39 +261,59 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   protected def compatibleImplementors(implementors: List[StructureId], id: InterfaceId): List[InterfaceConstructors] = {
-    val ifaceFields = enumFields(apply(id))
-    val ifaceNonUniqueFields = ifaceFields.conflicts.softConflicts.keySet
-    val fieldsToCopyFromInterface = ifaceFields.all.map(_.field)
-      .toSet
-      .filterNot(f => ifaceNonUniqueFields.contains(f.name))
+    val struct = structure(apply(id))
+
+    val parentInstanceFields = {
+      val baseConflicts = struct.conflicts.softConflicts.keySet
+
+      struct.all.map(_.field)
+        .toSet
+        .filterNot(f => baseConflicts.contains(f.name))
+    }
 
     val compatibleIfs = compatible(id)
 
-    implementors.map {
-      typeToConstruct =>
-        val definition = apply(typeToConstruct)
-        val implFields = enumFields(definition).all
+    implementors
+      .map(t => structure(apply(t)))
+      .map {
+        istruct =>
+          val localFields = istruct
+            .local
+            .toSet
 
-        val requiredParameters = implFields
-          .map(_.definedBy)
-          .collect({ case i: InterfaceId => i })
-          .filterNot(compatibleIfs.contains)
-          .toSet
+          val inheritedFields = istruct.inherited
+            .map(_.definedBy)
+            .collect({ case i: StructureId => i })
+            .filterNot(compatibleIfs.contains)
+            .toSet
 
-        val fieldsToTakeFromParameters = requiredParameters
-          .flatMap(mi => enumFields(apply(mi)).all)
-          .filterNot(f => fieldsToCopyFromInterface.contains(f.field))
-          .filterNot(f => ifaceNonUniqueFields.contains(f.field.name))
+          val filteredParentFields = parentInstanceFields
+            .filterNot(i => localFields.exists(_.field == i))
 
-        // TODO: pass definition instead of id
-        InterfaceConstructors(
-          typeToConstruct
-          , requiredParameters.toList
-          , fieldsToCopyFromInterface
-          , fieldsToTakeFromParameters
-          , ifaceFields
-        )
-    }
+          val parentsAsParams = inheritedFields
+            .collect({ case i: InterfaceId => i })
+            .toList
+
+          val mixinInstanceFields = istruct
+            .inherited
+            .map(_.definedBy)
+            .collect({ case i: StructureId => i })
+            .flatMap(mi => structure(apply(mi)).all)
+            .filterNot(f => parentInstanceFields.contains(f.field))
+            .filterNot(f => istruct.conflicts.softConflicts.keySet.contains(f.field.name))
+            .toSet
+
+
+          // TODO: pass definition instead of id
+          InterfaceConstructors(
+            istruct.id
+            , parentsAsParams
+            , filteredParentFields
+            , mixinInstanceFields
+            , localFields
+            , struct
+          )
+      }
   }
 
 }

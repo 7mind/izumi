@@ -19,8 +19,8 @@ class TypeCollection(domain: DomainDefinition) {
         val outIid = DTOId(service.id, s"Out${m.name.capitalize}")
 
         Seq(
-          DTO(inIid, Super.interfaces(m.signature.input))
-          , DTO(outIid, Super.interfaces(m.signature.output))
+          DTO(inIid, List.empty, Super.interfaces(m.signature.input))
+          , DTO(outIid, List.empty, Super.interfaces(m.signature.output))
         )
     }
   }).flatten.toSeq
@@ -30,7 +30,7 @@ class TypeCollection(domain: DomainDefinition) {
       .collect {
         case i: Interface =>
           val iid = DTOId(i.id, toDtoName(i.id))
-          DTO(iid, Super.interfaces(List(i.id)))
+          DTO(iid, List.empty, Super.interfaces(List(i.id)))
       }
   }
 

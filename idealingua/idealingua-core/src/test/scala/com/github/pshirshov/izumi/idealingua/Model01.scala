@@ -39,6 +39,7 @@ object Model01 {
     )
     , ILAst.DTO(
       testIdObject
+      , List.empty
       , Super.interfaces(List(testInterfaceId))
     )
   ), List(

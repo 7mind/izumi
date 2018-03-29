@@ -32,6 +32,7 @@ object Model02 {
 
   final val dto1 = ILAst.DTO(
     dto1Id
+    , List.empty
     , Super.interfaces(List(if2Id, if3Id))
   )
 

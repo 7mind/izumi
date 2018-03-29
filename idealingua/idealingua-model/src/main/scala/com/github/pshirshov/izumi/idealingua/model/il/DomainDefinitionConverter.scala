@@ -43,7 +43,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
 
       case d: ILAstParsed.DTO =>
         val superclasses = Super(interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
-        ILAst.DTO(id = fixId(d.id), superclasses)
+        ILAst.DTO(id = fixId(d.id), fields = fixFields(d.fields), superclasses = superclasses)
 
       case d: ILAstParsed.Adt =>
         ILAst.Adt(id = fixId(d.id), alternatives = fixIds(d.alternatives))

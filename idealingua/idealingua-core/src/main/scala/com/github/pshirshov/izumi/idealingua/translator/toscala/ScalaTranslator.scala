@@ -10,7 +10,6 @@ import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaField, ServiceMethodProduct}
 
-import scala.collection.immutable
 import scala.meta._
 
 
@@ -170,7 +169,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
 
   protected def renderIdentifier(i: Identifier): Seq[Defn] = {
-    val fields = typespace.enumFields(i).toScala
+    val fields = typespace.structure(i).toScala
     val decls = fields.all.toParams
 
     val superClasses = ctx.tools.withAnyval(fields.fields, List(rt.generated.init(), rt.tIDLIdentifier.init()))
@@ -202,7 +201,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
-    val fields = typespace.enumFields(i).toScala
+    val fields = typespace.structure(i).toScala
 
     // TODO: contradictions
     val decls = fields.all.map {
@@ -241,31 +240,34 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val constructors = typespace.compatibleImplementors(i.id).map {
       t =>
-        val requiredParameters = t.requiredParameters
-        val fieldsToCopyFromInterface: Set[Field] = t.fieldsToCopyFromInterface
-        val fieldsToTakeFromParameters: Set[ExtendedField] = t.fieldsToTakeFromParameters
-        val signature = requiredParameters.map(f => (ctx.tools.idToParaName(f), conv.toScala(f).typeFull)).toParams
-        val nonUniqueFields: immutable.Seq[ScalaField] = t.fields.toScala.nonUnique
-        val fullSignature = signature ++ nonUniqueFields.toParams
+        val instanceFields = t.parentInstanceFields
+        val childMixinFields = t.mixinsInstancesFields
+        val localFields = t.localFields.map(_.field)
 
-        val constructorCodeThis = fieldsToCopyFromInterface.toList.map {
+        val constructorSignature = Seq(
+          t.parentsAsParams.map(f => (ctx.tools.idToParaName(f), conv.toScala(f).typeFull))
+          , t.localFields.map(f => (Term.Name(f.field.name), conv.toScala(f.field.typeId).typeFull))
+        ).flatten.toParams
+
+        val constructorCodeThis = instanceFields.toList.map {
           f =>
             q""" ${Term.Name(f.name)} = _value.${Term.Name(f.name)}  """
         }
 
-        val constructorCodeOthers = fieldsToTakeFromParameters.map {
+        val constructorCodeOthers = childMixinFields.map {
           f =>
             q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
         }
 
-        val constructorCodeNonUnique = nonUniqueFields.map {
+        val constructorCodeNonUnique = localFields.map {
           f =>
-            q""" ${f.name} = ${f.name}  """
+            val term = Term.Name(f.name)
+            q""" $term = $term """
         }
 
         val impl = t.typeToConstruct
 
-        q"""def ${Term.Name("to" + impl.name.capitalize)}(..$fullSignature): ${toScala(impl).typeFull} = {
+        q"""def ${Term.Name("to" + impl.name.capitalize)}(..$constructorSignature): ${toScala(impl).typeFull} = {
             ${toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers ++ constructorCodeNonUnique})
             }
           """

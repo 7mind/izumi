@@ -14,9 +14,8 @@ class ScalaTranslationTools(ctx: ScalaTranslationContext) {
   import ctx.conv._
 
   def mkStructure(id: StructureId): CompositeStructure = {
-    //val interfaces = ctx.typespace.getComposite(id)
     val fields = ctx.typespace.enumFields(id).toScala
-    new CompositeStructure(ctx, id, fields)
+    new CompositeStructure(ctx, fields)
   }
 
 
@@ -79,9 +78,6 @@ class ScalaTranslationTools(ctx: ScalaTranslationContext) {
       case t: StructureId =>
         val struct = ctx.typespace.enumFields(t)
         struct.isComposite || (struct.isScalar && !struct.all.exists(v => canBeAnyValField(v.field.typeId)))
-
-      case s: ServiceId =>
-        throw new IDLException(s"Impossible case: $s cannot be a field")
     }
   }
 }

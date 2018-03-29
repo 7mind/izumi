@@ -1,14 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
-import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
 
 import scala.meta._
 
 
-class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val fields: ScalaStruct) {
-  val t: ScalaType = ctx.conv.toScala(id)
+class CompositeStructure(ctx: ScalaTranslationContext, val fields: ScalaStruct) {
+  val t: ScalaType = ctx.conv.toScala(fields.id)
 
   import ScalaField._
   import ctx.conv._
@@ -16,6 +15,7 @@ class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val 
   private val composite = fields.fields.superclasses.interfaces
 
   val explodedSignature: List[Term.Param] = fields.all.toParams
+
   val constructorSignature: List[Term.Param] = {
 
     val embedded = fields.fields.all
@@ -29,21 +29,30 @@ class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val 
       .map {
         d =>
           (ctx.tools.idToParaName(d), ctx.conv.toScala(d).typeFull)
-      }
-      .toParams
+      }.toParams
 
-    val fieldParams = fields.nonUnique.toParams
 
-    interfaceParams ++ fieldParams
+    val fieldParams = List(
+      fields.nonUnique
+      , fields.local
+    ).flatten.toParams
+
+    interfaceParams ++
+      fieldParams
   }
 
   def instantiator: Term.Apply = {
-    val constructorCode = fields.fields.all.filterNot(f => fields.nonUnique.exists(_.name.value == f.field.name)).map {
-      f =>
-        q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
-    }
+    val local = (fields.nonUnique ++ fields.local).distinct
+    val localNames = local.map(_.field.field.name).toSet
 
-    val constructorCodeNonUnique = fields.nonUnique.map {
+    val constructorCode = fields.fields.all
+      .filterNot(f => localNames.contains(f.field.name))
+      .map {
+        f =>
+          q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
+      }
+
+    val constructorCodeNonUnique = local.distinct.map {
       f =>
         q""" ${f.name} = ${f.name}  """
     }
@@ -65,6 +74,7 @@ class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val 
   }
 
   val decls: List[Term.Param] = fields.all.toParams
+
   val names: List[Term.Name] = fields.all.toNames
 
   def defns(bases: List[Init]): Seq[Defn] = {
@@ -74,14 +84,14 @@ class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val 
     }
 
     val superClasses = ctx.tools.withAnyval(fields.fields, bases ++ ifDecls)
-    val tools = t.within(s"${id.name.capitalize}Extensions")
+    val tools = t.within(s"${fields.id.name.capitalize}Extensions")
 
-    val converters = ctx.tools.mkConverters(id, fields)
+    val converters = ctx.tools.mkConverters(fields.id, fields)
 
     val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
 
     val qqTools = q""" implicit class ${tools.typeName}(_value: ${t.typeFull}) { ..$converters }"""
-    val extTools = ctx.ext.extend(id, qqTools, _.handleCompositeTools)
+    val extTools = ctx.ext.extend(fields.id, qqTools, _.handleCompositeTools)
 
 
     val qqCompositeCompanion =
@@ -90,6 +100,6 @@ class CompositeStructure(ctx: ScalaTranslationContext, val id: StructureId, val 
           ..$constructors
          }"""
 
-    ctx.ext.extend(id, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
+    ctx.ext.extend(fields.id, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
   }
 }

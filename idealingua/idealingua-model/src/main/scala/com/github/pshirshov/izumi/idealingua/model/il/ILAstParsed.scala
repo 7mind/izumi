@@ -21,7 +21,7 @@ object ILAstParsed {
 
   case class Interface(id: InterfaceId, fields: Aggregate, interfaces: Composite, concepts: Composite) extends ILAstParsed
 
-  case class DTO(id: DTOId, interfaces: Composite, concepts: Composite) extends ILAstParsed
+  case class DTO(id: DTOId, fields: Aggregate, interfaces: Composite, concepts: Composite) extends ILAstParsed
 
   case class Adt(id: AdtId, alternatives: List[AbstractTypeId]) extends ILAstParsed
 

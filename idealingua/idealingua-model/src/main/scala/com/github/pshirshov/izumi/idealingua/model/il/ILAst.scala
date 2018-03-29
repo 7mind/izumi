@@ -35,7 +35,7 @@ object ILAst {
 
   case class Interface(id: InterfaceId, fields: Tuple, superclasses: Super) extends ILStructure
 
-  case class DTO(id: DTOId, superclasses: Super) extends ILStructure
+  case class DTO(id: DTOId, fields: Tuple, superclasses: Super) extends ILStructure
 
   case class Enumeration(id: EnumId, members: List[String]) extends ILAst
 
