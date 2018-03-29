@@ -287,7 +287,6 @@ class Typespace(val domain: DomainDefinition) {
           // TODO: pass definition instead of id
           InterfaceConstructors(
             istruct.id
-            , struct
             , filteredParentFields
             , localFields
             , mixinInstanceFields
