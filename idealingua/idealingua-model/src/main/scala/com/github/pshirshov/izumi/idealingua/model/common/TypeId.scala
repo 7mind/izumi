@@ -42,6 +42,7 @@ case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractTypeId {
 
 object IndefiniteId {
   def apply(id: TypeId): IndefiniteId = new IndefiniteId(id.pkg, id.name)
+
   def apply(id: ServiceId): IndefiniteId = new IndefiniteId(id.pkg, id.name)
 
   def parse(s: String): IndefiniteId = {
@@ -58,6 +59,7 @@ object TypeId {
 
   object DTOId {
     def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
+
     def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
   }
 
@@ -85,61 +87,64 @@ object Builtin {
 }
 
 trait Primitive extends Builtin with ScalarId {
+  def aliases: List[TypeName]
+
+  def name: TypeName = aliases.head
 }
 
 object Primitive {
 
   case object TBool extends Primitive {
-    override def name: TypeName = "bool"
+    override def aliases: List[TypeName] = List("bool", "boolean")
   }
 
   case object TString extends Primitive {
-    override def name: TypeName = "str"
+    override def aliases: List[TypeName] = List("str", "string")
   }
 
   case object TInt8 extends Primitive {
-    override def name: TypeName = "i08"
+    override def aliases: List[TypeName] = List("i08", "byte", "int8")
   }
 
   case object TInt16 extends Primitive {
-    override def name: TypeName = "i16"
+    override def aliases: List[TypeName] = List("i16", "short", "int16")
   }
 
   case object TInt32 extends Primitive {
-    override def name: TypeName = "i32"
+    override def aliases: List[TypeName] = List("i32", "int", "int32")
   }
 
   case object TInt64 extends Primitive {
-    override def name: TypeName = "i64"
+    override def aliases: List[TypeName] = List("i64", "long", "int64")
   }
 
   case object TFloat extends Primitive {
-    override def name: TypeName = "flt"
+    override def aliases: List[TypeName] = List("flt", "float")
   }
 
   case object TDouble extends Primitive {
-    override def name: TypeName = "dbl"
+    override def aliases: List[TypeName] = List("dbl", "double")
   }
 
   case object TUUID extends Primitive {
-    override def name: TypeName = "uid"
+    override def aliases: List[TypeName] = List("uid", "uuid")
   }
 
   case object TTs extends Primitive with TimeTypeId {
-    override def name: TypeName = "tsl"
+    override def aliases: List[TypeName] = List("tsl", "datetimel", "dtl")
   }
 
 
   case object TTsTz extends Primitive with TimeTypeId {
-    override def name: TypeName = "tsz"
+    override def aliases: List[TypeName] = List("tsz", "datetimez", "dtz")
   }
 
   case object TTime extends Primitive with TimeTypeId {
-    override def name: TypeName = "time"
+    override def aliases: List[TypeName] = List("time")
   }
 
   case object TDate extends Primitive with TimeTypeId {
-    override def name: TypeName = "date"
+    override def aliases: List[TypeName] = List("date")
   }
 
 
@@ -159,7 +164,7 @@ object Primitive {
     , TTs
     ,
   )
-    .map(tpe => tpe.name -> tpe)
+    .flatMap(tpe => tpe.aliases.map(a => a -> tpe))
     .toMap
 }
 
