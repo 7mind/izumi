@@ -1,15 +1,16 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, Indefinite, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.EphemeralId
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
-import com.github.pshirshov.izumi.idealingua.model.il.{Fields, ILAst, Typespace}
+import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, IndefiniteId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.il.Typespace
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 
 import scala.collection.{GenTraversableOnce, mutable}
 import GoLangTypeConverter._
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
 
 case class WithPackages(packages: Set[String] = Set.empty, content: Seq[String] = Seq.empty) {
   def toImports: String = {
@@ -121,7 +122,7 @@ class GoLangTranslator(typespace: Typespace) {
     }
 
     if (defns.content.nonEmpty) {
-      toSource(Indefinite(definition.id), toModuleId(definition), defns)
+      toSource(IndefiniteId(definition.id), toModuleId(definition), defns)
     } else {
       Seq.empty
     }
@@ -189,11 +190,11 @@ class GoLangTranslator(typespace: Typespace) {
   }
 
   protected def renderIdentifier(i: Identifier): WithPackages = {
-    renderStruct(i.id.name, typespace.enumFields(i).toGoLangFields)
+    renderStruct(i.id.name, typespace.structure(i).toGoLangFields)
   }
 
   protected def renderDTO(i: DTO): WithPackages = {
-    renderStruct(i.id.name, typespace.enumFields(i).toGoLangFields)
+    renderStruct(i.id.name, typespace.structure(i).toGoLangFields)
   }
 
   private def renderStruct(name: String, fields: GoLangFields, withPrivate: Boolean = false) = {
@@ -211,13 +212,13 @@ class GoLangTranslator(typespace: Typespace) {
   }
 
   protected def renderInterface(i: Interface): WithPackages = {
-    val fields = typespace.enumFields(i)
+    val fields = typespace.structure(i)
 
     val methods = fields.toGoLangFields.all.map { f =>
       s"$padding${f.name.capitalize}() ${f.fieldType.render()} "
     }.mkString("\n")
 
-    val implType = EphemeralId(i.id, typespace.toDtoName(i.id))
+    val implType = DTOId(i.id, typespace.toDtoName(i.id))
 
     val interface = Seq(
       s"""type ${i.id.name} interface {
@@ -229,9 +230,9 @@ class GoLangTranslator(typespace: Typespace) {
     composite.copy(content = interface ++ composite.content)
   }
 
-  private def renderComposite(impl: TypeId, i: Interface): WithPackages = {
+  private def renderComposite(impl: DTOId, i: Interface): WithPackages = {
     val implTypeName = impl.name
-    val fields = typespace.enumFields(typespace.getComposite(impl))
+    val fields = typespace.enumFields(impl)
 
     val goLangFields = fields.toGoLangFields.all
 
@@ -300,15 +301,15 @@ class GoLangTranslator(typespace: Typespace) {
          |}
        """.stripMargin
 
-    val result = renderStruct(adt.id.name, Fields(fields).toGoLangFields)
+    val result = renderStruct(adt.id.name, fields.toGoLang)
     result.copy(packages = result.packages ++ Seq("encoding/json"), content = result.content ++ Seq(jsonMarshaller))
   }
 
   protected def translateService(definition: Service): Seq[Module] = {
     val transportDef: Service = definition.copy(id = definition.id.copy(name = definition.id.name + "Transport")  )
 
-    toSource(Indefinite(definition.id), toModuleId(definition.id), renderService(definition)) ++
-    toSource(Indefinite(transportDef.id), toModuleId(transportDef.id), renderTransport(transportDef))
+    toSource(IndefiniteId(definition.id), toModuleId(definition.id), renderService(definition)) ++
+    toSource(IndefiniteId(transportDef.id), toModuleId(transportDef.id), renderTransport(transportDef))
   }
 
   protected def renderService(i: Service): WithPackages = {
@@ -317,11 +318,11 @@ class GoLangTranslator(typespace: Typespace) {
         val in = s"In${method.name.capitalize}"
         val out = s"Out${method.name.capitalize}"
 
-        val inDef = EphemeralId(i.id, in)
-        val outDef = EphemeralId(i.id, out)
+        val inDef = DTOId(i.id, in)
+        val outDef = DTOId(i.id, out)
 
-        val inDefSrc = renderStruct(inDef.name, typespace.enumFields(typespace.getComposite(inDef)).toGoLangFields)
-        val outDefSrc = renderStruct(outDef.name, typespace.enumFields(typespace.getComposite(outDef)).toGoLangFields)
+        val inDefSrc = renderStruct(inDef.name, typespace.enumFields(inDef).toGoLangFields)
+        val outDefSrc = renderStruct(outDef.name, typespace.enumFields(outDef).toGoLangFields)
         val methodSrc = s"${method.name.capitalize}(${inDef.name}) ${outDef.name}"
 
         (inDefSrc, outDefSrc, methodSrc)
@@ -435,7 +436,9 @@ class GoLangTranslator(typespace: Typespace) {
 
   private def toModuleId(id: TypeId) = ModuleId(id.pkg, s"${id.name}.go") // use implicits conv
 
-  private def toSource(id: Indefinite, moduleId: ModuleId, traitDef: WithPackages) = {
+  private def toModuleId(id: ServiceId) = ModuleId(id.pkg, s"${id.name}.go") // use implicits conv
+
+  private def toSource(id: IndefiniteId, moduleId: ModuleId, traitDef: WithPackages) = {
     val code = traitDef.render().mkString("\n\n")
     val content = withPackage(id.pkg, code)
     Seq(Module(moduleId, content))

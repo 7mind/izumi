@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
 import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.{FieldConflicts, Fields, ILAst}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
+import com.github.pshirshov.izumi.idealingua.model.il.structures.Struct
 
 object GoLangTypeConverter {
   def toGoLang(id: TypeId): GoLangType = id match {
@@ -52,11 +53,10 @@ object GoLangTypeConverter {
       ListType(None) // TODO: introduce an Option type to Go
   }
 
-  implicit class ConflictsOps(conflicts: FieldConflicts) {
+  implicit class FieldsOps(fields: List[ExtendedField]) {
     def toGoLang: GoLangFields = {
       GoLangFields(
-        conflicts.goodFields.flatMap(f => f._2.map(ef => toGoLang(ef.field))).toList
-        , conflicts.softConflicts.flatMap(_._2).keys.map(f => toGoLang(f)).toList
+        fields.map(f => toGoLang(f.field))
       )
     }
 
@@ -65,9 +65,9 @@ object GoLangTypeConverter {
     }
   }
 
-  implicit class ExtendedFieldSeqOps(fields: Fields) {
+  implicit class ExtendedFieldSeqOps(struct: Struct) {
     def toGoLangFields: GoLangFields = {
-      FieldConflicts(fields.all).toGoLang
+      struct.all.toGoLang
     }
   }
 }
