@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Super, Tuple}
 
 sealed trait ILAst {
   def id: TypeId
@@ -9,7 +10,9 @@ sealed trait ILAst {
 
 
 sealed trait ILStructure extends ILAst {
-  override def id: StructureId
+  def id: StructureId
+  def fields: Tuple
+  def superclasses: Super
 }
 
 object ILAst {
@@ -31,7 +34,7 @@ object ILAst {
     def interfaces(ids: List[InterfaceId]): Super = Super(ids, List.empty)
   }
 
-  case class Identifier(id: IdentifierId, fields: PrimitiveTuple) extends ILStructure
+  case class Identifier(id: IdentifierId, fields: PrimitiveTuple) extends ILAst
 
   case class Interface(id: InterfaceId, fields: Tuple, superclasses: Super) extends ILStructure
 

@@ -152,14 +152,16 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
+  def structure(defn: Identifier): Struct = {
+    Struct(defn.id, Super.empty, extractFields(defn))
+
+  }
   def structure(defn: ILStructure): Struct = {
     val parts = apply(defn.id) match {
       case i: Interface =>
         i.superclasses
       case i: DTO =>
         i.superclasses
-      case _: Identifier =>
-        Super.empty
     }
 
     Struct(defn.id, parts, extractFields(defn))
