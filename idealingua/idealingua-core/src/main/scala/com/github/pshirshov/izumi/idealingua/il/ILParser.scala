@@ -38,7 +38,11 @@ class ILParser {
 
   object kw {
     def kw(s: String): all.Parser[Unit] = P(s ~ SepInline)(sourcecode.Name(s"`$s`"))
-    def kw(s: String, alt: String): all.Parser[Unit] = P((s | alt) ~ SepInline)(sourcecode.Name(s"`$s | $alt`"))
+
+    def kw(s: String, alt: String*): all.Parser[Unit] = {
+      val alts = alt.foldLeft(P(s)) { case (acc, v) => acc | v }
+      P(alts ~ SepInline)(sourcecode.Name(s"`$s | $alt`"))
+    }
 
     final val domain = kw("domain", "package")
     final val include = kw("include")
@@ -46,13 +50,13 @@ class ILParser {
 
     final val enum = kw("enum")
     final val adt = kw("adt")
-    final val alias = kw("alias", "type")
+    final val alias = kw("alias", "type", "using")
     final val id = kw("id")
     final val mixin = kw("mixin")
     final val data = kw("data")
     final val service = kw("service")
 
-    final val defm = kw("def", "fn")
+    final val defm = kw("def", "fn", "fun")
 
   }
 
@@ -103,7 +107,7 @@ class ILParser {
   final val method: all.Parser[DefMethod] = P(SepInlineOpt ~ defmethod ~ SepInlineOpt)
   final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = SepLine))
 
-  final val enumBlock = P(kw.enum ~/ symbol ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~symbol.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
+  final val enumBlock = P(kw.enum ~/ symbol ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ symbol.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
     .map(v => ILDef(Enumeration(ILParsedId(v._1).toEnumId, v._2.toList)))
 
   final val adtBlock = P(kw.adt ~/ symbol ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ identifier.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")

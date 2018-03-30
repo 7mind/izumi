@@ -196,7 +196,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             def parse(s: String): ${t.typeName} = {
               import ${rt.tIDLIdentifier.termBase}._
               val withoutPrefix = s.substring(s.indexOf("#") + 1)
-              val parts = withoutPrefix.split(":").map(part => unescape(part.toString))
+              val parts = withoutPrefix.split(":").map(part => unescape(part))
               ${t.termName}(..$parsers)
             }
       }"""
