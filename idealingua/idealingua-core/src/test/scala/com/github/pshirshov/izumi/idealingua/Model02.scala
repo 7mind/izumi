@@ -9,6 +9,7 @@ object Model02 {
   final val if2Id = model.common.Indefinite.parse("izumi.test.domain02.TestInterface2").toInterface
   final val if3Id = model.common.Indefinite.parse("izumi.test.domain02.TestInterface3").toInterface
   final val dto1Id = model.common.Indefinite.parse("izumi.test.domain02.DTO1").toDTO
+  final val adtId = model.common.Indefinite.parse("izumi.test.domain02.TestAdt").toAdtId
 
   final val if1 = ILAst.Interface(if1Id, List(
     Field(Primitive.TInt32, "if1Field_overriden")
@@ -41,5 +42,6 @@ object Model02 {
     , if2
     , if3
     , dto1
+    , ILAst.Adt(adtId, alternatives = List(if1.id, if2.id))
   ), Seq.empty, Map.empty)
 }

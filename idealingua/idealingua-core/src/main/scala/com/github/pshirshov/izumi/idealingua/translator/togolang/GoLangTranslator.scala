@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.{Indefinite, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EphemeralId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, Indefinite, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.EphemeralId
 import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
-import com.github.pshirshov.izumi.idealingua.model.il.{ILAst, Typespace}
+import com.github.pshirshov.izumi.idealingua.model.il.{Fields, ILAst, Typespace}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 
 import scala.collection.{GenTraversableOnce, mutable}
@@ -280,7 +280,29 @@ class GoLangTranslator(typespace: Typespace) {
     structImpl.copy(content = structImpl.content ++  Seq(constructor, implMethods, jsonMarshaller))
   }
 
-  def renderAdt(i: Adt) = WithPackages(Set.empty, Seq(s"adt: ${i.id.name}"))
+  def renderAdt(adt: Adt): WithPackages = {
+    val fields = adt.alternatives.map { alt =>
+      ExtendedField(Field(alt, alt.name), adt.id)
+    }
+
+    val name = adt.id.name
+
+    val jsonFieldMarshallers = adt.alternatives.map { alt =>
+      s"""if $name.${alt.name} != nil {
+         |    return json.Marshal($name.${alt.name})
+         |}
+       """.stripMargin.split("\n").map(padding + _).mkString("\n")
+    }.mkString("\n")
+
+    val jsonMarshaller =
+      s"""func ($name $name) MarshallJSON() ([]byte, error) {
+         |$jsonFieldMarshallers
+         |}
+       """.stripMargin
+
+    val result = renderStruct(adt.id.name, Fields(fields).toGoLangFields)
+    result.copy(packages = result.packages ++ Seq("encoding/json"), content = result.content ++ Seq(jsonMarshaller))
+  }
 
   protected def translateService(definition: Service): Seq[Module] = {
     val transportDef: Service = definition.copy(id = definition.id.copy(name = definition.id.name + "Transport")  )
