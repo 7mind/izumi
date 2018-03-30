@@ -22,15 +22,17 @@ class ModuleTools(rt: IDLRuntimeTypes.type) {
   }
 
   def withPackage(pkg: idealingua.model.common.Package, code: String): String = {
+    /*
+    *
+    * import scala.language.higherKinds
+import _root_.${rt.modelPkg}._
+import _root_.${rt.runtimePkg}._
+    * */
+
     val content = if (pkg.isEmpty) {
       code
     } else {
       s"""package ${pkg.mkString(".")}
-         |
-         |import scala.language.higherKinds
-         |
-         |import _root_.${rt.modelPkg}._
-         |import _root_.${rt.runtimePkg}._
          |
          |$code
        """.stripMargin

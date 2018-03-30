@@ -20,6 +20,10 @@ trait ScalaMetaTools {
       extended.asInstanceOf[T]
     }
 
+    def addBase(inits: Init*): T = {
+      addBase(inits.toList)
+    }
+
     def addBase(inits: List[Init]): T = {
       val extended = defn match {
         case o: Defn.Object =>

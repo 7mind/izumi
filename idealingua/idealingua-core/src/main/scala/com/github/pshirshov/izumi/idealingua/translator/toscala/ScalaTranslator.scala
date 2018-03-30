@@ -211,7 +211,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }"""
 
 
-    ext.extend(i, CogenProduct(qqIdentifier, qqCompanion, qqTools), _.handleIdentifier).render
+    ext.extend(i, CogenProduct(qqIdentifier, qqCompanion, qqTools, List.empty), _.handleIdentifier).render
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
@@ -250,7 +250,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
              ..$impl
          }"""
 
-    ext.extend(i, CogenProduct(qqInterface, qqInterfaceCompanion, qqTools), _.handleInterface).render
+    ext.extend(i, CogenProduct(qqInterface, qqInterfaceCompanion, qqTools, List.empty), _.handleInterface).render
   }
 
 
@@ -397,11 +397,11 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         )
       }
 
-      Seq(dServer, dClient, dCompr) ++ dExpl
+      List(dServer, dClient, dCompr) ++ dExpl
     }
 
 
-    dispatchers ++ ext.extend(i, CogenProduct(qqService, qqServiceCompanion, qqTools), _.handleService).render
+    ext.extend(i, CogenProduct(qqService, qqServiceCompanion, qqTools, dispatchers), _.handleService).render
   }
 
 
