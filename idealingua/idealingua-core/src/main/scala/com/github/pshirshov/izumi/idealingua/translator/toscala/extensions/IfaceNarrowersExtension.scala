@@ -2,13 +2,15 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Interface
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct.InterfaceProduct
 
 import scala.meta._
 
 object IfaceNarrowersExtension extends ScalaTranslatorExtension {
-  override def handleInterfaceTools(ctx: STContext, iface: Interface, defn: Defn.Class): Defn.Class = {
+
+  override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     // we don't add explicit parents here because their converters are available
-    val allStructuralParents = List(iface.id) ++ iface.superclasses.concepts
+    val allStructuralParents = List(interface.id) ++ interface.superclasses.concepts
 
     val narrowers = allStructuralParents.distinct.map {
       p =>
@@ -30,6 +32,7 @@ object IfaceNarrowersExtension extends ScalaTranslatorExtension {
 
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
-    defn.extendDefinition(narrowers)
+    product.copy(tools = product.tools.extendDefinition(narrowers))
   }
+
 }

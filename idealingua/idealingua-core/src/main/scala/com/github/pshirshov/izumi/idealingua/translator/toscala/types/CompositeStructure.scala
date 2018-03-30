@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct
 
 import scala.meta._
 
@@ -86,15 +87,14 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
     val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
 
     val qqTools = q""" implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
-    val extTools = ctx.ext.extend(fields, qqTools, _.handleCompositeTools)
-
 
     val qqCompositeCompanion =
       q"""object ${t.termName} {
-          $extTools
           ..$constructors
          }"""
 
-    ctx.ext.extend(fields, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
+    ctx.ext.extendX(fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools), _.handleComposite).render
+
+    //ctx.ext.extend(fields, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
   }
 }

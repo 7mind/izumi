@@ -13,6 +13,16 @@ class ScalaTranslatorExtensions(ctx: STContext, extensions: Seq[ScalaTranslatorE
     }
   }
 
+  def extendX[S, P](source: S
+                           , entity: P
+                           , entityTransformer: ScalaTranslatorExtension => (STContext, S, P) => P
+                          ): P = {
+    extensions.foldLeft(entity) {
+      case (acc, v) =>
+        entityTransformer(v)(ctx, source, acc)
+    }
+  }
+
   def extend[I, D <: Defn](id: I
                                      , entity: D
                                      , entityTransformer: ScalaTranslatorExtension => (STContext, I, D) => D

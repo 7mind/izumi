@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Interface
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct.InterfaceProduct
 
 import scala.meta._
 
@@ -9,8 +10,9 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
   import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaField._
 
-  override def handleInterfaceTools(ctx: STContext, iface: Interface, defn: Defn.Class): Defn.Class = {
-    val constructors = ctx.typespace.compatibleImplementors(iface.id).map {
+
+  override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
+    val constructors = ctx.typespace.compatibleImplementors(interface.id).map {
       t =>
         val instanceFields = t.parentInstanceFields
         val childMixinFields = t.mixinsInstancesFields
@@ -47,6 +49,6 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
-    defn.extendDefinition(constructors)
+    product.copy(tools = product.tools.extendDefinition(constructors))
   }
 }

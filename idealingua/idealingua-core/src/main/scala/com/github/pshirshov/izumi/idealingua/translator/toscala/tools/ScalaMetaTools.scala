@@ -4,6 +4,10 @@ import scala.meta.{Defn, Init, Stat}
 
 trait ScalaMetaTools {
   implicit class DefnExt[T <: Defn](defn: T) {
+    def extendDefinition(stats: Stat*): T = {
+      extendDefinition(stats.toList)
+    }
+
     def extendDefinition(stats: List[Stat]): T = {
       val extended = defn match {
         case o: Defn.Object =>
