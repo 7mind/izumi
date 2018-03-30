@@ -3,187 +3,58 @@ package com.github.pshirshov.izumi.idealingua.model.il
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
+import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst, ILStructure}
+import com.github.pshirshov.izumi.idealingua.model.il.structures.{ConverterDef, Struct}
 
 
 class Typespace(val domain: DomainDefinition) {
   protected val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new Typespace(d))
-  protected val typespace: Map[TypeId, ILAst] = verified(domain.types)
-  protected val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
+  protected val types = new TypeCollection(domain)
+  protected val index: Map[TypeId, ILAst] = types.index
 
-  protected val serviceEphemerals: Map[EphemeralId, DTO] = (for {
-    service <- services.values
-    method <- service.methods
-  } yield {
-    method match {
-      case m: RPCMethod =>
-        val inId = EphemeralId(service.id, s"In${m.name.capitalize}")
-        val outId = EphemeralId(service.id, s"Out${m.name.capitalize}")
-        val inIid = DTOId(inId.pkg, inId.name)
-        val outIid = DTOId(outId.pkg, outId.name)
-
-        Seq(
-          inId -> DTO(inIid, m.signature.input, List.empty)
-          , outId -> DTO(outIid, m.signature.output, List.empty)
-        )
-    }
-  }).flatten.toMap
-
-  protected val interfaceEphemerals: Map[EphemeralId, DTO] = {
-    typespace
-      .values
-      .collect {
-        case i: Interface =>
-          val eid = EphemeralId(i.id, toDtoName(i.id))
-          val iid = DTOId(eid.pkg, eid.name)
-          eid -> DTO(iid, List(i.id), List.empty)
-      }
-      .toMap
-  }
-
-  protected val adtEphemerals: Map[EphemeralId, TypeId] = {
-    typespace
-      .values
-      .collect {
-        case i: Adt =>
-          i.alternatives.map {
-            el =>
-              val eid = EphemeralId(i.id, el.name)
-              eid -> el
-          }
-      }
-      .flatten
-      .toMap
-  }
 
   def apply(id: TypeId): ILAst = {
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
       id match {
-        case e: EphemeralId if serviceEphemerals.contains(e) =>
-          serviceEphemerals(e)
-
-        case e: EphemeralId if interfaceEphemerals.contains(e) =>
-          interfaceEphemerals(e)
-
-        case e: EphemeralId if adtEphemerals.contains(e) =>
-          apply(adtEphemerals(e))
-
         case o =>
-          typespace(o)
+          index(o)
       }
     } else {
       referenced(typeDomain).apply(id)
     }
   }
 
-  protected def apply(id: InterfaceId): Interface = apply(id: TypeId).asInstanceOf[Interface]
-
-  def apply(id: ServiceId): Service = services(id)
-
-  def toDtoName(id: TypeId): String = {
-    id match {
-      case _: InterfaceId =>
-        s"${id.name}Impl"
-      case _ =>
-        s"${id.name}"
-
-    }
+  protected def apply(id: InterfaceId): Interface = {
+    apply(id: TypeId).asInstanceOf[Interface]
   }
 
-  def getComposite(id: TypeId): Composite = {
-    apply(id) match {
-      case i: Interface =>
-        i.interfaces ++ i.concepts
-      case i: DTO =>
-        i.interfaces ++ i.concepts
-      case _ =>
-        throw new IDLException(s"Interface or DTO expected: $id")
-    }
+  protected def apply(id: StructureId): ILStructure = {
+    apply(id: TypeId).asInstanceOf[ILStructure]
   }
 
-  def implementors(id: InterfaceId): List[InterfaceConstructors] = {
-    val implementors = implementingDtos(id) ++ implementingEphemerals(id)
+  protected def apply(id: DTOId): DTO = {
+    apply(id: TypeId).asInstanceOf[DTO]
+  }
+
+  def apply(id: ServiceId): Service = {
+    types.services(id)
+  }
+
+  def toDtoName(id: TypeId): String = types.toDtoName(id)
+
+
+  def implementors(id: InterfaceId): List[ConverterDef] = {
+    val implementors = implementingDtos(id)
     compatibleImplementors(implementors, id)
   }
 
-  def compatibleImplementors(id: InterfaceId): List[InterfaceConstructors] = {
-    val implementors = compatibleDtos(id) ++ compatibleEphemerals(id)
+  def compatibleImplementors(id: InterfaceId): List[ConverterDef] = {
+    val implementors = compatibleDtos(id)
     compatibleImplementors(implementors, id)
-  }
-
-  protected def compatibleImplementors(implementors: List[TypeId], id: InterfaceId): List[InterfaceConstructors] = {
-    val ifaceFields = enumFields(apply(id))
-    val ifaceNonUniqueFields = ifaceFields.conflicts.softConflicts.keySet
-    val fieldsToCopyFromInterface = ifaceFields.all.map(_.field)
-      .toSet
-      .filterNot(f => ifaceNonUniqueFields.contains(f.name))
-
-    val compatibleIfs = compatible(id)
-
-    implementors.map {
-      typeToConstruct =>
-        val definition = apply(typeToConstruct)
-        val implFields = enumFields(definition).all
-
-        val requiredParameters = implFields
-          .map(_.definedBy)
-          .collect({ case i: InterfaceId => i })
-          .filterNot(compatibleIfs.contains)
-          .toSet
-
-        val fieldsToTakeFromParameters = requiredParameters
-          .flatMap(mi => enumFields(apply(mi)).all)
-          .filterNot(f => fieldsToCopyFromInterface.contains(f.field))
-          .filterNot(f => ifaceNonUniqueFields.contains(f.field.name))
-
-        // TODO: pass definition instead of id
-        InterfaceConstructors(
-          typeToConstruct
-          , requiredParameters.toList
-          , fieldsToCopyFromInterface
-          , fieldsToTakeFromParameters
-          , ifaceFields
-        )
-    }
-  }
-
-
-  def allTypes: List[TypeId] = List(
-    typespace.keys
-    , serviceEphemerals.keys
-    , interfaceEphemerals.keys
-  ).flatten
-
-
-  def all: Set[TypeId] = List(
-    allTypes
-    , services.values.map(_.id)
-    , domain.types.collect({ case t: Enumeration => t })
-      .flatMap(e => e.members.map(m => EphemeralId(e.id, m)))
-  )
-    .flatten
-    .toSet
-
-  def extractDependencies(definition: ILAst): Seq[Dependency] = {
-    definition match {
-      case _: Enumeration =>
-        Seq.empty
-      case d: Interface =>
-        d.interfaces.map(i => Dependency.Interface(d.id, i)) ++
-          d.concepts.flatMap(c => extractDependencies(apply(c))) ++
-          d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
-      case d: DTO =>
-        d.interfaces.map(i => Dependency.Interface(d.id, i))
-      case d: Identifier =>
-        d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
-      case d: Adt =>
-        d.alternatives.map(apply).flatMap(extractDependencies)
-      case d: Alias =>
-        Seq(Dependency.Alias(d.id, d.target))
-    }
   }
 
   def verify(): Unit = {
@@ -191,12 +62,12 @@ class Typespace(val domain: DomainDefinition) {
     val typeDependencies = domain.types.flatMap(extractDependencies)
 
     val serviceDependencies = for {
-      service <- services.values
+      service <- types.services.values
       method <- service.methods
     } yield {
       method match {
         case m: RPCMethod =>
-          (m.signature.input ++ m.signature.output).map(i => Dependency.Parameter(service.id, i))
+          (m.signature.input ++ m.signature.output).map(i => Dependency.ServiceParameter(service.id, i))
       }
     }
 
@@ -206,28 +77,22 @@ class Typespace(val domain: DomainDefinition) {
     // TODO: very ineffective!
     val missingTypes = allDependencies
       .filterNot(_.typeId.isInstanceOf[Builtin])
-      .filterNot(d => all.contains(d.typeId))
-      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(_.all.contains(d.typeId)))
+      .filterNot(d => types.index.contains(d.typeId))
+      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(_.types.index.contains(d.typeId)))
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
     }
   }
 
-  def parents(id: TypeId): List[InterfaceId] = {
+  def parentsInherited(id: TypeId): List[InterfaceId] = {
     id match {
       case i: InterfaceId =>
         val defn = apply(i)
-        List(i) ++ defn.interfaces.flatMap(parents)
+        List(i) ++ defn.superclasses.interfaces.flatMap(parentsInherited)
 
       case i: DTOId =>
-        apply(i).interfaces.flatMap(parents)
-
-      case e: EphemeralId if serviceEphemerals.contains(e) =>
-        serviceEphemerals(e).interfaces.flatMap(parents)
-
-      case e: EphemeralId if interfaceEphemerals.contains(e) =>
-        interfaceEphemerals(e).interfaces.flatMap(parents)
+        apply(i).superclasses.interfaces.flatMap(parentsInherited)
 
       case _: IdentifierId =>
         List()
@@ -243,27 +108,17 @@ class Typespace(val domain: DomainDefinition) {
 
       case e: Builtin =>
         throw new IDLException(s"Unexpected id: $e")
-
-      case e: ServiceId =>
-        throw new IDLException(s"Unexpected id: $e")
-
     }
   }
 
-  def compatible(id: TypeId): List[InterfaceId] = {
+  def parentsStructural(id: TypeId): List[InterfaceId] = {
     id match {
       case i: InterfaceId =>
         val defn = apply(i)
-        List(i) ++ defn.interfaces.flatMap(compatible) ++ defn.concepts.flatMap(compatible)
+        List(i) ++ defn.superclasses.all.flatMap(parentsStructural)
 
       case i: DTOId =>
-        apply(i).interfaces.flatMap(compatible)
-
-      case e: EphemeralId if serviceEphemerals.contains(e) =>
-        serviceEphemerals(e).interfaces.flatMap(compatible)
-
-      case e: EphemeralId if interfaceEphemerals.contains(e) =>
-        interfaceEphemerals(e).interfaces.flatMap(compatible)
+        apply(i).superclasses.all.flatMap(parentsStructural)
 
       case _: IdentifierId =>
         List()
@@ -278,69 +133,84 @@ class Typespace(val domain: DomainDefinition) {
         List()
 
       case e: Builtin =>
-        throw new IDLException(s"Unexpected id: $e")
-
-      case e: ServiceId =>
         throw new IDLException(s"Unexpected id: $e")
 
     }
   }
 
   protected def implementingDtos(id: InterfaceId): List[DTOId] = {
-    typespace.collect {
-      case (tid, d: DTO) if parents(tid).contains(id) =>
+    index.collect {
+      case (tid, d: DTO) if parentsInherited(tid).contains(id) =>
         d.id
-    }.toList
-  }
-
-  protected def implementingEphemerals(id: InterfaceId): List[EphemeralId] = {
-    (serviceEphemerals ++ interfaceEphemerals).collect {
-      case (eid, _: DTO) if parents(eid).contains(id) =>
-        eid
     }.toList
   }
 
   protected def compatibleDtos(id: InterfaceId): List[DTOId] = {
-    typespace.collect {
-      case (tid, d: DTO) if compatible(tid).contains(id) =>
+    index.collect {
+      case (tid, d: DTO) if parentsStructural(tid).contains(id) =>
         d.id
     }.toList
   }
 
-  protected def compatibleEphemerals(id: InterfaceId): List[EphemeralId] = {
-    (serviceEphemerals ++ interfaceEphemerals).collect {
-      case (eid, _: DTO) if compatible(eid).contains(id) =>
-        eid
-    }.toList
+  def structure(defn: Identifier): Struct = {
+    Struct(defn.id, Super.empty, extractFields(defn))
+
+  }
+  def structure(defn: ILStructure): Struct = {
+    val parts = apply(defn.id) match {
+      case i: Interface =>
+        i.superclasses
+      case i: DTO =>
+        i.superclasses
+    }
+
+    Struct(defn.id, parts, extractFields(defn))
   }
 
-  def enumFields(defn: ILAst): Fields = {
-    Fields(extractFields(defn))
+  def enumFields(id: StructureId): Struct = {
+    structure(apply(id))
   }
 
-  def enumFields(composite: Composite): Fields = {
-    Fields(extractFields(composite))
+  def sameSignature(tid: StructureId): List[DTO] = {
+    val sig = signature(apply(tid))
+
+    types
+      .structures
+      .filterNot(_.id == tid)
+      .filter(another => sig == signature(another))
+      .filterNot(_.id == tid)
+      .distinct
+      .filterNot(id => parentsInherited(id.id).contains(tid))
+      .collect({ case t: DTO => t })
+      .toList
   }
+
 
   protected def extractFields(defn: ILAst): List[ExtendedField] = {
     val fields = defn match {
       case t: Interface =>
-        val superFields = extractFields(t.interfaces)
-          .map(_.copy(definedBy = t.id)) // in fact super field is defined by this
-
-        val embeddedFields = t.concepts.flatMap(id => extractFields(apply(id)))
-
+        val superFields = compositeFields(t.superclasses.interfaces)
+        val embeddedFields = t.superclasses.concepts.flatMap(id => extractFields(apply(id)))
         val thisFields = toExtendedFields(t.fields, t.id)
-        superFields ++ thisFields ++ embeddedFields
+
+        superFields.map(_.copy(definedBy = t.id)) ++ // in fact super field is defined by this
+          embeddedFields ++
+          thisFields
 
       case t: DTO =>
-        extractFields(t.interfaces) ++ extractFields(t.concepts)
+        val superFields = compositeFields(t.superclasses.interfaces)
+        val embeddedFields = t.superclasses.concepts.flatMap(id => extractFields(apply(id)))
+        val thisFields = toExtendedFields(t.fields, t.id)
+
+        superFields ++
+          embeddedFields ++
+          thisFields
 
       case t: Adt =>
         t.alternatives.map(apply).flatMap(extractFields)
 
       case t: Identifier =>
-        toExtendedFields(t.fields, t.id)
+        toExtendedPrimitiveFields(t.fields, t.id)
 
       case _: Enumeration =>
         List()
@@ -352,77 +222,108 @@ class Typespace(val domain: DomainDefinition) {
     fields.distinct
   }
 
-  protected def extractFields(composite: Composite): List[ExtendedField] = {
-    composite.flatMap(i => extractFields(typespace(i)))
-  }
-
-  def sameSignature(tid: TypeId): List[DTO] = {
-    val ret = filterTypes(tid) {
-      case (thisSig, otherSig) =>
-        thisSig == otherSig
-    }
-      .filterNot(id => parents(id._1).contains(tid))
-      .collect({ case (t, e: DTO) => t -> e })
-
-    ret.map(_._2)
-  }
-
-  protected def filterTypes(tid: TypeId)(pred: (List[ILAst.Field], List[ILAst.Field]) => Boolean): List[(TypeId, ILAst)] = {
-    val sig = signature(apply(tid))
-
-    allTypes
-      .filterNot(_ == tid)
-      .map(id => id -> apply(id))
-      .filter(another => pred(sig, signature(another._2)))
-      .filterNot {
-        id =>
-          tid == id._1 || tid == id._2.id
-      }
-      .distinct
-  }
-
-  protected def signature(defn: ILAst): List[Field] = {
-    enumFields(defn).all.map(_.field)
-  }
-
-  protected def verified(types: Seq[ILAst]): Map[TypeId, ILAst] = {
-    val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
-    if (conflictingTypes.nonEmpty) {
-      throw new IDLException(s"Conflicting types in: $conflictingTypes")
-    }
-
-    types.map(t => (t.id, t)).toMap
-  }
-
-  protected def apply(id: DTOId): DTO = {
-    apply(id: TypeId).asInstanceOf[DTO]
-  }
-
-  protected def toExtendedFields(fields: Aggregate, id: TypeId): List[ExtendedField] = {
+  protected def toExtendedFields(fields: Tuple, id: TypeId): List[ExtendedField] = {
     fields.map(f => ExtendedField(f, id: TypeId))
   }
+
+  protected def toExtendedPrimitiveFields(fields: PrimitiveTuple, id: TypeId): List[ExtendedField] = {
+    fields.map(f => ExtendedField(ILAst.Field(f.typeId, f.name), id: TypeId))
+  }
+
+  protected def compositeFields(composite: Composite): List[ExtendedField] = {
+    composite.flatMap(i => extractFields(index(i)))
+  }
+
+
+  protected def signature(defn: ILStructure): List[Field] = {
+    structure(defn).all.map(_.field).sortBy(_.name)
+  }
+
+
+  protected def extractDependencies(definition: ILAst): Seq[Dependency] = {
+    definition match {
+      case _: Enumeration =>
+        Seq.empty
+      case d: Interface =>
+        d.superclasses.interfaces.map(i => Dependency.Interface(d.id, i)) ++
+          d.superclasses.concepts.flatMap(c => extractDependencies(apply(c))) ++
+          d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
+      case d: DTO =>
+        d.superclasses.interfaces.map(i => Dependency.Interface(d.id, i)) ++
+          d.superclasses.concepts.flatMap(c => extractDependencies(apply(c))) ++
+          d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
+
+      case d: Identifier =>
+        d.fields.map(f => Dependency.PrimitiveField(d.id, f.typeId, f))
+
+      case d: Adt =>
+        d.alternatives.map(apply).flatMap(extractDependencies)
+
+      case d: Alias =>
+        Seq(Dependency.Alias(d.id, d.target))
+    }
+  }
+
+  protected def compatibleImplementors(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
+    val struct = structure(apply(id))
+    val parentInstanceFields = struct.unambigious.map(_.field).toSet
+
+    implementors
+      .map(t => structure(apply(t)))
+      .map {
+        istruct =>
+          val localFields = istruct.localOrAmbigious
+            .map(_.field)
+            .toSet
+
+          val filteredParentFields = parentInstanceFields.diff(localFields)
+
+          val mixinInstanceFields = istruct
+            .unambigiousInherited
+            .map(_.definedBy)
+            .collect({ case i: InterfaceId => i })
+            .flatMap(mi => structure(apply(mi)).all)
+            .filterNot(f => parentInstanceFields.contains(f.field))
+            .filterNot(f => localFields.contains(f.field))
+            .toSet
+
+
+          // TODO: pass definition instead of id
+          ConverterDef(
+            istruct.id
+            , filteredParentFields
+            , localFields
+            , mixinInstanceFields
+          )
+      }
+  }
+
 }
 
 
 object Typespace {
 
   trait Dependency {
-    def definedIn: TypeId
-
     def typeId: TypeId
   }
 
   object Dependency {
 
-    case class Field(definedIn: TypeId, definite: TypeId, tpe: ILAst.Field) extends Dependency {
-
-      override def typeId: TypeId = definite
-
+    case class Field(definedIn: TypeId, typeId: TypeId, tpe: ILAst.Field) extends Dependency {
       override def toString: TypeName = s"[field $definedIn::${tpe.name} :$typeId]"
     }
 
+    case class PrimitiveField(definedIn: TypeId, typeId: TypeId, tpe: ILAst.PrimitiveField) extends Dependency {
+      override def toString: TypeName = s"[field $definedIn::${tpe.name} :$typeId]"
+    }
+
+
     case class Parameter(definedIn: TypeId, typeId: TypeId) extends Dependency {
       override def toString: TypeName = s"[param $definedIn::$typeId]"
+    }
+
+    case class ServiceParameter(definedIn: ServiceId, typeId: TypeId) extends Dependency {
+      override def toString: TypeName = s"[sparam $definedIn::$typeId]"
     }
 
 

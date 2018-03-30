@@ -1,8 +1,15 @@
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys._
+import com.github.pshirshov.izumi.sbt.IdealinguaPlugin.Keys._
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
+
+lazy val pluginVersion = if (sys.props.isDefinedAt("plugin.version")) {
+  sys.props("plugin.version")
+} else {
+  IO.read(new File("../../../../../../version.sbt")).split("\"")(1)
+}
 
 // -- build settings, root artifact settings, etc
 name := "sbt-izumi-idl-test"
@@ -39,7 +46,7 @@ val baseSettings = new GlobalSettings {
 
       // these dependencies will be added into each project handled by Izumi
       override val sharedDeps = Set(
-        "com.github.pshirshov.izumi.r2" %% "idealingua-model" % sys.props("plugin.version")
+        "com.github.pshirshov.izumi.r2" %% "idealingua-model" % pluginVersion
       ) ++ circe
     }
     , AppSettings -> new ProjectSettings {

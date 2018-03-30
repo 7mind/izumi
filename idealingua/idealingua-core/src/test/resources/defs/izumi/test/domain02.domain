@@ -1,4 +1,4 @@
-domain izumi.test.domain02
+package izumi.test.domain02
 
 import izumi.test.domain01
 
@@ -36,7 +36,7 @@ data DTO1 {
 
 mixin Pair1 {
   x: str
-  y: str
+  y: string
 }
 
 mixin Pair2 {

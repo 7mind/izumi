@@ -12,18 +12,19 @@ trait AbstractTypeId {
 }
 
 
-sealed trait TypeId extends AbstractTypeId {
-}
+sealed trait TypeId extends AbstractTypeId
 
-sealed trait Scalar extends TypeId {
+sealed trait StructureId extends TypeId
+
+sealed trait ScalarId extends TypeId {
   this: TypeId =>
 }
 
-sealed trait TimeType {
-  this: Scalar =>
+sealed trait TimeTypeId {
+  this: ScalarId =>
 }
 
-case class Indefinite(pkg: Package, name: TypeName) extends AbstractTypeId {
+case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractTypeId {
   def toAlias: AliasId = AliasId(pkg, name)
 
   def toEnum: EnumId = EnumId(pkg, name)
@@ -39,20 +40,30 @@ case class Indefinite(pkg: Package, name: TypeName) extends AbstractTypeId {
   def toService: ServiceId = ServiceId(pkg, name)
 }
 
-object Indefinite {
-  def apply(id: TypeId): Indefinite = new Indefinite(id.pkg, id.name)
+object IndefiniteId {
+  def apply(id: TypeId): IndefiniteId = new IndefiniteId(id.pkg, id.name)
 
-  def parse(s: String): Indefinite = {
+  def apply(id: ServiceId): IndefiniteId = new IndefiniteId(id.pkg, id.name)
+
+  def parse(s: String): IndefiniteId = {
     val parts = s.split('.')
-    Indefinite(parts.toSeq.init, parts.last)
+    IndefiniteId(parts.toSeq.init, parts.last)
   }
 }
 
 object TypeId {
 
-  case class InterfaceId(pkg: Package, name: TypeName) extends TypeId
+  case class InterfaceId(pkg: Package, name: TypeName) extends StructureId
 
-  case class DTOId(pkg: Package, name: TypeName) extends TypeId
+  case class DTOId(pkg: Package, name: TypeName) extends StructureId
+
+  object DTOId {
+    def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
+
+    def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
+  }
+
+  case class IdentifierId(pkg: Package, name: TypeName) extends StructureId with ScalarId
 
   case class AdtId(pkg: Package, name: TypeName) extends TypeId
 
@@ -60,17 +71,16 @@ object TypeId {
 
   case class EnumId(pkg: Package, name: TypeName) extends TypeId
 
-  case class IdentifierId(pkg: Package, name: TypeName) extends TypeId with Scalar
-
-  case class ServiceId(pkg: Package, name: TypeName) extends TypeId
-
-  case class EphemeralId(parent: TypeId, name: TypeName) extends TypeId {
-    override def pkg: Package = parent.pkg :+ parent.name
-  }
+  // TODO: remove superclass?
+  case class ServiceId(pkg: Package, name: TypeName)
 
 }
 
 sealed trait Builtin extends TypeId {
+  def aliases: List[TypeName]
+
+  override def name: TypeName = aliases.head
+
   override def pkg: Package = Builtin.prelude
 
   override def toString: TypeName = s"#$name"
@@ -80,62 +90,63 @@ object Builtin {
   final val prelude: Package = Seq.empty
 }
 
-trait Primitive extends Builtin with Scalar {
+trait Primitive extends Builtin with ScalarId {
+
 }
 
 object Primitive {
 
   case object TBool extends Primitive {
-    override def name: TypeName = "bool"
+    override def aliases: List[TypeName] = List("bool", "boolean")
   }
 
   case object TString extends Primitive {
-    override def name: TypeName = "str"
+    override def aliases: List[TypeName] = List("str", "string")
   }
 
   case object TInt8 extends Primitive {
-    override def name: TypeName = "i08"
+    override def aliases: List[TypeName] = List("i08", "byte", "int8")
   }
 
   case object TInt16 extends Primitive {
-    override def name: TypeName = "i16"
+    override def aliases: List[TypeName] = List("i16", "short", "int16")
   }
 
   case object TInt32 extends Primitive {
-    override def name: TypeName = "i32"
+    override def aliases: List[TypeName] = List("i32", "int", "int32")
   }
 
   case object TInt64 extends Primitive {
-    override def name: TypeName = "i64"
+    override def aliases: List[TypeName] = List("i64", "long", "int64")
   }
 
   case object TFloat extends Primitive {
-    override def name: TypeName = "flt"
+    override def aliases: List[TypeName] = List("flt", "float")
   }
 
   case object TDouble extends Primitive {
-    override def name: TypeName = "dbl"
+    override def aliases: List[TypeName] = List("dbl", "double")
   }
 
   case object TUUID extends Primitive {
-    override def name: TypeName = "uid"
+    override def aliases: List[TypeName] = List("uid", "uuid")
   }
 
-  case object TTs extends Primitive with TimeType {
-    override def name: TypeName = "tsl"
+  case object TTs extends Primitive with TimeTypeId {
+    override def aliases: List[TypeName] = List("tsl", "datetimel", "dtl")
   }
 
 
-  case object TTsTz extends Primitive with TimeType {
-    override def name: TypeName = "tsz"
+  case object TTsTz extends Primitive with TimeTypeId {
+    override def aliases: List[TypeName] = List("tsz", "datetimez", "dtz")
   }
 
-  case object TTime extends Primitive with TimeType {
-    override def name: TypeName = "time"
+  case object TTime extends Primitive with TimeTypeId {
+    override def aliases: List[TypeName] = List("time")
   }
 
-  case object TDate extends Primitive with TimeType {
-    override def name: TypeName = "date"
+  case object TDate extends Primitive with TimeTypeId {
+    override def aliases: List[TypeName] = List("date")
   }
 
 
@@ -155,7 +166,7 @@ object Primitive {
     , TTs
     ,
   )
-    .map(tpe => tpe.name -> tpe)
+    .flatMap(tpe => tpe.aliases.map(a => a -> tpe))
     .toMap
 }
 
@@ -165,31 +176,60 @@ sealed trait Generic extends Builtin {
 
 object Generic {
 
+  trait GenericCompanion {
+    def aliases: List[TypeName]
+
+  }
   case class TList(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
-    override def name: TypeName = "list"
+    override def aliases: List[TypeName] = TList.aliases
+  }
+
+  object TList extends GenericCompanion {
+    def aliases: List[TypeName] = List("lst", "list")
   }
 
   case class TSet(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
-    override def name: TypeName = "set"
+    override def aliases: List[TypeName] = TSet.aliases
+  }
+
+  object TSet extends GenericCompanion {
+    def aliases: List[TypeName] = List("set")
   }
 
   case class TOption(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
-    override def name: TypeName = "opt"
+    override def aliases: List[TypeName] = TOption.aliases
   }
 
-  case class TMap(keyType: Scalar, valueType: TypeId) extends Generic {
+  object TOption extends GenericCompanion {
+    def aliases: List[TypeName] = List("opt", "option")
+  }
+
+
+  case class TMap(keyType: ScalarId, valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(keyType, valueType)
 
-    override def name: TypeName = "map"
+    override def aliases: List[TypeName] = TMap.aliases
   }
 
-  final val all = Set("list", "set", "map", "opt")
+  object TMap extends GenericCompanion {
+    def aliases: List[TypeName] = List("map", "dict")
+  }
+
+
+  final val all = Set(
+    TList
+    , TSet
+    , TOption
+    , TMap
+  )
+    .flatMap(tpe => tpe.aliases.map(a => a -> tpe))
+    .toMap
 }
 
 

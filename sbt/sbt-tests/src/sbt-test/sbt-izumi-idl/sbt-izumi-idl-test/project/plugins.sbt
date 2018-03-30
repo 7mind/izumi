@@ -1,4 +1,8 @@
-scalaVersion := "2.12.4"
+lazy val pluginVersion = if (sys.props.isDefinedAt("plugin.version")) {
+  sys.props("plugin.version")
+} else {
+  IO.read(new File("../../../../../../version.sbt")).split("\"")(1)
+}
 
-addSbtPlugin("com.github.pshirshov.izumi.r2" %% "sbt-idealingua" % sys.props("plugin.version"))
-addSbtPlugin("com.github.pshirshov.izumi.r2" %% "sbt-izumi" % sys.props("plugin.version"))
+addSbtPlugin("com.github.pshirshov.izumi.r2" %% "sbt-idealingua" % pluginVersion)
+addSbtPlugin("com.github.pshirshov.izumi.r2" %% "sbt-izumi" % pluginVersion)

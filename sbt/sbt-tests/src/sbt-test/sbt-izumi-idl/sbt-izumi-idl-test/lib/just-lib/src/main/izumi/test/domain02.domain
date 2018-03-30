@@ -1,8 +1,8 @@
 domain test.domain02
 
-import shared.sharedDomain
+import shared.rpc
 
-include "shared/model01.model"
+include "shared/users.model"
 
 mixin TestInterface1 {
   if1Field_overriden: i32

@@ -15,7 +15,7 @@ including the following components:
 
 1. Generative and introspectable runtime DI framework, [distage](doc/md/distage.md) 
 2. Effortless structured logging framework, [logstage](doc/md/distage.md)
-3. Staged Interface Definition and Data Modeling language, [idealingua](doc/md/idealingua.md) supporting many target languages including Go, Typescript and C#
+3. Staged Interface Definition and Data Modeling language, [idealingua](doc/md/idealingua/idealingua.md) supporting many target languages including Go, Typescript and C#
 4. A set of opinionated [SBT plugins](doc/md/sbt.md) allowing you to significantly increase clarity of your builds and compactify build files
 5. [Percept-plan-execute-repeat (PPER)](doc/md/pper.md) toolchain, allowing you to model very complex domain and orchestrate deadly complex processes without an issue
 

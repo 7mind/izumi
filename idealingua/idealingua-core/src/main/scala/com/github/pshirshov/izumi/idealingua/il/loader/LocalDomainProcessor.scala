@@ -6,7 +6,9 @@ import java.nio.file.{Path, Paths}
 import com.github.pshirshov.izumi.idealingua.il.IL.{ILDef, ILService}
 import com.github.pshirshov.izumi.idealingua.il.{LoadedModel, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.{DomainDefinitionParsed, DomainId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.parsing
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.DomainDefinitionParsed
 
 protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], domain: ParsedDomain, domains: Map[DomainId, ParsedDomain], models: Map[Path, ParsedModel]) {
 
@@ -38,7 +40,7 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
 
     val types = allIncludes.definitions.collect({ case d: ILDef => d.v })
     val services = allIncludes.definitions.collect({ case d: ILService => d.v })
-    DomainDefinitionParsed(domain.did.id, types, services, imports)
+    parsing.DomainDefinitionParsed(domain.did.id, types, services, imports)
   }
 
   private def loadModel(modelResolver: Path => Option[ParsedModel], toInclude: String): LoadedModel = {

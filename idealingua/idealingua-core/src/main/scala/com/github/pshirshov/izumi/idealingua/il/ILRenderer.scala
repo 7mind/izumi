@@ -4,10 +4,10 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.ILAst._
-import com.github.pshirshov.izumi.idealingua.model.il._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
 
 class ILRenderer(domain: DomainDefinition) {
   def render(): String = {
@@ -42,19 +42,27 @@ class ILRenderer(domain: DomainDefinition) {
 
       case d: Identifier =>
         s"""id ${render(d.id)} {
-           |${renderAggregate(d.fields).shift(2)}
+           |${renderPrimitiveAggregate(d.fields).shift(2)}
            |}
          """.stripMargin
 
       case d: Interface =>
-        val body = Seq(renderComposite(d.interfaces), renderComposite(d.concepts, '*'), renderAggregate(d.fields)).filterNot(_.isEmpty).mkString("\n\n")
+        val body = Seq(
+          renderComposite(d.superclasses.interfaces)
+          , renderComposite(d.superclasses.concepts, '*')
+          , renderAggregate(d.fields)
+        ).filterNot(_.isEmpty).mkString("\n")
         s"""mixin ${render(d.id)} {
            |${body.shift(2)}
            |}
          """.stripMargin
 
       case d: DTO =>
-        val body = Seq(renderComposite(d.interfaces), renderComposite(d.concepts, '*')).filterNot(_.isEmpty).mkString("\n\n")
+        val body = Seq(
+          renderComposite(d.superclasses.interfaces)
+          , renderComposite(d.superclasses.concepts, '*')
+          , renderAggregate(d.fields)
+        ).filterNot(_.isEmpty).mkString("\n")
 
         s"""data ${render(d.id)} {
            |${body.shift(2)}
@@ -81,13 +89,23 @@ class ILRenderer(domain: DomainDefinition) {
       .mkString("\n")
   }
 
-  def renderAggregate(aggregate: Aggregate): String = {
+  def renderAggregate(aggregate: Tuple): String = {
+    aggregate
+      .map(render)
+      .mkString("\n")
+  }
+
+  def renderPrimitiveAggregate(aggregate: PrimitiveTuple): String = {
     aggregate
       .map(render)
       .mkString("\n")
   }
 
   def render(field: Field): String = {
+    s"${field.name}: ${render(field.typeId)}"
+  }
+
+  def render(field: PrimitiveField): String = {
     s"${field.name}: ${render(field.typeId)}"
   }
 
@@ -100,9 +118,6 @@ class ILRenderer(domain: DomainDefinition) {
 
   def render(typeId: TypeId): String = {
     typeId match {
-      case t: EphemeralId => // TODO: impossible case
-        s"${render(t.parent)}#${t.name}"
-
       case g: Generic =>
         s"${renderTypeName(g.pkg, g.name)}${g.args.map(render).mkString("[", ", ", "]")}"
 

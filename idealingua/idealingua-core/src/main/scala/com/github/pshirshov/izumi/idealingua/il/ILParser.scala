@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.il
 
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ILAstParsed.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ILAstParsed._
-import com.github.pshirshov.izumi.idealingua.model.il._
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILParsedId
 import fastparse.CharPredicates._
 import fastparse.all._
 import fastparse.{all, core}
@@ -37,18 +38,22 @@ class ILParser {
 
   object kw {
     def kw(s: String): all.Parser[Unit] = P(s ~ SepInline)(sourcecode.Name(s"`$s`"))
+    def kw(s: String, alt: String): all.Parser[Unit] = P((s | alt) ~ SepInline)(sourcecode.Name(s"`$s | $alt`"))
+
+    final val domain = kw("domain", "package")
+    final val include = kw("include")
+    final val `import` = kw("import")
 
     final val enum = kw("enum")
     final val adt = kw("adt")
-    final val alias = kw("alias")
+    final val alias = kw("alias", "type")
     final val id = kw("id")
     final val mixin = kw("mixin")
     final val data = kw("data")
     final val service = kw("service")
-    final val domain = kw("domain")
-    final val defm = kw("def")
-    final val include = kw("include")
-    final val `import` = kw("import")
+
+    final val defm = kw("def", "fn")
+
   }
 
   final val symbol = P(CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c) | c == '_').rep).!
@@ -78,10 +83,10 @@ class ILParser {
 
   final val aggregate = P(field.rep(sep = SepLine))
 
-  final val mixed = P(SepInlineOpt ~ "+" ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
+  final val mixed = P(SepInlineOpt ~ "+" ~ "++".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
   final val composite = P(mixed.rep(sep = SepLine))
 
-  final val added = P(SepInlineOpt ~ "*" ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
+  final val added = P(SepInlineOpt ~ ("*" | "...") ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
   final val embedded = P(added.rep(sep = SepLine))
 
 
@@ -113,8 +118,8 @@ class ILParser {
   final val mixinBlock = P(kw.mixin ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ composite ~ SepLineOpt ~ embedded ~ SepLineOpt ~ aggregate ~ SepLineOpt) ~ "}")
     .map(v => ILDef(Interface(ILParsedId(v._1).toMixinId, v._2._3, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
 
-  final val dtoBlock = P(kw.data ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ composite ~ SepLineOpt ~ embedded ~ SepLineOpt) ~ "}")
-    .map(v => ILDef(DTO(ILParsedId(v._1).toDataId, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
+  final val dtoBlock = P(kw.data ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ composite ~ SepLineOpt ~ embedded ~ SepLineOpt ~ aggregate ~ SepLineOpt) ~ "}")
+    .map(v => ILDef(DTO(ILParsedId(v._1).toDataId, v._2._3, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
 
   final val serviceBlock = P(kw.service ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ methods ~ SepLineOpt) ~ "}")
     .map(v => ILService(Service(ILParsedId(v._1).toServiceId, v._2)))

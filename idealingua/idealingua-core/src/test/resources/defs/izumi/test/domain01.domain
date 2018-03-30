@@ -4,11 +4,11 @@ include "model01.model"
 include "model02.model"
 
 id TestValIdentifier {
-  userId: UserId
+  userId: str
 }
 
 id TestIdentifer {
-  userId: UserId
+  userId: str
   context: str
 }
 
@@ -40,6 +40,7 @@ mixin AllTypes {
   date    : date
 
   list    : list[AllTypes]
+  another : lst[AllTypes]
   map     : map[str, AllTypes]
   option  : opt[AllTypes]
   set     : set[AllTypes]

@@ -4,10 +4,9 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import com.github.pshirshov.izumi.idealingua.il.ILRenderer
-import com.github.pshirshov.izumi.idealingua.model.il.DomainDefinition
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
-import com.github.pshirshov.izumi.idealingua.translator.togolang.FinalTranslatorGoLangImpl
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{FinalTranslatorScalaImpl, TranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 
 
 class IDLCompiler(domain: DomainDefinition) {
@@ -36,7 +35,7 @@ class IDLCompiler(domain: DomainDefinition) {
       case IDLLanguage.Scala =>
         new FinalTranslatorScalaImpl()
       case IDLLanguage.Go =>
-        new FinalTranslatorGoLangImpl()
+        ???
       case IDLLanguage.Typescript =>
         ???
       case IDLLanguage.UnityCSharp =>

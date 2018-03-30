@@ -3,19 +3,20 @@ package com.github.pshirshov.izumi.idealingua
 import java.io.File
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
 import org.scalatest.WordSpec
 
 
 class LoadThenCompileTest extends WordSpec {
-  import ILTranslatorTest._
+
+  import IDLTestTools._
 
   "IL loader" should {
     "load & parse domain definition" in {
-      val src = new File(getClass.getResource("/defs").toURI).toPath
-      val loader = new LocalModelLoader(src, Seq.empty)
-      val loaded = loader.load()
-      assert(loaded.lengthCompare(3) == 0)
-      assert(compiles(getClass.getSimpleName, loaded))
+      assert(compiles(getClass.getSimpleName, loadDefs()))
     }
   }
+
+
 }
+
