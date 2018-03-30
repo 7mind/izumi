@@ -1,9 +1,5 @@
 package com.github.pshirshov.izumi.idealingua
 
-import java.io.File
-
-import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
 import org.scalatest.WordSpec
 
 

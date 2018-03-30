@@ -300,8 +300,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val fullServiceType = fullService.typeFull
     val qqService =
       q"""trait ${t.typeName}[R[_]] extends ${rt.idtService.parameterize("R").init()} {
-          import ${t.termBase}._
-
           override type InputType = ${serviceInputBase.typeFull}
           override type OutputType = ${serviceOutputBase.typeFull}
           override def inputClass: Class[${serviceInputBase.typeFull}] = classOf[${serviceInputBase.typeFull}]
@@ -333,7 +331,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             (
               val service: S
             ) extends $dispatcherInTpe with ${rt.generated.init()} {
-            import ${t.termBase}._
             ..$transportDecls
            }"""
       }
@@ -349,7 +346,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             (
               dispatcher: ${dispatcherInTpe.typeFull}
             ) extends ${fullService.init()} with ${rt.generated.init()} {
-            import ${t.termBase}._
            ..$transportDecls
            }"""
       }
@@ -364,8 +360,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             (
               val service: S
             ) extends ${dispatcherInTpe.init()} with ${rt.generated.init()} {
-            import ${t.termBase}._
-
             ..$forwarder
            }"""
       }
@@ -385,13 +379,11 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         Seq(
           q"""trait ${explodedService.typeName}[R[+_], S <: $fullServiceType]
               extends ${wrapperTpe.init()} with ${rt.generated.init()} {
-            import ${t.termBase}._
            ..$explodedDecls
            }"""
           ,
           q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType](val service: ${wrapped.typeFull})
               extends ${fullService.init()} with ${rt.generated.init()} {
-            import ${t.termBase}._
            ..$transportDecls
            }"""
         )
@@ -405,7 +397,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       s"""import scala.language.higherKinds
          |import _root_.${rt.runtimePkg}._
          |""".stripMargin
-    
+
     ext.extend(i, CogenProduct(qqService, qqServiceCompanion, qqTools, dispatchers, preamble), _.handleService)
   }
 
