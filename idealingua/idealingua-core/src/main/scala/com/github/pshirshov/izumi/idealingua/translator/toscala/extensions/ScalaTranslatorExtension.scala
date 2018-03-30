@@ -16,10 +16,11 @@ trait ScalaTranslatorExtension extends TranslatorExtension {
 
   def handleModules(ctx: STContext, acc: Seq[Module]): Seq[Module] = acc
 
-  def handleInterface(ctx: STContext, interface: Interface, product: CogenProduct.InterfaceProduct): InterfaceProduct = product
-  def handleComposite(ctx: STContext, struct: ScalaStruct, product: CogenProduct.CompositeProudct): CompositeProudct = product
-  def handleIdentifier(ctx: STContext, id: Identifier, product: CogenProduct.IdentifierProudct): IdentifierProudct = product
-  def handleService(ctx: STContext, service: Service, product: CogenProduct.ServiceProudct): ServiceProudct = product
+  def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = product
+  def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = product
+  def handleIdentifier(ctx: STContext, id: Identifier, product: IdentifierProudct): IdentifierProudct = product
+  def handleService(ctx: STContext, service: Service, product: ServiceProudct): ServiceProudct = product
+  def handleEnum(ctx: STContext, enum: Enumeration, product: EnumProduct): EnumProduct = product
 
 
   def handleAdt(ctx: STContext, adt: Adt, defn: Defn.Trait): Defn.Trait = defn
@@ -29,13 +30,6 @@ trait ScalaTranslatorExtension extends TranslatorExtension {
   def handleAdtElement(ctx: STContext, id: DTOId, defn: Defn.Class): Defn.Class = defn
 
   def handleAdtElementCompanion(ctx: STContext, id: DTOId, defn: Defn.Object): Defn.Object = defn
-
-  def handleEnum(ctx: STContext, enum: Enumeration, defn: Defn.Trait): Defn.Trait = defn
-
-  def handleEnumElement(ctx: STContext, enum: Enumeration, defn: Defn): Defn = defn
-
-  def handleEnumCompanion(ctx: STContext, enum: Enumeration, defn: Defn.Object): Defn.Object = defn
-
 }
 
 

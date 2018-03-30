@@ -147,7 +147,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
               override def toString: String = ${Lit.String(m)}
             }"""
 
-        mt.termName -> ext.extend(i, element, _.handleEnumElement)
+        mt.termName -> element
     }
 
     val parseMembers = members.map {
@@ -166,11 +166,9 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             override def parse(value: String) = value match {
               ..case $parseMembers
             }
-
-            ..${members.map(_._2)}
            }"""
 
-    ext.extend(i, qqEnum, qqEnumCompanion, _.handleEnum, _.handleEnumCompanion)
+    ext.extendX(i, CogenProduct.EnumProduct(qqEnum, qqEnumCompanion, members), _.handleEnum).render
   }
 
 

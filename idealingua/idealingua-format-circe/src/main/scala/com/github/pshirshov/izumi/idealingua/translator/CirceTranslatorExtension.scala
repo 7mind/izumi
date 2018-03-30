@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Adt, Enumeration, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.{CogenProduct, ScalaTranslatorExtension}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaStruct
 
@@ -40,10 +40,10 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
   }
 
 
-  override def handleEnumCompanion(ctx: STContext, enum: Enumeration, defn: Defn.Object): Defn.Object = {
-    withParseable(ctx, defn, enum.id)
+  override def handleEnum(ctx: STContext, enum: Enumeration, product: CogenProduct.EnumProduct): CogenProduct.EnumProduct = {
+    val boilerplate = withParseable(ctx, enum.id)
+    product.copy(companion = product.companion.extendDefinition(boilerplate))
   }
-
 
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     val t = ctx.conv.toScala(interface.id)
@@ -85,15 +85,14 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
   }
 
 
-  private def withParseable(ctx: STContext, defn: Defn.Object, id: TypeId) = {
+  private def withParseable(ctx: STContext, id: TypeId) = {
     val t = ctx.conv.toScala(id)
     val tpe = t.typeFull
-    val circeBoilerplate = imports ++ List(
+    imports ++ List(
       q""" implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = Encoder.encodeString.contramap(_.toString) """
       ,
       q""" implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = Decoder.decodeString.map(${t.termFull}.parse) """
     )
-    defn.extendDefinition(circeBoilerplate)
   }
 
   private def withDerived[T <: Defn](ctx: STContext, id: TypeId) = {
