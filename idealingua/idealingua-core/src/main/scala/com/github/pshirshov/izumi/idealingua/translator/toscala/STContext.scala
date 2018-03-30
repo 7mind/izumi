@@ -17,7 +17,7 @@ class STContext(
   final val sig = new TypeSignature(typespace)
   final val schemaSerializer: ILSchemaSerializerJson4sImpl.type = ILSchemaSerializerJson4sImpl
 
-  final val modules = new ModuleTools(rt)
+  final val modules = new ModuleTools()
 
   final val tools = new ScalaTranslationTools(this)
   final val ext = {

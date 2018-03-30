@@ -6,29 +6,23 @@ import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Alias
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime.IDLRuntimeTypes
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.RenderableCogenProduct
 
-import scala.meta.Defn
+class ModuleTools() {
+  def toSource(id: IndefiniteId, moduleId: ModuleId, product: RenderableCogenProduct): Seq[Module] = {
+    product match {
+      case p if p.isEmpty =>
+        Seq.empty
 
-class ModuleTools(rt: IDLRuntimeTypes.type) {
-  def toSource(id: IndefiniteId, moduleId: ModuleId, traitDef: Seq[Defn]): Seq[Module] = {
-    if (traitDef.nonEmpty) {
-      val code = traitDef.map(_.toString()).mkString("\n\n")
-      val content: String = withPackage(id.pkg, code)
-      Seq(Module(moduleId, content))
-    } else {
-      Seq.empty
+      case _ =>
+        val code = (product.preamble +:  product.render.map(_.toString())).mkString("\n\n")
+        val content: String = withPackage(id.pkg, code)
+        Seq(Module(moduleId, content))
     }
+
   }
 
   def withPackage(pkg: idealingua.model.common.Package, code: String): String = {
-    /*
-    *
-    * import scala.language.higherKinds
-import _root_.${rt.modelPkg}._
-import _root_.${rt.runtimePkg}._
-    * */
-
     val content = if (pkg.isEmpty) {
       code
     } else {

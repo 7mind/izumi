@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.{CogenProduct, RenderableCogenProduct}
 
 import scala.meta._
 
@@ -75,7 +75,7 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
 
   val names: List[Term.Name] = fields.all.toNames
 
-  def defns(bases: List[Init]): Seq[Defn] = {
+  def defns(bases: List[Init]): RenderableCogenProduct = {
     val ifDecls = composite.map {
       iface =>
         ctx.conv.toScala(iface).init()
@@ -93,6 +93,6 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
           ..$constructors
          }"""
 
-    ctx.ext.extend(fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools, List.empty), _.handleComposite).render
+    ctx.ext.extend(fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools, List.empty), _.handleComposite)
   }
 }

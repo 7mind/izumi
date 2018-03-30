@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
-import scala.meta.{Case, Defn, Pat, Stat, Term, Type, _}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.RenderableCogenProduct
+
+import scala.meta._
 
 case class ServiceMethodProduct(
                                  name: String
@@ -8,7 +10,7 @@ case class ServiceMethodProduct(
                                  , out: CompositeStructure
                                  , input: Type
                                  , output: Type
-                                 , types: Seq[Defn]
+                                 , types: Seq[RenderableCogenProduct]
                                ) {
   def defn: Stat = {
     q"def ${Term.Name(name)}(input: $input): Result[$output]"

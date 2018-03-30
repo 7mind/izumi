@@ -7,6 +7,14 @@
 //import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
 //import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaStruct
 //
+
+/*
+*preamble:
+*
+import _root_.${rt.modelPkg}._
+import _root_.${rt.runtimePkg}._
+* */
+
 //object ScalaTranslatorMetadataExtension extends ScalaTranslatorExtension {
 //
 //  import scala.meta._
