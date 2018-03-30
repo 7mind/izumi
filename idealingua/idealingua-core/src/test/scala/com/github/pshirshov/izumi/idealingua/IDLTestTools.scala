@@ -61,6 +61,7 @@ object IDLTestTools {
         val settings = new Settings()
         settings.d.value = ctarget.toString
         settings.feature.value = true
+        settings.warnUnused.add("_")
         settings.embeddedDefaults(this.getClass.getClassLoader)
 
         val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))

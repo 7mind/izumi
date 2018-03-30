@@ -37,7 +37,7 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
       e =>
         val id = DTOId(adt.id, e.name)
         val boilerplate = withDerived(ctx, id)
-        e.copy(defn = e.defn.extendDefinition(boilerplate))
+        e.copy(companion = e.companion.extendDefinition(boilerplate))
     }
 
     product.copy(companion = product.companion.extendDefinition(boilerplate), elements = elements)
