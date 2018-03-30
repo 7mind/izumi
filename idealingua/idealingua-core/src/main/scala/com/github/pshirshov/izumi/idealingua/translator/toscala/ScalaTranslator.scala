@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
 import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaField, ServiceMethodProduct}
 
@@ -100,7 +101,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       throw new IDLException(s"Duplicated adt elements: $duplicates")
     }
 
-    val members = i.alternatives.flatMap {
+    val members = i.alternatives.map {
       m =>
         val mt = t.within(m.name)
         val original = conv.toScala(m)
@@ -109,14 +110,13 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         val qqCompanion = q""" object ${mt.termName} {} """
 
 
-        val converters = Seq(
+        val converters = List(
           q"""implicit def ${Term.Name("into" + m.name.capitalize)}(value: ${original.typeAbsolute}): ${t.typeFull} = ${mt.termFull}(value) """
           ,
           q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeAbsolute} = value.value"""
         )
 
-        val id = DTOId(i.id, m.name)
-        ext.extend(id, qqElement, qqCompanion, _.handleAdtElement, _.handleAdtElementCompanion) ++ converters
+        AdtElementProduct(m.name, qqElement, qqCompanion, converters)
     }
 
     val qqAdt = q""" sealed trait ${t.typeName} extends ${rt.adtEl.init()}{} """
@@ -126,9 +126,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
             type Element = ${t.typeFull}
 
-            ..$members
            }"""
-    ext.extend(i, qqAdt, qqAdtCompanion, _.handleAdt, _.handleAdtCompanion)
+    ext.extend(i, AdtProduct(qqAdt, qqAdtCompanion, members), _.handleAdt).render
   }
 
   def renderEnumeration(i: Enumeration): Seq[Defn] = {
@@ -168,7 +167,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             }
            }"""
 
-    ext.extendX(i, CogenProduct.EnumProduct(qqEnum, qqEnumCompanion, members), _.handleEnum).render
+    ext.extend(i, EnumProduct(qqEnum, qqEnumCompanion, members), _.handleEnum).render
   }
 
 
@@ -212,7 +211,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }"""
 
 
-    ext.extendX(i, CogenProduct(qqIdentifier, qqCompanion, qqTools), _.handleIdentifier).render
+    ext.extend(i, CogenProduct(qqIdentifier, qqCompanion, qqTools), _.handleIdentifier).render
   }
 
   protected def renderInterface(i: Interface): Seq[Defn] = {
@@ -251,7 +250,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
              ..$impl
          }"""
 
-    ext.extendX(i, CogenProduct(qqInterface, qqInterfaceCompanion, qqTools), _.handleInterface).render
+    ext.extend(i, CogenProduct(qqInterface, qqInterfaceCompanion, qqTools), _.handleInterface).render
   }
 
 
@@ -402,7 +401,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     }
 
 
-    dispatchers ++ ext.extendX(i, CogenProduct(qqService, qqServiceCompanion, qqTools), _.handleService).render
+    dispatchers ++ ext.extend(i, CogenProduct(qqService, qqServiceCompanion, qqTools), _.handleService).render
   }
 
 

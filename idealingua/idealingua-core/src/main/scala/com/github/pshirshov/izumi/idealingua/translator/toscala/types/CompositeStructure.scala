@@ -93,8 +93,6 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
           ..$constructors
          }"""
 
-    ctx.ext.extendX(fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools), _.handleComposite).render
-
-    //ctx.ext.extend(fields, qqComposite, qqCompositeCompanion, _.handleComposite, _.handleCompositeCompanion)
+    ctx.ext.extend(fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools), _.handleComposite).render
   }
 }

@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Adt, Enumeration, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
@@ -29,16 +30,18 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     product.copy(companion = product.companion.extendDefinition(boilerplate))
   }
 
-  override def handleAdtCompanion(ctx: STContext, adt: Adt, defn: Defn.Object): Defn.Object = {
+
+  override def handleAdt(ctx: STContext, adt: Adt, product: CogenProduct.AdtProduct): CogenProduct.AdtProduct = {
     val boilerplate = withDerived(ctx, adt.id)
-    defn.extendDefinition(boilerplate)
-  }
+    val elements = product.elements.map {
+      e =>
+        val id = DTOId(adt.id, e.name)
+        val boilerplate = withDerived(ctx, id)
+        e.copy(defn = e.defn.extendDefinition(boilerplate))
+    }
 
-  override def handleAdtElementCompanion(ctx: STContext, id: TypeId.DTOId, defn: Defn.Object): Defn.Object = {
-    val boilerplate = withDerived(ctx, id)
-    defn.extendDefinition(boilerplate)
+    product.copy(companion = product.companion.extendDefinition(boilerplate), elements = elements)
   }
-
 
   override def handleEnum(ctx: STContext, enum: Enumeration, product: CogenProduct.EnumProduct): CogenProduct.EnumProduct = {
     val boilerplate = withParseable(ctx, enum.id)
