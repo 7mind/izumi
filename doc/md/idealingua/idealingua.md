@@ -2,6 +2,21 @@
 
 [Code generation examples](cogen.md)
 
+## Keywords and aliases
+
+Keyword     | Aliases                | Explanation                                 |
+------------| ---------------------- | ------------------------------------------- |
+`domain `   | `package`, `namespace` | Namespace containing collection of entities |
+`import`    |                        | References a domain by id                   |
+`include`   |                        | Includes `*.model` file by name             |
+`alias`     | `type`, `using`        | Type alias                                  |
+`service`   |                        | Service interface                           |
+`def`       | `fn`, `fun`            | Method                                      |
+`id`        |                        | Identifier, named collection of scalars     |
+`mixin`     |                        | Mixin, named collection of fields           |
+`data`      |                        | Data                                        |
+`enum`      |                        | Enumeration                                 |
+`adt`       |                        | Algebraic Data Type                         |
 
 ## Embedded data types
 
@@ -22,8 +37,8 @@ Type name   | Aliases            | Explanation                                 |
 `i16`       | `short`, `int16`   | 16-bit integer                              | `Short`                      |
 `i32`       | `int`, `int32`     | 32-bit integer                              | `Int`                        |
 `i64`       | `long`, `int64`    | 64-bit integer                              | `Long`                       |
-`flt`       | `float`            | Floating point                              | `Float`                      |
-`dbl`       | `double`           | Double accuracy floating point              | `Double`                     |
+`flt`       | `float`            | Single precision floating point             | `Float`                      |
+`dbl`       | `double`           | Double precision floating point             | `Double`                     |
 `uid`       | `uuid`             | UUID                                        | `java.util.UUID`             |
 `tsz`       | `dtl`, `datetimel` | Timestamp with timezone                     | `java.time.ZonedDateTime`    |
 `tsl`       | `dtz`, `datetimez` | Local timestamp                             | `java.time.LocalDateTime`    |

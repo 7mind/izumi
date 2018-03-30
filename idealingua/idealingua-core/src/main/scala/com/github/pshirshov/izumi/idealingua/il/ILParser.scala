@@ -44,7 +44,7 @@ class ILParser {
       P(alts ~ SepInline)(sourcecode.Name(s"`$s | $alt`"))
     }
 
-    final val domain = kw("domain", "package")
+    final val domain = kw("domain", "package", "namespace")
     final val include = kw("include")
     final val `import` = kw("import")
 
