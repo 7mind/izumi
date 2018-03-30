@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.model
 
 import java.net.{URLDecoder, URLEncoder}
+import java.util.UUID
 
 
 trait IDLIdentifier extends Any {
@@ -31,6 +32,10 @@ object IDLIdentifier {
         v.toFloat
       case c if c.isAssignableFrom(classOf[Double]) =>
         v.toDouble
+      case c if c.isAssignableFrom(classOf[UUID]) =>
+        UUID.fromString(v)
+      case t =>
+        throw new IllegalArgumentException(s"Not supported by identifiers (yet?..): $v: $t => $clazz")
     }
     ret.asInstanceOf[T]
   }
