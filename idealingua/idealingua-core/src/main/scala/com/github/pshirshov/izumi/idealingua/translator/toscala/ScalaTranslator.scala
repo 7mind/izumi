@@ -192,10 +192,16 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
     val extended = ext.extend(i, qqTools, _.handleIdentifierTools)
 
+    val parsers = fields.all.zipWithIndex
+      .map(fi => q"parsePart[${fi._1.fieldType}](parts(${Lit.Int(fi._2)}), classOf[${fi._1.fieldType}])")
+
     val qqCompanion =
       q"""object ${t.termName} {
             def parse(s: String): ${t.typeName} = {
-              ???
+              import ${rt.tIDLIdentifier.termBase}._
+              val withoutPrefix = s.substring(s.indexOf("#") + 1)
+              val parts = withoutPrefix.split(":").map(part => unescape(part.toString))
+              ${t.termName}(..$parsers)
             }
 
             $extended
@@ -204,7 +210,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val qqIdentifier =
       q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
             override def toString: String = {
-              val suffix = this.productIterator.map(part => ${rt.tIDLIdentifier.termFull}.escape(part.toString)).mkString(":")
+              import ${rt.tIDLIdentifier.termBase}._
+              val suffix = this.productIterator.map(part => escape(part.toString)).mkString(":")
               $interp
             }
          }"""

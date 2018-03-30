@@ -50,9 +50,8 @@ class ILRenderer(domain: DomainDefinition) {
         val body = Seq(
           renderComposite(d.superclasses.interfaces)
           , renderComposite(d.superclasses.concepts, '*')
-          , " "
           , renderAggregate(d.fields)
-        ).filterNot(_.isEmpty).map(_.trim).mkString("\n")
+        ).filterNot(_.isEmpty).mkString("\n")
         s"""mixin ${render(d.id)} {
            |${body.shift(2)}
            |}
@@ -62,9 +61,8 @@ class ILRenderer(domain: DomainDefinition) {
         val body = Seq(
           renderComposite(d.superclasses.interfaces)
           , renderComposite(d.superclasses.concepts, '*')
-          , " "
           , renderAggregate(d.fields)
-        ).filterNot(_.isEmpty).map(_.trim).mkString("\n")
+        ).filterNot(_.isEmpty).mkString("\n")
 
         s"""data ${render(d.id)} {
            |${body.shift(2)}
