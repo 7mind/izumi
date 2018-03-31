@@ -14,6 +14,8 @@ import scala.language.implicitConversions
 
 class ILParser {
 
+  case class ParsedStruct(inherited: Seq[ILParsedId], mixed: Seq[ILParsedId], removed: Seq[ILParsedId], fields: Seq[Field], removedFields: Seq[Field])
+
   private implicit def toList[T](seq: Seq[T]): List[T] = seq.toList
 
   import IL._
@@ -85,14 +87,10 @@ class ILParser {
         Field(tpe, name)
     }
 
-  final val aggregate = P(field.rep(sep = SepLine))
 
   final val mixed = P(SepInlineOpt ~ "+" ~ "++".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
-  final val composite = P(mixed.rep(sep = SepLine))
-
+  final val removed = P(SepInlineOpt ~ "-" ~ "--".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
   final val added = P(SepInlineOpt ~ ("*" | "...") ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
-  final val embedded = P(added.rep(sep = SepLine))
-
 
   final val sigParam = P(SepInlineOpt ~ identifier ~ SepInlineOpt)
   final val signature = P(sigParam.rep(sep = ","))
@@ -116,14 +114,30 @@ class ILParser {
   final val aliasBlock = P(kw.alias ~/ symbol ~ SepInlineOpt ~ "=" ~ SepInlineOpt ~ identifier)
     .map(v => ILDef(Alias(ILParsedId(v._1).toAliasId, v._2.toTypeId)))
 
+  final val aggregate = P(field.rep(sep = SepLine))
+
+
   final val idBlock = P(kw.id ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ aggregate ~ SepLineOpt) ~ "}")
     .map(v => ILDef(Identifier(ILParsedId(v._1).toIdId, v._2)))
 
-  final val mixinBlock = P(kw.mixin ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ composite ~ SepLineOpt ~ embedded ~ SepLineOpt ~ aggregate ~ SepLineOpt) ~ "}")
-    .map(v => ILDef(Interface(ILParsedId(v._1).toMixinId, v._2._3, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
+  def struct(entrySep: all.Parser[Unit], sep: all.Parser[Unit]): all.Parser[ParsedStruct] = {
+    val composite = P(mixed.rep(sep = entrySep))
+    val embedded = P(added.rep(sep = entrySep))
+    val removedAgg = P(removed.rep(sep = entrySep))
+    val aggregate = P(field.rep(sep = entrySep))
+    val removedFields = P(("/" ~ field).rep(sep = entrySep))
 
-  final val dtoBlock = P(kw.data ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ composite ~ SepLineOpt ~ embedded ~ SepLineOpt ~ aggregate ~ SepLineOpt) ~ "}")
-    .map(v => ILDef(DTO(ILParsedId(v._1).toDataId, v._2._3, v._2._1.map(_.toMixinId), v._2._2.map(_.toMixinId))))
+    P(sep ~ composite ~ sep ~ embedded ~ sep ~ removedAgg ~ sep ~ aggregate ~ sep ~ removedFields ~ sep)
+      .map(v => ParsedStruct.tupled(v))
+  }
+
+  final val blockStruct = struct(SepLine, SepLineOpt)
+
+  final val mixinBlock = P(kw.mixin ~/ symbol ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
+    .map(v => ILDef(Interface(ILParsedId(v._1).toMixinId, v._2.fields, v._2.inherited.map(_.toMixinId), v._2.mixed.map(_.toMixinId))))
+
+  final val dtoBlock = P(kw.data ~/ symbol ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
+    .map(v => ILDef(Interface(ILParsedId(v._1).toMixinId, v._2.fields, v._2.inherited.map(_.toMixinId), v._2.mixed.map(_.toMixinId))))
 
   final val serviceBlock = P(kw.service ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ methods ~ SepLineOpt) ~ "}")
     .map(v => ILService(Service(ILParsedId(v._1).toServiceId, v._2)))

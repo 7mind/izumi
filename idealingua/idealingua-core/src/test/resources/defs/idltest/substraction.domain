@@ -1,0 +1,17 @@
+domain idltest.substraction
+
+mixin Identified {
+  id: str
+}
+
+mixin User {
+  name: str
+  id: str
+  pass: str
+}
+
+mixin PublicUser {
+  * User
+  - Identified
+  / pass: str
+}

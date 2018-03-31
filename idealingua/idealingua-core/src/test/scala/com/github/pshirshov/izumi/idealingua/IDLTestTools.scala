@@ -17,7 +17,7 @@ object IDLTestTools {
     val src = new File(getClass.getResource("/defs").toURI).toPath
     val loader = new LocalModelLoader(src, Seq.empty)
     val loaded = loader.load()
-    assert(loaded.size == 5)
+    assert(loaded.size == 6)
     loaded
   }
 
