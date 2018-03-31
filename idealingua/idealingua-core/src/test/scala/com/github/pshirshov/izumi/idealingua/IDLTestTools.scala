@@ -6,6 +6,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import com.github.pshirshov.izumi.idealingua.il.ILRenderer
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
@@ -18,6 +19,10 @@ object IDLTestTools {
     val loader = new LocalModelLoader(src, Seq.empty)
     val loaded = loader.load()
     assert(loaded.size == 6)
+    loaded.foreach {
+      d=>
+      println(new ILRenderer(d).render())
+    }
     loaded
   }
 
