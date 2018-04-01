@@ -66,10 +66,10 @@ class ILRenderer(domain: DomainDefinition) {
 
   def renderStruct(struct: Structure): String = {
     Seq(
-      renderComposite(struct.superclasses.interfaces)
+      renderComposite(struct.superclasses.interfaces, "+ ")
       , renderComposite(struct.superclasses.concepts, "* ")
       , renderComposite(struct.superclasses.removedConcepts, "- ")
-      , renderAggregate(struct.fields)
+      , renderAggregate(struct.fields, "")
       , renderAggregate(struct.removedFields, "- ")
     )
       .filterNot(_.isEmpty)
@@ -82,20 +82,11 @@ class ILRenderer(domain: DomainDefinition) {
        |}
      """.stripMargin
   }
-
-  def renderComposite(aggregate: Composite): String = {
-    renderComposite(aggregate, "+ ")
-  }
-
   def renderComposite(aggregate: Composite, prefix: String): String = {
     aggregate
       .map(render)
       .map(t => s"$prefix$t")
       .mkString("\n")
-  }
-
-  def renderAggregate(aggregate: Tuple): String = {
-    renderAggregate(aggregate, "")
   }
 
   def renderAggregate(aggregate: Tuple, prefix: String): String = {
