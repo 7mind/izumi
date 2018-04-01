@@ -47,28 +47,33 @@ class ILRenderer(domain: DomainDefinition) {
          """.stripMargin
 
       case d: Interface =>
-        val body = Seq(
-          renderComposite(d.struct.superclasses.interfaces)
-          , renderComposite(d.struct.superclasses.concepts, '*')
-          , renderAggregate(d.struct.fields)
-        ).filterNot(_.isEmpty).mkString("\n")
+        val body = renderStruct(d.struct)
+
         s"""mixin ${render(d.id)} {
            |${body.shift(2)}
            |}
          """.stripMargin
 
       case d: DTO =>
-        val body = Seq(
-          renderComposite(d.struct.superclasses.interfaces)
-          , renderComposite(d.struct.superclasses.concepts, '*')
-          , renderAggregate(d.struct.fields)
-        ).filterNot(_.isEmpty).mkString("\n")
+        val body = renderStruct(d.struct)
 
         s"""data ${render(d.id)} {
            |${body.shift(2)}
            |}
          """.stripMargin
     }
+  }
+
+  def renderStruct(struct: Structure): String = {
+    Seq(
+      renderComposite(struct.superclasses.interfaces)
+      , renderComposite(struct.superclasses.concepts, "* ")
+      , renderComposite(struct.superclasses.removedConcepts, "- ")
+      , renderAggregate(struct.fields)
+      , renderAggregate(struct.removedFields, "- ")
+    )
+      .filterNot(_.isEmpty)
+      .mkString("\n")
   }
 
   def render(service: Service): String = {
@@ -79,19 +84,24 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def renderComposite(aggregate: Composite): String = {
-    renderComposite(aggregate, '+')
+    renderComposite(aggregate, "+ ")
   }
 
-  def renderComposite(aggregate: Composite, char: Char): String = {
+  def renderComposite(aggregate: Composite, prefix: String): String = {
     aggregate
       .map(render)
-      .map(t => s"$char $t")
+      .map(t => s"$prefix$t")
       .mkString("\n")
   }
 
   def renderAggregate(aggregate: Tuple): String = {
+    renderAggregate(aggregate, "")
+  }
+
+  def renderAggregate(aggregate: Tuple, prefix: String): String = {
     aggregate
       .map(render)
+      .map(t => s"$prefix$t")
       .mkString("\n")
   }
 
