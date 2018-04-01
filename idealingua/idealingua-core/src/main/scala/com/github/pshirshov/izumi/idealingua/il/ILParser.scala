@@ -98,11 +98,6 @@ class ILParser {
         Field(tpe, name)
     }
 
-
-  final val mixed = P(SepInlineOpt ~ "+" ~ "++".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
-  final val removed = P(SepInlineOpt ~ "-" ~ "--".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
-  final val added = P(SepInlineOpt ~ ("*" | "...") ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
-
   final val sigParam = P(SepInlineOpt ~ identifier ~ SepInlineOpt)
   final val signature = P(sigParam.rep(sep = ","))
 
@@ -132,6 +127,9 @@ class ILParser {
     .map(v => ILDef(Identifier(v._1.toIdId, v._2)))
 
   def struct(entrySep: all.Parser[Unit], sep: all.Parser[Unit]): all.Parser[ParsedStruct] = {
+    val mixed = P(SepInlineOpt ~ "+" ~ "++".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
+    val removed = P(SepInlineOpt ~ "-" ~ "--".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
+    val added = P(SepInlineOpt ~ ("*" | "...") ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
     val composite = P(mixed.rep(sep = entrySep))
     val embedded = P(added.rep(sep = entrySep))
     val removedAgg = P(removed.rep(sep = entrySep))
