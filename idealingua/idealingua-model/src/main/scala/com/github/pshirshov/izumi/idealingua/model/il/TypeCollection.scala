@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, Interfa
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, ILAst, ILStructure}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{DTO, Interface, Service, Super}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
 
 class TypeCollection(domain: DomainDefinition) {
   val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
@@ -20,8 +20,8 @@ class TypeCollection(domain: DomainDefinition) {
         val outIid = DTOId(service.id, s"Out${m.name.capitalize}")
 
         Seq(
-          DTO(inIid, List.empty, Super.interfaces(m.signature.input))
-          , DTO(outIid, List.empty, Super.interfaces(m.signature.output))
+          DTO(inIid, Structure.interfaces(m.signature.input))
+          , DTO(outIid, Structure.interfaces(m.signature.output))
         )
     }
   }).flatten.toSeq
@@ -31,7 +31,7 @@ class TypeCollection(domain: DomainDefinition) {
       .collect {
         case i: Interface =>
           val iid = DTOId(i.id, toDtoName(i.id))
-          DTO(iid, List.empty, Super.interfaces(List(i.id)))
+          DTO(iid, Structure.interfaces(List(i.id)))
       }
   }
 

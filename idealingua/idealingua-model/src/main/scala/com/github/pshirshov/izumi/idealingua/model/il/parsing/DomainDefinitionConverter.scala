@@ -4,8 +4,8 @@ import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Super
-import com.github.pshirshov.izumi.idealingua.model.il.{ast, _}
+import com.github.pshirshov.izumi.idealingua.model.il.ast
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Structure, Super}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
 
 
@@ -31,25 +31,31 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
   protected def fixType(defn: ILAstParsed): ILAst = {
     defn match {
       case d: ILAstParsed.Enumeration =>
-        ILAst.Enumeration(id = fixId(d.id), members = d.members)
+        ILAst.Enumeration(id = fixId(d.id): TypeId.EnumId, members = d.members)
 
       case d: ILAstParsed.Alias =>
-        ILAst.Alias(id = fixId(d.id), target = fixId(d.target))
+        ILAst.Alias(id = fixId(d.id): TypeId.AliasId, target = fixId(d.target) : TypeId)
 
       case d: ILAstParsed.Identifier =>
-        ILAst.Identifier(id = fixId(d.id), fields = fixPrimitiveFields(d.fields))
+        ILAst.Identifier(id = fixId(d.id): TypeId.IdentifierId, fields = fixPrimitiveFields(d.fields))
 
       case d: ILAstParsed.Interface =>
-        val superclasses = Super(interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
-        ILAst.Interface(id = fixId(d.id), fields = fixFields(d.fields), superclasses = superclasses)
+        ILAst.Interface(id = fixId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct))
 
       case d: ILAstParsed.DTO =>
-        val superclasses = Super(interfaces = fixIds(d.interfaces), concepts = fixIds(d.concepts))
-        ILAst.DTO(id = fixId(d.id), fields = fixFields(d.fields), superclasses = superclasses)
+        ILAst.DTO(id = fixId(d.id): TypeId.DTOId, struct = toStruct(d.struct))
 
       case d: ILAstParsed.Adt =>
-        ILAst.Adt(id = fixId(d.id), alternatives = fixIds(d.alternatives))
+        ILAst.Adt(id = fixId(d.id): TypeId.AdtId, alternatives = fixIds(d.alternatives))
     }
+  }
+
+  protected def toStruct(struct: ILAstParsed.Structure): Structure = {
+    Structure(fields = fixFields(struct.fields), removedFields = fixFields(struct.removedFields), superclasses = toSuper(struct))
+  }
+
+  protected def toSuper(struct: ILAstParsed.Structure): Super = {
+    Super(interfaces = fixIds(struct.interfaces), concepts = fixIds(struct.concepts), removedConcepts = fixIds(struct.removedConcepts))
   }
 
   protected def fixService(defn: ILAstParsed.Service): ILAst.Service = {

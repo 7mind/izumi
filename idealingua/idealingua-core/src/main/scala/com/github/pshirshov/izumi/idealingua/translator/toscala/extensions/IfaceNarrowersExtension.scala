@@ -10,7 +10,7 @@ object IfaceNarrowersExtension extends ScalaTranslatorExtension {
 
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     // we don't add explicit parents here because their converters are available
-    val allStructuralParents = List(interface.id) ++ interface.superclasses.concepts
+    val allStructuralParents = List(interface.id) ++ interface.struct.superclasses.concepts
 
     val narrowers = allStructuralParents.distinct.map {
       p =>

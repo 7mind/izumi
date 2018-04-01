@@ -13,16 +13,17 @@ object ILAstParsed {
   type Composite = List[InterfaceId]
   type Aggregate = List[Field]
 
+  case class Structure(interfaces: Composite, concepts: Composite, removedConcepts: Composite, fields: Aggregate, removedFields: Aggregate)
+
+  case class Interface(id: InterfaceId, struct: Structure) extends ILAstParsed
+
+  case class DTO(id: DTOId, struct: Structure) extends ILAstParsed
+
   case class Enumeration(id: EnumId, members: List[String]) extends ILAstParsed
 
   case class Alias(id: AliasId, target: AbstractTypeId) extends ILAstParsed
 
   case class Identifier(id: IdentifierId, fields: Aggregate) extends ILAstParsed
-
-
-  case class Interface(id: InterfaceId, fields: Aggregate, interfaces: Composite, concepts: Composite) extends ILAstParsed
-
-  case class DTO(id: DTOId, fields: Aggregate, interfaces: Composite, concepts: Composite) extends ILAstParsed
 
   case class Adt(id: AdtId, alternatives: List[AbstractTypeId]) extends ILAstParsed
 

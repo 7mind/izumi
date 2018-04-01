@@ -48,9 +48,9 @@ class ILRenderer(domain: DomainDefinition) {
 
       case d: Interface =>
         val body = Seq(
-          renderComposite(d.superclasses.interfaces)
-          , renderComposite(d.superclasses.concepts, '*')
-          , renderAggregate(d.fields)
+          renderComposite(d.struct.superclasses.interfaces)
+          , renderComposite(d.struct.superclasses.concepts, '*')
+          , renderAggregate(d.struct.fields)
         ).filterNot(_.isEmpty).mkString("\n")
         s"""mixin ${render(d.id)} {
            |${body.shift(2)}
@@ -59,9 +59,9 @@ class ILRenderer(domain: DomainDefinition) {
 
       case d: DTO =>
         val body = Seq(
-          renderComposite(d.superclasses.interfaces)
-          , renderComposite(d.superclasses.concepts, '*')
-          , renderAggregate(d.fields)
+          renderComposite(d.struct.superclasses.interfaces)
+          , renderComposite(d.struct.superclasses.concepts, '*')
+          , renderAggregate(d.struct.fields)
         ).filterNot(_.isEmpty).mkString("\n")
 
         s"""data ${render(d.id)} {

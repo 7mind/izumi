@@ -224,7 +224,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     }
 
     val ifDecls = {
-      val scalaIfaces = (rt.generated +: i.superclasses.interfaces.map(conv.toScala)).map(_.init())
+      val scalaIfaces = (rt.generated +: i.struct.superclasses.interfaces.map(conv.toScala)).map(_.init())
       ctx.tools.withAny(fields.fields, scalaIfaces)
     }
 

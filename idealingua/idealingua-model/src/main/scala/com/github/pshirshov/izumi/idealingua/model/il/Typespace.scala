@@ -89,10 +89,10 @@ class Typespace(val domain: DomainDefinition) {
     id match {
       case i: InterfaceId =>
         val defn = apply(i)
-        List(i) ++ defn.superclasses.interfaces.flatMap(parentsInherited)
+        List(i) ++ defn.struct.superclasses.interfaces.flatMap(parentsInherited)
 
       case i: DTOId =>
-        apply(i).superclasses.interfaces.flatMap(parentsInherited)
+        apply(i).struct.superclasses.interfaces.flatMap(parentsInherited)
 
       case _: IdentifierId =>
         List()
@@ -115,10 +115,10 @@ class Typespace(val domain: DomainDefinition) {
     id match {
       case i: InterfaceId =>
         val defn = apply(i)
-        List(i) ++ defn.superclasses.all.flatMap(parentsStructural)
+        List(i) ++ defn.struct.superclasses.all.flatMap(parentsStructural)
 
       case i: DTOId =>
-        apply(i).superclasses.all.flatMap(parentsStructural)
+        apply(i).struct.superclasses.all.flatMap(parentsStructural)
 
       case _: IdentifierId =>
         List()
@@ -159,9 +159,9 @@ class Typespace(val domain: DomainDefinition) {
   def structure(defn: ILStructure): Struct = {
     val parts = apply(defn.id) match {
       case i: Interface =>
-        i.superclasses
+        i.struct.superclasses
       case i: DTO =>
-        i.superclasses
+        i.struct.superclasses
     }
 
     Struct(defn.id, parts, extractFields(defn))
@@ -189,18 +189,18 @@ class Typespace(val domain: DomainDefinition) {
   protected def extractFields(defn: ILAst): List[ExtendedField] = {
     val fields = defn match {
       case t: Interface =>
-        val superFields = compositeFields(t.superclasses.interfaces)
-        val embeddedFields = t.superclasses.concepts.flatMap(id => extractFields(apply(id)))
-        val thisFields = toExtendedFields(t.fields, t.id)
+        val superFields = compositeFields(t.struct.superclasses.interfaces)
+        val embeddedFields = t.struct.superclasses.concepts.flatMap(id => extractFields(apply(id)))
+        val thisFields = toExtendedFields(t.struct.fields, t.id)
 
         superFields.map(_.copy(definedBy = t.id)) ++ // in fact super field is defined by this
           embeddedFields ++
           thisFields
 
       case t: DTO =>
-        val superFields = compositeFields(t.superclasses.interfaces)
-        val embeddedFields = t.superclasses.concepts.flatMap(id => extractFields(apply(id)))
-        val thisFields = toExtendedFields(t.fields, t.id)
+        val superFields = compositeFields(t.struct.superclasses.interfaces)
+        val embeddedFields = t.struct.superclasses.concepts.flatMap(id => extractFields(apply(id)))
+        val thisFields = toExtendedFields(t.struct.fields, t.id)
 
         superFields ++
           embeddedFields ++
@@ -245,13 +245,13 @@ class Typespace(val domain: DomainDefinition) {
       case _: Enumeration =>
         Seq.empty
       case d: Interface =>
-        d.superclasses.interfaces.map(i => Dependency.Interface(d.id, i)) ++
-          d.superclasses.concepts.flatMap(c => extractDependencies(apply(c))) ++
-          d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
+        d.struct.superclasses.interfaces.map(i => Dependency.Interface(d.id, i)) ++
+          d.struct.superclasses.concepts.flatMap(c => extractDependencies(apply(c))) ++
+          d.struct.fields.map(f => Dependency.Field(d.id, f.typeId, f))
       case d: DTO =>
-        d.superclasses.interfaces.map(i => Dependency.Interface(d.id, i)) ++
-          d.superclasses.concepts.flatMap(c => extractDependencies(apply(c))) ++
-          d.fields.map(f => Dependency.Field(d.id, f.typeId, f))
+        d.struct.superclasses.interfaces.map(i => Dependency.Interface(d.id, i)) ++
+          d.struct.superclasses.concepts.flatMap(c => extractDependencies(apply(c))) ++
+          d.struct.fields.map(f => Dependency.Field(d.id, f.typeId, f))
 
       case d: Identifier =>
         d.fields.map(f => Dependency.PrimitiveField(d.id, f.typeId, f))
