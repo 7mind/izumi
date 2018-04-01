@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.il
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.{ILAstParsed, ILParsedId}
 import fastparse.CharPredicates._
 import fastparse.all._
 import fastparse.{all, core}
@@ -14,7 +15,17 @@ import scala.language.implicitConversions
 
 class ILParser {
 
-  case class ParsedStruct(inherited: Seq[ILParsedId], mixed: Seq[ILParsedId], removed: Seq[ILParsedId], fields: Seq[Field], removedFields: Seq[Field])
+  case class ParsedStruct(inherited: Seq[ILParsedId], mixed: Seq[ILParsedId], removed: Seq[ILParsedId], fields: Seq[Field], removedFields: Seq[Field]) {
+    def toInterface(id: InterfaceId): ILAstParsed.Interface = {
+      Interface(id, fields, inherited.map(_.toMixinId), mixed.map(_.toMixinId))
+    }
+
+    def toDto(id: DTOId): ILAstParsed.DTO = {
+      DTO(id, fields, inherited.map(_.toMixinId), mixed.map(_.toMixinId))
+    }
+  }
+
+
 
   private implicit def toList[T](seq: Seq[T]): List[T] = seq.toList
 
@@ -65,7 +76,7 @@ class ILParser {
   final val symbol = P(CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c) | c == '_').rep).!
 
 
-  final val pkgIdentifier = P(symbol.rep(sep = ".")) //.map(v => AbstractId(v))
+  final val pkgIdentifier = P(symbol.rep(sep = "."))
   final val fqIdentifier = P(pkgIdentifier ~ "#" ~/ symbol).map(v => ILParsedId(v._1, v._2))
   final val shortIdentifier = P(symbol).map(v => ILParsedId(v))
   final val identifier = P(fqIdentifier | shortIdentifier)
@@ -105,20 +116,20 @@ class ILParser {
   final val method: all.Parser[DefMethod] = P(SepInlineOpt ~ defmethod ~ SepInlineOpt)
   final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = SepLine))
 
-  final val enumBlock = P(kw.enum ~/ symbol ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ symbol.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
-    .map(v => ILDef(Enumeration(ILParsedId(v._1).toEnumId, v._2.toList)))
+  final val enumBlock = P(kw.enum ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ symbol.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
+    .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
 
-  final val adtBlock = P(kw.adt ~/ symbol ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ identifier.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
-    .map(v => ILDef(Adt(ILParsedId(v._1).toAdtId, v._2.map(_.toTypeId).toList)))
+  final val adtBlock = P(kw.adt ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ identifier.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
+    .map(v => ILDef(Adt(v._1.toAdtId, v._2.map(_.toTypeId).toList)))
 
-  final val aliasBlock = P(kw.alias ~/ symbol ~ SepInlineOpt ~ "=" ~ SepInlineOpt ~ identifier)
-    .map(v => ILDef(Alias(ILParsedId(v._1).toAliasId, v._2.toTypeId)))
+  final val aliasBlock = P(kw.alias ~/ shortIdentifier ~ SepInlineOpt ~ "=" ~ SepInlineOpt ~ identifier)
+    .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
 
   final val aggregate = P(field.rep(sep = SepLine))
 
 
-  final val idBlock = P(kw.id ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ aggregate ~ SepLineOpt) ~ "}")
-    .map(v => ILDef(Identifier(ILParsedId(v._1).toIdId, v._2)))
+  final val idBlock = P(kw.id ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ aggregate ~ SepLineOpt) ~ "}")
+    .map(v => ILDef(Identifier(v._1.toIdId, v._2)))
 
   def struct(entrySep: all.Parser[Unit], sep: all.Parser[Unit]): all.Parser[ParsedStruct] = {
     val composite = P(mixed.rep(sep = entrySep))
@@ -133,14 +144,14 @@ class ILParser {
 
   final val blockStruct = struct(SepLine, SepLineOpt)
 
-  final val mixinBlock = P(kw.mixin ~/ symbol ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
-    .map(v => ILDef(Interface(ILParsedId(v._1).toMixinId, v._2.fields, v._2.inherited.map(_.toMixinId), v._2.mixed.map(_.toMixinId))))
+  final val mixinBlock = P(kw.mixin ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
+    .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
 
-  final val dtoBlock = P(kw.data ~/ symbol ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
-    .map(v => ILDef(Interface(ILParsedId(v._1).toMixinId, v._2.fields, v._2.inherited.map(_.toMixinId), v._2.mixed.map(_.toMixinId))))
+  final val dtoBlock = P(kw.data ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
+    .map(v => ILDef(v._2.toDto(v._1.toDataId)))
 
-  final val serviceBlock = P(kw.service ~/ symbol ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ methods ~ SepLineOpt) ~ "}")
-    .map(v => ILService(Service(ILParsedId(v._1).toServiceId, v._2)))
+  final val serviceBlock = P(kw.service ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ methods ~ SepLineOpt) ~ "}")
+    .map(v => ILService(Service(v._1.toServiceId, v._2)))
 
   final val includeBlock = P(kw.include ~/ SepInlineOpt ~ "\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
     .map(v => ILInclude(v))
