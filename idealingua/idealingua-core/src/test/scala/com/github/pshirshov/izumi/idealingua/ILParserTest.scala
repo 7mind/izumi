@@ -7,20 +7,7 @@ import org.scalatest.WordSpec
 
 
 class ILParserTest extends WordSpec {
-  private def assertParses[T](p: Parser[T], str: String): T = {
-    p.parse(str) match {
-      case Parsed.Success(v, _) =>
-        v
-      case Parsed.Failure(lp, idx, e) =>
-        throw new IllegalStateException(s"Parsing failed: $lp, $idx, $e, ${e.traced}, ${e.traced.trace}")
-    }
-  }
-
-  private def assertDomainParses(str: String): Unit = {
-    val parsed = assertParses(new ILParser().fullDomainDef, str)
-    assert(parsed.model.definitions.nonEmpty)
-    ()
-  }
+  private val parser = new ILParser()
 
   "IL parser" should {
     "parse all test domains" in {
@@ -32,28 +19,30 @@ class ILParserTest extends WordSpec {
       }
     }
 
-    "parse domain definition" in {
-      assertParses(new ILParser().identifier, "x.y.z")
-      assertParses(new ILParser().domainId, "domain x.y.z")
-      assertParses(new ILParser().field, "a: map[str, str]")
-      assertParses(new ILParser().field, "a: map[str, set[x#Y]]")
-
-      assertParses(new ILParser().aliasBlock, "alias x = y")
-      assertParses(new ILParser().enumBlock, "enum MyEnum {X Y Zz}")
-      assertParses(new ILParser().adtBlock, "adt MyAdt { X Y a.b.c#D }")
-
-      assertParses(new ILParser().mixinBlock, "mixin Mixin {}")
-      assertParses(new ILParser().dtoBlock, "data Data {}")
-      assertParses(new ILParser().idBlock, "id Id {}")
-      assertParses(new ILParser().serviceBlock, "service Service {}")
-      assertParses(new ILParser().SepLineOpt, "// test")
-      assertParses(new ILParser().SepLineOpt,
+    "parse basic contstructs" in {
+      assertParses(parser.SepLineOpt, "// test")
+      assertParses(parser.SepLineOpt,
         """// test
           |/*test*/
           | /* test/**/*/
         """.stripMargin)
 
+      assertParses(parser.identifier, "x.y.z")
+      assertParses(parser.field, "a: map[str, str]")
+      assertParses(parser.field, "a: map[str, set[x#Y]]")
 
+      assertParses(parser.blocks.aliasBlock, "alias x = y")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum {X Y Zz}")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt { X Y a.b.c#D }")
+      assertParses(parser.blocks.mixinBlock, "mixin Mixin {}")
+      assertParses(parser.blocks.dtoBlock, "data Data {}")
+      assertParses(parser.blocks.idBlock, "id Id {}")
+      assertParses(parser.blocks.serviceBlock, "service Service {}")
+
+      assertParses(parser.domains.domainId, "domain x.y.z")
+    }
+
+    "parse domain definition" in {
       val domaindef1 =
         """domain x.y.z
           |
@@ -134,4 +123,21 @@ class ILParserTest extends WordSpec {
 
     }
   }
+
+  private def assertParses[T](p: Parser[T], str: String): T = {
+    p.parse(str) match {
+      case Parsed.Success(v, _) =>
+        v
+      case Parsed.Failure(lp, idx, e) =>
+        throw new IllegalStateException(s"Parsing failed: $lp, $idx, $e, ${e.traced}, ${e.traced.trace}")
+    }
+  }
+
+
+  private def assertDomainParses(str: String): Unit = {
+    val parsed = assertParses(parser.fullDomainDef, str)
+    assert(parsed.model.definitions.nonEmpty)
+    ()
+  }
+
 }

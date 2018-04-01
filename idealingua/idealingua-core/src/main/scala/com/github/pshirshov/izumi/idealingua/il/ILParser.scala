@@ -81,11 +81,6 @@ class ILParser {
   final val shortIdentifier = P(symbol).map(v => ILParsedId(v))
   final val identifier = P(fqIdentifier | shortIdentifier)
 
-
-  final val domainId = P(pkgIdentifier)
-    .map(v => ILDomainId(DomainId(v.init, v.last)))
-  final val domainBlock = P(kw.domain ~/ domainId)
-
   final val fulltype: all.Parser[AbstractTypeId] = P(SepInlineOpt ~ identifier ~ SepInlineOpt ~ generic.rep(min = 0, max = 1) ~ SepInlineOpt)
     .map(tp => tp._1.toGeneric(tp._2))
 
@@ -98,33 +93,7 @@ class ILParser {
         Field(tpe, name)
     }
 
-  final val sigParam = P(SepInlineOpt ~ identifier ~ SepInlineOpt)
-  final val signature = P(sigParam.rep(sep = ","))
-
-
-  final val defmethod = P(kw.defm ~/ SepInlineOpt ~ symbol ~ "(" ~ SepInlineOpt ~ signature ~ SepInlineOpt ~ ")" ~ SepInlineOpt ~ ":" ~ SepInlineOpt ~ "(" ~ SepInlineOpt ~ signature ~ SepInlineOpt ~ ")" ~ SepInlineOpt).map {
-    case (name, in, out) =>
-      DefMethod.RPCMethod(name, DefMethod.Signature(in.map(_.toMixinId), out.map(_.toMixinId)))
-  }
-
-  // other method kinds should be added here
-  final val method: all.Parser[DefMethod] = P(SepInlineOpt ~ defmethod ~ SepInlineOpt)
-  final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = SepLine))
-
-  final val enumBlock = P(kw.enum ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ symbol.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
-    .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
-
-  final val adtBlock = P(kw.adt ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ identifier.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
-    .map(v => ILDef(Adt(v._1.toAdtId, v._2.map(_.toTypeId).toList)))
-
-  final val aliasBlock = P(kw.alias ~/ shortIdentifier ~ SepInlineOpt ~ "=" ~ SepInlineOpt ~ identifier)
-    .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
-
   final val aggregate = P(field.rep(sep = SepLine))
-
-
-  final val idBlock = P(kw.id ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ aggregate ~ SepLineOpt) ~ "}")
-    .map(v => ILDef(Identifier(v._1.toIdId, v._2)))
 
   def struct(entrySep: all.Parser[Unit], sep: all.Parser[Unit]): all.Parser[ParsedStruct] = {
     val mixed = P(SepInlineOpt ~ "+" ~ "++".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
@@ -140,38 +109,75 @@ class ILParser {
       .map(v => ParsedStruct.tupled(v))
   }
 
-  final val blockStruct = struct(SepLine, SepLineOpt)
-
-  final val mixinBlock = P(kw.mixin ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
-    .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
-
-  final val dtoBlock = P(kw.data ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
-    .map(v => ILDef(v._2.toDto(v._1.toDataId)))
-
-  final val serviceBlock = P(kw.service ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ methods ~ SepLineOpt) ~ "}")
-    .map(v => ILService(Service(v._1.toServiceId, v._2)))
-
-  final val includeBlock = P(kw.include ~/ SepInlineOpt ~ "\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
-    .map(v => ILInclude(v))
+  object services {
+    final val sigParam = P(SepInlineOpt ~ identifier ~ SepInlineOpt)
+    final val signature = P(sigParam.rep(sep = ","))
 
 
-  final val anyBlock: core.Parser[Val, Char, String] = enumBlock |
-    adtBlock |
-    aliasBlock |
-    idBlock |
-    mixinBlock |
-    dtoBlock |
-    serviceBlock |
-    includeBlock
+    final val defmethod = P(kw.defm ~/ SepInlineOpt ~ symbol ~ "(" ~ SepInlineOpt ~ signature ~ SepInlineOpt ~ ")" ~ SepInlineOpt ~ ":" ~ SepInlineOpt ~ "(" ~ SepInlineOpt ~ signature ~ SepInlineOpt ~ ")" ~ SepInlineOpt).map {
+      case (name, in, out) =>
+        DefMethod.RPCMethod(name, DefMethod.Signature(in.map(_.toMixinId), out.map(_.toMixinId)))
+    }
 
-  final val importBlock = P(kw.`import` ~/ SepInlineOpt ~ domainId)
+    // other method kinds should be added here
+    final val method: all.Parser[DefMethod] = P(SepInlineOpt ~ defmethod ~ SepInlineOpt)
+    final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = SepLine))
+  }
 
-  final val modelDef = P(SepLineOpt ~ anyBlock.rep(sep = SepLineOpt) ~ SepLineOpt).map {
+  object blocks {
+    final val includeBlock = P(kw.include ~/ SepInlineOpt ~ "\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
+      .map(v => ILInclude(v))
+
+    final val blockStruct = struct(SepLine, SepLineOpt)
+
+    final val mixinBlock = P(kw.mixin ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
+      .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
+
+    final val dtoBlock = P(kw.data ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
+      .map(v => ILDef(v._2.toDto(v._1.toDataId)))
+
+    final val idBlock = P(kw.id ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ aggregate ~ SepLineOpt) ~ "}")
+      .map(v => ILDef(Identifier(v._1.toIdId, v._2)))
+
+    final val enumBlock = P(kw.enum ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ symbol.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
+      .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
+
+    final val adtBlock = P(kw.adt ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ identifier.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
+      .map(v => ILDef(Adt(v._1.toAdtId, v._2.map(_.toTypeId).toList)))
+
+    final val aliasBlock = P(kw.alias ~/ shortIdentifier ~ SepInlineOpt ~ "=" ~ SepInlineOpt ~ identifier)
+      .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
+
+    final val serviceBlock = P(kw.service ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ services.methods ~ SepLineOpt) ~ "}")
+      .map(v => ILService(Service(v._1.toServiceId, v._2)))
+
+
+
+    final val anyBlock: core.Parser[Val, Char, String] = enumBlock |
+      adtBlock |
+      aliasBlock |
+      idBlock |
+      mixinBlock |
+      dtoBlock |
+      serviceBlock |
+      includeBlock
+  }
+
+  object domains {
+    final val domainId = P(pkgIdentifier)
+      .map(v => ILDomainId(DomainId(v.init, v.last)))
+
+    final val domainBlock = P(kw.domain ~/ domainId)
+    final val importBlock = P(kw.`import` ~/ SepInlineOpt ~ domainId)
+
+  }
+
+  final val modelDef = P(SepLineOpt ~ blocks.anyBlock.rep(sep = SepLineOpt) ~ SepLineOpt).map {
     defs =>
       ParsedModel(defs)
   }
 
-  final val fullDomainDef = P(domainBlock ~ SepLineOpt ~ importBlock.rep(sep = SepLineOpt) ~ modelDef).map {
+  final val fullDomainDef = P(domains.domainBlock ~ SepLineOpt ~ domains.importBlock.rep(sep = SepLineOpt) ~ modelDef).map {
     case (did, imports, defs) =>
       ParsedDomain(did, imports, defs)
   }
