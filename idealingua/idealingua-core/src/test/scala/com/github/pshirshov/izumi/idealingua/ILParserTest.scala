@@ -23,6 +23,15 @@ class ILParserTest extends WordSpec {
   }
 
   "IL parser" should {
+    "parse all test domains" in {
+      val defs = IDLTestTools.loadDefs()
+      assert(defs.nonEmpty)
+      defs.foreach {
+        d =>
+          assert(d.types.nonEmpty)
+      }
+    }
+
     "parse domain definition" in {
       assertParses(new ILParser().identifier, "x.y.z")
       assertParses(new ILParser().domainId, "domain x.y.z")
