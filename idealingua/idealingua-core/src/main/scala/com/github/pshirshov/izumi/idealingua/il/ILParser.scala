@@ -8,23 +8,50 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.{ILAstParsed, ILParsedId}
 import fastparse.CharPredicates._
 import fastparse.all._
-import fastparse.{all, core}
 
 import scala.language.implicitConversions
 
+sealed trait StructOp
 
-class ILParser {
+object StructOp {
 
-  case class ParsedStruct(inherited: Seq[ILParsedId], mixed: Seq[ILParsedId], removed: Seq[ILParsedId], fields: Seq[Field], removedFields: Seq[Field]) {
-    def toInterface(id: InterfaceId): ILAstParsed.Interface = {
-      Interface(id, fields, inherited.map(_.toMixinId), mixed.map(_.toMixinId))
-    }
+  case class Extend(tpe: TypeId.InterfaceId) extends StructOp
 
-    def toDto(id: DTOId): ILAstParsed.DTO = {
-      DTO(id, fields, inherited.map(_.toMixinId), mixed.map(_.toMixinId))
-    }
+  case class Mix(tpe: TypeId.InterfaceId) extends StructOp
+
+  case class Drop(tpe: TypeId.InterfaceId) extends StructOp
+
+  case class AddField(field: Field) extends StructOp
+
+  case class RemoveField(field: Field) extends StructOp
+
+}
+
+case class ParsedStruct(inherited: List[InterfaceId], mixed: List[InterfaceId], removed: List[InterfaceId], fields: List[Field], removedFields: List[Field]) {
+  def toInterface(id: InterfaceId): ILAstParsed.Interface = {
+    Interface(id, fields, inherited, mixed)
   }
 
+  def toDto(id: DTOId): ILAstParsed.DTO = {
+    DTO(id, fields, inherited, mixed)
+  }
+}
+
+object ParsedStruct {
+  def apply(v: Seq[StructOp]): ParsedStruct = {
+    import StructOp._
+    ParsedStruct(
+      v.collect({ case Extend(i) => i }).toList
+      , v.collect({ case Mix(i) => i }).toList
+      , v.collect({ case Drop(i) => i }).toList
+      , v.collect({ case AddField(i) => i }).toList
+      , v.collect({ case RemoveField(i) => i }).toList
+    )
+  }
+}
+
+
+class ILParser {
 
 
   private implicit def toList[T](seq: Seq[T]): List[T] = seq.toList
@@ -94,15 +121,27 @@ class ILParser {
     }
 
 
-  def struct(entrySep: Parser[Unit], sep: Parser[Unit]): Parser[ParsedStruct] = {
-    val plus = P(("+" ~ "++".?) ~/ SepInlineOpt ~ identifier)
-    val embed = P(("*" | "...") ~/ SepInlineOpt ~ identifier)
-    val minus = P(("-" ~ "--".?) ~/ SepInlineOpt ~ (field | identifier))
+  def struct(sepEntry: Parser[Unit]): Parser[ParsedStruct] = {
+    val sepInline = SepInlineOpt
+    val margin = SepLineOpt
 
-    val anyPart = P(field | plus | embed | minus)
+    val plus = P(("+" ~ "++".?) ~/ sepInline ~ identifier).map(_.toMixinId).map(StructOp.Extend)
+    val embed = P(("*" | "...") ~/ sepInline ~ identifier).map(_.toMixinId).map(StructOp.Mix)
+    val minus = P(("-" ~ "--".?) ~/ sepInline ~ (field | identifier)).map {
+      case v: Field =>
+        StructOp.RemoveField(v)
+      case i: ILParsedId =>
+        StructOp.Drop(i.toMixinId)
+    }
+    val plusField = field.map(StructOp.AddField)
 
-    P(SepLineOpt ~(SepInlineOpt ~ anyPart ~ SepInlineOpt).rep(sep = SepLine) ~ SepLineOpt)
-      .map(v => ParsedStruct(Seq.empty, Seq.empty, Seq.empty, Seq.empty, Seq.empty))
+    val anyPart = P(plusField | plus | embed | minus)
+
+    P(margin ~ (sepInline ~ anyPart ~ sepInline).rep(sep = sepEntry) ~ margin)
+      .map {
+        v =>
+          ParsedStruct(v)
+      }
   }
 
   final val aggregate = P((SepInlineOpt ~ field ~ SepInlineOpt).rep(sep = SepLine))
@@ -126,7 +165,7 @@ class ILParser {
     final val includeBlock = P(kw.include ~/ SepInlineOpt ~ "\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
       .map(v => ILInclude(v))
 
-    final val blockStruct = struct(SepLine, SepLineOpt)
+    final val blockStruct = struct(SepLine)
 
     final val mixinBlock = P(kw.mixin ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ blockStruct ~ "}")
       .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
