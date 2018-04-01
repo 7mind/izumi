@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Structure, Super}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
 
@@ -59,7 +60,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
   }
 
   protected def fixService(defn: ILAstParsed.Service): ILAst.Service = {
-    ILAst.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod))
+    ILAst.Service(id = fixServiceId(defn.id), methods = defn.methods.filter(_.isInstanceOf[ILAstParsed.Service.DefMethod.RPCMethod]).map(fixMethod))
   }
 
   protected def makeDefinite(id: AbstractTypeId): TypeId = {
