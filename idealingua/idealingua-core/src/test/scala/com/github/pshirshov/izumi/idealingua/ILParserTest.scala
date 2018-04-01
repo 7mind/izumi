@@ -36,6 +36,15 @@ class ILParserTest extends WordSpec {
       assertParses(parser.blocks.adtBlock, "adt MyAdt { X Y a.b.c#D }")
       assertParses(parser.blocks.mixinBlock, "mixin Mixin {}")
       assertParses(parser.blocks.dtoBlock, "data Data {}")
+      assertParses(parser.blocks.dtoBlock,
+        """data Data {
+          |+ Add
+          |+++ Add
+          |* Embed
+          |field: F
+          |... Embed
+          |another: F
+          |}""".stripMargin)
       assertParses(parser.blocks.idBlock, "id Id {}")
       assertParses(parser.blocks.serviceBlock, "service Service {}")
 

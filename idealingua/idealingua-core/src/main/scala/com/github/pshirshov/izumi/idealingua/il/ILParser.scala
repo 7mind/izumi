@@ -50,9 +50,9 @@ class ILParser {
   final val SepAnyOpt = P(SepInline | SepLineBase.rep)
 
   object kw {
-    def kw(s: String): all.Parser[Unit] = P(s ~ SepInline)(sourcecode.Name(s"`$s`"))
+    def kw(s: String): Parser[Unit] = P(s ~ SepInline)(sourcecode.Name(s"`$s`"))
 
-    def kw(s: String, alt: String*): all.Parser[Unit] = {
+    def kw(s: String, alt: String*): Parser[Unit] = {
       val alts = alt.foldLeft(P(s)) { case (acc, v) => acc | v }
       P(alts ~ SepInline)(sourcecode.Name(s"`$s | $alt`"))
     }
@@ -81,33 +81,31 @@ class ILParser {
   final val shortIdentifier = P(symbol).map(v => ILParsedId(v))
   final val identifier = P(fqIdentifier | shortIdentifier)
 
-  final val fulltype: all.Parser[AbstractTypeId] = P(SepInlineOpt ~ identifier ~ SepInlineOpt ~ generic.rep(min = 0, max = 1) ~ SepInlineOpt)
+  final val fulltype: Parser[AbstractTypeId] = P(SepInlineOpt ~ identifier ~ SepInlineOpt ~ generic.rep(min = 0, max = 1) ~ SepInlineOpt)
     .map(tp => tp._1.toGeneric(tp._2))
 
 
-  final def generic: all.Parser[Seq[AbstractTypeId]] = P("[" ~/ SepInlineOpt ~ fulltype.rep(sep = ",") ~ SepInlineOpt ~ "]")
+  final def generic: Parser[Seq[AbstractTypeId]] = P("[" ~/ SepInlineOpt ~ fulltype.rep(sep = ",") ~ SepInlineOpt ~ "]")
 
-  final val field = P(SepInlineOpt ~ symbol ~ SepInlineOpt ~ ":" ~/ SepInlineOpt ~ fulltype ~ SepInlineOpt)
+  val field: Parser[Field] = P(symbol ~ SepInlineOpt ~ ":" ~/ SepInlineOpt ~ fulltype)
     .map {
       case (name, tpe) =>
         Field(tpe, name)
     }
 
-  final val aggregate = P(field.rep(sep = SepLine))
 
-  def struct(entrySep: all.Parser[Unit], sep: all.Parser[Unit]): all.Parser[ParsedStruct] = {
-    val mixed = P(SepInlineOpt ~ "+" ~ "++".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
-    val removed = P(SepInlineOpt ~ "-" ~ "--".? ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
-    val added = P(SepInlineOpt ~ ("*" | "...") ~/ SepInlineOpt ~ identifier ~ SepInlineOpt)
-    val composite = P(mixed.rep(sep = entrySep))
-    val embedded = P(added.rep(sep = entrySep))
-    val removedAgg = P(removed.rep(sep = entrySep))
-    val aggregate = P(field.rep(sep = entrySep))
-    val removedFields = P(("/" ~ field).rep(sep = entrySep))
+  def struct(entrySep: Parser[Unit], sep: Parser[Unit]): Parser[ParsedStruct] = {
+    val plus = P(("+" ~ "++".?) ~/ SepInlineOpt ~ identifier)
+    val embed = P(("*" | "...") ~/ SepInlineOpt ~ identifier)
+    val minus = P(("-" ~ "--".?) ~/ SepInlineOpt ~ (field | identifier))
 
-    P(sep ~ composite ~ sep ~ embedded ~ sep ~ removedAgg ~ sep ~ aggregate ~ sep ~ removedFields ~ sep)
-      .map(v => ParsedStruct.tupled(v))
+    val anyPart = P(field | plus | embed | minus)
+
+    P(SepLineOpt ~(SepInlineOpt ~ anyPart ~ SepInlineOpt).rep(sep = SepLine) ~ SepLineOpt)
+      .map(v => ParsedStruct(Seq.empty, Seq.empty, Seq.empty, Seq.empty, Seq.empty))
   }
+
+  final val aggregate = P((SepInlineOpt ~ field ~ SepInlineOpt).rep(sep = SepLine))
 
   object services {
     final val sigParam = P(SepInlineOpt ~ identifier ~ SepInlineOpt)
@@ -120,7 +118,7 @@ class ILParser {
     }
 
     // other method kinds should be added here
-    final val method: all.Parser[DefMethod] = P(SepInlineOpt ~ defmethod ~ SepInlineOpt)
+    final val method: Parser[DefMethod] = P(SepInlineOpt ~ defmethod ~ SepInlineOpt)
     final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = SepLine))
   }
 
@@ -151,9 +149,7 @@ class ILParser {
     final val serviceBlock = P(kw.service ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ (SepLineOpt ~ services.methods ~ SepLineOpt) ~ "}")
       .map(v => ILService(Service(v._1.toServiceId, v._2)))
 
-
-
-    final val anyBlock: core.Parser[Val, Char, String] = enumBlock |
+    final val anyBlock: Parser[Val] = enumBlock |
       adtBlock |
       aliasBlock |
       idBlock |
