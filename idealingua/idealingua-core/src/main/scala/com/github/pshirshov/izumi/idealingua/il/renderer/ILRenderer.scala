@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.il
+package com.github.pshirshov.izumi.idealingua.il.renderer
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common

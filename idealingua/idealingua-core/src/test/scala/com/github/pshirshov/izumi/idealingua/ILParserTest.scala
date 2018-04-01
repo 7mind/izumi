@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua
 
-import com.github.pshirshov.izumi.idealingua.il.ILParser
+import com.github.pshirshov.izumi.idealingua.il.parser.ILParser
 import fastparse.all._
 import fastparse.core.Parsed
 import org.scalatest.WordSpec

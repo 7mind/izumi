@@ -1,54 +1,16 @@
-package com.github.pshirshov.izumi.idealingua.il
+package com.github.pshirshov.izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.il._
+import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.{ILAstParsed, ILParsedId}
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILParsedId
 import fastparse.CharPredicates._
 import fastparse.all._
 
 import scala.language.implicitConversions
-
-sealed trait StructOp
-
-object StructOp {
-
-  case class Extend(tpe: TypeId.InterfaceId) extends StructOp
-
-  case class Mix(tpe: TypeId.InterfaceId) extends StructOp
-
-  case class Drop(tpe: TypeId.InterfaceId) extends StructOp
-
-  case class AddField(field: Field) extends StructOp
-
-  case class RemoveField(field: Field) extends StructOp
-
-}
-
-case class ParsedStruct(inherited: List[InterfaceId], mixed: List[InterfaceId], removed: List[InterfaceId], fields: List[Field], removedFields: List[Field]) {
-  def toInterface(id: InterfaceId): ILAstParsed.Interface = {
-    Interface(id, fields, inherited, mixed)
-  }
-
-  def toDto(id: DTOId): ILAstParsed.DTO = {
-    DTO(id, fields, inherited, mixed)
-  }
-}
-
-object ParsedStruct {
-  def apply(v: Seq[StructOp]): ParsedStruct = {
-    import StructOp._
-    ParsedStruct(
-      v.collect({ case Extend(i) => i }).toList
-      , v.collect({ case Mix(i) => i }).toList
-      , v.collect({ case Drop(i) => i }).toList
-      , v.collect({ case AddField(i) => i }).toList
-      , v.collect({ case RemoveField(i) => i }).toList
-    )
-  }
-}
 
 
 class ILParser {
