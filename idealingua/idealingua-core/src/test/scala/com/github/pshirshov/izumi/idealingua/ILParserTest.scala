@@ -20,8 +20,8 @@ class ILParserTest extends WordSpec {
     }
 
     "parse basic contstructs" in {
-      assertParses(parser.SepLineOpt, "// test")
-      assertParses(parser.SepLineOpt,
+      assertParses(parser.Separators.SepLineOpt, "// test")
+      assertParses(parser.Separators.SepLineOpt,
         """// test
           |/*test*/
           | /* test/**/*/
@@ -30,6 +30,12 @@ class ILParserTest extends WordSpec {
       assertParses(parser.identifier, "x.y.z")
       assertParses(parser.field, "a: map[str, str]")
       assertParses(parser.field, "a: map[str, set[x#Y]]")
+      assertParses(parser.services.inlineStruct, "(a: A, b: B, +C)")
+      assertParses(parser.services.inlineStruct, "(a: str)")
+      assertParses(parser.services.adtOut, "( A \n | \n B )")
+      assertParses(parser.services.adtOut, "(A|B)")
+      assertParses(parser.services.adtOut, "(A | B)")
+      assertParses(parser.services.inlineStruct, "(\n  firstName: str \n , \n secondName: str\n  )")
 
       assertParses(parser.blocks.aliasBlock, "alias x = y")
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X Y Zz}")

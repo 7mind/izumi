@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il._
-import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
+import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod.{Output, SignatureEx}
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed._
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILParsedId
 import fastparse.CharPredicates._
@@ -22,21 +23,30 @@ class ILParser {
 
   final val ws = P(" " | "\t")(sourcecode.Name("WS"))
   final val wss = P(ws.rep)
-  final val wsm = P(ws.rep(1))
 
   final val NLC = P("\r\n" | "\n" | "\r")
 
   final val CommentChunk = P(CharsWhile(c => c != '/' && c != '*') | MultilineComment | !"*/" ~ AnyChar)
   final val MultilineComment: P0 = P((wss ~ "/*" ~ CommentChunk.rep ~ "*/" ~ wss).rep(1))
-
   final val ShortComment = P(wss ~ "//" ~ CharsWhile(c => c != '\n' && c != '\r') ~ (NLC | End))
 
-  final val SepInline = P(MultilineComment | wsm)
-  final val SepInlineOpt = P(MultilineComment | wss)
-  final val SepLineBase = P((NLC | ShortComment | (MultilineComment ~ (NLC | End))) ~ wss)
-  final val SepLine = P(End | SepLineBase.rep(1))
-  final val SepLineOpt = P(End | SepLineBase.rep)
-  final val SepAnyOpt = P(SepInline | SepLineBase.rep)
+  final val wsm = P(ws.rep(1))
+
+
+  class Separators(main: Parser[Unit]) {
+    final val SepInline = P(MultilineComment | wsm)
+    final val SepInlineOpt = P(MultilineComment | wss)
+    final val SepLineBase = P((main | ShortComment | (MultilineComment ~ (main | End))) ~ wss)
+    final val SepLine = P(End | SepLineBase.rep(1))
+    final val SepLineOpt = P(End | SepLineBase.rep)
+    final val SepAnyOpt = P(SepInline | SepLineBase.rep)
+  }
+
+  object Separators extends Separators(NLC)
+
+  import Separators._
+
+  object SigSeparators extends Separators(P(NLC | ","))
 
   object kw {
     def kw(s: String): Parser[Unit] = P(s ~ SepInline)(sourcecode.Name(s"`$s`"))
@@ -104,21 +114,50 @@ class ILParser {
   }
 
   final val aggregate = P((SepInlineOpt ~ field ~ SepInlineOpt).rep(sep = SepLine))
+  final val adt: Parser[AlgebraicType] = {
+    P(SepAnyOpt ~ identifier.rep(min = 1, sep = (ws | NLC | "|").rep(min = 1) ) ~ SepAnyOpt).map(v => AlgebraicType(v.map(_.toTypeId).toList))
+  }
+
 
   object services {
-    final val sigParam = P(SepInlineOpt ~ identifier ~ SepInlineOpt)
-    final val signature = P(sigParam.rep(sep = ","))
+    final val sigSep = P("=>" | "->") // ":"
+    final val wsAny = P(SepInlineOpt ~ SepLineOpt ~ SepInlineOpt)
+    final val sepInlineStruct = P(SepInlineOpt ~ SigSeparators.SepLine ~ SepInlineOpt)
+    final val inlineStruct = P("(" ~ struct(sepInlineStruct) ~ ")")
+    final val adtOut = P("(" ~ adt ~ ")")
 
+    final val defmethodEx = P(
+      kw.defm ~ SepInlineOpt ~
+        symbol ~ wsAny ~
+        inlineStruct ~ wsAny ~
+        sigSep ~ wsAny ~
+        (adtOut | inlineStruct)
+    ).map {
+      case (id, in, out: ParsedStruct) =>
+        DefMethod.RPCMethodEx(id, SignatureEx(in.structure, Output.Usual(out.structure)))
 
-    final val defmethod = P(kw.defm ~/ SepInlineOpt ~ symbol ~ "(" ~ SepInlineOpt ~ signature ~ SepInlineOpt ~ ")" ~ SepInlineOpt ~ ":" ~ SepInlineOpt ~ "(" ~ SepInlineOpt ~ signature ~ SepInlineOpt ~ ")" ~ SepInlineOpt).map {
-      case (name, in, out) =>
-        DefMethod.RPCMethod(name, DefMethod.Signature(in.map(_.toMixinId), out.map(_.toMixinId)))
+      case (id, in, out: AlgebraicType) =>
+        DefMethod.RPCMethodEx(id, SignatureEx(in.structure, Output.Algebraic(out.alternatives)))
+
+      case f =>
+        throw new IllegalStateException(s"Impossible case: $f")
     }
 
+
+    final val sigParam = P(SepInlineOpt ~ identifier ~ SepInlineOpt)
+    final val signature = P(sigParam.rep(sep = ","))
+    final val defmethod = P(kw.defm ~ SepInlineOpt ~ symbol ~ "(" ~ SepInlineOpt ~ signature ~ SepInlineOpt ~ ")" ~ SepInlineOpt ~
+      ":" ~ SepInlineOpt ~ "(" ~ SepInlineOpt ~ signature ~ SepInlineOpt ~ ")" ~ SepInlineOpt)
+      .map {
+        case (name, in, out) =>
+          DefMethod.RPCMethod(name, DefMethod.Signature(in.map(_.toMixinId), out.map(_.toMixinId)))
+      }
+
     // other method kinds should be added here
-    final val method: Parser[DefMethod] = P(SepInlineOpt ~ defmethod ~ SepInlineOpt)
+    final val method: Parser[DefMethod] = P(SepInlineOpt ~ (defmethod | defmethodEx) ~ SepInlineOpt)
     final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = SepLine))
   }
+
 
   object blocks {
     final val includeBlock = P(kw.include ~/ SepInlineOpt ~ "\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
@@ -138,8 +177,8 @@ class ILParser {
     final val enumBlock = P(kw.enum ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ symbol.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
       .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
 
-    final val adtBlock = P(kw.adt ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ SepAnyOpt ~ identifier.rep(min = 1, sep = SepAnyOpt) ~ SepAnyOpt ~ "}")
-      .map(v => ILDef(Adt(v._1.toAdtId, v._2.map(_.toTypeId).toList)))
+    final val adtBlock = P(kw.adt ~/ shortIdentifier ~ SepInlineOpt ~ "{" ~ adt ~ "}")
+      .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
 
     final val aliasBlock = P(kw.alias ~/ shortIdentifier ~ SepInlineOpt ~ "=" ~ SepInlineOpt ~ identifier)
       .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
