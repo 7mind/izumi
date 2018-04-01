@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst, ILStructure}
-import com.github.pshirshov.izumi.idealingua.model.il.structures.{ConverterDef, Struct}
+import com.github.pshirshov.izumi.idealingua.model.il.structures.{ConverterDef, PlainStruct, Struct}
 
 
 class Typespace(val domain: DomainDefinition) {
@@ -152,10 +152,10 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
-  def structure(defn: Identifier): Struct = {
-    Struct(defn.id, Super.empty, extractFields(defn))
-
+  def structure(defn: Identifier): PlainStruct = {
+    PlainStruct(extractFields(defn))
   }
+
   def structure(defn: ILStructure): Struct = {
     val parts = apply(defn.id) match {
       case i: Interface =>

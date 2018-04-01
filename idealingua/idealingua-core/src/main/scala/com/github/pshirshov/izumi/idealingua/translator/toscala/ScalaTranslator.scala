@@ -175,7 +175,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val fields = typespace.structure(i).toScala
     val decls = fields.all.toParams
 
-    val superClasses = ctx.tools.withAnyval(fields.fields, List(rt.generated.init(), rt.tIDLIdentifier.init()))
+    val superClasses = ctx.tools.withAnyval(fields, List(rt.generated.init(), rt.tIDLIdentifier.init()))
 
     // TODO: contradictions
 
