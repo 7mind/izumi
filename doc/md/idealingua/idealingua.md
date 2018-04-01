@@ -10,13 +10,13 @@ Keyword     | Aliases                | Explanation                              
 `import`    |                        | References a domain by id                   |
 `include`   |                        | Includes `*.model` file by name             |
 `alias`     | `type`, `using`        | Type alias                                  |
+`enum`      |                        | Enumeration                                 |
+`mixin`     | `interface`            | Mixin, named collection of fields           |
+`data`      | `dto`, `struct`        | Data                                        |
+`adt`       | `choice`               | Algebraic Data Type                         |
+`id`        |                        | Identifier, named collection of scalars     |
 `service`   |                        | Service interface                           |
 `def`       | `fn`, `fun`            | Method                                      |
-`id`        |                        | Identifier, named collection of scalars     |
-`mixin`     |                        | Mixin, named collection of fields           |
-`data`      |                        | Data                                        |
-`enum`      |                        | Enumeration                                 |
-`adt`       |                        | Algebraic Data Type                         |
 
 ## Embedded data types
 
@@ -51,5 +51,5 @@ Type name    | Explanation                                 | Scala mapping  |
 ------------ | ------------------------------------------- | -------------- |
 `list[T]`    | List                                        | `List`         |
 `map[K, V]`  | Map (only scalar keys supported)            | `Map`          |
-`opt[T]`     | Optional value                              | `Set`          |
-`set[T]`     | Set (no guarantees for traversal ordering)  | `scala.Option` |
+`opt[T]`     | Optional value                              | `scala.Option` |
+`set[T]`     | Set (no guarantees for traversal ordering)  | `Set`          |

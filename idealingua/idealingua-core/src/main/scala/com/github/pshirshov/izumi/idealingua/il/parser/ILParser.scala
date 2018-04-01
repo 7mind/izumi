@@ -51,11 +51,11 @@ class ILParser {
     final val `import` = kw("import")
 
     final val enum = kw("enum")
-    final val adt = kw("adt")
+    final val adt = kw("adt", "choice")
     final val alias = kw("alias", "type", "using")
     final val id = kw("id")
-    final val mixin = kw("mixin")
-    final val data = kw("data")
+    final val mixin = kw("mixin", "interface")
+    final val data = kw("data", "dto", "struct")
     final val service = kw("service")
 
     final val defm = kw("def", "fn", "fun")
@@ -100,10 +100,7 @@ class ILParser {
     val anyPart = P(plusField | plus | embed | minus)
 
     P(margin ~ (sepInline ~ anyPart ~ sepInline).rep(sep = sepEntry) ~ margin)
-      .map {
-        v =>
-          ParsedStruct(v)
-      }
+      .map(ParsedStruct.apply)
   }
 
   final val aggregate = P((SepInlineOpt ~ field ~ SepInlineOpt).rep(sep = SepLine))
