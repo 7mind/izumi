@@ -34,8 +34,8 @@ class Typespace(val domain: DomainDefinition) {
     apply(id: TypeId).asInstanceOf[Interface]
   }
 
-  protected def apply(id: StructureId): ILStructure = {
-    apply(id: TypeId).asInstanceOf[ILStructure]
+  protected def apply(id: StructureId): WithStructure = {
+    apply(id: TypeId).asInstanceOf[WithStructure]
   }
 
   protected def apply(id: IdentifierId): Identifier = {
@@ -167,7 +167,7 @@ class Typespace(val domain: DomainDefinition) {
     PlainStruct(extractFields(defn))
   }
 
-  def structure(defn: ILStructure): Struct = {
+  def structure(defn: WithStructure): Struct = {
     val parts = apply(defn.id) match {
       case i: Interface =>
         i.struct.superclasses
@@ -246,7 +246,7 @@ class Typespace(val domain: DomainDefinition) {
   }
 
 
-  protected def signature(defn: ILStructure): List[Field] = {
+  protected def signature(defn: WithStructure): List[Field] = {
     structure(defn).all.map(_.field).sortBy(_.name)
   }
 

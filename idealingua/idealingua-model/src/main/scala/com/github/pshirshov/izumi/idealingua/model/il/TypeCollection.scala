@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.il
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, ILStructure, TypeDef, _}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{DeprecatedRPCMethod, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 
@@ -47,7 +47,7 @@ class TypeCollection(domain: DomainDefinition) {
     verified(definitions)
   }
 
-  val structures: Seq[ILStructure] = all.collect { case t: ILStructure => t }
+  val structures: Seq[WithStructure] = all.collect { case t: WithStructure => t }
 
   def index: Map[TypeId, TypeDef] = {
     all.map(t => (t.id, t)).toMap
