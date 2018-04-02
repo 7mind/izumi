@@ -7,25 +7,16 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
 
 protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver: TypeResolver, inheritance: InheritanceQueries) extends StructuralQueries {
-  def conversions(id: InterfaceId): List[ConverterDef] = {
-    val implementors = inheritance.compatibleDtos(id)
-    converters(implementors, id)
-  }
-
-
-  override def requiredInterfaces(s: Struct): List[InterfaceId] = {
-    s.all
-      .map(_.definedBy)
-      .collect({ case i: InterfaceId => i })
-      .distinct
-  }
-
   def structure(defn: IdentifierId): PlainStruct = {
     structure(resolver.get(defn))
   }
 
   def structure(defn: Identifier): PlainStruct = {
     PlainStruct(extractFields(defn))
+  }
+
+  def structure(id: StructureId): Struct = {
+    structure(resolver.get(id))
   }
 
   def structure(defn: WithStructure): Struct = {
@@ -39,8 +30,9 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     Struct(defn.id, parts, extractFields(defn))
   }
 
-  def enumFields(id: StructureId): Struct = {
-    structure(resolver.get(id))
+  def conversions(id: InterfaceId): List[ConverterDef] = {
+    val implementors = inheritance.compatibleDtos(id)
+    converters(implementors, id)
   }
 
   def sameSignature(tid: StructureId): List[DTO] = {
@@ -57,6 +49,39 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       .toList
   }
 
+  protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
+    val struct = structure(resolver.get(id))
+    val parentInstanceFields = struct.unambigious.map(_.field).toSet
+
+    implementors
+      .map(t => structure(resolver.get(t)))
+      .map {
+        istruct =>
+          val localFields = istruct.localOrAmbigious
+            .map(_.field)
+            .toSet
+
+          val filteredParentFields = parentInstanceFields.diff(localFields)
+
+          val mixinInstanceFields = istruct
+            .unambigiousInherited
+            .map(_.definedBy)
+            .collect({ case i: InterfaceId => i })
+            .flatMap(mi => structure(resolver.get(mi)).all)
+            .filterNot(f => parentInstanceFields.contains(f.field))
+            .filterNot(f => localFields.contains(f.field))
+            .toSet
+
+
+          // TODO: pass definition instead of id
+          ConverterDef(
+            istruct.id
+            , filteredParentFields
+            , localFields
+            , mixinInstanceFields
+          )
+      }
+  }
 
   protected def extractFields(defn: TypeDef): List[ExtendedField] = {
     val fields = defn match {
@@ -109,39 +134,5 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
   protected def signature(defn: WithStructure): List[Field] = {
     structure(defn).all.map(_.field).sortBy(_.name)
-  }
-
-  protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
-    val struct = structure(resolver.get(id))
-    val parentInstanceFields = struct.unambigious.map(_.field).toSet
-
-    implementors
-      .map(t => structure(resolver.get(t)))
-      .map {
-        istruct =>
-          val localFields = istruct.localOrAmbigious
-            .map(_.field)
-            .toSet
-
-          val filteredParentFields = parentInstanceFields.diff(localFields)
-
-          val mixinInstanceFields = istruct
-            .unambigiousInherited
-            .map(_.definedBy)
-            .collect({ case i: InterfaceId => i })
-            .flatMap(mi => structure(resolver.get(mi)).all)
-            .filterNot(f => parentInstanceFields.contains(f.field))
-            .filterNot(f => localFields.contains(f.field))
-            .toSet
-
-
-          // TODO: pass definition instead of id
-          ConverterDef(
-            istruct.id
-            , filteredParentFields
-            , localFields
-            , mixinInstanceFields
-          )
-      }
   }
 }

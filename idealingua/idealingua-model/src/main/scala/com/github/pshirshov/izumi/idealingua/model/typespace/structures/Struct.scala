@@ -21,6 +21,13 @@ class Struct private
   override protected def isLocal(f: ExtendedField): Boolean = {
     f.definedBy == id
   }
+
+  def requiredInterfaces: List[InterfaceId] = {
+    all
+      .map(_.definedBy)
+      .collect({ case i: InterfaceId => i })
+      .distinct
+  }
 }
 
 object Struct {

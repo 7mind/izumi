@@ -16,7 +16,7 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val explodedSignature: List[Term.Param] = fields.all.toParams
 
   val constructorSignature: List[Term.Param] = {
-    val params = ctx.typespace.structure.requiredInterfaces(fields.fields)
+    val params = fields.fields.requiredInterfaces
       .map {
         d =>
           (ctx.tools.idToParaName(d), ctx.conv.toScala(d).typeFull)

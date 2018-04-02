@@ -34,9 +34,9 @@ trait TypeResolver {
 trait InheritanceQueries {
   def allParents(id: TypeId): List[InterfaceId]
 
-  protected[typespace] def parentsInherited(id: TypeId): List[InterfaceId]
-
   def implementingDtos(id: InterfaceId): List[DTOId]
+
+  protected[typespace] def parentsInherited(id: TypeId): List[InterfaceId]
 
   protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId]
 }
@@ -44,7 +44,7 @@ trait InheritanceQueries {
 trait StructuralQueries {
   def conversions(id: InterfaceId): List[ConverterDef]
 
-  def enumFields(id: StructureId): Struct
+  def structure(id: StructureId): Struct
 
   def structure(defn: IdentifierId): PlainStruct
 
@@ -53,8 +53,6 @@ trait StructuralQueries {
   def structure(defn: WithStructure): Struct
 
   def sameSignature(tid: StructureId): List[DTO]
-
-  def requiredInterfaces(s: Struct): List[InterfaceId]
 
   protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef]
 }

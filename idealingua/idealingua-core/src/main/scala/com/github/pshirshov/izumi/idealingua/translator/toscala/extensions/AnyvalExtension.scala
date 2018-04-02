@@ -78,7 +78,7 @@ object AnyvalExtension extends ScalaTranslatorExtension {
         }
 
       case t: StructureId =>
-        val struct = ctx.typespace.structure.enumFields(t)
+        val struct = ctx.typespace.structure.structure(t)
         struct.isComposite || (struct.isScalar && !struct.all.exists(v => canBeAnyValField(ctx, v.field.typeId)))
       case t: IdentifierId =>
         val struct = ctx.typespace.structure.structure(t)

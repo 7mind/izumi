@@ -10,7 +10,7 @@ class ScalaTranslationTools(ctx: STContext) {
   import ctx.conv._
 
   def mkStructure(id: StructureId): CompositeStructure = {
-    val fields = ctx.typespace.structure.enumFields(id).toScala
+    val fields = ctx.typespace.structure.structure(id).toScala
     new CompositeStructure(ctx, fields)
   }
 
