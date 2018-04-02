@@ -16,6 +16,7 @@ class ILParser {
 
   object Symbols {
     final val NLC = P("\r\n" | "\n" | "\r")
+    final val String = P("\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
   }
 
   object Comments {
@@ -179,30 +180,48 @@ class ILParser {
 
 
   object blocks {
-    final val includeBlock = P(kw.include ~/ opt.SepInlineOpt ~ "\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
-      .map(v => ILInclude(v))
+    def block[T](kw: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
+      P(kw ~/ shortIdentifier ~ opt.SepInlineOpt ~ "{" ~ defparser ~ "}").map {
+        case (k, v) =>
+          (k, v)
+      }
+    }
 
-    final val blockStruct = struct(SepLine)
+    def linedef[T](kw: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
+      P(kw ~/ shortIdentifier ~ opt.SepInlineOpt ~ defparser).map {
+        case (k, v) =>
+          (k, v)
+      }
+    }
 
-    final val mixinBlock = P(kw.mixin ~/ shortIdentifier ~ opt.SepInlineOpt ~ "{" ~ blockStruct ~ "}")
-      .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
+    def line[T](kw: Parser[Unit], defparser: Parser[T]): Parser[T] = {
+      P(kw ~/ opt.SepInlineOpt ~ defparser)
+    }
 
-    final val dtoBlock = P(kw.data ~/ shortIdentifier ~ opt.SepInlineOpt ~ "{" ~ blockStruct ~ "}")
-      .map(v => ILDef(v._2.toDto(v._1.toDataId)))
+    final val fullStruct = struct(SepLine)
 
-    final val idBlock = P(kw.id ~/ shortIdentifier ~ opt.SepInlineOpt ~ "{" ~ (opt.SepLineOpt ~ aggregate ~ opt.SepLineOpt) ~ "}")
-      .map(v => ILDef(Identifier(v._1.toIdId, v._2.toList)))
-
-    final val enumBlock = P(kw.enum ~/ shortIdentifier ~ opt.SepInlineOpt ~ "{" ~ opt.SepAnyOpt ~ symbol.rep(min = 1, sep = opt.SepAnyOpt) ~ opt.SepAnyOpt ~ "}")
-      .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
-
-    final val adtBlock = P(kw.adt ~/ shortIdentifier ~ opt.SepInlineOpt ~ "{" ~ adt ~ "}")
-      .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
-
-    final val aliasBlock = P(kw.alias ~/ shortIdentifier ~ opt.SepInlineOpt ~ "=" ~ opt.SepInlineOpt ~ identifier)
+    final val aliasBlock = linedef(kw.alias, "=" ~ opt.SepInlineOpt ~ identifier)
       .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
 
-    final val serviceBlock = P(kw.service ~/ shortIdentifier ~ opt.SepInlineOpt ~ "{" ~ (opt.SepLineOpt ~ services.methods ~ opt.SepLineOpt) ~ "}")
+    final val inclusion = line(kw.include, Symbols.String)
+      .map(v => ILInclude(v))
+
+    final val mixinBlock = block(kw.mixin, fullStruct)
+      .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
+
+    final val dtoBlock = block(kw.data, fullStruct)
+      .map(v => ILDef(v._2.toDto(v._1.toDataId)))
+
+    final val idBlock = block(kw.id, opt.SepLineOpt ~ aggregate ~ opt.SepLineOpt)
+      .map(v => ILDef(Identifier(v._1.toIdId, v._2.toList)))
+
+    final val enumBlock = block(kw.enum, opt.SepAnyOpt ~ symbol.rep(min = 1, sep = opt.SepAnyOpt) ~ opt.SepAnyOpt)
+      .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
+
+    final val adtBlock = block(kw.adt, adt)
+      .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
+
+    final val serviceBlock = block(kw.service, opt.SepLineOpt ~ services.methods ~ opt.SepLineOpt)
       .map(v => ILService(Service(v._1.toServiceId, v._2.toList)))
 
     final val anyBlock: Parser[Val] = enumBlock |
@@ -212,7 +231,7 @@ class ILParser {
       mixinBlock |
       dtoBlock |
       serviceBlock |
-      includeBlock
+      inclusion
   }
 
   object domains {
