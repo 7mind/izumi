@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.il.loader.model
 
-import com.github.pshirshov.izumi.idealingua.il.IL
+import com.github.pshirshov.izumi.idealingua.il.parser.IL
 
 case class LoadedModel private(definitions: Seq[IL.Val]) {
   def ++(other: LoadedModel): LoadedModel = {

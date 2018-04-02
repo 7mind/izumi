@@ -1,7 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.il
+package com.github.pshirshov.izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{ILAstParsed, _}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 
 object IL {

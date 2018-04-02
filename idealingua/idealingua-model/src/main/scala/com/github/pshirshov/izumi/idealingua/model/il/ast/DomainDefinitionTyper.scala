@@ -4,13 +4,11 @@ import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionParsed, ILAstParsed}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, DomainId, TypeDef}
 
 
 class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
-  final val domainId: DomainId = defn.id
+  final val domainId: typed.DomainId = defn.id
 
   protected val mapping: Map[IndefiniteId, TypeId] = {
     defn.types.map(_.id)
@@ -21,20 +19,20 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
       .toMap
   }
 
-  def convert(): DomainDefinition = {
+  def convert(): typed.DomainDefinition = {
     val mappedTypes = defn.types.map(fixType)
     val mappedServices = defn.services.map(fixService)
     val ref = defn.referenced.map(d => d._1 -> new DomainDefinitionTyper(d._2).convert())
-    DomainDefinition(id = domainId, types = mappedTypes, services = mappedServices, referenced = ref)
+    typed.DomainDefinition(id = domainId, types = mappedTypes, services = mappedServices, referenced = ref)
   }
 
-  protected def fixType(defn: ILAstParsed): TypeDef = {
+  protected def fixType(defn: ILAstParsed): typed.TypeDef = {
     defn match {
       case d: ILAstParsed.Enumeration =>
         typed.TypeDef.Enumeration(id = fixId(d.id): TypeId.EnumId, members = d.members)
 
       case d: ILAstParsed.Alias =>
-        typed.TypeDef.Alias(id = fixId(d.id): TypeId.AliasId, target = fixId(d.target) : TypeId)
+        typed.TypeDef.Alias(id = fixId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId)
 
       case d: ILAstParsed.Identifier =>
         typed.TypeDef.Identifier(id = fixId(d.id): TypeId.IdentifierId, fields = fixPrimitiveFields(d.fields))
@@ -50,15 +48,15 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     }
   }
 
-  protected def toStruct(struct: ILAstParsed.Structure): typed.Structure = {
+  protected def toStruct(struct: raw.Structure): typed.Structure = {
     typed.Structure(fields = fixFields(struct.fields), removedFields = fixFields(struct.removedFields), superclasses = toSuper(struct))
   }
 
-  protected def toSuper(struct: ILAstParsed.Structure): typed.Super = {
+  protected def toSuper(struct: raw.Structure): typed.Super = {
     typed.Super(interfaces = fixIds(struct.interfaces), concepts = fixIds(struct.concepts), removedConcepts = fixIds(struct.removedConcepts))
   }
 
-  protected def fixService(defn: ILAstParsed.Service): typed.Service = {
+  protected def fixService(defn: raw.Service): typed.Service = {
     typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod))
   }
 
@@ -133,44 +131,44 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     d.map(fixId[T, R])
   }
 
-  protected def fixFields(fields: ILAstParsed.Aggregate): typed.Tuple = {
+  protected def fixFields(fields: raw.Aggregate): typed.Tuple = {
     fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractTypeId, TypeId](f.typeId)))
   }
 
-  protected def fixPrimitiveFields(fields: ILAstParsed.Aggregate): typed.PrimitiveTuple = {
+  protected def fixPrimitiveFields(fields: raw.Aggregate): typed.PrimitiveTuple = {
     fields.map(f => typed.PrimitiveField(name = f.name, typeId = toPrimitive(f.typeId)))
   }
 
 
-  protected def fixMethod(method: ILAstParsed.Service.DefMethod): typed.Service.DefMethod = {
+  protected def fixMethod(method: raw.Service.DefMethod): typed.Service.DefMethod = {
     method match {
-      case m: ILAstParsed.Service.DefMethod.DeprecatedMethod =>
+      case m: raw.Service.DefMethod.DeprecatedMethod =>
         typed.Service.DefMethod.DeprecatedRPCMethod(signature = fixSignature(m.signature), name = m.name)
-      case m: ILAstParsed.Service.DefMethod.RPCMethod =>
+      case m: raw.Service.DefMethod.RPCMethod =>
         typed.Service.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name)
     }
   }
 
-  protected def fixSignature(signature: ILAstParsed.Service.DefMethod.Signature): typed.Service.DefMethod.Signature = {
+  protected def fixSignature(signature: raw.Service.DefMethod.Signature): typed.Service.DefMethod.Signature = {
     typed.Service.DefMethod.Signature(input = fixStructure(signature.input), output = fixOut(signature.output))
   }
 
-  protected def fixOut(output: ILAstParsed.Service.DefMethod.Output): typed.Service.DefMethod.Output = {
+  protected def fixOut(output: raw.Service.DefMethod.Output): typed.Service.DefMethod.Output = {
     output match {
-      case o: ILAstParsed.Service.DefMethod.Output.Usual =>
+      case o: raw.Service.DefMethod.Output.Usual =>
         typed.Service.DefMethod.Output.Usual(fixStructure(o.input))
-      case o: ILAstParsed.Service.DefMethod.Output.Algebraic =>
+      case o: raw.Service.DefMethod.Output.Algebraic =>
         typed.Service.DefMethod.Output.Algebraic(fixIds(o.alternatives))
 
     }
   }
 
 
-  protected def fixStructure(s: ILAstParsed.SimpleStructure): typed.SimpleStructure = {
+  protected def fixStructure(s: raw.SimpleStructure): typed.SimpleStructure = {
     typed.SimpleStructure(concepts = fixIds(s.concepts), fields = fixFields(s.fields))
   }
 
-  protected def fixSignature(signature: ILAstParsed.Service.DefMethod.DeprecatedSignature): typed.Service.DefMethod.DeprecatedSignature = {
+  protected def fixSignature(signature: raw.Service.DefMethod.DeprecatedSignature): typed.Service.DefMethod.DeprecatedSignature = {
     typed.Service.DefMethod.DeprecatedSignature(input = fixIds(signature.input), output = fixIds(signature.output))
   }
 

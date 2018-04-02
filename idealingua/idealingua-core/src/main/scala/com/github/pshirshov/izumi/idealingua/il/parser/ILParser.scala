@@ -1,12 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il._
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed.Service.DefMethod.{Output, Signature}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.Service._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 import fastparse.CharPredicates._
 import fastparse.all._
@@ -147,10 +145,10 @@ class ILParser {
         (adtOut | inlineStruct)
     ).map {
       case (id, in, out: SimpleStructure) =>
-        DefMethod.RPCMethod(id, Signature(in, Output.Usual(out)))
+        DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Usual(out)))
 
       case (id, in, out: AlgebraicType) =>
-        DefMethod.RPCMethod(id, Signature(in, Output.Algebraic(out.alternatives)))
+        DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Algebraic(out.alternatives)))
 
       case f =>
         throw new IllegalStateException(s"Impossible case: $f")
