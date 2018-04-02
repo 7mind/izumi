@@ -6,10 +6,11 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{TypeDef, Service}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{AdtElementProduct, AdtProduct, EnumProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaField, ServiceMethodProduct}
 
 import scala.meta._

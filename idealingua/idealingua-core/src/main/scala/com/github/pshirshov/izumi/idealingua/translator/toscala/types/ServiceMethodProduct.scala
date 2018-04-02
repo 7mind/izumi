@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.RenderableCogenProduct
+
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.RenderableCogenProduct
 
 import scala.meta._
 

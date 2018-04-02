@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.RenderableCogenProduct
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.RenderableCogenProduct
 
 class ModuleTools() {
   def toSource(id: IndefiniteId, moduleId: ModuleId, product: RenderableCogenProduct): Seq[Module] = {

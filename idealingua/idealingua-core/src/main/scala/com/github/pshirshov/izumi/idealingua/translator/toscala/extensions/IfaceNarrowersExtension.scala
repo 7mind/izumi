@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct.InterfaceProduct
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.InterfaceProduct
 
 import scala.meta._
 

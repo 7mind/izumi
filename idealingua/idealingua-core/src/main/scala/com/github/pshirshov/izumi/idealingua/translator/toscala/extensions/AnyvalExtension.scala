@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
 import com.github.pshirshov.izumi.idealingua.model.il.structures.{PlainStruct, Struct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{PlainScalaStruct, ScalaStruct}
 
 import scala.meta._

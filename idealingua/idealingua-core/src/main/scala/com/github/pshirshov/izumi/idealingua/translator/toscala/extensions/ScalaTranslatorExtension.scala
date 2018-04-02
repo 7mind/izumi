@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaStruc
 
 trait ScalaTranslatorExtension extends TranslatorExtension {
 
-  import CogenProduct._
+  import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct._
 
   def handleModules(ctx: STContext, acc: Seq[Module]): Seq[Module] = acc
 
