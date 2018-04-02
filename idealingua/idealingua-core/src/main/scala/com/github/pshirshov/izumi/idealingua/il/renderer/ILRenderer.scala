@@ -82,6 +82,7 @@ class ILRenderer(domain: DomainDefinition) {
        |}
      """.stripMargin
   }
+
   def renderComposite(aggregate: Composite, prefix: String): String = {
     aggregate
       .map(render)
@@ -112,9 +113,27 @@ class ILRenderer(domain: DomainDefinition) {
 
   def render(tpe: DefMethod): String = {
     tpe match {
-      case d: RPCMethod =>
+      case m: RPCMethod =>
+        s"def ${m.name}(${render(m.signature.input)}) => (${render(m.signature.output)})"
+
+      case d: DeprecatedRPCMethod =>
         s"def ${d.name}(${d.signature.input.map(render).mkString(", ")}): (${d.signature.output.map(render).mkString(", ")})"
     }
+  }
+
+  def render(out: Service.DefMethod.Output): String = {
+    out match {
+      case o: Service.DefMethod.Output.Usual =>
+        render(o.input)
+      case o: Service.DefMethod.Output.Algebraic =>
+        o.alternatives.map(render).mkString(" | ")
+    }
+  }
+  def render(signature: SimpleStructure): String = {
+    Seq(
+      signature.concepts.map(render).map(t => s"* $t")
+      , signature.fields.map(render)
+    ).flatten.mkString(", ")
   }
 
   def render(typeId: TypeId): String = {

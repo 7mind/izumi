@@ -20,13 +20,13 @@ service TestService {
 
   def greetComplex
     (
-      + Request
       region: str,
       age: int8
     )
       =>
     (
-        +Success
+        * Success
+        , bullshit: str
     )
 
   def greetAlgebraic(firstName: str, secondName: str) => ( Success | Error )

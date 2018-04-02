@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 
+
 sealed trait ILAst {
   def id: TypeId
 }
@@ -21,6 +22,7 @@ object ILAst {
   type Composite = List[InterfaceId]
   type Tuple = List[Field]
   type PrimitiveTuple = List[PrimitiveField]
+  type TypeList = List[TypeId]
 
   case class Super(
                     interfaces: Composite
@@ -44,6 +46,8 @@ object ILAst {
 
   }
 
+  case class SimpleStructure(concepts: Composite, fields: Tuple)
+
   case class Identifier(id: IdentifierId, fields: PrimitiveTuple) extends ILAst
 
   case class Interface(id: InterfaceId, struct: Structure) extends ILStructure
@@ -54,7 +58,7 @@ object ILAst {
 
   case class Alias(id: AliasId, target: TypeId) extends ILAst
 
-  case class Adt(id: AdtId, alternatives: List[TypeId]) extends ILAst
+  case class Adt(id: AdtId, alternatives: TypeList) extends ILAst
 
   case class Service(id: ServiceId, methods: List[Service.DefMethod])
 
@@ -64,11 +68,22 @@ object ILAst {
 
     object DefMethod {
 
-      case class Signature(input: Composite, output: Composite) {
+      sealed trait Output
+
+      object Output {
+        case class Usual(input: SimpleStructure) extends Output
+        case class Algebraic(alternatives: TypeList) extends Output
+      }
+
+      case class Signature(input: SimpleStructure, output: Output)
+
+      case class RPCMethod(name: String, signature: Signature) extends DefMethod
+
+      case class DeprecatedSignature(input: Composite, output: Composite) {
         def asList: List[InterfaceId] = input ++ output
       }
 
-      case class RPCMethod(name: String, signature: Signature) extends DefMethod
+      case class DeprecatedRPCMethod(name: String, signature: DeprecatedSignature) extends DefMethod
 
     }
 

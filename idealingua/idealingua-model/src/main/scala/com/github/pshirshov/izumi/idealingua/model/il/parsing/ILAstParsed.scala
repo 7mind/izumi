@@ -15,6 +15,7 @@ object ILAstParsed {
   type Types = List[AbstractTypeId]
 
   case class Structure(interfaces: Composite, concepts: Composite, removedConcepts: Composite, fields: Aggregate, removedFields: Aggregate)
+  case class SimpleStructure(concepts: Composite, fields: Aggregate)
 
   case class Interface(id: InterfaceId, struct: Structure) extends ILAstParsed
 
@@ -36,24 +37,24 @@ object ILAstParsed {
 
     object DefMethod {
 
+      sealed trait Output
+
+      object Output {
+        case class Usual(input: SimpleStructure) extends Output
+        case class Algebraic(alternatives: Types) extends Output
+      }
+
+      case class Signature(input: SimpleStructure, output: Output)
+
+      case class RPCMethod(name: String, signature: Signature) extends DefMethod
+
       @deprecated
-      case class Signature(input: Composite, output: Composite) {
+      case class DeprecatedSignature(input: Composite, output: Composite) {
         def asList: List[InterfaceId] = input ++ output
       }
 
       @deprecated
-      case class RPCMethod(name: String, signature: Signature) extends DefMethod
-
-      sealed trait Output
-
-      object Output {
-        case class Usual(input: Structure) extends Output
-        case class Algebraic(alternatives: Types) extends Output
-      }
-
-      case class SignatureEx(input: Structure, output: Output)
-
-      case class RPCMethodEx(name: String, signature: SignatureEx) extends DefMethod
+      case class DeprecatedMethod(name: String, signature: DeprecatedSignature) extends DefMethod
     }
 
   }

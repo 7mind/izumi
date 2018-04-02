@@ -262,8 +262,9 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val serviceInputBase = t.within(s"In${typeName.capitalize}")
     val serviceOutputBase = t.within(s"Out${typeName.capitalize}")
 
-    val decls = i.methods.map {
-      case method: RPCMethod =>
+    val decls = i.methods.collect { // TODO
+
+      case method: DeprecatedRPCMethod =>
         // TODO: unify with ephemerals in typespace
         val in = t.within(s"In${method.name.capitalize}")
         val out = t.within(s"Out${method.name.capitalize}")

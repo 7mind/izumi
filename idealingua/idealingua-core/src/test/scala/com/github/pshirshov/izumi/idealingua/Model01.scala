@@ -42,7 +42,7 @@ object Model01 {
     )
   ), List(
     Service(serviceIdentifier, List(
-      DefMethod.RPCMethod("createUser", DefMethod.Signature(List(testInterfaceId), List(testInterfaceId)))
+      DefMethod.DeprecatedRPCMethod("createUser", DefMethod.DeprecatedSignature(List(testInterfaceId), List(testInterfaceId)))
     ))
   ), Map.empty)
 }

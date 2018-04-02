@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, Par
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod.{Output, SignatureEx}
+import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod.{Output, Signature}
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed._
 import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILParsedId
 import fastparse.CharPredicates._
@@ -113,6 +113,19 @@ class ILParser {
       .map(ParsedStruct.apply)
   }
 
+  def simpleStruct(sepEntry: Parser[Unit]): Parser[SimpleStructure] = {
+    val sepInline = SepInlineOpt
+    val margin = SepLineOpt
+
+    val embed = P(("*" | "...") ~/ sepInline ~ identifier).map(_.toMixinId).map(StructOp.Mix)
+    val plusField = field.map(StructOp.AddField)
+
+    val anyPart = P(plusField | embed)
+
+    P(margin ~ (sepInline ~ anyPart ~ sepInline).rep(sep = sepEntry) ~ margin)
+      .map(ParsedStruct.apply).map(s => SimpleStructure(s.structure.concepts, s.structure.fields))
+  }
+
   final val aggregate = P((SepInlineOpt ~ field ~ SepInlineOpt).rep(sep = SepLine))
   final val adt: Parser[AlgebraicType] = {
     P(SepAnyOpt ~ identifier.rep(min = 1, sep = (ws | NLC | "|").rep(min = 1) ) ~ SepAnyOpt).map(v => AlgebraicType(v.map(_.toTypeId).toList))
@@ -123,7 +136,7 @@ class ILParser {
     final val sigSep = P("=>" | "->") // ":"
     final val wsAny = P(SepInlineOpt ~ SepLineOpt ~ SepInlineOpt)
     final val sepInlineStruct = P(SepInlineOpt ~ SigSeparators.SepLine ~ SepInlineOpt)
-    final val inlineStruct = P("(" ~ struct(sepInlineStruct) ~ ")")
+    final val inlineStruct = P("(" ~ simpleStruct(sepInlineStruct) ~ ")")
     final val adtOut = P("(" ~ adt ~ ")")
 
     final val defmethodEx = P(
@@ -133,11 +146,11 @@ class ILParser {
         sigSep ~ wsAny ~
         (adtOut | inlineStruct)
     ).map {
-      case (id, in, out: ParsedStruct) =>
-        DefMethod.RPCMethodEx(id, SignatureEx(in.structure, Output.Usual(out.structure)))
+      case (id, in, out: SimpleStructure) =>
+        DefMethod.RPCMethod(id, Signature(in, Output.Usual(out)))
 
       case (id, in, out: AlgebraicType) =>
-        DefMethod.RPCMethodEx(id, SignatureEx(in.structure, Output.Algebraic(out.alternatives)))
+        DefMethod.RPCMethod(id, Signature(in, Output.Algebraic(out.alternatives)))
 
       case f =>
         throw new IllegalStateException(s"Impossible case: $f")
@@ -150,7 +163,7 @@ class ILParser {
       ":" ~ SepInlineOpt ~ "(" ~ SepInlineOpt ~ signature ~ SepInlineOpt ~ ")" ~ SepInlineOpt)
       .map {
         case (name, in, out) =>
-          DefMethod.RPCMethod(name, DefMethod.Signature(in.map(_.toMixinId), out.map(_.toMixinId)))
+          DefMethod.DeprecatedMethod(name, DefMethod.DeprecatedSignature(in.map(_.toMixinId), out.map(_.toMixinId)))
       }
 
     // other method kinds should be added here

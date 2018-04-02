@@ -17,7 +17,7 @@ class TypeSignature(typespace: Typespace) {
   def signature(id: ServiceId): Int = {
     val service = typespace(id)
     MurmurHash3.orderedHash(simpleSignature(service.id) +: service.methods.flatMap {
-      case r: RPCMethod =>
+      case r: DeprecatedRPCMethod =>
         Seq(MurmurHash3.stringHash(r.name), MurmurHash3.orderedHash(r.signature.asList.map(signature)))
     })
   }

@@ -5,7 +5,6 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Structure, Super}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
 
@@ -60,7 +59,7 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
   }
 
   protected def fixService(defn: ILAstParsed.Service): ILAst.Service = {
-    ILAst.Service(id = fixServiceId(defn.id), methods = defn.methods.filter(_.isInstanceOf[ILAstParsed.Service.DefMethod.RPCMethod]).map(fixMethod))
+    ILAst.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod))
   }
 
   protected def makeDefinite(id: AbstractTypeId): TypeId = {
@@ -145,13 +144,34 @@ class DomainDefinitionConverter(defn: DomainDefinitionParsed) {
 
   protected def fixMethod(method: ILAstParsed.Service.DefMethod): ILAst.Service.DefMethod = {
     method match {
+      case m: ILAstParsed.Service.DefMethod.DeprecatedMethod =>
+        ILAst.Service.DefMethod.DeprecatedRPCMethod(signature = fixSignature(m.signature), name = m.name)
       case m: ILAstParsed.Service.DefMethod.RPCMethod =>
         ILAst.Service.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name)
     }
   }
 
   protected def fixSignature(signature: ILAstParsed.Service.DefMethod.Signature): ILAst.Service.DefMethod.Signature = {
-    ILAst.Service.DefMethod.Signature(input = fixIds(signature.input), output = fixIds(signature.output))
+    ILAst.Service.DefMethod.Signature(input = fixStructure(signature.input), output = fixOut(signature.output))
+  }
+
+  protected def fixOut(output: ILAstParsed.Service.DefMethod.Output): ILAst.Service.DefMethod.Output = {
+    output match {
+      case o: ILAstParsed.Service.DefMethod.Output.Usual =>
+        ILAst.Service.DefMethod.Output.Usual(fixStructure(o.input))
+      case o: ILAstParsed.Service.DefMethod.Output.Algebraic =>
+        ILAst.Service.DefMethod.Output.Algebraic(fixIds(o.alternatives))
+
+    }
+  }
+
+
+  protected def fixStructure(s: ILAstParsed.SimpleStructure): ILAst.SimpleStructure = {
+    ILAst.SimpleStructure(concepts = fixIds(s.concepts), fields = fixFields(s.fields))
+  }
+
+  protected def fixSignature(signature: ILAstParsed.Service.DefMethod.DeprecatedSignature): ILAst.Service.DefMethod.DeprecatedSignature = {
+    ILAst.Service.DefMethod.DeprecatedSignature(input = fixIds(signature.input), output = fixIds(signature.output))
   }
 
   protected def fixPkg(pkg: common.Package): common.Package = {

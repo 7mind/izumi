@@ -70,8 +70,10 @@ class Typespace(val domain: DomainDefinition) {
       method <- service.methods
     } yield {
       method match {
-        case m: RPCMethod =>
+        case m: DeprecatedRPCMethod =>
           (m.signature.input ++ m.signature.output).map(i => Dependency.ServiceParameter(service.id, i))
+        case m: RPCMethod =>
+          Seq() // TODO
       }
     }
 

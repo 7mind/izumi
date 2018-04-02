@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, ILAst, ILStructure}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod.{DeprecatedRPCMethod, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
 
 class TypeCollection(domain: DomainDefinition) {
@@ -15,7 +15,7 @@ class TypeCollection(domain: DomainDefinition) {
     method <- service.methods
   } yield {
     method match {
-      case m: RPCMethod =>
+      case m: DeprecatedRPCMethod =>
         val inIid = DTOId(service.id, s"In${m.name.capitalize}")
         val outIid = DTOId(service.id, s"Out${m.name.capitalize}")
 
@@ -23,6 +23,8 @@ class TypeCollection(domain: DomainDefinition) {
           DTO(inIid, Structure.interfaces(m.signature.input))
           , DTO(outIid, Structure.interfaces(m.signature.output))
         )
+      case m: RPCMethod =>
+        Seq() // TODO
     }
   }).flatten.toSeq
 
