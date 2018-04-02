@@ -48,8 +48,8 @@ class ILParserTest extends WordSpec {
     }
 
     "parse complex comments" in {
-      assertParses(parser.Separators.opt.SepLineOpt, "// test")
-      assertParses(parser.Separators.opt.SepLineOpt,
+      assertParses(parser.sep.opt.any, "// test")
+      assertParses(parser.sep.opt.any,
         """// test
           |/*test*/
           | /* test/**/*/

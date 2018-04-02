@@ -14,48 +14,45 @@ class ILParser {
 
   import IL._
 
-  object Symbols {
+  object sym {
     final val NLC = P("\r\n" | "\n" | "\r")
     final val String = P("\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
   }
 
-  object Comments {
+  object comments {
     final lazy val MultilineComment: P0 = {
       val CommentChunk = P(CharsWhile(c => c != '/' && c != '*') | MultilineComment | !"*/" ~ AnyChar)
       P("/*" ~ CommentChunk.rep ~ "*/").rep(1)
     }
 
-    final lazy val ShortComment = P("//" ~ CharsWhile(c => c != '\n' && c != '\r') ~ (Symbols.NLC | End))
+    final lazy val ShortComment = P("//" ~ CharsWhile(c => c != '\n' && c != '\r') ~ (sym.NLC | End))
   }
 
-  class Separators(main: Parser[Unit]) {
+  class sep(main: Parser[Unit]) {
     private val ws = P(" " | "\t")(sourcecode.Name("WS"))
     private val wss = P(ws.rep)
     private val wsm = P(ws.rep(1))
 
-    import Comments._
+    import comments._
 
     private val WsComment = wss ~ MultilineComment ~ wss
     private val SepLineBase = P(main | (wss ~ ShortComment) | (WsComment ~ (main | End)))
 
     final val SepInline = P(WsComment | wsm)
     final val SepLine = P(End | SepLineBase.rep(1))
-    final val SepAdt = P(ws | Symbols.NLC | "|")
+    final val SepAdt = P(ws | sym.NLC | "|")
 
     object opt {
-      final val SepInlineOpt = P(WsComment | wss)
-      final val SepLineOpt = P(End | SepLineBase.rep)
-      final val SepAnyOpt = P(wss ~ (WsComment | SepLineBase).rep ~ wss)
+      final val inline = P(WsComment | wss)
+      final val any = P(End |(wss ~ (WsComment | SepLineBase).rep ~ wss))
     }
-
-
   }
 
-  object Separators extends Separators(Symbols.NLC)
+  object sep extends sep(sym.NLC)
 
-  import Separators._
+  import sep._
 
-  object SigSeparators extends Separators(P(Symbols.NLC | ","))
+  object SigSep extends sep(P(sym.NLC | ","))
 
   object kw {
     def kw(s: String): Parser[Unit] = P(s ~ SepInline)(sourcecode.Name(s"`$s`"))
@@ -92,14 +89,14 @@ class ILParser {
     final val shortIdentifier = P(symbol).map(v => ParsedId(v))
     final val identifier = P(fqIdentifier | shortIdentifier)
 
-    final lazy val fulltype: Parser[AbstractTypeId] = P(opt.SepInlineOpt ~ identifier ~ opt.SepInlineOpt ~ generic.rep(min = 0, max = 1) ~ opt.SepInlineOpt)
+    final lazy val fulltype: Parser[AbstractTypeId] = P(opt.inline ~ identifier ~ opt.inline ~ generic.rep(min = 0, max = 1) ~ opt.inline)
       .map(tp => tp._1.toGeneric(tp._2))
 
-    final lazy val generic = P("[" ~/ opt.SepInlineOpt ~ fulltype.rep(sep = ",") ~ opt.SepInlineOpt ~ "]")
+    final lazy val generic = P("[" ~/ opt.inline ~ fulltype.rep(sep = ",") ~ opt.inline ~ "]")
   }
 
   object defs {
-    final val field = P(ids.symbol ~ opt.SepInlineOpt ~ ":" ~/ opt.SepInlineOpt ~ ids.fulltype)
+    final val field = P(ids.symbol ~ opt.inline ~ ":" ~/ opt.inline ~ ids.fulltype)
       .map {
         case (name, tpe) =>
           RawField(tpe, name)
@@ -108,8 +105,7 @@ class ILParser {
 
     final val struct = {
       val sepEntry = SepLine
-      val sepInline = opt.SepInlineOpt
-      //val margin = opt.SepLineOpt
+      val sepInline = opt.inline
 
       val plus = P(("+" ~ "++".?) ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Extend)
       val embed = P(("*" | "...") ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Mix)
@@ -128,23 +124,23 @@ class ILParser {
     }
 
     final val simpleStruct = {
-      val sepInline = opt.SepAnyOpt
+      val sepInline = opt.any
       val embed = P(("*" | "...") ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Mix)
       val plusField = field.map(StructOp.AddField)
 
       val anyPart = P(plusField | embed)
 
-      val sepInlineStruct = P(opt.SepInlineOpt ~ SigSeparators.SepLine ~ opt.SepInlineOpt)
+      val sepInlineStruct = P(opt.inline ~ SigSep.SepLine ~ opt.inline)
 
       P((sepInline ~ anyPart ~ sepInline).rep(sep = sepInlineStruct))
         .map(ParsedStruct.apply).map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
     }
 
-    final val aggregate = P((opt.SepInlineOpt ~ field ~ opt.SepInlineOpt).rep(sep = SepLine))
+    final val aggregate = P((opt.inline ~ field ~ opt.inline).rep(sep = SepLine))
     final val adt = {
       P(ids.identifier.rep(min = 1, sep = SepAdt.rep(min = 1))).map(v => AlgebraicType(v.map(_.toTypeId).toList))
     }
-    final val enum = P(ids.symbol.rep(min = 1, sep = opt.SepAnyOpt))
+    final val enum = P(ids.symbol.rep(min = 1, sep = opt.any))
 
   }
 
@@ -152,15 +148,14 @@ class ILParser {
 
   object services {
     final val sigSep = P("=>" | "->") // ":"
-    final val wsAny = P(opt.SepInlineOpt ~ opt.SepLineOpt ~ opt.SepInlineOpt)
     final val inlineStruct = P("(" ~ defs.simpleStruct ~ ")")
-    final val adtOut = P("(" ~ opt.SepAnyOpt ~ defs.adt ~ opt.SepAnyOpt ~ ")")
+    final val adtOut = P("(" ~ opt.any ~ defs.adt ~ opt.any ~ ")")
 
     final val defmethodEx = P(
-      kw.defm ~ opt.SepInlineOpt ~
-        ids.symbol ~ wsAny ~
-        inlineStruct ~ wsAny ~
-        sigSep ~ wsAny ~
+      kw.defm ~ opt.inline ~
+        ids.symbol ~ opt.any ~
+        inlineStruct ~ opt.any ~
+        sigSep ~ opt.any ~
         (adtOut | inlineStruct)
     ).map {
       case (id, in, out: RawSimpleStructure) =>
@@ -174,40 +169,40 @@ class ILParser {
     }
 
 
-    final val sigParam = P(opt.SepInlineOpt ~ ids.identifier ~ opt.SepInlineOpt)
+    final val sigParam = P(opt.inline ~ ids.identifier ~ opt.inline)
     final val signature = P(sigParam.rep(sep = ","))
-    final val defmethod = P(kw.defm ~ opt.SepInlineOpt ~ ids.symbol ~ "(" ~ opt.SepInlineOpt ~ signature ~ opt.SepInlineOpt ~ ")" ~ opt.SepInlineOpt ~
-      ":" ~ opt.SepInlineOpt ~ "(" ~ opt.SepInlineOpt ~ signature ~ opt.SepInlineOpt ~ ")" ~ opt.SepInlineOpt)
+    final val defmethod = P(kw.defm ~ opt.inline ~ ids.symbol ~ "(" ~ opt.inline ~ signature ~ opt.inline ~ ")" ~ opt.inline ~
+      ":" ~ opt.inline ~ "(" ~ opt.inline ~ signature ~ opt.inline ~ ")" ~ opt.inline)
       .map {
         case (name, in, out) =>
           DefMethod.DeprecatedMethod(name, DefMethod.DeprecatedSignature(in.map(_.toMixinId).toList, out.map(_.toMixinId).toList))
       }
 
     // other method kinds should be added here
-    final val method: Parser[DefMethod] = P(opt.SepInlineOpt ~ (defmethod | defmethodEx) ~ opt.SepInlineOpt)
+    final val method: Parser[DefMethod] = P(opt.inline ~ (defmethod | defmethodEx) ~ opt.inline)
     final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = SepLine))
   }
 
 
   object blocks {
     def block[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
-      kw(keyword, ids.shortIdentifier ~ opt.SepInlineOpt ~ "{" ~ opt.SepAnyOpt ~ defparser ~ opt.SepAnyOpt ~ "}").map {
+      kw(keyword, ids.shortIdentifier ~ opt.inline ~ "{" ~ opt.any ~ defparser ~ opt.any ~ "}").map {
         case (k, v) =>
           (k, v)
       }
     }
 
     def line[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
-      kw(keyword, ids.shortIdentifier ~ opt.SepInlineOpt ~ defparser).map {
+      kw(keyword, ids.shortIdentifier ~ opt.inline ~ defparser).map {
         case (k, v) =>
           (k, v)
       }
     }
 
-    final val inclusion = kw(kw.include, Symbols.String)
+    final val inclusion = kw(kw.include, sym.String)
       .map(v => ILInclude(v))
 
-    final val aliasBlock = line(kw.alias, "=" ~ opt.SepInlineOpt ~ ids.identifier)
+    final val aliasBlock = line(kw.alias, "=" ~ opt.inline ~ ids.identifier)
       .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
 
     final val mixinBlock = block(kw.mixin, defs.struct)
@@ -245,12 +240,12 @@ class ILParser {
     final val importBlock = kw(kw.`import`, domainId)
   }
 
-  final val modelDef = P(opt.SepLineOpt ~ blocks.anyBlock.rep(sep = opt.SepLineOpt) ~ opt.SepLineOpt).map {
+  final val modelDef = P(opt.any ~ blocks.anyBlock.rep(sep = opt.any) ~ opt.any).map {
     defs =>
       ParsedModel(defs)
   }
 
-  final val fullDomainDef = P(domains.domainBlock ~ opt.SepLineOpt ~ domains.importBlock.rep(sep = opt.SepLineOpt) ~ modelDef).map {
+  final val fullDomainDef = P(domains.domainBlock ~ opt.any ~ domains.importBlock.rep(sep = opt.any) ~ modelDef).map {
     case (did, imports, defs) =>
       ParsedDomain(did, imports, defs)
   }
