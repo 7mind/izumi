@@ -14,7 +14,7 @@ object TypeDef {
 
   case class Enumeration(id: EnumId, members: List[String]) extends TypeDef
 
-  case class Adt(id: AdtId, alternatives: TypeList) extends TypeDef
+  case class Adt(id: AdtId, alternatives: Types) extends TypeDef
 
   case class Identifier(id: IdentifierId, fields: PrimitiveTuple) extends TypeDef
 

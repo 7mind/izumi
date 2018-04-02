@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionParsed, ILAstParsed}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionParsed, RawTypeDef}
 
 
 class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
@@ -26,33 +26,33 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     typed.DomainDefinition(id = domainId, types = mappedTypes, services = mappedServices, referenced = ref)
   }
 
-  protected def fixType(defn: ILAstParsed): typed.TypeDef = {
+  protected def fixType(defn: RawTypeDef): typed.TypeDef = {
     defn match {
-      case d: ILAstParsed.Enumeration =>
+      case d: RawTypeDef.Enumeration =>
         typed.TypeDef.Enumeration(id = fixId(d.id): TypeId.EnumId, members = d.members)
 
-      case d: ILAstParsed.Alias =>
+      case d: RawTypeDef.Alias =>
         typed.TypeDef.Alias(id = fixId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId)
 
-      case d: ILAstParsed.Identifier =>
+      case d: RawTypeDef.Identifier =>
         typed.TypeDef.Identifier(id = fixId(d.id): TypeId.IdentifierId, fields = fixPrimitiveFields(d.fields))
 
-      case d: ILAstParsed.Interface =>
+      case d: RawTypeDef.Interface =>
         typed.TypeDef.Interface(id = fixId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct))
 
-      case d: ILAstParsed.DTO =>
+      case d: RawTypeDef.DTO =>
         typed.TypeDef.DTO(id = fixId(d.id): TypeId.DTOId, struct = toStruct(d.struct))
 
-      case d: ILAstParsed.Adt =>
+      case d: RawTypeDef.Adt =>
         typed.TypeDef.Adt(id = fixId(d.id): TypeId.AdtId, alternatives = fixIds(d.alternatives))
     }
   }
 
-  protected def toStruct(struct: raw.Structure): typed.Structure = {
+  protected def toStruct(struct: raw.RawStructure): typed.Structure = {
     typed.Structure(fields = fixFields(struct.fields), removedFields = fixFields(struct.removedFields), superclasses = toSuper(struct))
   }
 
-  protected def toSuper(struct: raw.Structure): typed.Super = {
+  protected def toSuper(struct: raw.RawStructure): typed.Super = {
     typed.Super(interfaces = fixIds(struct.interfaces), concepts = fixIds(struct.concepts), removedConcepts = fixIds(struct.removedConcepts))
   }
 
@@ -131,11 +131,11 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     d.map(fixId[T, R])
   }
 
-  protected def fixFields(fields: raw.Aggregate): typed.Tuple = {
+  protected def fixFields(fields: raw.RawTuple): typed.Tuple = {
     fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractTypeId, TypeId](f.typeId)))
   }
 
-  protected def fixPrimitiveFields(fields: raw.Aggregate): typed.PrimitiveTuple = {
+  protected def fixPrimitiveFields(fields: raw.RawTuple): typed.PrimitiveTuple = {
     fields.map(f => typed.PrimitiveField(name = f.name, typeId = toPrimitive(f.typeId)))
   }
 
@@ -164,7 +164,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
   }
 
 
-  protected def fixStructure(s: raw.SimpleStructure): typed.SimpleStructure = {
+  protected def fixStructure(s: raw.RawSimpleStructure): typed.SimpleStructure = {
     typed.SimpleStructure(concepts = fixIds(s.concepts), fields = fixFields(s.fields))
   }
 

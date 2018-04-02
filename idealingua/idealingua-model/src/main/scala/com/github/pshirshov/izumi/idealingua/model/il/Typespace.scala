@@ -241,7 +241,7 @@ class Typespace(val domain: DomainDefinition) {
     fields.map(f => ExtendedField(Field(f.typeId, f.name), id: TypeId))
   }
 
-  protected def compositeFields(composite: Composite): List[ExtendedField] = {
+  protected def compositeFields(composite: Interfaces): List[ExtendedField] = {
     composite.flatMap(i => extractFields(index(i)))
   }
 

@@ -13,16 +13,16 @@ object Service {
     sealed trait Output
 
     object Output {
-      case class Usual(input: SimpleStructure) extends Output
-      case class Algebraic(alternatives: Types) extends Output
+      case class Usual(input: RawSimpleStructure) extends Output
+      case class Algebraic(alternatives: RawTypes) extends Output
     }
 
-    case class Signature(input: SimpleStructure, output: Output)
+    case class Signature(input: RawSimpleStructure, output: Output)
 
     case class RPCMethod(name: String, signature: Signature) extends DefMethod
 
     @deprecated
-    case class DeprecatedSignature(input: Composite, output: Composite) {
+    case class DeprecatedSignature(input: RawInterfaces, output: RawInterfaces) {
       def asList: List[InterfaceId] = input ++ output
     }
 

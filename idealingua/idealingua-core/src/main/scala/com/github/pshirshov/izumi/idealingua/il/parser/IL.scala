@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{ILAstParsed, _}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawTypeDef, _}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 
 object IL {
@@ -13,6 +13,6 @@ object IL {
 
   case class ILInclude(i: String) extends Val
 
-  case class ILDef(v: ILAstParsed) extends Val
+  case class ILDef(v: RawTypeDef) extends Val
 
 }

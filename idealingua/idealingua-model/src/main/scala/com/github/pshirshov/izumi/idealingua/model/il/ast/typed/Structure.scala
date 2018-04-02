@@ -7,13 +7,13 @@ case class Field(typeId: TypeId, name: String)
 
 case class PrimitiveField(typeId: Primitive, name: String)
 
-case class SimpleStructure(concepts: Composite, fields: Tuple)
+case class SimpleStructure(concepts: Interfaces, fields: Tuple)
 
 
 case class Super(
-                  interfaces: Composite
-                  , concepts: Composite
-                  , removedConcepts: Composite
+                  interfaces: Interfaces
+                  , concepts: Interfaces
+                  , removedConcepts: Interfaces
                 ) {
   val all: List[InterfaceId] = interfaces ++ concepts
 }

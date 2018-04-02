@@ -16,7 +16,7 @@ object Service {
 
       case class Usual(input: SimpleStructure) extends Output
 
-      case class Algebraic(alternatives: TypeList) extends Output
+      case class Algebraic(alternatives: Types) extends Output
 
     }
 
@@ -24,7 +24,7 @@ object Service {
 
     case class RPCMethod(name: String, signature: Signature) extends DefMethod
 
-    case class DeprecatedSignature(input: Composite, output: Composite) {
+    case class DeprecatedSignature(input: Interfaces, output: Interfaces) {
       def asList: List[InterfaceId] = input ++ output
     }
 

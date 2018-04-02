@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.Service._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
@@ -74,8 +74,8 @@ class ILParser {
 
 
   final val pkgIdentifier = P(symbol.rep(sep = "."))
-  final val fqIdentifier = P(pkgIdentifier ~ "#" ~/ symbol).map(v => ILParsedId(v._1, v._2))
-  final val shortIdentifier = P(symbol).map(v => ILParsedId(v))
+  final val fqIdentifier = P(pkgIdentifier ~ "#" ~/ symbol).map(v => ParsedId(v._1, v._2))
+  final val shortIdentifier = P(symbol).map(v => ParsedId(v))
   final val identifier = P(fqIdentifier | shortIdentifier)
 
   final val fulltype: Parser[AbstractTypeId] = P(SepInlineOpt ~ identifier ~ SepInlineOpt ~ generic.rep(min = 0, max = 1) ~ SepInlineOpt)
@@ -84,10 +84,10 @@ class ILParser {
 
   final def generic: Parser[Seq[AbstractTypeId]] = P("[" ~/ SepInlineOpt ~ fulltype.rep(sep = ",") ~ SepInlineOpt ~ "]")
 
-  val field: Parser[Field] = P(symbol ~ SepInlineOpt ~ ":" ~/ SepInlineOpt ~ fulltype)
+  val field: Parser[RawField] = P(symbol ~ SepInlineOpt ~ ":" ~/ SepInlineOpt ~ fulltype)
     .map {
       case (name, tpe) =>
-        Field(tpe, name)
+        RawField(tpe, name)
     }
 
 
@@ -98,9 +98,9 @@ class ILParser {
     val plus = P(("+" ~ "++".?) ~/ sepInline ~ identifier).map(_.toMixinId).map(StructOp.Extend)
     val embed = P(("*" | "...") ~/ sepInline ~ identifier).map(_.toMixinId).map(StructOp.Mix)
     val minus = P(("-" ~ "--".?) ~/ sepInline ~ (field | identifier)).map {
-      case v: Field =>
+      case v: RawField =>
         StructOp.RemoveField(v)
-      case i: ILParsedId =>
+      case i: ParsedId =>
         StructOp.Drop(i.toMixinId)
     }
     val plusField = field.map(StructOp.AddField)
@@ -111,7 +111,7 @@ class ILParser {
       .map(ParsedStruct.apply)
   }
 
-  def simpleStruct(sepEntry: Parser[Unit]): Parser[SimpleStructure] = {
+  def simpleStruct(sepEntry: Parser[Unit]): Parser[RawSimpleStructure] = {
     val sepInline = SepInlineOpt
     val margin = SepLineOpt
 
@@ -121,7 +121,7 @@ class ILParser {
     val anyPart = P(plusField | embed)
 
     P(margin ~ (sepInline ~ anyPart ~ sepInline).rep(sep = sepEntry) ~ margin)
-      .map(ParsedStruct.apply).map(s => SimpleStructure(s.structure.concepts, s.structure.fields))
+      .map(ParsedStruct.apply).map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
   }
 
   final val aggregate = P((SepInlineOpt ~ field ~ SepInlineOpt).rep(sep = SepLine))
@@ -144,7 +144,7 @@ class ILParser {
         sigSep ~ wsAny ~
         (adtOut | inlineStruct)
     ).map {
-      case (id, in, out: SimpleStructure) =>
+      case (id, in, out: RawSimpleStructure) =>
         DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Usual(out)))
 
       case (id, in, out: AlgebraicType) =>

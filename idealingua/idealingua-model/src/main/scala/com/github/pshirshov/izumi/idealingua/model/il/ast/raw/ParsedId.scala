@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 
-case class ILParsedId(pkg: Seq[String], name: String) {
+case class ParsedId(pkg: Seq[String], name: String) {
   def toEnumId: EnumId = EnumId(pkg, name)
 
   def toAliasId: AliasId = AliasId(pkg, name)
@@ -31,6 +31,6 @@ case class ILParsedId(pkg: Seq[String], name: String) {
   }
 }
 
-object ILParsedId {
-  def apply(name: String): ILParsedId = new ILParsedId(Seq.empty, name)
+object ParsedId {
+  def apply(name: String): ParsedId = new ParsedId(Seq.empty, name)
 }
