@@ -36,6 +36,10 @@ class Typespace(val domain: DomainDefinition) {
     apply(id: TypeId).asInstanceOf[ILStructure]
   }
 
+  protected def apply(id: IdentifierId): Identifier = {
+    apply(id: TypeId).asInstanceOf[Identifier]
+  }
+
   protected def apply(id: DTOId): DTO = {
     apply(id: TypeId).asInstanceOf[DTO]
   }
@@ -152,6 +156,9 @@ class Typespace(val domain: DomainDefinition) {
     }.toList
   }
 
+  def structure(defn: IdentifierId): PlainStruct = {
+    structure(apply(defn))
+  }
   def structure(defn: Identifier): PlainStruct = {
     PlainStruct(extractFields(defn))
   }

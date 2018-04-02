@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId, IdentifierId}
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
@@ -39,14 +39,6 @@ class ScalaTranslationTools(ctx: STContext) {
     doModify(ifDecls, base, struct.isScalar && struct.all.forall(f => canBeAnyValField(f.field.typeId)))
   }
 
-  private def doModify(ifDecls: List[Init], base: String, modify: Boolean) = {
-    if (modify) {
-      ctx.conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
-    } else {
-      ifDecls
-    }
-  }
-
   private def canBeAnyValField(typeId: TypeId): Boolean = {
     typeId match {
       case _: Builtin =>
@@ -71,6 +63,18 @@ class ScalaTranslationTools(ctx: STContext) {
       case t: StructureId =>
         val struct = ctx.typespace.enumFields(t)
         struct.isComposite || (struct.isScalar && !struct.all.exists(v => canBeAnyValField(v.field.typeId)))
+      case t: IdentifierId =>
+        val struct = ctx.typespace.structure(t)
+        struct.all.size > 1
+
+    }
+  }
+
+  private def doModify(ifDecls: List[Init], base: String, modify: Boolean) = {
+    if (modify) {
+      ctx.conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
+    } else {
+      ifDecls
     }
   }
 }

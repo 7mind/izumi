@@ -1,0 +1,13 @@
+domain test.anyvals
+
+id RecordId {
+  value: uid
+}
+
+mixin WithRecordId {
+  id: RecordId
+}
+
+mixin UserData {
+  id: WithRecordId
+}
