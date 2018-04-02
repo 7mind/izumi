@@ -64,15 +64,15 @@ class ILParserTest extends WordSpec {
     }
 
     "parse identifiers" in {
-      assertParses(parser.identifier, "x.y.z")
+      assertParses(parser.ids.identifier, "x.y.z")
       assertParses(parser.domains.domainId, "domain x.y.z")
     }
 
     "parse fields" in {
-      assertParses(parser.field, "a: str")
-      assertParses(parser.field, "a: domain#Type")
-      assertParses(parser.field, "a: map[str, str]")
-      assertParses(parser.field, "a: map[str, set[domain#Type]]")
+      assertParses(parser.defs.field, "a: str")
+      assertParses(parser.defs.field, "a: domain#Type")
+      assertParses(parser.defs.field, "a: map[str, str]")
+      assertParses(parser.defs.field, "a: map[str, set[domain#Type]]")
     }
 
     "parse domain definition" in {
