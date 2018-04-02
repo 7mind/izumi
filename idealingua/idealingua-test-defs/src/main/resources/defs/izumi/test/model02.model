@@ -1,0 +1,4 @@
+enum AnEnum {
+  VALUE1
+  VALUE2
+}
