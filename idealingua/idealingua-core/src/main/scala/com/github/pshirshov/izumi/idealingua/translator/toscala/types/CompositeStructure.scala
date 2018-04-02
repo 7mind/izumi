@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
 
 import scala.meta._
 
@@ -11,9 +10,8 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val t: ScalaType = ctx.conv.toScala(fields.id)
 
   import ScalaField._
-  import ctx.conv._
 
-  private val composite = fields.fields.superclasses.interfaces
+  val composite = fields.fields.superclasses.interfaces
 
   val explodedSignature: List[Term.Param] = fields.all.toParams
 
@@ -74,26 +72,4 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val decls: List[Term.Param] = fields.all.toParams
 
   val names: List[Term.Name] = fields.all.toNames
-
-  def defns(bases: List[Init]): RenderableCogenProduct = {
-    val ifDecls = composite.map {
-      iface =>
-        ctx.conv.toScala(iface).init()
-    }
-
-    val superClasses = bases ++ ifDecls
-
-    val tools = t.within(s"${fields.id.name.capitalize}Extensions")
-
-    val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""
-
-    val qqTools = q""" implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
-
-    val qqCompositeCompanion =
-      q"""object ${t.termName} {
-          ..$constructors
-         }"""
-
-    ctx.ext.extend(fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools, List.empty), _.handleComposite)
-  }
 }

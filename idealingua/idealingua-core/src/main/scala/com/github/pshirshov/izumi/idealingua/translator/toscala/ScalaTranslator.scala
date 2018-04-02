@@ -3,15 +3,15 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{AdtElementProduct, AdtProduct, EnumProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaField, ServiceMethodProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, ScalaField, ServiceMethodProduct}
 
 import scala.meta._
 
@@ -90,14 +90,36 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   }
 
   protected def renderDto(i: DTO): RenderableCogenProduct = {
-    ctx.tools.mkStructure(i.id).defns(List.empty)
+    defns(ctx.tools.mkStructure(i.id))
+  }
+
+  protected def defns(struct: CompositeStructure, bases: List[Init] = List.empty): RenderableCogenProduct = {
+    val ifDecls = struct.composite.map {
+      iface =>
+        ctx.conv.toScala(iface).init()
+    }
+
+    val superClasses = bases ++ ifDecls
+
+    val tools = struct.t.within(s"${struct.fields.id.name.capitalize}Extensions")
+
+    val qqComposite = q"""case class ${struct.t.typeName}(..${struct.decls}) extends ..$superClasses {}"""
+
+    val qqTools = q""" implicit class ${tools.typeName}(_value: ${struct.t.typeFull}) { }"""
+
+    val qqCompositeCompanion =
+      q"""object ${struct.t.termName} {
+          ..${struct.constructors}
+         }"""
+
+    ctx.ext.extend(struct.fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools, List.empty), _.handleComposite)
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
     Seq(q"type ${conv.toScala(i.id).typeName} = ${conv.toScala(i.target).typeFull}")
   }
 
-  def renderAdt(i: Adt): RenderableCogenProduct = {
+  protected def renderAdt(i: Adt): RenderableCogenProduct = {
     val t = conv.toScala(i.id)
 
     val duplicates = i.alternatives.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
@@ -134,7 +156,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     ext.extend(i, AdtProduct(qqAdt, qqAdtCompanion, members), _.handleAdt)
   }
 
-  def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
+  protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
     val t = conv.toScala(i.id)
 
     val duplicates = i.members.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
@@ -233,7 +255,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val eid = DTOId(i.id, typespace.toDtoName(i.id))
 
     val implStructure = ctx.tools.mkStructure(eid)
-    val impl = implStructure.defns(List.empty).render
+    val impl = defns(implStructure).render
 
     val tools = t.within(s"${i.id.name}Extensions")
     val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
@@ -280,9 +302,9 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         val outputType = out.typeFull
 
 
-        val defns = Seq(
-          inputComposite.defns(List(serviceInputBase.init()))
-          , outputComposite.defns(List(serviceOutputBase.init()))
+        val ioDefns = Seq(
+          defns(inputComposite, List(serviceInputBase.init()))
+          , defns(outputComposite, List(serviceOutputBase.init()))
         )
 
         ServiceMethodProduct(
@@ -291,7 +313,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
           , outputComposite
           , inputType
           , outputType
-          , defns
+          , ioDefns
         )
     }
 
