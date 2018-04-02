@@ -36,7 +36,7 @@ trait InheritanceQueries {
 
   protected[typespace] def parentsInherited(id: TypeId): List[InterfaceId]
 
-  protected[typespace] def implementingDtos(id: InterfaceId): List[DTOId]
+  def implementingDtos(id: InterfaceId): List[DTOId]
 
   protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId]
 }
@@ -61,6 +61,7 @@ trait StructuralQueries {
 
 trait Typespace {
   def inheritance: InheritanceQueries
+
   def structure: StructuralQueries
 
   def domain: DomainDefinition
@@ -69,12 +70,9 @@ trait Typespace {
 
   def apply(id: ServiceId): Service
 
-  def implementors(id: InterfaceId): List[ConverterDef]
-
   def implId(id: InterfaceId): DTOId
 
   protected[typespace] def types: TypeCollection
-
 }
 
 

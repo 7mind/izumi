@@ -61,17 +61,17 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     import ctx.conv._
     val t = toScala(interface.id)
     val tpe = t.typeFull
-    val implementors = ctx.typespace.implementors(interface.id)
+    val implementors = ctx.typespace.inheritance.implementingDtos(interface.id)
 
     val enc = implementors.map {
       c =>
-        p"""case v: ${toScala(c.typeToConstruct).typeFull} => Map(${Lit.String(c.typeToConstruct.name)} -> v).asJson"""
+        p"""case v: ${toScala(c).typeFull} => Map(${Lit.String(c.name)} -> v).asJson"""
 
     }
 
     val dec = implementors.map {
       c =>
-        p"""case ${Lit.String(c.typeToConstruct.name)} => value.as[${toScala(c.typeToConstruct).typeFull}]"""
+        p"""case ${Lit.String(c.name)} => value.as[${toScala(c).typeFull}]"""
     }
 
     val boilerplate = CirceTrait(

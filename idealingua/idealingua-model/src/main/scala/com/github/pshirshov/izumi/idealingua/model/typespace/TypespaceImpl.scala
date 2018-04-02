@@ -39,13 +39,6 @@ protected[typespace] class TypespaceImpl(val domain: DomainDefinition) extends T
     }
   }
 
-
-  def implementors(id: InterfaceId): List[ConverterDef] = {
-    val implementors = inheritance.implementingDtos(id)
-    structure.converters(implementors, id)
-  }
-
-
   def verify(): Unit = {
     val typeDependencies = domain.types.flatMap(extractDependencies)
 
