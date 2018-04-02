@@ -45,7 +45,7 @@ class ILParser {
     object opt {
       final val SepInlineOpt = P(WsComment | wss)
       final val SepLineOpt = P(End | SepLineBase.rep)
-      final val SepAnyOpt = P(wss ~ (SepInline | SepLineBase.rep) ~ wss)
+      final val SepAnyOpt = P(wss ~ (WsComment | SepLineBase).rep ~ wss)
     }
 
 
@@ -109,7 +109,7 @@ class ILParser {
     final val struct = {
       val sepEntry = SepLine
       val sepInline = opt.SepInlineOpt
-      val margin = opt.SepLineOpt
+      //val margin = opt.SepLineOpt
 
       val plus = P(("+" ~ "++".?) ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Extend)
       val embed = P(("*" | "...") ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Mix)
@@ -123,7 +123,7 @@ class ILParser {
 
       val anyPart = P(plusField | plus | embed | minus)
 
-      P(margin ~ (sepInline ~ anyPart ~ sepInline).rep(sep = sepEntry) ~ margin)
+      P((sepInline ~ anyPart ~ sepInline).rep(sep = sepEntry))
         .map(ParsedStruct.apply)
     }
 
@@ -242,7 +242,7 @@ class ILParser {
     final val domainId = P(ids.pkgIdentifier)
       .map(v => ILDomainId(DomainId(v.init, v.last)))
     final val domainBlock = P(kw.domain ~/ domainId)
-    final val importBlock = kw(kw.`import`, opt.SepInlineOpt ~ domainId)
+    final val importBlock = kw(kw.`import`, domainId)
   }
 
   final val modelDef = P(opt.SepLineOpt ~ blocks.anyBlock.rep(sep = opt.SepLineOpt) ~ opt.SepLineOpt).map {

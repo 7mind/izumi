@@ -42,6 +42,9 @@ class ILParserTest extends WordSpec {
           |}""".stripMargin)
       assertParses(parser.blocks.idBlock, "id Id {}")
       assertParses(parser.blocks.serviceBlock, "service Service {}")
+      assertParses(parser.domains.importBlock, "import a.b.c")
+      assertParses(parser.domains.importBlock, "import     a.b.c ")
+      assertParses(parser.domains.importBlock, "import a ")
     }
 
     "parse complex comments" in {
