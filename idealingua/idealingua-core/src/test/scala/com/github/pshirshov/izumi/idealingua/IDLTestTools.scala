@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension}
 
 @ExposedTestScope
@@ -27,7 +28,7 @@ object IDLTestTools {
   }
 
   def compiles(id: String, domains: Seq[DomainDefinition]): Boolean = {
-    compiles(id, domains, Seq.empty)
+    compiles(id, domains, ScalaTranslator.defaultExtensions)
   }
 
   def compiles(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension]): Boolean = {

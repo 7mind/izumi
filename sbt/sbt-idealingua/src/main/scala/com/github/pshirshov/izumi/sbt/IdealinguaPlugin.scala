@@ -4,6 +4,7 @@ import java.nio.file.Path
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.{CirceTranslatorExtension, IDLCompiler, IDLLanguage, TranslatorExtension}
 import sbt.Keys.{sourceGenerators, _}
 import sbt._
@@ -37,9 +38,10 @@ object IdealinguaPlugin extends AutoPlugin {
 
 
   override lazy val projectSettings = Seq(
-    Keys.idlDefaultExtensionsScala := Seq(
+    Keys.idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions ++ Seq(
       CirceTranslatorExtension
     )
+
     , Keys.compilationTargets := Seq(
       Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Sources)
       , Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Artifact)

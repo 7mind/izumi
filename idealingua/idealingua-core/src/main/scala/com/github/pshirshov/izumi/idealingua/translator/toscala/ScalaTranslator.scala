@@ -14,15 +14,17 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaFiel
 
 import scala.meta._
 
-
-class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) {
-  protected val allExtensions: Seq[ScalaTranslatorExtension] = extensions ++ Seq(
+object ScalaTranslator {
+  final val defaultExtensions = Seq(
     ConvertersExtension
     , IfaceConstructorsExtension
     , IfaceNarrowersExtension
     , AnyvalExtension
   )
-  protected val ctx: STContext = new STContext(ts, allExtensions)
+}
+
+class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) {
+  protected val ctx: STContext = new STContext(ts, extensions)
 
   import ScalaField._
   import ctx._
