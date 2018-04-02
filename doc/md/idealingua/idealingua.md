@@ -56,6 +56,8 @@ Type name    | Explanation                                 | Scala mapping  |
 
 ### Circe serialization
 
+#### Polymorphism and time
+
 The following example demonstrates how polymorphism and time values are handled:
 
 ```scala
@@ -162,3 +164,49 @@ Right({
 Restored:
 Right(Right(AnotherPayload(hi)))
 ```
+
+Notes:
+1. Same convention is applied for all the polymorhic values, like ADTs and Interfaces.
+2. Data classes cannot be polymorphic 
+
+#### Identifiers
+
+Identifiers codec just invokes `.toString` and `.parse` to serialize/deserialize Identifiers.
+
+Identifier format:
+
+`Name#urlencoded(part1):urlencoded(part2):...`
+
+Please check [identifier codegen example](cogen.md#id-identifier) for additional details.
+
+Full example:
+
+```
+case class TestIdentifer(userId: String, context: String) {
+  override def toString: String = {
+    import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+    val suffix = this.productIterator.map(part => escape(part.toString)).mkString(":")
+    s"TestIdentifer#$suffix"
+  }
+}
+
+trait TestIdentiferCirce {
+  import _root_.io.circe.{ Encoder, Decoder }
+  implicit val encodeTestIdentifer: Encoder[TestIdentifer] = Encoder.encodeString.contramap(_.toString)
+  implicit val decodeTestIdentifer: Decoder[TestIdentifer] = Decoder.decodeString.map(TestIdentifer.parse)
+}
+
+object TestIdentifer extends TestIdentiferCirce {
+  def parse(s: String): TestIdentifer = {
+    import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+    val withoutPrefix = s.substring(s.indexOf("#") + 1)
+    val parts = withoutPrefix.split(":").map(part => unescape(part))
+    TestIdentifer(parsePart[String](parts(0), classOf[String]), parsePart[String](parts(1), classOf[String]))
+  }
+  implicit class TestIdentiferExtensions(_value: TestIdentifer)
+}
+```
+
+#### Enumerations
+
+Identifiers codec just invokes `.toString` and `.parse` same way as it implemented for Identifiers.

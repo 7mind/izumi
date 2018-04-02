@@ -18,7 +18,7 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
 
   override def handleIdentifier(ctx: STContext, id: Identifier, product: IdentifierProudct): IdentifierProudct = {
     import ctx.conv._
-    val boilerplate = withDerived(ctx, id.id)
+    val boilerplate = withParseable(ctx, id.id)
     val init = toScala(id.id).sibling(boilerplate.name).init()
     product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
