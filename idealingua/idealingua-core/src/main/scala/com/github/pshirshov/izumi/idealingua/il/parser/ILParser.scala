@@ -136,15 +136,26 @@ class ILParser {
     final val enum = P(ids.symbol.rep(min = 1, sep = any))
   }
 
-  def enclosed[T](defparser: Parser[T]): Parser[T] = {
-    P(("{" ~ any ~ defparser ~ any ~ "}") | "(" ~ any ~ defparser ~ any ~ ")")
+  object structure {
+    def enclosed[T](defparser: Parser[T]): Parser[T] = {
+      P(("{" ~ any ~ defparser ~ any ~ "}") | "(" ~ any ~ defparser ~ any ~ ")")
+    }
+
+    def starting[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
+      kw(keyword, ids.shortIdentifier ~ inline ~ defparser)
+    }
+
+    def block[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
+      starting(keyword, enclosed(defparser))
+    }
   }
+
 
 
   object services {
     final val sigSep = P("=>" | "->") // ":"
-    final val inlineStruct = enclosed(defs.simpleStruct)
-    final val adtOut = enclosed(defs.adt)
+    final val inlineStruct = structure.enclosed(defs.simpleStruct)
+    final val adtOut = structure.enclosed(defs.adt)
 
     final val defMethod = P(
       kw.defm ~ inline ~
@@ -178,44 +189,29 @@ class ILParser {
     final val methods: Parser[Seq[DefMethod]] = P(any ~ method.rep(sep = any) ~ any)
   }
 
-
   object blocks {
-    def block[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
-      kw(keyword, ids.shortIdentifier ~ inline ~ enclosed(defparser)).map {
-        case (k, v) =>
-          (k, v)
-      }
-    }
-
-    def line[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
-      kw(keyword, ids.shortIdentifier ~ inline ~ defparser).map {
-        case (k, v) =>
-          (k, v)
-      }
-    }
-
     final val inclusion = kw(kw.include, sym.String)
       .map(v => ILInclude(v))
 
-    final val aliasBlock = line(kw.alias, "=" ~ inline ~ ids.identifier)
+    final val aliasBlock = structure.starting(kw.alias, "=" ~ inline ~ ids.identifier)
       .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
 
-    final val mixinBlock = block(kw.mixin, defs.struct)
+    final val mixinBlock = structure.block(kw.mixin, defs.struct)
       .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
 
-    final val dtoBlock = block(kw.data, defs.struct)
+    final val dtoBlock = structure.block(kw.data, defs.struct)
       .map(v => ILDef(v._2.toDto(v._1.toDataId)))
 
-    final val adtBlock = block(kw.adt, defs.adt)
+    final val adtBlock = structure.block(kw.adt, defs.adt)
       .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
 
-    final val idBlock = block(kw.id, defs.aggregate)
+    final val idBlock = structure.block(kw.id, defs.aggregate)
       .map(v => ILDef(Identifier(v._1.toIdId, v._2.toList)))
 
-    final val enumBlock = block(kw.enum, defs.enum)
+    final val enumBlock = structure.block(kw.enum, defs.enum)
       .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
 
-    final val serviceBlock = block(kw.service, services.methods)
+    final val serviceBlock = structure.block(kw.service, services.methods)
       .map(v => ILService(Service(v._1.toServiceId, v._2.toList)))
 
     final val anyBlock: Parser[Val] = enumBlock |
