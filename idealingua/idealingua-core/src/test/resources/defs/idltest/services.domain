@@ -34,4 +34,13 @@ service TestService {
      Success
    | Error
   )
+
+  def greetAlgebraic3
+   {
+     firstName: str
+     , secondName: str
+   } => {
+     Success
+     Error
+  }
 }
