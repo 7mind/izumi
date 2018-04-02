@@ -195,7 +195,7 @@ class ILParser {
     }
 
     def line[T](kw: Parser[Unit], defparser: Parser[T]): Parser[T] = {
-      P(kw ~/ opt.SepInlineOpt ~ defparser)
+      P(kw ~/ defparser)
     }
 
     final val fullStruct = struct(SepLine)
@@ -212,14 +212,14 @@ class ILParser {
     final val dtoBlock = block(kw.data, fullStruct)
       .map(v => ILDef(v._2.toDto(v._1.toDataId)))
 
+    final val adtBlock = block(kw.adt, adt)
+      .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
+
     final val idBlock = block(kw.id, opt.SepLineOpt ~ aggregate ~ opt.SepLineOpt)
       .map(v => ILDef(Identifier(v._1.toIdId, v._2.toList)))
 
     final val enumBlock = block(kw.enum, opt.SepAnyOpt ~ symbol.rep(min = 1, sep = opt.SepAnyOpt) ~ opt.SepAnyOpt)
       .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
-
-    final val adtBlock = block(kw.adt, adt)
-      .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
 
     final val serviceBlock = block(kw.service, opt.SepLineOpt ~ services.methods ~ opt.SepLineOpt)
       .map(v => ILService(Service(v._1.toServiceId, v._2.toList)))
