@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.structures.Struct
+import com.github.pshirshov.izumi.idealingua.model.il.structures.{PlainStruct, Struct}
 
 import scala.language.higherKinds
 import scala.meta._
@@ -15,22 +15,28 @@ import scala.reflect.{ClassTag, classTag}
 
 
 class ScalaTypeConverter(domain: DomainId) {
+  protected def toScalaField(field: ExtendedField): ScalaField = {
+    ScalaField(
+      Term.Name(field.field.name)
+      , ScalaTypeConverter.this.toScala(field.field.typeId).typeFull
+      , field
+    )
+  }
+
+  implicit class StructOps(fields: PlainStruct) {
+    def toScala: PlainScalaStruct = {
+      PlainScalaStruct(fields.all.map(toScalaField))
+    }
+  }
 
   implicit class ConflictsOps(fields: Struct) {
     def toScala: ScalaStruct = {
-      val good = fields.unambigious.map(toScala)
-      val soft = fields.ambigious.map(toScala)
+      val good = fields.unambigious.map(toScalaField)
+      val soft = fields.ambigious.map(toScalaField)
       new ScalaStruct(fields, good, soft)
     }
-
-    private def toScala(field: ExtendedField): ScalaField = {
-      ScalaField(
-        Term.Name(field.field.name)
-        , ScalaTypeConverter.this.toScala(field.field.typeId).typeFull
-        , field
-      )
-    }
   }
+
 
   implicit class ScalaTypeOps(st: ScalaType) {
     def sibling(name: TypeName): ScalaType = {

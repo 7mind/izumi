@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.idealingua.translator
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import com.github.pshirshov.izumi.idealingua.il.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
 import com.github.pshirshov.izumi.idealingua.translator.togolang.FinalTranslatorGoLangImpl
@@ -12,8 +11,6 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorS
 
 class IDLCompiler(domain: DomainDefinition) {
   def compile(target: Path, options: CompilerOptions): IDLResult = {
-    println(new ILRenderer(domain).render())
-
     val translator = toTranslator(options)
     val modules = translator.translate(domain, options.extensions)
 

@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId,
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
 import com.github.pshirshov.izumi.idealingua.model.il.structures.Struct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.CompositeStructure
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, PlainScalaStruct}
 
 import scala.meta._
 
@@ -22,6 +22,10 @@ class ScalaTranslationTools(ctx: STContext) {
 
   def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
 
+  def withAnyval(struct: PlainScalaStruct, ifDecls: List[Init]): List[Init] = {
+    doModify(ifDecls, "AnyVal", struct.all.size == 1)
+  }
+
 
   def withAnyval(struct: Struct, ifDecls: List[Init]): List[Init] = {
     addAnyBase(struct, ifDecls, "AnyVal")
@@ -31,10 +35,12 @@ class ScalaTranslationTools(ctx: STContext) {
     addAnyBase(struct, ifDecls, "Any")
   }
 
-
-
   private def addAnyBase(struct: Struct, ifDecls: List[Init], base: String): List[Init] = {
-    if (struct.isScalar && struct.all.forall(f => canBeAnyValField(f.field.typeId))) {
+    doModify(ifDecls, base, struct.isScalar && struct.all.forall(f => canBeAnyValField(f.field.typeId)))
+  }
+
+  private def doModify(ifDecls: List[Init], base: String, modify: Boolean) = {
+    if (modify) {
       ctx.conv.toScala(JavaType(Seq.empty, base)).init() +: ifDecls
     } else {
       ifDecls

@@ -207,6 +207,11 @@ case class RecordId(value: java.util.UUID) extends AnyVal {
 }
 
 object RecordId {
+  def parse(s: String): RecordId = {
+    val withoutPrefix = s.substring(s.indexOf("#") + 1)
+    val parts = withoutPrefix.split(":").map(part => IDLIdentifier.unescape(part))
+    RecordId(IDLIdentifier.parsePart[UUID](parts(0), classOf[UUID]))
+  }
 }      
 ``` 
 

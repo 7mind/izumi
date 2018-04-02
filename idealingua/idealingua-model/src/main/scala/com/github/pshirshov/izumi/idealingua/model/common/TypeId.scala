@@ -63,7 +63,7 @@ object TypeId {
     def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
   }
 
-  case class IdentifierId(pkg: Package, name: TypeName) extends StructureId with ScalarId
+  case class IdentifierId(pkg: Package, name: TypeName) extends ScalarId
 
   case class AdtId(pkg: Package, name: TypeName) extends TypeId
 

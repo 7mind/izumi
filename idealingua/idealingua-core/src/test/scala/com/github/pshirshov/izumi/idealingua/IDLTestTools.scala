@@ -7,6 +7,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
+import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension}
@@ -17,7 +18,11 @@ object IDLTestTools {
     val src = new File(getClass.getResource("/defs").toURI).toPath
     val loader = new LocalModelLoader(src, Seq.empty)
     val loaded = loader.load()
-    assert(loaded.size == 5)
+    assert(loaded.size == 7)
+    loaded.foreach {
+      d=>
+      println(new ILRenderer(d).render())
+    }
     loaded
   }
 
@@ -53,11 +58,12 @@ object IDLTestTools {
       val ctarget = runDir.resolve("scalac")
       ctarget.toFile.mkdirs()
 
-      import scala.tools.nsc.{Global, Settings}
-      val settings = new Settings()
-      settings.d.value = ctarget.toString
-      settings.feature.value = true
-      settings.embeddedDefaults(this.getClass.getClassLoader)
+        import scala.tools.nsc.{Global, Settings}
+        val settings = new Settings()
+        settings.d.value = ctarget.toString
+        settings.feature.value = true
+        settings.warnUnused.add("_")
+        settings.embeddedDefaults(this.getClass.getClassLoader)
 
       val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
       if (!isSbt) {

@@ -34,3 +34,5 @@ object Struct {
     new Struct(id, superclasses, conflicts)
   }
 }
+
+case class PlainStruct(all: List[ExtendedField])

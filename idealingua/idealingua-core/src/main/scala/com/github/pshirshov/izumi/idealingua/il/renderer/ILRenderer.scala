@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.il
+package com.github.pshirshov.izumi.idealingua.il.renderer
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
@@ -47,22 +47,15 @@ class ILRenderer(domain: DomainDefinition) {
          """.stripMargin
 
       case d: Interface =>
-        val body = Seq(
-          renderComposite(d.superclasses.interfaces)
-          , renderComposite(d.superclasses.concepts, '*')
-          , renderAggregate(d.fields)
-        ).filterNot(_.isEmpty).mkString("\n")
+        val body = renderStruct(d.struct)
+
         s"""mixin ${render(d.id)} {
            |${body.shift(2)}
            |}
          """.stripMargin
 
       case d: DTO =>
-        val body = Seq(
-          renderComposite(d.superclasses.interfaces)
-          , renderComposite(d.superclasses.concepts, '*')
-          , renderAggregate(d.fields)
-        ).filterNot(_.isEmpty).mkString("\n")
+        val body = renderStruct(d.struct)
 
         s"""data ${render(d.id)} {
            |${body.shift(2)}
@@ -71,27 +64,35 @@ class ILRenderer(domain: DomainDefinition) {
     }
   }
 
+  def renderStruct(struct: Structure): String = {
+    Seq(
+      renderComposite(struct.superclasses.interfaces, "+ ")
+      , renderComposite(struct.superclasses.concepts, "* ")
+      , renderComposite(struct.superclasses.removedConcepts, "- ")
+      , renderAggregate(struct.fields, "")
+      , renderAggregate(struct.removedFields, "- ")
+    )
+      .filterNot(_.isEmpty)
+      .mkString("\n")
+  }
+
   def render(service: Service): String = {
     s"""service ${render(service.id)} {
        |${service.methods.map(render).mkString("\n").shift(2)}
        |}
      """.stripMargin
   }
-
-  def renderComposite(aggregate: Composite): String = {
-    renderComposite(aggregate, '+')
-  }
-
-  def renderComposite(aggregate: Composite, char: Char): String = {
+  def renderComposite(aggregate: Composite, prefix: String): String = {
     aggregate
       .map(render)
-      .map(t => s"$char $t")
+      .map(t => s"$prefix$t")
       .mkString("\n")
   }
 
-  def renderAggregate(aggregate: Tuple): String = {
+  def renderAggregate(aggregate: Tuple, prefix: String): String = {
     aggregate
       .map(render)
+      .map(t => s"$prefix$t")
       .mkString("\n")
   }
 

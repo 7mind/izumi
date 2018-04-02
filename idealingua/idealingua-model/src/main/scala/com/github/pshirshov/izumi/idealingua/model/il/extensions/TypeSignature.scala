@@ -57,11 +57,11 @@ class TypeSignature(typespace: Typespace) {
   protected def explode(defn: ILAst): List[TrivialField] = {
     defn match {
       case t: Interface =>
-        t.superclasses.all.flatMap(i => explode(typespace(i)))
-          t.fields.flatMap(explode)
+        t.struct.superclasses.all.flatMap(i => explode(typespace(i)))
+          t.struct.fields.flatMap(explode)
 
       case t: DTO =>
-        t.superclasses.all.flatMap(i => explode(typespace(i)))
+        t.struct.superclasses.all.flatMap(i => explode(typespace(i)))
 
       case t: Adt =>
         t.alternatives.map(typespace.apply).flatMap(explode)

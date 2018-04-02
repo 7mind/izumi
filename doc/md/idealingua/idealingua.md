@@ -2,6 +2,21 @@
 
 [Code generation examples](cogen.md)
 
+## Keywords and aliases
+
+Keyword     | Aliases                | Explanation                                 |
+------------| ---------------------- | ------------------------------------------- |
+`domain `   | `package`, `namespace` | Namespace containing collection of entities |
+`import`    |                        | References a domain by id                   |
+`include`   |                        | Includes `*.model` file by name             |
+`alias`     | `type`, `using`        | Type alias                                  |
+`enum`      |                        | Enumeration                                 |
+`mixin`     | `interface`            | Mixin, named collection of fields           |
+`data`      | `dto`, `struct`        | Data                                        |
+`adt`       | `choice`               | Algebraic Data Type                         |
+`id`        |                        | Identifier, named collection of scalars     |
+`service`   |                        | Service interface                           |
+`def`       | `fn`, `fun`            | Method                                      |
 
 ## Embedded data types
 
@@ -22,8 +37,8 @@ Type name   | Aliases            | Explanation                                 |
 `i16`       | `short`, `int16`   | 16-bit integer                              | `Short`                      |
 `i32`       | `int`, `int32`     | 32-bit integer                              | `Int`                        |
 `i64`       | `long`, `int64`    | 64-bit integer                              | `Long`                       |
-`flt`       | `float`            | Floating point                              | `Float`                      |
-`dbl`       | `double`           | Double accuracy floating point              | `Double`                     |
+`flt`       | `float`            | Single precision floating point             | `Float`                      |
+`dbl`       | `double`           | Double precision floating point             | `Double`                     |
 `uid`       | `uuid`             | UUID                                        | `java.util.UUID`             |
 `tsz`       | `dtl`, `datetimel` | Timestamp with timezone                     | `java.time.ZonedDateTime`    |
 `tsl`       | `dtz`, `datetimez` | Local timestamp                             | `java.time.LocalDateTime`    |
@@ -36,5 +51,5 @@ Type name    | Explanation                                 | Scala mapping  |
 ------------ | ------------------------------------------- | -------------- |
 `list[T]`    | List                                        | `List`         |
 `map[K, V]`  | Map (only scalar keys supported)            | `Map`          |
-`opt[T]`     | Optional value                              | `Set`          |
-`set[T]`     | Set (no guarantees for traversal ordering)  | `scala.Option` |
+`opt[T]`     | Optional value                              | `scala.Option` |
+`set[T]`     | Set (no guarantees for traversal ordering)  | `Set`          |

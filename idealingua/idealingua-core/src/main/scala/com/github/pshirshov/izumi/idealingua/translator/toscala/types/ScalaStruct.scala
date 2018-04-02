@@ -20,3 +20,6 @@ class ScalaStruct
 }
 
 
+case class PlainScalaStruct(all: List[ScalaField])
+
+

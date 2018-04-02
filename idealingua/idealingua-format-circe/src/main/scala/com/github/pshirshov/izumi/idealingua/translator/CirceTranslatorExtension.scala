@@ -1,9 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Adt, Enumeration, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.{CogenProduct, ScalaTranslatorExtension}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaStruct
 
@@ -11,91 +13,118 @@ import scala.meta._
 
 
 object CirceTranslatorExtension extends ScalaTranslatorExtension {
-  private val imports = List(q""" import _root_.io.circe.{Encoder, Decoder} """)
-  private val java8Imports = imports ++ List(
-    q""" import _root_.io.circe.java8.time._ """
-  )
+  private case class CirceTrait(name: String, defn: Defn.Trait)
 
-  override def handleCompositeCompanion(ctx: STContext, struct: ScalaStruct, defn: Defn.Object): Defn.Object = {
-    withDerived(ctx, struct.id, defn)
+  override def handleIdentifier(ctx: STContext, id: Identifier, product: IdentifierProudct): IdentifierProudct = {
+    import ctx.conv._
+    val boilerplate = withDerived(ctx, id.id)
+    val init = toScala(id.id).sibling(boilerplate.name).init()
+    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn)
   }
 
-  override def handleAdtCompanion(ctx: STContext, adt: Adt, defn: Defn.Object): Defn.Object = {
-    withDerived(ctx, adt.id, defn)
+
+  override def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = {
+    import ctx.conv._
+    val boilerplate = withDerived(ctx, struct.id)
+    val init = toScala(struct.id).sibling(boilerplate.name).init()
+    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn)
   }
 
-  override def handleAdtElementCompanion(ctx: STContext, id: TypeId.DTOId, defn: Defn.Object): Defn.Object = {
-    withDerived(ctx, id, defn)
+
+  override def handleAdt(ctx: STContext, adt: Adt, product: CogenProduct.AdtProduct): CogenProduct.AdtProduct = {
+    import ctx.conv._
+
+    val elements = product.elements.map {
+      e =>
+        val id = DTOId(adt.id, e.name)
+        val boilerplate = withDerived(ctx, id)
+        val init = toScala(adt.id).sibling(boilerplate.name).init()
+
+        e.copy(companion = e.companion.addBase(init), more = e.more :+ boilerplate.defn)
+    }
+
+    val boilerplate = withDerived(ctx, adt.id)
+    val init = toScala(adt.id).sibling(boilerplate.name).init()
+
+    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn, elements = elements)
   }
 
-  override def handleIdentifierCompanion(ctx: STContext, id: Identifier, defn: Defn.Object): Defn.Object = {
-    withParseable(ctx, defn, id.id)
+  override def handleEnum(ctx: STContext, enum: Enumeration, product: CogenProduct.EnumProduct): CogenProduct.EnumProduct = {
+    import ctx.conv._
+    val boilerplate = withParseable(ctx, enum.id)
+    val init = toScala(enum.id).sibling(boilerplate.name).init()
+    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn)
   }
 
-  override def handleEnumCompanion(ctx: STContext, enum: Enumeration, defn: Defn.Object): Defn.Object = {
-    withParseable(ctx, defn, enum.id)
-  }
-
-  override def handleInterfaceCompanion(ctx: STContext, iface: Interface, defn: Defn.Object): Defn.Object = {
-    val t = ctx.conv.toScala(iface.id)
+  override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
+    import ctx.conv._
+    val t = toScala(interface.id)
     val tpe = t.typeFull
-    val implementors = ctx.typespace.implementors(iface.id)
+    val implementors = ctx.typespace.implementors(interface.id)
 
     val enc = implementors.map {
       c =>
-        p"""case v: ${ctx.conv.toScala(c.typeToConstruct).typeFull} => Map(${Lit.String(c.typeToConstruct.name)} -> v).asJson"""
+        p"""case v: ${toScala(c.typeToConstruct).typeFull} => Map(${Lit.String(c.typeToConstruct.name)} -> v).asJson"""
 
     }
 
     val dec = implementors.map {
       c =>
-        p"""case ${Lit.String(c.typeToConstruct.name)} => value.as[${ctx.conv.toScala(c.typeToConstruct).typeFull}]"""
+        p"""case ${Lit.String(c.typeToConstruct.name)} => value.as[${toScala(c.typeToConstruct).typeFull}]"""
     }
 
-    val circeBoilerplate = java8Imports ++ List(
-      q""" import _root_.io.circe.syntax._ """
-      ,
-      q""" implicit val ${Pat.Var(Term.Name(s"encode${iface.id.name}"))}: Encoder[$tpe] = Encoder.instance {
-        c => {
-          c match {
-            ..case $enc
+    val boilerplate = CirceTrait(
+      s"${interface.id.name}Circe", q"""trait ${Type.Name(s"${interface.id.name}Circe")} {
+             import _root_.io.circe.syntax._
+             import _root_.io.circe.{Encoder, Decoder}
+             implicit val ${Pat.Var(Term.Name(s"encode${interface.id.name}"))}: Encoder[$tpe] = Encoder.instance {
+                     c => {
+                       c match {
+                         ..case $enc
+                       }
+                     }
+                   }
+             implicit val ${Pat.Var(Term.Name(s"decode${interface.id.name}"))}: Decoder[$tpe] = Decoder.instance(c => {
+                          val fname = c.keys.flatMap(_.headOption).toSeq.head
+                          val value = c.downField(fname)
+                          fname match {
+                            ..case $dec
+                          }
+                        })
           }
-        }
-      } """
-      ,
-      q""" implicit val ${Pat.Var(Term.Name(s"decode${iface.id.name}"))}: Decoder[$tpe] = Decoder.instance(c => {
-             val fname = c.keys.flatMap(_.headOption).toSeq.head
-             val value = c.downField(fname)
-             fname match {
-               ..case $dec
-             }
-           })
-       """
-    )
-    defn.extendDefinition(circeBoilerplate)
+      """)
+    val init = toScala(interface.id).sibling(boilerplate.name).init()
+    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn)
   }
 
-  private def withParseable(ctx: STContext, defn: Defn.Object, id: TypeId) = {
+
+  private def withParseable(ctx: STContext, id: TypeId) = {
     val t = ctx.conv.toScala(id)
     val tpe = t.typeFull
-    val circeBoilerplate = imports ++ List(
-      q""" implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = Encoder.encodeString.contramap(_.toString) """
-      ,
-      q""" implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = Decoder.decodeString.map(${t.termFull}.parse) """
-    )
-    defn.extendDefinition(circeBoilerplate)
+
+
+    CirceTrait(
+      s"${id.name}Circe", q"""trait ${Type.Name(s"${id.name}Circe")} {
+            import _root_.io.circe.{Encoder, Decoder}
+            implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = Encoder.encodeString.contramap(_.toString)
+            implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = Decoder.decodeString.map(${t.termFull}.parse)
+          }
+      """)
   }
 
-  private def withDerived[T <: Defn](ctx: STContext, id: TypeId, defn: T) = {
+
+  private def withDerived[T <: Defn](ctx: STContext, id: TypeId) = {
     val tpe = ctx.conv.toScala(id).typeFull
-    val circeBoilerplate = java8Imports ++ List(
-      q""" import _root_.io.circe.generic.semiauto.{deriveDecoder, deriveEncoder} """
-      ,
-      q""" implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = deriveEncoder[$tpe] """
-      ,
-      q""" implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = deriveDecoder[$tpe] """
-    )
-    defn.extendDefinition(circeBoilerplate)
+
+
+    CirceTrait(
+      s"${id.name}Circe", q"""trait ${Type.Name(s"${id.name}Circe")} extends _root_.io.circe.java8.time.TimeInstances {
+            import _root_.io.circe.{Encoder, Decoder}
+            import _root_.io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+            implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = deriveEncoder[$tpe]
+            implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = deriveDecoder[$tpe]
+          }
+      """)
   }
 }
 

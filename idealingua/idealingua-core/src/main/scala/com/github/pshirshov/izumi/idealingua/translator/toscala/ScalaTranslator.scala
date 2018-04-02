@@ -8,7 +8,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
 import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
 import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.{ConvertersExtension, IfaceConstructorsExtension, IfaceNarrowersExtension, ScalaTranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct._
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaField, ServiceMethodProduct}
 
 import scala.meta._
@@ -78,13 +79,13 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       case d: Adt =>
         renderAdt(d)
       case _: Alias =>
-        Seq()
+        RenderableCogenProduct.empty
     }
 
     ctx.modules.toSource(IndefiniteId(definition.id), ctx.modules.toModuleId(definition), defns)
   }
 
-  protected def renderDto(i: DTO): Seq[Defn] = {
+  protected def renderDto(i: DTO): RenderableCogenProduct = {
     ctx.tools.mkStructure(i.id).defns(List.empty)
   }
 
@@ -92,7 +93,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     Seq(q"type ${conv.toScala(i.id).typeName} = ${conv.toScala(i.target).typeFull}")
   }
 
-  def renderAdt(i: Adt): Seq[Defn] = {
+  def renderAdt(i: Adt): RenderableCogenProduct = {
     val t = conv.toScala(i.id)
 
     val duplicates = i.alternatives.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
@@ -100,7 +101,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       throw new IDLException(s"Duplicated adt elements: $duplicates")
     }
 
-    val members = i.alternatives.flatMap {
+    val members = i.alternatives.map {
       m =>
         val mt = t.within(m.name)
         val original = conv.toScala(m)
@@ -109,14 +110,13 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         val qqCompanion = q""" object ${mt.termName} {} """
 
 
-        val converters = Seq(
+        val converters = List(
           q"""implicit def ${Term.Name("into" + m.name.capitalize)}(value: ${original.typeAbsolute}): ${t.typeFull} = ${mt.termFull}(value) """
           ,
           q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeAbsolute} = value.value"""
         )
 
-        val id = DTOId(i.id, m.name)
-        ext.extend(id, qqElement, qqCompanion, _.handleAdtElement, _.handleAdtElementCompanion) ++ converters
+        AdtElementProduct(m.name, qqElement, qqCompanion, converters)
     }
 
     val qqAdt = q""" sealed trait ${t.typeName} extends ${rt.adtEl.init()}{} """
@@ -126,12 +126,11 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
             type Element = ${t.typeFull}
 
-            ..$members
            }"""
-    ext.extend(i, qqAdt, qqAdtCompanion, _.handleAdt, _.handleAdtCompanion)
+    ext.extend(i, AdtProduct(qqAdt, qqAdtCompanion, members), _.handleAdt)
   }
 
-  def renderEnumeration(i: Enumeration): Seq[Defn] = {
+  def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
     val t = conv.toScala(i.id)
 
     val duplicates = i.members.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
@@ -147,7 +146,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
               override def toString: String = ${Lit.String(m)}
             }"""
 
-        mt.termName -> ext.extend(i, element, _.handleEnumElement)
+        mt.termName -> element
     }
 
     val parseMembers = members.map {
@@ -166,19 +165,17 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             override def parse(value: String) = value match {
               ..case $parseMembers
             }
-
-            ..${members.map(_._2)}
            }"""
 
-    ext.extend(i, qqEnum, qqEnumCompanion, _.handleEnum, _.handleEnumCompanion)
+    ext.extend(i, EnumProduct(qqEnum, qqEnumCompanion, members), _.handleEnum)
   }
 
 
-  protected def renderIdentifier(i: Identifier): Seq[Defn] = {
+  protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
     val fields = typespace.structure(i).toScala
     val decls = fields.all.toParams
 
-    val superClasses = ctx.tools.withAnyval(fields.fields, List(rt.generated.init(), rt.tIDLIdentifier.init()))
+    val superClasses = ctx.tools.withAnyval(fields, List(rt.generated.init(), rt.tIDLIdentifier.init()))
 
     // TODO: contradictions
 
@@ -190,7 +187,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val tools = t.within(s"${i.id.name}Extensions")
 
     val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
-    val extended = ext.extend(i, qqTools, _.handleIdentifierTools)
 
     val parsers = fields.all.zipWithIndex
       .map(fi => q"parsePart[${fi._1.fieldType}](parts(${Lit.Int(fi._2)}), classOf[${fi._1.fieldType}])")
@@ -200,11 +196,9 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             def parse(s: String): ${t.typeName} = {
               import ${rt.tIDLIdentifier.termBase}._
               val withoutPrefix = s.substring(s.indexOf("#") + 1)
-              val parts = withoutPrefix.split(":").map(part => unescape(part.toString))
+              val parts = withoutPrefix.split(":").map(part => unescape(part))
               ${t.termName}(..$parsers)
             }
-
-            $extended
       }"""
 
     val qqIdentifier =
@@ -217,10 +211,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }"""
 
 
-    ext.extend(i, qqIdentifier, qqCompanion, _.handleIdentifier, _.handleIdentifierCompanion)
+    ext.extend(i, CogenProduct(qqIdentifier, qqCompanion, qqTools, List.empty), _.handleIdentifier)
   }
 
-  protected def renderInterface(i: Interface): Seq[Defn] = {
+  protected def renderInterface(i: Interface): RenderableCogenProduct = {
     val fields = typespace.structure(i).toScala
 
     // TODO: contradictions
@@ -230,7 +224,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     }
 
     val ifDecls = {
-      val scalaIfaces = (rt.generated +: i.superclasses.interfaces.map(conv.toScala)).map(_.init())
+      val scalaIfaces = (rt.generated +: i.struct.superclasses.interfaces.map(conv.toScala)).map(_.init())
       ctx.tools.withAny(fields.fields, scalaIfaces)
     }
 
@@ -238,13 +232,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val eid = DTOId(i.id, typespace.toDtoName(i.id))
 
     val implStructure = ctx.tools.mkStructure(eid)
-    val impl = implStructure.defns(List.empty).toList
+    val impl = implStructure.defns(List.empty).render
 
-    val extensions = {
-      val tools = t.within(s"${i.id.name}Extensions")
-      val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
-      ext.extend(i, qqTools, _.handleInterfaceTools)
-    }
+    val tools = t.within(s"${i.id.name}Extensions")
+    val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
 
     val qqInterface =
       q"""trait ${t.typeName} extends ..$ifDecls {
@@ -256,17 +247,14 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val qqInterfaceCompanion =
       q"""object ${t.termName} {
              def apply(..${implStructure.decls}) = ${conv.toScala(eid).termName}(..${implStructure.names})
-
-             $extensions
-
              ..$impl
          }"""
 
-    ext.extend(i, qqInterface, qqInterfaceCompanion, _.handleInterface, _.handleInterfaceCompanion)
+    ext.extend(i, CogenProduct(qqInterface, qqInterfaceCompanion, qqTools, List.empty), _.handleInterface)
   }
 
 
-  protected def renderService(i: Service): Seq[Defn] = {
+  protected def renderService(i: Service): RenderableCogenProduct = {
     val typeName = i.id.name
 
     val t = conv.toScala(IndefiniteId(i.id))
@@ -293,7 +281,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         val defns = Seq(
           inputComposite.defns(List(serviceInputBase.init()))
           , outputComposite.defns(List(serviceOutputBase.init()))
-        ).flatten
+        )
 
         ServiceMethodProduct(
           method.name
@@ -312,8 +300,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val fullServiceType = fullService.typeFull
     val qqService =
       q"""trait ${t.typeName}[R[_]] extends ${rt.idtService.parameterize("R").init()} {
-          import ${t.termBase}._
-
           override type InputType = ${serviceInputBase.typeFull}
           override type OutputType = ${serviceOutputBase.typeFull}
           override def inputClass: Class[${serviceInputBase.typeFull}] = classOf[${serviceInputBase.typeFull}]
@@ -322,16 +308,13 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
           ..${decls.map(_.defn)}
          }"""
     val qqTools = q"""implicit class ${tools.typeName}[R[_]](_value: $fullServiceType) {}"""
-    val extTools = ext.extend(i, qqTools, _.handleServiceTools)
 
     val qqServiceCompanion =
       q"""object ${t.termName} {
             sealed trait ${serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
             sealed trait ${serviceOutputBase.typeName} extends Any with ${rt.output.init()} {}
 
-            $extTools
-
-            ..${decls.flatMap(_.types)}
+            ..${decls.flatMap(_.types).flatMap(_.render)}
            }"""
 
 
@@ -348,7 +331,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             (
               val service: S
             ) extends $dispatcherInTpe with ${rt.generated.init()} {
-            import ${t.termBase}._
             ..$transportDecls
            }"""
       }
@@ -364,7 +346,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             (
               dispatcher: ${dispatcherInTpe.typeFull}
             ) extends ${fullService.init()} with ${rt.generated.init()} {
-            import ${t.termBase}._
            ..$transportDecls
            }"""
       }
@@ -379,8 +360,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             (
               val service: S
             ) extends ${dispatcherInTpe.init()} with ${rt.generated.init()} {
-            import ${t.termBase}._
-
             ..$forwarder
            }"""
       }
@@ -400,23 +379,26 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         Seq(
           q"""trait ${explodedService.typeName}[R[+_], S <: $fullServiceType]
               extends ${wrapperTpe.init()} with ${rt.generated.init()} {
-            import ${t.termBase}._
            ..$explodedDecls
            }"""
           ,
           q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType](val service: ${wrapped.typeFull})
               extends ${fullService.init()} with ${rt.generated.init()} {
-            import ${t.termBase}._
            ..$transportDecls
            }"""
         )
       }
 
-      Seq(dServer, dClient, dCompr) ++ dExpl
+      List(dServer, dClient, dCompr) ++ dExpl
     }
 
 
-    dispatchers ++ ext.extend(i, qqService, qqServiceCompanion, _.handleService, _.handleServiceCompanion)
+    val preamble =
+      s"""import scala.language.higherKinds
+         |import _root_.${rt.runtimePkg}._
+         |""".stripMargin
+
+    ext.extend(i, CogenProduct(qqService, qqServiceCompanion, qqTools, dispatchers, preamble), _.handleService)
   }
 
 

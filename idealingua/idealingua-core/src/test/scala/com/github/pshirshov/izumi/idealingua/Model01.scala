@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, IndefiniteId, Primitive}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
-import com.github.pshirshov.izumi.idealingua.model.il._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
 
 object Model01 {
@@ -35,13 +34,11 @@ object Model01 {
     , ILAst.Identifier(testIdentifier, testIdStructure)
     , ILAst.Interface(
       testInterfaceId
-      , testInterfaceFields
-      , Super.empty
+      , Structure(testInterfaceFields, List.empty, Super.empty)
     )
     , ILAst.DTO(
       testIdObject
-      , List.empty
-      , Super.interfaces(List(testInterfaceId))
+      , Structure.interfaces(List(testInterfaceId))
     )
   ), List(
     Service(serviceIdentifier, List(
