@@ -17,25 +17,13 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val explodedSignature: List[Term.Param] = fields.all.toParams
 
   val constructorSignature: List[Term.Param] = {
-
-    val embedded = fields.fields.all
-      .map(_.definedBy)
-      .collect({ case i: InterfaceId => i })
-      .filterNot(composite.contains)
-    // TODO: contradictions
-
-    val interfaceParams = (composite ++ embedded)
-      .distinct
+    val params = ctx.typespace.requiredInterfaces(fields.fields)
       .map {
         d =>
           (ctx.tools.idToParaName(d), ctx.conv.toScala(d).typeFull)
       }.toParams
-
-
     val fieldParams = fields.localOrAmbigious.toParams
-
-    interfaceParams ++
-      fieldParams
+    params ++ fieldParams
   }
 
   def instantiator: Term.Apply = {

@@ -34,6 +34,8 @@ trait Typespace {
 
   def compatibleImplementors(id: InterfaceId): List[ConverterDef]
 
+  def requiredInterfaces(s: Struct): List[InterfaceId]
+
   protected[typespace] def types: TypeCollection
 
 }

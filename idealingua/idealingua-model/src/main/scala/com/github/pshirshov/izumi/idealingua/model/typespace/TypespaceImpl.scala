@@ -61,6 +61,14 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace {
     compatibleImplementors(implementors, id)
   }
 
+
+  override def requiredInterfaces(s: Struct): List[InterfaceId] = {
+    s.all
+      .map(_.definedBy)
+      .collect({ case i: InterfaceId => i })
+      .distinct
+  }
+
   def verify(): Unit = {
     import TypespaceImpl._
     val typeDependencies = domain.types.flatMap(extractDependencies)
@@ -84,7 +92,7 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace {
     val missingTypes = allDependencies
       .filterNot(_.typeId.isInstanceOf[Builtin])
       .filterNot(d => types.index.contains(d.typeId))
-      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists( t => t.types.index.contains(d.typeId)))
+      .filterNot(d => referenced.get(domain.id.toDomainId(d.typeId)).exists(t => t.types.index.contains(d.typeId)))
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
