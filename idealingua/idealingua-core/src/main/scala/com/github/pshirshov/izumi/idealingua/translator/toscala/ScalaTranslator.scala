@@ -20,6 +20,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     ConvertersExtension
     , IfaceConstructorsExtension
     , IfaceNarrowersExtension
+    , AnyvalExtension
   )
   protected val ctx: STContext = new STContext(ts, allExtensions)
 
@@ -175,8 +176,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val fields = typespace.structure(i).toScala
     val decls = fields.all.toParams
 
-    val superClasses = ctx.tools.withAnyval(fields, List(rt.generated.init(), rt.tIDLIdentifier.init()))
-
     // TODO: contradictions
 
     val typeName = i.id.name
@@ -190,6 +189,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val parsers = fields.all.zipWithIndex
       .map(fi => q"parsePart[${fi._1.fieldType}](parts(${Lit.Int(fi._2)}), classOf[${fi._1.fieldType}])")
+
+    val superClasses = List(rt.generated.init(), rt.tIDLIdentifier.init())
 
     val qqCompanion =
       q"""object ${t.termName} {
@@ -223,10 +224,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
     }
 
-    val ifDecls = {
-      val scalaIfaces = (rt.generated +: i.struct.superclasses.interfaces.map(conv.toScala)).map(_.init())
-      ctx.tools.withAny(fields.fields, scalaIfaces)
-    }
+    val ifDecls = (rt.generated +: i.struct.superclasses.interfaces.map(conv.toScala)).map(_.init())
 
     val t = conv.toScala(i.id)
     val eid = DTOId(i.id, typespace.toDtoName(i.id))

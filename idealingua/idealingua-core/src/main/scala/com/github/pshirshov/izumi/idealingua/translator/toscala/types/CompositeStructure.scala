@@ -81,7 +81,8 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
         ctx.conv.toScala(iface).init()
     }
 
-    val superClasses = ctx.tools.withAnyval(fields.fields, bases ++ ifDecls)
+    val superClasses = bases ++ ifDecls
+
     val tools = t.within(s"${fields.id.name.capitalize}Extensions")
 
     val qqComposite = q"""case class ${t.typeName}(..$decls) extends ..$superClasses {}"""

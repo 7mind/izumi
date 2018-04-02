@@ -19,7 +19,7 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     import ctx.conv._
     val boilerplate = withDerived(ctx, id.id)
     val init = toScala(id.id).sibling(boilerplate.name).init()
-    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn)
+    product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
 
@@ -27,7 +27,7 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     import ctx.conv._
     val boilerplate = withDerived(ctx, struct.id)
     val init = toScala(struct.id).sibling(boilerplate.name).init()
-    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn)
+    product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
 
@@ -40,20 +40,20 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
         val boilerplate = withDerived(ctx, id)
         val init = toScala(adt.id).sibling(boilerplate.name).init()
 
-        e.copy(companion = e.companion.addBase(init), more = e.more :+ boilerplate.defn)
+        e.copy(companion = e.companion.prependBase(init), more = e.more :+ boilerplate.defn)
     }
 
     val boilerplate = withDerived(ctx, adt.id)
     val init = toScala(adt.id).sibling(boilerplate.name).init()
 
-    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn, elements = elements)
+    product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn, elements = elements)
   }
 
   override def handleEnum(ctx: STContext, enum: Enumeration, product: CogenProduct.EnumProduct): CogenProduct.EnumProduct = {
     import ctx.conv._
     val boilerplate = withParseable(ctx, enum.id)
     val init = toScala(enum.id).sibling(boilerplate.name).init()
-    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn)
+    product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
@@ -94,7 +94,7 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
           }
       """)
     val init = toScala(interface.id).sibling(boilerplate.name).init()
-    product.copy(companion = product.companion.addBase(init), more = product.more :+ boilerplate.defn)
+    product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
 

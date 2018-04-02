@@ -20,18 +20,25 @@ trait ScalaMetaTools {
       extended.asInstanceOf[T]
     }
 
-    def addBase(inits: Init*): T = {
-      addBase(inits.toList)
+    def prependBase(inits: Init*): T = {
+      prependBase(inits.toList)
     }
 
-    def addBase(inits: List[Init]): T = {
+    def prependBase(inits: List[Init]): T = {
+      modifyBase {
+        existing =>
+          inits ++ existing
+      }
+    }
+
+    def modifyBase(modify: (List[Init]) => List[Init]): T = {
       val extended = defn match {
         case o: Defn.Object =>
-          o.copy(templ = o.templ.copy(inits = o.templ.inits ++ inits))
+          o.copy(templ = o.templ.copy(inits = modify(o.templ.inits)))
         case o: Defn.Class =>
-          o.copy(templ = o.templ.copy(inits = o.templ.inits ++ inits))
+          o.copy(templ = o.templ.copy(inits = modify(o.templ.inits)))
         case o: Defn.Trait =>
-          o.copy(templ = o.templ.copy(inits = o.templ.inits ++ inits))
+          o.copy(templ = o.templ.copy(inits = modify(o.templ.inits)))
       }
       extended.asInstanceOf[T]
     }
