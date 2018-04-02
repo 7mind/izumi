@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 

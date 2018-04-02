@@ -1,10 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast
+package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
 case class DomainDefinition(
                              id: DomainId
-                             , types: Seq[ILAst]
-                             , services: Seq[ILAst.Service]
+                             , types: Seq[TypeDef]
+                             , services: Seq[Service]
                              , referenced: Map[DomainId, DomainDefinition]
                            )
-
-

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.structures
 
 import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, StructureId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Super
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Super
 
 
 class Struct private

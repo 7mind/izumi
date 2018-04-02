@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.{DTO, Interface, Structure}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed.{DTO, Interface, Structure}
 
 case class ParsedStruct(structure: Structure) {
   def toInterface(id: InterfaceId): ILAstParsed.Interface = {

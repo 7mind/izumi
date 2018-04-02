@@ -7,9 +7,9 @@ import com.github.pshirshov.izumi.idealingua.il.IL.{ILDef, ILService}
 import com.github.pshirshov.izumi.idealingua.il.loader.model.LoadedModel
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.parsing
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.DomainDefinitionParsed
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.DomainDefinitionParsed
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 
 protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], domain: ParsedDomain, domains: Map[DomainId, ParsedDomain], models: Map[Path, ParsedModel]) {
 
@@ -41,7 +41,7 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
 
     val types = allIncludes.definitions.collect({ case d: ILDef => d.v })
     val services = allIncludes.definitions.collect({ case d: ILService => d.v })
-    parsing.DomainDefinitionParsed(domain.did.id, types, services, imports)
+    raw.DomainDefinitionParsed(domain.did.id, types, services, imports)
   }
 
   private def loadModel(modelResolver: Path => Option[ParsedModel], toInclude: String): LoadedModel = {

@@ -8,8 +8,8 @@ import com.github.pshirshov.izumi.idealingua.il.parser.ILParser
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId}
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.DomainDefinitionConverter
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, DomainId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinitionTyper
 import fastparse.all
 import fastparse.core.Parsed
 
@@ -42,7 +42,7 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
         new LocalDomainProcessor(root, classpath, domain, domains, models).postprocess()
     }.map {
       d =>
-        new DomainDefinitionConverter(d).convert()
+        new DomainDefinitionTyper(d).convert()
     }.toSeq
   }
 }

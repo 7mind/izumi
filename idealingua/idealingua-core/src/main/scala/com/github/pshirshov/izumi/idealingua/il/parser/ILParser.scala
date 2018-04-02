@@ -3,11 +3,11 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 import com.github.pshirshov.izumi.idealingua.il._
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Service.DefMethod.{Output, Signature}
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed._
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed.Service.DefMethod.{Output, Signature}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 import fastparse.CharPredicates._
 import fastparse.all._
 

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct.{CompositeProudct, InterfaceProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaStruct
@@ -18,7 +18,7 @@ object ConvertersExtension extends ScalaTranslatorExtension {
 
   }
 
-  override def handleInterface(ctx: STContext, interface: ILAst.Interface, product: InterfaceProduct): InterfaceProduct = {
+  override def handleInterface(ctx: STContext, interface: TypeDef.Interface, product: InterfaceProduct): InterfaceProduct = {
     import ctx.conv._
     val converters = mkConverters(ctx, ctx.typespace.structure(interface).toScala)
     product.copy(tools = product.tools.extendDefinition(converters))

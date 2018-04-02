@@ -2,7 +2,7 @@
 //
 //import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{IdentifierId, ServiceId}
 //import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, IndefiniteId, StructureId, TypeId}
-//import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinition
+//import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainDefinition
 //import com.github.pshirshov.izumi.idealingua.model.output.Module
 //import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslationContext
 //import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaStruct

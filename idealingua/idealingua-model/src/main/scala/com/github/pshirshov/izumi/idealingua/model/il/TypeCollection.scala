@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.idealingua.model.il
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, ILAst, ILStructure}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod.{DeprecatedRPCMethod, RPCMethod}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, ILStructure, TypeDef, _}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{DeprecatedRPCMethod, RPCMethod}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 
 class TypeCollection(domain: DomainDefinition) {
   val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
@@ -37,7 +37,7 @@ class TypeCollection(domain: DomainDefinition) {
       }
   }
 
-  val all: Seq[ILAst] = {
+  val all: Seq[TypeDef] = {
     val definitions = Seq(
       domain.types
       , serviceEphemerals
@@ -49,7 +49,7 @@ class TypeCollection(domain: DomainDefinition) {
 
   val structures: Seq[ILStructure] = all.collect { case t: ILStructure => t }
 
-  def index: Map[TypeId, ILAst] = {
+  def index: Map[TypeId, TypeDef] = {
     all.map(t => (t.id, t)).toMap
   }
 
@@ -63,7 +63,7 @@ class TypeCollection(domain: DomainDefinition) {
     }
   }
 
-  protected def verified(types: Seq[ILAst]): Seq[ILAst] = {
+  protected def verified(types: Seq[TypeDef]): Seq[TypeDef] = {
     val conflictingTypes = types.groupBy(_.id).filter(_._2.lengthCompare(1) > 0)
     if (conflictingTypes.nonEmpty) {
       throw new IDLException(s"Conflicting types in: $conflictingTypes")

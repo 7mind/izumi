@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast
+package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, Builtin}

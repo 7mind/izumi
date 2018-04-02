@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, IndefiniteId, Primitive}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{TypeDef, _}
 
 object Model01 {
   final val userIdTypeId = model.common.IndefiniteId.parse("izumi.test.domain01.UserId").toAlias
@@ -28,15 +27,15 @@ object Model01 {
   final val testIdObject = IndefiniteId.parse("izumi.test.domain01.TestObject").toDTO
 
   final val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain01"), Seq(
-    ILAst.Alias(userIdTypeId, Primitive.TString)
-    , ILAst.Enumeration(enumId, List("VALUE1", "VALUE2"))
-    , ILAst.Identifier(testValIdentifier, testValStructure)
-    , ILAst.Identifier(testIdentifier, testIdStructure)
-    , ILAst.Interface(
+    TypeDef.Alias(userIdTypeId, Primitive.TString)
+    , TypeDef.Enumeration(enumId, List("VALUE1", "VALUE2"))
+    , TypeDef.Identifier(testValIdentifier, testValStructure)
+    , TypeDef.Identifier(testIdentifier, testIdStructure)
+    , TypeDef.Interface(
       testInterfaceId
       , Structure(testInterfaceFields, List.empty, Super.empty)
     )
-    , ILAst.DTO(
+    , TypeDef.DTO(
       testIdObject
       , Structure.interfaces(List(testInterfaceId))
     )

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.il.parsing
+package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._

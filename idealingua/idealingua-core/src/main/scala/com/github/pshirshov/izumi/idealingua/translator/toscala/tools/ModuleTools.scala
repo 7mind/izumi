@@ -3,8 +3,8 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.tools
 import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Alias
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.RenderableCogenProduct
 
@@ -34,7 +34,7 @@ class ModuleTools() {
     content
   }
 
-  def toModuleId(defn: ILAst): ModuleId = {
+  def toModuleId(defn: TypeDef): ModuleId = {
     defn match {
       case i: Alias =>
         val concrete = i.id

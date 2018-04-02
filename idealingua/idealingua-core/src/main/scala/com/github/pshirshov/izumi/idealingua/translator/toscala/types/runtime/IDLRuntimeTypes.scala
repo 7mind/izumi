@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, DomainId, TypeDef}
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, WithInfo}
 import com.github.pshirshov.izumi.idealingua.runtime.transport.{AbstractClientDispatcher, AbstractServerDispatcher}
@@ -43,7 +43,7 @@ object IDLRuntimeTypes {
   final val typeId = modelConv.toScala[TypeId]
   final val typeInfo = modelConv.toScala[IDLTypeInfo]
   final val withTypeInfo = modelConv.toScala[WithInfo]
-  final val tFinalDefinition = modelConv.toScala[ILAst]
+  final val tFinalDefinition = modelConv.toScala[TypeDef]
   final val tDomainDefinition = modelConv.toScala[DomainDefinition]
   final val tDomainId = modelConv.toScala[DomainId]
   final val tDomainCompanion = modelConv.toScala[IDLDomainCompanion]

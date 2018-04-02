@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.TranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext

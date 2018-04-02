@@ -3,20 +3,22 @@ package com.github.pshirshov.izumi.idealingua.model.il
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
-import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst, ILStructure}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.il.structures.{ConverterDef, PlainStruct, Struct}
 
 
 class Typespace(val domain: DomainDefinition) {
   protected val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new Typespace(d))
   protected val types = new TypeCollection(domain)
-  protected val index: Map[TypeId, ILAst] = types.index
+  protected val index: Map[TypeId, TypeDef] = types.index
 
 
-  def apply(id: TypeId): ILAst = {
+  def apply(id: TypeId): TypeDef = {
     val typeDomain = domain.id.toDomainId(id)
     if (domain.id == typeDomain) {
       id match {
@@ -195,7 +197,7 @@ class Typespace(val domain: DomainDefinition) {
   }
 
 
-  protected def extractFields(defn: ILAst): List[ExtendedField] = {
+  protected def extractFields(defn: TypeDef): List[ExtendedField] = {
     val fields = defn match {
       case t: Interface =>
         val superFields = compositeFields(t.struct.superclasses.interfaces)
@@ -236,7 +238,7 @@ class Typespace(val domain: DomainDefinition) {
   }
 
   protected def toExtendedPrimitiveFields(fields: PrimitiveTuple, id: TypeId): List[ExtendedField] = {
-    fields.map(f => ExtendedField(ILAst.Field(f.typeId, f.name), id: TypeId))
+    fields.map(f => ExtendedField(Field(f.typeId, f.name), id: TypeId))
   }
 
   protected def compositeFields(composite: Composite): List[ExtendedField] = {
@@ -249,7 +251,7 @@ class Typespace(val domain: DomainDefinition) {
   }
 
 
-  protected def extractDependencies(definition: ILAst): Seq[Dependency] = {
+  protected def extractDependencies(definition: TypeDef): Seq[Dependency] = {
     definition match {
       case _: Enumeration =>
         Seq.empty
@@ -318,11 +320,11 @@ object Typespace {
 
   object Dependency {
 
-    case class Field(definedIn: TypeId, typeId: TypeId, tpe: ILAst.Field) extends Dependency {
+    case class Field(definedIn: TypeId, typeId: TypeId, tpe: typed.Field) extends Dependency {
       override def toString: TypeName = s"[field $definedIn::${tpe.name} :$typeId]"
     }
 
-    case class PrimitiveField(definedIn: TypeId, typeId: TypeId, tpe: ILAst.PrimitiveField) extends Dependency {
+    case class PrimitiveField(definedIn: TypeId, typeId: TypeId, tpe: typed.PrimitiveField) extends Dependency {
       override def toString: TypeName = s"[field $definedIn::${tpe.name} :$typeId]"
     }
 

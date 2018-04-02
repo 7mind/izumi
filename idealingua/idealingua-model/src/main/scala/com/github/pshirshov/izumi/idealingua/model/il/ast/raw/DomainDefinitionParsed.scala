@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.il.parsing
+package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 
 case class DomainDefinitionParsed(
                              id: DomainId

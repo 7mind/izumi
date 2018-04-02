@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.model
 
 import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, Package, PackageTools}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 
 import scala.reflect._
 

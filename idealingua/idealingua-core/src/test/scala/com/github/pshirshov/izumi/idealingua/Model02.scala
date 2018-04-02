@@ -2,8 +2,7 @@ package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.model.common.Primitive
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Field, Structure}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.{DomainDefinition, DomainId, ILAst}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
 object Model02 {
   def struct(fields: List[Field]): Structure = {
@@ -19,27 +18,27 @@ object Model02 {
   final val if3Id = model.common.IndefiniteId.parse("izumi.test.domain02.TestInterface3").toInterface
   final val dto1Id = model.common.IndefiniteId.parse("izumi.test.domain02.DTO1").toDTO
 
-  final val if1 = ILAst.Interface(if1Id, struct(List(
+  final val if1 = TypeDef.Interface(if1Id, struct(List(
     Field(Primitive.TInt32, "if1Field_overriden")
     , Field(Primitive.TInt32, "if1Field_inherited")
     , Field(Primitive.TInt64, "sameField")
     , Field(Primitive.TInt64, "sameEverywhereField")
   )))
 
-  final val if2 = ILAst.Interface(if2Id, struct(List(
+  final val if2 = TypeDef.Interface(if2Id, struct(List(
     Field(Primitive.TInt64, "if2Field")
     , Field(Primitive.TInt64, "sameField")
     , Field(Primitive.TInt64, "sameEverywhereField")
   )))
 
-  final val if3 = ILAst.Interface(if3Id, struct(List(
+  final val if3 = TypeDef.Interface(if3Id, struct(List(
     Field(Primitive.TInt32, "if1Field_overriden")
     , Field(Primitive.TInt64, "if3Field")
     , Field(Primitive.TInt64, "sameEverywhereField")
   ), List(if1Id)))
 
 
-  final val dto1 = ILAst.DTO(
+  final val dto1 = TypeDef.DTO(
     dto1Id
     , Structure.interfaces(List(if2Id, if3Id))
   )

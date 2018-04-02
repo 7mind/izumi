@@ -1,5 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.model.common
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
-case class ExtendedField(field: ILAst.Field, definedBy: TypeId)
+case class ExtendedField(field: typed.Field, definedBy: TypeId)

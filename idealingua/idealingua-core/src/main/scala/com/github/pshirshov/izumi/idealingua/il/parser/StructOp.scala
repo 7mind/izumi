@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.parsing.ILAstParsed.Field
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ILAstParsed.Field
 
 sealed trait StructOp
 

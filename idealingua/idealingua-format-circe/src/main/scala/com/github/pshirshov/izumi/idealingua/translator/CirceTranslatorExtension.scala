@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.{Adt, Enumeration, Identifier, Interface}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.{CogenProduct, ScalaTranslatorExtension}

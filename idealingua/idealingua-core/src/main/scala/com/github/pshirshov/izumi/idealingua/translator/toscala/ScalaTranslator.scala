@@ -3,10 +3,10 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{TypeDef, Service}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
@@ -66,7 +66,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     ctx.modules.toSource(IndefiniteId(definition.id), ctx.modules.toModuleId(definition.id), renderService(definition))
   }
 
-  protected def translateDef(definition: ILAst): Seq[Module] = {
+  protected def translateDef(definition: TypeDef): Seq[Module] = {
     val defns = definition match {
       case i: Enumeration =>
         renderEnumeration(i)

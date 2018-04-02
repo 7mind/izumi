@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId, IdentifierId}
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.il.structures.Struct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, PlainScalaStruct}
 
@@ -53,7 +53,7 @@ class ScalaTranslationTools(ctx: STContext) {
 
       case a: AliasId =>
         ctx.typespace(a) match {
-          case alias: ILAst.Alias =>
+          case alias: TypeDef.Alias =>
             canBeAnyValField(alias.target)
 
           case v =>
