@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.togolang
 
 import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, Generic, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.ILAst
-import com.github.pshirshov.izumi.idealingua.model.il.structures.Struct
+import com.github.pshirshov.izumi.idealingua.model.il.structures.{PlainStruct, Struct}
 
 object GoLangTypeConverter {
   def toGoLang(id: TypeId): GoLangType = id match {
@@ -65,7 +65,13 @@ object GoLangTypeConverter {
     }
   }
 
-  implicit class ExtendedFieldSeqOps(struct: Struct) {
+  implicit class StructOps(struct: Struct) {
+    def toGoLangFields: GoLangFields = {
+      struct.all.toGoLang
+    }
+  }
+
+  implicit class PlainStructOps(struct: PlainStruct) {
     def toGoLangFields: GoLangFields = {
       struct.all.toGoLang
     }
