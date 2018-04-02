@@ -7,7 +7,41 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
 
 
+trait Resolver {
+  def apply(id: ServiceId): Service
+
+  def apply(id: TypeId): TypeDef
+
+  protected[typespace] def get(id: InterfaceId): Interface = {
+    apply(id: TypeId).asInstanceOf[Interface]
+  }
+
+  protected[typespace] def get(id: StructureId): WithStructure = {
+    apply(id: TypeId).asInstanceOf[WithStructure]
+  }
+
+
+  protected[typespace] def get(id: IdentifierId): Identifier = {
+    apply(id: TypeId).asInstanceOf[Identifier]
+  }
+
+  protected[typespace] def get(id: DTOId): DTO = {
+    apply(id: TypeId).asInstanceOf[DTO]
+  }
+
+}
+
+trait Inheritance {
+  def parentsStructural(id: TypeId): List[InterfaceId]
+
+  protected[typespace] def parentsInherited(id: TypeId): List[InterfaceId]
+
+  protected[typespace] def implementingDtos(id: InterfaceId): List[DTOId]
+}
+
 trait Typespace {
+  def inheritance: Inheritance
+
   def domain: DomainDefinition
 
   def apply(id: TypeId): TypeDef
@@ -15,10 +49,6 @@ trait Typespace {
   def apply(id: ServiceId): Service
 
   def implementors(id: InterfaceId): List[ConverterDef]
-
-  def parentsInherited(id: TypeId): List[InterfaceId]
-
-  def parentsStructural(id: TypeId): List[InterfaceId]
 
   def enumFields(id: StructureId): Struct
 
