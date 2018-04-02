@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Interfaces
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
@@ -17,7 +16,7 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val explodedSignature: List[Term.Param] = fields.all.toParams
 
   val constructorSignature: List[Term.Param] = {
-    val params = ctx.typespace.requiredInterfaces(fields.fields)
+    val params = ctx.typespace.structure.requiredInterfaces(fields.fields)
       .map {
         d =>
           (ctx.tools.idToParaName(d), ctx.conv.toScala(d).typeFull)

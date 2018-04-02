@@ -14,7 +14,7 @@ object IfaceNarrowersExtension extends ScalaTranslatorExtension {
 
     val narrowers = allStructuralParents.distinct.map {
       p =>
-        val ifields = ctx.typespace.enumFields(p)
+        val ifields = ctx.typespace.structure.enumFields(p)
 
         val constructorCode = ifields.all.map {
           f =>

@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId,
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.DTO
 
-class InheritanceImpl(ts: Resolver, types: TypeCollection) extends Inheritance {
+protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeCollection) extends InheritanceQueries {
   def allParents(id: TypeId): List[InterfaceId] = {
     parentsInherited(id) ++ parentsConcepts(id)
   }

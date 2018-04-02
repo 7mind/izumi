@@ -23,12 +23,12 @@ object AnyvalExtension extends ScalaTranslatorExtension {
   }
 
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
-    val struct = ctx.typespace.structure(interface)
+    val struct = ctx.typespace.structure.structure(interface)
     product.copy(defn = product.defn.prependBase(withAny(ctx, struct)))
   }
 
   override def handleIdentifier(ctx: STContext, id: TypeDef.Identifier, product: IdentifierProudct): IdentifierProudct = {
-    val struct = ctx.typespace.structure(id.id)
+    val struct = ctx.typespace.structure.structure(id.id)
     product.copy(defn = product.defn.prependBase(withAnyval(ctx, struct)))
   }
 
@@ -78,10 +78,10 @@ object AnyvalExtension extends ScalaTranslatorExtension {
         }
 
       case t: StructureId =>
-        val struct = ctx.typespace.enumFields(t)
+        val struct = ctx.typespace.structure.enumFields(t)
         struct.isComposite || (struct.isScalar && !struct.all.exists(v => canBeAnyValField(ctx, v.field.typeId)))
       case t: IdentifierId =>
-        val struct = ctx.typespace.structure(t)
+        val struct = ctx.typespace.structure.structure(t)
         struct.all.size > 1
 
     }

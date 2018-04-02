@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
 
 
-trait Resolver {
+trait TypeResolver {
   def apply(id: ServiceId): Service
 
   def apply(id: TypeId): TypeDef
@@ -31,7 +31,7 @@ trait Resolver {
 
 }
 
-trait Inheritance {
+trait InheritanceQueries {
   def allParents(id: TypeId): List[InterfaceId]
 
   protected[typespace] def parentsInherited(id: TypeId): List[InterfaceId]
@@ -41,16 +41,8 @@ trait Inheritance {
   protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId]
 }
 
-trait Typespace {
-  def inheritance: Inheritance
-
-  def domain: DomainDefinition
-
-  def apply(id: TypeId): TypeDef
-
-  def apply(id: ServiceId): Service
-
-  def implementors(id: InterfaceId): List[ConverterDef]
+trait StructuralQueries {
+  def conversions(id: InterfaceId): List[ConverterDef]
 
   def enumFields(id: StructureId): Struct
 
@@ -60,14 +52,26 @@ trait Typespace {
 
   def structure(defn: WithStructure): Struct
 
-  //def toDtoName(id: TypeId): String
-  def implId(id: InterfaceId): DTOId
-
   def sameSignature(tid: StructureId): List[DTO]
 
-  def compatibleImplementors(id: InterfaceId): List[ConverterDef]
-
   def requiredInterfaces(s: Struct): List[InterfaceId]
+
+  protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef]
+}
+
+trait Typespace {
+  def inheritance: InheritanceQueries
+  def structure: StructuralQueries
+
+  def domain: DomainDefinition
+
+  def apply(id: TypeId): TypeDef
+
+  def apply(id: ServiceId): Service
+
+  def implementors(id: InterfaceId): List[ConverterDef]
+
+  def implId(id: InterfaceId): DTOId
 
   protected[typespace] def types: TypeCollection
 

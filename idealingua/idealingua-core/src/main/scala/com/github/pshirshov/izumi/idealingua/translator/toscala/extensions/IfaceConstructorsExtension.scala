@@ -12,7 +12,7 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
 
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
-    val constructors = ctx.typespace.compatibleImplementors(interface.id).map {
+    val constructors = ctx.typespace.structure.conversions(interface.id).map {
       t =>
         val instanceFields = t.parentInstanceFields
         val childMixinFields = t.mixinsInstancesFields

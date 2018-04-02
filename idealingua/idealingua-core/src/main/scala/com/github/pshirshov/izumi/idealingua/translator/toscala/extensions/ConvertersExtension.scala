@@ -20,13 +20,13 @@ object ConvertersExtension extends ScalaTranslatorExtension {
 
   override def handleInterface(ctx: STContext, interface: TypeDef.Interface, product: InterfaceProduct): InterfaceProduct = {
     import ctx.conv._
-    val converters = mkConverters(ctx, ctx.typespace.structure(interface).toScala)
+    val converters = mkConverters(ctx, ctx.typespace.structure.structure(interface).toScala)
     product.copy(tools = product.tools.extendDefinition(converters))
   }
 
 
   private def mkConverters(ctx: STContext, struct: ScalaStruct): List[Defn.Def] = {
-    ctx.typespace.sameSignature(struct.id).map {
+    ctx.typespace.structure.sameSignature(struct.id).map {
       same =>
         val code = struct.all.map {
           f =>
