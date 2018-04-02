@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{IdentifierId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, StructureId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
@@ -60,6 +61,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
           val localFields = istruct.localOrAmbigious
             .map(_.field)
             .toSet
+          val all = istruct.all.map(_.field).toSet
 
           val filteredParentFields = parentInstanceFields.diff(localFields)
 
@@ -68,10 +70,10 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
             .map(_.definedBy)
             .collect({ case i: InterfaceId => i })
             .flatMap(mi => structure(resolver.get(mi)).all)
+            .filter(f => all.contains(f.field)) // to drop removed fields
             .filterNot(f => parentInstanceFields.contains(f.field))
             .filterNot(f => localFields.contains(f.field))
             .toSet
-
 
           // TODO: pass definition instead of id
           ConverterDef(
@@ -86,22 +88,15 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   protected def extractFields(defn: TypeDef): List[ExtendedField] = {
     val fields = defn match {
       case t: Interface =>
-        val superFields = compositeFields(t.struct.superclasses.interfaces)
-        val embeddedFields = t.struct.superclasses.concepts.flatMap(id => extractFields(resolver.apply(id)))
-        val thisFields = toExtendedFields(t.struct.fields, t.id)
-
-        superFields.map(_.copy(definedBy = t.id)) ++ // in fact super field is defined by this
-          embeddedFields ++
-          thisFields
+        val struct = t.struct
+        val superFields = compositeFields(struct.superclasses.interfaces)
+          .map(_.copy(definedBy = t.id)) // for interfaces super field is ok to consider as defined by this interface
+        filterFields(t.id, superFields, struct)
 
       case t: DTO =>
-        val superFields = compositeFields(t.struct.superclasses.interfaces)
-        val embeddedFields = t.struct.superclasses.concepts.flatMap(id => extractFields(resolver.apply(id)))
-        val thisFields = toExtendedFields(t.struct.fields, t.id)
-
-        superFields ++
-          embeddedFields ++
-          thisFields
+        val struct = t.struct
+        val superFields = compositeFields(struct.superclasses.interfaces)
+        filterFields(t.id, superFields, struct)
 
       case t: Adt =>
         t.alternatives.map(resolver.apply).flatMap(extractFields)
@@ -119,6 +114,42 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     fields.distinct
   }
 
+
+  private def filterFields(id: StructureId, superFields: List[ExtendedField], struct: Structure): List[ExtendedField] = {
+    val embeddedFields = struct.superclasses.concepts.map(resolver.apply).flatMap(extractFields)
+    val thisFields = toExtendedFields(struct.fields, id)
+
+    val removable = embeddedFields ++ thisFields
+
+    val removedFields = extractRemoved(resolver.apply(id)).toSet
+
+    val badRemovals = superFields.map(_.field).toSet.intersect(removedFields)
+    if (badRemovals.nonEmpty) {
+      throw new IDLException(s"Cannot remove inherited fields from $id: $badRemovals")
+    }
+
+    superFields ++ removable.filterNot(f => removedFields.contains(f.field))
+  }
+
+  protected def extractRemoved(defn: TypeDef): List[Field] = {
+    val fields = defn match {
+      case t: Interface =>
+        t.struct.removedFields ++ t.struct.superclasses.removedConcepts.map(resolver.apply).flatMap(extractRemoved)
+
+      case t: DTO =>
+        t.struct.removedFields ++ t.struct.superclasses.removedConcepts.map(resolver.apply).flatMap(extractRemoved)
+
+      case _ =>
+        List()
+    }
+
+    fields.distinct
+  }
+
+  protected def compositeFields(composite: Interfaces): List[ExtendedField] = {
+    composite.flatMap(i => extractFields(types.index(i)))
+  }
+
   protected def toExtendedFields(fields: Tuple, id: TypeId): List[ExtendedField] = {
     fields.map(f => ExtendedField(f, id: TypeId))
   }
@@ -126,11 +157,6 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   protected def toExtendedPrimitiveFields(fields: PrimitiveTuple, id: TypeId): List[ExtendedField] = {
     fields.map(f => ExtendedField(Field(f.typeId, f.name), id: TypeId))
   }
-
-  protected def compositeFields(composite: Interfaces): List[ExtendedField] = {
-    composite.flatMap(i => extractFields(types.index(i)))
-  }
-
 
   protected def signature(defn: WithStructure): List[Field] = {
     structure(defn).all.map(_.field).sortBy(_.name)

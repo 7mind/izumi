@@ -18,6 +18,7 @@ sealed trait StructureId extends TypeId
 
 sealed trait ScalarId extends TypeId {
   this: TypeId =>
+  override def toString: TypeName = s"$name"
 }
 
 sealed trait TimeTypeId {

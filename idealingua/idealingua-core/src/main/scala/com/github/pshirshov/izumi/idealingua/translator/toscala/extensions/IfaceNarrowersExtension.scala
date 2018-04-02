@@ -9,26 +9,30 @@ import scala.meta._
 object IfaceNarrowersExtension extends ScalaTranslatorExtension {
 
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
+    val thisStructure = ctx.typespace.structure.structure(interface)
+
     // we don't add explicit parents here because their converters are available
     val allStructuralParents = List(interface.id) ++ interface.struct.superclasses.concepts
 
-    val narrowers = allStructuralParents.distinct.map {
-      p =>
-        val ifields = ctx.typespace.structure.structure(p)
+    val narrowers = allStructuralParents
+      .distinct
+      .map(id => id -> ctx.typespace.structure.structure(id))
+      .filter(kv => kv._2.all.map(_.field).diff(thisStructure.all.map(_.field)).isEmpty)
+      .map {
+        case (id, ifields) =>
+          val constructorCode = ifields.all.map {
+            f =>
+              q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
+          }
 
-        val constructorCode = ifields.all.map {
-          f =>
-            q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
-        }
-
-        val dtoId = ctx.typespace.implId(p)
-        val tt = ctx.conv.toScala(dtoId)
-        val parentType = ctx.conv.toScala(p)
-        q"""def ${Term.Name("as" + p.name.capitalize)}(): ${parentType.typeFull} = {
+          val dtoId = ctx.typespace.implId(id)
+          val tt = ctx.conv.toScala(dtoId)
+          val parentType = ctx.conv.toScala(id)
+          q"""def ${Term.Name("as" + id.name.capitalize)}(): ${parentType.typeFull} = {
              ${tt.termFull}(..$constructorCode)
             }
           """
-    }
+      }
 
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
