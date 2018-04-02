@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId,
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
-import com.github.pshirshov.izumi.idealingua.model.il.structures.{PlainStruct, Struct}
+import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{PlainScalaStruct, ScalaStruct}

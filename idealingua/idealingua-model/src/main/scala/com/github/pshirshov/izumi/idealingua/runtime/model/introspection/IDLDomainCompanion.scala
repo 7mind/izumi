@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.model.introspection
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, DomainId}
-import com.github.pshirshov.izumi.idealingua.model.il.serialization.ILSchemaSerializerJson4sImpl
+import com.github.pshirshov.izumi.idealingua.tools.serialization.ILSchemaSerializer
 
 trait IDLDomainCompanion {
   def id: DomainId
@@ -18,5 +18,5 @@ trait IDLDomainCompanion {
   protected def referencedDomains: Map[DomainId, DomainDefinition]
 
   private lazy val cachedSchema: DomainDefinition = schemaSerializer.parseSchema(serializedSchema).copy(referenced = referencedDomains)
-  protected val schemaSerializer: ILSchemaSerializerJson4sImpl.type = ILSchemaSerializerJson4sImpl
+  protected val schemaSerializer: ILSchemaSerializer
 }

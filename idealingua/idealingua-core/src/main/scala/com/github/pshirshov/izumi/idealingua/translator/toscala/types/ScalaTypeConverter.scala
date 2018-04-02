@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.structures.{PlainStruct, Struct}
+import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 
 import scala.language.higherKinds
 import scala.meta._

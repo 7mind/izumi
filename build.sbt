@@ -228,7 +228,7 @@ lazy val logstageRouting = inLogStage.as.module
   )
 
 lazy val idealinguaModel = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.json4s_native))
+  .settings()
 
 lazy val fastparseShaded = inShade.as.module
   .settings(libraryDependencies ++= Seq(R.fastparse))

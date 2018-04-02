@@ -1,15 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.model.il
+package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.Typespace.Dependency
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
-import com.github.pshirshov.izumi.idealingua.model.il.structures.{ConverterDef, PlainStruct, Struct}
+import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
 
 
 class Typespace(val domain: DomainDefinition) {
@@ -251,7 +249,8 @@ class Typespace(val domain: DomainDefinition) {
   }
 
 
-  protected def extractDependencies(definition: TypeDef): Seq[Dependency] = {
+  protected def extractDependencies(definition: TypeDef): Seq[Typespace.Dependency] = {
+    import Typespace._
     definition match {
       case _: Enumeration =>
         Seq.empty

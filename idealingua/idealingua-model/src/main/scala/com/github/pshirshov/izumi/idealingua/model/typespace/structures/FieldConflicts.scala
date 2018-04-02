@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.il.structures
+package com.github.pshirshov.izumi.idealingua.model.typespace.structures
 
 import com.github.pshirshov.izumi.idealingua.model.common.ExtendedField
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Field

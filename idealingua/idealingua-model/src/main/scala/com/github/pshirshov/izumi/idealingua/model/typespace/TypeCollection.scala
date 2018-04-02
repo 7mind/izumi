@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.model.il
+package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{DeprecatedRPCMethod, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
 class TypeCollection(domain: DomainDefinition) {
   val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)

@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Interfaces
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
 import scala.meta._
@@ -11,7 +12,7 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
 
   import ScalaField._
 
-  val composite = fields.fields.superclasses.interfaces
+  val composite: Interfaces = fields.fields.superclasses.interfaces
 
   val explodedSignature: List[Term.Param] = fields.all.toParams
 

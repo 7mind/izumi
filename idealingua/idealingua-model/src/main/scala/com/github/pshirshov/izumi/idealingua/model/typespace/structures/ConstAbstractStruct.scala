@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.il.structures
+package com.github.pshirshov.izumi.idealingua.model.typespace.structures
 
 trait ConstAbstractStruct[F] extends AbstractStruct[F]{
   override lazy val inherited: List[F] = super.inherited

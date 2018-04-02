@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.il.Typespace
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.{FinalTranslator, TranslatorExtension}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 
