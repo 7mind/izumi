@@ -252,7 +252,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val ifDecls = (rt.generated +: i.struct.superclasses.interfaces.map(conv.toScala)).map(_.init())
 
     val t = conv.toScala(i.id)
-    val eid = DTOId(i.id, typespace.toDtoName(i.id))
+    val eid = typespace.implId(i.id)
 
     val implStructure = ctx.tools.mkStructure(eid)
     val impl = defns(implStructure).render

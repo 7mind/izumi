@@ -6,13 +6,20 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.DTO
 
 class InheritanceImpl(ts: Resolver, types: TypeCollection) extends Inheritance {
-  def parentsStructural(id: TypeId): List[InterfaceId] = {
+  def allParents(id: TypeId): List[InterfaceId] = {
     parentsInherited(id) ++ parentsConcepts(id)
   }
 
   protected[typespace] def implementingDtos(id: InterfaceId): List[DTOId] = {
     types.index.collect {
       case (tid, d: DTO) if parentsInherited(tid).contains(id) =>
+        d.id
+    }.toList
+  }
+
+  protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId] = {
+    types.index.collect {
+      case (tid, d: DTO) if allParents(tid).contains(id) =>
         d.id
     }.toList
   }
@@ -48,7 +55,7 @@ class InheritanceImpl(ts: Resolver, types: TypeCollection) extends Inheritance {
       case i: StructureId =>
         val superclasses = ts.get(i).struct.superclasses
         val removed = superclasses.removedConcepts.toSet
-        superclasses.concepts.flatMap(parentsStructural).filterNot(removed.contains)
+        superclasses.concepts.flatMap(allParents).filterNot(removed.contains)
 
       case _: IdentifierId =>
         List()

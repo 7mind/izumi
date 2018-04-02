@@ -21,9 +21,9 @@ object IfaceNarrowersExtension extends ScalaTranslatorExtension {
             q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
         }
 
-        import ctx.conv._
+        val dtoId = ctx.typespace.implId(p)
+        val tt = ctx.conv.toScala(dtoId)
         val parentType = ctx.conv.toScala(p)
-        val tt = parentType.within(ctx.typespace.toDtoName(p))
         q"""def ${Term.Name("as" + p.name.capitalize)}(): ${parentType.typeFull} = {
              ${tt.termFull}(..$constructorCode)
             }

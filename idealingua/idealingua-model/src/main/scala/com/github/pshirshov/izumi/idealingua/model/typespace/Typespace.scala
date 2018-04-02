@@ -32,11 +32,13 @@ trait Resolver {
 }
 
 trait Inheritance {
-  def parentsStructural(id: TypeId): List[InterfaceId]
+  def allParents(id: TypeId): List[InterfaceId]
 
   protected[typespace] def parentsInherited(id: TypeId): List[InterfaceId]
 
   protected[typespace] def implementingDtos(id: InterfaceId): List[DTOId]
+
+  protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId]
 }
 
 trait Typespace {
@@ -58,7 +60,8 @@ trait Typespace {
 
   def structure(defn: WithStructure): Struct
 
-  def toDtoName(id: TypeId): String
+  //def toDtoName(id: TypeId): String
+  def implId(id: InterfaceId): DTOId
 
   def sameSignature(tid: StructureId): List[DTO]
 

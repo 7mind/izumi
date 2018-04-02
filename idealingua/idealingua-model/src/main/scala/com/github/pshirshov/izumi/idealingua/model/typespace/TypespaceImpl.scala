@@ -9,7 +9,6 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
 
 
-
 class TypespaceImpl(val domain: DomainDefinition) extends Typespace with Resolver {
   protected[typespace] val types: TypeCollection = new TypeCollection(domain)
 
@@ -18,6 +17,10 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with Resolve
 
 
   override def inheritance: Inheritance = new InheritanceImpl(this, types)
+
+  override def implId(id: InterfaceId): DTOId = DTOId(id, types.toDtoName(id))
+
+  def toDtoName(id: TypeId): String = types.toDtoName(id)
 
   def apply(id: ServiceId): Service = {
     types.services(id)
@@ -35,17 +38,15 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with Resolve
     }
   }
 
-  def toDtoName(id: TypeId): String = types.toDtoName(id)
-
 
   def implementors(id: InterfaceId): List[ConverterDef] = {
     val implementors = inheritance.implementingDtos(id)
-    compatibleImplementors(implementors, id)
+    converters(implementors, id)
   }
 
   def compatibleImplementors(id: InterfaceId): List[ConverterDef] = {
-    val implementors = compatibleDtos(id)
-    compatibleImplementors(implementors, id)
+    val implementors = inheritance.compatibleDtos(id)
+    converters(implementors, id)
   }
 
 
@@ -121,15 +122,6 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with Resolve
       .filterNot(id => inheritance.parentsInherited(id.id).contains(tid))
       .collect({ case t: DTO => t })
       .toList
-  }
-
-
-
-  protected def compatibleDtos(id: InterfaceId): List[DTOId] = {
-    index.collect {
-      case (tid, d: DTO) if inheritance.parentsStructural(tid).contains(id) =>
-        d.id
-    }.toList
   }
 
 
@@ -211,7 +203,7 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with Resolve
     }
   }
 
-  protected def compatibleImplementors(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
+  protected def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
     val struct = structure(get(id))
     val parentInstanceFields = struct.unambigious.map(_.field).toSet
 
