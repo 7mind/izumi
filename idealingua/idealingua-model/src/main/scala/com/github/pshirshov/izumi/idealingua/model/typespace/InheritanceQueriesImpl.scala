@@ -10,7 +10,7 @@ protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeC
     parentsInherited(id) ++ parentsConcepts(id)
   }
 
-  protected[typespace] def implementingDtos(id: InterfaceId): List[DTOId] = {
+  def implementingDtos(id: InterfaceId): List[DTOId] = {
     types.index.collect {
       case (tid, d: DTO) if parentsInherited(tid).contains(id) =>
         d.id

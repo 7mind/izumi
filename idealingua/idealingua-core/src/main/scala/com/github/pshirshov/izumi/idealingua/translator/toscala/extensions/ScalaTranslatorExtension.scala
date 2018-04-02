@@ -9,17 +9,40 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaStruc
 
 
 trait ScalaTranslatorExtension extends TranslatorExtension {
-
+  import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
   import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct._
 
-  def handleModules(ctx: STContext, acc: Seq[Module]): Seq[Module] = acc
+  def handleModules(ctx: STContext, acc: Seq[Module]): Seq[Module] = {
+    discard(ctx)
+    acc
+  }
 
-  def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = product
-  def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = product
-  def handleIdentifier(ctx: STContext, id: Identifier, product: IdentifierProudct): IdentifierProudct = product
-  def handleService(ctx: STContext, service: Service, product: ServiceProudct): ServiceProudct = product
-  def handleEnum(ctx: STContext, enum: Enumeration, product: EnumProduct): EnumProduct = product
-  def handleAdt(ctx: STContext, adt: Adt, product: AdtProduct): AdtProduct = product
+  def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
+    discard(ctx, interface)
+    product
+  }
+  def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = {
+    discard(ctx, struct)
+    product
+  }
+  def handleIdentifier(ctx: STContext, id: Identifier, product: IdentifierProudct): IdentifierProudct = {
+    discard(ctx, id)
+    product
+  }
+  def handleService(ctx: STContext, service: Service, product: ServiceProudct): ServiceProudct = {
+    discard(ctx, service)
+    product
+  }
+  def handleEnum(ctx: STContext, enum: Enumeration, product: EnumProduct): EnumProduct = {
+    discard(ctx, enum)
+    product
+  }
+  def handleAdt(ctx: STContext, adt: Adt, product: AdtProduct): AdtProduct = {
+    discard(ctx, adt)
+    product
+  }
+
+
 }
 
 

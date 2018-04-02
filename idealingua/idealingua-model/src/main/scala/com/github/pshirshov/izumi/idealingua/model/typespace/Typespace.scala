@@ -44,6 +44,8 @@ trait InheritanceQueries {
 trait StructuralQueries {
   def conversions(id: InterfaceId): List[ConverterDef]
 
+  def structuralParents(id: Interface): List[Struct]
+
   def structure(id: StructureId): Struct
 
   def structure(defn: IdentifierId): PlainStruct

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.products
 
-import scala.meta.{Defn, Term}
+import scala.meta.Defn
 
 
 trait RenderableCogenProduct {

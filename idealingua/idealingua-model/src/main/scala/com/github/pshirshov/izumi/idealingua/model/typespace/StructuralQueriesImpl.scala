@@ -21,7 +21,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   }
 
   def structure(defn: WithStructure): Struct = {
-    val parts = resolver.apply(defn.id) match {
+    val parts = resolver.get(defn.id) match {
       case i: Interface =>
         i.struct.superclasses
       case i: DTO =>
@@ -34,6 +34,19 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   def conversions(id: InterfaceId): List[ConverterDef] = {
     val implementors = inheritance.compatibleDtos(id)
     converters(implementors, id)
+  }
+
+
+  override def structuralParents(interface: Interface): List[Struct] = {
+    val thisStructure = structure(interface)
+
+    // we don't add explicit parents here because their converters are available
+    val allStructuralParents = List(interface.id) ++ interface.struct.superclasses.concepts
+
+    allStructuralParents
+      .distinct
+      .map(structure)
+      .filter(_.all.map(_.field).diff(thisStructure.all.map(_.field)).isEmpty)
   }
 
   def sameSignature(tid: StructureId): List[DTO] = {
