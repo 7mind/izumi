@@ -19,28 +19,16 @@ class ILParserTest extends WordSpec {
       }
     }
 
-    "parse basic contstructs" in {
-      assertParses(parser.Separators.SepLineOpt, "// test")
-      assertParses(parser.Separators.SepLineOpt,
-        """// test
-          |/*test*/
-          | /* test/**/*/
-        """.stripMargin)
-
-      assertParses(parser.identifier, "x.y.z")
-      assertParses(parser.field, "a: map[str, str]")
-      assertParses(parser.field, "a: map[str, set[x#Y]]")
-      assertParses(parser.services.inlineStruct, "(a: A, b: B, * C)")
-      assertParses(parser.services.inlineStruct, "(a: str)")
-      assertParses(parser.services.inlineStruct, "(* A)")
-      assertParses(parser.services.adtOut, "( A \n | \n B )")
-      assertParses(parser.services.adtOut, "(A|B)")
-      assertParses(parser.services.adtOut, "(A | B)")
-      assertParses(parser.services.inlineStruct, "(\n  firstName: str \n , \n secondName: str\n  )")
-
+    "parse basic blocks" in {
       assertParses(parser.blocks.aliasBlock, "alias x = y")
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X Y Zz}")
       assertParses(parser.blocks.adtBlock, "adt MyAdt { X Y a.b.c#D }")
+      assertParses(parser.blocks.adtBlock,
+        """adt MyAdt {
+          | X
+          |Y
+          | a.b.c#D
+          |}""".stripMargin)
       assertParses(parser.blocks.mixinBlock, "mixin Mixin {}")
       assertParses(parser.blocks.dtoBlock, "data Data {}")
       assertParses(parser.blocks.dtoBlock,
@@ -54,8 +42,37 @@ class ILParserTest extends WordSpec {
           |}""".stripMargin)
       assertParses(parser.blocks.idBlock, "id Id {}")
       assertParses(parser.blocks.serviceBlock, "service Service {}")
+    }
 
+    "parse complex comments" in {
+      assertParses(parser.Separators.opt.SepLineOpt, "// test")
+      assertParses(parser.Separators.opt.SepLineOpt,
+        """// test
+          |/*test*/
+          | /* test/**/*/
+        """.stripMargin)
+    }
+
+    "parse service defintions" in {
+      assertParses(parser.services.inlineStruct, "(a: A, b: B, * C)")
+      assertParses(parser.services.inlineStruct, "(a: str)")
+      assertParses(parser.services.inlineStruct, "(* A)")
+      assertParses(parser.services.adtOut, "( A \n | \n B )")
+      assertParses(parser.services.adtOut, "(A|B)")
+      assertParses(parser.services.adtOut, "(A | B)")
+      assertParses(parser.services.inlineStruct, "(\n  firstName: str \n , \n secondName: str\n)")
+    }
+
+    "parse identifiers" in {
+      assertParses(parser.identifier, "x.y.z")
       assertParses(parser.domains.domainId, "domain x.y.z")
+    }
+
+    "parse fields" in {
+      assertParses(parser.field, "a: str")
+      assertParses(parser.field, "a: domain#Type")
+      assertParses(parser.field, "a: map[str, str]")
+      assertParses(parser.field, "a: map[str, set[domain#Type]]")
     }
 
     "parse domain definition" in {

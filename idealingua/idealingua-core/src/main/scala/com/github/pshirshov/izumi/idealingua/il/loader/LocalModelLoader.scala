@@ -67,7 +67,7 @@ object LocalModelLoader {
 
     val failures = parsedValues.getOrElse(classOf[Parsed.Failure[Char, String]], Map.empty)
     if (failures.nonEmpty) {
-      throw new IDLException(s"Failed to parse definitions: ${formatFailures(failures)}")
+      throw new IDLException(s"Failed to parse definitions:\n${formatFailures(failures)}")
     }
 
     val success = parsedValues.getOrElse(classOf[Parsed.Success[T, Char, String]], Map.empty)
@@ -83,7 +83,7 @@ object LocalModelLoader {
   }
 
   def formatFailures[T](failures: Map[Path, Parsed[T, Char, String]]): String = {
-    failures.map(kv => s"${kv._1}: ${kv._2}").mkString("\n")
+    failures.map(kv => s" -> ${kv._1}: ${kv._2}").mkString("\n")
   }
 
   def parseModels(files: Map[Path, String]): Map[Path, ParsedModel] = {
