@@ -43,6 +43,7 @@ object IdealinguaPlugin extends AutoPlugin {
     , Keys.compilationTargets := Seq(
       Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Sources)
       , Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Artifact)
+      , Invokation(CompilerOptions(IDLLanguage.Go, Seq.empty), Mode.Artifact)
     )
 
     , sourceGenerators in Compile += Def.task {
