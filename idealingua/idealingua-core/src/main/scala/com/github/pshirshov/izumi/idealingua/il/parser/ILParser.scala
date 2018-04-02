@@ -28,14 +28,14 @@ class ILParser {
     final lazy val ShortComment = P("//" ~ CharsWhile(c => c != '\n' && c != '\r') ~ (sym.NLC | End))
   }
 
-  class sep(main: Parser[Unit]) {
+  object sep {
     private val ws = P(" " | "\t")(sourcecode.Name("WS"))
     private val wss = P(ws.rep)
 
     import comments._
 
     private val WsComment = wss ~ MultilineComment ~ wss
-    private val SepLineBase = P(main | (wss ~ ShortComment) | (WsComment ~ (main | End)))
+    private val SepLineBase = P(sym.NLC | (WsComment ~ (sym.NLC | End) | (wss ~ ShortComment)))
 
     final val line = P(End | SepLineBase.rep(1))
     final val inline = P(WsComment | wss)
@@ -43,8 +43,6 @@ class ILParser {
 
     final val sepAdt = P(ws | sym.NLC | "|")
   }
-
-  object sep extends sep(sym.NLC)
 
   import sep._
 
@@ -117,16 +115,13 @@ class ILParser {
         .map(ParsedStruct.apply)
     }
 
-    object SigSep extends sep(P(sym.NLC | ","))
 
     final val simpleStruct = {
       val sepInline = any
       val embed = P(("*" | "...") ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Mix)
       val plusField = field.map(StructOp.AddField)
-
       val anyPart = P(plusField | embed)
-
-      val sepInlineStruct = P(inline ~ SigSep.line ~ inline)
+      val sepInlineStruct = any ~ ",".? ~ any
 
       P((sepInline ~ anyPart ~ sepInline).rep(sep = sepInlineStruct))
         .map(ParsedStruct.apply).map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
@@ -151,7 +146,7 @@ class ILParser {
     final val inlineStruct = enclosed(defs.simpleStruct)
     final val adtOut = enclosed(defs.adt)
 
-    final val defmethodEx = P(
+    final val defMethod = P(
       kw.defm ~ inline ~
         ids.symbol ~ any ~
         inlineStruct ~ any ~
@@ -171,7 +166,7 @@ class ILParser {
 
     final val sigParam = P(inline ~ ids.identifier ~ inline)
     final val signature = P(sigParam.rep(sep = ","))
-    final val defmethod = P(kw.defm ~ inline ~ ids.symbol ~ "(" ~ inline ~ signature ~ inline ~ ")" ~ inline ~
+    final val defmethodDeprecated = P(kw.defm ~ inline ~ ids.symbol ~ "(" ~ inline ~ signature ~ inline ~ ")" ~ inline ~
       ":" ~ inline ~ "(" ~ inline ~ signature ~ inline ~ ")" ~ inline)
       .map {
         case (name, in, out) =>
@@ -179,7 +174,7 @@ class ILParser {
       }
 
     // other method kinds should be added here
-    final val method: Parser[DefMethod] = P(defmethod | defmethodEx)
+    final val method: Parser[DefMethod] = P(defMethod | defmethodDeprecated)
     final val methods: Parser[Seq[DefMethod]] = P(any ~ method.rep(sep = any) ~ any)
   }
 

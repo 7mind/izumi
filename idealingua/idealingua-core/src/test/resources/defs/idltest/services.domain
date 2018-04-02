@@ -38,9 +38,9 @@ service TestService {
   def greetAlgebraic3
    {
      firstName: str
-     , secondName: str
+     secondName: str
    } => {
      Success
      Error
-  }
+   }
 }
