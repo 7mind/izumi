@@ -141,14 +141,15 @@ class ILParser {
     final val enum = P(ids.symbol.rep(min = 1, sep = any))
   }
 
+  def enclosed[T](defparser: Parser[T]): Parser[T] = {
+    P(("{" ~ any ~ defparser ~ any ~ "}") | "(" ~ any ~ defparser ~ any ~ ")")
+  }
 
 
   object services {
     final val sigSep = P("=>" | "->") // ":"
-    final val open = P("(" | "{")
-    final val close = P(")" | "}")
-    final val inlineStruct = P(open ~ defs.simpleStruct ~ close)
-    final val adtOut = P(open ~ any ~ defs.adt ~ any ~ close)
+    final val inlineStruct = enclosed(defs.simpleStruct)
+    final val adtOut = enclosed(defs.adt)
 
     final val defmethodEx = P(
       kw.defm ~ inline ~
@@ -185,7 +186,7 @@ class ILParser {
 
   object blocks {
     def block[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
-      kw(keyword, ids.shortIdentifier ~ inline ~ "{" ~ any ~ defparser ~ any ~ "}").map {
+      kw(keyword, ids.shortIdentifier ~ inline ~ enclosed(defparser)).map {
         case (k, v) =>
           (k, v)
       }
