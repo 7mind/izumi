@@ -43,6 +43,8 @@ object D {
     val scala_library = R.scala_library % "test"
     val slf4j_simple = R.slf4j_simple % "test"
     val essentials = Seq(scalatest)
+
+    val circe = R.circe.map(_ % "test")
   }
 
 }

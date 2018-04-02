@@ -234,14 +234,17 @@ lazy val fastparseShaded = inShade.as.module
   .settings(libraryDependencies ++= Seq(R.fastparse))
   .settings(ShadingSettings)
 
+lazy val idealinguaTestDefs = inIdealingua.as.module
+
 lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler, T.scala_library))
-  .depends(idealinguaModel, fastparseShaded)
+  .depends(idealinguaModel, fastparseShaded, idealinguaTestDefs.testOnlyRef)
   .settings(ShadingSettings)
 
 lazy val idealinguaFormatCirce = inIdealingua.as.module
-  .depends(idealinguaCore)
-  .settings(libraryDependencies ++= R.circe)
+  .depends(idealinguaCore, idealinguaTestDefs.testOnlyRef)
+  .settings(libraryDependencies ++= T.circe)
+
 
 lazy val idealinguaRuntimeCats = inIdealingua.as.module
   .depends(idealinguaModel)
