@@ -11,13 +11,13 @@ mixin Metadata {
 }
 
 mixin PointLike {
-  + Metadata
-  * IntPair
+  & Metadata
+  + IntPair
 }
 
 data Point {
-  + Metadata
-  * IntPair
+  & Metadata
+  + IntPair
   ownfield: str
   name: str
 }

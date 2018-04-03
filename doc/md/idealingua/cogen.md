@@ -17,7 +17,7 @@ We support the following concepts:
 
 ## Inheritance
 
-1. We support two forms of inheritance: interface inheritance (`+` modifier) and structural mixins (`*` modifier)
+1. We support two forms of inheritance: interface inheritance (`&` modifier) and structural mixins (`*` modifier)
 2. The only difference between structural inheritance and interface inheritance is presence/absence of the base interface in the list of supertypes
 3. Both Data Classes and Mixins support both forms of inheritance 
 4. Services, ADTs, Type Aliases, Identifiers and Enumerations does not support inheritance

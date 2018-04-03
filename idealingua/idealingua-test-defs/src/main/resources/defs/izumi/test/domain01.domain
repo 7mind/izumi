@@ -21,7 +21,7 @@ mixin TestInterface {
 }
 
 data TestObject {
-  + TestInterface
+  & TestInterface
 }
 
 mixin AllTypes {
@@ -52,7 +52,7 @@ adt AnAdt {
 }
 
 data AllTypesObject {
-  + AllTypes
+  & AllTypes
 }
 
 mixin AnyValTest {
@@ -74,23 +74,23 @@ mixin PrivateMixinPrivateParent {
 }
 
 mixin PrivateMixin {
-  + PrivateMixinParent
-  * PrivateMixinPrivateParent
+  & PrivateMixinParent
+  + PrivateMixinPrivateParent
 
   embedded: bool
 }
 
 mixin ExtendedMixin {
-  * PrivateMixin
+  + PrivateMixin
   own: i08
 }
 
 data PrivateTestObject {
-  + ExtendedMixin
+  & ExtendedMixin
 }
 
 data AnotherTestObject {
-  * ExtendedMixin
+  + ExtendedMixin
 }
 
 
@@ -107,11 +107,11 @@ mixin RtestMixin2 {
 }
 
 data RTestObject1 {
- + RtestMixin2
+ & RtestMixin2
 }
 
 data RTestObject2 {
- + RtestMixin2
+ & RtestMixin2
 }
 
 service TestService {

@@ -67,8 +67,8 @@ class ILRenderer(domain: DomainDefinition) {
 
   def renderStruct(struct: Structure): String = {
     Seq(
-      renderComposite(struct.superclasses.interfaces, "+ ")
-      , renderComposite(struct.superclasses.concepts, "* ")
+      renderComposite(struct.superclasses.interfaces, "& ")
+      , renderComposite(struct.superclasses.concepts, "+ ")
       , renderComposite(struct.superclasses.removedConcepts, "- ")
       , renderAggregate(struct.fields, "")
       , renderAggregate(struct.removedFields, "- ")
@@ -132,7 +132,7 @@ class ILRenderer(domain: DomainDefinition) {
   }
   def render(signature: SimpleStructure): String = {
     Seq(
-      signature.concepts.map(render).map(t => s"* $t")
+      signature.concepts.map(render).map(t => s"+ $t")
       , signature.fields.map(render)
     ).flatten.mkString(", ")
   }

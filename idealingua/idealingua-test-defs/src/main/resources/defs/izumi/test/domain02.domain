@@ -21,7 +21,7 @@ mixin TestInterface2 {
 }
 
 mixin TestInterface3 {
-  + TestInterface1
+  & TestInterface1
 
   if1Field_overriden: i32
   if3Field: i64
@@ -29,8 +29,8 @@ mixin TestInterface3 {
 }
 
 data DTO1 {
-  + TestInterface2
-  + TestInterface3
+  & TestInterface2
+  & TestInterface3
 }
 
 

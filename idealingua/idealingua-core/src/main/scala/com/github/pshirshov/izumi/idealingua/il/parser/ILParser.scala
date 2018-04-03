@@ -99,8 +99,8 @@ class ILParser {
       val sepEntry = line
       val sepInline = inline
 
-      val plus = P(("+" ~ "++".?) ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Extend)
-      val embed = P(("*" | "...") ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Mix)
+      val plus = P(("&" ~ "&&".?) ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Extend)
+      val embed = P((("+" ~ "++".?) | "...") ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Mix)
       val minus = P(("-" ~ "--".?) ~/ sepInline ~ (field | ids.identifier)).map {
         case v: RawField =>
           StructOp.RemoveField(v)
@@ -118,7 +118,7 @@ class ILParser {
 
     final val simpleStruct = {
       val sepInline = any
-      val embed = P(("*" | "...") ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Mix)
+      val embed = P((("+" ~ "++".?) | "...") ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Mix)
       val plusField = field.map(StructOp.AddField)
       val anyPart = P(plusField | embed)
       val sepInlineStruct = any ~ ",".? ~ any

@@ -6,7 +6,7 @@
 
 Keyword     | Aliases                | Explanation                                 |
 ------------| ---------------------- | ------------------------------------------- |
-`domain `   | `package`, `namespace` | Namespace containing collection of entities |
+`domain`    | `package`, `namespace` | Namespace containing collection of entities |
 `import`    |                        | References a domain by id                   |
 `include`   |                        | Includes `*.model` file by name             |
 `alias`     | `type`, `using`        | Type alias                                  |
@@ -17,6 +17,14 @@ Keyword     | Aliases                | Explanation                              
 `id`        |                        | Identifier, named collection of scalars     |
 `service`   |                        | Service interface                           |
 `def`       | `fn`, `fun`            | Method                                      |
+
+## Inheritance operators
+
+Keyword     | Aliases                | Explanation                                          | Example                       |  
+------------| ---------------------- | ---------------------------------------------------- | ------------------------------|
+`+`         | `+++`, `...`           | Inherit structure (copy fields)                      | `+ Mixin`                     |
+`&`         | `&&&`                  | Inherit interface                                    | `& Mixin`                     | 
+`-`         | `---`                  | Remove structure (doesn't work for interfaces)       | `- Mixin`, `- field: str`     |
 
 ## Embedded data types
 

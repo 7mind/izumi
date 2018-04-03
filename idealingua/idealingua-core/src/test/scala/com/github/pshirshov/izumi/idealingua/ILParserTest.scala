@@ -33,9 +33,12 @@ class ILParserTest extends WordSpec {
       assertParses(parser.blocks.dtoBlock, "data Data {}")
       assertParses(parser.blocks.dtoBlock,
         """data Data {
-          |+ Add
-          |+++ Add
-          |* Embed
+          |& Add
+          |&&& Add
+          |+ Embed
+          |+++ Embed
+          |- Remove
+          |--- Remove
           |field: F
           |... Embed
           |another: F
@@ -57,9 +60,9 @@ class ILParserTest extends WordSpec {
     }
 
     "parse service defintions" in {
-      assertParses(parser.services.inlineStruct, "(a: A, b: B, * C)")
+      assertParses(parser.services.inlineStruct, "(a: A, b: B, + C)")
       assertParses(parser.services.inlineStruct, "(a: str)")
-      assertParses(parser.services.inlineStruct, "(* A)")
+      assertParses(parser.services.inlineStruct, "(+ A)")
       assertParses(parser.services.adtOut, "( A \n | \n B )")
       assertParses(parser.services.adtOut, "(A|B)")
       assertParses(parser.services.adtOut, "(A | B)")
