@@ -51,7 +51,6 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
 }
 
 
-
 object LocalModelLoader {
   val domainExt = ".domain"
   val modelExt = ".model"
@@ -74,10 +73,17 @@ object LocalModelLoader {
     }
 
     val success = parsedValues.getOrElse(classOf[Parsed.Success[T, Char, String]], Map.empty)
-    success.collect {
+    val pairs = success.toList.collect {
       case (path, Parsed.Success(r, _)) =>
         mapper(path, r) -> r
     }
+
+    val grouped = pairs.groupBy(_._1)
+    val duplicates = grouped.filter(_._2.size > 1)
+    if (duplicates.nonEmpty) {
+      throw new IDLException(s"Duplicate domain ids: $duplicates")
+    }
+    grouped.map(_._2.head)
   }
 
   def toPath(id: DomainId): Path = {
