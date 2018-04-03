@@ -1,0 +1,10 @@
+domain idltest.identifiers
+
+id CompanyId {
+  value: uid
+}
+
+id UserId {
+  value: uid
+  company: uid
+}

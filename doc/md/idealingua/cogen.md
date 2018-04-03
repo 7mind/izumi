@@ -188,31 +188,38 @@ object Gender {
 
 ## `id`: Identifier
 
-```idealingua
- id RecordId {
-   value: uid
- }
-```
+Notes:
+1. You can use only scalar builtin types for identifier fields 
+2. We provide both parser and sane `.toString` implementation
+3. `.toString` uses the following format: `Name#urlencoded(part1):urlencoded(part2):...`
+4. Fields are sorted by name before using in parser and `.toString`
 
-Note: implementation is unfinished, we don't provide parsers right now
+```idealingua
+id UserId {
+  value: uid
+  company: uid
+}
+```
 
 ### Scala output
 
 ```scala
-case class RecordId(value: java.util.UUID) extends AnyVal {
+case class UserId(value: java.util.UUID, company: java.util.UUID) {
   override def toString: String = {
-    val suffix = this.productIterator.map(part => IDLIdentifier.escape(part.toString)).mkString(":")
-    s"RecordId#$suffix"
+    import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+    val suffix = Seq(this.company, this.value).map(part => escape(part.toString)).mkString(":")
+    s"UserId#$suffix"
   }
 }
 
-object RecordId {
-  def parse(s: String): RecordId = {
+object UserId {
+  def parse(s: String): UserId = {
+    import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
     val withoutPrefix = s.substring(s.indexOf("#") + 1)
-    val parts = withoutPrefix.split(":").map(part => IDLIdentifier.unescape(part))
-    RecordId(IDLIdentifier.parsePart[UUID](parts(0), classOf[UUID]))
+    val parts = withoutPrefix.split(":").map(part => unescape(part))
+    UserId(parsePart[java.util.UUID](parts(0), classOf[java.util.UUID]), parsePart[java.util.UUID](parts(1), classOf[java.util.UUID]))
   }
-}      
+}
 ``` 
 
 ## `service`: Service

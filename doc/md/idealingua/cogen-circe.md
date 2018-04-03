@@ -208,37 +208,33 @@ Right(Right(AnotherPayload(hi)))
 
 Identifiers codec just invokes `.toString` and `.parse` to serialize/deserialize Identifiers.
 
-Identifier format:
-
-`Name#urlencoded(part1):urlencoded(part2):...`
-
 Please check [identifier codegen example](cogen.md#id-identifier) for additional details.
 
 Full example:
 
-```
-case class TestIdentifer(userId: String, context: String) {
+```scala
+case class CompanyId(value: java.util.UUID) {
   override def toString: String = {
     import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
-    val suffix = this.productIterator.map(part => escape(part.toString)).mkString(":")
-    s"TestIdentifer#$suffix"
+    val suffix = Seq(this.value).map(part => escape(part.toString)).mkString(":")
+    s"CompanyId#$suffix"
   }
 }
 
-trait TestIdentiferCirce {
+trait CompanyIdCirce {
   import _root_.io.circe.{ Encoder, Decoder }
-  implicit val encodeTestIdentifer: Encoder[TestIdentifer] = Encoder.encodeString.contramap(_.toString)
-  implicit val decodeTestIdentifer: Decoder[TestIdentifer] = Decoder.decodeString.map(TestIdentifer.parse)
+  implicit val encodeCompanyId: Encoder[CompanyId] = Encoder.encodeString.contramap(_.toString)
+  implicit val decodeCompanyId: Decoder[CompanyId] = Decoder.decodeString.map(CompanyId.parse)
 }
 
-object TestIdentifer extends TestIdentiferCirce {
-  def parse(s: String): TestIdentifer = {
+object CompanyId extends CompanyIdCirce {
+  def parse(s: String): CompanyId = {
     import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
     val withoutPrefix = s.substring(s.indexOf("#") + 1)
     val parts = withoutPrefix.split(":").map(part => unescape(part))
-    TestIdentifer(parsePart[String](parts(0), classOf[String]), parsePart[String](parts(1), classOf[String]))
+    CompanyId(parsePart[java.util.UUID](parts(0), classOf[java.util.UUID]))
   }
-  implicit class TestIdentiferExtensions(_value: TestIdentifer)
+  implicit class CompanyIdExtensions(_value: CompanyId)
 }
 ```
 
