@@ -105,18 +105,18 @@ object Polymorphic {
     implicit val encodePolymorphic: Encoder[Polymorphic] = Encoder.instance { c =>
     c match {
       case v: TestPayload =>
-        Map("TestPayload" -> v).asJson
+        Map("com.test#TestPayload" -> v).asJson
       case v: AnotherPayload =>
-        Map("RealPayload" -> v).asJson
+        Map("com.test#RealPayload" -> v).asJson
     }
   }
   implicit val decodePolymorphic: Decoder[Polymorphic] = Decoder.instance(c => {
     val fname = c.keys.flatMap(_.headOption).toSeq.head
     val value = c.downField(fname)
     fname match {
-      case "TestPayload" =>
+      case "com.test#TestPayload" =>
         value.as[TestPayload]
-      case "RealPayload" =>
+      case "com.test#RealPayload" =>
         value.as[AnotherPayload]
     }
   })

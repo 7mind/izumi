@@ -65,13 +65,13 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
 
     val enc = implementors.map {
       c =>
-        p"""case v: ${toScala(c).typeFull} => Map(${Lit.String(c.name)} -> v).asJson"""
+        p"""case v: ${toScala(c).typeFull} => Map(${Lit.String(str(c))} -> v).asJson"""
 
     }
 
     val dec = implementors.map {
       c =>
-        p"""case ${Lit.String(c.name)} => value.as[${toScala(c).typeFull}]"""
+        p"""case ${Lit.String(str(c))} => value.as[${toScala(c).typeFull}]"""
     }
 
     val boilerplate = CirceTrait(
@@ -98,6 +98,10 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
+
+  private def str(c: DTOId) = {
+    s"${c.pkg.mkString(".")}#${c.name}"
+  }
 
   private def withParseable(ctx: STContext, id: TypeId) = {
     val t = ctx.conv.toScala(id)
