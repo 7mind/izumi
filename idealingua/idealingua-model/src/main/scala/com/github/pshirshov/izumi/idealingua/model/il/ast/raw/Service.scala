@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
+import com.github.pshirshov.izumi.idealingua.model.common.AbstractTypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{InterfaceId, ServiceId}
 
 case class Service(id: ServiceId, methods: List[Service.DefMethod])
@@ -13,8 +14,9 @@ object Service {
     sealed trait Output
 
     object Output {
-      case class Usual(input: RawSimpleStructure) extends Output
+      case class Struct(input: RawSimpleStructure) extends Output
       case class Algebraic(alternatives: RawTypes) extends Output
+      case class Singular(typeId: AbstractTypeId) extends Output
     }
 
     case class Signature(input: RawSimpleStructure, output: Output)

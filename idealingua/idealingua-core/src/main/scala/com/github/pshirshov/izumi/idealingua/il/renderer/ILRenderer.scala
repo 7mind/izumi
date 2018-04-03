@@ -115,7 +115,7 @@ class ILRenderer(domain: DomainDefinition) {
   def render(tpe: DefMethod): String = {
     tpe match {
       case m: RPCMethod =>
-        s"def ${m.name}(${render(m.signature.input)}) => (${render(m.signature.output)})"
+        s"def ${m.name}(${render(m.signature.input)}) => ${render(m.signature.output)}"
 
       case d: DeprecatedRPCMethod =>
         s"def ${d.name}(${d.signature.input.map(render).mkString(", ")}): (${d.signature.output.map(render).mkString(", ")})"
@@ -124,10 +124,12 @@ class ILRenderer(domain: DomainDefinition) {
 
   def render(out: Service.DefMethod.Output): String = {
     out match {
-      case o: Service.DefMethod.Output.Usual =>
-        render(o.input)
+      case o: Service.DefMethod.Output.Struct =>
+        s"(${render(o.input)})"
       case o: Service.DefMethod.Output.Algebraic =>
-        o.alternatives.map(render).mkString(" | ")
+        s"(${o.alternatives.map(render).mkString(" | ")})"
+      case o: Service.DefMethod.Output.Singular =>
+        render(o.typeId)
     }
   }
   def render(signature: SimpleStructure): String = {

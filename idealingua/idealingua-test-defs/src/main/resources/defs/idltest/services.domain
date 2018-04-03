@@ -16,9 +16,14 @@ mixin Request {
 service TestService {
   def deprecated(Request): (Request)
 
-  def greetSimple(firstName: str, secondName: str) => (a: str)
+  // simple instance
+  def greetSingleTypeIdOutput(firstName: str, secondName: str) => str
 
-  def greetComplex
+  // implicitly created structure
+  def greetImplicitStructureOutput(firstName: str, secondName: str) => (a: str)
+
+  // implicitly created structure
+  def greetImplicitStructureMultiline
     (
       region: str,
       age: int8
@@ -29,13 +34,27 @@ service TestService {
         , bullshit: str
     )
 
-  def greetAlgebraic(firstName: str, secondName: str) => ( Success | Error )
-  def greetAlgebraic2(firstName: str, secondName: str) => (
+  // implicitly created structure
+  def greetImplicitStructureMultilineCurlyBraces
+    {
+      region: str,
+      age: int8
+    } => {
+        + Success
+        , bullshit: str
+    }
+
+  // ADT
+  def greetAlgebraicOutput(firstName: str, secondName: str) => ( Success | Error )
+
+  // ADT
+  def greetAlgebraicOutputMultiline(firstName: str, secondName: str) => (
      Success
    | Error
   )
 
-  def greetAlgebraic3
+  // ADT
+  def greetAlgebraicOutputMultilineCurlyBraces
    {
      firstName: str
      secondName: str

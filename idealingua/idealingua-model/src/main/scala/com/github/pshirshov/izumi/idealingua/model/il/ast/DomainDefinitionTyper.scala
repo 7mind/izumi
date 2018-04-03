@@ -155,11 +155,12 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
   protected def fixOut(output: raw.Service.DefMethod.Output): typed.Service.DefMethod.Output = {
     output match {
-      case o: raw.Service.DefMethod.Output.Usual =>
-        typed.Service.DefMethod.Output.Usual(fixStructure(o.input))
+      case o: raw.Service.DefMethod.Output.Struct =>
+        typed.Service.DefMethod.Output.Struct(fixStructure(o.input))
       case o: raw.Service.DefMethod.Output.Algebraic =>
         typed.Service.DefMethod.Output.Algebraic(fixIds(o.alternatives))
-
+      case o: raw.Service.DefMethod.Output.Singular =>
+        typed.Service.DefMethod.Output.Singular(fixId(o.typeId) : TypeId)
     }
   }
 

@@ -24,7 +24,7 @@ Keyword     | Aliases                | Explanation                              
 ------------| ---------------------- | ---------------------------------------------------- | ------------------------------|
 `+`         | `+++`, `...`           | Inherit structure (copy fields)                      | `+ Mixin`                     |
 `&`         | `&&&`                  | Inherit interface                                    | `& Mixin`                     | 
-`-`         | `---`                  | Remove structure (doesn't work for interfaces)       | `- Mixin`, `- field: str`     |
+`-`         | `---`                  | Drop structure (doesn't work for interfaces)         | `- Mixin`, `- field: str`     |
 
 ## Embedded data types
 
