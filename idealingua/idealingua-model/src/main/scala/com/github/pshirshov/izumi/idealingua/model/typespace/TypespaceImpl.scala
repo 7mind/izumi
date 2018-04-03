@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
 
-protected[typespace] class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeResolver {
+class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeResolver {
   protected[typespace] lazy val types: TypeCollection = new TypeCollection(domain)
   protected lazy val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new TypespaceImpl(d))
   protected lazy val index: Map[TypeId, TypeDef] = types.index

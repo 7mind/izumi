@@ -200,9 +200,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
     val fields = typespace.structure.structure(i).toScala
     val decls = fields.all.toParams
-
-    // TODO: contradictions
-
     val typeName = i.id.name
 
     val interp = Term.Interpolate(Term.Name("s"), List(Lit.String(typeName + "#"), Lit.String("")), List(Term.Name("suffix")))
@@ -242,8 +239,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
   protected def renderInterface(i: Interface): RenderableCogenProduct = {
     val fields = typespace.structure.structure(i).toScala
-
-    // TODO: contradictions
     val decls = fields.all.map {
       f =>
         Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
