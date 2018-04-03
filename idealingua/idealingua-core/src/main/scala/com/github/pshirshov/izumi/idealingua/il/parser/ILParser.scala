@@ -41,7 +41,8 @@ class ILParser {
     final val inline = P(WsComment | wss)
     final val any = P(End |(wss ~ (WsComment | SepLineBase).rep ~ wss))
 
-    final val sepAdt = P(ws | sym.NLC | "|")
+    final val sepAdt = P("|" | sym.NLC | ws).rep(min = 1)
+    final val sepEnum = P("|" | "," | sym.NLC | ws).rep(min = 1)
   }
 
   import sep._
@@ -131,10 +132,15 @@ class ILParser {
     final val aggregate = P((inline ~ field ~ inline)
       .rep(sep = line))
 
-    final val adt = P(ids.identifier.rep(min = 1, sep = sepAdt.rep(min = 1)))
-      .map(v => AlgebraicType(v.map(_.toTypeId).toList))
+    final val adtMember = P(ids.identifier ~ (inline ~"as" ~/ inline ~ ids.symbol).?).map {
+      case (tpe, alias) =>
+        RawAdtMember(tpe.toTypeId, alias)
+    }
 
-    final val enum = P(ids.symbol.rep(min = 1, sep = any))
+    final val adt = P(adtMember.rep(min = 1, sep = sepAdt))
+      .map(_.toList).map(AlgebraicType)
+
+    final val enum = P(ids.symbol.rep(min = 1, sep = sepEnum))
   }
 
   object structure {

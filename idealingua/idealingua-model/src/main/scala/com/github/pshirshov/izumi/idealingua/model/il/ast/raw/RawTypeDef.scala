@@ -21,9 +21,10 @@ object RawTypeDef {
 
   case class Identifier(id: IdentifierId, fields: RawTuple) extends RawTypeDef
 
-  case class Adt(id: AdtId, alternatives: RawTypes) extends RawTypeDef
+  case class Adt(id: AdtId, alternatives: List[RawAdtMember]) extends RawTypeDef
 
 }
+
 
 
 

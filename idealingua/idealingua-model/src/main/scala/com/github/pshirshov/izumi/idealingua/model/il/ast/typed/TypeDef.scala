@@ -8,13 +8,14 @@ sealed trait TypeDef {
   def id: TypeId
 }
 
+
 object TypeDef {
 
   case class Alias(id: AliasId, target: TypeId) extends TypeDef
 
   case class Enumeration(id: EnumId, members: List[String]) extends TypeDef
 
-  case class Adt(id: AdtId, alternatives: Types) extends TypeDef
+  case class Adt(id: AdtId, alternatives: List[AdtMember]) extends TypeDef
 
   case class Identifier(id: IdentifierId, fields: PrimitiveTuple) extends TypeDef
 

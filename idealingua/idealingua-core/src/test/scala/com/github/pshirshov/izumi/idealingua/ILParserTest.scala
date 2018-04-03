@@ -19,18 +19,40 @@ class ILParserTest extends WordSpec {
       }
     }
 
-    "parse basic blocks" in {
+    "parse imports" in {
+      assertParses(parser.domains.importBlock, "import a.b.c")
+      assertParses(parser.domains.importBlock, "import     a.b.c ")
+      assertParses(parser.domains.importBlock, "import a ")
+    }
+
+    "parse aliases" in {
       assertParses(parser.blocks.aliasBlock, "alias x = y")
+    }
+
+    "parse enums" in {
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X Y Zz}")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt { X Y a.b.c#D }")
-      assertParses(parser.blocks.adtBlock,
-        """adt MyAdt {
-          | X
-          |Y
-          | a.b.c#D
+      assertParses(parser.blocks.enumBlock, "enum MyEnum { X Y Z }")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum {  X  Y  Z  }")
+      assertParses(parser.blocks.enumBlock,
+        """enum MyEnum {
+          |X
+          | Y
+          |Z
           |}""".stripMargin)
+      assertParses(parser.blocks.enumBlock, "enum MyEnum {X,Y,Z}")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum {X|Y|Z}")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum { X | Y | Z }")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum { X , Y , Z }")
+    }
+
+    "parse empty blocks" in {
       assertParses(parser.blocks.mixinBlock, "mixin Mixin {}")
+      assertParses(parser.blocks.idBlock, "id Id {}")
+      assertParses(parser.blocks.serviceBlock, "service Service {}")
       assertParses(parser.blocks.dtoBlock, "data Data {}")
+    }
+
+    "parse dto blocks" in {
       assertParses(parser.blocks.dtoBlock,
         """data Data {
           |& Add
@@ -43,11 +65,6 @@ class ILParserTest extends WordSpec {
           |... Embed
           |another: F
           |}""".stripMargin)
-      assertParses(parser.blocks.idBlock, "id Id {}")
-      assertParses(parser.blocks.serviceBlock, "service Service {}")
-      assertParses(parser.domains.importBlock, "import a.b.c")
-      assertParses(parser.domains.importBlock, "import     a.b.c ")
-      assertParses(parser.domains.importBlock, "import a ")
     }
 
     "parse complex comments" in {
@@ -79,6 +96,31 @@ class ILParserTest extends WordSpec {
       assertParses(parser.defs.field, "a: domain#Type")
       assertParses(parser.defs.field, "a: map[str, str]")
       assertParses(parser.defs.field, "a: map[str, set[domain#Type]]")
+    }
+
+    "parse adt members" in {
+      assertParses(parser.defs.adtMember, "X")
+      assertParses(parser.defs.adtMember, "a.b.c.X")
+      assertParses(parser.defs.adtMember, "a.b.c.X as T")
+      assertParses(parser.defs.adtMember, "X as T")
+    }
+
+    "parse adt blocks" in {
+      assertParses(parser.blocks.adtBlock, "adt MyAdt { X as XXX | Y }")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt { X | Y | a.b.c#D as B }")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt { X }")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt {a.b.c#D}")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt { a.b.c#D }")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt { a.b.c#D Z Z }")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt { a.b.c#D  Z  Z }")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt { X Y a.b.c#D Z }")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt { X Y a.b.c#D }")
+      assertParses(parser.blocks.adtBlock,
+        """adt MyAdt {
+          | X
+          |Y
+          | a.b.c#D
+          |}""".stripMargin)
     }
 
     "parse domain definition" in {

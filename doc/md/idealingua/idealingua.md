@@ -79,7 +79,7 @@ import io.circe.generic.decoding._
 import io.circe.generic.encoding._
 import io.circe.java8.time._
 
-sealed trait Polymorphic
+trait Polymorphic
 
 case class TestPayload(
                         zonedDateTime: ZonedDateTime = ZonedDateTime.now()
@@ -133,7 +133,6 @@ def test(t: Polymorphic): Unit = {
 
 test(TestPayload())
 test(AnotherPayload("hi"))
-
 ```  
 
 This example produces the following output:

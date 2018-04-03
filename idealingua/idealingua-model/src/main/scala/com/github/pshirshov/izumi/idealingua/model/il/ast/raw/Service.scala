@@ -15,7 +15,7 @@ object Service {
 
     object Output {
       case class Struct(input: RawSimpleStructure) extends Output
-      case class Algebraic(alternatives: RawTypes) extends Output
+      case class Algebraic(alternatives: List[RawAdtMember]) extends Output
       case class Singular(typeId: AbstractTypeId) extends Output
     }
 

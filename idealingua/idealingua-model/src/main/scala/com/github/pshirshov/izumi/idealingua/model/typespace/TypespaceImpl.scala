@@ -55,7 +55,6 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
 
     val allDependencies = typeDependencies ++ serviceDependencies.flatten
 
-
     // TODO: very ineffective!
     val missingTypes = allDependencies
       .filterNot(_.typeId.isInstanceOf[Builtin])
@@ -64,6 +63,22 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
 
     if (missingTypes.nonEmpty) {
       throw new IDLException(s"Incomplete typespace: $missingTypes")
+    }
+
+    domain.types.foreach {
+      case t: TypeDef.Enumeration =>
+        val duplicates = t.members.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
+        if (duplicates.nonEmpty) {
+          throw new IDLException(s"Duplicated enum elements: $duplicates")
+        }
+      case t: TypeDef.Adt =>
+        val duplicates = t.alternatives.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
+        if (duplicates.nonEmpty) {
+          throw new IDLException(s"Duplicated adt elements: $duplicates")
+        }
+
+      case _ =>
+
     }
   }
 
@@ -85,7 +100,7 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
         d.fields.map(f => DefinitionDependency.DepPrimitiveField(d.id, f.typeId, f))
 
       case d: Adt =>
-        d.alternatives.map(apply).flatMap(extractDependencies)
+        d.alternatives.map(_.typeId).map(apply).flatMap(extractDependencies)
 
       case d: Alias =>
         Seq(DefinitionDependency.DepAlias(d.id, d.target))

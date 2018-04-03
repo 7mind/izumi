@@ -65,7 +65,7 @@ class TypeSignature(typespace: Typespace) {
         t.struct.superclasses.all.flatMap(i => explode(typespace(i)))
 
       case t: Adt =>
-        t.alternatives.map(typespace.apply).flatMap(explode)
+        t.alternatives.map(_.typeId).map(typespace.apply).flatMap(explode)
 
       case t: Identifier =>
         t.fields.flatMap(explode)

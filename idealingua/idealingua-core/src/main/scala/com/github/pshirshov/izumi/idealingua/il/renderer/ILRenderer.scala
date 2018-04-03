@@ -104,6 +104,16 @@ class ILRenderer(domain: DomainDefinition) {
       .mkString("\n")
   }
 
+  def render(field: AdtMember): String = {
+    val t = render(field.typeId)
+    field.memberName match {
+      case Some(name) =>
+        s"$t as $name"
+      case None =>
+        t
+    }
+  }
+
   def render(field: Field): String = {
     s"${field.name}: ${render(field.typeId)}"
   }
@@ -132,6 +142,7 @@ class ILRenderer(domain: DomainDefinition) {
         render(o.typeId)
     }
   }
+
   def render(signature: SimpleStructure): String = {
     Seq(
       signature.concepts.map(render).map(t => s"+ $t")

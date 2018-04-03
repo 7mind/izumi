@@ -44,8 +44,12 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         typed.TypeDef.DTO(id = fixId(d.id): TypeId.DTOId, struct = toStruct(d.struct))
 
       case d: RawTypeDef.Adt =>
-        typed.TypeDef.Adt(id = fixId(d.id): TypeId.AdtId, alternatives = fixIds(d.alternatives))
+        typed.TypeDef.Adt(id = fixId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember))
     }
+  }
+
+  protected def toMember(member: raw.RawAdtMember): typed.AdtMember = {
+    typed.AdtMember(fixId(member.typeId): TypeId, member.memberName)
   }
 
   protected def toStruct(struct: raw.RawStructure): typed.Structure = {
@@ -158,9 +162,9 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
       case o: raw.Service.DefMethod.Output.Struct =>
         typed.Service.DefMethod.Output.Struct(fixStructure(o.input))
       case o: raw.Service.DefMethod.Output.Algebraic =>
-        typed.Service.DefMethod.Output.Algebraic(fixIds(o.alternatives))
+        typed.Service.DefMethod.Output.Algebraic(o.alternatives.map(toMember))
       case o: raw.Service.DefMethod.Output.Singular =>
-        typed.Service.DefMethod.Output.Singular(fixId(o.typeId) : TypeId)
+        typed.Service.DefMethod.Output.Singular(fixId(o.typeId): TypeId)
     }
   }
 

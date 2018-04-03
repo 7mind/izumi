@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
@@ -122,27 +121,23 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   protected def renderAdt(i: Adt): RenderableCogenProduct = {
     val t = conv.toScala(i.id)
 
-    val duplicates = i.alternatives.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
-    if (duplicates.nonEmpty) {
-      throw new IDLException(s"Duplicated adt elements: $duplicates")
-    }
-
     val members = i.alternatives.map {
       m =>
-        val mt = t.within(m.name)
-        val original = conv.toScala(m)
+        val memberName = m.memberName.getOrElse(m.typeId.name).capitalize
+        val mt = t.within(memberName)
+        val original = conv.toScala(m.typeId)
 
         val qqElement = q"""case class ${mt.typeName}(value: ${original.typeAbsolute}) extends ..${List(t.init())}"""
         val qqCompanion = q""" object ${mt.termName} {} """
 
 
         val converters = List(
-          q"""implicit def ${Term.Name("into" + m.name.capitalize)}(value: ${original.typeAbsolute}): ${t.typeFull} = ${mt.termFull}(value) """
+          q"""implicit def ${Term.Name("into" + memberName)}(value: ${original.typeAbsolute}): ${t.typeFull} = ${mt.termFull}(value) """
           ,
-          q"""implicit def ${Term.Name("from" + m.name.capitalize)}(value: ${mt.typeFull}): ${original.typeAbsolute} = value.value"""
+          q"""implicit def ${Term.Name("from" + memberName)}(value: ${mt.typeFull}): ${original.typeAbsolute} = value.value"""
         )
 
-        AdtElementProduct(m.name, qqElement, qqCompanion, converters)
+        AdtElementProduct(memberName, qqElement, qqCompanion, converters)
     }
 
     val qqAdt = q""" sealed trait ${t.typeName} extends ${rt.adtEl.init()}{} """
@@ -158,11 +153,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
   protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
     val t = conv.toScala(i.id)
-
-    val duplicates = i.members.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
-    if (duplicates.nonEmpty) {
-      throw new IDLException(s"Duplicated enum elements: $duplicates")
-    }
 
     val members = i.members.map {
       m =>
@@ -419,6 +409,4 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     ext.extend(i, CogenProduct(qqService, qqServiceCompanion, qqTools, dispatchers, preamble), _.handleService)
   }
-
-
 }

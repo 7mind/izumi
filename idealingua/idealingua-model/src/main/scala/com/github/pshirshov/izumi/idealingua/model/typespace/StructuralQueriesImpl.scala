@@ -112,7 +112,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
         filterFields(t.id, superFields, struct)
 
       case t: Adt =>
-        t.alternatives.map(resolver.apply).flatMap(extractFields)
+        t.alternatives.map(_.typeId).map(resolver.apply).flatMap(extractFields)
 
       case t: Identifier =>
         toExtendedPrimitiveFields(t.fields, t.id)
