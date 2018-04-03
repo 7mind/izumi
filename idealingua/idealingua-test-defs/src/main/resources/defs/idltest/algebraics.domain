@@ -1,0 +1,10 @@
+domain idltest.algebraics
+
+data Success { message: str }
+data Failure { code: int8 }
+
+
+adt Alternative {
+  Success as TestSuccess
+  Failure
+}

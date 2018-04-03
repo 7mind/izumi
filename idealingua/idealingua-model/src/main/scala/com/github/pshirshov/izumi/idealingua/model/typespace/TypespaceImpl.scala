@@ -72,7 +72,7 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
           throw new IDLException(s"Duplicated enum elements: $duplicates")
         }
       case t: TypeDef.Adt =>
-        val duplicates = t.alternatives.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
+        val duplicates = t.alternatives.groupBy(v => v.name).filter(_._2.lengthCompare(1) > 0)
         if (duplicates.nonEmpty) {
           throw new IDLException(s"Duplicated adt elements: $duplicates")
         }

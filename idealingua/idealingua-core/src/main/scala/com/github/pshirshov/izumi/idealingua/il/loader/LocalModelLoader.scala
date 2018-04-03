@@ -20,20 +20,7 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
 
 
   def load(): Seq[DomainDefinition] = {
-    import scala.collection.JavaConverters._
-
-    val file = root.toFile
-    if (!file.exists() || !file.isDirectory) {
-      return Seq.empty
-    }
-
-    val files = java.nio.file.Files.walk(root).iterator().asScala
-      .filter {
-        f => Files.isRegularFile(f) && (f.getFileName.toString.endsWith(modelExt) || f.getFileName.toString.endsWith(domainExt))
-      }
-      .map(f => root.relativize(f) -> readFile(f))
-      .toMap
-
+    val files = enumerate()
     val domains = parseDomains(files)
     val models = parseModels(files)
 
@@ -44,6 +31,22 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
       d =>
         new DomainDefinitionTyper(d).convert()
     }.toSeq
+  }
+
+  def enumerate(): Map[Path, String] = {
+    import scala.collection.JavaConverters._
+
+    val file = root.toFile
+    if (!file.exists() || !file.isDirectory) {
+      return Map.empty
+    }
+
+    java.nio.file.Files.walk(root).iterator().asScala
+      .filter {
+        f => Files.isRegularFile(f) && (f.getFileName.toString.endsWith(modelExt) || f.getFileName.toString.endsWith(domainExt))
+      }
+      .map(f => root.relativize(f) -> readFile(f))
+      .toMap
   }
 }
 

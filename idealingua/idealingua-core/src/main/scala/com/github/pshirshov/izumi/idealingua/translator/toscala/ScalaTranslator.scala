@@ -123,7 +123,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val members = i.alternatives.map {
       m =>
-        val memberName = m.memberName.getOrElse(m.typeId.name).capitalize
+        val memberName = m.name
         val mt = t.within(memberName)
         val original = conv.toScala(m.typeId)
 
