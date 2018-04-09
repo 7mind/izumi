@@ -118,9 +118,11 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |
          |${distinctFields.map(f => conv.toFieldMethods(f)).mkString("\n").shift(4)}
 
-         |    constructor(data: string | I${i.id.name} = undefined) {
+         |    constructor(data: I${i.id.name} = undefined) {
          |        if (data) {
-         |
+         |            // If data is a class instance, we make a clone of it by serializing data and then using it
+         |            data = data instanceof ${i.id.name} ? data.serialize() : data;
+         |${distinctFields.map(f => s"this.${f.name} = ${conv.deserializeType("data." + f.name, f.typeId)};").mkString("\n").shift(12)}
          |        }
          |    }
          |
@@ -336,7 +338,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${fields.all.map(f => conv.toFieldMethods(f.field)).mkString("\n").shift(4)}
          |    constructor(data: ${i.id.name} = undefined) {
          |        if (data) {
-         |            // If data is an object, we make a clone of it by serializing data and then using it
+         |            // If data is a class instance, we make a clone of it by serializing data and then using it
          |            data = data instanceof ${eid.name} ? data.serialize() : data;
          |${distinctFields.map(f => s"this.${f.name} = ${conv.deserializeType("data." + f.name, f.typeId)};").mkString("\n").shift(12)}
          |        }

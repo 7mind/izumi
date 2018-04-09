@@ -43,9 +43,25 @@ class TypeScriptTypeConverter(domain: DomainId) {
       case Primitive.TDate => "new Date(" + variable + ".getTime())"
       case Primitive.TTs => "new Date(" + variable + ".getTime())"
       case Primitive.TTsTz => "new Date(" + variable + ".getTime())"
-      // TODO We do nothing for other types, should probably figure something out ...
-      case _ => variable
+      case g: Generic => deserializeGenericType(variable, g)
+      case _ => deserializeCustomType(variable, target)
     }
+  }
+
+  def deserializeGenericType(variable: String, target: Generic): String = target match {
+    case gm: Generic.TMap => variable
+    case gl: Generic.TList => variable
+    case go: Generic.TOption => variable
+    case gs: Generic.TSet => variable
+  }
+
+  def deserializeCustomType(variable: String, target: TypeId): String = target match {
+    case a: AdtId => s"${a.name}Helpers.deserialize(${variable})"
+    case i: InterfaceId => s"${i.name}Struct.create(${variable})"
+    case d: DTOId => s"new ${d.name}(${variable})"
+    case al: AliasId => s"'${al.name}: Not implemented for Alias'"
+
+    case _ => s"'${variable}: Error here! Not Implemented! ${target.name}'"
   }
 
   def toNativeType(id: TypeId, forInterface: Boolean = false): String = {
