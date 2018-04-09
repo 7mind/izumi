@@ -6,6 +6,7 @@ import java.nio.file.{Files, Path}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.FinalTranslatorTypeScriptImpl
 
 
 class IDLCompiler(domain: DomainDefinition) {
@@ -34,7 +35,7 @@ class IDLCompiler(domain: DomainDefinition) {
       case IDLLanguage.Go =>
         ???
       case IDLLanguage.Typescript =>
-        ???
+        new FinalTranslatorTypeScriptImpl()
       case IDLLanguage.UnityCSharp =>
         ???
     }

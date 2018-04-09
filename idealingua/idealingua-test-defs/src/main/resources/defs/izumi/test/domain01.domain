@@ -7,9 +7,10 @@ id TestValIdentifier {
   userId: str
 }
 
-id TestIdentifer {
+id TestIdentifier {
   userId: str
   context: str
+  userType: i08
 }
 
 mixin TestInterface {

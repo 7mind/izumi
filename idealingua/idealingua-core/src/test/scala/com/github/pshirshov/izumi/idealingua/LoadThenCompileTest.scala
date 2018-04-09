@@ -9,10 +9,8 @@ class LoadThenCompileTest extends WordSpec {
 
   "IL loader" should {
     "load & parse domain definition" in {
-      assert(compiles(getClass.getSimpleName, loadDefs()))
+      assert(compilesScala(getClass.getSimpleName, loadDefs()))
     }
   }
-
-
 }
 
