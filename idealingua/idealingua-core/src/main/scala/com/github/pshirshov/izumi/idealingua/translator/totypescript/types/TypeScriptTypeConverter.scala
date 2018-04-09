@@ -3,7 +3,9 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript.types
 import com.github.pshirshov.izumi.idealingua.model.common.Generic.{TList, TMap, TOption, TSet}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, DTOId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainId, Field}
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
 import scala.language.higherKinds
 
@@ -28,7 +30,7 @@ class TypeScriptTypeConverter(domain: DomainId) {
     }
   }
 
-  def deserializeType(variable: String, target: TypeId): String = {
+  def deserializeType(variable: String, target: TypeId, ts: Typespace): String = {
     target match {
       case Primitive.TBool => variable
       case Primitive.TString => variable
@@ -43,23 +45,32 @@ class TypeScriptTypeConverter(domain: DomainId) {
       case Primitive.TDate => "new Date(" + variable + ".getTime())"
       case Primitive.TTs => "new Date(" + variable + ".getTime())"
       case Primitive.TTsTz => "new Date(" + variable + ".getTime())"
-      case g: Generic => deserializeGenericType(variable, g)
-      case _ => deserializeCustomType(variable, target)
+      case g: Generic => deserializeGenericType(variable, g, ts)
+      case _ => deserializeCustomType(variable, target, ts)
     }
   }
 
-  def deserializeGenericType(variable: String, target: Generic): String = target match {
-    case gm: Generic.TMap => variable
-    case gl: Generic.TList => variable
-    case go: Generic.TOption => variable
-    case gs: Generic.TSet => variable
+  def deserializeGenericType(variable: String, target: Generic, ts: Typespace): String = target match {
+    case gm: Generic.TMap => s"Object.keys(${variable}).reduce((previous, current) => {previous[current] = ${deserializeType(s"${variable}[current]", gm.valueType, ts)}; return previous; }, {})"
+    case gl: Generic.TList => gl.valueType match {
+      case _: Primitive => s"${variable}.slice()"
+      case _ => s"${variable}.map(e => ${serializeValue("e", gl.valueType, ts)})"
+    }
+    case go: Generic.TOption => s"typeof ${variable} !== 'undefined' ? ${deserializeType(variable, go.valueType, ts)} : undefined"
+    case gs: Generic.TSet => gs.valueType match {
+      case _: Primitive => s"${variable}.slice()"
+      case _ => s"${variable}.map(e => ${serializeValue("e", gs.valueType, ts)})"
+    }
   }
 
-  def deserializeCustomType(variable: String, target: TypeId): String = target match {
+  def deserializeCustomType(variable: String, target: TypeId, ts: Typespace): String = target match {
     case a: AdtId => s"${a.name}Helpers.deserialize(${variable})"
     case i: InterfaceId => s"${i.name}Struct.create(${variable})"
     case d: DTOId => s"new ${d.name}(${variable})"
-    case al: AliasId => s"'${al.name}: Not implemented for Alias'"
+    case al: AliasId => {
+      val alias = ts(al).asInstanceOf[Alias]
+      deserializeType(variable, alias.target, ts)
+    }
 
     case _ => s"'${variable}: Error here! Not Implemented! ${target.name}'"
   }
@@ -109,17 +120,17 @@ class TypeScriptTypeConverter(domain: DomainId) {
     }
   }
 
-  def serializeField(field: Field): String = {
-    s"${field.name}: ${serializeValue("this." + field.name, field.typeId)}"
+  def serializeField(field: Field, ts: Typespace): String = {
+    s"${field.name}: ${serializeValue("this." + field.name, field.typeId, ts)}"
   }
 
-  def serializeValue(name: String, id: TypeId): String = id match {
-    case _: Primitive => serializePrimitive(name, id)
-    case _: Generic => serializeGeneric(name, id)
-    case _ => serializeCustom(name, id)
+  def serializeValue(name: String, id: TypeId, ts: Typespace): String = id match {
+    case _: Primitive => serializePrimitive(name, id, ts)
+    case _: Generic => serializeGeneric(name, id, ts)
+    case _ => serializeCustom(name, id, ts)
   }
 
-  def serializePrimitive(name: String, id: TypeId): String = id match {
+  def serializePrimitive(name: String, id: TypeId, ts: Typespace): String = id match {
     case Primitive.TBool => s"${name}"
     case Primitive.TString => s"${name}"
     case Primitive.TInt8 => s"${name}"
@@ -135,25 +146,28 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case Primitive.TTsTz => s"${name}.toISOString()"
   }
 
-  def serializeGeneric(name: String, id: TypeId): String = id match {
-      case m: Generic.TMap => s"Object.keys(${name}).reduce((previous, current) => {previous[current] = ${serializeValue(s"${name}[current]", m.valueType)}; return previous; }, {})"
+  def serializeGeneric(name: String, id: TypeId, ts: Typespace): String = id match {
+      case m: Generic.TMap => s"Object.keys(${name}).reduce((previous, current) => {previous[current] = ${serializeValue(s"${name}[current]", m.valueType, ts)}; return previous; }, {})"
       case s: Generic.TSet => s.valueType match {
         case _: Primitive => s"${name}.slice()"
-        case _ =>  s"${name}.map(e => ${serializeValue("e", s.valueType)})"
+        case _ =>  s"${name}.map(e => ${serializeValue("e", s.valueType, ts)})"
       }
       case l: Generic.TList => l.valueType match {
         case _: Primitive => s"${name}.slice()"
-        case _ =>  s"${name}.map(e => ${serializeValue("e", l.valueType)})"
+        case _ =>  s"${name}.map(e => ${serializeValue("e", l.valueType, ts)})"
       }
-      case o: Generic.TOption => s"typeof ${name} !== 'undefined' ? ${serializeValue(name, o.valueType)} : undefined"
+      case o: Generic.TOption => s"typeof ${name} !== 'undefined' ? ${serializeValue(name, o.valueType, ts)} : undefined"
       case _ => s"${name}: 'Error here! Not Implemented!'"
   }
 
-  def serializeCustom(name: String, id: TypeId): String = id match {
+  def serializeCustom(name: String, id: TypeId, ts: Typespace): String = id match {
     case a: AdtId => s"${a.name}Helpers.serialize(${name})"
     case i: InterfaceId => s"'${i.name}: {[this.${i.name}.getFullClassName()]: this.${i.name}.serialize()}"
     case d: DTOId => s"${d.name}.serialize()"
-    case al: AliasId => s"'${al.name}: Not implemented for Alias'"
+    case al: AliasId => {
+      val alias = ts(al).asInstanceOf[Alias]
+      serializeValue(name, alias.target, ts)
+    }
 
     case _ => s"'${name}: Error here! Not Implemented! ${id.name}'"
   }

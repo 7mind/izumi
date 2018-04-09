@@ -117,17 +117,17 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${distinctFields.map(f => conv.toFieldMember(f)).mkString("\n").shift(4)}
          |
          |${distinctFields.map(f => conv.toFieldMethods(f)).mkString("\n").shift(4)}
-
          |    constructor(data: I${i.id.name} = undefined) {
-         |        if (data) {
-         |            // If data is a class instance, we make a clone of it by serializing data and then using it
-         |            data = data instanceof ${i.id.name} ? data.serialize() : data;
-         |${distinctFields.map(f => s"this.${f.name} = ${conv.deserializeType("data." + f.name, f.typeId)};").mkString("\n").shift(12)}
+         |        if (typeof data === 'undefined') {
+         |            return;
          |        }
+         |
+         |        // If data is a class instance, we make a clone of it by serializing data and then using it
+         |        data = data instanceof ${i.id.name} ? data.serialize() : data;
+         |${distinctFields.map(f => s"this.${f.name} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
          |    }
          |
          |${i.struct.superclasses.interfaces.map(si => renderDtoInterfaceSerializer(si)).mkString("\n").shift(4)}
-         |
          |    public serialize(): I${i.id.name} {
          |        return {
          |${renderSerializedObject(distinctFields.toList).shift(12)}
@@ -140,6 +140,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |}
          |
          |${dtoIfaces}
+         |${i.struct.superclasses.interfaces.map(sc => typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
          """.stripMargin
 
     CompositeProduct(dto, importHeader, s"// ${i.id.name} DTO")
@@ -160,7 +161,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |export class ${i.id.name}Helpers {
          |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => alt.typeId).mkString(" | ")}} {
          |        return {
-         |
+         |            [adt.getClassName()]: adt.serialize()
          |        };
          |    }
          |
@@ -168,7 +169,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |        const adtId = Object.keys(data)[0];
          |        const adtContent = data[adtId];
          |        switch (adtId) {
-         |${i.alternatives.map(a => "'" + a.typeId.name + "': " + conv.deserializeType("adtContent", a.typeId)).mkString("\n").shift(12)}
+         |${i.alternatives.map(a => "'" + a.typeId.name + "': " + conv.deserializeType("adtContent", a.typeId, typespace)).mkString("\n").shift(12)}
          |        }
          |    }
          |}
@@ -217,13 +218,15 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |
            |${fields.all.map(f => conv.toFieldMethods(f.field)).mkString("\n").shift(4)}
            |    constructor(data: string | I${typeName} = undefined) {
-           |        if (data) {
-           |            if (typeof data === 'string') {
-           |                const parts = data.split(':');
-           |${sortedFields.zipWithIndex.map{ case (sf, index) => s"this.${sf.field.name} = ${conv.parseTypeFromString(s"decodeURIComponent(parts[${index}])", sf.field.typeId)};"}.mkString("\n").shift(16)}
-           |            } else {
-           |${fields.all.map(f => s"this.${f.field.name} = ${conv.deserializeType("data." + f.field.name, f.field.typeId)};").mkString("\n").shift(16)}
-           |            }
+           |        if (typeof data === 'undefined') {
+           |            return;
+           |        }
+           |
+           |        if (typeof data === 'string') {
+           |            const parts = data.split(':');
+           |${sortedFields.zipWithIndex.map{ case (sf, index) => s"this.${sf.field.name} = ${conv.parseTypeFromString(s"decodeURIComponent(parts[${index}])", sf.field.typeId)};"}.mkString("\n").shift(12)}
+           |        } else {
+           |${fields.all.map(f => s"this.${f.field.name} = ${conv.deserializeType("data." + f.field.name, f.field.typeId, typespace)};").mkString("\n").shift(12)}
            |        }
            |    }
            |
@@ -301,7 +304,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   }
 
   protected def renderSerializedObject(fields: List[Field]): String = {
-    val serialized = fields.map(f => conv.serializeField(f))
+    val serialized = fields.map(f => conv.serializeField(f, typespace))
     val it = serialized.iterator
     val serializedFields = it.map { m => s"${m}${if (it.hasNext) "," else ""}" }.mkString("\n")
     serializedFields
@@ -337,11 +340,13 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |
          |${fields.all.map(f => conv.toFieldMethods(f.field)).mkString("\n").shift(4)}
          |    constructor(data: ${i.id.name} = undefined) {
-         |        if (data) {
-         |            // If data is a class instance, we make a clone of it by serializing data and then using it
-         |            data = data instanceof ${eid.name} ? data.serialize() : data;
-         |${distinctFields.map(f => s"this.${f.name} = ${conv.deserializeType("data." + f.name, f.typeId)};").mkString("\n").shift(12)}
+         |        if (typeof data === 'undefined') {
+         |            return;
          |        }
+         |
+         |        // If data is a class instance, we make a clone of it by serializing data and then using it
+         |        data = data instanceof ${eid.name} ? data.serialize() : data;
+         |${distinctFields.map(f => s"this.${f.name} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
          |    }
          |
          |    public serialize(): ${i.id.name} {
@@ -372,6 +377,8 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |        return ctor(data[polymorphicId]);
          |    }
          |}
+         |
+         |${i.struct.superclasses.interfaces.map(sc => typespace.implId(sc).name + s".register(${eid.name}.FullClassName, ${eid.name});").mkString("\n")}
        """.stripMargin
 
     ext.extend(i, InterfaceProduct(iface, companion, importHeader, s"// ${i.id.name} Interface"), _.handleInterface)
@@ -380,22 +387,30 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   protected def renderServiceMethodSignature(method: DeprecatedRPCMethod, spread: Boolean = false): String = {
     if (spread) {
       val fields = method.signature.input.map(typespace.structure.structure)
-      s"""${method.name}(${fields.map(f=> f.all)})"""
+      s"""${method.name}(${fields.map(f=> f.all.map(ff => ff.field.name + ": " + ff.field.typeId.name))}): Promise<Out${method.name.capitalize}>"""
     } else {
       s"""${method.name}(input: In${method.name.capitalize}): Promise<Out${method.name.capitalize}>"""
     }
   }
 
   protected def renderServiceMethod(service: String, method: DeprecatedRPCMethod): String = {
-    s"""${renderServiceMethodSignature(method)} {
-       |    return this._transport.send(${service}.ClassName, '${method.name}', input)
+    s"""private _${renderServiceMethodSignature(method)} {
+       |    return new Promise((resolve, reject) => {
+       |        this._transport.send(${service}.ClassName, '${method.name}', input)
        |        .then(data => {
-       |            return data as Out${method.name.capitalize};
+       |            resolve(data as Out${method.name.capitalize});
        |        })
        |        .catch( err => {
        |            this._transport.log(err);
+       |            reject(err);
        |        });
-       |    return undefined;
+       |    });
+       |}
+       |
+       |public ${renderServiceMethodSignature(method,true)} {
+       |    const data = new In${method.name.capitalize}();
+       |    // TODO Set up members here before proceeding...
+       |    return this._${method.name}(data);
        |}
      """.stripMargin
   }
@@ -408,7 +423,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |${i.methods.map(me => renderServiceMethodSignature(me.asInstanceOf[DeprecatedRPCMethod])).mkString("\n").shift(4)}
            |}
            |
-           |interface ${typeName.capitalize}Transport {
+           |export interface ITransport {
            |    send(service: string, method: string, data: any): Promise<any>
            |    subscribe(packageClass: string, callback: (data: any) => void): void
            |    unsubscribe(packageClass: string, callback: (data: any) => void): void
@@ -417,13 +432,13 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |
            |export class ${typeName} implements I${typeName} {
            |${renderRuntimeNames(i.id.pkg.mkString("."), i.id.name).shift(4)}
-           |    protected _transport: ${typeName.capitalize}Transport;
+           |    protected _transport: ITransport;
            |
-           |    constructor(transport: ${typeName.capitalize}Transport) {
+           |    constructor(transport: ITransport) {
            |        this._transport = transport;
            |    }
            |
-           |${i.methods.map(me => "public " + renderServiceMethod(i.id.name, me.asInstanceOf[DeprecatedRPCMethod])).mkString("\n").shift(4)}
+           |${i.methods.map(me => renderServiceMethod(i.id.name, me.asInstanceOf[DeprecatedRPCMethod])).mkString("\n").shift(4)}
            |}
          """.stripMargin
 //
