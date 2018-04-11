@@ -1,10 +1,10 @@
 domain idltest.services
 
-data Success {
+data SuccessData {
   greeting: str
 }
 
-data Error {
+data ErrorData {
   message: str
 }
 
@@ -30,7 +30,7 @@ service TestService {
     )
       =>
     (
-        + Success
+        + SuccessData
         , bullshit: str
     )
 
@@ -40,17 +40,17 @@ service TestService {
       region: str,
       age: int8
     } => {
-        + Success
+        + SuccessData
         , bullshit: str
     }
 
   // ADT
-  def greetAlgebraicOutput(firstName: str, secondName: str) => ( Success | Error )
+  def greetAlgebraicOutput(firstName: str, secondName: str) => ( SuccessData | ErrorData )
 
   // ADT
   def greetAlgebraicOutputMultiline(firstName: str, secondName: str) => (
-     Success
-   | Error
+     SuccessData
+   | ErrorData
   )
 
   // ADT
@@ -59,7 +59,7 @@ service TestService {
      firstName: str
      secondName: str
    } => {
-     Success
-     Error
+     SuccessData
+     ErrorData
    }
 }

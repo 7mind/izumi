@@ -20,7 +20,7 @@ object EnumHelpersExtension extends TypeScriptTranslatorExtension {
          |    ]
          |
          |    public static isValid(value: string): boolean {
-         |        return ${enum.id.name}Helpers.all.indexOf(value) >= 0;
+         |        return ${enum.id.name}Helpers.all.indexOf(value as ${enum.id.name}) >= 0;
          |    }
          |}
        """.stripMargin

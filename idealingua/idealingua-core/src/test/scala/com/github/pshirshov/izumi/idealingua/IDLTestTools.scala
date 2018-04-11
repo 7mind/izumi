@@ -65,28 +65,30 @@ object IDLTestTools {
         }
     }
 
-      {
-        val ctarget = runDir.resolve("scalac")
-        ctarget.toFile.mkdirs()
+    if (language == IDLLanguage.Scala)
+    {
+      val ctarget = runDir.resolve("scalac")
+      ctarget.toFile.mkdirs()
 
-        import scala.tools.nsc.{Global, Settings}
-        val settings = new Settings()
-        settings.d.value = ctarget.toString
-        settings.feature.value = true
-        settings.warnUnused.add("_")
-        settings.embeddedDefaults(this.getClass.getClassLoader)
+      import scala.tools.nsc.{Global, Settings}
+      val settings = new Settings()
+      settings.d.value = ctarget.toString
+      settings.feature.value = true
+      settings.warnUnused.add("_")
+      settings.embeddedDefaults(this.getClass.getClassLoader)
 
-        val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
-        if (!isSbt) {
-          settings.usejavacp.value = true
-        }
-
-        val g = new Global(settings)
-        val run = new g.Run
-        run.compile(allFiles.map(_.toFile.getCanonicalPath).toList)
-        run.runIsAt(run.jvmPhase.next)
+      val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
+      if (!isSbt) {
+        settings.usejavacp.value = true
       }
 
+      val g = new Global(settings)
+      val run = new g.Run
+      run.compile(allFiles.map(_.toFile.getCanonicalPath).toList)
+      run.runIsAt(run.jvmPhase.next)
+    } else {
+      true
+    }
   }
 
   def remove(root: Path): Unit = {
