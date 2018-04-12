@@ -14,6 +14,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension}
 
+
 @ExposedTestScope
 object IDLTestTools {
   def loadDefs(): Seq[DomainDefinition] = {
@@ -23,23 +24,46 @@ object IDLTestTools {
     val loadableCount = loader.enumerate().count(_._1.toString.endsWith(LocalModelLoader.domainExt))
     assert(loaded.size == loadableCount, s"expected $loadableCount domains")
     loaded.foreach {
-      d=>
-      println(new ILRenderer(d).render())
+      d =>
+        println(new ILRenderer(d).render())
     }
     loaded
   }
 
   def compilesScala(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
-    compiles(id, domains, IDLLanguage.Scala, extensions)
+    val out = compiles(id, domains, IDLLanguage.Scala, extensions)
+
+    val ctarget = out.targetDir.resolve("scalac")
+    ctarget.toFile.mkdirs()
+
+    import scala.tools.nsc.{Global, Settings}
+    val settings = new Settings()
+    settings.d.value = ctarget.toString
+    settings.feature.value = true
+    settings.warnUnused.add("_")
+    settings.embeddedDefaults(this.getClass.getClassLoader)
+
+    val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
+    if (!isSbt) {
+      settings.usejavacp.value = true
+    }
+
+    val g = new Global(settings)
+    val run = new g.Run
+    run.compile(out.allFiles.map(_.toFile.getCanonicalPath).toList)
+    run.runIsAt(run.jvmPhase.next)
   }
 
   def compilesTypeScript(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
-    compiles(id, domains, IDLLanguage.Typescript, extensions)
+    val out = compiles(id, domains, IDLLanguage.Typescript, extensions)
+    out.allFiles.nonEmpty
   }
 
-  def compiles(id: String, domains: Seq[DomainDefinition], language: IDLLanguage, extensions: Seq[TranslatorExtension]): Boolean = {
+  case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
+
+  private def compiles(id: String, domains: Seq[DomainDefinition], language: IDLLanguage, extensions: Seq[TranslatorExtension]) = {
     val tmpdir = Paths.get("target")
-    val runPrefix = s"idl-${ManagementFactory.getRuntimeMXBean.getStartTime}"
+    val runPrefix = s"idl-${language.toString}-${ManagementFactory.getRuntimeMXBean.getStartTime}"
     val runDir = tmpdir.resolve(s"$runPrefix-${System.currentTimeMillis()}-$id")
 
     tmpdir
@@ -52,7 +76,7 @@ object IDLTestTools {
           remove(f.toPath)
       }
 
-    val allFiles = domains.flatMap {
+    val allFiles: Seq[Path] = domains.flatMap {
       domain =>
         val compiler = new IDLCompiler(domain)
         compiler.compile(runDir.resolve(domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language, extensions)) match {
@@ -65,34 +89,11 @@ object IDLTestTools {
         }
     }
 
-    if (language == IDLLanguage.Scala)
-    {
-      val ctarget = runDir.resolve("scalac")
-      ctarget.toFile.mkdirs()
-
-      import scala.tools.nsc.{Global, Settings}
-      val settings = new Settings()
-      settings.d.value = ctarget.toString
-      settings.feature.value = true
-      settings.warnUnused.add("_")
-      settings.embeddedDefaults(this.getClass.getClassLoader)
-
-      val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
-      if (!isSbt) {
-        settings.usejavacp.value = true
-      }
-
-      val g = new Global(settings)
-      val run = new g.Run
-      run.compile(allFiles.map(_.toFile.getCanonicalPath).toList)
-      run.runIsAt(run.jvmPhase.next)
-    } else {
-      true
-    }
+    CompilerOutput(runDir, allFiles)
   }
 
   def remove(root: Path): Unit = {
-    val _  = Files.walkFileTree(root, new SimpleFileVisitor[Path] {
+    val _ = Files.walkFileTree(root, new SimpleFileVisitor[Path] {
       override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
         Files.delete(file)
         FileVisitResult.CONTINUE

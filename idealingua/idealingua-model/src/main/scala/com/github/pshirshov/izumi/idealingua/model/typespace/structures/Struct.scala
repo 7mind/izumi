@@ -10,9 +10,12 @@ class Struct private
 (
   val id: StructureId
   , val superclasses: Super
-  , conflicts: FieldConflicts
+  , val conflicts: FieldConflicts
 ) extends ConstAbstractStruct[ExtendedField] {
-  override def all: List[ExtendedField] = conflicts.all.toList
+  override def all: List[ExtendedField] = {
+    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    conflicts.all.distinctBy(_.field).toList
+  }
 
   override def unambigious: List[ExtendedField] = conflicts.goodFields.flatMap(_._2).toList
 
