@@ -5,7 +5,8 @@ import java.nio.file.Path
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
-import com.github.pshirshov.izumi.idealingua.translator.{CirceTranslatorExtension, IDLCompiler, IDLLanguage, TranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.{CirceTranslatorExtension, IDLCompiler, IDLLanguage}
 import sbt.Keys.{sourceGenerators, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger
@@ -29,7 +30,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
   object Keys {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
-    val idlDefaultExtensionsScala = settingKey[Seq[TranslatorExtension]]("Default list of translator extensions for scala")
+    val idlDefaultExtensionsScala = settingKey[Seq[ScalaTranslatorExtension]]("Default list of translator extensions for scala")
   }
 
   private val logger: ConsoleLogger = ConsoleLogger()

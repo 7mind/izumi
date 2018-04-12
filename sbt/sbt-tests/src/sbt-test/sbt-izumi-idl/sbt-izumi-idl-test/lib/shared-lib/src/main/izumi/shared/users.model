@@ -15,6 +15,6 @@ mixin IdentifiedUser {
 }
 
 data HumanUser {
-  + IdentifiedUser
-  * Person
+  & IdentifiedUser
+  + Person
 }

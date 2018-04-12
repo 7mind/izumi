@@ -29,12 +29,12 @@ object IDLTestTools {
     loaded
   }
 
-  def compilesScala(id: String, domains: Seq[DomainDefinition]): Boolean = {
-    compiles(id, domains, IDLLanguage.Scala, ScalaTranslator.defaultExtensions)
+  def compilesScala(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
+    compiles(id, domains, IDLLanguage.Scala, extensions)
   }
 
-  def compilesTypeScript(id: String, domains: Seq[DomainDefinition]): Boolean = {
-    compiles(id, domains, IDLLanguage.Typescript, TypeScriptTranslator.defaultExtensions)
+  def compilesTypeScript(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
+    compiles(id, domains, IDLLanguage.Typescript, extensions)
   }
 
   def compiles(id: String, domains: Seq[DomainDefinition], language: IDLLanguage, extensions: Seq[TranslatorExtension]): Boolean = {
