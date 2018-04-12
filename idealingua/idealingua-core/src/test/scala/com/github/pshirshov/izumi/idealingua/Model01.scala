@@ -23,7 +23,7 @@ object Model01 {
 
 
   final val testValStructure = List(PrimitiveField(Primitive.TString, "userId"))
-  final val testIdStructure = List(PrimitiveField(Primitive.TString, "userId"), PrimitiveField(Primitive.TString, "context"))
+  final val testIdStructure = List(PrimitiveField(Primitive.TString, "userId"), PrimitiveField(Primitive.TString, "context"), PrimitiveField(Primitive.TInt8, "userRegion"))
   final val testIdObject = IndefiniteId.parse("izumi.test.domain01.TestObject").toDTO
 
   final val domain: DomainDefinition = DomainDefinition(DomainId(Seq("izumi", "test"), "domain01"), Seq(
