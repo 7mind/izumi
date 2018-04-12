@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.{CirceTranslatorExtension, IDLCompiler, IDLLanguage}
 import sbt.Keys.{sourceGenerators, _}
@@ -44,6 +45,8 @@ object IdealinguaPlugin extends AutoPlugin {
     Keys.idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions ++ Seq(
       CirceTranslatorExtension
     )
+
+    , Keys.idlDefaultExtensionsTypescript := TypeScriptTranslator.defaultExtensions
 
     , Keys.compilationTargets := Seq(
       Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Sources)
