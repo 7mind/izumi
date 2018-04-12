@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.{CirceTranslatorExtension, IDLCompiler, IDLLanguage}
 import sbt.Keys.{sourceGenerators, _}
 import sbt._
@@ -31,6 +32,7 @@ object IdealinguaPlugin extends AutoPlugin {
   object Keys {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
     val idlDefaultExtensionsScala = settingKey[Seq[ScalaTranslatorExtension]]("Default list of translator extensions for scala")
+    val idlDefaultExtensionsTypescript = settingKey[Seq[TypeScriptTranslatorExtension]]("Default list of translator extensions for typescript")
   }
 
   private val logger: ConsoleLogger = ConsoleLogger()
@@ -46,6 +48,8 @@ object IdealinguaPlugin extends AutoPlugin {
     , Keys.compilationTargets := Seq(
       Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Sources)
       , Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Artifact)
+
+      , Invokation(CompilerOptions(IDLLanguage.Typescript, Keys.idlDefaultExtensionsTypescript.value), Mode.Sources)
     )
 
     , sourceGenerators in Compile += Def.task {
