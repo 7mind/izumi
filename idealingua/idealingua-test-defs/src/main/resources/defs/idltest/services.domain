@@ -1,10 +1,10 @@
 domain idltest.services
 
-data SuccessData {
+mixin SuccessData {
   greeting: str
 }
 
-data ErrorData {
+mixin ErrorData {
   message: str
 }
 

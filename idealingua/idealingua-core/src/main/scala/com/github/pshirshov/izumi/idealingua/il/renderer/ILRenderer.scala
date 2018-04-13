@@ -135,7 +135,7 @@ class ILRenderer(domain: DomainDefinition) {
   def render(out: Service.DefMethod.Output): String = {
     out match {
       case o: Service.DefMethod.Output.Struct =>
-        s"(${render(o.input)})"
+        s"(${render(o.struct)})"
       case o: Service.DefMethod.Output.Algebraic =>
         s"(${o.alternatives.map(render).mkString(" | ")})"
       case o: Service.DefMethod.Output.Singular =>

@@ -13,14 +13,20 @@ import scala.meta._
 case class ServiceProduct(ctx: STContext, svc: Service) {
   private val typeName: TypeName = svc.id.name
 
+  val baseId: IndefiniteId = IndefiniteId(svc.id).copy(name = s"$typeName")
+
   val svcId: IndefiniteId = IndefiniteId(svc.id).copy(name = s"${typeName}Server")
   val wrappedId: IndefiniteId = svcId.copy(name = s"${typeName}Wrapped")
   val clientId: IndefiniteId = svcId.copy(name = s"${typeName}Client")
 
+  val svcBaseTpe: ScalaType = ctx.conv.toScala(baseId)
   val svcTpe: ScalaType = ctx.conv.toScala(svcId)
-  val svcClientTpe: ScalaType = ctx.conv(clientId)
-  val svcWrappedTpe: ScalaType = ctx.conv(wrappedId)
+  val svcClientTpe: ScalaType = ctx.conv.toScala(clientId)
+  val svcWrappedTpe: ScalaType = ctx.conv.toScala(wrappedId)
 
+  import ctx.conv._
+  val serviceInputBase: ScalaType = svcBaseTpe.within(s"In${typeName.capitalize}")
+  val serviceOutputBase: ScalaType = svcBaseTpe.within(s"Out${typeName.capitalize}")
 }
 
 case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCMethod) {
@@ -39,36 +45,21 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
     q"def ${Term.Name(name)}(ctx: C, ..$wrappedSignature): Result[${outputType.typeFull}]"
   }
 
-  def types: List[Defn] = {
-    List(
-      Some(inputDefn)
-      , outputDefn
-    )
-      .flatMap(_.toList)
+  protected def outputType: ScalaType = {
+    ctx.conv.toScala(outputWrappedId)
   }
 
-  protected def outputDefn: Option[Defn] = {
+  def outputWrappedId: TypeId = {
     method.signature.output match {
       case o: Output.Singular =>
-        None
+        DTOId(sp.baseId, s"${name.capitalize}Output")
 
-      case o: Output.Struct =>
-        Some(???)
-
-      case o: Output.Algebraic =>
-        Some(???)
+      case _ =>
+        outputId
     }
   }
 
-  protected def inputDefn: Defn = {
-    ???
-  }
-
-  protected def outputType: ScalaType = {
-    ctx.conv.toScala(outputId)
-  }
-
-  protected def inputWrappedType: ScalaType = sp.svcWrappedTpe.within(inputWrappedId.name)
+  protected def inputWrappedType: ScalaType = sp.svcBaseTpe.within(inputWrappedId.name)
 
   protected def outputId: TypeId = {
     method.signature.output match {
@@ -76,14 +67,14 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
         o.typeId
 
       case o: Output.Struct =>
-        DTOId(sp.svcId, s"${name.capitalize}Output")
+        DTOId(sp.baseId, s"${name.capitalize}Output")
 
       case o: Output.Algebraic =>
-        AdtId(sp.svcId, s"${name.capitalize}Output")
+        AdtId(sp.baseId, s"${name.capitalize}Output")
     }
   }
 
-  protected def inputWrappedId: DTOId = DTOId(sp.svcId, s"${name.capitalize}Input")
+  def inputWrappedId: DTOId = DTOId(sp.baseId, s"${name.capitalize}Input")
 
   protected def signature: List[Term.Param] = fields.toParams
 

@@ -15,7 +15,7 @@ object Service {
 
     object Output {
 
-      case class Struct(input: SimpleStructure) extends Output
+      case class Struct(struct: SimpleStructure) extends Output
 
       case class Algebraic(alternatives: List[AdtMember]) extends Output
 

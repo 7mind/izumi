@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -268,6 +268,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
 
   protected def renderService(svc: Service): RenderableCogenProduct = {
+
+
     val sp = ServiceProduct(ctx, svc)
     val decls = svc.methods.collect({ case c: RPCMethod => c }).map {
       method =>
@@ -303,6 +305,21 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         ServiceMethodProduct(ctx, sp, method)
     }
 
+    val inputs = decls.map(_.inputWrappedId).map({
+      dto =>
+        val struct = ctx.tools.mkStructure(dto)
+        defns(struct, List(sp.serviceInputBase.init()))
+    }).flatMap(_.render)
+
+    val outputs = decls.map(_.outputWrappedId).map({
+      case dto: DTOId =>
+        val struct = ctx.tools.mkStructure(dto)
+        defns(struct, List(sp.serviceOutputBase.init()))
+      case adt: AdtId =>
+        renderAdt(typespace.apply(adt).asInstanceOf[Adt])
+    }).flatMap(_.render)
+
+
 
     val qqService =
       q"""trait ${sp.svcTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
@@ -315,11 +332,42 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
           }"""
 
     val qqWrapped =
-      q"""trait ${sp.svcWrappedTpe.typeName}[R[_]] extends ${rt.WithResultType.parameterize("R").init()} {
+      q"""trait ${sp.svcWrappedTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
             import ${sp.svcWrappedTpe.termBase}._
 
             ..${decls.map(_.defnWrapped)}
           }"""
+
+    val qqBaseCompanion =
+      q"""
+         object ${sp.svcBaseTpe.termName} {
+            sealed trait ${sp.serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
+            sealed trait ${sp.serviceOutputBase.typeName} extends Any with ${rt.input.init()} {}
+           ..$outputs
+           ..$inputs
+         }
+       """
+
+    val qqWrappedCompanion =
+      q"""
+         object ${sp.svcWrappedTpe.termName} {
+
+         }
+       """
+
+    val qqServiceCompanion =
+      q"""
+         object ${sp.svcTpe.termName} {
+         }
+       """
+
+    new RenderableCogenProduct {
+      override def preamble: String =       s"""import scala.language.higherKinds
+                                               |import _root_.${rt.runtimePkg}._
+                                               |""".stripMargin
+
+      override def render: List[Defn] = List(qqBaseCompanion, qqService, qqServiceCompanion, qqClient, qqWrapped, qqWrappedCompanion)
+    }
 
     //    val tools = t.within(s"${i.id.name}Extensions")
     //
@@ -420,13 +468,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     //    }
     //
     //
-    //    val preamble =
-    //      s"""import scala.language.higherKinds
-    //         |import _root_.${rt.runtimePkg}._
-    //         |""".stripMargin
+
     //
     //
     //    ext.extend(i, CogenProduct(qqService, qqServiceCompanion, qqTools, dispatchers, preamble), _.handleService)
-    ???
+
   }
 }
