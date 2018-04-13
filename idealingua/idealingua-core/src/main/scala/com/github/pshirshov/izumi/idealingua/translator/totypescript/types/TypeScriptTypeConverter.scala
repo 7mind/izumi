@@ -223,21 +223,8 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case _ => toFieldMethods(field.typeId, field.name, false)
   }
 
-  def toFieldMember(field: Field): String = field.typeId match {
-    case Primitive.TBool => toPrivateMember(field.name, "boolean")
-    case Primitive.TString => toPrivateMember(field.name, "string")
-    case Primitive.TInt8 => toPrivateMember(field.name, "number")
-    case Primitive.TInt16 => toPrivateMember(field.name, "number")
-    case Primitive.TInt32 => toPrivateMember(field.name, "number")
-    case Primitive.TInt64 => toPrivateMember(field.name, "number")
-    case Primitive.TFloat => toPrivateMember(field.name, "number")
-    case Primitive.TDouble => toPrivateMember(field.name, "number")
-    case Primitive.TUUID => toPrivateMember(field.name, "string")
-    case Primitive.TTime => toPrivateMember(field.name, "Date")
-    case Primitive.TDate => toPrivateMember(field.name, "Date")
-    case Primitive.TTs => toPrivateMember(field.name, "Date")
-    case Primitive.TTsTz => toPrivateMember(field.name, "Date")
-    case _ => toPrivateMember(field.name, toNativeType(field.typeId))
+  def toFieldMember(field: Field): String = {
+    toFieldMember(field.name, field.typeId)
   }
 
   def toFieldMember(name: String, id: TypeId): String = id match {

@@ -12,6 +12,5 @@ class TypeScriptTranslationTools(ctx: TSTContext) {
 //    new CompositeStructure(ctx, fields)
 //  }
 
-
   def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
 }

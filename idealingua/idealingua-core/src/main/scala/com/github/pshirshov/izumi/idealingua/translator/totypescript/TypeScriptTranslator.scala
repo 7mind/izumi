@@ -68,7 +68,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     s"""// Runtime identification methods
        |public static readonly PackageName = ${"\"" + pkg + "\""};
        |public static readonly ClassName = ${"\"" + name + "\""};
-       |public static readonly FullClassName = ${if(holderName == null) name else holderName}.PackageName + "." + ${if(holderName == null) name else holderName}.ClassName;
+       |public static readonly FullClassName = $name.PackageName + "." + $name.ClassName;
        |
        |public getPackageName(): string { return ${if(holderName == null) name else holderName}.PackageName; }
        |public getClassName(): string { return ${if(holderName == null) name else holderName}.ClassName; }
