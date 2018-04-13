@@ -42,10 +42,14 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
   }
 
   def defnWrapped: Stat = {
-    q"def ${Term.Name(name)}(ctx: C, ..$wrappedSignature): Result[${outputType.typeFull}]"
+    q"def ${Term.Name(name)}(ctx: C, ..$wrappedSignature): Result[${outputTypeWrapped.typeFull}]"
   }
 
   protected def outputType: ScalaType = {
+    ctx.conv.toScala(outputId)
+  }
+
+  protected def outputTypeWrapped: ScalaType = {
     ctx.conv.toScala(outputWrappedId)
   }
 

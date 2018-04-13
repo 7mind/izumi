@@ -266,7 +266,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   }
 
 
-
   protected def renderService(svc: Service): RenderableCogenProduct = {
 
 
@@ -320,7 +319,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     }).flatMap(_.render)
 
 
-
     val qqService =
       q"""trait ${sp.svcTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
             ..${decls.map(_.defnServer)}
@@ -331,22 +329,17 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             ..${decls.map(_.defnClient)}
           }"""
 
+    val qqClientCompanion =
+      q"""object ${sp.svcClientTpe.termName} {
+
+         }"""
+
     val qqWrapped =
       q"""trait ${sp.svcWrappedTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
             import ${sp.svcWrappedTpe.termBase}._
 
             ..${decls.map(_.defnWrapped)}
           }"""
-
-    val qqBaseCompanion =
-      q"""
-         object ${sp.svcBaseTpe.termName} {
-            sealed trait ${sp.serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
-            sealed trait ${sp.serviceOutputBase.typeName} extends Any with ${rt.input.init()} {}
-           ..$outputs
-           ..$inputs
-         }
-       """
 
     val qqWrappedCompanion =
       q"""
@@ -361,12 +354,28 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }
        """
 
-    new RenderableCogenProduct {
-      override def preamble: String =       s"""import scala.language.higherKinds
-                                               |import _root_.${rt.runtimePkg}._
-                                               |""".stripMargin
+    val qqBaseCompanion =
+      q"""
+         object ${sp.svcBaseTpe.termName} {
+            sealed trait ${sp.serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
+            sealed trait ${sp.serviceOutputBase.typeName} extends Any with ${rt.input.init()} {}
+           ..$outputs
+           ..$inputs
+         }
+       """
 
-      override def render: List[Defn] = List(qqBaseCompanion, qqService, qqServiceCompanion, qqClient, qqWrapped, qqWrappedCompanion)
+    new RenderableCogenProduct {
+      override def preamble: String =
+        s"""import scala.language.higherKinds
+           |import _root_.${rt.runtimePkg}._
+           |""".stripMargin
+
+      override def render: List[Defn] = List(
+        qqService, qqServiceCompanion
+        , qqClient, qqClientCompanion
+        , qqWrapped, qqWrappedCompanion
+        , qqBaseCompanion
+      )
     }
 
     //    val tools = t.within(s"${i.id.name}Extensions")

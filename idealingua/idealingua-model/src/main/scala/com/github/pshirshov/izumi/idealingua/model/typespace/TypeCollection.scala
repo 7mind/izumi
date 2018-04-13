@@ -31,7 +31,6 @@ class TypeCollection(domain: DomainDefinition) {
           val in = m.signature.input
           val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
           val inId = DTOId(IndefiniteId(service.id), s"${baseName}Input")
-          println(inId)
           DTO(inId, inputStructure)
         }
 
