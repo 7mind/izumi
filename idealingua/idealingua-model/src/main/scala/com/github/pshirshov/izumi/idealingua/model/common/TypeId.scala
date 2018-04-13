@@ -62,11 +62,16 @@ object TypeId {
     def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
 
     def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
+    def apply(parent: IndefiniteId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
   }
 
   case class IdentifierId(pkg: Package, name: TypeName) extends ScalarId
 
   case class AdtId(pkg: Package, name: TypeName) extends TypeId
+
+  object AdtId {
+    def apply(parent: IndefiniteId, name: TypeName): AdtId = new AdtId(parent.pkg :+ parent.name, name)
+  }
 
   case class AliasId(pkg: Package, name: TypeName) extends TypeId
 

@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, DomainId, TypeDef}
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, WithInfo}
+import com.github.pshirshov.izumi.idealingua.runtime.services.WithResultType
 import com.github.pshirshov.izumi.idealingua.runtime.transport.{AbstractClientDispatcher, AbstractServerDispatcher}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaTypeConverter
 
@@ -30,6 +31,8 @@ object IDLRuntimeTypes {
 
   final val adt = modelConv.toScala[IDLAdt]
   final val adtEl = modelConv.toScala[IDLAdtElement]
+
+  final val WithResultType = modelConv.toScala[WithResultType[Id]]
 
   final val idtService = modelConv.toScala[IDLService[Id]]
   final val serverDispatcher = runtimeConv.toScala[AbstractServerDispatcher[Id, _]]

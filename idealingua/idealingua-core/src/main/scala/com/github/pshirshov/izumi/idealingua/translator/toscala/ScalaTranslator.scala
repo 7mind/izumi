@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{AdtElementProduct, AdtProduct, EnumProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, ScalaField, ServiceMethodProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
 
 import scala.meta._
 
@@ -266,151 +266,167 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   }
 
 
-  protected def renderService(i: Service): RenderableCogenProduct = {
-    val typeName = i.id.name
 
-    val t = conv.toScala(IndefiniteId(i.id))
+  protected def renderService(svc: Service): RenderableCogenProduct = {
+    val sp = ServiceProduct(ctx, svc)
+    val decls = svc.methods.collect({ case c: RPCMethod => c }).map {
+      method =>
+        //        // TODO: unify with ephemerals in typespace
+        //        val in = t.within(s"In${method.name.capitalize}")
+        //        val out = t.within(s"Out${method.name.capitalize}")
+        //
+        //        val inDef = DTOId(i.id, in.fullJavaType.name)
+        //        val outDef = DTOId(i.id, out.fullJavaType.name)
+        //
+        //        val inputComposite = ctx.tools.mkStructure(inDef)
+        //        val outputComposite = ctx.tools.mkStructure(outDef)
+        //
+        //        val inputType = in.typeFull
+        //        val outputType = out.typeFull
+        //
+        //
+        //        val ioDefns = Seq(
+        //          defns(inputComposite, List(serviceInputBase.init()))
+        //          , defns(outputComposite, List(serviceOutputBase.init()))
+        //        )
+        //
+        //        ServiceMethodProduct(
+        //          method.name
+        //          , inputComposite
+        //          , outputComposite
+        //          , inputType
+        //          , outputType
+        //          , ioDefns
+        //        )
 
-    val serviceInputBase = t.within(s"In${typeName.capitalize}")
-    val serviceOutputBase = t.within(s"Out${typeName.capitalize}")
 
-    val decls = i.methods.collect { // TODO
-
-      case method: DeprecatedRPCMethod =>
-        // TODO: unify with ephemerals in typespace
-        val in = t.within(s"In${method.name.capitalize}")
-        val out = t.within(s"Out${method.name.capitalize}")
-
-        val inDef = DTOId(i.id, in.fullJavaType.name)
-        val outDef = DTOId(i.id, out.fullJavaType.name)
-
-        val inputComposite = ctx.tools.mkStructure(inDef)
-        val outputComposite = ctx.tools.mkStructure(outDef)
-
-        val inputType = in.typeFull
-        val outputType = out.typeFull
-
-
-        val ioDefns = Seq(
-          defns(inputComposite, List(serviceInputBase.init()))
-          , defns(outputComposite, List(serviceOutputBase.init()))
-        )
-
-        ServiceMethodProduct(
-          method.name
-          , inputComposite
-          , outputComposite
-          , inputType
-          , outputType
-          , ioDefns
-        )
+        ServiceMethodProduct(ctx, sp, method)
     }
 
 
-    val tools = t.within(s"${i.id.name}Extensions")
-
-    val fullService = t.parameterize("R")
-    val fullServiceType = fullService.typeFull
     val qqService =
-      q"""trait ${t.typeName}[R[_]] extends ${rt.idtService.parameterize("R").init()} {
-          override type InputType = ${serviceInputBase.typeFull}
-          override type OutputType = ${serviceOutputBase.typeFull}
-          override def inputClass: Class[${serviceInputBase.typeFull}] = classOf[${serviceInputBase.typeFull}]
-          override def outputClass: Class[${serviceOutputBase.typeFull}] = classOf[${serviceOutputBase.typeFull}]
+      q"""trait ${sp.svcTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
+            ..${decls.map(_.defnServer)}
+          }"""
 
-          ..${decls.map(_.defn)}
-         }"""
-    val qqTools = q"""implicit class ${tools.typeName}[R[_]](_value: $fullServiceType) {}"""
+    val qqClient =
+      q"""trait ${sp.svcClientTpe.typeName}[R[_]] extends ${rt.WithResultType.parameterize("R").init()} {
+            ..${decls.map(_.defnClient)}
+          }"""
 
-    val qqServiceCompanion =
-      q"""object ${t.termName} {
-            sealed trait ${serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
-            sealed trait ${serviceOutputBase.typeName} extends Any with ${rt.output.init()} {}
+    val qqWrapped =
+      q"""trait ${sp.svcWrappedTpe.typeName}[R[_]] extends ${rt.WithResultType.parameterize("R").init()} {
+            import ${sp.svcWrappedTpe.termBase}._
 
-            ..${decls.flatMap(_.types).flatMap(_.render)}
-           }"""
+            ..${decls.map(_.defnWrapped)}
+          }"""
 
-
-    val dispatchers = {
-      val dServer = {
-        val forwarder = Term.Match(Term.Name("input"), decls.map(_.routingClause))
-        val transportDecls =
-          List(
-            q"override def dispatch(input: ${serviceInputBase.typeFull}): R[${serviceOutputBase.typeFull}] = $forwarder"
-          )
-        val dispatcherInTpe = rt.serverDispatcher.parameterize("R", "S").init()
-        val dispactherTpe = t.sibling(typeName + "ServerDispatcher")
-        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
-            (
-              val service: S
-            ) extends $dispatcherInTpe with ${rt.generated.init()} {
-            ..$transportDecls
-           }"""
-      }
-
-
-      val dClient = {
-        val dispatcherInTpe = rt.clientDispatcher.parameterize("R", "S")
-        val dispactherTpe = t.sibling(typeName + "ClientDispatcher")
-
-        val transportDecls = decls.map(_.defnDispatch)
-
-        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
-            (
-              dispatcher: ${dispatcherInTpe.typeFull}
-            ) extends ${fullService.init()} with ${rt.generated.init()} {
-           ..$transportDecls
-           }"""
-      }
-
-      val dCompr = {
-        val dispatcherInTpe = rt.clientWrapper.parameterize("R", "S")
-
-        val forwarder = decls.map(_.defnCompress)
-
-        val dispactherTpe = t.sibling(typeName + "ClientWrapper")
-        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
-            (
-              val service: S
-            ) extends ${dispatcherInTpe.init()} with ${rt.generated.init()} {
-            ..$forwarder
-           }"""
-      }
-
-      val dExpl = {
-        val explodedService = t.sibling(typeName + "Unwrapped")
-        val explodedDecls = decls.flatMap(in => Seq(in.defnExploded))
-
-
-        val dispactherTpe = t.sibling(typeName + "ServerWrapper")
-
-        val transportDecls = decls.flatMap(in => Seq(in.defnExplode))
-
-        val wrapperTpe = rt.serverWrapper.parameterize("R", "S")
-        val wrapped = explodedService.parameterize("R", "S")
-
-        Seq(
-          q"""trait ${explodedService.typeName}[R[+_], S <: $fullServiceType]
-              extends ${wrapperTpe.init()} with ${rt.generated.init()} {
-           ..$explodedDecls
-           }"""
-          ,
-          q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType](val service: ${wrapped.typeFull})
-              extends ${fullService.init()} with ${rt.generated.init()} {
-           ..$transportDecls
-           }"""
-        )
-      }
-
-      List(dServer, dClient, dCompr) ++ dExpl
-    }
-
-
-    val preamble =
-      s"""import scala.language.higherKinds
-         |import _root_.${rt.runtimePkg}._
-         |""".stripMargin
-
-    ext.extend(i, CogenProduct(qqService, qqServiceCompanion, qqTools, dispatchers, preamble), _.handleService)
+    //    val tools = t.within(s"${i.id.name}Extensions")
+    //
+    //    val fullService = t.parameterize("R")
+    //    val fullServiceType = fullService.typeFull
+    //    val qqService =
+    //      q"""trait ${t.typeName}[R[_]] extends ${rt.idtService.parameterize("R").init()} {
+    //          override type InputType = ${serviceInputBase.typeFull}
+    //          override type OutputType = ${serviceOutputBase.typeFull}
+    //          override def inputClass: Class[${serviceInputBase.typeFull}] = classOf[${serviceInputBase.typeFull}]
+    //          override def outputClass: Class[${serviceOutputBase.typeFull}] = classOf[${serviceOutputBase.typeFull}]
+    //
+    //          ..${decls.map(_.defn)}
+    //         }"""
+    //    val qqTools = q"""implicit class ${tools.typeName}[R[_]](_value: $fullServiceType) {}"""
+    //
+    //    val qqServiceCompanion =
+    //      q"""object ${t.termName} {
+    //            sealed trait ${serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
+    //            sealed trait ${serviceOutputBase.typeName} extends Any with ${rt.output.init()} {}
+    //
+    //            ..${decls.flatMap(_.types).flatMap(_.render)}
+    //           }"""
+    //
+    //
+    //    val dispatchers = {
+    //      val dServer = {
+    //        val forwarder = Term.Match(Term.Name("input"), decls.map(_.routingClause))
+    //        val transportDecls =
+    //          List(
+    //            q"override def dispatch(input: ${serviceInputBase.typeFull}): R[${serviceOutputBase.typeFull}] = $forwarder"
+    //          )
+    //        val dispatcherInTpe = rt.serverDispatcher.parameterize("R", "S").init()
+    //        val dispactherTpe = t.sibling(typeName + "ServerDispatcher")
+    //        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
+    //            (
+    //              val service: S
+    //            ) extends $dispatcherInTpe with ${rt.generated.init()} {
+    //            ..$transportDecls
+    //           }"""
+    //      }
+    //
+    //
+    //      val dClient = {
+    //        val dispatcherInTpe = rt.clientDispatcher.parameterize("R", "S")
+    //        val dispactherTpe = t.sibling(typeName + "ClientDispatcher")
+    //
+    //        val transportDecls = decls.map(_.defnDispatch)
+    //
+    //        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
+    //            (
+    //              dispatcher: ${dispatcherInTpe.typeFull}
+    //            ) extends ${fullService.init()} with ${rt.generated.init()} {
+    //           ..$transportDecls
+    //           }"""
+    //      }
+    //
+    //      val dCompr = {
+    //        val dispatcherInTpe = rt.clientWrapper.parameterize("R", "S")
+    //
+    //        val forwarder = decls.map(_.defnCompress)
+    //
+    //        val dispactherTpe = t.sibling(typeName + "ClientWrapper")
+    //        q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType]
+    //            (
+    //              val service: S
+    //            ) extends ${dispatcherInTpe.init()} with ${rt.generated.init()} {
+    //            ..$forwarder
+    //           }"""
+    //      }
+    //
+    //      val dExpl = {
+    //        val explodedService = t.sibling(typeName + "Unwrapped")
+    //        val explodedDecls = decls.flatMap(in => Seq(in.defnExploded))
+    //
+    //
+    //        val dispactherTpe = t.sibling(typeName + "ServerWrapper")
+    //
+    //        val transportDecls = decls.flatMap(in => Seq(in.defnExplode))
+    //
+    //        val wrapperTpe = rt.serverWrapper.parameterize("R", "S")
+    //        val wrapped = explodedService.parameterize("R", "S")
+    //
+    //        Seq(
+    //          q"""trait ${explodedService.typeName}[R[+_], S <: $fullServiceType]
+    //              extends ${wrapperTpe.init()} with ${rt.generated.init()} {
+    //           ..$explodedDecls
+    //           }"""
+    //          ,
+    //          q"""class ${dispactherTpe.typeName}[R[+_], S <: $fullServiceType](val service: ${wrapped.typeFull})
+    //              extends ${fullService.init()} with ${rt.generated.init()} {
+    //           ..$transportDecls
+    //           }"""
+    //        )
+    //      }
+    //
+    //      List(dServer, dClient, dCompr) ++ dExpl
+    //    }
+    //
+    //
+    //    val preamble =
+    //      s"""import scala.language.higherKinds
+    //         |import _root_.${rt.runtimePkg}._
+    //         |""".stripMargin
+    //
+    //
+    //    ext.extend(i, CogenProduct(qqService, qqServiceCompanion, qqTools, dispatchers, preamble), _.handleService)
+    ???
   }
 }
