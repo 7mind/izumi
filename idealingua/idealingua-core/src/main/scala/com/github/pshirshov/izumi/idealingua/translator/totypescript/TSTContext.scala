@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript
 
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.tools.extensions.TypeSignature
-import com.github.pshirshov.izumi.idealingua.translator.toscala.TypeScriptTranslationTools
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{TypeScriptTranslatorExtension, TypeScriptTranslatorExtensions}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.tools.ModuleTools
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.types.TypeScriptTypeConverter

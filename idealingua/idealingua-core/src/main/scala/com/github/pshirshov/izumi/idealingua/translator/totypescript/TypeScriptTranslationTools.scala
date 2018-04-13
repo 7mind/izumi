@@ -1,13 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package com.github.pshirshov.izumi.idealingua.translator.totypescript
 
-import com.github.pshirshov.izumi.idealingua.model.common.{StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.TSTContext
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 
 import scala.meta._
 
 
 class TypeScriptTranslationTools(ctx: TSTContext) {
-  import ctx.conv._
 //
 //  def mkStructure(id: StructureId): CompositeStructure = {
 //    val fields = ctx.typespace.structure.structure(id).toTypescript
