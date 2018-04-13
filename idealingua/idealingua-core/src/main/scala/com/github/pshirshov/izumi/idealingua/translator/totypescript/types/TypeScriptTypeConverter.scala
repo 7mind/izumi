@@ -241,6 +241,23 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case _ => toPrivateMember(field.name, toNativeType(field.typeId))
   }
 
+  def toFieldMember(name: String, id: TypeId): String = id match {
+    case Primitive.TBool => toPrivateMember(name, "boolean")
+    case Primitive.TString => toPrivateMember(name, "string")
+    case Primitive.TInt8 => toPrivateMember(name, "number")
+    case Primitive.TInt16 => toPrivateMember(name, "number")
+    case Primitive.TInt32 => toPrivateMember(name, "number")
+    case Primitive.TInt64 => toPrivateMember(name, "number")
+    case Primitive.TFloat => toPrivateMember(name, "number")
+    case Primitive.TDouble => toPrivateMember(name, "number")
+    case Primitive.TUUID => toPrivateMember(name, "string")
+    case Primitive.TTime => toPrivateMember(name, "Date")
+    case Primitive.TDate => toPrivateMember(name, "Date")
+    case Primitive.TTs => toPrivateMember(name, "Date")
+    case Primitive.TTsTz => toPrivateMember(name, "Date")
+    case _ => toPrivateMember(name, toNativeType(id))
+  }
+
   def safeName(name: String): String = {
     val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
       "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",

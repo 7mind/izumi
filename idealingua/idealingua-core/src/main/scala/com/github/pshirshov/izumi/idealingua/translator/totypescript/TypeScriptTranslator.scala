@@ -154,7 +154,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
   protected def renderAlias(i: Alias): RenderableCogenProduct = {
     // TODO Finish import
-      val importHeader = "" // typesToImports(Seq(i.target), i.id.pkg)
+      val importHeader = typesToImports(Seq(i.target), i.id.pkg)
 
       AliasProduct(
         s"export type ${i.id.name} = ${conv.toNativeType(i.target)};",
@@ -276,50 +276,53 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     case _ => Seq(id)
   }
 
-  protected def withConstImport(t: TypeId, fromPackage: Package, index: Int): String = {
-        if (t.pkg.mkString(".") == fromPackage.mkString(".")) {
-          // It seems that we don't need if namespace is the same, TypeScript should handle resolution itself
-          return ""
-        }
-
-        val pkgName = t.pkg.head + index + "." + t.pkg.drop(1).mkString(".")
-
-        t match {
-          case iid: InterfaceId =>
-            s"""const ${t.name} = ${pkgName}.${t.name};
-               |const ${typespace.implId(iid).name} = ${pkgName}.${typespace.implId(iid).name};
-               |const ${typespace.implId(iid).name}Serialized = ${pkgName}.${typespace.implId(iid).name}Serialized;
-             """.stripMargin
-
-          case _: AdtId => s"const ${t.name} = ${pkgName}.${t.name};"
-
-          case _: AliasId => s"const ${t.name} = ${pkgName}.${t.name};"
-
-          case _: IdentifierId =>
-            s"""const ${t.name} = ${pkgName}.${t.name};
-               |const I${t.name} = ${pkgName}.I${t.name};
-             """.stripMargin
-
-          case _: EnumId => s"const ${t.name} = ${pkgName}.${t.name};"
-          case _: DTOId =>
-            s"""const ${t.name} = ${pkgName}.${t.name};
-               |const I${t.name} = ${pkgName}.I${t.name};
-               |const I${t.name}Serialized = ${pkgName}.I${t.name}Serialized;
-             """.stripMargin
-        }
-  }
-
   private def withImport(t: TypeId, fromPackage: Package, index: Int): String = {
+    if (t.pkg.isEmpty) {
+      return s""
+    }
+
     val nestedDepth = t.pkg.zip(fromPackage).filter(x => x._1 == x._2).size
 
     if (nestedDepth == t.pkg.size) {
-      // It seems that we don't need if namespace is the same, TypeScript should handle resolution itself
-      s""
+        // It seems that we don't need if namespace is the same, TypeScript should handle resolution itself
+        return ""
 //      s"import { ${t.pkg.head} as ${t.pkg.head + index} } from ${"\"" + "./" + t.name + "\""};"
-    } else {
-      var importOffset = ""
-      (1 to (t.pkg.size - nestedDepth + 1)).foreach(_ => importOffset += "../")
-      s"import { ${t.pkg.head} as ${t.pkg.head + index} } from ${"\"" + importOffset + t.pkg.drop(nestedDepth - 1).mkString("/") + t.name + "\""};"
+    }
+
+    var importOffset = ""
+    (1 to (t.pkg.size - nestedDepth)).foreach(_ => importOffset += "../")
+
+    val importFile = importOffset + t.pkg.drop(nestedDepth).mkString("/")+ "/" + t.name
+
+    val pkgName = t.pkg.head + index + "." + t.pkg.drop(1).mkString(".")
+
+    t match {
+      case iid: InterfaceId =>
+        s"""import { ${t.pkg.head} as ${t.pkg.head + index} } from '${importFile}';
+           |import { ${t.name}, ${typespace.implId(iid).name}Serialized } from '${importFile}';
+           |const ${typespace.implId(iid).name} = ${pkgName}.${typespace.implId(iid).name};
+             """.stripMargin
+
+      case _: AdtId =>
+        s"import { ${t.name} } from '${importFile}';"
+
+      case _: AliasId =>
+        s"import { ${t.name} } from '${importFile}';"
+
+      case _: IdentifierId =>
+        s"""import { ${t.pkg.head} as ${t.pkg.head + index} } from '${importFile}';
+           |import { I${t.name} } from '${importFile}';
+           |const ${t.name} = ${pkgName}.${t.name};
+             """.stripMargin
+
+      case _: EnumId =>
+        s"import { ${t.name} } from '${importFile}';"
+
+      case dto: DTOId =>
+        s"""import { ${t.pkg.head} as ${t.pkg.head + index} } from '${importFile}';
+           |import { I${t.name}, I${t.name}Serialized } from '${importFile}';
+           |const ${t.name} = ${pkgName}.${t.name};
+             """.stripMargin
     }
   }
 
@@ -329,8 +332,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       return ""
     }
 
-    imports.zipWithIndex.map{ case (it, index) => this.withImport(it, pkg, index)}.mkString("\n") + "\n\n" +
-    imports.zipWithIndex.map{ case (it, index) => this.withConstImport(it, pkg, index)}.mkString("\n") + "\n\n"
+    imports.zipWithIndex.map{ case (it, index) => this.withImport(it, pkg, index)}.mkString("\n") + "\n\n"
   }
 
   protected def renderSerializedObject(fields: List[Field]): String = {
