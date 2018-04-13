@@ -48,7 +48,16 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
   }
 
   protected def outputDefn: Option[Defn] = {
-    ???
+    method.signature.output match {
+      case o: Output.Singular =>
+        None
+
+      case o: Output.Struct =>
+        Some(???)
+
+      case o: Output.Algebraic =>
+        Some(???)
+    }
   }
 
   protected def inputDefn: Defn = {
@@ -74,29 +83,15 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
     }
   }
 
-  protected def inputWrappedId: TypeId = DTOId(sp.svcId, s"${name.capitalize}Input")
+  protected def inputWrappedId: DTOId = DTOId(sp.svcId, s"${name.capitalize}Input")
 
   protected def signature: List[Term.Param] = fields.toParams
 
   protected def wrappedSignature: List[Term.Param] = List(param"input: ${inputWrappedType.typeFull}")
 
-  protected def fields: List[ScalaField] = {
+  protected def inputStruct: CompositeStructure = ctx.tools.mkStructure(inputWrappedId)
 
-    val compositeFields = method.signature.input
-      .concepts
-      .map(ctx.typespace.structure.structure)
-      .map(_.toScala)
-      .flatMap(_.all)
-
-    val ownFields =
-      PlainStruct(method.signature.input.fields.map {
-        f =>
-          ExtendedField(f, ???)
-      }).toScala.all
-
-
-    compositeFields ++ ownFields
-  }
+  protected def fields: List[ScalaField] = inputStruct.fields.all
 
   protected def name: String = method.name
 

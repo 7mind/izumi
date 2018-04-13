@@ -61,6 +61,7 @@ object TypeId {
   object DTOId {
     def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
 
+    @deprecated
     def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
     def apply(parent: IndefiniteId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
   }

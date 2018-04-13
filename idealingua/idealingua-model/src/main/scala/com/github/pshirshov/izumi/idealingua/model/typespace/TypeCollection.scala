@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{DeprecatedRPCMethod, RPCMethod}
@@ -24,7 +24,12 @@ class TypeCollection(domain: DomainDefinition) {
           , DTO(outIid, Structure.interfaces(m.signature.output))
         )
       case m: RPCMethod =>
-        Seq() // TODO
+        val in = m.signature.input
+        val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
+        val inIid = DTOId(IndefiniteId(service.id), s"${m.name}Input")
+        val inputDto = DTO(inIid, inputStructure)
+
+        Seq(inputDto) // TODO
     }
   }).flatten.toSeq
 
