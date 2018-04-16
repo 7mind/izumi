@@ -119,7 +119,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     Seq(q"type ${conv.toScala(i.id).typeName} = ${conv.toScala(i.target).typeFull}")
   }
 
-  protected def renderAdt(i: Adt): RenderableCogenProduct = {
+  protected def renderAdt(i: Adt, bases: List[Init] = List.empty): RenderableCogenProduct = {
     val t = conv.toScala(i.id)
 
     val members = i.alternatives.map {
@@ -141,7 +141,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         AdtElementProduct(memberName, qqElement, qqCompanion, converters)
     }
 
-    val qqAdt = q""" sealed trait ${t.typeName} extends ${rt.adtEl.init()}{} """
+    val superClasses = List(rt.adtEl.init()) ++ bases
+    val qqAdt = q""" sealed trait ${t.typeName} extends ..$superClasses {} """
     val qqAdtCompanion =
       q"""object ${t.termName} extends ${rt.adt.init()} {
             import scala.language.implicitConversions
@@ -285,7 +286,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         val struct = ctx.tools.mkStructure(dto)
         defns(struct, List(sp.serviceOutputBase.init()))
       case adt: AdtId =>
-        renderAdt(typespace.apply(adt).asInstanceOf[Adt])
+        renderAdt(typespace.apply(adt).asInstanceOf[Adt], List(sp.serviceOutputBase.init()))
       case o =>
         throw new IDLException(s"Impossible case: $o")
     }).flatMap(_.render)
@@ -324,8 +325,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val qqWrapped =
       q"""trait ${sp.svcWrappedTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
-            import ${sp.svcWrappedTpe.termBase}._
-
             ..${decls.map(_.defnWrapped)}
           }"""
 
@@ -449,7 +448,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     new RenderableCogenProduct {
       override def preamble: String =
         s"""import scala.language.higherKinds
-           |import _root_.${rt.transport.pkg}._
            |import _root_.${rt.services.pkg}._
            |""".stripMargin
 
