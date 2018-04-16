@@ -133,39 +133,4 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
   protected def fields: List[ScalaField] = inputStruct.fields.all
 
   protected def name: String = method.name
-
-  //  def defn: Stat = {
-  //    q"def $nameTerm(input: $input): Result[$output]"
-  //  }
-  //
-  //  def defnDispatch: Stat = {
-  //    q"def $nameTerm(input: $input): Result[$output] = dispatcher.dispatch(input, classOf[$output])"
-  //  }
-  //
-  //  def defnExplode: Stat = {
-  //    val code = in.explodedSignature.map(p => q"${Term.Name(p.name.value)} = input.${Term.Name(p.name.value)}")
-  //    q"def $nameTerm(input: $input): Result[$output] = service.$nameTerm(..$code)"
-  //  }
-  //
-  //  def defnExploded: Stat = {
-  //    q"def $nameTerm(..${in.explodedSignature}): Result[$output]"
-  //  }
-  //
-  //
-  //  def defnCompress: Stat = {
-  //    val code = in.explodedSignature.map(p => q"${Term.Name(p.name.value)} = ${Term.Name(p.name.value)}")
-  //
-  //    q"""def $nameTerm(..${in.explodedSignature}): Result[$output] = {
-  //       service.$nameTerm(${in.t.termFull}(..$code))
-  //      }
-  //      """
-  //  }
-  //
-  //  def routingClause: Case = {
-  //    Case(
-  //      Pat.Typed(Pat.Var(Term.Name("value")), input)
-  //      , None
-  //      , q"service.$nameTerm(value)"
-  //    )
-  //  }
 }
