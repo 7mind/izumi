@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.services
 
 import scala.concurrent.Future
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.higherKinds
 import scala.util.Try
 
 trait ServiceResultTransformer[R1[_], R2[_]] {

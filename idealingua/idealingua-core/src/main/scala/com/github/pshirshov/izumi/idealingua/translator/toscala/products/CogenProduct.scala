@@ -1,13 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.products
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeName
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime.Import
 
 import scala.meta.{Defn, Term}
-
-
-
-
-
 
 
 case class CogenProduct[T <: Defn](
@@ -23,11 +19,32 @@ case class CogenProduct[T <: Defn](
   }
 }
 
+case class CogenPair[T <: Defn](defn: T, companion: Defn.Object) {
+  def render: List[Defn] = List(defn, companion)
+}
+
+case class CogenServiceProduct(
+                           service: CogenPair[Defn.Trait]
+                           , client: CogenPair[Defn.Trait]
+                           , wrapped: CogenPair[Defn.Trait]
+                           , defs: Defn.Object
+                           , imports: List[Import]
+                         ) extends RenderableCogenProduct {
+
+  override def preamble: String =
+    s"""${imports.map(_.render).mkString("\n")}
+       |""".stripMargin
+
+  def render: List[Defn] = {
+    List(service, client, wrapped).flatMap(_.render) :+ defs
+  }
+}
+
+
 object CogenProduct {
   type InterfaceProduct = CogenProduct[Defn.Trait]
   type CompositeProudct = CogenProduct[Defn.Class]
   type IdentifierProudct = CogenProduct[Defn.Class]
-  type ServiceProudct = CogenProduct[Defn.Trait]
 
   case class EnumProduct(
                           defn: Defn.Trait

@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{AdtElementProduct, AdtProduct, EnumProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenPair, CogenProduct, CogenServiceProduct, RenderableCogenProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
 
 import scala.meta._
@@ -293,7 +293,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val outputMappers = decls.map(_.outputMatcher)
     val packing = decls.map(_.bodyClient)
     val unpacking = decls.map(_.bodyServer)
-
     val dispatchers = decls.map(_.dispatching)
 
     val qqService =
@@ -461,18 +460,16 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }
        """
 
-    new RenderableCogenProduct {
-      override def preamble: String =
-        s"""import scala.language.higherKinds
-           |import _root_.${rt.services.pkg}._
-           |""".stripMargin
 
-      override def render: List[Defn] = List(
-        qqService, qqServiceCompanion
-        , qqClient, qqClientCompanion
-        , qqWrapped, qqWrappedCompanion
-        , qqBaseCompanion
-      )
-    }
+    val out = CogenServiceProduct(
+      CogenPair(qqService, qqServiceCompanion)
+      , CogenPair(qqClient, qqClientCompanion)
+      , CogenPair(qqWrapped, qqWrappedCompanion)
+      , qqBaseCompanion
+      , List(runtime.Import.from(runtime.Pkg.language, "higherKinds"), rt.services.`import`)
+    )
+
+    ext.extend(svc, out, _.handleService)
+
   }
 }

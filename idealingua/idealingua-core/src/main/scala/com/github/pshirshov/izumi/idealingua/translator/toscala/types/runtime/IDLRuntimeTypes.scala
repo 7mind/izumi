@@ -5,29 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinitio
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, WithInfo}
 import com.github.pshirshov.izumi.idealingua.runtime.services.{ServiceResult, WithResult, WithResultType}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaTypeConverter
 
-import scala.reflect._
-
-class Pkg private (pkgParts: Seq[String]) {
-  final val pkg = pkgParts.mkString(".")
-  final val conv = new ScalaTypeConverter(DomainId(pkgParts.init, pkgParts.last))
-}
-
-object Pkg {
-  def parentOf[T : ClassTag]: Pkg = {
-     val classPkg = classTag[T].runtimeClass.getPackage.getName
-    val classPkgParts = classPkg.split('.').toSeq
-    new Pkg(classPkgParts)
-  }
-
-  def of[T : ClassTag]: Pkg = {
-    val classPkg = classTag[T].runtimeClass.getPackage.getName
-    val classPkgParts = classPkg.split('.')
-    new Pkg(classPkgParts)
-  }
-
-}
 
 object IDLRuntimeTypes {
 

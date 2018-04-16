@@ -241,10 +241,12 @@ lazy val idealinguaCore = inIdealingua.as.module
   .depends(idealinguaModel, fastparseShaded, idealinguaTestDefs.testOnlyRef)
   .settings(ShadingSettings)
 
-lazy val idealinguaFormatCirce = inIdealingua.as.module
-  .depends(idealinguaCore, idealinguaTestDefs.testOnlyRef)
-  .settings(libraryDependencies ++= T.circe)
+lazy val idealinguaRuntimeCirce = inIdealingua.as.module
+  .depends(idealinguaModel)
+  .settings(libraryDependencies ++= R.circe)
 
+lazy val idealinguaFormatCirce = inIdealingua.as.module
+  .depends(idealinguaCore, idealinguaTestDefs.testOnlyRef, idealinguaRuntimeCirce.testOnlyRef)
 
 lazy val idealinguaRuntimeCats = inIdealingua.as.module
   .depends(idealinguaModel)

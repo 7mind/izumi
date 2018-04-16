@@ -31,6 +31,17 @@ trait ScalaMetaTools {
       }
     }
 
+    def appendBase(inits: Init*): T = {
+      appendBase(inits.toList)
+    }
+
+    def appendBase(inits: List[Init]): T = {
+      modifyBase {
+        existing =>
+          existing ++ inits
+      }
+    }
+
     def modifyBase(modify: (List[Init]) => List[Init]): T = {
       val extended = defn match {
         case o: Defn.Object =>
