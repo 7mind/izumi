@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.typespace
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{DeprecatedRPCMethod, RPCMethod}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
@@ -46,9 +46,9 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
       method <- service.methods
     } yield {
       method match {
-        case m: DeprecatedRPCMethod =>
-          (m.signature.input ++ m.signature.output).map(i => DefinitionDependency.DepServiceParameter(service.id, i))
         case m: RPCMethod =>
+//        case m: DeprecatedRPCMethod =>
+//          (m.signature.input ++ m.signature.output).map(i => DefinitionDependency.DepServiceParameter(service.id, i))
           Seq() // TODO
       }
     }

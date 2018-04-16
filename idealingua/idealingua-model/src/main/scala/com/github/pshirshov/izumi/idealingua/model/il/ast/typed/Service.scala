@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{InterfaceId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 
 case class Service(id: ServiceId, methods: List[Service.DefMethod])
 
@@ -25,13 +25,6 @@ object Service {
     case class Signature(input: SimpleStructure, output: Output)
 
     case class RPCMethod(name: String, signature: Signature) extends DefMethod
-
-    case class DeprecatedSignature(input: Interfaces, output: Interfaces) {
-      def asList: List[InterfaceId] = input ++ output
-    }
-
-    case class DeprecatedRPCMethod(name: String, signature: DeprecatedSignature) extends DefMethod
-
   }
 
 }

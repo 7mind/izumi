@@ -125,10 +125,7 @@ class ILRenderer(domain: DomainDefinition) {
   def render(tpe: DefMethod): String = {
     tpe match {
       case m: RPCMethod =>
-        s"def ${m.name}(${render(m.signature.input)}) => ${render(m.signature.output)}"
-
-      case d: DeprecatedRPCMethod =>
-        s"def ${d.name}(${d.signature.input.map(render).mkString(", ")}): (${d.signature.output.map(render).mkString(", ")})"
+        s"def ${m.name}(${render(m.signature.input)}): ${render(m.signature.output)}"
     }
   }
 

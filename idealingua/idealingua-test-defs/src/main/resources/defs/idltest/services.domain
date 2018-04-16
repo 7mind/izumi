@@ -14,7 +14,7 @@ mixin Request {
 }
 
 service TestService {
-  def deprecated(Request): (Request)
+  def simple(+Request): (+Request)
 
   // simple instance
   def greetSingleTypeIdOutput(firstName: str, secondName: str) => str

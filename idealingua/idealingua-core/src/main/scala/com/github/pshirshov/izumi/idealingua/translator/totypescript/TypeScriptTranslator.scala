@@ -428,8 +428,6 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   }
 
   protected def renderServiceMethodSignature(method: Service.DefMethod, spread: Boolean = false): String = method match {
-    case _: DefMethod.DeprecatedRPCMethod =>
-      ""
     case m: DefMethod.RPCMethod =>
       if (spread) {
         val fields = m.signature.input.fields.map(f => f.name + s": ${conv.toNativeType(f.typeId)}").mkString(", ")
@@ -446,9 +444,6 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   }
 
   protected def renderServiceClientMethod(service: String, method: Service.DefMethod): String = method match {
-    case _: DefMethod.DeprecatedRPCMethod =>
-      ""
-
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct =>
         s"""public ${renderServiceMethodSignature(method, spread = true)} {
@@ -580,9 +575,6 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   }
 
   protected def renderServiceMethodModels(method: Service.DefMethod): String = method match {
-    case _: DefMethod.DeprecatedRPCMethod =>
-      ""
-
     case m: DefMethod.RPCMethod =>
       s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "IServiceClientInData", m.signature.input)}
          |${renderServiceMethodOutModel(s"Out${m.name.capitalize}", "IServiceClientOutData", m.signature.output)}
