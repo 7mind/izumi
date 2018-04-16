@@ -68,8 +68,11 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
     val sig = fields.map(_.name)
 
     val output = method.signature.output match {
-      case _ =>
+      case _: Output.Singular =>
         q"???"
+
+      case _ =>
+        q"o"
     }
 
     q"""def $nameTerm(..$signature): Result[${outputType.typeFull}] = {
