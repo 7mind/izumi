@@ -32,16 +32,55 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
 
   import ctx.conv._
 
+  def nameTerm = Term.Name(name)
+  
   def defnServer: Stat = {
-    q"def ${Term.Name(name)}(ctx: C, ..$signature): Result[${outputType.typeFull}]"
+    q"def $nameTerm(ctx: C, ..$signature): Result[${outputType.typeFull}]"
   }
 
   def defnClient: Stat = {
-    q"def ${Term.Name(name)}(..$signature): Result[${outputType.typeFull}]"
+    q"def $nameTerm(..$signature): Result[${outputType.typeFull}]"
   }
 
   def defnWrapped: Stat = {
-    q"def ${Term.Name(name)}(ctx: C, ..$wrappedSignature): Result[${outputTypeWrapped.typeFull}]"
+    q"def $nameTerm(ctx: C, ..$wrappedSignature): Result[${outputTypeWrapped.typeFull}]"
+  }
+
+  def bodyServer: Stat = {
+    val sig = fields.map(f => q"input.${f.name}")
+
+    val output = method.signature.output match {
+      case _: Output.Singular =>
+        q"???"
+
+      case _: Output.Algebraic =>
+        q"result"
+
+      case _: Output.Struct =>
+        q"result"
+    }
+
+    q"""def $nameTerm(ctx: C, ..$wrappedSignature): Result[${outputTypeWrapped.typeFull}] = {
+             val result = service.$nameTerm(ctx, ..$sig)
+             $output
+       }
+     """
+  }
+
+  def bodyClient: Stat = {
+    val sig = fields.map(_.name)
+    q"""def $nameTerm(..$signature): Result[${outputType.typeFull}] = {
+             val packed = ${inputTypeWrapped.termFull}(..$sig)
+             val dispatched = dispatcher.dispatch(packed)
+             _ServiceResult.map(dispatched) {
+               case o: ${outputTypeWrapped.typeFull} =>
+                 ???
+               case o =>
+                 val id: String = ${Lit.String(s"${sp.svcId.name}.$name)")}
+                 throw new TypeMismatchException(s"Unexpected input in $$id: $$o", o)
+             }
+       }
+     """
   }
 
   protected def outputType: ScalaType = {
@@ -49,10 +88,10 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
   }
 
   def outputTypeWrapped: ScalaType = {
-    ctx.conv.toScala(outputWrappedId)
+    ctx.conv.toScala(outputIdWrapped)
   }
 
-  def outputWrappedId: TypeId = {
+  def outputIdWrapped: TypeId = {
     method.signature.output match {
       case _: Output.Singular =>
         DTOId(sp.baseId, s"${name.capitalize}Output")
@@ -62,7 +101,7 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
     }
   }
 
-  def inputWrappedType: ScalaType = sp.svcBaseTpe.within(inputWrappedId.name)
+  def inputTypeWrapped: ScalaType = sp.svcBaseTpe.within(inputIdWrapped.name)
 
   protected def outputId: TypeId = {
     method.signature.output match {
@@ -77,41 +116,41 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
     }
   }
 
-  def inputWrappedId: DTOId = DTOId(sp.baseId, s"${name.capitalize}Input")
+  def inputIdWrapped: DTOId = DTOId(sp.baseId, s"${name.capitalize}Input")
 
   protected def signature: List[Term.Param] = fields.toParams
 
-  protected def wrappedSignature: List[Term.Param] = List(param"input: ${inputWrappedType.typeFull}")
+  protected def wrappedSignature: List[Term.Param] = List(param"input: ${inputTypeWrapped.typeFull}")
 
-  protected def inputStruct: CompositeStructure = ctx.tools.mkStructure(inputWrappedId)
+  protected def inputStruct: CompositeStructure = ctx.tools.mkStructure(inputIdWrapped)
 
   protected def fields: List[ScalaField] = inputStruct.fields.all
 
   protected def name: String = method.name
 
   //  def defn: Stat = {
-  //    q"def ${Term.Name(name)}(input: $input): Result[$output]"
+  //    q"def $nameTerm(input: $input): Result[$output]"
   //  }
   //
   //  def defnDispatch: Stat = {
-  //    q"def ${Term.Name(name)}(input: $input): Result[$output] = dispatcher.dispatch(input, classOf[$output])"
+  //    q"def $nameTerm(input: $input): Result[$output] = dispatcher.dispatch(input, classOf[$output])"
   //  }
   //
   //  def defnExplode: Stat = {
   //    val code = in.explodedSignature.map(p => q"${Term.Name(p.name.value)} = input.${Term.Name(p.name.value)}")
-  //    q"def ${Term.Name(name)}(input: $input): Result[$output] = service.${Term.Name(name)}(..$code)"
+  //    q"def $nameTerm(input: $input): Result[$output] = service.$nameTerm(..$code)"
   //  }
   //
   //  def defnExploded: Stat = {
-  //    q"def ${Term.Name(name)}(..${in.explodedSignature}): Result[$output]"
+  //    q"def $nameTerm(..${in.explodedSignature}): Result[$output]"
   //  }
   //
   //
   //  def defnCompress: Stat = {
   //    val code = in.explodedSignature.map(p => q"${Term.Name(p.name.value)} = ${Term.Name(p.name.value)}")
   //
-  //    q"""def ${Term.Name(name)}(..${in.explodedSignature}): Result[$output] = {
-  //       service.${Term.Name(name)}(${in.t.termFull}(..$code))
+  //    q"""def $nameTerm(..${in.explodedSignature}): Result[$output] = {
+  //       service.$nameTerm(${in.t.termFull}(..$code))
   //      }
   //      """
   //  }
@@ -120,7 +159,7 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
   //    Case(
   //      Pat.Typed(Pat.Var(Term.Name("value")), input)
   //      , None
-  //      , q"service.${Term.Name(name)}(value)"
+  //      , q"service.$nameTerm(value)"
   //    )
   //  }
 }

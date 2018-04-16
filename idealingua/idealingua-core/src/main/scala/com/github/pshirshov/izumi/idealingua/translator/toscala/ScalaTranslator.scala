@@ -275,13 +275,13 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val decls = svc.methods.collect({ case c: RPCMethod => c })
       .map(ServiceMethodProduct(ctx, sp, _))
 
-    val inputs = decls.map(_.inputWrappedId).map({
+    val inputs = decls.map(_.inputIdWrapped).map({
       dto =>
         val struct = ctx.tools.mkStructure(dto)
         defns(struct, List(sp.serviceInputBase.init()))
     }).flatMap(_.render)
 
-    val outputs = decls.map(_.outputWrappedId).map({
+    val outputs = decls.map(_.outputIdWrapped).map({
       case dto: DTOId =>
         val struct = ctx.tools.mkStructure(dto)
         defns(struct, List(sp.serviceOutputBase.init()))
@@ -291,21 +291,22 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         throw new IDLException(s"Impossible case: $o")
     }).flatMap(_.render)
 
-    val inputMappers: List[Case] = decls.map {
+    val inputMappers = decls.map {
       d =>
-        p""" case _: ${d.inputWrappedType.typeFull} => Method(serviceId, MethodId(${Lit.String(d.method.name)})) """
+        p""" case _: ${d.inputTypeWrapped.typeFull} => Method(serviceId, MethodId(${Lit.String(d.method.name)})) """
     }
-    val outputMappers: List[Case] = decls.map {
+    val outputMappers = decls.map {
       d =>
         p""" case _: ${d.outputTypeWrapped.typeFull} => Method(serviceId, MethodId(${Lit.String(d.method.name)})) """
     }
 
-    val packing: List[Defn] = List.empty
-    val unpacking: List[Defn] = List.empty
+    val packing = decls.map(_.bodyClient)
 
-    val dispatchers: List[Case] = decls.map {
+    val unpacking = decls.map(_.bodyServer)
+
+    val dispatchers = decls.map {
       d =>
-        p""" case InContext(v: ${d.inputWrappedType.typeFull}, c) => _ServiceResult.map(${Term.Name(d.method.name)}(c, v))(v => v) // upcast """
+        p""" case InContext(v: ${d.inputTypeWrapped.typeFull}, c) => _ServiceResult.map(${Term.Name(d.method.name)}(c, v))(v => v) // upcast """
     }
 
     val qqService =
@@ -345,7 +346,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         }
       }"""
 
-    val qqUnpackingDispatcher = q"""
+    val qqUnpackingDispatcher =
+      q"""
   trait UnpackingDispatcher[R[_], C]
     extends ${sp.svcWrappedTpe.parameterize("R", "C").init()}
       with Dispatcher[InContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R]
@@ -376,7 +378,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val qqUnpackingDispatcherCompanion =
       q"""  object UnpackingDispatcher {
-        class Impl[R[_] : ServiceResult, C](val dispatcher: Dispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]) extends UnpackingDispatcher[R, C] {
+        class Impl[R[_] : ServiceResult, C](val service: ${sp.svcTpe.typeFull}[R, C]) extends UnpackingDispatcher[R, C] {
           override protected def _ServiceResult: ServiceResult[R] = implicitly
         }
       }"""
@@ -432,9 +434,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }
        """
 
-    /*
-    *             sealed trait ${sp.serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
-            sealed trait ${sp.serviceOutputBase.typeName} extends Any with ${rt.input.init()} {}*/
+    // TODO: move Any into extensions
     val qqBaseCompanion =
       q"""
          object ${sp.svcBaseTpe.termName} {
