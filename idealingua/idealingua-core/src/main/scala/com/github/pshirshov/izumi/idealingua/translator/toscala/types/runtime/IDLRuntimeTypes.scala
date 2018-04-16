@@ -49,17 +49,6 @@ object IDLRuntimeTypes {
   final val WithResult = services.conv.toScala[WithResult[_1Arg]]
   final val WithResultType = services.conv.toScala[WithResultType[_1Arg]]
 
-  final val idtService = model.conv.toScala[IDLService[_1Arg]]
-
-//  @deprecated
-//  val transport: Pkg = Pkg.parentOf[AbstractClientDispatcher[_1Arg, _]]
-//  final val serverDispatcher = transport.conv.toScala[AbstractServerDispatcher[_1Arg, _]]
-//  final val clientDispatcher = transport.conv.toScala[AbstractClientDispatcher[_1Arg, _]]
-//  final val clientWrapper = transport.conv.toScala[IDLClientWrapper[_1Arg, _]]
-//  final val serverWrapper = transport.conv.toScala[IDLServiceExploded[_1Arg, _]]
-  final val input = model.conv.toScala[IDLInput]
-  final val output = model.conv.toScala[IDLOutput]
-
   // introspection
   final val typeId = model.conv.toScala[TypeId]
   final val typeInfo = model.conv.toScala[IDLTypeInfo]
