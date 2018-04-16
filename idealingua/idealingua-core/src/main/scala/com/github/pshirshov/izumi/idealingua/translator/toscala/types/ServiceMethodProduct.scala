@@ -69,7 +69,7 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
 
     val output = method.signature.output match {
       case _: Output.Singular =>
-        q"???"
+        q"o.value"
 
       case _ =>
         q"o"
