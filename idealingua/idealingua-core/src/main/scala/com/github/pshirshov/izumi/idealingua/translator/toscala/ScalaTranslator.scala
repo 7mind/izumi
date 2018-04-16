@@ -383,7 +383,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
                  case MuxResponse(t: ${sp.serviceOutputBase.typeFull}, _) =>
                    t
                  case o =>
-                   throw new TypeMismatchException(s"Unexpected output in CalculatorServiceSafeToUnsafeBridge.dispatch: $$o", o)
+                   val id: String = ${Lit.String(s"${sp.svcId.name}.SafeToUnsafeBridge.name)")}
+                   throw new TypeMismatchException(s"Unexpected output in $$id: $$o", o)
                }
              }
            }
