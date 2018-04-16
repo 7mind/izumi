@@ -405,7 +405,36 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val qqWrappedCompanion =
       q"""
-         object ${sp.svcWrappedTpe.termName} {
+         object ${sp.svcWrappedTpe.termName}
+          extends IdentifiableServiceDefinition
+            with WrappedServiceDefinition
+            with WrappedUnsafeServiceDefinition {
+
+          type Input =  ${sp.serviceInputBase.typeFull}
+          type Output = ${sp.serviceOutputBase.typeFull}
+
+
+           override type ServiceServer[R[_], C] = ${sp.svcTpe.parameterize("R", "C").typeFull}
+           override type ServiceClient[R[_]] = ${sp.svcClientTpe.parameterize("R").typeFull}
+
+  def client[R[_] : ServiceResult](dispatcher: Dispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
+    new PackingDispatcher.Impl[R](dispatcher)
+  }
+
+
+  def clientUnsafe[R[_] : ServiceResult](dispatcher: Dispatcher[MuxRequest[_], MuxResponse[_], R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
+    client(new SafeToUnsafeBridge[R](dispatcher))
+  }
+
+  def server[R[_] : ServiceResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): Dispatcher[InContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R] = {
+    new UnpackingDispatcher.Impl[R, C](service)
+  }
+
+
+  def serverUnsafe[R[_] : ServiceResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): UnsafeDispatcher[C, R] = {
+    new UnpackingDispatcher.Impl[R, C](service)
+  }
+
           val serviceId = ServiceId(${Lit.String(sp.svcId.name)})
 
           def toMethodId(v: ${sp.serviceInputBase.typeFull}): Method = {
