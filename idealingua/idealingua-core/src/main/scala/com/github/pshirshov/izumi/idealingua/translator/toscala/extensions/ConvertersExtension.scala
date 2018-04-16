@@ -14,14 +14,14 @@ object ConvertersExtension extends ScalaTranslatorExtension {
 
   override def handleComposite(ctx: STContext, interface: ScalaStruct, product: CompositeProudct): CompositeProudct = {
     val converters = mkConverters(ctx, interface)
-    product.copy(tools = product.tools.extendDefinition(converters))
+    product.copy(tools = product.tools.appendDefinitions(converters))
 
   }
 
   override def handleInterface(ctx: STContext, interface: TypeDef.Interface, product: InterfaceProduct): InterfaceProduct = {
     import ctx.conv._
     val converters = mkConverters(ctx, ctx.typespace.structure.structure(interface).toScala)
-    product.copy(tools = product.tools.extendDefinition(converters))
+    product.copy(tools = product.tools.appendDefinitions(converters))
   }
 
 

@@ -4,18 +4,37 @@ import scala.meta.{Defn, Init, Stat}
 
 trait ScalaMetaTools {
   implicit class DefnExt[T <: Defn](defn: T) {
-    def extendDefinition(stats: Stat*): T = {
-      extendDefinition(stats.toList)
+    def prependDefnitions(stats: Stat*): T = {
+      prependDefnitions(stats.toList)
     }
 
-    def extendDefinition(stats: List[Stat]): T = {
+    def prependDefnitions(stats: List[Stat]): T = {
+      modifyDefinitions {
+        existing =>
+          stats ++ existing
+      }
+    }
+
+    def appendDefinitions(stats: Stat*): T = {
+      appendDefinitions(stats.toList)
+    }
+
+    def appendDefinitions(stats: List[Stat]): T = {
+      modifyDefinitions {
+        existing =>
+          existing ++ stats
+      }
+    }
+
+
+    def modifyDefinitions(modify: (List[Stat]) => List[Stat]): T = {
       val extended = defn match {
         case o: Defn.Object =>
-          o.copy(templ = o.templ.copy(stats = o.templ.stats ++ stats))
+          o.copy(templ = o.templ.copy(stats = modify(o.templ.stats)))
         case o: Defn.Class =>
-          o.copy(templ = o.templ.copy(stats = o.templ.stats ++ stats))
+          o.copy(templ = o.templ.copy(stats = modify(o.templ.stats)))
         case o: Defn.Trait =>
-          o.copy(templ = o.templ.copy(stats = o.templ.stats ++ stats))
+          o.copy(templ = o.templ.copy(stats = modify(o.templ.stats)))
       }
       extended.asInstanceOf[T]
     }

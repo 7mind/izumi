@@ -37,7 +37,7 @@ object IfaceNarrowersExtension extends ScalaTranslatorExtension {
 
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
-    product.copy(tools = product.tools.extendDefinition(narrowers))
+    product.copy(tools = product.tools.appendDefinitions(narrowers))
   }
 
 }

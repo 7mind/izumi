@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{AdtElementProduct, AdtProduct, EnumProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenPair, CogenProduct, CogenServiceProduct, RenderableCogenProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
 
 import scala.meta._
@@ -450,12 +450,14 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }
        """
 
+    val input = CogenPair(q"sealed trait ${sp.serviceInputBase.typeName} extends Any", q"object ${sp.serviceInputBase.termName} {}")
+    val output = CogenPair(q"sealed trait ${sp.serviceOutputBase.typeName} extends Any", q"object ${sp.serviceOutputBase.termName} {}")
+
     // TODO: move Any into extensions
     val qqBaseCompanion =
       q"""
          object ${sp.svcBaseTpe.termName} {
-            sealed trait ${sp.serviceInputBase.typeName} extends Any
-            sealed trait ${sp.serviceOutputBase.typeName} extends Any
+
            ..$outputs
            ..$inputs
          }
@@ -466,11 +468,11 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       CogenPair(qqService, qqServiceCompanion)
       , CogenPair(qqClient, qqClientCompanion)
       , CogenPair(qqWrapped, qqWrappedCompanion)
-      , qqBaseCompanion
+      , products.CogenServiceDefs(qqBaseCompanion, input, output)
       , List(runtime.Import.from(runtime.Pkg.language, "higherKinds"), rt.services.`import`)
     )
 
-    ext.extend(svc, out, _.handleService)
+    ext.extend(sp, out, _.handleService)
 
   }
 }
