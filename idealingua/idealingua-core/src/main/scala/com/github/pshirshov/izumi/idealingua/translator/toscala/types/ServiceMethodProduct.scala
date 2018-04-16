@@ -51,12 +51,9 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
 
     val output = method.signature.output match {
       case _: Output.Singular =>
-        q"???"
+        q"_ServiceResult.map(result)(${outputTypeWrapped.termFull}.apply)"
 
-      case _: Output.Algebraic =>
-        q"result"
-
-      case _: Output.Struct =>
+      case _ =>
         q"result"
     }
 
@@ -69,12 +66,18 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
 
   def bodyClient: Stat = {
     val sig = fields.map(_.name)
+
+    val output = method.signature.output match {
+      case _ =>
+        q"???"
+    }
+
     q"""def $nameTerm(..$signature): Result[${outputType.typeFull}] = {
              val packed = ${inputTypeWrapped.termFull}(..$sig)
              val dispatched = dispatcher.dispatch(packed)
              _ServiceResult.map(dispatched) {
                case o: ${outputTypeWrapped.typeFull} =>
-                 ???
+                 $output
                case o =>
                  val id: String = ${Lit.String(s"${sp.svcId.name}.$name)")}
                  throw new TypeMismatchException(s"Unexpected input in $$id: $$o", o)
