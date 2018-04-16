@@ -64,6 +64,10 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
      """
   }
 
+  def dispatching: Case = {
+    p" case InContext(v: ${inputTypeWrapped.typeFull}, c) => _ServiceResult.map(${Term.Name(method.name)}(c, v))(v => v) // upcast "
+  }
+
   def bodyClient: Stat = {
     val sig = fields.map(_.name)
 
@@ -87,6 +91,14 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
              }
        }
      """
+  }
+
+  def inputMatcher: Case =  {
+    p" case _: ${inputTypeWrapped.typeFull} => Method(serviceId, MethodId(${Lit.String(method.name)}))"
+  }
+
+  def outputMatcher: Case =  {
+    p" case _: ${outputTypeWrapped.typeFull} => Method(serviceId, MethodId(${Lit.String(method.name)}))"
   }
 
   protected def outputType: ScalaType = {
