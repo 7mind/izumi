@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
@@ -270,39 +271,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
 
     val sp = ServiceProduct(ctx, svc)
-    val decls = svc.methods.collect({ case c: RPCMethod => c }).map {
-      method =>
-        //        // TODO: unify with ephemerals in typespace
-        //        val in = t.within(s"In${method.name.capitalize}")
-        //        val out = t.within(s"Out${method.name.capitalize}")
-        //
-        //        val inDef = DTOId(i.id, in.fullJavaType.name)
-        //        val outDef = DTOId(i.id, out.fullJavaType.name)
-        //
-        //        val inputComposite = ctx.tools.mkStructure(inDef)
-        //        val outputComposite = ctx.tools.mkStructure(outDef)
-        //
-        //        val inputType = in.typeFull
-        //        val outputType = out.typeFull
-        //
-        //
-        //        val ioDefns = Seq(
-        //          defns(inputComposite, List(serviceInputBase.init()))
-        //          , defns(outputComposite, List(serviceOutputBase.init()))
-        //        )
-        //
-        //        ServiceMethodProduct(
-        //          method.name
-        //          , inputComposite
-        //          , outputComposite
-        //          , inputType
-        //          , outputType
-        //          , ioDefns
-        //        )
-
-
-        ServiceMethodProduct(ctx, sp, method)
-    }
+    val decls = svc.methods.collect({ case c: RPCMethod => c })
+      .map(ServiceMethodProduct(ctx, sp, _))
 
     val inputs = decls.map(_.inputWrappedId).map({
       dto =>
@@ -316,8 +286,26 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         defns(struct, List(sp.serviceOutputBase.init()))
       case adt: AdtId =>
         renderAdt(typespace.apply(adt).asInstanceOf[Adt])
+      case o =>
+        throw new IDLException(s"Impossible case: $o")
     }).flatMap(_.render)
 
+    val inputMappers: List[Case] = decls.map {
+      d =>
+        p""" case _: ${d.inputWrappedType.typeFull} => Method(serviceId, MethodId(${Lit.String(d.method.name)})) """
+    }
+    val outputMappers: List[Case] = decls.map {
+      d =>
+        p""" case _: ${d.outputTypeWrapped.typeFull} => Method(serviceId, MethodId(${Lit.String(d.method.name)})) """
+    }
+
+    val packing: List[Defn] = List.empty
+    val unpacking: List[Defn] = List.empty
+
+    val dispatchers: List[Case] = decls.map {
+      d =>
+        p""" case InContext(v: ${d.inputWrappedType.typeFull}, c) => _ServiceResult.map(${Term.Name(d.method.name)}(c, v))(v => v) // upcast """
+    }
 
     val qqService =
       q"""trait ${sp.svcTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
@@ -341,10 +329,101 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
             ..${decls.map(_.defnWrapped)}
           }"""
 
+    val qqPackingDispatcher =
+      q"""
+           trait PackingDispatcher[R[_]]
+             extends ${sp.svcClientTpe.parameterize("R").init()}
+               with ${rt.WithResult.parameterize("R").init()} {
+             def dispatcher: Dispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]
+
+               ..$packing
+           }
+       """
+    val qqPackingDispatcherCompanion =
+      q"""  object PackingDispatcher {
+        class Impl[R[_] : ServiceResult](val dispatcher: Dispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]) extends PackingDispatcher[R] {
+          override protected def _ServiceResult: ServiceResult[R] = implicitly
+        }
+      }"""
+
+    val qqUnpackingDispatcher = q"""
+  trait UnpackingDispatcher[R[_], C]
+    extends ${sp.svcWrappedTpe.parameterize("R", "C").init()}
+      with Dispatcher[InContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R]
+      with UnsafeDispatcher[C, R]
+      with WithResult[R] {
+    def service: ${sp.svcTpe.typeFull}[R, C]
+
+    def dispatch(input: InContext[${sp.serviceInputBase.typeFull}, C]): Result[${sp.serviceOutputBase.typeFull}] = {
+      input match {
+        ..case $dispatchers
+      }
+    }
+
+    def identifier: ServiceId = serviceId
+
+    def dispatchUnsafe(input: InContext[MuxRequest[_], C]): Option[Result[MuxResponse[_]]] = {
+      input.value.v match {
+        case v: ${sp.serviceInputBase.typeFull} =>
+          Option(_ServiceResult.map(dispatch(InContext(v, input.context)))(v => MuxResponse(v, toMethodId(v))))
+
+        case _ =>
+          None
+      }
+    }
+
+      ..$unpacking
+  }"""
+
+    val qqUnpackingDispatcherCompanion =
+      q"""  object UnpackingDispatcher {
+        class Impl[R[_] : ServiceResult, C](val dispatcher: Dispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]) extends UnpackingDispatcher[R, C] {
+          override protected def _ServiceResult: ServiceResult[R] = implicitly
+        }
+      }"""
+
+    val qqSafeToUnsafeBridge =
+      q"""
+        class SafeToUnsafeBridge[R[_] : ServiceResult](dispatcher: Dispatcher[MuxRequest[_], MuxResponse[_], R])
+           extends Dispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]
+           with ${rt.WithResult.parameterize("R").init()} {
+             override protected def _ServiceResult: ServiceResult[R] = implicitly
+
+             import ServiceResult._
+
+             override def dispatch(input: ${sp.serviceInputBase.typeFull}): Result[${sp.serviceOutputBase.typeFull}] = {
+               dispatcher.dispatch(MuxRequest(input, toMethodId(input))).map {
+                 case MuxResponse(t: ${sp.serviceOutputBase.typeFull}, _) =>
+                   t
+                 case o =>
+                   throw new TypeMismatchException(s"Unexpected output in CalculatorServiceSafeToUnsafeBridge.dispatch: $$o", o)
+               }
+             }
+           }
+       """
+
     val qqWrappedCompanion =
       q"""
          object ${sp.svcWrappedTpe.termName} {
+          val serviceId = ServiceId(${Lit.String(sp.svcId.name)})
 
+          def toMethodId(v: ${sp.serviceInputBase.typeFull}): Method = {
+            v match {
+              ..case $inputMappers
+            }
+          }
+
+          def toMethodId(v: ${sp.serviceOutputBase.typeFull}): Method = {
+            v match {
+              ..case $outputMappers
+            }
+          }
+
+          $qqPackingDispatcher
+          $qqPackingDispatcherCompanion
+          $qqSafeToUnsafeBridge
+          $qqUnpackingDispatcher
+          $qqUnpackingDispatcherCompanion
          }
        """
 
@@ -354,11 +433,14 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }
        """
 
+    /*
+    *             sealed trait ${sp.serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
+            sealed trait ${sp.serviceOutputBase.typeName} extends Any with ${rt.input.init()} {}*/
     val qqBaseCompanion =
       q"""
          object ${sp.svcBaseTpe.termName} {
-            sealed trait ${sp.serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
-            sealed trait ${sp.serviceOutputBase.typeName} extends Any with ${rt.input.init()} {}
+            sealed trait ${sp.serviceInputBase.typeName} extends AnyRef with ${rt.input.init()} {}
+            sealed trait ${sp.serviceOutputBase.typeName} extends AnyRef with ${rt.input.init()} {}
            ..$outputs
            ..$inputs
          }
@@ -367,7 +449,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     new RenderableCogenProduct {
       override def preamble: String =
         s"""import scala.language.higherKinds
-           |import _root_.${rt.runtimePkg}._
+           |import _root_.${rt.transport.pkg}._
+           |import _root_.${rt.services.pkg}._
            |""".stripMargin
 
       override def render: List[Defn] = List(

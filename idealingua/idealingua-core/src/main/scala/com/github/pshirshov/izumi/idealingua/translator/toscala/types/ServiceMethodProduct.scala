@@ -2,10 +2,9 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
-import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, IndefiniteId, TypeId, TypeName}
+import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId, TypeName}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.PlainStruct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
 import scala.meta._
@@ -49,13 +48,13 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
     ctx.conv.toScala(outputId)
   }
 
-  protected def outputTypeWrapped: ScalaType = {
+  def outputTypeWrapped: ScalaType = {
     ctx.conv.toScala(outputWrappedId)
   }
 
   def outputWrappedId: TypeId = {
     method.signature.output match {
-      case o: Output.Singular =>
+      case _: Output.Singular =>
         DTOId(sp.baseId, s"${name.capitalize}Output")
 
       case _ =>
@@ -63,17 +62,17 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceProduct, method: RPCM
     }
   }
 
-  protected def inputWrappedType: ScalaType = sp.svcBaseTpe.within(inputWrappedId.name)
+  def inputWrappedType: ScalaType = sp.svcBaseTpe.within(inputWrappedId.name)
 
   protected def outputId: TypeId = {
     method.signature.output match {
       case o: Output.Singular =>
         o.typeId
 
-      case o: Output.Struct =>
+      case _: Output.Struct =>
         DTOId(sp.baseId, s"${name.capitalize}Output")
 
-      case o: Output.Algebraic =>
+      case _: Output.Algebraic =>
         AdtId(sp.baseId, s"${name.capitalize}Output")
     }
   }
