@@ -110,6 +110,7 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
       q""" object CodecProvider extends ${cp.init()} {
         import _root_.io.circe._
         import _root_.io.circe.syntax._
+        import io.circe.Decoder.Result
 
         def requestEncoders: List[PartialFunction[ReqBody, Json]] = List(
                {
@@ -198,8 +199,8 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
       q"""trait ${Type.Name(s"${name}Circe")} extends _root_.io.circe.java8.time.TimeInstances {
             import _root_.io.circe.{Encoder, Decoder}
             import _root_.io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-            implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = deriveEncoder[$tpe]
-            implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = deriveDecoder[$tpe]
+            implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = deriveEncoder
+            implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = deriveDecoder
           }
       """)
   }
