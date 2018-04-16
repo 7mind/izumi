@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.runtime.services
 
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.higherKinds
 
-case class InContext[V <: AnyRef, Ctx](value: V, context: Ctx)
+case class InContext[V, Ctx](value: V, context: Ctx)
 
 
 trait Transport[RequestWire, ResponseWire] {

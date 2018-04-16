@@ -10,15 +10,27 @@ trait UnsafeDispatcher[Ctx, R[_]] extends WithResultType[R] {
 
 case class Method(service: ServiceId, methodId: MethodId)
 
-case class ReqBody(value: AnyRef) extends AnyRef
+//case class ReqBody(value: AnyRef) extends AnyRef
+//
+//case class ResBody(value: AnyRef) extends AnyRef
+//
+//case class MuxResponse[T <: AnyRef](v: T, method: Method) {
+//  def body: ResBody = ResBody(v)
+//}
+//
+//case class MuxRequest[T <: AnyRef](v: T, method: Method) {
+//  def body: ReqBody = ReqBody(v)
+//}
 
-case class ResBody(value: AnyRef) extends AnyRef
+case class ReqBody(value: Any) extends AnyRef
 
-case class MuxResponse[T <: AnyRef](v: T, method: Method) {
+case class ResBody(value: Any) extends AnyRef
+
+case class MuxResponse[T](v: T, method: Method) {
   def body: ResBody = ResBody(v)
 }
 
-case class MuxRequest[T <: AnyRef](v: T, method: Method) {
+case class MuxRequest[T](v: T, method: Method) {
   def body: ReqBody = ReqBody(v)
 }
 

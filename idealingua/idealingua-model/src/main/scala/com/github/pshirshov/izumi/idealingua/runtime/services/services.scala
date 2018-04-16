@@ -17,8 +17,8 @@ trait Receiver[In, Out, R[_]] extends WithResultType[R] {
 trait WrappedServiceDefinition {
   this: IdentifiableServiceDefinition =>
 
-  type Input <: AnyRef
-  type Output <: AnyRef
+  type Input
+  type Output
   type ServiceServer[_[_], _]
   type ServiceClient[_[_]]
 

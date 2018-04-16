@@ -438,8 +438,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val qqBaseCompanion =
       q"""
          object ${sp.svcBaseTpe.termName} {
-            sealed trait ${sp.serviceInputBase.typeName} extends AnyRef with ${rt.input.init()} {}
-            sealed trait ${sp.serviceOutputBase.typeName} extends AnyRef with ${rt.input.init()} {}
+            sealed trait ${sp.serviceInputBase.typeName} extends Any with ${rt.input.init()} {}
+            sealed trait ${sp.serviceOutputBase.typeName} extends Any with ${rt.input.init()} {}
            ..$outputs
            ..$inputs
          }
