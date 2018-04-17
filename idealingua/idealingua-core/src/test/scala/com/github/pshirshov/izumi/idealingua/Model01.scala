@@ -40,8 +40,6 @@ object Model01 {
       , Structure.interfaces(List(testInterfaceId))
     )
   ), List(
-    Service(serviceIdentifier, List(
-      DefMethod.DeprecatedRPCMethod("createUser", DefMethod.DeprecatedSignature(List(testInterfaceId), List(testInterfaceId)))
-    ))
+    Service(serviceIdentifier, List(DefMethod.RPCMethod("test", DefMethod.Signature(SimpleStructure(List.empty, List(Field(Primitive.TInt8, "a"))), DefMethod.Output.Singular(Primitive.TString)))))
   ), Map.empty)
 }

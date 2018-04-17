@@ -60,11 +60,6 @@ mixin AnyValTest {
   boolean: bool
 }
 
-service UserService {
-  def createUser(TestInterface): (TestInterface)
-  def anyvalTest(AnyValTest): (AnyValTest)
-}
-
 
 mixin PrivateMixinParent {
   parent: str
@@ -115,10 +110,16 @@ data RTestObject2 {
  & RtestMixin2
 }
 
-service TestService {
-    def createUser(RtestMixin2, RTestMixin): (RtestMixin2)
-}
-
 mixin AnyValTest2 {
  field: AnyValTest
 }
+
+/*
+service TestService {
+    def createUser(RtestMixin2, RTestMixin): (RtestMixin2)
+}
+service UserService {
+  def createUser(TestInterface): (TestInterface)
+  def anyvalTest(AnyValTest): (AnyValTest)
+}
+*/

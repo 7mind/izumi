@@ -47,3 +47,4 @@ object Struct {
 }
 
 case class PlainStruct(all: List[ExtendedField])
+

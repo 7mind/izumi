@@ -24,6 +24,6 @@ mixin PrivateUserData {
 }
 
 service UserService {
-  def deleteUser(WithRecordId): (WithResult)
-  def createUser(UserData, PrivateUserData): (WithRecordId, WithResult)
+  def deleteUser(+WithRecordId) => (+WithResult)
+  def createUser(+UserData, +PrivateUserData): (+WithRecordId, +WithResult)
 }

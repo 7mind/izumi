@@ -1,10 +1,10 @@
 domain idltest.services
 
-data SuccessData {
+mixin SuccessData {
   greeting: str
 }
 
-data ErrorData {
+mixin ErrorData {
   message: str
 }
 
@@ -14,7 +14,8 @@ mixin Request {
 }
 
 service TestService {
-  def deprecated(Request): (Request)
+  def simpleMethod(a: str): str
+  def simple(+Request): (+Request)
 
   // simple instance
   def greetSingleTypeIdOutput(firstName: str, secondName: str) => str
@@ -62,4 +63,5 @@ service TestService {
      SuccessData
      ErrorData
    }
+
 }

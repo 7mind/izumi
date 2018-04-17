@@ -49,6 +49,6 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
-    product.copy(tools = product.tools.extendDefinition(constructors))
+    product.copy(tools = product.tools.appendDefinitions(constructors))
   }
 }

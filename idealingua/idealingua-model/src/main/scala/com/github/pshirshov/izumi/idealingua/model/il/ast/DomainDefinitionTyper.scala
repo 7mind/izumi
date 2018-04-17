@@ -146,8 +146,6 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
   protected def fixMethod(method: raw.Service.DefMethod): typed.Service.DefMethod = {
     method match {
-      case m: raw.Service.DefMethod.DeprecatedMethod =>
-        typed.Service.DefMethod.DeprecatedRPCMethod(signature = fixSignature(m.signature), name = m.name)
       case m: raw.Service.DefMethod.RPCMethod =>
         typed.Service.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name)
     }
@@ -171,10 +169,6 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
   protected def fixStructure(s: raw.RawSimpleStructure): typed.SimpleStructure = {
     typed.SimpleStructure(concepts = fixIds(s.concepts), fields = fixFields(s.fields))
-  }
-
-  protected def fixSignature(signature: raw.Service.DefMethod.DeprecatedSignature): typed.Service.DefMethod.DeprecatedSignature = {
-    typed.Service.DefMethod.DeprecatedSignature(input = fixIds(signature.input), output = fixIds(signature.output))
   }
 
   protected def fixPkg(pkg: common.Package): common.Package = {

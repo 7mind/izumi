@@ -32,6 +32,13 @@ object D {
       , "io.circe" %% "circe-java8"
     ).map(_ % circeVersion)
 
+    val http4s_version = "0.18.0"
+    val http4s_client = "org.http4s" %% "http4s-blaze-client" % http4s_version
+    val http4s_all: Seq[ModuleID] = Seq(
+      "org.http4s" %% "http4s-dsl"
+      , "org.http4s" %% "http4s-circe"
+      , "org.http4s" %% "http4s-blaze-server"
+    ).map(_ % http4s_version) ++ Seq(http4s_client)
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % "1.7.25"
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % "1.7.25"

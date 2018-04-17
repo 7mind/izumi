@@ -160,7 +160,7 @@ class ILParser {
 
 
   object services {
-    final val sigSep = P("=>" | "->") // ":"
+    final val sigSep = P("=>" | "->" | ":")
     final val inlineStruct = structure.enclosed(defs.simpleStruct)
     final val adtOut = structure.enclosed(defs.adt)
 
@@ -187,15 +187,15 @@ class ILParser {
 
     final val sigParam = P(inline ~ ids.identifier ~ inline)
     final val signature = P(sigParam.rep(sep = ","))
-    final val defmethodDeprecated = P(kw.defm ~ inline ~ ids.symbol ~ "(" ~ inline ~ signature ~ inline ~ ")" ~ inline ~
-      ":" ~ inline ~ "(" ~ inline ~ signature ~ inline ~ ")" ~ inline)
-      .map {
-        case (name, in, out) =>
-          DefMethod.DeprecatedMethod(name, DefMethod.DeprecatedSignature(in.map(_.toMixinId).toList, out.map(_.toMixinId).toList))
-      }
+//    final val defmethodDeprecated = P(kw.defm ~ inline ~ ids.symbol ~ "(" ~ inline ~ signature ~ inline ~ ")" ~ inline ~
+//      ":" ~ inline ~ "(" ~ inline ~ signature ~ inline ~ ")" ~ inline)
+//      .map {
+//        case (name, in, out) =>
+//          DefMethod.DeprecatedMethod(name, DefMethod.DeprecatedSignature(in.map(_.toMixinId).toList, out.map(_.toMixinId).toList))
+//      }
 
     // other method kinds should be added here
-    final val method: Parser[DefMethod] = P(defMethod | defmethodDeprecated)
+    final val method: Parser[DefMethod] = P(defMethod)
     final val methods: Parser[Seq[DefMethod]] = P(any ~ method.rep(sep = any) ~ any)
   }
 
