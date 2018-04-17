@@ -33,6 +33,7 @@ class ILParserTest extends WordSpec {
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X Y Zz}")
       assertParses(parser.blocks.enumBlock, "enum MyEnum { X Y Z }")
       assertParses(parser.blocks.enumBlock, "enum MyEnum {  X  Y  Z  }")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum = X | Y | Z")
       assertParses(parser.blocks.enumBlock,
         """enum MyEnum {
           |X
@@ -108,6 +109,7 @@ class ILParserTest extends WordSpec {
     "parse adt blocks" in {
       assertParses(parser.blocks.adtBlock, "adt MyAdt { X as XXX | Y }")
       assertParses(parser.blocks.adtBlock, "adt MyAdt { X | Y | a.b.c#D as B }")
+      assertParses(parser.blocks.adtBlock, "adt MyAdt = X | Y | Z")
       assertParses(parser.blocks.adtBlock, "adt MyAdt { X }")
       assertParses(parser.blocks.adtBlock, "adt MyAdt {a.b.c#D}")
       assertParses(parser.blocks.adtBlock, "adt MyAdt { a.b.c#D }")

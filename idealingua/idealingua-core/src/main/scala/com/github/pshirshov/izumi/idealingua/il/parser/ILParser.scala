@@ -42,7 +42,9 @@ class ILParser {
     final val any = P(End |(wss ~ (WsComment | SepLineBase).rep ~ wss))
 
     final val sepAdt = P("|" | sym.NLC | ws).rep(min = 1)
+    final val sepAdtInline = P("|" | ws).rep(min = 1)
     final val sepEnum = P("|" | "," | sym.NLC | ws).rep(min = 1)
+    final val sepEnumInline = P("|" | "," | ws).rep(min = 1)
   }
 
   import sep._
@@ -137,10 +139,10 @@ class ILParser {
         RawAdtMember(tpe.toTypeId, alias)
     }
 
-    final val adt = P(adtMember.rep(min = 1, sep = sepAdt))
+    final def adt(sep: Parser[Unit]) = P(adtMember.rep(min = 1, sep = sep))
       .map(_.toList).map(AlgebraicType)
 
-    final val enum = P(ids.symbol.rep(min = 1, sep = sepEnum))
+    final def enum(sep: Parser[Unit]) = P(ids.symbol.rep(min = 1, sep = sep))
   }
 
   object structure {
@@ -162,7 +164,7 @@ class ILParser {
   object services {
     final val sigSep = P("=>" | "->" | ":")
     final val inlineStruct = structure.enclosed(defs.simpleStruct)
-    final val adtOut = structure.enclosed(defs.adt)
+    final val adtOut = structure.enclosed(defs.adt(sepAdt))
 
     final val defMethod = P(
       kw.defm ~ inline ~
@@ -187,12 +189,6 @@ class ILParser {
 
     final val sigParam = P(inline ~ ids.identifier ~ inline)
     final val signature = P(sigParam.rep(sep = ","))
-//    final val defmethodDeprecated = P(kw.defm ~ inline ~ ids.symbol ~ "(" ~ inline ~ signature ~ inline ~ ")" ~ inline ~
-//      ":" ~ inline ~ "(" ~ inline ~ signature ~ inline ~ ")" ~ inline)
-//      .map {
-//        case (name, in, out) =>
-//          DefMethod.DeprecatedMethod(name, DefMethod.DeprecatedSignature(in.map(_.toMixinId).toList, out.map(_.toMixinId).toList))
-//      }
 
     // other method kinds should be added here
     final val method: Parser[DefMethod] = P(defMethod)
@@ -212,13 +208,13 @@ class ILParser {
     final val dtoBlock = structure.block(kw.data, defs.struct)
       .map(v => ILDef(v._2.toDto(v._1.toDataId)))
 
-    final val adtBlock = structure.block(kw.adt, defs.adt)
+    final val adtBlock = structure.starting(kw.adt, structure.enclosed(defs.adt(sepAdt)) | ("=" ~ inline ~ defs.adt(sepAdtInline)))
       .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
 
     final val idBlock = structure.block(kw.id, defs.aggregate)
       .map(v => ILDef(Identifier(v._1.toIdId, v._2.toList)))
 
-    final val enumBlock = structure.block(kw.enum, defs.enum)
+    final val enumBlock = structure.starting(kw.enum, structure.enclosed(defs.enum(sepEnum)) | ("=" ~ inline ~ defs.enum(sepEnumInline)))
       .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
 
     final val serviceBlock = structure.block(kw.service, services.methods)
