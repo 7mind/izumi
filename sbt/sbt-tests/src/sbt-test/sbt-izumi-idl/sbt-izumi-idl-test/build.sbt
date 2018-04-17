@@ -24,17 +24,6 @@ defaultStubPackage := Some("org.test.project")
 // -- settings groups identifiers
 val AppSettings = SettingsGroupId()
 
-val circeVersion = "0.9.1"
-
-val circe: Seq[ModuleID] = Seq(
-  "io.circe" %% "circe-core"
-  , "io.circe" %% "circe-generic"
-  , "io.circe" %% "circe-generic-extras"
-  , "io.circe" %% "circe-parser"
-  , "io.circe" %% "circe-java8"
-).map(_ % circeVersion)
-
-
 // -- settings groups definitions
 val baseSettings = new GlobalSettings {
   override val settings: Map[SettingsGroupId, ProjectSettings] = Map(
@@ -47,7 +36,8 @@ val baseSettings = new GlobalSettings {
       // these dependencies will be added into each project handled by Izumi
       override val sharedDeps = Set(
         "com.github.pshirshov.izumi.r2" %% "idealingua-model" % pluginVersion
-      ) ++ circe
+        , "com.github.pshirshov.izumi.r2" %% "idealingua-runtime-circe" % pluginVersion
+      )
     }
     , AppSettings -> new ProjectSettings {
 

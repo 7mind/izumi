@@ -6,11 +6,11 @@ trait IdentifiableServiceDefinition {
   def serviceId: ServiceId
 }
 
-trait Dispatcher[In, Out, R[_]] extends WithResultType[R] {
+trait Dispatcher[In, Out, R[_]] extends WithSvcResultType[R] {
   def dispatch(input: In): Result[Out]
 }
 
-trait Receiver[In, Out, R[_]] extends WithResultType[R] {
+trait Receiver[In, Out, R[_]] extends WithSvcResultType[R] {
   def receive(input: In): Result[Out]
 }
 

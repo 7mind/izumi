@@ -338,7 +338,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     extends ${sp.svcWrappedTpe.parameterize("R", "C").init()}
       with Dispatcher[InContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R]
       with UnsafeDispatcher[C, R]
-      with WithResult[R] {
+      with ${rt.WithResult.parameterize("R").init()}  {
     def service: ${sp.svcTpe.typeFull}[R, C]
 
     def dispatch(input: InContext[${sp.serviceInputBase.typeFull}, C]): Result[${sp.serviceOutputBase.typeFull}] = {

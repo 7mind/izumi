@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, DomainId, TypeDef}
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, WithInfo}
-import com.github.pshirshov.izumi.idealingua.runtime.services.{ServiceResult, WithResult, WithResultType}
+import com.github.pshirshov.izumi.idealingua.runtime.services.{ServiceResult, WithSvcResult, WithSvcResultType}
 
 
 object IDLRuntimeTypes {
@@ -24,8 +24,8 @@ object IDLRuntimeTypes {
   final val adt = model.conv.toScala[IDLAdt]
   final val adtEl = model.conv.toScala[IDLAdtElement]
 
-  final val WithResult = services.conv.toScala[WithResult[_1Arg]]
-  final val WithResultType = services.conv.toScala[WithResultType[_1Arg]]
+  final val WithResult = services.conv.toScala[WithSvcResult[_1Arg]]
+  final val WithResultType = services.conv.toScala[WithSvcResultType[_1Arg]]
 
   // introspection
   final val typeId = model.conv.toScala[TypeId]

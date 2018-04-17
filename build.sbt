@@ -246,7 +246,7 @@ lazy val idealinguaRuntimeCirce = inIdealingua.as.module
   .settings(libraryDependencies ++= R.circe)
 
 lazy val idealinguaFormatCirce = inIdealingua.as.module
-  .depends(idealinguaCore, idealinguaTestDefs.testOnlyRef, idealinguaRuntimeCirce.testOnlyRef)
+  .depends(idealinguaCore, idealinguaTestDefs.testOnlyRef, idealinguaRuntimeCirce)
 
 lazy val idealinguaRuntimeCats = inIdealingua.as.module
   .depends(idealinguaModel)

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.services
 
 import scala.language.higherKinds
 
-trait UnsafeDispatcher[Ctx, R[_]] extends WithResultType[R] {
+trait UnsafeDispatcher[Ctx, R[_]] extends WithSvcResultType[R] {
   def identifier: ServiceId
 
   def dispatchUnsafe(input: InContext[MuxRequest[_], Ctx]): Option[Result[MuxResponse[_]]]

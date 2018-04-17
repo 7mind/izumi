@@ -25,7 +25,7 @@ class ServerReceiver[RequestWire, Request, Response, ResponseWire, R[_] : Servic
 (
   dispatcher: Dispatcher[Request, Response, R]
   , codec: TransportMarshallers[RequestWire, Request, Response, ResponseWire]
-) extends Receiver[RequestWire, ResponseWire, R] with WithResult[R] {
+) extends Receiver[RequestWire, ResponseWire, R] with WithSvcResult[R] {
   override protected def _ServiceResult: ServiceResult[R] = implicitly
 
   def receive(request: RequestWire): R[ResponseWire] = {
@@ -41,7 +41,7 @@ class ClientDispatcher[RequestWire, Request, Response, ResponseWire, R[_] : Serv
 (
   transport: Transport[RequestWire, R[ResponseWire]]
   , codec: TransportMarshallers[RequestWire, Request, Response, ResponseWire]
-) extends Dispatcher[Request, Response, R] with WithResult[R] {
+) extends Dispatcher[Request, Response, R] with WithSvcResult[R] {
   override protected def _ServiceResult: ServiceResult[R] = implicitly
 
   def dispatch(input: Request): Result[Response] = {

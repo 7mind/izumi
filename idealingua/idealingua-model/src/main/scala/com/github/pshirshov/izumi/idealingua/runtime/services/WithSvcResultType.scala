@@ -3,16 +3,16 @@ package com.github.pshirshov.izumi.idealingua.runtime.services
 import scala.language.higherKinds
 
 
-trait WithResultType[R[_]] {
+trait WithSvcResultType[R[_]] {
   type Result[T] = R[T]
 }
 
-trait WithResult[R[_]] extends WithResultType[R] {
+trait WithSvcResult[R[_]] extends WithSvcResultType[R] {
   protected def _ServiceResult: ServiceResult[R]
 
   protected def _Result[T](value: => T): R[T] = _ServiceResult.pure(value)
 }
 
-trait WithContext[C] {
+trait WithSvcContext[C] {
   type Context = C
 }
