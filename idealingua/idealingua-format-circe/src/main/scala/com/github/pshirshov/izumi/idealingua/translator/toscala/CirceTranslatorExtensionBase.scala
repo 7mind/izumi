@@ -1,10 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.translator
+package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
+import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.runtime.circe.{CirceWrappedServiceDefinition, MuxedCodec, MuxingCodecProvider}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, CogenServiceProduct}
@@ -13,10 +12,12 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{FullServi
 
 import scala.meta._
 
+trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
+  protected case class CirceTrait(name: String, defn: Defn.Trait)
 
-object CirceTranslatorExtension extends ScalaTranslatorExtension {
+  protected def classDeriverImports: List[Import]
 
-  private case class CirceTrait(name: String, defn: Defn.Trait)
+  protected def adtDeriverImports: List[Import] = classDeriverImports
 
   private val circeRuntimePkg = runtime.Pkg.of[MuxedCodec]
 
@@ -27,14 +28,12 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
-
   override def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = {
     import ctx.conv._
-    val boilerplate = withDerived(ctx, struct.id)
+    val boilerplate = withDerivedClass(ctx, struct.id)
     val init = toScala(struct.id).sibling(boilerplate.name).init()
     product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
-
 
   override def handleAdt(ctx: STContext, adt: Adt, product: CogenProduct.AdtProduct): CogenProduct.AdtProduct = {
     import ctx.conv._
@@ -42,12 +41,12 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     val elements = product.elements.map {
       e =>
         val id = DTOId(adt.id, e.name)
-        val boilerplate = withDerived(ctx, id)
+        val boilerplate = withDerivedClass(ctx, id)
         val init = toScala(id).sibling(boilerplate.name).init()
         e.copy(companion = e.companion.prependBase(init), more = e.more :+ boilerplate.defn)
     }
 
-    val boilerplate = withDerived(ctx, adt.id)
+    val boilerplate = withDerivedAdt(ctx, adt.id)
     val init = toScala(adt.id).sibling(boilerplate.name).init()
 
     product.copy(companion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn, elements = elements)
@@ -75,13 +74,20 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     val dec = implementors.map {
       c =>
         p"""case ${Lit.String(str(c))} => value.as[${toScala(c).typeFull}]"""
-    }
+    } :+ p"""case _ =>
+           Left(
+            DecodingFailure(
+              "Can't decode type " + fname + " as " + ${Lit.String(str(interface.id))} + ", expected one of [" +
+                List(..${implementors.map(c => Lit.String(str(c)))}).mkString(",") + "]"
+              , value.history
+            )
+          )"""
 
     val boilerplate = CirceTrait(
       s"${interface.id.name}Circe",
       q"""trait ${Type.Name(s"${interface.id.name}Circe")} {
              import _root_.io.circe.syntax._
-             import _root_.io.circe.{Encoder, Decoder}
+             import _root_.io.circe.{Encoder, Decoder, DecodingFailure}
              implicit val ${Pat.Var(Term.Name(s"encode${interface.id.name}"))}: Encoder[$tpe] = Encoder.instance {
                      c => {
                        c match {
@@ -89,13 +95,16 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
                        }
                      }
                    }
-             implicit val ${Pat.Var(Term.Name(s"decode${interface.id.name}"))}: Decoder[$tpe] = Decoder.instance(c => {
-                          val fname = c.keys.flatMap(_.headOption).toSeq.head
-                          val value = c.downField(fname)
-                          fname match {
-                            ..case $dec
-                          }
-                        })
+             implicit val ${Pat.Var(Term.Name(s"decode${interface.id.name}"))}: Decoder[$tpe] = Decoder.instance(c =>
+               for {
+                 fname <- c.keys.flatMap(_.headOption)
+                   .toRight(DecodingFailure("No type name found in JSON, expected JSON of form { \"type_name\": { ...fields } }", c.history))
+
+                 value = c.downField(fname)
+
+                 result <- fname match { ..case $dec }
+               } yield result
+             )
           }
       """)
     val init = toScala(interface.id).sibling(boilerplate.name).init()
@@ -174,11 +183,11 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
     )
   }
 
-  private def str(c: DTOId) = {
+  protected def str(c: AbstractTypeId) = {
     s"${c.pkg.mkString(".")}#${c.name}"
   }
 
-  private def withParseable(ctx: STContext, id: TypeId) = {
+  protected def withParseable(ctx: STContext, id: TypeId): CirceTrait = {
     val t = ctx.conv.toScala(id)
     val tpe = t.typeFull
 
@@ -193,24 +202,29 @@ object CirceTranslatorExtension extends ScalaTranslatorExtension {
       """)
   }
 
+  protected def withDerivedClass(ctx: STContext, id: TypeId): CirceTrait =
+    withDerived(ctx, id, classDeriverImports)
 
-  private def withDerived(ctx: STContext, id: TypeId): CirceTrait = {
+  protected def withDerivedAdt(ctx: STContext, id: TypeId): CirceTrait =
+    withDerived(ctx, id, adtDeriverImports)
+
+  protected def withDerived(ctx: STContext, id: TypeId, deriverImports: List[Import]): CirceTrait = {
     val tpe = ctx.conv.toScala(id)
-    withDerived(tpe)
+    withDerived(tpe, deriverImports)
   }
 
-  private def withDerived(stype: ScalaType): CirceTrait = {
+  protected def withDerived(stype: ScalaType, deriverImports: List[Import]): CirceTrait = {
     val name = stype.fullJavaType.name
     val tpe = stype.typeName
     CirceTrait(
       s"${name}Circe",
       q"""trait ${Type.Name(s"${name}Circe")} extends _root_.io.circe.java8.time.TimeInstances {
-            import _root_.io.circe._
-            import _root_.io.circe.generic.semiauto._
+            ..$deriverImports
+            import _root_.io.circe.{Encoder, Decoder}
             implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = deriveEncoder[$tpe]
             implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = deriveDecoder[$tpe]
           }
       """)
   }
-}
 
+}

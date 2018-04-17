@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.util.Formattable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString
@@ -41,7 +40,7 @@ object ExecutableOp {
   }
 
   sealed trait WiringOp extends InstantiationOp {
-    def wiring: Wiring
+    def wiring: RuntimeUniverse.Wiring
   }
 
   object WiringOp {
@@ -54,7 +53,7 @@ object ExecutableOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 
-    case class InstantiateFactory(target: RuntimeUniverse.DIKey, wiring: Wiring.FactoryMethod) extends WiringOp {
+    case class InstantiateFactory(target: RuntimeUniverse.DIKey, wiring: FactoryMethod) extends WiringOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 

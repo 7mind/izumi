@@ -2,10 +2,12 @@ package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.CustomDef
 import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverseBase, RuntimeUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{Callable, DIUniverseBase, RuntimeUniverse, SafeType}
 
-trait TypeWiring {
+trait Wiring {
   this: DIUniverseBase
+    with SafeType
+    with Callable
     with DIKey
     with Association
     with DependencyContext

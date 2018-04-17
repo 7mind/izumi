@@ -22,15 +22,17 @@ object D {
     val fastparse = "com.lihaoyi" %% "fastparse" % "1.0.0" % "shaded"
     val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3"
 
-    val circeVersion = "0.9.1"
+    val circeVersion = "0.9.3"
+    val circeDerivationVersion = "0.9.0-M3"
 
-    val circe: Seq[ModuleID] = Seq(
+    val circe: Seq[ModuleID] =  Seq(
       "io.circe" %% "circe-core"
       , "io.circe" %% "circe-generic"
       , "io.circe" %% "circe-generic-extras"
       , "io.circe" %% "circe-parser"
       , "io.circe" %% "circe-java8"
-    ).map(_ % circeVersion)
+    ).map(_ % circeVersion) :+
+      ("io.circe" %% "circe-derivation" % circeDerivationVersion)
 
     val http4s_version = "0.18.0"
     val http4s_client = "org.http4s" %% "http4s-blaze-client" % http4s_version

@@ -31,7 +31,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   import ctx._
   import conv._
 
-
   def translate(): Seq[Module] = {
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val aliases = typespace.domain.types
@@ -145,7 +144,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val qqAdt = q""" sealed trait ${t.typeName} extends ..$superClasses {} """
     val qqAdtCompanion =
       q"""object ${t.termName} extends ${rt.adt.init()} {
-            import scala.language.implicitConversions
+            import _root_.scala.language.implicitConversions
 
             type Element = ${t.typeFull}
 

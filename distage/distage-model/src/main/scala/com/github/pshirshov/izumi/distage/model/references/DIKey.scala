@@ -1,8 +1,10 @@
 package com.github.pshirshov.izumi.distage.model.references
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverseBase, RuntimeUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverseBase, RuntimeUniverse, SafeType}
 
-trait DIKey { this: DIUniverseBase =>
+trait DIKey {
+  this: DIUniverseBase
+    with SafeType =>
 
   import u._
 

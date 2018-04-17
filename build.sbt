@@ -22,7 +22,7 @@ val SbtSettings = SettingsGroupId()
 val ShadingSettings = SettingsGroupId()
 
 val scala_212 = "2.12.4"
-val scala_213 = "2.13.0-M2"
+val scala_213 = "2.13.0-M3"
 
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("com.github.pshirshov.izumi")
