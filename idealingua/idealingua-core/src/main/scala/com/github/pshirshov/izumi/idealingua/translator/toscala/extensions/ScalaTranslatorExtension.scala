@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.TranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenServiceProduct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaStruct, ServiceProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{FullServiceContext, ScalaStruct, ServiceContext}
 
 
 trait ScalaTranslatorExtension extends TranslatorExtension {
@@ -29,8 +29,8 @@ trait ScalaTranslatorExtension extends TranslatorExtension {
     discard(ctx, id)
     product
   }
-  def handleService(ctx: STContext, service: ServiceProduct, product: CogenServiceProduct): CogenServiceProduct = {
-    discard(ctx, service)
+  def handleService(ctx: STContext, sCtx: FullServiceContext, product: CogenServiceProduct): CogenServiceProduct = {
+    discard(ctx, sCtx)
     product
   }
   def handleEnum(ctx: STContext, enum: Enumeration, product: EnumProduct): EnumProduct = {

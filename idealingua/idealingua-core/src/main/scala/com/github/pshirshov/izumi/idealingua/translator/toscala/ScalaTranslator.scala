@@ -269,7 +269,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
 
   protected def renderService(svc: Service): RenderableCogenProduct = {
-    val sp = ServiceProduct(ctx, svc)
+    val sp = ServiceContext(ctx, svc)
     val decls = svc.methods.collect({ case c: RPCMethod => c })
       .map(ServiceMethodProduct(ctx, sp, _))
 
@@ -472,7 +472,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       , List(runtime.Import.from(runtime.Pkg.language, "higherKinds"), rt.services.`import`)
     )
 
-    ext.extend(sp, out, _.handleService)
+    ext.extend(FullServiceContext(sp, decls), out, _.handleService)
 
   }
 }

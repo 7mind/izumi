@@ -14,6 +14,7 @@ mixin Request {
 }
 
 service TestService {
+  def simplex(a: str): str
   def simple(+Request): (+Request)
 
   // simple instance
@@ -62,4 +63,5 @@ service TestService {
      SuccessData
      ErrorData
    }
+
 }
