@@ -190,10 +190,10 @@ class ILParserTest extends WordSpec {
           | /*test*/
           | /*test*/
           | // test
-          | def/*test*/testMethod(Mixin1, c.d#Mixin2, x.y#Mixin3, x.y.z#Mixin4, z#Mixin5): (Mixin1, a.b#Mixin3)
+          | def/*test*/testMethod(+Mixin1, +c.d#Mixin2, +x.y#Mixin3, +x.y.z#Mixin4, +z#Mixin5, a: str): (+Mixin1, +a.b#Mixin3, b: str)
           | // test
           | /*test*/
-          | def testMethod1(Mixin1,/*test*/c.d#Mixin2, x.y#Mixin3, x.y.z#Mixin4, z#Mixin5): (Mixin1, a.b#Mixin3)
+          | def testMethod1(+Mixin1,/*test*/+c.d#Mixin2, +x.y#Mixin3, +x.y.z#Mixin4, +z#Mixin5, a: str): (A | B)
           |}
           |
           |// test

@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Generic, IndefiniteId, Primitive}
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, Generic, IndefiniteId, Primitive}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{TypeDef, _}
 
 object Model01 {
@@ -39,6 +40,6 @@ object Model01 {
       , Structure.interfaces(List(testInterfaceId))
     )
   ), List(
-    Service(serviceIdentifier, List())
+    Service(serviceIdentifier, List(DefMethod.RPCMethod("test", DefMethod.Signature(SimpleStructure(List.empty, List(Field(Primitive.TInt8, "a"))), DefMethod.Output.Singular(Primitive.TString)))))
   ), Map.empty)
 }
