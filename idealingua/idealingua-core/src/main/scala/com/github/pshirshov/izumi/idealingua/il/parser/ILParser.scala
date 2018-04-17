@@ -171,7 +171,7 @@ class ILParser {
         ids.symbol ~ any ~
         inlineStruct ~ any ~
         sigSep ~ any ~
-        (adtOut | inlineStruct | ids.identifier)
+        (adtOut | inlineStruct | ids.fulltype)
     ).map {
       case (id, in, out: RawSimpleStructure) =>
         DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Struct(out)))
@@ -179,8 +179,8 @@ class ILParser {
       case (id, in, out: AlgebraicType) =>
         DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Algebraic(out.alternatives)))
 
-      case (id, in, out: ParsedId) =>
-        DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Singular(out.toTypeId)))
+      case (id, in, out: AbstractTypeId) =>
+        DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Singular(out)))
 
       case f =>
         throw new IllegalStateException(s"Impossible case: $f")

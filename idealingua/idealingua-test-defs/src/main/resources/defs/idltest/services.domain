@@ -15,16 +15,17 @@ mixin Request {
 
 service TestService {
   def simpleMethod(a: str): str
+  def simpleMethodWithGenerics(a: list[str]): list[str]
   def simple(+Request): (+Request)
 
   // simple instance
-  def greetSingleTypeIdOutput(firstName: str, secondName: str) => str
+  def greetSingularOut(firstName: str, secondName: str) => str
 
   // implicitly created structure
-  def greetImplicitStructureOutput(firstName: str, secondName: str) => (a: str)
+  def greetImplicitStructOut(firstName: str, secondName: str) => (a: str)
 
   // implicitly created structure
-  def greetImplicitStructureMultiline
+  def greetImplicitStructMultilineSyntax
     (
       region: str,
       age: int8
@@ -36,7 +37,7 @@ service TestService {
     )
 
   // implicitly created structure
-  def greetImplicitStructureMultilineCurlyBraces
+  def greetImplicitStructureMultilineCurlyBracesSyntax
     {
       region: str,
       age: int8
@@ -46,16 +47,16 @@ service TestService {
     }
 
   // ADT
-  def greetAlgebraicOutput(firstName: str, secondName: str) => ( SuccessData | ErrorData )
+  def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
 
   // ADT
-  def greetAlgebraicOutputMultiline(firstName: str, secondName: str) => (
+  def greetAlgebraicMultilineSyntax(firstName: str, secondName: str) => (
      SuccessData
    | ErrorData
   )
 
   // ADT
-  def greetAlgebraicOutputMultilineCurlyBraces
+  def greetAlgebraicMultilineCurlyBracesSyntax
    {
      firstName: str
      secondName: str

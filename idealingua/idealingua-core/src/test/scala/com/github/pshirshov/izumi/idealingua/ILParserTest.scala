@@ -196,6 +196,7 @@ class ILParserTest extends WordSpec {
           | // test
           | /*test*/
           | def testMethod1(+Mixin1,/*test*/+c.d#Mixin2, +x.y#Mixin3, +x.y.z#Mixin4, +z#Mixin5, a: str): (A | B)
+          | def testMethod2(a: list[str]): list[str]
           |}
           |
           |// test
