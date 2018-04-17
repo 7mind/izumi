@@ -252,6 +252,10 @@ lazy val idealinguaRuntimeCats = inIdealingua.as.module
   .depends(idealinguaModel)
   .settings(libraryDependencies += R.cats_core)
 
+lazy val idealinguaRuntimeHttp4s = inIdealingua.as.module
+  .depends(idealinguaModel)
+  .settings(libraryDependencies ++= R.http4s_all ++ Seq(R.http4s_client))
+
 lazy val sbtIzumi = inSbt.as
   .module
 
