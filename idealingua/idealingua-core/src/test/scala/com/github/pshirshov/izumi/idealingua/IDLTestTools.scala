@@ -43,8 +43,7 @@ object IDLTestTools {
     settings.warnUnused.add("_")
     settings.embeddedDefaults(this.getClass.getClassLoader)
 
-    val isSbt = Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
-    if (!isSbt) {
+    if (!isRunningUnderSbt) {
       settings.usejavacp.value = true
     }
 
@@ -54,6 +53,10 @@ object IDLTestTools {
     run.runIsAt(run.jvmPhase.next)
   }
 
+  private def isRunningUnderSbt: Boolean = {
+    Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
+  }
+
   def compilesTypeScript(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.Typescript, extensions)
     out.allFiles.nonEmpty
@@ -61,16 +64,20 @@ object IDLTestTools {
 
   case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
 
-  private def compiles(id: String, domains: Seq[DomainDefinition], language: IDLLanguage, extensions: Seq[TranslatorExtension]) = {
+  private def compiles(id: String, domains: Seq[DomainDefinition], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
     val tmpdir = Paths.get("target")
-    val runPrefix = s"idl-${language.toString}-${ManagementFactory.getRuntimeMXBean.getStartTime}"
-    val runDir = tmpdir.resolve(s"$runPrefix-${System.currentTimeMillis()}-$id")
+
+    // TODO: clashes still may happen in case of parallel runs with the same ID
+    val stablePrefix = s"idl-${language.toString}-$id"
+    val vmPrefix = s"$stablePrefix-${ManagementFactory.getRuntimeMXBean.getStartTime}"
+    val dirPrefix = s"$vmPrefix-${System.currentTimeMillis()}"
+    val runDir = tmpdir.resolve(dirPrefix)
 
     tmpdir
       .toFile
       .listFiles()
       .toList
-      .filter(f => f.isDirectory && f.getName.startsWith("idl-") && !f.getName.startsWith(runPrefix))
+      .filter(f => f.isDirectory && f.getName.startsWith(stablePrefix) && !f.getName.startsWith(vmPrefix))
       .foreach {
         f =>
           remove(f.toPath)
