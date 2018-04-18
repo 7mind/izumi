@@ -23,7 +23,7 @@ object IzTime {
       .appendFraction(NANO_OF_SECOND, 3, 3, true)
       .toFormatter()
   }
-  
+
   final val ISO_LOCAL_DATE_TIME = {
     new DateTimeFormatterBuilder()
       .parseCaseInsensitive

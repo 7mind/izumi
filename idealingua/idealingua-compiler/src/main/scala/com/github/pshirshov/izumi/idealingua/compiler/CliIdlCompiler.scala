@@ -1,17 +1,15 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.nio.file.{Path, Paths}
-import java.util.concurrent.TimeUnit
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.{ExtensionId, IDLCompiler, IDLLanguage, TranslatorExtension}
 import org.rogach.scallop.{ScallopConf, ScallopOption}
-
-import scala.concurrent.duration.FiniteDuration
 
 
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
@@ -60,10 +58,10 @@ object CliIdlCompiler {
     }
 
     println(s"Loading definitions from `$path`...")
-    val toCompile = timed {
+    val toCompile = Timed {
       new LocalModelLoader(path, Seq.empty).load()
     }
-    println(s"Done: ${toCompile.value.size} in ${toCompile.duration.toMillis}ms")
+    println(s"Done: ${toCompile.size} in ${toCompile.duration.toMillis}ms")
     println()
 
 
@@ -75,7 +73,7 @@ object CliIdlCompiler {
           option =>
             val itarget = target.resolve(option.language.toString)
 
-            val out = timed {
+            val out = Timed {
               IzFiles.remove(itarget)
               print(s"  - Compiling into ${option.language}: ")
               compiler.compile(itarget, option) match {
@@ -87,18 +85,10 @@ object CliIdlCompiler {
               }
             }
 
-            println(s"${out.value.paths.size} source files produced in `$itarget` in ${out.duration.toMillis}ms")
+            println(s"${out.paths.size} source files produced in `$itarget` in ${out.duration.toMillis}ms")
         }
 
     }
   }
 
-  case class Timed[U](value: U, duration: FiniteDuration)
-
-  private def timed[U](f: => U): Timed[U] = {
-    val before = System.nanoTime()
-    val out = f
-    val after = System.nanoTime()
-    Timed(out, FiniteDuration.apply(after - before, TimeUnit.NANOSECONDS))
-  }
 }
