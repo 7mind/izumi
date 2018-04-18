@@ -64,3 +64,17 @@ Type name    | Explanation                                 | Scala mapping  |
 `opt[T]`     | Optional value                              | `scala.Option` |
 `set[T]`     | Set (no guarantees for traversal ordering)  | `Set`          |
 
+
+## Standalone compiler
+
+The compiler is built as an uberjar and published onto central.
+
+You may use [https://github.com/coursier/coursier](Coursier) to run it:
+
+```bash
+# release
+./coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- --help
+
+# snapshot
+coursier launch -r https://oss.sonatype.org/content/repositories/snapshots/ com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0-SNAPSHOT -- --help
+```
