@@ -5,12 +5,14 @@ import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGro
 import com.typesafe.sbt.pgp.PgpSettings
 import coursier.ShadingPlugin.autoImport.shadingNamespace
 import sbt.Keys.{pomExtra, publishMavenStyle}
+import sbtassembly.Assembly
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
 enablePlugins(GitStampPlugin)
+disablePlugins(AssemblyPlugin)
 
 name := "izumi-r2"
 
@@ -80,6 +82,8 @@ val baseSettings = new GlobalSettings {
           , libraryDependencies ++= T.essentials
         )
       ).flatten
+
+      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin)
     }
     , ShadingSettings -> new ProjectSettings {
       override val plugins: Set[Plugins] = Set(ShadingPlugin)
@@ -104,6 +108,8 @@ val baseSettings = new GlobalSettings {
     }
     , SbtSettings -> new ProjectSettings {
       override val plugins: Set[Plugins] = Set(ScriptedPlugin)
+      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin)
+
       override val settings: Seq[sbt.Setting[_]] = Seq(
         Seq(
           target ~= { t => t.toPath.resolve("primary").toFile }
@@ -123,6 +129,9 @@ val baseSettings = new GlobalSettings {
         )
       ).flatten
     }
+    , AppSettings -> new ProjectSettings {
+      override val plugins = Set(AssemblyPlugin)
+    }
   )
 }
 // --------------------------------------------
@@ -138,8 +147,10 @@ val inLogStage = In("logstage")
   .withModuleSettings(LibSettings)
 val inFundamentals = In("fundamentals")
   .withModuleSettings(LibSettings)
-val inIdealingua = In("idealingua")
+val inIdealinguaBase = In("idealingua")
+val inIdealingua = inIdealinguaBase
   .withModuleSettings(LibSettings)
+
 
 // --------------------------------------------
 
@@ -254,10 +265,14 @@ lazy val idealinguaRuntimeHttp4s = inIdealingua.as.module
   .depends(idealinguaModel)
   .settings(libraryDependencies ++= R.http4s_all ++ Seq(R.http4s_client))
 
-lazy val idealinguaCompiler = inIdealingua.as.module
+lazy val idealinguaCompiler = inIdealinguaBase.as.module
   .depends(idealinguaCore, idealinguaFormatCirce)
-  .settings(libraryDependencies ++= Seq(R.scallop))
-
+  .settings(AppSettings)
+  .settings(
+    libraryDependencies ++= Seq(R.scallop)
+    , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CliIdlCompiler")
+  )
+  .settings(addArtifact(artifact in(Compile, assembly), assembly))
 
 
 lazy val sbtIzumi = inSbt.as
@@ -285,7 +300,10 @@ lazy val distage: Seq[ProjectReference] = Seq(
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
   , idealinguaRuntimeCats
+  , idealinguaRuntimeHttp4s
+  , idealinguaRuntimeCirce
   , idealinguaFormatCirce
+  , idealinguaCompiler
 )
 lazy val izsbt: Seq[ProjectReference] = Seq(
   sbtIzumi, sbtIdealingua, sbtTests
