@@ -43,7 +43,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
   override lazy val projectSettings = Seq(
     Keys.idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions ++ Seq(
-      new CirceDerivationTranslatorExtension
+      CirceDerivationTranslatorExtension
     )
 
     , Keys.idlDefaultExtensionsTypescript := TypeScriptTranslator.defaultExtensions

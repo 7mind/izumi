@@ -44,6 +44,8 @@ object D {
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % "1.7.25"
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % "1.7.25"
+
+    val scallop = "org.rogach" %% "scallop" % "3.1.2"
   }
 
   object T {

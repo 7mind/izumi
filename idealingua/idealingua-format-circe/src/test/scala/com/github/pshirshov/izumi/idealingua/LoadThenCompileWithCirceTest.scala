@@ -9,11 +9,11 @@ class LoadThenCompileWithCirceTest extends WordSpec {
 
   "IL loader" should {
     "load & parse domain definition using circe-derivation" in {
-      assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(new CirceDerivationTranslatorExtension)))
+      assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(CirceDerivationTranslatorExtension)))
     }
 
     "load & parse domain definition using circe-generic" ignore {
-      assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(new CirceGenericTranslatorExtension)))
+      assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(CirceGenericTranslatorExtension)))
     }
   }
 }

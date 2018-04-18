@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.idealingua
 
-import java.io.{File, IOException}
+import java.io.File
 import java.lang.management.ManagementFactory
 import java.nio.file._
-import java.nio.file.attribute.BasicFileAttributes
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
@@ -88,7 +88,7 @@ object IDLTestTools {
       .filter(f => f.isDirectory && f.getName.startsWith(stablePrefix) && !f.getName.startsWith(vmPrefix))
       .foreach {
         f =>
-          Quirks.discard(remove(f.toPath))
+          Quirks.discard(IzFiles.remove(f.toPath))
       }
 
     val allFiles: Seq[Path] = domains.flatMap {
@@ -107,20 +107,5 @@ object IDLTestTools {
     CompilerOutput(runDir, allFiles)
   }
 
-  def remove(root: Path): Unit = {
-    val _ = Files.walkFileTree(root, new SimpleFileVisitor[Path] {
-      override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-        Files.delete(file)
-        FileVisitResult.CONTINUE
-      }
 
-      override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
-        Files.delete(dir)
-        FileVisitResult.CONTINUE
-      }
-
-    })
-
-
-  }
 }

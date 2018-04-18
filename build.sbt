@@ -2,11 +2,9 @@ import D._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
-import com.github.pshirshov.izumi.sbt.definitions.Extender
 import com.typesafe.sbt.pgp.PgpSettings
 import coursier.ShadingPlugin.autoImport.shadingNamespace
 import sbt.Keys.{pomExtra, publishMavenStyle}
-import sbt.librarymanagement.syntax
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 
@@ -255,6 +253,12 @@ lazy val idealinguaRuntimeCats = inIdealingua.as.module
 lazy val idealinguaRuntimeHttp4s = inIdealingua.as.module
   .depends(idealinguaModel)
   .settings(libraryDependencies ++= R.http4s_all ++ Seq(R.http4s_client))
+
+lazy val idealinguaCompiler = inIdealingua.as.module
+  .depends(idealinguaCore, idealinguaFormatCirce)
+  .settings(libraryDependencies ++= Seq(R.scallop))
+
+
 
 lazy val sbtIzumi = inSbt.as
   .module

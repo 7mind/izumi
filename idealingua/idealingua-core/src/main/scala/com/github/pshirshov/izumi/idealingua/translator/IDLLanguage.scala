@@ -4,15 +4,28 @@ sealed trait IDLLanguage
 
 object IDLLanguage {
   case object Scala extends IDLLanguage {
-    override def toString: String = "scala"
+    override val toString: String = "scala"
   }
   case object Go extends IDLLanguage {
-    override def toString: String = "go"
+    override val toString: String = "go"
   }
   case object Typescript extends IDLLanguage {
-    override def toString: String = "typescript"
+    override val toString: String = "typescript"
   }
   case object UnityCSharp extends IDLLanguage {
-    override def toString: String = "csharp-unity"
+    override val toString: String = "csharp-unity"
+  }
+
+  def parse(s: String): IDLLanguage = {
+    s.trim.toLowerCase match {
+      case Scala.toString  =>
+        Scala
+      case Go.toString  =>
+        Go
+      case Typescript.toString  =>
+        Typescript
+      case UnityCSharp.toString  =>
+        UnityCSharp
+    }
   }
 }
