@@ -74,7 +74,9 @@ object CliIdlCompiler {
             val itarget = target.resolve(option.language.toString)
 
             val out = Timed {
-              IzFiles.remove(itarget)
+              if (itarget.toFile.exists()) {
+                IzFiles.remove(itarget)
+              }
               print(s"  - Compiling into ${option.language}: ")
               compiler.compile(itarget, option) match {
                 case s: IDLSuccess =>

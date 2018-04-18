@@ -73,8 +73,18 @@ You may use [https://github.com/coursier/coursier](Coursier) to run it:
 
 ```bash
 # release
-./coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- --help
+coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- --help
 
 # snapshot
 coursier launch -r https://oss.sonatype.org/content/repositories/snapshots/ com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0-SNAPSHOT -- --help
+```
+
+Commandline examples:
+
+```
+coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- -s src -t target -L scala=* -L typescript=*
+```
+
+```
+coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- -s src -t target -L scala=-AnyvalExtension -L typescript=*
 ```
