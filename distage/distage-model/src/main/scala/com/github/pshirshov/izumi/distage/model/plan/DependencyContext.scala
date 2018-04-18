@@ -1,8 +1,11 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverseBase, RuntimeUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{Callable, DIUniverseBase, RuntimeUniverse, SafeType}
 
-trait DependencyContext { this: DIUniverseBase =>
+trait DependencyContext {
+  this: DIUniverseBase
+    with SafeType
+    with Callable =>
 
   sealed trait DependencyContext {
     def definingClass: TypeFull
