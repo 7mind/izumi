@@ -64,6 +64,13 @@ object CliIdlCompiler {
     println(s"Done: ${toCompile.size} in ${toCompile.duration.toMillis}ms")
     println()
 
+    options.foreach {
+      option =>
+        val itarget = target.resolve(option.language.toString)
+        if (itarget.toFile.exists()) {
+          IzFiles.remove(itarget)
+        }
+    }
 
     toCompile.value.foreach {
       domain =>
@@ -74,9 +81,7 @@ object CliIdlCompiler {
             val itarget = target.resolve(option.language.toString)
 
             val out = Timed {
-              if (itarget.toFile.exists()) {
-                IzFiles.remove(itarget)
-              }
+
               print(s"  - Compiling into ${option.language}: ")
               compiler.compile(itarget, option) match {
                 case s: IDLSuccess =>
