@@ -1,15 +1,15 @@
 package com.github.pshirshov.izumi.idealingua.translator.totypescript.tools
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
-import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainId, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class ModuleTools() {
-  def toSource(id: IndefiniteId, moduleId: ModuleId, product: RenderableCogenProduct): Seq[Module] = {
+  def toSource(id: DomainId, moduleId: ModuleId, product: RenderableCogenProduct): Seq[Module] = {
     product match {
       case p if p.isEmpty =>
         Seq.empty
@@ -17,7 +17,7 @@ class ModuleTools() {
       case _ =>
         val code = (product.preamble +:  product.render.map(_.toString())).mkString("\n")
         val header = product.renderHeader.map(_.toString()).mkString("\n")
-        val content: String = withPackage(id.pkg, header, code)
+        val content: String = withPackage(id.toPackage, header, code)
         Seq(Module(moduleId, content))
     }
   }
@@ -53,10 +53,10 @@ class ModuleTools() {
   }
 
   def toModuleId(id: TypeId): ModuleId = {
-    ModuleId(id.pkg, s"${id.name}.ts")
+    ModuleId(id.path.toPackage, s"${id.name}.ts")
   }
 
   def toModuleId(id: ServiceId): ModuleId = {
-    ModuleId(id.pkg, s"${id.name}.ts")
+    ModuleId(id.domain.toPackage, s"${id.name}.ts")
   }
 }

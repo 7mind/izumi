@@ -32,6 +32,5 @@ object JavaType {
     model.JavaType(pkg, nameParts.last)
   }
 
-  def apply(typeId: AbstractTypeId): JavaType = new JavaType(typeId.pkg, typeId.name)
   def apply(typeId: DomainId): JavaType = new JavaType(typeId.pkg, typeId.id)
 }

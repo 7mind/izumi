@@ -1,18 +1,34 @@
 package com.github.pshirshov.izumi.idealingua.model.common
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 
 
 trait AbstractTypeId {
-  def pkg: Package
+//  def pkg: Package
 
   def name: TypeName
 
-  override def toString: TypeName = s"{${pkg.mkString(".")}#$name :${getClass.getSimpleName}}"
+  //override def toString: TypeName = s"{${pkg.mkString(".")}#$name :${getClass.getSimpleName}}"
 }
 
+case class TypePath(domain: DomainId, within: Package) {
+  def sub(v: TypeName) = TypePath(domain, within :+ v)
+  def toPackage: Package= domain.toPackage ++ within
 
-sealed trait TypeId extends AbstractTypeId
+  override def toString: TypeName = {
+    if (within.isEmpty) {
+      s"$domain/"
+    } else {
+      s"$domain/${within.mkString("/")}"
+    }
+  }
+}
+
+sealed trait TypeId extends AbstractTypeId {
+  def path: TypePath
+  override def toString: TypeName = s"{${path}#$name :}@${getClass.getSimpleName}"
+
+}
 
 sealed trait StructureId extends TypeId
 
@@ -25,27 +41,9 @@ sealed trait TimeTypeId {
   this: ScalarId =>
 }
 
-case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractTypeId {
-  def toAlias: AliasId = AliasId(pkg, name)
-
-  def toEnum: EnumId = EnumId(pkg, name)
-
-  def toInterface: InterfaceId = InterfaceId(pkg, name)
-
-  def toDTO: DTOId = DTOId(pkg, name)
-
-  def toAdtId: AdtId = AdtId(pkg, name)
-
-  def toIdentifier: IdentifierId = IdentifierId(pkg, name)
-
-  def toService: ServiceId = ServiceId(pkg, name)
-}
+case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractTypeId
 
 object IndefiniteId {
-  def apply(id: TypeId): IndefiniteId = new IndefiniteId(id.pkg, id.name)
-
-  def apply(id: ServiceId): IndefiniteId = new IndefiniteId(id.pkg, id.name)
-
   def parse(s: String): IndefiniteId = {
     val parts = s.split('.')
     IndefiniteId(parts.toSeq.init, parts.last)
@@ -54,32 +52,29 @@ object IndefiniteId {
 
 object TypeId {
 
-  case class InterfaceId(pkg: Package, name: TypeName) extends StructureId
+  case class InterfaceId(path: TypePath, name: TypeName) extends StructureId
 
-  case class DTOId(pkg: Package, name: TypeName) extends StructureId
+  case class DTOId(path: TypePath, name: TypeName) extends StructureId
 
   object DTOId {
-    def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
-
-//    @deprecated
-//    def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
-    def apply(parent: IndefiniteId, name: TypeName): DTOId = new DTOId(parent.pkg :+ parent.name, name)
+    def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.path.sub(parent.name), name)
+    def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(TypePath(parent.domain, Seq(parent.name)), name)
   }
 
-  case class IdentifierId(pkg: Package, name: TypeName) extends ScalarId
+  case class IdentifierId(path: TypePath, name: TypeName) extends ScalarId
 
-  case class AdtId(pkg: Package, name: TypeName) extends TypeId
+  case class AdtId(path: TypePath, name: TypeName) extends TypeId
 
   object AdtId {
-    def apply(parent: IndefiniteId, name: TypeName): AdtId = new AdtId(parent.pkg :+ parent.name, name)
+    def apply(parent: ServiceId, name: TypeName): AdtId = new AdtId(TypePath(parent.domain, Seq(parent.name)), name)
   }
 
-  case class AliasId(pkg: Package, name: TypeName) extends TypeId
+  case class AliasId(path: TypePath, name: TypeName) extends TypeId
 
-  case class EnumId(pkg: Package, name: TypeName) extends TypeId
+  case class EnumId(path: TypePath, name: TypeName) extends TypeId
 
   // TODO: remove superclass?
-  case class ServiceId(pkg: Package, name: TypeName)
+  case class ServiceId(domain: DomainId, name: TypeName)
 
 }
 
@@ -88,7 +83,8 @@ sealed trait Builtin extends TypeId {
 
   override def name: TypeName = aliases.head
 
-  override def pkg: Package = Builtin.prelude
+
+  override def path: TypePath = TypePath(DomainId.Builtin, Seq.empty)
 
   override def toString: TypeName = s"#$name"
 }

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.runtime.circe.{CirceWrappedServiceDefinition, MuxedCodec, MuxingCodecProvider}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
@@ -183,8 +183,8 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     )
   }
 
-  protected def str(c: AbstractTypeId) = {
-    s"${c.pkg.mkString(".")}#${c.name}"
+  protected def str(c: TypeId): String = {
+    s"${c.path.toPackage.mkString(".")}#${c.name}"
   }
 
   protected def withParseable(ctx: STContext, id: TypeId): CirceTrait = {

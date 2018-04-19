@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
-import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId, TypeName}
+import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId, TypeName, TypePath}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
@@ -10,11 +10,13 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import scala.meta._
 
 case class ServiceContext(ctx: STContext, svc: Service) {
-  private val typeName: TypeName = svc.id.name
+  val typeName: TypeName = svc.id.name
 
-  val baseId: IndefiniteId = IndefiniteId(svc.id).copy(name = s"$typeName")
+  val basePath = TypePath(svc.id.domain, Seq(typeName))
+  val svcPath = TypePath(svc.id.domain, Seq(s"${typeName}Server"))
+  val baseId: IndefiniteId = IndefiniteId(basePath.toPackage, s"$typeName")
+  val svcId: IndefiniteId = IndefiniteId(svcPath.toPackage, name = s"${typeName}Server")
 
-  val svcId: IndefiniteId = IndefiniteId(svc.id).copy(name = s"${typeName}Server")
   val wrappedId: IndefiniteId = svcId.copy(name = s"${typeName}Wrapped")
   val clientId: IndefiniteId = svcId.copy(name = s"${typeName}Client")
 
@@ -88,7 +90,7 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCM
                case o: ${outputTypeWrapped.typeFull} =>
                  $output
                case o =>
-                 val id: String = ${Lit.String(s"${sp.svcId.name}.$name)")}
+                 val id: String = ${Lit.String(s"${sp.typeName}.$name)")}
                  throw new TypeMismatchException(s"Unexpected input in $$id: $$o", o)
              }
        }
@@ -114,7 +116,7 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCM
   def outputIdWrapped: TypeId = {
     method.signature.output match {
       case _: Output.Singular =>
-        DTOId(sp.baseId, s"${name.capitalize}Output")
+        DTOId(sp.basePath, s"${name.capitalize}Output")
 
       case _ =>
         outputId
@@ -129,14 +131,14 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCM
         o.typeId
 
       case _: Output.Struct =>
-        DTOId(sp.baseId, s"${name.capitalize}Output")
+        DTOId(sp.basePath, s"${name.capitalize}Output")
 
       case _: Output.Algebraic =>
-        AdtId(sp.baseId, s"${name.capitalize}Output")
+        AdtId(sp.basePath, s"${name.capitalize}Output")
     }
   }
 
-  def inputIdWrapped: DTOId = DTOId(sp.baseId, s"${name.capitalize}Input")
+  def inputIdWrapped: DTOId = DTOId(sp.basePath, s"${name.capitalize}Input")
 
   protected def signature: List[Term.Param] = fields.toParams
 

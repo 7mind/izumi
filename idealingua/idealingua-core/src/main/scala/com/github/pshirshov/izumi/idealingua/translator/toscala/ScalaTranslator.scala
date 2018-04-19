@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
-import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -66,7 +65,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
 
   protected def translateService(definition: Service): Seq[Module] = {
-    ctx.modules.toSource(IndefiniteId(definition.id), ctx.modules.toModuleId(definition.id), renderService(definition))
+    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderService(definition))
   }
 
   protected def translateDef(definition: TypeDef): Seq[Module] = {
@@ -85,7 +84,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         RenderableCogenProduct.empty
     }
 
-    ctx.modules.toSource(IndefiniteId(definition.id), ctx.modules.toModuleId(definition), defns)
+    ctx.modules.toSource(definition.id.path.domain, ctx.modules.toModuleId(definition), defns)
   }
 
   protected def renderDto(i: DTO): RenderableCogenProduct = {

@@ -150,10 +150,10 @@ class ILRenderer(domain: DomainDefinition) {
   def render(typeId: TypeId): String = {
     typeId match {
       case g: Generic =>
-        s"${renderTypeName(g.pkg, g.name)}${g.args.map(render).mkString("[", ", ", "]")}"
+        s"${renderTypeName(g.path.toPackage, g.name)}${g.args.map(render).mkString("[", ", ", "]")}"
 
       case t =>
-        renderTypeName(t.pkg, t.name)
+        renderTypeName(t.path.toPackage, t.name)
     }
   }
 
@@ -166,7 +166,7 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def render(id: ServiceId): String = {
-    renderTypeName(id.pkg, id.name)
+    renderTypeName(id.domain.toPackage, id.name)
   }
 
   def minimize(value: common.Package): common.Package = {

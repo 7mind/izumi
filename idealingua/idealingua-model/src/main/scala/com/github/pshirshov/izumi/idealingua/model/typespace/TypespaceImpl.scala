@@ -27,18 +27,8 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
     if (index.contains(id)) {
       index(id)
     } else {
-      referenced(domain.id.toDomainId(id)).apply(id)
+      referenced(id.path.domain).apply(id)
     }
-
-//    val typeDomain = domain.id.toDomainId(id)
-//    if (domain.id == typeDomain) {
-//      id match {
-//        case o =>
-//          index(o)
-//      }
-//    } else {
-//      referenced(typeDomain).apply(id)
-//    }
   }
 
 }

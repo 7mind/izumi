@@ -105,7 +105,7 @@ class TypespaceVerifier(ts: Typespace) {
     val missingTypes = allDependencies
       .filterNot(_.missing.isInstanceOf[Builtin])
       .filterNot(d => ts.types.index.contains(d.missing))
-      .filterNot(d => ts.referenced.get(ts.domain.id.toDomainId(d.missing)).exists(t => t.types.index.contains(d.missing)))
+      .filterNot(d => ts.referenced.get(d.missing.path.domain).exists(t => t.types.index.contains(d.missing)))
 
     if (missingTypes.nonEmpty) {
       issues += Issue.MissingDependencies(missingTypes.toList)

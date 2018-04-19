@@ -64,7 +64,31 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod))
   }
 
-  protected def makeDefinite(id: AbstractTypeId): TypeId = {
+  /*
+  *   def contains(typeId: AbstractTypeId): Boolean = ??? /*{
+    typeId match {
+      case _: Builtin =>
+        false
+      case t if t.pkg.isEmpty =>
+        true
+      case t =>
+        toPackage.zip(t.pkg).forall(ab =>  ab._1 == ab._2)
+    }
+  }*/
+
+  def toDomainId(typeId: AbstractTypeId): DomainId = ??? /*{
+    typeId match {
+      case t if contains(t) =>
+        this
+
+      case t if pkg.nonEmpty =>
+        DomainId(t.pkg.init, t.pkg.last)
+    }
+  }*/
+  *
+  * */
+
+  protected def makeDefinite(id: AbstractTypeId): TypeId = ???/*{
     downcast(id) match {
       case p: Primitive =>
         p
@@ -87,7 +111,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         }
 
     }
-  }
+  }*/
 
   protected def fixId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
     (t match {
@@ -99,35 +123,6 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
       case o =>
         fixSimpleId(o)
-    }).asInstanceOf[R]
-  }
-
-  protected def fixServiceId(t: ServiceId): ServiceId = {
-    t.copy(pkg = fixPkg(t.pkg))
-  }
-
-  protected def fixSimpleId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
-    (t match {
-      case t: DTOId =>
-        t.copy(pkg = fixPkg(t.pkg))
-
-      case t: InterfaceId =>
-        t.copy(pkg = fixPkg(t.pkg))
-
-      case t: AdtId =>
-        t.copy(pkg = fixPkg(t.pkg))
-
-      case t: AliasId =>
-        t.copy(pkg = fixPkg(t.pkg))
-
-      case t: EnumId =>
-        t.copy(pkg = fixPkg(t.pkg))
-
-      case t: IdentifierId =>
-        t.copy(pkg = fixPkg(t.pkg))
-
-      case t: Builtin =>
-        t
     }).asInstanceOf[R]
   }
 
@@ -171,13 +166,6 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     typed.SimpleStructure(concepts = fixIds(s.concepts), fields = fixFields(s.fields))
   }
 
-  protected def fixPkg(pkg: common.Package): common.Package = {
-    if (pkg.isEmpty) {
-      domainId.toPackage
-    } else {
-      pkg
-    }
-  }
 
   protected def downcast(tid: AbstractTypeId): AbstractTypeId = {
     if (isPrimitive(tid)) {
@@ -193,15 +181,6 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         p
       case o =>
         throw new IDLException(s"Unexpected non-primitive id: $o")
-    }
-  }
-
-  protected def toScalar(typeId: TypeId): ScalarId = {
-    typeId match {
-      case p: Primitive =>
-        p
-      case o =>
-        IdentifierId(o.pkg, o.name)
     }
   }
 
@@ -221,15 +200,84 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     }
   }
 
-  protected def toIndefinite(typeId: AbstractTypeId): IndefiniteId = {
-    IndefiniteId(fixPkg(typeId.pkg), typeId.name)
+//  protected def fixServiceId(t: ServiceId): ServiceId = {
+//    t.copy(pkg = fixPkg(t.pkg))
+//  }
+//
+//  protected def fixSimpleId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
+//    (t match {
+//      case t: DTOId =>
+//        t.copy(pkg = fixPkg(t.pkg))
+//
+//      case t: InterfaceId =>
+//        t.copy(pkg = fixPkg(t.pkg))
+//
+//      case t: AdtId =>
+//        t.copy(pkg = fixPkg(t.pkg))
+//
+//      case t: AliasId =>
+//        t.copy(pkg = fixPkg(t.pkg))
+//
+//      case t: EnumId =>
+//        t.copy(pkg = fixPkg(t.pkg))
+//
+//      case t: IdentifierId =>
+//        t.copy(pkg = fixPkg(t.pkg))
+//
+//      case t: Builtin =>
+//        t
+//    }).asInstanceOf[R]
+//  }
+//
+//  protected def toScalar(typeId: TypeId): ScalarId = {
+//    typeId match {
+//      case p: Primitive =>
+//        p
+//      case o =>
+//        IdentifierId(o.pkg, o.name)
+//    }
+//  }
+//
+//  protected def toIndefinite(typeId: AbstractTypeId): IndefiniteId = {
+//    IndefiniteId(fixPkg(typeId.pkg), typeId.name)
+//  }
+//
+//
+//  protected def fixPkg(pkg: common.Package): common.Package = {
+//    if (pkg.isEmpty) {
+//      domainId.toPackage
+//    } else {
+//      pkg
+//    }
+//  }
+//
+//  protected def isGeneric(abstractTypeId: AbstractTypeId): Boolean = {
+//    abstractTypeId.pkg.isEmpty && Generic.all.contains(abstractTypeId.name)
+//  }
+//
+//  protected def isPrimitive(abstractTypeId: AbstractTypeId): Boolean = {
+//    abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
+//  }
+
+  protected def fixServiceId(t: ServiceId): ServiceId = ???
+
+  protected def fixSimpleId[T <: AbstractTypeId, R <: TypeId](t: T): R = ???
+
+  protected def toScalar(typeId: TypeId): ScalarId = ???
+
+  protected def toIndefinite(typeId: AbstractTypeId): IndefiniteId = ???
+
+
+  protected def fixPkg(pkg: common.Package): common.Package = {
+    if (pkg.isEmpty) {
+      domainId.toPackage
+    } else {
+      pkg
+    }
   }
 
-  protected def isGeneric(abstractTypeId: AbstractTypeId): Boolean = {
-    abstractTypeId.pkg.isEmpty && Generic.all.contains(abstractTypeId.name)
-  }
+  protected def isGeneric(abstractTypeId: AbstractTypeId): Boolean = ???
 
-  protected def isPrimitive(abstractTypeId: AbstractTypeId): Boolean = {
-    abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
-  }
+  protected def isPrimitive(abstractTypeId: AbstractTypeId): Boolean = ???
+
 }

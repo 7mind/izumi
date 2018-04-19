@@ -36,7 +36,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
 
   protected def translateService(definition: Service): Seq[Module] = {
-    ctx.modules.toSource(IndefiniteId(definition.id), ctx.modules.toModuleId(definition.id), renderService(definition))
+    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderService(definition))
   }
 
   protected def translateDef(definition: TypeDef): Seq[Module] = {
@@ -57,11 +57,11 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
         RenderableCogenProduct.empty
     }
 
-    ctx.modules.toSource(IndefiniteId(definition.id), ctx.modules.toModuleId(definition), defns)
+    ctx.modules.toSource(definition.id.path.domain, ctx.modules.toModuleId(definition), defns)
   }
 
   protected def renderRuntimeNames(i: TypeId): String = {
-      renderRuntimeNames(i.pkg.mkString("."), i.name)
+      renderRuntimeNames(i.path.toPackage.mkString("."), i.name)
   }
 
   protected def renderRuntimeNames(pkg: String, name: String, holderName: String = null): String = {
@@ -100,17 +100,17 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
     val importHeader = typesToImports(
       i.struct.fields.flatMap(i => collectCustomTypes(i.typeId)) ++
-        i.struct.superclasses.interfaces, i.id.pkg)
+        i.struct.superclasses.interfaces, i.id.path.toPackage)
 
     val implementsInterfaces =
-      if (i.struct.superclasses.interfaces.length > 0) {
+      if (i.struct.superclasses.interfaces.nonEmpty) {
         "implements " + i.struct.superclasses.interfaces.map(iface => iface.name).mkString(", ") + " "
       } else {
         ""
       }
 
     val extendsInterfacesSerialized =
-      if (i.struct.superclasses.interfaces.length > 0) {
+      if (i.struct.superclasses.interfaces.nonEmpty) {
         "extends " + i.struct.superclasses.interfaces.map(iface => s"${typespace.implId(iface).name}Serialized").mkString(", ") + " "
       } else {
         ""
@@ -150,7 +150,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
   protected def renderAlias(i: Alias): RenderableCogenProduct = {
     // TODO Finish import
-      val importHeader = typesToImports(Seq(i.target), i.id.pkg)
+      val importHeader = typesToImports(Seq(i.target), i.id.path.toPackage)
 
       AliasProduct(
         s"export type ${i.id.name} = ${conv.toNativeType(i.target)};",
@@ -184,7 +184,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |}
        """.stripMargin
 
-    val importHeader = typesToImports(i.alternatives.map(ii => ii.typeId), i.id.pkg)
+    val importHeader = typesToImports(i.alternatives.map(ii => ii.typeId), i.id.path.toPackage)
 
     AdtProduct(
       base,
@@ -273,28 +273,28 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   }
 
   private def withImport(t: TypeId, fromPackage: Package, index: Int): String = {
-    if (t.pkg.isEmpty) {
+    if (t.path.toPackage.isEmpty) {
       return s""
     }
 
-    val nestedDepth = t.pkg.zip(fromPackage).count(x => x._1 == x._2)
+    val nestedDepth = t.path.toPackage.zip(fromPackage).count(x => x._1 == x._2)
 
-    if (nestedDepth == t.pkg.size) {
+    if (nestedDepth == t.path.toPackage.size) {
         // It seems that we don't need if namespace is the same, TypeScript should handle resolution itself
         return ""
-//      s"import { ${t.pkg.head} as ${t.pkg.head + index} } from ${"\"" + "./" + t.name + "\""};"
+//      s"import { ${t.path.toPackage.head} as ${t.path.toPackage.head + index} } from ${"\"" + "./" + t.name + "\""};"
     }
 
     var importOffset = ""
-    (1 to (t.pkg.size - nestedDepth)).foreach(_ => importOffset += "../")
+    (1 to (t.path.toPackage.size - nestedDepth)).foreach(_ => importOffset += "../")
 
-    val importFile = importOffset + t.pkg.drop(nestedDepth).mkString("/")+ "/" + t.name
+    val importFile = importOffset + t.path.toPackage.drop(nestedDepth).mkString("/")+ "/" + t.name
 
-    val pkgName = t.pkg.head + index + "." + t.pkg.drop(1).mkString(".")
+    val pkgName = t.path.toPackage.head + index + "." + t.path.toPackage.drop(1).mkString(".")
 
     t match {
       case iid: InterfaceId =>
-        s"""import { ${t.pkg.head} as ${t.pkg.head + index} } from '$importFile';
+        s"""import { ${t.path.toPackage.head} as ${t.path.toPackage.head + index} } from '$importFile';
            |import { ${t.name}, ${typespace.implId(iid).name}Serialized } from '$importFile';
            |const ${typespace.implId(iid).name} = $pkgName.${typespace.implId(iid).name};
              """.stripMargin
@@ -306,7 +306,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
         s"import { ${t.name} } from '$importFile';"
 
       case _: IdentifierId =>
-        s"""import { ${t.pkg.head} as ${t.pkg.head + index} } from '$importFile';
+        s"""import { ${t.path.toPackage.head} as ${t.path.toPackage.head + index} } from '$importFile';
            |import { I${t.name} } from '$importFile';
            |const ${t.name} = $pkgName.${t.name};
              """.stripMargin
@@ -315,7 +315,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
         s"import { ${t.name} } from '$importFile';"
 
       case _: DTOId =>
-        s"""import { ${t.pkg.head} as ${t.pkg.head + index} } from '$importFile';
+        s"""import { ${t.path.toPackage.head} as ${t.path.toPackage.head + index} } from '$importFile';
            |import { I${t.name}, I${t.name}Serialized } from '$importFile';
            |const ${t.name} = $pkgName.${t.name};
              """.stripMargin
@@ -375,8 +375,8 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
        """.stripMargin
 
     val importHeader = typesToImports(
-        fields.all.flatMap(i => collectCustomTypes(i.field.typeId)).filter(p => p.name != i.id.name && p.pkg.mkString(".") != i.id.pkg.mkString(".")) ++
-        i.struct.superclasses.interfaces, i.id.pkg)
+        fields.all.flatMap(i => collectCustomTypes(i.field.typeId)).filter(p => p.name != i.id.name && p.path.toPackage.mkString(".") != i.id.path.toPackage.mkString(".")) ++
+        i.struct.superclasses.interfaces, i.id.path.toPackage)
 
     val companion =
       s"""export class ${eid.name} implements ${i.id.name} {
@@ -513,7 +513,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
        |}
        |
        |export class ${i.id.name}Client implements I${i.id.name}Client {
-       |${renderRuntimeNames(i.id.pkg.mkString("."), i.id.name, s"${i.id.name}Client").shift(4)}
+       |${renderRuntimeNames(i.id.domain.toPackage.mkString("."), i.id.name, s"${i.id.name}Client").shift(4)}
        |    protected _transport: IClientTransport;
        |
        |    constructor(transport: IClientTransport) {
@@ -616,7 +616,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 //
 //    val importHeader = typesToImports(
 //      i.methods.map(im => im.asInstanceOf[DeprecatedRPCMethod]).map(f => f.signature.input.flatMap(f2 => f2)) struct.fields.flatMap(i => collectCustomTypes(i.typeId)) ++
-//        i.struct.superclasses.interfaces, i.id.pkg)
+//        i.struct.superclasses.interfaces, i.id.path.toPackage)
 
     val importHeader = ""
 

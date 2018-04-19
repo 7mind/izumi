@@ -21,7 +21,7 @@ class TypeCollection(domain: DomainDefinition) {
         val inputDto = {
           val in = m.signature.input
           val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
-          val inId = DTOId(IndefiniteId(service.id), s"${baseName}Input")
+          val inId = DTOId(service.id, s"${baseName}Input")
           DTO(inId, inputStructure)
         }
 
@@ -29,16 +29,16 @@ class TypeCollection(domain: DomainDefinition) {
         val outDto = m.signature.output match {
           case o: Output.Singular =>
             val outStructure = Structure.apply(List(Field(o.typeId, "value")), List.empty, Super.empty)
-            val outId = DTOId(IndefiniteId(service.id), s"${baseName}Output")
+            val outId = DTOId(service.id, s"${baseName}Output")
             DTO(outId, outStructure)
 
           case o: Output.Struct =>
             val outStructure = Structure.apply(o.struct.fields, List.empty, Super(List.empty, o.struct.concepts, List.empty))
-            val outId = DTOId(IndefiniteId(service.id), s"${baseName}Output")
+            val outId = DTOId(service.id, s"${baseName}Output")
             DTO(outId, outStructure)
 
           case o: Output.Algebraic =>
-            val outId = AdtId(IndefiniteId(service.id), s"${baseName}Output")
+            val outId = AdtId(service.id, s"${baseName}Output")
             Adt(outId, o.alternatives)
         }
 

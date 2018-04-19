@@ -34,12 +34,12 @@ class IDLCompiler(typespace: Typespace) {
     options.language match {
       case IDLLanguage.Scala =>
         new FinalTranslatorScalaImpl()
-      case IDLLanguage.Go =>
-        ???
       case IDLLanguage.Typescript =>
         new FinalTranslatorTypeScriptImpl()
+      case IDLLanguage.Go =>
+        ??? // go transpiler is not ready
       case IDLLanguage.UnityCSharp =>
-        ???
+        ??? // c# transpiler is not ready
     }
   }
 }

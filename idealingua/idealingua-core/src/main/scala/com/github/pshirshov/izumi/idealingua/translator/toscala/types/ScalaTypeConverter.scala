@@ -59,7 +59,7 @@ class ScalaTypeConverter(domain: DomainId) {
         toScala(toPrimitive(t))
 
       case _ =>
-        toScala(JavaType(id.pkg, id.name))
+        toScala(JavaType(id.path.toPackage, id.name))
     }
   }
 
@@ -73,7 +73,7 @@ class ScalaTypeConverter(domain: DomainId) {
   }
 
   def toScala(clazz: Class[_]): ScalaType = {
-    val javaType = JavaType(IndefiniteId(clazz.getPackage.getName.split('.'), clazz.getSimpleName))
+    val javaType = JavaType(clazz.getPackage.getName.split('.'), clazz.getSimpleName)
     toScala(javaType)
   }
 

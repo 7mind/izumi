@@ -2,25 +2,34 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 
 case class ParsedId(pkg: Seq[String], name: String) {
-  def toEnumId: EnumId = EnumId(pkg, name)
+  private def typePath = {
+    if (pkg.isEmpty) {
+      TypePath(DomainId.Undefined, Seq.empty)
+    } else {
+      TypePath(DomainId(pkg.init, pkg.last), Seq.empty)
 
-  def toAliasId: AliasId = AliasId(pkg, name)
+    }
+  }
+  def toEnumId: EnumId = EnumId(typePath, name)
 
-  def toIdId: IdentifierId = IdentifierId(pkg, name)
+  def toAliasId: AliasId = AliasId(typePath, name)
 
-  def toMixinId: InterfaceId = InterfaceId(pkg, name)
+  def toIdId: IdentifierId = IdentifierId(typePath, name)
 
-  def toDataId: DTOId = DTOId(pkg, name)
+  def toMixinId: InterfaceId = InterfaceId(typePath, name)
 
-  def toAdtId: AdtId = AdtId(pkg, name)
+  def toDataId: DTOId = DTOId(typePath, name)
+
+  def toAdtId: AdtId = AdtId(typePath, name)
+
+  def toServiceId: ServiceId = ServiceId(typePath.domain, name)
 
   def toTypeId: AbstractTypeId = {
     IndefiniteId(pkg, name)
   }
-
-  def toServiceId: ServiceId = ServiceId(pkg, name)
 
   def toGeneric(params: Seq[Seq[AbstractTypeId]]): AbstractTypeId = {
     if (params.nonEmpty) {
