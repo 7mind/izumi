@@ -381,7 +381,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
                  case MuxResponse(t: ${sp.serviceOutputBase.typeFull}, _) =>
                    t
                  case o =>
-                   val id: String = ${Lit.String(s"${sp.svcId.name}.SafeToUnsafeBridge.name)")}
+                   val id: String = ${Lit.String(s"${sp.typeName}.SafeToUnsafeBridge.name)")}
                    throw new TypeMismatchException(s"Unexpected output in $$id: $$o", o)
                }
              }
@@ -420,7 +420,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     new UnpackingDispatcher.Impl[R, C](service)
   }
 
-          val serviceId = ServiceId(${Lit.String(sp.svcId.name)})
+          val serviceId = ServiceId(${Lit.String(sp.typeName)})
 
           def toMethodId(v: ${sp.serviceInputBase.typeFull}): Method = {
             v match {

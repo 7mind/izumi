@@ -273,6 +273,10 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   }
 
   private def withImport(t: TypeId, fromPackage: Package, index: Int): String = {
+    if (t.path.domain == DomainId.Builtin) {
+      return s""
+    }
+    
     if (t.path.toPackage.isEmpty) {
       return s""
     }

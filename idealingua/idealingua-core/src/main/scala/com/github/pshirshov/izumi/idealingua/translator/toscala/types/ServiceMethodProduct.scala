@@ -14,8 +14,8 @@ case class ServiceContext(ctx: STContext, svc: Service) {
 
   val basePath = TypePath(svc.id.domain, Seq(typeName))
   val svcPath = TypePath(svc.id.domain, Seq(s"${typeName}Server"))
-  val baseId: IndefiniteId = IndefiniteId(basePath.toPackage, s"$typeName")
-  val svcId: IndefiniteId = IndefiniteId(svcPath.toPackage, name = s"${typeName}Server")
+  private val baseId: IndefiniteId = IndefiniteId(svc.id.domain.toPackage, s"$typeName")
+  private val svcId: IndefiniteId = IndefiniteId(svc.id.domain.toPackage, name = s"${typeName}Server")
 
   val wrappedId: IndefiniteId = svcId.copy(name = s"${typeName}Wrapped")
   val clientId: IndefiniteId = svcId.copy(name = s"${typeName}Client")
