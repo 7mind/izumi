@@ -15,6 +15,7 @@ import org.rogach.scallop.{ScallopConf, ScallopOption}
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
   val source: ScallopOption[Path] = opt[Path](name = "source", default = Some(Paths.get("source")), descr = "Input directory")
   val target: ScallopOption[Path] = opt[Path](name = "target", default = Some(Paths.get("target")), descr = "Output directory")
+  val runtime: ScallopOption[Path] = opt[Path](name = "runtime", default = Some(Paths.get("runtime")), descr = "Runtime directory to copy")
 
   val languages: Map[String, String] = props[String]('L', descr = "Key is language id, value is extension filter. Example: -L scala=-AnyvalExtension;-CirceDerivationTranslatorExtension")
 
@@ -64,13 +65,22 @@ object CliIdlCompiler {
     println(s"Done: ${toCompile.size} in ${toCompile.duration.toMillis}ms")
     println()
 
+    println(s"Preparing targets...")
     options.foreach {
       option =>
         val itarget = target.resolve(option.language.toString)
         if (itarget.toFile.exists()) {
           IzFiles.remove(itarget)
         }
+
+        val rtSource = conf.runtime.toOption.map(_.resolve(option.language.toString))
+        rtSource.filter(p => p.toFile.exists() && p.toFile.isDirectory).foreach {
+          path =>
+            copyDir(path, itarget)
+        }
     }
+    println()
+
 
     toCompile.value.foreach {
       domain =>
@@ -98,4 +108,20 @@ object CliIdlCompiler {
     }
   }
 
+  import java.nio.file.{Files, Path, StandardCopyOption}
+
+  private def copyDir(src: Path, dest: Path): Unit = {
+    import scala.collection.JavaConverters._
+
+    val rt = Files.walk(src).iterator()
+      .asScala
+      .filter(_.toFile.isFile).toList
+
+    rt.foreach((f: Path) => {
+      val t = dest.resolve(src.relativize(f))
+      t.getParent.toFile.mkdirs()
+      Files.copy(f, t, StandardCopyOption.REPLACE_EXISTING)
+    })
+    println(s"${rt.size} stub file(s) copied into $dest")
+  }
 }
