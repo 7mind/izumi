@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainDefinition
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
@@ -18,7 +18,7 @@ import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguag
 
 @ExposedTestScope
 object IDLTestTools {
-  def loadDefs(): Seq[DomainDefinition] = {
+  def loadDefs(): Seq[Typespace] = {
     val src = new File(getClass.getResource("/defs").toURI).toPath
     val loader = new LocalModelLoader(src, Seq.empty)
     val loaded = loader.load()
@@ -26,12 +26,12 @@ object IDLTestTools {
     assert(loaded.size == loadableCount, s"expected $loadableCount domains")
     loaded.foreach {
       d =>
-        println(new ILRenderer(d).render())
+        println(new ILRenderer(d.domain).render())
     }
     loaded
   }
 
-  def compilesScala(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
+  def compilesScala(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.Scala, extensions)
 
     val ctarget = out.targetDir.resolve("scalac")
@@ -58,14 +58,14 @@ object IDLTestTools {
     Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
   }
 
-  def compilesTypeScript(id: String, domains: Seq[DomainDefinition], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
+  def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.Typescript, extensions)
     out.allFiles.nonEmpty
   }
 
   case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
 
-  private def compiles(id: String, domains: Seq[DomainDefinition], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
+  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
     val targetDir = Paths.get("target")
     val tmpdir = targetDir.resolve("idl-output")
 
@@ -92,9 +92,9 @@ object IDLTestTools {
       }
 
     val allFiles: Seq[Path] = domains.flatMap {
-      domain =>
-        val compiler = new IDLCompiler(domain)
-        compiler.compile(runDir.resolve(domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language, extensions)) match {
+      typespace =>
+        val compiler = new IDLCompiler(typespace)
+        compiler.compile(runDir.resolve(typespace.domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language, extensions)) match {
           case IDLSuccess(files) =>
             assert(files.toSet.size == files.size)
             files

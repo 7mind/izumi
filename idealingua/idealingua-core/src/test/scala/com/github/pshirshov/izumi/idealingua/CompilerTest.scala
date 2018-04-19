@@ -3,16 +3,16 @@ package com.github.pshirshov.izumi.idealingua
 import org.scalatest.WordSpec
 
 
-class LoadThenCompileTest extends WordSpec {
+class CompilerTest extends WordSpec {
 
   import IDLTestTools._
 
-  "IL loader" should {
-    "load & parse domain definition in scala" in {
+  "IDL compiler" should {
+    "be able to compile into scala" in {
       assert(compilesScala(getClass.getSimpleName, loadDefs()))
     }
 
-    "load & parse domain definition in typescript" in {
+    "be able to compile into typescript" in {
       assert(compilesTypeScript(getClass.getSimpleName, loadDefs()))
     }
   }

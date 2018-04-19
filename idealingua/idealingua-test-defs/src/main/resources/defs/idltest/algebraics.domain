@@ -11,9 +11,4 @@ adt Alternative {
 
 adt ShortSyntax = Success as TestSuccess | Failure
 
-enum TestEnum {
-  Element1
-  Element2
-}
-
-enum ShortSyntaxEnum = Element1 | Element2
+adt Test = str | i08

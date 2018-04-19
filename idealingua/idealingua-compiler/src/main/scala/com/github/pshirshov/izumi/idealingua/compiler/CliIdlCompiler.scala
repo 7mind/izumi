@@ -74,7 +74,7 @@ object CliIdlCompiler {
 
     toCompile.value.foreach {
       domain =>
-        println(s"Processing domain ${domain.id}...")
+        println(s"Processing domain ${domain.domain.id}...")
         val compiler = new IDLCompiler(domain)
         options.foreach {
           option =>
@@ -88,7 +88,7 @@ object CliIdlCompiler {
                   s
 
                 case _ =>
-                  throw new IllegalStateException(s"Cannot compile model ${domain.id}")
+                  throw new IllegalStateException(s"Cannot compile model ${domain.domain.id}")
               }
             }
 

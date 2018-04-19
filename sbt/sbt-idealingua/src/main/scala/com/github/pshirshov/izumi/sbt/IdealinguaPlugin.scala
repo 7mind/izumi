@@ -133,19 +133,19 @@ object IdealinguaPlugin extends AutoPlugin {
 
         val toCompile = new LocalModelLoader(scope.source, cp).load()
         if (toCompile.nonEmpty) {
-          logger.info(s"""Going to compile the following models: ${toCompile.map(_.id).mkString(",")}""")
+          logger.info(s"""Going to compile the following models: ${toCompile.map(_.domain.id).mkString(",")}""")
         }
 
         toCompile.flatMap {
-          domain =>
-            logger.info(s"Compiling model ${domain.id} into $target...")
-            val compiler = new IDLCompiler(domain)
+          typespace =>
+            logger.info(s"Compiling model ${typespace.domain.id} into $target...")
+            val compiler = new IDLCompiler(typespace)
             compiler.compile(target, invokation.options) match {
               case s: IDLSuccess =>
-                logger.debug(s"Model ${domain.id} produces ${s.paths.size} source files...")
+                logger.debug(s"Model ${typespace.domain.id} produces ${s.paths.size} source files...")
                 s.paths.map(_.toFile)
               case _ =>
-                throw new IllegalStateException(s"Cannot compile model ${domain.id}")
+                throw new IllegalStateException(s"Cannot compile model ${typespace.domain.id}")
             }
         }
 

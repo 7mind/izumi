@@ -73,6 +73,7 @@ trait Typespace {
   def implId(id: InterfaceId): DTOId
 
   protected[typespace] def types: TypeCollection
+  protected[typespace] def referenced: Map[DomainId, Typespace]
 }
 
 

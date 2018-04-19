@@ -24,7 +24,7 @@ case class DomainId(pkg: common.Package, id: String) {
       case t if contains(t) =>
         this
 
-      case t =>
+      case t if pkg.nonEmpty =>
         DomainId(t.pkg.init, t.pkg.last)
     }
   }

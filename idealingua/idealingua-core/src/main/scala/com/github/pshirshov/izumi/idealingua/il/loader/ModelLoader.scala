@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainDefinition
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
 trait ModelLoader {
-  def load(): Seq[DomainDefinition]
+  def load(): Seq[Typespace]
 }
