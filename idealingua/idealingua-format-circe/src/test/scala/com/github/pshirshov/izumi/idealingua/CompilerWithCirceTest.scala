@@ -12,7 +12,7 @@ class CompilerWithCirceTest extends WordSpec {
       assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(CirceDerivationTranslatorExtension)))
     }
 
-    "be able to compile into scala with circe-generic" ignore {
+    "be able to compile into scala with circe-generic" in {
       assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(CirceGenericTranslatorExtension)))
     }
   }

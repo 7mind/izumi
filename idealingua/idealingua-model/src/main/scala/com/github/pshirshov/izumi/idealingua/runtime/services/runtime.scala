@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.services
 
 import scala.language.higherKinds
 
-case class InContext[V, Ctx](value: V, context: Ctx)
+case class IRTInContext[V, Ctx](value: V, context: Ctx)
 
 
 trait IRTTransport[RequestWire, ResponseWire] {

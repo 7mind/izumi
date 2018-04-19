@@ -69,7 +69,7 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCM
   }
 
   def dispatching: Case = {
-    p" case InContext(v: ${inputTypeWrapped.typeFull}, c) => _ServiceResult.map(${Term.Name(method.name)}(c, v))(v => v) // upcast "
+    p" case IRTInContext(v: ${inputTypeWrapped.typeFull}, c) => _ServiceResult.map(${Term.Name(method.name)}(c, v))(v => v) // upcast "
   }
 
   def bodyClient: Stat = {
@@ -91,18 +91,18 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCM
                  $output
                case o =>
                  val id: String = ${Lit.String(s"${sp.typeName}.$name)")}
-                 throw new TypeMismatchException(s"Unexpected input in $$id: $$o", o)
+                 throw new IRTTypeMismatchException(s"Unexpected input in $$id: $$o", o)
              }
        }
      """
   }
 
   def inputMatcher: Case =  {
-    p" case _: ${inputTypeWrapped.typeFull} => Method(serviceId, MethodId(${Lit.String(method.name)}))"
+    p" case _: ${inputTypeWrapped.typeFull} => IRTMethod(serviceId, IRTMethodId(${Lit.String(method.name)}))"
   }
 
   def outputMatcher: Case =  {
-    p" case _: ${outputTypeWrapped.typeFull} => Method(serviceId, MethodId(${Lit.String(method.name)}))"
+    p" case _: ${outputTypeWrapped.typeFull} => IRTMethod(serviceId, IRTMethodId(${Lit.String(method.name)}))"
   }
 
   protected def outputType: ScalaType = {

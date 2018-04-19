@@ -25,7 +25,7 @@ trait IRTWrappedServiceDefinition {
   def client[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[Input, Output, R]): ServiceClient[R]
 
 
-  def server[R[_] : IRTServiceResult, C](service: ServiceServer[R, C]): IRTDispatcher[InContext[Input, C], Output, R]
+  def server[R[_] : IRTServiceResult, C](service: ServiceServer[R, C]): IRTDispatcher[IRTInContext[Input, C], Output, R]
 
 }
 
