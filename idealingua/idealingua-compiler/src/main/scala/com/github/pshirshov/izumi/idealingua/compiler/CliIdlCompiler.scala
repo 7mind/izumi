@@ -103,15 +103,27 @@ object CliIdlCompiler {
             }
 
             println(s"${out.paths.size} source files produced in `$itarget` in ${out.duration.toMillis}ms")
+
+            val ztarget = target.resolve(s"${option.language.toString}.zip")
+            zip(ztarget, enumerate(itarget))
         }
 
     }
   }
 
   import java.nio.file.{Files, Path, StandardCopyOption}
+  import scala.collection.JavaConverters._
 
+  private def enumerate(src: Path): List[ZE] = {
+    val files = Files.walk(src).iterator()
+      .asScala
+      .filter(_.toFile.isFile).toList
+
+    files.map(f => {
+      ZE(src.relativize(f).toString, f)
+    })
+  }
   private def copyDir(src: Path, dest: Path): Unit = {
-    import scala.collection.JavaConverters._
 
     val rt = Files.walk(src).iterator()
       .asScala
@@ -123,5 +135,32 @@ object CliIdlCompiler {
       Files.copy(f, t, StandardCopyOption.REPLACE_EXISTING)
     })
     println(s"${rt.size} stub file(s) copied into $dest")
+  }
+
+  case class ZE(name: String, file: Path)
+
+  def zip(out: Path, files: Iterable[ZE]): Unit = {
+    import java.io.{ BufferedInputStream, FileInputStream, FileOutputStream }
+    import java.util.zip.{ ZipEntry, ZipOutputStream }
+
+    val outFile = out.toFile
+    if (outFile.exists()) {
+      outFile.delete()
+    }
+
+    val zip = new ZipOutputStream(new FileOutputStream(outFile))
+
+    files.foreach { name =>
+      zip.putNextEntry(new ZipEntry(name.name))
+      val in = new BufferedInputStream(new FileInputStream(name.file.toFile))
+      var b = in.read()
+      while (b > -1) {
+        zip.write(b)
+        b = in.read()
+      }
+      in.close()
+      zip.closeEntry()
+    }
+    zip.close()
   }
 }
