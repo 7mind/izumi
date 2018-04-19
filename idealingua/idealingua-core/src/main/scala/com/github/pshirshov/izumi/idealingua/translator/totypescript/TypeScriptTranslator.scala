@@ -276,7 +276,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     if (t.path.domain == DomainId.Builtin) {
       return s""
     }
-    
+
     if (t.path.toPackage.isEmpty) {
       return s""
     }
