@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, Pars
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinitionTyper
-import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, TypespaceImpl, TypespaceVerifier}
+import com.github.pshirshov.izumi.idealingua.model.typespace.{FailedTypespace, Typespace, TypespaceImpl, TypespaceVerifier}
 import fastparse.all
 import fastparse.core.Parsed
 
@@ -24,20 +24,24 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
     val domains = parseDomains(files)
     val models = parseModels(files)
 
-    domains.map {
+    val typespaces = domains.map {
       case (_, domain) =>
         new LocalDomainProcessor(root, classpath, domain, domains, models).postprocess()
     }.map {
       d =>
         val domain = new DomainDefinitionTyper(d).convert()
-        val typespace = new TypespaceImpl(domain)
-        val issues = new TypespaceVerifier(typespace).verify()
-        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-        if (issues.nonEmpty) {
-          throw new IDLException(s"Typespace verification failed:\n${issues.mkString("\n").shift(2)}")
-        }
-        typespace
+        new TypespaceImpl(domain)
     }.toSeq
+
+    val issues = typespaces
+      .map(ts => FailedTypespace(ts.domain.id, new TypespaceVerifier(ts).verify()))
+      .filter(_.issues.nonEmpty)
+
+    if (issues.nonEmpty) {
+      throw new IDLException(s"Verification failed:\n${issues.mkString("\n\n")}")
+    }
+
+    typespaces
   }
 
   def enumerate(): Map[Path, String] = {
