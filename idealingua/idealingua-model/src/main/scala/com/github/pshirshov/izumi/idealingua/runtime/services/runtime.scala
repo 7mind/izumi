@@ -5,11 +5,11 @@ import scala.language.higherKinds
 case class InContext[V, Ctx](value: V, context: Ctx)
 
 
-trait Transport[RequestWire, ResponseWire] {
+trait IRTTransport[RequestWire, ResponseWire] {
   def send(v: RequestWire): ResponseWire
 }
 
-trait TransportMarshallers[RequestWire, Request, Response, ResponseWire] {
+trait IRTTransportMarshallers[RequestWire, Request, Response, ResponseWire] {
   def decodeRequest(requestWire: RequestWire): Request
 
   def encodeRequest(request: Request): RequestWire
@@ -21,15 +21,15 @@ trait TransportMarshallers[RequestWire, Request, Response, ResponseWire] {
 
 
 
-class ServerReceiver[RequestWire, Request, Response, ResponseWire, R[_] : ServiceResult]
+class IRTServerReceiver[RequestWire, Request, Response, ResponseWire, R[_] : IRTServiceResult]
 (
-  dispatcher: Dispatcher[Request, Response, R]
-  , codec: TransportMarshallers[RequestWire, Request, Response, ResponseWire]
-) extends Receiver[RequestWire, ResponseWire, R] with WithSvcResult[R] {
-  override protected def _ServiceResult: ServiceResult[R] = implicitly
+  dispatcher: IRTDispatcher[Request, Response, R]
+  , codec: IRTTransportMarshallers[RequestWire, Request, Response, ResponseWire]
+) extends IRTReceiver[RequestWire, ResponseWire, R] with IRTWithSvcResult[R] {
+  override protected def _ServiceResult: IRTServiceResult[R] = implicitly
 
   def receive(request: RequestWire): R[ResponseWire] = {
-    import ServiceResult._
+    import IRTServiceResult._
     _Result(codec.decodeRequest(request))
       .flatMap(dispatcher.dispatch)
       .map(codec.encodeResponse)
@@ -37,15 +37,15 @@ class ServerReceiver[RequestWire, Request, Response, ResponseWire, R[_] : Servic
 }
 
 
-class ClientDispatcher[RequestWire, Request, Response, ResponseWire, R[_] : ServiceResult]
+class IRTClientDispatcher[RequestWire, Request, Response, ResponseWire, R[_] : IRTServiceResult]
 (
-  transport: Transport[RequestWire, R[ResponseWire]]
-  , codec: TransportMarshallers[RequestWire, Request, Response, ResponseWire]
-) extends Dispatcher[Request, Response, R] with WithSvcResult[R] {
-  override protected def _ServiceResult: ServiceResult[R] = implicitly
+  transport: IRTTransport[RequestWire, R[ResponseWire]]
+  , codec: IRTTransportMarshallers[RequestWire, Request, Response, ResponseWire]
+) extends IRTDispatcher[Request, Response, R] with IRTWithSvcResult[R] {
+  override protected def _ServiceResult: IRTServiceResult[R] = implicitly
 
   def dispatch(input: Request): Result[Response] = {
-    import ServiceResult._
+    import IRTServiceResult._
     _Result(codec.encodeRequest(input))
       .flatMap(transport.send)
       .map(codec.decodeResponse)

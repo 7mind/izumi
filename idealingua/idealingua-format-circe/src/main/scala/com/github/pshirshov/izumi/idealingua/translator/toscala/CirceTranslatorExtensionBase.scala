@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
-import com.github.pshirshov.izumi.idealingua.runtime.circe.{CirceWrappedServiceDefinition, MuxedCodec, MuxingCodecProvider}
+import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTCirceWrappedServiceDefinition, IRTMuxedCodec, IRTMuxingCodecProvider}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, CogenServiceProduct}
@@ -19,7 +19,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
   protected def adtDeriverImports: List[Import] = classDeriverImports
 
-  private val circeRuntimePkg = runtime.Pkg.of[MuxedCodec]
+  private val circeRuntimePkg = runtime.Pkg.of[IRTMuxedCodec]
 
   override def handleIdentifier(ctx: STContext, id: Identifier, product: IdentifierProudct): IdentifierProudct = {
     import ctx.conv._
@@ -113,8 +113,8 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
 
   override def handleService(ctx: STContext, sCtx: FullServiceContext, product: CogenServiceProduct): CogenServiceProduct = {
-    val cp = circeRuntimePkg.conv.toScala[MuxingCodecProvider]
-    val base = circeRuntimePkg.conv.toScala[CirceWrappedServiceDefinition]
+    val cp = circeRuntimePkg.conv.toScala[IRTMuxingCodecProvider]
+    val base = circeRuntimePkg.conv.toScala[IRTCirceWrappedServiceDefinition]
 
     val requestEncoders = sCtx.methods.map {
       m =>

@@ -42,7 +42,7 @@ object WithCirceTest {
 
   object TestCaseGeneric {
     final case class Abc(a: Int, b: Int)
-    object Abc extends WithCirceGeneric[Abc]
+    object Abc extends IRTWithCirceGeneric[Abc]
 
     object Alt {
       import io.circe.generic.encoding.DerivedObjectEncoder
@@ -56,7 +56,7 @@ object WithCirceTest {
 
   object TestCaseDerivation {
     final case class Cba(a: Int, b: Int)
-    object Cba extends WithCirce[Cba]
+    object Cba extends IRTWithCirce[Cba]
   }
 
 }

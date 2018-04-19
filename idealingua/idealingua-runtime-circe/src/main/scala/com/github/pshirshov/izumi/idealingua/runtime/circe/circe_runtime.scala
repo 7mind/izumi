@@ -4,62 +4,62 @@ import com.github.pshirshov.izumi.idealingua.runtime.services._
 import io.circe._
 
 
-trait CirceWrappedServiceDefinition {
-  this: IdentifiableServiceDefinition =>
-  def codecProvider: MuxingCodecProvider
+trait IRTCirceWrappedServiceDefinition {
+  this: IRTIdentifiableServiceDefinition =>
+  def codecProvider: IRTMuxingCodecProvider
 }
 
-trait MuxedCodec {
-  implicit val encodePolymorphicRequest: Encoder[ReqBody]
-  implicit val encodePolymorphicResponse: Encoder[ResBody]
+trait IRTMuxedCodec {
+  implicit val encodePolymorphicRequest: Encoder[IRTReqBody]
+  implicit val encodePolymorphicResponse: Encoder[IRTResBody]
 
-  implicit def decodePolymorphicRequest(implicit method: Method): Decoder[ReqBody]
-  implicit def decodePolymorphicResponse(implicit method: Method): Decoder[ResBody]
+  implicit def decodePolymorphicRequest(implicit method: IRTMethod): Decoder[IRTReqBody]
+  implicit def decodePolymorphicResponse(implicit method: IRTMethod): Decoder[IRTResBody]
 }
 
-case class CursorForMethod(methodId: Method, cursor: HCursor)
+case class IRTCursorForMethod(methodId: IRTMethod, cursor: HCursor)
 
-trait MuxingCodecProvider {
-  def requestEncoders: List[PartialFunction[ReqBody, Json]]
+trait IRTMuxingCodecProvider {
+  def requestEncoders: List[PartialFunction[IRTReqBody, Json]]
 
-  def responseEncoders: List[PartialFunction[ResBody, Json]]
+  def responseEncoders: List[PartialFunction[IRTResBody, Json]]
 
-  def requestDecoders: List[PartialFunction[CursorForMethod, Decoder.Result[ReqBody]]]
+  def requestDecoders: List[PartialFunction[IRTCursorForMethod, Decoder.Result[IRTReqBody]]]
 
-  def responseDecoders: List[PartialFunction[CursorForMethod, Decoder.Result[ResBody]]]
+  def responseDecoders: List[PartialFunction[IRTCursorForMethod, Decoder.Result[IRTResBody]]]
 
 }
 
-class OpinionatedMuxedCodec
+class IRTOpinionatedMuxedCodec
 (
-  provider: List[MuxingCodecProvider]
-) extends MuxedCodec {
+  provider: List[IRTMuxingCodecProvider]
+) extends IRTMuxedCodec {
 
   private val requestEncoders = provider.flatMap(_.requestEncoders)
   private val responseEncoders = provider.flatMap(_.responseEncoders)
   private val requestDecoders = provider.flatMap(_.requestDecoders)
   private val responseDecoders = provider.flatMap(_.responseDecoders)
 
-  override implicit val encodePolymorphicRequest: Encoder[ReqBody] = Encoder.instance { c =>
-    requestEncoders.foldLeft(PartialFunction.empty[ReqBody, Json])(_ orElse _)(c)
+  override implicit val encodePolymorphicRequest: Encoder[IRTReqBody] = Encoder.instance { c =>
+    requestEncoders.foldLeft(PartialFunction.empty[IRTReqBody, Json])(_ orElse _)(c)
 
   }
 
-  override implicit val encodePolymorphicResponse: Encoder[ResBody] = Encoder.instance { c =>
-    responseEncoders.foldLeft(PartialFunction.empty[ResBody, Json])(_ orElse _)(c)
+  override implicit val encodePolymorphicResponse: Encoder[IRTResBody] = Encoder.instance { c =>
+    responseEncoders.foldLeft(PartialFunction.empty[IRTResBody, Json])(_ orElse _)(c)
 
   }
 
-  override implicit def decodePolymorphicRequest(implicit method: Method): Decoder[ReqBody] = Decoder.instance(c => {
-    requestDecoders.foldLeft(PartialFunction.empty[CursorForMethod, Decoder.Result[ReqBody]])(_ orElse _)(CursorForMethod(method, c))
+  override implicit def decodePolymorphicRequest(implicit method: IRTMethod): Decoder[IRTReqBody] = Decoder.instance(c => {
+    requestDecoders.foldLeft(PartialFunction.empty[IRTCursorForMethod, Decoder.Result[IRTReqBody]])(_ orElse _)(IRTCursorForMethod(method, c))
   })
 
-  override implicit def decodePolymorphicResponse(implicit method: Method): Decoder[ResBody] = Decoder.instance(c => {
-    responseDecoders.foldLeft(PartialFunction.empty[CursorForMethod, Decoder.Result[ResBody]])(_ orElse _)(CursorForMethod(method, c))
+  override implicit def decodePolymorphicResponse(implicit method: IRTMethod): Decoder[IRTResBody] = Decoder.instance(c => {
+    responseDecoders.foldLeft(PartialFunction.empty[IRTCursorForMethod, Decoder.Result[IRTResBody]])(_ orElse _)(IRTCursorForMethod(method, c))
   })
 
 }
 
-object OpinionatedMuxedCodec {
-  def apply(definitions: List[CirceWrappedServiceDefinition]) = new OpinionatedMuxedCodec(definitions.map(_.codecProvider))
+object IRTOpinionatedMuxedCodec {
+  def apply(definitions: List[IRTCirceWrappedServiceDefinition]) = new IRTOpinionatedMuxedCodec(definitions.map(_.codecProvider))
 }

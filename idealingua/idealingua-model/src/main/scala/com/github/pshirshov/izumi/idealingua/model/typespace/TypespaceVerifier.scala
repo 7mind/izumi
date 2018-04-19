@@ -30,7 +30,7 @@ object Issue {
   }
 
   case class ReservedTypenamePrefix(t: TypeId) extends Issue {
-    override def toString: TypeName = s"Typenames can't start with reserved runtime prefixes `IRT` or `IZ`: $t"
+    override def toString: TypeName = s"Typenames can't start with reserved runtime prefixes ${TypespaceVerifier.badNames.mkString(",")}: $t"
   }
 
   case class MissingDependencies(deps: List[MissingDependency]) extends Issue {
@@ -148,7 +148,7 @@ class TypespaceVerifier(ts: Typespace) {
           issues += Issue.NoncapitalizedTypename(t.id)
         }
 
-        if (t.id.name.startsWith("IRT") || t.id.name.startsWith("Iz")) {
+        if (TypespaceVerifier.badNames.exists(t.id.name.startsWith)) {
           issues += Issue.ReservedTypenamePrefix(t.id)
         }
     }
@@ -194,4 +194,8 @@ class TypespaceVerifier(ts: Typespace) {
     }
   }
 
+}
+
+object TypespaceVerifier {
+  final val badNames = Set("Iz", "IRT", "IDL")
 }

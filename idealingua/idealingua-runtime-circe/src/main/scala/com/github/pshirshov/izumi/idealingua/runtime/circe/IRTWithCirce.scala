@@ -13,13 +13,13 @@ import scala.reflect.macros.blackbox
  *   object Abc extends WithCirce[Abc]
  *
  */
-abstract class WithCirce[A: DerivationDerivedEncoder: DerivationDerivedDecoder] {
+abstract class IRTWithCirce[A: DerivationDerivedEncoder: DerivationDerivedDecoder] {
   implicit val enc: Encoder[A] = implicitly[DerivationDerivedEncoder[A]].value
   implicit val dec: Decoder[A] = implicitly[DerivationDerivedDecoder[A]].value
 }
 
 // TODO: merge upstream, also with @JsonCodec
-class MaterializeDerivationMacros(override val c: blackbox.Context) extends derivation.DerivationMacros(c) {
+final class MaterializeDerivationMacros(override val c: blackbox.Context) extends derivation.DerivationMacros(c) {
   import c.universe._
 
   def materializeEncoderImpl[A: c.WeakTypeTag]: c.Expr[DerivationDerivedEncoder[A]] =
