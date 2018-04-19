@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript.tools
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainId, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
 

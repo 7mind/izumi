@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
+import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 
 case class ParsedId(pkg: Seq[String], name: String) {
   private def typePath = {
@@ -27,11 +26,11 @@ case class ParsedId(pkg: Seq[String], name: String) {
 
   def toServiceId: ServiceId = ServiceId(typePath.domain, name)
 
-  def toTypeId: AbstractTypeId = {
+  def toTypeId: AbstractIndefiniteId = {
     IndefiniteId(pkg, name)
   }
 
-  def toGeneric(params: Seq[Seq[AbstractTypeId]]): AbstractTypeId = {
+  def toGeneric(params: Seq[Seq[AbstractIndefiniteId]]): AbstractIndefiniteId = {
     if (params.nonEmpty) {
       IndefiniteGeneric(pkg, name, params.flatten.toList)
     } else {

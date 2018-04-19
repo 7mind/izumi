@@ -8,13 +8,13 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionP
 
 
 class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
-  final val domainId: typed.DomainId = defn.id
+  final val domainId: DomainId = defn.id
 
   protected val mapping: Map[IndefiniteId, TypeId] = {
     defn.types.map(_.id)
       .map {
         kv =>
-          toIndefinite(kv) -> fixSimpleId[AbstractTypeId, TypeId](kv)
+          toIndefinite(kv) -> fixSimpleId[TypeId, TypeId](kv)
       }
       .toMap
   }
@@ -29,22 +29,22 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
   protected def fixType(defn: RawTypeDef): typed.TypeDef = {
     defn match {
       case d: RawTypeDef.Enumeration =>
-        typed.TypeDef.Enumeration(id = fixId(d.id): TypeId.EnumId, members = d.members)
+        typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.members)
 
       case d: RawTypeDef.Alias =>
-        typed.TypeDef.Alias(id = fixId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId)
+        typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId)
 
       case d: RawTypeDef.Identifier =>
-        typed.TypeDef.Identifier(id = fixId(d.id): TypeId.IdentifierId, fields = fixPrimitiveFields(d.fields))
+        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = fixPrimitiveFields(d.fields))
 
       case d: RawTypeDef.Interface =>
-        typed.TypeDef.Interface(id = fixId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct))
+        typed.TypeDef.Interface(id = fixSimpleId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct))
 
       case d: RawTypeDef.DTO =>
-        typed.TypeDef.DTO(id = fixId(d.id): TypeId.DTOId, struct = toStruct(d.struct))
+        typed.TypeDef.DTO(id = fixSimpleId(d.id): TypeId.DTOId, struct = toStruct(d.struct))
 
       case d: RawTypeDef.Adt =>
-        typed.TypeDef.Adt(id = fixId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember))
+        typed.TypeDef.Adt(id = fixSimpleId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember))
     }
   }
 
@@ -57,81 +57,30 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
   }
 
   protected def toSuper(struct: raw.RawStructure): typed.Super = {
-    typed.Super(interfaces = fixIds(struct.interfaces), concepts = fixIds(struct.concepts), removedConcepts = fixIds(struct.removedConcepts))
+    typed.Super(interfaces = fixSimpleIds(struct.interfaces), concepts = fixSimpleIds(struct.concepts), removedConcepts = fixSimpleIds(struct.removedConcepts))
   }
 
   protected def fixService(defn: raw.Service): typed.Service = {
     typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod))
   }
 
-  /*
-  *   def contains(typeId: AbstractTypeId): Boolean = ??? /*{
-    typeId match {
-      case _: Builtin =>
-        false
-      case t if t.pkg.isEmpty =>
-        true
-      case t =>
-        toPackage.zip(t.pkg).forall(ab =>  ab._1 == ab._2)
-    }
-  }*/
 
-  def toDomainId(typeId: AbstractTypeId): DomainId = ??? /*{
-    typeId match {
-      case t if contains(t) =>
-        this
-
-      case t if pkg.nonEmpty =>
-        DomainId(t.pkg.init, t.pkg.last)
-    }
-  }*/
-  *
-  * */
-
-  protected def makeDefinite(id: AbstractTypeId): TypeId = ???/*{
-    downcast(id) match {
-      case p: Primitive =>
-        p
-      case g: IndefiniteGeneric =>
-        toGeneric(g)
-      case v if domainId.contains(v) =>
-        mapping.get(toIndefinite(v)) match {
-          case Some(t) =>
-            t
-          case None =>
-            throw new IDLException(s"Type $id is missing from domain $domainId")
-        }
-      case v if !domainId.contains(v) =>
-        val referencedDomain = domainId.toDomainId(v)
-        defn.referenced.get(referencedDomain) match {
-          case Some(d) =>
-            new DomainDefinitionTyper(d).makeDefinite(v)
-          case None =>
-            throw new IDLException(s"Domain $referencedDomain is missing from context of $domainId")
-        }
-
-    }
-  }*/
-
-  protected def fixId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
+  protected def fixId[T <: AbstractIndefiniteId, R <: TypeId](t: T): R = {
     (t match {
       case t: IndefiniteId =>
         makeDefinite(t)
 
       case t: IndefiniteGeneric =>
         makeDefinite(t)
-
-      case o =>
-        fixSimpleId(o)
     }).asInstanceOf[R]
   }
 
-  protected def fixIds[T <: AbstractTypeId, R <: TypeId](d: List[T]): List[R] = {
-    d.map(fixId[T, R])
+  protected def fixSimpleIds[T <: TypeId, R <: TypeId](d: List[T]): List[R] = {
+    d.map(fixSimpleId[T, R])
   }
 
   protected def fixFields(fields: raw.RawTuple): typed.Tuple = {
-    fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractTypeId, TypeId](f.typeId)))
+    fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId)))
   }
 
   protected def fixPrimitiveFields(fields: raw.RawTuple): typed.PrimitiveTuple = {
@@ -163,22 +112,43 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
 
   protected def fixStructure(s: raw.RawSimpleStructure): typed.SimpleStructure = {
-    typed.SimpleStructure(concepts = fixIds(s.concepts), fields = fixFields(s.fields))
+    typed.SimpleStructure(concepts = fixSimpleIds(s.concepts), fields = fixFields(s.fields))
   }
 
 
-  protected def downcast(tid: AbstractTypeId): AbstractTypeId = {
-    if (isPrimitive(tid)) {
-      Primitive.mapping(tid.name)
-    } else {
-      tid
+  protected def makeDefinite(id: AbstractIndefiniteId): TypeId = {
+    id match {
+      case p if isPrimitive(p) =>
+        Primitive.mapping(p.name)
+
+      case g: IndefiniteGeneric =>
+        toGeneric(g)
+
+      case v if contains(v) =>
+        mapping.get(toIndefinite(v)) match {
+          case Some(t) =>
+            t
+          case None =>
+            throw new IDLException(s"Type $id is missing from domain $domainId")
+        }
+
+      case v if !contains(v) =>
+        val referencedDomain = DomainId(v.pkg.init, v.pkg.last)
+        defn.referenced.get(referencedDomain) match {
+          case Some(d) =>
+            new DomainDefinitionTyper(d).makeDefinite(v)
+          case None =>
+            throw new IDLException(s"Domain $referencedDomain is missing from context of $domainId")
+        }
+
     }
   }
 
-  protected def toPrimitive(typeId: AbstractTypeId): Primitive = {
-    downcast(typeId) match {
-      case p: Primitive =>
-        p
+  protected def toPrimitive(typeId: AbstractIndefiniteId): Primitive = {
+    typeId match {
+      case p if isPrimitive(p) =>
+        Primitive.mapping(p.name)
+
       case o =>
         throw new IDLException(s"Unexpected non-primitive id: $o")
     }
@@ -200,84 +170,85 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     }
   }
 
-//  protected def fixServiceId(t: ServiceId): ServiceId = {
-//    t.copy(pkg = fixPkg(t.pkg))
-//  }
-//
-//  protected def fixSimpleId[T <: AbstractTypeId, R <: TypeId](t: T): R = {
-//    (t match {
-//      case t: DTOId =>
-//        t.copy(pkg = fixPkg(t.pkg))
-//
-//      case t: InterfaceId =>
-//        t.copy(pkg = fixPkg(t.pkg))
-//
-//      case t: AdtId =>
-//        t.copy(pkg = fixPkg(t.pkg))
-//
-//      case t: AliasId =>
-//        t.copy(pkg = fixPkg(t.pkg))
-//
-//      case t: EnumId =>
-//        t.copy(pkg = fixPkg(t.pkg))
-//
-//      case t: IdentifierId =>
-//        t.copy(pkg = fixPkg(t.pkg))
-//
-//      case t: Builtin =>
-//        t
-//    }).asInstanceOf[R]
-//  }
-//
-//  protected def toScalar(typeId: TypeId): ScalarId = {
-//    typeId match {
-//      case p: Primitive =>
-//        p
-//      case o =>
-//        IdentifierId(o.pkg, o.name)
-//    }
-//  }
-//
-//  protected def toIndefinite(typeId: AbstractTypeId): IndefiniteId = {
-//    IndefiniteId(fixPkg(typeId.pkg), typeId.name)
-//  }
-//
-//
-//  protected def fixPkg(pkg: common.Package): common.Package = {
-//    if (pkg.isEmpty) {
-//      domainId.toPackage
-//    } else {
-//      pkg
-//    }
-//  }
-//
-//  protected def isGeneric(abstractTypeId: AbstractTypeId): Boolean = {
-//    abstractTypeId.pkg.isEmpty && Generic.all.contains(abstractTypeId.name)
-//  }
-//
-//  protected def isPrimitive(abstractTypeId: AbstractTypeId): Boolean = {
-//    abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
-//  }
 
-  protected def fixServiceId(t: ServiceId): ServiceId = ???
-
-  protected def fixSimpleId[T <: AbstractTypeId, R <: TypeId](t: T): R = ???
-
-  protected def toScalar(typeId: TypeId): ScalarId = ???
-
-  protected def toIndefinite(typeId: AbstractTypeId): IndefiniteId = ???
-
-
-  protected def fixPkg(pkg: common.Package): common.Package = {
-    if (pkg.isEmpty) {
-      domainId.toPackage
+  protected def contains(typeId: AbstractIndefiniteId): Boolean = {
+    if (typeId.pkg.isEmpty) {
+      true
     } else {
-      pkg
+      domainId.toPackage.zip(typeId.pkg).forall(ab => ab._1 == ab._2)
     }
   }
 
-  protected def isGeneric(abstractTypeId: AbstractTypeId): Boolean = ???
 
-  protected def isPrimitive(abstractTypeId: AbstractTypeId): Boolean = ???
+  protected def fixServiceId(t: ServiceId): ServiceId = {
+    t.copy(domain = domainId)
+  }
+
+  protected def fixSimpleId[T <: TypeId, R <: TypeId](t: T): R = {
+    (t match {
+      case t: DTOId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: InterfaceId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: AdtId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: AliasId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: EnumId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: IdentifierId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: Builtin =>
+        t
+    }).asInstanceOf[R]
+  }
+
+  protected def toScalar(typeId: TypeId): ScalarId = {
+    typeId match {
+      case p: Primitive =>
+        p
+      case o =>
+        IdentifierId(o.path, o.name)
+    }
+  }
+
+  protected def toIndefinite(typeId: TypeId): IndefiniteId = {
+    typeId.path.domain match {
+      case DomainId.Undefined =>
+        IndefiniteId(domainId.toPackage, typeId.name)
+
+      case _ =>
+        IndefiniteId(typeId.path.toPackage, typeId.name)
+    }
+  }
+
+  protected def toIndefinite(typeId: AbstractIndefiniteId): IndefiniteId = {
+    if (typeId.pkg.isEmpty) {
+      IndefiniteId(domainId.toPackage, typeId.name)
+    } else {
+      IndefiniteId(typeId.pkg, typeId.name)
+    }
+  }
+
+
+  protected def fixPkg(pkg: TypePath): common.TypePath = {
+    pkg.domain match {
+      case DomainId.Undefined =>
+        pkg.copy(domain = domainId)
+      case _ =>
+        pkg
+    }
+  }
+
+  protected def isPrimitive(abstractTypeId: AbstractIndefiniteId): Boolean = {
+    abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
+  }
+
 
 }

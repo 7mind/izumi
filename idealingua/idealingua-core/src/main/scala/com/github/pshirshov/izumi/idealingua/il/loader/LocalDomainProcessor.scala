@@ -6,10 +6,10 @@ import java.nio.file.{Path, Paths}
 import com.github.pshirshov.izumi.idealingua.il.parser.IL.{ILDef, ILService}
 import com.github.pshirshov.izumi.idealingua.il.loader.model.LoadedModel
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
+import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.DomainDefinitionParsed
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 
 protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], domain: ParsedDomain, domains: Map[DomainId, ParsedDomain], models: Map[Path, ParsedModel]) {
 

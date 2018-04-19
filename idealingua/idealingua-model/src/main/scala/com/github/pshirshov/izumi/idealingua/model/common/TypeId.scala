@@ -1,32 +1,29 @@
 package com.github.pshirshov.izumi.idealingua.model.common
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 
-
-trait AbstractTypeId {
-//  def pkg: Package
-
+sealed trait AbstractIndefiniteId {
+  def pkg: Package
   def name: TypeName
-
-  //override def toString: TypeName = s"{${pkg.mkString(".")}#$name :${getClass.getSimpleName}}"
 }
 
-case class TypePath(domain: DomainId, within: Package) {
-  def sub(v: TypeName) = TypePath(domain, within :+ v)
-  def toPackage: Package= domain.toPackage ++ within
 
-  override def toString: TypeName = {
-    if (within.isEmpty) {
-      s"$domain/"
-    } else {
-      s"$domain/${within.mkString("/")}"
-    }
+case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractIndefiniteId
+
+object IndefiniteId {
+  def parse(s: String): IndefiniteId = {
+    val parts = s.split('.')
+    IndefiniteId(parts.toSeq.init, parts.last)
   }
 }
 
-sealed trait TypeId extends AbstractTypeId {
+case class IndefiniteGeneric(pkg: Package, name: TypeName, args: List[AbstractIndefiniteId]) extends AbstractIndefiniteId
+
+
+sealed trait TypeId {
   def path: TypePath
-  override def toString: TypeName = s"{${path}#$name :}@${getClass.getSimpleName}"
+  def name: TypeName
+
+  override def toString: TypeName = s"${getClass.getSimpleName}:$path#$name"
 
 }
 
@@ -41,14 +38,6 @@ sealed trait TimeTypeId {
   this: ScalarId =>
 }
 
-case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractTypeId
-
-object IndefiniteId {
-  def parse(s: String): IndefiniteId = {
-    val parts = s.split('.')
-    IndefiniteId(parts.toSeq.init, parts.last)
-  }
-}
 
 object TypeId {
 
@@ -58,6 +47,7 @@ object TypeId {
 
   object DTOId {
     def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.path.sub(parent.name), name)
+
     def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(TypePath(parent.domain, Seq(parent.name)), name)
   }
 
@@ -183,6 +173,7 @@ object Generic {
     def aliases: List[TypeName]
 
   }
+
   case class TList(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
@@ -236,4 +227,3 @@ object Generic {
 }
 
 
-case class IndefiniteGeneric(pkg: Package, name: TypeName, args: List[AbstractTypeId]) extends AbstractTypeId

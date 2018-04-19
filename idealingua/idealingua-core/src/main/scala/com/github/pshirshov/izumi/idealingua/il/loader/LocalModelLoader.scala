@@ -6,10 +6,9 @@ import java.nio.file.{Files, Path, Paths}
 
 import com.github.pshirshov.izumi.idealingua.il.parser.ILParser
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
-import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinitionTyper
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, TypespaceImpl, TypespaceVerifier}
 import fastparse.all
 import fastparse.core.Parsed

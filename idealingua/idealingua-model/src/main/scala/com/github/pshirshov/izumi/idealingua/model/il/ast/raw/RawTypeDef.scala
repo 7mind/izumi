@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractTypeId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, TypeId}
 
 
 
@@ -17,7 +17,7 @@ object RawTypeDef {
 
   case class Enumeration(id: EnumId, members: List[String]) extends RawTypeDef
 
-  case class Alias(id: AliasId, target: AbstractTypeId) extends RawTypeDef
+  case class Alias(id: AliasId, target: AbstractIndefiniteId) extends RawTypeDef
 
   case class Identifier(id: IdentifierId, fields: RawTuple) extends RawTypeDef
 

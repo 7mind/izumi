@@ -11,4 +11,3 @@ adt Alternative {
 
 adt ShortSyntax = Success as TestSuccess | Failure
 
-adt Test = str | i08

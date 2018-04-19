@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, DomainId, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, TypeDef}
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, WithInfo}
 import com.github.pshirshov.izumi.idealingua.runtime.services.{ServiceResult, WithSvcResult, WithSvcResultType}

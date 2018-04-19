@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.Generic.{TList, TMap, 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainId, Field}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Field
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
 

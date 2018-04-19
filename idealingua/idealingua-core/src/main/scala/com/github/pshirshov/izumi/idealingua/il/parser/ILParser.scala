@@ -1,11 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, ParsedDomain, ParsedModel}
-import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.Service._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainId
 import fastparse.CharPredicates._
 import fastparse.all._
 
@@ -84,7 +83,7 @@ class ILParser {
     final val shortIdentifier = P(symbol).map(v => ParsedId(v))
     final val identifier = P(fqIdentifier | shortIdentifier)
 
-    final lazy val fulltype: Parser[AbstractTypeId] = P(inline ~ identifier ~ inline ~ generic.rep(min = 0, max = 1) ~ inline)
+    final lazy val fulltype: Parser[AbstractIndefiniteId] = P(inline ~ identifier ~ inline ~ generic.rep(min = 0, max = 1) ~ inline)
       .map(tp => tp._1.toGeneric(tp._2))
 
     final lazy val generic = P("[" ~/ inline ~ fulltype.rep(sep = ",") ~ inline ~ "]")
@@ -179,7 +178,7 @@ class ILParser {
       case (id, in, out: AlgebraicType) =>
         DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Algebraic(out.alternatives)))
 
-      case (id, in, out: AbstractTypeId) =>
+      case (id, in, out: AbstractIndefiniteId) =>
         DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Singular(out)))
 
       case f =>

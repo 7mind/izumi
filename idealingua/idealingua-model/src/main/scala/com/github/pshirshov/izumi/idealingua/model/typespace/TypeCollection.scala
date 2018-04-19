@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
