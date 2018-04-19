@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, EnumId, InterfaceId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId, TypeName}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
@@ -36,6 +36,7 @@ object Issue {
   case class MissingDependencies(deps: List[MissingDependency]) extends Issue {
     override def toString: TypeName = s"Missing dependencies: ${deps.mkString(", ")}"
   }
+
 }
 
 sealed trait MissingDependency {
@@ -129,7 +130,12 @@ class TypespaceVerifier(ts: Typespace) {
 
     ts.domain.types.foreach {
       case t: TypeDef.Adt =>
-        val builtins = t.alternatives.collect({ case m@AdtMember(_: Builtin, _) => m })
+        val builtins = t.alternatives.collect {
+          case m@AdtMember(_: Builtin, _) =>
+            m
+          case m@AdtMember(a: AliasId, _) if dealias(a).isInstanceOf[Builtin] =>
+            m
+        }
         if (builtins.nonEmpty) {
           issues += Issue.PrimitiveAdtMember(t.id, builtins)
         }
@@ -150,6 +156,15 @@ class TypespaceVerifier(ts: Typespace) {
     issues.toList
   }
 
+  private def dealias(t: TypeId): TypeId = {
+    t match {
+      case a: AliasId =>
+        dealias(ts.apply(a).asInstanceOf[Alias].target)
+
+      case o =>
+        o
+    }
+  }
 
   private def extractDeps(ss: SimpleStructure) = {
     ss.fields.map(f => f.typeId) ++ ss.concepts
