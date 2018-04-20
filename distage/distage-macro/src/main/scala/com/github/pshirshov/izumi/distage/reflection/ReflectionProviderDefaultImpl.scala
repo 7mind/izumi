@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.reflection
 import com.github.pshirshov.izumi.distage.model.definition.With
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnsupportedWiringException}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MacroUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
@@ -63,7 +63,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   // extension point in case we ever want to use tagged types, singleton literals or marker traits for named arguments
-  override def providerToWiring(function: u.Callable): u.Wiring = {
+  // ^ FIXME actually we already put the additional data into Callable (in DIKeyWrappedFunction), so we don't need it really...
+  override def providerToWiring(function: u.Provider): u.Wiring = {
     Wiring.UnaryWiring.Function(function)
   }
 
@@ -99,13 +100,14 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   private def traitMethods(symb: TypeFull): Seq[Association.Method] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
     val declaredAbstractMethods = symb.tpe.members
+      .sorted // implicit invariant: preserve definition ordering
       .filter(symbolIntrospector.isWireableMethod(symb, _))
       .map(_.asMethod)
     val context = DependencyContext.MethodContext(symb)
     declaredAbstractMethods.map {
       method =>
         Association.Method(context, method, keyProvider.keyFromMethod(context, method))
-    }.toSeq
+    }
   }
 
   protected object ConcreteSymbol {
@@ -148,37 +150,36 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
 object ReflectionProviderDefaultImpl {
 
-  class Java(
-              override val keyProvider: DependencyKeyProvider.Java
-              , override val symbolIntrospector: SymbolIntrospector.Java
+  class Runtime(
+              override val keyProvider: DependencyKeyProvider.Runtime
+              , override val symbolIntrospector: SymbolIntrospector.Runtime
             )
-    extends ReflectionProvider.Java
+    extends ReflectionProvider.Runtime
       with ReflectionProviderDefaultImpl {
-    override protected def bugAnnotationCall(parameterSymbol: u.Symb): Option[u.u.Annotation] =
-      AnnotationTools.find[With[_]](u.u)(parameterSymbol)
-  }
-//  object Java {
-//    final val instance = new ReflectionProviderDefaultImpl.Java(DependencyKeyProviderDefaultImpl.Java.instance, SymbolIntrospectorDefaultImpl.Java.instance)
-//  }
 
-  trait Macro[M <: MacroUniverse[_ <: Universe]]
-    extends ReflectionProvider.Macro[M]
-      with ReflectionProviderDefaultImpl {
     override protected def bugAnnotationCall(parameterSymbol: u.Symb): Option[u.u.Annotation] =
       AnnotationTools.find[With[_]](u.u)(parameterSymbol)
   }
-  object Macro {
+
+  trait Static[M <: StaticDIUniverse[_ <: Universe]]
+    extends ReflectionProvider.Static[M]
+      with ReflectionProviderDefaultImpl {
+
+    override protected def bugAnnotationCall(parameterSymbol: u.Symb): Option[u.u.Annotation] =
+      AnnotationTools.find[With[_]](u.u)(parameterSymbol)
+
+  }
+  object Static {
     // workaround for no path-dependent type support in class constructor
     // https://stackoverflow.com/questions/18077315/dependent-types-not-working-for-constructors#18078333
-    def instance[M <: MacroUniverse[_]]
-      (macroUniverse: M)
-        (keyProvider: DependencyKeyProvider.Macro[macroUniverse.type] ,symbolIntrospector: SymbolIntrospector.Macro[macroUniverse.type])
-        : Macro[macroUniverse.type] = {
-      class Instance (
-                       override val u: macroUniverse.type = macroUniverse
-                      , override val keyProvider: DependencyKeyProvider.Macro[macroUniverse.type] = keyProvider
-                      , override val symbolIntrospector: SymbolIntrospector.Macro[macroUniverse.type] = symbolIntrospector
-                     ) extends Macro[macroUniverse.type]
+    def instance[M <: StaticDIUniverse[_]]
+      (  macroUniverse: M
+      )( keyProvider: DependencyKeyProvider.Static[macroUniverse.type]
+       , symbolIntrospector: SymbolIntrospector.Static[macroUniverse.type]): Static[macroUniverse.type] = {
+      class Instance ( override val u: macroUniverse.type = macroUniverse
+                     , override val keyProvider: DependencyKeyProvider.Static[macroUniverse.type] = keyProvider
+                     , override val symbolIntrospector: SymbolIntrospector.Static[macroUniverse.type] = symbolIntrospector
+                     ) extends Static[macroUniverse.type]
       new Instance
     }
   }

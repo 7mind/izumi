@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.commons.TraitTools
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibFactoryMethodInterceptor, CglibTools, ProxyParams}
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
@@ -17,10 +17,10 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
     val narrowedContext = context.narrow(allRequiredKeys)
 
     val factoryMethodIndex = makeFactoryIndex(op)
-    val traitIndex = TraitTools.traitIndex(op.wiring.factoryType, op.wiring.dependencies)
+    val traitIndex = TraitTools.traitIndex(op.wiring.factoryType, op.wiring.fieldDependencies)
 
     val instanceType = op.wiring.factoryType
-    val runtimeClass = RuntimeUniverse.mirror.runtimeClass(instanceType.tpe)
+    val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(instanceType.tpe)
     val dispatcher = new CgLibFactoryMethodInterceptor(
       factoryMethodIndex
       , traitIndex
@@ -37,7 +37,7 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
   }
 
   private def makeFactoryIndex(op: WiringOp.InstantiateFactory) = {
-    op.wiring.wireables.map {
+    op.wiring.factoryMethods.map {
       wiring =>
         ReflectionUtil.toJavaMethod(op.wiring.factoryType.tpe, wiring.factoryMethod) -> wiring
     }.toMap

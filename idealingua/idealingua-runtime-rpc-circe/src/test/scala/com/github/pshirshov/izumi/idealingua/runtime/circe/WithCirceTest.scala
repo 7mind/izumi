@@ -17,8 +17,8 @@ class WithCirceTest extends WordSpec {
 
       {
         import Alt._
-        val _ = enc // prevent intellij from removing import
-        assert(Abc(1, 2).asJson.as[Abc].right.get == Abc(1, 2))
+        implicit val notImplementedErrorEnc = enc
+        assert(Abc(1, 2).asJson.as[Abc].right.get == Abc(1, 2)) // old instance is picked up anyway due to aching, ignoring the one we just defined
       }
 
       assertThrows[NotImplementedError] {

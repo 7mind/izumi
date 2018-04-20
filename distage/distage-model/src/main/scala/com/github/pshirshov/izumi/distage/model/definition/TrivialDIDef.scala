@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-case class TrivialDIDef(bindings: Seq[Binding]) extends ContextDefinition
-
-object TrivialDIDef extends BindingDSL {
-  override final val bindings: Seq[Binding] = Seq()
+final case class TrivialDIDef(bindings: Set[Binding]) extends ContextDefinition {
+  override def +(binding: Binding): ContextDefinition = TrivialDIDef(this.bindings + binding)
+  override def ++(that: ContextDefinition): TrivialDIDef = TrivialDIDef(this.bindings ++ bindings)
 }
+
+object TrivialDIDef extends BindingDSL(Set.empty)

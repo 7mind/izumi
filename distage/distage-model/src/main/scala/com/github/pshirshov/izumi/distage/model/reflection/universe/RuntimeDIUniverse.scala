@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
-trait RuntimeUniverse
+trait RuntimeDIUniverse
   extends DIUniverse
 {
   override final val u: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
@@ -8,4 +8,4 @@ trait RuntimeUniverse
   val mirror: u.Mirror = scala.reflect.runtime.currentMirror
 }
 
-object RuntimeUniverse extends RuntimeUniverse
+object RuntimeDIUniverse extends RuntimeDIUniverse

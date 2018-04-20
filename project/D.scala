@@ -27,6 +27,7 @@ object D {
 
     private val cats_version = "1.1.0"
     private val cats_effect_version = "0.10"
+    val cats_kernel = "org.typelevel" %% "cats-kernel" % cats_version
     val cats_all: Seq[ModuleID] = Seq(
       "org.typelevel" %% "cats-core"
     ).map(_ % cats_version) ++ Seq(
@@ -39,6 +40,7 @@ object D {
     val fastparse = "com.lihaoyi" %% "fastparse" % "1.0.0" % "shaded"
     val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3"
 
+    val shapeless = "com.chuusai" %% "shapeless" % "2.3.3"
     private val circeVersion = "0.9.3"
     private val circeDerivationVersion = "0.9.0-M3"
 
@@ -76,7 +78,8 @@ object D {
     val slf4j_simple = R.slf4j_simple % "test"
     val essentials = Seq(scalatest)
 
-    val circe = R.circe.map(_ % "test")
+    val circe: Seq[ModuleID] = R.circe.map(_ % "test")
+    val cats_all: Seq[ModuleID] = R.cats_all.map(_ % "test")
   }
 
 }

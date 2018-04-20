@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.NameableBinding
+import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSL, BindOnlyNameableDSL}
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MacroUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.strategies.{FactoryStrategyMacro, FactoryStrategyMacroDefaultImpl, TraitStrategyMacro, TraitStrategyMacroDefaultImpl}
 import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
 
@@ -19,11 +19,11 @@ trait MagicMacro {
   def traitStrategyMacro: TraitStrategyMacro
   def factoryStrategyMacro: FactoryStrategyMacro
 
-  def magicMacro[THIS: c.WeakTypeTag, T: c.WeakTypeTag, I: c.WeakTypeTag](c: blackbox.Context): c.Expr[NameableBinding] = {
+  def magicMacro[THIS: c.WeakTypeTag, T: c.WeakTypeTag, I: c.WeakTypeTag](c: blackbox.Context): c.Expr[BindOnlyNameableDSL] = {
     import c.universe._
 
-    val macroUniverse = MacroUniverse(c)
-    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Macro.instance(macroUniverse)
+    val macroUniverse = StaticDIUniverse(c)
+    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static.instance(macroUniverse)
     import macroUniverse._
 
     val tType = weakTypeOf[T]
@@ -34,32 +34,24 @@ trait MagicMacro {
     val self = q"${reify(c.prefix.splice.asInstanceOf[THIS]).tree}.self"
 
     if (symbolIntrospector.isConcrete(safeI)) {
-      c.Expr[NameableBinding] {
+      c.Expr[BindDSL[T]] {
         if (safeT == safeI) {
-          q"{ $self.binding[$tType] }"
+          q"{ $self.bind[$tType] }"
         } else {
-          q"{ $self.binding[$tType, $iType] }"
+          q"{ $self.bind[$tType].as[$iType] }"
         }
       }
     } else if (symbolIntrospector.isFactory(safeI)) {
       val f = factoryStrategyMacro.mkWrappedFactoryConstructorMacro[I](c)
 
-      c.Expr[NameableBinding] {
-        if (safeT == safeI) {
-          q"{ $self.provider[$tType]({$f}) }"
-        } else {
-          q"{ $self.provider[$tType, $iType]({$f}) }"
-        }
+      c.Expr[BindOnlyNameableDSL] {
+        q"{ $self.bind[$tType].provided[$tType]({$f}) }"
       }
     } else if (symbolIntrospector.isWireableAbstract(safeI)) {
       val f = traitStrategyMacro.mkWrappedTraitConstructorMacro[I](c)
 
-      c.Expr[NameableBinding] {
-        if (safeT == safeI) {
-          q"{ $self.provider[$tType]({$f}) }"
-        } else {
-          q"{ $self.provider[$tType, $iType]({$f}) }"
-        }
+      c.Expr[BindOnlyNameableDSL] {
+        q"{ $self.bind[$tType].provided[$tType]({$f}) }"
       }
     } else {
       throw new UnsupportedWiringException(

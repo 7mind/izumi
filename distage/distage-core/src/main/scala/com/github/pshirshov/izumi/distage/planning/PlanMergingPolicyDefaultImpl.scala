@@ -45,8 +45,6 @@ class PlanMergingPolicyDefaultImpl(
 
     val issues: Seq[PlanningFailure] = issuesMap
       .map {
-        case (key, values) if values.toSet.size == 1 =>
-          PlanningFailure.DuplicatedStatements(key, values)
         case (key, values) =>
           PlanningFailure.UnsolvableConflict(key, values)
       }

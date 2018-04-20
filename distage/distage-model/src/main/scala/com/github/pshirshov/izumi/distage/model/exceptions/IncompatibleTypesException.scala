@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.exceptions
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 class IncompatibleTypesException
-(message: String, val expected: RuntimeUniverse.SafeType, val got: RuntimeUniverse.SafeType) extends DIException(message, null)
+(message: String, val expected: RuntimeDIUniverse.SafeType, val got: RuntimeDIUniverse.SafeType) extends DIException(message, null)

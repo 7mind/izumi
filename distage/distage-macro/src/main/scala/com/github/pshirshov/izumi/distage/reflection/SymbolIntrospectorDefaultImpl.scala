@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.reflection
 
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MacroUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 
 trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
@@ -51,21 +51,17 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
 object SymbolIntrospectorDefaultImpl {
 
-  class Java
-    extends SymbolIntrospector.Java
-      with SymbolIntrospectorDefaultImpl
+  class Runtime
+    extends SymbolIntrospector.Runtime
+       with SymbolIntrospectorDefaultImpl
 
-//  object Java {
-//    final val instance = new SymbolIntrospectorDefaultImpl.Java
-//  }
+  class Static[M <: StaticDIUniverse[_]](macroUniverse: M)
+    extends SymbolIntrospector.Static[M](macroUniverse)
+       with SymbolIntrospectorDefaultImpl
 
-  class Macro[M <: MacroUniverse[_]](macroUniverse: M)
-    extends SymbolIntrospector.Macro[M](macroUniverse)
-      with SymbolIntrospectorDefaultImpl
-
-  object Macro {
-    def instance[M <: MacroUniverse[_]](macroUniverse: M): SymbolIntrospector.Macro[macroUniverse.type] =
-      new SymbolIntrospectorDefaultImpl.Macro(macroUniverse)
+  object Static {
+    def instance[M <: StaticDIUniverse[_]](macroUniverse: M): SymbolIntrospector.Static[macroUniverse.type] =
+      new SymbolIntrospectorDefaultImpl.Static(macroUniverse)
   }
 
 }

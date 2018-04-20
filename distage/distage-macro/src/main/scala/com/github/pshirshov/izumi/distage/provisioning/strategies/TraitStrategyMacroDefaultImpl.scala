@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
-import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MacroUniverse
-import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
+import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
+import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
@@ -11,11 +11,11 @@ import scala.reflect.macros.blackbox
 trait TraitStrategyMacroDefaultImpl {
   self: TraitStrategyMacro =>
 
-  def mkWrappedTraitConstructor[T]: WrappedFunction[T] = macro TraitStrategyMacroDefaultImplImpl.mkWrappedTraitConstructorMacro[T]
+  def mkWrappedTraitConstructor[T]: DIKeyWrappedFunction[T] = macro TraitStrategyMacroDefaultImplImpl.mkWrappedTraitConstructorMacro[T]
 
   @inline
   // reason for this is simply IDEA flipping out on [T: c.WeakTypeTag]
-  override def mkWrappedTraitConstructorMacro[T: blackbox.Context#WeakTypeTag](c: blackbox.Context): c.Expr[WrappedFunction[T]] =
+  override def mkWrappedTraitConstructorMacro[T: blackbox.Context#WeakTypeTag](c: blackbox.Context): c.Expr[DIKeyWrappedFunction[T]] =
     TraitStrategyMacroDefaultImplImpl.mkWrappedTraitConstructorMacro[T](c)
 }
 
@@ -27,69 +27,67 @@ object TraitStrategyMacroDefaultImpl
 
 private[strategies] object TraitStrategyMacroDefaultImplImpl {
 
-  def mkWrappedTraitConstructorMacro[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[WrappedFunction[T]] = {
+  def mkWrappedTraitConstructorMacro[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[DIKeyWrappedFunction[T]] = {
     import c.universe._
 
-    val macroUniverse = MacroUniverse(c)
-    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Macro.instance(macroUniverse)
+    val macroUniverse = StaticDIUniverse(c)
+    import macroUniverse._
+    import macroUniverse.Wiring._
+    import macroUniverse.Association._
+
+    val keyProvider = DependencyKeyProviderDefaultImpl.Static.instance(macroUniverse)
+    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static.instance(macroUniverse)
+    val reflectionProvider = ReflectionProviderDefaultImpl.Static.instance(macroUniverse)(keyProvider, symbolIntrospector)
 
     val targetType = weakTypeOf[T]
 
-    val (wireArgs, wireMethods) = targetType
-      .members
-      .sorted
-      .collect(makeDeclsAndConstructorArgs(c)(macroUniverse)(symbolIntrospector)(targetType))
-      .unzip
+    val UnaryWiring.Abstract(_, wireables) = reflectionProvider.symbolToWiring(SafeType(targetType))
+
+    val (wireArgs, wireMethods) = wireables.map {
+      // FIXME: FIXME COPYPASTA with below and with FactoryStrategyMacro
+      case Method(_, methodSymbol, targetKey) =>
+        val tpe = targetKey.symbol.tpe
+        val methodName = methodSymbol.asMethod.name.toTermName
+        val argName = c.freshName(methodName)
+
+        val anns = targetKey match {
+          case idKey: DIKey.IdKey[_] =>
+            import idKey._
+            val ann = q"new _root_.com.github.pshirshov.izumi.distage.model.definition.Id($id)"
+            Modifiers.apply(NoFlags, typeNames.EMPTY, List(ann))
+          case _ =>
+            Modifiers()
+        }
+
+        (q"$anns val $argName: $tpe", q"override val $methodName: $tpe = $argName")
+    }.unzip
 
     val instantiate = if (wireMethods.isEmpty)
       q"new $targetType {}"
     else
       q"new $targetType { ..$wireMethods }"
 
-    val expr =
-      c.Expr {
-        q"""
-      {
+    val constructorDef = q"""
       ${if (wireArgs.nonEmpty)
-          q"def traitConstructor(..$wireArgs): $targetType = ($instantiate).asInstanceOf[$targetType]"
+          q"def constructor(..$wireArgs): $targetType = ($instantiate).asInstanceOf[$targetType]"
         else
-          q"def traitConstructor: $targetType = ($instantiate).asInstanceOf[$targetType]"
-      }
-
-      (traitConstructor _)
+          q"def constructor: $targetType = ($instantiate).asInstanceOf[$targetType]"
       }
       """
-      }
 
-    val wrappedFunction = typeOf[WrappedFunction[_]].typeSymbol
-
-    val res = c.Expr[WrappedFunction[T]] {
+    val wrappedFunction = symbolOf[WrappedFunction.type].asClass.module
+    val res = c.Expr[DIKeyWrappedFunction[T]] {
       q"""
           {
-          val ctor = $expr
+          $constructorDef
 
-          // trigger implicit conversion
-          _root_.scala.Predef.identity[$wrappedFunction[$targetType]](ctor)
+          $wrappedFunction.DIKeyWrappedFunction.apply[$targetType](constructor _)
           }
        """
     }
     c.info(c.enclosingPosition, s"Syntax tree of trait $targetType:\n$res", force = false)
+
     res
-  }
-
-  private def makeDeclsAndConstructorArgs
-    (c: blackbox.Context)
-      (macroUniverse: MacroUniverse[c.universe.type])
-        (symbolIntrospector: SymbolIntrospector.Macro[macroUniverse.type])
-          (targetType: c.universe.Type)
-          : PartialFunction[c.universe.Symbol, (c.universe.Tree, c.universe.Tree)] = {
-    case d if symbolIntrospector.isWireableMethod(macroUniverse.SafeType(targetType), d) =>
-      import c.universe._
-      val methodName = d.asMethod.name.toTermName
-      val argName = c.freshName(methodName)
-      val tpe = d.typeSignature.finalResultType
-
-      (q"$argName: $tpe", q"override val $methodName: $tpe = $argName")
   }
 }
 

@@ -2,12 +2,12 @@ package com.github.pshirshov.izumi.distage.model.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.references.RefTable
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.collection.mutable
 
 trait PlanAnalyzer {
-  type Accumulator = mutable.HashMap[RuntimeUniverse.DIKey, mutable.Set[RuntimeUniverse.DIKey]]
+  type Accumulator = mutable.HashMap[RuntimeDIUniverse.DIKey, mutable.Set[RuntimeDIUniverse.DIKey]]
 
   def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable
 
@@ -15,9 +15,9 @@ trait PlanAnalyzer {
 
   def computeFwdRefTable(
                           plan: Iterable[ExecutableOp]
-                          , refFilter: Accumulator => RuntimeUniverse.DIKey => Boolean
-                          , postFilter: ((RuntimeUniverse.DIKey, mutable.Set[RuntimeUniverse.DIKey])) => Boolean
+                          , refFilter: Accumulator => RuntimeDIUniverse.DIKey => Boolean
+                          , postFilter: ((RuntimeDIUniverse.DIKey, mutable.Set[RuntimeDIUniverse.DIKey])) => Boolean
                         ): RefTable
 
-  def reverseReftable(dependencies: Map[RuntimeUniverse.DIKey, Set[RuntimeUniverse.DIKey]]): Map[RuntimeUniverse.DIKey, Set[RuntimeUniverse.DIKey]]
+  def reverseReftable(dependencies: Map[RuntimeDIUniverse.DIKey, Set[RuntimeDIUniverse.DIKey]]): Map[RuntimeDIUniverse.DIKey, Set[RuntimeDIUniverse.DIKey]]
 }

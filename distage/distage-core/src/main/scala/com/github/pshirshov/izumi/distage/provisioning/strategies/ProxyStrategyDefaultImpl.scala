@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, Wiri
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools, ProxyParams}
 
 /**
@@ -46,7 +46,7 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Java) exte
 
     val constructors = tpe.tpe.decls.filter(_.isConstructor)
     val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
-    val runtimeClass = RuntimeUniverse.mirror.runtimeClass(tpe.tpe)
+    val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(tpe.tpe)
 
     val params = if (constructors.isEmpty || hasTrivial) {
       ProxyParams.Empty
@@ -63,7 +63,6 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Java) exte
 
       ProxyParams.Params(args.map(_._1).toArray, args.map(_._2).toArray)
     }
-
 
     val nullDispatcher = new CglibNullMethodInterceptor(makeProxy.target)
     val nullProxy = CglibTools.mkDynamic(nullDispatcher, runtimeClass, makeProxy, params) {
@@ -82,8 +81,8 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Java) exte
     }
   }
 
-  private def proxyKey(m: RuntimeUniverse.DIKey) = {
-    RuntimeUniverse.DIKey.ProxyElementKey(m, RuntimeUniverse.SafeType.get[CglibRefDispatcher])
+  private def proxyKey(m: RuntimeDIUniverse.DIKey) = {
+    RuntimeDIUniverse.DIKey.ProxyElementKey(m, RuntimeDIUniverse.SafeType.get[CglibRefDispatcher])
   }
 
 }

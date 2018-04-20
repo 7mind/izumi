@@ -1,15 +1,15 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.Planner
-import com.github.pshirshov.izumi.distage.model.definition.BindingT.{EmptySetBinding, SetBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ContextDefinition, ImplDef}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CustomOp, ImportDependency, SetOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring.UnaryWiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.functional.Value
 
 
@@ -17,7 +17,7 @@ class PlannerDefaultImpl
 (
   protected val planResolver: PlanResolver
   , protected val forwardingRefResolver: ForwardingRefResolver
-  , protected val reflectionProvider: ReflectionProvider.Java
+  , protected val reflectionProvider: ReflectionProvider.Runtime
   , protected val sanityChecker: SanityChecker
   , protected val customOpHandler: CustomOpHandler
   , protected val planningObserver: PlanningObserver
@@ -53,7 +53,7 @@ class PlannerDefaultImpl
 
   private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
     binding match {
-      case c: SingletonBinding =>
+      case c: SingletonBinding[_] =>
         val newOps = provisioning(c)
 
         val imports = computeImports(currentPlan, binding, newOps.wiring)
@@ -63,9 +63,9 @@ class PlannerDefaultImpl
           , newOps.ops
         )
 
-      case s: SetBinding =>
+      case s: SetBinding[_] =>
         val target = s.target
-        val elementKey = RuntimeUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
+        val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
 
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
         NextOps(
@@ -74,7 +74,7 @@ class PlannerDefaultImpl
           , next.provisions :+ SetOp.AddToSet(target, elementKey)
         )
 
-      case s: EmptySetBinding =>
+      case s: EmptySetBinding[_] =>
         NextOps(
           Set.empty
           , Set(SetOp.CreateSet(s.target, s.target.symbol))
@@ -83,7 +83,7 @@ class PlannerDefaultImpl
     }
   }
 
-  private def provisioning(binding: SingletonBinding): Step = {
+  private def provisioning(binding: Binding.ImplBinding): Step = {
     val target = binding.target
     val wiring = implToWireable(binding.implementation)
     wiring match {
@@ -108,7 +108,7 @@ class PlannerDefaultImpl
 
   }
 
-  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: RuntimeUniverse.Wiring): Set[ImportDependency] = {
+  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: RuntimeDIUniverse.Wiring): Set[ImportDependency] = {
     val knownTargets = currentPlan.statements.map(_.target).toSet
     val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith))
     // we don't need resolved deps, we already have them in finalPlan
@@ -116,7 +116,7 @@ class PlannerDefaultImpl
     toImport.toSet
   }
 
-  private def implToWireable(impl: ImplDef): RuntimeUniverse.Wiring = {
+  private def implToWireable(impl: ImplDef): RuntimeDIUniverse.Wiring = {
     impl match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)
@@ -129,7 +129,7 @@ class PlannerDefaultImpl
     }
   }
 
-  private def setElementKeySymbol(impl: ImplDef): RuntimeUniverse.TypeFull = {
+  private def setElementKeySymbol(impl: ImplDef): RuntimeDIUniverse.TypeFull = {
     impl match {
       case i: ImplDef.TypeImpl =>
         i.implType
