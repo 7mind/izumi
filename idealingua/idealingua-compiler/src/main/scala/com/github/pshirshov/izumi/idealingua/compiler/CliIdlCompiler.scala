@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
+import java.io.File
 import java.nio.file.{Path, Paths}
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
@@ -15,7 +16,7 @@ import org.rogach.scallop.{ScallopConf, ScallopOption}
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
   val source: ScallopOption[Path] = opt[Path](name = "source", default = Some(Paths.get("source")), descr = "Input directory")
   val target: ScallopOption[Path] = opt[Path](name = "target", default = Some(Paths.get("target")), descr = "Output directory")
-  val runtime: ScallopOption[Path] = opt[Path](name = "runtime", default = Some(Paths.get("runtime")), descr = "Runtime directory to copy")
+  val runtime: ScallopOption[Boolean] = opt[Boolean](name = "runtime", descr = "Copy embedded runtime", default = Some(false))
 
   val languages: Map[String, String] = props[String]('L', descr = "Key is language id, value is extension filter. Example: -L scala=-AnyvalExtension;-CirceDerivationTranslatorExtension")
 
@@ -65,6 +66,14 @@ object CliIdlCompiler {
     println(s"Done: ${toCompile.size} in ${toCompile.duration.toMillis}ms")
     println()
 
+    val rtSourceBase = {
+      val loader = Thread.currentThread.getContextClassLoader
+      val url = loader.getResource("runtime")
+      val path = url.getPath
+      new File(path).toPath
+    }
+
+
     println(s"Preparing targets...")
     options.foreach {
       option =>
@@ -73,11 +82,13 @@ object CliIdlCompiler {
           IzFiles.remove(itarget)
         }
 
-        val rtSource = conf.runtime.toOption.map(_.resolve(option.language.toString))
-        rtSource.filter(p => p.toFile.exists() && p.toFile.isDirectory).foreach {
-          path =>
-            copyDir(path, itarget)
-        }
+        conf.runtime
+          .map(_ => rtSourceBase.resolve(option.language.toString))
+          .filter(p => p.toFile.exists() && p.toFile.isDirectory)
+          .foreach {
+            path =>
+              copyDir(path, itarget)
+          }
     }
     println()
 
@@ -112,6 +123,7 @@ object CliIdlCompiler {
   }
 
   import java.nio.file.{Files, Path, StandardCopyOption}
+
   import scala.collection.JavaConverters._
 
   private def enumerate(src: Path): List[ZE] = {
@@ -123,6 +135,7 @@ object CliIdlCompiler {
       ZE(src.relativize(f).toString, f)
     })
   }
+
   private def copyDir(src: Path, dest: Path): Unit = {
 
     val rt = Files.walk(src).iterator()
@@ -140,8 +153,8 @@ object CliIdlCompiler {
   case class ZE(name: String, file: Path)
 
   def zip(out: Path, files: Iterable[ZE]): Unit = {
-    import java.io.{ BufferedInputStream, FileInputStream, FileOutputStream }
-    import java.util.zip.{ ZipEntry, ZipOutputStream }
+    import java.io.{BufferedInputStream, FileInputStream, FileOutputStream}
+    import java.util.zip.{ZipEntry, ZipOutputStream}
 
     val outFile = out.toFile
     if (outFile.exists()) {
