@@ -10,18 +10,6 @@ trait IRTUnsafeDispatcher[Ctx, R[_]] extends IRTWithSvcResultType[R] {
 
 case class IRTMethod(service: IRTServiceId, methodId: IRTMethodId)
 
-//case class ReqBody(value: AnyRef) extends AnyRef
-//
-//case class ResBody(value: AnyRef) extends AnyRef
-//
-//case class MuxResponse[T <: AnyRef](v: T, method: Method) {
-//  def body: ResBody = ResBody(v)
-//}
-//
-//case class MuxRequest[T <: AnyRef](v: T, method: Method) {
-//  def body: ReqBody = ReqBody(v)
-//}
-
 case class IRTReqBody(value: Any) extends AnyRef
 
 case class IRTResBody(value: Any) extends AnyRef

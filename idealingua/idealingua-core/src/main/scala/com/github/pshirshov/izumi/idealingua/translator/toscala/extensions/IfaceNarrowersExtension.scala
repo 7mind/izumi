@@ -29,7 +29,7 @@ object IfaceNarrowersExtension extends ScalaTranslatorExtension {
 
           val tt = ctx.conv.toScala(dtoId)
           val parentType = ctx.conv.toScala(struct.id)
-          q"""def ${Term.Name("as" + struct.id.name.capitalize)}(): ${parentType.typeFull} = {
+          q"""def ${Term.Name("as" + struct.id.name)}(): ${parentType.typeFull} = {
              ${tt.termFull}(..$constructorCode)
             }
           """

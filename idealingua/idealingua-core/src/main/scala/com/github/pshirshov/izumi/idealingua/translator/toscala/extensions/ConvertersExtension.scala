@@ -32,7 +32,7 @@ object ConvertersExtension extends ScalaTranslatorExtension {
           f =>
             q""" ${f.name} = _value.${f.name}  """
         }
-        q"""def ${Term.Name("cast" + same.id.name.capitalize)}(): ${ctx.conv.toScala(same.id).typeFull} = {
+        q"""def ${Term.Name("cast" + same.id.name)}(): ${ctx.conv.toScala(same.id).typeFull} = {
               ${ctx.conv.toScala(same.id).termFull}(..$code)
             }
           """
