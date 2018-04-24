@@ -17,8 +17,12 @@ class IzString(s: String) {
     s.split("\n").map(s => s"$shift$s").mkString("\n")
   }
 
+  @inline def densify(): String = {
+    s.replaceAll("\n\\s*\n", "\n\n").replaceAll("\\{\n\\s*\n", "{\n").replaceAll("\n\\s*\n\\}\n", "\n}").trim()
+  }
+
   @inline def leftPad(len: Int): String = leftPad(len, ' ')
-  
+
   @inline def leftPad(len: Int, elem: Char): String = {
     elem.toString * (len - s.length()) + s
   }

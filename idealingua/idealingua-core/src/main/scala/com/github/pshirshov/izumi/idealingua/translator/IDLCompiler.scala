@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainDefinition
 import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, TypespaceImpl, TypespaceVerifier}
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
+import com.github.pshirshov.izumi.idealingua.translator.togolang.FinalTranslatorGoLangImpl
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.FinalTranslatorTypeScriptImpl
 
@@ -34,10 +35,10 @@ class IDLCompiler(typespace: Typespace) {
     options.language match {
       case IDLLanguage.Scala =>
         new FinalTranslatorScalaImpl()
+      case IDLLanguage.Go =>
+        new FinalTranslatorGoLangImpl()
       case IDLLanguage.Typescript =>
         new FinalTranslatorTypeScriptImpl()
-      case IDLLanguage.Go =>
-        ??? // go transpiler is not ready
       case IDLLanguage.UnityCSharp =>
         ??? // c# transpiler is not ready
     }
