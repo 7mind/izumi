@@ -20,29 +20,26 @@ import scala.language.higherKinds
 
 case class DummyContext(ip: String)
 
-class Demo[R[_] : IRTServiceResult : Monad, Ctx] {
+class DemoContext[R[_] : IRTServiceResult : Monad, Ctx] {
+  private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
+  private val calculatorService = new AbstractCalculatorServer.Impl[R, Ctx]
+  private val greeterDispatcher = GreeterServiceWrapped.serverUnsafe(greeterService)
+  private val calculatorDispatcher = CalculatorServiceWrapped.serverUnsafe(calculatorService)
+  private val dispatchers = List(greeterDispatcher, calculatorDispatcher)
 
-  final val serverMuxer = {
-    val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
-    val calculatorService = new AbstractCalculatorServer.Impl[R, Ctx]
-    val greeterDispatcher = GreeterServiceWrapped.serverUnsafe(greeterService)
-    val calculatorDispatcher = CalculatorServiceWrapped.serverUnsafe(calculatorService)
-    val dispatchers = List(greeterDispatcher, calculatorDispatcher)
-    new IRTServerMultiplexor(dispatchers)
-  }
-
-  final val codecs = List(GreeterServiceWrapped, CalculatorServiceWrapped)
-
+  private final val codecs = List(GreeterServiceWrapped, CalculatorServiceWrapped)
   private final val marsh = IRTOpinionatedMarshalers(codecs)
+
+  final val serverMuxer = new IRTServerMultiplexor(dispatchers)
   final val cm: IRTClientMarshallers = marsh
   final val sm: IRTServerMarshallers = marsh
 }
 
-object Definitions {
+object Http4sTestContext {
 
   import com.github.pshirshov.izumi.idealingua.runtime.cats.RuntimeCats._
 
-  final val demo = new Demo[IO, DummyContext]()
+  final val demo = new DemoContext[IO, DummyContext]()
 
   final val authUser: Kleisli[OptionT[IO, ?], Request[IO], DummyContext] =
     Kleisli {
@@ -69,7 +66,7 @@ class Http4sTransportTest extends WordSpec {
 
   "Http4s transport" should {
     "support direct calls" in {
-      import Definitions._
+      import Http4sTestContext._
 
       val builder = BlazeBuilder[IO]
         .bindHttp(port, host)
