@@ -3,9 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DomainDefinition
-import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, TypespaceImpl, TypespaceVerifier}
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
 import com.github.pshirshov.izumi.idealingua.translator.togolang.FinalTranslatorGoLangImpl
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl

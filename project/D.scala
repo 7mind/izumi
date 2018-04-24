@@ -15,7 +15,13 @@ object D {
     val essentials = Seq(scala_java8_compat)
 
     val cats_version = "1.1.0"
-    val cats_core = "org.typelevel" %% "cats-core" % cats_version
+    val cats_effect = "0.10"
+    val cats_all: Seq[ModuleID] = Seq(
+      "org.typelevel" %% "cats-core"
+    ).map(_ % cats_version) ++ Seq(
+      "org.typelevel" %% "cats-effect"
+    ).map(_ % cats_effect)
+
 
     val scalameta = "org.scalameta" %% "scalameta" % "3.3.1" // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
     val cglib_nodep = "cglib" % "cglib-nodep" % "3.2.6" // TODO: It would be good to completely get rid of cglib and build our own proxy generator on top of scala-asm
@@ -34,13 +40,17 @@ object D {
     ).map(_ % circeVersion) :+
       ("io.circe" %% "circe-derivation" % circeDerivationVersion)
 
-    val http4s_version = "0.18.0"
-    val http4s_client = "org.http4s" %% "http4s-blaze-client" % http4s_version
-    val http4s_all: Seq[ModuleID] = Seq(
+    val http4s_version = "0.18.9"
+    val http4s_client: Seq[ModuleID] = Seq(
+      "org.http4s" %% "http4s-blaze-client"
+    ).map(_ % http4s_version)
+    val http4s_server: Seq[ModuleID] = Seq(
       "org.http4s" %% "http4s-dsl"
       , "org.http4s" %% "http4s-circe"
       , "org.http4s" %% "http4s-blaze-server"
-    ).map(_ % http4s_version) ++ Seq(http4s_client)
+    ).map(_ % http4s_version)
+
+    val http4s_all: Seq[ModuleID] = http4s_server ++ http4s_client
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % "1.7.25"
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % "1.7.25"
