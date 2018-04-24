@@ -73,7 +73,9 @@ val baseSettings = new GlobalSettings {
           commitNextVersion, // : ReleaseStep
           pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
         )
+        , addCompilerPlugin(R.kind_projector)
       )
+
     }
     , LibSettings -> new ProjectSettings {
       override val settings: Seq[sbt.Setting[_]] = Seq(
@@ -229,17 +231,19 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
 
 
 lazy val logstageRouting = inLogStage.as.module
-  .depends(
-    logstageApi
-    , logstageSinkConsole.testOnlyRef
-    , logstageSinkSlf4j.testOnlyRef
-    , logstageJsonJson4s.testOnlyRef
-  )
+  .depends(logstageApi)
+  .depends(Seq(
+    logstageSinkConsole
+    , logstageSinkSlf4j
+    , logstageJsonJson4s
+  ).map(_.testOnlyRef): _*)
 
 lazy val idealinguaModel = inIdealingua.as.module
   .settings()
 
 lazy val idealinguaRuntimeRpc = inIdealingua.as.module
+
+lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpc, idealinguaRuntimeRpcCirce)
 
 lazy val idealinguaRuntimeRpcCirce = inIdealingua.as.module
   .depends(idealinguaRuntimeRpc)
@@ -251,10 +255,10 @@ lazy val idealinguaRuntimeRpcCats = inIdealingua.as.module
 
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpcCirce)
+  .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats)
+  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= R.http4s_all)
 
-lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpc, idealinguaRuntimeRpcCats, idealinguaRuntimeRpcHttp4s, idealinguaRuntimeRpcCirce)
 
 lazy val fastparseShaded = inShade.as.module
   .settings(libraryDependencies ++= Seq(R.fastparse))
@@ -262,11 +266,14 @@ lazy val fastparseShaded = inShade.as.module
 
 lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler, T.scala_library))
-  .depends(idealinguaModel, fastparseShaded, idealinguaTestDefs.testOnlyRef)
+  .depends(idealinguaModel, fastparseShaded)
+  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
   .settings(ShadingSettings)
 
 lazy val idealinguaExtensionRpcFormatCirce = inIdealingua.as.module
-  .depends(idealinguaCore, idealinguaTestDefs.testOnlyRef, idealinguaRuntimeRpcCirce)
+  .depends(idealinguaCore, idealinguaRuntimeRpcCirce)
+  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
+
 
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
   .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce)

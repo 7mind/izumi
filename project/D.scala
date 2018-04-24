@@ -14,6 +14,8 @@ object D {
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0"
     val essentials = Seq(scala_java8_compat)
 
+    val kind_projector = "org.spire-math" % "kind-projector" % "0.9.6" cross CrossVersion.binary
+
     val cats_version = "1.1.0"
     val cats_effect = "0.10"
     val cats_all: Seq[ModuleID] = Seq(

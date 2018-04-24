@@ -88,3 +88,13 @@ coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- 
 ```
 coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- -s src -t target -L scala=-AnyvalExtension -L typescript=*
 ```
+
+## Http4s Transport
+
+Most likely you would need to use [https://github.com/non/kind-projector](Kind Projector) compiler plugin and partial unification enabled:
+
+```scala
+scalacOptions += "-Ypartial-unification"
+resolvers += Resolver.sonatypeRepo("releases")
+addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.6" cross CrossVersion.binary)
+``` 
