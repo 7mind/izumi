@@ -91,7 +91,7 @@ coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- 
 
 ## Http4s Transport
 
-Most likely you would need to use [https://github.com/non/kind-projector](Kind Projector) compiler plugin and partial unification enabled:
+Most likely you would need to use [Kind Projector](https://github.com/non/kind-projector) compiler plugin and partial unification enabled:
 
 ```scala
 scalacOptions += "-Ypartial-unification"
