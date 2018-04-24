@@ -14,6 +14,7 @@ mixin Request {
 }
 
 service TestService {
+  def parameterless(): str
   def simpleMethod(a: str): str
   def simpleMethodWithGenerics(a: list[str]): list[str]
   def simple(+Request): (+Request)

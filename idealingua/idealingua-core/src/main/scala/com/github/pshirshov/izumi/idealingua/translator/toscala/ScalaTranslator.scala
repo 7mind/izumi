@@ -293,6 +293,12 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val unpacking = decls.map(_.bodyServer)
     val dispatchers = decls.map(_.dispatching)
 
+    val zeroargCases: List[Case] = decls.filter(_.methodArity == 0).map({
+      method =>
+        p"""case IRTMethod(`serviceId`, ${method.methodIdPat}) =>
+              Some(${method.inputTypeWrapped.termFull}())"""
+    })
+
     val qqService =
       q"""trait ${sp.svcTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
             ..${decls.map(_.defnServer)}
@@ -347,13 +353,26 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     def identifier: IRTServiceId = serviceId
 
-    def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[_], C]): Option[Result[IRTMuxResponse[_]]] = {
+    private def toZeroargBody(v: IRTMethod): Option[${sp.serviceInputBase.typeFull}] = {
+      v match {
+        ..case $zeroargCases
+
+        case _ =>
+          None
+      }
+    }
+
+    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): Option[Result[IRTMuxResponse[Product]]] = {
+      toZeroargBody(input.value).map(b => _ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+    }
+
+    def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], C]): Option[Result[IRTMuxResponse[Product]]] = {
       input.value.v match {
         case v: ${sp.serviceInputBase.typeFull} =>
           Option(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
 
         case _ =>
-          None
+          dispatchZeroargUnsafe(IRTInContext(input.value.method, input.context))
       }
     }
 
@@ -369,7 +388,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val qqSafeToUnsafeBridge =
       q"""
-        class SafeToUnsafeBridge[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[_], IRTMuxResponse[_], R])
+        class SafeToUnsafeBridge[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R])
            extends IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]
            with ${rt.WithResult.parameterize("R").init()} {
              override protected def _ServiceResult: IRTServiceResult[R] = implicitly
@@ -377,12 +396,12 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
              import IRTServiceResult._
 
              override def dispatch(input: ${sp.serviceInputBase.typeFull}): Result[${sp.serviceOutputBase.typeFull}] = {
-               dispatcher.dispatch(IRTMuxRequest(input, toMethodId(input))).map {
+               dispatcher.dispatch(IRTMuxRequest(input : Product, toMethodId(input))).map {
                  case IRTMuxResponse(t: ${sp.serviceOutputBase.typeFull}, _) =>
                    t
                  case o =>
                    val id: String = ${Lit.String(s"${sp.typeName}.SafeToUnsafeBridge.name)")}
-                   throw new IRTTypeMismatchException(s"Unexpected output in $$id: $$o", o)
+                   throw new IRTTypeMismatchException(s"Unexpected output in $$id: $$o", o, None)
                }
              }
            }
@@ -407,7 +426,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   }
 
 
-  def clientUnsafe[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[_], IRTMuxResponse[_], R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
+  def clientUnsafe[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
     client(new SafeToUnsafeBridge[R](dispatcher))
   }
 
@@ -448,8 +467,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }
        """
 
-    val input = CogenPair(q"sealed trait ${sp.serviceInputBase.typeName} extends Any", q"object ${sp.serviceInputBase.termName} {}")
-    val output = CogenPair(q"sealed trait ${sp.serviceOutputBase.typeName} extends Any", q"object ${sp.serviceOutputBase.termName} {}")
+    val input = CogenPair(q"sealed trait ${sp.serviceInputBase.typeName} extends Any with Product", q"object ${sp.serviceInputBase.termName} {}")
+    val output = CogenPair(q"sealed trait ${sp.serviceOutputBase.typeName} extends Any with Product", q"object ${sp.serviceOutputBase.termName} {}")
 
     // TODO: move Any into extensions
     val qqBaseCompanion =

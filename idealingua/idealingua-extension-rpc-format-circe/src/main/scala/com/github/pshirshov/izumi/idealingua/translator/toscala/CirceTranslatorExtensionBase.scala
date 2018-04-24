@@ -71,39 +71,40 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
     }
 
+
     val dec = implementors.map {
       c =>
         p"""case ${Lit.String(str(c))} => value.as[${toScala(c).typeFull}]"""
-    } :+ p"""case _ =>
-           Left(
-            DecodingFailure(
-              "Can't decode type " + fname + " as " + ${Lit.String(str(interface.id))} + ", expected one of [" +
-                List(..${implementors.map(c => Lit.String(str(c)))}).mkString(",") + "]"
-              , value.history
-            )
-          )"""
+    }
+
+    val missingDefinitionCase = p"""case _ =>
+           val cname = ${Lit.String(str(interface.id))}
+           val alts = List(..${implementors.map(c => Lit.String(str(c)))}).mkString(",")
+           Left(DecodingFailure(s"Can't decode type $$fname as $$cname, expected one of [$$alts]", value.history))
+      """
+
+    val decCases = dec :+ missingDefinitionCase
 
     val boilerplate = CirceTrait(
       s"${interface.id.name}Circe",
       q"""trait ${Type.Name(s"${interface.id.name}Circe")} {
              import _root_.io.circe.syntax._
              import _root_.io.circe.{Encoder, Decoder, DecodingFailure}
+
              implicit val ${Pat.Var(Term.Name(s"encode${interface.id.name}"))}: Encoder[$tpe] = Encoder.instance {
-                     c => {
-                       c match {
-                         ..case $enc
-                       }
-                     }
-                   }
-             implicit val ${Pat.Var(Term.Name(s"decode${interface.id.name}"))}: Decoder[$tpe] = Decoder.instance(c =>
-               for {
-                 fname <- c.keys.flatMap(_.headOption)
-                   .toRight(DecodingFailure("No type name found in JSON, expected JSON of form { \"type_name\": { ...fields } }", c.history))
+               ..case $enc
+             }
 
-                 value = c.downField(fname)
+             implicit val ${Pat.Var(Term.Name(s"decode${interface.id.name}"))}: Decoder[$tpe] = Decoder.instance(c => {
+                 val maybeContent = c.keys.flatMap(_.headOption)
+                      .toRight(DecodingFailure("No type name found in JSON, expected JSON of form { \"type_name\": { ...fields } }", c.history))
 
-                 result <- fname match { ..case $dec }
-               } yield result
+                 for {
+                   fname <- maybeContent
+                   value = c.downField(fname)
+                   result <- fname match { ..case $decCases }
+                 } yield result
+               }
              )
           }
       """)

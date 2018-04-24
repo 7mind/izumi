@@ -36,6 +36,7 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCM
 
   import ctx.conv._
 
+  def methodArity: Int = fields.size
   def nameTerm = Term.Name(name)
   
   def defnServer: Stat = {
@@ -62,6 +63,7 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCM
     }
 
     q"""def $nameTerm(ctx: C, ..$wrappedSignature): Result[${outputTypeWrapped.typeFull}] = {
+             assert(input != null)
              val result = service.$nameTerm(ctx, ..$sig)
              $output
        }
@@ -97,12 +99,16 @@ case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCM
      """
   }
 
+
+  def methodId: Term.Apply = q"IRTMethodId(${Lit.String(method.name)})"
+  def methodIdPat: Pat.Extract = p"IRTMethodId(${Lit.String(method.name)})"
+
   def inputMatcher: Case =  {
-    p" case _: ${inputTypeWrapped.typeFull} => IRTMethod(serviceId, IRTMethodId(${Lit.String(method.name)}))"
+    p" case _: ${inputTypeWrapped.typeFull} => IRTMethod(serviceId, $methodId)"
   }
 
   def outputMatcher: Case =  {
-    p" case _: ${outputTypeWrapped.typeFull} => IRTMethod(serviceId, IRTMethodId(${Lit.String(method.name)}))"
+    p" case _: ${outputTypeWrapped.typeFull} => IRTMethod(serviceId, $methodId)"
   }
 
   protected def outputType: ScalaType = {

@@ -161,6 +161,7 @@ object GreeterServiceWrapped
     def service: GreeterService[R, C]
 
     def greet(context: Context, input: GreetInput): Result[GreetOutput] = {
+      assert(input != null)
       val result = service.greet(context, input.name, input.surname)
       _ServiceResult.map(result)(GreetOutput.apply)
     }
