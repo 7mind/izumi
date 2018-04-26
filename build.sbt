@@ -229,6 +229,9 @@ lazy val logstageJsonJson4s = inLogStage.as.module
 
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApi)
+  .depends(Seq(
+    logstageRouting
+  ).map(_.testOnlyRef): _*)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApi)

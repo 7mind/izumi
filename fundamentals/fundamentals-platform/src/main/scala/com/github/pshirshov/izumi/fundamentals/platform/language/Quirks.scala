@@ -7,4 +7,8 @@ object Quirks {
         ()
     }
   }
+
+  implicit class Discarder(t: Any) extends AnyRef {
+    def discard(): Unit = Quirks.discard(t)
+  }
 }

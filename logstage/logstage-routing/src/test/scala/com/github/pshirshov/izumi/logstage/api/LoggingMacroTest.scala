@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.core.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
 import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.logstage.model.config.LoggerConfig
-import com.github.pshirshov.izumi.logstage.model.logger.LogSink
+import com.github.pshirshov.izumi.logstage.model.logger.{LogSink, QueueingSink}
 import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
 import org.scalatest.WordSpec
 
@@ -28,6 +28,13 @@ class ExampleService(logger: IzLogger) {
     val t = new RuntimeException("Oy vey!")
     logger.crit(s"A failure happened: $t")
   }
+
+  def work(): Unit = {
+    (1 to 100).foreach {
+      i =>
+        logger.debug(s"step $i")
+    }
+  }
 }
 
 
@@ -43,6 +50,16 @@ class LoggingMacroTest extends WordSpec {
 
     "support console sink with json output policy" in {
       new ExampleService(setupJsonLogger()).start()
+    }
+
+    "support async sinks" in {
+      val asyncConsoleSinkJson = new QueueingSink(new ConsoleSink(jsonPolicy))
+      try {
+        new ExampleService(configureLogger(Seq(asyncConsoleSinkJson))).work()
+        asyncConsoleSinkJson.start()
+      } finally {
+        asyncConsoleSinkJson.close()
+      }
     }
   }
 }
