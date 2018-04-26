@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import com.github.pshirshov.izumi.logstage.TestSink
 import com.github.pshirshov.izumi.logstage.api.logger.RenderingOptions
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.core.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
@@ -53,13 +54,17 @@ class LoggingMacroTest extends WordSpec {
     }
 
     "support async sinks" in {
-      val asyncConsoleSinkJson = new QueueingSink(new ConsoleSink(jsonPolicy))
+      val testSink = new TestSink()
+      val asyncConsoleSinkJson = new QueueingSink(testSink)
       try {
         new ExampleService(configureLogger(Seq(asyncConsoleSinkJson))).work()
+        assert(testSink.fetch.isEmpty)
         asyncConsoleSinkJson.start()
       } finally {
         asyncConsoleSinkJson.close()
       }
+
+      assert(testSink.fetch.size == 100)
     }
   }
 }
