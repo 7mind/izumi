@@ -27,7 +27,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
     val caller = Thread.currentThread()
       .getStackTrace.tail.find(_.getClassName != getClass.getCanonicalName)
-    
+
     val ctx = caller match {
       case Some(frame) =>
         StaticExtendedContext(id, frame.getFileName, frame.getLineNumber)
@@ -51,8 +51,10 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
         (s"_${kv._2}", kv._1)
     }
 
+    val template = message.split("\\{\\}", -1)
+
     Entry(
-      Message(StringContext(message.split("\\{\\}") :_*), messageArgs)
+      Message(StringContext(template :_*), messageArgs)
       , Context(
         ctx
         , DynamicContext(level, threadData, System.currentTimeMillis())
