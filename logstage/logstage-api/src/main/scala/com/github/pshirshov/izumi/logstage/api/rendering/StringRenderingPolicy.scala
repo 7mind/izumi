@@ -105,12 +105,12 @@ class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
   def formatMessage(entry: Log.Entry): RenderedMessage = {
     val templateBuilder = new StringBuilder()
     val messageBuilder = new StringBuilder()
-//    val rawMessageBuilder = new StringBuilder()
+    //    val rawMessageBuilder = new StringBuilder()
 
     val head = entry.message.template.parts.head
     templateBuilder.append(head)
     messageBuilder.append(head)
-//    rawMessageBuilder.append(head)
+    //    rawMessageBuilder.append(head)
 
     val balanced = entry.message.template.parts.tail.zip(entry.message.args)
     val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
@@ -124,13 +124,21 @@ class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
         messageBuilder.append(formatKv((argName, argToString(argValue))))
         messageBuilder.append(part)
 
-//        rawMessageBuilder.append('{')
-//        rawMessageBuilder.append(argName)
-//        rawMessageBuilder.append('=')
-//        rawMessageBuilder.append(argToString(argValue))
-//        rawMessageBuilder.append('}')
+      //        rawMessageBuilder.append('{')
+      //        rawMessageBuilder.append(argName)
+      //        rawMessageBuilder.append('=')
+      //        rawMessageBuilder.append(argToString(argValue))
+      //        rawMessageBuilder.append('}')
 
     }
+
+    unbalanced.foreach {
+      case (argName, argValue) =>
+        templateBuilder.append("; ?")
+        messageBuilder.append("; ")
+        messageBuilder.append(formatKv((argName, argToString(argValue))))
+    }
+
     RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString())
   }
 

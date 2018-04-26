@@ -30,7 +30,8 @@ class BasicLoggingTest extends WordSpec {
   "String rendering policy" should {
     "not fail on unbalanced messages" in {
       val p = new StringRenderingPolicy(RenderingOptions(withColors = false))
-      assert(render(p, Message(StringContext("begin ", " end"), Seq("[a1]" -> 1, "[a2]" -> 2))) == "")
+      val expected = "W 1970-01-01T01:00:00.000+01:00                  (test.scala:0) [         test:0] begin [a1]=1 end; [a2]=2"
+      assert(render(p, Message(StringContext("begin ", " end"), Seq("[a1]" -> 1, "[a2]" -> 2))) == expected)
     }
   }
 
