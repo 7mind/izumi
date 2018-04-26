@@ -28,14 +28,11 @@ class ModuleTools() {
     } else {
       s"""// Auto-generated, any modifications may be overwritten in the future.
           |${header}
-          |namespace ${pkg.mkString(".")} {
           |
-          |${code.shift(4)}
-          |
-          |}
+          |$code
        """.stripMargin
     }
-    content
+    content.densify()
   }
 
   def toModuleId(defn: TypeDef): ModuleId = {
