@@ -6,3 +6,4 @@ trait LogRouter {
   def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean
   def log(entry: Log.Entry): Unit
 }
+

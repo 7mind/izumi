@@ -24,6 +24,18 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
   private def mkEntry(level: Level, message: String, args: Seq[Any], marker: Option[Marker]): Entry = {
     val thread = Thread.currentThread()
     val threadData = ThreadData(thread.getName, thread.getId)
+
+    val caller = Thread.currentThread()
+      .getStackTrace.tail.find(_.getClassName != getClass.getCanonicalName)
+    
+    val ctx = caller match {
+      case Some(frame) =>
+        StaticExtendedContext(id, frame.getFileName, frame.getLineNumber)
+
+      case None =>
+        StaticExtendedContext(id, "?", 0)
+    }
+
     val customContext = marker match {
       case Some(m) =>
         import scala.collection.JavaConverters._
@@ -34,9 +46,15 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
         CustomContext(Seq.empty)
     }
 
+    val messageArgs = args.zipWithIndex.map{
+      kv =>
+        (s"_${kv._2}", kv._1)
+    }
+
     Entry(
-      Message(StringContext(message.split("\\{\\}") :_*), args.zipWithIndex.map(kv => (kv._1.toString, kv._2)))
-      , Context(StaticExtendedContext(id, "?", 0)
+      Message(StringContext(message.split("\\{\\}") :_*), messageArgs)
+      , Context(
+        ctx
         , DynamicContext(level, threadData, System.currentTimeMillis())
         , customContext
       )

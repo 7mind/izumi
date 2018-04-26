@@ -214,6 +214,9 @@ lazy val logstageSinkConsole = inLogStage.as.module
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
   .depends(logstageApi)
+  .depends(Seq(
+    logstageRouting
+  ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies += R.slf4j_api)
 //
 
@@ -227,17 +230,17 @@ lazy val logstageJsonJson4s = inLogStage.as.module
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApi)
 
-
-
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApi)
+  .depends(Seq(
+    logstageRouting
+  ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 
 lazy val logstageRouting = inLogStage.as.module
   .depends(logstageApi)
   .depends(Seq(
     logstageSinkConsole
-    , logstageSinkSlf4j
     , logstageJsonJson4s
   ).map(_.testOnlyRef): _*)
 
