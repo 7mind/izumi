@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.r2.idealingua.test.generated
 
 import com.github.pshirshov.izumi.idealingua.runtime.circe._
-import com.github.pshirshov.izumi.r2.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.Decoder.Result
 import io.circe._
 import io.circe.generic.semiauto._

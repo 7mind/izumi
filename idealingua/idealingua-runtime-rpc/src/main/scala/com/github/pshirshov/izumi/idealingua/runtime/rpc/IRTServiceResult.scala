@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.r2.idealingua.runtime.rpc
+package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.{higherKinds, implicitConversions}

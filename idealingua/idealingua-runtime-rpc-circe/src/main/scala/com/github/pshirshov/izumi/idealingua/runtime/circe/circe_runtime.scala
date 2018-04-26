@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.circe
 
-import com.github.pshirshov.izumi.r2.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTIdentifiableServiceDefinition, IRTMethod, IRTReqBody, IRTResBody}
 import io.circe._
 
 

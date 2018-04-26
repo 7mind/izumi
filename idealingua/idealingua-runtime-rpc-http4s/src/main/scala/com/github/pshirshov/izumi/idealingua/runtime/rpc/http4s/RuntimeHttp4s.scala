@@ -3,7 +3,8 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import cats._
 import cats.implicits._
 import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTClientMarshallers, IRTServerMarshallers}
-import com.github.pshirshov.izumi.r2.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.Stream
 import org.http4s._
 import org.http4s.client.Client

@@ -112,7 +112,9 @@ class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
     messageBuilder.append(head)
 //    rawMessageBuilder.append(head)
 
-    entry.message.template.parts.tail.zip(entry.message.args).foreach {
+    val balanced = entry.message.template.parts.tail.zip(entry.message.args)
+    val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
+    balanced.foreach {
       case (part, (argName, argValue)) =>
         templateBuilder.append('{')
         templateBuilder.append(argName)

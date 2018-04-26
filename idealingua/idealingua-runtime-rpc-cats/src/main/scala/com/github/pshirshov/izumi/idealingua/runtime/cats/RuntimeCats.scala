@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.cats
 
 import cats.Monad
 import cats.effect.IO
-import com.github.pshirshov.izumi.r2.idealingua.runtime.rpc.IRTServiceResult
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTServiceResult
 
 trait RuntimeCats {
   implicit object IOResult extends IRTServiceResult[IO] {

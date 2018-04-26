@@ -4,8 +4,8 @@ object D {
 
   object R {
     val scala212 = "2.12.5"
-    val scala_compiler =  "org.scala-lang" % "scala-compiler" % scala212
-    val scala_library =  "org.scala-lang" % "scala-library" % scala212
+    val scala_compiler = "org.scala-lang" % "scala-compiler" % scala212
+    val scala_library = "org.scala-lang" % "scala-library" % scala212
     val scala_reflect = "org.scala-lang" % "scala-reflect" % scala212
 
     //val scala_asm = "org.scala-lang.modules" % "scala-asm" % "6.0.0-scala-1"
@@ -16,13 +16,20 @@ object D {
 
     val kind_projector = "org.spire-math" % "kind-projector" % "0.9.6" cross CrossVersion.binary
 
-    val cats_version = "1.1.0"
-    val cats_effect = "0.10"
+    val better_files = "com.github.pathikrit" %% "better-files" % "3.4.0"
+
+    val kamon = Seq(
+      "io.kamon" %% "kamon-core" % "1.0.0"
+      , "io.kamon" %% "kamon-jmx" % "0.6.7"
+    )
+
+    private val cats_version = "1.1.0"
+    private val cats_effect_version = "0.10"
     val cats_all: Seq[ModuleID] = Seq(
       "org.typelevel" %% "cats-core"
     ).map(_ % cats_version) ++ Seq(
       "org.typelevel" %% "cats-effect"
-    ).map(_ % cats_effect)
+    ).map(_ % cats_effect_version)
 
 
     val scalameta = "org.scalameta" %% "scalameta" % "3.3.1" // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
@@ -30,17 +37,17 @@ object D {
     val fastparse = "com.lihaoyi" %% "fastparse" % "1.0.0" % "shaded"
     val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3"
 
-    val circeVersion = "0.9.3"
-    val circeDerivationVersion = "0.9.0-M3"
+    private val circeVersion = "0.9.3"
+    private val circeDerivationVersion = "0.9.0-M3"
 
-    val circe: Seq[ModuleID] =  Seq(
+    val circe: Seq[ModuleID] = Seq(
       "io.circe" %% "circe-core"
       , "io.circe" %% "circe-generic"
       , "io.circe" %% "circe-generic-extras"
       , "io.circe" %% "circe-parser"
       , "io.circe" %% "circe-java8"
-    ).map(_ % circeVersion) :+
-      ("io.circe" %% "circe-derivation" % circeDerivationVersion)
+    ).map(_ % circeVersion) ++ Seq(
+      "io.circe" %% "circe-derivation" % circeDerivationVersion)
 
     val http4s_version = "0.18.9"
     val http4s_client: Seq[ModuleID] = Seq(

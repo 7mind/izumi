@@ -3,8 +3,10 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import cats._
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
+import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
 import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTClientMarshallers, IRTOpinionatedMarshalers, IRTServerMarshallers}
-import com.github.pshirshov.izumi.r2.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTServerMultiplexor
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.r2.idealingua.test.generated._
 import com.github.pshirshov.izumi.r2.idealingua.test.impls._
 import org.http4s._
@@ -49,8 +51,9 @@ object Http4sTestContext {
         OptionT.liftF(IO(context))
     }
 
-  final val port = 8080
-  final val host = "localhost"
+  final val addr = IzSockets.temporaryServerAddress()
+  final val port = addr.getPort
+  final val host = addr.getHostName
   final val baseUri = Uri(Some(Uri.Scheme.http), Some(Uri.Authority(host = Uri.RegName(host), port = Some(port))))
   final val rt = new RuntimeHttp4s[IO]
   final val ioService = rt.httpService(demo.serverMuxer, AuthMiddleware(authUser), demo.sm, io)
@@ -75,9 +78,13 @@ class Http4sTransportTest extends WordSpec {
 
       builder.unsafeRunAsync {
         case Right(server) =>
-          assert(greeterClient.greet("John", "Smith").unsafeRunSync() == "Hi, John Smith!")
-          assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
-          server.shutdownNow()
+          try {
+            assert(greeterClient.greet("John", "Smith").unsafeRunSync() == "Hi, John Smith!")
+            assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
+            ()
+          } finally {
+            server.shutdownNow()
+          }
 
         case Left(error) =>
           throw error

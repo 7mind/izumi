@@ -28,8 +28,8 @@ service TestService {
   // implicitly created structure
   def greetImplicitStructMultilineSyntax
     (
-      region: str,
-      age: int8
+      region: str
+      , age: int8
     )
       =>
     (
@@ -40,8 +40,8 @@ service TestService {
   // implicitly created structure
   def greetImplicitStructureMultilineCurlyBracesSyntax
     {
-      region: str,
-      age: int8
+      region: str
+      , age: int8
     } => {
         + SuccessData
         , bullshit: str

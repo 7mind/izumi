@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.r2.idealingua.test.impls
 
-import com.github.pshirshov.izumi.r2.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.r2.idealingua.test.generated._
 
 import scala.language.higherKinds

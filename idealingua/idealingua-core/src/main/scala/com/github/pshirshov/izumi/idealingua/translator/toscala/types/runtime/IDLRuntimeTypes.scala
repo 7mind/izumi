@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, TypeDef}
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, IDLWithInfo}
-import com.github.pshirshov.izumi.r2.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTServiceResult, IRTWithResult, IRTWithResultType}
 
 
 object IDLRuntimeTypes {

@@ -1,6 +1,9 @@
 package com.github.pshirshov.izumi.logstage
 
 import com.github.pshirshov.izumi.logstage.api.ExtratingStringInterpolator
+import com.github.pshirshov.izumi.logstage.api.logger.RenderingOptions
+import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
+import com.github.pshirshov.izumi.logstage.model.Log._
 import org.scalatest.WordSpec
 
 import scala.util.Random
@@ -24,7 +27,16 @@ class BasicLoggingTest extends WordSpec {
     }
   }
 
+  "String rendering policy" should {
+    "not fail on unbalanced messages" in {
+      val p = new StringRenderingPolicy(RenderingOptions(withColors = false))
+      assert(render(p, Message(StringContext("begin ", " end"), Seq("[a1]" -> 1, "[a2]" -> 2))) == "")
+    }
+  }
 
+  private def render(p: StringRenderingPolicy, m: Message) = {
+    p.render(Entry(m, Context(StaticExtendedContext(LoggerId("test"), "test.scala", 0), DynamicContext(Level.Warn, ThreadData("test", 0), 0), CustomContext(Seq.empty))))
+  }
 }
 
 

@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang.tools
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, IndefiniteId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.RenderableCogenProduct
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class ModuleTools() {
   def toSource(id: DomainId, moduleId: ModuleId, testModuleId: ModuleId, product: RenderableCogenProduct): Seq[Module] = {

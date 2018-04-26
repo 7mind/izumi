@@ -195,6 +195,7 @@ lazy val distageCore = inDiStage.as.module
     )
   )
 
+//
 lazy val logstageModel = inLogStage.as.module
 
 lazy val logstageMacro = inLogStage.as.module
@@ -208,6 +209,14 @@ lazy val logstageMacro = inLogStage.as.module
 lazy val logstageApi = inLogStage.as.module
   .depends(logstageMacro)
 
+lazy val logstageSinkConsole = inLogStage.as.module
+  .depends(logstageApi)
+
+lazy val logstageAdapterSlf4j = inLogStage.as.module
+  .depends(logstageApi)
+  .settings(libraryDependencies += R.slf4j_api)
+//
+
 lazy val logstageDi = inLogStage.as.module
   .depends(logstageApi, distageModel)
 
@@ -218,17 +227,11 @@ lazy val logstageJsonJson4s = inLogStage.as.module
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApi)
 
-lazy val logstageSinkConsole = inLogStage.as.module
-  .depends(logstageApi)
+
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApi)
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
-
-lazy val logstageAdapterSlf4j = inLogStage.as.module
-  .depends(logstageApi)
-  .settings(libraryDependencies += R.slf4j_api)
-
 
 lazy val logstageRouting = inLogStage.as.module
   .depends(logstageApi)
@@ -266,7 +269,7 @@ lazy val fastparseShaded = inShade.as.module
 
 lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler, T.scala_library))
-  .depends(idealinguaModel, fastparseShaded)
+  .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
   .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
   .settings(ShadingSettings)
 

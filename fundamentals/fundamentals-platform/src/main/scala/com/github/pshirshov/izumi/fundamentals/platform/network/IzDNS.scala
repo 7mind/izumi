@@ -3,12 +3,15 @@ package com.github.pshirshov.izumi.fundamentals.platform.network
 import java.net.InetSocketAddress
 import java.util.regex.{Matcher, Pattern}
 
-object NetworkUtils {
+object IzDNS {
   private val IPV6_PATTERN = Pattern.compile("^\\[([:a-fA-F0-9]+)\\](:(\\d+))?$")
   private val IPV4_PATTERN = Pattern.compile("^([\\.0-9]+)(:(\\d+))?$")
   private val ENDPOINT_TOKENS_PATTERN: Pattern = Pattern.compile(":")
 
-  def getAddress(endpoint: String, defaultPort: Int): InetSocketAddress = {
+  /**
+    * Translates DNS name into ip address
+    */
+  def resolve(endpoint: String, defaultPort: Int): InetSocketAddress = {
     val address = endpoint.trim()
     val ipv6matcher = IPV6_PATTERN.matcher(address)
     val ipv4matcher = IPV4_PATTERN.matcher(address)
