@@ -27,6 +27,3 @@ class TraitStrategyDefaultImpl extends TraitStrategy {
 
 }
 
-object TraitStrategyDefaultImpl {
-  final val instance = new TraitStrategyDefaultImpl()
-}

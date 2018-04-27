@@ -68,6 +68,3 @@ class ProxyStrategyDefaultImpl extends ProxyStrategy {
 
 }
 
-object ProxyStrategyDefaultImpl {
-  final val instance = new ProxyStrategyDefaultImpl()
-}

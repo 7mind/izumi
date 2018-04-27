@@ -45,6 +45,3 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
 }
 
 
-object FactoryStrategyDefaultImpl {
-  final val instance = new FactoryStrategyDefaultImpl()
-}

@@ -12,14 +12,18 @@ trait Injector extends Planner with Producer {
 }
 
 object Injector {
-  def bootstrapDefault(): DefaultBootstrapContext = bootstrap(defaultBootstrapContextDefinition)
+  import DefaultBootstrapContext._
 
-  def bootstrapCustomized(overrides: ContextDefinition): DefaultBootstrapContext = {
-    bootstrap(defaultBootstrapContextDefinition.overridenBy(overrides))
+  private def bootstrapDefault(): DefaultBootstrapContext = bootstrap(defaultBootstrapContextDefinition)
+
+  private final lazy val defaultBootstrapContext = bootstrapDefault()
+
+  private def bootstrap(definition: ContextDefinition): DefaultBootstrapContext = {
+    new DefaultBootstrapContext(definition)
   }
 
-  def bootstrap(definition: ContextDefinition): DefaultBootstrapContext = {
-    new DefaultBootstrapContext(definition)
+  def emerge(overrides: ContextDefinition, extensions: LocatorExtension*): Injector = {
+    emerge(bootstrap(defaultBootstrapContextDefinition.overridenBy(overrides)), extensions :_*)
   }
 
   def emerge(bootstrapContext: Locator, extensions: LocatorExtension*): Injector = {
@@ -30,22 +34,7 @@ object Injector {
     emerge(defaultBootstrapContext, extensions:_*)
   }
 
-  final lazy val defaultBootstrapContext = bootstrapDefault()
 
-  final lazy val defaultBootstrapContextDefinition: ContextDefinition = TrivialDIDef
-    .instance[CustomOpHandler](CustomOpHandler.NullCustomOpHander)
-    .instance[LookupInterceptor](NullLookupInterceptor.instance)
-    .binding[PlanningHook, PlanningHookDefaultImpl]
-    .binding[PlanningObserver, PlanningObserverDefaultImpl]
-    .binding[PlanResolver, PlanResolverDefaultImpl]
-    .binding[PlanAnalyzer, PlanAnalyzerDefaultImpl]
-    .binding[PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
-    .binding[TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl]
-    .binding[ForwardingRefResolver, ForwardingRefResolverDefaultImpl]
-    .binding[SanityChecker, SanityCheckerDefaultImpl]
-    .instance[ReflectionProvider.Java](ReflectionProviderDefaultImpl.Java.instance)
-    .instance[SymbolIntrospector.Java](SymbolIntrospectorDefaultImpl.Java.instance)
-    .instance[DependencyKeyProvider.Java](DependencyKeyProviderDefaultImpl.Java.instance)
-    .binding[Planner, PlannerDefaultImpl]
+
 
 }

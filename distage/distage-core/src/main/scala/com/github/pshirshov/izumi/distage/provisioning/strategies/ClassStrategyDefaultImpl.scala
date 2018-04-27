@@ -36,6 +36,3 @@ class ClassStrategyDefaultImpl extends ClassStrategy {
   }
 }
 
-object ClassStrategyDefaultImpl {
-  final val instance = new ClassStrategyDefaultImpl()
-}

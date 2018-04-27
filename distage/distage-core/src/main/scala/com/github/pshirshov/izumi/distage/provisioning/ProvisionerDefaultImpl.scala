@@ -39,15 +39,7 @@ class ProvisionerDefaultImpl
                 acc
             }
         }
-
     }
-//
-//    val withImmutableSets = provisions.instances.map {
-//      case (key, value: mutable.HashSet[_]) if  =>
-//        (key, value.toSet)
-//      case v =>
-//        v
-//    }
 
     ProvisionImmutable(provisions.instances, provisions.imports)
   }

@@ -6,8 +6,6 @@ import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan, Fina
 import com.github.pshirshov.izumi.distage.model.planning.PlanResolver
 
 
-
-
 class PlanResolverDefaultImpl extends PlanResolver {
   override def resolve(plan: DodgyPlan, definition: ContextDefinition): FinalPlan = {
     val issues = plan.issues
@@ -20,3 +18,4 @@ class PlanResolverDefaultImpl extends PlanResolver {
     FinalPlanImmutableImpl(definition)(ops)
   }
 }
+

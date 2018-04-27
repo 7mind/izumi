@@ -11,6 +11,3 @@ class CustomStrategyDefaultImpl extends CustomStrategy {
   }
 }
 
-object CustomStrategyDefaultImpl {
-  final val instance = new CustomStrategyDefaultImpl()
-}

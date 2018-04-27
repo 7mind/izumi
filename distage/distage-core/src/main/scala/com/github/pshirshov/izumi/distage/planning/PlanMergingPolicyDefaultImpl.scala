@@ -1,11 +1,15 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, SetOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, SetOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
+import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
-class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
+class PlanMergingPolicyDefaultImpl(
+                                    protected val planAnalyzer: PlanAnalyzer
+                                  ) extends PlanMergingPolicy {
+
   def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
     val oldImports = currentPlan.imports.keySet
 
@@ -18,7 +22,8 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
     val safeNewProvisions = if (oldImports.intersect(newProvisionKeys).isEmpty) {
       currentPlan.steps ++ currentOp.provisions
     } else {
-      currentOp.provisions ++ currentPlan.steps
+      val (dependent, independent) = split(currentPlan.steps, currentOp)
+      independent ++ currentOp.provisions ++ dependent
     }
 
     val newImports = computeNewImports(currentPlan, currentOp)
@@ -51,6 +56,25 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
     newPlan.copy(issues = newPlan.issues ++ issues, steps = newPlan.steps.filterNot(step => issuesMap.contains(step.target)))
   }
 
+  private def split(steps: Seq[ExecutableOp.InstantiationOp], currentOp: NextOps): (Seq[ExecutableOp.InstantiationOp], Seq[ExecutableOp.InstantiationOp]) = {
+    val newKeys = currentOp.provisions.map(_.target).toSet
+    val fwd = planAnalyzer.computeFullRefTable(steps ++ currentOp.provisions)
+
+    steps.partition {
+      step =>
+        fwd.dependants.getOrElse(step.target, Set.empty).intersect(newKeys).isEmpty
+    }
+  }
+
+//  private def requirements(step: ExecutableOp.InstantiationOp): Set[RuntimeUniverse.DIKey] = {
+//    step match {
+//      case w: WiringOp =>
+//        w.wiring.associations.map(_.wireWith).toSet
+//      case _ =>
+//        Set.empty
+//    }
+//  }
+
   private def computeNewImports(currentPlan: DodgyPlan, currentOp: NextOps) = {
     val newProvisionKeys = currentOp
       .provisions
@@ -74,3 +98,4 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy {
     newImports
   }
 }
+

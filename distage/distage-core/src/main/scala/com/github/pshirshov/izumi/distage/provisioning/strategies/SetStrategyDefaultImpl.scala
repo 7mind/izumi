@@ -54,7 +54,4 @@ class SetStrategyDefaultImpl extends SetStrategy {
   }
 }
 
-object SetStrategyDefaultImpl {
-  final val instance = new SetStrategyDefaultImpl()
-}
 

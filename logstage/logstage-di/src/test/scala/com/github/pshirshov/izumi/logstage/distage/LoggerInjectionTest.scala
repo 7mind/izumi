@@ -23,7 +23,7 @@ class ExampleApp(log: IzLogger, service: ExampleService) {
   }
 }
 
-class PlanningObserverLoggingImpl extends PlanningObserver {
+class PlanningObserverLoggingImpl(log: IzLogger) extends PlanningObserver {
 
   override def onFinalPlan(finalPlan: FinalPlan): Unit = {
     System.err.println("=" * 60 + " Final Plan " + "=" * 60)
@@ -53,21 +53,20 @@ class PlanningObserverLoggingImpl extends PlanningObserver {
 class LoggerInjectionTest extends WordSpec {
   "Logging module for distage" should {
     "inject loggers" in {
-      def mkInjector(): Injector = {
-        val customizations = TrivialDIDef.binding[PlanningObserver, PlanningObserverLoggingImpl]
-        Injector.emerge(Injector.bootstrapCustomized(customizations))
-      }
+      val router= LoggingMacroTest.mkRouter(LoggingMacroTest.consoleSinkText)
 
-      val router: LogRouter = LoggingMacroTest.mkRouter(LoggingMacroTest.consoleSinkText)
-
-      val definition: ContextDefinition = TrivialDIDef
-        .instance(router)
-        .instance(CustomContext.empty)
-        .binding[IzLogger]
+      val definition = TrivialDIDef
         .binding[ExampleService]
         .binding[ExampleApp]
 
-      val injector = mkInjector()
+
+      val customizations = TrivialDIDef
+        .instance[LogRouter](router)
+        .instance(CustomContext.empty)
+        .binding[IzLogger]
+        .binding[PlanningObserver, PlanningObserverLoggingImpl]
+
+      val injector = Injector.emerge(customizations)
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
       assert(context.get[ExampleApp].test == 265)

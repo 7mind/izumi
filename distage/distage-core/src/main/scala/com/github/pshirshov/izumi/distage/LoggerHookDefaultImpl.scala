@@ -6,6 +6,3 @@ class LoggerHookDefaultImpl extends LoggerHook {
 
 }
 
-object LoggerHookDefaultImpl {
-  final val instance = new LoggerHookDefaultImpl()
-}

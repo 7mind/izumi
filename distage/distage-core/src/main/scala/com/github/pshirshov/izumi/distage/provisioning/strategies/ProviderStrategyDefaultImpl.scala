@@ -50,6 +50,3 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy  {
     }
 }
 
-object ProviderStrategyDefaultImpl {
-  final val instance = new ProviderStrategyDefaultImpl()
-}

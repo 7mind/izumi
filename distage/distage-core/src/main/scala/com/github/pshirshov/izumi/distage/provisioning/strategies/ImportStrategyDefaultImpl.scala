@@ -23,6 +23,3 @@ class ImportStrategyDefaultImpl extends ImportStrategy {
   }
 }
 
-object ImportStrategyDefaultImpl {
-  final val instance = new ImportStrategyDefaultImpl()
-}
