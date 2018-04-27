@@ -15,30 +15,30 @@ import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
 
 
-class PlanningObserverLoggingXImpl() extends PlanningObserver {
-
-  override def onFinalPlan(finalPlan: FinalPlan): Unit = {
-    System.err.println("=" * 60 + " Final Plan " + "=" * 60)
-    System.err.println(s"$finalPlan")
-    System.err.println("\n")
-  }
-
-
-  override def onResolvingFinished(finalPlan: FinalPlan): Unit = {
-    System.err.println("=" * 60 + " Resolved Plan " + "=" * 60)
-    System.err.println(s"$finalPlan")
-    System.err.println("\n")
-  }
-
-  override def onSuccessfulStep(next: DodgyPlan): Unit = {
-    System.err.println("-" * 60 + " Next Plan " + "-" * 60)
-    System.err.println(next)
-  }
-
-  override def onReferencesResolved(plan: DodgyPlan): Unit = {
-
-  }
-}
+//class PlanningObserverLoggingXImpl() extends PlanningObserver {
+//
+//  override def onFinalPlan(finalPlan: FinalPlan): Unit = {
+//    System.err.println("=" * 60 + " Final Plan " + "=" * 60)
+//    System.err.println(s"$finalPlan")
+//    System.err.println("\n")
+//  }
+//
+//
+//  override def onResolvingFinished(finalPlan: FinalPlan): Unit = {
+//    System.err.println("=" * 60 + " Resolved Plan " + "=" * 60)
+//    System.err.println(s"$finalPlan")
+//    System.err.println("\n")
+//  }
+//
+//  override def onSuccessfulStep(next: DodgyPlan): Unit = {
+//    System.err.println("-" * 60 + " Next Plan " + "-" * 60)
+//    System.err.println(next)
+//  }
+//
+//  override def onReferencesResolved(plan: DodgyPlan): Unit = {
+//
+//  }
+//}
 
 class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends AbstractLocator {
 
@@ -65,7 +65,8 @@ object DefaultBootstrapContext {
     , ReflectionProviderDefaultImpl.Java.instance
     , new SanityCheckerDefaultImpl(analyzer)
     , CustomOpHandler.NullCustomOpHander
-    , new PlanningObserverLoggingXImpl() //PlanningObserverDefaultImpl.instance
+//    , new PlanningObserverLoggingXImpl()
+    , PlanningObserverDefaultImpl.instance
     , new PlanMergingPolicyDefaultImpl(analyzer)
     , new PlanningHookDefaultImpl
   )
@@ -76,7 +77,7 @@ object DefaultBootstrapContext {
     , new ProvisionerIntrospectorDefaultImpl
     , new LoggerHookDefaultImpl   // TODO: add user-controllable logs
     , new SetStrategyDefaultImpl
-    , new ProxyStrategyDefaultImpl
+    , new ProxyStrategyFailingImpl
     , new FactoryStrategyDefaultImpl
     , new TraitStrategyDefaultImpl
     , new ProviderStrategyDefaultImpl
@@ -88,7 +89,7 @@ object DefaultBootstrapContext {
 
   final lazy val defaultBootstrapContextDefinition: ContextDefinition = TrivialDIDef
     .instance[CustomOpHandler](CustomOpHandler.NullCustomOpHander)
-    .instance[LookupInterceptor](NullLookupInterceptor.instance)
+    .instance[LookupInterceptor](NullLookupInterceptor)
     .instance[ReflectionProvider.Java](ReflectionProviderDefaultImpl.Java.instance)
     .instance[SymbolIntrospector.Java](SymbolIntrospectorDefaultImpl.Java.instance)
     .instance[DependencyKeyProvider.Java](DependencyKeyProviderDefaultImpl.Java.instance)
@@ -105,7 +106,7 @@ object DefaultBootstrapContext {
     .binding[ProvisionerIntrospector, ProvisionerIntrospectorDefaultImpl]
     .binding[LoggerHook, LoggerHookDefaultImpl]
     .binding[SetStrategy, SetStrategyDefaultImpl]
-    .binding[ProxyStrategy, ProxyStrategyFailingImpl]
+    .binding[ProxyStrategy, ProxyStrategyDefaultImpl]
     .binding[FactoryStrategy, FactoryStrategyDefaultImpl]
     .binding[TraitStrategy, TraitStrategyDefaultImpl]
     .binding[ProviderStrategy, ProviderStrategyDefaultImpl]

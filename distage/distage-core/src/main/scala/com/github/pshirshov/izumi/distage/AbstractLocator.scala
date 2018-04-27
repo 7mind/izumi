@@ -54,5 +54,5 @@ trait AbstractLocator extends Locator {
   protected final def interceptor: LookupInterceptor =
     lookup[LookupInterceptor](RuntimeUniverse.DIKey.get[LookupInterceptor])
       .map(_.value)
-      .getOrElse(NullLookupInterceptor.instance)
+      .getOrElse(NullLookupInterceptor)
 }

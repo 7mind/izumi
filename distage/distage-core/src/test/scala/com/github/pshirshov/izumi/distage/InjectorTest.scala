@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.definition.CompileTimeDSL._
+import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, TraitInitializationFailedException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
@@ -12,7 +13,7 @@ import org.scalatest.WordSpec
 
 class InjectorTest extends WordSpec {
 
-  def mkInjector(): Injector = Injector.emerge()
+  def mkInjector(): Injector = Injectors.bootstrap()
 
   "DI planner" should {
 
@@ -96,6 +97,7 @@ class InjectorTest extends WordSpec {
       val context = injector.produce(plan)
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
+      assert(context.get[Circular2].arg != null)
     }
 
     "support complex circular dependencies" in {

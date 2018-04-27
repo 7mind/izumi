@@ -22,7 +22,7 @@ class PlanMergingPolicyDefaultImpl(
     val safeNewProvisions = if (oldImports.intersect(newProvisionKeys).isEmpty) {
       currentPlan.steps ++ currentOp.provisions
     } else {
-      val (dependent, independent) = split(currentPlan.steps, currentOp)
+      val (independent, dependent) = split(currentPlan.steps, currentOp)
       independent ++ currentOp.provisions ++ dependent
     }
 
@@ -58,22 +58,14 @@ class PlanMergingPolicyDefaultImpl(
 
   private def split(steps: Seq[ExecutableOp.InstantiationOp], currentOp: NextOps): (Seq[ExecutableOp.InstantiationOp], Seq[ExecutableOp.InstantiationOp]) = {
     val newKeys = currentOp.provisions.map(_.target).toSet
-    val fwd = planAnalyzer.computeFullRefTable(steps ++ currentOp.provisions)
+
+    val fwd = planAnalyzer.computeFwdRefTable(currentOp.provisions ++ steps)
 
     steps.partition {
       step =>
-        fwd.dependants.getOrElse(step.target, Set.empty).intersect(newKeys).isEmpty
+        fwd.dependants.getOrElse(step.target, Set.empty).intersect(newKeys).nonEmpty
     }
   }
-
-//  private def requirements(step: ExecutableOp.InstantiationOp): Set[RuntimeUniverse.DIKey] = {
-//    step match {
-//      case w: WiringOp =>
-//        w.wiring.associations.map(_.wireWith).toSet
-//      case _ =>
-//        Set.empty
-//    }
-//  }
 
   private def computeNewImports(currentPlan: DodgyPlan, currentOp: NextOps) = {
     val newProvisionKeys = currentOp

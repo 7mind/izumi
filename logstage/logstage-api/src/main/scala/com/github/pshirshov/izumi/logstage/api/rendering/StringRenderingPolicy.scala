@@ -108,8 +108,8 @@ class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
     //    val rawMessageBuilder = new StringBuilder()
 
     val head = entry.message.template.parts.head
-    templateBuilder.append(head)
-    messageBuilder.append(head)
+    templateBuilder.append(StringContext.treatEscapes(head))
+    messageBuilder.append(StringContext.treatEscapes(head))
     //    rawMessageBuilder.append(head)
 
     val balanced = entry.message.template.parts.tail.zip(entry.message.args)
@@ -119,10 +119,10 @@ class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
         templateBuilder.append('{')
         templateBuilder.append(argName)
         templateBuilder.append('}')
-        templateBuilder.append(part)
+        templateBuilder.append(StringContext.treatEscapes(part))
 
         messageBuilder.append(formatKv((argName, argToString(argValue))))
-        messageBuilder.append(part)
+        messageBuilder.append(StringContext.treatEscapes(part))
 
       //        rawMessageBuilder.append('{')
       //        rawMessageBuilder.append(argName)
@@ -154,7 +154,6 @@ class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
 
       case _ =>
         argValue.toString
-
     }
   }
 

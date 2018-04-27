@@ -38,11 +38,11 @@ class ProxyStrategyDefaultImpl extends ProxyStrategy {
         throw new DIException(s"Operation unsupported by proxy mechanism: $op", null)
     }
 
-    val constructors = tpe.tpe.decls.filter(_.isConstructor)
-    val constructable = constructors.forall(_.asMethod.paramLists.forall(_.isEmpty))
-    if (!constructable) {
-      throw new DIException(s"Failed to instantiate proxy ${makeProxy.target}. All the proxy constructors must be zero-arg though we have $constructors", null)
-    }
+//    val constructors = tpe.tpe.decls.filter(_.isConstructor)
+//    val constructable = constructors.forall(_.asMethod.paramLists.forall(_.isEmpty))
+//    if (!constructable) {
+//      throw new DIException(s"Failed to instantiate proxy ${makeProxy.target}. All the proxy constructors must be zero-arg though we have $constructors", null)
+//    }
 
     val runtimeClass = RuntimeUniverse.mirror.runtimeClass(tpe.tpe)
     val nullDispatcher = new CglibNullMethodInterceptor(makeProxy.target)

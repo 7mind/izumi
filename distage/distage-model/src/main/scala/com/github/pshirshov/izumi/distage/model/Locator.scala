@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
 import com.github.pshirshov.izumi.distage.model.references.{IdentifiedRef, TypedRef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
+
 trait Locator {
   def enumerate: Stream[IdentifiedRef]
 
@@ -24,6 +25,7 @@ trait Locator {
   def get[T: RuntimeUniverse.Tag](id: String): T
 
   protected[distage] def lookup[T: RuntimeUniverse.Tag](key: RuntimeUniverse.DIKey): Option[TypedRef[T]]
+
 }
 
 trait LocatorExtension {
@@ -31,6 +33,7 @@ trait LocatorExtension {
 }
 
 object Locator {
+
   implicit class LocatorExt(locator: Locator) {
     def extend(extensions: LocatorExtension*): Locator = {
       extensions.foldLeft(locator) {
@@ -39,4 +42,5 @@ object Locator {
       }
     }
   }
+
 }

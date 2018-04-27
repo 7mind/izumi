@@ -22,7 +22,7 @@ object CglibTools {
         callback(proxyInstance)
 
       case Failure(f) =>
-        throw new DIException(s"Failed to instantiate abstract class with CGLib. Operation: $op", f)
+        throw new DIException(s"Failed to instantiate class with CGLib. Operation: $op", f)
     }
   }
 

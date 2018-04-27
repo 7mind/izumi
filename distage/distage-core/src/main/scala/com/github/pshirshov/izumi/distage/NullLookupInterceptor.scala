@@ -8,6 +8,5 @@ class NullLookupInterceptor extends LookupInterceptor {
   def interceptLookup[T:RuntimeUniverse.Tag](key: RuntimeUniverse.DIKey, context: Locator): Option[TypedRef[T]] = None
 }
 
-object NullLookupInterceptor {
-  final val instance = new NullLookupInterceptor()
+object NullLookupInterceptor extends NullLookupInterceptor {
 }
