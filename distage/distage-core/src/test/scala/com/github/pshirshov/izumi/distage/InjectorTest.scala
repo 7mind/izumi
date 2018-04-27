@@ -81,7 +81,6 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
-      println(context.get[TestClass]("named.test.class"))
       assert(context.get[TestClass]("named.test.class").correctWired())
     }
 
@@ -117,7 +116,7 @@ class InjectorTest extends WordSpec {
       assert(traitArg != null && traitArg.isInstanceOf[Circular4])
       assert(c3.method == 2L)
       assert(traitArg.testVal == 1)
-      context.enumerate.foreach(println)
+      assert(context.enumerate.nonEmpty)
     }
 
     "support generics" in {
@@ -404,7 +403,7 @@ class InjectorTest extends WordSpec {
       val context = injector.produce(plan)
       val instantiated = context.get[TestCaseClass2]
 
-      println(s"Got instance: ${instantiated.toString}!")
+      assert(instantiated.a.z.nonEmpty)
     }
 
     "instantiate provider bindings" in {
@@ -418,10 +417,9 @@ class InjectorTest extends WordSpec {
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan)
-      println(context.parent.get.plan)
+      assert(context.parent.exists(_.plan.steps.nonEmpty))
       val instantiated = context.get[TestClass]
-
-      println(s"Got instance: ${instantiated.toString}!")
+      assert(instantiated.b == null)
     }
 
     "handle one-arg trait" in {
@@ -437,8 +435,7 @@ class InjectorTest extends WordSpec {
       val context = injector.produce(plan)
       val instantiated = context.get[TestTrait]
       assert(instantiated.isInstanceOf[TestTrait])
-
-      println(s"Got instance: ${instantiated.toString}!")
+      assert(instantiated.dep != null)
     }
 
     "handle named one-arg trait" in {
@@ -455,8 +452,7 @@ class InjectorTest extends WordSpec {
       val context = injector.produce(plan)
       val instantiated = context.get[TestTrait]("named-trait")
       assert(instantiated.isInstanceOf[TestTrait])
-
-      println(s"Got instance: ${instantiated.toString}!")
+      assert(instantiated.dep != null)
     }
 
     "handle mixed sub-trait with protected autowires" in {

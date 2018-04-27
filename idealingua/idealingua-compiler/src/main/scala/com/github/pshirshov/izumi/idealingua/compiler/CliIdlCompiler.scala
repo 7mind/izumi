@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
-import java.net.{URI, URL}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 
@@ -129,19 +128,19 @@ object CliIdlCompiler {
     })
   }
 
-  private def copyDir(src: Path, dest: Path): Unit = {
-
-    val rt = Files.walk(src).iterator()
-      .asScala
-      .filter(_.toFile.isFile).toList
-
-    rt.foreach((f: Path) => {
-      val t = dest.resolve(src.relativize(f))
-      t.getParent.toFile.mkdirs()
-      Files.copy(f, t, StandardCopyOption.REPLACE_EXISTING)
-    })
-    println(s"${rt.size} stub file(s) copied into $dest")
-  }
+//  private def copyDir(src: Path, dest: Path): Unit = {
+//
+//    val rt = Files.walk(src).iterator()
+//      .asScala
+//      .filter(_.toFile.isFile).toList
+//
+//    rt.foreach((f: Path) => {
+//      val t = dest.resolve(src.relativize(f))
+//      t.getParent.toFile.mkdirs()
+//      Files.copy(f, t, StandardCopyOption.REPLACE_EXISTING)
+//    })
+//    println(s"${rt.size} stub file(s) copied into $dest")
+//  }
 
   class PathReference(val path: Path, val fileSystem: FileSystem) extends AutoCloseable {
     override def close(): Unit = {
@@ -162,7 +161,7 @@ object CliIdlCompiler {
     try {
       Some(new PathReference(Paths.get(u.toURI), null))
     } catch {
-      case e: FileSystemNotFoundException => {
+      case _: FileSystemNotFoundException => {
         val env: Map[String, _] = Map.empty
         import scala.collection.JavaConverters._
 

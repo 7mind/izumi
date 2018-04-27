@@ -20,24 +20,13 @@ import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguag
 
 @ExposedTestScope
 object IDLTestTools {
-  private val targetDir = Paths.get("target")
-  private val tmpdir = targetDir.resolve("idl-output")
-  private val domainsDir = tmpdir.resolve("idl-rendered")
-
   def loadDefs(): Seq[Typespace] = {
     val src = new File(getClass.getResource("/defs").toURI).toPath
     val loader = new LocalModelLoader(src, Seq.empty)
     val loaded = loader.load()
+
     val loadableCount = loader.enumerate().count(_._1.toString.endsWith(LocalModelLoader.domainExt))
     assert(loaded.size == loadableCount, s"expected $loadableCount domains")
-
-    IzFiles.recreateDir(domainsDir)
-
-    loaded.foreach {
-      d =>
-        val rendered = new ILRenderer(d.domain).render()
-        Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
-    }
 
     loaded
   }
@@ -82,6 +71,8 @@ object IDLTestTools {
   case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
 
   private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
+    val targetDir = Paths.get("target")
+    val tmpdir = targetDir.resolve("idl-output")
 
     Quirks.discard(tmpdir.toFile.mkdirs())
 
@@ -95,6 +86,9 @@ object IDLTestTools {
     Quirks.discard(symlink.toFile.delete())
     Quirks.discard(Files.createSymbolicLink(symlink, runDir.toFile.getCanonicalFile.toPath))
 
+    val domainsDir = runDir.resolve("rendered")
+
+
     tmpdir
       .toFile
       .listFiles()
@@ -104,6 +98,14 @@ object IDLTestTools {
         f =>
           Quirks.discard(IzFiles.removeDir(f.toPath))
       }
+
+    IzFiles.recreateDir(domainsDir)
+
+    domains.foreach {
+      d =>
+        val rendered = new ILRenderer(d.domain).render()
+        Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
+    }
 
     val allFiles: Seq[Path] = domains.flatMap {
       typespace =>

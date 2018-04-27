@@ -36,7 +36,9 @@ val baseSettings = new GlobalSettings {
       // these dependencies will be added into each project handled by Izumi
       override val sharedDeps = Set(
         "com.github.pshirshov.izumi.r2" %% "idealingua-model" % pluginVersion
-        , "com.github.pshirshov.izumi.r2" %% "idealingua-runtime-circe" % pluginVersion
+        , "com.github.pshirshov.izumi.r2" %% "idealingua-runtime-rpc-circe" % pluginVersion
+        , "com.github.pshirshov.izumi.r2" %% "idealingua-runtime-rpc-cats" % pluginVersion
+        , "com.github.pshirshov.izumi.r2" %% "idealingua-runtime-rpc-http4s" % pluginVersion
       )
     }
     , AppSettings -> new ProjectSettings {
