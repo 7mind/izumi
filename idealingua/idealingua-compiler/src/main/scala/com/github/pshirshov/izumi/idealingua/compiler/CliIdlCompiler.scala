@@ -73,10 +73,7 @@ object CliIdlCompiler {
     options.foreach {
       option =>
         val itarget = target.resolve(option.language.toString)
-        if (itarget.toFile.exists()) {
-          IzFiles.remove(itarget)
-        }
-        itarget.toFile.mkdirs()
+        IzFiles.recreateDir(itarget)
 
         conf.runtime
           .filter(_ == true)
