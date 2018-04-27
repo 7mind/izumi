@@ -1,9 +1,10 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package com.github.pshirshov.izumi.distage.model.definition.static
 
-import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.DIKey.{IdKey, TypeKey}
-import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.ImplDef.{InstanceImpl, ProviderImpl, TypeImpl}
+import com.github.pshirshov.izumi.distage.model.definition.static.TypeLevelDSL.DIKey._
+import com.github.pshirshov.izumi.distage.model.definition.static.TypeLevelDSL.Binding._
+import com.github.pshirshov.izumi.distage.model.definition.static.TypeLevelDSL.ImplDef._
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.{definition => valuedef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import shapeless.{::, HList, HNil, Witness}
 
@@ -19,7 +20,7 @@ object TypeLevelDSL {
     }
 
     trait IdKey[T, I <: String with Singleton] extends DIKey {
-      def repr(implicit ev: RuntimeDIUniverse.Tag[T], w: Witness.Aux[I]): RuntimeDIUniverse.DIKey.IdKey[String with Singleton] =
+      def repr(implicit ev: RuntimeDIUniverse.Tag[T], w: Witness.Aux[I]): RuntimeDIUniverse.DIKey.IdKey[w.T] =
         RuntimeDIUniverse.DIKey.IdKey(RuntimeDIUniverse.SafeType.get[T], w.value)
     }
 
@@ -29,21 +30,24 @@ object TypeLevelDSL {
 
   object ImplDef {
 
-    trait TypeImpl[T] extends ImplDef
-
-    trait InstanceImpl[T, I <: T with Singleton] extends ImplDef {
-      def repr(implicit ev: RuntimeDIUniverse.Tag[I], w: Witness.Aux[I]) =
-        _root_.com.github.pshirshov.izumi.distage.model.definition.ImplDef.InstanceImpl(
-          RuntimeDIUniverse.SafeType.get[I]
-          , w.value
-        )
+    trait TypeImpl[T] extends ImplDef {
+      def repr(implicit ev: RuntimeDIUniverse.Tag[T]): valuedef.ImplDef.TypeImpl =
+        valuedef.ImplDef.TypeImpl(RuntimeDIUniverse.SafeType.get[T])
     }
 
+    trait InstanceImpl[T, I <: T with Singleton] extends ImplDef {
+      def repr(implicit ev: RuntimeDIUniverse.Tag[I], w: Witness.Aux[I]): valuedef.ImplDef.InstanceImpl =
+        valuedef.ImplDef.InstanceImpl(RuntimeDIUniverse.SafeType.get[I], w.value)
+    }
     object InstanceImpl {
       def apply[T <: AnyRef](impl: T with Singleton): InstanceImpl[T, impl.type] = new InstanceImpl[T, impl.type] {}
     }
 
-    trait ProviderImpl[T, I <: RuntimeDIUniverse.Provider with Singleton] extends ImplDef
+    trait ProviderImpl[T, I <: RuntimeDIUniverse.Provider with Singleton] extends ImplDef {
+      def repr(implicit ev: RuntimeDIUniverse.Tag[I], w: Witness.Aux[I]): valuedef.ImplDef.ProviderImpl =
+        valuedef.ImplDef.ProviderImpl(RuntimeDIUniverse.SafeType.get[I], w.value
+        )
+    }
 
   }
 
@@ -88,7 +92,7 @@ object TypeLevelDSL {
 
     // TODO named bindings
 
-    def namedBind[T: RuntimeDIUniverse.Tag](name: String with Singleton) : Bindings[SingletonBinding[IdKey[T, name.type], TypeImpl[T]] :: BS] =
+    def namedBind[T: RuntimeDIUniverse.Tag](name: String with Singleton): Bindings[SingletonBinding[IdKey[T, name.type], TypeImpl[T]] :: BS] =
       new Bindings[SingletonBinding[IdKey[T, name.type], TypeImpl[T]] :: BS]
   }
 
