@@ -1,3 +1,3 @@
 
-export * from './Transport'
-export * from './Logger'
+export * from './transport'
+export * from './logger'

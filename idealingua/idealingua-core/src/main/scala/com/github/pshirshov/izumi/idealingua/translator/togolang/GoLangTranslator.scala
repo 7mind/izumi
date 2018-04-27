@@ -613,10 +613,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |
        |type $name struct {
        |    ${i.id.name}
-       |    transport ${name}Transport
+       |    transport irt.ServiceClientTransport
        |}
        |
-       |func (v *$name) SetTransport(t ${name}Transport) error {
+       |func (v *$name) SetTransport(t irt.ServiceClientTransport) error {
        |    if t == nil {
        |        return fmt.Errorf("method SetTransport requires a valid transport, got nil")
        |    }
@@ -626,7 +626,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |}
        |
        |func (v *$name) SetHTTPTransport(endpoint string, timeout int, skipSSLVerify bool) {
-       |    v.transport = new${name}HTTPTransport(endpoint, timeout, skipSSLVerify)
+       |    v.transport = irt.NewHTTPClientTransport(endpoint, timeout, skipSSLVerify)
        |}
        |
        |func New${name}OverHTTP(endpoint string) *$name{
@@ -735,70 +735,6 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   protected def renderServiceModels(i: Service, imports: GoLangImports): String = {
     i.methods.map(me => renderServiceMethodModels(i, me, imports)).mkString("\n")
   }
-    //newAdminServiceClientHTTPTransport
-  protected def renderHttpClientTransport(name: String): String = {
-    s"""type ${name}ClientTransport interface {
-       |    Send(service string, method string, dataIn interface{}, dataOut interface{}) error
-       |}
-       |
-       |type client${name}HTTPTransport struct {
-       |    Endpoint string
-       |    Client *http.Client
-       |    Transport *http.Transport
-       |}
-       |
-       |func new${name}ClientHTTPTransport(endpoint string, timeout int, skipSSLVerify bool) *client${name}HTTPTransport {
-       |    transport := &http.Transport {
-       |        TLSClientConfig: &tls.Config{InsecureSkipVerify: skipSSLVerify},
-       |        ExpectContinueTimeout: time.Millisecond * time.Duration(timeout),
-       |        ResponseHeaderTimeout: time.Millisecond * time.Duration(timeout),
-       |    }
-       |    client := &http.Client{Transport: transport}
-       |    return &client${name}HTTPTransport {
-       |        Endpoint: endpoint,
-       |        Transport: transport,
-       |        Client: client,
-       |    }
-       |}
-       |
-       |func (c *client${name}HTTPTransport) Send(service string, method string, dataIn interface{}, dataOut interface{}) error {
-       |    url := c.Endpoint + service + "/" + method
-       |
-       |    var req *http.Request
-       |    var err error
-       |    if dataIn == nil {
-       |        req, err = http.NewRequest("GET", url, nil)
-       |    } else {
-       |        body, err := json.Marshal(dataIn)
-       |        if err != nil {
-       |            return err
-       |        }
-       |        req, err = http.NewRequest("POST", url, bytes.NewBuffer(body))
-       |        if err != nil {
-       |            return err
-       |        }
-       |        req.Header.Set("Content-Type", "application/json")
-       |    }
-       |
-       |    resp, err := c.Client.Do(req)
-       |    if err != nil {
-       |        return err
-       |    }
-       |
-       |    defer resp.Body.Close()
-       |    respBody, err := ioutil.ReadAll(resp.Body)
-       |    if err != nil {
-       |        return err
-       |    }
-       |
-       |    if err := json.Unmarshal(respBody, dataOut); err != nil {
-       |        return fmt.Errorf("error while unmarshalling data %+v Body: %s", err, string(respBody))
-       |    }
-       |
-       |    return nil
-       |}
-     """.stripMargin
-  }
 
   protected def renderService(i: Service): RenderableCogenProduct = {
       val imports = GoLangImports(i, i.id.domain.toPackage, List.empty)
@@ -807,9 +743,6 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
         s"""// ============== Service models ==============
            |${renderServiceModels(i, imports)}
            |
-           |// ============== Service Transport ==============
-           |${renderHttpClientTransport(i.id.name)}
-           |
            |// ============== Service Client ==============
            |${renderServiceClient(i, imports)}
            |
@@ -817,7 +750,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
            |${renderServiceDispatcher(i, imports)}
          """.stripMargin
 
-      ServiceProduct(svc, imports.renderImports(Seq("net/http", "crypto/tls", "time", "io/ioutil", "encoding/json", "fmt", "bytes")))
+      ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "irt")))
   }
 }
 

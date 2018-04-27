@@ -183,7 +183,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |
          |export class ${i.id.name}Helpers {
          |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (if (alt.typeId.isInstanceOf[InterfaceId]) typespace.implId(alt.typeId.asInstanceOf[InterfaceId]).name else alt.typeId.name) + "Serialized").mkString(" | ")}} {
-         |        var className = adt.getClassName();
+         |        const className = adt.getClassName();
          |${i.alternatives.filter(al => al.memberName.isDefined).map(a => s"if (className == '${a.typeId.name}') {\n    className = '${a.memberName.get}'\n}").mkString("\n").shift(8)}
          |        return {
          |            [className]: adt.serialize()
@@ -528,6 +528,15 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     i.methods.map(me => renderServiceMethodModels(me)).mkString("\n")
   }
 
+  protected def importFromIRT(names: List[String], pkg: Package): String = {
+    var importOffset = ""
+    (1 to pkg.length).foreach(_ => importOffset += "../")
+    s"""import {
+       |${names.map(n => s"    $n").mkString(",\n")}
+       |} from '${importOffset}irt'
+     """.stripMargin
+  }
+
   protected def renderService(i: Service): RenderableCogenProduct = {
       val imports = TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty)
       val typeName = i.id.name
@@ -537,6 +546,11 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |${renderServiceClient(i)}
          """.stripMargin
 
-    ServiceProduct(svc, imports.render(ts), s"// $typeName client")
+      val header =
+        s"""${imports.render(ts)}
+           |${importFromIRT(List("IRTServiceClientInData", "IRTServiceClientOutData", "IRTClientTransport"), i.id.domain.toPackage)}
+         """.stripMargin
+
+    ServiceProduct(svc, header, s"// $typeName client")
   }
 }
