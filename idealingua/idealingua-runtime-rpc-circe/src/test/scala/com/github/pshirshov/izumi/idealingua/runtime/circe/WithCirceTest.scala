@@ -17,7 +17,7 @@ class WithCirceTest extends WordSpec {
 
       {
         import Alt._
-        implicit val notImplementedErrorEnc = enc
+        implicit val _ = enc
         assert(Abc(1, 2).asJson.as[Abc].right.get == Abc(1, 2)) // old instance is picked up anyway due to aching, ignoring the one we just defined
       }
 

@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
+import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -78,56 +79,40 @@ object WrappedFunction {
 
         val argTree = funcExpr.tree
 
+        val (args: List[Tree], body, isValReference) = argTree match {
+          case q"""{ (..$args) => $body }""" =>
+            (args, body, false)
+          case q"""(..$args) => $body""" =>
+            (args, body, false)
+          case q"""{ () => $body }""" =>
+            (List(), body, false)
+          case q"""() => $body""" =>
+            (List(), body, false)
+
+          case _ if Option(argTree.symbol).exists(_.isMethod)
+            // FIXME: cant work with vals at all...
+            && argTree.symbol.asMethod.paramLists.nonEmpty =>
+            (List(), argTree, true)
+          case _ =>
+            throw new RuntimeException(
+              s"""
+                 | Can handle only method references of form (method _) or lambda bodies of form (body => ???).\n
+                 | Argument doesn't seem to be a method reference or a lambda:\n
+                 |   argument: ${c.universe.showCode(argTree)}\n
+                 |   argumentTree: ${c.universe.showRaw(argTree)}\n
+                 | Hint: Try appending _ to your method name""".stripMargin
+            )
+        }
+
         val annotations: List[Option[Annotation]] = {
-          val (args: List[Tree], body, isValReference) = argTree match {
-            case q"""{ (..$args) => $body }""" =>
-              (args, body, false)
-            case q"""{ () => $body }""" =>
-              (List(), body, false)
-
-            // fucking hell
-            case q"""(..$args) => $body""" =>
-              (args, body, false)
-            case q"""() => $body""" =>
-              (List(), body, false)
-
-            case _ if Option(argTree.symbol).exists(_.isMethod)
-              // FIXME: cant work with vals at all...
-              && argTree.symbol.asMethod.paramLists.nonEmpty
-            =>
-              (List(), argTree, true)
-            case _ =>
-              throw new RuntimeException(
-                s"""
-                   | Can handle only method references of form (method _) or lambda bodies of form (body => ???).\n
-                   | Argument doesn't seem to be a method reference or a lambda:\n
-                   |   argument: ${c.universe.showCode(argTree)}\n
-                   |   argumentTree: ${c.universe.showRaw(argTree)}\n
-                   | Hint: Try appending _ to your method name""".stripMargin
-              )
-          }
-
           val lambdaAnnotations: List[Option[Annotation]] = args.collect {
-            case q"""@..${valAnns: List[Tree]} val $v: $typ""" =>
-              val typAnns = typ match {
-                case tq"""$_ @..${ann: List[Tree]}""" => ann
-                case _ => List()
-              }
-
-              val allAnns = valAnns ++ typAnns
-
-              val idAnns = allAnns.filter(_.tpe.erasure =:= typeOf[Id].erasure)
-
-              idAnns match {
-                case List(ann) => Some(ann)
-                case tooManyAnns =>
-                  throw new RuntimeException(
-                    s"Conflicting annotations: more than one @Id annotation attached to parameter $v, annotations: $tooManyAnns"
-                  )
-              }
-            case _ =>
+            case p@q"$_ val $_: $_" =>
+              // FIXME: use symbolIntrospector
+              AnnotationTools.find[Id](u)(p.symbol)
+            case arg =>
+              c.info(c.enclosingPosition, s"Lambda argument found but can't matched as a symbol $arg", force = false)
               None
-          }.map(_.map(Annotation(_)))
+          }
 
           val maybeMethodTree = body match {
             case _ if isValReference =>
@@ -188,10 +173,12 @@ object WrappedFunction {
                  |, lambda annotations: $lambdaAnnotations,
                  | method reference annotations: $methodReferenceAnnotations""".stripMargin, force = false)
             methodReferenceAnnotations
+          } else if (lambdaAnnotations == methodReferenceAnnotations) {
+            lambdaAnnotations
           } else {
             throw new UnsupportedWiringException(
               s"""
-                 |Conflicting sets of annotations, found @Id annotations on both lambda arguments and method reference
+                 |Conflicting sets of annotations, found different @Id annotations on both lambda arguments and method reference
                  |, lambda annotations: $lambdaAnnotations,
                  |method reference annotations: $methodReferenceAnnotations""".stripMargin
             , SafeType.getWeak[R])
@@ -237,6 +224,9 @@ object WrappedFunction {
              | IsMethodSymbol: ${Option(argTree.symbol).exists(_.isMethod)}\n
              | Annotations: $annotations\n
              | IdsList: $idsList\n
+             | strat match: ${(args, body, isValReference)}\n
+             | argument: ${c.universe.showCode(argTree)}\n
+             | argumentTree: ${c.universe.showRaw(argTree)}\n
              | Result code: ${showCode(result.tree)}""".stripMargin
           , force = false
         )

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.Fixtures.Case16.TestProviderModule
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.definition.MagicDSL._
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
@@ -535,6 +536,7 @@ class InjectorTest extends WordSpec {
       .magic[Dep, DepA].named("A")
       .magic[Dep, DepB].named("B")
       .magic[Trait]
+      .magic[Trait1]
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -544,6 +546,11 @@ class InjectorTest extends WordSpec {
 
     assert(instantiated.depA.isA)
     assert(!instantiated.depB.isA)
+
+    val instantiated1 = context.get[Trait1]
+
+    assert(instantiated1.depA.isA)
+    assert(!instantiated1.depB.isA)
   }
 
   "support named bindings in cglib traits" in {
@@ -553,6 +560,7 @@ class InjectorTest extends WordSpec {
       .bind[Dep].as[DepA].named("A")
       .bind[Dep].as[DepB].named("B")
       .bind[Trait]
+      .bind[Trait1]
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -562,6 +570,44 @@ class InjectorTest extends WordSpec {
 
     assert(instantiated.depA.isA)
     assert(!instantiated.depB.isA)
+
+    val instantiated1 = context.get[Trait1]
+
+    assert(instantiated1.depA.isA)
+    assert(!instantiated1.depB.isA)
+  }
+
+  "support named bindings in method reference providers" in {
+    import Case17._
+
+    val definition = TrivialDIDef
+      .bind[TestDependency].named("classdeftypeann1")
+      .bind[TestClass].provided(implType _)
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    val dependency = context.get[TestDependency]("classdeftypeann1")
+    val instantiated = context.get[TestClass]
+
+    assert(instantiated.a == dependency)
+  }
+
+  "support named bindings in lambda providers" in {
+    import Case17._
+
+    val definition = TrivialDIDef
+      .bind[TestDependency].named("classdeftypeann1")
+      .bind[TestClass].provided { t: TestDependency @Id("classdeftypeann1") => new TestClass(t) }
+
+    val injector = mkInjector()
+    val context = injector.produce(injector.plan(definition))
+
+    val dependency = context.get[TestDependency]("classdeftypeann1")
+    val instantiated = context.get[TestClass]
+
+    assert(instantiated.a == dependency)
   }
 
   "populate implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {

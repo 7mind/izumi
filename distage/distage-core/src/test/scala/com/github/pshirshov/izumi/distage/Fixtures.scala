@@ -315,6 +315,12 @@ Forest fire, climbin' higher, real life, it can wait""")
       def depB: Dep
     }
 
+    trait Trait1 {
+      def depA: Dep @Id("A")
+
+      def depB: Dep @Id("B")
+    }
+
   }
 
   object Case11 {
@@ -393,7 +399,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     case class CustomApp(customClass: CustomClass, customDep2: CustomDep2)
   }
 
-  object WrappedFunctionAnnotationTest {
+  object Case16 {
     def deftypeannfn(y: String @Id("deftypeann"), z: Int @Id("deftypeann2")): String = Function.const(y)(z)
 
     def defargannfn(@Id("defargann") y: String, @Id("defargann2") z: Int): String = Function.const(y)(z)
@@ -420,5 +426,17 @@ Forest fire, climbin' higher, real life, it can wait""")
       def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
 
     }
+  }
+
+  object Case17 {
+
+    class TestDependency
+
+    class TestClass(val a: TestDependency)
+
+    def implArg(@Id("classdefargann1") arganndep: TestDependency): TestClass = new TestClass(arganndep)
+
+    def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
+
   }
 }
