@@ -1,22 +1,26 @@
 package com.github.pshirshov.izumi.logstage.core
 
-import java.util.concurrent.atomic.AtomicReference
-
 import com.github.pshirshov.izumi.logstage.api.config.LogConfigService
-import com.github.pshirshov.izumi.logstage.api.logger.{RenderingOptions, RenderingPolicy}
-import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.model.Log
-import com.github.pshirshov.izumi.logstage.model.logger.{LogRouter, LogSink}
+import com.github.pshirshov.izumi.logstage.model.logger.{FallbackLogOutput, LogRouter}
 
 class ConfigurableLogRouter
 (
   logConfigService: LogConfigService
 ) extends LogRouter {
-  override def log(entry: Log.Entry): Unit = {
+  override protected def doLog(entry: Log.Entry): Unit = {
     logConfigService
       .config(entry)
       .sinks
-      .foreach(sink => sink.flush(entry))
+      .foreach {
+        sink =>
+          try  {
+            sink.flush(entry)
+          } catch {
+            case e: Throwable =>
+              FallbackLogOutput.flush(s"Log sink $sink failed", e)
+          }
+      }
   }
 
 

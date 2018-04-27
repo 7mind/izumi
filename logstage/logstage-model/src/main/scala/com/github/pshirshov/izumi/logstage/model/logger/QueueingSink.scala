@@ -4,10 +4,12 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.model.Log
 
 import scala.concurrent.duration._
-import Quirks._
+
+
 
 class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) extends LogSink with AutoCloseable {
   private val queue = new ConcurrentLinkedQueue[Log.Entry]()
@@ -15,7 +17,6 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
   private val stop = new AtomicBoolean(false)
 
   import QueueingSink._
-
 
   def start(): Unit = {
     pollingThread.start()
@@ -42,8 +43,7 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
             stop.set(true)
 
           case e: Throwable => // bad case!
-            System.err.println("Logger polling failed!")
-            e.printStackTrace()
+            flush("Logger polling failed", e)
         }
       }
 

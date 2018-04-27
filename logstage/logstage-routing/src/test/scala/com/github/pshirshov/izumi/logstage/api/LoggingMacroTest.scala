@@ -86,11 +86,11 @@ object LoggingMacroTest {
   }
 
   def configureLogger(sinks: Seq[LogSink]): IzLogger = {
-    val router: ConfigurableLogRouter = mkRouter(sinks)
+    val router: ConfigurableLogRouter = mkRouter(sinks :_*)
     IzLogger(router)
   }
 
-  def mkRouter(sinks: Seq[LogSink]): ConfigurableLogRouter = {
+  def mkRouter(sinks: LogSink*): ConfigurableLogRouter = {
     val configService = new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(Log.Level.Trace, sinks))
     val router = new ConfigurableLogRouter(configService)
     router
