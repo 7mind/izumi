@@ -180,6 +180,11 @@ lazy val fundamentalsReflection = inFundamentals.as.module
 lazy val distageModel = inDiStage.as.module
   .depends(fundamentalsReflection)
 
+lazy val distagePlugins = inDiStage.as.module
+  .depends(distageModel, distageCore.testOnlyRef)
+  .settings(
+    libraryDependencies ++= Seq(R.fast_classpath_scanner)
+  )
 lazy val distageMacro = inDiStage.as.module
   .depends(distageModel)
   .settings(
@@ -221,7 +226,14 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
 //
 
 lazy val logstageDi = inLogStage.as.module
-  .depends(logstageApi, distageModel)
+  .depends(
+    logstageApi
+    , distageModel
+  )
+  .depends(Seq(
+    logstageRouting
+    , distageCore
+  ).map(_.testOnlyRef): _*)
 
 lazy val logstageJsonJson4s = inLogStage.as.module
   .depends(logstageApi)
@@ -315,6 +327,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageCore
+  , distagePlugins
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore

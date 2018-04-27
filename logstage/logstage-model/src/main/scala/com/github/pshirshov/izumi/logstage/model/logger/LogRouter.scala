@@ -14,6 +14,6 @@ trait LogRouter {
     }
   }
 
-  protected def doLog(entry: Log.Entry)
+  protected def doLog(entry: Log.Entry): Unit
 }
 

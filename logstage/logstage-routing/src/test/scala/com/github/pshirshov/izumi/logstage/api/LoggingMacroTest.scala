@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.logstage.api.logger.RenderingOptions
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.core.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
 import com.github.pshirshov.izumi.logstage.model.Log
+import com.github.pshirshov.izumi.logstage.model.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.model.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.model.logger.{LogSink, QueueingSink}
 import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
@@ -87,7 +88,7 @@ object LoggingMacroTest {
 
   def configureLogger(sinks: Seq[LogSink]): IzLogger = {
     val router: ConfigurableLogRouter = mkRouter(sinks :_*)
-    IzLogger(router)
+    new IzLogger(router, CustomContext.empty)
   }
 
   def mkRouter(sinks: LogSink*): ConfigurableLogRouter = {

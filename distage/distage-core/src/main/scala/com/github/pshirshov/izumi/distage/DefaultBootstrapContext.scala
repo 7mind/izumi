@@ -17,10 +17,26 @@ import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
 
-trait DefaultBootstrapContext extends AbstractLocator {
-  override def parent: Option[AbstractLocator] = None
+class BootstrapPlanner extends Planner {
+  override def plan(context: ContextDefinition): FinalPlan = {
+    FinalPlanImmutableImpl(context) {
+      context.bindings.foldLeft(Seq.empty[ExecutableOp]) {
+        case (acc, SingletonBinding(target, ImplDef.TypeImpl(impl))) =>
+          val materials = ReflectionProviderDefaultImpl.Java.instance.constructorParameters(impl)
+          acc :+ WiringOp.InstantiateClass(target, UnaryWiring.Constructor(impl, materials))
 
-  private val bootstrapProducer = new ProvisionerDefaultImpl(
+        case (acc, SingletonBinding(target, ImplDef.InstanceImpl(impl, instance))) =>
+          acc :+ WiringOp.ReferenceInstance(target, UnaryWiring.Instance(impl, instance))
+
+        case op =>
+          throw new DIException(s"It's a bug! Bootstrap failed on unsupported definition: $op", null)
+      }
+    }
+  }
+}
+
+trait DefaultBootstrapContext extends AbstractLocator {
+  private lazy val bootstrapProducer = new ProvisionerDefaultImpl(
     ProvisionerHookDefaultImpl.instance
     , ProvisionerIntrospectorDefaultImpl.instance
     // TODO: add user-controllable logs
@@ -37,44 +53,30 @@ trait DefaultBootstrapContext extends AbstractLocator {
   )
 
   // we don't need to pass all these instances, but why create new ones in case we have them already?
-  private final val contextDefinition: ContextDefinition = TrivialDIDef
+  private lazy val contextDefinition: ContextDefinition = TrivialDIDef
     .instance[CustomOpHandler](CustomOpHandler.NullCustomOpHander)
     .instance[LookupInterceptor](NullLookupInterceptor.instance)
     .instance[SymbolIntrospector.Java](SymbolIntrospectorDefaultImpl.Java.instance)
     .instance[Provisioner](bootstrapProducer)
-    .binding [PlanningHook, PlanningHookDefaultImpl]
-    .binding [PlanningObserver, PlanningObserverDefaultImpl]
-    .binding [PlanResolver, PlanResolverDefaultImpl]
+    .binding[PlanningHook, PlanningHookDefaultImpl]
+    .binding[PlanningObserver, PlanningObserverDefaultImpl]
+    .binding[PlanResolver, PlanResolverDefaultImpl]
     .instance[DependencyKeyProvider.Java](DependencyKeyProviderDefaultImpl.Java.instance)
-    .binding [PlanAnalyzer, PlanAnalyzerDefaultImpl]
-    .binding [PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
-    .binding [TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl]
-    .binding [ForwardingRefResolver, ForwardingRefResolverDefaultImpl]
-    .binding [SanityChecker, SanityCheckerDefaultImpl]
+    .binding[PlanAnalyzer, PlanAnalyzerDefaultImpl]
+    .binding[PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
+    .binding[TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl]
+    .binding[ForwardingRefResolver, ForwardingRefResolverDefaultImpl]
+    .binding[SanityChecker, SanityCheckerDefaultImpl]
     .instance[ReflectionProvider.Java](ReflectionProviderDefaultImpl.Java.instance)
-    .binding [Planner, PlannerDefaultImpl]
+    .binding[Planner, PlannerDefaultImpl]
 
-  private final val bootstrapPlanner: Planner = {
-    ctxDef => FinalPlanImmutableImpl(ctxDef) {
-      ctxDef.bindings.foldLeft(Seq.empty[ExecutableOp]) {
-        case (acc, SingletonBinding(target, ImplDef.TypeImpl(impl))) =>
-          val materials = ReflectionProviderDefaultImpl.Java.instance.constructorParameters(impl)
-          acc :+ WiringOp.InstantiateClass(target, UnaryWiring.Constructor(impl, materials))
-
-        case (acc, SingletonBinding(target, ImplDef.InstanceImpl(impl, instance))) =>
-          acc :+ WiringOp.ReferenceInstance(target, UnaryWiring.Instance(impl, instance))
-
-        case op =>
-          throw new DIException(s"It's a bug! Bootstrap failed on unsupported definition: $op", null)
-      }
-    }
-  }
-
-  override val plan: FinalPlan = bootstrapPlanner.plan(contextDefinition)
-
-  private final val bootstrappedContext = bootstrapProducer.provision(plan, this)
+  private lazy val bootstrappedContext = bootstrapProducer.provision(plan, this)
 
   override protected def unsafeLookup(key: RuntimeUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
+
+  override lazy val parent: Option[AbstractLocator] = None
+  override lazy val plan: FinalPlan = new BootstrapPlanner().plan(contextDefinition)
+
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
 }
 

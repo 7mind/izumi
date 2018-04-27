@@ -25,3 +25,18 @@ trait Locator {
 
   protected[distage] def lookup[T: RuntimeUniverse.Tag](key: RuntimeUniverse.DIKey): Option[TypedRef[T]]
 }
+
+trait LocatorExtension {
+  def extend(locator: Locator): Locator
+}
+
+object Locator {
+  implicit class LocatorExt(locator: Locator) {
+    def extend(extensions: LocatorExtension*): Locator = {
+      extensions.foldLeft(locator) {
+        case (acc, e) =>
+          e.extend(acc)
+      }
+    }
+  }
+}

@@ -18,6 +18,8 @@ object D {
 
     val better_files = "com.github.pathikrit" %% "better-files" % "3.4.0"
 
+    val fast_classpath_scanner = "io.github.lukehutch" % "fast-classpath-scanner" % "2.18.2"
+
     val kamon = Seq(
       "io.kamon" %% "kamon-core" % "1.0.0"
       , "io.kamon" %% "kamon-jmx" % "0.6.7"
