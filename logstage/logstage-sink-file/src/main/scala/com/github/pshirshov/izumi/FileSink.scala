@@ -1,15 +1,15 @@
 package com.github.pshirshov.izumi
 
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
+import java.io._
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.Rotation.{DisabledRotation, EnabledRotation}
+import com.github.pshirshov.izumi.FileSink.{IOState, IOStateMod, State}
+import com.github.pshirshov.izumi.Rotation.EnabledRotation
 import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.logstage.model.logger.LogSink
 import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
-import java.io._
-
-import com.github.pshirshov.izumi.FileSink.{IOState, IOStateMod, State}
 
 import scala.util.{Failure, Success, Try}
 
@@ -38,10 +38,10 @@ class FileSink(policy: RenderingPolicy, consoleSink: ConsoleSink, config: FileSi
 
   def prepareFileId(state: State): IOState[Int] = {
     val fileId = state.currentFileId
-    if (state.isFilled) {
+    if (state.isFull) {
       State.changeFile(state, fileId + 1)
     } else {
-      State.unchanged(fileId, state)
+      State(fileId, state)
     }
   }
 
@@ -55,15 +55,10 @@ class FileSink(policy: RenderingPolicy, consoleSink: ConsoleSink, config: FileSi
   }
 
   def doWrite(fileId: Int, e: Log.Entry, state: State): IOStateMod = {
-    val res = for {
-      _ <- Try(state.fileWriter.append(policy.render(e)))
-      _ <- Try(state.fileWriter.newLine())
-      _ <- Try(state.fileWriter.flush())
-      ss <- State.mod(state) {
-        s => s.copy(currentFileId = s.currentFileSize + 1)
-      }
-    } yield ss
-    res
+    for {
+      _ <- state.writeNewItem(s"${policy.render(e)}\n")
+      updatedState <- state.copy(currentFileSize = state.currentFileSize + 1)
+    } yield updatedState
   }
 
   override def flush(e: Log.Entry): Unit = synchronized {
@@ -74,7 +69,6 @@ class FileSink(policy: RenderingPolicy, consoleSink: ConsoleSink, config: FileSi
       (_, afterWrite) <- doWrite(rotatedFileId, e, afterRotate)
     } yield afterWrite) match {
       case Failure(f) =>
-        println("fa")
         // todo : also console output failure message ?
         consoleSink.flush(e)
       case Success(newState) =>
@@ -90,9 +84,44 @@ object FileSink {
 
   type IOStateMod = IOState[Unit]
 
-  case class State(currentFileSize: Int = 0, currentFileId: Int = State.initFileId, config: FileSinkConfig) {
-    lazy val fileWriter = new BufferedWriter(new FileWriter(State.buildName(config.destination, currentFileId)))
-    def isFilled: Boolean = config.fileLimit == currentFileSize
+  case class State private (currentFileSize: Int = 0, currentFileId: Int = State.initFileId, config: FileSinkConfig, connectionPool : scala.collection.mutable.HashMap[String, (File, OutputStream)] = scala.collection.mutable.HashMap.empty[String, (File, OutputStream)]) {
+    lazy val name: String = State.buildName(config.destination, currentFileId)
+
+    def writeNewItem(e : String) : Try[Unit] = {
+      for {
+        (_, writer) <- fetchFileData(name)
+        _ <- Try(writer.write(e.getBytes())) // todo : UTF-8
+      } yield ()
+    }
+
+    def fetchFileData(fileName : String) : Try[(File, OutputStream)] = {
+      Try(connectionPool(fileName)) match {
+        case s@Success(_) => s
+        case Failure(f) =>
+          val newFile = new File(name)
+          for {
+            _ <- Try(newFile.createNewFile())
+            stream <- Try(Files.newOutputStream(Paths.get(name), StandardOpenOption.APPEND))
+          } yield {
+            connectionPool.put(name, (newFile, stream))
+            (newFile, stream)
+          }
+      }
+    }
+
+    def unregisterNewFileWriter(filename : String) : IOStateMod = {
+      val res = for {
+        (file, writer) <- Try(connectionPool(filename))
+        _ <- Try(writer.flush())
+        _ <- Try(writer.close())
+        _ <- Try(file.delete())
+        _ <- Success(connectionPool.remove(filename))
+      } yield this
+      res
+    }
+
+
+    lazy val isFull: Boolean = config.fileLimit == currentFileSize
   }
 
   object State {
@@ -114,16 +143,7 @@ object FileSink {
     }
 
     def changeFile(curState: State, fileId: Int): IOState[Int] = {
-      for {
-        (_, afterClose) <- State.mod(curState) {
-          s =>
-            val res = for {
-              _ <- Try(s.fileWriter.flush())
-              _ <- Try(s.fileWriter.close())
-            } yield s
-            res
-        }
-      } yield (fileId, afterClose.copy(0, fileId, afterClose.config))
+      State.apply(fileId, curState.copy(0, fileId, curState.config))
     }
   }
 
