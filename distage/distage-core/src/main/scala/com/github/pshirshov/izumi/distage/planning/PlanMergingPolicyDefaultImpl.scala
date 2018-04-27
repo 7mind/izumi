@@ -56,14 +56,23 @@ class PlanMergingPolicyDefaultImpl(
     newPlan.copy(issues = newPlan.issues ++ issues, steps = newPlan.steps.filterNot(step => issuesMap.contains(step.target)))
   }
 
+
+  /**
+    *
+    */
   private def split(steps: Seq[ExecutableOp.InstantiationOp], currentOp: NextOps): (Seq[ExecutableOp.InstantiationOp], Seq[ExecutableOp.InstantiationOp]) = {
     val newKeys = currentOp.provisions.map(_.target).toSet
 
-    val fwd = planAnalyzer.computeFwdRefTable(currentOp.provisions ++ steps)
+    val fwd = planAnalyzer.computeFullRefTable(currentOp.provisions ++ steps)
+    //     //val fwd = planAnalyzer.computeFwdRefTable(steps ++ currentOp.provisions)
+    val allProvisionDependencies = currentOp.provisions.flatMap {
+      p =>
+        fwd.dependenciesOf.getOrElse(p.target, Set.empty)
+    }.toSet
 
     steps.partition {
       step =>
-        fwd.dependants.getOrElse(step.target, Set.empty).intersect(newKeys).nonEmpty
+        allProvisionDependencies.contains(step.target) || fwd.dependenciesOf.getOrElse(step.target, Set.empty).intersect(newKeys).isEmpty
     }
   }
 

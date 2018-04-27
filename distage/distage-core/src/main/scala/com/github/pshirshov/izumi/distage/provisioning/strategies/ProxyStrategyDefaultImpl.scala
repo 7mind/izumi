@@ -4,10 +4,16 @@ import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
-import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools}
+import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools, ProxyParams}
 
-class ProxyStrategyDefaultImpl extends ProxyStrategy {
+/**
+  * Limitations:
+  * - Will not work for any class which performs any operations on forwarding refs within constructor
+  * - Untested on constructors accepting primitive values, will fail most likely
+  */
+class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Java) extends ProxyStrategy {
   def initProxy(context: ProvisioningContext, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(initProxy.target)
     context.fetchKey(key) match {
@@ -38,22 +44,36 @@ class ProxyStrategyDefaultImpl extends ProxyStrategy {
         throw new DIException(s"Operation unsupported by proxy mechanism: $op", null)
     }
 
-//    val constructors = tpe.tpe.decls.filter(_.isConstructor)
-//    val constructable = constructors.forall(_.asMethod.paramLists.forall(_.isEmpty))
-//    if (!constructable) {
-//      throw new DIException(s"Failed to instantiate proxy ${makeProxy.target}. All the proxy constructors must be zero-arg though we have $constructors", null)
-//    }
-
+    val constructors = tpe.tpe.decls.filter(_.isConstructor)
+    val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
     val runtimeClass = RuntimeUniverse.mirror.runtimeClass(tpe.tpe)
+
+    val params = if (constructors.isEmpty || hasTrivial) {
+      ProxyParams.Empty
+    } else {
+      val params = reflectionProvider.constructorParameters(makeProxy.op.target.symbol)
+
+      val args  = params.map {
+        case p if makeProxy.forwardRefs.contains(p.wireWith) =>
+          RuntimeUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> null
+
+        case p =>
+          RuntimeUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> context.fetchKey(p.wireWith)
+      }
+
+      ProxyParams.Params(args.map(_._1).toArray, args.map(_._2).toArray)
+    }
+
+
     val nullDispatcher = new CglibNullMethodInterceptor(makeProxy.target)
-    val nullProxy = CglibTools.mkDynamic(nullDispatcher, runtimeClass, makeProxy) {
+    val nullProxy = CglibTools.mkDynamic(nullDispatcher, runtimeClass, makeProxy, params) {
       proxyInstance =>
         proxyInstance
     }
 
     val dispatcher = new CglibRefDispatcher(nullProxy)
 
-    CglibTools.mkDynamic(dispatcher, runtimeClass, makeProxy) {
+    CglibTools.mkDynamic(dispatcher, runtimeClass, makeProxy, params) {
       proxyInstance =>
         Seq(
           OpResult.NewInstance(makeProxy.target, proxyInstance)

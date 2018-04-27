@@ -23,13 +23,13 @@ class ForwardingRefResolverDefaultImpl
     val proxies = mutable.HashMap[RuntimeUniverse.DIKey, ProxyOp.MakeProxy]()
 
     val resolvedSteps = plan.steps.flatMap {
-      case step if dependencies.contains(step.target) =>
-        val op = ProxyOp.MakeProxy(step, dependencies(step.target))
+      case step if dependenciesOf.contains(step.target) =>
+        val op = ProxyOp.MakeProxy(step, dependenciesOf(step.target))
         proxies += (step.target -> op)
         Seq(op)
 
-      case step if dependants.contains(step.target) =>
-        dependants(step.target).foreach {
+      case step if dependsOn.contains(step.target) =>
+        dependsOn(step.target).foreach {
           proxy =>
             proxyInits.getOrElseUpdate(proxy, mutable.Set.empty) += step.target
         }

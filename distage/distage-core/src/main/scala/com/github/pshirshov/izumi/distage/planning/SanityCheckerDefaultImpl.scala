@@ -17,17 +17,17 @@ class SanityCheckerDefaultImpl
     assertNoDuplicateOps(plan.steps)
 
     val reftable = planAnalyzer.computeFwdRefTable(plan.steps.toStream)
-    if (reftable.dependants.nonEmpty) {
-      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependants}!", reftable)
+    if (reftable.dependsOn.nonEmpty) {
+      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependsOn}!", reftable)
     }
 
     val fullRefTable = planAnalyzer.computeFullRefTable(plan.steps.toStream)
 
-    val allAvailableRefs = fullRefTable.dependencies.keySet
-    val fullDependenciesSet = fullRefTable.dependencies.flatMap(_._2).toSet
+    val allAvailableRefs = fullRefTable.dependenciesOf.keySet
+    val fullDependenciesSet = fullRefTable.dependenciesOf.flatMap(_._2).toSet
     val missingRefs = fullDependenciesSet -- allAvailableRefs
     if (missingRefs.nonEmpty) {
-      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependants}!", missingRefs, Some(fullRefTable))
+      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependsOn}!", missingRefs, Some(fullRefTable))
     }
 
   }

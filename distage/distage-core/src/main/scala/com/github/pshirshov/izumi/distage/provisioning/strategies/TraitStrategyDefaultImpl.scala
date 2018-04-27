@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
-import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibTraitMethodInterceptor, CglibTools}
+import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibTraitMethodInterceptor, CglibTools, ProxyParams}
 
 
 class TraitStrategyDefaultImpl extends TraitStrategy {
@@ -18,7 +18,7 @@ class TraitStrategyDefaultImpl extends TraitStrategy {
     val runtimeClass = RuntimeUniverse.mirror.runtimeClass(instanceType.tpe)
     val dispatcher = new CgLibTraitMethodInterceptor(wiredMethodIndex, traitDeps)
 
-    CglibTools.mkDynamic(dispatcher, runtimeClass, op) {
+    CglibTools.mkDynamic(dispatcher, runtimeClass, op, ProxyParams.Empty) {
       instance =>
         TraitTools.initTrait(instanceType, runtimeClass, instance)
         Seq(OpResult.NewInstance(op.target, instance))

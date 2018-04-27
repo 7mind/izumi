@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
-import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibFactoryMethodInterceptor, CglibTools}
+import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibFactoryMethodInterceptor, CglibTools, ProxyParams}
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
 
@@ -29,7 +29,7 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
       , op
     )
 
-    CglibTools.mkDynamic(dispatcher, runtimeClass, op) {
+    CglibTools.mkDynamic(dispatcher, runtimeClass, op, ProxyParams.Empty) {
       instance =>
         TraitTools.initTrait(instanceType, runtimeClass, instance)
         Seq(OpResult.NewInstance(op.target, instance))

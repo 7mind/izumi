@@ -96,8 +96,7 @@ Forest fire, climbin' higher, real life, it can wait""")
       def arg: Circular2
     }
 
-    class Circular2(val arg: Circular1) {}
-
+    class Circular2(val arg: Circular1)
   }
 
   object Case3 {
