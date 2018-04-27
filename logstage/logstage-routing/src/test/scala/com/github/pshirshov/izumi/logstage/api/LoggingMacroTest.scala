@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
+import com.github.pshirshov.izumi.{FileSink, FileSinkConfig, Rotation}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.TestSink
 import com.github.pshirshov.izumi.logstage.api.logger.RenderingOptions
@@ -76,9 +77,11 @@ object LoggingMacroTest {
   val jsonPolicy = new JsonRenderingPolicy()
   val consoleSinkText = new ConsoleSink(coloringPolicy)
   val consoleSinkJson = new ConsoleSink(jsonPolicy)
+  val finelSinkJson = new FileSink(jsonPolicy, consoleSinkJson, FileSinkConfig(10, "/Users/rtwnk/Desktop", Rotation.DisabledRotation))
 
   def setupConsoleLogger(): IzLogger = {
-    configureLogger(Seq(consoleSinkText))
+    configureLogger(Seq(finelSinkJson))
+//    configureLogger(Seq(consoleSinkText, finelSinkJson))
   }
 
   def setupJsonLogger(): IzLogger = {
