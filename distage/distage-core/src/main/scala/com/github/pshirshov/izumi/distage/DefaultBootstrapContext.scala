@@ -6,13 +6,10 @@ import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.provisioning.Provisioner
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring.UnaryWiring
-import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
-import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
@@ -35,7 +32,7 @@ class BootstrapPlanner extends Planner {
   }
 }
 
-trait DefaultBootstrapContext extends AbstractLocator {
+class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends AbstractLocator {
   private lazy val bootstrapProducer = new ProvisionerDefaultImpl(
     ProvisionerHookDefaultImpl.instance
     , ProvisionerIntrospectorDefaultImpl.instance
@@ -52,34 +49,20 @@ trait DefaultBootstrapContext extends AbstractLocator {
     , InstanceStrategyDefaultImpl.instance
   )
 
-  // we don't need to pass all these instances, but why create new ones in case we have them already?
-  private lazy val contextDefinition: ContextDefinition = TrivialDIDef
-    .instance[CustomOpHandler](CustomOpHandler.NullCustomOpHander)
-    .instance[LookupInterceptor](NullLookupInterceptor.instance)
-    .instance[SymbolIntrospector.Java](SymbolIntrospectorDefaultImpl.Java.instance)
+  val immutableDefinitions: ContextDefinition = TrivialDIDef
     .instance[Provisioner](bootstrapProducer)
-    .binding[PlanningHook, PlanningHookDefaultImpl]
-    .binding[PlanningObserver, PlanningObserverDefaultImpl]
-    .binding[PlanResolver, PlanResolverDefaultImpl]
-    .instance[DependencyKeyProvider.Java](DependencyKeyProviderDefaultImpl.Java.instance)
-    .binding[PlanAnalyzer, PlanAnalyzerDefaultImpl]
-    .binding[PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
-    .binding[TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl]
-    .binding[ForwardingRefResolver, ForwardingRefResolverDefaultImpl]
-    .binding[SanityChecker, SanityCheckerDefaultImpl]
-    .instance[ReflectionProvider.Java](ReflectionProviderDefaultImpl.Java.instance)
-    .binding[Planner, PlannerDefaultImpl]
 
+
+  val fullDefinition = TrivialDIDef(immutableDefinitions.bindings ++ contextDefinition.bindings)
+
+  // we don't need to pass all these instances, but why create new ones in case we have them already?
   private lazy val bootstrappedContext = bootstrapProducer.provision(plan, this)
 
   override protected def unsafeLookup(key: RuntimeUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
 
   override lazy val parent: Option[AbstractLocator] = None
-  override lazy val plan: FinalPlan = new BootstrapPlanner().plan(contextDefinition)
+  override lazy val plan: FinalPlan = new BootstrapPlanner().plan(fullDefinition)
 
   override def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
 }
 
-object DefaultBootstrapContext {
-  final val instance: DefaultBootstrapContext = new DefaultBootstrapContext {}
-}

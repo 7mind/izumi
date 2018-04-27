@@ -12,7 +12,7 @@ class BootstrapTest extends WordSpec {
   "DI Context" should {
     "support cute api calls :3" in {
       import scala.language.reflectiveCalls
-      val context = new DefaultBootstrapContext() {
+      val context = new DefaultBootstrapContext(Injector.defaultBootstrapContextDefinition) {
         def publicLookup[T: RuntimeUniverse.Tag](key: RuntimeUniverse.DIKey): Option[TypedRef[T]] = super.lookup(key)
       }
 

@@ -53,14 +53,16 @@ object SymbolIntrospectorDefaultImpl {
 
   class Java
     extends SymbolIntrospector.Java
-       with SymbolIntrospectorDefaultImpl
+      with SymbolIntrospectorDefaultImpl
+
   object Java {
     final val instance = new SymbolIntrospectorDefaultImpl.Java
   }
 
   class Macro[M <: MacroUniverse[_]](macroUniverse: M)
     extends SymbolIntrospector.Macro[M](macroUniverse)
-       with SymbolIntrospectorDefaultImpl
+      with SymbolIntrospectorDefaultImpl
+
   object Macro {
     def instance[M <: MacroUniverse[_]](macroUniverse: M): SymbolIntrospector.Macro[macroUniverse.type] =
       new SymbolIntrospectorDefaultImpl.Macro(macroUniverse)
