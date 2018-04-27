@@ -121,6 +121,22 @@ class InjectorTest extends WordSpec {
       assert(context.enumerate.nonEmpty)
     }
 
+    "support more complex circular dependencies" in {
+      import Case15._
+
+      val definition: ContextDefinition = TrivialDIDef
+        .instance(CustomDep1.empty)
+        .instance(customTraitInstance)
+        .binding[CustomClass]
+        .binding[CustomDep2]
+        .binding[CustomApp]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+      assert(context.get[CustomApp] != null)
+    }
+
     "support generics" in {
       import Case11._
 

@@ -361,5 +361,25 @@ Forest fire, climbin' higher, real life, it can wait""")
         dep.toString
       }
     }
+
+
+  }
+
+  object Case15 {
+    case class DummyDep1()
+
+    case class CustomDep1(d: DummyDep1)
+    object CustomDep1 {
+      def empty = CustomDep1(DummyDep1())
+    }
+
+    trait CustomTrait
+    def customTraitInstance: CustomTrait = new CustomTrait {}
+
+    class CustomClass(val c: CustomDep2)
+
+    case class CustomDep2(t: CustomTrait, c: CustomDep1)
+
+    case class CustomApp(customClass: CustomClass, customDep2: CustomDep2)
   }
 }
