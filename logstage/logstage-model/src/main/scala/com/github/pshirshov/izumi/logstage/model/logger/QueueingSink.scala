@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.logstage.model.logger
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.model.Log
 
@@ -43,7 +42,7 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
             stop.set(true)
 
           case e: Throwable => // bad case!
-            flush("Logger polling failed", e)
+            FallbackLogOutput.flush("Logger polling failed", e)
         }
       }
 
