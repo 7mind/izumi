@@ -10,10 +10,9 @@ import org.scalatest.WordSpec
 class WrappedFunctionAnnotationTest extends WordSpec {
   def priv(@Id("locargann") x: Int): Unit = ()
 
-  val locargannfnval: Int => Unit = priv _
+  val locargannfnval: Int @Id("locargann") => Unit = priv _
 
   "Annotation extracting WrappedFunction" should {
-
     "produce correct DI keys for anonymous inline lambda" in {
       val fn = DIKeyWrappedFunction {
         x: Int @Id("inlinetypeann") => x
@@ -44,9 +43,11 @@ class WrappedFunctionAnnotationTest extends WordSpec {
 
       val fn = DIKeyWrappedFunction(locargannfn _)
       assert(fn.diKeys contains DIKey.get[Int].named("locargann"))
+    }
 
-//      val fn = DIKeyWrappedFunction(locargannfnval)
-//      assert(fn.diKeys contains DIKey.get[Int].named("locargann"))
+    "progression test: value references lose annotation info" in {
+      val fn1 = DIKeyWrappedFunction(locargannfnval)
+      assert(fn1.diKeys contains DIKey.get[Int])
     }
 
     "wrappedfunction can work with vals" in {
@@ -55,10 +56,10 @@ class WrappedFunctionAnnotationTest extends WordSpec {
       assertCompiles("triggerConversion(testVal3)")
     }
 
-    "regression test: dikeywrappedfunction can't work with vals yet" in {
+    "dikeywrappedfunction can work with vals" in {
       def triggerConversion[R](x: DIKeyWrappedFunction[R]): Int = 5
 
-      assertTypeError("triggerConversion(testVal3)")
+      assertCompiles("triggerConversion(testVal3)")
     }
 
     "handle opaque references with type annotations" in {
@@ -80,10 +81,10 @@ class WrappedFunctionAnnotationTest extends WordSpec {
       assertTypeError("DIKeyWrappedFunction.apply(defconfannfn2 _)")
     }
 
-    "can't handle value annotations in the type signature" in {
-      assertTypeError("DIKeyWrappedFunction.apply(testVal)")
-      assertTypeError("DIKeyWrappedFunction.apply(testVal2)")
-      assertTypeError("DIKeyWrappedFunction.apply(testVal3)")
+    "progression test: can't handle dikeys in the val type signature" in {
+      assert(DIKeyWrappedFunction(testVal).diKeys.collect{case i: DIKey.IdKey[_] => i}.isEmpty)
+      assert(DIKeyWrappedFunction(testVal2).diKeys.collect{case i: DIKey.IdKey[_] => i}.isEmpty)
+      assert(DIKeyWrappedFunction(testVal3).diKeys.collect{case i: DIKey.IdKey[_] => i}.isEmpty)
     }
 
     "handle opaque local references in traits" in {

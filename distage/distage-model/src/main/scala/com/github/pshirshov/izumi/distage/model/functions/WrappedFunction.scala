@@ -89,18 +89,21 @@ object WrappedFunction {
           case q"""() => $body""" =>
             (List(), body, false)
 
-          case _ if Option(argTree.symbol).exists(_.isMethod)
-            // FIXME: cant work with vals at all...
-            && argTree.symbol.asMethod.paramLists.nonEmpty =>
+          case _ if Option(argTree.symbol).exists(_.isMethod) =>
+            c.warning(
+              c.enclosingPosition
+              , s"""Recognized argument as a value reference, annotations will not be extracted.
+                   |To support annotations use a method reference such as (fn _).""".stripMargin)
             (List(), argTree, true)
           case _ =>
-            throw new RuntimeException(
+            throw new UnsupportedWiringException(
               s"""
                  | Can handle only method references of form (method _) or lambda bodies of form (body => ???).\n
                  | Argument doesn't seem to be a method reference or a lambda:\n
                  |   argument: ${c.universe.showCode(argTree)}\n
                  |   argumentTree: ${c.universe.showRaw(argTree)}\n
                  | Hint: Try appending _ to your method name""".stripMargin
+              , SafeType.getWeak[R]
             )
         }
 
@@ -200,7 +203,11 @@ object WrappedFunction {
           q"""{
             val wrapped = $wrappedFunction.apply[${weakTypeOf[R]}]($funcExpr)
 
-            val idsList: ${typeOf[List[Option[String]]]} = $idsList
+            val idsList: ${typeOf[List[Option[String]]]} =
+              ${if(!isValReference)
+                  q"$idsList"
+                else
+                  q"""_root_.scala.List.fill(wrapped.argTypes.length)(_root_.scala.None)"""}
 
             _root_.scala.Predef.assert(wrapped.argTypes.length == idsList.length, "Impossible Happened! argTypes has different length than idsList")
 
