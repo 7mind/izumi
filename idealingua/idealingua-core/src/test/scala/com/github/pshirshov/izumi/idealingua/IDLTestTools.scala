@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
@@ -66,6 +67,11 @@ object IDLTestTools {
 
   def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.Go, extensions)
+    out.allFiles.nonEmpty
+  }
+
+  def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
+    val out = compiles(id, domains, IDLLanguage.UnityCSharp, extensions)
     out.allFiles.nonEmpty
   }
 

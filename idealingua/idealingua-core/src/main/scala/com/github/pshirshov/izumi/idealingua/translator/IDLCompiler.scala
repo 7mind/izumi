@@ -5,6 +5,7 @@ import java.nio.file.{Files, Path}
 
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.FinalTranslatorCSharpImpl
 import com.github.pshirshov.izumi.idealingua.translator.togolang.FinalTranslatorGoLangImpl
 import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.FinalTranslatorTypeScriptImpl
@@ -38,7 +39,7 @@ class IDLCompiler(typespace: Typespace) {
       case IDLLanguage.Typescript =>
         new FinalTranslatorTypeScriptImpl()
       case IDLLanguage.UnityCSharp =>
-        ??? // c# transpiler is not ready
+        new FinalTranslatorCSharpImpl()
     }
   }
 }

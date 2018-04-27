@@ -17,5 +17,9 @@ class ILTranslatorTest extends WordSpec {
     "be able to produce go source code" in {
       assert(compilesGolang(getClass.getSimpleName, loadDefs()))
     }
+    "be able to produce charp-unity source code" in {
+//      assert(compilesCSharp(getClass.getSimpleName, loadDefs()))
+      compilesCSharp(getClass.getSimpleName, loadDefs())
+    }
   }
 }
