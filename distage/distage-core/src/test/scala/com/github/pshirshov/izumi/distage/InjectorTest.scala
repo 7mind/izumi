@@ -127,11 +127,11 @@ class InjectorTest extends WordSpec {
       import Case15._
 
       val definition: ContextDefinition = TrivialDIDef
-        .instance(CustomDep1.empty)
-        .instance(customTraitInstance)
-        .binding[CustomClass]
-        .binding[CustomDep2]
-        .binding[CustomApp]
+        .bind(CustomDep1.empty)
+        .bind(customTraitInstance)
+        .bind[CustomClass]
+        .bind[CustomDep2]
+        .bind[CustomApp]
 
       val injector = mkInjector()
       val plan = injector.plan(definition)

@@ -23,7 +23,6 @@ class ExampleApp(log: IzLogger, service: ExampleService) {
   }
 }
 
-
 class LoggerInjectionTest extends WordSpec {
   "Logging module for distage" should {
     "inject loggers" in {
@@ -31,15 +30,15 @@ class LoggerInjectionTest extends WordSpec {
       val router = LoggingMacroTest.mkRouter(testSink)
 
       val definition = TrivialDIDef
-        .binding[ExampleService]
+        .bind[ExampleService]
         .binding[ExampleApp]
 
 
       val customizations = TrivialDIDef
-        .instance[LogRouter](router)
-        .instance(CustomContext.empty)
-        .binding[IzLogger]
-        .binding[PlanningObserver, PlanningObserverLoggingImpl]
+        .bind[LogRouter](router)
+        .bind(CustomContext.empty)
+        .bind[IzLogger]
+        .bind[PlanningObserver].as[PlanningObserverLoggingImpl]
 
       val injector = Injectors.bootstrap(customizations)
       val plan = injector.plan(definition)

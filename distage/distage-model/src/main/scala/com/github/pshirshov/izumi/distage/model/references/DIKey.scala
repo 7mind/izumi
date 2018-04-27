@@ -30,16 +30,14 @@ trait DIKey {
       }
     }
 
-    case class IdKey[InstanceId : Liftable](symbol: TypeFull, id: InstanceId) extends DIKey {
-      val liftableId: Liftable[InstanceId] = implicitly
-
+    case class IdKey[InstanceId](symbol: TypeFull, id: InstanceId)(implicit val liftableId: Liftable[InstanceId]) extends DIKey {
       override def toString: String = s"${symbol.toString}#$id"
     }
     object IdKey {
       implicit final def liftableIdKey[InstanceId]: Liftable[IdKey[InstanceId]] = {
-        case i: IdKey[_] => import i._; q"""
-        { new $RuntimeDIUniverse.DIKey.IdKey($symbol, $id) }
-          """
+        case idKey: IdKey[_] =>
+          import idKey._
+          q"""{ new $RuntimeDIUniverse.DIKey.IdKey($symbol, $id) }"""
       }
     }
 
