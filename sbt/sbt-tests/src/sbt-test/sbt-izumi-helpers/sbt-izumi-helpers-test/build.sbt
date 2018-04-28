@@ -7,7 +7,7 @@ enablePlugins(IzumiDslPlugin)
 // -- build settings, root artifact settings, etc
 name := "sbt-izumi-helpers-test"
 crossScalaVersions in ThisBuild := Seq(
-  "2.12.5"
+  "2.12.6"
   , "2.11.12"
 )
 
