@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.distage
 
 import com.github.pshirshov.izumi.distage.model.LoggerHook
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef, StandardModuleDef, TrivialModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, StandardModuleDef, TrivialModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext

@@ -10,19 +10,19 @@ if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TR
     sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"
 fi
 
+sbt clean coverage test coverageReport || exit 1
+
 if [[ -f credentials.sonatype-nexus.properties ]] ; then
-    sbt +clean +test +publishSigned || exit 1
+    sbt +clean +publishSigned || exit 1
 
     if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
         sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease || exit 1
     fi
 else
-    sbt +clean +test +package || exit 1
+    sbt +clean +package || exit 1
 fi
 
-
-sbt clean coverage test coverageReport || exit 1
-
+sbt "scripted sbt-izumi-idl/*" || exit 1
 }
 
 

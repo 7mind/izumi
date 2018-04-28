@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.logstage.distage
 
-import com.github.pshirshov.izumi.distage.model.LoggerHook
 import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.logstage.api.IzLogger
