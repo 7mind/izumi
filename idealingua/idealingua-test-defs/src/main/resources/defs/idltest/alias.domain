@@ -1,0 +1,5 @@
+namespace zzz
+
+alias B = str
+alias C = int8
+alias D = bool
