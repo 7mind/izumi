@@ -88,7 +88,6 @@ object WrappedFunction {
             (List(), body, false)
           case q"""() => $body""" =>
             (List(), body, false)
-
           case _ if Option(argTree.symbol).exists(_.isMethod) =>
             c.warning(
               c.enclosingPosition
@@ -96,15 +95,13 @@ object WrappedFunction {
                    |To support annotations use a method reference such as (fn _).""".stripMargin)
             (List(), argTree, true)
           case _ =>
-            throw new UnsupportedWiringException(
-              s"""
+            c.abort(c.enclosingPosition
+              , s"""
                  | Can handle only method references of form (method _) or lambda bodies of form (body => ???).\n
                  | Argument doesn't seem to be a method reference or a lambda:\n
                  |   argument: ${c.universe.showCode(argTree)}\n
                  |   argumentTree: ${c.universe.showRaw(argTree)}\n
-                 | Hint: Try appending _ to your method name""".stripMargin
-              , SafeType.getWeak[R]
-            )
+                 | Hint: Try appending _ to your method name""".stripMargin)
         }
 
         val annotations: List[Option[Annotation]] = {
@@ -153,9 +150,8 @@ object WrappedFunction {
                         case List(ann) =>
                           Some(ann)
                         case tooManyAnns =>
-                          throw new UnsupportedWiringException(
-                            s"Conflicting annotations: more than one @Id annotation attached to parameter $p, annotations: $tooManyAnns"
-                            , SafeType.getWeak[R]
+                          c.abort(c.enclosingPosition
+                            , s"Conflicting annotations: more than one @Id annotation attached to parameter $p, annotations: $tooManyAnns"
                           )
                       }
                   }
@@ -179,12 +175,12 @@ object WrappedFunction {
           } else if (lambdaAnnotations == methodReferenceAnnotations) {
             lambdaAnnotations
           } else {
-            throw new UnsupportedWiringException(
-              s"""
+            c.abort(c.enclosingPosition
+              , s"""
                  |Conflicting sets of annotations, found different @Id annotations on both lambda arguments and method reference
                  |, lambda annotations: $lambdaAnnotations,
                  |method reference annotations: $methodReferenceAnnotations""".stripMargin
-            , SafeType.getWeak[R])
+            )
           }
         }
 

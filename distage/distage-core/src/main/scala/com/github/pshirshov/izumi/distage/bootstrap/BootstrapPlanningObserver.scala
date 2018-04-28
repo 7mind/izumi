@@ -32,7 +32,7 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
     ).mkString("\n"))
   }
 
-  override def onReferencesResolved(plan: DodgyPlan): Unit = {
+  override def onReferencesResolved(plan: DodgyPlan): Unit = ()
 
   }
 

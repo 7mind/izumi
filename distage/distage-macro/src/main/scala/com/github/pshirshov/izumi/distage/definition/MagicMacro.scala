@@ -54,12 +54,12 @@ trait MagicMacro {
         q"{ $self.bind[$tType].provided[$tType]({$f}) }"
       }
     } else {
-      throw new UnsupportedWiringException(
-        s"""
+      c.abort(c.enclosingPosition
+        , s"""
            |The impossible happened! Tried to wire class $iType, but it's neither concrete, nor a trait, nor factory,
            | nor we can provide a better error message because we can't classify it! When wiring $tType to $iType
          """.stripMargin
-      , safeI)
+      )
     }
 
   }

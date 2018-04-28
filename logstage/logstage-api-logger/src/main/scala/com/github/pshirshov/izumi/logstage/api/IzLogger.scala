@@ -12,6 +12,7 @@ class IzLogger
   , override val contextCustom: Log.CustomContext
 ) extends LoggingMacro
   with AbstractLogger {
+
   implicit def withCustomContext(newCustomContext: CustomContext): IzLogger = {
     new IzLogger(receiver, contextCustom + newCustomContext)
   }

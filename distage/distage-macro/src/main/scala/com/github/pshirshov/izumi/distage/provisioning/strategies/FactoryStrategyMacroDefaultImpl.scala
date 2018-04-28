@@ -26,7 +26,6 @@ object FactoryStrategyMacroDefaultImpl
     with FactoryStrategyMacro
 
 // TODO: Factories can exceed 22 arguments limit on function parameter list
-// TODO: Preserve annotations to support IDs
 
 // reason for this indirection is just to avoid slowdown from red lines in idea on ```object FactoryStrategyMacroDefaultImpl extends FactoryStrategyMacro with FactoryStrategyMacroDefaultImpl```
 private[strategies] object FactoryStrategyMacroDefaultImplImpl {
