@@ -4,7 +4,11 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, SetOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.model.references.DIKey
+import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+
+import scala.collection.mutable
 
 class PlanMergingPolicyDefaultImpl(
                                     protected val planAnalyzer: PlanAnalyzer
@@ -13,11 +17,7 @@ class PlanMergingPolicyDefaultImpl(
   def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
     val oldImports = currentPlan.imports.keySet
 
-    // TODO duplicate: currentOp.provisions.map(_.target).toSet
-    val newProvisionKeys = currentOp
-      .provisions
-      .map(op => op.target)
-      .toSet
+    val newProvisionKeys = newKeys(currentOp)
 
     val safeNewProvisions = if (oldImports.intersect(newProvisionKeys).isEmpty) {
       currentPlan.steps ++ currentOp.provisions
@@ -57,30 +57,43 @@ class PlanMergingPolicyDefaultImpl(
   }
 
 
-  /**
-    *
-    */
   private def split(steps: Seq[ExecutableOp.InstantiationOp], currentOp: NextOps): (Seq[ExecutableOp.InstantiationOp], Seq[ExecutableOp.InstantiationOp]) = {
-    val newKeys = currentOp.provisions.map(_.target).toSet
+    val newProvisionKeys = newKeys(currentOp)
 
-    val fwd = planAnalyzer.computeFullRefTable(currentOp.provisions ++ steps)
-    //     //val fwd = planAnalyzer.computeFwdRefTable(steps ++ currentOp.provisions)
-    val allProvisionDependencies = currentOp.provisions.flatMap {
-      p =>
-        fwd.dependenciesOf.getOrElse(p.target, Set.empty)
-    }.toSet
+    val left = mutable.ArrayBuffer[ExecutableOp.InstantiationOp]()
+    val right = mutable.ArrayBuffer[ExecutableOp.InstantiationOp]()
+    val rightSet = mutable.LinkedHashSet[RuntimeUniverse.DIKey]()
 
-    steps.partition {
+
+    steps.foreach {
       step =>
-        allProvisionDependencies.contains(step.target) || fwd.dependenciesOf.getOrElse(step.target, Set.empty).intersect(newKeys).isEmpty
+        val required = requirements(step)
+
+        val toRight = required.intersect(newProvisionKeys).nonEmpty || required.intersect(rightSet).nonEmpty
+
+        if (toRight) {
+          rightSet += step.target
+          right += step
+        } else {
+          left += step
+        }
+
+    }
+
+    (left, right)
+  }
+
+  private def requirements(step: ExecutableOp.InstantiationOp): Set[RuntimeUniverse.DIKey] = {
+    step match {
+      case w: WiringOp =>
+        w.wiring.associations.map(_.wireWith).toSet
+      case _ =>
+        Set.empty
     }
   }
 
   private def computeNewImports(currentPlan: DodgyPlan, currentOp: NextOps) = {
-    val newProvisionKeys = currentOp
-      .provisions
-      .map(op => op.target)
-      .toSet
+    val newProvisionKeys = newKeys(currentOp)
 
     val currentImportsMap = currentPlan.imports
       .values
@@ -97,6 +110,13 @@ class PlanMergingPolicyDefaultImpl(
         acc.updated(target, ImportDependency(target, importOp.references ++ op.references))
     }
     newImports
+  }
+
+  private def newKeys(currentOp: NextOps): Set[universe.RuntimeUniverse.DIKey] = {
+    currentOp
+      .provisions
+      .map(op => op.target)
+      .toSet
   }
 }
 
