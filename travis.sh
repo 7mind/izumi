@@ -11,13 +11,13 @@ if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TR
 fi
 
 if [[ -f credentials.sonatype-nexus.properties ]] ; then
-    sbt +clean +test +scripted +publishSigned || exit 1
+    sbt +clean +test +publishSigned || exit 1
 
     if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
         sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease || exit 1
     fi
 else
-    sbt +clean +test +scripted +package || exit 1
+    sbt +clean +test +package || exit 1
 fi
 
 
