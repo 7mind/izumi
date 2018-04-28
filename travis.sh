@@ -5,24 +5,25 @@
 #  - sbt coveralls
 
 function build {
-
-if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then
+  if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then
     sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"
-fi
+  fi
 
-sbt clean coverage test coverageReport || exit 1
-
-if [[ -f credentials.sonatype-nexus.properties ]] ; then
-    sbt +clean +publishSigned || exit 1
-
+  echo "PUBLISH..."
+  if [[ -f credentials.sonatype-nexus.properties ]] ; then
+    sbt +clean +test +publishSigned || exit 1
     if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
         sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease || exit 1
     fi
-else
-    sbt +clean +package || exit 1
-fi
+  else
+    sbt +clean +test +package || exit 1
+  fi
 
-sbt "scripted sbt-izumi-idl/*" || exit 1
+  echo "SCRIPTED..."
+  sbt clean "scripted sbt-izumi-idl/*" || exit 1
+
+  echo "COVERAGE..."
+  sbt clean coverage test coverageReport || exit 1
 }
 
 
