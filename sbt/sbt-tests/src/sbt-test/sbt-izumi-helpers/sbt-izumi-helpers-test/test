@@ -17,9 +17,8 @@ $ exists lib/yyy
 # dump compiler options
 > ++show scalacOptions
 
-
 # build
-> ;+clean;+test;+publishLocal;+plugins
+> ;+clean;+test;package;+plugins
 $ exists app/just-app/target/scala-2.12/test-classes-exposed
 
 # check convenience helpers
