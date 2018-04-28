@@ -41,7 +41,7 @@ object DefaultBootstrapContext {
       , new SymbolIntrospectorDefaultImpl.Runtime
     )
 
-    val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.debug.distage.bootstrap"))
+    val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap"))
 
     val analyzer = new PlanAnalyzerDefaultImpl
 
