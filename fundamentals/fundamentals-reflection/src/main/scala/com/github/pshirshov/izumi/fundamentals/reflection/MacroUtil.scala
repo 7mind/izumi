@@ -13,6 +13,6 @@ object MacroUtil {
   }
 
   def mkLogger[T: ClassTag](c: blackbox.Context): TrivialLogger =
-    TrivialLogger.make[T]("izumi.debug.distage.macro", sink = new MacroSink(c))
+    TrivialLogger.make[T]("izumi.distage.debug.macro", sink = new MacroSink(c))
 
 }

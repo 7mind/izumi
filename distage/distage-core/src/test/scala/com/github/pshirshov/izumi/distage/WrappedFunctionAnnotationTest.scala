@@ -29,6 +29,13 @@ class WrappedFunctionAnnotationTest extends WordSpec {
       assert(fn.diKeys contains DIKey.get[Int].named("inlinetypeann"))
     }
 
+    "handle anonymous inline nullarg function" in {
+      assertCompiles("DIKeyWrappedFunction( () => 0 )")
+      assertCompiles("DIKeyWrappedFunction{ () => 0 }")
+      assertCompiles("DIKeyWrappedFunction({ () => 0 })")
+      assertCompiles("DIKeyWrappedFunction({{{ () => 0 }}})")
+    }
+
     "handle opaque local references with type annotations" in {
       def loctypeannfn(x: Int @Id("loctypeann")): Unit = {val _ = x}
 

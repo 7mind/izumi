@@ -78,15 +78,11 @@ object WrappedFunction {
 
         val argTree = funcExpr.tree
 
-        val (args: List[Tree], body, isValReference) = argTree match {
-          case q"""{ (..$args) => $body }""" =>
+        val (args: List[ValDef], body, isValReference) = argTree match {
+          case Block(_, Function(args, body)) => //q"""{ (..$args) => $body }""" =>
             (args, body, false)
-          case q"""(..$args) => $body""" =>
+          case Function(args, body) =>
             (args, body, false)
-          case q"""{ () => $body }""" =>
-            (List(), body, false)
-          case q"""() => $body""" =>
-            (List(), body, false)
           case _ if Option(argTree.symbol).exists(_.isMethod) =>
             c.warning(
               c.enclosingPosition
@@ -105,24 +101,21 @@ object WrappedFunction {
         }
 
         val annotations: List[Option[Annotation]] = {
-          val lambdaAnnotations: List[Option[Annotation]] = args.collect {
-            case p@q"$_ val $_: $_" =>
+          val lambdaAnnotations: List[Option[Annotation]] = args.map {
+            p =>
               // FIXME: use symbolIntrospector
               AnnotationTools.find[Id](u)(p.symbol)
-            case arg =>
-              logger.log(s"Lambda argument found but can't matched as a symbol $arg")
-              None
           }
 
           val maybeMethodTree = body match {
             case _ if isValReference =>
-              logger.log(s"Matched function body as variable - $body")
+              logger.log(s"Matched function body as variable - ${showRaw(body)}")
               Some(body)
-            case q"$n(..$_)" =>
-              logger.log(s"Matched function body as a lambda reference - consists of a single call to function $n")
+            case Apply(n, _) =>
+              logger.log(s"Matched function body as a method reference - consists of a single call to a function $n - ${showRaw(body)}")
               Some(n)
             case _ =>
-              logger.log(s"Function body didn't match as a variable or method reference - $body")
+              logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
               None
           }
 
@@ -140,7 +133,7 @@ object WrappedFunction {
                         case _ =>
                           List()
                       }
-                      val allAnns = p.annotations ++ typAnns
+                      val allAnns: List[Annotation] = p.annotations ++ typAnns
 
                       val idAnns = allAnns.filter(_.tree.tpe.erasure =:= typeOf[Id].erasure)
 
@@ -159,40 +152,43 @@ object WrappedFunction {
                 }
             }
 
-          if (methodReferenceAnnotations.flatMap(_.toList).isEmpty) {
-            logger.log(
-              s"""
-                 |Couldn't find any methodReferenceAnnotations
-                 |, lambda annotations: $lambdaAnnotations,
-                 | method reference annotations: $methodReferenceAnnotations""".stripMargin
-            )
-            lambdaAnnotations
-          } else if (lambdaAnnotations.flatMap(_.toList).isEmpty) {
-            logger.log(
-              s"""
-                 |Couldn't find any lambdaAnnotations
-                 |, lambda annotations: $lambdaAnnotations,
-                 | method reference annotations: $methodReferenceAnnotations""".stripMargin
-            )
-            methodReferenceAnnotations
-          } else if (lambdaAnnotations == methodReferenceAnnotations) {
-            lambdaAnnotations
-          } else {
-            c.abort(c.enclosingPosition
-              , s"""
-                 |Conflicting sets of annotations, found different @Id annotations on both lambda arguments and method reference
-                 |, lambda annotations: $lambdaAnnotations,
-                 |method reference annotations: $methodReferenceAnnotations""".stripMargin
-            )
+          (lambdaAnnotations.flatten, methodReferenceAnnotations.flatten) match {
+            case (l, m) if l == m =>
+              lambdaAnnotations
+            case (_, Nil) =>
+              logger.log(
+                s"""Couldn't find any methodReferenceAnnotations
+                   | lambda annotations: $lambdaAnnotations,
+                   | method reference annotations: $methodReferenceAnnotations""".stripMargin
+              )
+              lambdaAnnotations
+            case (Nil, _) =>
+              logger.log(
+                s"""Couldn't find any lambdaAnnotations
+                   | lambda annotations: $lambdaAnnotations,
+                   | method reference annotations: $methodReferenceAnnotations""".stripMargin
+              )
+              methodReferenceAnnotations
+            case _ =>
+              c.abort(c.enclosingPosition
+                , s"""
+                   |Conflicting sets of annotations, found different @Id annotations on both lambda arguments and method reference
+                   |, lambda annotations: $lambdaAnnotations,
+                   |method reference annotations: $methodReferenceAnnotations""".stripMargin
+              )
           }
         }
 
-
         val idsList: List[Option[String]] = annotations.map {
           _.flatMap {
-            _.tree.children.tail.collectFirst {
+            _.tree.children.tail.headOption.map {
               case Literal(Constant(s: String)) => s
               case Constant(s: String) => s
+              case err =>
+                c.abort(
+                  c.enclosingPosition
+                  , s"""Error when parsing argument $err to @Id annotation - only string constants are supported, as in @Id("myclass")"""
+                )
             }
           }
         }
@@ -237,10 +233,6 @@ object WrappedFunction {
              | argumentType: ${argTree.tpe}
              | Result code: ${showCode(result.tree)}""".stripMargin
         )
-
-        if(annotations.size != idsList.size) {
-          c.abort(c.enclosingPosition, "Impossible Happened! annotations list has different length than idsList, not all annotations extracted")
-        }
 
         result
       }
