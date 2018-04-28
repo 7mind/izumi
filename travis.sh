@@ -1,9 +1,5 @@
 #!/bin/bash -xe
 
-#  - sbt clean coverage test coverageReport && sbt coverageAggregate
-#after_success:
-#  - sbt coveralls
-
 function build {
   if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then
     sbt ++$TRAVIS_SCALA_VERSION "addVersionSuffix $TRAVIS_BRANCH"
@@ -20,15 +16,11 @@ function build {
   fi
 
   echo "SCRIPTED..."
-  sbt clean "scripted sbt-izumi-idl/*" || exit 1
+  sbt clean "scripted sbt-izumi-plugins/*" || exit 1
 
   echo "COVERAGE..."
   sbt clean coverage test coverageReport || exit 1
-}
-
-
-function report {
-    bash <(curl -s https://codecov.io/bash)
+  bash <(curl -s https://codecov.io/bash)
 }
 
 PARAMS=()
@@ -39,9 +31,6 @@ do
 case $i in
     build)
         build
-    ;;
-    report)
-        report
     ;;
     *)
         echo "Unknown option"
