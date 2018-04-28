@@ -3,9 +3,11 @@ package com.github.pshirshov.izumi.logstage.distage
 import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.model.definition.TrivialDIDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, LoggingMacroTest}
-import com.github.pshirshov.izumi.logstage.model.Log.CustomContext
-import com.github.pshirshov.izumi.logstage.model.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.TestSink
+import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
+import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
 import org.scalatest.WordSpec
 
 class ExampleService(log: IzLogger) {
@@ -26,7 +28,8 @@ class ExampleApp(log: IzLogger, service: ExampleService) {
 class LoggerInjectionTest extends WordSpec {
   "Logging module for distage" should {
     "inject loggers" in {
-      val router = LoggingMacroTest.mkRouter(LoggingMacroTest.consoleSinkText)
+      val testSink = new TestSink()
+      val router = LoggingMacroTest.mkRouter(testSink)
 
       val definition = TrivialDIDef
         .binding[ExampleService]
@@ -43,6 +46,7 @@ class LoggerInjectionTest extends WordSpec {
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
       assert(context.get[ExampleApp].test == 265)
+      assert(testSink.fetch.size == 2)
     }
   }
 }

@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.logstage.adapter.slf4j
 
 import com.github.pshirshov.izumi.logstage.TestSink
-import com.github.pshirshov.izumi.logstage.api.LoggingMacroTest
-import com.github.pshirshov.izumi.logstage.core.StaticLogRouter
+import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
+import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
 import org.scalatest.WordSpec
 import org.slf4j.LoggerFactory
 

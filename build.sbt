@@ -201,63 +201,67 @@ lazy val distageCore = inDiStage.as.module
   )
 
 //
-lazy val logstageModel = inLogStage.as.module
+lazy val logstageApiBase = inLogStage.as.module
 
-lazy val logstageMacro = inLogStage.as.module
-  .depends(logstageModel)
+lazy val logstageApiBaseMacro = inLogStage.as.module
+  .depends(logstageApiBase)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
     )
   )
 
-lazy val logstageApi = inLogStage.as.module
-  .depends(logstageMacro)
+//lazy val logstageApiLogger = inLogStage.as.module
+//  .depends(logstageApiBaseMacro)
+
+lazy val logstageApiLogger = inLogStage.as.module
+  .depends(logstageApiBaseMacro)
+//  .depends(Seq(
+//    logstageSinkConsole
+//    , logstageRenderingJson4s
+//  ).map(_.testOnlyRef): _*)
 
 lazy val logstageSinkConsole = inLogStage.as.module
-  .depends(logstageApi)
+  .depends(logstageApiBase)
+  .depends(Seq(
+    logstageApiLogger
+  ).map(_.testOnlyRef): _*)
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
-  .depends(logstageApi)
-  .depends(Seq(
-    logstageRouting
-  ).map(_.testOnlyRef): _*)
+  .depends(logstageApiLogger)
   .settings(libraryDependencies += R.slf4j_api)
 //
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
-    logstageApi
+    logstageApiLogger
     , distageModel
   )
   .depends(Seq(
-    logstageRouting
-    , distageCore
+    distageCore
   ).map(_.testOnlyRef): _*)
 
-lazy val logstageJsonJson4s = inLogStage.as.module
-  .depends(logstageApi)
+lazy val logstageRenderingJson4s = inLogStage.as.module
+  .depends(logstageApiLogger)
+  .depends(Seq(
+    logstageSinkConsole
+  ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= Seq(R.json4s_native))
 
 lazy val logstageSinkFile = inLogStage.as.module
-  .depends(logstageApi)
+  .depends(logstageApiBase)
   .depends(Seq(
-    logstageRouting
+    logstageApiLogger
   ).map(_.testOnlyRef): _*)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
-  .depends(logstageApi)
+  .depends(logstageApiBase)
   .depends(Seq(
-    logstageRouting
+    logstageApiLogger
   ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 
-lazy val logstageRouting = inLogStage.as.module
-  .depends(logstageApi)
-  .depends(Seq(
-    logstageSinkConsole
-    , logstageJsonJson4s
-  ).map(_.testOnlyRef): _*)
+
 
 lazy val idealinguaModel = inIdealingua.as.module
   .settings()
@@ -319,7 +323,7 @@ lazy val sbtTests = inSbt.as
 
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageDi
-  , logstageRouting
+  , logstageApiLogger
   , logstageSinkConsole
   , logstageSinkFile
   , logstageSinkSlf4j
