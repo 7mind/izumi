@@ -5,9 +5,9 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import scala.language.implicitConversions
 
 trait ModuleDef {
-  protected type Impl = ModuleDef
+  protected type Impl <: ModuleDef
 
-  protected def make(bindings: Set[Binding]): Impl = TrivialModuleDef(bindings)
+  protected def make(bindings: Set[Binding]): Impl
 
   def bindings: Set[Binding]
 
@@ -36,6 +36,13 @@ trait ModuleDef {
   }
 
   override def hashCode(): Int = bindings.hashCode()
+}
+
+trait StandardModuleDef extends ModuleDef {
+
+  override protected type Impl = ModuleDef
+
+  protected def make(bindings: Set[Binding]): Impl = TrivialModuleDef(bindings)
 }
 
 object ModuleDef {

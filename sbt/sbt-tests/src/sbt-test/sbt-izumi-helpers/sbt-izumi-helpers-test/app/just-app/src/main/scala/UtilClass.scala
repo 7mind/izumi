@@ -1,3 +1,3 @@
 class UtilClass {
-  val a: LibClass = _
+  val a: LibClass = null
 }

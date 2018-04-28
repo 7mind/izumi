@@ -1,6 +1,6 @@
 class AnotherTestClass {
-  val a: LibClass = _
-  val b: ExposedClass = _
-  val c: UtilClass = _
-  val d: PrivateClass = _
+  val a: LibClass = null
+  val b: ExposedClass = null
+  val c: UtilClass = null
+  //val d: PrivateClass = null
 }

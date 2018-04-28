@@ -219,15 +219,10 @@ class InjectorTest extends WordSpec {
     "fail on unbindable" in {
       import Case4._
 
-      val definition: ModuleDef = new ModuleDef {
+      val definition: ModuleDef = new StandardModuleDef {
         override def bindings: Set[Binding] = Set(
           SingletonBinding(RuntimeDIUniverse.DIKey.get[Dependency], ImplDef.TypeImpl(RuntimeDIUniverse.SafeType.get[Long]))
         )
-
-
-        override type Impl = ModuleDef
-
-        override protected def make(bindings: Set[Binding]): ModuleDef = ???
       }
 
       val injector = mkInjector()
