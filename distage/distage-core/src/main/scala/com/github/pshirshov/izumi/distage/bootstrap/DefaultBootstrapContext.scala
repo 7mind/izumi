@@ -34,47 +34,54 @@ class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends Abst
 }
 
 object DefaultBootstrapContext {
-  private val analyzer = new PlanAnalyzerDefaultImpl
   private val reflectionProvider = new ReflectionProviderDefaultImpl.Java(
     new DependencyKeyProviderDefaultImpl.Java
     , new SymbolIntrospectorDefaultImpl.Java
   )
 
   import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-  
-  private val bootstrapObserver = if (System.getProperty("izumi.debug.distage.bootstrap").asBoolean().getOrElse(false)) {
-    new BootstrapPrintingObserverImpl()
-  } else {
-    new PlanningObserverDefaultImpl
+
+  private lazy val bootstrapPlanner = {
+    val bootstrapObserver =
+    if (System.getProperty("izumi.debug.distage.bootstrap").asBoolean().getOrElse(false)) {
+      new BootstrapPrintingObserverImpl()
+    } else {
+      new PlanningObserverDefaultImpl
+    }
+
+    val analyzer = new PlanAnalyzerDefaultImpl
+
+    new PlannerDefaultImpl(
+      new PlanResolverDefaultImpl
+      , new ForwardingRefResolverDefaultImpl(analyzer)
+      , reflectionProvider
+      , new SanityCheckerDefaultImpl(analyzer)
+      , CustomOpHandler.NullCustomOpHander
+      , bootstrapObserver
+      , new PlanMergingPolicyDefaultImpl(analyzer)
+      , new PlanningHookDefaultImpl
+    )
   }
 
 
-  private lazy val bootstrapPlanner = new PlannerDefaultImpl(
-    new PlanResolverDefaultImpl
-    , new ForwardingRefResolverDefaultImpl(analyzer)
-    , reflectionProvider
-    , new SanityCheckerDefaultImpl(analyzer)
-    , CustomOpHandler.NullCustomOpHander
-    , bootstrapObserver
-    , new PlanMergingPolicyDefaultImpl(analyzer)
-    , new PlanningHookDefaultImpl
-  )
+  private lazy val bootstrapProducer = {
+    val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
 
-
-  private lazy val bootstrapProducer = new ProvisionerDefaultImpl(
-    new ProvisionerHookDefaultImpl
-    , new ProvisionerIntrospectorDefaultImpl
-    , new LoggerHookDefaultImpl // TODO: add user-controllable logs
-    , new SetStrategyDefaultImpl
-    , new ProxyStrategyFailingImpl
-    , new FactoryStrategyDefaultImpl
-    , new TraitStrategyDefaultImpl
-    , new ProviderStrategyDefaultImpl
-    , new ClassStrategyDefaultImpl
-    , new ImportStrategyDefaultImpl
-    , new CustomStrategyDefaultImpl
-    , new InstanceStrategyDefaultImpl
-  )
+    new ProvisionerDefaultImpl(
+      new ProvisionerHookDefaultImpl
+      , new ProvisionerIntrospectorDefaultImpl
+      , loggerHook
+      , new SetStrategyDefaultImpl
+      , new ProxyStrategyFailingImpl
+      , new FactoryStrategyDefaultImpl
+      , new TraitStrategyDefaultImpl
+      , new ProviderStrategyDefaultImpl(loggerHook)
+      , new ClassStrategyDefaultImpl
+      , new ImportStrategyDefaultImpl
+      , new CustomStrategyDefaultImpl
+      , new InstanceStrategyDefaultImpl
+    )
+  }
 
   final lazy val defaultBootstrapContextDefinition: ContextDefinition = TrivialDIDef
     .instance[CustomOpHandler](CustomOpHandler.NullCustomOpHander)

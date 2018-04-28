@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
+import com.github.pshirshov.izumi.distage.model.LoggerHook
 import com.github.pshirshov.izumi.distage.model.exceptions.InvalidPlanException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.OpResult.NewInstance
@@ -7,7 +8,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies.Provider
 import com.github.pshirshov.izumi.distage.model.provisioning.{FactoryExecutor, OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 
-class ProviderStrategyDefaultImpl extends ProviderStrategy  {
+class ProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends ProviderStrategy  {
   def callProvider(context: ProvisioningContext, executor: OperationExecutor, op: WiringOp.CallProvider): Seq[OpResult.NewInstance] = {
 
     // TODO: here we depend on order of .associations and Callable.argTypes being the same
