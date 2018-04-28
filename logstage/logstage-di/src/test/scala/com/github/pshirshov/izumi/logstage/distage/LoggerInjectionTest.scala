@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.logstage.distage
 
 import com.github.pshirshov.izumi.distage.Injectors
-import com.github.pshirshov.izumi.distage.model.definition.TrivialDIDef
+import com.github.pshirshov.izumi.distage.model.LoggerHook
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef, TrivialModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
@@ -23,24 +24,21 @@ class ExampleApp(log: IzLogger, service: ExampleService) {
   }
 }
 
+
+
 class LoggerInjectionTest extends WordSpec {
   "Logging module for distage" should {
     "inject loggers" in {
       val testSink = new TestSink()
       val router = LoggingMacroTest.mkRouter(testSink)
 
-      val definition = TrivialDIDef
+      val definition = TrivialModuleDef
         .bind[ExampleService]
         .bind[ExampleApp]
 
+      val loggerModule = new LogstageModule(router)
 
-      val customizations = TrivialDIDef
-        .bind[LogRouter](router)
-        .bind(CustomContext.empty)
-        .bind[IzLogger]
-        .bind[PlanningObserver].as[PlanningObserverLoggingImpl]
-
-      val injector = Injectors.bootstrap(customizations)
+      val injector = Injectors.bootstrap(loggerModule)
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
       assert(context.get[ExampleApp].test == 265)
@@ -50,7 +48,6 @@ class LoggerInjectionTest extends WordSpec {
       val last = messages.takeRight(2)
       assert(last.head.message.template.toString.contains("-App-"))
       assert(last.last.message.template.toString.contains("-Service-"))
-
     }
   }
 }

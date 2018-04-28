@@ -4,8 +4,12 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBind
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-class BindingDSL private[definition] (override val bindings: Set[Binding]) extends ContextDefinition {
+class BindingDSL private[definition] (override val bindings: Set[Binding]) extends ModuleDef {
   import BindingDSL._
+
+  override protected type Impl = BindingDSL
+
+  override protected def make(bindings: Set[Binding]): BindingDSL = new BindingDSL(bindings)
 
   def bind[T: RuntimeDIUniverse.Tag]: BindDSL[T] =
     new BindDSL(bindings, RuntimeDIUniverse.DIKey.get[T], ImplDef.TypeImpl(RuntimeDIUniverse.SafeType.get[T]))
@@ -16,12 +20,6 @@ class BindingDSL private[definition] (override val bindings: Set[Binding]) exten
   // sets
   def set[T: RuntimeDIUniverse.Tag]: SetDSL[T] =
     new SetDSL[T](bindings, RuntimeDIUniverse.DIKey.get[Set[T]], Set.empty)
-
-  override def +(binding: Binding): BindingDSL =
-    new BindingDSL(bindings + binding)
-
-  override def ++(that: ContextDefinition): BindingDSL =
-    new BindingDSL(bindings ++ that.bindings)
 }
 
 object BindingDSL {

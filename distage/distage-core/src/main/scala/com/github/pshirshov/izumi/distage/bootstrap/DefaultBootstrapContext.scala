@@ -17,7 +17,7 @@ import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
-class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends AbstractLocator {
+class DefaultBootstrapContext(contextDefinition: ModuleDef) extends AbstractLocator {
 
   import DefaultBootstrapContext._
 
@@ -76,7 +76,7 @@ object DefaultBootstrapContext {
     )
   }
 
-  final lazy val defaultBootstrapContextDefinition: ContextDefinition = TrivialDIDef
+  final lazy val defaultBootstrapContextDefinition: ModuleDef = TrivialModuleDef
     .bind[CustomOpHandler].as(CustomOpHandler.NullCustomOpHander)
     .bind[LookupInterceptor].as(NullLookupInterceptor)
     .bind[ReflectionProvider.Runtime].as[ReflectionProviderDefaultImpl.Runtime]

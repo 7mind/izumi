@@ -20,7 +20,7 @@ class InjectorTest extends WordSpec {
 
     "maintain correct operation order" in {
       import Case1._
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[TestClass]
         .bind[TestDependency3]
         .bind[TestDependency0].as[TestImpl0]
@@ -51,7 +51,7 @@ class InjectorTest extends WordSpec {
 
     "support multiple bindings" in {
       import Case1._
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .set[JustTrait]
           .named("named.empty.set")
         .set[JustTrait]
@@ -73,7 +73,7 @@ class InjectorTest extends WordSpec {
 
     "support named bindings" in {
       import Case1_1._
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[TestClass]
           .named("named.test.class")
         .bind[TestDependency0].as[TestImpl0Bad]
@@ -91,7 +91,7 @@ class InjectorTest extends WordSpec {
     "support circular dependencies" in {
       import Case2._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Circular2]
         .bind[Circular1]
 
@@ -106,7 +106,7 @@ class InjectorTest extends WordSpec {
     "support complex circular dependencies" in {
       import Case3._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Circular3]
         .bind[Circular1]
         .bind[Circular2]
@@ -127,7 +127,7 @@ class InjectorTest extends WordSpec {
     "support more complex circular dependencies" in {
       import Case15._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind(CustomDep1.empty)
         .bind(customTraitInstance)
         .bind[CustomClass]
@@ -143,7 +143,7 @@ class InjectorTest extends WordSpec {
     "support generics" in {
       import Case11._
 
-      val definition = TrivialDIDef
+      val definition = TrivialModuleDef
         .bind[List[Dep]](List(DepA())).named("As")
         .bind[List[Dep]](List(DepB())).named("Bs")
         .bind[List[DepA]](List(DepA(), DepA(), DepA()))
@@ -177,7 +177,7 @@ class InjectorTest extends WordSpec {
     "support traits with typealiases" in {
       import Case11._
 
-      val definition = TrivialDIDef
+      val definition = TrivialModuleDef
         .bind[DepA]
         .bind[TestTrait]
 
@@ -191,7 +191,7 @@ class InjectorTest extends WordSpec {
     "support trait initialization" in {
       import Case3._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[CircularBad1]
         .bind[CircularBad2]
 
@@ -206,7 +206,7 @@ class InjectorTest extends WordSpec {
     }
 
     "support trait fields" in {
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Case9.ATraitWithAField]
 
       val injector = mkInjector()
@@ -219,14 +219,15 @@ class InjectorTest extends WordSpec {
     "fail on unbindable" in {
       import Case4._
 
-      val definition: ContextDefinition = new ContextDefinition {
+      val definition: ModuleDef = new ModuleDef {
         override def bindings: Set[Binding] = Set(
           SingletonBinding(RuntimeDIUniverse.DIKey.get[Dependency], ImplDef.TypeImpl(RuntimeDIUniverse.SafeType.get[Long]))
         )
 
-        override def ++(that: ContextDefinition): ContextDefinition = TrivialDIDef(bindings ++ that.bindings)
 
-        override def +(binding: Binding): ContextDefinition = TrivialDIDef(bindings + binding)
+        override type Impl = ModuleDef
+
+        override protected def make(bindings: Set[Binding]): ModuleDef = ???
       }
 
       val injector = mkInjector()
@@ -239,7 +240,7 @@ class InjectorTest extends WordSpec {
     "fail on unsolvable conflicts" in {
       import Case4._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Dependency].as[Impl1]
         .bind[Dependency].as[Impl2]
 
@@ -253,7 +254,7 @@ class InjectorTest extends WordSpec {
     "handle factory injections" in {
       import Case5._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Factory]
         .bind[Dependency]
         .bind[OverridingFactory]
@@ -283,7 +284,7 @@ class InjectorTest extends WordSpec {
     "handle generic arguments in cglib factory methods" in {
       import Case5._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[GenericAssistedFactory]
         .bind[Dependency](ConcreteDep())
 
@@ -301,7 +302,7 @@ class InjectorTest extends WordSpec {
     "handle named assisted dependencies in cglib factory methods" in {
       import Case5._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[NamedAssistedFactory]
         .bind[Dependency]
         .bind[Dependency](SpecialDep()).named("special")
@@ -321,7 +322,7 @@ class InjectorTest extends WordSpec {
     "handle macro factory injections" in {
       import Case5._
 
-      val definition1 = TrivialDIDef
+      val definition1 = TrivialModuleDef
         .magic[Factory]
         .magic[Dependency]
         .magic[OverridingFactory]
@@ -352,7 +353,7 @@ class InjectorTest extends WordSpec {
     "handle generic arguments in macro factory methods" in {
       import Case5._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .magic[GenericAssistedFactory]
         .bind[Dependency](ConcreteDep())
 
@@ -370,7 +371,7 @@ class InjectorTest extends WordSpec {
     "handle assisted dependencies in macro factory methods" in {
       import Case5._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .magic[AssistedFactory]
         .bind[Dependency](ConcreteDep())
 
@@ -386,7 +387,7 @@ class InjectorTest extends WordSpec {
     "handle named assisted dependencies in macro factory methods" in {
       import Case5._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .magic[NamedAssistedFactory]
         .magic[Dependency]
         .bind[Dependency](SpecialDep()).named("special")
@@ -405,7 +406,7 @@ class InjectorTest extends WordSpec {
     // BasicProvisionerTest
     "instantiate simple class" in {
       import Case1._
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[TestCaseClass2]
         .bind(new TestInstanceBinding)
 
@@ -420,7 +421,7 @@ class InjectorTest extends WordSpec {
     "instantiate provider bindings" in {
       import Case6._
 
-      val definition: ContextDefinition = TrivialDIDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[TestClass].provided( (a: Dependency1) => new TestClass(null) )
         .bind[Dependency1].provided( () => new Dependency1Sub {} )
 
@@ -436,7 +437,7 @@ class InjectorTest extends WordSpec {
     "handle one-arg trait" in {
       import Case7._
 
-      val definition = TrivialDIDef
+      val definition = TrivialModuleDef
         .bind[Dependency1]
         .magic[TestTrait]
 
@@ -452,7 +453,7 @@ class InjectorTest extends WordSpec {
     "handle named one-arg trait" in {
       import Case7._
 
-      val definition = TrivialDIDef
+      val definition = TrivialModuleDef
         .bind[Dependency1]
         .magic[TestTrait]
           .named("named-trait")
@@ -469,7 +470,7 @@ class InjectorTest extends WordSpec {
     "handle mixed sub-trait with protected autowires" in {
       import Case8._
 
-      val definition = TrivialDIDef
+      val definition = TrivialModuleDef
         .magic[Trait3]
         .magic[Trait2]
         .magic[Trait1]
@@ -496,7 +497,7 @@ class InjectorTest extends WordSpec {
     "handle sub-type trait" in {
       import Case8._
 
-      val definition = TrivialDIDef
+      val definition = TrivialModuleDef
         .magic[Trait2, Trait3]
         .bind[Dependency3]
         .bind[Dependency2]
@@ -514,7 +515,7 @@ class InjectorTest extends WordSpec {
     "handle generics" in {
       import Case12._
 
-      val definition = TrivialDIDef
+      val definition = TrivialModuleDef
         .bind[Parameterized[Dep]]
         .bind[ParameterizedTrait[Dep]]
         .bind[Dep]
@@ -532,7 +533,7 @@ class InjectorTest extends WordSpec {
   "support named bindings in macro traits" in {
     import Case10._
 
-    val definition = TrivialDIDef
+    val definition = TrivialModuleDef
       .magic[Dep, DepA].named("A")
       .magic[Dep, DepB].named("B")
       .magic[Trait]
@@ -556,7 +557,7 @@ class InjectorTest extends WordSpec {
   "support named bindings in cglib traits" in {
     import Case10._
 
-    val definition = TrivialDIDef
+    val definition = TrivialModuleDef
       .bind[Dep].as[DepA].named("A")
       .bind[Dep].as[DepB].named("B")
       .bind[Trait]
@@ -580,7 +581,7 @@ class InjectorTest extends WordSpec {
   "support named bindings in method reference providers" in {
     import Case17._
 
-    val definition = TrivialDIDef
+    val definition = TrivialModuleDef
       .bind[TestDependency].named("classdeftypeann1")
       .bind[TestClass].provided(implType _)
 
@@ -597,7 +598,7 @@ class InjectorTest extends WordSpec {
   "support named bindings in lambda providers" in {
     import Case17._
 
-    val definition = TrivialDIDef
+    val definition = TrivialModuleDef
       .bind[TestDependency].named("classdeftypeann1")
       .bind[TestClass].provided { t: TestDependency @Id("classdeftypeann1") => new TestClass(t) }
 
@@ -613,7 +614,7 @@ class InjectorTest extends WordSpec {
   "populate implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
     import Case13._
 
-    val definition = TrivialDIDef
+    val definition = TrivialModuleDef
       .bind[TestClass]
       .bind[Dep]
       .bind[DummyImplicit].as[MyDummyImplicit]
@@ -631,7 +632,7 @@ class InjectorTest extends WordSpec {
   "override protected defs in cglib traits" in {
     import Case14._
 
-    val definition = TrivialDIDef
+    val definition = TrivialModuleDef
       .bind[TestTrait]
       .bind[Dep]
 
@@ -647,7 +648,7 @@ class InjectorTest extends WordSpec {
   "override protected defs in macro traits" in {
     import Case14._
 
-    val definition = TrivialDIDef
+    val definition = TrivialModuleDef
       .magic[TestTrait]
       .magic[Dep]
 

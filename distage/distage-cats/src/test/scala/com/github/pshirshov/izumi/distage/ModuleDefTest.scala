@@ -2,33 +2,33 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.definition.Bindings.binding
-import com.github.pshirshov.izumi.distage.model.definition.{Bindings, ContextDefinition, ModuleBuilder, TrivialDIDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Bindings, ModuleDef, ModuleBuilder, TrivialModuleDef}
 import com.github.pshirshov.izumi.distage.definition.MagicDSL._
 import org.scalatest.WordSpec
 import DIStageInstances._
 import cats.implicits._
 
-class ContextDefinitionTest extends WordSpec {
+class ModuleDefTest extends WordSpec {
   "cats instances for ContextDefinition" should {
     "allow monoidal operations between different types of binding dsls" in {
       import Case1._
 
-      val mod1: ContextDefinition = new ModuleBuilder {
+      val mod1: ModuleDef = new ModuleBuilder {
         bind[TestClass]
       }
 
-      val mod2: ContextDefinition = TrivialDIDef
+      val mod2: ModuleDef = TrivialModuleDef
         .bind[TestCaseClass2]
 
-      val mod3: ContextDefinition = TrivialDIDef
+      val mod3: ModuleDef = TrivialModuleDef
         .magic[TestDependency1]
         .magic[NotInContext]
 
-      val mod4: ContextDefinition = Set(
+      val mod4: ModuleDef = Set(
         binding(TestInstanceBinding())
       )
 
-      val mod5: ContextDefinition = (TrivialDIDef
+      val mod5: ModuleDef = (TrivialModuleDef
         + Bindings.binding[TestDependency0, TestImpl0]
         )
 
@@ -36,7 +36,7 @@ class ContextDefinitionTest extends WordSpec {
 
       val plusModules = mod5 |+| mod4 |+| mod3 |+| mod2 |+| mod1
 
-      val complexModule = TrivialDIDef
+      val complexModule = TrivialModuleDef
         .bind[TestClass]
         .bind[TestDependency0].as[TestImpl0]
         .bind[TestCaseClass2]
