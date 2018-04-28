@@ -16,18 +16,24 @@ class BootstrapTest extends WordSpec {
         def publicLookup[T: Tag](key: DIKey): Option[TypedRef[T]] = super.lookup(key)
       }
 
-      assert(context.find[PlanResolver].exists(_.isInstanceOf[PlanResolverDefaultImpl]))
-      assert(context.find[PlanResolver]("another.one").isEmpty)
+      val maybeResolver = context.find[PlanResolver]
+      val noResolver = context.find[PlanResolver]("another.one")
 
+      assert(maybeResolver.exists(_.isInstanceOf[PlanResolverDefaultImpl]))
+      assert(noResolver.isEmpty)
       assert(context.get[PlanResolver].isInstanceOf[PlanResolverDefaultImpl])
+
       intercept[MissingInstanceException] {
         context.get[PlanResolver]("another.one")
       }
 
-      assert(context.publicLookup[PlanResolver](DIKey.get[PlanResolver]).exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
-      assert(context.publicLookup[Any](DIKey.get[PlanResolver]).exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
-      assert(context.publicLookup[Long](DIKey.get[PlanResolver]).isEmpty)
+      val resolverRef = context.publicLookup[PlanResolver](DIKey.get[PlanResolver])
+      val resolverSuperRef = context.publicLookup[Any](DIKey.get[PlanResolver])
+      val badResolver = context.publicLookup[Long](DIKey.get[PlanResolver])
 
+      assert(resolverRef.exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
+      assert(resolverSuperRef.exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
+      assert(badResolver.isEmpty)
     }
   }
 

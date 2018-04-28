@@ -225,15 +225,9 @@ lazy val logstageApiBaseMacro = inLogStage.as.module
     )
   )
 
-//lazy val logstageApiLogger = inLogStage.as.module
-//  .depends(logstageApiBaseMacro)
-
 lazy val logstageApiLogger = inLogStage.as.module
   .depends(logstageApiBaseMacro)
-//  .depends(Seq(
-//    logstageSinkConsole
-//    , logstageRenderingJson4s
-//  ).map(_.testOnlyRef): _*)
+
 
 lazy val logstageSinkConsole = inLogStage.as.module
   .depends(logstageApiBase)
@@ -243,8 +237,11 @@ lazy val logstageSinkConsole = inLogStage.as.module
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
   .depends(logstageApiLogger)
-  .settings(libraryDependencies += R.slf4j_api)
-//
+  .settings(
+    libraryDependencies += R.slf4j_api
+    , compileOrder in Compile := CompileOrder.Mixed
+    , compileOrder in Test := CompileOrder.Mixed
+  )
 
 lazy val logstageDi = inLogStage.as.module
   .depends(

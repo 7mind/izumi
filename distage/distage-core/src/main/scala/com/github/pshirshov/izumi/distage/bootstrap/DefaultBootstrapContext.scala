@@ -21,21 +21,20 @@ class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends Abst
 
   import DefaultBootstrapContext._
 
-  // we don't need to pass all these instances, but why create new ones in case we have them already?
-  protected lazy val bootstrappedContext: ProvisionImmutable = {
-    bootstrapProducer.provision(plan, this)
-  }
-
-  protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
-
   lazy val parent: Option[AbstractLocator] = None
+
   lazy val plan: FinalPlan = bootstrapPlanner.plan(contextDefinition)
 
   def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
+
+  protected lazy val bootstrappedContext: ProvisionImmutable = bootstrapProducer.provision(plan, this)
+
+  protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
+
 }
 
 object DefaultBootstrapContext {
-  private lazy val bootstrapPlanner = {
+  protected lazy val bootstrapPlanner: Planner = {
     val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
       new DependencyKeyProviderDefaultImpl.Runtime
       , new SymbolIntrospectorDefaultImpl.Runtime
@@ -58,14 +57,11 @@ object DefaultBootstrapContext {
   }
 
 
-  private lazy val bootstrapProducer = {
+  protected lazy val bootstrapProducer: Provisioner = {
     val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
 
     new ProvisionerDefaultImpl(
-      new ProvisionerHookDefaultImpl
-      , new ProvisionerIntrospectorDefaultImpl
-      , loggerHook
-      , new SetStrategyDefaultImpl
+      new SetStrategyDefaultImpl
       , new ProxyStrategyFailingImpl
       , new FactoryStrategyDefaultImpl
       , new TraitStrategyDefaultImpl
@@ -74,6 +70,9 @@ object DefaultBootstrapContext {
       , new ImportStrategyDefaultImpl
       , new CustomStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
+//      , new ProvisionerHookDefaultImpl
+//      , new ProvisionerIntrospectorDefaultImpl
+//      , loggerHook
     )
   }
 
