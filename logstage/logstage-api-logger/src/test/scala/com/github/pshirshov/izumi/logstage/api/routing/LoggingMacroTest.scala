@@ -47,13 +47,13 @@ class LoggingMacroTest extends WordSpec {
       val asyncConsoleSinkJson = new QueueingSink(testSink)
       try {
         new ExampleService(configureLogger(Seq(asyncConsoleSinkJson))).work()
-        assert(testSink.fetch.isEmpty)
+        assert(testSink.fetch().isEmpty)
         asyncConsoleSinkJson.start()
       } finally {
         asyncConsoleSinkJson.close()
       }
 
-      assert(testSink.fetch.size == 100)
+      assert(testSink.fetch().size == 100)
     }
   }
 }

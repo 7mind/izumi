@@ -26,7 +26,7 @@ class Slf4jAdapterTest extends WordSpec {
       logger.warn(s"Debug message: {}", Integer.valueOf(1), Integer.valueOf(1), Integer.valueOf(1), Integer.valueOf(1))
       logger.error(s"Debug message: {}", new RuntimeException())
 
-      assert(sink.fetch.size == 6)
+      assert(sink.fetch().size == 6)
     }
   }
 

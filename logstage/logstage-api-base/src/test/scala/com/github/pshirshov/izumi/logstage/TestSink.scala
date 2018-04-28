@@ -14,7 +14,9 @@ class TestSink extends LogSink {
   import scala.collection.JavaConverters._
 
 
-  def fetch: Seq[Log.Entry] = messages.asScala.toSeq
+  def fetch(): Seq[Log.Entry] = {
+    messages.asScala.toSeq
+  }
 
   override def flush(e: Log.Entry): Unit = {
     Quirks.discard(messages.add(e))
