@@ -3,8 +3,7 @@ package com.github.pshirshov.izumi.logstage.distage
 import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.model.definition.TrivialDIDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
-import com.github.pshirshov.izumi.logstage.TestSink
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest

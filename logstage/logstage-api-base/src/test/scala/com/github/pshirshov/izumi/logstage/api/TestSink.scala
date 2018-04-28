@@ -1,10 +1,9 @@
-package com.github.pshirshov.izumi.logstage
+package com.github.pshirshov.izumi.logstage.api
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 
 @ExposedTestScope

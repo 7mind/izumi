@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.api.rendering.json
+package com.github.pshirshov.izumi.logstage.api.rendering.json
 
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.rendering.json.JsonRenderingPolicy
