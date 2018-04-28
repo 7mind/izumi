@@ -14,6 +14,7 @@ import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
 class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends AbstractLocator {
@@ -34,20 +35,13 @@ class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends Abst
 }
 
 object DefaultBootstrapContext {
-  private val reflectionProvider = new ReflectionProviderDefaultImpl.Java(
-    new DependencyKeyProviderDefaultImpl.Java
-    , new SymbolIntrospectorDefaultImpl.Java
-  )
-
-  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-
   private lazy val bootstrapPlanner = {
-    val bootstrapObserver =
-    if (System.getProperty("izumi.debug.distage.bootstrap").asBoolean().getOrElse(false)) {
-      new BootstrapPrintingObserverImpl()
-    } else {
-      new PlanningObserverDefaultImpl
-    }
+    val reflectionProvider = new ReflectionProviderDefaultImpl.Java(
+      new DependencyKeyProviderDefaultImpl.Java
+      , new SymbolIntrospectorDefaultImpl.Java
+    )
+
+    val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.debug.distage.bootstrap"))
 
     val analyzer = new PlanAnalyzerDefaultImpl
 

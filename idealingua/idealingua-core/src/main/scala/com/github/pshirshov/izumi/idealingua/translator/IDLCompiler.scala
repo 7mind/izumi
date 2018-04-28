@@ -20,9 +20,6 @@ class IDLCompiler(typespace: Typespace) {
         val parts = module.id.path :+ module.id.name
         val modulePath = parts.foldLeft(target) { case (path, part) => path.resolve(part) }
         modulePath.getParent.toFile.mkdirs()
-
-        //println(s"""$modulePath:\n${module.content}\n\n""")
-
         Files.write(modulePath, module.content.getBytes(StandardCharsets.UTF_8))
         modulePath
     }

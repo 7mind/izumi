@@ -37,17 +37,6 @@ object TraitTools {
     }.toMap
   }
 
-  //        try {
-  //          CglibTools.initTrait(instance)
-  //        } catch {
-  //          case e: AbstractMethodError =>
-  //            System.err.println(e)
-  //
-  //          case e: NoSuchMethodError =>
-  //            System.err.println(e)
-  //
-  //        }
-
   def initTrait(instanceType: RuntimeUniverse.TypeFull, runtimeClass: Class[_], instance: AnyRef): Unit = {
     instanceType.tpe.decls.find(_.name.decodedName.toString == "$init$") match {
       case Some(_) => // here we have an instance of scala MethodSymbol though we can't reflect it, so let's use java

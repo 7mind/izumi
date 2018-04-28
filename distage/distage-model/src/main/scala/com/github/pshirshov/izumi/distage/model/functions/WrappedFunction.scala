@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.functions
 
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 import scala.language.experimental.macros
 
@@ -19,11 +20,14 @@ object DIKeyWrappedFunctionMacroImpl {
 
   import scala.reflect.macros._
 
+  private final val logger = TrivialLogger.make[DIKeyWrappedFunctionMacroImpl.type]("izumi.distage.debug.macro")
+
   def impl[R](c: blackbox.Context)(funcExpr: c.Expr[Any]): c.Expr[DIKeyWrappedFunction[R]] = {
     import c.universe._
-    System.err.println(c.universe.showCode(funcExpr.tree))
-    System.err.println(c.universe.showRaw(funcExpr.tree))
-
+    logger.log(
+      s"""code: ${c.universe.showCode(funcExpr.tree)}
+         |tree: ${c.universe.showRaw(funcExpr.tree)}
+       """.stripMargin)
     c.Expr[DIKeyWrappedFunction[R]]{q"???"}
   }
 }

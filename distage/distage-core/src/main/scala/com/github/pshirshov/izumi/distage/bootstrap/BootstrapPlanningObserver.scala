@@ -2,11 +2,13 @@ package com.github.pshirshov.izumi.distage.bootstrap
 
 import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
-class BootstrapPrintingObserverImpl() extends PlanningObserver {
+
+class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver {
 
   override def onFinalPlan(finalPlan: FinalPlan): Unit = {
-    out(Seq(
+    logger.log(Seq(
       "=" * 60 + " Final Plan " + "=" * 60
       , s"$finalPlan"
       , "\n"
@@ -15,7 +17,7 @@ class BootstrapPrintingObserverImpl() extends PlanningObserver {
 
 
   override def onResolvingFinished(finalPlan: FinalPlan): Unit = {
-    out(Seq(
+    logger.log(Seq(
       "=" * 60 + " Resolved Plan " + "=" * 60
       , s"$finalPlan"
       , "\n"
@@ -23,7 +25,7 @@ class BootstrapPrintingObserverImpl() extends PlanningObserver {
   }
 
   override def onSuccessfulStep(next: DodgyPlan): Unit = {
-    out(Seq(
+    logger.log(Seq(
       "=" * 60 + " Next Plan " + "=" * 60
       , s"$next"
       , "\n"
@@ -34,5 +36,4 @@ class BootstrapPrintingObserverImpl() extends PlanningObserver {
 
   }
 
-  private def out(s: String): Unit = println(s)
 }

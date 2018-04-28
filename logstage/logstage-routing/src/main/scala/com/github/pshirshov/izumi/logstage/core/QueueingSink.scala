@@ -1,10 +1,12 @@
-package com.github.pshirshov.izumi.logstage.model.logger
+package com.github.pshirshov.izumi.logstage.core
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.model.Log
+import com.github.pshirshov.izumi.logstage.model.logger.LogSink
 
 import scala.concurrent.duration._
 
@@ -14,6 +16,8 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
   private val queue = new ConcurrentLinkedQueue[Log.Entry]()
   private val maxBatchSize = 100
   private val stop = new AtomicBoolean(false)
+
+  private val fallback = TrivialLogger.make[FallbackConsoleSink](FallbackConsoleSink.fallbackPropertyName, forceLog = true)
 
   import QueueingSink._
 
@@ -42,7 +46,7 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
             stop.set(true)
 
           case e: Throwable => // bad case!
-            FallbackLogOutput.flush("Logger polling failed", e)
+            fallback.log("Logger polling failed", e)
         }
       }
 

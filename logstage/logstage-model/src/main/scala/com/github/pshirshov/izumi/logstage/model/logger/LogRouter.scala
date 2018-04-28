@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.logstage.model.logger
 
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.logstage.model.Log
 
 trait LogRouter {
@@ -10,7 +11,7 @@ trait LogRouter {
       doLog(entry)
     } catch {
       case e: Throwable =>
-        FallbackLogOutput.flush("Log router failed", e)
+        //TrivialLogger.flush("Log router failed", e)
     }
   }
 

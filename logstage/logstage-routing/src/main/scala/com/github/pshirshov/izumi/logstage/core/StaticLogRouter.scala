@@ -1,7 +1,8 @@
-package com.github.pshirshov.izumi.logstage.api.routing
+package com.github.pshirshov.izumi.logstage.core
 
 import java.util.concurrent.atomic.AtomicReference
 
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.logstage.api.logger.RenderingOptions
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.model.Log
@@ -9,7 +10,9 @@ import com.github.pshirshov.izumi.logstage.model.logger.LogRouter
 
 class StaticLogRouter extends LogRouter {
   private val proxied = new AtomicReference[LogRouter]()
-  private val fallbackSink = new FallbackConsoleSink(new StringRenderingPolicy(RenderingOptions()))
+
+  private val trivialLogger = TrivialLogger.make[FallbackConsoleSink](FallbackConsoleSink.fallbackPropertyName, forceLog = true)
+  private val fallbackSink = new FallbackConsoleSink(new StringRenderingPolicy(RenderingOptions()), trivialLogger)
 
   def setup(router: LogRouter): Unit = {
     proxied.set(router)

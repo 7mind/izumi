@@ -1,13 +1,16 @@
 package com.github.pshirshov.izumi.logstage.core
 
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.logstage.api.config.LogConfigService
 import com.github.pshirshov.izumi.logstage.model.Log
-import com.github.pshirshov.izumi.logstage.model.logger.{FallbackLogOutput, LogRouter}
+import com.github.pshirshov.izumi.logstage.model.logger.LogRouter
 
 class ConfigurableLogRouter
 (
   logConfigService: LogConfigService
 ) extends LogRouter {
+  private val fallback = TrivialLogger.make[FallbackConsoleSink](FallbackConsoleSink.fallbackPropertyName, forceLog = true)
+
   override protected def doLog(entry: Log.Entry): Unit = {
     logConfigService
       .config(entry)
@@ -18,7 +21,7 @@ class ConfigurableLogRouter
             sink.flush(entry)
           } catch {
             case e: Throwable =>
-              FallbackLogOutput.flush(s"Log sink $sink failed", e)
+              fallback.log(s"Log sink $sink failed", e)
           }
       }
   }

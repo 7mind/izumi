@@ -1,3 +1,3 @@
 class UtilClass {
-  println(classOf[LibClass])
+  val a: LibClass = _
 }

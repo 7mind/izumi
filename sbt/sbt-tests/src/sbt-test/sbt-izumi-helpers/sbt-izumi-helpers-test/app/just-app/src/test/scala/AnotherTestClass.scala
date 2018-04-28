@@ -1,6 +1,6 @@
 class AnotherTestClass {
-  println(classOf[LibClass])
-  println(classOf[ExposedClass])
-  println(classOf[UtilClass])
-  //println(classOf[PrivateClass])
+  val a: LibClass = _
+  val b: ExposedClass = _
+  val c: UtilClass = _
+  val d: PrivateClass = _
 }
