@@ -18,8 +18,12 @@ $ exists lib/yyy
 > ++show scalacOptions
 
 # build
-> ;+clean;+test;package;+plugins
+> +clean
+> +test:compile
 $ exists app/just-app/target/scala-2.12/test-classes-exposed
+> test
+> package
+> plugins
 
 # check convenience helpers
 > preserveTargets test
