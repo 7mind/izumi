@@ -1,13 +1,9 @@
 package com.github.pshirshov.izumi.logstage.distage
 
 import com.github.pshirshov.izumi.distage.Injectors
-import com.github.pshirshov.izumi.distage.model.LoggerHook
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef, TrivialModuleDef}
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
-import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import com.github.pshirshov.izumi.distage.model.definition.TrivialModuleDef
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
+import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import org.scalatest.WordSpec
 
 class ExampleService(log: IzLogger) {

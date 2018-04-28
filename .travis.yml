@@ -6,7 +6,7 @@ cache:
   - $HOME/.coursier
   - $HOME/.m2
 scala:
-  - 2.12.4
+  - 2.12.6
 jdk:
   - oraclejdk9
 before_install:

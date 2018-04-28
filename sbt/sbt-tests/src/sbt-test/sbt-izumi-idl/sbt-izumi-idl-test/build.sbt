@@ -14,7 +14,7 @@ lazy val pluginVersion = if (sys.props.isDefinedAt("plugin.version")) {
 // -- build settings, root artifact settings, etc
 name := "sbt-izumi-idl-test"
 crossScalaVersions in ThisBuild := Seq(
-  "2.12.4"
+  "2.12.6"
 )
 
 // unfortunately we have to use this bcs conditional settings in plugins don't work
