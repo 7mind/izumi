@@ -1,7 +1,11 @@
 package com.github.pshirshov.izumi.distage.model
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import scala.language.implicitConversions
 
 package object definition {
-  type Binding = BindingT[RuntimeUniverse.DIKey]
+  // doesn't work properly if put in ModuleBuilder or ContextDefinition companion object
+  // (triggers with `object extends ModuleBuilder`, but doesn't with `new ModuleBuilder {}`)
+  // works in package object though...
+  implicit def moduleBuilderContextDefinition(moduleBuilder: ModuleBuilder): ContextDefinition =
+    moduleBuilder.build
 }

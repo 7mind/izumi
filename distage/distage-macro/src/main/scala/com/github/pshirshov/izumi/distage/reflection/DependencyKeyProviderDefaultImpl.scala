@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.reflection
 
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.reflection.DependencyKeyProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MacroUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 import scala.reflect.api.Universe
@@ -25,16 +25,10 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
   private def withOptionalName(parameterSymbol: Symb, typeKey: DIKey.TypeKey) = {
     bugAnnotationCall(parameterSymbol)
       .flatMap {
-        ann =>
-          ann.tree.children.tail
-            .collect {
-              case l: LiteralApi =>
-                l.value
-            }
-            .collectFirst {
-              case Constant(name: String) =>
-                name
-            }
+        _.tree.children.tail.collectFirst {
+          case Literal(Constant(name: String)) =>
+            name
+        }
       } match {
       case Some(ann) =>
         typeKey.named(ann)
@@ -65,25 +59,22 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
 
 object DependencyKeyProviderDefaultImpl {
 
-  class Java
-    extends DependencyKeyProvider.Java
+  class Runtime
+    extends DependencyKeyProvider.Runtime
        with DependencyKeyProviderDefaultImpl {
     override protected def bugAnnotationCall(parameterSymbol: u.Symb): Option[u.u.Annotation] =
       AnnotationTools.find[Id](u.u)(parameterSymbol)
   }
-//  object Java {
-//    final val instance = new DependencyKeyProviderDefaultImpl.Java
-//  }
 
-  class Macro[M <: MacroUniverse[_ <: Universe]](macroUniverse: M)
-    extends DependencyKeyProvider.Macro[M](macroUniverse)
+  class Static[M <: StaticDIUniverse[_ <: Universe]](macroUniverse: M)
+    extends DependencyKeyProvider.Static[M](macroUniverse)
        with DependencyKeyProviderDefaultImpl {
     override protected def bugAnnotationCall(parameterSymbol: u.Symb): Option[u.u.Annotation] =
       AnnotationTools.find[Id](u.u)(parameterSymbol)
   }
-  object Macro {
-    def instance[M <: MacroUniverse[_]](macroUniverse: M): Macro[macroUniverse.type] =
-      new Macro(macroUniverse)
+  object Static {
+    def instance[M <: StaticDIUniverse[_]](macroUniverse: M): Static[macroUniverse.type] =
+      new Static(macroUniverse)
   }
 }
 

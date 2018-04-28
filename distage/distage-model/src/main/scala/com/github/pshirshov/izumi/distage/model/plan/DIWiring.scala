@@ -2,15 +2,16 @@ package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.CustomDef
 import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{Callable, DIUniverseBase, RuntimeUniverse, SafeType}
+import com.github.pshirshov.izumi.distage.model.reflection.universe._
 
-trait Wiring {
+trait DIWiring {
   this: DIUniverseBase
-    with SafeType
-    with Callable
+    with DISafeType
+    with DICallable
     with DIKey
-    with Association
-    with DependencyContext
+    with DIAssociation
+    with DIDependencyContext
+    with DILiftableRuntimeUniverse
   =>
 
   sealed trait Wiring {
@@ -35,25 +36,25 @@ trait Wiring {
         object Constructor {
           implicit final val liftableConstructor: Liftable[Constructor] = {
             case Constructor(instanceType, associations) => q"""
-            { new ${symbolOf[RuntimeUniverse.type].asClass.module}.Wiring.UnaryWiring.Constructor($instanceType, ${associations.toList}) }
+            { new $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor($instanceType, ${associations.toList}) }
               """
           }
         }
 
         case class Abstract(instanceType: TypeFull, associations: Seq[Association.Method]) extends ProductWiring
 
-      case class Function(provider: Callable, associations: Seq[Association]) extends UnaryWiring {
+      case class Function(provider: Provider, associations: Seq[Association]) extends UnaryWiring {
         override def instanceType: TypeFull = provider.ret
       }
       object Function {
-        def apply(function: Callable): Function = {
-          val associations = function.argTypes.map {
-            parameter =>
+        def apply(function: Provider): Function = {
+          val associations = function.diKeys.map {
+            key =>
               Association.Parameter(
                 DependencyContext.CallableParameterContext(function)
-                , parameter.tpe.typeSymbol.name.decodedName.toString
-                , SafeType(parameter.tpe)
-                , DIKey.TypeKey(parameter)
+                , key.symbol.tpe.typeSymbol.name.decodedName.toString
+                , key.symbol
+                , key
               )
           }
           UnaryWiring.Function(function, associations)
@@ -69,7 +70,7 @@ trait Wiring {
     case class CustomWiring(customDef: CustomDef, associations: Seq[Association]) extends Wiring
 
 
-    case class FactoryMethod(factoryType: TypeFull, wireables: Seq[FactoryMethod.WithContext], dependencies: Seq[Association.Method]) extends Wiring {
+    case class FactoryMethod(factoryType: TypeFull, factoryMethods: Seq[FactoryMethod.WithContext], fieldDependencies: Seq[Association.Method]) extends Wiring {
       /**
         * this method returns product dependencies which aren't present in any signature of factory methods.
         * Though it's kind of a heuristic which can be spoiled at the time of plan initialization
@@ -77,8 +78,11 @@ trait Wiring {
         * Complete check can only be performed at runtime.
         */
       override def associations: Seq[Association] = {
-        val signature = wireables.flatMap(_.methodArguments).toSet
-        wireables.flatMap(_.wireWith.associations).filterNot(v => signature.contains(v.wireWith))
+        val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
+
+        val productsDepsNotInMethods = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.wireWith))
+
+        productsDepsNotInMethods ++ fieldDependencies
       }
     }
 

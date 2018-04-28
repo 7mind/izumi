@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, MacroUniverse, RuntimeUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, StaticDIUniverse, RuntimeDIUniverse}
 
 trait SymbolIntrospector {
   val u: DIUniverse
@@ -24,10 +24,10 @@ trait SymbolIntrospector {
 
 object SymbolIntrospector {
 
-  trait Java extends SymbolIntrospector {
-    override val u: RuntimeUniverse.type = RuntimeUniverse
+  trait Runtime extends SymbolIntrospector {
+    override val u: RuntimeDIUniverse.type = RuntimeDIUniverse
   }
 
-  abstract class Macro[+M <: MacroUniverse[_]](override val u: M) extends SymbolIntrospector
+  abstract class Static[+M <: StaticDIUniverse[_]](override val u: M) extends SymbolIntrospector
 
 }

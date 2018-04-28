@@ -7,8 +7,20 @@ object AnnotationTools {
     symb
       .annotations
       .find {
-        ann =>
-          ann.tree.tpe.erasure =:= tTag.tpe.erasure
+        annotationTypeEq(u)(tTag)
+      }.orElse {
+      symb.typeSignature.finalResultType match {
+        case t: u.AnnotatedTypeApi =>
+          t.annotations.find {
+            annotationTypeEq(u)(tTag)
+          }
+        case _ =>
+          None
       }
+    }
+  }
+
+  def annotationTypeEq[T](u: Universe)(tTag: u.TypeTag[T])(ann: u.Annotation): Boolean = {
+    ann.tree.tpe.erasure =:= tTag.tpe.erasure
   }
 }

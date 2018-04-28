@@ -1,9 +1,11 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.model.definition.{Id, With}
+import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 
 import scala.util.Random
 
+@ExposedTestScope
 object Fixtures {
 
   object Case1 {
@@ -171,12 +173,18 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     trait Dependency {
       def isSpecial: Boolean = false
+
+      def isVerySpecial: Boolean = false
     }
 
     case class ConcreteDep() extends Dependency
 
     case class SpecialDep() extends Dependency {
       override def isSpecial: Boolean = true
+    }
+
+    case class VerySpecialDep() extends Dependency {
+      override def isVerySpecial: Boolean = true
     }
 
     case class TestClass(b: Dependency)
@@ -204,6 +212,8 @@ Forest fire, climbin' higher, real life, it can wait""")
     }
 
     trait NamedAssistedFactory {
+      def dep: Dependency @Id("veryspecial")
+
       def x(a: Int): NamedAssistedTestClass
     }
 
@@ -305,6 +315,12 @@ Forest fire, climbin' higher, real life, it can wait""")
       def depB: Dep
     }
 
+    trait Trait1 {
+      def depA: Dep @Id("A")
+
+      def depB: Dep @Id("B")
+    }
+
   }
 
   object Case11 {
@@ -381,5 +397,46 @@ Forest fire, climbin' higher, real life, it can wait""")
     case class CustomDep2(t: CustomTrait, c: CustomDep1)
 
     case class CustomApp(customClass: CustomClass, customDep2: CustomDep2)
+  }
+
+  object Case16 {
+    def deftypeannfn(y: String @Id("deftypeann"), z: Int @Id("deftypeann2")): String = Function.const(y)(z)
+
+    def defargannfn(@Id("defargann") y: String, @Id("defargann2") z: Int): String = Function.const(y)(z)
+
+    def defconfannfn(@Id("confargann") y: String @Id("conftypeann")): String = y
+
+    def defconfannfn2(@Id("confargann1") @Id("confargann2") y: String): String = y
+
+    val testVal: (String @Id("sigtypeann1"), Int @Id("sigtypeann2")) => String = (x, _) => x
+
+    val testVal2: Boolean => String = { x: Boolean @Id("valtypeann") => x.toString }
+
+    val testVal3: Long @Id("duptypeann1") => String @Id("duptypeann2") => Long =
+      { x: Long @Id("duptypeanndiff") => _ => x }
+
+    class TestProviderModule {
+
+      class TestDependency
+
+      class TestClass(val a: TestDependency)
+
+      def implArg(@Id("classdefargann1") arganndep: TestDependency): TestClass = new TestClass(arganndep)
+
+      def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
+
+    }
+  }
+
+  object Case17 {
+
+    class TestDependency
+
+    class TestClass(val a: TestDependency)
+
+    def implArg(@Id("classdefargann1") arganndep: TestDependency): TestClass = new TestClass(arganndep)
+
+    def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
+
   }
 }

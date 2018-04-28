@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, MacroUniverse, RuntimeUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, StaticDIUniverse, RuntimeDIUniverse}
 
 trait DependencyKeyProvider {
   val u: DIUniverse
@@ -12,9 +12,9 @@ trait DependencyKeyProvider {
 
 object DependencyKeyProvider {
 
-  trait Java extends DependencyKeyProvider {
-    val u: RuntimeUniverse.type = RuntimeUniverse
+  trait Runtime extends DependencyKeyProvider {
+    val u: RuntimeDIUniverse.type = RuntimeDIUniverse
   }
 
-  abstract class Macro[+M <: MacroUniverse[_]](override val u: M) extends DependencyKeyProvider
+  abstract class Static[+M <: StaticDIUniverse[_]](override val u: M) extends DependencyKeyProvider
 }

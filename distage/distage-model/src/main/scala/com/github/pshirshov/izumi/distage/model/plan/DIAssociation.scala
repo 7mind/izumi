@@ -1,15 +1,16 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{Callable, DIUniverseBase, RuntimeUniverse, SafeType}
+import com.github.pshirshov.izumi.distage.model.reflection.universe._
 import com.github.pshirshov.izumi.distage.model.util.Formattable
 
-trait Association {
+trait DIAssociation {
   this:  DIUniverseBase
-    with SafeType
-    with Callable
+    with DISafeType
+    with DICallable
     with DIKey
-    with DependencyContext
+    with DIDependencyContext
+    with DILiftableRuntimeUniverse
   =>
 
   sealed trait Association extends Formattable {
@@ -25,7 +26,7 @@ trait Association {
     object Parameter {
       implicit final val liftableParameter: Liftable[Parameter] = {
         case Parameter(context, name, tpe, wireWith) => q"""
-        { new ${symbolOf[RuntimeUniverse.type].asClass.module}.Association.Parameter($context, $name, $tpe, $wireWith) }
+        { new $RuntimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith) }
         """
       }
     }

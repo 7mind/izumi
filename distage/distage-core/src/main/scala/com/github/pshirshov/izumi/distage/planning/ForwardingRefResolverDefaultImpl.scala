@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
 import com.github.pshirshov.izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.collection.mutable
 
@@ -19,8 +19,8 @@ class ForwardingRefResolverDefaultImpl
 
     import reftable._
 
-    val proxyInits = mutable.HashMap[RuntimeUniverse.DIKey, mutable.Set[RuntimeUniverse.DIKey]]()
-    val proxies = mutable.HashMap[RuntimeUniverse.DIKey, ProxyOp.MakeProxy]()
+    val proxyInits = mutable.HashMap[RuntimeDIUniverse.DIKey, mutable.Set[RuntimeDIUniverse.DIKey]]()
+    val proxies = mutable.HashMap[RuntimeDIUniverse.DIKey, ProxyOp.MakeProxy]()
 
     val resolvedSteps = plan.steps.flatMap {
       case step if dependenciesOf.contains(step.target) =>

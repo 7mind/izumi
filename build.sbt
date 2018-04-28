@@ -75,7 +75,6 @@ val baseSettings = new GlobalSettings {
         )
         , addCompilerPlugin(R.kind_projector)
       )
-
     }
     , LibSettings -> new ProjectSettings {
       override val settings: Seq[sbt.Setting[_]] = Seq(
@@ -171,6 +170,7 @@ val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module
+  .dependsOn(fundamentalsPlatform)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
@@ -201,7 +201,21 @@ lazy val distageCore = inDiStage.as.module
   )
 
 //
+lazy val distageStatic = inDiStage.as.module
+  .depends(distageModel, distageCore.testOnlyRef)
+  .settings(
+    libraryDependencies += R.shapeless
+  )
+//
 lazy val logstageApiBase = inLogStage.as.module
+
+lazy val distageCats = inDiStage.as.module
+  .depends(distageModel, distageCore.testOnlyRef)
+  .settings(
+    libraryDependencies += R.cats_kernel
+    , libraryDependencies ++= T.cats_all
+  )
+
 
 lazy val logstageApiBaseMacro = inLogStage.as.module
   .depends(logstageApiBase)

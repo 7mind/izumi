@@ -1,10 +1,8 @@
 package com.github.pshirshov.izumi.logstage.api.rendering.json
 
-import com.github.pshirshov.izumi.logstage.api.logger.RenderingOptions
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.Log.LogContext
-import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods

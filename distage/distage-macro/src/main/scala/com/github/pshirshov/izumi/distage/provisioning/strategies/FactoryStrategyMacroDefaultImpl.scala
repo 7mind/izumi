@@ -1,10 +1,12 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
+import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MacroUniverse, RuntimeUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
@@ -12,11 +14,11 @@ import scala.reflect.macros.blackbox
 trait FactoryStrategyMacroDefaultImpl {
   self: FactoryStrategyMacro =>
 
-  def mkWrappedFactoryConstructor[T]: WrappedFunction[T] = macro FactoryStrategyMacroDefaultImplImpl.mkWrappedFactoryConstructorMacro[T]
+  def mkWrappedFactoryConstructor[T]: DIKeyWrappedFunction[T] = macro FactoryStrategyMacroDefaultImplImpl.mkWrappedFactoryConstructorMacro[T]
 
   @inline
   // reason for this is simply IDEA flipping out on [T: c.WeakTypeTag]
-  override def mkWrappedFactoryConstructorMacro[T: blackbox.Context#WeakTypeTag](c: blackbox.Context): c.Expr[WrappedFunction[T]] =
+  override def mkWrappedFactoryConstructorMacro[T: blackbox.Context#WeakTypeTag](c: blackbox.Context): c.Expr[DIKeyWrappedFunction[T]] =
     FactoryStrategyMacroDefaultImplImpl.mkWrappedFactoryConstructorMacro[T](c)
 }
 
@@ -25,25 +27,23 @@ object FactoryStrategyMacroDefaultImpl
     with FactoryStrategyMacro
 
 // TODO: Factories can exceed 22 arguments limit on function parameter list
-// TODO: Preserve annotations to support IDs
 
 // reason for this indirection is just to avoid slowdown from red lines in idea on ```object FactoryStrategyMacroDefaultImpl extends FactoryStrategyMacro with FactoryStrategyMacroDefaultImpl```
 private[strategies] object FactoryStrategyMacroDefaultImplImpl {
 
 
-  def mkWrappedFactoryConstructorMacro[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[WrappedFunction[T]] = {
+  def mkWrappedFactoryConstructorMacro[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[DIKeyWrappedFunction[T]] = {
     import c.universe._
 
-    val macroUniverse = MacroUniverse(c)
-    import macroUniverse.Wiring._
+    val macroUniverse = StaticDIUniverse(c)
     import macroUniverse._
+    import macroUniverse.Wiring._
+    import macroUniverse.Association._
 
-    val keyProvider = DependencyKeyProviderDefaultImpl.Macro.instance(macroUniverse)
-    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Macro.instance(macroUniverse)
-    val reflectionProvider = ReflectionProviderDefaultImpl.Macro.instance(macroUniverse)(
-      keyProvider
-      , symbolIntrospector
-    )
+    val keyProvider = DependencyKeyProviderDefaultImpl.Static.instance(macroUniverse)
+    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static.instance(macroUniverse)
+    val reflectionProvider = ReflectionProviderDefaultImpl.Static.instance(macroUniverse)(keyProvider, symbolIntrospector)
+    val logger = MacroUtil.mkLogger[this.type](c)
 
     val targetType = weakTypeOf[T]
 
@@ -52,19 +52,41 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
     )
 
     val (dependencyArgs, dependencyMethods) = dependencies.map {
-      dep =>
-        val methodName = dep.symbol.name.toTermName
+      // FIXME: FIXME COPYPASTA with below and with TraitStrategyMacro
+      case Method(_, methodSymbol, targetKey) =>
+        val tpe = targetKey.symbol.tpe
+        val methodName = methodSymbol.asMethod.name.toTermName
         val argName = c.freshName(methodName)
-        val tpe = dep.wireWith.symbol.tpe
 
-        (q"$argName: $tpe",  q"override val $methodName: $tpe = $argName")
+        val anns = targetKey match {
+          case idKey: DIKey.IdKey[_] =>
+            import idKey._
+            val ann = q"new _root_.com.github.pshirshov.izumi.distage.model.definition.Id($id)"
+            Modifiers.apply(NoFlags, typeNames.EMPTY, List(ann))
+          case _ =>
+            Modifiers()
+        }
+
+        (q"$anns val $argName: $tpe", q"override val $methodName: $tpe = $argName")
     }.unzip
 
-    // FIXME transitive dependencies request
+    // FIXME transitive dependencies request (HACK pulling up dependencies from factory methods to ensure correct plan ordering)
     val transitiveDependenciesArgsHACK = factoryInfo.associations.map {
+          // FIXME: FIXME COPYPASTA with above and with TraitStrategyMacro
       assoc =>
-        val typeFull = assoc.wireWith.symbol
-        q"${TermName(c.freshName("transitive"))}: ${typeFull.tpe}"
+        val key = assoc.wireWith
+
+        val anns = key match {
+          case idKey: DIKey.IdKey[_] =>
+            import idKey._
+            val ann = q"new _root_.com.github.pshirshov.izumi.distage.model.definition.Id($id)"
+            Modifiers.apply(NoFlags, typeNames.EMPTY, List(ann))
+          case _ =>
+            Modifiers()
+        }
+
+        val typeFull = key.symbol
+        q"$anns val ${TermName(c.freshName("transitive"))}: ${typeFull.tpe}"
     }
 
     val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor].typeSymbol
@@ -74,8 +96,16 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
     // FIXME we can't remove runtime dependency on scala.reflect right now because:
     //  1. provisioner depends on RuntimeUniverse scala.reflect Types
     //  2. we need to lift DIKey & SafeType types (by calling RuntimeUniverse reflection)
+    //
+    //  Solution:
+    //    * Provisioning shouldn't call reflection, all necessary info should be collected by planner
+    //    * Universe types(DIKey, SafeType) should be interfaces not directly referencing scala-reflect types
+    //    * API builder methods shouldn't require TypeTag
+    //    * make scala-reflect dependency (% Provided) for distage-static
+    //      * provided dependencies seem to be correctly transitive, at least shapeless doesn't require the user to
+    //        to add provided scala-reflect to his .sbt
     val producerMethods = wireables.map {
-      case FactoryMethod.WithContext(factoryMethod, wireWith, methodArguments) =>
+      case FactoryMethod.WithContext(factoryMethod, productConstructor, methodArguments) =>
 
         val (methodArgs, executorArgs) = methodArguments.map {
           dIKey =>
@@ -86,22 +116,24 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
         val typeParams = factoryMethod.typeParams.map(ty => c.internal.typeDef(ty))
 
         val resultTypeOfMethod = factoryMethod.typeSignature.finalResultType
-        val instanceType = wireWith.instanceType
+        val instanceType = productConstructor.instanceType
 
-        val wiringInfo = wireWith match {
+        val wiringInfo = productConstructor match {
           case w: UnaryWiring.Constructor =>
             q"{ $w }"
-          case w: UnaryWiring.Abstract => q"""{
+          case w: UnaryWiring.Abstract =>
+            // FIXME could be a Factory within a Factory, handle case or provide error message
+            q"""{
             val fun = ${symbolOf[TraitStrategyMacroDefaultImpl.type].asClass.module}.mkWrappedTraitConstructor[${w.instanceType.tpe}]
-            ${symbolOf[RuntimeUniverse.type].asClass.module}.Wiring.UnaryWiring.Function.apply(fun)
+            $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun)
             }"""
         }
 
         q"""
         override def ${factoryMethod.name}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
-          val symbolDeps: ${typeOf[RuntimeUniverse.Wiring.UnaryWiring]} = $wiringInfo
+          val symbolDeps: ${typeOf[RuntimeDIUniverse.Wiring.UnaryWiring]} = $wiringInfo
 
-          val executorArgs: ${typeOf[Map[RuntimeUniverse.DIKey, Any]]} =
+          val executorArgs: ${typeOf[Map[RuntimeDIUniverse.DIKey, Any]]} =
             ${if (executorArgs.nonEmpty)
               // ensure referential equality for typetags inside symbolDeps and inside executableOps (to support weakTypeTag generics)
               q"{ symbolDeps.associations.map(_.wireWith).zip(${executorArgs.toList}).toMap }"
@@ -129,29 +161,23 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
     else
       q"new $targetType { ..$allMethods }"
 
-    val expr = c.Expr {
+    val constructorDef =
       q"""
-      {
-      def factoryConstructor(..$allArgs): $targetType =
+      def constructor(..$allArgs): $targetType =
         ($instantiate).asInstanceOf[$targetType]
-
-      (factoryConstructor _)
-      }
       """
-    }
 
-    val WrappedFunction = typeOf[WrappedFunction[_]].typeSymbol
-    val res = c.Expr[WrappedFunction[T]] {
+    val wrappedFunction = symbolOf[WrappedFunction.type].asClass.module
+    val res = c.Expr[DIKeyWrappedFunction[T]] {
       q"""
           {
-          val ctor = ${reify(expr.splice)}
+          $constructorDef
 
-          // trigger implicit conversion
-          _root_.scala.Predef.identity[$WrappedFunction[$targetType]](ctor)
+          $wrappedFunction.DIKeyWrappedFunction.apply[$targetType](constructor _)
           }
        """
     }
-    c.info(c.enclosingPosition, s"Syntax tree of factory $targetType:\n$res", force = false)
+    logger.log(s"Final syntax tree of factory $targetType:\n$res")
 
     res
   }

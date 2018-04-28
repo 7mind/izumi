@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.distage.model.references
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverseBase, RuntimeUniverse, SafeType}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DILiftableRuntimeUniverse, DISafeType, DIUniverseBase, RuntimeDIUniverse}
 
 trait DIKey {
   this: DIUniverseBase
-    with SafeType =>
+    with DISafeType
+    with DILiftableRuntimeUniverse =>
 
   import u._
 
@@ -14,6 +15,8 @@ trait DIKey {
 
   object DIKey {
 
+    def get[K: Tag]: TypeKey = TypeKey(SafeType.get[K])
+
     case class TypeKey(symbol: TypeFull) extends DIKey {
       override def toString: String = symbol.toString
 
@@ -22,21 +25,19 @@ trait DIKey {
     object TypeKey {
       implicit final val liftableTypeKey: Liftable[TypeKey] = {
         case TypeKey(symbol) => q"""
-        { new ${symbolOf[RuntimeUniverse.type].asClass.module}.DIKey.TypeKey($symbol) }
+        { new $RuntimeDIUniverse.DIKey.TypeKey($symbol) }
           """
       }
     }
 
-    case class IdKey[InstanceId : Liftable](symbol: TypeFull, id: InstanceId) extends DIKey {
-      val liftableId: Liftable[InstanceId] = implicitly
-
+    case class IdKey[InstanceId](symbol: TypeFull, id: InstanceId)(implicit val liftableId: Liftable[InstanceId]) extends DIKey {
       override def toString: String = s"${symbol.toString}#$id"
     }
     object IdKey {
       implicit final def liftableIdKey[InstanceId]: Liftable[IdKey[InstanceId]] = {
-        case i@IdKey(symbol, id) => q"""
-        { new ${symbolOf[RuntimeUniverse.type].asClass.module}.DIKey.IdKey($symbol, ${i.liftableId(id)}) }
-          """
+        case idKey: IdKey[_] =>
+          import idKey._
+          q"""{ new $RuntimeDIUniverse.DIKey.IdKey($symbol, $id) }"""
       }
     }
 
@@ -48,7 +49,7 @@ trait DIKey {
     object ProxyElementKey {
       implicit final val liftableProxyElementKey: Liftable[ProxyElementKey] = {
         case ProxyElementKey(proxied, symbol) => q"""
-        { new ${symbolOf[RuntimeUniverse.type].asClass.module}.DIKey.ProxyElementKey(${liftableDIKey(proxied)}, $symbol) }
+        { new $RuntimeDIUniverse.DIKey.ProxyElementKey(${liftableDIKey(proxied)}, $symbol) }
           """
       }
     }
@@ -61,12 +62,10 @@ trait DIKey {
     object SetElementKey {
       implicit final val liftableSetElementKey: Liftable[SetElementKey] = {
         case SetElementKey(set, symbol) => q"""
-        { new ${symbolOf[RuntimeUniverse.type].asClass.module}.DIKey.SetElementKey(${liftableDIKey(set)}, $symbol) }
+        { new $RuntimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, $symbol) }
           """
       }
     }
-
-    def get[K: Tag]: TypeKey = TypeKey(SafeType.get[K])
 
     implicit final val liftableDIKey: Liftable[DIKey] = {
       Liftable[DIKey] {

@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
-trait SafeType {
-  this: DIUniverseBase =>
+trait DISafeType {
+  this: DIUniverseBase
+    with DILiftableRuntimeUniverse
+  =>
 
   type TypeFull = SafeType
 
@@ -16,6 +18,9 @@ trait SafeType {
       case _ =>
         false
     }
+
+    def <:<(that: SafeType): Boolean =
+      this.tpe <:< that.tpe
   }
 
   object SafeType {
@@ -26,7 +31,7 @@ trait SafeType {
     implicit final val liftableSafeType: u.Liftable[SafeType] =
       value => {
         import u._
-        q"{ ${symbolOf[RuntimeUniverse.type].asClass.module}.SafeType.getWeak[${Liftable.liftType(value.tpe)}] }"
+        q"{ $RuntimeDIUniverse.SafeType.getWeak[${Liftable.liftType(value.tpe)}] }"
       }
   }
 

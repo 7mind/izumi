@@ -8,8 +8,8 @@ import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
@@ -26,7 +26,7 @@ class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends Abst
     bootstrapProducer.provision(plan, this)
   }
 
-  protected def unsafeLookup(key: RuntimeUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
+  protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
 
   lazy val parent: Option[AbstractLocator] = None
   lazy val plan: FinalPlan = bootstrapPlanner.plan(contextDefinition)
@@ -36,9 +36,9 @@ class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends Abst
 
 object DefaultBootstrapContext {
   private lazy val bootstrapPlanner = {
-    val reflectionProvider = new ReflectionProviderDefaultImpl.Java(
-      new DependencyKeyProviderDefaultImpl.Java
-      , new SymbolIntrospectorDefaultImpl.Java
+    val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
+      new DependencyKeyProviderDefaultImpl.Runtime
+      , new SymbolIntrospectorDefaultImpl.Runtime
     )
 
     val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.debug.distage.bootstrap"))
@@ -78,31 +78,31 @@ object DefaultBootstrapContext {
   }
 
   final lazy val defaultBootstrapContextDefinition: ContextDefinition = TrivialDIDef
-    .instance[CustomOpHandler](CustomOpHandler.NullCustomOpHander)
-    .instance[LookupInterceptor](NullLookupInterceptor)
-    .binding[ReflectionProvider.Java, ReflectionProviderDefaultImpl.Java]
-    .binding[SymbolIntrospector.Java, SymbolIntrospectorDefaultImpl.Java]
-    .binding[DependencyKeyProvider.Java, DependencyKeyProviderDefaultImpl.Java]
-    .binding[PlanningHook, PlanningHookDefaultImpl]
-    .binding[PlanningObserver, PlanningObserverDefaultImpl]
-    .binding[PlanResolver, PlanResolverDefaultImpl]
-    .binding[PlanAnalyzer, PlanAnalyzerDefaultImpl]
-    .binding[PlanMergingPolicy, PlanMergingPolicyDefaultImpl]
-    .binding[TheFactoryOfAllTheFactories, TheFactoryOfAllTheFactoriesDefaultImpl]
-    .binding[ForwardingRefResolver, ForwardingRefResolverDefaultImpl]
-    .binding[SanityChecker, SanityCheckerDefaultImpl]
-    .binding[Planner, PlannerDefaultImpl]
-    .binding[ProvisionerHook, ProvisionerHookDefaultImpl]
-    .binding[ProvisionerIntrospector, ProvisionerIntrospectorDefaultImpl]
-    .binding[LoggerHook, LoggerHookDefaultImpl]
-    .binding[SetStrategy, SetStrategyDefaultImpl]
-    .binding[ProxyStrategy, ProxyStrategyDefaultImpl]
-    .binding[FactoryStrategy, FactoryStrategyDefaultImpl]
-    .binding[TraitStrategy, TraitStrategyDefaultImpl]
-    .binding[ProviderStrategy, ProviderStrategyDefaultImpl]
-    .binding[ClassStrategy, ClassStrategyDefaultImpl]
-    .binding[ImportStrategy, ImportStrategyDefaultImpl]
-    .binding[CustomStrategy, CustomStrategyDefaultImpl]
-    .binding[InstanceStrategy, InstanceStrategyDefaultImpl]
-    .binding[Provisioner, ProvisionerDefaultImpl]
+    .bind[CustomOpHandler].as(CustomOpHandler.NullCustomOpHander)
+    .bind[LookupInterceptor].as(NullLookupInterceptor)
+    .bind[ReflectionProvider.Runtime].as[ReflectionProviderDefaultImpl.Runtime]
+    .bind[SymbolIntrospector.Runtime].as[SymbolIntrospectorDefaultImpl.Runtime]
+    .bind[DependencyKeyProvider.Runtime].as[DependencyKeyProviderDefaultImpl.Runtime]
+    .bind[PlanningHook].as[PlanningHookDefaultImpl]
+    .bind[PlanningObserver].as[PlanningObserverDefaultImpl]
+    .bind[PlanResolver].as[PlanResolverDefaultImpl]
+    .bind[PlanAnalyzer].as[PlanAnalyzerDefaultImpl]
+    .bind[PlanMergingPolicy].as[PlanMergingPolicyDefaultImpl]
+    .bind[TheFactoryOfAllTheFactories].as[TheFactoryOfAllTheFactoriesDefaultImpl]
+    .bind[ForwardingRefResolver].as[ForwardingRefResolverDefaultImpl]
+    .bind[SanityChecker].as[SanityCheckerDefaultImpl]
+    .bind[Planner].as[PlannerDefaultImpl]
+    .bind[ProvisionerHook].as[ProvisionerHookDefaultImpl]
+    .bind[ProvisionerIntrospector].as[ProvisionerIntrospectorDefaultImpl]
+    .bind[LoggerHook].as[LoggerHookDefaultImpl]
+    .bind[SetStrategy].as[SetStrategyDefaultImpl]
+    .bind[ProxyStrategy].as[ProxyStrategyDefaultImpl]
+    .bind[FactoryStrategy].as[FactoryStrategyDefaultImpl]
+    .bind[TraitStrategy].as[TraitStrategyDefaultImpl]
+    .bind[ProviderStrategy].as[ProviderStrategyDefaultImpl]
+    .bind[ClassStrategy].as[ClassStrategyDefaultImpl]
+    .bind[ImportStrategy].as[ImportStrategyDefaultImpl]
+    .bind[CustomStrategy].as[CustomStrategyDefaultImpl]
+    .bind[InstanceStrategy].as[InstanceStrategyDefaultImpl]
+    .bind[Provisioner].as[ProvisionerDefaultImpl]
 }

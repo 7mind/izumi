@@ -1,11 +1,13 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{Callable, DIUniverseBase, RuntimeUniverse, SafeType}
+import com.github.pshirshov.izumi.distage.model.reflection.universe._
 
-trait DependencyContext {
+trait DIDependencyContext {
   this: DIUniverseBase
-    with SafeType
-    with Callable =>
+    with DISafeType
+    with DICallable
+    with DILiftableRuntimeUniverse
+  =>
 
   sealed trait DependencyContext {
     def definingClass: TypeFull
@@ -30,7 +32,7 @@ trait DependencyContext {
       object ConstructorParameterContext {
         implicit final val liftableParameter: Liftable[ConstructorParameterContext] = {
           case ConstructorParameterContext(definingClass) => q"""
-          { new ${symbolOf[RuntimeUniverse.type].asClass.module}.DependencyContext.ConstructorParameterContext($definingClass) }
+          { new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext($definingClass) }
           """
         }
       }
@@ -39,7 +41,7 @@ trait DependencyContext {
         override def definingClass: TypeFull = factoryClass
       }
 
-      case class CallableParameterContext(definingCallable: Callable) extends ParameterContext {
+      case class CallableParameterContext(definingCallable: Provider) extends ParameterContext {
         override def definingClass: TypeFull = definingCallable.ret
       }
 
