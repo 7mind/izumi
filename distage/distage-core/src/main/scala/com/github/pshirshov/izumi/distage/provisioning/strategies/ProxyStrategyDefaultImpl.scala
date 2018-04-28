@@ -13,7 +13,7 @@ import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInt
   * - Will not work for any class which performs any operations on forwarding refs within constructor
   * - Untested on constructors accepting primitive values, will fail most likely
   */
-class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Java) extends ProxyStrategy {
+class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) extends ProxyStrategy {
   def initProxy(context: ProvisioningContext, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(initProxy.target)
     context.fetchKey(key) match {
@@ -55,10 +55,10 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Java) exte
 
       val args  = params.map {
         case p if makeProxy.forwardRefs.contains(p.wireWith) =>
-          RuntimeUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> null
+          RuntimeDIUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> null
 
         case p =>
-          RuntimeUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> context.fetchKey(p.wireWith)
+          RuntimeDIUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> context.fetchKey(p.wireWith)
       }
 
       ProxyParams.Params(args.map(_._1).toArray, args.map(_._2).toArray)

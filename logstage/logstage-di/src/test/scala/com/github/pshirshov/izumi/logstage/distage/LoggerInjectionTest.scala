@@ -31,7 +31,7 @@ class LoggerInjectionTest extends WordSpec {
 
       val definition = TrivialDIDef
         .bind[ExampleService]
-        .binding[ExampleApp]
+        .bind[ExampleApp]
 
 
       val customizations = TrivialDIDef

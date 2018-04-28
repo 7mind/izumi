@@ -4,8 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, SetOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
-import com.github.pshirshov.izumi.distage.model.reflection.universe
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.collection.mutable
 
@@ -59,7 +58,7 @@ class PlanMergingPolicyDefaultImpl(
 
     val left = mutable.ArrayBuffer[ExecutableOp.InstantiationOp]()
     val right = mutable.ArrayBuffer[ExecutableOp.InstantiationOp]()
-    val rightSet = mutable.LinkedHashSet[RuntimeUniverse.DIKey]()
+    val rightSet = mutable.LinkedHashSet[RuntimeDIUniverse.DIKey]()
 
 
     steps.foreach {
@@ -80,7 +79,7 @@ class PlanMergingPolicyDefaultImpl(
     (left, right)
   }
 
-  private def requirements(step: ExecutableOp.InstantiationOp): Set[RuntimeUniverse.DIKey] = {
+  private def requirements(step: ExecutableOp.InstantiationOp): Set[RuntimeDIUniverse.DIKey] = {
     step match {
       case w: WiringOp =>
         w.wiring.associations.map(_.wireWith).toSet
@@ -109,7 +108,7 @@ class PlanMergingPolicyDefaultImpl(
     newImports
   }
 
-  private def newKeys(currentOp: NextOps): Set[universe.RuntimeUniverse.DIKey] = {
+  private def newKeys(currentOp: NextOps): Set[RuntimeDIUniverse.DIKey] = {
     currentOp
       .provisions
       .map(op => op.target)

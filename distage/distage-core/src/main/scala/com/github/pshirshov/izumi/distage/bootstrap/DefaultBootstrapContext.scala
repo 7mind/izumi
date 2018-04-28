@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
@@ -26,7 +27,7 @@ class DefaultBootstrapContext(contextDefinition: ContextDefinition) extends Abst
     bootstrapProducer.provision(plan, this)
   }
 
-  protected def unsafeLookup(key: RuntimeUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
+  protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
 
   lazy val parent: Option[AbstractLocator] = None
   lazy val plan: FinalPlan = bootstrapPlanner.plan(contextDefinition)
