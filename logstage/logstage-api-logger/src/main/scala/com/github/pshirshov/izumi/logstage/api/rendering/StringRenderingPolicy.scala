@@ -12,7 +12,7 @@ class StringRenderingPolicy(options: RenderingOptions) extends RenderingPolicy {
   protected val withColors: Boolean = {
     (
       options.withColors &&
-        System.getProperty("iz.log.colored").asBoolean(true)
+        System.getProperty("izumi.logstage.rendering.colored").asBoolean(true)
       ) &&
       !GraphicsEnvironment.isHeadless
   }
