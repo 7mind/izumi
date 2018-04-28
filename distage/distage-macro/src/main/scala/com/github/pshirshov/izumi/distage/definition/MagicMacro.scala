@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSL, BindOnlyNameableDSL}
-import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.strategies.{FactoryStrategyMacro, FactoryStrategyMacroDefaultImpl, TraitStrategyMacro, TraitStrategyMacroDefaultImpl}
 import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl

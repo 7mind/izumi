@@ -1,10 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.functions
 
 import com.github.pshirshov.izumi.distage.model.definition.Id
-import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
-import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -25,8 +24,6 @@ object WrappedFunction {
   final class WrappedFunctionApply[R] {
     def apply[T](fun: T)(implicit conv: T => WrappedFunction[R]): WrappedFunction[R] = conv(fun)
   }
-
-  private final val logger = TrivialLogger.make[DIKeyWrappedFunctionMacroImpl.type]("izumi.distage.debug.macro")
 
   /** Trigger implicit conversion from function into a WrappedFunction **/
   def apply[R](fun: WrappedFunction[R]): WrappedFunction[R] = fun
@@ -77,6 +74,8 @@ object WrappedFunction {
         import macroUniverse._
         import macroUniverse.u._
 
+        val logger = MacroUtil.mkLogger[this.type](c)
+
         val argTree = funcExpr.tree
 
         val (args: List[Tree], body, isValReference) = argTree match {
@@ -93,6 +92,7 @@ object WrappedFunction {
               c.enclosingPosition
               , s"""Recognized argument as a value reference, annotations will not be extracted.
                    |To support annotations use a method reference such as (fn _).""".stripMargin)
+
             (List(), argTree, true)
           case _ =>
             c.abort(c.enclosingPosition
@@ -110,19 +110,19 @@ object WrappedFunction {
               // FIXME: use symbolIntrospector
               AnnotationTools.find[Id](u)(p.symbol)
             case arg =>
-              c.info(c.enclosingPosition, s"Lambda argument found but can't matched as a symbol $arg", force = false)
+              logger.log(s"Lambda argument found but can't matched as a symbol $arg")
               None
           }
 
           val maybeMethodTree = body match {
             case _ if isValReference =>
-              c.info(c.enclosingPosition, s"Matched function body as variable - $body", force = false)
+              logger.log(s"Matched function body as variable - $body")
               Some(body)
             case q"$n(..$_)" =>
-              c.info(c.enclosingPosition, s"Matched function body as a lambda reference - consists of a single call to function $n", force = false)
+              logger.log(s"Matched function body as a lambda reference - consists of a single call to function $n")
               Some(n)
             case _ =>
-              c.info(c.enclosingPosition, s"Function body didn't match as a variable or method reference - $body", force = false)
+              logger.log(s"Function body didn't match as a variable or method reference - $body")
               None
           }
 
@@ -135,7 +135,7 @@ object WrappedFunction {
                       val typAnns: List[Annotation] = p.typeSignature match {
                         case t: AnnotatedType =>
                           val annots = t.annotations
-                          c.info(c.enclosingPosition, s"Within method reference $n, on parameter $p found annotations $annots", force = false)
+                          logger.log(s"Within method reference $n, on parameter $p found annotations $annots")
                           annots
                         case _ =>
                           List()
@@ -150,7 +150,8 @@ object WrappedFunction {
                         case List(ann) =>
                           Some(ann)
                         case tooManyAnns =>
-                          c.abort(c.enclosingPosition
+                          c.abort(
+                            c.enclosingPosition
                             , s"Conflicting annotations: more than one @Id annotation attached to parameter $p, annotations: $tooManyAnns"
                           )
                       }
@@ -159,18 +160,20 @@ object WrappedFunction {
             }
 
           if (methodReferenceAnnotations.flatMap(_.toList).isEmpty) {
-            c.info(c.enclosingPosition,
+            logger.log(
               s"""
                  |Couldn't find any methodReferenceAnnotations
                  |, lambda annotations: $lambdaAnnotations,
-                 | method reference annotations: $methodReferenceAnnotations""".stripMargin, force = false)
+                 | method reference annotations: $methodReferenceAnnotations""".stripMargin
+            )
             lambdaAnnotations
           } else if (lambdaAnnotations.flatMap(_.toList).isEmpty) {
-            c.info(c.enclosingPosition,
+            logger.log(
               s"""
                  |Couldn't find any lambdaAnnotations
                  |, lambda annotations: $lambdaAnnotations,
-                 | method reference annotations: $methodReferenceAnnotations""".stripMargin, force = false)
+                 | method reference annotations: $methodReferenceAnnotations""".stripMargin
+            )
             methodReferenceAnnotations
           } else if (lambdaAnnotations == methodReferenceAnnotations) {
             lambdaAnnotations
@@ -200,10 +203,12 @@ object WrappedFunction {
             val wrapped = $wrappedFunction.apply[${weakTypeOf[R]}]($funcExpr)
 
             val idsList: ${typeOf[List[Option[String]]]} =
-              ${if(!isValReference)
-                  q"$idsList"
-                else
-                  q"""_root_.scala.List.fill(wrapped.argTypes.length)(_root_.scala.None)"""}
+              ${
+            if (!isValReference) {
+              q"$idsList"
+            } else {
+              q"""_root_.scala.List.fill(wrapped.argTypes.length)(_root_.scala.None)"""
+            }}
 
             _root_.scala.Predef.assert(wrapped.argTypes.length == idsList.length, "Impossible Happened! argTypes has different length than idsList")
 
@@ -220,8 +225,7 @@ object WrappedFunction {
           }"""
         }
 
-        c.info(
-          c.enclosingPosition,
+        logger.log(
           s"""Macro expansion info:
              | Symbol: ${argTree.symbol}\n
              | IsMethodSymbol: ${Option(argTree.symbol).exists(_.isMethod)}\n
@@ -230,11 +234,13 @@ object WrappedFunction {
              | strat match: ${(args, body, isValReference)}\n
              | argument: ${c.universe.showCode(argTree)}\n
              | argumentTree: ${c.universe.showRaw(argTree)}\n
+             | argumentType: ${argTree.tpe}
              | Result code: ${showCode(result.tree)}""".stripMargin
-          , force = false
         )
 
-        assert(annotations.size == idsList.size, "Impossible Happened! argTypes has different length than idsList")
+        if(annotations.size != idsList.size) {
+          c.abort(c.enclosingPosition, "Impossible Happened! annotations list has different length than idsList, not all annotations extracted")
+        }
 
         result
       }

@@ -34,6 +34,4 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
 
   override def onReferencesResolved(plan: DodgyPlan): Unit = ()
 
-  }
-
 }

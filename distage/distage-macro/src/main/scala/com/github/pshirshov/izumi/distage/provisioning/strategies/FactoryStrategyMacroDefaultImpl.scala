@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
@@ -42,6 +43,7 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
     val keyProvider = DependencyKeyProviderDefaultImpl.Static.instance(macroUniverse)
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static.instance(macroUniverse)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static.instance(macroUniverse)(keyProvider, symbolIntrospector)
+    val logger = MacroUtil.mkLogger[this.type](c)
 
     val targetType = weakTypeOf[T]
 
@@ -175,7 +177,7 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
           }
        """
     }
-    c.info(c.enclosingPosition, s"Syntax tree of factory $targetType:\n$res", force = false)
+    logger.log(s"Final syntax tree of factory $targetType:\n$res")
 
     res
   }

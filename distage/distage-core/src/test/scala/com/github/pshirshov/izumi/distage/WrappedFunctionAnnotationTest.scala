@@ -8,9 +8,9 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import org.scalatest.WordSpec
 
 class WrappedFunctionAnnotationTest extends WordSpec {
-  def priv(@Id("locargann") x: Int): Unit = ()
+  def priv(@Id("locargann") x: Int): Unit = {val _ = x}
 
-  val locargannfnval: Int @Id("locargann") => Unit = priv _
+  val locargannfnval: Int @Id("locargann") => Unit = priv
 
   "Annotation extracting WrappedFunction" should {
     "produce correct DI keys for anonymous inline lambda" in {
@@ -30,7 +30,7 @@ class WrappedFunctionAnnotationTest extends WordSpec {
     }
 
     "handle opaque local references with type annotations" in {
-      def loctypeannfn(x: Int @Id("loctypeann")): Unit = ()
+      def loctypeannfn(x: Int @Id("loctypeann")): Unit = {val _ = x}
 
       val fn = DIKeyWrappedFunction(loctypeannfn _)
 
@@ -39,7 +39,7 @@ class WrappedFunctionAnnotationTest extends WordSpec {
     }
 
     "handle opaque local references with argument annotations" in {
-      def locargannfn(@Id("locargann") x: Int): Unit = ()
+      def locargannfn(@Id("locargann") x: Int): Unit = {val _ = x}
 
       val fn = DIKeyWrappedFunction(locargannfn _)
       assert(fn.diKeys contains DIKey.get[Int].named("locargann"))
@@ -51,13 +51,13 @@ class WrappedFunctionAnnotationTest extends WordSpec {
     }
 
     "wrappedfunction can work with vals" in {
-      def triggerConversion[R](x: WrappedFunction[R]): Int = 5
+      def triggerConversion[R](x: WrappedFunction[R]): Int = {val _ = x; return 5}
 
       assertCompiles("triggerConversion(testVal3)")
     }
 
     "dikeywrappedfunction can work with vals" in {
-      def triggerConversion[R](x: DIKeyWrappedFunction[R]): Int = 5
+      def triggerConversion[R](x: DIKeyWrappedFunction[R]): Int = {val _ = x; return 5}
 
       assertCompiles("triggerConversion(testVal3)")
     }

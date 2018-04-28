@@ -170,6 +170,7 @@ val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module
+  .dependsOn(fundamentalsPlatform)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
