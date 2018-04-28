@@ -10,6 +10,3 @@ class PlanningObserverDefaultImpl extends PlanningObserver {
   override def onReferencesResolved(plan: DodgyPlan): Unit = {}
 }
 
-object PlanningObserverDefaultImpl {
-  final val instance = new PlanningObserverDefaultImpl()
-}

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.model.planning.PlanResolver
 import com.github.pshirshov.izumi.distage.model.references.TypedRef

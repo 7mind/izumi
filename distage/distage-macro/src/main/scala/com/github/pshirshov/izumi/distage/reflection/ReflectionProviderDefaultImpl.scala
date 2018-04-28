@@ -157,9 +157,9 @@ object ReflectionProviderDefaultImpl {
     override protected def bugAnnotationCall(parameterSymbol: u.Symb): Option[u.u.Annotation] =
       AnnotationTools.find[With[_]](u.u)(parameterSymbol)
   }
-  object Java {
-    final val instance = new ReflectionProviderDefaultImpl.Java(DependencyKeyProviderDefaultImpl.Java.instance, SymbolIntrospectorDefaultImpl.Java.instance)
-  }
+//  object Java {
+//    final val instance = new ReflectionProviderDefaultImpl.Java(DependencyKeyProviderDefaultImpl.Java.instance, SymbolIntrospectorDefaultImpl.Java.instance)
+//  }
 
   trait Macro[M <: MacroUniverse[_ <: Universe]]
     extends ReflectionProvider.Macro[M]

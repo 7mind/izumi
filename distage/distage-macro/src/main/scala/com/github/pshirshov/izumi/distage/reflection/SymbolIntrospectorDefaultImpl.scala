@@ -55,9 +55,9 @@ object SymbolIntrospectorDefaultImpl {
     extends SymbolIntrospector.Java
       with SymbolIntrospectorDefaultImpl
 
-  object Java {
-    final val instance = new SymbolIntrospectorDefaultImpl.Java
-  }
+//  object Java {
+//    final val instance = new SymbolIntrospectorDefaultImpl.Java
+//  }
 
   class Macro[M <: MacroUniverse[_]](macroUniverse: M)
     extends SymbolIntrospector.Macro[M](macroUniverse)

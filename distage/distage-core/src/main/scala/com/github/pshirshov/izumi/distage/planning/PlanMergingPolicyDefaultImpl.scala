@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, SetOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
-import com.github.pshirshov.izumi.distage.model.references.DIKey
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
 

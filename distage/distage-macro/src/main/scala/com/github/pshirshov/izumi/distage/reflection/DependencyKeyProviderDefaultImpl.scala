@@ -71,9 +71,9 @@ object DependencyKeyProviderDefaultImpl {
     override protected def bugAnnotationCall(parameterSymbol: u.Symb): Option[u.u.Annotation] =
       AnnotationTools.find[Id](u.u)(parameterSymbol)
   }
-  object Java {
-    final val instance = new DependencyKeyProviderDefaultImpl.Java
-  }
+//  object Java {
+//    final val instance = new DependencyKeyProviderDefaultImpl.Java
+//  }
 
   class Macro[M <: MacroUniverse[_ <: Universe]](macroUniverse: M)
     extends DependencyKeyProvider.Macro[M](macroUniverse)
