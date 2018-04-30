@@ -45,6 +45,6 @@ class ForwardingRefResolverDefaultImpl
         acc :+ ProxyOp.InitProxy(proxyKey, proxyDep.toSet, proxies(proxyKey))
     }
 
-    plan.copy(steps = resolvedSteps, proxies  = proxyOps)
+    plan.copy(steps = resolvedSteps, proxies = proxyOps)
   }
 }

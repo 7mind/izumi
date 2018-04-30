@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -21,15 +20,15 @@ trait ModuleBuilder {
   }
 
   final protected def bind[T: RuntimeDIUniverse.Tag, I <: T: RuntimeDIUniverse.Tag]: Unit = { val _ =
-    mutableState += Binding.SingletonBinding(RuntimeDIUniverse.DIKey.get[T], ImplDef.TypeImpl(RuntimeDIUniverse.SafeType.get[I]))
+    mutableState += Bindings.binding[T, I]
   }
 
   final protected def bind[T: RuntimeDIUniverse.Tag](instance: T): Unit = { val _ =
-    mutableState += Binding.SingletonBinding(RuntimeDIUniverse.DIKey.get[T], ImplDef.InstanceImpl(RuntimeDIUniverse.SafeType.get[T], instance))
+    mutableState += Bindings.binding(instance)
   }
 
   final protected def provider[T: RuntimeDIUniverse.Tag](f: DIKeyWrappedFunction[T]): Unit = { val _ =
-    mutableState += SingletonBinding(RuntimeDIUniverse.DIKey.get[T], ImplDef.ProviderImpl(f.ret, f))
+    mutableState += Bindings.provider(f)
   }
 
 }

@@ -18,7 +18,8 @@ class TheFactoryOfAllTheFactoriesDefaultImpl(
       override protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] =
         dependencyMap.get(key)
 
-      override def enumerate: Stream[IdentifiedRef] = dependencyMap.enumerate
+      override def enumerate: Stream[IdentifiedRef] =
+        dependencyMap.enumerate
 
       override val plan: FinalPlan = finalPlan
     }

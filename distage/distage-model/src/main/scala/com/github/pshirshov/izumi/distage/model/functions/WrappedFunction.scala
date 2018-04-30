@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, Macr
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
+import scala.reflect.macros.blackbox
 
 sealed trait WrappedFunction[+R] extends RuntimeDIUniverse.Callable {
   protected def fun: Any
@@ -65,146 +66,58 @@ object WrappedFunction {
     implicit def apply[R](funcExpr: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): DIKeyWrappedFunction[R] = macro DIKeyWrappedFunctionMacroImpl.impl[R]
     implicit def apply[R](funcExpr: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): DIKeyWrappedFunction[R] = macro DIKeyWrappedFunctionMacroImpl.impl[R]
 
-    object DIKeyWrappedFunctionMacroImpl {
-      import scala.reflect.macros._
+    class DIKeyWrappedFunctionMacroImpl(val c: blackbox.Context) {
+
+      // FIXME: use symbolIntrospector
+
+      val macroUniverse = StaticDIUniverse(c)
+      private val logger = MacroUtil.mkLogger[DIKeyWrappedFunctionMacroImpl](c)
+
+      import macroUniverse._
+      import c.universe._
+
+      case class ExtractedInfo(paramsInfo: List[ParamInfo], isValReference: Boolean)
+
+      case class ParamInfo(typ: Type, ann: Option[u.Annotation])
+      object ParamInfo {
+        def apply(typ: Type): ParamInfo =
+          ParamInfo(typ, AnnotationTools.findTypeAnnotation[Id](u)(typ))
+
+        def apply(sym: Symbol): ParamInfo =
+          ParamInfo(sym.typeSignature, AnnotationTools.find[Id](u)(sym))
+      }
 
       // FIXME: use SymbolIntrospector
-      def impl[R: c.WeakTypeTag](c: blackbox.Context)(funcExpr: c.Expr[_]): c.Expr[DIKeyWrappedFunction[R]] = {
-        val macroUniverse = StaticDIUniverse(c)
-        import macroUniverse._
-        import macroUniverse.u._
+      def impl[R: c.WeakTypeTag](funcExpr: c.Expr[_]): c.Expr[DIKeyWrappedFunction[R]] = {
 
         val logger = MacroUtil.mkLogger[this.type](c)
 
         val argTree = funcExpr.tree
 
-        val (args: List[ValDef], body, isValReference) = argTree match {
-          case Block(_, Function(args, body)) => //q"""{ (..$args) => $body }""" =>
-            (args, body, false)
-          case Function(args, body) =>
-            (args, body, false)
-          case _ if Option(argTree.symbol).exists(_.isMethod) =>
-            c.warning(
-              c.enclosingPosition
-              , s"""Recognized argument as a value reference, annotations will not be extracted.
-                   |To support annotations use a method reference such as (fn _).""".stripMargin)
+        val ExtractedInfo(paramsInfo, isValReference) = analyze(argTree)
 
-            (List(), argTree, true)
-          case _ =>
-            c.abort(c.enclosingPosition
-              , s"""
-                 | Can handle only method references of form (method _) or lambda bodies of form (body => ???).\n
-                 | Argument doesn't seem to be a method reference or a lambda:\n
-                 |   argument: ${c.universe.showCode(argTree)}\n
-                 |   argumentTree: ${c.universe.showRaw(argTree)}\n
-                 | Hint: Try appending _ to your method name""".stripMargin)
-        }
-
-        val annotations: List[Option[Annotation]] = {
-          val lambdaAnnotations: List[Option[Annotation]] = args.map {
-            p =>
-              // FIXME: use symbolIntrospector
-              AnnotationTools.find[Id](u)(p.symbol)
-          }
-
-          val maybeMethodTree = body match {
-            case _ if isValReference =>
-              logger.log(s"Matched function body as variable - ${showRaw(body)}")
-              Some(body)
-            case Apply(n, _) =>
-              logger.log(s"Matched function body as a method reference - consists of a single call to a function $n - ${showRaw(body)}")
-              Some(n)
-            case _ =>
-              logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
-              None
-          }
-
-          val methodReferenceAnnotations =
-            maybeMethodTree.toList.flatMap {
-              n =>
-                n.symbol.asMethod.typeSignature.paramLists.flatMap {
-                  _.map {
-                    p =>
-                      val typAnns: List[Annotation] = p.typeSignature match {
-                        case t: AnnotatedType =>
-                          val annots = t.annotations
-                          logger.log(s"Within method reference $n, on parameter $p found annotations $annots")
-                          annots
-                        case _ =>
-                          List()
-                      }
-                      val allAnns: List[Annotation] = p.annotations ++ typAnns
-
-                      val idAnns = allAnns.filter(_.tree.tpe.erasure =:= typeOf[Id].erasure)
-
-                      idAnns match {
-                        case Nil =>
-                          None
-                        case List(ann) =>
-                          Some(ann)
-                        case tooManyAnns =>
-                          c.abort(
-                            c.enclosingPosition
-                            , s"Conflicting annotations: more than one @Id annotation attached to parameter $p, annotations: $tooManyAnns"
-                          )
-                      }
-                  }
-                }
-            }
-
-          (lambdaAnnotations.flatten, methodReferenceAnnotations.flatten) match {
-            case (l, m) if l == m =>
-              lambdaAnnotations
-            case (_, Nil) =>
-              logger.log(
-                s"""Couldn't find any methodReferenceAnnotations
-                   | lambda annotations: $lambdaAnnotations,
-                   | method reference annotations: $methodReferenceAnnotations""".stripMargin
-              )
-              lambdaAnnotations
-            case (Nil, _) =>
-              logger.log(
-                s"""Couldn't find any lambdaAnnotations
-                   | lambda annotations: $lambdaAnnotations,
-                   | method reference annotations: $methodReferenceAnnotations""".stripMargin
-              )
-              methodReferenceAnnotations
-            case _ =>
-              c.abort(c.enclosingPosition
-                , s"""
-                   |Conflicting sets of annotations, found different @Id annotations on both lambda arguments and method reference
-                   |, lambda annotations: $lambdaAnnotations,
-                   |method reference annotations: $methodReferenceAnnotations""".stripMargin
-              )
-          }
-        }
-
-        val idsList: List[Option[String]] = annotations.map {
-          _.flatMap {
-            _.tree.children.tail.headOption.map {
-              case Literal(Constant(s: String)) => s
-              case Constant(s: String) => s
-              case err =>
-                c.abort(
-                  c.enclosingPosition
-                  , s"""Error when parsing argument $err to @Id annotation - only string constants are supported, as in @Id("myclass")"""
-                )
+        val idsList: List[Option[String]] =
+          paramsInfo.map {
+            _.ann.flatMap {
+              _.tree.children.tail.collectFirst {
+                case Literal(Constant(s: String)) => s
+                case Constant(s: String) => s
+                case err =>
+                  c.abort(
+                    c.enclosingPosition
+                    ,
+                    s"""Error when parsing argument $err to @Id annotation - only string constants are supported, as in @Id("myclass")"""
+                  )
+              }
             }
           }
-        }
 
         val wrappedFunction = symbolOf[WrappedFunction.type].asClass.module
         val result = c.Expr[DIKeyWrappedFunction[R]] {
           q"""{
             val wrapped = $wrappedFunction.apply[${weakTypeOf[R]}]($funcExpr)
 
-            val idsList: ${typeOf[List[Option[String]]]} =
-              ${
-            if (!isValReference) {
-              q"$idsList"
-            } else {
-              q"""_root_.scala.List.fill(wrapped.argTypes.length)(_root_.scala.None)"""
-            }}
+            val idsList: ${typeOf[List[Option[String]]]} = $idsList
 
             _root_.scala.Predef.assert(wrapped.argTypes.length == idsList.length, "Impossible Happened! argTypes has different length than idsList")
 
@@ -225,9 +138,9 @@ object WrappedFunction {
           s"""Macro expansion info:
              | Symbol: ${argTree.symbol}\n
              | IsMethodSymbol: ${Option(argTree.symbol).exists(_.isMethod)}\n
-             | Annotations: $annotations\n
+             | Annotations: $paramsInfo\n
+             | IsValReference: $isValReference\n
              | IdsList: $idsList\n
-             | strat match: ${(args, body, isValReference)}\n
              | argument: ${c.universe.showCode(argTree)}\n
              | argumentTree: ${c.universe.showRaw(argTree)}\n
              | argumentType: ${argTree.tpe}
@@ -236,6 +149,56 @@ object WrappedFunction {
 
         result
       }
+
+      def analyze: c.Tree => ExtractedInfo = {
+        case Block(List(), tree) =>
+          analyze(tree)
+        case Function(args, body) =>
+          ExtractedInfo(analyzeMethodRef(args.map(_.symbol), body), isValReference = false)
+        case tree if Option(tree.symbol).exists(_.isMethod) =>
+          c.warning(
+            c.enclosingPosition
+            , s"""Recognized argument as a value reference, annotations will not be extracted.
+                 |To support annotations use a method reference such as (fn _).""".stripMargin
+          )
+
+          val sig = tree.symbol.typeSignature.finalResultType
+
+          val pars = sig.typeArgs.init.map(ParamInfo(_))
+
+          ExtractedInfo(pars, isValReference = true)
+        case tree =>
+          c.abort(c.enclosingPosition
+            , s"""
+               | Can handle only method references of form (method _) or lambda bodies of form (body => ???).\n
+               | Argument doesn't seem to be a method reference or a lambda:\n
+               |   argument: ${showCode(tree)}\n
+               |   argumentTree: ${showRaw(tree)}\n
+               | Hint: Try appending _ to your method name""".stripMargin)
+      }
+
+      def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[ParamInfo] = {
+        val lambdaAnnotations: List[ParamInfo] =
+          lambdaArgs.map(ParamInfo(_))
+
+        val methodReferenceAnnotations: List[ParamInfo] = body match {
+          case Apply(n, _) =>
+            logger.log(s"Matched function body as a method reference - consists of a single call to a function $n - ${showRaw(body)}")
+
+            val params = n.symbol.asMethod.typeSignature.paramLists.flatten
+            params.map(ParamInfo(_))
+          case _ =>
+            logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
+
+            List()
+        }
+
+        if (methodReferenceAnnotations.flatMap(_.ann).isEmpty)
+          lambdaAnnotations
+        else
+          methodReferenceAnnotations
+      }
+
     }
   }
 

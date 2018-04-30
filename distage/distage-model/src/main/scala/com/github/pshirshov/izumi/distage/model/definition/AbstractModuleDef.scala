@@ -21,11 +21,11 @@ trait AbstractModuleDef {
 
   final def overridenBy(that: AbstractModuleDef): Impl = {
     // we replace existing items in-place and appending new at the end
-    val overrides: Map[DIKey, Binding] = that.bindings.map(b => b.target -> b).toMap
-    val overriden: Set[Binding] = this.bindings.map(b => overrides.getOrElse(b.target, b))
+    val overrides: Map[DIKey, Binding] = that.bindings.map(b => b.key -> b).toMap
+    val overriden: Set[Binding] = this.bindings.map(b => overrides.getOrElse(b.key, b))
 
-    val index = overriden.map(_.target)
-    val appended: Set[Binding] = that.bindings.filterNot(b => index.contains(b.target))
+    val index: Set[DIKey] = overriden.map(_.key)
+    val appended: Set[Binding] = that.bindings.filterNot(b => index.contains(b.key))
 
     make(overriden ++ appended)
   }

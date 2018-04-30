@@ -50,7 +50,6 @@ class PlannerDefaultImpl
     finalPlan
   }
 
-
   private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
     binding match {
       case c: SingletonBinding[_] =>
@@ -60,11 +59,11 @@ class PlannerDefaultImpl
         NextOps(
           imports
           , Set.empty
-          , newOps.ops
+          , Seq(newOps.op)
         )
 
       case s: SetBinding[_] =>
-        val target = s.target
+        val target = s.key
         val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
 
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
@@ -77,42 +76,41 @@ class PlannerDefaultImpl
       case s: EmptySetBinding[_] =>
         NextOps(
           Set.empty
-          , Set(SetOp.CreateSet(s.target, s.target.symbol))
+          , Set(SetOp.CreateSet(s.key, s.key.symbol))
           , Seq.empty
         )
     }
   }
 
   private def provisioning(binding: Binding.ImplBinding): Step = {
-    val target = binding.target
+    val target = binding.key
     val wiring = implToWireable(binding.implementation)
     wiring match {
       case w: Constructor =>
-        Step(wiring, Seq(WiringOp.InstantiateClass(target, w)))
+        Step(wiring, WiringOp.InstantiateClass(target, w))
 
       case w: Abstract =>
-        Step(wiring, Seq(WiringOp.InstantiateTrait(target, w)))
+        Step(wiring, WiringOp.InstantiateTrait(target, w))
 
       case w: FactoryMethod =>
-        Step(wiring, Seq(WiringOp.InstantiateFactory(target, w)))
+        Step(wiring, WiringOp.InstantiateFactory(target, w))
 
       case w: Function =>
-        Step(wiring, Seq(WiringOp.CallProvider(target, w)))
+        Step(wiring, WiringOp.CallProvider(target, w))
 
       case w: Instance =>
-        Step(wiring, Seq(WiringOp.ReferenceInstance(target, w)))
+        Step(wiring, WiringOp.ReferenceInstance(target, w))
 
       case w: CustomWiring =>
-        Step(wiring, Seq(CustomOp(target, w)))
+        Step(wiring, CustomOp(target, w))
     }
-
   }
 
   private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: RuntimeDIUniverse.Wiring): Set[ImportDependency] = {
     val knownTargets = currentPlan.statements.map(_.target).toSet
     val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith))
     // we don't need resolved deps, we already have them in finalPlan
-    val toImport = unresolved.map(dep => ImportDependency(dep.wireWith, Set(binding.target)))
+    val toImport = unresolved.map(dep => ImportDependency(dep.wireWith, Set(binding.key)))
     toImport.toSet
   }
 
@@ -120,12 +118,12 @@ class PlannerDefaultImpl
     impl match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)
+      case i: ImplDef.InstanceImpl =>
+        UnaryWiring.Instance(i.implType, i.instance)
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerToWiring(p.function)
       case c: ImplDef.CustomImpl =>
         customOpHandler.getDeps(c)
-      case i: ImplDef.InstanceImpl =>
-        UnaryWiring.Instance(i.implType, i.instance)
     }
   }
 

@@ -4,39 +4,39 @@ import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyW
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 sealed trait Binding {
-  def target: DIKey
+  def key: DIKey
 }
 
 object Binding {
 
-  type Aux[+T <: DIKey] = Binding { def target: T }
+  type Aux[+K <: DIKey] = Binding { def key: K }
 
   sealed trait ImplBinding extends Binding {
     def implementation: ImplDef
   }
 
-  final case class SingletonBinding[+T <: DIKey](target: T, implementation: ImplDef) extends ImplBinding
+  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef) extends ImplBinding
 
-  final case class SetBinding[+T <: DIKey](target: T, implementation: ImplDef) extends ImplBinding
+  final case class SetBinding[+K <: DIKey](key: K, implementation: ImplDef) extends ImplBinding
 
   // Do we need this?
-  final case class EmptySetBinding[+T <: DIKey](target: T) extends Binding
+  final case class EmptySetBinding[+K <: DIKey](key: K) extends Binding
 
   implicit final class WithTarget(private val binding: Binding) extends AnyVal {
     def withTarget[G <: DIKey](newTarget: G): Binding.Aux[G] =
       binding match {
         case b: SingletonBinding[_] =>
-          b.copy(target = newTarget)
+          b.copy(key = newTarget)
         case b: SetBinding[_] =>
-          b.copy(target = newTarget)
+          b.copy(key = newTarget)
         case b: EmptySetBinding[_] =>
-          b.copy(target = newTarget)
+          b.copy(key = newTarget)
       }
   }
 
   implicit final class WithNamedTarget(private val binding: Binding.Aux[DIKey.TypeKey]) extends AnyVal {
     def named[I: u.Liftable](id: I): Binding.Aux[DIKey.IdKey[I]] = {
-      binding.withTarget(binding.target.named(id))
+      binding.withTarget(binding.key.named(id))
     }
   }
 
