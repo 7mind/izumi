@@ -1,17 +1,24 @@
 package com.github.pshirshov.izumi.logstage.api.routing
 
-import java.nio.file.Files
-
-import com.github.pshirshov.izumi.{FileSink, FileSinkConfig, Rotation}
+import com.github.pshirshov.izumi.FileSink
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log, TestSink}
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
+import com.github.pshirshov.izumi.logstage.TestSink
+import com.github.pshirshov.izumi.logstage.api.logger.RenderingOptions
+import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
+import com.github.pshirshov.izumi.logstage.core.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
+import com.github.pshirshov.izumi.logstage.model.Log
+import com.github.pshirshov.izumi.logstage.model.config.LoggerConfig
+import com.github.pshirshov.izumi.logstage.model.logger.{LogSink, QueueingSink}
+import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
+import com.github.pshirshov.izumi.models.{FileSinkConfig, Rotation}
 import org.scalatest.WordSpec
 
-import scala.util.{Random, Try}
+import scala.util.Random
 
 @ExposedTestScope
 class ExampleService(logger: IzLogger) {
