@@ -53,7 +53,7 @@ abstract class OpinionatedDiApp {
   protected def requiredComponents: Set[RuntimeDIUniverse.DIKey]
 
   // sane defaults
-  protected def gc: DIGarbageCollector = NullDiGC
+  protected def gc: DIGarbageCollector = TracingDIGC
 
   protected def mergeStrategy: PluginMergeStrategy[LoadedPlugins] = SimplePluginMergeStrategy
 

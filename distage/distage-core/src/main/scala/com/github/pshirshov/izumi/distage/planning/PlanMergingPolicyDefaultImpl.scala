@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, SetOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp.AddToSet
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -79,15 +81,21 @@ class PlanMergingPolicyDefaultImpl(
     (left, right)
   }
 
-  private def requirements(step: ExecutableOp.InstantiationOp): Set[RuntimeDIUniverse.DIKey] = {
-    step match {
+  private def requirements(op: InstantiationOp): Set[RuntimeDIUniverse.DIKey] = {
+    op match {
       case w: WiringOp =>
         w.wiring.associations.map(_.wireWith).toSet
+
+      case s: AddToSet =>
+        Set(s.element)
+
+      case p: ProxyOp =>
+        throw new DIException(s"Unexpected op: $p", null)
+
       case _ =>
         Set.empty
     }
   }
-
   private def computeNewImports(currentPlan: DodgyPlan, currentOp: NextOps) = {
     val newProvisionKeys = newKeys(currentOp)
 
@@ -115,4 +123,3 @@ class PlanMergingPolicyDefaultImpl(
       .toSet
   }
 }
-
