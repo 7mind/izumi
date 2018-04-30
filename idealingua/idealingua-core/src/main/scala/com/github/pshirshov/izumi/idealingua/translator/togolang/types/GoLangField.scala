@@ -228,9 +228,18 @@ case class GoLangField(
              |$assignTemp
            """.stripMargin
 
-        case _: IdentifierId | _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
+        case _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
           s"""$tempVal := &${id.name}{}
              |err = json.Unmarshal([]byte($variable), $tempVal)
+             |if err != nil {
+             |    return err
+             |}
+             |$assignTemp
+           """.stripMargin
+
+        case _: IdentifierId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
+          s"""$tempVal := &${id.name}{}
+             |err = $tempVal.LoadSerialized($variable)
              |if err != nil {
              |    return err
              |}

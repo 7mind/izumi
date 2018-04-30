@@ -351,27 +351,16 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       s"""${struct.render()}
          |
          |// String converts an identifier to a string
-         |func (i *${i.id.name}) String() string {
-         |    suffix := ${sortedFields.map(f => "url.QueryEscape(" + GoLangType(f.field.typeId).renderToString(s"i.${f.field.name}") + ")").mkString(" + \":\" + ")}
+         |func (v *${i.id.name}) String() string {
+         |    suffix := ${sortedFields.map(f => "url.QueryEscape(" + GoLangType(f.field.typeId).renderToString(s"v.${f.field.name}") + ")").mkString(" + \":\" + ")}
          |    return "${i.id.name}#" + suffix
          |}
          |
-         |// MarshalJSON serialization for the identifier
-         |func (i ${i.id.name}) MarshalJSON() ([]byte, error) {
-         |    buffer := bytes.NewBufferString(`"`)
-         |    buffer.WriteString(i.String())
-         |    buffer.WriteString(`"`)
-         |    return buffer.Bytes(), nil
+         |func (v *${i.id.name}) Serialize() string {
+         |    return v.String()
          |}
          |
-         |// UnmarshalJSON deserialization for the identifier
-         |func (i *${i.id.name}) UnmarshalJSON(b []byte) error {
-         |    var s string
-         |    err := json.Unmarshal(b, &s)
-         |    if err != nil {
-         |        return err
-         |    }
-         |
+         |func (v *${i.id.name}) LoadSerialized(s string) error {
          |    if !strings.HasPrefix(s, "${i.id.name}#") {
          |        return fmt.Errorf("expected identifier for type ${i.id.name}, got %s", s)
          |    }
@@ -381,10 +370,29 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |        return fmt.Errorf("expected identifier for type ${i.id.name} with ${struct.fields.length} parts, got %d in string %s", len(parts), s)
          |    }
          |
-         |${struct.fields.zipWithIndex.map{ case (f, index) => f.tp.renderFromString(f.renderMemberName(false), s"parts[$index]", unescape = true)}.mkString("\n").shift(4)}
+         |${struct.fields.zipWithIndex.map { case (f, index) => f.tp.renderFromString(f.renderMemberName(false), s"parts[$index]", unescape = true) }.mkString("\n").shift(4)}
          |
-         |    *i = *New${i.id.name}(${struct.fields.map(f => f.renderMemberName(false)).mkString(", ")})
+         |${struct.fields.map(f => f.renderAssign("v", f.renderMemberName(false), serialized = false, optional = false)).mkString("\n").shift(4)}
          |    return nil
+         |}
+         |
+         |// MarshalJSON serialization for the identifier
+         |func (v *${i.id.name}) MarshalJSON() ([]byte, error) {
+         |    buffer := bytes.NewBufferString(`"`)
+         |    buffer.WriteString(v.String())
+         |    buffer.WriteString(`"`)
+         |    return buffer.Bytes(), nil
+         |}
+         |
+         |// UnmarshalJSON deserialization for the identifier
+         |func (v *${i.id.name}) UnmarshalJSON(b []byte) error {
+         |    var s string
+         |    err := json.Unmarshal(b, &s)
+         |    if err != nil {
+         |        return err
+         |    }
+         |
+         |    return v.LoadSerialized(s)
          |}
        """.stripMargin
 
@@ -639,7 +647,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
      """.stripMargin
   }
 
-  protected def renderServiceDispatcherHandler(i: Service, method: Service.DefMethod, imports: GoLangImports): String = method match {
+  protected def renderServiceDispatcherHandler(i: Service, method: Service.DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""case "${m.name}": {
          |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"dataIn, ok := data.(*${inName(i, m.name)})\n    if !ok {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + "\")\n    }"}
@@ -649,7 +657,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        """.stripMargin
   }
 
-  protected def renderServiceDispatcherPreHandler(i: Service, method: Service.DefMethod, imports: GoLangImports): String = method match {
+  protected def renderServiceDispatcherPreHandler(i: Service, method: Service.DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""case "${m.name}": ${if (m.signature.input.fields.isEmpty) "return nil, nil" else s"return &${inName(i, m.name)}{}, nil"}""".stripMargin
   }
@@ -686,7 +694,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |
        |func (v *$name) PreDispatchModel(context interface{}, method string) (interface{}, error) {
        |    switch method {
-       |${i.methods.map(m => renderServiceDispatcherPreHandler(i, m, imports)).mkString("\n").shift(8)}
+       |${i.methods.map(m => renderServiceDispatcherPreHandler(i, m)).mkString("\n").shift(8)}
        |        default:
        |            return nil, fmt.Errorf("$name dispatch doesn't support method %s", method)
        |    }
@@ -694,7 +702,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |
        |func (v *$name) Dispatch(context interface{}, method string, data interface{}) (interface{}, error) {
        |    switch method {
-       |${i.methods.map(m => renderServiceDispatcherHandler(i, m, imports)).mkString("\n").shift(8)}
+       |${i.methods.map(m => renderServiceDispatcherHandler(i, m)).mkString("\n").shift(8)}
        |        default:
        |            return nil, fmt.Errorf("$name dispatch doesn't support method %s", method)
        |    }
@@ -705,6 +713,17 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |    res.SetServer(service)
        |    return res
        |}
+     """.stripMargin
+  }
+
+  protected def renderServiceServerDummy(i: Service, imports: GoLangImports): String = {
+    val name = s"${i.id.name}ServerDummy"
+    s"""// $name is a dummy for implementation references
+       |type $name struct {
+       |    // Implements ${i.id.name}Server interface
+       |}
+       |
+       |${i.methods.map(m => s"func (d *$name) " + renderServiceMethodSignature(i, m, imports, spread = true, withContext = true) + s""" {\n    return nil, fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
      """.stripMargin
   }
 
@@ -748,6 +767,9 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
            |
            |// ============== Service Dispatcher ==============
            |${renderServiceDispatcher(i, imports)}
+           |
+           |// ============== Service Server Dummy ==============
+           |${renderServiceServerDummy(i, imports)}
          """.stripMargin
 
       ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "irt")))

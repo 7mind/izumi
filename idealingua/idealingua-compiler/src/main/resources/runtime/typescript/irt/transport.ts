@@ -18,7 +18,7 @@ export class IRTHTTPClientTransport implements IRTClientTransport {
     private authorization: string;
 
     constructor(endpoint: string = undefined) {
-        this.endpoint = endpoint;
+        this.setEndpoint(endpoint);
     }
 
     private get isReady(): boolean {
@@ -57,6 +57,22 @@ export class IRTHTTPClientTransport implements IRTClientTransport {
         }
 
         req.send(payload);
+    }
+
+    private sanitizeEndpoint(endpoint: string): string {
+        if (!endpoint || endpoint.length === 0) {
+            return endpoint;
+        }
+
+        if (endpoint.endsWith('/') || endpoint.endsWith('\\')) {
+            endpoint = endpoint.substr(0, endpoint.length - 1);
+        }
+
+        return endpoint;
+    }
+
+    public setEndpoint(endpoint: string) {
+        this.endpoint = this.sanitizeEndpoint(endpoint);
     }
 
     public setAuthorization(token: string) {
