@@ -191,9 +191,9 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |${alternatives.map(al => renderAdtMember(name, al, imports)).mkString("\n")}
          |
          |func NewTest$name() *$name {
-         |    res := $name{}
+         |    res := &$name{}
          |    res.Set${alternatives.head.name}(NewTest${alternatives.head.name}())
-         |    return res;
+         |    return res
          |}
          |
          |func (v *$name) MarshalJSON() ([]byte, error) {
@@ -302,6 +302,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |// New$name creates a new enum from string
        |func New$name(e string) $name {
        |    return mapStringTo$name[e]
+       |}
+       |
+       |func NewTest$name() $name {
+       |    return mapStringTo$name["${i.members.head}"]
        |}
        |
        |// IsValid$name checks if the string value can be converted to an enum

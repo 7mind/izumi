@@ -177,6 +177,8 @@ case class GoLangType (
     case Primitive.TTs => "Time Stamp"
     case Primitive.TTsTz => "Time Stamp UTC"
     case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
+    case _: IdentifierId | _: DTOId | _: EnumId => s"NewTest${id.name}()"
+    case i: InterfaceId => s"NewTest${ts.implId(i).name}()"
     case _ => "nil"
   }
 }
