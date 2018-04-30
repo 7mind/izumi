@@ -6,6 +6,6 @@ package object definition {
   // doesn't work properly if put in ModuleBuilder or ContextDefinition companion object
   // (triggers with `object extends ModuleBuilder`, but doesn't with `new ModuleBuilder {}`)
   // works in package object though...
-  implicit def moduleBuilderContextDefinition(moduleBuilder: ModuleBuilder): AbstractModuleDef =
-    moduleBuilder.build
+  implicit def moduleBuilderIsModuleDef(moduleBuilder: ModuleBuilder): AbstractModuleDef =
+    moduleBuilder.finalDef
 }

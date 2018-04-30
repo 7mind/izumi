@@ -1,6 +1,5 @@
-package com.github.pshirshov.izumi.distage.definition
+package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.BindingDSL
 import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.BindOnlyNameableDSL
 
 import scala.language.experimental.macros

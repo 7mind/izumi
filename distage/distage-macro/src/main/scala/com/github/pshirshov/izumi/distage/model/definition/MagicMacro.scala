@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.definition
+package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSL, BindOnlyNameableDSL}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse

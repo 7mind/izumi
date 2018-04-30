@@ -28,7 +28,7 @@ object BindingDSL {
 
   // .bind{.as, .provider}{.named}
 
-  final class BindDSL[T] private[BindingDSL]
+  private[definition] final class BindDSL[T] private[BindingDSL]
   (
     private val completed: Set[Binding]
     , private val bindKey: RuntimeDIUniverse.DIKey.TypeKey
@@ -48,7 +48,7 @@ object BindingDSL {
       new BindOnlyNameableDSL.Impl(completed, SingletonBinding(bindKey, impl))
   }
 
-  final class BindNamedDSL[T] private[BindingDSL]
+  private[definition] final class BindNamedDSL[T] private[BindingDSL]
   (
     private val completed: Set[Binding]
     , private val bindKey: RuntimeDIUniverse.DIKey.IdKey[_]
@@ -64,11 +64,11 @@ object BindingDSL {
       new BindingDSL(completed + SingletonBinding(bindKey, impl))
   }
 
-  sealed trait BindOnlyNameableDSL extends BindingDSL {
+  private[definition] trait BindOnlyNameableDSL extends BindingDSL {
     def named(name: String): BindingDSL
   }
 
-  object BindOnlyNameableDSL {
+  private[definition] object BindOnlyNameableDSL {
     private[BindingDSL] final class Impl
     (
       private val completed: Set[Binding]
@@ -81,7 +81,7 @@ object BindingDSL {
     }
   }
 
-  private[BindingDSL] sealed trait BindDSLBase {
+  private[definition] trait BindDSLBase {
     protected type AfterBind <: BindingDSL
 
     protected type Elem
@@ -101,7 +101,7 @@ object BindingDSL {
 
   // .set{.element, .elementProvider}{.named}
 
-  final class SetDSL[T] private[BindingDSL]
+  private[definition] final class SetDSL[T] private[BindingDSL]
   (
     private val completed: Set[Binding]
     , private val setKey: RuntimeDIUniverse.DIKey.TypeKey
@@ -120,7 +120,7 @@ object BindingDSL {
       new SetDSL(completed, setKey, setElements + newElement)
   }
 
-  final class SetNamedDSL[T] private[BindingDSL]
+  private[definition] final class SetNamedDSL[T] private[BindingDSL]
   (
     private val completed: Set[Binding]
     , private val setKey: RuntimeDIUniverse.DIKey.IdKey[_]
@@ -136,7 +136,7 @@ object BindingDSL {
       new SetNamedDSL(completed, setKey, setElements + newElement)
   }
 
-  private[BindingDSL] sealed trait SetDSLBase {
+  private[definition] sealed trait SetDSLBase {
     protected type This <: SetDSLBase
 
     protected type Elem
@@ -152,7 +152,5 @@ object BindingDSL {
 
     protected def add(newElement: ImplDef): This
   }
-
-
 
 }
