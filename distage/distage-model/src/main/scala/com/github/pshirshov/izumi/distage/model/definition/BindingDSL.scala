@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBind
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-class BindingDSL private[definition] (override val bindings: Set[Binding]) extends ModuleDef {
+class BindingDSL private[definition] (override val bindings: Set[Binding]) extends AbstractModuleDef {
   import BindingDSL._
 
   override protected type Impl = BindingDSL

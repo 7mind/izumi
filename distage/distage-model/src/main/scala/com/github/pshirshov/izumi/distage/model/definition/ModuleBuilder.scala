@@ -14,7 +14,7 @@ trait ModuleBuilder {
 
   final private[this] val mutableState: mutable.Set[Binding] = initialState
 
-  def build: ModuleDef = freeze(mutableState)
+  def build: AbstractModuleDef = freeze(mutableState)
 
   final protected def bind[T: RuntimeDIUniverse.Tag]: Unit = {
     bind[T, T]

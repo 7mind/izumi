@@ -4,8 +4,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.language.implicitConversions
 
-trait ModuleDef {
-  protected type Impl <: ModuleDef
+trait AbstractModuleDef {
+  protected type Impl <: AbstractModuleDef
 
   protected def make(bindings: Set[Binding]): Impl
 
@@ -15,11 +15,11 @@ trait ModuleDef {
     make(this.bindings + binding)
   }
 
-  final def ++(that: ModuleDef): Impl = {
+  final def ++(that: AbstractModuleDef): Impl = {
     make(this.bindings ++ that.bindings)
   }
 
-  final def overridenBy(that: ModuleDef): Impl = {
+  final def overridenBy(that: AbstractModuleDef): Impl = {
     // we replace existing items in-place and appending new at the end
     val overrides: Map[DIKey, Binding] = that.bindings.map(b => b.target -> b).toMap
     val overriden: Set[Binding] = this.bindings.map(b => overrides.getOrElse(b.target, b))
@@ -31,21 +31,26 @@ trait ModuleDef {
   }
 
   override def equals(obj: scala.Any): Boolean = obj match {
-    case that: ModuleDef => bindings == that.bindings
+    case that: AbstractModuleDef => bindings == that.bindings
     case _ => false
   }
 
   override def hashCode(): Int = bindings.hashCode()
 }
 
-trait StandardModuleDef extends ModuleDef {
+trait ModuleDef extends AbstractModuleDef {
 
-  override protected type Impl = ModuleDef
+  override protected type Impl = AbstractModuleDef
 
   protected def make(bindings: Set[Binding]): Impl = TrivialModuleDef(bindings)
 }
 
-object ModuleDef {
-  implicit def bindingSetContextDefinition[T <: Binding](set: Set[T]): ModuleDef =
+
+trait PluginDef extends ModuleDef {
+
+}
+
+object AbstractModuleDef {
+  implicit def bindingSetContextDefinition[T <: Binding](set: Set[T]): AbstractModuleDef =
     TrivialModuleDef(set.toSet)
 }

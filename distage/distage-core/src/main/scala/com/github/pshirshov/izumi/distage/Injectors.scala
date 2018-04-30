@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.model._
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleDef, TrivialModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{AbstractModuleDef, TrivialModuleDef}
 
 
 object Injectors {
@@ -14,7 +14,7 @@ object Injectors {
     bootstrap(TrivialModuleDef, extensions :_*)
   }
 
-  def bootstrap(overrides: ModuleDef, extensions: LocatorExtension*): Injector = {
+  def bootstrap(overrides: AbstractModuleDef, extensions: LocatorExtension*): Injector = {
     val bootstrapDefinition = defaultBootstrapContextDefinition.overridenBy(overrides)
     val bootstrapLocator = new DefaultBootstrapContext(bootstrapDefinition)
     create(bootstrapLocator, extensions: _*)

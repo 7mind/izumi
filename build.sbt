@@ -181,7 +181,7 @@ lazy val distageModel = inDiStage.as.module
   .depends(fundamentalsReflection)
 
 lazy val distagePlugins = inDiStage.as.module
-  .depends(distageModel, distageCore.testOnlyRef)
+  .depends(distageCore, logstageDi.testOnlyRef)
   .settings(
     libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
