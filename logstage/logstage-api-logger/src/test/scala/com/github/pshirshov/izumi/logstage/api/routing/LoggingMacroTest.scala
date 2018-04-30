@@ -72,7 +72,7 @@ object LoggingMacroTest {
   val jsonPolicy = new JsonRenderingPolicy()
   val consoleSinkText = new ConsoleSink(coloringPolicy)
   val consoleSinkJson = new ConsoleSink(jsonPolicy)
-  val fileSinkText = new FileSink(simplePolicy, consoleSinkText, FileSinkConfig(3, "logstage", Rotation.EnabledRotation(2)))
+  val fileSinkText = new FileSink(simplePolicy, consoleSinkText, FileSinkConfig(2, "logstage", Rotation.EnabledRotation(2)))
 
   def setupConsoleLogger(): IzLogger = {
     configureLogger(Seq(consoleSinkText))

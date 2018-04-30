@@ -1,23 +1,22 @@
-package com.github.pshirshov.izumi.algebra
+package com.github.pshirshov.izumi.models
 
 import java.nio.file.{FileAlreadyExistsException, Files, Paths, StandardOpenOption}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
+import LogFile.TryOps._
 
 trait LogFile {
-  def name: String
+  def name: FileId
 
   def path: String
 
   def status: LogFileStatus
 
-  def writeFile(item: String): Try[Unit]
+  def write(item: String): Try[Unit]
 
   def updateStatus(status: LogFileStatus): Try[LogFile]
 
-  def readFile: Try[Seq[String]]
+  def getFileSize: Try[Int]
 
   def remove: Try[Unit]
 
@@ -26,50 +25,46 @@ trait LogFile {
 
 object LogFile {
 
-  case class DummyFile(status: LogFileStatus = LogFileStatus.Pending) extends LogFile {
-
-    override def name: String = ""
-
-    override def path: String = ""
+  case class DummyFile(path: String, name: FileId, status: LogFileStatus = LogFileStatus.FirstEntry) extends LogFile {
 
     private lazy val state = scala.collection.mutable.ListBuffer.empty[String]
 
-    override def writeFile(item: String): Try[Unit] = {
-      Success {
-        state += item
-      }
+    override def write(item: String): Try[Unit] = {
+      state += item
+      ()
     }
 
     override def updateStatus(status: LogFileStatus): Try[LogFile] = {
-      Success {
-        this.copy(status)
-      }
+      this.copy(status = status)
     }
 
-    override def readFile: Try[Seq[String]] = Success {
-      state.toList
+    override def getFileSize: Try[Int] = {
+      state.size
     }
 
-    override def remove: Try[Unit] = Success {
+    override def remove: Try[Unit] = {
       state.clear()
     }
   }
 
-  case class RealFile(path: String, name: String, status: LogFileStatus = LogFileStatus.Pending) extends LogFile {
+  case class RealFile(path: String, name: FileId, status: LogFileStatus = LogFileStatus.FirstEntry) extends LogFile {
 
     private lazy val outputStreamWriter = for {
       _ <- createFile
       res <- Try(Files.newOutputStream(Paths.get(filePath), StandardOpenOption.APPEND))
     } yield res
 
-    private lazy val fileReader = Try {
-      Source.fromFile(filePath)
+    private lazy val fileReader = {
+      for {
+        _ <- createFile
+        res <- Try(Source.fromFile(filePath))
+      } yield res
     }
 
-    override def writeFile(item: String): Try[Unit] = {
+    override def write(item: String): Try[Unit] = {
       for {
         stream <- outputStreamWriter
-        res <- Try(stream.write(item.getBytes())) // UTF-8
+        res <- Try(stream.write(s"$item\n".getBytes())) // UTF-8
       } yield res
     }
 
@@ -80,21 +75,16 @@ object LogFile {
       } yield withStatus
     }
 
-    override def readFile: Try[Seq[String]] = for {
+    override def getFileSize: Try[Int] = for {
       reader <- fileReader
-      res <- Try {
-        reader.getLines.toList
-      }
+      res <- Try(reader.getLines.size)
     } yield res
 
     override def remove: Try[Unit] = {
       for {
-        a <- closeStream
-        res <- Try {
-          Files.deleteIfExists(Paths.get(filePath))
-        }
+        _ <- closeStream
+        res <- Try(Files.deleteIfExists(Paths.get(filePath)))
       } yield res
-
     }
 
     private def closeStream: Try[Unit] = {
@@ -107,19 +97,25 @@ object LogFile {
 
     def createFile: Try[Unit] = {
       try {
-        val res = Files.createFile(Paths.get(filePath))
-        Success(Quirks.discard(res))
+        Files.createFile(Paths.get(filePath))
+        Success(())
       } catch {
         case _: FileAlreadyExistsException =>
-          Success(Quirks.discard())
+          Success(())
         case other =>
           Failure(other)
       }
     }
   }
 
-
-  def buildName(path: String, name: String): String = {
-    s"$path/log.$name.txt"
+  def buildName(path: String, fileId: FileId): String = {
+    s"$path/log.$fileId.txt"
   }
+
+  object TryOps {
+    implicit def asSuccess[T](t: T): Try[T] = {
+      Success(t)
+    }
+  }
+
 }
