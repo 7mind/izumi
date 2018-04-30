@@ -32,6 +32,12 @@ case class GoLangStruct(
        |${fields.map(f => f.renderAssign("res", f.renderMemberName(false), serialized = false, optional = true)).mkString("\n").shift(4)}
        |    return res
        |}
+       |
+       |func ${if (makePrivate) "newTest" else "NewTest"}$name() *$name {
+       |    res := &$name{}
+       |${fields.map(f => f.renderAssign("res", f.tp.testValue(), serialized = false, optional = true)).mkString("\n").shift(4)}
+       |    return res
+       |}
      """.stripMargin
 
     if (rtti) {

@@ -104,9 +104,33 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |${renderRegistrations(i.struct.superclasses.interfaces, i.id.name, imports)}
        """.stripMargin
 
-    // TODO here above Register methods don't use module, if a package is different - it will fail, needs a fix using the corrent import access
-
-    val tests = ""
+    val tests =
+      s"""import (
+         |    "testing"
+         |    "encoding/json"
+         |)
+         |
+         |func Test${i.id.name}JSONSerialization(t *testing.T) {
+         |    v1 := New${i.id.name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    serialized, err := json.Marshal(v1)
+         |    if err != nil {
+         |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
+         |    }
+         |    var v2 ${i.id.name}
+         |    err = json.Unmarshal(serialized, &v2)
+         |    if err != nil {
+         |        t.Fatalf("Type '%s' should deserialize from JSON using Unmarshal. %s", "${i.id.name}", err.Error())
+         |    }
+         |    serialized2, err := json.Marshal(&v2)
+         |    if err != nil {
+         |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
+         |    }
+         |
+         |    if string(serialized) != string(serialized2) {
+         |        t.Errorf("type '%s' serialization to JSON and from it afterwards must return the same value. Got '%s' and '%s'", "${i.id.name}", string(serialized), string(serialized2))
+         |    }
+         |}
+       """.stripMargin
 
     CompositeProduct(dto, imports.renderImports(List("encoding/json", "fmt")), tests)
 
@@ -128,26 +152,26 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
     val serializationName =  member.name
     val typeName = GoLangType(member.typeId, im, ts).renderType()
 
-    s"""func (a *$structName) Is$serializationName() bool {
-       |    return a.valueType == "$serializationName"
+    s"""func (v *$structName) Is$serializationName() bool {
+       |    return v.valueType == "$serializationName"
        |}
        |
-       |func (a *$structName) Get$serializationName() $typeName {
-       |    if !a.Is$serializationName() {
+       |func (v *$structName) Get$serializationName() $typeName {
+       |    if !v.Is$serializationName() {
        |        return nil
        |    }
        |
-       |    v, ok := a.value.($typeName)
+       |    obj, ok := v.value.($typeName)
        |    if !ok {
        |        return nil
        |    }
        |
-       |    return v
+       |    return obj
        |}
        |
-       |func (a *$structName) Set$serializationName(v $typeName) {
-       |    a.value = v
-       |    a.valueType = "$serializationName"
+       |func (v *$structName) Set$serializationName(obj $typeName) {
+       |    v.value = obj
+       |    v.valueType = "$serializationName"
        |}
        |
        |func New${structName}From${member.typeId.name}(v $typeName) *$structName {
@@ -165,6 +189,12 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |}
          |
          |${alternatives.map(al => renderAdtMember(name, al, imports)).mkString("\n")}
+         |
+         |func NewTest$name() *$name {
+         |    res := $name{}
+         |    res.Set${alternatives.head.name}(NewTest${alternatives.head.name}())
+         |    return res;
+         |}
          |
          |func (v *$name) MarshalJSON() ([]byte, error) {
          |    if v.value == nil {
@@ -201,11 +231,49 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        """.stripMargin
   }
 
+  protected def renderAdtAlternativeTest(i: Adt, m: AdtMember): String = {
+    s"""func Test${i.id.name}As${m.name}(t *testing.T) {
+       |    adt := &${i.id.name}{}
+       |    adt.Set${m.name}(NewTest${m.typeId.name}())
+       |
+       |    if !adt.Is${m.name}() {
+       |        t.Errorf("type '%s' Is${m.name} must be true.", "${i.id.name}")
+       |    }
+       |
+       |${i.alternatives.map(al => if (al.name == m.name) "" else s"""if adt.Is${al.name} {\n    t.Errorf("type '%s' Is${al.name} must be false.", "${i.id.name}")""").mkString("\n").shift(4)}
+       |
+       |    serialized, err := json.Marshal(adt)
+       |    if err != nil {
+       |        t.Errorf("type '%s' json serialization failed. %+v", "${i.id.name}", err)
+       |    }
+       |
+       |    adt2 := &${i.id.name}{}
+       |    err = json.Unmarshal(serialized, adt2)
+       |    if err != nil {
+       |        t.Errorf("type '%s' json deserialization failed. %+v", "${i.id.name}", err)
+       |    }
+       |
+       |    if !adt2.Is${m.name}() {
+       |        t.Errorf("type '%s' Is${m.name} must be true after deserialization.", "${i.id.name}")
+       |    }
+       |}
+     """.stripMargin
+  }
+
   protected def renderAdt(i: Adt): RenderableCogenProduct = {
     val imports = GoLangImports(i, i.id.path.toPackage)
     val name = i.id.name
 
-    AdtProduct(renderAdtImpl(name, i.alternatives, imports), imports.renderImports(Seq("fmt", "encoding/json")))
+    val tests =
+      s"""import (
+         |    "testing"
+         |    "encoding/json"
+         |)
+         |
+         |${i.alternatives.map(al => renderAdtAlternativeTest(i, al)).mkString("\n")}
+       """.stripMargin
+
+    AdtProduct(renderAdtImpl(name, i.alternatives, imports), imports.renderImports(Seq("fmt", "encoding/json")), tests)
   }
 
   protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
@@ -519,27 +587,31 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |)
          |
          |func Test${i.id.name}Creation(t *testing.T) {
-         |    // v := New${i.id.name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
-         |    // if v == nil {
-         |    //     t.Errorf("identifier of type ${i.id.name} should be possible to create with New method.")
-         |    // }
+         |    v := New${ts.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    if v == nil {
+         |        t.Errorf("interface of type ${i.id.name} should be possible to create with New method.")
+         |    }
          |}
          |
          |func Test${i.id.name}JSONSerialization(t *testing.T) {
-         |    // v1 := New${i.id.name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
-         |    // serialized, err := json.Marshal(v1)
-         |    // if err != nil {
-         |    //    t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
-         |    // }
-         |    // var v2 ${i.id.name}
-         |    // err = json.Unmarshal(serialized, &v2)
-         |    // if err != nil {
-         |    //     t.Fatalf("Type '%s' should deserialize from JSON using Unmarshal. %s", "${i.id.name}", err.Error())
-         |    // }
+         |    v1 := New${ts.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    serialized, err := json.Marshal(v1)
+         |    if err != nil {
+         |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
+         |    }
+         |    var v2 ${ts.implId(i.id).name}
+         |    err = json.Unmarshal(serialized, &v2)
+         |    if err != nil {
+         |        t.Fatalf("Type '%s' should deserialize from JSON using Unmarshal. %s", "${i.id.name}", err.Error())
+         |    }
+         |    serialized2, err := json.Marshal(&v2)
+         |    if err != nil {
+         |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
+         |    }
          |
-         |    // if v1.String() != v2.String() {
-         |    //     t.Errorf("type '%s' serialization to JSON and from it afterwards must return the same identifier value. Got '%s' and '%s'", "${i.id.name}", v1.String(), v2.String())
-         |    // }
+         |    if string(serialized) != string(serialized2) {
+         |        t.Errorf("type '%s' serialization to JSON and from it afterwards must return the same value. Got '%s' and '%s'", "${i.id.name}", string(serialized), string(serialized2))
+         |    }
          |}
        """.stripMargin
 

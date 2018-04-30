@@ -33,13 +33,13 @@ case class GoLangType (
     renderNativeType(id, serialized, forAlias)
   }
 
-  private def renderNativeType(id: TypeId, serialized: Boolean = false, forAlias: Boolean = false): String = id match {
+  private def renderNativeType(id: TypeId, serialized: Boolean, forAlias: Boolean = false): String = id match {
     case g: Generic => renderGenericType(g, serialized)
     case p: Primitive => renderPrimitiveType(p, serialized)
     case _ => renderUserType(id, serialized, forAlias)
   }
 
-  private def renderGenericType(generic: Generic, serialized: Boolean = false): String = generic match {
+  private def renderGenericType(generic: Generic, serialized: Boolean): String = generic match {
     case gm: Generic.TMap => s"map[${renderNativeType(gm.keyType, serialized)}]${renderNativeType(gm.valueType, serialized)}"
     case gl: Generic.TList => s"[]${renderNativeType(gl.valueType, serialized)}"
     case gs: Generic.TSet => s"[]${renderNativeType(gs.valueType, serialized)}"
@@ -176,6 +176,7 @@ case class GoLangType (
     case Primitive.TDate => "01:01:2010"
     case Primitive.TTs => "Time Stamp"
     case Primitive.TTsTz => "Time Stamp UTC"
+    case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
     case _ => "nil"
   }
 }

@@ -47,7 +47,7 @@ func (d *Dispatcher) Unregister(serviceName string) bool {
 	return false
 }
 
-func (d *Dispatcher) PreDispatchModel(context interface{}, service string, method string) (interface{}, error) {
+func (d *Dispatcher) PreDispatchModel(context interface{}, service string, method string) (model interface{}, pdmerr error) {
 	if d.services == nil {
 		return nil, fmt.Errorf("no services registered to dispatch to")
 	}
@@ -56,11 +56,18 @@ func (d *Dispatcher) PreDispatchModel(context interface{}, service string, metho
 	if !ok {
 		return nil, fmt.Errorf("no %s service dispatcher registered", service)
 	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			model = nil
+			pdmerr = fmt.Errorf("error in PreDispatchModel for %s/%s: %+v", service, method, err)
+		}
+	}()
 
 	return dispatcher.PreDispatchModel(context, method)
 }
 
-func (d *Dispatcher) Dispatch(context interface{}, service string, method string, data interface{}) (interface{}, error) {
+func (d *Dispatcher) Dispatch(context interface{}, service string, method string, data interface{}) (model interface{}, derr error) {
 	if d.services == nil {
 		return nil, fmt.Errorf("no services registered to dispatch to")
 	}
@@ -69,6 +76,13 @@ func (d *Dispatcher) Dispatch(context interface{}, service string, method string
 	if !ok {
 		return nil, fmt.Errorf("no %s service dispatcher registered", service)
 	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			model = nil
+			derr = fmt.Errorf("error in Dispatch for %s/%s: %+v", service, method, err)
+		}
+	}()
 
 	return dispatcher.Dispatch(context, method, data)
 }
