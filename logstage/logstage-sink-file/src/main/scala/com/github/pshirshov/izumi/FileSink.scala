@@ -79,21 +79,18 @@ case class FileSink(
   }
 
   override def flush(e: Log.Entry): Unit = synchronized {
-    sendMessage(renderingPolicy.render(e))
-  }
-
-  def sendMessage(e : String) : Unit = {
     val oldState = sinkState.get()
     val res = for {
       s1 <- processCurrentFile(oldState)
       s2 <- adjustByRotate(s1, rotation)
-      s3 <- performWriting(s2, e)
+      s3 <- performWriting(s2, renderingPolicy.render(e))
     } yield s3
     res match {
       case Failure(f) =>
       case Success(newState) =>
         sinkState.set(newState)
     }
+
   }
 }
 

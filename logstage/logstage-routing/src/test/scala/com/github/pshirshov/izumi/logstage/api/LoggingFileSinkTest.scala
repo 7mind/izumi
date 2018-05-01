@@ -103,7 +103,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
         (sink, logger) =>
           (1 to fileSize * filesLimit).foreach {
             i =>
-              sink.sendMessage(i.toString)
+              logger.info(i.toString)
           }
           val curState1 = sink.sinkState.get()
           assert(curState1.forRotate.isEmpty)
