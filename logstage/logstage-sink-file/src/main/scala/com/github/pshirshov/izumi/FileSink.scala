@@ -11,9 +11,15 @@ import com.github.pshirshov.izumi.models.{FileRotation, FileSinkState}
 
 import scala.util.{Failure, Success, Try}
 
-case class FileSink(fileSize: Int, fileService: FileService, rotation: FileRotation, path: String) extends LogSink {
+case class FileSinkConfig(fileSize : Int, filePath : String)
 
-  val sinkState = new AtomicReference[FileSinkState](FileSinkState(fileSize, path))
+case class FileSink(
+                    fileService: FileService
+                    , rotation: FileRotation
+                    , config : FileSinkConfig
+                   ) extends LogSink {
+
+  val sinkState = new AtomicReference[FileSinkState](FileSinkState(config.fileSize, config.filePath))
 
   def processCurrentFile(state: FileSinkState): Try[FileSinkState] = {
     (state.currentFileId, state.currentFileSize) match {
@@ -24,13 +30,13 @@ case class FileSink(fileSize: Int, fileService: FileService, rotation: FileRotat
           maybeFile <- Success(filesWithSize.toList.sortWith(_.size < _.size).headOption)
           (curFileId, curFileSize) <- maybeFile.map {
             case WithSize(_, size) if size >= state.maxSize => // if all files are full, target file will be with next id
-              Success((filesWithSize.size, 0))
+              Success((filesWithSize.size, FileSink.FileSize.init))
             case WithSize(name, size) =>
               fileService.getFileId(name).map((_, size))
-          }.getOrElse(Success((FileSink.FileIdentity.init, 0)))
+          }.getOrElse(Success((FileSink.FileIdentity.init, FileSink.FileSize.init)))
         } yield state.copy(currentFileId = Some(curFileId), currentFileSize = curFileSize)
       case (fileId@Some(_), size) if size >= state.maxSize =>
-        Success(state.copy(currentFileId = fileId.map(_ + 1), currentFileSize = 0))
+        Success(state.copy(currentFileId = fileId.map(_ + 1), currentFileSize = FileSink.FileSize.init))
       case _ =>
         Success(state)
     }
@@ -46,7 +52,10 @@ case class FileSink(fileSize: Int, fileService: FileService, rotation: FileRotat
           _ <- fileService.removeFile(FileSink.buildFileName(state.path, newFileId))
           fileIds <- others.map(fileService.getFileId).asTry
         } yield {
-          state.copy(currentFileId = Some(newFileId), currentFileSize = 0, forRotate = fileIds.toSet)
+          state.copy(currentFileId = Some(newFileId),
+            currentFileSize = FileSink.FileSize.init,
+            forRotate = fileIds.toSet
+          )
         }
       case FileLimiterRotation(_) =>
         Success(state)
@@ -95,6 +104,10 @@ object FileSink {
   }
 
   object FileIdentity {
+    final val init = 0
+  }
+
+  object FileSize {
     final val init = 0
   }
 
