@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.mutable
 
-case class ProvisionActive
+final case class ProvisionActive
 (
   instances: mutable.HashMap[RuntimeDIUniverse.DIKey, Any] = mutable.HashMap[RuntimeDIUniverse.DIKey, Any]()
   , imports: mutable.HashMap[RuntimeDIUniverse.DIKey, Any] = mutable.HashMap[RuntimeDIUniverse.DIKey, Any]()

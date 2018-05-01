@@ -42,7 +42,7 @@ object Log {
   //type LogContext = Map[String, Any]
 
 
-  case class CustomContext(values: LogContext) {
+  final case class CustomContext(values: LogContext) {
     def +(that: CustomContext): CustomContext = {
       CustomContext(values ++ that.values)
     }
@@ -53,23 +53,23 @@ object Log {
     def empty: CustomContext = CustomContext(List.empty)
   }
 
-  case class LoggerId(id: String) extends AnyVal
+  final case class LoggerId(id: String) extends AnyVal
 
-  case class StaticExtendedContext(id: LoggerId, file: String, line: Int)
+  final case class StaticExtendedContext(id: LoggerId, file: String, line: Int)
 
-  case class ThreadData(threadName: String, threadId: Long)
+  final case class ThreadData(threadName: String, threadId: Long)
 
-  case class DynamicContext(level: Level, threadData: ThreadData, tsMillis: Long)
+  final case class DynamicContext(level: Level, threadData: ThreadData, tsMillis: Long)
 
-  case class Context(static: StaticExtendedContext, dynamic: DynamicContext, customContext: CustomContext)
+  final case class Context(static: StaticExtendedContext, dynamic: DynamicContext, customContext: CustomContext)
 
-  case class Entry(message: Message, context: Context) {
+  final case class Entry(message: Message, context: Context) {
     def firstThrowable: Option[Throwable] = {
       message.args.map(_._2).collectFirst { case t: Throwable => t }
     }
   }
 
-  case class Message(template: StringContext, args: LogContext) {
+  final case class Message(template: StringContext, args: LogContext) {
 
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 

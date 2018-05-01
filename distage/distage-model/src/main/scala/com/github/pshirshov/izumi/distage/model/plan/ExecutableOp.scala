@@ -49,7 +49,7 @@ object ExecutableOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 
-    final case class InstantiateTrait(target: RuntimeDIUniverse.DIKey, wiring: UnaryWiring.Abstract) extends WiringOp {
+    final case class InstantiateTrait(target: RuntimeDIUniverse.DIKey, wiring: UnaryWiring.AbstractSymbol) extends WiringOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 

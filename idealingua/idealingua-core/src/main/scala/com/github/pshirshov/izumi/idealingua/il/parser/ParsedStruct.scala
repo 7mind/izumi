@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, Interfa
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 
-case class ParsedStruct(structure: RawStructure) {
+final case class ParsedStruct(structure: RawStructure) {
   def toInterface(id: InterfaceId): RawTypeDef.Interface = {
     Interface(id, structure)
   }

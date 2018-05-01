@@ -6,11 +6,14 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 sealed trait ImplDef
 
 object ImplDef {
-  final case class TypeImpl(implType: RuntimeDIUniverse.TypeFull) extends ImplDef
+  sealed trait WithImplType extends ImplDef {
+    def implType: RuntimeDIUniverse.TypeFull
+  }
+  final case class TypeImpl(implType: RuntimeDIUniverse.TypeFull) extends WithImplType
 
-  final case class InstanceImpl(implType: RuntimeDIUniverse.TypeFull, instance: Any) extends ImplDef
+  final case class InstanceImpl(implType: RuntimeDIUniverse.TypeFull, instance: Any) extends WithImplType
 
-  final case class ProviderImpl(implType: RuntimeDIUniverse.TypeFull, function: RuntimeDIUniverse.Provider) extends ImplDef
+  final case class ProviderImpl(implType: RuntimeDIUniverse.TypeFull, function: RuntimeDIUniverse.Provider) extends WithImplType
 
   // not sure if it's required though why not have it?..
   final case class CustomImpl(data: CustomDef) extends ImplDef

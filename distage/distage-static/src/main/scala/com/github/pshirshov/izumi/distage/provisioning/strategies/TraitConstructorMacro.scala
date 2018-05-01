@@ -25,11 +25,11 @@ object TraitConstructorMacro {
 
     val targetType = weakTypeOf[T]
 
-    val UnaryWiring.Abstract(_, wireables) = reflectionProvider.symbolToWiring(SafeType(targetType))
+    val UnaryWiring.AbstractSymbol(_, wireables) = reflectionProvider.symbolToWiring(SafeType(targetType))
 
     val (wireArgs, wireMethods) = wireables.map {
       // FIXME: FIXME COPYPASTA with below and with FactoryStrategyMacro
-      case Method(_, methodSymbol, targetKey) =>
+      case AbstractMethod(_, methodSymbol, targetKey) =>
         val tpe = targetKey.symbol.tpe
         val methodName = methodSymbol.asMethod.name.toTermName
         val argName = c.freshName(methodName)

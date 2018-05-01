@@ -15,7 +15,7 @@ import shapeless.{Cached, Lazy}
  *     implicit val dec: Decoder[A] = implicitly[DerivedDecoder[A]]
  *   }
  *
- *   case class X(int: Int)
+ *   final case class X(int: Int)
  *
  *   object X extends WithCirceGeneric[X]
  *

@@ -11,7 +11,7 @@ object Injectors {
 
 
   def bootstrap(extensions: LocatorExtension*): Injector = {
-    bootstrap(TrivialModuleDef, extensions :_*)
+    bootstrap(TrivialModuleDef.empty, extensions :_*)
   }
 
   def bootstrap(overrides: ModuleDef, extensions: LocatorExtension*): Injector = {

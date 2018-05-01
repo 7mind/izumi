@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import scala.meta.{Init, Name, Term, Type}
 
 
-case class ScalaTypeImpl(
+final case class ScalaTypeImpl(
                           termAbsoluteBase: Term.Ref
                           , typeAbsoluteBase: Type.Ref
                           , termBase: Term.Ref

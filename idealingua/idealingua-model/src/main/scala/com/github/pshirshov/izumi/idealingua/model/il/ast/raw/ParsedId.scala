@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 
-case class ParsedId(pkg: Seq[String], name: String) {
+final case class ParsedId(pkg: Seq[String], name: String) {
   private def typePath = {
     if (pkg.isEmpty) {
       TypePath(DomainId.Undefined, Seq.empty)

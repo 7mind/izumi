@@ -17,17 +17,20 @@ object Binding {
 
   final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef) extends ImplBinding
 
-  final case class SetBinding[+K <: DIKey](key: K, implementation: ImplDef) extends ImplBinding
 
-  // Do we need this?
-  final case class EmptySetBinding[+K <: DIKey](key: K) extends Binding
+  sealed trait SetBinding extends Binding
+
+  final case class SetElementBinding[+K <: DIKey](key: K, implementation: ImplDef) extends ImplBinding with SetBinding
+
+  // Do we need this? - we do, we may wish to define an empty set. Without elements
+  final case class EmptySetBinding[+K <: DIKey](key: K) extends SetBinding
 
   implicit final class WithTarget(private val binding: Binding) extends AnyVal {
     def withTarget[G <: DIKey](newTarget: G): Binding.Aux[G] =
       binding match {
         case b: SingletonBinding[_] =>
           b.copy(key = newTarget)
-        case b: SetBinding[_] =>
+        case b: SetElementBinding[_] =>
           b.copy(key = newTarget)
         case b: EmptySetBinding[_] =>
           b.copy(key = newTarget)
@@ -54,7 +57,7 @@ object Binding {
       binding match {
         case b: SingletonBinding[_] =>
           b.copy(implementation = impl)
-        case b: SetBinding[_] =>
+        case b: SetElementBinding[_] =>
           b.copy(implementation = impl)
       }
   }

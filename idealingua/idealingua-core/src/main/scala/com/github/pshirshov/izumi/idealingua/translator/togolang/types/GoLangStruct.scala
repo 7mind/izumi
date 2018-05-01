@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
-case class GoLangStruct(
+final case class GoLangStruct(
                           name: String,
                           typeId: TypeId,
                           implements: List[InterfaceId] = List.empty,

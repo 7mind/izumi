@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
-case class DomainDefinitionParsed(
+final case class DomainDefinitionParsed(
                              id: DomainId
                              , types: Seq[RawTypeDef]
                              , services: Seq[raw.Service]

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSLBase, SetDSLBase}
 import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleBuilder.{BindDSL, SetDSL}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -38,7 +38,6 @@ trait ModuleBuilder extends ModuleDef {
 
 }
 
-trait PluginBuilder extends ModuleBuilder with PluginDef
 
 object AbstractModuleBuilder {
 
@@ -145,12 +144,12 @@ object AbstractModuleBuilder {
     protected def setElements: Set[ImplDef]
 
     protected def append(impl: ImplDef): Unit = discard {
-      mutableState += SetBinding(setKey, impl)
+      mutableState += SetElementBinding(setKey, impl)
     }
 
     protected def replaceKey(key: DIKey): Unit = discard {
       mutableState.retain(_.key != key)
-      val newElements = setElements.map(SetBinding(key, _): Binding) + EmptySetBinding(key)
+      val newElements = setElements.map(SetElementBinding(key, _): Binding) + EmptySetBinding(key)
       mutableState ++= newElements
     }
   }

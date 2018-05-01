@@ -33,7 +33,7 @@ object FactoryConstructorMacro {
 
     val (dependencyArgs, dependencyMethods) = dependencies.map {
       // FIXME: FIXME COPYPASTA with below and with TraitStrategyMacro
-      case Method(_, methodSymbol, targetKey) =>
+      case AbstractMethod(_, methodSymbol, targetKey) =>
         val tpe = targetKey.symbol.tpe
         val methodName = methodSymbol.asMethod.name.toTermName
         val argName = c.freshName(methodName)
@@ -101,7 +101,7 @@ object FactoryConstructorMacro {
         val wiringInfo = productConstructor match {
           case w: UnaryWiring.Constructor =>
             q"{ $w }"
-          case w: UnaryWiring.Abstract =>
+          case w: UnaryWiring.AbstractSymbol =>
             q"""{
             val fun = ${symbolOf[AbstractConstructor.type].asClass.module}.apply[${w.instanceType.tpe}].function
             $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun)

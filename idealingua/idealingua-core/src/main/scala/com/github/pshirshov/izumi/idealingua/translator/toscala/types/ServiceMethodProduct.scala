@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
 import scala.meta._
 
-case class ServiceContext(ctx: STContext, svc: Service) {
+final case class ServiceContext(ctx: STContext, svc: Service) {
   val typeName: TypeName = svc.id.name
 
   val basePath = TypePath(svc.id.domain, Seq(typeName))
@@ -30,9 +30,9 @@ case class ServiceContext(ctx: STContext, svc: Service) {
   val serviceOutputBase: ScalaType = svcBaseTpe.within(s"Out${typeName.capitalize}")
 }
 
-case class FullServiceContext(service: ServiceContext, methods: List[ServiceMethodProduct])
+final case class FullServiceContext(service: ServiceContext, methods: List[ServiceMethodProduct])
 
-case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCMethod) {
+final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCMethod) {
 
   import ctx.conv._
 

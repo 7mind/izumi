@@ -52,7 +52,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         val context = DependencyContext.MethodContext(symbl)
         val materials = dependencyMethods.map {
           method =>
-            Association.Method(context, method, keyProvider.keyFromMethod(context, method))
+            Association.AbstractMethod(context, method, keyProvider.keyFromMethod(context, method))
         }
 
         Wiring.FactoryMethod(symbl, mw, materials)
@@ -68,27 +68,29 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     Wiring.UnaryWiring.Function(function)
   }
 
-  override def constructorParameters(symbl: TypeFull): List[Association.Parameter] = {
+  override def constructorParameters(symbl: TypeFull): List[Association.ExtendedParameter] = {
     val args: List[u.Symb] = symbolIntrospector.selectConstructor(symbl).arguments
 
     val context = DependencyContext.ConstructorParameterContext(symbl)
+
     args.map {
       parameter =>
-        Association.Parameter(
+        val p = Association.Parameter(
           context
           , parameter.name.toTermName.toString
           , SafeType(parameter.typeSignatureIn(symbl.tpe))
           , keyProvider.keyFromParameter(context, parameter)
         )
+        Association.ExtendedParameter(parameter, p)
     }
   }
 
   private def unarySymbolDeps(symbl: TypeFull): UnaryWiring.ProductWiring = symbl match {
     case ConcreteSymbol(symb) =>
-      UnaryWiring.Constructor(symb, constructorParameters(symb))
+      UnaryWiring.Constructor(symb, constructorParameters(symb).map(_.parameter))
 
     case AbstractSymbol(symb) =>
-      UnaryWiring.Abstract(symb, traitMethods(symb))
+      UnaryWiring.AbstractSymbol(symb, traitMethods(symb))
 
     case FactorySymbol(_, _, _) =>
       throw new UnsupportedWiringException(s"Factory cannot produce factories, it's pointless: $symbl", symbl)
@@ -97,7 +99,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       throw new UnsupportedWiringException(s"Wiring unsupported: $symbl", symbl)
   }
 
-  private def traitMethods(symb: TypeFull): Seq[Association.Method] = {
+  private def traitMethods(symb: TypeFull): Seq[Association.AbstractMethod] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
     val declaredAbstractMethods = symb.tpe.members
       .sorted // implicit invariant: preserve definition ordering
@@ -106,7 +108,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     val context = DependencyContext.MethodContext(symb)
     declaredAbstractMethods.map {
       method =>
-        Association.Method(context, method, keyProvider.keyFromMethod(context, method))
+        Association.AbstractMethod(context, method, keyProvider.keyFromMethod(context, method))
     }
   }
 

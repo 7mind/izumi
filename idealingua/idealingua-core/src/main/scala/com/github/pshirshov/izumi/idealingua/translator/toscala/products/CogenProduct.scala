@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime.Im
 import scala.meta.{Defn, Term}
 
 
-case class CogenProduct[T <: Defn](
+final case class CogenProduct[T <: Defn](
                                     defn: T
                                     , companion: Defn.Object
                                     , tools: Defn.Class
@@ -19,18 +19,18 @@ case class CogenProduct[T <: Defn](
   }
 }
 
-case class CogenPair[T <: Defn](defn: T, companion: Defn.Object) {
+final case class CogenPair[T <: Defn](defn: T, companion: Defn.Object) {
   def render: List[Defn] = List(defn, companion)
 }
 
-case class CogenServiceDefs(defs: Defn.Object, in: CogenPair[Defn.Trait], out: CogenPair[Defn.Trait]) {
+final case class CogenServiceDefs(defs: Defn.Object, in: CogenPair[Defn.Trait], out: CogenPair[Defn.Trait]) {
   def render: Defn = {
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
     defs.prependDefnitions(in.render ++ out.render)
   }
 }
 
-case class CogenServiceProduct(
+final case class CogenServiceProduct(
                                 service: CogenPair[Defn.Trait]
                                 , client: CogenPair[Defn.Trait]
                                 , wrapped: CogenPair[Defn.Trait]
@@ -53,7 +53,7 @@ object CogenProduct {
   type CompositeProudct = CogenProduct[Defn.Class]
   type IdentifierProudct = CogenProduct[Defn.Class]
 
-  case class EnumProduct(
+  final case class EnumProduct(
                           defn: Defn.Trait
                           , companion: Defn.Object
                           , elements: List[(Term.Name, Defn)]
@@ -66,7 +66,7 @@ object CogenProduct {
     }
   }
 
-  case class AdtElementProduct[T <: Defn](
+  final case class AdtElementProduct[T <: Defn](
                                            name: TypeName
                                            , defn: T
                                            , companion: Defn.Object
@@ -77,7 +77,7 @@ object CogenProduct {
     override def render: List[Defn] = List(defn) ++ more ++ converters ++ List(companion)
   }
 
-  case class AdtProduct(
+  final case class AdtProduct(
                          defn: Defn.Trait
                          , companion: Defn.Object
                          , elements: List[AdtElementProduct[Defn.Class]]

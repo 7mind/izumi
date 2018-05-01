@@ -18,7 +18,7 @@ object FormattingUtils {
       case Constructor(instanceType, associations) =>
         doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'))
 
-      case Abstract(instanceType, associations) =>
+      case AbstractSymbol(instanceType, associations) =>
         doFormat(instanceType.tpe.toString, associations.map(_.format), "impl", ('[', ']'), ('{', '}'))
 
       case Function(instanceType, associations) =>

@@ -20,6 +20,6 @@ class ScalaStruct
 }
 
 
-case class PlainScalaStruct(all: List[ScalaField])
+final case class PlainScalaStruct(all: List[ScalaField])
 
 

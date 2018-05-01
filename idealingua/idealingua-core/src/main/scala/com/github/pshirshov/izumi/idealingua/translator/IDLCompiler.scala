@@ -42,12 +42,12 @@ class IDLCompiler(typespace: Typespace) {
 
 object IDLCompiler {
 
-  case class CompilerOptions(language: IDLLanguage, extensions: Seq[TranslatorExtension])
+  final case class CompilerOptions(language: IDLLanguage, extensions: Seq[TranslatorExtension])
 
   trait IDLResult
 
-  case class IDLSuccess(paths: Seq[Path]) extends IDLResult
+  final case class IDLSuccess(paths: Seq[Path]) extends IDLResult
 
-  case class IDLFailure() extends IDLResult
+  final case class IDLFailure() extends IDLResult
 
 }

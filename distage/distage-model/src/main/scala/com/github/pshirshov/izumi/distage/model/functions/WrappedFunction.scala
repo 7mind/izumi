@@ -109,6 +109,7 @@ object WrappedFunction {
       case class ExtractedInfo(paramsInfo: List[ParamInfo], isValReference: Boolean)
 
       case class ParamInfo(typ: Type, ann: Option[u.Annotation])
+
       object ParamInfo {
         def apply(typ: Type): ParamInfo =
           ParamInfo(typ, AnnotationTools.findTypeAnnotation[Id](u)(typ))

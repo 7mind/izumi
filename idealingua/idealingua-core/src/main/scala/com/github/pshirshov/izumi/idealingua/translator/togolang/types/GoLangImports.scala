@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDe
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
-case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
+final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
   def renderImports(extra: Seq[String] = List.empty): String = {
     // Exclude extra ones which are already included into the import
     val combined = imports.map(i => i.renderImport()) ++ extra.filterNot(e => imports.exists(p => p.pkg.mkString(".") == e)).map(e => "\"" + e + "\"")

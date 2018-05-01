@@ -74,7 +74,7 @@ object IRTOpinionatedMarshalers {
 }
 
 
-case class IRTCursorForMethod(methodId: IRTMethod, cursor: HCursor)
+final case class IRTCursorForMethod(methodId: IRTMethod, cursor: HCursor)
 
 trait IRTMuxingCodecProvider {
   def requestEncoders: List[PartialFunction[IRTReqBody, Json]]

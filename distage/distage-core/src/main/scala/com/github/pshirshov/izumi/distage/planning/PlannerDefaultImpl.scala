@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.Planner
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef, ImplDef}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CustomOp, ImportDependency, SetOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
@@ -22,9 +22,10 @@ class PlannerDefaultImpl
   , protected val customOpHandler: CustomOpHandler
   , protected val planningObserver: PlanningObserver
   , protected val planMergingPolicy: PlanMergingPolicy
-  , protected val planningHook: PlanningHook
+  , protected val planningHooks: Set[PlanningHook]
 )
   extends Planner {
+  private val hook = new PlanningHookAggregate(planningHooks)
 
   override def plan(context: ModuleDef): FinalPlan = {
     val plan = context.bindings.foldLeft(DodgyPlan.empty) {
@@ -33,7 +34,7 @@ class PlannerDefaultImpl
           .eff(sanityChecker.assertNoDuplicateOps)
           .map(planMergingPolicy.extendPlan(currentPlan, binding, _))
           .eff(sanityChecker.assertNoDuplicateOps)
-          .map(planningHook.hookStep(context, currentPlan, binding, _))
+          .map(hook.hookStep(context, currentPlan, binding, _))
           .eff(planningObserver.onSuccessfulStep)
           .get
     }
@@ -43,6 +44,8 @@ class PlannerDefaultImpl
       .eff(planningObserver.onReferencesResolved)
       .map(planResolver.resolve(_, context))
       .eff(planningObserver.onResolvingFinished)
+      .eff(sanityChecker.assertSanity)
+      .map(hook.hookFinal)
       .eff(sanityChecker.assertSanity)
       .eff(planningObserver.onFinalPlan)
       .get
@@ -62,7 +65,7 @@ class PlannerDefaultImpl
           , Seq(newOps.op)
         )
 
-      case s: SetBinding[_] =>
+      case s: SetElementBinding[_] =>
         val target = s.key
         val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
 
@@ -84,12 +87,13 @@ class PlannerDefaultImpl
 
   private def provisioning(binding: Binding.ImplBinding): Step = {
     val target = binding.key
-    val wiring = implToWireable(binding.implementation)
+    val wiring = hook.hookWiring(binding, bindingToWireable(binding))
+
     wiring match {
       case w: Constructor =>
         Step(wiring, WiringOp.InstantiateClass(target, w))
 
-      case w: Abstract =>
+      case w: AbstractSymbol =>
         Step(wiring, WiringOp.InstantiateTrait(target, w))
 
       case w: FactoryMethod =>
@@ -107,15 +111,15 @@ class PlannerDefaultImpl
   }
 
   private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: RuntimeDIUniverse.Wiring): Set[ImportDependency] = {
-    val knownTargets = currentPlan.statements.map(_.target).toSet
-    val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith))
+    val knownTargets = currentPlan.keys
     // we don't need resolved deps, we already have them in finalPlan
+    val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith) && !currentPlan.imports.contains(dep.wireWith))
     val toImport = unresolved.map(dep => ImportDependency(dep.wireWith, Set(binding.key)))
     toImport.toSet
   }
 
-  private def implToWireable(impl: ImplDef): RuntimeDIUniverse.Wiring = {
-    impl match {
+  private def bindingToWireable(binding: Binding.ImplBinding): RuntimeDIUniverse.Wiring = {
+    binding.implementation match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)
       case i: ImplDef.InstanceImpl =>

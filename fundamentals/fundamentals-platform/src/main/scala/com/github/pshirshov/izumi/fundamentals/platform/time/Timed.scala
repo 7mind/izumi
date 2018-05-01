@@ -16,4 +16,4 @@ object Timed {
   }
 }
 
-case class Timed[U](value: U, duration: FiniteDuration)
+final case class Timed[U](value: U, duration: FiniteDuration)

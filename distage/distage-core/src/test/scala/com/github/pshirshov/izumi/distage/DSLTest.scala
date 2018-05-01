@@ -74,7 +74,7 @@ class DSLTest extends WordSpec {
         )
       }
 
-      val mod5: ModuleDef = (TrivialModuleDef
+      val mod5: ModuleDef = (TrivialModuleDef.empty
         ++ Bindings.binding[TestDependency0, TestImpl0]
         )
 

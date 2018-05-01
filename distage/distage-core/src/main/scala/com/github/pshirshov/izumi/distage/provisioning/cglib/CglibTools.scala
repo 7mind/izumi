@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 sealed trait ProxyParams
 object ProxyParams {
   case object Empty extends ProxyParams
-  case class Params(types: Array[Class[_]], values: Array[AnyRef]) extends ProxyParams
+  final case class Params(types: Array[Class[_]], values: Array[AnyRef]) extends ProxyParams
 
 }
 

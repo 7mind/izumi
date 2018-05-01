@@ -33,15 +33,17 @@ object TracingDIGC extends DIGarbageCollector {
   override def gc(plan: FinalPlan, isRoot: RuntimeDIUniverse.DIKey => Boolean): FinalPlan = {
     val toLeave = mutable.HashSet[RuntimeDIUniverse.DIKey]()
     toLeave ++= plan.steps.map(_.target).filter(isRoot)
-    allDeps(plan.steps.map(v => v.target -> v).toMap, toLeave)
+    allDeps(plan.steps.map(v => v.target -> v).toMap, toLeave.toSet, toLeave)
     val refinedPlan = TrivialModuleDef(plan.definition.bindings.filter(b => toLeave.contains(b.key)))
     val steps = plan.steps.filter(s => toLeave.contains(s.target))
     FinalPlanImmutableImpl(refinedPlan, steps)
   }
 
   @tailrec
-  private def allDeps(ops: Map[RuntimeDIUniverse.DIKey, ExecutableOp], deps: mutable.HashSet[RuntimeDIUniverse.DIKey]): Unit = {
-    val newDeps = deps.map(ops.apply).flatMap {
+  private def allDeps(ops: Map[RuntimeDIUniverse.DIKey, ExecutableOp], depsToTrace: Set[RuntimeDIUniverse.DIKey], deps: mutable.HashSet[RuntimeDIUniverse.DIKey]): Unit = {
+    // TODO: inefficient
+
+    val newDeps = depsToTrace.map(ops.apply).flatMap {
       case w: WiringOp =>
         w.wiring.associations.map(_.wireWith)
       case p: InitProxy =>
@@ -58,7 +60,7 @@ object TracingDIGC extends DIGarbageCollector {
 
     if (newDeps.nonEmpty) {
       deps ++= newDeps
-      allDeps(ops, deps)
+      allDeps(ops, newDeps, deps)
     }
   }
 }

@@ -1,24 +1,24 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.distage.model.plan.{DIAssociation, DIDependencyContext, DIWiring}
-import com.github.pshirshov.izumi.distage.model.references.{DIKey, DITypedRef}
+import com.github.pshirshov.izumi.distage.model.plan.{WithDIAssociation, WithDIDependencyContext, WithDIWiring}
+import com.github.pshirshov.izumi.distage.model.references.{WithDIKey, WithDITypedRef}
 
 trait DIUniverse
   extends DIUniverseBase
-     with DISafeType
-     with DITypedRef
-     with DICallable
-     with DIKey
-     with DIDependencyContext
-     with DIAssociation
-     with DIWiring
-     with DILiftableRuntimeUniverse
+    with DILiftableRuntimeUniverse
+    with WithDISafeType
+    with WithDITypedRef
+    with WithDICallable
+    with WithDIKey
+    with WithDIDependencyContext
+    with WithDIAssociation
+    with WithDIWiring
 
 trait DILiftableRuntimeUniverse {
   this: DIUniverseBase =>
 
   import u._
-  implicit final val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] =
-    { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
+
+  implicit final val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] = { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
 
 }
