@@ -20,7 +20,7 @@ trait DIKey {
     case class TypeKey(symbol: TypeFull) extends DIKey {
       override def toString: String = symbol.toString
 
-      def named[Id: Liftable](id: Id): IdKey[Id] = IdKey(symbol, id)
+      def named[Id: IdContract](id: Id): IdKey[Id] = IdKey(symbol, id)
     }
     object TypeKey {
       implicit final val liftableTypeKey: Liftable[TypeKey] = {
@@ -30,12 +30,14 @@ trait DIKey {
       }
     }
 
-    case class IdKey[InstanceId](symbol: TypeFull, id: InstanceId)(implicit val liftableId: Liftable[InstanceId]) extends DIKey {
+    case class IdKey[Id: IdContract](symbol: TypeFull, id: Id) extends DIKey {
+      val idContract: IdContract[Id] = implicitly[IdContract[Id]]
+      implicit val liftable: Liftable[Id] = idContract.liftable
       override def toString: String = s"${symbol.toString}#$id"
     }
     object IdKey {
-      implicit final def liftableIdKey[InstanceId]: Liftable[IdKey[InstanceId]] = {
-        case idKey: IdKey[_] =>
+      implicit def liftableIdKey[Id]: Liftable[IdKey[Id]] = {
+        case idKey: IdKey[Id] =>
           import idKey._
           q"""{ new $RuntimeDIUniverse.DIKey.IdKey($symbol, $id) }"""
       }
@@ -75,6 +77,15 @@ trait DIKey {
         case s: SetElementKey => q"$s"
       }
     }
+  }
+
+  class IdContract[T: Liftable] {
+    val liftable: Liftable[T] = implicitly[Liftable[T]]
+  }
+
+  object IdContract {
+    implicit val stringIdContract: IdContract[String] = new IdContract[String]
+    implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = new IdContract[S]
   }
 
 }

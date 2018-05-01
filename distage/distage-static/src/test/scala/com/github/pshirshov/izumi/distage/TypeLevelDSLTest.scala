@@ -9,7 +9,7 @@ class TypeLevelDSLTest extends WordSpec {
 
       assertCompiles("""
         import com.github.pshirshov.izumi.distage.Fixtures._
-        import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL
+        import com.github.pshirshov.izumi.distage.model.definition.static.TypeLevelDSL
         import Case1._
 
         TypeLevelDSL.Bindings()

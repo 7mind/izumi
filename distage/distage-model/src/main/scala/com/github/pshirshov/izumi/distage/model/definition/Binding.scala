@@ -35,7 +35,7 @@ object Binding {
   }
 
   implicit final class WithNamedTarget(private val binding: Binding.Aux[DIKey.TypeKey]) extends AnyVal {
-    def named[I: u.Liftable](id: I): Binding.Aux[DIKey.IdKey[I]] = {
+    def named[I: IdContract](id: I): Binding.Aux[DIKey.IdKey[I]] = {
       binding.withTarget(binding.key.named(id))
     }
   }
