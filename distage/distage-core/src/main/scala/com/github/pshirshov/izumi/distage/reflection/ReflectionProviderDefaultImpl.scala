@@ -10,9 +10,8 @@ import scala.reflect.api.Universe
 
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   self =>
-
-  import u.Wiring._
   import u._
+  import u.Wiring._
 
   protected def keyProvider: DependencyKeyProvider { val u: self.u.type }
   protected def symbolIntrospector: SymbolIntrospector { val u: self.u.type }

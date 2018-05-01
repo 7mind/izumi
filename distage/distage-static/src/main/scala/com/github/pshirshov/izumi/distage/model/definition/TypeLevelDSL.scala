@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.model.definition.static
+package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.static.TypeLevelDSL.DIKey._
-import com.github.pshirshov.izumi.distage.model.definition.static.TypeLevelDSL.Binding._
-import com.github.pshirshov.izumi.distage.model.definition.static.TypeLevelDSL.ImplDef._
+import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.Binding._
+import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.DIKey._
+import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.ImplDef._
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
-import com.github.pshirshov.izumi.distage.model.{definition => valuedef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.{definition => valuedef}
 import shapeless.{::, HList, HNil, Witness}
 
 object TypeLevelDSL {

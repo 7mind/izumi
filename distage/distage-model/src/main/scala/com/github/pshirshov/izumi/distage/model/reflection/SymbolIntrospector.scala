@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, StaticDIUniverse, RuntimeDIUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, RuntimeDIUniverse, StaticDIUniverse}
 
 trait SymbolIntrospector {
   val u: DIUniverse

@@ -2,8 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.definition.Bindings.binding
-import com.github.pshirshov.izumi.distage.model.definition.{AbstractModuleDef, BindingDSL, Bindings, ModuleBuilder, ModuleDef, TrivialModuleDef}
-import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
+import com.github.pshirshov.izumi.distage.model.definition.{AbstractModuleDef, BindingDSL, Bindings, AbstractModuleBuilder, TrivialModuleDef}
 import org.scalatest.WordSpec
 import DIStageInstances._
 import cats.implicits._
@@ -21,11 +20,11 @@ class DIStageInstancesTest extends WordSpec {
         .bind[TestCaseClass2]
 
       val mod3_1: AbstractModuleDef = TrivialModuleDef
-        .magic[TestDependency1]
+        .bind[TestDependency1]
 
       val mod3_2 = TrivialModuleDef
 
-      val mod3 = (mod3_1 |+| mod3_2).magic[NotInContext]
+      val mod3 = (mod3_1 |+| mod3_2).bind[NotInContext]
 
       val mod4 = Set(
         binding(TestInstanceBinding())
