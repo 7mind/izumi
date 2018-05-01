@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api.routing
 
-import com.github.pshirshov.izumi.FileSink
+import com.github.pshirshov.izumi.{FileSink, FileSinkConfig}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log, TestSink}
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
@@ -15,7 +15,6 @@ import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.logstage.model.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.model.logger.{LogSink, QueueingSink}
 import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
-import com.github.pshirshov.izumi.models.{FileSinkConfig, Rotation}
 import org.scalatest.WordSpec
 
 import scala.util.Random
