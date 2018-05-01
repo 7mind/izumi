@@ -182,7 +182,16 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
      """.stripMargin
   }
 
-  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], imports: GoLangImports): String = {
+  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], imports: GoLangImports, withTest: Boolean = true): String = {
+      val test =
+        s"""
+           |func NewTest$name() *$name {
+           |    res := &$name{}
+           |    res.Set${alternatives.head.name}(NewTest${alternatives.head.name}())
+           |    return res
+           |}
+         """.stripMargin
+
       s"""type $name struct {
          |    value interface{}
          |    valueType string
@@ -190,11 +199,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |
          |${alternatives.map(al => renderAdtMember(name, al, imports)).mkString("\n")}
          |
-         |func NewTest$name() *$name {
-         |    res := &$name{}
-         |    res.Set${alternatives.head.name}(NewTest${alternatives.head.name}())
-         |    return res
-         |}
+         |${if (withTest) test else ""}
          |
          |func (v *$name) MarshalJSON() ([]byte, error) {
          |    if v.value == nil {
@@ -332,7 +337,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |        return err
        |    }
        |
-       |    *e = New(s)
+       |    *e = New$name(s)
        |    return nil
        |}
      """.stripMargin
@@ -805,7 +810,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
 
   protected def renderServiceMethodOutModel(i: Service, name: String, out: Service.DefMethod.Output, imports: GoLangImports): String = out match {
     case st: Struct => renderServiceMethodInModel(i, name, st.struct, imports)
-    case al: Algebraic => renderAdtImpl(name, al.alternatives, imports)
+    case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
     case _ => s""
   }
 
@@ -814,7 +819,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       structure.fields.map(ef => GoLangField(ef.name, GoLangType(ef.typeId, imports, ts), name, imports, ts)),
       imports, ts
     )
-    s"""${struct.render(makePrivate = true)}
+    s"""${struct.render(makePrivate = true, withTest = false)}
        |${struct.renderSerialized(makePrivate = true)}
      """.stripMargin
   }

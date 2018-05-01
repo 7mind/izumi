@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang.types
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
@@ -98,7 +100,7 @@ case class GoLangField(
        |
        |func (v *$structName) ${renderMemberName(true)}AsString() string {
        |    year, month, day := v.${renderMemberName(false)}.Date()
-       |    return strconv.Itoa(day) + ":" + strconv.Itoa(int(month)) + ":" + strconv.Itoa(year)
+       |    return fmt.Sprintf("%04d:%02d:%02d", year, month, day)
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
@@ -140,7 +142,7 @@ case class GoLangField(
        |    minute := v.${renderMemberName(false)}.Minute()
        |    second := v.${renderMemberName(false)}.Second()
        |    millis := v.${renderMemberName(false)}.Nanosecond() / int((int64(time.Millisecond) / int64(time.Nanosecond)))
-       |    return strconv.Itoa(hour) + ":" + strconv.Itoa(minute) + ":" + strconv.Itoa(second) + "." + strconv.Itoa(millis)
+       |    return fmt.Sprintf("%02d:%02d:%02d.%d", hour, minute, second, millis)
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
@@ -180,6 +182,49 @@ case class GoLangField(
     renderAssignImpl(struct, tp.id, variable, serialized, optional)
   }
 
+  private def renderDeserializedVar(id: TypeId, dest: String, src: String): String = id match {
+    case _: InterfaceId =>
+      s"""$dest, err := ${im.withImport(id)}Create${id.name}($src)
+         |if err != nil {
+         |    return err
+         |}
+           """.stripMargin
+
+    case _: AdtId =>
+      s"""$dest := &${id.name}{}
+         |err = json.Unmarshal($src, $dest)
+         |if err != nil {
+         |    return err
+         |}
+           """.stripMargin
+
+    case _: DTOId =>
+      s"""$dest := &${id.name}{}
+         |err = $dest.LoadSerialized($src)
+         |if err != nil {
+         |    return err
+         |}
+           """.stripMargin
+
+    case _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
+      s"""var $dest ${id.name}
+         |err = json.Unmarshal([]byte($src), $dest)
+         |if err != nil {
+         |    return err
+         |}
+           """.stripMargin
+
+    case _: IdentifierId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
+      s"""$dest := &${id.name}{}
+         |err = $dest.LoadSerialized($src)
+         |if err != nil {
+         |    return err
+         |}
+           """.stripMargin
+
+    case _ => throw new IDLException("We should never get here for deserialized field.")
+  }
+
   private def renderAssignImpl(struct: String, id: TypeId, variable: String, serialized: Boolean, optional: Boolean = false): String = {
     if (serialized) {
       val assignVar = if (optional || !tp.hasSetterError())
@@ -193,7 +238,7 @@ case class GoLangField(
 
       val tempVal = s"m${name.capitalize}"
       val assignTemp = if (optional || !tp.hasSetterError())
-        s"$struct.Set${renderMemberName(true)}($tempVal)"
+        s"$struct.Set${renderMemberName(true)}(${(if (optional) "&" else "") + tempVal})"
       else
         s"""err = $struct.Set${renderMemberName(true)}($tempVal)
            |if err != nil {
@@ -202,56 +247,54 @@ case class GoLangField(
          """.stripMargin
 
       id match {
-        case _: InterfaceId =>
-          s"""$tempVal, err := ${im.withImport(id)}Create${id.name}($variable)
-             |if err != nil {
-             |    return err
-             |}
-             |$assignTemp
-           """.stripMargin
-
-        case _: AdtId =>
-          s"""$tempVal := &${id.name}{}
-             |err = json.Unmarshal($variable, $tempVal)
-             |if err != nil {
-             |    return err
-             |}
-             |$assignTemp
-           """.stripMargin
-
-        case _: DTOId =>
-          s"""$tempVal := &${id.name}{}
-             |err = $tempVal.LoadSerialized($variable)
-             |if err != nil {
-             |    return err
-             |}
-             |$assignTemp
-           """.stripMargin
-
-        case _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
-          s"""$tempVal := &${id.name}{}
-             |err = json.Unmarshal([]byte($variable), $tempVal)
-             |if err != nil {
-             |    return err
-             |}
-             |$assignTemp
-           """.stripMargin
-
-        case _: IdentifierId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
-          s"""$tempVal := &${id.name}{}
-             |err = $tempVal.LoadSerialized($variable)
-             |if err != nil {
-             |    return err
-             |}
+        case _: InterfaceId | _: AdtId | _: DTOId | _: EnumId | _: IdentifierId =>
+          s"""${renderDeserializedVar(id, tempVal, (if(optional) "*" else "") + variable)}
              |$assignTemp
            """.stripMargin
 
           case al: AliasId => renderAssignImpl(struct, ts(al).asInstanceOf[Alias].target, variable, serialized, optional)
           case g: Generic => g match {
-            case go: Generic.TOption => renderAssignImpl(struct, go.valueType, variable, serialized, true)
-            case gl: Generic.TList => "Not Implemented! Generic.TList in renderAssignImpl"
-            case gm: Generic.TMap => "Not Implemented! Generic.TMap in renderAssignImpl"
-            case gs: Generic.TSet => "Not Implemented! Generic.TSet in renderAssignImpl"
+            case go: Generic.TOption =>
+              s"""if $variable != nil {
+                 |${renderAssignImpl(struct, go.valueType, s"$variable", serialized, optional = true).shift(4)}
+                 |}
+               """.stripMargin
+
+            // TODO This is probably not going to work well for nested generics
+            case _: Generic.TList | _: Generic.TSet => {
+              val vt = g match {
+                case gl: Generic.TList => gl.valueType
+                case gs: Generic.TSet => gs.valueType
+              }
+
+              if (GoLangType(null, im, ts).isPrimitive(vt))
+                assignVar
+              else
+                s"""$tempVal := make(${tp.renderType()}, len($variable))
+                   |for ${tempVal}Index, ${tempVal}Val := range $variable {
+                   |${if (vt.isInstanceOf[Primitive])
+                  renderAssignImpl(struct, vt, s"${tempVal}Val", serialized, optional).shift(4) else
+                  (renderDeserializedVar(vt, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)}
+                   |}
+                   |$assignTemp
+                 """.stripMargin
+            }
+
+            case gm: Generic.TMap => {
+              val vt = gm.valueType
+
+              if (GoLangType(null, im, ts).isPrimitive(vt))
+                assignVar
+              else
+                s"""$tempVal := make(${tp.renderType()})
+                   |for ${tempVal}Key, ${tempVal}Val := range $variable {
+                   |${if (vt.isInstanceOf[Generic])
+                      renderAssignImpl(struct, vt, s"${tempVal}Val", serialized, optional).shift(4) else
+                      (renderDeserializedVar(vt, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
+                   |}
+                   |$assignTemp
+                 """.stripMargin
+            }
           }
         case Primitive.TTsTz | Primitive.TTs | Primitive.TTime | Primitive.TDate =>
           s"""err = $struct.Set${renderMemberName(true)}FromString($variable)
@@ -264,8 +307,8 @@ case class GoLangField(
       }
     } else {
       val res = id match {
-        case Primitive.TTsTz | Primitive.TTs | Primitive.TTime | Primitive.TDate =>
-          s"$struct.Set${renderMemberName(true)}FromString($variable)"
+//        case Primitive.TTsTz | Primitive.TTs | Primitive.TTime | Primitive.TDate =>
+//          s"$struct.Set${renderMemberName(true)}FromString($variable)"
         case _ => s"$struct.Set${renderMemberName(true)}($variable)"
       }
       if (optional || !tp.hasSetterError())
