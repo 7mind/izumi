@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 // TODO: startables
 // TODO: config mapping/injection
 // TODO: cli parser?..
+// TODO: split into di-plugins and di-app
 abstract class OpinionatedDiApp {
   def main(args: Array[String]): Unit = {
     try {
