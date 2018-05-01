@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition._
@@ -41,7 +40,8 @@ class InjectorTest extends WordSpec {
           Seq(WiringOp.ReferenceInstance(
             key
             , UnaryWiring.Instance(RuntimeDIUniverse.SafeType.get[NotInContext], new NotInContext {})
-          ))
+          )
+          )
 
         case op =>
           Seq(op)
@@ -53,16 +53,16 @@ class InjectorTest extends WordSpec {
       import Case1._
       val definition: AbstractModuleDef = TrivialModuleDef
         .set[JustTrait]
-          .named("named.empty.set")
+        .named("named.empty.set")
         .set[JustTrait]
-          .element[JustTrait]
-          .element(new Impl1)
+        .element[JustTrait]
+        .element(new Impl1)
         .set[JustTrait]
-          .element(new Impl2())
-          .named("named.set")
+        .element(new Impl2())
+        .named("named.set")
         .set[JustTrait]
-          .element[Impl3]
-          .named("named.set")
+        .element[Impl3]
+        .named("named.set")
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -75,12 +75,12 @@ class InjectorTest extends WordSpec {
       import Case1_1._
       val definition: AbstractModuleDef = TrivialModuleDef
         .bind[TestClass]
-          .named("named.test.class")
+        .named("named.test.class")
         .bind[TestDependency0].as[TestImpl0Bad]
         .bind[TestDependency0].as[TestImpl0Good]
-          .named("named.test.dependency.0")
+        .named("named.test.dependency.0")
         .bind(TestInstanceBinding())
-          .named("named.test")
+        .named("named.test")
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -159,20 +159,19 @@ class InjectorTest extends WordSpec {
       assert(context.get[TestClass[DepA]].inner == context.get[List[DepA]])
     }
 
-//  TODO:
-//    "support classes with typealiases" in {
-//      import Case11._
-//
-//      val definition = TrivialDIDef
-//        .binding[DepA]
-//        .binding[TestClass2[TypeAliasDepA]]
-//
-//      val injector = mkInjector()
-//      val plan = injector.plan(definition)
-//      val context = injector.produce(plan)
-//
-//      assert(context.get[TestTrait].dep.isInstanceOf[TypeAliasDepA])
-//    }
+    "support classes with typealiases" ignore {
+      import Case11._
+
+      val definition = TrivialModuleDef
+        .bind[DepA]
+        .bind[TestClass2[TypeAliasDepA]]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestTrait].dep.isInstanceOf[TypeAliasDepA])
+    }
 
     "support traits with typealiases" in {
       import Case11._
@@ -313,90 +312,6 @@ class InjectorTest extends WordSpec {
       assert(instantiated.x(5).b.isSpecial)
     }
 
-    // TODO GenericFactory polymorphic arguments in producer methods
-    "handle macro factory injections" in {
-      import Case5._
-
-      val definition = TrivialModuleDef
-        .magic[Factory]
-        .magic[Dependency]
-        .magic[OverridingFactory]
-        .magic[AssistedFactory]
-        .magic[AbstractFactory]
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
-
-      val factory = context.get[Factory]
-      assert(factory.wiringTargetForDependency != null)
-      assert(factory.factoryMethodForDependency() != factory.wiringTargetForDependency)
-      assert(factory.x().b.isInstanceOf[Dependency])
-
-      val abstractFactory = context.get[AbstractFactory]
-      assert(abstractFactory.x().isInstanceOf[AbstractDependencyImpl])
-
-      val overridingFactory = context.get[OverridingFactory]
-      assert(overridingFactory.x(ConcreteDep()).b.isInstanceOf[ConcreteDep])
-
-      val assistedFactory = context.get[AssistedFactory]
-      assert(assistedFactory.x(1).a == 1)
-      assert(assistedFactory.x(1).b.isInstanceOf[Dependency])
-    }
-
-    "handle generic arguments in macro factory methods" in {
-      import Case5._
-
-      val definition: AbstractModuleDef = TrivialModuleDef
-        .magic[GenericAssistedFactory]
-        .bind[Dependency](ConcreteDep())
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
-
-      val instantiated = context.get[GenericAssistedFactory]
-      val product = instantiated.x(List(SpecialDep()), List(5))
-      assert(product.a.forall(_.isSpecial))
-      assert(product.b.forall(_ == 5))
-      assert(product.c == ConcreteDep())
-    }
-
-    "handle assisted dependencies in macro factory methods" in {
-      import Case5._
-
-      val definition: AbstractModuleDef = TrivialModuleDef
-        .magic[AssistedFactory]
-        .bind[Dependency](ConcreteDep())
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
-
-      val instantiated = context.get[AssistedFactory]
-
-      assert(instantiated.x(5).a == 5)
-    }
-
-    "handle named assisted dependencies in macro factory methods" in {
-      import Case5._
-
-      val definition: AbstractModuleDef = TrivialModuleDef
-        .magic[NamedAssistedFactory]
-        .magic[Dependency]
-        .bind[Dependency](SpecialDep()).named("special")
-        .bind[Dependency](VerySpecialDep()).named("veryspecial")
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
-
-      val instantiated = context.get[NamedAssistedFactory]
-
-      assert(instantiated.dep.isVerySpecial)
-      assert(instantiated.x(5).b.isSpecial)
-    }
-
     // BasicProvisionerTest
     "instantiate simple class" in {
       import Case1._
@@ -416,8 +331,8 @@ class InjectorTest extends WordSpec {
       import Case6._
 
       val definition: AbstractModuleDef = TrivialModuleDef
-        .bind[TestClass].provided( (a: Dependency1) => new TestClass(null) )
-        .bind[Dependency1].provided( () => new Dependency1Sub {} )
+        .bind[TestClass].provided((a: Dependency1) => new TestClass(null))
+        .bind[Dependency1].provided(() => new Dependency1Sub {})
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -428,231 +343,97 @@ class InjectorTest extends WordSpec {
       assert(instantiated.b == null)
     }
 
-    "handle one-arg trait" in {
-      import Case7._
+    "support named bindings in cglib traits" in {
+      import Case10._
 
       val definition = TrivialModuleDef
-        .bind[Dependency1]
-        .magic[TestTrait]
+        .bind[Dep].as[DepA].named("A")
+        .bind[Dep].as[DepB].named("B")
+        .bind[Trait]
+        .bind[Trait1]
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan)
-      val instantiated = context.get[TestTrait]
-      assert(instantiated.isInstanceOf[TestTrait])
-      assert(instantiated.dep != null)
-    }
+      val instantiated = context.get[Trait]
 
-    "handle named one-arg trait" in {
-      import Case7._
+      assert(instantiated.depA.isA)
+      assert(!instantiated.depB.isA)
 
-      val definition = TrivialModuleDef
-        .bind[Dependency1]
-        .magic[TestTrait]
-          .named("named-trait")
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produce(plan)
-      val instantiated = context.get[TestTrait]("named-trait")
-      assert(instantiated.isInstanceOf[TestTrait])
-      assert(instantiated.dep != null)
-    }
-
-    "handle mixed sub-trait with protected autowires" in {
-      import Case8._
-
-      val definition = TrivialModuleDef
-        .magic[Trait3]
-        .magic[Trait2]
-        .magic[Trait1]
-        .bind[Dependency3]
-        .bind[Dependency2]
-        .bind[Dependency1]
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produce(plan)
       val instantiated1 = context.get[Trait1]
-      assert(instantiated1.isInstanceOf[Trait1])
 
-      val instantiated2 = context.get[Trait2]
-      assert(instantiated2.isInstanceOf[Trait2])
-
-      val instantiated3 = context.get[Trait3]
-      assert(instantiated3.isInstanceOf[Trait3])
-
-      instantiated3.prr()
+      assert(instantiated1.depA.isA)
+      assert(!instantiated1.depB.isA)
     }
 
-    "handle sub-type trait" in {
-      import Case8._
+    "support named bindings in method reference providers" in {
+      import Case17._
 
       val definition = TrivialModuleDef
-        .bind[Trait2].magically[Trait3]
-        .bind[Dependency3]
-        .bind[Dependency2]
-        .bind[Dependency1]
+        .bind[TestDependency].named("classdeftypeann1")
+        .bind[TestClass].provided(implType _)
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val dependency = context.get[TestDependency]("classdeftypeann1")
+      val instantiated = context.get[TestClass]
+
+      assert(instantiated.a == dependency)
+    }
+
+    "support named bindings in lambda providers" in {
+      import Case17._
+
+      val definition = TrivialModuleDef
+        .bind[TestDependency].named("classdeftypeann1")
+        .bind[TestClass].provided { t: TestDependency@Id("classdeftypeann1") => new TestClass(t) }
+
+      val injector = mkInjector()
+      val context = injector.produce(injector.plan(definition))
+
+      val dependency = context.get[TestDependency]("classdeftypeann1")
+      val instantiated = context.get[TestClass]
+
+      assert(instantiated.a == dependency)
+    }
+
+    "populate implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
+      import Case13._
+
+      val definition = TrivialModuleDef
+        .bind[TestClass]
+        .bind[Dep]
+        .bind[DummyImplicit].as[MyDummyImplicit]
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan)
-      val instantiated3 = context.get[Trait2]
-      assert(instantiated3.isInstanceOf[Trait2])
-      assert(instantiated3.asInstanceOf[Trait3].prr() == "Hello World")
+      val instantiated = context.get[TestClass]
+
+      assert(instantiated.dummyImplicit.isInstanceOf[MyDummyImplicit])
+      assert(instantiated.dummyImplicit.asInstanceOf[MyDummyImplicit].imADummy)
     }
 
-    "handle generics" in {
-      import Case12._
+    "override protected defs in cglib traits" in {
+      import Case14._
 
       val definition = TrivialModuleDef
-        .bind[Parameterized[Dep]]
-        .bind[ParameterizedTrait[Dep]]
+        .bind[TestTrait]
         .bind[Dep]
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan)
-      assert(context.get[Parameterized[Dep]].t.isInstanceOf[Dep])
-      assert(context.get[ParameterizedTrait[Dep]].t.isInstanceOf[Dep])
+      val instantiated = context.get[TestTrait]
+
+      assert(instantiated.rd == Dep().toString)
     }
 
-  }
-
-  "support named bindings in macro traits" in {
-    import Case10._
-
-    val definition = TrivialModuleDef
-      .bind[Dep].magically[DepA].named("A")
-      .bind[Dep].magically[DepB].named("B")
-      .magic[Trait]
-      .magic[Trait1]
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-
-    val context = injector.produce(plan)
-    val instantiated = context.get[Trait]
-
-    assert(instantiated.depA.isA)
-    assert(!instantiated.depB.isA)
-
-    val instantiated1 = context.get[Trait1]
-
-    assert(instantiated1.depA.isA)
-    assert(!instantiated1.depB.isA)
-  }
-
-  "support named bindings in cglib traits" in {
-    import Case10._
-
-    val definition = TrivialModuleDef
-      .bind[Dep].as[DepA].named("A")
-      .bind[Dep].as[DepB].named("B")
-      .bind[Trait]
-      .bind[Trait1]
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-
-    val context = injector.produce(plan)
-    val instantiated = context.get[Trait]
-
-    assert(instantiated.depA.isA)
-    assert(!instantiated.depB.isA)
-
-    val instantiated1 = context.get[Trait1]
-
-    assert(instantiated1.depA.isA)
-    assert(!instantiated1.depB.isA)
-  }
-
-  "support named bindings in method reference providers" in {
-    import Case17._
-
-    val definition = TrivialModuleDef
-      .bind[TestDependency].named("classdeftypeann1")
-      .bind[TestClass].provided(implType _)
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-    val context = injector.produce(plan)
-
-    val dependency = context.get[TestDependency]("classdeftypeann1")
-    val instantiated = context.get[TestClass]
-
-    assert(instantiated.a == dependency)
-  }
-
-  "support named bindings in lambda providers" in {
-    import Case17._
-
-    val definition = TrivialModuleDef
-      .bind[TestDependency].named("classdeftypeann1")
-      .bind[TestClass].provided { t: TestDependency @Id("classdeftypeann1") => new TestClass(t) }
-
-    val injector = mkInjector()
-    val context = injector.produce(injector.plan(definition))
-
-    val dependency = context.get[TestDependency]("classdeftypeann1")
-    val instantiated = context.get[TestClass]
-
-    assert(instantiated.a == dependency)
-  }
-
-  "populate implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
-    import Case13._
-
-    val definition = TrivialModuleDef
-      .bind[TestClass]
-      .bind[Dep]
-      .bind[DummyImplicit].as[MyDummyImplicit]
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-
-    val context = injector.produce(plan)
-    val instantiated = context.get[TestClass]
-
-    assert(instantiated.dummyImplicit.isInstanceOf[MyDummyImplicit])
-    assert(instantiated.dummyImplicit.asInstanceOf[MyDummyImplicit].imADummy)
-  }
-
-  "override protected defs in cglib traits" in {
-    import Case14._
-
-    val definition = TrivialModuleDef
-      .bind[TestTrait]
-      .bind[Dep]
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-
-    val context = injector.produce(plan)
-    val instantiated = context.get[TestTrait]
-
-    assert(instantiated.rd == Dep().toString)
-  }
-
-  "override protected defs in macro traits" in {
-    import Case14._
-
-    val definition = TrivialModuleDef
-      .magic[TestTrait]
-      .magic[Dep]
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-
-    val context = injector.produce(plan)
-    val instantiated = context.get[TestTrait]
-
-    assert(instantiated.rd == Dep().toString)
   }
 
 }

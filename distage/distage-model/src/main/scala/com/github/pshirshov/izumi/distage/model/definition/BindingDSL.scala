@@ -4,8 +4,6 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBind
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-import scala.language.implicitConversions
-
 class BindingDSL private[definition] (override val bindings: Set[Binding]) extends AbstractModuleDef {
   import BindingDSL._
 
@@ -25,9 +23,6 @@ class BindingDSL private[definition] (override val bindings: Set[Binding]) exten
 }
 
 object BindingDSL {
-
-  implicit def moduleDefIsBindingDSL[M](moduleDef: M)(implicit ev: M => AbstractModuleDef): BindingDSL =
-    new BindingDSL(moduleDef.bindings)
 
   // DSL state machine...
 

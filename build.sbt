@@ -185,14 +185,9 @@ lazy val distagePlugins = inDiStage.as.module
   .settings(
     libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
-lazy val distageMacro = inDiStage.as.module
-  .depends(distageModel)
-  .settings(
-    libraryDependencies ++= Seq(R.scala_reflect)
-  )
 
 lazy val distageCore = inDiStage.as.module
-  .depends(distageMacro, fundamentalsFunctional)
+  .depends(fundamentalsFunctional, distageModel)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
@@ -200,13 +195,12 @@ lazy val distageCore = inDiStage.as.module
     )
   )
 
-//
 lazy val distageStatic = inDiStage.as.module
-  .depends(distageModel, distageCore.testOnlyRef)
+  .depends(distageCore)
   .settings(
     libraryDependencies += R.shapeless
   )
-//
+
 lazy val logstageApiBase = inLogStage.as.module
 
 lazy val distageCats = inDiStage.as.module
