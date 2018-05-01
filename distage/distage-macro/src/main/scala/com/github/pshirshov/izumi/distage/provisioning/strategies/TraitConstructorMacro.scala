@@ -1,34 +1,16 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
+import com.github.pshirshov.izumi.distage.provisioning.TraitConstructor
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
 
-import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-trait TraitStrategyMacroDefaultImpl {
-  self: TraitStrategyMacro =>
+object TraitConstructorMacro {
 
-  def mkWrappedTraitConstructor[T]: DIKeyWrappedFunction[T] = macro TraitStrategyMacroDefaultImplImpl.mkWrappedTraitConstructorMacro[T]
-
-  @inline
-  // reason for this is simply IDEA flipping out on [T: c.WeakTypeTag]
-  override def mkWrappedTraitConstructorMacro[T: blackbox.Context#WeakTypeTag](c: blackbox.Context): c.Expr[DIKeyWrappedFunction[T]] =
-    TraitStrategyMacroDefaultImplImpl.mkWrappedTraitConstructorMacro[T](c)
-}
-
-object TraitStrategyMacroDefaultImpl
-  extends TraitStrategyMacroDefaultImpl
-    with TraitStrategyMacro
-
-// TODO: Preserve annotations to support IDs
-
-private[strategies] object TraitStrategyMacroDefaultImplImpl {
-
-  def mkWrappedTraitConstructorMacro[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[DIKeyWrappedFunction[T]] = {
+  def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
@@ -77,13 +59,13 @@ private[strategies] object TraitStrategyMacroDefaultImplImpl {
       }
       """
 
-    val wrappedFunction = symbolOf[WrappedFunction.type].asClass.module
-    val res = c.Expr[DIKeyWrappedFunction[T]] {
+    val dikeyWrappedFunction = symbolOf[DIKeyWrappedFunction.type].asClass.module
+    val res = c.Expr[TraitConstructor[T]] {
       q"""
           {
           $constructorDef
 
-          $wrappedFunction.DIKeyWrappedFunction.apply[$targetType](constructor _)
+          new ${weakTypeOf[TraitConstructor[T]]}($dikeyWrappedFunction.apply[$targetType](constructor _))
           }
        """
     }

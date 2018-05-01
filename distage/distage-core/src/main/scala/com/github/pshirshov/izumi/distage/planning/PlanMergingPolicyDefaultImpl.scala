@@ -62,7 +62,6 @@ class PlanMergingPolicyDefaultImpl(
     val right = mutable.ArrayBuffer[ExecutableOp.InstantiationOp]()
     val rightSet = mutable.LinkedHashSet[RuntimeDIUniverse.DIKey]()
 
-
     steps.foreach {
       step =>
         val required = requirements(step)

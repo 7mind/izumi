@@ -8,13 +8,9 @@ trait PluginMergeStrategy[T <: LoadedPlugins] {
   // TODO: configurable merge strategy allowing to enable/individual plugins
 }
 
-
 object SimplePluginMergeStrategy extends PluginMergeStrategy[LoadedPlugins] {
   override def merge[D <: PluginDef](defs: Seq[D]): LoadedPlugins = {
-    val merged = defs.foldLeft[AbstractModuleDef](TrivialModuleDef(Set.empty)) {
-      case (acc, definition) =>
-        acc ++ definition
-    }
+    val merged = defs.reduceLeftOption[AbstractModuleDef](_ ++ _).getOrElse(TrivialModuleDef)
 
     JustLoadedPlugins(merged)
   }

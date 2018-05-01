@@ -20,8 +20,6 @@ class ExampleApp(log: IzLogger, service: ExampleService) {
   }
 }
 
-
-
 class LoggerInjectionTest extends WordSpec {
   "Logging module for distage" should {
     "inject loggers" in {

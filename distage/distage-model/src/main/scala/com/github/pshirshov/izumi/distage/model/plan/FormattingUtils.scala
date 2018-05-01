@@ -11,7 +11,6 @@ object FormattingUtils {
   def doFormat(target: RuntimeDIUniverse.DIKey, deps: RuntimeDIUniverse.Wiring): String = {
     val op = doFormat(deps)
     s"$target := $op"
-
   }
 
   private def doFormat(deps: RuntimeDIUniverse.Wiring): String = {

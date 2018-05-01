@@ -1,4 +1,5 @@
 package com.github.pshirshov.izumi.distage.reflection
+
 import com.github.pshirshov.izumi.distage.model.definition.With
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnsupportedWiringException}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse

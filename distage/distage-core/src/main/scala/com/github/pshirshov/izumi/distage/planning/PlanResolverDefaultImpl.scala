@@ -15,7 +15,7 @@ class PlanResolverDefaultImpl extends PlanResolver {
     }
 
     val ops = plan.statements
-    FinalPlanImmutableImpl(definition)(ops)
+    FinalPlanImmutableImpl(definition, ops)
   }
 }
 

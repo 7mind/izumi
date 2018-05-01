@@ -408,12 +408,12 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     def defconfannfn2(@Id("confargann1") @Id("confargann2") y: String): String = y
 
-    val testVal: (String @Id("sigtypeann1"), Int @Id("sigtypeann2")) => String = (x, _) => x
+    val testVal: (String @Id("valsigtypeann1"), Int @Id("valsigtypeann2")) => String = (x, _) => x
 
-    val testVal2: Boolean => String = { x: Boolean @Id("valtypeann") => x.toString }
+    val testVal2: Boolean => String = { x: Boolean @Id("valbodytypeann") => x.toString }
 
-    val testVal3: Long @Id("duptypeann1") => String @Id("duptypeann2") => Long =
-      { x: Long @Id("duptypeanndiff") => _ => x }
+    val testVal3: Long @Id("valsbtypeann1") => String @Id("valsbtypeann2") => Long =
+      { x: Long @Id("valsbtypeann3") => _ => x }
 
     class TestProviderModule {
 

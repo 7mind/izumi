@@ -32,16 +32,16 @@ trait DIWiring {
 
       sealed trait ProductWiring extends UnaryWiring
 
-        case class Constructor(instanceType: TypeFull, associations: Seq[Association.Parameter]) extends ProductWiring
-        object Constructor {
-          implicit final val liftableConstructor: Liftable[Constructor] = {
-            case Constructor(instanceType, associations) => q"""
-            { new $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor($instanceType, ${associations.toList}) }
-              """
-          }
+      case class Constructor(instanceType: TypeFull, associations: Seq[Association.Parameter]) extends ProductWiring
+      object Constructor {
+        implicit final val liftableConstructor: Liftable[Constructor] = {
+          case Constructor(instanceType, associations) => q"""
+          { new $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor($instanceType, ${associations.toList}) }
+            """
         }
+      }
 
-        case class Abstract(instanceType: TypeFull, associations: Seq[Association.Method]) extends ProductWiring
+      case class Abstract(instanceType: TypeFull, associations: Seq[Association.Method]) extends ProductWiring
 
       case class Function(provider: Provider, associations: Seq[Association]) extends UnaryWiring {
         override def instanceType: TypeFull = provider.ret
