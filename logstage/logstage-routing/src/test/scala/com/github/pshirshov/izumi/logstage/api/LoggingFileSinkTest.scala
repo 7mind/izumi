@@ -1,23 +1,31 @@
-package com.github.pshirshov.izumi
+package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.models.FileRotation
 import org.scalatest.WordSpec
-import FileSinkLogicTest._
+import LoggingFileSinkTest._
+import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
+import com.github.pshirshov.izumi.{DummyFile, DummyFileService, FileSink, FileSinkConfig}
+
 import scala.util.Random
 import org.scalatest.GivenWhenThen
 
 @ExposedTestScope
-class FileSinkLogicTest extends WordSpec with GivenWhenThen{
+class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
+
 
   "Dummy file sink " should {
+
+
+    val policy = LoggingMacroTest.simplePolicy
 
     val dummyFolder = "folder"
 
     "write data to files correctly" in {
-      withSink(withoutRotation(2, dummyFolder)) {
-        sink =>
-          List.fill(3)("msg") foreach sink.sendMessage
+      withFileLogger(withoutRotation(policy, 2, dummyFolder)) {
+        (sink, logger) =>
+
+          List.fill(3)("msg").foreach(i => logger.info(i))
           val curState = sink.sinkState.get()
           assert(curState.currentFileId.contains(FileSink.FileIdentity.init + 1))
           assert(curState.currentFileSize == 1)
@@ -35,10 +43,10 @@ class FileSinkLogicTest extends WordSpec with GivenWhenThen{
       Given("empty file in storage")
       prefilledFiles.storage.put(dummyFolder, Set(file1))
 
-      withSink(withoutRotation(randomFileSize, dummyFolder, prefilledFiles)) {
-        sink =>
+      withFileLogger(withoutRotation(policy, randomFileSize, dummyFolder, prefilledFiles)) {
+        (sink, logger) =>
           When("new message sends")
-          sink.sendMessage("new")
+          logger.info("new")
           val curState = sink.sinkState.get()
           Then("current file id should be init and size uquals to 1")
           assert(curState.currentFileId.contains(FileSink.FileIdentity.init))
@@ -61,10 +69,10 @@ class FileSinkLogicTest extends WordSpec with GivenWhenThen{
       prefilledFiles.storage.put(dummyFolder, Set(file1, file2))
 
 
-      withSink(withoutRotation(randomFileSize, dummyFolder, prefilledFiles)) {
-        sink =>
+      withFileLogger(withoutRotation(policy, randomFileSize, dummyFolder, prefilledFiles)) {
+        (sink, logger) =>
           When("new message sends")
-          sink.sendMessage("new")
+          logger.info("new")
           val curState = sink.sinkState.get()
           Then("current file id should be next and size uquals to next after size of randomly filled file")
           assert(curState.currentFileId.contains(FileSink.FileIdentity.init + 1))
@@ -74,10 +82,10 @@ class FileSinkLogicTest extends WordSpec with GivenWhenThen{
       Given("fullfilled file in storage")
       prefilledFiles.storage.put(dummyFolder, Set(file1))
 
-      withSink(withoutRotation(randomFileSize, dummyFolder, prefilledFiles)) {
-        sink =>
+      withFileLogger(withoutRotation(policy, randomFileSize, dummyFolder, prefilledFiles)) {
+        (sink, logger) =>
           When("new message sends")
-          sink.sendMessage("new")
+          logger.info("new")
           Then("current file id should be next and size uquals to 1")
           val curState = sink.sinkState.get()
           assert(curState.currentFileId.contains(FileSink.FileIdentity.init + 1))
@@ -91,8 +99,8 @@ class FileSinkLogicTest extends WordSpec with GivenWhenThen{
       val filesLimit = 3
 
       val dummyService = new DummyFileService()
-      withSink(withRotation(fileSize = fileSize, folder = dummyFolder, filesLimit = filesLimit, fileService = dummyService)) {
-        sink =>
+      withFileLogger(withRotation(policy, fileSize = fileSize, folder = dummyFolder, filesLimit = filesLimit, fileService = dummyService)) {
+        (sink, logger) =>
           (1 to fileSize * filesLimit).foreach {
             i =>
               sink.sendMessage(i.toString)
@@ -101,14 +109,14 @@ class FileSinkLogicTest extends WordSpec with GivenWhenThen{
           assert(curState1.forRotate.isEmpty)
           assert(curState1.currentFileId.contains(FileSink.FileIdentity.init + 2))
 
-          sink.sendMessage("another")
+          logger.info("new")
           val curState2 = sink.sinkState.get()
           assert(curState2.forRotate.size == filesLimit - 1)
           assert(curState2.currentFileId.contains(FileSink.FileIdentity.init))
 
           (1 to fileSize).foreach {
             i =>
-              sink.sendMessage(i.toString)
+              logger.info(i.toString)
           }
           val curState3 = sink.sinkState.get()
           assert(curState3.forRotate.size == filesLimit - 2)
@@ -135,9 +143,9 @@ class FileSinkLogicTest extends WordSpec with GivenWhenThen{
 
       prefilledFiles.storage.put(dummyFolder, filledFiles.toSet)
 
-      withSink(withRotation(fileSize = fileSize, folder = dummyFolder, filesLimit = filesLimit, fileService = prefilledFiles)) {
-        sink =>
-          sink.sendMessage("another")
+      withFileLogger(withRotation(policy, fileSize = fileSize, folder = dummyFolder, filesLimit = filesLimit, fileService = prefilledFiles)) {
+        (sink, logger) =>
+          logger.info("new")
           val curState = sink.sinkState.get()
           assert(curState.forRotate.size == filesLimit - 1)
           assert(curState.currentFileId.contains(FileSink.FileIdentity.init))
@@ -147,22 +155,24 @@ class FileSinkLogicTest extends WordSpec with GivenWhenThen{
   }
 }
 
-object FileSinkLogicTest {
+object LoggingFileSinkTest {
 
-  def dummySink(r: FileRotation, fileSize: Int, folder: String = "", fileService: DummyFileService = new DummyFileService()): FileSink = {
-    new FileSink(fileService, r, FileSinkConfig(fileSize, folder))
+  def dummySink(renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, folder: String = "", fileService: DummyFileService = new DummyFileService()): FileSink = {
+    new FileSink(renderingPolicy, fileService, r, FileSinkConfig(fileSize, folder))
   }
 
-  def withoutRotation(fileSize: Int, folder: String = "", fileService: DummyFileService = new DummyFileService()): FileSink = {
-    dummySink(FileRotation.DisabledRotation, fileSize, folder, fileService)
+  def withoutRotation(renderingPolicy: RenderingPolicy,fileSize: Int, folder: String = "", fileService: DummyFileService = new DummyFileService()): FileSink = {
+    dummySink(renderingPolicy, FileRotation.DisabledRotation, fileSize, folder, fileService)
   }
 
-  def withRotation(fileSize: Int, folder: String = "", fileService: DummyFileService = new DummyFileService(), filesLimit: Int): FileSink = {
-    dummySink(FileRotation.FileLimiterRotation(filesLimit), fileSize, folder, fileService)
+  def withRotation(renderingPolicy: RenderingPolicy,fileSize: Int, folder: String = "", fileService: DummyFileService = new DummyFileService(), filesLimit: Int): FileSink = {
+    dummySink(renderingPolicy, FileRotation.FileLimiterRotation(filesLimit), fileSize, folder, fileService)
   }
 
-  def withSink(f: => FileSink)(f2: FileSink => Unit): Unit = {
-    f2(f)
+  def withFileLogger(f: => FileSink)(f2: (FileSink, IzLogger) => Unit): Unit = {
+    val fileSink = f
+    val logger = LoggingMacroTest.configureLogger(Seq(fileSink))
+    f2(fileSink, logger)
   }
 
 }

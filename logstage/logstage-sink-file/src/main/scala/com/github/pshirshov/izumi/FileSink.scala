@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.FileSink.WithSize
 import com.github.pshirshov.izumi.TryOps._
+import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.logstage.model.logger.LogSink
 import com.github.pshirshov.izumi.models.FileRotation.{DisabledRotation, FileLimiterRotation}
@@ -14,7 +15,8 @@ import scala.util.{Failure, Success, Try}
 case class FileSinkConfig(fileSize : Int, filePath : String)
 
 case class FileSink(
-                    fileService: FileService
+                   renderingPolicy: RenderingPolicy
+                    , fileService: FileService
                     , rotation: FileRotation
                     , config : FileSinkConfig
                    ) extends LogSink {
@@ -77,8 +79,7 @@ case class FileSink(
   }
 
   override def flush(e: Log.Entry): Unit = synchronized {
-    // todo : add policy
-    sendMessage(e.toString)
+    sendMessage(renderingPolicy.render(e))
   }
 
   def sendMessage(e : String) : Unit = {
