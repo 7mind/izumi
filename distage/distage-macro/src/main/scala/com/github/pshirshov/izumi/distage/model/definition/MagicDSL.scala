@@ -16,7 +16,7 @@ object MagicDSL {
       }
   }
 
-  implicit final class MagicBindingDSL[B <: ModuleDef](private val dsl: B)(implicit ev: B => BindingDSL) {
+  implicit final class MagicBindingDSL[B <: AbstractModuleDef](private val dsl: B)(implicit ev: B => BindingDSL) {
     @inline
     def magic[T: Tag: AnyConstructor]: BindOnlyNameableDSL =
       implicitly[AnyConstructor[T]] match {

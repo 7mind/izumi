@@ -29,15 +29,14 @@ object NullDiGC extends DIGarbageCollector {
   }
 }
 
-
 object TracingDIGC extends DIGarbageCollector {
   override def gc(plan: FinalPlan, isRoot: RuntimeDIUniverse.DIKey => Boolean): FinalPlan = {
     val toLeave = mutable.HashSet[RuntimeDIUniverse.DIKey]()
     toLeave ++= plan.steps.map(_.target).filter(isRoot)
     allDeps(plan.steps.map(v => v.target -> v).toMap, toLeave)
-    val refinedPlan = TrivialModuleDef(plan.definition.bindings.filter(b => toLeave.contains(b.target)))
+    val refinedPlan = TrivialModuleDef(plan.definition.bindings.filter(b => toLeave.contains(b.key)))
     val steps = plan.steps.filter(s => toLeave.contains(s.target))
-    FinalPlanImmutableImpl(refinedPlan)(steps)
+    FinalPlanImmutableImpl(refinedPlan, steps)
   }
 
   @tailrec
@@ -49,17 +48,15 @@ object TracingDIGC extends DIGarbageCollector {
         p.dependencies
       case s: AddToSet =>
         Seq(s.element)
-      case p: MakeProxy =>
+      case _: MakeProxy =>
         Seq.empty
-      case i: ImportDependency =>
+      case _: ImportDependency =>
         Seq.empty
       case _ =>
         Seq.empty
     }
 
-    if (newDeps.isEmpty) {
-      ()
-    } else {
+    if (newDeps.nonEmpty) {
       deps ++= newDeps
       allDeps(ops, deps)
     }

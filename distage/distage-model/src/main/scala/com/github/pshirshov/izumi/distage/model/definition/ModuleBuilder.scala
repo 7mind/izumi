@@ -16,7 +16,7 @@ trait ModuleBuilder {
 
   final private[this] val mutableState: mutable.Set[Binding] = initialState
 
-  def build: AbstractModuleDef = freeze(mutableState)
+  final def finalDef: ModuleDef = freeze(mutableState)
 
   final protected def bind[T: Tag]: BindDSL[T] = {
     val binding = Bindings.binding[T]

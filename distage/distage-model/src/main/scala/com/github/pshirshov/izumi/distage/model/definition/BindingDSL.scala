@@ -26,7 +26,7 @@ class BindingDSL private[definition] (override val bindings: Set[Binding]) exten
 
 object BindingDSL {
 
-  implicit def moduleDefIsBindingDSL(moduleDef: ModuleDef): BindingDSL =
+  implicit def moduleDefIsBindingDSL[M](moduleDef: M)(implicit ev: M => AbstractModuleDef): BindingDSL =
     new BindingDSL(moduleDef.bindings)
 
   // DSL state machine...

@@ -51,6 +51,6 @@ trait PluginDef extends ModuleDef {
 }
 
 object AbstractModuleDef {
-  implicit def bindingSetContextDefinition[T <: Binding](set: Set[T]): AbstractModuleDef =
+  implicit def bindingSetContextDefinition[T <: Binding](set: Set[T]): ModuleDef =
     TrivialModuleDef(set.toSet)
 }

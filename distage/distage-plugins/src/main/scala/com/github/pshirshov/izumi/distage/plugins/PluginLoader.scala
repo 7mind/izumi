@@ -24,7 +24,6 @@ trait LoadedPlugins {
 
 case class JustLoadedPlugins(definition: AbstractModuleDef) extends LoadedPlugins
 
-
 class PluginLoader(config: PluginConfig) {
   type PluginType = Class[_ <: PluginDef]
 

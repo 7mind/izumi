@@ -22,14 +22,44 @@ sealed trait WrappedFunction[+R] extends RuntimeDIUniverse.Callable {
 object WrappedFunction {
   import RuntimeDIUniverse._
 
-  final class WrappedFunctionApply[R] {
-    def apply[T](fun: T)(implicit conv: T => WrappedFunction[R]): WrappedFunction[R] = conv(fun)
-  }
-
-  /** Trigger implicit conversion from function into a WrappedFunction **/
+  /**
+  * Trigger implicit conversion from function into a WrappedFunction
+  * */
   def apply[R](fun: WrappedFunction[R]): WrappedFunction[R] = fun
-//  def apply[R]: WrappedFunctionApply[R] = new WrappedFunctionApply[R]
 
+  /**
+  * A function that receives its arguments from DI context, including named instances via @Id annotation.
+  *
+  * Prefer passing a method reference such as (method _)
+  *
+  * The following syntaxes are supported by extractor macro:
+  *
+  * Inline lambda:
+  *
+  *   Bindings.provider[Unit] {
+  *     i: Int @Id("special") => ()
+  *   }
+  *
+  * Method reference:
+  *   def constructor(@Id("special") i: Int): Unit = ()
+  *
+  *   Bindings.provider[Unit](constructor _)
+  *
+  * Function value with annotated signature:
+  *
+  *   val constructor: Int @Id("special") => Unit = _ => ()
+  *
+  *   Bindings.provider[Unit](constructor)
+  *
+  * The following IS NOT SUPPORTED, annotations are lost when converting method to a function value:
+  *
+  *   def constructorMethod(@Id("special") i: Int): Unit = ()
+  *
+  *   val constructor = constructorMethod _
+  *
+  *   Bindings.provider[Unit](constructor) // Will summon regular Int, not a "special" Int from DI context
+  *
+  * */
   class DIKeyWrappedFunction[+R](val diKeys: Seq[DIKey]
                                , val ret: TypeFull
                                , val fun: Seq[Any] => R
@@ -156,12 +186,6 @@ object WrappedFunction {
         case Function(args, body) =>
           ExtractedInfo(analyzeMethodRef(args.map(_.symbol), body), isValReference = false)
         case tree if Option(tree.symbol).exists(_.isMethod) =>
-          c.warning(
-            c.enclosingPosition
-            , s"""Recognized argument as a value reference, annotations will not be extracted.
-                 |To support annotations use a method reference such as (fn _).""".stripMargin
-          )
-
           val sig = tree.symbol.typeSignature.finalResultType
 
           val pars = sig.typeArgs.init.map(ParamInfo(_))

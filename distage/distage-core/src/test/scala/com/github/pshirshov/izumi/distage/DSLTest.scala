@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
-import com.github.pshirshov.izumi.distage.model.definition.{Bindings, AbstractModuleDef, ModuleBuilder, TrivialModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{AbstractModuleDef, Bindings, ModuleBuilder, ModuleDef, TrivialModuleDef}
 import com.github.pshirshov.izumi.distage.model.definition.Bindings._
 import org.scalatest.WordSpec
 
