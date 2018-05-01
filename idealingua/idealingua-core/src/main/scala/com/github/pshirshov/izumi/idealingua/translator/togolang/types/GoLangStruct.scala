@@ -157,9 +157,9 @@ case class GoLangStruct(
              |if $src != nil {
              |${
                   if (GoLangType(id, imports, ts).isPolymorph(go.valueType))
-                    renderPolymorphSerialized(go.valueType, dest, src, forOption = true)
+                    renderPolymorphSerialized(go.valueType, dest, src, forOption = true).shift(4)
                   else
-                    s"$dest = $src"
+                    s"    $dest = $src"
                 }
              |}
            """.stripMargin
