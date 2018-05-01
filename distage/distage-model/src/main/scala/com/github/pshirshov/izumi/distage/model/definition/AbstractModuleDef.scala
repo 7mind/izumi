@@ -40,7 +40,7 @@ trait AbstractModuleDef {
 
 trait ModuleDef extends AbstractModuleDef {
 
-  override protected type Impl = AbstractModuleDef
+  override type Impl = AbstractModuleDef
 
   protected def make(bindings: Set[Binding]): Impl = TrivialModuleDef(bindings)
 }

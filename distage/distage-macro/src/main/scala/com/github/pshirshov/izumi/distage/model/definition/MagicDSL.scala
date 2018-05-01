@@ -1,28 +1,30 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.BindOnlyNameableDSL
-
-import scala.language.experimental.macros
+import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSLBase, BindOnlyNameableDSL}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
+import com.github.pshirshov.izumi.distage.provisioning.{AbstractConstructor, AnyConstructor, ConcreteConstructor}
 
 object MagicDSL {
 
-  implicit final class CompileTimeBindingDSL(val self: BindingDSL) extends AnyVal {
-    def magic[T]: BindOnlyNameableDSL = macro MagicMacro.magicMacro[CompileTimeBindingDSL, T, T]
+  implicit final class MagicBindDSL[T, AfterBind](private val dsl: BindDSLBase[T, AfterBind]) extends AnyVal {
+    def magically[I <: T: Tag: AnyConstructor]: AfterBind =
+      implicitly[AnyConstructor[I]] match {
+        case ctor: AbstractConstructor[I] =>
+          dsl.provided[I](ctor.function)
+        case _: ConcreteConstructor[I] =>
+          dsl.as[I]
+      }
+  }
 
-    def magic[T, I <: T]: BindOnlyNameableDSL = macro MagicMacro.magicMacro[CompileTimeBindingDSL, T, I]
+  implicit final class MagicBindingDSL[B <: ModuleDef](private val dsl: B)(implicit ev: B => BindingDSL) {
+    @inline
+    def magic[T: Tag: AnyConstructor]: BindOnlyNameableDSL =
+      implicitly[AnyConstructor[T]] match {
+        case ctor: AbstractConstructor[T] =>
+          dsl.bind[T].provided(ctor.function)
+        case _: ConcreteConstructor[T] =>
+          dsl.bind[T]
+      }
   }
 
 }
-
-  // can use implicit materializer to remove references to .self in macro and make it private
-  // but requires DummyImplicit in API because of erasure ambiguity:
-  //
-  // object CompileTimeDSL {
-  //  implicit def magicMacroImpl[T, I <: T]: MagicMacroRes[T, I] = macro MagicMacro.magicMacro[Nothing, T, I]
-  //
-  //  implicit final class CompileTimeBindingDSL(private val dsl: BindingDSL) extends AnyVal {
-  //    def magic[T](implicit magicMacroRes: MagicMacroRes[T, T]): NameableBinding = magicMacroRes.apply(dsl)
-  //
-  //    def magic[T, I <: T](implicit magicMacroRes: MagicMacroRes[T, I], dummyImplicit: DummyImplicit): NameableBinding = magicMacroRes.apply(dsl)
-  //  }
-  // }

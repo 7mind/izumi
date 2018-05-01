@@ -41,7 +41,7 @@ class DSLTest extends WordSpec {
       import Case1._
       val definition: AbstractModuleDef = TrivialModuleDef
         .magic[TestClass]
-        .magic[TestDependency0, TestImpl0]
+        .bind[TestDependency0].magically[TestImpl0]
         .bind(TestInstanceBinding())
 
         .magic[TestClass]
@@ -72,10 +72,13 @@ class DSLTest extends WordSpec {
 
       object Module extends ModuleBuilder {
         bind[TestClass]
-        bind[TestDependency0, TestImpl0]
+        bind[TestDependency0].as[TestImpl0]
       }
 
-      assert(Module.bindings.nonEmpty)
+      assert(Module.bindings == Set(
+        Bindings.binding[TestClass]
+        , Bindings.binding[TestDependency0, TestImpl0]
+      ))
     }
 
     "allow monoidal operations between different types of binding dsls" in {
@@ -88,11 +91,14 @@ class DSLTest extends WordSpec {
       val mod2: AbstractModuleDef = TrivialModuleDef
         .bind[TestCaseClass2]
 
-      val mod3: AbstractModuleDef = TrivialModuleDef
+      val mod3_1 = TrivialModuleDef
         .magic[TestDependency1]
-        .magic[NotInContext]
 
-      val mod4: AbstractModuleDef = Set(
+      val mod3_2 = TrivialModuleDef
+
+      val mod3 = (mod3_1 ++ mod3_2).magic[NotInContext]
+
+      val mod4: ModuleDef = Set(
         binding(TestInstanceBinding())
       )
 

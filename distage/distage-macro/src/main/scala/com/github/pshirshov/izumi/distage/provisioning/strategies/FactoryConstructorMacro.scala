@@ -1,44 +1,24 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
-import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
+import com.github.pshirshov.izumi.distage.provisioning.{AbstractConstructor, AnyConstructor, FactoryConstructor, FactoryTools}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
 
-import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-trait FactoryStrategyMacroDefaultImpl {
-  self: FactoryStrategyMacro =>
-
-  def mkWrappedFactoryConstructor[T]: DIKeyWrappedFunction[T] = macro FactoryStrategyMacroDefaultImplImpl.mkWrappedFactoryConstructorMacro[T]
-
-  @inline
-  // reason for this is simply IDEA flipping out on [T: c.WeakTypeTag]
-  override def mkWrappedFactoryConstructorMacro[T: blackbox.Context#WeakTypeTag](c: blackbox.Context): c.Expr[DIKeyWrappedFunction[T]] =
-    FactoryStrategyMacroDefaultImplImpl.mkWrappedFactoryConstructorMacro[T](c)
-}
-
-object FactoryStrategyMacroDefaultImpl
-  extends FactoryStrategyMacroDefaultImpl
-    with FactoryStrategyMacro
-
 // TODO: Factories can exceed 22 arguments limit on function parameter list
+object FactoryConstructorMacro {
 
-// reason for this indirection is just to avoid slowdown from red lines in idea on ```object FactoryStrategyMacroDefaultImpl extends FactoryStrategyMacro with FactoryStrategyMacroDefaultImpl```
-private[strategies] object FactoryStrategyMacroDefaultImplImpl {
-
-
-  def mkWrappedFactoryConstructorMacro[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[DIKeyWrappedFunction[T]] = {
+  def mkFactoryConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[FactoryConstructor[T]] = {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
-    import macroUniverse._
-    import macroUniverse.Wiring._
     import macroUniverse.Association._
+    import macroUniverse.Wiring._
+    import macroUniverse._
 
     val keyProvider = DependencyKeyProviderDefaultImpl.Static.instance(macroUniverse)
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static.instance(macroUniverse)
@@ -122,9 +102,8 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
           case w: UnaryWiring.Constructor =>
             q"{ $w }"
           case w: UnaryWiring.Abstract =>
-            // FIXME could be a Factory within a Factory, handle case or provide error message
             q"""{
-            val fun = ${symbolOf[TraitStrategyMacroDefaultImpl.type].asClass.module}.mkWrappedTraitConstructor[${w.instanceType.tpe}]
+            val fun = ${symbolOf[AbstractConstructor.type].asClass.module}.apply[${w.instanceType.tpe}].function
             $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun)
             }"""
         }
@@ -161,19 +140,19 @@ private[strategies] object FactoryStrategyMacroDefaultImplImpl {
     else
       q"new $targetType { ..$allMethods }"
 
-    val constructorDef =
+    val defConstructor =
       q"""
       def constructor(..$allArgs): $targetType =
         ($instantiate).asInstanceOf[$targetType]
       """
 
-    val wrappedFunction = symbolOf[WrappedFunction.type].asClass.module
-    val res = c.Expr[DIKeyWrappedFunction[T]] {
+    val dikeyWrappedFunction = symbolOf[DIKeyWrappedFunction.type].asClass.module
+    val res = c.Expr[FactoryConstructor[T]] {
       q"""
           {
-          $constructorDef
+          $defConstructor
 
-          $wrappedFunction.DIKeyWrappedFunction.apply[$targetType](constructor _)
+          new ${weakTypeOf[FactoryConstructor[T]]}($dikeyWrappedFunction.apply[$targetType](constructor _))
           }
        """
     }

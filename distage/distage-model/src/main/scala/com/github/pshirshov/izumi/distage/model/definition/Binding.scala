@@ -42,27 +42,20 @@ object Binding {
 
   implicit final class WithImplementation(private val binding: ImplBinding) extends AnyVal {
     def withImpl[T: Tag]: ImplBinding =
-      binding match {
-        case b: SingletonBinding[_] =>
-          b.copy(implementation = ImplDef.TypeImpl(SafeType.get[T]))
-        case b: SetBinding[_] =>
-          b.copy(implementation = ImplDef.TypeImpl(SafeType.get[T]))
-      }
+      withImpl(ImplDef.TypeImpl(SafeType.get[T]))
 
     def withImpl[T: Tag](instance: T): ImplBinding =
-      binding match {
-        case b: SingletonBinding[_] =>
-          b.copy(implementation = ImplDef.InstanceImpl(SafeType.get[T], instance))
-        case b: SetBinding[_] =>
-          b.copy(implementation = ImplDef.InstanceImpl(SafeType.get[T], instance))
-      }
+      withImpl(ImplDef.InstanceImpl(SafeType.get[T], instance))
 
     def withImpl[T: Tag](f: DIKeyWrappedFunction[T]): ImplBinding =
+      withImpl(ImplDef.ProviderImpl(f.ret, f))
+
+    def withImpl(impl: ImplDef): ImplBinding =
       binding match {
         case b: SingletonBinding[_] =>
-          b.copy(implementation = ImplDef.ProviderImpl(f.ret, f))
+          b.copy(implementation = impl)
         case b: SetBinding[_] =>
-          b.copy(implementation = ImplDef.ProviderImpl(f.ret, f))
+          b.copy(implementation = impl)
       }
   }
 }

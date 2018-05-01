@@ -317,13 +317,12 @@ class InjectorTest extends WordSpec {
     "handle macro factory injections" in {
       import Case5._
 
-      val definition1 = TrivialModuleDef
+      val definition = TrivialModuleDef
         .magic[Factory]
         .magic[Dependency]
         .magic[OverridingFactory]
         .magic[AssistedFactory]
-
-      val definition = (definition1 ++ definition1).magic[AbstractFactory]
+        .magic[AbstractFactory]
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -493,7 +492,7 @@ class InjectorTest extends WordSpec {
       import Case8._
 
       val definition = TrivialModuleDef
-        .magic[Trait2, Trait3]
+        .bind[Trait2].magically[Trait3]
         .bind[Dependency3]
         .bind[Dependency2]
         .bind[Dependency1]
@@ -529,8 +528,8 @@ class InjectorTest extends WordSpec {
     import Case10._
 
     val definition = TrivialModuleDef
-      .magic[Dep, DepA].named("A")
-      .magic[Dep, DepB].named("B")
+      .bind[Dep].magically[DepA].named("A")
+      .bind[Dep].magically[DepB].named("B")
       .magic[Trait]
       .magic[Trait1]
 

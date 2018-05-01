@@ -1,21 +1,29 @@
 package com.github.pshirshov.izumi.distage
 
-import cats.kernel.{BoundedSemilattice, Hash, PartialOrder}
 import cats.kernel.instances.set.catsKernelStdPartialOrderForSet
-import com.github.pshirshov.izumi.distage.model.definition.{AbstractModuleDef, TrivialModuleDef}
+import cats.kernel.{BoundedSemilattice, Hash, PartialOrder}
+import com.github.pshirshov.izumi.distage.model.definition.{BindingDSL, ModuleDef, TrivialModuleDef}
 
 object DIStageInstances {
-  implicit val catsKernelStdPartialOrderForContextDefinition: PartialOrder[AbstractModuleDef] =
+  implicit val catsKernelStdPartialOrderForModuleDef: PartialOrder[ModuleDef] =
     PartialOrder.by(_.bindings)
 
-  implicit val catsKernelStdSemilatticeForContextDefinition: BoundedSemilattice[AbstractModuleDef] =
-    new ContextDefinitionSemilattice
+  implicit val catsKernelStdSemilatticeForModuleDef: BoundedSemilattice[ModuleDef] =
+    new ModuleDefSemilattice
 
-  implicit val catsKernelStdHashForContextDefinition: Hash[AbstractModuleDef] =
-    Hash.fromUniversalHashCode[AbstractModuleDef]
+  implicit def catsKernelStdSemilatticeForBindingDSL: BoundedSemilattice[BindingDSL] =
+    new BindingDSLSemilattice
+
+  implicit val catsKernelStdHashForModuleDef: Hash[ModuleDef] =
+    Hash.fromUniversalHashCode[ModuleDef]
 }
 
-class ContextDefinitionSemilattice extends BoundedSemilattice[AbstractModuleDef] {
-  def empty: AbstractModuleDef = TrivialModuleDef
-  def combine(x: AbstractModuleDef, y: AbstractModuleDef): AbstractModuleDef = x ++ y
+class ModuleDefSemilattice extends BoundedSemilattice[ModuleDef] {
+  def empty: ModuleDef = TrivialModuleDef
+  def combine(x: ModuleDef, y: ModuleDef): ModuleDef = x ++ y
+}
+
+class BindingDSLSemilattice extends BoundedSemilattice[BindingDSL] {
+  def empty: BindingDSL = TrivialModuleDef
+  def combine(x: BindingDSL, y: BindingDSL): BindingDSL = x ++ y
 }
