@@ -26,26 +26,22 @@ trait FileService[File <: LogFile] {
     } yield file.exists
   }
 
-  def scanDirectory: Try[Set[FileIdentity]] = {
-    val res = storage.mapValues(_.exists).collect {
-      case (id, true) => Some(id)
-      case (_, false) => None
-    }
-    Success(res.flatten.toSet)
+  def scanDirectory: Set[FileIdentity] = {
+    storage.collect {
+      case (id, file) if file.exists => id
+    }.toSet
   }
 
   def fileContent(fileIdentity: FileIdentity): Try[Iterable[String]] = {
     for {
       file <- Try(storage(fileIdentity))
-      content <- file.getContent
-    } yield content
+    } yield file.getContent
   }
 
   def fileSize(fileIdentity: FileIdentity): Try[Int] = {
     for {
       file <- Try(storage(fileIdentity))
-      size <- file.size
-    } yield size
+    } yield file.size
   }
 
   def removeFile(fileIdentity: FileIdentity): Try[Unit] = {

@@ -53,9 +53,9 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
         (sink, logger) =>
           List.fill(3)("msg").foreach(i => logger.info(i))
           val curState = sink.sinkState.get()
-          assert(curState.currentFileId == FileSink.FileIdentity.init + 1)
+          assert(curState.currentFileId == 1)
           assert(curState.currentFileSize == 1)
-          assert(sink.fileService.scanDirectory.map(_.size).toOption.contains(2))
+          assert(sink.fileService.scanDirectory.size == 2)
       }
     }
 
@@ -66,7 +66,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
       Given("empty file in storage")
       prefilledFiles.withPreparedData {
-        List((FileSink.FileIdentity.init, List.empty))
+        List((0, List.empty))
       }
 
       withFileLogger(withoutRotation(policy, randomFileSize, prefilledFiles)) {
@@ -75,7 +75,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
           logger.info("new")
           val curState = sink.sinkState.get()
           Then("current file id should be init and size uquals to 1")
-          assert(curState.currentFileId == FileSink.FileIdentity.init)
+          assert(curState.currentFileId == 0)
           assert(curState.currentFileSize == 1)
       }
 
@@ -83,8 +83,8 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
       Given("full and randomly filled files in storage")
 
-      val fullFile = (FileSink.FileIdentity.init, (1 to randomFileSize).map(i => s"msg$i").toList)
-      val randomlyFilledData = (FileSink.FileIdentity.init + 1, (1 to lastPos).map(i => s"msg$i").toList)
+      val fullFile = (0, (1 to randomFileSize).map(i => s"msg$i").toList)
+      val randomlyFilledData = (1, (1 to lastPos).map(i => s"msg$i").toList)
 
       prefilledFiles.withPreparedData {
         List(fullFile, randomlyFilledData)
@@ -96,7 +96,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
           logger.info("new")
           val curState = sink.sinkState.get()
           Then("current file id should be next and size uquals to next after size of randomly filled file")
-          assert(curState.currentFileId == FileSink.FileIdentity.init + 1)
+          assert(curState.currentFileId == 1)
           assert(curState.currentFileSize == lastPos + 1)
       }
 
@@ -111,7 +111,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
           logger.info("new")
           Then("current file id should be next and size uquals to 1")
           val curState = sink.sinkState.get()
-          assert(curState.currentFileId == FileSink.FileIdentity.init + 1)
+          assert(curState.currentFileId == 1)
           assert(curState.currentFileSize == 1)
       }
     }
@@ -126,17 +126,16 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
         (sink, logger) =>
           (1 to fileSize * filesLimit).foreach {
-            i =>
-              logger.info(i.toString)
+            i => logger.info(i.toString)
           }
           val curState1 = sink.sinkState.get()
           assert(curState1.forRotate.isEmpty)
-          assert(curState1.currentFileId == FileSink.FileIdentity.init + 2)
+          assert(curState1.currentFileId == 2)
 
           logger.info("new")
           val curState2 = sink.sinkState.get()
           assert(curState2.forRotate.size == filesLimit - 1)
-          assert(curState2.currentFileId == FileSink.FileIdentity.init)
+          assert(curState2.currentFileId == 0)
 
           (1 to fileSize).foreach {
             i =>
@@ -144,7 +143,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
           }
           val curState3 = sink.sinkState.get()
           assert(curState3.forRotate.size == filesLimit - 2)
-          assert(curState3.currentFileId == (FileSink.FileIdentity.init + 1))
+          assert(curState3.currentFileId == 1)
           assert(curState3.currentFileSize == 1)
       }
     }
@@ -158,7 +157,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       val svc = fileSvcUtils.provideSvc(dummyFolder)
 
       svc.withPreparedData {
-        (0 until filesLimit).map { i => (FileSink.FileIdentity.init + i, (1 to fileSize).map(_.toString).toList) }.toList
+        (0 until filesLimit).map { i => (i, (1 to fileSize).map(_.toString).toList) }.toList
       }
 
       withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
@@ -166,7 +165,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
           logger.info("new")
           val curState = sink.sinkState.get()
           assert(curState.forRotate.size == filesLimit - 1)
-          assert(curState.currentFileId == FileSink.FileIdentity.init)
+          assert(curState.currentFileId == 0)
       }
     }
 
@@ -200,16 +199,11 @@ object LoggingFileSinkTest {
   def withFileLogger[F <: LogFile](f: => FileSink[F])(f2: (FileSink[F], IzLogger) => Assertion): Unit = {
     val fileSink = f
     val logger = LoggingMacroTest.configureLogger(Seq(fileSink))
-
     try {
       f2(fileSink, logger)
     } finally {
       val svc = fileSink.fileService
-      for {
-        ids <- svc.scanDirectory
-      } yield {
-        ids.foreach(svc.removeFile)
-      }
+      svc.scanDirectory.foreach(svc.removeFile)
     }
   }
 

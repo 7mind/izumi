@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi
 import com.github.pshirshov.izumi.models.LogFile
 
 import scala.collection.mutable.ListBuffer
-import scala.util.{Success, Try}
 
 case class DummyFile(override val name: String) extends LogFile {
 
@@ -11,21 +10,17 @@ case class DummyFile(override val name: String) extends LogFile {
 
   override def exists: Boolean = true
 
-  def size: Try[Int] = {
-    Success(content.size)
+  def size: Int = {
+    content.size
   }
 
-  def getContent: Try[List[String]] = Success {
+  def getContent: List[String] = {
     content.toList
   }
 
-  def append(i: String): Try[Unit] = {
-    Success {
+  def append(i: String): Unit = {
       content += i
-    }
   }
 
-  override def beforeDelete(): Try[Unit] = {
-    Success(())
-  }
+  override def beforeDelete(): Unit = {}
 }

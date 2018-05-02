@@ -4,10 +4,10 @@ import scala.util.Try
 
 trait LogFile {
   def name : String
-  def size : Try[Int]
-  def getContent : Try[Iterable[String]]
-  def append(item : String) : Try[Unit]
-  def beforeDelete() : Try[Unit]
+  def size : Int
+  def getContent : Iterable[String]
+  def append(item : String) : Unit
+  def beforeDelete() : Unit
   def exists : Boolean
 }
 

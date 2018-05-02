@@ -4,11 +4,12 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{FileAlreadyExistsException, Files, Paths, StandardOpenOption}
 
-import scala.util.{Failure, Success, Try}
 import com.github.pshirshov.izumi.FileServiceImpl.RealFile
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.models.LogFile
 
 import scala.io.Source
+import scala.util.Try
 
 class FileServiceImpl(override val path: String) extends FileService[RealFile] {
   override val createFileWithName: String => RealFile = RealFile.apply
@@ -16,7 +17,7 @@ class FileServiceImpl(override val path: String) extends FileService[RealFile] {
 
 object FileServiceImpl {
 
-  case class RealFile(override val name : String) extends LogFile {
+  case class RealFile(override val name: String) extends LogFile {
 
     private def filePath = Paths.get(name)
 
@@ -24,11 +25,7 @@ object FileServiceImpl {
       Source.fromFile(this.name)
     }
 
-    override def exists: Boolean = {
-      new File(name).exists()
-    }
-
-    private val fileWriter = {
+    private val outputSink = {
       for {
         _ <- createIfNotExists
         writer <- Try(Files.newOutputStream(filePath, StandardOpenOption.APPEND))
@@ -36,43 +33,42 @@ object FileServiceImpl {
 
     }
 
-    override def size: Try[Int] = {
-      for {
-        src <- fileSrc
-        size <- Try(src.getLines().size)
-      } yield size
+    override def exists: Boolean = {
+      new File(name).exists()
     }
 
-    override def getContent: Try[Iterable[String]] = {
-      for {
-        src <- fileSrc
-        lines <- Try(src.getLines())
-      } yield lines.toList
+    override def size: Int = {
+      fileSrc.map(_.getLines().size).get
     }
 
-    override def append(item: String): Try[Unit] = {
+    override def getContent: Iterable[String] = {
+      fileSrc.map(_.getLines().toList).get
+    }
+
+    override def append(item: String): Unit = {
+      outputSink.foreach(_.write(s"$item\n".getBytes(StandardCharsets.UTF_8)))
+    }
+
+    override def beforeDelete(): Unit = {
+      closeStream.foreach {
+        _ => Files.deleteIfExists(filePath)
+      }
+    }
+
+    private def closeStream: Try[Unit] =
       for {
-        writer <- fileWriter
-        _ <- Try(writer.write(s"$item\n".getBytes(StandardCharsets.UTF_8)))
+        stream <- outputSink
+        _ <- Try(stream.flush())
+        _ <- Try(stream.close())
       } yield ()
-    }
 
-    override def beforeDelete(): Try[Unit] = {
-      for {
-        writer <- fileWriter
-        _ <- Try(writer.flush())
-        _ <- Try(writer.close())
-        _ <- Try(Files.deleteIfExists(filePath))
-      } yield ()
-    }
-
-    def createIfNotExists: Try[Unit] = {
-      (Try {
-        Files.createFile(filePath)
+    private def createIfNotExists: Try[Unit] = {
+      Try {
+        Files.createFile(filePath).discard()
       } recover {
         case _: FileAlreadyExistsException =>
-          ()
-      }).map(_ => ())
+      }
     }
   }
+
 }

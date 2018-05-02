@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.FileSink.{FileIdentity, FileSize, WithSize}
 import com.github.pshirshov.izumi.TryOps._
 import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.model.Log
@@ -30,17 +29,16 @@ case class FileSink[T <: LogFile](
     }
   }.get
 
-  def initState: FileSinkState = FileSinkState(currentFileId = FileIdentity.init, currentFileSize = FileSize.init)
+  def initState: FileSinkState = FileSinkState(currentFileId = 0, currentFileSize = 0)
 
   def restoreSinkState(): Try[Option[FileSinkState]] = {
     for {
-      files <- fileService.scanDirectory
-      filesWithSize <- files.map(f => fileService.fileSize(f).map(WithSize(f, _))).asTry
-      maybeFile <- Success(filesWithSize.toList.sortWith(_.size < _.size).headOption) // by size ? // todo : bytes
+      filesWithSize <- fileService.scanDirectory.map(f => fileService.fileSize(f).map((f, _))).asTry
+      maybeFile <- Success(filesWithSize.toList.sortWith(_._2 < _._2).headOption) // by size ? // todo : bytes
       res <- Success(maybeFile.map {
-        case WithSize(_, size) if size >= config.maxAllowedSize =>
-          (filesWithSize.size, FileSink.FileSize.init)
-        case WithSize(name, size) =>
+        case (_, size) if size >= config.maxAllowedSize =>
+          (filesWithSize.size, 0)
+        case (name, size) =>
           (name, size)
       })
     } yield res.map {
@@ -52,7 +50,7 @@ case class FileSink[T <: LogFile](
   def processCurrentFile(state: FileSinkState): Try[FileSinkState] = {
     (state.currentFileId, state.currentFileSize) match {
       case (fileId, size) if size >= config.maxAllowedSize =>
-        Success(state.copy(currentFileId = fileId + 1, currentFileSize = FileSink.FileSize.init))
+        Success(state.copy(currentFileId = fileId + 1, currentFileSize = 0))
       case _ =>
         Success(state)
     }
@@ -62,28 +60,21 @@ case class FileSink[T <: LogFile](
     rotation match {
       case DisabledRotation => Success(state)
       case FileLimiterRotation(limit) if state.currentFileId == limit =>
-        val newFileId = FileSink.FileIdentity.init
-        for {
-          (_, othersIds) <- fileService.scanDirectory.map(_.partition(_ == newFileId))
-          _ <- fileService.removeFile(newFileId)
-        } yield state.copy(
-          currentFileId = newFileId
-          , currentFileSize = FileSink.FileSize.init
-          , forRotate = othersIds
-        )
+        val newFileId = 0
+        val (_, rotateNext) = fileService.scanDirectory.partition(_ == newFileId)
+        fileService.removeFile(newFileId).map {
+          _ => initState.copy(forRotate = rotateNext)
+        }
       case FileLimiterRotation(_) =>
         Success(state)
     }
   }
 
   def performWriting(state: FileSinkState, payload: String): Try[FileSinkState] = {
-    val currentFileId = state.currentFileId
+    val (current, others) = state.forRotate.partition(_ == state.currentFileId)
+    current.headOption foreach fileService.removeFile
     for {
-      (current, others) <- Success(state.forRotate.partition(_ == currentFileId))
-      _ <- Try {
-        current.headOption.foreach { _ => fileService.removeFile(currentFileId) }
-      }
-      _ <- fileService.writeToFile(currentFileId, payload)
+      _ <- fileService.writeToFile(state.currentFileId, payload)
     } yield state.copy(currentFileSize = state.currentFileSize + 1, forRotate = others)
   }
 
@@ -106,17 +97,6 @@ case class FileSink[T <: LogFile](
 
 object FileSink {
   type FileIdentity = Int
-
-  object FileIdentity {
-    final val init = 0
-  }
-
-  object FileSize {
-    final val init = 0
-  }
-
-  case class WithSize[T](item: T, size: Int)
-
 }
 
 
