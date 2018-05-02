@@ -4,13 +4,13 @@ import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, Incompa
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.SetStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 class SetStrategyDefaultImpl extends SetStrategy {
   def makeSet(context: ProvisioningContext, op: SetOp.CreateSet): Seq[OpResult.NewInstance] = {
     import op._
     // target is guaranteed to be a Set
-    val scalaCollectionSetType = RuntimeUniverse.SafeType.get[collection.Set[_]]
+    val scalaCollectionSetType = RuntimeDIUniverse.SafeType.get[collection.Set[_]]
     val erasure = scalaCollectionSetType.tpe.typeSymbol
 
     if (!tpe.tpe.baseClasses.contains(erasure)) {
@@ -54,7 +54,4 @@ class SetStrategyDefaultImpl extends SetStrategy {
   }
 }
 
-object SetStrategyDefaultImpl {
-  final val instance = new SetStrategyDefaultImpl()
-}
 

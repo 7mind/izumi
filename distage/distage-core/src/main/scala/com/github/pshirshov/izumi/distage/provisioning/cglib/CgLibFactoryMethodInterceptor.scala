@@ -7,15 +7,15 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExecutor, TraitIndex}
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse.Wiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
 import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
 import net.sf.cglib.proxy.MethodProxy
 
 protected[distage] class CgLibFactoryMethodInterceptor
 (
-  factoryMethodIndex: Map[Method, RuntimeUniverse.Wiring.FactoryMethod.WithContext]
+  factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.FactoryMethod.WithContext]
   , dependencyMethodIndex: TraitIndex
   , narrowedContext: ProvisioningContext
   , executor: OperationExecutor
@@ -47,7 +47,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val unmatchedTypes = providedValues.filter {
       case (key, value) =>
-        val runtimeClass = RuntimeUniverse.mirror.runtimeClass(key.symbol.tpe.erasure)
+        val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(key.symbol.tpe.erasure)
         !TypeUtil.isAssignableFrom(runtimeClass, value)
     }
 

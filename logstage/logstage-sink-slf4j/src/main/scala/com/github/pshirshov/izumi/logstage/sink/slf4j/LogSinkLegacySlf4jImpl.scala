@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.logstage.sink.slf4j
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
-import com.github.pshirshov.izumi.logstage.model.Log
-import com.github.pshirshov.izumi.logstage.model.logger.LogSink
+import com.github.pshirshov.izumi.logstage.api.Log
+import com.github.pshirshov.izumi.logstage.api.logger.LogSink
+import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import org.slf4j
 import org.slf4j.Marker
 import org.slf4j.helpers.BasicMarkerFactory
@@ -14,7 +14,7 @@ import scala.compat.java8.FunctionConverters._
 
 class LogSinkLegacySlf4jImpl
 (
-  policy: StringRenderingPolicy
+  policy: RenderingPolicy
 ) extends LogSink {
   override def flush(e: Log.Entry): Unit = {
     val slf4jLogger = getSlf4jLogger(e)

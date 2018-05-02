@@ -1,15 +1,15 @@
 package com.github.pshirshov.izumi.distage.model.provisioning
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 trait ProvisioningContext {
-  def fetchKey(key: RuntimeUniverse.DIKey): Option[Any]
+  def fetchKey(key: RuntimeDIUniverse.DIKey): Option[Any]
 
-  def importKey(key: RuntimeUniverse.DIKey): Option[Any]
+  def importKey(key: RuntimeDIUniverse.DIKey): Option[Any]
 
-  def narrow(allRequiredKeys: Set[RuntimeUniverse.DIKey]): ProvisioningContext
+  def narrow(allRequiredKeys: Set[RuntimeDIUniverse.DIKey]): ProvisioningContext
 
-  def extend(values: Map[RuntimeUniverse.DIKey, Any]): ProvisioningContext
+  def extend(values: Map[RuntimeDIUniverse.DIKey, Any]): ProvisioningContext
 }
 
 

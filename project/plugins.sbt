@@ -1,4 +1,4 @@
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.6"
 
 // https://github.com/coursier/coursier#sbt-plugin
 val coursier = "1.0.3"

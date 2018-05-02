@@ -10,19 +10,34 @@ import net.sf.cglib.proxy.{Callback, Enhancer}
 import scala.util.{Failure, Success, Try}
 
 
+sealed trait ProxyParams
+object ProxyParams {
+  case object Empty extends ProxyParams
+  case class Params(types: Array[Class[_]], values: Array[AnyRef]) extends ProxyParams
+
+}
+
 object CglibTools {
 
-  def mkDynamic[T](dispatcher: Callback, runtimeClass: Class[_], op: ExecutableOp)(callback: AnyRef => T): T = {
+  def mkDynamic[T](dispatcher: Callback, runtimeClass: Class[_], op: ExecutableOp, params: ProxyParams)(callback: AnyRef => T): T = {
     val enhancer = new Enhancer()
     enhancer.setSuperclass(runtimeClass)
     enhancer.setCallback(dispatcher)
 
-    Try(enhancer.create()) match {
+    val result = params match {
+      case ProxyParams.Empty =>
+        Try(enhancer.create())
+
+      case ProxyParams.Params(types, values) =>
+        Try(enhancer.create(types, values))
+    }
+
+     result match {
       case Success(proxyInstance) =>
         callback(proxyInstance)
 
       case Failure(f) =>
-        throw new DIException(s"Failed to instantiate abstract class with CGLib. Operation: $op", f)
+        throw new DIException(s"Failed to instantiate class with CGLib. Operation: $op", f)
     }
   }
 

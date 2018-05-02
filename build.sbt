@@ -21,7 +21,7 @@ val LibSettings = SettingsGroupId()
 val SbtSettings = SettingsGroupId()
 val ShadingSettings = SettingsGroupId()
 
-val scala_212 = "2.12.4"
+val scala_212 = "2.12.6"
 val scala_213 = "2.13.0-M3"
 
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
@@ -75,7 +75,6 @@ val baseSettings = new GlobalSettings {
         )
         , addCompilerPlugin(R.kind_projector)
       )
-
     }
     , LibSettings -> new ProjectSettings {
       override val settings: Seq[sbt.Setting[_]] = Seq(
@@ -171,6 +170,7 @@ val globalDefs = setup(baseSettings)
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module
+  .dependsOn(fundamentalsPlatform)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
@@ -180,14 +180,14 @@ lazy val fundamentalsReflection = inFundamentals.as.module
 lazy val distageModel = inDiStage.as.module
   .depends(fundamentalsReflection)
 
-lazy val distageMacro = inDiStage.as.module
-  .depends(distageModel)
+lazy val distagePlugins = inDiStage.as.module
+  .depends(distageCore, logstageDi)
   .settings(
-    libraryDependencies ++= Seq(R.scala_reflect)
+    libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
 
 lazy val distageCore = inDiStage.as.module
-  .depends(distageMacro, fundamentalsFunctional)
+  .depends(fundamentalsFunctional, distageModel)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
@@ -195,57 +195,78 @@ lazy val distageCore = inDiStage.as.module
     )
   )
 
-//
-lazy val logstageModel = inLogStage.as.module
+lazy val distageStatic = inDiStage.as.module
+  .depends(distageCore)
+  .settings(
+    libraryDependencies += R.shapeless
+  )
 
-lazy val logstageMacro = inLogStage.as.module
-  .depends(logstageModel)
+lazy val logstageApiBase = inLogStage.as.module
+
+lazy val distageCats = inDiStage.as.module
+  .depends(distageModel, distageCore.testOnlyRef)
+  .settings(
+    libraryDependencies += R.cats_kernel
+    , libraryDependencies ++= T.cats_all
+  )
+
+
+lazy val logstageApiBaseMacro = inLogStage.as.module
+  .depends(logstageApiBase)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
     )
   )
 
-lazy val logstageApi = inLogStage.as.module
-  .depends(logstageMacro)
+lazy val logstageApiLogger = inLogStage.as.module
+  .depends(logstageApiBaseMacro)
+
 
 lazy val logstageSinkConsole = inLogStage.as.module
-  .depends(logstageApi)
+  .depends(logstageApiBase)
+  .depends(Seq(
+    logstageApiLogger
+  ).map(_.testOnlyRef): _*)
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
-  .depends(logstageApi)
-  .depends(Seq(
-    logstageRouting
-  ).map(_.testOnlyRef): _*)
-  .settings(libraryDependencies += R.slf4j_api)
-//
+  .depends(logstageApiLogger)
+  .settings(
+    libraryDependencies += R.slf4j_api
+    , compileOrder in Compile := CompileOrder.Mixed
+    , compileOrder in Test := CompileOrder.Mixed
+  )
 
 lazy val logstageDi = inLogStage.as.module
-  .depends(logstageApi, distageModel)
+  .depends(
+    logstageApiLogger
+    , distageModel
+  )
+  .depends(Seq(
+    distageCore
+  ).map(_.testOnlyRef): _*)
 
-lazy val logstageJsonJson4s = inLogStage.as.module
-  .depends(logstageApi)
+lazy val logstageRenderingJson4s = inLogStage.as.module
+  .depends(logstageApiLogger)
+  .depends(Seq(
+    logstageSinkConsole
+  ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= Seq(R.json4s_native))
 
 lazy val logstageSinkFile = inLogStage.as.module
-  .depends(logstageApi)
+  .depends(logstageApiBase)
   .depends(Seq(
-    logstageRouting
+    logstageApiLogger
   ).map(_.testOnlyRef): _*)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
-  .depends(logstageApi)
+  .depends(logstageApiBase)
   .depends(Seq(
-    logstageRouting
+    logstageApiLogger
   ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 
-lazy val logstageRouting = inLogStage.as.module
-  .depends(logstageApi)
-  .depends(Seq(
-    logstageSinkConsole
-    , logstageJsonJson4s
-  ).map(_.testOnlyRef): _*)
+
 
 lazy val idealinguaModel = inIdealingua.as.module
   .settings()
@@ -307,7 +328,7 @@ lazy val sbtTests = inSbt.as
 
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageDi
-  , logstageRouting
+  , logstageApiLogger
   , logstageSinkConsole
   , logstageSinkFile
   , logstageSinkSlf4j
@@ -315,6 +336,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageCore
+  , distagePlugins
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore

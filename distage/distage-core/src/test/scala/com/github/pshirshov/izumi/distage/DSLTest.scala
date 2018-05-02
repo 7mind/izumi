@@ -1,68 +1,95 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.definition.CompileTimeDSL._
-import com.github.pshirshov.izumi.distage.model.definition.{ContextDefinition, TrivialDIDef}
+import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.model.definition.{Bindings, ModuleBuilder, ModuleDef, TrivialModuleDef}
 import org.scalatest.WordSpec
-
-import Fixtures._
 
 class DSLTest extends WordSpec {
 
   "Basic DSL" should {
     "allow to define contexts" in {
       import Case1._
-      val definition: ContextDefinition = TrivialDIDef
-        .binding[TestClass]
-        .binding[TestDependency0, TestImpl0]
-        .instance(TestInstanceBinding())
+      val definition: ModuleDef = TrivialModuleDef
+        .bind[TestClass]
+        .bind[TestDependency0].as[TestImpl0]
+        .bind(TestInstanceBinding())
 
-        .binding[TestClass]
+        .bind[TestClass]
           .named("named.test.class")
-        .binding[TestDependency0]
+        .bind[TestDependency0]
           .named("named.test.dependency.0")
-        .instance(TestInstanceBinding())
+        .bind(TestInstanceBinding())
           .named("named.test")
         .set[JustTrait]
           .named("named.empty.set")
         .set[JustTrait]
-
-        .element[JustTrait, Impl0]
-        .element[JustTrait](new Impl1)
-        .element[JustTrait](new Impl2())
-          .named("named.set")
-        .element[JustTrait, Impl3]
-          .named("named.set")
-
-      assert(definition != null)
-    }
-
-    "allow to define magic contexts" in {
-      import Case1._
-      val definition: ContextDefinition = TrivialDIDef
-        .magic[TestClass]
-        .magic[TestDependency0, TestImpl0]
-        .instance(TestInstanceBinding())
-
-        .magic[TestClass]
-          .named("named.test.class")
-        .magic[TestDependency0]
-          .named("named.test.dependency.0")
-        .instance(TestInstanceBinding())
-          .named("named.test")
+          .element[Impl0]
+          .element(new Impl1)
         .set[JustTrait]
-          .named("named.empty.set")
+          .element(new Impl2())
+          .named("named.set")
         .set[JustTrait]
-
-        .element[JustTrait, Impl0]
-        .element[JustTrait](new Impl1)
-        .element[JustTrait](new Impl2())
           .named("named.set")
-        .element[JustTrait, Impl3]
-          .named("named.set")
+          .element[Impl3]
 
       assert(definition != null)
     }
   }
 
+  "Module DSL" should {
+    "allow to define contexts" in {
+      import Case1._
+
+      object Module extends ModuleBuilder {
+        bind[TestClass]
+        bind[TestDependency0].as[TestImpl0]
+      }
+
+      assert(Module.bindings == Set(
+        Bindings.binding[TestClass]
+        , Bindings.binding[TestDependency0, TestImpl0]
+      ))
+    }
+
+    "allow monoidal operations between different types of binding dsls" in {
+      import Case1._
+
+      val mod1: ModuleDef = new ModuleBuilder {
+        bind[TestClass]
+      }
+
+      val mod2: ModuleDef = TrivialModuleDef
+        .bind[TestCaseClass2]
+
+      val mod3_1 = TrivialModuleDef
+        .bind[TestDependency1]
+
+      val mod3_2 = TrivialModuleDef
+
+      val mod3 = (mod3_1 ++ mod3_2).bind[NotInContext]
+
+      val mod4: ModuleDef = TrivialModuleDef {
+        Set(
+          Bindings.binding(TestInstanceBinding())
+        )
+      }
+
+      val mod5: ModuleDef = (TrivialModuleDef
+        ++ Bindings.binding[TestDependency0, TestImpl0]
+        )
+
+      val combinedModules = Seq(mod1, mod2, mod3, mod4, mod5)
+        .foldLeft[ModuleDef](TrivialModuleDef)(_ ++ _)
+
+      val complexModule = TrivialModuleDef
+        .bind[TestClass]
+        .bind[TestDependency0].as[TestImpl0]
+        .bind[TestCaseClass2]
+        .bind(TestInstanceBinding())
+        .++(mod3) // function pointer equality on magic trait providers
+
+      assert(combinedModules == complexModule)
+    }
+  }
 
 }

@@ -4,14 +4,14 @@ import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.github.pshirshov.izumi.distage.model.exceptions.TraitInitializationFailedException
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{TraitField, TraitIndex}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.reflection._
 
 object TraitTools {
 
-  def traitIndex(tpe: RuntimeUniverse.TypeFull, methods: Seq[RuntimeUniverse.Association.Method]): TraitIndex = {
+  def traitIndex(tpe: RuntimeDIUniverse.TypeFull, methods: Seq[RuntimeDIUniverse.Association.Method]): TraitIndex = {
     val vals = tpe.tpe.decls.collect {
-      case m: RuntimeUniverse.u.TermSymbolApi if m.isVal || m.isVar =>
+      case m: RuntimeDIUniverse.u.TermSymbolApi if m.isVal || m.isVar =>
         m
     }
 
@@ -30,25 +30,14 @@ object TraitTools {
     TraitIndex(makeTraitIndex(methods), getters, setters)
   }
 
-  private def makeTraitIndex(methods: Seq[RuntimeUniverse.Association.Method]): Map[Method, RuntimeUniverse.Association.Method] = {
+  private def makeTraitIndex(methods: Seq[RuntimeDIUniverse.Association.Method]): Map[Method, RuntimeDIUniverse.Association.Method] = {
     methods.map {
       m =>
         ReflectionUtil.toJavaMethod(m.context.definingClass.tpe, m.symbol) -> m
     }.toMap
   }
 
-  //        try {
-  //          CglibTools.initTrait(instance)
-  //        } catch {
-  //          case e: AbstractMethodError =>
-  //            System.err.println(e)
-  //
-  //          case e: NoSuchMethodError =>
-  //            System.err.println(e)
-  //
-  //        }
-
-  def initTrait(instanceType: RuntimeUniverse.TypeFull, runtimeClass: Class[_], instance: AnyRef): Unit = {
+  def initTrait(instanceType: RuntimeDIUniverse.TypeFull, runtimeClass: Class[_], instance: AnyRef): Unit = {
     instanceType.tpe.decls.find(_.name.decodedName.toString == "$init$") match {
       case Some(_) => // here we have an instance of scala MethodSymbol though we can't reflect it, so let's use java
         try {

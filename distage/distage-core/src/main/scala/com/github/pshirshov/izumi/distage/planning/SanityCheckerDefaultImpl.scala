@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.exceptions.{DuplicateKeysExcepti
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, SetOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.collection.mutable
 
@@ -17,17 +17,17 @@ class SanityCheckerDefaultImpl
     assertNoDuplicateOps(plan.steps)
 
     val reftable = planAnalyzer.computeFwdRefTable(plan.steps.toStream)
-    if (reftable.dependants.nonEmpty) {
-      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependants}!", reftable)
+    if (reftable.dependsOn.nonEmpty) {
+      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependsOn}!", reftable)
     }
 
     val fullRefTable = planAnalyzer.computeFullRefTable(plan.steps.toStream)
 
-    val allAvailableRefs = fullRefTable.dependencies.keySet
-    val fullDependenciesSet = fullRefTable.dependencies.flatMap(_._2).toSet
+    val allAvailableRefs = fullRefTable.dependenciesOf.keySet
+    val fullDependenciesSet = fullRefTable.dependenciesOf.flatMap(_._2).toSet
     val missingRefs = fullDependenciesSet -- allAvailableRefs
     if (missingRefs.nonEmpty) {
-      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependants}!", missingRefs, Some(fullRefTable))
+      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependsOn}!", missingRefs, Some(fullRefTable))
     }
 
   }
@@ -37,7 +37,7 @@ class SanityCheckerDefaultImpl
     val (proxies, single) = ops.partition(_.isInstanceOf[ProxyOp.InitProxy])
 
     val (uniqOps, nonUniqueOps) = single
-      .foldLeft((mutable.ArrayBuffer[RuntimeUniverse.DIKey](), mutable.HashSet[RuntimeUniverse.DIKey]())) {
+      .foldLeft((mutable.ArrayBuffer[RuntimeDIUniverse.DIKey](), mutable.HashSet[RuntimeDIUniverse.DIKey]())) {
         case ((unique, nonunique), s: SetOp) =>
           (unique, nonunique += s.target)
         case ((unique, nonunique), s) =>
@@ -56,14 +56,14 @@ class SanityCheckerDefaultImpl
     }
   }
 
-  private def assertNoDuplicateKeys(keys: Seq[RuntimeUniverse.DIKey]): Unit = {
+  private def assertNoDuplicateKeys(keys: Seq[RuntimeDIUniverse.DIKey]): Unit = {
     val dupes = duplicates(keys)
     if (dupes.nonEmpty) {
       throw new DuplicateKeysException(s"Cannot finish the plan, there are duplicates: $dupes!", dupes)
     }
   }
 
-  private def duplicates(keys: Seq[RuntimeUniverse.DIKey]): Map[RuntimeUniverse.DIKey, Int] = {
+  private def duplicates(keys: Seq[RuntimeDIUniverse.DIKey]): Map[RuntimeDIUniverse.DIKey, Int] = {
     val counted = keys
       .groupBy(k => k)
       .map(t => (t._1, t._2.length))

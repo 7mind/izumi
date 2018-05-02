@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua
 
 import java.io.File
 import java.lang.management.ManagementFactory
+import java.nio.charset.StandardCharsets
 import java.nio.file._
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
@@ -23,12 +24,10 @@ object IDLTestTools {
     val src = new File(getClass.getResource("/defs").toURI).toPath
     val loader = new LocalModelLoader(src, Seq.empty)
     val loaded = loader.load()
+
     val loadableCount = loader.enumerate().count(_._1.toString.endsWith(LocalModelLoader.domainExt))
     assert(loaded.size == loadableCount, s"expected $loadableCount domains")
-    loaded.foreach {
-      d =>
-        println(new ILRenderer(d.domain).render())
-    }
+
     loaded
   }
 
@@ -87,6 +86,9 @@ object IDLTestTools {
     Quirks.discard(symlink.toFile.delete())
     Quirks.discard(Files.createSymbolicLink(symlink, runDir.toFile.getCanonicalFile.toPath))
 
+    val domainsDir = runDir.resolve("rendered")
+
+
     tmpdir
       .toFile
       .listFiles()
@@ -94,8 +96,16 @@ object IDLTestTools {
       .filter(f => f.isDirectory && f.getName.startsWith(stablePrefix) && !f.getName.startsWith(vmPrefix))
       .foreach {
         f =>
-          Quirks.discard(IzFiles.remove(f.toPath))
+          Quirks.discard(IzFiles.removeDir(f.toPath))
       }
+
+    IzFiles.recreateDir(domainsDir)
+
+    domains.foreach {
+      d =>
+        val rendered = new ILRenderer(d.domain).render()
+        Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
+    }
 
     val allFiles: Seq[Path] = domains.flatMap {
       typespace =>

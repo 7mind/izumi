@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
 import com.github.pshirshov.izumi.distage.model.references.RefTable
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.collection.mutable
 
@@ -29,8 +29,8 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
 
   override def computeFwdRefTable(
                                    plan: Iterable[ExecutableOp]
-                                 , refFilter: Accumulator => RuntimeUniverse.DIKey => Boolean
-                                 , postFilter: ((RuntimeUniverse.DIKey, mutable.Set[RuntimeUniverse.DIKey])) => Boolean
+                                 , refFilter: Accumulator => RuntimeDIUniverse.DIKey => Boolean
+                                 , postFilter: ((RuntimeDIUniverse.DIKey, mutable.Set[RuntimeDIUniverse.DIKey])) => Boolean
                                  ): RefTable = {
 
     val dependencies = plan.toList.foldLeft(new Accumulator) {
@@ -50,8 +50,8 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
     RefTable(dependencies, dependants)
   }
 
-  override def reverseReftable(dependencies: Map[RuntimeUniverse.DIKey, Set[RuntimeUniverse.DIKey]]): Map[RuntimeUniverse.DIKey, Set[RuntimeUniverse.DIKey]] = {
-    val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[RuntimeUniverse.DIKey, RuntimeUniverse.DIKey]) {
+  override def reverseReftable(dependencies: Map[RuntimeDIUniverse.DIKey, Set[RuntimeDIUniverse.DIKey]]): Map[RuntimeDIUniverse.DIKey, Set[RuntimeDIUniverse.DIKey]] = {
+    val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[RuntimeDIUniverse.DIKey, RuntimeDIUniverse.DIKey]) {
       case (acc, (reference, referencee)) =>
         referencee.foreach(acc.addBinding(_, reference))
         acc

@@ -15,10 +15,10 @@ class WithCirceTest extends WordSpec {
       assert(Abc(1, 2).asJson.as[Abc].right.get == Abc(1, 2))
       assert(Abc(1, 2).asJson.noSpaces == """{"a":1,"b":2}""")
 
-      assert {
+      {
         import Alt._
-        val _ = enc // prevent intellij from removing import
-        Abc(1, 2).asJson.as[Abc].right.get == Abc(1, 2)
+        implicit val _ = enc
+        assert(Abc(1, 2).asJson.as[Abc].right.get == Abc(1, 2)) // old instance is picked up anyway due to aching, ignoring the one we just defined
       }
 
       assertThrows[NotImplementedError] {

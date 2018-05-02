@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.model.{Locator, LoggerHook}
+import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
@@ -12,10 +12,7 @@ import scala.util.{Failure, Try}
 
 class ProvisionerDefaultImpl
 (
-  provisionerHook: ProvisionerHook
-  , provisionerIntrospector: ProvisionerIntrospector
-  , loggerHook: LoggerHook
-  , setStrategy: SetStrategy
+  setStrategy: SetStrategy
   , proxyStrategy: ProxyStrategy
   , factoryStrategy: FactoryStrategy
   , traitStrategy: TraitStrategy
@@ -24,6 +21,10 @@ class ProvisionerDefaultImpl
   , importStrategy: ImportStrategy
   , customStrategy: CustomStrategy
   , instanceStrategy: InstanceStrategy
+// TODO: add introspection capabilities
+//  , provisionerHook: ProvisionerHook
+//  , provisionerIntrospector: ProvisionerIntrospector
+//  , loggerHook: LoggerHook
 ) extends Provisioner with OperationExecutor {
   override def provision(plan: FinalPlan, parentContext: Locator): ProvisionImmutable = {
     val activeProvision = ProvisionActive()
@@ -39,15 +40,7 @@ class ProvisionerDefaultImpl
                 acc
             }
         }
-
     }
-//
-//    val withImmutableSets = provisions.instances.map {
-//      case (key, value: mutable.HashSet[_]) if  =>
-//        (key, value.toSet)
-//      case v =>
-//        v
-//    }
 
     ProvisionImmutable(provisions.instances, provisions.imports)
   }
@@ -55,13 +48,13 @@ class ProvisionerDefaultImpl
   private def interpretResult(active: ProvisionActive, result: OpResult): Unit = {
     result match {
       case OpResult.NewImport(target, value) =>
-          if (active.imports.contains(target)) {
-            throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
-          }
-          if (value.isInstanceOf[OpResult]) {
-            throw new DIException(s"Pathological case. Tried to add set into itself: $target -> $value", null)
-          }
-          active.imports += (target -> value)
+        if (active.imports.contains(target)) {
+          throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
+        }
+        if (value.isInstanceOf[OpResult]) {
+          throw new DIException(s"Pathological case. Tried to add set into itself: $target -> $value", null)
+        }
+        active.imports += (target -> value)
 
       case OpResult.NewInstance(target, value) =>
         if (active.instances.contains(target)) {

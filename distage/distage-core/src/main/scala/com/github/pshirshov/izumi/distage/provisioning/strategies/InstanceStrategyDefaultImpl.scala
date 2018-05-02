@@ -9,7 +9,3 @@ class InstanceStrategyDefaultImpl extends InstanceStrategy {
     Seq(OpResult.NewInstance(op.target, op.wiring.instance))
   }
 }
-
-object InstanceStrategyDefaultImpl {
-  final val instance = new InstanceStrategyDefaultImpl()
-}

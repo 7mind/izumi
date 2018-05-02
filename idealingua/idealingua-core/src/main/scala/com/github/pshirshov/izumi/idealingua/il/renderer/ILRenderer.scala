@@ -162,7 +162,7 @@ class ILRenderer(domain: DomainDefinition) {
       case DomainId.Builtin =>
         name
 
-      case o =>
+      case _ =>
         Seq(renderPkg(pkg.toPackage), name).filterNot(_.isEmpty).mkString("#")
     }
   }

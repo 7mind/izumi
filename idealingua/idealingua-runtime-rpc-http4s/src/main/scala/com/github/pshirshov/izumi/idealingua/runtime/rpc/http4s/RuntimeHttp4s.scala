@@ -62,7 +62,7 @@ class RuntimeHttp4s[R[_] : IRTServiceResult : Monad] {
     implicit val enc: EntityEncoder[R, muxer.Output] = respEncoder()
 
     val svc = AuthedService[Ctx, R] {
-      case request@GET -> Root / service / method as ctx =>
+      case GET -> Root / service / method as ctx =>
         val methodId = IRTMethod(IRTServiceId(service), IRTMethodId(method))
         val req = IRTInContext(IRTMuxRequest[Product](methodId, methodId), ctx)
         TM.flatMap(muxer.dispatch(req))(dsl.Ok(_))

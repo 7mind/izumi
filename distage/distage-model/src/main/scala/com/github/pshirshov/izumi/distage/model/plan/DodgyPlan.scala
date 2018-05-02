@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 /**
   * ***********,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,***./((%%&&&%%##((//////((((((((((((((((((((((///(((((((((//////(((
@@ -95,7 +95,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUnive
   * &&&&&&&./((##%%%%%&&&&%%#((((((((##%&&&&%%##((////////((#%%%####((((((((((((((#%%%%%##%%%%#####%%####((/8.///(#&&&&&&
   * &&&&&&&%/./(###%%%%&&&%#(///(#%%%&%%%&&&@&&%%%####((/////((%%%%####((((((((((((#%%%%%%##%%%%#####%%%###((/8.///((%&&&&&
   * &&&&&&./((##%%%%&&%#///#%%&&&&&&&%&&&@&%%%%#((((////////(#%%%####(((((((((((#%%%%%%%##%%%%%####%%#####((/8.///(#&&&&&
-  * &&&&&&&/./(##%%%%%%(//#%&&&&&&&%%#%%&&@&%#(((//8,,.//(////(#%%%%####((((((((#%%%%%%%%%%%%%%%%####%%%####((/8*.//((%&&&&
+  * &&&&&&&/./(##%%%%%%(//#%&&&&&&&%%#%%&&@&%#(((//8...//(////(#%%%%####((((((((#%%%%%%%%%%%%%%%%####%%%####((/8*.//((%&&&&
   * &&&&&&&//((##%%%#(/(#%&&&&&&%#####%&&&&&%#((//8*.///(((((/(##%%%%####((((((#%%%%%%%%%%%%%%%%%%###%%%#####((/8.//((%&&&&
   * &&&&&&%//(##%%%#(#%&&&&&&&&&%###%&&&&&&&&%##(////(((//((((/(#%&%%%####((((#%%%%%%%%%%%%%%%%%%%###%%%#####((/.///(#%&&&&
   * &&&&&/(##%%%%%&&&&&&&&&&%###&&@&%&&@@&@&%%#(((((///(((((/(%&&&%%%###(((#%%%%%%%%%%%%%%%%%%%%###%%%%####(((////(#%&&&&
@@ -118,7 +118,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeUnive
   * &&&&&&&&&&&&&&&&&&&&&&&&&&&%#&&&&&&@@@@&&&&&&&&&&&&&@@@&&&&&%%%%%%&&&&&&&&&&@@@@@@@@&@@@&&@@&&&&&&&&&&&&&&&&&&&&&&&&&&&
   **/
 case class DodgyPlan(
-                      imports: Map[RuntimeUniverse.DIKey, ImportDependency]
+                      imports: Map[RuntimeDIUniverse.DIKey, ImportDependency]
                       , sets: Set[CreateSet]
                       , proxies: Seq[ProxyOp.InitProxy]
                       , steps: Seq[InstantiationOp]
