@@ -9,12 +9,11 @@ class TSTContext(
                  val typespace: Typespace
                  , extensions: Seq[TypeScriptTranslatorExtension]
                ) {
-  final val conv = new TypeScriptTypeConverter(typespace.domain.id)
-  //final val sig = new TypeSignature(typespace)
+  final val conv = new TypeScriptTypeConverter()
 
   final val modules = new ModuleTools()
 
-  final val tools = new TypeScriptTranslationTools(this)
+  final val tools = new TypeScriptTranslationTools()
   final val ext = {
     new TypeScriptTranslatorExtensions(this, extensions)
   }

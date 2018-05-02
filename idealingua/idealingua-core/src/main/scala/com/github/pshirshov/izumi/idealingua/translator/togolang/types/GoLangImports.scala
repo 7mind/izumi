@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang.types
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, Generic, Package, Primitive, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
 case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
   def renderImports(extra: Seq[String] = List.empty): String = {
@@ -42,8 +43,8 @@ object GoLangImports {
   def apply(imports: List[GoLangImportRecord]): GoLangImports =
     new GoLangImports(imports)
 
-  def apply(definition: TypeDef, fromPkg: Package, extra: List[GoLangImportRecord] = List.empty): GoLangImports =
-    GoLangImports(fromDefinition(definition, fromPkg, extra))
+  def apply(definition: TypeDef, fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord] = List.empty): GoLangImports =
+    GoLangImports(fromDefinition(definition, fromPkg, extra, ts))
 
   def apply(i: Service, fromPkg: Package, extra: List[GoLangImportRecord]): GoLangImports =
     GoLangImports(fromService(i, fromPkg, extra))
@@ -56,10 +57,10 @@ object GoLangImports {
       case Primitive.TDate => return Seq(Seq("time"), Seq("strings"), Seq("strconv"))
       case Primitive.TUUID => return Seq(Seq("regexp"))
       case g: Generic => g match {
-        case go: Generic.TOption => return Seq.empty
-        case gm: Generic.TMap => return Seq.empty
-        case gl: Generic.TList => return Seq.empty
-        case gs: Generic.TSet => return Seq.empty
+        case _: Generic.TOption => return Seq.empty
+        case _: Generic.TMap => return Seq.empty
+        case _: Generic.TList => return Seq.empty
+        case _: Generic.TSet => return Seq.empty
       }
       case _: Primitive => return Seq.empty
       case _ =>
@@ -116,7 +117,7 @@ object GoLangImports {
     case _ => throw new IDLException(s"Impossible type in collectTypes ${id.name} ${id.path.toPackage.mkString(".")}")
   }
 
-  protected def collectTypes(definition: TypeDef): List[TypeId] = definition match {
+  protected def collectTypes(definition: TypeDef, ts: Typespace): List[TypeId] = definition match {
     case i: Alias =>
       List(i.target)
     case _: Enumeration =>
@@ -124,17 +125,15 @@ object GoLangImports {
     case i: Identifier =>
       i.fields.flatMap(f => List(f.typeId) ++ collectTypes(f.typeId))
     case i: Interface =>
-      i.struct.superclasses.all ++ i.struct.fields.flatMap(f => List(f.typeId) ++ collectTypes(f.typeId))
+      i.struct.superclasses.all ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId))
     case d: DTO =>
-      d.struct.superclasses.all ++ d.struct.fields.flatMap(f => List(f.typeId) ++ collectTypes(f.typeId))
+      d.struct.superclasses.all ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(al.typeId))
-    case _: Builtin =>
-      throw new IDLException(s"Impossible case: User type expected ${definition.id.name}")
   }
 
-  protected def fromDefinition(definition: TypeDef, fromPkg: Package, extra: List[GoLangImportRecord] = List.empty): List[GoLangImportRecord] = {
-    val types = collectTypes(definition)
+  protected def fromDefinition(definition: TypeDef, fromPkg: Package, extra: List[GoLangImportRecord] = List.empty, ts: Typespace = null): List[GoLangImportRecord] = {
+    val types = collectTypes(definition, ts)
     fromTypes(types, fromPkg, extra)
   }
 

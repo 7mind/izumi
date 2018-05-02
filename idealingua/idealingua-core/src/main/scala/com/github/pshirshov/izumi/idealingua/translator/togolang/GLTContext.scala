@@ -11,7 +11,7 @@ class GLTContext(
 
   final val modules = new ModuleTools()
 
-  final val tools = new GoLangTranslationTools(this)
+  final val tools = new GoLangTranslationTools()
   final val ext = {
     new GoLangTranslatorExtensions(this, extensions)
   }

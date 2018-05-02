@@ -33,17 +33,51 @@ case class GoLangType (
     renderNativeType(id, serialized, forAlias)
   }
 
-  private def renderNativeType(id: TypeId, serialized: Boolean = false, forAlias: Boolean = false): String = id match {
+  private def renderNativeType(id: TypeId, serialized: Boolean, forAlias: Boolean = false): String = id match {
     case g: Generic => renderGenericType(g, serialized)
     case p: Primitive => renderPrimitiveType(p, serialized)
     case _ => renderUserType(id, serialized, forAlias)
   }
 
-  private def renderGenericType(generic: Generic, serialized: Boolean = false): String = generic match {
+  private def renderGenericType(generic: Generic, serialized: Boolean): String = generic match {
     case gm: Generic.TMap => s"map[${renderNativeType(gm.keyType, serialized)}]${renderNativeType(gm.valueType, serialized)}"
     case gl: Generic.TList => s"[]${renderNativeType(gl.valueType, serialized)}"
     case gs: Generic.TSet => s"[]${renderNativeType(gs.valueType, serialized)}"
     case go: Generic.TOption => s"*${renderNativeType(go.valueType, serialized)}"
+  }
+
+  def isPrimitive(id: TypeId): Boolean = id match {
+    case _: Primitive => true
+    case _: DTOId => false
+    case _: IdentifierId => false
+    case _: AdtId => false
+    case _: InterfaceId => false
+    case _: EnumId => false
+    case al: AliasId => isPrimitive(ts(al).asInstanceOf[Alias].target)
+    case g: Generic => g match {
+      case go: Generic.TOption => isPrimitive(go.valueType)
+      case gl: Generic.TList => isPrimitive(gl.valueType)
+      case gs: Generic.TSet => isPrimitive(gs.valueType)
+      case gm: Generic.TMap => isPrimitive(gm.valueType)
+    }
+    case _ => throw new IDLException("Unknown type is checked for primitiveness " + id.name)
+  }
+
+  def isPolymorph(id: TypeId): Boolean = id match {
+    case _: Primitive => false
+    case _: DTOId => true
+    case _: IdentifierId => true
+    case _: AdtId => true
+    case _: InterfaceId => true
+    case _: EnumId => true
+    case al: AliasId => isPolymorph(ts(al).asInstanceOf[Alias].target)
+    case g: Generic => g match {
+      case go: Generic.TOption => isPolymorph(go.valueType)
+      case gl: Generic.TList => isPolymorph(gl.valueType)
+      case gs: Generic.TSet => isPolymorph(gs.valueType)
+      case gm: Generic.TMap => isPolymorph(gm.valueType)
+    }
+    case _ => false
   }
 
   protected def renderPrimitiveType(primitive: Primitive, serialized: Boolean = false): String = primitive match {
@@ -62,15 +96,6 @@ case class GoLangType (
     case Primitive.TTsTz => if (serialized) "string" else "time.Time"
   }
 
-  protected def isAliasPrimitive(id: TypeId): Boolean = id match {
-    case _: DTOId => false
-    case _: IdentifierId => false
-    case _: AdtId => false
-    case _: InterfaceId => false
-    case al: AliasId => isAliasPrimitive(ts(al).asInstanceOf[Alias].target)
-    case _ => true
-  }
-
   protected def renderUserType(id: TypeId, serialized: Boolean = false, forAlias: Boolean = false): String = {
     if (serialized) {
       id match {
@@ -78,14 +103,15 @@ case class GoLangType (
         case _: AdtId => s"json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
         case _: IdentifierId | _: EnumId => s"string"
         case d: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(d)}${d.name}Serialized"
-        case al: AliasId => if (isAliasPrimitive(ts(al).asInstanceOf[Alias].target)) id.name else renderNativeType(ts(al).asInstanceOf[Alias].target, serialized)
+        case al: AliasId => if (isPrimitive(ts(al).asInstanceOf[Alias].target)) id.name else renderNativeType(ts(al).asInstanceOf[Alias].target, serialized)
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
     } else {
       id match {
-        case _: EnumId => id.name
-        case _: AdtId | _: DTOId | _: IdentifierId | _: InterfaceId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
-        case al: AliasId => if (isAliasPrimitive(ts(al).asInstanceOf[Alias].target)) id.name else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+        case _: EnumId => s"${im.withImport(id)}${id.name}"
+        case _: InterfaceId => s"${im.withImport(id)}${id.name}"
+        case _: AdtId | _: DTOId | _: IdentifierId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+        case al: AliasId => if (isPrimitive(ts(al).asInstanceOf[Alias].target)) id.name else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
     }
@@ -125,10 +151,10 @@ case class GoLangType (
          """.stripMargin
 
       case g: Generic => g match {
-        case gm: Generic.TMap => s"Not implemented renderUnmarshal.Generic.TMap"
-        case gl: Generic.TList => s"Not implemented renderUnmarshal.Generic.TMap"
-        case go: Generic.TOption => s"Not implemented renderUnmarshal.Generic.TMap"
-        case gs: Generic.TSet => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TMap => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TList => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TOption => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TSet => s"Not implemented renderUnmarshal.Generic.TMap"
       }
 
       case _ => throw new IDLException("Primitive types should not be unmarshalled manually")
@@ -172,10 +198,13 @@ case class GoLangType (
     case Primitive.TFloat => "32.32"
     case Primitive.TDouble => "64.64"
     case Primitive.TUUID => "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\""
-    case Primitive.TTime => "10:10:10.100"
-    case Primitive.TDate => "01:01:2010"
-    case Primitive.TTs => "Time Stamp"
-    case Primitive.TTsTz => "Time Stamp UTC"
+    case Primitive.TTime => "time.Now()" // "\"15:10:10.10001\""
+    case Primitive.TDate => "time.Now()" // "\"2010-12-01\""
+    case Primitive.TTs => "time.Now()" // "\"2010-12-01T15:10:10.10001\""
+    case Primitive.TTsTz => "time.Now()" // "\"2010-12-01T15:10:10.10001[UTC]\""
+    case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
+    case _: IdentifierId | _: DTOId | _: EnumId => s"NewTest${id.name}()"
+    case i: InterfaceId => s"NewTest${ts.implId(i).name}()"
     case _ => "nil"
   }
 }

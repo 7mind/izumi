@@ -104,6 +104,7 @@ object CogenProduct {
 
   case class AdtProduct(content: String = ""
                         , header: String = ""
+                        , tests: String = ""
                        ) extends RenderableCogenProduct {
     def render: List[String] = {
       content.split("\n").toList
@@ -114,7 +115,7 @@ object CogenProduct {
     }
 
     def renderTests: List[String] = {
-      List.empty
+      tests.split("\n").toList
     }
   }
 }

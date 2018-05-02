@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
+import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.{ExtensionId, IDLCompiler, IDLLanguage, TranslatorExtension}
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 
@@ -31,6 +32,7 @@ object CliIdlCompiler {
   private def extensions: Map[IDLLanguage, Seq[TranslatorExtension]] = Map(
     IDLLanguage.Scala -> (ScalaTranslator.defaultExtensions ++ Seq(CirceDerivationTranslatorExtension))
     , IDLLanguage.Typescript -> TypeScriptTranslator.defaultExtensions
+    , IDLLanguage.Go -> GoLangTranslator.defaultExtensions
   )
 
   private def getExt(lang: IDLLanguage, filter: String): Seq[TranslatorExtension] = {
