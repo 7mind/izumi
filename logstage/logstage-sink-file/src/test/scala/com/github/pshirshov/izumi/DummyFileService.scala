@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.FileSink.FileIdentity
 
 import scala.util.{Success, Try}
 
-class DummyFileService extends FileService {
+class DummyFileService(override val path : String) extends FileService {
   val storage = scala.collection.mutable.HashMap.empty[FileIdentity, DummyFile]
 
   override def getFileIds: Try[Set[FileIdentity]] = Try(storage.keySet.toSet)
@@ -31,9 +31,9 @@ class DummyFileService extends FileService {
     Success(storage.remove(fileIdentity))
   }
 
-  override def writeToFile(path: String, fileIdentity: FileIdentity, content: String): Try[Unit] = {
+  override def writeToFile(fileIdentity: FileIdentity, content: String): Try[Unit] = {
     for {
-      file <- Try(storage.getOrElseUpdate(fileIdentity, DummyFile(fileIdentity.toString)))
+      file <- Try(storage.getOrElseUpdate(fileIdentity, DummyFile(provideFileName(fileIdentity))))
       _ <- Success{
         file.append(content)
       }
@@ -41,5 +41,9 @@ class DummyFileService extends FileService {
         storage.put(fileIdentity, file)
       }
     } yield ()
+  }
+
+  override def provideFileName(fileIdentity: FileIdentity): String = {
+    fileIdentity.toString
   }
 }

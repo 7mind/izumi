@@ -12,7 +12,7 @@ import com.github.pshirshov.izumi.models.{FileRotation, FileSinkState}
 
 import scala.util.{Failure, Success, Try}
 
-case class FileSinkConfig(fileSize : Int, filePath : String)
+case class FileSinkConfig(fileSize : Int)
 
 case class FileSink(
                    renderingPolicy: RenderingPolicy
@@ -21,7 +21,7 @@ case class FileSink(
                     , config : FileSinkConfig
                    ) extends LogSink {
 
-  val sinkState = new AtomicReference[FileSinkState](FileSinkState(config.fileSize, config.filePath))
+  val sinkState = new AtomicReference[FileSinkState](FileSinkState(config.fileSize))
 
   def processCurrentFile(state: FileSinkState): Try[FileSinkState] = {
     (state.currentFileId, state.currentFileSize) match {
@@ -71,7 +71,7 @@ case class FileSink(
       _ <- Try {
         current.headOption.foreach { _ => fileService.removeFile(curFileId) }
       }
-      _ <- fileService.writeToFile(state.path, curFileId, payload)
+      _ <- fileService.writeToFile(curFileId, payload)
     } yield state.copy(currentFileSize = state.currentFileSize + 1, forRotate = others)
   }
 

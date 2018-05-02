@@ -22,7 +22,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
     val dummyFolder = "folder"
 
     "write data to files correctly" in {
-      withFileLogger(withoutRotation(policy, 2, dummyFolder)) {
+      withFileLogger(withoutRotation(policy, 2, new DummyFileService(dummyFolder))) {
         (sink, logger) =>
 
           List.fill(3)("msg").foreach(i => logger.info(i))
@@ -35,7 +35,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
 
     "continue writing data starts from existing non-empty file" in {
 
-      val prefilledFiles = new DummyFileService()
+      val prefilledFiles = new DummyFileService(dummyFolder)
       val randomFileSize = Random.nextInt(100)
 
       val file1 = DummyFile(FileSink.buildFileName(dummyFolder, FileSink.FileIdentity.init))
@@ -43,7 +43,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
       Given("empty file in storage")
       prefilledFiles.storage.put(FileSink.FileIdentity.init, file1)
 
-      withFileLogger(withoutRotation(policy, randomFileSize, dummyFolder, prefilledFiles)) {
+      withFileLogger(withoutRotation(policy, randomFileSize, prefilledFiles)) {
         (sink, logger) =>
           When("new message sends")
           logger.info("new")
@@ -71,7 +71,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
       prefilledFiles.storage.put(FileSink.FileIdentity.init + 1, file2)
 
 
-      withFileLogger(withoutRotation(policy, randomFileSize, dummyFolder, prefilledFiles)) {
+      withFileLogger(withoutRotation(policy, randomFileSize, prefilledFiles)) {
         (sink, logger) =>
           When("new message sends")
           logger.info("new")
@@ -85,7 +85,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
       prefilledFiles.storage.clear()
       prefilledFiles.storage.put(FileSink.FileIdentity.init, file1)
 
-      withFileLogger(withoutRotation(policy, randomFileSize, dummyFolder, prefilledFiles)) {
+      withFileLogger(withoutRotation(policy, randomFileSize, prefilledFiles)) {
         (sink, logger) =>
           When("new message sends")
           logger.info("new")
@@ -101,8 +101,8 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
       val fileSize = 2
       val filesLimit = 3
 
-      val dummyService = new DummyFileService()
-      withFileLogger(withRotation(policy, fileSize = fileSize, folder = dummyFolder, filesLimit = filesLimit, fileService = dummyService)) {
+      val dummyService = new DummyFileService(dummyFolder)
+      withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = dummyService)) {
         (sink, logger) =>
           (1 to fileSize * filesLimit).foreach {
             i =>
@@ -134,7 +134,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
       val fileSize = 2
       val filesLimit = 3
 
-      val prefilledFiles = new DummyFileService()
+      val prefilledFiles = new DummyFileService(dummyFolder)
       val randomFileSize = Random.nextInt(100)
 
       val filledFiles = (0 until filesLimit).map {
@@ -149,7 +149,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
           prefilledFiles.storage.put(id, file)
       }
 
-      withFileLogger(withRotation(policy, fileSize = fileSize, folder = dummyFolder, filesLimit = filesLimit, fileService = prefilledFiles)) {
+      withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = prefilledFiles)) {
         (sink, logger) =>
           logger.info("new")
           val curState = sink.sinkState.get()
@@ -163,16 +163,16 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
 
 object LoggingFileSinkTest {
 
-  def dummySink(renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, folder: String = "", fileService: DummyFileService = new DummyFileService()): FileSink = {
-    new FileSink(renderingPolicy, fileService, r, FileSinkConfig(fileSize, folder))
+  def dummySink(renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, fileService: DummyFileService): FileSink = {
+    new FileSink(renderingPolicy, fileService, r, FileSinkConfig(fileSize))
   }
 
-  def withoutRotation(renderingPolicy: RenderingPolicy,fileSize: Int, folder: String = "", fileService: DummyFileService = new DummyFileService()): FileSink = {
-    dummySink(renderingPolicy, FileRotation.DisabledRotation, fileSize, folder, fileService)
+  def withoutRotation(renderingPolicy: RenderingPolicy,fileSize: Int, fileService: DummyFileService): FileSink = {
+    dummySink(renderingPolicy, FileRotation.DisabledRotation, fileSize, fileService)
   }
 
-  def withRotation(renderingPolicy: RenderingPolicy,fileSize: Int, folder: String = "", fileService: DummyFileService = new DummyFileService(), filesLimit: Int): FileSink = {
-    dummySink(renderingPolicy, FileRotation.FileLimiterRotation(filesLimit), fileSize, folder, fileService)
+  def withRotation(renderingPolicy: RenderingPolicy,fileSize: Int, fileService: DummyFileService, filesLimit: Int): FileSink = {
+    dummySink(renderingPolicy, FileRotation.FileLimiterRotation(filesLimit), fileSize, fileService)
   }
 
   def withFileLogger(f: => FileSink)(f2: (FileSink, IzLogger) => Unit): Unit = {

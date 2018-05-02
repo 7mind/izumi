@@ -8,6 +8,8 @@ import scala.util.Try
 
 trait FileService {
 
+  def path : String
+
   def getFileIds: Try[Set[FileIdentity]]
 
   def fileContent(fileIdentity: FileIdentity): Try[List[String]]
@@ -18,8 +20,9 @@ trait FileService {
 
   def removeFile(fileIdentity: FileIdentity): Try[Unit]
 
-  def writeToFile(path : String, fileIdentity: FileIdentity, content: String): Try[Unit]
+  def writeToFile(fileIdentity: FileIdentity, content: String): Try[Unit]
 
+  protected def provideFileName(provideFileNamefileIdentity: FileIdentity) : String
 }
 
 object FileService {
