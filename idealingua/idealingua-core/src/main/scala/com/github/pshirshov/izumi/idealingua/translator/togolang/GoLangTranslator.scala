@@ -83,7 +83,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   }
 
   protected def renderDto(i: DTO): RenderableCogenProduct = {
-    val imports = GoLangImports(i, i.id.path.toPackage)
+    val imports = GoLangImports(i, i.id.path.toPackage, ts)
 
     val fields = typespace.structure.structure(i).all
     val distinctFields = fields.groupBy(_.field.name).map(_._2.head.field)
@@ -137,7 +137,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   }
 
   protected def renderAlias(i: Alias): RenderableCogenProduct = {
-      val imports = GoLangImports(i, i.id.path.toPackage)
+      val imports = GoLangImports(i, i.id.path.toPackage, ts)
       val goType = GoLangType(i.target, imports, ts)
 
       AliasProduct(
@@ -266,7 +266,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   }
 
   protected def renderAdt(i: Adt): RenderableCogenProduct = {
-    val imports = GoLangImports(i, i.id.path.toPackage)
+    val imports = GoLangImports(i, i.id.path.toPackage, ts)
     val name = i.id.name
 
     val tests =
@@ -349,35 +349,35 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |)
          |
          |func Test${name}Creation(t *testing.T) {
-         |    if IsValid("${i.members.head}Invalid") {
+         |    if IsValid${name}("${i.members.head}Invalid") {
          |        t.Errorf("type '%s' IsValid function should correctly identify invalid string enums", "$name")
          |    }
          |
-         |    if !IsValid("${i.members.head}") {
+         |    if !IsValid${name}("${i.members.head}") {
          |        t.Errorf("type '%s' IsValid function should correctly identify valid string enums", "$name")
          |    }
          |
-         |    v1 := New("${i.members.head}")
-         |    if !IsValid(v.String()) {
+         |    v1 := New${name}("${i.members.head}")
+         |    if !IsValid${name}(v1.String()) {
          |        t.Errorf("type '%s' should be possible to create via New method with '%s' value", "$name", "${i.members.head}")
          |    }
          |
-         |    v2 = ${i.members.head}
+         |    v2 := ${i.members.head}
          |    if v1 != v2 {
          |        t.Errorf("type '%s' created from enum const and a corresponding string must return the same value. Got '%+v' and '%+v'", "$name", v1, v2)
          |    }
          |}
          |
          |func Test${name}StringSerialization(t *testing.T) {
-         |    v1 := New("${i.members.head}")
-         |    v2 := New(v1.String())
+         |    v1 := New${name}("${i.members.head}")
+         |    v2 := New${name}(v1.String())
          |    if v1 != v2 {
          |        t.Errorf("type '%s' to string and new from that string must return the same enum value. Got '%+v' and '%+v'", "$name", v1, v2)
          |    }
          |}
          |
          |func Test${name}JSONSerialization(t *testing.T) {
-         |    v1 := New("${i.members.head}")
+         |    v1 := New${name}("${i.members.head}")
          |    serialized, err := json.Marshal(v1)
          |    if err != nil {
          |        t.Fatalf("type '%s' should serialize into JSON using Marshal. %s", "$name", err.Error())
@@ -402,7 +402,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   }
 
   protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
-    val imports = GoLangImports(i, i.id.path.toPackage)
+    val imports = GoLangImports(i, i.id.path.toPackage, ts)
 
     val fields = typespace.structure.structure(i)
     val sortedFields = fields.all.sortBy(_.field.name)
@@ -515,7 +515,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   }
 
   protected def renderInterface(i: Interface): RenderableCogenProduct = {
-    val imports = GoLangImports(i, i.id.path.toPackage)
+    val imports = GoLangImports(i, i.id.path.toPackage, ts)
 
     val fields = typespace.structure.structure(i)
     val distinctFields = fields.all.groupBy(_.field.name).map(_._2.head.field)
@@ -533,7 +533,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
 
     val iface =
       s"""type ${i.id.name} interface {
-         |${i.struct.superclasses.interfaces.map(ifc => GoLangType(ifc, imports, ts).renderType()).mkString("\n").shift(4)}
+         |${i.struct.superclasses.interfaces.map(ifc => s"// implements ${ifc.name} interface").mkString("\n").shift(4)}
          |${struct.fields.map(f => f.renderInterfaceMethods()).mkString("\n").shift(4)}
          |    GetPackageName() string
          |    GetClassName() string

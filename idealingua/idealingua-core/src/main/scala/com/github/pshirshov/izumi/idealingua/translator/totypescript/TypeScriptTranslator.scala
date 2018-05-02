@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -170,9 +169,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |//
            |// See this and other referenced threads for more information:
            |// https://github.com/Microsoft/TypeScript/issues/2552
-          """.stripMargin,
-        "",
-        ""
+          """.stripMargin
       )
   }
 
@@ -281,21 +278,20 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   protected def renderSerializedObject(fields: List[Field]): String = {
     val serialized = fields.map(f => conv.serializeField(f, typespace))
     val it = serialized.iterator
-    val serializedFields = it.map { m => s"$m${if (it.hasNext) "," else ""}" }.mkString("\n")
-    serializedFields
+    it.map { m => s"$m${if (it.hasNext) "," else ""}" }.mkString("\n")
   }
 
   protected def renderInterface(i: Interface): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage)
     val extendsInterfaces =
-      if (i.struct.superclasses.interfaces.length > 0) {
+      if (i.struct.superclasses.interfaces.nonEmpty) {
         "extends " + i.struct.superclasses.interfaces.map(iface => iface.name).mkString(", ") + " "
       } else {
         ""
       }
 
     val extendsInterfacesSerialized =
-      if (i.struct.superclasses.interfaces.length > 0) {
+      if (i.struct.superclasses.interfaces.nonEmpty) {
         "extends " + i.struct.superclasses.interfaces.map(iface => typespace.implId(iface).name + "Serialized").mkString(", ") + " "
       } else {
         ""

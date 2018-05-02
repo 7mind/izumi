@@ -5,6 +5,6 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import scala.meta._
 
 
-class GoLangTranslationTools(ctx: GLTContext) {
+class GoLangTranslationTools() {
   def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
 }

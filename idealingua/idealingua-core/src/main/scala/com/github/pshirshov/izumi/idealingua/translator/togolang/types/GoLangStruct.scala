@@ -113,37 +113,41 @@ case class GoLangStruct(
     }
   }
 
-  private def renderPolymorphSerialized(id: TypeId, dest: String, src: String, forOption: Boolean = false): String = id match {
-    case _: InterfaceId =>
-      s"""_$dest, err := json.Marshal($src)
-         |if err != nil {
-         |    return nil, err
-         |}
-         |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}map[string]json.RawMessage{v.GetFullClassName(): _$dest}
+  private def renderPolymorphSerialized(id: TypeId, dest: String, srcOriginal: String, forOption: Boolean = false): String = {
+    val src =  if (forOption) s"(*$srcOriginal)" else srcOriginal
+
+    id match {
+      case _: InterfaceId =>
+        s"""_$dest, err := json.Marshal($src)
+           |if err != nil {
+           |    return nil, err
+           |}
+           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}map[string]json.RawMessage{v.GetFullClassName(): _$dest}
          """.stripMargin
 
-    case _: AdtId =>
-      s"""_$dest, err ${if(forOption) "" else ":"}= json.Marshal($src)
-         |if err != nil {
-         |    return nil, err
-         |}
-         |$dest := ${if(forOption) "&" else ""}_$dest
+      case _: AdtId =>
+        s"""_$dest, err ${if(forOption) "" else ":"}= json.Marshal($src)
+           |if err != nil {
+           |    return nil, err
+           |}
+           |$dest := ${if(forOption) "&" else ""}_$dest
          """.stripMargin
 
-    case _: IdentifierId | _: EnumId =>
-      s"""_$dest := $src.String()
-         |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}_$dest
+      case _: IdentifierId | _: EnumId =>
+        s"""_$dest := $src.String()
+           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}_$dest
        """.stripMargin
 
-    case _: DTOId =>
-      s"""_$dest, err ${if(forOption) "" else ":"}= $src.Serialize()
-         |if err != nil {
-         |    return nil, err
-         |}
-         |$dest := ${if(forOption) "&" else ""}_$dest
+      case _: DTOId =>
+        s"""_$dest, err ${if(forOption) "" else ":"}= $src.Serialize()
+           |if err != nil {
+           |    return nil, err
+           |}
+           |$dest := ${if(forOption) "&" else ""}_$dest
          """.stripMargin
 
-    case _ => throw new IDLException("Should not get into renderPolymorphSerialized")
+      case _ => throw new IDLException("Should not get into renderPolymorphSerialized")
+    }
   }
 
   private def renderPolymorphSerializedVar(id: TypeId, dest: String, src: String): String = {
@@ -159,8 +163,7 @@ case class GoLangStruct(
                   if (GoLangType(id, imports, ts).isPolymorph(go.valueType))
                     renderPolymorphSerialized(go.valueType, dest, src, forOption = true).shift(4)
                   else
-                    s"    $dest = $src"
-                }
+                    s"    $dest = $src"}
              |}
            """.stripMargin
 
@@ -168,6 +171,7 @@ case class GoLangStruct(
           val vt = g match {
             case gl: Generic.TList => gl.valueType
             case gs: Generic.TSet => gs.valueType
+            case _ => throw new IDLException("Just preventing a warning here...")
           }
 
           val tempVal = s"_$dest"

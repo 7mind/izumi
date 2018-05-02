@@ -3,13 +3,12 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript.types
 import com.github.pshirshov.izumi.idealingua.model.common.Generic.{TList, TMap, TOption, TSet}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Alias}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Field
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
 
-class TypeScriptTypeConverter(domain: DomainId) {
+class TypeScriptTypeConverter() {
   def parseTypeFromString(value: String, target: TypeId): String = {
     target match {
       case Primitive.TBool => "(" + value + " === 'true)'"
@@ -73,10 +72,7 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case a: AdtId => s"${a.name}Helpers.deserialize($variable)"
     case i: InterfaceId => s"${i.name}Struct.create(${variable + (if (asAny) " as any" else "")})"
     case d: DTOId => s"new ${d.name}(${variable + (if (asAny) " as any" else "")})"
-    case al: AliasId => {
-      val alias = ts(al).asInstanceOf[Alias]
-      deserializeType(variable, alias.target, ts)
-    }
+    case al: AliasId => deserializeType(variable, ts(al).asInstanceOf[Alias].target, ts)
     case id: IdentifierId => s"new ${id.name}($variable)"
     case _: EnumId => s"$variable"
 
@@ -103,9 +99,9 @@ class TypeScriptTypeConverter(domain: DomainId) {
     if (forSerialized) {
       id match {
         case i: InterfaceId => s"{[key: string]: ${ts.implId(i).name + "Serialized"}}"
-        case a: AdtId => s"{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
+        case _: AdtId => s"{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
         case al: AliasId => toNativeType(ts(al).asInstanceOf[Alias].target, ts, forSerialized)
-        case d: DTOId => s"${id.name}Serialized"
+        case _: DTOId => s"${id.name}Serialized"
         case _: IdentifierId => s"string"
         case _ => s"${id.name}"
       }
@@ -117,7 +113,7 @@ class TypeScriptTypeConverter(domain: DomainId) {
     }
   }
 
-  private def toPrimitiveType(id: Primitive, forSerialized: Boolean = false): String = id match {
+  private def toPrimitiveType(id: Primitive, forSerialized: Boolean): String = id match {
     case Primitive.TBool => "boolean"
     case Primitive.TString => "string"
     case Primitive.TInt8 => "number"
@@ -133,7 +129,7 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case Primitive.TTsTz => if (forSerialized) "string" else "Date"
   }
 
-  private def toGenericType(typeId: Generic, ts: Typespace, forSerialized: Boolean = false): String = {
+  private def toGenericType(typeId: Generic, ts: Typespace, forSerialized: Boolean): String = {
     typeId match {
       case _: Generic.TSet => toNativeType(typeId.asInstanceOf[TSet].valueType, ts, forSerialized) + "[]"
       case _: Generic.TMap => "{[key: " + toNativeType(typeId.asInstanceOf[TMap].keyType, ts, forSerialized) + "]: " + toNativeType(typeId.asInstanceOf[TMap].valueType, ts, forSerialized) + "}"
@@ -147,12 +143,12 @@ class TypeScriptTypeConverter(domain: DomainId) {
   }
 
   def serializeValue(name: String, id: TypeId, ts: Typespace): String = id match {
-    case p: Primitive => serializePrimitive(name, p, ts)
+    case p: Primitive => serializePrimitive(name, p)
     case _: Generic => serializeGeneric(name, id, ts)
     case _ => serializeCustom(name, id, ts)
   }
 
-  def serializePrimitive(name: String, id: Primitive, ts: Typespace): String = id match {
+  def serializePrimitive(name: String, id: Primitive): String = id match {
     case Primitive.TBool => s"$name"
     case Primitive.TString => s"$name"
     case Primitive.TInt8 => s"$name"
@@ -185,18 +181,15 @@ class TypeScriptTypeConverter(domain: DomainId) {
   def serializeCustom(name: String, id: TypeId, ts: Typespace): String = id match {
     case a: AdtId => s"${a.name}Helpers.serialize($name)"
     case _: InterfaceId => s"{[$name.getFullClassName()]: $name.serialize()}"
-    case d: DTOId => s"${name}.serialize()"
-    case al: AliasId => {
-      val alias = ts(al).asInstanceOf[Alias]
-      serializeValue(name, alias.target, ts)
-    }
+    case _: DTOId => s"$name.serialize()"
+    case al: AliasId => serializeValue(name, ts(al).asInstanceOf[Alias].target, ts)
     case _: IdentifierId => s"$name.serialize()"
-    case _: EnumId => s"$name"
+    case _: EnumId => name
 
     case _ => s"'$name: Error here! Not Implemented! ${id.name}'"
   }
 
-  def toFieldMethods(id: TypeId, name: String, ts: Typespace, optional: Boolean = false) = id match {
+  def toFieldMethods(id: TypeId, name: String, ts: Typespace, optional: Boolean = false): String = id match {
     case Primitive.TBool => toBooleanField(name, optional)
     case Primitive.TString => toStringField(name, Int.MinValue, optional)
     case Primitive.TInt8 => toIntField(name, -128, 127, optional)
@@ -225,8 +218,8 @@ class TypeScriptTypeConverter(domain: DomainId) {
   }
 
   def toFieldMethods(field: Field, ts: Typespace): String = field.typeId match {
-    case go: Generic.TOption => toFieldMethods(go.valueType, field.name, ts, true)
-    case _ => toFieldMethods(field.typeId, field.name, ts, false)
+    case go: Generic.TOption => toFieldMethods(go.valueType, field.name, ts, optional = true)
+    case _ => toFieldMethods(field.typeId, field.name, ts)
   }
 
   def toFieldMember(field: Field, ts: Typespace): String = {
@@ -251,12 +244,12 @@ class TypeScriptTypeConverter(domain: DomainId) {
   }
 
   def safeName(name: String): String = {
-    val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
-      "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",
-      "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends",
-      "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "any",
-      "implements", "instanceof", "namespace", "boolean", "constructor", "declare", "get", "module", "require",
-      "number", "set", "string", "symbol", "type", "from", "of")
+//    val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
+//      "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",
+//      "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends",
+//      "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "any",
+//      "implements", "instanceof", "namespace", "boolean", "constructor", "declare", "get", "module", "require",
+//      "number", "set", "string", "symbol", "type", "from", "of")
 
     //    if (ecma1.contains(name)) s"m${name.capitalize}" else name
     name
@@ -314,10 +307,12 @@ class TypeScriptTypeConverter(domain: DomainId) {
 
   def toDoubleField(name: String, precision: Int = 64, optional: Boolean = false): String = {
     s"""public get ${safeName(name)}(): number {
+       |    // Precision: $precision
        |    return this._$name;
        |}
        |
        |public set ${safeName(name)}(value: number) {
+       |    // Precision: $precision
        |    if (typeof value === 'undefined' || value === null) {
        |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
        |    }

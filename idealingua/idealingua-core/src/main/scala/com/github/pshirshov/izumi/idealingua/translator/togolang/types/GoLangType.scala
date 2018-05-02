@@ -52,6 +52,7 @@ case class GoLangType (
     case _: IdentifierId => false
     case _: AdtId => false
     case _: InterfaceId => false
+    case _: EnumId => false
     case al: AliasId => isPrimitive(ts(al).asInstanceOf[Alias].target)
     case g: Generic => g match {
       case go: Generic.TOption => isPrimitive(go.valueType)
@@ -107,7 +108,7 @@ case class GoLangType (
       }
     } else {
       id match {
-        case _: EnumId => id.name
+        case _: EnumId => s"${im.withImport(id)}${id.name}"
         case _: InterfaceId => s"${im.withImport(id)}${id.name}"
         case _: AdtId | _: DTOId | _: IdentifierId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
         case al: AliasId => if (isPrimitive(ts(al).asInstanceOf[Alias].target)) id.name else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
@@ -150,10 +151,10 @@ case class GoLangType (
          """.stripMargin
 
       case g: Generic => g match {
-        case gm: Generic.TMap => s"Not implemented renderUnmarshal.Generic.TMap"
-        case gl: Generic.TList => s"Not implemented renderUnmarshal.Generic.TMap"
-        case go: Generic.TOption => s"Not implemented renderUnmarshal.Generic.TMap"
-        case gs: Generic.TSet => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TMap => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TList => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TOption => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TSet => s"Not implemented renderUnmarshal.Generic.TMap"
       }
 
       case _ => throw new IDLException("Primitive types should not be unmarshalled manually")

@@ -191,7 +191,7 @@ case class GoLangField(
            """.stripMargin
 
     case _: AdtId =>
-      s"""$dest := &${id.name}{}
+      s"""$dest := &${im.withImport(id)}${id.name}{}
          |err = json.Unmarshal($src, $dest)
          |if err != nil {
          |    return err
@@ -199,7 +199,7 @@ case class GoLangField(
            """.stripMargin
 
     case _: DTOId =>
-      s"""$dest := &${id.name}{}
+      s"""$dest := &${im.withImport(id)}${id.name}{}
          |err = $dest.LoadSerialized($src)
          |if err != nil {
          |    return err
@@ -207,7 +207,7 @@ case class GoLangField(
            """.stripMargin
 
     case _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
-      s"""var $dest ${id.name}
+      s"""var $dest ${im.withImport(id)}${id.name}
          |err = json.Unmarshal([]byte($src), $dest)
          |if err != nil {
          |    return err
@@ -215,7 +215,7 @@ case class GoLangField(
            """.stripMargin
 
     case _: IdentifierId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
-      s"""$dest := &${id.name}{}
+      s"""$dest := &${im.withImport(id)}${id.name}{}
          |err = $dest.LoadSerialized($src)
          |if err != nil {
          |    return err
@@ -225,7 +225,7 @@ case class GoLangField(
     case _ => throw new IDLException("We should never get here for deserialized field.")
   }
 
-  private def renderAssignImpl(struct: String, id: TypeId, variable: String, serialized: Boolean, optional: Boolean = false): String = {
+  private def renderAssignImpl(struct: String, id: TypeId, variable: String, serialized: Boolean, optional: Boolean): String = {
     if (serialized) {
       val assignVar = if (optional || !tp.hasSetterError())
         s"$struct.Set${renderMemberName(true)}($variable)"
@@ -265,6 +265,7 @@ case class GoLangField(
               val vt = g match {
                 case gl: Generic.TList => gl.valueType
                 case gs: Generic.TSet => gs.valueType
+                case _ => throw new IDLException("Just preventing a warning here...")
               }
 
               if (GoLangType(null, im, ts).isPrimitive(vt))

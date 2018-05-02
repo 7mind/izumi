@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.totypescript
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, Generic, Package, Primitive, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
@@ -47,10 +47,10 @@ object TypeScriptImports {
   protected def withImport(t: TypeId, fromPackage: Package): Seq[String] = {
     t match {
       case g: Generic => g match {
-        case go: Generic.TOption => return Seq.empty
-        case gm: Generic.TMap => return Seq.empty
-        case gl: Generic.TList => return Seq.empty
-        case gs: Generic.TSet => return Seq.empty
+        case _: Generic.TOption => return Seq.empty
+        case _: Generic.TMap => return Seq.empty
+        case _: Generic.TList => return Seq.empty
+        case _: Generic.TSet => return Seq.empty
       }
       case _: Primitive => return Seq.empty
       case _ =>
@@ -71,7 +71,7 @@ object TypeScriptImports {
     (1 to (t.path.toPackage.size - nestedDepth)).foreach(_ => importOffset += "../")
     val importFile = importOffset + t.path.toPackage.drop(nestedDepth).mkString("/")//+ "/" + t.name
 
-    return Seq(importFile)
+    Seq(importFile)
   }
 
   protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[TypeScriptImport] = List.empty): List[TypeScriptImport] = {
@@ -113,8 +113,6 @@ object TypeScriptImports {
       d.struct.superclasses.all ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
-    case _: Builtin =>
-      throw new IDLException(s"Impossible case: User type expected ${definition.id.name}")
   }
 
   protected def fromDefinition(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty): List[TypeScriptImport] = {
