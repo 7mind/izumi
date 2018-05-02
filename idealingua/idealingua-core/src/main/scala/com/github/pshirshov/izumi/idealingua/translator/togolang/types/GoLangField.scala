@@ -47,8 +47,8 @@ case class GoLangField(
     case Primitive.TUUID => toGuidField()
     case Primitive.TTime => toTimeField()
     case Primitive.TDate => toDateField()
-    case Primitive.TTs => toDateField()
-    case Primitive.TTsTz => toDateField()
+    case Primitive.TTs => toTimeStampField(false)
+    case Primitive.TTsTz => toTimeStampField(true)
     case _ => toGenericField()
   }
 
@@ -173,6 +173,33 @@ case class GoLangField(
        |    }
        |
        |    v.${renderMemberName(false)} = time.Date(2000, time.January, 1, hour, minute, second, millis * int(time.Millisecond), time.UTC)
+       |    return nil
+       |}
+     """.stripMargin
+  }
+
+  def toTimeStampField(utc: Boolean): String = {
+    s"""func (v *$structName) ${renderMemberName(true)}() time.Time {
+       |    return v.${renderMemberName(false)}
+       |}
+       |
+       |func (v *$structName) Set${renderMemberName(true)}(value time.Time) {
+       |    v.${renderMemberName(false)} = value
+       |}
+       |
+       |func (v *$structName) ${renderMemberName(true)}AsString() string {
+       |    layout := "2006-01-02T15:04:05.000Z"
+       |    return v.${renderMemberName(false)}.Format(layout)
+       |}
+       |
+       |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
+       |    layout := "2006-01-02T15:04:05.000Z"
+       |    t, err := time.Parse(layout, value)
+       |    if err != nil {
+       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DDTHH:MM:SS.MS[TimeZone] format. Got %s", value)
+       |    }
+       |
+       |    v.${renderMemberName(false)} = t
        |    return nil
        |}
      """.stripMargin

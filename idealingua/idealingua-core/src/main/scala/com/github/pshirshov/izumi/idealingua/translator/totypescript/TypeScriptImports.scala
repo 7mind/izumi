@@ -108,9 +108,9 @@ object TypeScriptImports {
     case i: Identifier =>
       i.fields.flatMap(f => List(f.typeId) ++ collectTypes(ts, f.typeId))
     case i: Interface =>
-      i.struct.superclasses.all ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId))
+      i.struct.superclasses.interfaces ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId))
     case d: DTO =>
-      d.struct.superclasses.all ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId))
+      d.struct.superclasses.interfaces ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
   }

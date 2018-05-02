@@ -101,7 +101,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       s"""${struct.render()}
          |${struct.renderSerialized()}
          |${struct.renderSlices()}
-         |${renderRegistrations(i.struct.superclasses.interfaces, i.id.name, imports)}
+         |${renderRegistrations(ts.inheritance.allParents(i.id), i.id.name, imports)}
        """.stripMargin
 
     val tests =
@@ -584,7 +584,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |
          |    return nil, fmt.Errorf("empty content for polymorphic type in Create${i.id.name}")
          |}
-         |${renderRegistrations(i.struct.superclasses.interfaces, eid.name, imports)}
+         |${renderRegistrations(ts.inheritance.allParents(i.id), eid.name, imports)}
        """.stripMargin
 
     // TODO here above Register methods don't use module, if a package is different - it will fail, needs a fix using the corrent import access
