@@ -29,7 +29,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
           val curState = sink.sinkState.get()
           assert(curState.currentFileId.contains(FileSink.FileIdentity.init + 1))
           assert(curState.currentFileSize == 1)
-          assert(sink.fileService.getFileIdsIn(dummyFolder).map(_.size).toOption.contains(2))
+          assert(sink.fileService.getFileIds.map(_.size).toOption.contains(2))
       }
     }
 
@@ -41,7 +41,7 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
       val file1 = DummyFile(FileSink.buildFileName(dummyFolder, FileSink.FileIdentity.init))
 
       Given("empty file in storage")
-      prefilledFiles.storage.put(dummyFolder, Set(file1))
+      prefilledFiles.storage.put(FileSink.FileIdentity.init, file1)
 
       withFileLogger(withoutRotation(policy, randomFileSize, dummyFolder, prefilledFiles)) {
         (sink, logger) =>
@@ -66,7 +66,9 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
       }
 
       Given("full and randomly filled files in storage")
-      prefilledFiles.storage.put(dummyFolder, Set(file1, file2))
+      prefilledFiles.storage.clear()
+      prefilledFiles.storage.put(FileSink.FileIdentity.init, file1)
+      prefilledFiles.storage.put(FileSink.FileIdentity.init + 1, file2)
 
 
       withFileLogger(withoutRotation(policy, randomFileSize, dummyFolder, prefilledFiles)) {
@@ -80,7 +82,8 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
       }
 
       Given("fullfilled file in storage")
-      prefilledFiles.storage.put(dummyFolder, Set(file1))
+      prefilledFiles.storage.clear()
+      prefilledFiles.storage.put(FileSink.FileIdentity.init, file1)
 
       withFileLogger(withoutRotation(policy, randomFileSize, dummyFolder, prefilledFiles)) {
         (sink, logger) =>
@@ -138,10 +141,13 @@ class LoggingFileSinkTest extends WordSpec with GivenWhenThen{
         i =>
           val file = DummyFile(FileSink.buildFileName(dummyFolder, FileSink.FileIdentity.init + i))
           ( 1 to fileSize).map(_.toString) foreach file.append
-          file
+          (FileSink.FileIdentity.init + i, file)
       }
 
-      prefilledFiles.storage.put(dummyFolder, filledFiles.toSet)
+      filledFiles.foreach {
+        case (id, file) =>
+          prefilledFiles.storage.put(id, file)
+      }
 
       withFileLogger(withRotation(policy, fileSize = fileSize, folder = dummyFolder, filesLimit = filesLimit, fileService = prefilledFiles)) {
         (sink, logger) =>

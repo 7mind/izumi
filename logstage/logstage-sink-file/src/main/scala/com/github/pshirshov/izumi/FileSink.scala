@@ -27,14 +27,14 @@ case class FileSink(
     (state.currentFileId, state.currentFileSize) match {
       case (None, _) =>
         for {
-          files <- fileService.getFileIdsIn(state.path)
+          files <- fileService.getFileIds
           filesWithSize <- files.map(f => fileService.fileSize(f).map(WithSize(f, _))).asTry
           maybeFile <- Success(filesWithSize.toList.sortWith(_.size < _.size).headOption)
           (curFileId, curFileSize) <- maybeFile.map {
             case WithSize(_, size) if size >= state.maxSize => // if all files are full, target file will be with next id
               Success((filesWithSize.size, FileSink.FileSize.init))
             case WithSize(name, size) =>
-              fileService.getFileId(name).map((_, size))
+              Success((name, size))
           }.getOrElse(Success((FileSink.FileIdentity.init, FileSink.FileSize.init)))
         } yield state.copy(currentFileId = Some(curFileId), currentFileSize = curFileSize)
       case (fileId@Some(_), size) if size >= state.maxSize =>
@@ -50,13 +50,13 @@ case class FileSink(
       case FileLimiterRotation(limit) if state.currentFileId.contains(limit) =>
         val newFileId = FileSink.FileIdentity.init
         for {
-          (_, others) <- fileService.getFileIdsIn(state.path).map(_.partition(_ == newFileId))
-          _ <- fileService.removeFile(FileSink.buildFileName(state.path, newFileId))
-          fileIds <- others.map(fileService.getFileId).asTry
+          (_, othersIds) <- fileService.getFileIds.map(_.partition(_ == newFileId))
+          _ <- fileService.removeFile(newFileId)
+
         } yield {
           state.copy(currentFileId = Some(newFileId),
             currentFileSize = FileSink.FileSize.init,
-            forRotate = fileIds.toSet
+            forRotate = othersIds
           )
         }
       case FileLimiterRotation(_) =>
@@ -67,14 +67,11 @@ case class FileSink(
   def performWriting(state: FileSinkState, payload: String): Try[FileSinkState] = {
     for {
       curFileId <- Try(state.currentFileId.get)
-      curFileName <- Try {
-        FileSink.buildFileName(state.path, curFileId)
-      }
       (current, others) <- Success(state.forRotate.partition(_ == curFileId))
       _ <- Try {
-        current.headOption.foreach { _ => fileService.removeFile(curFileName) }
+        current.headOption.foreach { _ => fileService.removeFile(curFileId) }
       }
-      _ <- fileService.writeToFile(curFileName, payload)
+      _ <- fileService.writeToFile(state.path, curFileId, payload)
     } yield state.copy(currentFileSize = state.currentFileSize + 1, forRotate = others)
   }
 
