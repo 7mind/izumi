@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.TryOps._
 import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.model.Log
 import com.github.pshirshov.izumi.logstage.model.logger.LogSink
@@ -21,69 +20,60 @@ case class FileSink[T <: LogFile](
                                  ) extends LogSink {
 
   val sinkState: AtomicReference[FileSinkState] = {
-    for {
-      restoredMaybe <- restoreSinkState()
-      state <- Success(restoredMaybe.getOrElse(initState))
-    } yield {
-      new AtomicReference[FileSinkState](state)
-    }
-  }.get
+    val currentState = restoreSinkState.getOrElse(initState)
+    new AtomicReference[FileSinkState](currentState)
+  }
 
   def initState: FileSinkState = FileSinkState(currentFileId = 0, currentFileSize = 0)
 
-  def restoreSinkState(): Try[Option[FileSinkState]] = {
-    for {
-      filesWithSize <- fileService.scanDirectory.map(f => fileService.fileSize(f).map((f, _))).asTry
-      maybeFile <- Success(filesWithSize.toList.sortWith(_._2 < _._2).headOption) // by size ? // todo : bytes
-      res <- Success(maybeFile.map {
-        case (_, size) if size >= config.maxAllowedSize =>
-          (filesWithSize.size, 0)
-        case (name, size) =>
-          (name, size)
-      })
-    } yield res.map {
-      case (id, size) => FileSinkState(id, size)
+  def restoreSinkState: Option[FileSinkState] = {
+    val files = fileService.scanDirectory
+    val filesWithSize = files.map(f => (f, fileService.fileSize(f)))
+    filesWithSize.toList.sortWith(_._2 < _._2).headOption.map {
+      case (_, size) if size >= config.maxAllowedSize =>
+        (filesWithSize.size, 0)
+      case (name, size) =>
+        (name, size)
+    }.map {
+      case (curFileId, curFileSize) => FileSinkState(curFileId, curFileSize)
     }
   }
 
 
-  def processCurrentFile(state: FileSinkState): Try[FileSinkState] = {
-    (state.currentFileId, state.currentFileSize) match {
-      case (fileId, size) if size >= config.maxAllowedSize =>
-        Success(state.copy(currentFileId = fileId + 1, currentFileSize = 0))
-      case _ =>
-        Success(state)
+  def processCurrentFile(state: FileSinkState): FileSinkState = {
+    if (state.currentFileSize >= config.maxAllowedSize) {
+      state.copy(currentFileId = state.currentFileId + 1, currentFileSize = 0)
+    } else {
+      state
     }
   }
 
-  def adjustByRotate(state: FileSinkState, rotate: FileRotation): Try[FileSinkState] = {
+  def adjustByRotate(state: FileSinkState): FileSinkState = {
     rotation match {
-      case DisabledRotation => Success(state)
       case FileLimiterRotation(limit) if state.currentFileId == limit =>
         val newFileId = 0
         val (_, rotateNext) = fileService.scanDirectory.partition(_ == newFileId)
-        fileService.removeFile(newFileId).map {
-          _ => initState.copy(forRotate = rotateNext)
-        }
-      case FileLimiterRotation(_) =>
-        Success(state)
+        fileService.removeFile(newFileId)
+        initState.copy(forRotate = rotateNext)
+      case FileLimiterRotation(_) | DisabledRotation =>
+        state
     }
   }
 
   def performWriting(state: FileSinkState, payload: String): Try[FileSinkState] = {
     val (current, others) = state.forRotate.partition(_ == state.currentFileId)
     current.headOption foreach fileService.removeFile
-    for {
-      _ <- fileService.writeToFile(state.currentFileId, payload)
-    } yield state.copy(currentFileSize = state.currentFileSize + 1, forRotate = others)
+    fileService.writeToFile(state.currentFileId, payload).map {
+      _ =>
+        state.copy(currentFileSize = state.currentFileSize + 1, forRotate = others)
+    }
   }
 
   override def flush(e: Log.Entry): Unit = synchronized {
     val oldState = sinkState.get()
-
     val res = for {
-      s1 <- processCurrentFile(oldState)
-      s2 <- adjustByRotate(s1, rotation)
+      s1 <- Try(processCurrentFile(oldState))
+      s2 <- Try(adjustByRotate(s1))
       s3 <- performWriting(s2, renderingPolicy.render(e))
     } yield s3
     res match {
@@ -93,24 +83,11 @@ case class FileSink[T <: LogFile](
     }
 
   }
+
 }
 
 object FileSink {
   type FileIdentity = Int
 }
 
-
-object TryOps {
-
-  implicit class ListHelper[T](list: Iterable[Try[T]]) {
-    def asTry: Try[Iterable[T]] = {
-      Success(list.foldLeft(List.empty[T]) {
-        case (acc, Success(item)) => acc :+ item
-        case (_, Failure(message)) =>
-          return Failure(throw new Exception(s"Error while parsing list of tries.Cause: $message"))
-      })
-    }
-  }
-
-}
 

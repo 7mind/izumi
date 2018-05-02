@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi
 
 import com.github.pshirshov.izumi.FileSink.FileIdentity
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.Discarder
 import com.github.pshirshov.izumi.models.LogFile
 
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.Discarder
+import scala.util.{Success, Try}
 
 trait FileService[File <: LogFile] {
 
@@ -20,10 +20,8 @@ trait FileService[File <: LogFile] {
       createFileWithName(FileService.provideFileName(path, id))
   }
 
-  def exists(fileIdentity: FileIdentity) : Try[Boolean] = {
-    for {
-      file <- Try(storage(fileIdentity))
-    } yield file.exists
+  def exists(fileIdentity: FileIdentity): Boolean = {
+    storage.get(fileIdentity).exists(_.exists)
   }
 
   def scanDirectory: Set[FileIdentity] = {
@@ -32,30 +30,27 @@ trait FileService[File <: LogFile] {
     }.toSet
   }
 
-  def fileContent(fileIdentity: FileIdentity): Try[Iterable[String]] = {
-    for {
-      file <- Try(storage(fileIdentity))
-    } yield file.getContent
+  def fileContent(fileIdentity: FileIdentity): Option[Iterable[String]] = {
+    storage.get(fileIdentity).map(_.getContent)
   }
 
-  def fileSize(fileIdentity: FileIdentity): Try[Int] = {
-    for {
-      file <- Try(storage(fileIdentity))
-    } yield file.size
+  def fileSize(fileIdentity: FileIdentity): Int = {
+    storage.get(fileIdentity).map(_.size).get
   }
 
-  def removeFile(fileIdentity: FileIdentity): Try[Unit] = {
-    for {
-      file <- Try(storage(fileIdentity))
-      _ <- Success(file.beforeDelete())
-    } yield storage.remove(fileIdentity).discard()
+  def removeFile(fileIdentity: FileIdentity): Unit = {
+    storage.get(fileIdentity).foreach {
+      f =>
+        f.beforeDelete()
+        storage.remove(fileIdentity).discard()
+    }
   }
 
   def writeToFile(fileIdentity: FileIdentity, content: String): Try[Unit] = {
     for {
       file <- Try(storage.getOrElseUpdate(fileIdentity, createFile(fileIdentity)))
       _ <- Try(file.append(content))
-    } yield storage.put(fileIdentity, file)
+    } yield storage.put(fileIdentity, file).discard()
   }
 }
 

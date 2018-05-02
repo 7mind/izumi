@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.models
 
-import scala.util.Try
-
 trait LogFile {
   def name : String
   def size : Int
