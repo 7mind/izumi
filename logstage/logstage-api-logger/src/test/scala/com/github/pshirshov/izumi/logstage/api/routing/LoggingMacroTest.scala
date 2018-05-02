@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api.routing
 
-import com.github.pshirshov.izumi.{DummyFileService, FileSink, FileSinkConfig}
+import com.github.pshirshov.izumi.{DummyFileServiceImpl, FileSink, FileSinkConfig}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log, TestSink}
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
@@ -79,7 +79,7 @@ object LoggingMacroTest {
   val jsonPolicy = new JsonRenderingPolicy()
   val consoleSinkText = new ConsoleSink(coloringPolicy)
   val consoleSinkJson = new ConsoleSink(jsonPolicy)
-  val fileSinkText = new FileSink(simplePolicy, new DummyFileService("logstage"), FileRotation.DisabledRotation, FileSinkConfig(2))
+  val fileSinkText = new FileSink(simplePolicy, new DummyFileServiceImpl("logstage"), FileRotation.DisabledRotation, FileSinkConfig(2))
 
   def setupConsoleLogger(): IzLogger = {
     configureLogger(Seq(consoleSinkText))

@@ -1,20 +1,31 @@
 package com.github.pshirshov.izumi
 
+import com.github.pshirshov.izumi.models.LogFile
+
 import scala.collection.mutable.ListBuffer
+import scala.util.{Success, Try}
 
-case class DummyFile(name: String) {
+case class DummyFile(override val name: String) extends LogFile {
 
-  private val _content = ListBuffer.empty[String]
+  private val content = ListBuffer.empty[String]
 
-  def size: Int = {
-    content.size
+  override def exists: Boolean = true
+
+  def size: Try[Int] = {
+    Success(content.size)
   }
 
-  def content: List[String] = _content.toList
-
-  def append(i: String): Unit = {
-    _content += i
+  def getContent: Try[List[String]] = Success {
+    content.toList
   }
 
-  def clear: Unit = _content.clear()
+  def append(i: String): Try[Unit] = {
+    Success {
+      content += i
+    }
+  }
+
+  override def beforeDelete(): Try[Unit] = {
+    Success(())
+  }
 }
