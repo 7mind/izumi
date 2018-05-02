@@ -20,8 +20,9 @@ trait DIKey {
     case class TypeKey(symbol: TypeFull) extends DIKey {
       override def toString: String = symbol.toString
 
-      def named[Id: IdContract](id: Id): IdKey[Id] = IdKey(symbol, id)
+      def named[I: IdContract](id: I): IdKey[I] = IdKey(symbol, id)
     }
+
     object TypeKey {
       implicit final val liftableTypeKey: Liftable[TypeKey] = {
         case TypeKey(symbol) => q"""
@@ -30,14 +31,17 @@ trait DIKey {
       }
     }
 
-    case class IdKey[Id: IdContract](symbol: TypeFull, id: Id) extends DIKey {
-      val idContract: IdContract[Id] = implicitly[IdContract[Id]]
-      implicit val liftable: Liftable[Id] = idContract.liftable
+    case class IdKey[I: IdContract](symbol: TypeFull, id: I) extends DIKey {
+      val idContract: IdContract[I] = implicitly[IdContract[I]]
+
+      implicit val liftable: Liftable[I] = idContract.liftable
+
       override def toString: String = s"${symbol.toString}#$id"
     }
+
     object IdKey {
-      implicit def liftableIdKey[Id]: Liftable[IdKey[Id]] = {
-        case idKey: IdKey[Id] =>
+      implicit def liftableIdKey[I]: Liftable[IdKey[I]] = {
+        case idKey: IdKey[I] =>
           import idKey._
           q"""{ new $RuntimeDIUniverse.DIKey.IdKey($symbol, $id) }"""
       }
@@ -48,6 +52,7 @@ trait DIKey {
 
       override def hashCode(): Int = toString.hashCode()
     }
+
     object ProxyElementKey {
       implicit final val liftableProxyElementKey: Liftable[ProxyElementKey] = {
         case ProxyElementKey(proxied, symbol) => q"""
@@ -61,6 +66,7 @@ trait DIKey {
 
       override def hashCode(): Int = toString.hashCode()
     }
+
     object SetElementKey {
       implicit final val liftableSetElementKey: Liftable[SetElementKey] = {
         case SetElementKey(set, symbol) => q"""

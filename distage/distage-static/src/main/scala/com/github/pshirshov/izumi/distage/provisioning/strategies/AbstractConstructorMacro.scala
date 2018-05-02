@@ -11,7 +11,7 @@ object AbstractConstructorMacro {
       import c.universe._
 
       val macroUniverse = StaticDIUniverse(c)
-      val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static.instance(macroUniverse)
+      val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
 
       val safe = macroUniverse.SafeType(weakTypeOf[T])
 

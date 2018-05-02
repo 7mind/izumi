@@ -19,6 +19,10 @@ trait DIDependencyContext {
 
     case class MethodContext(definingClass: TypeFull) extends DependencyContext
 
+    case class FactoryMethodContext(factoryClass: TypeFull) extends DependencyContext {
+      override def definingClass: TypeFull = factoryClass
+    }
+
     sealed trait ParameterContext extends DependencyContext
     object ParameterContext {
       implicit final val liftableParameter: Liftable[ParameterContext] = {
@@ -28,22 +32,22 @@ trait DIDependencyContext {
       }
     }
 
-      case class ConstructorParameterContext(definingClass: TypeFull) extends ParameterContext
-      object ConstructorParameterContext {
-        implicit final val liftableParameter: Liftable[ConstructorParameterContext] = {
-          case ConstructorParameterContext(definingClass) => q"""
-          { new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext($definingClass) }
-          """
-        }
+    case class ConstructorParameterContext(definingClass: TypeFull) extends ParameterContext
+    object ConstructorParameterContext {
+      implicit final val liftableParameter: Liftable[ConstructorParameterContext] = {
+        case ConstructorParameterContext(definingClass) => q"""
+        { new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext($definingClass) }
+        """
       }
+    }
 
-      case class MethodParameterContext(factoryClass: TypeFull, factoryMethod: MethodSymb) extends ParameterContext {
-        override def definingClass: TypeFull = factoryClass
-      }
+    case class MethodParameterContext(factoryClass: TypeFull, factoryMethod: MethodSymb) extends ParameterContext {
+      override def definingClass: TypeFull = factoryClass
+    }
 
-      case class CallableParameterContext(definingCallable: Provider) extends ParameterContext {
-        override def definingClass: TypeFull = definingCallable.ret
-      }
+    case class CallableParameterContext(definingCallable: Provider) extends ParameterContext {
+      override def definingClass: TypeFull = definingCallable.ret
+    }
 
   }
 

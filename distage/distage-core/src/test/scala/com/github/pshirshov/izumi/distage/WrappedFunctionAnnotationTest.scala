@@ -81,12 +81,6 @@ class WrappedFunctionAnnotationTest extends WordSpec {
       assert(fn2.diKeys contains DIKey.get[Int].named("valsigtypeann2"))
     }
 
-    "wrappedfunction can work with vals" in {
-      def triggerConversion[R](x: WrappedFunction[R]): Int = {val _ = x; return 5}
-
-      assertCompiles("triggerConversion(testVal3)")
-    }
-
     "dikeywrappedfunction can work with vals" in {
       def triggerConversion[R](x: DIKeyWrappedFunction[R]): Int = {val _ = x; return 5}
 
