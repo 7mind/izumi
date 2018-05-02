@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Field
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
 
-class TypeScriptTypeConverter(domain: DomainId) {
+class TypeScriptTypeConverter() {
   def parseTypeFromString(value: String, target: TypeId): String = {
     target match {
       case Primitive.TBool => "(" + value + " === 'true)'"
@@ -72,21 +72,18 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case a: AdtId => s"${a.name}Helpers.deserialize($variable)"
     case i: InterfaceId => s"${i.name}Struct.create(${variable + (if (asAny) " as any" else "")})"
     case d: DTOId => s"new ${d.name}(${variable + (if (asAny) " as any" else "")})"
-    case al: AliasId => {
-      val alias = ts(al).asInstanceOf[Alias]
-      deserializeType(variable, alias.target, ts)
-    }
+    case al: AliasId => deserializeType(variable, ts(al).asInstanceOf[Alias].target, ts)
     case id: IdentifierId => s"new ${id.name}($variable)"
     case _: EnumId => s"$variable"
 
     case _ => s"'$variable: Error here! Not Implemented! ${target.name}'"
   }
 
-  def toNativeType(id: TypeId, forSerialized: Boolean = false, ts: Typespace = null): String = {
+  def toNativeType(id: TypeId, ts: Typespace, forSerialized: Boolean = false): String = {
     id match {
-      case t: Generic => toGenericType(t, forSerialized, ts)
+      case t: Generic => toGenericType(t, ts, forSerialized)
       case t: Primitive => toPrimitiveType(t, forSerialized)
-      case _ => toCustomType(id, forSerialized, ts)
+      case _ => toCustomType(id, ts, forSerialized)
     }
   }
 
@@ -98,20 +95,25 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case _ => name
   }
 
-  def toCustomType(id: TypeId, forSerialized: Boolean = false, ts: Typespace = null): String = {
+  def toCustomType(id: TypeId, ts: Typespace, forSerialized: Boolean = false): String = {
     if (forSerialized) {
       id match {
         case i: InterfaceId => s"{[key: string]: ${ts.implId(i).name + "Serialized"}}"
-        case a: AdtId => s"{[key: string]: ${a.name}}"
+        case _: AdtId => s"{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
+        case al: AliasId => toNativeType(ts(al).asInstanceOf[Alias].target, ts, forSerialized)
+        case _: DTOId => s"${id.name}Serialized"
         case _: IdentifierId => s"string"
         case _ => s"${id.name}"
       }
     } else {
-      id.name
+      id match {
+        case al: AliasId => toNativeType(ts(al).asInstanceOf[Alias].target, ts, forSerialized)
+        case _ => id.name
+      }
     }
   }
 
-  private def toPrimitiveType(id: Primitive, forSerialized: Boolean = false): String = id match {
+  private def toPrimitiveType(id: Primitive, forSerialized: Boolean): String = id match {
     case Primitive.TBool => "boolean"
     case Primitive.TString => "string"
     case Primitive.TInt8 => "number"
@@ -127,12 +129,12 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case Primitive.TTsTz => if (forSerialized) "string" else "Date"
   }
 
-  private def toGenericType(typeId: Generic, forSerialized: Boolean = false, ts: Typespace = null): String = {
+  private def toGenericType(typeId: Generic, ts: Typespace, forSerialized: Boolean): String = {
     typeId match {
-      case _: Generic.TSet => toNativeType(typeId.asInstanceOf[TSet].valueType, forSerialized, ts) + "[]"
-      case _: Generic.TMap => "{[key: " + toNativeType(typeId.asInstanceOf[TMap].keyType) + "]: " + toNativeType(typeId.asInstanceOf[TMap].valueType, forSerialized, ts) + "}"
-      case _: Generic.TList => toNativeType(typeId.asInstanceOf[TList].valueType, forSerialized, ts) + "[]"
-      case _: Generic.TOption => toNativeType(typeId.asInstanceOf[TOption].valueType, forSerialized, ts)
+      case _: Generic.TSet => toNativeType(typeId.asInstanceOf[TSet].valueType, ts, forSerialized) + "[]"
+      case _: Generic.TMap => "{[key: " + toNativeType(typeId.asInstanceOf[TMap].keyType, ts, forSerialized) + "]: " + toNativeType(typeId.asInstanceOf[TMap].valueType, ts, forSerialized) + "}"
+      case _: Generic.TList => toNativeType(typeId.asInstanceOf[TList].valueType, ts, forSerialized) + "[]"
+      case _: Generic.TOption => toNativeType(typeId.asInstanceOf[TOption].valueType, ts, forSerialized)
     }
   }
 
@@ -141,12 +143,12 @@ class TypeScriptTypeConverter(domain: DomainId) {
   }
 
   def serializeValue(name: String, id: TypeId, ts: Typespace): String = id match {
-    case p: Primitive => serializePrimitive(name, p, ts)
+    case p: Primitive => serializePrimitive(name, p)
     case _: Generic => serializeGeneric(name, id, ts)
     case _ => serializeCustom(name, id, ts)
   }
 
-  def serializePrimitive(name: String, id: Primitive, ts: Typespace): String = id match {
+  def serializePrimitive(name: String, id: Primitive): String = id match {
     case Primitive.TBool => s"$name"
     case Primitive.TString => s"$name"
     case Primitive.TInt8 => s"$name"
@@ -179,18 +181,15 @@ class TypeScriptTypeConverter(domain: DomainId) {
   def serializeCustom(name: String, id: TypeId, ts: Typespace): String = id match {
     case a: AdtId => s"${a.name}Helpers.serialize($name)"
     case _: InterfaceId => s"{[$name.getFullClassName()]: $name.serialize()}"
-    case d: DTOId => s"${d.name}.serialize()"
-    case al: AliasId => {
-      val alias = ts(al).asInstanceOf[Alias]
-      serializeValue(name, alias.target, ts)
-    }
+    case _: DTOId => s"$name.serialize()"
+    case al: AliasId => serializeValue(name, ts(al).asInstanceOf[Alias].target, ts)
     case _: IdentifierId => s"$name.serialize()"
-    case _: EnumId => s"$name"
+    case _: EnumId => name
 
     case _ => s"'$name: Error here! Not Implemented! ${id.name}'"
   }
 
-  def toFieldMethods(id: TypeId, name: String, optional: Boolean = false) = id match {
+  def toFieldMethods(id: TypeId, name: String, ts: Typespace, optional: Boolean = false): String = id match {
     case Primitive.TBool => toBooleanField(name, optional)
     case Primitive.TString => toStringField(name, Int.MinValue, optional)
     case Primitive.TInt8 => toIntField(name, -128, 127, optional)
@@ -205,11 +204,11 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case Primitive.TTs => toDateField(name, optional)
     case Primitive.TTsTz => toDateField(name, optional)
     case _ =>
-      s"""public get ${safeName(name)}(): ${toNativeType(id)} {
+      s"""public get ${safeName(name)}(): ${toNativeType(id, ts)} {
          |    return this._$name;
          |}
          |
-         |public set ${safeName(name)}(value: ${toNativeType(id)}) {
+         |public set ${safeName(name)}(value: ${toNativeType(id, ts)}) {
          |    if (typeof value === 'undefined' || value === null) {
          |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
          |    }
@@ -218,16 +217,16 @@ class TypeScriptTypeConverter(domain: DomainId) {
        """.stripMargin
   }
 
-  def toFieldMethods(field: Field): String = field.typeId match {
-    case go: Generic.TOption => toFieldMethods(go.valueType, field.name, true)
-    case _ => toFieldMethods(field.typeId, field.name, false)
+  def toFieldMethods(field: Field, ts: Typespace): String = field.typeId match {
+    case go: Generic.TOption => toFieldMethods(go.valueType, field.name, ts, optional = true)
+    case _ => toFieldMethods(field.typeId, field.name, ts)
   }
 
-  def toFieldMember(field: Field): String = {
-    toFieldMember(field.name, field.typeId)
+  def toFieldMember(field: Field, ts: Typespace): String = {
+    toFieldMember(field.name, field.typeId, ts)
   }
 
-  def toFieldMember(name: String, id: TypeId): String = id match {
+  def toFieldMember(name: String, id: TypeId, ts: Typespace): String = id match {
     case Primitive.TBool => toPrivateMember(name, "boolean")
     case Primitive.TString => toPrivateMember(name, "string")
     case Primitive.TInt8 => toPrivateMember(name, "number")
@@ -241,16 +240,16 @@ class TypeScriptTypeConverter(domain: DomainId) {
     case Primitive.TDate => toPrivateMember(name, "Date")
     case Primitive.TTs => toPrivateMember(name, "Date")
     case Primitive.TTsTz => toPrivateMember(name, "Date")
-    case _ => toPrivateMember(name, toNativeType(id))
+    case _ => toPrivateMember(name, toNativeType(id, ts))
   }
 
   def safeName(name: String): String = {
-    val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
-      "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",
-      "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends",
-      "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "any",
-      "implements", "instanceof", "namespace", "boolean", "constructor", "declare", "get", "module", "require",
-      "number", "set", "string", "symbol", "type", "from", "of")
+//    val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
+//      "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",
+//      "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends",
+//      "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "any",
+//      "implements", "instanceof", "namespace", "boolean", "constructor", "declare", "get", "module", "require",
+//      "number", "set", "string", "symbol", "type", "from", "of")
 
     //    if (ecma1.contains(name)) s"m${name.capitalize}" else name
     name
@@ -308,10 +307,12 @@ class TypeScriptTypeConverter(domain: DomainId) {
 
   def toDoubleField(name: String, precision: Int = 64, optional: Boolean = false): String = {
     s"""public get ${safeName(name)}(): number {
+       |    // Precision: $precision
        |    return this._$name;
        |}
        |
        |public set ${safeName(name)}(value: number) {
+       |    // Precision: $precision
        |    if (typeof value === 'undefined' || value === null) {
        |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
        |    }
