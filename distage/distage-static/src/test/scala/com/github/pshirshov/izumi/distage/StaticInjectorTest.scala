@@ -52,7 +52,7 @@ class StaticInjectorTest extends WordSpec {
     "handle generic arguments in macro factory methods" in {
       import Case5._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .magic[GenericAssistedFactory]
         .bind[Dependency](ConcreteDep())
 
@@ -70,7 +70,7 @@ class StaticInjectorTest extends WordSpec {
     "handle assisted dependencies in macro factory methods" in {
       import Case5._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .magic[AssistedFactory]
         .bind[Dependency](ConcreteDep())
 
@@ -86,7 +86,7 @@ class StaticInjectorTest extends WordSpec {
     "handle named assisted dependencies in macro factory methods" in {
       import Case5._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .magic[NamedAssistedFactory]
         .magic[Dependency]
         .bind[Dependency](SpecialDep()).named("special")
