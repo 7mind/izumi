@@ -2,13 +2,13 @@ package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSLBase, SetDSLBase}
-import com.github.pshirshov.izumi.distage.model.definition.ModuleBuilder.{BindDSL, SetDSL}
+import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleBuilder.{BindDSL, SetDSL}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
 
-trait ModuleBuilder {
+trait ModuleBuilder extends ModuleDef {
 
   protected def initialState: mutable.Set[Binding] = mutable.HashSet.empty[Binding]
 
@@ -16,7 +16,7 @@ trait ModuleBuilder {
 
   final private[this] val mutableState: mutable.Set[Binding] = initialState
 
-  final def finalDef: ModuleDef = freeze(mutableState)
+  final override def bindings: Set[Binding] = freeze(mutableState)
 
   final protected def bind[T: Tag]: BindDSL[T] = {
     val binding = Bindings.binding[T]
@@ -38,7 +38,9 @@ trait ModuleBuilder {
 
 }
 
-object ModuleBuilder {
+trait PluginBuilder extends ModuleBuilder with PluginDef
+
+object AbstractModuleBuilder {
 
   // DSL state machine...
 
@@ -82,7 +84,7 @@ object ModuleBuilder {
   }
 
   private[definition] object BindOnlyNameableDSL {
-    private[ModuleBuilder] final class Impl
+    private[AbstractModuleBuilder] final class Impl
     (
       protected val mutableState: mutable.Set[Binding]
       , protected val binding: SingletonBinding[DIKey.TypeKey]

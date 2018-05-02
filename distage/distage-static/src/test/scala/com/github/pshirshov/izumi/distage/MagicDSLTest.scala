@@ -1,22 +1,25 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.model.definition.Bindings._
+import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
 import com.github.pshirshov.izumi.distage.model.definition.{Bindings, ModuleBuilder, ModuleDef, TrivialModuleDef}
 import org.scalatest.WordSpec
 
-class DSLTest extends WordSpec {
+class MagicDSLTest extends WordSpec {
 
-  "Basic DSL" should {
-    "allow to define contexts" in {
+  "Magic DSL" should {
+
+    "allow to define magic contexts" in {
       import Case1._
       val definition: ModuleDef = TrivialModuleDef
-        .bind[TestClass]
-        .bind[TestDependency0].as[TestImpl0]
+        .magic[TestClass]
+        .bind[TestDependency0].magically[TestImpl0]
         .bind(TestInstanceBinding())
 
-        .bind[TestClass]
+        .magic[TestClass]
           .named("named.test.class")
-        .bind[TestDependency0]
+        .magic[TestDependency0]
           .named("named.test.dependency.0")
         .bind(TestInstanceBinding())
           .named("named.test")
@@ -27,10 +30,10 @@ class DSLTest extends WordSpec {
           .element(new Impl1)
         .set[JustTrait]
           .element(new Impl2())
-          .named("named.set")
+            .named("named.set")
         .set[JustTrait]
-          .named("named.set")
           .element[Impl3]
+            .named("named.set")
 
       assert(definition != null)
     }
@@ -62,24 +65,22 @@ class DSLTest extends WordSpec {
         .bind[TestCaseClass2]
 
       val mod3_1 = TrivialModuleDef
-        .bind[TestDependency1]
+        .magic[TestDependency1]
 
       val mod3_2 = TrivialModuleDef
 
-      val mod3 = (mod3_1 ++ mod3_2).bind[NotInContext]
+      val mod3 = (mod3_1 ++ mod3_2).magic[NotInContext]
 
-      val mod4: ModuleDef = TrivialModuleDef {
-        Set(
-          Bindings.binding(TestInstanceBinding())
-        )
-      }
+      val mod4: ModuleDef = TrivialModuleDef(Set(
+        binding(TestInstanceBinding())
+      ))
 
       val mod5: ModuleDef = (TrivialModuleDef
         ++ Bindings.binding[TestDependency0, TestImpl0]
         )
 
       val combinedModules = Seq(mod1, mod2, mod3, mod4, mod5)
-        .foldLeft[ModuleDef](TrivialModuleDef)(_ ++ _)
+        .foldLeft(TrivialModuleDef: ModuleDef)(_ ++ _)
 
       val complexModule = TrivialModuleDef
         .bind[TestClass]
