@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage.model.reflection.universe
 
 trait WithDISafeType {
   this: DIUniverseBase
-    with DILiftableRuntimeUniverse
   =>
 
   type TypeFull = SafeType
@@ -24,7 +23,7 @@ trait WithDISafeType {
       this.tpe.deannotate.dealias <:< that.tpe.deannotate.dealias
   }
 
-  implicit class Deannotate(typ: TypeNative) {
+  implicit final class Deannotate(typ: TypeNative) {
     def deannotate: TypeNative =
       typ match {
         case t: u.AnnotatedTypeApi =>
@@ -38,12 +37,6 @@ trait WithDISafeType {
     def get[T: Tag]: TypeFull = SafeType(u.typeTag[T].tpe)
 
     def getWeak[T: u.WeakTypeTag]: TypeFull = SafeType(u.weakTypeTag[T].tpe)
-
-    implicit final val liftableSafeType: u.Liftable[SafeType] =
-      value => {
-        import u._
-        q"{ $RuntimeDIUniverse.SafeType.getWeak[${Liftable.liftType(value.tpe)}] }"
-      }
   }
 
 }

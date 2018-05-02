@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
+import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.TraitConstructor
-import com.github.pshirshov.izumi.distage.provisioning.strategies.`macro`.MacroTools
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
 
@@ -22,6 +22,7 @@ object TraitConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
+    val tools = DIUniverseMacros(macroUniverse)
     val logger = MacroUtil.mkLogger[this.type](c)
 
     val targetType = weakTypeOf[T]
@@ -34,7 +35,7 @@ object TraitConstructorMacro {
         val methodName = methodSymbol.asMethod.name.toTermName
         val argName = c.freshName(methodName)
 
-        val anns = MacroTools.annotationsForDIKey(macroUniverse)(key)
+        val anns = tools.annotationsFromDIKey(key)
 
         (q"$anns val $argName: $tpe", q"override val $methodName: $tpe = $argName")
     }.unzip

@@ -17,7 +17,6 @@ object Binding {
 
   final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef) extends ImplBinding
 
-
   sealed trait SetBinding extends Binding
 
   final case class SetElementBinding[+K <: DIKey](key: K, implementation: ImplDef) extends ImplBinding with SetBinding

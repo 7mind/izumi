@@ -10,7 +10,6 @@ trait WithDIAssociation {
     with WithDICallable
     with WithDIKey
     with WithDIDependencyContext
-    with DILiftableRuntimeUniverse
   =>
 
   sealed trait Association extends Formattable {
@@ -18,8 +17,6 @@ trait WithDIAssociation {
   }
 
   object Association {
-    import u._
-
     @deprecated
     case class ExtendedParameter(symb: Symb, parameter: Parameter) {
       val wireWith: DIKey = parameter.wireWith
@@ -31,11 +28,10 @@ trait WithDIAssociation {
     }
 
     object Parameter {
-      @deprecated
-      implicit final val liftableParameter: Liftable[Parameter] = {
-        case Parameter(context, name, tpe, wireWith) => q"""
-        { new $RuntimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith) }
-        """
+      def fromDIKey(context: DependencyContext.ParameterContext, key: DIKey): Parameter = {
+        val name = key.symbol.tpe.typeSymbol.name.decodedName.toString
+
+        Association.Parameter(context, name, tpe = key.symbol, key)
       }
     }
 

@@ -11,7 +11,7 @@ class StaticInjectorTest extends WordSpec {
 
   def mkInjector(): Injector = Injectors.bootstrap()
 
-  "DI planner" should {
+  "DI planner" should{
 
     // TODO GenericFactory polymorphic arguments in producer methods
     "handle macro factory injections" in {
