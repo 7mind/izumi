@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
-import com.github.pshirshov.izumi.distage.model.definition.{AbstractModuleDef, Bindings, AbstractModuleBuilder, ModuleDef, TrivialModuleDef}
 import com.github.pshirshov.izumi.distage.model.definition.Bindings._
+import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
+import com.github.pshirshov.izumi.distage.model.definition.{Bindings, ModuleBuilder, ModuleDef, TrivialModuleDef}
 import org.scalatest.WordSpec
 
 class MagicDSLTest extends WordSpec {
@@ -12,7 +12,7 @@ class MagicDSLTest extends WordSpec {
 
     "allow to define magic contexts" in {
       import Case1._
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .magic[TestClass]
         .bind[TestDependency0].magically[TestImpl0]
         .bind(TestInstanceBinding())
@@ -57,11 +57,11 @@ class MagicDSLTest extends WordSpec {
     "allow monoidal operations between different types of binding dsls" in {
       import Case1._
 
-      val mod1: AbstractModuleDef = new ModuleBuilder {
+      val mod1: ModuleDef = new ModuleBuilder {
         bind[TestClass]
       }
 
-      val mod2: AbstractModuleDef = TrivialModuleDef
+      val mod2: ModuleDef = TrivialModuleDef
         .bind[TestCaseClass2]
 
       val mod3_1 = TrivialModuleDef
@@ -71,16 +71,16 @@ class MagicDSLTest extends WordSpec {
 
       val mod3 = (mod3_1 ++ mod3_2).magic[NotInContext]
 
-      val mod4: ModuleDef = Set(
+      val mod4: ModuleDef = TrivialModuleDef(Set(
         binding(TestInstanceBinding())
-      )
+      ))
 
-      val mod5: AbstractModuleDef = (TrivialModuleDef
-        + Bindings.binding[TestDependency0, TestImpl0]
+      val mod5: ModuleDef = (TrivialModuleDef
+        ++ Bindings.binding[TestDependency0, TestImpl0]
         )
 
       val combinedModules = Seq(mod1, mod2, mod3, mod4, mod5)
-        .foldLeft(TrivialModuleDef: AbstractModuleDef)(_ ++ _)
+        .foldLeft(TrivialModuleDef: ModuleDef)(_ ++ _)
 
       val complexModule = TrivialModuleDef
         .bind[TestClass]

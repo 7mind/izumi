@@ -19,7 +19,7 @@ class InjectorTest extends WordSpec {
 
     "maintain correct operation order" in {
       import Case1._
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[TestClass]
         .bind[TestDependency3]
         .bind[TestDependency0].as[TestImpl0]
@@ -51,7 +51,7 @@ class InjectorTest extends WordSpec {
 
     "support multiple bindings" in {
       import Case1._
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .set[JustTrait]
         .named("named.empty.set")
         .set[JustTrait]
@@ -73,7 +73,7 @@ class InjectorTest extends WordSpec {
 
     "support named bindings" in {
       import Case1_1._
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[TestClass]
         .named("named.test.class")
         .bind[TestDependency0].as[TestImpl0Bad]
@@ -91,7 +91,7 @@ class InjectorTest extends WordSpec {
     "support circular dependencies" in {
       import Case2._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Circular2]
         .bind[Circular1]
 
@@ -106,7 +106,7 @@ class InjectorTest extends WordSpec {
     "support complex circular dependencies" in {
       import Case3._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Circular3]
         .bind[Circular1]
         .bind[Circular2]
@@ -127,7 +127,7 @@ class InjectorTest extends WordSpec {
     "support more complex circular dependencies" in {
       import Case15._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind(CustomDep1.empty)
         .bind(customTraitInstance)
         .bind[CustomClass]
@@ -190,7 +190,7 @@ class InjectorTest extends WordSpec {
     "support trait initialization" in {
       import Case3._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[CircularBad1]
         .bind[CircularBad2]
 
@@ -205,7 +205,7 @@ class InjectorTest extends WordSpec {
     }
 
     "support trait fields" in {
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Case9.ATraitWithAField]
 
       val injector = mkInjector()
@@ -218,7 +218,7 @@ class InjectorTest extends WordSpec {
     "fail on unbindable" in {
       import Case4._
 
-      val definition: AbstractModuleDef = new ModuleDef {
+      val definition: ModuleDef = new ModuleDef {
         override def bindings: Set[Binding] = Set(
           SingletonBinding(RuntimeDIUniverse.DIKey.get[Dependency], ImplDef.TypeImpl(RuntimeDIUniverse.SafeType.get[Long]))
         )
@@ -234,7 +234,7 @@ class InjectorTest extends WordSpec {
     "fail on unsolvable conflicts" in {
       import Case4._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Dependency].as[Impl1]
         .bind[Dependency].as[Impl2]
 
@@ -248,7 +248,7 @@ class InjectorTest extends WordSpec {
     "handle factory injections" in {
       import Case5._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[Factory]
         .bind[Dependency]
         .bind[OverridingFactory]
@@ -278,7 +278,7 @@ class InjectorTest extends WordSpec {
     "handle generic arguments in cglib factory methods" in {
       import Case5._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[GenericAssistedFactory]
         .bind[Dependency](ConcreteDep())
 
@@ -296,7 +296,7 @@ class InjectorTest extends WordSpec {
     "handle named assisted dependencies in cglib factory methods" in {
       import Case5._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[NamedAssistedFactory]
         .bind[Dependency]
         .bind[Dependency](SpecialDep()).named("special")
@@ -315,7 +315,7 @@ class InjectorTest extends WordSpec {
     // BasicProvisionerTest
     "instantiate simple class" in {
       import Case1._
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[TestCaseClass2]
         .bind(new TestInstanceBinding)
 
@@ -330,7 +330,7 @@ class InjectorTest extends WordSpec {
     "instantiate provider bindings" in {
       import Case6._
 
-      val definition: AbstractModuleDef = TrivialModuleDef
+      val definition: ModuleDef = TrivialModuleDef
         .bind[TestClass].provided((a: Dependency1) => new TestClass(null))
         .bind[Dependency1].provided(() => new Dependency1Sub {})
 

@@ -2,37 +2,39 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.definition.Bindings.binding
-import com.github.pshirshov.izumi.distage.model.definition.{AbstractModuleDef, BindingDSL, Bindings, AbstractModuleBuilder, TrivialModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition._
 import org.scalatest.WordSpec
 import DIStageInstances._
 import cats.implicits._
+import cats.kernel.Semigroup
 
 class DIStageInstancesTest extends WordSpec {
   "cats instances for ContextDefinition" should {
     "allow monoidal operations between different types of binding dsls" in {
       import Case1._
 
-      val mod1: AbstractModuleDef = new ModuleBuilder {
+      val mod1: ModuleDef = new ModuleBuilder {
         bind[TestClass]
       }
 
-      val mod2: AbstractModuleDef = TrivialModuleDef
+      val mod2: ModuleDef = TrivialModuleDef
         .bind[TestCaseClass2]
 
-      val mod3_1: AbstractModuleDef = TrivialModuleDef
+      val mod3_1: ModuleDef = TrivialModuleDef
         .bind[TestDependency1]
 
       val mod3_2 = TrivialModuleDef
 
       val mod3 = (mod3_1 |+| mod3_2).bind[NotInContext]
 
-      val mod4 = Set(
+      val mod4 = TrivialModuleDef(Set(
         binding(TestInstanceBinding())
-      )
+      ))
 
-      val mod5: BindingDSL = TrivialModuleDef + Bindings.binding[TestDependency0, TestImpl0]
+      val moduleDef: ModuleDef = TrivialModuleDef
+      val mod5: BindingDSL = moduleDef ++ Bindings.binding[TestDependency0, TestImpl0]
 
-      val combinedModules = Vector[AbstractModuleDef](mod1, mod2, mod3, mod4, mod5).combineAll
+      val combinedModules = Vector[ModuleDef](mod1, mod2, mod3, mod4, mod5).combineAll
 
       val plusModules = mod5 |+| mod4 |+| mod3 |+| mod2 |+| mod1
 

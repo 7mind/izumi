@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
 
-trait AbstractModuleBuilder extends AbstractModuleDef {
+trait ModuleBuilder extends ModuleDef {
 
   protected def initialState: mutable.Set[Binding] = mutable.HashSet.empty[Binding]
 
@@ -38,9 +38,7 @@ trait AbstractModuleBuilder extends AbstractModuleDef {
 
 }
 
-trait ModuleBuilder extends AbstractModuleBuilder with ModuleDef
-
-trait PluginBuilder extends AbstractModuleBuilder with PluginDef
+trait PluginBuilder extends ModuleBuilder with PluginDef
 
 object AbstractModuleBuilder {
 
