@@ -116,62 +116,59 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       }
     }
 
-        "perform file limiter rotation" in {
+    "perform file limiter rotation" in {
 
-          val fileSize = 2
-          val filesLimit = 3
+      val fileSize = 2
+      val filesLimit = 3
 
-          val svc = fileSvcUtils.provideSvc(dummyFolder)
+      val svc = fileSvcUtils.provideSvc(dummyFolder)
 
-          withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
-            (sink, logger) =>
-              (1 to fileSize * filesLimit).foreach {
-                i =>
-                  logger.info(i.toString)
-              }
-              val curState1 = sink.sinkState.get()
-//              assert(curState1.forRotate.isEmpty)
-              assert(curState1.currentFileId == FileSink.FileIdentity.init + 2)
-
-              logger.info("new")
-              val curState2 = sink.sinkState.get()
-//              assert(curState2.forRotate.size == filesLimit - 1)
-              assert(curState2.currentFileId == FileSink.FileIdentity.init)
-
-              (1 to fileSize).foreach {
-                i =>
-                  logger.info(i.toString)
-              }
-              val curState3 = sink.sinkState.get()
-//              assert(curState3.forRotate.size == filesLimit - 2)
-              assert(curState3.currentFileId == (FileSink.FileIdentity.init + 1))
-              assert(curState3.currentFileSize == 1)
+      withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
+        (sink, logger) =>
+          (1 to fileSize * filesLimit).foreach {
+            i =>
+              logger.info(i.toString)
           }
-        }
+          val curState1 = sink.sinkState.get()
+          assert(curState1.forRotate.isEmpty)
+          assert(curState1.currentFileId == FileSink.FileIdentity.init + 2)
 
+          logger.info("new")
+          val curState2 = sink.sinkState.get()
+          assert(curState2.forRotate.size == filesLimit - 1)
+          assert(curState2.currentFileId == FileSink.FileIdentity.init)
 
-        "perform continuing writing when rotation is enabled " in {
-
-          val fileSize = 2
-          val filesLimit = 3
-
-          val svc = fileSvcUtils.provideSvc(dummyFolder)
-
-          svc.withPreparedData {
-            (0 until filesLimit).map {
-              i =>
-                (FileSink.FileIdentity.init + i, (1 to fileSize).map(_.toString).toList)
-            }.toList
+          (1 to fileSize).foreach {
+            i =>
+              logger.info(i.toString)
           }
+          val curState3 = sink.sinkState.get()
+          assert(curState3.forRotate.size == filesLimit - 2)
+          assert(curState3.currentFileId == (FileSink.FileIdentity.init + 1))
+          assert(curState3.currentFileSize == 1)
+      }
+    }
 
-          withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
-            (sink, logger) =>
-              logger.info("new")
-              val curState = sink.sinkState.get()
-//              assert(curState.forRotate.size == filesLimit - 1)
-              assert(curState.currentFileId == FileSink.FileIdentity.init)
-          }
-        }
+
+    "perform continuing writing when rotation is enabled " in {
+
+      val fileSize = 2
+      val filesLimit = 3
+
+      val svc = fileSvcUtils.provideSvc(dummyFolder)
+
+      svc.withPreparedData {
+        (0 until filesLimit).map { i => (FileSink.FileIdentity.init + i, (1 to fileSize).map(_.toString).toList) }.toList
+      }
+
+      withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
+        (sink, logger) =>
+          logger.info("new")
+          val curState = sink.sinkState.get()
+          assert(curState.forRotate.size == filesLimit - 1)
+          assert(curState.currentFileId == FileSink.FileIdentity.init)
+      }
+    }
 
   }
 }
