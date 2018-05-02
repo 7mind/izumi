@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.Planner
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, AbstractModuleDef, ImplDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef, ImplDef}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CustomOp, ImportDependency, SetOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
@@ -26,7 +26,7 @@ class PlannerDefaultImpl
 )
   extends Planner {
 
-  override def plan(context: AbstractModuleDef): FinalPlan = {
+  override def plan(context: ModuleDef): FinalPlan = {
     val plan = context.bindings.foldLeft(DodgyPlan.empty) {
       case (currentPlan, binding) =>
         Value(computeProvisioning(currentPlan, binding))

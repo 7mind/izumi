@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.plugins
 
-import com.github.pshirshov.izumi.distage.model.definition.{AbstractModuleDef, PluginDef}
+import com.github.pshirshov.izumi.distage.model.definition.{ModuleDef, PluginDef}
 import com.github.pshirshov.izumi.functional.Value
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
 
@@ -19,10 +19,10 @@ private class ConfigApplicator(config: PluginConfig) {
 
 
 trait LoadedPlugins {
-  def definition: AbstractModuleDef
+  def definition: ModuleDef
 }
 
-case class JustLoadedPlugins(definition: AbstractModuleDef) extends LoadedPlugins
+case class JustLoadedPlugins(definition: ModuleDef) extends LoadedPlugins
 
 class PluginLoader(config: PluginConfig) {
   type PluginType = Class[_ <: PluginDef]
