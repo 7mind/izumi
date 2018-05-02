@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.logstage.api.logger.RenderingPolicy
-import com.github.pshirshov.izumi.logstage.model.Log
-import com.github.pshirshov.izumi.logstage.model.logger.LogSink
+import com.github.pshirshov.izumi.logstage.api.Log
+import com.github.pshirshov.izumi.logstage.api.logger.LogSink
+import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.models.FileRotation.{DisabledRotation, FileLimiterRotation}
 import com.github.pshirshov.izumi.models.{FileRotation, FileSinkState, LogFile}
 

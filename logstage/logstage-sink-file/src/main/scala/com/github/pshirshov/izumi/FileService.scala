@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.models.LogFile
 import scala.collection.mutable
 import scala.util.{Success, Try}
 
-trait FileService[File <: LogFile] {
+trait FileService[File <:LogFile] {
 
   val storage: mutable.Map[FileIdentity, File] = scala.collection.mutable.HashMap.empty[FileIdentity, File]
 

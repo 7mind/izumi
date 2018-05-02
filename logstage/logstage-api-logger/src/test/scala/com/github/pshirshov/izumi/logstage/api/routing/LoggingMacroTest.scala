@@ -1,21 +1,11 @@
 package com.github.pshirshov.izumi.logstage.api.routing
 
-import com.github.pshirshov.izumi.{DummyFileServiceImpl, FileSink, FileSinkConfig}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log, TestSink}
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
-import com.github.pshirshov.izumi.logstage.TestSink
-import com.github.pshirshov.izumi.logstage.api.logger.RenderingOptions
-import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
-import com.github.pshirshov.izumi.logstage.core.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
-import com.github.pshirshov.izumi.logstage.model.Log
-import com.github.pshirshov.izumi.logstage.model.config.LoggerConfig
-import com.github.pshirshov.izumi.logstage.model.logger.{LogSink, QueueingSink}
-import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
-import com.github.pshirshov.izumi.models.FileRotation
+import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log, TestSink}
 import org.scalatest.WordSpec
 
 import scala.util.Random
@@ -64,10 +54,6 @@ class LoggingMacroTest extends WordSpec {
 
       assert(testSink.fetch().size == 100)
     }
-
-    "support file sink" in {
-      new ExampleService(setupFileLogger()).start()
-    }
   }
 }
 
@@ -76,22 +62,6 @@ object LoggingMacroTest {
 
   val coloringPolicy = new StringRenderingPolicy(RenderingOptions())
   val simplePolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false))
-  val jsonPolicy = new JsonRenderingPolicy()
-  val consoleSinkText = new ConsoleSink(coloringPolicy)
-  val consoleSinkJson = new ConsoleSink(jsonPolicy)
-  val fileSinkText = new FileSink(simplePolicy, new DummyFileServiceImpl("logstage"), FileRotation.DisabledRotation, FileSinkConfig(2))
-
-  def setupConsoleLogger(): IzLogger = {
-    configureLogger(Seq(consoleSinkText))
-  }
-
-  def setupFileLogger(): IzLogger = {
-    configureLogger(Seq(fileSinkText))
-  }
-
-  def setupJsonLogger(): IzLogger = {
-    configureLogger(Seq(consoleSinkJson))
-  }
 
   def configureLogger(sinks: Seq[LogSink]): IzLogger = {
     val router: ConfigurableLogRouter = mkRouter(sinks :_*)

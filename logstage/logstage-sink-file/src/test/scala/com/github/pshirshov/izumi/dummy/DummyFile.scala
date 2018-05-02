@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi
+package com.github.pshirshov.izumi.dummy
 
 import com.github.pshirshov.izumi.models.LogFile
 
