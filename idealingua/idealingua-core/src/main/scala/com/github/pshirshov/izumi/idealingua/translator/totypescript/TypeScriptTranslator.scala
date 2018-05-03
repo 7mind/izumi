@@ -140,7 +140,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${distinctFields.map(f => s"${conv.toNativeTypeName(f.name, f.typeId)}: ${conv.toNativeType(f.typeId, ts, forSerialized = true)};").mkString("\n").shift(4)}
          |}
          |
-         |${i.struct.superclasses.interfaces.map(sc => typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
+         |${ts.inheritance.allParents(i.id).map(sc => typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
          """.stripMargin
 
     CompositeProduct(dto, imports.render(ts), s"// ${i.id.name} DTO")
@@ -359,7 +359,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |    }
          |}
          |
-         |${i.struct.superclasses.interfaces.map(sc => typespace.implId(sc).name + s".register(${eid.name}.FullClassName, ${eid.name});").mkString("\n")}
+         |${ts.inheritance.allParents(i.id).map(sc => typespace.implId(sc).name + s".register(${eid.name}.FullClassName, ${eid.name});").mkString("\n")}
        """.stripMargin
 
     ext.extend(i, InterfaceProduct(iface, companion, imports.render(ts), s"// ${i.id.name} Interface"), _.handleInterface)

@@ -77,7 +77,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |
        |func init() {
        |    // Here we register current DTO in other interfaces
-       |${interfaces.map(sc => s"Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
+       |${interfaces.map(sc => s"${imports.withImport(sc)}Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
@@ -101,17 +101,16 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       s"""${struct.render()}
          |${struct.renderSerialized()}
          |${struct.renderSlices()}
-         |${renderRegistrations(i.struct.superclasses.interfaces, i.id.name, imports)}
+         |${renderRegistrations(ts.inheritance.allParents(i.id), i.id.name, imports)}
        """.stripMargin
 
+    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil") GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
+
     val tests =
-      s"""import (
-         |    "testing"
-         |    "encoding/json"
-         |)
+      s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
          |
          |func Test${i.id.name}JSONSerialization(t *testing.T) {
-         |    v1 := New${i.id.name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    v1 := New${i.id.name}(${struct.fields.map(f => GoLangType(f.tp.id, testImports, ts).testValue()).mkString(", ")})
          |    serialized, err := json.Marshal(v1)
          |    if err != nil {
          |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
@@ -473,10 +472,13 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |}
        """.stripMargin
 
+    val testImports = struct.fields.flatMap(f => f.tp.testValuePackage()).distinct
+
     val tests =
       s"""import (
          |    "testing"
          |    "encoding/json"
+         |${testImports.map(fi => "\"" + fi + "\"") .mkString("\n").shift(4)}
          |)
          |
          |func Test${i.id.name}Creation(t *testing.T) {
@@ -584,16 +586,13 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |
          |    return nil, fmt.Errorf("empty content for polymorphic type in Create${i.id.name}")
          |}
-         |${renderRegistrations(i.struct.superclasses.interfaces, eid.name, imports)}
+         |${renderRegistrations(ts.inheritance.allParents(i.id), eid.name, imports)}
        """.stripMargin
 
-    // TODO here above Register methods don't use module, if a package is different - it will fail, needs a fix using the corrent import access
+    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil") GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
 
     val tests =
-      s"""import (
-         |    "testing"
-         |    "encoding/json"
-         |)
+      s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
          |
          |func Test${i.id.name}Creation(t *testing.T) {
          |    v := New${ts.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})

@@ -47,8 +47,8 @@ case class GoLangField(
     case Primitive.TUUID => toGuidField()
     case Primitive.TTime => toTimeField()
     case Primitive.TDate => toDateField()
-    case Primitive.TTs => toDateField()
-    case Primitive.TTsTz => toDateField()
+    case Primitive.TTs => toTimeStampField(false)
+    case Primitive.TTsTz => toTimeStampField(true)
     case _ => toGenericField()
   }
 
@@ -178,6 +178,34 @@ case class GoLangField(
      """.stripMargin
   }
 
+  def toTimeStampField(utc: Boolean): String = {
+    s"""func (v *$structName) ${renderMemberName(true)}() time.Time {
+       |    return v.${renderMemberName(false)}${if (utc) ".UTC()" else ""}
+       |}
+       |
+       |func (v *$structName) Set${renderMemberName(true)}(value time.Time) {
+       |    v.${renderMemberName(false)} = value
+       |}
+       |
+       |func (v *$structName) ${renderMemberName(true)}AsString() string {
+       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z[UTC]" else "-07:00[MST]"}"
+       |    return v.${renderMemberName(false)}${if (utc) ".UTC()" else ""}.Format(layout)
+       |}
+       |
+       |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
+       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z[UTC]" else "-07:00[MST]"}"
+       |    t, err := time.Parse(layout, value)
+       |    if err != nil {
+       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DDTHH:MM:SS.MICROS${if (utc) "Z[UTC]" else "+00:00[Zone/Region]"} format. Got %s", value)
+       |    }
+       |
+       |    v.${renderMemberName(false)} = t
+       |    return nil
+       |}
+     """.stripMargin
+    //+01:00[Europe/Dublin]
+  }
+
   def renderAssign(struct: String, variable: String, serialized: Boolean, optional: Boolean): String = {
     renderAssignImpl(struct, tp.id, variable, serialized, optional)
   }
@@ -207,11 +235,10 @@ case class GoLangField(
            """.stripMargin
 
     case _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
-      s"""var $dest ${im.withImport(id)}${id.name}
-         |err = json.Unmarshal([]byte($src), $dest)
-         |if err != nil {
-         |    return err
+      s"""if !${im.withImport(id)}IsValid${id.name}($src) {
+         |    return fmt.Errorf("Invalid ${id.name} enum value %s", $src)
          |}
+         |$dest := ${im.withImport(id)}New${id.name}($src)
            """.stripMargin
 
     case _: IdentifierId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object

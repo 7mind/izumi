@@ -202,10 +202,25 @@ case class GoLangType (
     case Primitive.TDate => "time.Now()" // "\"2010-12-01\""
     case Primitive.TTs => "time.Now()" // "\"2010-12-01T15:10:10.10001\""
     case Primitive.TTsTz => "time.Now()" // "\"2010-12-01T15:10:10.10001[UTC]\""
+    case g: Generic => g match {
+      case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType()}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
+      case gl: Generic.TList => s"[]${GoLangType(gl.valueType, im, ts).renderType()}{}"
+      case gs: Generic.TSet => s"[]${GoLangType(gs.valueType, im, ts).renderType()}{}"
+      case _: Generic.TOption => "nil"
+    }
     case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
-    case _: IdentifierId | _: DTOId | _: EnumId => s"NewTest${id.name}()"
-    case i: InterfaceId => s"NewTest${ts.implId(i).name}()"
+    case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${id.name}()"
+    case i: InterfaceId => s"${im.withImport(id)}NewTest${ts.implId(i).name}()"
     case _ => "nil"
+  }
+
+  def testValuePackage(): List[String] = id match {
+    case Primitive.TTime | Primitive.TDate | Primitive.TTsTz | Primitive.TTs => List("time")
+      // TODO For testing we might want to import from other packages...
+//    case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValuePackage()
+//    case _: IdentifierId | _: DTOId | _: EnumId => s"NewTest${id.name}()"
+//    case i: InterfaceId => s"NewTest${ts.implId(i).name}()"
+    case _ => List.empty
   }
 }
 
