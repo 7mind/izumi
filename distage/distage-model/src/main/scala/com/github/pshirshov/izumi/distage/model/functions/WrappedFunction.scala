@@ -115,7 +115,7 @@ object WrappedFunction {
       def extractParamKey(paramSymbol: Symbol): DIKey =
         keyProvider.keyFromParameter(context, paramSymbol)
 
-      def extractTypeKey(paramType: Type): DIKey =
+      def extractTypeKey(paramType: TypeNative): DIKey =
         keyProvider.keyFromParameterType(context, SafeType(paramType))
 
       def impl[R: c.WeakTypeTag](funcExpr: c.Expr[_]): c.Expr[DIKeyWrappedFunction[R]] = {
@@ -176,10 +176,10 @@ object WrappedFunction {
       }
 
       def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): ExtractedInfo = {
-        val lambdaAnnotations: List[DIKey] =
+        val lambdaKeys: List[DIKey] =
           lambdaArgs.map(extractParamKey)
 
-        val methodReferenceAnnotations: List[DIKey] = body match {
+        val methodReferenceKeys: List[DIKey] = body match {
           case Apply(f, _) =>
             logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
 
@@ -191,12 +191,12 @@ object WrappedFunction {
             List()
         }
 
-        val annotations = if (methodReferenceAnnotations.isEmpty)
-          lambdaAnnotations
+        val keys = if (methodReferenceKeys.collect {case i: DIKey.IdKey[_] => i}.isEmpty || methodReferenceKeys.size != lambdaKeys.size)
+          lambdaKeys
         else
-          methodReferenceAnnotations
+          methodReferenceKeys
 
-        ExtractedInfo(annotations, isValReference = false)
+        ExtractedInfo(keys, isValReference = false)
       }
 
       def analyzeValRef(symbol: Symbol): ExtractedInfo = {

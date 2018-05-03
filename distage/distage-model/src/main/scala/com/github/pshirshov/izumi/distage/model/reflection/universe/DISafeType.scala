@@ -10,17 +10,27 @@ trait DISafeType {
   case class SafeType(tpe: TypeNative) {
     override def toString: String = tpe.toString
 
-    override def hashCode(): Int = tpe.toString.hashCode
+    override def hashCode(): Int = tpe.deannotate.toString.hashCode
 
     override def equals(obj: scala.Any): Boolean = obj match {
       case SafeType(other) =>
-        tpe =:= other
+        tpe.deannotate.dealias =:= other.deannotate.dealias
       case _ =>
         false
     }
 
     def <:<(that: SafeType): Boolean =
-      this.tpe <:< that.tpe
+      this.tpe.deannotate.dealias <:< that.tpe.deannotate.dealias
+  }
+
+  implicit class Deannotate(typ: TypeNative) {
+    def deannotate: TypeNative =
+      typ match {
+        case t: u.AnnotatedTypeApi =>
+          t.underlying
+        case _ =>
+          typ
+      }
   }
 
   object SafeType {

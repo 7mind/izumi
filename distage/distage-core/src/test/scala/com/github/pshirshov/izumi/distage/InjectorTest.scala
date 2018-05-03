@@ -395,7 +395,7 @@ class InjectorTest extends WordSpec {
       import Case17._
 
       val definition = TrivialModuleDef
-        .bind[TestDependency @Id("classdeftypeann1")].named("classdeftypeann1")
+        .bind[TestDependency].named("classdeftypeann1")
         .bind[TestClass].provided(implType _)
 
       val injector = mkInjector()

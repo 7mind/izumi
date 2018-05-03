@@ -43,7 +43,7 @@ val baseSettings = new GlobalSettings {
           else
             Opts.resolver.sonatypeStaging
         )
-        , credentials in Global += Credentials(new File("credentials.sonatype-nexus.properties"))
+        , credentials in Global ++= Seq(new File("credentials.sonatype-nexus.properties")).filter(_.exists()).map(Credentials(_))
         , pomExtra in Global := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
           <licenses>
             <license>
