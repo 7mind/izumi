@@ -24,16 +24,13 @@ trait ModuleBuilder extends ModuleDef {
     new BindDSL(mutableState, binding)
   }
 
-  final protected def bind[T: Tag](instance: T): BindDSL[T] = {
-    val binding = Bindings.binding(instance)
-    mutableState += binding
-    new BindDSL(mutableState, binding)
-  }
-
   final protected def set[T: Tag]: SetDSL[T] = {
     val binding = Bindings.emptySet[T]
-    mutableState += binding
-    new SetDSL(mutableState, binding.key, Set())
+    val uniq = mutableState.add(binding)
+
+    val startingSet: Set[Binding] = if (uniq) Set(binding) else Set.empty
+
+    new SetDSL(mutableState, binding.key, startingSet)
   }
 
 }
@@ -111,18 +108,21 @@ object AbstractModuleBuilder {
   (
     protected val mutableState: mutable.Set[Binding]
     , protected val setKey: DIKey.TypeKey
-    , protected val setElements: Set[ImplDef]
+    , protected val setBindings: Set[Binding]
   ) extends SetDSLBase[T, SetDSL[T]]
     with SetDSLMutBase {
     def named(name: String): SetNamedDSL[T] = {
       val newKey = setKey.named(name)
-      replaceKey(newKey)
-      new SetNamedDSL(mutableState, newKey, setElements)
+      val newBindings = replaceKey(newKey)
+
+      new SetNamedDSL(mutableState, newKey, newBindings)
     }
 
     override protected def add(newElement: ImplDef): SetDSL[T] = {
-      append(newElement)
-      new SetDSL(mutableState, setKey, setElements + newElement)
+      val newBinding: Binding = SetBinding(setKey, newElement)
+
+      append(newBinding)
+      new SetDSL(mutableState, setKey, setBindings + newBinding)
     }
   }
 
@@ -130,28 +130,35 @@ object AbstractModuleBuilder {
   (
     protected val mutableState: mutable.Set[Binding]
     , protected val setKey: DIKey.IdKey[_]
-    , protected val setElements: Set[ImplDef]
+    , protected val setBindings: Set[Binding]
   ) extends SetDSLBase[T, SetNamedDSL[T]]
     with SetDSLMutBase {
+
     protected def add(newElement: ImplDef): SetNamedDSL[T] = {
-      append(newElement)
-      new SetNamedDSL(mutableState, setKey, setElements + newElement)
+      val newBinding: Binding = SetBinding(setKey, newElement)
+
+      append(newBinding)
+      new SetNamedDSL(mutableState, setKey, setBindings + newBinding)
     }
+
   }
 
   private[definition] sealed trait SetDSLMutBase {
     protected def mutableState: mutable.Set[Binding]
     protected def setKey: DIKey
-    protected def setElements: Set[ImplDef]
+    protected def setBindings: Set[Binding]
 
-    protected def append(impl: ImplDef): Unit = discard {
-      mutableState += SetBinding(setKey, impl)
+    protected def append(binding: Binding): Unit = discard {
+      mutableState += binding
     }
 
-    protected def replaceKey(key: DIKey): Unit = discard {
-      mutableState.retain(_.key != key)
-      val newElements = setElements.map(SetBinding(key, _): Binding) + EmptySetBinding(key)
-      mutableState ++= newElements
+    protected def replaceKey(newKey: DIKey): Set[Binding] = {
+      val newBindings = (setBindings + EmptySetBinding(setKey)).map(_.withTarget(newKey))
+
+      mutableState --= setBindings
+      mutableState ++= newBindings
+
+      newBindings
     }
   }
 
