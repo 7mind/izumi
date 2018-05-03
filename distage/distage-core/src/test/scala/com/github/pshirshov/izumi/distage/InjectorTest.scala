@@ -374,11 +374,28 @@ class InjectorTest extends WordSpec {
       assert(!instantiated1.depB.isA)
     }
 
+    "type annotations in di keys do not result in different keys" in {
+      import Case8._
+
+      val definition = TrivialModuleDef
+        .bind[Dependency1 @Id("special")]
+        .bind[Trait1]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.find[Dependency1]
+      val instantiated1 = context.find[Dependency1 @Id("special")]
+      assert(instantiated1.isDefined)
+      assert(instantiated.isDefined)
+    }
+
     "support named bindings in method reference providers" in {
       import Case17._
 
       val definition = TrivialModuleDef
-        .bind[TestDependency].named("classdeftypeann1")
+        .bind[TestDependency @Id("classdeftypeann1")].named("classdeftypeann1")
         .bind[TestClass].provided(implType _)
 
       val injector = mkInjector()
@@ -396,7 +413,7 @@ class InjectorTest extends WordSpec {
 
       val definition = TrivialModuleDef
         .bind[TestDependency].named("classdeftypeann1")
-        .bind[TestClass].provided { t: TestDependency@Id("classdeftypeann1") => new TestClass(t) }
+        .bind[TestClass].provided { t: TestDependency @Id("classdeftypeann1") => new TestClass(t) }
 
       val injector = mkInjector()
       val context = injector.produce(injector.plan(definition))
@@ -407,7 +424,7 @@ class InjectorTest extends WordSpec {
       assert(instantiated.a == dependency)
     }
 
-    "populate implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
+    "populates implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
       import Case13._
 
       val definition = TrivialModuleDef
