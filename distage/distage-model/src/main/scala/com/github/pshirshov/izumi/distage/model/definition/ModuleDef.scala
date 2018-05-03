@@ -13,6 +13,8 @@ trait ModuleDef {
   }
 
   override def hashCode(): Int = bindings.hashCode()
+
+  override def toString: String = bindings.toString()
 }
 
 trait PluginDef extends ModuleDef
