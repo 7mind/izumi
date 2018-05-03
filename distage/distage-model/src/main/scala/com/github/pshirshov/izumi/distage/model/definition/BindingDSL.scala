@@ -122,7 +122,7 @@ object BindingDSL {
     def elementProvider(f: DIKeyWrappedFunction[T]): AfterAdd =
       add(ImplDef.ProviderImpl(f.ret, f))
 
-    protected def add(newElement: ImplDef): AfterAdd
+    protected def add(newImpl: ImplDef): AfterAdd
   }
 
 }

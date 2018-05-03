@@ -15,6 +15,8 @@ trait ModuleDef {
   }
 
   override def hashCode(): Int = bindings.hashCode()
+
+  override def toString: String = bindings.toString()
 }
 
 final case class TrivialModuleDef(bindings: Set[Binding]) extends ModuleDef

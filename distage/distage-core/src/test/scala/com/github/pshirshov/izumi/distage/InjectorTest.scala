@@ -51,25 +51,32 @@ class InjectorTest extends WordSpec {
 
     "support multiple bindings" in {
       import Case1._
-      val definition: ModuleDef = TrivialModuleDef
-        .set[JustTrait]
-        .named("named.empty.set")
-        .set[JustTrait]
-        .element[JustTrait]
-        .element(new Impl1)
-        .set[JustTrait]
-        .element(new Impl2())
-        .named("named.set")
-        .set[JustTrait]
-        .element[Impl3]
-        .named("named.set")
+      val definition: ModuleDef = new ModuleBuilder {
+        set[JustTrait]
+          .named("named.empty.set")
+
+        set[JustTrait]
+          .element[JustTrait]
+          .element(new Impl1)
+
+        set[JustTrait]
+          .named("named.set")
+          .element(new Impl2())
+
+        set[JustTrait]
+          .element[Impl3]
+          .named("named.set")
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
+      assert(context.get[Set[JustTrait]].size == 2)
+      assert(context.get[Set[JustTrait]]("named.empty.set").isEmpty)
       assert(context.get[Set[JustTrait]]("named.set").size == 2)
     }
+
 
     "support named bindings" in {
       import Case1_1._
