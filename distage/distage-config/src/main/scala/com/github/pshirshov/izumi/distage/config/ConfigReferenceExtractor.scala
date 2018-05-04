@@ -37,8 +37,8 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
 
 
   protected def rewire(binding: Binding.ImplBinding, reflected: Association.ExtendedParameter, association: Association.Parameter): DIKey = {
-    val autoConfAnno = AnnotationTools.find[AutoConf](RuntimeDIUniverse.u)(reflected.symb)
-    val confAnno = AnnotationTools.find[Conf](RuntimeDIUniverse.u)(reflected.symb)
+    val autoConfAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[AutoConf], reflected.symb)
+    val confAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[Conf], reflected.symb)
 
     autoConfAnno.map {
       _ =>

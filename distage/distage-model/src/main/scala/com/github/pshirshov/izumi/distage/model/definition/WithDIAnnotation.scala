@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.references.DIKey
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DISafeType, DIUniverseBase}
+import com.github.pshirshov.izumi.distage.model.references.WithDIKey
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType}
 
-trait DIAnnotation {
+trait WithDIAnnotation {
   this: DIUniverseBase
-    with DIKey
-    with DISafeType =>
+    with WithDIKey
+    with WithDISafeType =>
 
   import u._
 

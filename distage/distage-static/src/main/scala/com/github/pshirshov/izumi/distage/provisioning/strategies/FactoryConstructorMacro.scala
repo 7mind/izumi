@@ -33,7 +33,7 @@ object FactoryConstructorMacro {
     )
 
     val (dependencyArgs, dependencyMethods) = dependencies.map {
-      case Method(_, methodSymbol, key) =>
+      case AbstractMethod(_, methodSymbol, key) =>
         val tpe = key.symbol.tpe
         val methodName = methodSymbol.asMethod.name.toTermName
         val argName = c.freshName(methodName)

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleBuilder.{BindDSL, SetDSL}
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSLBase, SetDSLBase}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -35,8 +35,6 @@ trait ModuleBuilder extends ModuleDef {
   }
 
 }
-
-trait PluginBuilder extends ModuleBuilder with PluginDef
 
 object AbstractModuleBuilder {
 
@@ -115,7 +113,7 @@ object AbstractModuleBuilder {
     }
 
     override protected def add(newElement: ImplDef): SetNamedDSL[T] = {
-      val newBinding: Binding = SetBinding(setKey, newElement)
+      val newBinding: Binding = SetElementBinding(setKey, newElement)
 
       append(newBinding)
       new SetNamedDSL(mutableState, setKey, setBindings + newBinding)
@@ -132,7 +130,7 @@ object AbstractModuleBuilder {
     with SetDSLMutBase {
 
     protected def add(newElement: ImplDef): SetNamedDSL[T] = {
-      val newBinding: Binding = SetBinding(setKey, newElement)
+      val newBinding: Binding = SetElementBinding(setKey, newElement)
 
       append(newBinding)
       new SetNamedDSL(mutableState, setKey, setBindings + newBinding)

@@ -29,7 +29,7 @@ object TraitConstructorMacro {
     val UnaryWiring.AbstractSymbol(_, wireables) = reflectionProvider.symbolToWiring(SafeType(targetType))
 
     val (wireArgs, wireMethods) = wireables.map {
-      case Method(_, methodSymbol, key) =>
+      case AbstractMethod(_, methodSymbol, key) =>
         val tpe = key.symbol.tpe
         val methodName = methodSymbol.asMethod.name.toTermName
         val argName = c.freshName(methodName)

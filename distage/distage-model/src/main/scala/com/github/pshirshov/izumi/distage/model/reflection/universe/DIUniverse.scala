@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.distage.model.definition.DIAnnotation
-import com.github.pshirshov.izumi.distage.model.plan.{DIAssociation, DIDependencyContext, DIWiring}
-import com.github.pshirshov.izumi.distage.model.references.{DIKey, DITypedRef}
+import com.github.pshirshov.izumi.distage.model.definition.WithDIAnnotation
+import com.github.pshirshov.izumi.distage.model.plan.{WithDIAssociation, WithDIDependencyContext, WithDIWiring}
+import com.github.pshirshov.izumi.distage.model.references._
 
 trait DIUniverse
   extends DIUniverseBase
@@ -14,7 +14,7 @@ trait DIUniverse
     with WithDIDependencyContext
     with WithDIAssociation
     with WithDIWiring
-    with DIAnnotation
+    with WithDIAnnotation
 
 trait DILiftableRuntimeUniverse {
   this: DIUniverseBase =>
