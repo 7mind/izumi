@@ -294,6 +294,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |${i.members.map(m => s"${name + m}: " + "\"" + m + "\",").mkString("\n").shift(4)}
        |}
        |
+       |var allOf$name = []$name{
+       |${i.members.map(m => name + m + ",").mkString("\n").shift(4)}
+       |}
+       |
        |var mapStringTo$name = map[string]$name{
        |${i.members.map(m => "\"" + m + "\": " + s"${name + m},").mkString("\n").shift(4)}
        |}
@@ -306,6 +310,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |// New$name creates a new enum from string
        |func New$name(e string) $name {
        |    return mapStringTo$name[e]
+       |}
+       |
+       |func GetAll$name() []$name {
+       |    return allOf$name
        |}
        |
        |func NewTest$name() $name {
