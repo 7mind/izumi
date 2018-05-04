@@ -8,9 +8,6 @@ import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy.{Constant, Form, LogMessageItem}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogUnit
 
-import scala.collection.mutable.ListBuffer
-import scala.util.{Failure, Success, Try}
-
 class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[String] = None) extends RenderingPolicy {
   protected val withColors: Boolean = {
     (
@@ -50,42 +47,44 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
     }
   }
 
-  // todo : tail rec
-  // todo : decompose to small functions
   // todo : maybe polish notation we need to use for checking braces and theirs closing
   // todo : inner props i.e. margins
 
   private def renderedLayout(pattern: String): Iterable[LogMessageItem] = {
+    def parseLogUnit(chars: List[Char]): (List[Char], String) = {
+      def traverseLogUnit(chars: List[Char], openBrackets: Int = 1, payload: List[Char] = List.empty): (List[Char], List[Char]) = {
+        if (openBrackets == 0) {
+          (chars, payload)
+        } else {
+          chars match {
+            case item +: xs if item == '}' =>
+              traverseLogUnit(xs, openBrackets - 1, payload)
+            case item +: xs if item == '{' =>
+              traverseLogUnit(xs, openBrackets + 1, payload)
+            case item +: xs =>
+              traverseLogUnit(xs, openBrackets, payload :+ item)
+            case Nil if openBrackets > 0 => throw new IllegalArgumentException("found unclosed braces")
+            case Nil => (Nil, payload)
+          }
+        }
+      }
+
+      val (remained, payload) = traverseLogUnit(chars)
+      (remained, payload.mkString(""))
+    }
 
     def traverseString(string: List[Char], buffer: List[LogMessageItem] = List.empty): List[LogMessageItem] = {
-
       string match {
         case ith +: jth +: others if ith == '$' && jth == '{' => {
-          var j = 0
-          var closeableRemained = 1
-          val buffer_i = ListBuffer.empty[Constant[_]]
-          while (closeableRemained > 0) {
-            val curChar = others(j)
-            if (curChar == '}') {
-              closeableRemained -= 1
-            } else if (curChar == '{') {
-              closeableRemained += 1
-            } else {
-              buffer_i += Constant(curChar)
-            }
-            j += 1
-          }
-          val str = buffer_i.map(_.i).mkString("")
-          traverseString(others.zipWithIndex.dropWhile(_._2 < j).map(_._1), buffer :+ {
-            LogUnit.apply(str) match {
-              case Some(unit) => Form(unit)
-              case None => Constant(s"$ith$jth" + str + "}")
+          val (remained, maybeLogUnit) = parseLogUnit(others)
+          traverseString(remained, buffer :+ {
+            LogUnit.apply(maybeLogUnit).map(Form).getOrElse {
+              Constant(s"$ith$jth" + maybeLogUnit + "}")
             }
           })
         }
-        case ith +: others => {
+        case ith +: others =>
           traverseString(others, buffer :+ Constant(ith))
-        }
         case ith +: Nil =>
           buffer :+ Constant(ith)
         case Nil =>
@@ -93,19 +92,13 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
       }
     }
 
-    Try {
-      traverseString(pattern.toList)
-    } match {
-      case Failure(_: IndexOutOfBoundsException) =>
-        throw new IllegalArgumentException("found unclosed braces")
-      case Success(items) =>
-        findDuplicateUnits(items).foreach {
-          duplicate =>
-            throw new IllegalArgumentException(s"Found duplicated log unit in rendering layout: ${duplicate.aliases.head}")
-        }
-        println(items)
-        items
+    val res = traverseString(pattern.toList)
+
+    findDuplicateUnits(res).foreach {
+      duplicate =>
+        throw new IllegalArgumentException(s"Found duplicated log unit in rendering layout: ${duplicate.aliases.head}")
     }
+    res
   }
 
   private def findDuplicateUnits(logItems: Iterable[LogMessageItem]): Option[LogUnit] = {
