@@ -85,7 +85,7 @@ object DefaultBootstrapContext {
     .bind[SymbolIntrospector.Runtime].as[SymbolIntrospectorDefaultImpl.Runtime]
     .bind[DependencyKeyProvider.Runtime].as[DependencyKeyProviderDefaultImpl.Runtime]
     .bind[PlanningHook].as[PlanningHookDefaultImpl]
-    .bind[PlanningObserver].as(new BootstrapPlanningObserver(TrivialLogger.make[this.type]("f", forceLog = true)))
+    .bind[PlanningObserver].as[PlanningObserverDefaultImpl]
     .bind[PlanResolver].as[PlanResolverDefaultImpl]
     .bind[PlanAnalyzer].as[PlanAnalyzerDefaultImpl]
     .bind[PlanMergingPolicy].as[PlanMergingPolicyDefaultImpl]

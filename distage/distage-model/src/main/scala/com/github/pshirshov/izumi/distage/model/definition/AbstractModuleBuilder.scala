@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSLBase, SetDSLBase}
 import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleBuilder.{BindDSL, SetDSL}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -47,8 +47,9 @@ object AbstractModuleBuilder {
   (
     protected val mutableState: mutable.Set[Binding]
     , protected val binding: SingletonBinding[DIKey.TypeKey]
-  ) extends BindDSLBase[T, BindOnlyNameableDSL]
+  ) extends BindDSLBase[T, BindNamedDSL[T]]
     with BindDSLMutBase {
+
     def named(name: String): BindNamedDSL[T] = {
       val newBinding = SingletonBinding(binding.key.named(name), binding.implementation)
 
@@ -57,39 +58,26 @@ object AbstractModuleBuilder {
       new BindNamedDSL[T](mutableState, newBinding)
     }
 
-    override protected def bind(impl: ImplDef): BindOnlyNameableDSL = {
+    override protected def bind(impl: ImplDef): BindNamedDSL[T] = {
       val newBinding = SingletonBinding(binding.key, impl)
 
       replace(newBinding)
 
-      new BindOnlyNameableDSL.Impl(mutableState, newBinding)
+      new BindNamedDSL[T](mutableState, newBinding)
     }
+
   }
 
   private[definition] final class BindNamedDSL[T]
   (
     protected val mutableState: mutable.Set[Binding]
-    , protected val binding: SingletonBinding[DIKey.IdKey[_]]
+    , protected val binding: Binding.SingletonBinding[_]
   ) extends BindDSLBase[T, Unit]
     with BindDSLMutBase {
+
     override protected def bind(impl: ImplDef): Unit =
       replace(binding.withImpl(impl))
-  }
 
-  private[definition] sealed trait BindOnlyNameableDSL {
-    def named(name: String): Unit
-  }
-
-  private[definition] object BindOnlyNameableDSL {
-    private[AbstractModuleBuilder] final class Impl
-    (
-      protected val mutableState: mutable.Set[Binding]
-      , protected val binding: SingletonBinding[DIKey.TypeKey]
-    ) extends BindOnlyNameableDSL
-      with BindDSLMutBase {
-      def named(name: String): Unit =
-        replace(binding.named(name))
-    }
   }
 
   private[definition] sealed trait BindDSLMutBase {
@@ -109,8 +97,9 @@ object AbstractModuleBuilder {
     protected val mutableState: mutable.Set[Binding]
     , protected val setKey: DIKey.TypeKey
     , protected val setBindings: Set[Binding]
-  ) extends SetDSLBase[T, SetDSL[T]]
+  ) extends SetDSLBase[T, SetNamedDSL[T]]
     with SetDSLMutBase {
+
     def named(name: String): SetNamedDSL[T] = {
       val newKey = setKey.named(name)
       val newBindings = replaceKey(newKey)
@@ -118,18 +107,19 @@ object AbstractModuleBuilder {
       new SetNamedDSL(mutableState, newKey, newBindings)
     }
 
-    override protected def add(newElement: ImplDef): SetDSL[T] = {
+    override protected def add(newElement: ImplDef): SetNamedDSL[T] = {
       val newBinding: Binding = SetBinding(setKey, newElement)
 
       append(newBinding)
-      new SetDSL(mutableState, setKey, setBindings + newBinding)
+      new SetNamedDSL(mutableState, setKey, setBindings + newBinding)
     }
+
   }
 
   private[definition] final class SetNamedDSL[T]
   (
     protected val mutableState: mutable.Set[Binding]
-    , protected val setKey: DIKey.IdKey[_]
+    , protected val setKey: DIKey
     , protected val setBindings: Set[Binding]
   ) extends SetDSLBase[T, SetNamedDSL[T]]
     with SetDSLMutBase {
