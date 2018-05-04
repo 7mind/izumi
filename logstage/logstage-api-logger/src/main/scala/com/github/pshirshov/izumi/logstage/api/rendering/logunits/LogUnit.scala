@@ -2,24 +2,32 @@ package com.github.pshirshov.izumi.logstage.api.rendering.logunits
 
 import java.time.{Instant, ZoneId}
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.rendering.{ConsoleColors, RenderedMessage}
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+
+case class Margin(elipsed: Boolean, size: Int)
 
 sealed trait LogUnit {
   def aliases: Vector[String]
 
-  def renderUnit(entry: Log.Entry, withColors: Boolean): String
+  def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String
 }
 
 object LogUnit {
 
-  case object ThreadUnit extends LogUnit {
-    override val aliases: Vector[String] = Vector(
-      "thread", "t"
-    )
+  def withMargin(string : String, margin: Option[Margin]) : String = {
+    margin match {
+      case Some(Margin(true, pad))  => string.ellipsedLeftPad(pad)
+      case Some(Margin(_, pad)) => string.leftPad(pad)
+      case None => string
+    }
+  }
 
-    override def renderUnit(entry: Log.Entry, withColors: Boolean): String = {
+  case object ThreadUnit extends LogUnit {
+    override val aliases: Vector[String] = Vector("thread", "t")
+
+    override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
       import entry.context
       val builder = new StringBuilder
       val threadName = s"${context.dynamic.threadData.threadName}:${context.dynamic.threadData.threadId}"
@@ -35,7 +43,9 @@ object LogUnit {
       } else {
         builder.append("] ")
       }
-      builder.toString()
+
+      withMargin(builder.toString(),margin)
+
     }
 
   }
@@ -45,7 +55,7 @@ object LogUnit {
       "timestamp", "ts"
     )
 
-    override def renderUnit(entry: Log.Entry, withColors: Boolean): String = {
+    override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
       val builder = new StringBuilder
       val context = entry.context
       if (withColors) {
@@ -61,7 +71,7 @@ object LogUnit {
       if (withColors) {
         builder.append(Console.RESET)
       }
-      builder.toString()
+      withMargin(builder.toString(),margin)
     }
   }
 
@@ -70,7 +80,7 @@ object LogUnit {
       "level", "lvl"
     )
 
-    override def renderUnit(entry: Log.Entry, withColors: Boolean): String = {
+    override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
       val builder = new StringBuilder
       val context = entry.context
       if (withColors) {
@@ -79,10 +89,11 @@ object LogUnit {
         builder.append(Console.BOLD)
       }
 
-      val level = context.dynamic.level.toString.substring(0, 1)
+      val level = context.dynamic.level.toString
       builder.append(level)
       builder.append(Console.RESET)
-      builder.toString()
+      withMargin(builder.toString(),margin)
+
     }
   }
 
@@ -91,8 +102,9 @@ object LogUnit {
       "location", "loc"
     )
 
-    override def renderUnit(entry: Log.Entry, withColors: Boolean): String = {
-      s"(${entry.context.static.file}:${entry.context.static.line}) "
+    override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
+      withMargin(s"(${entry.context.static.file}:${entry.context.static.line}) ",margin)
+
     }
   }
 
@@ -101,7 +113,7 @@ object LogUnit {
       "message", "msg"
     )
 
-    override def renderUnit(entry: Log.Entry, withColors: Boolean): String = {
+    override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
       formatMessage(entry, withColors).message
     }
   }
@@ -111,7 +123,7 @@ object LogUnit {
       "custom-ctx", "custom"
     )
 
-    override def renderUnit(entry: Log.Entry, withColors: Boolean): String = {
+    override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
       import entry.context.customContext.values
       val builder = new StringBuilder(" ")
 
