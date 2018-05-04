@@ -20,8 +20,9 @@ trait ModuleBuilder extends ModuleDef {
 
   final protected def bind[T: Tag]: BindDSL[T] = {
     val binding = Bindings.binding[T]
-    mutableState += binding
-    new BindDSL(mutableState, binding)
+    val uniq = mutableState.add(binding)
+
+    new BindDSL(mutableState, binding, uniq)
   }
 
   final protected def set[T: Tag]: SetDSL[T] = {
@@ -47,6 +48,7 @@ object AbstractModuleBuilder {
   (
     protected val mutableState: mutable.Set[Binding]
     , protected val binding: SingletonBinding[DIKey.TypeKey]
+    , protected val ownBinding: Boolean
   ) extends BindDSLBase[T, BindNamedDSL[T]]
     with BindDSLMutBase {
 
@@ -75,6 +77,8 @@ object AbstractModuleBuilder {
   ) extends BindDSLBase[T, Unit]
     with BindDSLMutBase {
 
+    override protected val ownBinding: Boolean = true
+
     override protected def bind(impl: ImplDef): Unit =
       replace(binding.withImpl(impl))
 
@@ -83,9 +87,12 @@ object AbstractModuleBuilder {
   private[definition] sealed trait BindDSLMutBase {
     protected def mutableState: mutable.Set[Binding]
     protected val binding: SingletonBinding[_]
+    protected val ownBinding: Boolean
 
     protected def replace(newBinding: Binding): Unit = discard {
-      mutableState -= binding
+      if (ownBinding) {
+        mutableState -= binding
+      }
       mutableState += newBinding
     }
   }

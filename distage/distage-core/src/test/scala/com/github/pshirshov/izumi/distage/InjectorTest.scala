@@ -300,15 +300,20 @@ class InjectorTest extends WordSpec {
     "handle named assisted dependencies in cglib factory methods" in {
       import Case5._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[NamedAssistedFactory]
-        .bind[Dependency]
-        .bind[Dependency](SpecialDep()).named("special")
-        .bind[Dependency](VerySpecialDep()).named("veryspecial")
+      val definition: ModuleDef = new ModuleBuilder {
+        bind[NamedAssistedFactory]
+        bind[Dependency]
+        bind[Dependency].named("special").as(SpecialDep())
+        bind[Dependency].named("veryspecial").as(VerySpecialDep())
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+
+      assert(!context.get[Dependency].isSpecial)
+      assert(context.get[Dependency]("special").isSpecial)
+      assert(context.get[Dependency]("veryspecial").isVerySpecial)
 
       val instantiated = context.get[NamedAssistedFactory]
 
