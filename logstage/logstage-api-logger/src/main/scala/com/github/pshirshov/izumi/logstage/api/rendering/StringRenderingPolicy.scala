@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api.rendering
 
 import java.awt.GraphicsEnvironment
-import java.util.regex.{Matcher, Pattern}
 
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -10,9 +9,9 @@ import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy.{
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogUnit
 
 import scala.collection.mutable.ListBuffer
-import scala.util.matching.Regex
+import scala.util.{Failure, Success, Try}
 
-class StringRenderingPolicy(options: RenderingOptions, layout: Option[String] = None) extends RenderingPolicy {
+class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[String] = None) extends RenderingPolicy {
   protected val withColors: Boolean = {
     (
       options.withColors &&
@@ -21,7 +20,7 @@ class StringRenderingPolicy(options: RenderingOptions, layout: Option[String] = 
       !GraphicsEnvironment.isHeadless
   }
 
-  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(layout.getOrElse("${level} ${ts}\t\t${thread}\t${location}${custom-ctx}${msg}"))
+  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse("${level} ${ts}\t\t${thread}\t${location}${custom-ctx}${msg}"))
 
   override def render(entry: Log.Entry): String = {
     val sb = new StringBuffer(performRendering(entry, withColors))
@@ -51,51 +50,74 @@ class StringRenderingPolicy(options: RenderingOptions, layout: Option[String] = 
     }
   }
 
+  // todo : tail rec
+  // todo : decompose to small functions
+  // todo : maybe polish notation we need to use for checking braces and theirs closing
+  // todo : inner props i.e. margins
+
   private def renderedLayout(pattern: String): Iterable[LogMessageItem] = {
-    val buffer = ListBuffer.empty[LogMessageItem]
-    var i = 0
-    val charList = pattern.toList
-
-    while (i < charList.length) {
-      val charIth = charList(i)
-      val charIthNext = charList(i + 1)
-      if (charIth == '$') {
-        if (charIthNext == '{') {
-          var j = i + 2
-          var closeableRemained = 1
-          val buffer_i = ListBuffer.empty[Constant[_]]
-          while (closeableRemained > 0) {
-            val curChar = charList(j)
-            if (curChar == '}') {
-              closeableRemained -= 1
-            } else {
-              buffer_i += Constant(curChar)
+    Try {
+      val buffer = ListBuffer.empty[LogMessageItem]
+      var i = 0
+      val charList = pattern.toList
+      while (i < charList.length) {
+        val charIth = charList(i)
+        val charIthNext = charList(i + 1)
+        if (charIth == '$') {
+          if (charIthNext == '{') {
+            var j = i + 2
+            var closeableRemained = 1
+            val buffer_i = ListBuffer.empty[Constant[_]]
+            while (closeableRemained > 0) {
+              val curChar = charList(j)
+              if (curChar == '}') {
+                closeableRemained -= 1
+              } else if (curChar == '{') {
+                closeableRemained += 1
+              } else {
+                buffer_i += Constant(curChar)
+              }
+              j += 1
             }
-            j += 1
-          }
-          val end = j
-
-          val str = buffer_i.map(_.i).mkString("")
-          buffer += {
-            LogUnit.apply(str) match {
-              case Some(unit) =>
-                Form(unit)
-              case None =>
-                Constant(s"$charIth$charIthNext" + str + "}")
+            val str = buffer_i.map(_.i).mkString("")
+            buffer += {
+              LogUnit.apply(str) match {
+                case Some(unit) =>
+                  Form(unit)
+                case None =>
+                  Constant(s"$charIth$charIthNext" + str + "}")
+              }
             }
+            i = j
+          } else {
+            buffer += Constant(charIthNext)
+            i += 1
           }
-          i = end
         } else {
-          buffer += Constant(charIthNext)
+          buffer += Constant(charIth)
           i += 1
         }
-      } else {
-        buffer += Constant(charIth)
-        i += 1
       }
+      buffer
+    } match {
+      case Failure(_ : IndexOutOfBoundsException) =>
+        throw new IllegalArgumentException("found unclosed braces")
+      case Success(items) =>
+        findDuplicateUnits(items).foreach {
+          duplicate =>
+            throw new IllegalArgumentException(s"Found duplicated log unit in rendering layout: ${duplicate.aliases.head}")
+        }
+        items
     }
-    buffer
   }
+
+  def findDuplicateUnits(logItems : Iterable[LogMessageItem]) : Option[LogUnit] =  {
+    val entries = scala.collection.mutable.HashSet.empty[LogUnit]
+    logItems.collectFirst {
+      case Form(unit) if !entries.add(unit) => unit
+    }
+  }
+
 
   private def performRendering(e: Log.Entry, withColor: Boolean)(implicit builder: Iterable[LogMessageItem]): String = {
     builder
