@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures.Case16._
 import com.github.pshirshov.izumi.distage.model.definition.Id
-import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import org.scalatest.WordSpec
@@ -79,12 +78,6 @@ class WrappedFunctionAnnotationTest extends WordSpec {
       val fn2 = DIKeyWrappedFunction(testVal)
       assert(fn2.diKeys contains DIKey.get[String].named("valsigtypeann1"))
       assert(fn2.diKeys contains DIKey.get[Int].named("valsigtypeann2"))
-    }
-
-    "wrappedfunction can work with vals" in {
-      def triggerConversion[R](x: WrappedFunction[R]): Int = {val _ = x; return 5}
-
-      assertCompiles("triggerConversion(testVal3)")
     }
 
     "dikeywrappedfunction can work with vals" in {

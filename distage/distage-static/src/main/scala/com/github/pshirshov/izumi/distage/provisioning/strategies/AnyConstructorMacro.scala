@@ -10,8 +10,8 @@ object AnyConstructorMacro {
   def mkAnyConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = {
     import c.universe._
 
-    val macroUniverse = StaticDIUniverse(c: c.type)
-    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static.instance(macroUniverse)
+    val macroUniverse = StaticDIUniverse(c)
+    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
 
     val safe = macroUniverse.SafeType(weakTypeOf[T])
 

@@ -35,9 +35,11 @@ class DefaultBootstrapContext(contextDefinition: ModuleDef) extends AbstractLoca
 
 object DefaultBootstrapContext {
   protected lazy val bootstrapPlanner: Planner = {
+    val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
+
     val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
-      new DependencyKeyProviderDefaultImpl.Runtime
-      , new SymbolIntrospectorDefaultImpl.Runtime
+      new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
+      , symbolIntrospector
     )
 
     val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap"))

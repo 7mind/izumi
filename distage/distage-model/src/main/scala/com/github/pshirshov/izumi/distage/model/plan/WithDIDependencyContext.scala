@@ -19,6 +19,10 @@ trait WithDIDependencyContext {
 
     case class MethodContext(definingClass: TypeFull) extends DependencyContext
 
+    case class FactoryMethodContext(factoryClass: TypeFull) extends DependencyContext {
+      override def definingClass: TypeFull = factoryClass
+    }
+
     sealed trait ParameterContext extends DependencyContext
 
     object ParameterContext {

@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 
 class LogstageModule(router: LogRouter) extends ModuleBuilder {
   bind[LogRouter].as(router)
-  bind(CustomContext.empty)
+  bind[CustomContext].as(CustomContext.empty)
   bind[IzLogger]
   bind[PlanningObserver].as[PlanningObserverLoggingImpl]
   bind[LoggerHook].as[LoggerHookLoggingImpl]

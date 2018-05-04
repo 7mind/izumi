@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
 import com.github.pshirshov.izumi.distage.model.definition._
+import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
 import org.scalatest.WordSpec
 
 class StaticInjectorTest extends WordSpec {

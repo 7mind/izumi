@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.reflection
 
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.DIUniverse
+import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
@@ -47,6 +48,16 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
       paramLists.nonEmpty && paramLists.forall(list => !list.contains(decl.asMethod.returnType) && !list.contains(tpe))
     }
   }
+
+  override def findSymbolAnnotation(annType: u.TypeFull, symb: u.Symb): Option[u.u.Annotation] = {
+    val univ: u.u.type = u.u // intellij
+    AnnotationTools.find(univ)(annType.tpe, symb)
+  }
+
+  override def findTypeAnnotation(annType: u.TypeFull, tpe: u.TypeFull): Option[u.u.Annotation] = {
+    val univ: u.u.type = u.u // intellij
+    AnnotationTools.findTypeAnnotation(univ)(annType.tpe, tpe.tpe)
+  }
 }
 
 object SymbolIntrospectorDefaultImpl {
@@ -55,13 +66,11 @@ object SymbolIntrospectorDefaultImpl {
     extends SymbolIntrospector.Runtime
        with SymbolIntrospectorDefaultImpl
 
-  class Static[M <: StaticDIUniverse[_]](macroUniverse: M)
-    extends SymbolIntrospector.Static[M](macroUniverse)
-       with SymbolIntrospectorDefaultImpl
-
   object Static {
-    def instance[M <: StaticDIUniverse[_]](macroUniverse: M): SymbolIntrospector.Static[macroUniverse.type] =
-      new SymbolIntrospectorDefaultImpl.Static(macroUniverse)
+    def apply(macroUniverse: DIUniverse): SymbolIntrospector.Static[macroUniverse.type] =
+      new SymbolIntrospectorDefaultImpl {
+        override val u: macroUniverse.type = macroUniverse
+      }
   }
 
 }
