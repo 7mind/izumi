@@ -244,7 +244,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |        t.Errorf("type '%s' Is${m.name} must be true.", "${i.id.name}")
        |    }
        |
-       |${i.alternatives.map(al => if (al.name == m.name) "" else s"""if adt.Is${al.name} {\n    t.Errorf("type '%s' Is${al.name} must be false.", "${i.id.name}")""").mkString("\n").shift(4)}
+       |${i.alternatives.map(al => if (al.name == m.name) "" else s"""if adt.Is${al.name}() {\n    t.Errorf("type '%s' Is${al.name} must be false.", "${i.id.name}")\n}""").mkString("\n").shift(4)}
        |
        |    serialized, err := json.Marshal(adt)
        |    if err != nil {
@@ -287,15 +287,15 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |type $name ${if (i.members.length <= 255) "uint8" else "uint16"}
        |
        |const (
-       |${i.members.map(m => s"// $m enum value\n" + (if (m == i.members.head) s"$m $name = iota" else m)).mkString("\n").shift(4)}
+       |${i.members.map(m => s"// $m enum value\n" + (if (m == i.members.head) s"${name + m} $name = iota" else (name + m))).mkString("\n").shift(4)}
        |)
        |
        |var map${name}ToString = map[$name]string{
-       |${i.members.map(m => s"$m: " + "\"" + m + "\",").mkString("\n").shift(4)}
+       |${i.members.map(m => s"${name + m}: " + "\"" + m + "\",").mkString("\n").shift(4)}
        |}
        |
        |var mapStringTo$name = map[string]$name{
-       |${i.members.map(m => "\"" + m + "\": " + s"$m,").mkString("\n").shift(4)}
+       |${i.members.map(m => "\"" + m + "\": " + s"${name + m},").mkString("\n").shift(4)}
        |}
        |
        |// String converts an enum to a string
@@ -358,10 +358,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |
          |    v1 := New${name}("${i.members.head}")
          |    if !IsValid${name}(v1.String()) {
-         |        t.Errorf("type '%s' should be possible to create via New method with '%s' value", "$name", "${i.members.head}")
+         |        t.Errorf("type '%s' should be possible to create via New method with '%s' value", "$name", "${name + i.members.head}")
          |    }
          |
-         |    v2 := ${i.members.head}
+         |    v2 := ${name + i.members.head}
          |    if v1 != v2 {
          |        t.Errorf("type '%s' created from enum const and a corresponding string must return the same value. Got '%+v' and '%+v'", "$name", v1, v2)
          |    }
