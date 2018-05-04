@@ -56,62 +56,59 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
   // todo : inner props i.e. margins
 
   private def renderedLayout(pattern: String): Iterable[LogMessageItem] = {
-    Try {
-      val buffer = ListBuffer.empty[LogMessageItem]
-      var i = 0
-      val charList = pattern.toList
-      while (i < charList.length) {
-        val charIth = charList(i)
-        val charIthNext = charList(i + 1)
-        if (charIth == '$') {
-          if (charIthNext == '{') {
-            var j = i + 2
-            var closeableRemained = 1
-            val buffer_i = ListBuffer.empty[Constant[_]]
-            while (closeableRemained > 0) {
-              val curChar = charList(j)
-              if (curChar == '}') {
-                closeableRemained -= 1
-              } else if (curChar == '{') {
-                closeableRemained += 1
-              } else {
-                buffer_i += Constant(curChar)
-              }
-              j += 1
+
+    def traverseString(string: List[Char], buffer: List[LogMessageItem] = List.empty): List[LogMessageItem] = {
+
+      string match {
+        case ith +: jth +: others if ith == '$' && jth == '{' => {
+          var j = 0
+          var closeableRemained = 1
+          val buffer_i = ListBuffer.empty[Constant[_]]
+          while (closeableRemained > 0) {
+            val curChar = others(j)
+            if (curChar == '}') {
+              closeableRemained -= 1
+            } else if (curChar == '{') {
+              closeableRemained += 1
+            } else {
+              buffer_i += Constant(curChar)
             }
-            val str = buffer_i.map(_.i).mkString("")
-            buffer += {
-              LogUnit.apply(str) match {
-                case Some(unit) =>
-                  Form(unit)
-                case None =>
-                  Constant(s"$charIth$charIthNext" + str + "}")
-              }
-            }
-            i = j
-          } else {
-            buffer += Constant(charIthNext)
-            i += 1
+            j += 1
           }
-        } else {
-          buffer += Constant(charIth)
-          i += 1
+          val str = buffer_i.map(_.i).mkString("")
+          traverseString(others.zipWithIndex.dropWhile(_._2 < j).map(_._1), buffer :+ {
+            LogUnit.apply(str) match {
+              case Some(unit) => Form(unit)
+              case None => Constant(s"$ith$jth" + str + "}")
+            }
+          })
         }
+        case ith +: others => {
+          traverseString(others, buffer :+ Constant(ith))
+        }
+        case ith +: Nil =>
+          buffer :+ Constant(ith)
+        case Nil =>
+          buffer
       }
-      buffer
+    }
+
+    Try {
+      traverseString(pattern.toList)
     } match {
-      case Failure(_ : IndexOutOfBoundsException) =>
+      case Failure(_: IndexOutOfBoundsException) =>
         throw new IllegalArgumentException("found unclosed braces")
       case Success(items) =>
         findDuplicateUnits(items).foreach {
           duplicate =>
             throw new IllegalArgumentException(s"Found duplicated log unit in rendering layout: ${duplicate.aliases.head}")
         }
+        println(items)
         items
     }
   }
 
-  def findDuplicateUnits(logItems : Iterable[LogMessageItem]) : Option[LogUnit] =  {
+  private def findDuplicateUnits(logItems: Iterable[LogMessageItem]): Option[LogUnit] = {
     val entries = scala.collection.mutable.HashSet.empty[LogUnit]
     logItems.collectFirst {
       case Form(unit) if !entries.add(unit) => unit
