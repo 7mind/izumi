@@ -21,4 +21,8 @@ object AnnotationTools {
 
   def annotationTypeEq(u: Universe)(tpe: u.Type, ann: u.Annotation): Boolean =
     ann.tree.tpe.erasure =:= tpe.erasure
+
+  def findMatchingBody[T: u.TypeTag, R](u: Universe)(symb: u.Symbol, matcher: PartialFunction[u.Tree, R]): Option[R] =
+    find(u)(u.typeOf[T], symb).map(_.tree.children.tail).flatMap(_.collectFirst[R](matcher))
+
 }
