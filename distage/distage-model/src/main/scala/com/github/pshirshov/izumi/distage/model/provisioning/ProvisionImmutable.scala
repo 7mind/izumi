@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.Map
 
-case class ProvisionImmutable
+final case class ProvisionImmutable
 (
   instances: Map[RuntimeDIUniverse.DIKey, Any]
   , imports: Map[RuntimeDIUniverse.DIKey, Any]

@@ -1,13 +1,11 @@
 package com.github.pshirshov.izumi.fundamentals.platform.console
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-
 trait AbstractStringSink {
   def flush(value: => String): Unit
 }
 
 object NullStringSink extends AbstractStringSink {
-  override def flush(value: => String): Unit = Quirks.discard(value)
+  override def flush(value: => String): Unit = {} // Don't use discard here, triggered computation is expensive
 }
 
 object SystemOutStringSink extends AbstractStringSink {

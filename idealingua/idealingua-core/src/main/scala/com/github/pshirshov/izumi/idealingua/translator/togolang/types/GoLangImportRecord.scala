@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.togolang.types
 import com.github.pshirshov.izumi.idealingua.model.common.Package
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 
-case class GoLangImportRecord(id: TypeId, importName: String, pkg: Package) {
+final case class GoLangImportRecord(id: TypeId, importName: String, pkg: Package) {
   def renderImport(): String = {
     if(pkg.isEmpty) {
       return ""

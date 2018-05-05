@@ -51,25 +51,29 @@ class InjectorTest extends WordSpec {
 
     "support multiple bindings" in {
       import Case1._
-      val definition: ModuleDef = TrivialModuleDef
-        .set[JustTrait]
-        .named("named.empty.set")
-        .set[JustTrait]
-        .element[JustTrait]
-        .element(new Impl1)
-        .set[JustTrait]
-        .element(new Impl2())
-        .named("named.set")
-        .set[JustTrait]
-        .element[Impl3]
-        .named("named.set")
+      val definition: ModuleDef = new ModuleBuilder {
+        set[JustTrait].named("named.empty.set")
+
+        set[JustTrait]
+          .element[JustTrait]
+          .element(new Impl1)
+
+        set[JustTrait].named("named.set")
+          .element(new Impl2())
+
+        set[JustTrait].named("named.set")
+          .element[Impl3]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
+      assert(context.get[Set[JustTrait]].size == 2)
+      assert(context.get[Set[JustTrait]]("named.empty.set").isEmpty)
       assert(context.get[Set[JustTrait]]("named.set").size == 2)
     }
+
 
     "support named bindings" in {
       import Case1_1._
@@ -296,15 +300,20 @@ class InjectorTest extends WordSpec {
     "handle named assisted dependencies in cglib factory methods" in {
       import Case5._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[NamedAssistedFactory]
-        .bind[Dependency]
-        .bind[Dependency](SpecialDep()).named("special")
-        .bind[Dependency](VerySpecialDep()).named("veryspecial")
+      val definition: ModuleDef = new ModuleBuilder {
+        bind[NamedAssistedFactory]
+        bind[Dependency]
+        bind[Dependency].named("special").as(SpecialDep())
+        bind[Dependency].named("veryspecial").as(VerySpecialDep())
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+
+      assert(!context.get[Dependency].isSpecial)
+      assert(context.get[Dependency]("special").isSpecial)
+      assert(context.get[Dependency]("veryspecial").isVerySpecial)
 
       val instantiated = context.get[NamedAssistedFactory]
 
@@ -367,6 +376,23 @@ class InjectorTest extends WordSpec {
       assert(!instantiated1.depB.isA)
     }
 
+    "type annotations in di keys do not result in different keys" in {
+      import Case8._
+
+      val definition = TrivialModuleDef
+        .bind[Dependency1 @Id("special")]
+        .bind[Trait1]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.find[Dependency1]
+      val instantiated1 = context.find[Dependency1 @Id("special")]
+      assert(instantiated1.isDefined)
+      assert(instantiated.isDefined)
+    }
+
     "support named bindings in method reference providers" in {
       import Case17._
 
@@ -389,7 +415,7 @@ class InjectorTest extends WordSpec {
 
       val definition = TrivialModuleDef
         .bind[TestDependency].named("classdeftypeann1")
-        .bind[TestClass].provided { t: TestDependency@Id("classdeftypeann1") => new TestClass(t) }
+        .bind[TestClass].provided { t: TestDependency @Id("classdeftypeann1") => new TestClass(t) }
 
       val injector = mkInjector()
       val context = injector.produce(injector.plan(definition))
@@ -400,7 +426,7 @@ class InjectorTest extends WordSpec {
       assert(instantiated.a == dependency)
     }
 
-    "populate implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
+    "populates implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
       import Case13._
 
       val definition = TrivialModuleDef

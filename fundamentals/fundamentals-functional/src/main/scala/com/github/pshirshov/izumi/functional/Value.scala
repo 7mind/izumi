@@ -22,9 +22,9 @@ object Value {
 //sealed trait ValueOp
 //
 //object ValueOp {
-//  case class Set[A](value: A) extends ValueOp
-//  case class Eff[A](f: A => Unit) extends ValueOp
-//  case class Map[A, B](f: A => B) extends ValueOp
+//  final case class Set[A](value: A) extends ValueOp
+//  final case class Eff[A](f: A => Unit) extends ValueOp
+//  final case class Map[A, B](f: A => B) extends ValueOp
 //}
 //
 //final class Value[A] private (ops: Seq[ValueOp]) {

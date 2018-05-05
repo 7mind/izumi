@@ -8,8 +8,8 @@ import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
@@ -35,9 +35,11 @@ class DefaultBootstrapContext(contextDefinition: ModuleDef) extends AbstractLoca
 
 object DefaultBootstrapContext {
   protected lazy val bootstrapPlanner: Planner = {
+    val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
+
     val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
-      new DependencyKeyProviderDefaultImpl.Runtime
-      , new SymbolIntrospectorDefaultImpl.Runtime
+      new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
+      , symbolIntrospector
     )
 
     val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap"))
@@ -52,7 +54,7 @@ object DefaultBootstrapContext {
       , CustomOpHandler.NullCustomOpHander
       , bootstrapObserver
       , new PlanMergingPolicyDefaultImpl(analyzer)
-      , new PlanningHookDefaultImpl
+      , Set(new PlanningHookDefaultImpl)
     )
   }
 
@@ -84,6 +86,7 @@ object DefaultBootstrapContext {
     .bind[DependencyKeyProvider.Runtime].as[DependencyKeyProviderDefaultImpl.Runtime]
     .bind[PlanningHook].as[PlanningHookDefaultImpl]
     .bind[PlanningObserver].as[PlanningObserverDefaultImpl]
+    //.bind[PlanningObserver](new BootstrapPlanningObserver(new TrivialLoggerImpl(SystemOutStringSink)))
     .bind[PlanResolver].as[PlanResolverDefaultImpl]
     .bind[PlanAnalyzer].as[PlanAnalyzerDefaultImpl]
     .bind[PlanMergingPolicy].as[PlanMergingPolicyDefaultImpl]
@@ -104,4 +107,6 @@ object DefaultBootstrapContext {
     .bind[CustomStrategy].as[CustomStrategyDefaultImpl]
     .bind[InstanceStrategy].as[InstanceStrategyDefaultImpl]
     .bind[Provisioner].as[ProvisionerDefaultImpl]
+    .set[PlanningHook]
+      .element[PlanningHookDefaultImpl]
 }

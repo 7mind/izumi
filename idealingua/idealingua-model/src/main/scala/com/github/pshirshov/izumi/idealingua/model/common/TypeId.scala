@@ -7,7 +7,7 @@ sealed trait AbstractIndefiniteId {
 }
 
 
-case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractIndefiniteId
+final case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractIndefiniteId
 
 object IndefiniteId {
   def parse(s: String): IndefiniteId = {
@@ -16,7 +16,7 @@ object IndefiniteId {
   }
 }
 
-case class IndefiniteGeneric(pkg: Package, name: TypeName, args: List[AbstractIndefiniteId]) extends AbstractIndefiniteId
+final case class IndefiniteGeneric(pkg: Package, name: TypeName, args: List[AbstractIndefiniteId]) extends AbstractIndefiniteId
 
 
 sealed trait TypeId {
@@ -41,9 +41,9 @@ sealed trait TimeTypeId {
 
 object TypeId {
 
-  case class InterfaceId(path: TypePath, name: TypeName) extends StructureId
+  final case class InterfaceId(path: TypePath, name: TypeName) extends StructureId
 
-  case class DTOId(path: TypePath, name: TypeName) extends StructureId
+  final case class DTOId(path: TypePath, name: TypeName) extends StructureId
 
   object DTOId {
     def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.path.sub(parent.name), name)
@@ -51,20 +51,20 @@ object TypeId {
     def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(TypePath(parent.domain, Seq(parent.name)), name)
   }
 
-  case class IdentifierId(path: TypePath, name: TypeName) extends ScalarId
+  final case class IdentifierId(path: TypePath, name: TypeName) extends ScalarId
 
-  case class AdtId(path: TypePath, name: TypeName) extends TypeId
+  final case class AdtId(path: TypePath, name: TypeName) extends TypeId
 
   object AdtId {
     def apply(parent: ServiceId, name: TypeName): AdtId = new AdtId(TypePath(parent.domain, Seq(parent.name)), name)
   }
 
-  case class AliasId(path: TypePath, name: TypeName) extends TypeId
+  final case class AliasId(path: TypePath, name: TypeName) extends TypeId
 
-  case class EnumId(path: TypePath, name: TypeName) extends TypeId
+  final case class EnumId(path: TypePath, name: TypeName) extends TypeId
 
   // TODO: remove superclass?
-  case class ServiceId(domain: DomainId, name: TypeName)
+  final case class ServiceId(domain: DomainId, name: TypeName)
 
 }
 
@@ -174,7 +174,7 @@ object Generic {
 
   }
 
-  case class TList(valueType: TypeId) extends Generic {
+  final case class TList(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
     override def aliases: List[TypeName] = TList.aliases
@@ -184,7 +184,7 @@ object Generic {
     def aliases: List[TypeName] = List("lst", "list")
   }
 
-  case class TSet(valueType: TypeId) extends Generic {
+  final case class TSet(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
     override def aliases: List[TypeName] = TSet.aliases
@@ -194,7 +194,7 @@ object Generic {
     def aliases: List[TypeName] = List("set")
   }
 
-  case class TOption(valueType: TypeId) extends Generic {
+  final case class TOption(valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(valueType)
 
     override def aliases: List[TypeName] = TOption.aliases
@@ -205,7 +205,7 @@ object Generic {
   }
 
 
-  case class TMap(keyType: ScalarId, valueType: TypeId) extends Generic {
+  final case class TMap(keyType: ScalarId, valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(keyType, valueType)
 
     override def aliases: List[TypeName] = TMap.aliases

@@ -8,9 +8,9 @@ import scala.language.implicitConversions
 
 object IzumiScopesPlugin extends AutoPlugin {
   sealed trait ProjectReferenceEx
-  case class ClasspathRef(ref: ClasspathDep[ProjectReference]) extends ProjectReferenceEx
-  case class ImprovedProjectRef(ref: Project) extends ProjectReferenceEx
-  case class DefaultProjectRef(ref: Project) extends ProjectReferenceEx
+  final case class ClasspathRef(ref: ClasspathDep[ProjectReference]) extends ProjectReferenceEx
+  final case class ImprovedProjectRef(ref: Project) extends ProjectReferenceEx
+  final case class DefaultProjectRef(ref: Project) extends ProjectReferenceEx
 
   //noinspection TypeAnnotation
   object autoImport {

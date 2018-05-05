@@ -11,13 +11,13 @@ sealed trait TypeDef {
 
 object TypeDef {
 
-  case class Alias(id: AliasId, target: TypeId) extends TypeDef
+  final case class Alias(id: AliasId, target: TypeId) extends TypeDef
 
-  case class Enumeration(id: EnumId, members: List[String]) extends TypeDef
+  final case class Enumeration(id: EnumId, members: List[String]) extends TypeDef
 
-  case class Adt(id: AdtId, alternatives: List[AdtMember]) extends TypeDef
+  final case class Adt(id: AdtId, alternatives: List[AdtMember]) extends TypeDef
 
-  case class Identifier(id: IdentifierId, fields: PrimitiveTuple) extends TypeDef
+  final case class Identifier(id: IdentifierId, fields: PrimitiveTuple) extends TypeDef
 
   sealed trait WithStructure extends TypeDef {
     def id: StructureId
@@ -25,9 +25,9 @@ object TypeDef {
     def struct: Structure
   }
 
-  case class Interface(id: InterfaceId, struct: Structure) extends WithStructure
+  final case class Interface(id: InterfaceId, struct: Structure) extends WithStructure
 
-  case class DTO(id: DTOId, struct: Structure) extends WithStructure
+  final case class DTO(id: DTOId, struct: Structure) extends WithStructure
 
 }
 

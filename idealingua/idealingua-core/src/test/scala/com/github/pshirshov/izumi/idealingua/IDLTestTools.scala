@@ -68,7 +68,7 @@ object IDLTestTools {
     out.allFiles.nonEmpty
   }
 
-  case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
+  final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
 
   private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
     val targetDir = Paths.get("target")

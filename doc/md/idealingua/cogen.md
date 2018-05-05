@@ -60,7 +60,7 @@ trait Metadata {
   def id: String
 }
 
-case class Point(y: Int, name: String, x: Int, id: String) extends Metadata
+final case class Point(y: Int, name: String, x: Int, id: String) extends Metadata
 
 trait PointLike extends Metadata {
   def y: Int
@@ -107,7 +107,7 @@ Differences between Mixins and Data Classes:
 ### Scala output
 
 ```scala
-case class HumanUser(name: String, surname: String, id: UserId) extends IdentifiedUser with Person
+final case class HumanUser(name: String, surname: String, id: UserId) extends IdentifiedUser with Person
 ``` 
 
 ## `adt`: Algebraic Data Type
@@ -204,7 +204,7 @@ id UserId {
 ### Scala output
 
 ```scala
-case class UserId(value: java.util.UUID, company: java.util.UUID) {
+final case class UserId(value: java.util.UUID, company: java.util.UUID) {
   override def toString: String = {
     import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
     val suffix = Seq(this.company, this.value).map(part => escape(part.toString)).mkString(":")
