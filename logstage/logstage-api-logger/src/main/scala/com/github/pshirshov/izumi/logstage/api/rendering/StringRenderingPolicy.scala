@@ -17,7 +17,7 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
       !GraphicsEnvironment.isHeadless
   }
 
-  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse("${level[2]} ${ts[..20]} ${thread}\t${location}${custom-ctx}${msg}"))
+  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse("${level} ${ts} ${thread}\t${location}${custom-ctx}${msg}"))
 
   override def render(entry: Log.Entry): String = {
     val sb = new StringBuffer(performRendering(entry, withColors))
@@ -73,17 +73,11 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
       (remained, payload)
     }
 
-    case class MaybeLogUnit(alias: String, margin: Option[String])
-
     def traverseString(string: List[Char], buffer: List[LogMessageItem] = List.empty): List[LogMessageItem] = {
       string match {
         case ith +: jth +: others if ith == '$' && jth == '{' => {
           val (remained, maybeLogUnit) = parseLogUnit(others)
-          traverseString(remained,
-            buffer :+ parseLogUnitWithMargin(maybeLogUnit).getOrElse {
-              Constant(s"$ith$jth" + maybeLogUnit + "}")
-            }
-          )
+          traverseString(remained, buffer :+ parseLogUnitWithMargin(maybeLogUnit).getOrElse(Constant(s"$ith$jth" + maybeLogUnit + "}")))
         }
         case ith +: others =>
           traverseString(others, buffer :+ Constant(ith))

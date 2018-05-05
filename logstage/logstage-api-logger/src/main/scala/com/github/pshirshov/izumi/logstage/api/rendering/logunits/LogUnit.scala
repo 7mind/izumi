@@ -16,7 +16,7 @@ sealed trait LogUnit {
 
 object LogUnit {
 
-  def withMargin(string : String, margin: Option[Margin]) : String = {
+  def withMargin(string: String, margin: Option[Margin]): String = {
     margin match {
       case Some(Margin(true, pad))  => string.ellipsedLeftPad(pad)
       case Some(Margin(_, pad)) => string.leftPad(pad)
@@ -71,7 +71,7 @@ object LogUnit {
       if (withColors) {
         builder.append(Console.RESET)
       }
-      withMargin(builder.toString(),margin)
+      withMargin(builder.toString(), margin)
     }
   }
 
@@ -90,10 +90,9 @@ object LogUnit {
       }
 
       val level = context.dynamic.level.toString
-      builder.append(level)
+      builder.append(String.format(level.substring(0, 1)))
       builder.append(Console.RESET)
-      withMargin(builder.toString(),margin)
-
+      builder.toString()
     }
   }
 
@@ -103,7 +102,7 @@ object LogUnit {
     )
 
     override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
-      withMargin(s"(${entry.context.static.file}:${entry.context.static.line}) ",margin)
+      withMargin(s"(${entry.context.static.file}:${entry.context.static.line}) ", margin)
 
     }
   }
