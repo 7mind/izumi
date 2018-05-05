@@ -7,12 +7,12 @@ object IL {
 
   sealed trait Val
 
-  case class ILDomainId(id: DomainId) extends Val
+  final case class ILDomainId(id: DomainId) extends Val
 
-  case class ILService(v: Service) extends Val
+  final case class ILService(v: Service) extends Val
 
-  case class ILInclude(i: String) extends Val
+  final case class ILInclude(i: String) extends Val
 
-  case class ILDef(v: RawTypeDef) extends Val
+  final case class ILDef(v: RawTypeDef) extends Val
 
 }

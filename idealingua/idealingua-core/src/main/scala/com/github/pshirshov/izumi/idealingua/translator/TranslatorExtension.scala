@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
-case class ExtensionId(id: String) extends AnyVal {
+final case class ExtensionId(id: String) extends AnyVal {
   override def toString: String = id
 }
 

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, StaticDIUniverse, RuntimeDIUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, RuntimeDIUniverse}
 
 trait ReflectionProvider {
   val u: DIUniverse
@@ -9,7 +9,7 @@ trait ReflectionProvider {
 
   def providerToWiring(function: u.Provider): u.Wiring
 
-  def constructorParameters(symbl: u.TypeFull): List[u.Association.Parameter]
+  def constructorParameters(symbl: u.TypeFull): List[u.Association.ExtendedParameter]
 }
 
 object ReflectionProvider {
@@ -18,8 +18,8 @@ object ReflectionProvider {
     override val u: RuntimeDIUniverse.type = RuntimeDIUniverse
   }
 
-  trait Static[+M <: StaticDIUniverse[_]] extends ReflectionProvider {
-    override val u: M
-  }
+  type Static[U] = Aux[U]
+
+  type Aux[U] = ReflectionProvider { val u: U }
 
 }

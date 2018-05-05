@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.distage.model.definition._
 import org.scalatest.WordSpec
 import DIStageInstances._
 import cats.implicits._
-import cats.kernel.Semigroup
 
 class DIStageInstancesTest extends WordSpec {
   "cats instances for ContextDefinition" should {

@@ -209,7 +209,7 @@ object CliIdlCompiler {
     println(s"Stubs: $cc files copied")
   }
 
-  case class ZE(name: String, file: Path)
+  final case class ZE(name: String, file: Path)
 
   def zip(out: Path, files: Iterable[ZE]): Unit = {
     import java.io.{BufferedInputStream, FileInputStream, FileOutputStream}

@@ -21,12 +21,12 @@ object Bindings {
   def emptySet[T: Tag]: EmptySetBinding[DIKey.TypeKey] =
     EmptySetBinding(DIKey.get[Set[T]])
 
-  def setElement[T: Tag, I <: T : Tag]: SetBinding[DIKey.TypeKey] =
-    SetBinding(DIKey.get[Set[T]], ImplDef.TypeImpl(SafeType.get[I]))
+  def setElement[T: Tag, I <: T : Tag]: SetElementBinding[DIKey.TypeKey] =
+    SetElementBinding(DIKey.get[Set[T]], ImplDef.TypeImpl(SafeType.get[I]))
 
-  def setElement[T: Tag, I <: T: Tag](instance: I): SetBinding[DIKey.TypeKey] =
-    SetBinding(DIKey.get[Set[T]], ImplDef.InstanceImpl(SafeType.get[T], instance))
+  def setElement[T: Tag, I <: T: Tag](instance: I): SetElementBinding[DIKey.TypeKey] =
+    SetElementBinding(DIKey.get[Set[T]], ImplDef.InstanceImpl(SafeType.get[T], instance))
 
-  def setElementProvider[T: Tag](f: DIKeyWrappedFunction[T]): SetBinding[DIKey.TypeKey] =
-    SetBinding(DIKey.get[Set[T]], ImplDef.ProviderImpl(f.ret, f))
+  def setElementProvider[T: Tag](f: DIKeyWrappedFunction[T]): SetElementBinding[DIKey.TypeKey] =
+    SetElementBinding(DIKey.get[Set[T]], ImplDef.ProviderImpl(f.ret, f))
 }

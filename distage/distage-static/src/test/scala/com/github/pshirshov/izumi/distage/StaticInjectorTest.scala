@@ -2,14 +2,9 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.Injector
-import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
+import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
-import com.github.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, TraitInitializationFailedException, UnsupportedWiringException, UntranslatablePlanException}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
-import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.UnsolvableConflict
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
 import org.scalatest.WordSpec
 
 class StaticInjectorTest extends WordSpec {

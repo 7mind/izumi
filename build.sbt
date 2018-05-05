@@ -21,7 +21,7 @@ val LibSettings = SettingsGroupId()
 val SbtSettings = SettingsGroupId()
 val ShadingSettings = SettingsGroupId()
 
-val scala_212 = "2.12.6"
+val scala_212 = R.scala212
 val scala_213 = "2.13.0-M3"
 
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
@@ -43,7 +43,7 @@ val baseSettings = new GlobalSettings {
           else
             Opts.resolver.sonatypeStaging
         )
-        , credentials in Global += Credentials(new File("credentials.sonatype-nexus.properties"))
+        , credentials in Global ++= Seq(new File("credentials.sonatype-nexus.properties")).filter(_.exists()).map(Credentials(_))
         , pomExtra in Global := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
           <licenses>
             <license>
@@ -181,10 +181,21 @@ lazy val distageModel = inDiStage.as.module
   .depends(fundamentalsReflection)
 
 lazy val distagePlugins = inDiStage.as.module
-  .depends(distageCore, logstageDi)
+  .depends(distageCore)
   .settings(
     libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
+
+lazy val distageApp = inDiStage.as.module
+  .depends(distageCore, distagePlugins, distageConfig, logstageDi)
+
+
+lazy val distageConfig = inDiStage.as.module
+  .depends(distageCore)
+  .settings(
+    libraryDependencies ++= Seq(R.typesafe_config)
+  )
+
 
 lazy val distageCore = inDiStage.as.module
   .depends(fundamentalsFunctional, distageModel)
@@ -336,7 +347,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageCore
-  , distagePlugins
+  , distageApp
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore

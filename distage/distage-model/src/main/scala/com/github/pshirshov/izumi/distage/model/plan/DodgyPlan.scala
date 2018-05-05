@@ -117,7 +117,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
   * &&&&&&&&&&&&&&&%%%%&&&&&@&&%(%@@@@@&%@@@@@@@@@@@@@@@@&&&&%%%%%%&&&&&&&&@&&@&&&@@@@@@@@&@@@@@@@&&&&&&&&&&&&&&&&&&&&&&&
   * &&&&&&&&&&&&&&&&&&&&&&&&&&&%#&&&&&&@@@@&&&&&&&&&&&&&@@@&&&&&%%%%%%&&&&&&&&&&@@@@@@@@&@@@&&@@&&&&&&&&&&&&&&&&&&&&&&&&&&&
   **/
-case class DodgyPlan(
+final case class DodgyPlan(
                       imports: Map[RuntimeDIUniverse.DIKey, ImportDependency]
                       , sets: Set[CreateSet]
                       , proxies: Seq[ProxyOp.InitProxy]
@@ -125,6 +125,9 @@ case class DodgyPlan(
                       , issues: Seq[PlanningFailure]
                     ) {
   def statements: Seq[ExecutableOp] = imports.values.toSeq ++ sets.toStream ++ steps ++ proxies
+
+  def index: Map[RuntimeDIUniverse.DIKey, ExecutableOp] = statements.map(s => s.target -> s).toMap
+  def keys: Set[RuntimeDIUniverse.DIKey] = statements.map(_.target).toSet
 
   override def toString: String = {
     val repr = issues.map(_.toString) ++ statements.map(_.format)

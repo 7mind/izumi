@@ -3,16 +3,16 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.common.{Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
 
-case class Field(typeId: TypeId, name: String) {
+final case class Field(typeId: TypeId, name: String) {
   override def toString: String = s"$name:$typeId"
 }
 
-case class PrimitiveField(typeId: Primitive, name: String)
+final case class PrimitiveField(typeId: Primitive, name: String)
 
-case class SimpleStructure(concepts: Interfaces, fields: Tuple)
+final case class SimpleStructure(concepts: Interfaces, fields: Tuple)
 
 
-case class Super(
+final case class Super(
                   interfaces: Interfaces
                   , concepts: Interfaces
                   , removedConcepts: Interfaces
@@ -24,7 +24,7 @@ object Super {
   def empty: Super = Super(List.empty, List.empty, List.empty)
 }
 
-case class Structure(fields: Tuple, removedFields: Tuple, superclasses: Super)
+final case class Structure(fields: Tuple, removedFields: Tuple, superclasses: Super)
 
 object Structure {
   def empty: Structure = Structure(List.empty, List.empty, Super.empty)

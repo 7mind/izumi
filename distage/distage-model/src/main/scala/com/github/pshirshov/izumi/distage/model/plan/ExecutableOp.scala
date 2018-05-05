@@ -18,7 +18,7 @@ object ExecutableOp {
   sealed trait InstantiationOp extends ExecutableOp
 
   final case class ImportDependency(target: RuntimeDIUniverse.DIKey, references: Set[RuntimeDIUniverse.DIKey]) extends ExecutableOp {
-    override def format: String = f"""$target := import $target // required for $references"""
+    override def format: String = f"""$target := import $target // required for ${references.mkString(" and ")}"""
   }
 
   final case class CustomOp(target: RuntimeDIUniverse.DIKey, data: CustomWiring) extends InstantiationOp {
@@ -49,7 +49,7 @@ object ExecutableOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 
-    final case class InstantiateTrait(target: RuntimeDIUniverse.DIKey, wiring: UnaryWiring.Abstract) extends WiringOp {
+    final case class InstantiateTrait(target: RuntimeDIUniverse.DIKey, wiring: UnaryWiring.AbstractSymbol) extends WiringOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 

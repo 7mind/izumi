@@ -16,7 +16,7 @@ import sbt.plugins._
 
 object IdealinguaPlugin extends AutoPlugin {
 
-  case class Scope(source: Path, target: Path)
+  final case class Scope(source: Path, target: Path)
 
   sealed trait Mode
 
@@ -28,7 +28,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
   }
 
-  case class Invokation(options: CompilerOptions, mode: Mode)
+  final case class Invokation(options: CompilerOptions, mode: Mode)
 
   object Keys {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")

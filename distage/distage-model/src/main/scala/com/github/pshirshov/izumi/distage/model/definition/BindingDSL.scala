@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
@@ -91,7 +91,7 @@ object BindingDSL {
     , private val setKey: DIKey.TypeKey
     , private val setElements: Set[ImplDef]
   ) extends BindingDSL(
-    completed + EmptySetBinding(setKey) ++ setElements.map(SetBinding(setKey, _))
+    completed + EmptySetBinding(setKey) ++ setElements.map(SetElementBinding(setKey, _))
   ) with SetDSLBase[T, SetDSL[T]] {
     def named(name: String): SetNamedDSL[T] =
       new SetNamedDSL(completed, setKey.named(name), setElements)
@@ -106,7 +106,7 @@ object BindingDSL {
     , private val setKey: DIKey.IdKey[_]
     , private val setElements: Set[ImplDef]
   ) extends BindingDSL(
-    completed + EmptySetBinding(setKey) ++ setElements.map(SetBinding(setKey, _))
+    completed + EmptySetBinding(setKey) ++ setElements.map(SetElementBinding(setKey, _))
   ) with SetDSLBase[T, SetNamedDSL[T]] {
     protected def add(newElement: ImplDef): SetNamedDSL[T] =
       new SetNamedDSL(completed, setKey, setElements + newElement)
@@ -122,7 +122,7 @@ object BindingDSL {
     def elementProvider(f: DIKeyWrappedFunction[T]): AfterAdd =
       add(ImplDef.ProviderImpl(f.ret, f))
 
-    protected def add(newElement: ImplDef): AfterAdd
+    protected def add(newImpl: ImplDef): AfterAdd
   }
 
 }

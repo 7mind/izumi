@@ -3,24 +3,24 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 import scala.language.higherKinds
 
 // addressing
-case class IRTServiceId(value: String) extends AnyVal
+final case class IRTServiceId(value: String) extends AnyVal
 
-case class IRTMethodId(value: String) extends AnyVal
+final case class IRTMethodId(value: String) extends AnyVal
 
-case class IRTMethod(service: IRTServiceId, methodId: IRTMethodId)
+final case class IRTMethod(service: IRTServiceId, methodId: IRTMethodId)
 
 
 // dtos
 
-case class IRTReqBody(value: Product) extends AnyRef
+final case class IRTReqBody(value: Product) extends AnyRef
 
-case class IRTResBody(value: Product) extends AnyRef
+final case class IRTResBody(value: Product) extends AnyRef
 
-case class IRTMuxResponse[T <: Product](v: T, method: IRTMethod) {
+final case class IRTMuxResponse[T <: Product](v: T, method: IRTMethod) {
   def body: IRTResBody = IRTResBody(v)
 }
 
-case class IRTMuxRequest[T <: Product](v: T, method: IRTMethod) {
+final case class IRTMuxRequest[T <: Product](v: T, method: IRTMethod) {
   def body: IRTReqBody = IRTReqBody(v)
 }
 

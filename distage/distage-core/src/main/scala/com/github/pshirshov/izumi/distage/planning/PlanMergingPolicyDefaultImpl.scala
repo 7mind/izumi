@@ -95,6 +95,7 @@ class PlanMergingPolicyDefaultImpl(
         Set.empty
     }
   }
+
   private def computeNewImports(currentPlan: DodgyPlan, currentOp: NextOps) = {
     val newProvisionKeys = newKeys(currentOp)
 
@@ -116,9 +117,8 @@ class PlanMergingPolicyDefaultImpl(
   }
 
   private def newKeys(currentOp: NextOps): Set[RuntimeDIUniverse.DIKey] = {
-    currentOp
-      .provisions
-      .map(op => op.target)
-      .toSet
+    val all = currentOp.provisions.map(op => op.target) ++
+      currentOp.sets.map(op => op.target)
+    all.toSet
   }
 }

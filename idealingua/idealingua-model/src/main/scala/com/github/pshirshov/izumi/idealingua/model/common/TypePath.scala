@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.common
 
-case class TypePath(domain: DomainId, within: Package) {
+final case class TypePath(domain: DomainId, within: Package) {
   def sub(v: TypeName) = TypePath(domain, within :+ v)
   def toPackage: Package= domain.toPackage ++ within
 

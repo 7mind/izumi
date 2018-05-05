@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
-case class GoLangType (
+final case class GoLangType (
                         id: TypeId,
                         im: GoLangImports = GoLangImports(List.empty),
                         ts: Typespace = null
