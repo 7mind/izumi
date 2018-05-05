@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.config
 
-import com.typesafe.config.ConfigValue
+import com.typesafe.config.Config
 
 trait ConfigInstanceReader {
-  def read(value: ConfigValue, clazz: Class[_]): Product
+  def read(value: Config, clazz: Class[_]): Product
 }

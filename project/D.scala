@@ -21,6 +21,7 @@ object D {
     val fast_classpath_scanner = "io.github.lukehutch" % "fast-classpath-scanner" % "2.19.0"
 
     val typesafe_config = "com.typesafe" % "config" % "1.3.3"
+    val pureconfig = "com.github.pureconfig" %% "pureconfig" % "0.9.1"
 
     val kamon = Seq(
       "io.kamon" %% "kamon-core" % "1.0.0"

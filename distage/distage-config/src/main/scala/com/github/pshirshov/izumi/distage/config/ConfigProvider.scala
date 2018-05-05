@@ -106,7 +106,7 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
 
 
   private def translate(step: RequiredConfigEntry): ExecutableOp = {
-    val results = step.paths.map(p => Try(config.config.getValue(p.toPath)))
+    val results = step.paths.map(p => Try(config.config.getConfig(p.toPath)))
     val loaded = results.collect({ case scala.util.Success(value) => value })
 
     if (loaded.isEmpty) {
