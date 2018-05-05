@@ -6,12 +6,17 @@ import com.typesafe.config._
 import org.scalatest.WordSpec
 
 
+object DummyConfigInstanceReader extends ConfigInstanceReader {
+  def read(value: ConfigValue, clazz: Class[_]): Product = {
+    clazz.getConstructor(classOf[Int], classOf[String]).newInstance(0.intValue().underlying(), "").asInstanceOf[Product]
+  }
+}
 
 class ConfigTest extends WordSpec {
   "Config resolver" should {
     "resolve config references" in {
       val config = AppConfig(ConfigFactory.load())
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = Injectors.bootstrap(new ConfigModule(config, DummyConfigInstanceReader))
       val plan = injector.plan(TestConfigApp.definition)
       //println(plan)
 
