@@ -1,37 +1,41 @@
 package com.github.pshirshov.configapp
 
-import com.github.pshirshov.izumi.distage.config.{AutoConf, Conf, WithPureConfig}
+import com.github.pshirshov.izumi.distage.config.pureconfig.WithPureConfig
+import com.github.pshirshov.izumi.distage.config.pureconfig.WithPureConfig.R
+import com.github.pshirshov.izumi.distage.config.{AutoConf, Conf}
 import com.github.pshirshov.izumi.distage.model.definition.{Id, TrivialModuleDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 case class HostPort(port: Int, host: String)
 
 object HostPort extends WithPureConfig[HostPort] {
-  def reader: R[HostPort] = implicitly
+  override def reader: R[HostPort] = implicitly
 }
 
-trait Listener {}
-
-class ListenerImpl(@AutoConf listen: HostPort) extends Listener {
-  Quirks.discard(listen)
+trait Endpoint {
+  def address: HostPort
 }
 
-class CassandraDriver(@Conf("cassandra") listen: HostPort) extends Listener {
-  Quirks.discard(listen)
+class EndpoitImpl(@AutoConf val address: HostPort) extends Endpoint {
+  Quirks.discard(address)
+}
+
+class CassandraEndpoint(@Conf("cassandra") val address: HostPort) extends Endpoint {
+  Quirks.discard(address)
 }
 
 
 trait TestService
 
-class TestService1(@Id("service1") listener: Listener, @Conf("cassandra") cassandra: HostPort) extends TestService {
+class TestService1(@Id("service1") listener: Endpoint, @Conf("cassandra") cassandra: HostPort) extends TestService {
   Quirks.discard(listener)
 }
 
-class TestService2(@Id("service2") listener: Listener) extends TestService {
+class TestService2(@Id("service2") listener: Endpoint) extends TestService {
   Quirks.discard(listener)
 }
 
-class TestService3(listener: Listener) extends TestService {
+class TestService3(listener: Endpoint) extends TestService {
   Quirks.discard(listener)
 }
 
@@ -45,8 +49,8 @@ object TestConfigApp {
     .element[TestService1]
     .element[TestService2]
     .element[TestService3]
-    .bind[Listener].named("service1").as[ListenerImpl]
-    .bind[Listener].named("service2").as[ListenerImpl]
-    .bind[Listener].as[ListenerImpl]
-    .bind[CassandraDriver]
+    .bind[Endpoint].named("service1").as[EndpoitImpl]
+    .bind[Endpoint].named("service2").as[EndpoitImpl]
+    .bind[Endpoint].as[EndpoitImpl]
+    .bind[CassandraEndpoint]
 }
