@@ -75,9 +75,9 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
   protected def renderRuntimeNames(pkg: String, name: String, holderName: String = null): String = {
     s"""// Runtime identification methods
-       |public static readonly PackageName = ${"\"" + pkg + "\""};
-       |public static readonly ClassName = ${"\"" + name + "\""};
-       |public static readonly FullClassName = "${pkg + "." + name}";
+       |public static readonly PackageName = '$pkg';
+       |public static readonly ClassName = '$name';
+       |public static readonly FullClassName = '${pkg + "." + name}';
        |
        |public getPackageName(): string { return ${if(holderName == null) name else holderName}.PackageName; }
        |public getClassName(): string { return ${if(holderName == null) name else holderName}.ClassName; }
