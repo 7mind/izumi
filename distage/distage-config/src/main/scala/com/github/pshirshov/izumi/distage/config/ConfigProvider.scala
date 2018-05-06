@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependen
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.typesafe.config.{Config, ConfigValue}
+import com.typesafe.config.Config
 
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -39,8 +39,9 @@ final class AutoConf() extends scala.annotation.StaticAnnotation
 final class Conf(val name: String) extends scala.annotation.StaticAnnotation
 
 
-class ConfigModule(config: AppConfig) extends ModuleBuilder {
+class ConfigModule(config: AppConfig, reader: ConfigInstanceReader) extends ModuleBuilder {
   bind[AppConfig].as(config)
+  bind[ConfigInstanceReader].as(reader)
   set[PlanningHook]
     .element[ConfigReferenceExtractor]
 
@@ -76,7 +77,7 @@ private object ConfigImport {
   }
 }
 
-class ConfigProvider(config: AppConfig) extends PlanningHook {
+class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends PlanningHook {
   override def hookFinal(plan: FinalPlan): FinalPlan = {
     val updatedSteps = plan.steps
       .map {
@@ -105,7 +106,7 @@ class ConfigProvider(config: AppConfig) extends PlanningHook {
 
 
   private def translate(step: RequiredConfigEntry): ExecutableOp = {
-    val results = step.paths.map(p => Try(config.config.getValue(p.toPath)))
+    val results = step.paths.map(p => Try(config.config.getConfig(p.toPath)))
     val loaded = results.collect({ case scala.util.Success(value) => value })
 
     if (loaded.isEmpty) {
@@ -114,7 +115,7 @@ class ConfigProvider(config: AppConfig) extends PlanningHook {
     }
 
     val section = loaded.head
-    val product = read(section, step.targetClass)
+    val product = reader.read(section, step.targetClass)
     ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.symbol, product))
   }
 
@@ -168,9 +169,9 @@ class ConfigProvider(config: AppConfig) extends PlanningHook {
     RequiredConfigEntry(paths, runtimeClass, op.imp.target)
   }
 
-  private def read(value: ConfigValue, clazz: Class[_]): Product = {
-    clazz.getConstructor(classOf[Int], classOf[String]).newInstance(0.intValue().underlying(), "").asInstanceOf[Product]
-  }
+
 }
+
+
 
 

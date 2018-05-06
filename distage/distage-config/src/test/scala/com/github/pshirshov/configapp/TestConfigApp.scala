@@ -1,10 +1,14 @@
 package com.github.pshirshov.configapp
 
-import com.github.pshirshov.izumi.distage.config.{AutoConf, Conf}
+import com.github.pshirshov.izumi.distage.config.{AutoConf, Conf, WithPureConfig}
 import com.github.pshirshov.izumi.distage.model.definition.{Id, TrivialModuleDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 case class HostPort(port: Int, host: String)
+
+object HostPort extends WithPureConfig[HostPort] {
+  def reader: R[HostPort] = implicitly
+}
 
 trait Listener {}
 
