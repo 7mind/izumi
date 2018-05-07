@@ -34,13 +34,15 @@ class DefaultBootstrapContext(contextDefinition: ModuleDef) extends AbstractLoca
 }
 
 object DefaultBootstrapContext {
-  protected lazy val bootstrapPlanner: Planner = {
-    val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
+  val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
 
-    val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
-      new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
-      , symbolIntrospector
-    )
+  val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
+    new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
+    , symbolIntrospector
+  )
+
+  protected lazy val bootstrapPlanner: Planner = {
+
 
     val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap"))
 
@@ -64,7 +66,7 @@ object DefaultBootstrapContext {
 
     new ProvisionerDefaultImpl(
       new SetStrategyDefaultImpl
-      , new ProxyStrategyFailingImpl
+      , new ProxyStrategyDefaultImpl(reflectionProvider) //new ProxyStrategyFailingImpl
       , new FactoryStrategyDefaultImpl
       , new TraitStrategyDefaultImpl
       , new ProviderStrategyDefaultImpl(loggerHook)

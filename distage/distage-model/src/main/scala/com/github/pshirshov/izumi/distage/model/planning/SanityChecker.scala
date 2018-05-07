@@ -7,6 +7,13 @@ trait SanityChecker {
   def assertSanity(plan: FinalPlan): Unit
 
   def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit
-  def assertNoDuplicateOps(plan: DodgyPlan): Unit = assertNoDuplicateOps(plan.statements)
-  def assertNoDuplicateOps(nextOps: NextOps): Unit = assertNoDuplicateOps(nextOps.flatten)
+
+  def assertNoDuplicateOps(plan: DodgyPlan): Unit = {
+    //assertNoDuplicateOps(plan.statements) // TODO:
+  }
+
+  def assertNoDuplicateOps(nextOps: NextOps): Unit = {
+    val allOps = nextOps.imports ++ nextOps.provisions ++ nextOps.sets.values
+    assertNoDuplicateOps(allOps.toSeq)
+  }
 }

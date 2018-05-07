@@ -1,11 +1,15 @@
 package com.github.pshirshov.izumi.distage.bootstrap
 
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan, ResolvedCyclesPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
 class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver {
+
+  override def onReferencesResolved(plan: ResolvedCyclesPlan): Unit = {
+
+  }
 
   override def onFinalPlan(finalPlan: FinalPlan): Unit = {
     logger.log(Seq(
@@ -31,7 +35,5 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
       , "\n"
     ).mkString("\n"))
   }
-
-  override def onReferencesResolved(plan: DodgyPlan): Unit = ()
 
 }

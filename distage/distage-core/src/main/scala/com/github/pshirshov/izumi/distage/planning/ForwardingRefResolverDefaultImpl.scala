@@ -1,19 +1,18 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
+import com.github.pshirshov.izumi.distage.model.plan.{ResolvedCyclesPlan, ResolvedSetsPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.collection.mutable
 
 
-
 class ForwardingRefResolverDefaultImpl
 (
   protected val planAnalyzer: PlanAnalyzer
 ) extends ForwardingRefResolver {
-  override def resolve(plan: DodgyPlan): DodgyPlan = {
+  override def resolve(plan: ResolvedSetsPlan): ResolvedCyclesPlan = {
     val statements = plan.statements
     val reftable = planAnalyzer.computeFwdRefTable(statements)
 
@@ -45,6 +44,6 @@ class ForwardingRefResolverDefaultImpl
         acc :+ ProxyOp.InitProxy(proxyKey, proxyDep.toSet, proxies(proxyKey))
     }
 
-    plan.copy(steps = resolvedSteps, proxies = proxyOps)
+    ResolvedCyclesPlan(imports = plan.imports, steps = resolvedSteps ++ proxyOps, issues = plan.issues)
   }
 }

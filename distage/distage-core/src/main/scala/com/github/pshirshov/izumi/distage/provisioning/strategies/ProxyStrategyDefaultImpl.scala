@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
@@ -40,6 +41,8 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) e
         op.wiring.instanceType
       case op: WiringOp.InstantiateFactory =>
         op.wiring.factoryType
+      case op: CreateSet =>
+       op.target.symbol
       case op =>
         throw new DIException(s"Operation unsupported by proxy mechanism: $op", null)
     }
@@ -58,9 +61,8 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) e
           RuntimeDIUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> null
 
         case p =>
-          RuntimeDIUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> context.fetchKey(p.wireWith)
+          RuntimeDIUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> context.fetchKey(p.wireWith).orNull.asInstanceOf[AnyRef]
       }
-
       ProxyParams.Params(args.map(_._1).toArray, args.map(_._2).toArray)
     }
 

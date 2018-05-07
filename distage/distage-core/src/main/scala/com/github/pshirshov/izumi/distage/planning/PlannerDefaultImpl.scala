@@ -40,6 +40,7 @@ class PlannerDefaultImpl
     }
 
     val finalPlan = Value(plan)
+      .map(planMergingPolicy.resolve)
       .map(forwardingRefResolver.resolve)
       .eff(planningObserver.onReferencesResolved)
       .map(planResolver.resolve(_, context))
@@ -61,25 +62,29 @@ class PlannerDefaultImpl
         val imports = computeImports(currentPlan, binding, newOps.wiring)
         NextOps(
           imports
-          , Set.empty
+          , Map.empty
           , Seq(newOps.op)
         )
 
       case s: SetElementBinding[_] =>
         val target = s.key
         val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
-
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
+        val oldSet = next.sets.getOrElse(target, SetOp.CreateSet(s.key, s.key.symbol, Set.empty))
+        val newSet = oldSet.copy(members = oldSet.members + elementKey)
+
         NextOps(
           next.imports
-          , next.sets + SetOp.CreateSet(target, target.symbol)
-          , next.provisions :+ SetOp.AddToSet(target, elementKey)
+          , next.sets.updated(target, newSet)
+          , next.provisions //:+ SetOp.AddToSet(target, elementKey)
         )
 
       case s: EmptySetBinding[_] =>
+        val newSet = SetOp.CreateSet(s.key, s.key.symbol, Set.empty)
+
         NextOps(
           Set.empty
-          , Set(SetOp.CreateSet(s.key, s.key.symbol))
+          , Map(s.key -> newSet)
           , Seq.empty
         )
     }
@@ -111,7 +116,7 @@ class PlannerDefaultImpl
   }
 
   private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: RuntimeDIUniverse.Wiring): Set[ImportDependency] = {
-    val knownTargets = currentPlan.keys
+    val knownTargets = currentPlan.steps.map(_.target).toSet
     // we don't need resolved deps, we already have them in finalPlan
     val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith) && !currentPlan.imports.contains(dep.wireWith))
     val toImport = unresolved.map(dep => ImportDependency(dep.wireWith, Set(binding.key)))
