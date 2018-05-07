@@ -7,6 +7,8 @@ trait SymbolIntrospector {
 
   case class SelectedConstructor(constructorSymbol: u.MethodSymb, arguments: List[u.Symb])
 
+  def selectConstructorMethod(tpe: u.TypeFull): u.MethodSymb
+
   def selectConstructor(tpe: u.TypeFull): SelectedConstructor
 
   def selectParameters(symb: u.MethodSymb): List[u.Symb]

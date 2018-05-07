@@ -20,7 +20,7 @@ trait ModuleBase {
 object ModuleBase {
 
   implicit final class ModuleDefSeqExt(private val defs: Seq[ModuleBase]) extends AnyVal {
-    def merge(): ModuleBase = {
+    def merge: ModuleBase = {
       defs.reduceLeftOption[ModuleBase](_ ++ _).getOrElse(SimpleModuleDef.empty)
     }
   }

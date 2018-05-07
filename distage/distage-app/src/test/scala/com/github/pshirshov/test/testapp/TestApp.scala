@@ -1,15 +1,9 @@
 package com.github.pshirshov.test.testapp
 
 import com.github.pshirshov.izumi.distage.config.AutoConf
-import com.github.pshirshov.izumi.distage.config.pureconfig.WithPureConfig
-import com.github.pshirshov.izumi.distage.config.pureconfig.WithPureConfig.R
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 
 case class Config(value: String)
-
-object Config extends WithPureConfig[Config] {
-  override def reader: R[Config] = implicitly
-}
 
 class TestApp(
                val conflict: Conflict

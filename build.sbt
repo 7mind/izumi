@@ -204,7 +204,6 @@ lazy val distageConfig = inDiStage.as.module
   .settings(
     libraryDependencies ++= Seq(
       R.typesafe_config
-      , R.pureconfig // TODO: we may extract it into a separate artifact
     )
   )
 

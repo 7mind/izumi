@@ -8,10 +8,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
-
-
-
-
 class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvider.Runtime) extends PlanningHook {
   import u._
   override def hookWiring(binding: Binding.ImplBinding, wiring: Wiring): Wiring = {

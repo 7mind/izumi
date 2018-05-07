@@ -34,6 +34,9 @@ trait ModuleDef extends ModuleBase {
     new SetDSL(mutableState, IdentSet(binding.key, Set()), startingSet)
   }
 
+  final protected def append(that: ModuleBase): Unit = discard {
+    mutableState ++= that.bindings
+  }
 }
 
 object ModuleDef {
