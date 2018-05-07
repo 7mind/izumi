@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStr
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools, ProxyParams}
+import com.github.pshirshov.izumi.distage.provisioning.cglib._
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
 trait FakeSet[A] extends Set[A]
@@ -17,14 +17,14 @@ trait FakeSet[A] extends Set[A]
   * - Will not work for any class which performs any operations on forwarding refs within constructor
   * - Untested on constructors accepting primitive values, will fail most likely
   */
-class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) extends ProxyStrategy {
+class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, proxyProvider: ProxyProvider) extends ProxyStrategy {
   def initProxy(context: ProvisioningContext, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(initProxy.target)
     context.fetchKey(key) match {
-      case Some(adapter: CglibRefDispatcher) =>
+      case Some(adapter: ProxyDispatcher) =>
         executor.execute(context, initProxy.proxy.op).head match {
           case OpResult.NewInstance(_, instance) =>
-            adapter.reference.set(instance.asInstanceOf[AnyRef])
+            adapter.init(instance.asInstanceOf[AnyRef])
           case r =>
             throw new DIException(s"Unexpected operation result for $key: $r", null)
         }
@@ -44,7 +44,7 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) e
         op.wiring.instanceType
       case op: WiringOp.InstantiateFactory =>
         op.wiring.factoryType
-      case op: CreateSet =>
+      case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
         RuntimeDIUniverse.SafeType.get[FakeSet[_]]
         //op.target.symbol
@@ -77,22 +77,14 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) e
       ProxyParams.Params(args.map(_._1).toArray, args.map(_._2).toArray)
     }
 
-    val nullDispatcher = new CglibNullMethodInterceptor(makeProxy.target)
+    val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
 
-    val nullProxy = CglibTools.mkDynamic(nullDispatcher, runtimeClass, makeProxy, params) {
-      proxyInstance =>
-        proxyInstance
-    }
 
-    val dispatcher = new CglibRefDispatcher(nullProxy)
-
-    CglibTools.mkDynamic(dispatcher, runtimeClass, makeProxy, params) {
-      proxyInstance =>
-        Seq(
-          OpResult.NewInstance(makeProxy.target, proxyInstance)
-          , OpResult.NewInstance(proxyKey(makeProxy.target), dispatcher)
-        )
-    }
+    val proxyInstance = proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
+    Seq(
+      OpResult.NewInstance(makeProxy.target, proxyInstance.proxy)
+      , OpResult.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
+    )
   }
 
   private def proxyKey(m: RuntimeDIUniverse.DIKey) = {

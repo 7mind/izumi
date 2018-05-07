@@ -12,6 +12,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
+import com.github.pshirshov.izumi.distage.provisioning.cglib.CglibTools
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
@@ -63,13 +64,14 @@ object DefaultBootstrapContext {
 
   protected lazy val bootstrapProducer: Provisioner = {
     val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
+    val proxyProvider = CglibTools
 
     new ProvisionerDefaultImpl(
       new SetStrategyDefaultImpl
-      //, new ProxyStrategyDefaultImpl(reflectionProvider)
+      //, new ProxyStrategyDefaultImpl(reflectionProvider, proxyProvider)
       , new ProxyStrategyFailingImpl
-      , new FactoryStrategyDefaultImpl
-      , new TraitStrategyDefaultImpl
+      , new FactoryStrategyDefaultImpl(proxyProvider)
+      , new TraitStrategyDefaultImpl(proxyProvider)
       , new ProviderStrategyDefaultImpl(loggerHook)
       , new ClassStrategyDefaultImpl
       , new ImportStrategyDefaultImpl
@@ -108,6 +110,7 @@ object DefaultBootstrapContext {
     .bind[ImportStrategy].as[ImportStrategyDefaultImpl]
     .bind[InstanceStrategy].as[InstanceStrategyDefaultImpl]
     .bind[Provisioner].as[ProvisionerDefaultImpl]
+    .bind[ProxyProvider].as[CglibTools.type]
     .set[PlanningHook]
       .element[PlanningHookDefaultImpl]
 }

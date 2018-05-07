@@ -4,22 +4,41 @@ import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
+import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import net.sf.cglib.proxy.{Callback, Enhancer}
 
 import scala.util.{Failure, Success, Try}
 
 
-sealed trait ProxyParams
-object ProxyParams {
-  case object Empty extends ProxyParams
-  final case class Params(types: Array[Class[_]], values: Array[AnyRef]) extends ProxyParams
+object CglibTools extends ProxyProvider {
+  override def makeCycleProxy(cycleContext: CycleContext, proxyContext: ProxyContext): DeferredInit = {
+    val nullDispatcher = new CglibNullMethodInterceptor(cycleContext.deferredKey)
+    val nullProxy = CglibTools.mkDynamic(nullDispatcher, proxyContext)
+    val dispatcher = new CglibRefDispatcher(nullProxy)
+    val proxy = CglibTools.mkDynamic(dispatcher, proxyContext)
+    DeferredInit(dispatcher, proxy)
+  }
 
-}
+  override def makeTraitProxy(factoryContext: TraitContext, proxyContext: ProxyContext): AnyRef = {
+    val dispatcher = new CgLibTraitMethodInterceptor(factoryContext.index, factoryContext.context)
+    mkDynamic(dispatcher, proxyContext)
+  }
 
-object CglibTools {
+  override def makeFactoryProxy(factoryContext: FactoryContext, proxyContext: ProxyContext): AnyRef = {
+    import factoryContext._
+    val dispatcher = new CgLibFactoryMethodInterceptor(
+      factoryMethodIndex
+      , dependencyMethodIndex
+      , narrowedContext
+      , executor
+      , op
+    )
 
-  def mkDynamic[T](dispatcher: Callback, runtimeClass: Class[_], op: ExecutableOp, params: ProxyParams)(callback: AnyRef => T): T = {
+    mkDynamic(dispatcher, proxyContext)
+  }
+
+  private def mkDynamic(dispatcher: Callback, proxyContext: ProxyContext): AnyRef = {
+    import proxyContext._
     val enhancer = new Enhancer()
     enhancer.setSuperclass(runtimeClass)
     enhancer.setCallback(dispatcher)
@@ -32,16 +51,16 @@ object CglibTools {
         Try(enhancer.create(types, values))
     }
 
-     result match {
+    result match {
       case Success(proxyInstance) =>
-        callback(proxyInstance)
+        proxyInstance
 
       case Failure(f) =>
         throw new DIException(s"Failed to instantiate class $runtimeClass, params=$params with CGLib. Operation: $op", f)
     }
   }
 
-  def invokeExistingMethod(o: Any, method: Method, objects: Array[AnyRef]): AnyRef = {
+  protected[cglib] def invokeExistingMethod(o: Any, method: Method, objects: Array[AnyRef]): AnyRef = {
     CglibTools.TRUSTED_METHOD_HANDLES
       .in(method.getDeclaringClass)
       .unreflectSpecial(method, method.getDeclaringClass)
@@ -50,9 +69,10 @@ object CglibTools {
   }
 
 
-  final val TRUSTED_METHOD_HANDLES = {
+  private final val TRUSTED_METHOD_HANDLES = {
     val methodHandles = classOf[MethodHandles.Lookup].getDeclaredField("IMPL_LOOKUP")
     methodHandles.setAccessible(true)
     methodHandles.get(null).asInstanceOf[MethodHandles.Lookup]
   }
 }
+
