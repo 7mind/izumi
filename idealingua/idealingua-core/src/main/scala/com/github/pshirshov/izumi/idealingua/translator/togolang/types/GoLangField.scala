@@ -236,7 +236,10 @@ case class GoLangField(
 
     case _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
       s"""if !${im.withImport(id)}IsValid${id.name}($src) {
-         |    return fmt.Errorf("Invalid ${id.name} enum value %s", $src)
+         |    err = fmt.Errorf("Invalid ${id.name} enum value %s", $src)
+         |}
+         |if err != nil {
+         |    return err
          |}
          |$dest := ${im.withImport(id)}New${id.name}($src)
            """.stripMargin
