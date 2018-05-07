@@ -50,8 +50,6 @@ object TracingDIGC extends DIGarbageCollector {
         c.members
       case p: InitProxy =>
         p.dependencies
-//      case s: AddToSet =>
-//        Seq(s.element)
       case _: MakeProxy =>
         Seq.empty
       case _: ImportDependency =>

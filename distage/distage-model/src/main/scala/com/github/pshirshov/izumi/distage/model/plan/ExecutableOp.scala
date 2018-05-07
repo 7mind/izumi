@@ -37,10 +37,6 @@ object ExecutableOp {
       }
     }
 
-//    final case class AddToSet(target: DIKey, element: DIKey) extends SetOp with InstantiationOp {
-//      override def format: String = f"""$target += $element"""
-//    }
-
   }
 
   sealed trait WiringOp extends InstantiationOp {

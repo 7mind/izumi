@@ -119,9 +119,6 @@ class PlanMergingPolicyDefaultImpl(
       case w: WiringOp =>
         w.wiring.associations.map(_.wireWith).toSet
 
-//      case s: AddToSet =>
-//        Set(s.element)
-
       case c: CreateSet =>
         c.members
 

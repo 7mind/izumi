@@ -76,7 +76,7 @@ class PlannerDefaultImpl
         NextOps(
           next.imports
           , next.sets.updated(target, newSet)
-          , next.provisions //:+ SetOp.AddToSet(target, elementKey)
+          , next.provisions
         )
 
       case s: EmptySetBinding[_] =>

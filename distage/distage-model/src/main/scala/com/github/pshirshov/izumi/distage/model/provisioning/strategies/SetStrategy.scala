@@ -7,8 +7,5 @@ trait SetStrategy {
 
   def makeSet(context: ProvisioningContext, op: SetOp.CreateSet): Seq[OpResult.NewInstance]
 
-  //def addToSet(context: ProvisioningContext, op: SetOp.AddToSet): Seq[OpResult.UpdatedSet]
-
-
 }
 
