@@ -19,6 +19,7 @@ Unit     | Aliases                | Explanation                                 
 
 - Each log unit has parameters. (example, padding, margins, etc). There are common parameters for all log units and specific for each one. 
 - NOTE! Currently there are only common parameters (padding). Parameters enumerates in `[` `]` braces. For example, `${message[15]}`
+
 Log unit    | Features | Explanation | Example | 
 ------------| ---------------------- | -------------------------------------------- | ------ |
 `common`    | `padding`              | padding for log unit in result string. It maybe default padding or ellipsed (`[:..14]`) | `${timestamp}[14]` |
