@@ -1,13 +1,11 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
+import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, DefaultBootstrapContext}
 import com.github.pshirshov.izumi.distage.model._
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleDef, TrivialModuleDef}
 
 
 object Injectors {
-
-  import DefaultBootstrapContext._
 
 
   def bootstrap(extensions: LocatorExtension*): Injector = {
@@ -15,7 +13,11 @@ object Injectors {
   }
 
   def bootstrap(overrides: ModuleDef, extensions: LocatorExtension*): Injector = {
-    val bootstrapDefinition = defaultBootstrapContextDefinition.overridenBy(overrides)
+    bootstrap(CglibBootstrap.cogenBootstrap, overrides, extensions :_*)
+  }
+
+  def bootstrap(base: ModuleDef, overrides: ModuleDef, extensions: LocatorExtension*): Injector = {
+    val bootstrapDefinition = base.overridenBy(overrides)
     val bootstrapLocator = new DefaultBootstrapContext(bootstrapDefinition)
     create(bootstrapLocator, extensions: _*)
   }

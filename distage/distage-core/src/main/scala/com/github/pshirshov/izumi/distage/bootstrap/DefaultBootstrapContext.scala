@@ -13,7 +13,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvide
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CglibProxyProvider
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
@@ -74,13 +73,15 @@ object DefaultBootstrapContext {
       , new ClassStrategyDefaultImpl
       , new ImportStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
-//      , new ProvisionerHookDefaultImpl
-//      , new ProvisionerIntrospectorDefaultImpl
-//      , loggerHook
     )
   }
 
-  final lazy val defaultBootstrapContextDefinition: ModuleDef = TrivialModuleDef
+  final lazy val noCogen: ModuleDef = TrivialModuleDef
+    .bind[ProxyStrategy].as[ProxyStrategyFailingImpl]
+    .bind[FactoryStrategy].as[FactoryStrategyFailingImpl]
+    .bind[TraitStrategy].as[TraitStrategyFailingImpl]
+
+  final lazy val defaultBootstrap: ModuleDef = TrivialModuleDef
     .bind[CustomOpHandler].as(CustomOpHandler.NullCustomOpHander)
     .bind[LookupInterceptor].as(NullLookupInterceptor)
     .bind[ReflectionProvider.Runtime].as[ReflectionProviderDefaultImpl.Runtime]
@@ -96,19 +97,18 @@ object DefaultBootstrapContext {
     .bind[ForwardingRefResolver].as[ForwardingRefResolverDefaultImpl]
     .bind[SanityChecker].as[SanityCheckerDefaultImpl]
     .bind[Planner].as[PlannerDefaultImpl]
-    .bind[ProvisionerHook].as[ProvisionerHookDefaultImpl]
-    .bind[ProvisionerIntrospector].as[ProvisionerIntrospectorDefaultImpl]
     .bind[LoggerHook].as[LoggerHookDefaultImpl]
     .bind[SetStrategy].as[SetStrategyDefaultImpl]
-    .bind[ProxyStrategy].as[ProxyStrategyDefaultImpl]
-    .bind[FactoryStrategy].as[FactoryStrategyDefaultImpl]
-    .bind[TraitStrategy].as[TraitStrategyDefaultImpl]
     .bind[ProviderStrategy].as[ProviderStrategyDefaultImpl]
     .bind[ClassStrategy].as[ClassStrategyDefaultImpl]
     .bind[ImportStrategy].as[ImportStrategyDefaultImpl]
     .bind[InstanceStrategy].as[InstanceStrategyDefaultImpl]
     .bind[Provisioner].as[ProvisionerDefaultImpl]
-    .bind[ProxyProvider].as[CglibProxyProvider.type]
     .set[PlanningHook]
-      .element[PlanningHookDefaultImpl]
+    .element[PlanningHookDefaultImpl]
+
+
+  final lazy val noCogenBootstrap = defaultBootstrap ++ noCogen
 }
+
+

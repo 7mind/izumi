@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CglibRefDispatcher
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
 trait FakeSet[A] extends Set[A]
@@ -87,7 +86,7 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
   }
 
   private def proxyKey(m: RuntimeDIUniverse.DIKey) = {
-    RuntimeDIUniverse.DIKey.ProxyElementKey(m, RuntimeDIUniverse.SafeType.get[CglibRefDispatcher])
+    RuntimeDIUniverse.DIKey.ProxyElementKey(m, RuntimeDIUniverse.SafeType.get[ProxyDispatcher])
   }
 
 }
