@@ -13,8 +13,7 @@ class StaticInjectorTest extends WordSpec {
 
   "DI planner" should{
 
-    // TODO GenericFactory polymorphic arguments in producer methods
-    "handle macro factory injections" in {
+    "handle macro factory injections" in  {
       import Case5._
 
       val definition = TrivialModuleDef

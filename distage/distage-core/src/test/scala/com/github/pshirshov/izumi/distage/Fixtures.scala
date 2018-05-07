@@ -439,4 +439,21 @@ Forest fire, climbin' higher, real life, it can wait""")
     def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
 
   }
+
+  object Case18 {
+
+    trait SetTrait
+    class SetImpl1 extends SetTrait
+    class SetImpl2 extends SetTrait
+    class SetImpl3 extends SetTrait
+
+    case class Service0(set: Set[SetTrait])
+
+    case class Service1(@Id("n1") set: Set[SetTrait])
+
+    case class Service2(service3: Service3, @Id("n2") set: Set[SetTrait])
+
+    case class Service3(@Id("n3") set: Set[SetTrait])
+
+  }
 }

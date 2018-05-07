@@ -90,9 +90,9 @@ object FactoryConstructorMacro {
         val wiringInfo = productConstructor match {
           case w: UnaryWiring.Constructor =>
             val associations: List[Tree] = w.associations.map {
-              case Association.Parameter(context, name, tpe, wireWith) =>
+              case Association.Parameter(context, name, wireWith) =>
                 val contextTree = q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}) }"
-                q"{ new $RuntimeDIUniverse.Association.Parameter($contextTree, $name, $tpe, $wireWith)}"
+                q"{ new $RuntimeDIUniverse.Association.Parameter($contextTree, $name, $wireWith)}"
             }.toList
 
             q"{ $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor(${w.instanceType}, $associations) }"

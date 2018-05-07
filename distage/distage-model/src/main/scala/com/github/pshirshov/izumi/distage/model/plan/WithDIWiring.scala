@@ -33,7 +33,7 @@ trait WithDIWiring {
 
       case class AbstractSymbol(instanceType: TypeFull, associations: Seq[Association.AbstractMethod]) extends ProductWiring
 
-      case class Function(provider: Provider, associations: Seq[Association]) extends UnaryWiring {
+      case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends UnaryWiring {
         override def instanceType: TypeFull = provider.ret
       }
 

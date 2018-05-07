@@ -64,7 +64,6 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         val p = Association.Parameter(
           context
           , parameter.name.toTermName.toString
-          , SafeType(parameter.typeSignatureIn(symbl.tpe))
           , keyProvider.keyFromParameter(context, parameter)
         )
         Association.ExtendedParameter(parameter, p)
