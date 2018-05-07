@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import scala.util.{Failure, Try}
 
 
+// TODO: add introspection capabilities
 class ProvisionerDefaultImpl
 (
   setStrategy: SetStrategy
@@ -20,10 +21,6 @@ class ProvisionerDefaultImpl
   , classStrategy: ClassStrategy
   , importStrategy: ImportStrategy
   , instanceStrategy: InstanceStrategy
-// TODO: add introspection capabilities
-//  , provisionerHook: ProvisionerHook
-//  , provisionerIntrospector: ProvisionerIntrospector
-//  , loggerHook: LoggerHook
 ) extends Provisioner with OperationExecutor {
   override def provision(plan: FinalPlan, parentContext: Locator): ProvisionImmutable = {
     val activeProvision = ProvisionActive()
