@@ -41,7 +41,7 @@ object LogUnit {
         builder.append(Console.RESET)
         builder.append(" ")
       } else {
-        builder.append("] ")
+        builder.append("]")
       }
 
       withMargin(builder.toString(),margin)
@@ -102,7 +102,7 @@ object LogUnit {
     )
 
     override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
-      withMargin(s"(${entry.context.static.file}:${entry.context.static.line}) ", margin)
+      withMargin(s"(${entry.context.static.file}:${entry.context.static.line})", margin)
 
     }
   }
@@ -124,7 +124,7 @@ object LogUnit {
 
     override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
       import entry.context.customContext.values
-      val builder = new StringBuilder(" ")
+      val builder = new StringBuilder()
 
       if (values.nonEmpty) {
         val customContextString = values.map(formatKv(withColors)).mkString(", ")
