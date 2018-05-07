@@ -64,14 +64,12 @@ object DefaultBootstrapContext {
 
   protected lazy val bootstrapProducer: Provisioner = {
     val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
-    val proxyProvider = CglibProxyProvider
 
     new ProvisionerDefaultImpl(
       new SetStrategyDefaultImpl
-      //, new ProxyStrategyDefaultImpl(reflectionProvider, proxyProvider)
       , new ProxyStrategyFailingImpl
-      , new FactoryStrategyDefaultImpl(proxyProvider)
-      , new TraitStrategyDefaultImpl(proxyProvider)
+      , new FactoryStrategyFailingImpl
+      , new TraitStrategyFailingImpl
       , new ProviderStrategyDefaultImpl(loggerHook)
       , new ClassStrategyDefaultImpl
       , new ImportStrategyDefaultImpl

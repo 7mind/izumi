@@ -1,10 +1,12 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.commons.TraitTools
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
 
@@ -43,3 +45,9 @@ class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider) extends FactorySt
 }
 
 
+class FactoryStrategyFailingImpl extends FactoryStrategy {
+  override def makeFactory(context: ProvisioningContext, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
+    Quirks.discard(context, executor)
+    throw new DIException(s"FactoryStrategyFailingImpl does not support proxies, failed op: $op", null)
+  }
+}
