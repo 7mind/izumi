@@ -66,7 +66,8 @@ object DefaultBootstrapContext {
 
     new ProvisionerDefaultImpl(
       new SetStrategyDefaultImpl
-      , new ProxyStrategyDefaultImpl(reflectionProvider) //new ProxyStrategyFailingImpl
+      //, new ProxyStrategyDefaultImpl(reflectionProvider)
+      , new ProxyStrategyFailingImpl
       , new FactoryStrategyDefaultImpl
       , new TraitStrategyDefaultImpl
       , new ProviderStrategyDefaultImpl(loggerHook)

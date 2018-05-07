@@ -66,7 +66,7 @@ class PlanMergingPolicyDefaultImpl(
       case (target, sets) =>
         sets.tail.foldLeft(sets.head) {
           case (acc, set) =>
-            assert(acc.tpe == set.tpe && acc.target == set.target)
+            assert(acc.tpe == set.tpe && acc.target == set.target && set.target == target)
             acc.copy(members = acc.members ++ set.members)
         }
     }
