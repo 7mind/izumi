@@ -87,7 +87,7 @@ class ProvisionerDefaultImpl
       case op: WiringOp.InstantiateClass =>
         classStrategy.instantiateClass(context, op)
 
-      case op: SetOp.CreateSet =>
+      case op: CreateSet =>
         setStrategy.makeSet(context, op)
 
       case op: WiringOp.InstantiateTrait =>

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.exceptions.{DuplicateKeysException, ForwardRefException, MissingRefException}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, SetOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -38,7 +38,7 @@ class SanityCheckerDefaultImpl
 
     val (uniqOps, nonUniqueOps) = single
       .foldLeft((mutable.ArrayBuffer[RuntimeDIUniverse.DIKey](), mutable.HashSet[RuntimeDIUniverse.DIKey]())) {
-        case ((unique, nonunique), s: SetOp) =>
+        case ((unique, nonunique), s: CreateSet) =>
           (unique, nonunique += s.target)
         case ((unique, nonunique), s) =>
           (unique += s.target, nonunique)

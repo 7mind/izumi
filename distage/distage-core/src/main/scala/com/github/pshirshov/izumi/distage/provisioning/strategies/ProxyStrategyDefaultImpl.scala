@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp.CreateSet
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}

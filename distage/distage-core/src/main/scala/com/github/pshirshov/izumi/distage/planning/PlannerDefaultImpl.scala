@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.Planner
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef, ImplDef}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CustomOp, ImportDependency, SetOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, ModuleDef}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, CustomOp, ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
@@ -70,7 +70,7 @@ class PlannerDefaultImpl
         val target = s.key
         val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
-        val oldSet = next.sets.getOrElse(target, SetOp.CreateSet(s.key, s.key.symbol, Set.empty))
+        val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.symbol, Set.empty))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
         NextOps(
@@ -80,7 +80,7 @@ class PlannerDefaultImpl
         )
 
       case s: EmptySetBinding[_] =>
-        val newSet = SetOp.CreateSet(s.key, s.key.symbol, Set.empty)
+        val newSet = CreateSet(s.key, s.key.symbol, Set.empty)
 
         NextOps(
           Set.empty

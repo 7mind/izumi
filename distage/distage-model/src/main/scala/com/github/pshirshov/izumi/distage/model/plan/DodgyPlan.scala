@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp.CreateSet
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 final case class DodgyPlan(

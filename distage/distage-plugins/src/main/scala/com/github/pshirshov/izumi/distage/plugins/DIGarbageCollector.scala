@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.plugins
 
 import com.github.pshirshov.izumi.distage.model.definition.TrivialModuleDef
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp.CreateSet
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse

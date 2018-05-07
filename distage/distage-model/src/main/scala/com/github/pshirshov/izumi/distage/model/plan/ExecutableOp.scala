@@ -26,17 +26,11 @@ object ExecutableOp {
     override def format: String = f"""$target := custom($target)"""
   }
 
-  sealed trait SetOp extends ExecutableOp
-
-  object SetOp {
-
-    final case class CreateSet(target: DIKey, tpe: TypeFull, members: Set[DIKey]) extends SetOp with InstantiationOp {
-      override def format: String = {
-        val repr = FormattingUtils.doFormat(tpe.toString, members.map(_.toString).toSeq, "newset", ('[', ']'), ('{', '}')) // f"""$target := newset[$tpe]"""
-        s"$target := $repr"
-      }
+  final case class CreateSet(target: DIKey, tpe: TypeFull, members: Set[DIKey]) extends InstantiationOp {
+    override def format: String = {
+      val repr = FormattingUtils.doFormat(tpe.toString, members.map(_.toString).toSeq, "newset", ('[', ']'), ('{', '}')) // f"""$target := newset[$tpe]"""
+      s"$target := $repr"
     }
-
   }
 
   sealed trait WiringOp extends InstantiationOp {
