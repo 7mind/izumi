@@ -37,7 +37,7 @@ object CglibTools {
         callback(proxyInstance)
 
       case Failure(f) =>
-        throw new DIException(s"Failed to instantiate class with CGLib. Operation: $op", f)
+        throw new DIException(s"Failed to instantiate class $runtimeClass, params=$params with CGLib. Operation: $op", f)
     }
   }
 

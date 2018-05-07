@@ -78,7 +78,7 @@ object ExecutableOp {
 
       override def format: String = {
         import IzString._
-        f"""$target := proxy($forwardRefs) {
+        f"""$target := proxy(${forwardRefs.mkString(", ")}) {
            |${op.toString.shift(2)}
            |}""".stripMargin
       }
