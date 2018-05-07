@@ -11,7 +11,6 @@ trait WithDIWiring {
     with WithDIKey
     with WithDIAssociation
     with WithDIDependencyContext
-    with DILiftableRuntimeUniverse
   =>
 
   sealed trait Wiring {
@@ -28,38 +27,14 @@ trait WithDIWiring {
 
     object UnaryWiring {
 
-      import u._
-
       sealed trait ProductWiring extends UnaryWiring
 
       case class Constructor(instanceType: TypeFull, associations: Seq[Association.Parameter]) extends ProductWiring
-      object Constructor {
-        @deprecated
-        implicit final val liftableConstructor: Liftable[Constructor] = {
-          case Constructor(instanceType, associations) => q"""
-          { new $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor($instanceType, ${associations.toList}) }
-            """
-        }
-      }
 
       case class AbstractSymbol(instanceType: TypeFull, associations: Seq[Association.AbstractMethod]) extends ProductWiring
 
-      case class Function(provider: Provider, associations: Seq[Association]) extends UnaryWiring {
+      case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends UnaryWiring {
         override def instanceType: TypeFull = provider.ret
-      }
-      object Function {
-        def apply(function: Provider): Function = {
-          val associations = function.diKeys.map {
-            key =>
-              Association.Parameter(
-                DependencyContext.CallableParameterContext(function)
-                , key.symbol.tpe.typeSymbol.name.decodedName.toString
-                , key.symbol
-                , key
-              )
-          }
-          UnaryWiring.Function(function, associations)
-        }
       }
 
       case class Instance(instanceType: TypeFull, instance: Any) extends UnaryWiring {

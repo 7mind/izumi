@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.distage.model.references._
 
 trait DIUniverse
   extends DIUniverseBase
-    with DILiftableRuntimeUniverse
     with WithDISafeType
     with WithDITypedRef
     with WithDICallable
@@ -15,12 +14,3 @@ trait DIUniverse
     with WithDIAssociation
     with WithDIWiring
     with WithDIAnnotation
-
-trait DILiftableRuntimeUniverse {
-  this: DIUniverseBase =>
-
-  import u._
-
-  implicit final val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] = { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
-
-}

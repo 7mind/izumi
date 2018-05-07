@@ -1,13 +1,10 @@
 package com.github.pshirshov.izumi.distage.model.references
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DILiftableRuntimeUniverse, WithDISafeType, DIUniverseBase, RuntimeDIUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{WithDISafeType, DIUniverseBase}
 
 trait WithDIKey {
   this: DIUniverseBase
-    with WithDISafeType
-    with DILiftableRuntimeUniverse =>
-
-  import u._
+    with WithDISafeType =>
 
   sealed trait DIKey {
     def symbol: TypeFull
@@ -23,28 +20,10 @@ trait WithDIKey {
       def named[I: IdContract](id: I): IdKey[I] = IdKey(symbol, id)
     }
 
-    object TypeKey {
-      implicit final val liftableTypeKey: Liftable[TypeKey] = {
-        case TypeKey(symbol) => q"""
-        { new $RuntimeDIUniverse.DIKey.TypeKey($symbol) }
-          """
-      }
-    }
-
     case class IdKey[I: IdContract](symbol: TypeFull, id: I) extends DIKey {
       val idContract: IdContract[I] = implicitly[IdContract[I]]
 
-      implicit val liftable: Liftable[I] = idContract.liftable
-
       override def toString: String = s"${symbol.toString}#$id"
-    }
-
-    object IdKey {
-      implicit def liftableIdKey[I]: Liftable[IdKey[I]] = {
-        case idKey: IdKey[I] =>
-          import idKey._
-          q"""{ new $RuntimeDIUniverse.DIKey.IdKey($symbol, $id) }"""
-      }
     }
 
     case class ProxyElementKey(proxied: DIKey, symbol: TypeFull) extends DIKey {
@@ -53,46 +32,19 @@ trait WithDIKey {
       override def hashCode(): Int = toString.hashCode()
     }
 
-    object ProxyElementKey {
-      implicit final val liftableProxyElementKey: Liftable[ProxyElementKey] = {
-        case ProxyElementKey(proxied, symbol) => q"""
-        { new $RuntimeDIUniverse.DIKey.ProxyElementKey(${liftableDIKey(proxied)}, $symbol) }
-          """
-      }
-    }
-
     case class SetElementKey(set: DIKey, symbol: TypeFull) extends DIKey {
       override def toString: String = s"Set[${symbol.toString}]#$set"
 
       override def hashCode(): Int = toString.hashCode()
     }
-
-    object SetElementKey {
-      implicit final val liftableSetElementKey: Liftable[SetElementKey] = {
-        case SetElementKey(set, symbol) => q"""
-        { new $RuntimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, $symbol) }
-          """
-      }
-    }
-
-    implicit final val liftableDIKey: Liftable[DIKey] = {
-      Liftable[DIKey] {
-        case t: TypeKey => q"$t"
-        case i: IdKey[_] => q"$i"
-        case p: ProxyElementKey => q"$p"
-        case s: SetElementKey => q"$s"
-      }
-    }
   }
 
-  class IdContract[T: Liftable] {
-    val liftable: Liftable[T] = implicitly[Liftable[T]]
-  }
+  trait IdContract[T]
 
-  object IdContract {
-    implicit val stringIdContract: IdContract[String] = new IdContract[String]
-
-    implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = new IdContract[S]
-  }
+  implicit def stringIdContract: IdContract[String]
+  implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S]
+//
+//  implicit val stringIdContract: IdContract[String] = null.asInstanceOf[IdContract[String]] //new IdContract[String]
+//  implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = null.asInstanceOf[IdContract[S]] //new IdContract[S]
 
 }
