@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.provisioning.cglib
+package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.provisioning.strategies.ProxyDispatcher
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher
 import net.sf.cglib.proxy.Dispatcher
 
 // dynamic dispatching is not optimal, uhu

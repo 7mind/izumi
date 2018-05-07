@@ -1,10 +1,11 @@
-package com.github.pshirshov.izumi.distage.provisioning.cglib
+package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.distage.provisioning.strategies._
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import net.sf.cglib.proxy.{Callback, Enhancer}
 
 import scala.util.{Failure, Success, Try}
@@ -16,7 +17,7 @@ object CglibProxyProvider extends ProxyProvider {
     val nullProxy = CglibProxyProvider.mkDynamic(nullDispatcher, proxyContext)
     val dispatcher = new CglibRefDispatcher(nullProxy)
     val proxy = CglibProxyProvider.mkDynamic(dispatcher, proxyContext)
-    DeferredInit(dispatcher, proxy)
+    strategies.DeferredInit(dispatcher, proxy)
   }
 
   override def makeTraitProxy(factoryContext: TraitContext, proxyContext: ProxyContext): AnyRef = {

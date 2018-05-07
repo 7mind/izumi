@@ -12,8 +12,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
-import com.github.pshirshov.izumi.distage.provisioning.cglib.CglibProxyProvider
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
+import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CglibProxyProvider
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 

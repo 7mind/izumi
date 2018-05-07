@@ -1,10 +1,9 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package com.github.pshirshov.izumi.distage.model.provisioning.strategies
 
 import java.lang.reflect.Method
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitIndex
 import com.github.pshirshov.izumi.distage.model.provisioning.{OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 

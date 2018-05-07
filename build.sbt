@@ -180,6 +180,15 @@ lazy val fundamentalsReflection = inFundamentals.as.module
 lazy val distageModel = inDiStage.as.module
   .depends(fundamentalsReflection)
 
+lazy val distageProxyCglib = inDiStage.as.module
+  .depends(distageModel)
+  .settings(
+    libraryDependencies ++= Seq(
+      R.scala_reflect
+      , R.cglib_nodep
+    )
+  )
+
 lazy val distagePlugins = inDiStage.as.module
   .depends(distageCore)
   .settings(
@@ -201,11 +210,10 @@ lazy val distageConfig = inDiStage.as.module
 
 
 lazy val distageCore = inDiStage.as.module
-  .depends(fundamentalsFunctional, distageModel)
+  .depends(fundamentalsFunctional, distageModel, distageProxyCglib)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
-      , R.cglib_nodep
     )
   )
 
