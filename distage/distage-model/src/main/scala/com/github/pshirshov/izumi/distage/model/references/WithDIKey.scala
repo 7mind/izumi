@@ -33,7 +33,7 @@ trait WithDIKey {
     }
 
     case class SetElementKey(set: DIKey, symbol: TypeFull) extends DIKey {
-      override def toString: String = s"Set[${symbol.toString}]#$set"
+      override def toString: String = s"$set##${symbol.toString}"
 
       override def hashCode(): Int = toString.hashCode()
     }

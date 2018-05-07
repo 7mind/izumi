@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
 import com.github.pshirshov.izumi.distage.model.references.RefTable
@@ -36,6 +37,11 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
     val dependencies = plan.toList.foldLeft(new Accumulator) {
       case (acc, op: WiringOp) =>
         val forwardRefs = op.wiring.associations.map(_.wireWith).filterNot(refFilter(acc)).toSet
+        acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= forwardRefs
+        acc
+
+      case (acc, op: CreateSet) =>
+        val forwardRefs = op.members.filterNot(refFilter(acc))
         acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= forwardRefs
         acc
 

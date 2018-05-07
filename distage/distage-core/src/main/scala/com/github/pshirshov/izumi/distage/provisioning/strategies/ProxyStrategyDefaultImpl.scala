@@ -1,12 +1,16 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools, ProxyParams}
+
+// CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
+trait FakeSet[A] extends Set[A]
 
 /**
   * Limitations:
@@ -40,6 +44,10 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) e
         op.wiring.instanceType
       case op: WiringOp.InstantiateFactory =>
         op.wiring.factoryType
+      case op: CreateSet =>
+        // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
+        RuntimeDIUniverse.SafeType.get[FakeSet[_]]
+        //op.target.symbol
       case op =>
         throw new DIException(s"Operation unsupported by proxy mechanism: $op", null)
     }
@@ -53,18 +61,24 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) e
     } else {
       val params = reflectionProvider.constructorParameters(makeProxy.op.target.symbol)
 
-      val args  = params.map {
-        case p if makeProxy.forwardRefs.contains(p.wireWith) =>
-          RuntimeDIUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> null
+      val args = params.map {
+        param =>
+          val value = param match {
+            case p if makeProxy.forwardRefs.contains(p.wireWith) =>
+              null
 
-        case p =>
-          RuntimeDIUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> context.fetchKey(p.wireWith)
+            case p =>
+              context.fetchKey(p.wireWith).orNull.asInstanceOf[AnyRef]
+          }
+
+          RuntimeDIUniverse.mirror.runtimeClass(param.wireWith.symbol.tpe) -> value
       }
 
       ProxyParams.Params(args.map(_._1).toArray, args.map(_._2).toArray)
     }
 
     val nullDispatcher = new CglibNullMethodInterceptor(makeProxy.target)
+
     val nullProxy = CglibTools.mkDynamic(nullDispatcher, runtimeClass, makeProxy, params) {
       proxyInstance =>
         proxyInstance

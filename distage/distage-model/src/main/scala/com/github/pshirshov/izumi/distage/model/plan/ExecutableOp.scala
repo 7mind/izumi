@@ -1,13 +1,14 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.util.Formattable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString
 
+
 // TODO: typeclass?..
 sealed trait ExecutableOp extends Formattable {
-  def target: RuntimeDIUniverse.DIKey
+  def target: DIKey
 
   override def toString: String = format
 }
@@ -17,11 +18,11 @@ object ExecutableOp {
 
   sealed trait InstantiationOp extends ExecutableOp
 
-  final case class ImportDependency(target: RuntimeDIUniverse.DIKey, references: Set[RuntimeDIUniverse.DIKey]) extends ExecutableOp {
+  final case class ImportDependency(target: DIKey, references: Set[DIKey]) extends ExecutableOp {
     override def format: String = f"""$target := import $target // required for ${references.mkString(" and ")}"""
   }
 
-  final case class CustomOp(target: RuntimeDIUniverse.DIKey, data: CustomWiring) extends InstantiationOp {
+  final case class CustomOp(target: DIKey, data: CustomWiring) extends InstantiationOp {
     override def format: String = f"""$target := custom($target)"""
   }
 
@@ -29,39 +30,38 @@ object ExecutableOp {
 
   object SetOp {
 
-    final case class CreateSet(target: RuntimeDIUniverse.DIKey, tpe: RuntimeDIUniverse.TypeFull) extends SetOp {
-      override def format: String = f"""$target := newset[$tpe]"""
-    }
-
-    final case class AddToSet(target: RuntimeDIUniverse.DIKey, element: RuntimeDIUniverse.DIKey) extends SetOp with InstantiationOp {
-      override def format: String = f"""$target += $element"""
+    final case class CreateSet(target: DIKey, tpe: TypeFull, members: Set[DIKey]) extends SetOp with InstantiationOp {
+      override def format: String = {
+        val repr = FormattingUtils.doFormat(tpe.toString, members.map(_.toString).toSeq, "newset", ('[', ']'), ('{', '}')) // f"""$target := newset[$tpe]"""
+        s"$target := $repr"
+      }
     }
 
   }
 
   sealed trait WiringOp extends InstantiationOp {
-    def wiring: RuntimeDIUniverse.Wiring
+    def wiring: Wiring
   }
 
   object WiringOp {
 
-    final case class InstantiateClass(target: RuntimeDIUniverse.DIKey, wiring: UnaryWiring.Constructor) extends WiringOp {
+    final case class InstantiateClass(target: DIKey, wiring: UnaryWiring.Constructor) extends WiringOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 
-    final case class InstantiateTrait(target: RuntimeDIUniverse.DIKey, wiring: UnaryWiring.AbstractSymbol) extends WiringOp {
+    final case class InstantiateTrait(target: DIKey, wiring: UnaryWiring.AbstractSymbol) extends WiringOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 
-    final case class InstantiateFactory(target: RuntimeDIUniverse.DIKey, wiring: FactoryMethod) extends WiringOp {
+    final case class InstantiateFactory(target: DIKey, wiring: FactoryMethod) extends WiringOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 
-    final case class CallProvider(target: RuntimeDIUniverse.DIKey, wiring: UnaryWiring.Function) extends WiringOp {
+    final case class CallProvider(target: DIKey, wiring: UnaryWiring.Function) extends WiringOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 
-    final case class ReferenceInstance(target: RuntimeDIUniverse.DIKey, wiring: UnaryWiring.Instance) extends WiringOp {
+    final case class ReferenceInstance(target: DIKey, wiring: UnaryWiring.Instance) extends WiringOp {
       override def format: String = {
         s"$target := ${wiring.instance.getClass.getTypeName}#${wiring.instance.hashCode()}"
       }
@@ -73,18 +73,18 @@ object ExecutableOp {
 
   object ProxyOp {
 
-    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[RuntimeDIUniverse.DIKey]) extends ProxyOp with InstantiationOp {
-      override def target: RuntimeDIUniverse.DIKey = op.target
+    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey]) extends ProxyOp with InstantiationOp {
+      override def target: DIKey = op.target
 
       override def format: String = {
         import IzString._
-        f"""$target := proxy($forwardRefs) {
+        f"""$target := proxy(${forwardRefs.mkString(", ")}) {
            |${op.toString.shift(2)}
            |}""".stripMargin
       }
     }
 
-    final case class InitProxy(target: RuntimeDIUniverse.DIKey, dependencies: Set[RuntimeDIUniverse.DIKey], proxy: MakeProxy) extends ProxyOp {
+    final case class InitProxy(target: DIKey, dependencies: Set[DIKey], proxy: MakeProxy) extends ProxyOp {
       override def format: String = f"""$target -> init(${dependencies.mkString(", ")})"""
     }
 

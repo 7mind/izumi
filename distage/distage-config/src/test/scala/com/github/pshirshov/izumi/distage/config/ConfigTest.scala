@@ -13,6 +13,7 @@ class ConfigTest extends WordSpec {
       val config = AppConfig(ConfigFactory.load())
       val injector = Injectors.bootstrap(new ConfigModule(config, PureConfigInstanceReader))
       val plan = injector.plan(TestConfigApp.definition)
+
       //println(plan)
 
       val context = injector.produce(plan)

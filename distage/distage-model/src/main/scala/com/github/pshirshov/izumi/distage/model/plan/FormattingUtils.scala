@@ -43,7 +43,7 @@ object FormattingUtils {
     }
   }
 
-  private def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
+  def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
     val sb = new StringBuilder()
     sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}\n")
     if (depRepr.nonEmpty) {
