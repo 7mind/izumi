@@ -40,7 +40,7 @@ protected[distage] class CgLibTraitMethodInterceptor
         fields.put(index.setters(method.getName).name, objects.head)
       }.asInstanceOf[AnyRef]
     } else {
-      CglibTools.invokeExistingMethod(o, method, objects)
+      CglibProxyProvider.invokeExistingMethod(o, method, objects)
     }
   }
 

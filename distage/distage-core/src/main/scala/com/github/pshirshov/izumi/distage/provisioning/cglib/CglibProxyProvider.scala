@@ -10,12 +10,12 @@ import net.sf.cglib.proxy.{Callback, Enhancer}
 import scala.util.{Failure, Success, Try}
 
 
-object CglibTools extends ProxyProvider {
+object CglibProxyProvider extends ProxyProvider {
   override def makeCycleProxy(cycleContext: CycleContext, proxyContext: ProxyContext): DeferredInit = {
     val nullDispatcher = new CglibNullMethodInterceptor(cycleContext.deferredKey)
-    val nullProxy = CglibTools.mkDynamic(nullDispatcher, proxyContext)
+    val nullProxy = CglibProxyProvider.mkDynamic(nullDispatcher, proxyContext)
     val dispatcher = new CglibRefDispatcher(nullProxy)
-    val proxy = CglibTools.mkDynamic(dispatcher, proxyContext)
+    val proxy = CglibProxyProvider.mkDynamic(dispatcher, proxyContext)
     DeferredInit(dispatcher, proxy)
   }
 
@@ -61,7 +61,7 @@ object CglibTools extends ProxyProvider {
   }
 
   protected[cglib] def invokeExistingMethod(o: Any, method: Method, objects: Array[AnyRef]): AnyRef = {
-    CglibTools.TRUSTED_METHOD_HANDLES
+    CglibProxyProvider.TRUSTED_METHOD_HANDLES
       .in(method.getDeclaringClass)
       .unreflectSpecial(method, method.getDeclaringClass)
       .bindTo(o)
