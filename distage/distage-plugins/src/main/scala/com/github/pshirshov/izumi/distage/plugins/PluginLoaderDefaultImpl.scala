@@ -22,18 +22,18 @@ private class ConfigApplicator(config: PluginConfig) {
 }
 
 trait PluginLoader {
-  def load(): Seq[PluginDef]
+  def load(): Seq[PluginBase]
 
   def loadDefinition[R <: LoadedPlugins](mergeStrategy: PluginMergeStrategy[R]): R
 }
 
 class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
-  type PluginType = Class[_ <: PluginDef]
+  type PluginType = Class[_ <: PluginBase]
 
   import scala.collection.JavaConverters._
 
-  def load(): Seq[PluginDef] = {
-    val base = classOf[PluginDef]
+  def load(): Seq[PluginBase] = {
+    val base = classOf[PluginBase]
     val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled :+ base.getPackage.getName)
     val configApplicator = new ConfigApplicator(config)
 

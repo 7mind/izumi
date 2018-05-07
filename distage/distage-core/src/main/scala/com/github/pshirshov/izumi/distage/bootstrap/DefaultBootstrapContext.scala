@@ -14,10 +14,9 @@ import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
-class DefaultBootstrapContext(contextDefinition: ModuleDef) extends AbstractLocator {
+class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLocator {
 
   import DefaultBootstrapContext._
 
@@ -43,7 +42,6 @@ object DefaultBootstrapContext {
 
   protected lazy val bootstrapPlanner: Planner = {
 
-
     val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap"))
 
     val analyzer = new PlanAnalyzerDefaultImpl
@@ -58,7 +56,6 @@ object DefaultBootstrapContext {
       , Set(new PlanningHookDefaultImpl)
     )
   }
-
 
   protected lazy val bootstrapProducer: Provisioner = {
     val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
@@ -75,10 +72,11 @@ object DefaultBootstrapContext {
     )
   }
 
-  final lazy val noCogen: ModuleDef = TrivialModuleDef
-    .bind[ProxyStrategy].as[ProxyStrategyFailingImpl]
-    .bind[FactoryStrategy].as[FactoryStrategyFailingImpl]
-    .bind[TraitStrategy].as[TraitStrategyFailingImpl]
+  final lazy val noCogen: ModuleBase = new ModuleDef {
+    make[ProxyStrategy].from[ProxyStrategyFailingImpl]
+    make[FactoryStrategy].from[FactoryStrategyFailingImpl]
+    make[TraitStrategy].from[TraitStrategyFailingImpl]
+  }
 
   final lazy val defaultBootstrap: ModuleDef = TrivialModuleDef
     .bind[LookupInterceptor].as(NullLookupInterceptor)
@@ -107,5 +105,3 @@ object DefaultBootstrapContext {
 
   final lazy val noCogenBootstrap = defaultBootstrap ++ noCogen
 }
-
-

@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
 
 final case class FinalPlanImmutableImpl(
-                                   definition: ModuleDef
+                                   definition: ModuleBase
                                    , steps: Seq[ExecutableOp]
                                  ) extends FinalPlan

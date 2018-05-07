@@ -1,17 +1,17 @@
 package com.github.pshirshov.izumi.distage.plugins
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, TrivialModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, SimpleModuleDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.reflection
 
 
 trait PluginMergeStrategy[T <: LoadedPlugins] {
-  def merge[D <: PluginDef](defs: Seq[D]): T
+  def merge[D <: PluginBase](defs: Seq[D]): T
 }
 
 object SimplePluginMergeStrategy extends PluginMergeStrategy[LoadedPlugins] {
-  override def merge[D <: PluginDef](defs: Seq[D]): LoadedPlugins = {
+  override def merge[D <: PluginBase](defs: Seq[D]): LoadedPlugins = {
     val merged = defs.merge()
     JustLoadedPlugins(merged)
   }
@@ -28,7 +28,7 @@ case class PluginMergeConfig
 )
 
 class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginMergeStrategy[LoadedPlugins] {
-  override def merge[D <: PluginDef](defs: Seq[D]): LoadedPlugins = {
+  override def merge[D <: PluginBase](defs: Seq[D]): LoadedPlugins = {
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val allBindings = defs.merge().bindings
 
@@ -38,7 +38,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       .toMultimap
       .map(resolve)
 
-    JustLoadedPlugins(TrivialModuleDef(resolved.toSet))
+    JustLoadedPlugins(SimpleModuleDef(resolved.toSet))
   }
 
   protected def resolve(kv: (reflection.universe.RuntimeDIUniverse.DIKey, Set[Binding])): Binding = {

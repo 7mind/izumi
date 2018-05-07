@@ -19,13 +19,14 @@ class InjectorTest extends WordSpec {
 
     "maintain correct operation order" in {
       import Case1._
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[TestClass]
-        .bind[TestDependency3]
-        .bind[TestDependency0].as[TestImpl0]
-        .bind[TestDependency1]
-        .bind[TestCaseClass]
-        .bind(TestInstanceBinding())
+      val definition: ModuleBase = new ModuleDef {
+        make[TestClass]
+        make[TestDependency3]
+        make[TestDependency0].from[TestImpl0]
+        make[TestDependency1]
+        make[TestCaseClass]
+        make[TestInstanceBinding].from(TestInstanceBinding())
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -51,18 +52,18 @@ class InjectorTest extends WordSpec {
 
     "support multiple bindings" in {
       import Case1._
-      val definition: ModuleDef = new ModuleBuilder {
-        set[JustTrait].named("named.empty.set")
+      val definition: ModuleBase = new ModuleDef {
+        many[JustTrait].named("named.empty.set")
 
-        set[JustTrait]
-          .element[JustTrait]
-          .element(new Impl1)
+        many[JustTrait]
+          .add[JustTrait]
+          .add(new Impl1)
 
-        set[JustTrait].named("named.set")
-          .element(new Impl2())
+        many[JustTrait].named("named.set")
+          .add(new Impl2())
 
-        set[JustTrait].named("named.set")
-          .element[Impl3]
+        many[JustTrait].named("named.set")
+          .add[Impl3]
       }
 
       val injector = mkInjector()
@@ -77,14 +78,15 @@ class InjectorTest extends WordSpec {
 
     "support named bindings" in {
       import Case1_1._
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[TestClass]
-        .named("named.test.class")
-        .bind[TestDependency0].as[TestImpl0Bad]
-        .bind[TestDependency0].as[TestImpl0Good]
-        .named("named.test.dependency.0")
-        .bind(TestInstanceBinding())
-        .named("named.test")
+      val definition: ModuleBase = new ModuleDef {
+        make[TestClass]
+          .named("named.test.class")
+        make[TestDependency0].from[TestImpl0Bad]
+        make[TestDependency0].named("named.test.dependency.0")
+          .from[TestImpl0Good]
+        make[TestInstanceBinding].named("named.test")
+          .from(TestInstanceBinding())
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -95,9 +97,10 @@ class InjectorTest extends WordSpec {
     "support circular dependencies" in {
       import Case2._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[Circular2]
-        .bind[Circular1]
+      val definition: ModuleBase = new ModuleDef {
+        make[Circular2]
+        make[Circular1]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -110,12 +113,13 @@ class InjectorTest extends WordSpec {
     "support complex circular dependencies" in {
       import Case3._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[Circular3]
-        .bind[Circular1]
-        .bind[Circular2]
-        .bind[Circular5]
-        .bind[Circular4]
+      val definition: ModuleBase = new ModuleDef {
+        make[Circular3]
+        make[Circular1]
+        make[Circular2]
+        make[Circular5]
+        make[Circular4]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -131,12 +135,13 @@ class InjectorTest extends WordSpec {
     "support more complex circular dependencies" in {
       import Case15._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind(CustomDep1.empty)
-        .bind(customTraitInstance)
-        .bind[CustomClass]
-        .bind[CustomDep2]
-        .bind[CustomApp]
+      val definition: ModuleBase = new ModuleDef {
+        make[CustomDep1].from(CustomDep1.empty)
+        make[CustomTrait].from(customTraitInstance)
+        make[CustomClass]
+        make[CustomDep2]
+        make[CustomApp]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -147,11 +152,12 @@ class InjectorTest extends WordSpec {
     "support generics" in {
       import Case11._
 
-      val definition = TrivialModuleDef
-        .bind[List[Dep]](List(DepA())).named("As")
-        .bind[List[Dep]](List(DepB())).named("Bs")
-        .bind[List[DepA]](List(DepA(), DepA(), DepA()))
-        .bind[TestClass[DepA]]
+      val definition: ModuleBase = new ModuleDef {
+        make[List[Dep]].named("As").from(List(DepA()))
+        make[List[Dep]].named("Bs").from(List(DepB()))
+        make[List[DepA]].from(List(DepA(), DepA(), DepA()))
+        make[TestClass[DepA]]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -166,9 +172,10 @@ class InjectorTest extends WordSpec {
     "support classes with typealiases" in {
       import Case11._
 
-      val definition = TrivialModuleDef
-        .bind[DepA]
-        .bind[TestClass2[TypeAliasDepA]]
+      val definition = new ModuleDef {
+        make[DepA]
+        make[TestClass2[TypeAliasDepA]]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -180,9 +187,10 @@ class InjectorTest extends WordSpec {
     "support traits with typealiases" in {
       import Case11._
 
-      val definition = TrivialModuleDef
-        .bind[DepA]
-        .bind[TestTrait]
+      val definition = new ModuleDef {
+        make[DepA]
+        make[TestTrait]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -194,9 +202,10 @@ class InjectorTest extends WordSpec {
     "support trait initialization" in {
       import Case3._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[CircularBad1]
-        .bind[CircularBad2]
+      val definition: ModuleBase = new ModuleDef {
+        make[CircularBad1]
+        make[CircularBad2]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -209,8 +218,9 @@ class InjectorTest extends WordSpec {
     }
 
     "support trait fields" in {
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[Case9.ATraitWithAField]
+      val definition: ModuleBase = new ModuleDef {
+        make[Case9.ATraitWithAField]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -222,7 +232,7 @@ class InjectorTest extends WordSpec {
     "fail on unbindable" in {
       import Case4._
 
-      val definition: ModuleDef = new ModuleDef {
+      val definition: ModuleBase = new ModuleBase {
         override def bindings: Set[Binding] = Set(
           SingletonBinding(RuntimeDIUniverse.DIKey.get[Dependency], ImplDef.TypeImpl(RuntimeDIUniverse.SafeType.get[Long]))
         )
@@ -238,9 +248,10 @@ class InjectorTest extends WordSpec {
     "fail on unsolvable conflicts" in {
       import Case4._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[Dependency].as[Impl1]
-        .bind[Dependency].as[Impl2]
+      val definition: ModuleBase = new ModuleDef {
+        make[Dependency].from[Impl1]
+        make[Dependency].from[Impl2]
+      }
 
       val injector = mkInjector()
       val exc = intercept[UntranslatablePlanException] {
@@ -252,12 +263,13 @@ class InjectorTest extends WordSpec {
     "handle factory injections" in {
       import Case5._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[Factory]
-        .bind[Dependency]
-        .bind[OverridingFactory]
-        .bind[AssistedFactory]
-        .bind[AbstractFactory]
+      val definition: ModuleBase = new ModuleDef {
+        make[Factory]
+        make[Dependency]
+        make[OverridingFactory]
+        make[AssistedFactory]
+        make[AbstractFactory]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -282,9 +294,10 @@ class InjectorTest extends WordSpec {
     "handle generic arguments in cglib factory methods" in {
       import Case5._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[GenericAssistedFactory]
-        .bind[Dependency](ConcreteDep())
+      val definition: ModuleBase = new ModuleDef {
+        make[GenericAssistedFactory]
+        make[Dependency].from(ConcreteDep())
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -300,11 +313,11 @@ class InjectorTest extends WordSpec {
     "handle named assisted dependencies in cglib factory methods" in {
       import Case5._
 
-      val definition: ModuleDef = new ModuleBuilder {
-        bind[NamedAssistedFactory]
-        bind[Dependency]
-        bind[Dependency].named("special").as(SpecialDep())
-        bind[Dependency].named("veryspecial").as(VerySpecialDep())
+      val definition: ModuleBase = new ModuleDef {
+        make[NamedAssistedFactory]
+        make[Dependency]
+        make[Dependency].named("special").from(SpecialDep())
+        make[Dependency].named("veryspecial").from(VerySpecialDep())
       }
 
       val injector = mkInjector()
@@ -324,9 +337,10 @@ class InjectorTest extends WordSpec {
     // BasicProvisionerTest
     "instantiate simple class" in {
       import Case1._
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[TestCaseClass2]
-        .bind(new TestInstanceBinding)
+      val definition: ModuleBase = new ModuleDef {
+        make[TestCaseClass2]
+        make[TestInstanceBinding].from(new TestInstanceBinding)
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -339,9 +353,10 @@ class InjectorTest extends WordSpec {
     "instantiate provider bindings" in {
       import Case6._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .bind[TestClass].provided((a: Dependency1) => new TestClass(null))
-        .bind[Dependency1].provided(() => new Dependency1Sub {})
+      val definition: ModuleBase = new ModuleDef {
+        make[TestClass].from((a: Dependency1) => new TestClass(null))
+        make[Dependency1].from(() => new Dependency1Sub {})
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -355,11 +370,12 @@ class InjectorTest extends WordSpec {
     "support named bindings in cglib traits" in {
       import Case10._
 
-      val definition = TrivialModuleDef
-        .bind[Dep].as[DepA].named("A")
-        .bind[Dep].as[DepB].named("B")
-        .bind[Trait]
-        .bind[Trait1]
+      val definition = new ModuleDef {
+        make[Dep].named("A").from[DepA]
+        make[Dep].named("B").from[DepB]
+        make[Trait]
+        make[Trait1]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -379,9 +395,10 @@ class InjectorTest extends WordSpec {
     "type annotations in di keys do not result in different keys" in {
       import Case8._
 
-      val definition = TrivialModuleDef
-        .bind[Dependency1 @Id("special")]
-        .bind[Trait1]
+      val definition = new ModuleDef {
+        make[Dependency1 @Id("special")]
+        make[Trait1]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -396,9 +413,10 @@ class InjectorTest extends WordSpec {
     "support named bindings in method reference providers" in {
       import Case17._
 
-      val definition = TrivialModuleDef
-        .bind[TestDependency].named("classdeftypeann1")
-        .bind[TestClass].provided(implType _)
+      val definition = new ModuleDef {
+        make[TestDependency].named("classdeftypeann1")
+        make[TestClass].from(implType _)
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -413,9 +431,10 @@ class InjectorTest extends WordSpec {
     "support named bindings in lambda providers" in {
       import Case17._
 
-      val definition = TrivialModuleDef
-        .bind[TestDependency].named("classdeftypeann1")
-        .bind[TestClass].provided { t: TestDependency @Id("classdeftypeann1") => new TestClass(t) }
+      val definition = new ModuleDef {
+        make[TestDependency].named("classdeftypeann1")
+        make[TestClass].from { t: TestDependency@Id("classdeftypeann1") => new TestClass(t) }
+      }
 
       val injector = mkInjector()
       val context = injector.produce(injector.plan(definition))
@@ -429,10 +448,11 @@ class InjectorTest extends WordSpec {
     "populates implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
       import Case13._
 
-      val definition = TrivialModuleDef
-        .bind[TestClass]
-        .bind[Dep]
-        .bind[DummyImplicit].as[MyDummyImplicit]
+      val definition = new ModuleDef {
+        make[TestClass]
+        make[Dep]
+        make[DummyImplicit].from[MyDummyImplicit]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -447,9 +467,10 @@ class InjectorTest extends WordSpec {
     "override protected defs in cglib traits" in {
       import Case14._
 
-      val definition = TrivialModuleDef
-        .bind[TestTrait]
-        .bind[Dep]
+      val definition = new ModuleDef {
+        make[TestTrait]
+        make[Dep]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -463,31 +484,31 @@ class InjectorTest extends WordSpec {
     "handle set bindings ordering" in {
       import Case18._
 
-      val definition = new ModuleBuilder {
-        bind[Service2]
-        bind[Service0]
-        bind[Service1]
-        bind[Service3]
+      val definition = new ModuleDef {
+        make[Service2]
+        make[Service0]
+        make[Service1]
+        make[Service3]
 
-        set[SetTrait]
-          .element[SetImpl1]
-          .element[SetImpl2]
-          .element[SetImpl3]
+        many[SetTrait]
+          .add[SetImpl1]
+          .add[SetImpl2]
+          .add[SetImpl3]
 
-        set[SetTrait].named("n1")
-          .element[SetImpl1]
-          .element[SetImpl2]
-          .element[SetImpl3]
+        many[SetTrait].named("n1")
+          .add[SetImpl1]
+          .add[SetImpl2]
+          .add[SetImpl3]
 
-        set[SetTrait].named("n2")
-          .element[SetImpl1]
-          .element[SetImpl2]
-          .element[SetImpl3]
+        many[SetTrait].named("n2")
+          .add[SetImpl1]
+          .add[SetImpl2]
+          .add[SetImpl3]
 
-        set[SetTrait].named("n3")
-          .element[SetImpl1]
-          .element[SetImpl2]
-          .element[SetImpl3]
+        many[SetTrait].named("n3")
+          .add[SetImpl1]
+          .add[SetImpl2]
+          .add[SetImpl3]
       }
 
       val injector = mkInjector()
@@ -504,17 +525,17 @@ class InjectorTest extends WordSpec {
     "ModuleBuilder supports tags" in {
       import Case18._
 
-      val definition = new ModuleBuilder {
-        set[SetTrait].named("n1").tagged("A", "B")
-          .element[SetImpl1].tagged("A")
-          .element[SetImpl1].tagged("B")
-          .element[SetImpl3].tagged("A").tagged("B")
+      val definition = new ModuleDef {
+        many[SetTrait].named("n1").tagged("A", "B")
+          .add[SetImpl1].tagged("A")
+          .add[SetImpl1].tagged("B")
+          .add[SetImpl3].tagged("A").tagged("B")
 
-        bind[Service1].tagged("CA").tagged("CB").as[Service1]
+        make[Service1].tagged("CA").tagged("CB").from[Service1]
 
-        bind[Service1].tagged("CC")
+        make[Service1].tagged("CC")
 
-        set[SetTrait].tagged("A", "B")
+        many[SetTrait].tagged("A", "B")
       }
 
       assert(definition.bindings.count(_.tags == Set("A", "B")) == 3)

@@ -3,7 +3,7 @@ package com.github.pshirshov.configapp
 import com.github.pshirshov.izumi.distage.config.pureconfig.WithPureConfig
 import com.github.pshirshov.izumi.distage.config.pureconfig.WithPureConfig.R
 import com.github.pshirshov.izumi.distage.config.{AutoConf, Conf}
-import com.github.pshirshov.izumi.distage.model.definition.{Id, TrivialModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 case class HostPort(port: Int, host: String)
@@ -29,6 +29,7 @@ trait TestService
 
 class TestService1(@Id("service1") listener: Endpoint, @Conf("cassandra") cassandra: HostPort) extends TestService {
   Quirks.discard(listener)
+  Quirks.discard(cassandra)
 }
 
 class TestService2(@Id("service2") listener: Endpoint) extends TestService {
@@ -43,14 +44,15 @@ class TestConfigApp(val services: Set[TestService])
 
 
 object TestConfigApp {
-  final val definition = TrivialModuleDef
-    .bind[TestConfigApp]
-    .set[TestService]
-    .element[TestService1]
-    .element[TestService2]
-    .element[TestService3]
-    .bind[Endpoint].named("service1").as[EndpoitImpl]
-    .bind[Endpoint].named("service2").as[EndpoitImpl]
-    .bind[Endpoint].as[EndpoitImpl]
-    .bind[CassandraEndpoint]
+  final val definition = new ModuleDef {
+    make[TestConfigApp]
+    many[TestService]
+      .add[TestService1]
+      .add[TestService2]
+      .add[TestService3]
+    make[Endpoint].named("service1").from[EndpoitImpl]
+    make[Endpoint].named("service2").from[EndpoitImpl]
+    make[Endpoint].from[EndpoitImpl]
+    make[CassandraEndpoint]
+  }
 }
