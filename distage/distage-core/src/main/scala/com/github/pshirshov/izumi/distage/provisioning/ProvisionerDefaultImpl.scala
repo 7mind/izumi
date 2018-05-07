@@ -19,7 +19,6 @@ class ProvisionerDefaultImpl
   , providerStrategy: ProviderStrategy
   , classStrategy: ClassStrategy
   , importStrategy: ImportStrategy
-  , customStrategy: CustomStrategy
   , instanceStrategy: InstanceStrategy
 // TODO: add introspection capabilities
 //  , provisionerHook: ProvisionerHook
@@ -101,10 +100,6 @@ class ProvisionerDefaultImpl
 
       case op: ProxyOp.InitProxy =>
         proxyStrategy.initProxy(context, this, op)
-
-      case op: CustomOp =>
-        customStrategy.handle(context, op)
-
     }
   }
 

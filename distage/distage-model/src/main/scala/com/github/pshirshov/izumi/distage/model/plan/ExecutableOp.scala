@@ -22,9 +22,6 @@ object ExecutableOp {
     override def format: String = f"""$target := import $target // required for ${references.mkString(" and ")}"""
   }
 
-  final case class CustomOp(target: DIKey, data: CustomWiring) extends InstantiationOp {
-    override def format: String = f"""$target := custom($target)"""
-  }
 
   final case class CreateSet(target: DIKey, tpe: TypeFull, members: Set[DIKey]) extends InstantiationOp {
     override def format: String = {

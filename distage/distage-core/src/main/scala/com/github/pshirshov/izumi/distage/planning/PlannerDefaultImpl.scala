@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.Planner
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, ModuleDef}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, CustomOp, ImportDependency, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
@@ -109,9 +109,6 @@ class PlannerDefaultImpl
 
       case w: Instance =>
         Step(wiring, WiringOp.ReferenceInstance(target, w))
-
-      case w: CustomWiring =>
-        Step(wiring, CustomOp(target, w))
     }
   }
 

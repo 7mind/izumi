@@ -73,7 +73,6 @@ object DefaultBootstrapContext {
       , new ProviderStrategyDefaultImpl(loggerHook)
       , new ClassStrategyDefaultImpl
       , new ImportStrategyDefaultImpl
-      , new CustomStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
 //      , new ProvisionerHookDefaultImpl
 //      , new ProvisionerIntrospectorDefaultImpl
@@ -107,7 +106,6 @@ object DefaultBootstrapContext {
     .bind[ProviderStrategy].as[ProviderStrategyDefaultImpl]
     .bind[ClassStrategy].as[ClassStrategyDefaultImpl]
     .bind[ImportStrategy].as[ImportStrategyDefaultImpl]
-    .bind[CustomStrategy].as[CustomStrategyDefaultImpl]
     .bind[InstanceStrategy].as[InstanceStrategyDefaultImpl]
     .bind[Provisioner].as[ProvisionerDefaultImpl]
     .set[PlanningHook]
