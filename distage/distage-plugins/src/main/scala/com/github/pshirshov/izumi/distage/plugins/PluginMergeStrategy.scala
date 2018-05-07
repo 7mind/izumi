@@ -41,11 +41,6 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
     JustLoadedPlugins(TrivialModuleDef(resolved.toSet))
   }
 
-  protected def tagsOf(binding: Binding): Set[String] = {
-    // TODO
-    Set.empty
-  }
-
   protected def resolve(kv: (reflection.universe.RuntimeDIUniverse.DIKey, Set[Binding])): Binding = {
     val (key, alternatives) = kv
     val name = key.symbol.tpe.typeSymbol.asClass.fullName
@@ -70,7 +65,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
 
         p.tag match {
           case Some(tag) =>
-            oneAlternative(matchingName.filter(b => tagsOf(b).contains(tag)))
+            oneAlternative(matchingName.filter(_.tags.contains(tag)))
           case None =>
             oneAlternative(matchingName)
         }
@@ -93,7 +88,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
     }
 
 
-    val hasDisabledTags = tagsOf(binding).intersect(config.disabledTags).nonEmpty
+    val hasDisabledTags = binding.tags.intersect(config.disabledTags).nonEmpty
 
     val hasDisabledName = maybeImplName.isDefined
     val hasDisabledImplName = {

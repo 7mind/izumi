@@ -50,17 +50,15 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  // extension point in case we ever want to use tagged types, singleton literals or marker traits for named arguments
-  // ^ FIXME actually we already put the additional data into Callable (in DIKeyWrappedFunction), so we don't need it really...
   override def providerToWiring(function: u.Provider): u.Wiring = {
-    Wiring.UnaryWiring.Function(function)
+    val associations = providerParameters(function)
+    Wiring.UnaryWiring.Function(function, associations)
   }
 
   override def constructorParameters(symbl: TypeFull): List[Association.ExtendedParameter] = {
     val args: List[u.Symb] = symbolIntrospector.selectConstructor(symbl).arguments
 
     val context = DependencyContext.ConstructorParameterContext(symbl)
-
     args.map {
       parameter =>
         val p = Association.Parameter(
@@ -71,6 +69,12 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         )
         Association.ExtendedParameter(parameter, p)
     }
+  }
+
+  private def providerParameters(provider: Provider): Seq[Association.Parameter] = {
+    val context = DependencyContext.CallableParameterContext(provider)
+
+    provider.diKeys.map(Association.Parameter.fromDIKey(context, _))
   }
 
   private def unarySymbolDeps(symbl: TypeFull): UnaryWiring.ProductWiring = symbl match {

@@ -60,8 +60,9 @@ class LoggingMacroTest extends WordSpec {
 @ExposedTestScope
 object LoggingMacroTest {
 
-  val coloringPolicy = new StringRenderingPolicy(RenderingOptions())
-  val simplePolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false))
+  def coloringPolicy(renderingLayout : Option[String] = None) = new StringRenderingPolicy(RenderingOptions(), renderingLayout)
+  def simplePolicy(renderingLayout : Option[String] = None) = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false), renderingLayout)
+
 
   def configureLogger(sinks: Seq[LogSink]): IzLogger = {
     val router: ConfigurableLogRouter = mkRouter(sinks :_*)

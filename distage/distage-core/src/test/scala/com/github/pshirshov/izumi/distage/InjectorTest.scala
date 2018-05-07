@@ -460,6 +460,70 @@ class InjectorTest extends WordSpec {
       assert(instantiated.rd == Dep().toString)
     }
 
+    "handle set bindings ordering" in {
+      import Case18._
+
+      val definition = new ModuleBuilder {
+        bind[Service2]
+        bind[Service0]
+        bind[Service1]
+        bind[Service3]
+
+        set[SetTrait]
+          .element[SetImpl1]
+          .element[SetImpl2]
+          .element[SetImpl3]
+
+        set[SetTrait].named("n1")
+          .element[SetImpl1]
+          .element[SetImpl2]
+          .element[SetImpl3]
+
+        set[SetTrait].named("n2")
+          .element[SetImpl1]
+          .element[SetImpl2]
+          .element[SetImpl3]
+
+        set[SetTrait].named("n3")
+          .element[SetImpl1]
+          .element[SetImpl2]
+          .element[SetImpl3]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[Service0].set.size == 3)
+      assert(context.get[Service1].set.size == 3)
+      assert(context.get[Service2].set.size == 3)
+      assert(context.get[Service3].set.size == 3)
+    }
+
+    "ModuleBuilder supports tags" in {
+      import Case18._
+
+      val definition = new ModuleBuilder {
+        set[SetTrait].named("n1").tagged("A", "B")
+          .element[SetImpl1].tagged("A")
+          .element[SetImpl1].tagged("B")
+          .element[SetImpl3].tagged("A").tagged("B")
+
+        bind[Service1].tagged("CA").tagged("CB").as[Service1]
+
+        bind[Service1].tagged("CC")
+
+        set[SetTrait].tagged("A", "B")
+      }
+
+      assert(definition.bindings.count(_.tags == Set("A", "B")) == 3)
+      assert(definition.bindings.count(_.tags == Set("CA", "CB")) == 1)
+      assert(definition.bindings.count(_.tags == Set("CC")) == 1)
+      assert(definition.bindings.count(_.tags == Set("A")) == 1)
+      assert(definition.bindings.count(_.tags == Set("B")) == 1)
+    }
+
   }
 
 }

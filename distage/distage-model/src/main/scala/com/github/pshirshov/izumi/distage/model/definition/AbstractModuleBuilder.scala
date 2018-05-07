@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleBuilder.{BindDSL, SetDSL}
+import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleBuilder.{BindDSL, IdentSet, SetDSL}
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSLBase, SetDSLBase}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -31,7 +31,7 @@ trait ModuleBuilder extends ModuleDef {
 
     val startingSet: Set[Binding] = if (uniq) Set(binding) else Set.empty
 
-    new SetDSL(mutableState, binding.key, startingSet)
+    new SetDSL(mutableState, IdentSet(binding.key, Set()), startingSet)
   }
 
 }
@@ -47,23 +47,22 @@ object AbstractModuleBuilder {
     protected val mutableState: mutable.Set[Binding]
     , protected val binding: SingletonBinding[DIKey.TypeKey]
     , protected val ownBinding: Boolean
-  ) extends BindDSLBase[T, BindNamedDSL[T]]
-    with BindDSLMutBase {
+  ) extends BindDSLMutBase[T] {
 
     def named(name: String): BindNamedDSL[T] = {
-      val newBinding = SingletonBinding(binding.key.named(name), binding.implementation)
+      val newBinding = binding.copy(key = binding.key.named(name))
 
-      replace(newBinding)
+      val uniq = replace(newBinding)
 
-      new BindNamedDSL[T](mutableState, newBinding)
+      new BindNamedDSL[T](mutableState, newBinding, uniq)
     }
 
-    override protected def bind(impl: ImplDef): BindNamedDSL[T] = {
-      val newBinding = SingletonBinding(binding.key, impl)
+    def tagged(tags: String*): BindDSL[T] = {
+      val newBinding = binding.copy(tags = binding.tags ++ tags)
 
-      replace(newBinding)
+      val uniq = replace(newBinding)
 
-      new BindNamedDSL[T](mutableState, newBinding)
+      new BindDSL[T](mutableState, newBinding, uniq)
     }
 
   }
@@ -71,52 +70,65 @@ object AbstractModuleBuilder {
   private[definition] final class BindNamedDSL[T]
   (
     protected val mutableState: mutable.Set[Binding]
-    , protected val binding: Binding.SingletonBinding[_]
-  ) extends BindDSLBase[T, Unit]
-    with BindDSLMutBase {
+    , protected val binding: Binding.SingletonBinding[DIKey]
+    , protected val ownBinding: Boolean
+  ) extends BindDSLMutBase[T] {
 
-    override protected val ownBinding: Boolean = true
+    def tagged(tags: String*): BindNamedDSL[T] = {
+      val newBinding = binding.copy(tags = binding.tags ++ tags)
 
-    override protected def bind(impl: ImplDef): Unit =
-      replace(binding.withImpl(impl))
+      val uniq = replace(newBinding)
+
+      new BindNamedDSL[T](mutableState, newBinding, uniq)
+    }
 
   }
 
-  private[definition] sealed trait BindDSLMutBase {
+  private[definition] sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {
     protected def mutableState: mutable.Set[Binding]
-    protected val binding: SingletonBinding[_]
+    protected val binding: SingletonBinding[DIKey]
     protected val ownBinding: Boolean
 
-    protected def replace(newBinding: Binding): Unit = discard {
+    protected def replace(newBinding: Binding): Boolean = {
       if (ownBinding) {
         mutableState -= binding
       }
-      mutableState += newBinding
+      mutableState.add(newBinding)
+    }
+
+    override protected def bind(impl: ImplDef): Unit = discard {
+      replace(binding.withImpl(impl))
     }
   }
 
   // .set{.element, .elementProvider}{.named}
 
+  private[definition] final case class IdentSet[+D <: DIKey](key: D, tags: Set[String]) {
+    def sameIdent(binding: Binding): Boolean =
+      key == binding.key && tags == binding.tags
+  }
+
   private[definition] final class SetDSL[T]
   (
     protected val mutableState: mutable.Set[Binding]
-    , protected val setKey: DIKey.TypeKey
-    , protected val setBindings: Set[Binding]
-  ) extends SetDSLBase[T, SetNamedDSL[T]]
-    with SetDSLMutBase {
+    , protected val identifier: IdentSet[DIKey.TypeKey]
+    , protected val currentBindings: Set[Binding]
+  ) extends SetDSLMutBase[T] {
 
     def named(name: String): SetNamedDSL[T] = {
-      val newKey = setKey.named(name)
-      val newBindings = replaceKey(newKey)
+      val newIdent = identifier.copy(key = identifier.key.named(name))
 
-      new SetNamedDSL(mutableState, newKey, newBindings)
+      val newBindings = replaceIdent(newIdent)
+
+      new SetNamedDSL(mutableState, newIdent, newBindings)
     }
 
-    override protected def add(newElement: ImplDef): SetNamedDSL[T] = {
-      val newBinding: Binding = SetElementBinding(setKey, newElement)
+    def tagged(tags: String*): SetDSL[T] = {
+      val newIdent = identifier.copy(tags = identifier.tags ++ tags)
 
-      append(newBinding)
-      new SetNamedDSL(mutableState, setKey, setBindings + newBinding)
+      val newBindings = replaceIdent(newIdent)
+
+      new SetDSL[T](mutableState, newIdent, newBindings)
     }
 
   }
@@ -124,36 +136,67 @@ object AbstractModuleBuilder {
   private[definition] final class SetNamedDSL[T]
   (
     protected val mutableState: mutable.Set[Binding]
-    , protected val setKey: DIKey
-    , protected val setBindings: Set[Binding]
-  ) extends SetDSLBase[T, SetNamedDSL[T]]
-    with SetDSLMutBase {
+    , protected val identifier: IdentSet[DIKey]
+    , protected val currentBindings: Set[Binding]
+  ) extends SetDSLMutBase[T] {
 
-    protected def add(newElement: ImplDef): SetNamedDSL[T] = {
-      val newBinding: Binding = SetElementBinding(setKey, newElement)
+    def tagged(tags: String*): SetNamedDSL[T] = {
+      val newIdent = identifier.copy(tags = identifier.tags ++ tags)
 
-      append(newBinding)
-      new SetNamedDSL(mutableState, setKey, setBindings + newBinding)
+      val newBindings = replaceIdent(newIdent)
+
+      new SetNamedDSL[T](mutableState, newIdent, newBindings)
     }
 
   }
 
-  private[definition] sealed trait SetDSLMutBase {
+  private[definition] final class SetElementDSL[T]
+  (
+    protected val mutableState: mutable.Set[Binding]
+    , protected val identifier: IdentSet[DIKey]
+    , protected val currentBindings: Set[Binding]
+    , protected val bindingCursor: Binding
+  ) extends SetDSLMutBase[T] {
+
+    def tagged(tags: String*): SetElementDSL[T] = {
+      val newBindingCursor = bindingCursor.withTags(tags = bindingCursor.tags ++ tags)
+
+      mutableState -= bindingCursor
+      val newCurrentBindings = currentBindings - bindingCursor
+
+      append(newBindingCursor)
+
+      new SetElementDSL[T](mutableState, identifier, newCurrentBindings + newBindingCursor, newBindingCursor)
+    }
+
+  }
+
+  private[definition] sealed trait SetDSLMutBase[T] extends SetDSLBase[T, SetElementDSL[T]]{
     protected def mutableState: mutable.Set[Binding]
-    protected def setKey: DIKey
-    protected def setBindings: Set[Binding]
+    protected def identifier: IdentSet[DIKey]
+    protected def currentBindings: Set[Binding]
 
     protected def append(binding: Binding): Unit = discard {
       mutableState += binding
     }
 
-    protected def replaceKey(newKey: DIKey): Set[Binding] = {
-      val newBindings = (setBindings + EmptySetBinding(setKey)).map(_.withTarget(newKey))
+    protected def replaceIdent(newIdent: IdentSet[DIKey]): Set[Binding] = {
+      val newBindings = (currentBindings + EmptySetBinding(newIdent.key, newIdent.tags)).map {
+        _.withTarget(newIdent.key) // tags only apply to EmptySet
+      }
 
-      mutableState --= setBindings
+      mutableState --= currentBindings
       mutableState ++= newBindings
 
       newBindings
+    }
+
+    override protected def add(newElement: ImplDef): SetElementDSL[T] = {
+      val newBinding: Binding = SetElementBinding(identifier.key, newElement)
+
+      append(newBinding)
+
+      new SetElementDSL[T](mutableState, identifier, currentBindings + newBinding, newBinding)
     }
   }
 
