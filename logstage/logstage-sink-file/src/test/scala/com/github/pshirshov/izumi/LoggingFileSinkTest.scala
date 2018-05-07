@@ -44,7 +44,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
   "File sink" should {
 
-    val policy = LoggingMacroTest.simplePolicy
+    val policy = LoggingMacroTest.simplePolicy()
 
     val dummyFolder = "logstage"
 

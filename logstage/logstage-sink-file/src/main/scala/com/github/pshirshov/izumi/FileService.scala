@@ -4,12 +4,15 @@ import com.github.pshirshov.izumi.FileSink.FileIdentity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.Discarder
 import com.github.pshirshov.izumi.models.LogFile
 
-import scala.collection.mutable
-import scala.util.{Success, Try}
+import java.util.concurrent.ConcurrentHashMap
 
+import scala.collection.concurrent
+import scala.collection.JavaConverters._
+
+import scala.util.Try
 trait FileService[File <:LogFile] {
 
-  val storage: mutable.Map[FileIdentity, File] = scala.collection.mutable.HashMap.empty[FileIdentity, File]
+  val storage: concurrent.Map[FileIdentity, File] = new ConcurrentHashMap[FileIdentity, File]().asScala
 
   def path: String
 
