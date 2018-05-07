@@ -153,7 +153,7 @@ object LogUnit {
     }
   }
 
-  private def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
+  def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
     val templateBuilder = new StringBuilder()
     val messageBuilder = new StringBuilder()
     //    val rawMessageBuilder = new StringBuilder()
