@@ -23,15 +23,15 @@ trait WithDIAssociation {
       val name: String = parameter.name
       val context: DependencyContext.ParameterContext = parameter.context
     }
-    case class Parameter(context: DependencyContext.ParameterContext, name: String, wireWith: DIKey) extends Association {
-      override def format: String = s"""par $name: ${wireWith.symbol} = lookup($wireWith)"""
+    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: TypeFull, wireWith: DIKey) extends Association {
+      override def format: String = s"""par $name: $tpe = lookup($wireWith)"""
     }
 
     object Parameter {
       def fromDIKey(context: DependencyContext.ParameterContext, key: DIKey): Parameter = {
         val name = key.symbol.tpe.typeSymbol.name.decodedName.toString
 
-        Association.Parameter(context, name, key)
+        Association.Parameter(context, name, tpe = key.symbol, key)
       }
     }
 
