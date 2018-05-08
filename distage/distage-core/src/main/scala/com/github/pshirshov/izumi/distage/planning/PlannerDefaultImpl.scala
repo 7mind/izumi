@@ -19,7 +19,6 @@ class PlannerDefaultImpl
   , protected val forwardingRefResolver: ForwardingRefResolver
   , protected val reflectionProvider: ReflectionProvider.Runtime
   , protected val sanityChecker: SanityChecker
-  , protected val customOpHandler: CustomOpHandler
   , protected val planningObserver: PlanningObserver
   , protected val planMergingPolicy: PlanMergingPolicy
   , protected val planningHooks: Set[PlanningHook]
@@ -28,7 +27,7 @@ class PlannerDefaultImpl
   private val hook = new PlanningHookAggregate(planningHooks)
 
   override def plan(context: ModuleDef): FinalPlan = {
-    val plan = context.bindings.foldLeft(DodgyPlan.empty) {
+    val plan = hook.hookDefinition(context).bindings.foldLeft(DodgyPlan.empty) {
       case (currentPlan, binding) =>
         Value(computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)
@@ -117,8 +116,6 @@ class PlannerDefaultImpl
         UnaryWiring.Instance(i.implType, i.instance)
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerToWiring(p.function)
-      case c: ImplDef.CustomImpl =>
-        customOpHandler.getDeps(c)
     }
   }
 
@@ -130,8 +127,6 @@ class PlannerDefaultImpl
         i.implType
       case p: ImplDef.ProviderImpl =>
         p.implType
-      case c: ImplDef.CustomImpl =>
-        customOpHandler.getSymbol(c)
     }
   }
 }

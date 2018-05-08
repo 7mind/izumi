@@ -53,7 +53,6 @@ object DefaultBootstrapContext {
       , new ForwardingRefResolverDefaultImpl(analyzer)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
-      , CustomOpHandler.NullCustomOpHander
       , bootstrapObserver
       , new PlanMergingPolicyDefaultImpl
       , Set(new PlanningHookDefaultImpl)
@@ -82,7 +81,6 @@ object DefaultBootstrapContext {
     .bind[TraitStrategy].as[TraitStrategyFailingImpl]
 
   final lazy val defaultBootstrap: ModuleDef = TrivialModuleDef
-    .bind[CustomOpHandler].as(CustomOpHandler.NullCustomOpHander)
     .bind[LookupInterceptor].as(NullLookupInterceptor)
     .bind[ReflectionProvider.Runtime].as[ReflectionProviderDefaultImpl.Runtime]
     .bind[SymbolIntrospector.Runtime].as[SymbolIntrospectorDefaultImpl.Runtime]

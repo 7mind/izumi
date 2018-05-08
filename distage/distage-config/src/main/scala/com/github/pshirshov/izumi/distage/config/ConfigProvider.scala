@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleBuilder
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
@@ -39,15 +38,7 @@ final class AutoConf() extends scala.annotation.StaticAnnotation
 final class Conf(val name: String) extends scala.annotation.StaticAnnotation
 
 
-class ConfigModule(config: AppConfig, reader: ConfigInstanceReader) extends ModuleBuilder {
-  bind[AppConfig].as(config)
-  bind[ConfigInstanceReader].as(reader)
-  set[PlanningHook]
-    .element[ConfigReferenceExtractor]
 
-  set[PlanningHook]
-    .element[ConfigProvider]
-}
 
 private case class ConfigImport(id: AbstractConfId, imp: ImportDependency)
 

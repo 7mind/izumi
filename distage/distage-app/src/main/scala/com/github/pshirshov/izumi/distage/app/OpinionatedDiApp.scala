@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.app
 
 import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.TrivialModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.{ModuleDef, TrivialModuleDef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -29,7 +29,7 @@ abstract class OpinionatedDiApp {
     val appLoader = mkLoader(appConfig)
 
     val bootstrapAutoDef = bootstrapLoader.loadDefinition(mergeStrategy)
-    val bootstrapCustomDef = TrivialModuleDef.bind[LogRouter](router)
+    val bootstrapCustomDef = TrivialModuleDef.bind[LogRouter](router) ++ bootstrapModules.merge
     val appDef = appLoader.loadDefinition(mergeStrategy)
     logger.trace(s"Have bootstrap definition\n$appDef")
     logger.trace(s"Have app definition\n$appDef")
@@ -51,6 +51,8 @@ abstract class OpinionatedDiApp {
   protected val appConfig: PluginConfig
 
   protected def router: LogRouter
+
+  protected def bootstrapModules: Seq[ModuleDef] = Seq.empty
 
   protected def requiredComponents: Set[RuntimeDIUniverse.DIKey]
 
