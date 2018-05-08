@@ -9,7 +9,7 @@ trait SanityChecker {
   def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit
 
   def assertNoDuplicateOps(plan: DodgyPlan): Unit = {
-    //assertNoDuplicateOps(plan.statements) // TODO:
+    //assertNoDuplicateOps(plan.operations) // TODO:
   }
 
   def assertNoDuplicateOps(nextOps: NextOps): Unit = {

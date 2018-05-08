@@ -163,7 +163,7 @@ class InjectorTest extends WordSpec {
       assert(context.get[TestClass[DepA]].inner == context.get[List[DepA]])
     }
 
-    "support classes with typealiases" ignore {
+    "support classes with typealiases" in {
       import Case11._
 
       val definition = TrivialModuleDef
@@ -174,10 +174,10 @@ class InjectorTest extends WordSpec {
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
-      assert(context.get[TestTrait].dep.isInstanceOf[TypeAliasDepA])
+      assert(context.get[TestClass2[TypeAliasDepA]].inner.isInstanceOf[TypeAliasDepA])
     }
 
-    "support traits with typealiases" ignore {
+    "support traits with typealiases" in {
       import Case11._
 
       val definition = TrivialModuleDef

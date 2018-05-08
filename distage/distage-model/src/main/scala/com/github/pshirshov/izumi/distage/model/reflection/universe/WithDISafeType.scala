@@ -8,19 +8,21 @@ trait WithDISafeType {
 
   // TODO: hotspots, hashcode on keys is inefficient
   case class SafeType(tpe: TypeNative) {
-    override lazy val toString: String = tpe.deannotate.toString
+    private val dealiased: u.Type = tpe.deannotate.dealias
+
+    override lazy val toString: String = dealiased.toString
 
     override lazy val hashCode: Int = toString.hashCode
 
     override def equals(obj: scala.Any): Boolean = obj match {
-      case SafeType(other) =>
-        tpe.deannotate.dealias =:= other.deannotate.dealias
+      case other: SafeType =>
+        dealiased =:= other.dealiased
       case _ =>
         false
     }
 
     def <:<(that: SafeType): Boolean =
-      this.tpe.deannotate.dealias <:< that.tpe.deannotate.dealias
+      dealiased <:< that.dealiased
   }
 
   implicit final class Deannotate(typ: TypeNative) {
