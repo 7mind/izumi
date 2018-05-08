@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.Planner
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, ModuleDef}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
@@ -51,6 +51,8 @@ class PlannerDefaultImpl
       .eff(planningObserver.onFinalPlan)
       .get
 
+    println(finalPlan)
+
     finalPlan
   }
 
@@ -59,10 +61,8 @@ class PlannerDefaultImpl
       case c: SingletonBinding[_] =>
         val newOps = provisioning(c)
 
-        val imports = computeImports(currentPlan, binding, newOps.wiring)
         NextOps(
-          imports
-          , Map.empty
+          Map.empty
           , Seq(newOps.op)
         )
 
@@ -74,8 +74,7 @@ class PlannerDefaultImpl
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
         NextOps(
-          next.imports
-          , next.sets.updated(target, newSet)
+          next.sets.updated(target, newSet)
           , next.provisions
         )
 
@@ -83,8 +82,7 @@ class PlannerDefaultImpl
         val newSet = CreateSet(s.key, s.key.symbol, Set.empty)
 
         NextOps(
-          Set.empty
-          , Map(s.key -> newSet)
+          Map(s.key -> newSet)
           , Seq.empty
         )
     }
@@ -112,13 +110,6 @@ class PlannerDefaultImpl
     }
   }
 
-  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: RuntimeDIUniverse.Wiring): Set[ImportDependency] = {
-    val knownTargets = currentPlan.steps.map(_.target).toSet
-    // we don't need resolved deps, we already have them in finalPlan
-    val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith) && !currentPlan.imports.contains(dep.wireWith))
-    val toImport = unresolved.map(dep => ImportDependency(dep.wireWith, Set(binding.key)))
-    toImport.toSet
-  }
 
   private def bindingToWireable(binding: Binding.ImplBinding): RuntimeDIUniverse.Wiring = {
     binding.implementation match {
