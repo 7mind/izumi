@@ -14,7 +14,7 @@ object Config extends WithPureConfig[Config] {
 class TestApp(
                val conflict: Conflict
                , @AutoConf val config: Config
-               //, val setTest: Set[Conflict]
+               , val setTest: Set[Conflict]
              ) {
 
 }

@@ -79,7 +79,7 @@ class OpinionatedDIAppTest extends WordSpec {
       val config = AppConfig(ConfigFactory.load())
       val modules = Seq(
         new ConfigModule(config, PureConfigInstanceReader)
-        //, new CustomizationModule
+        , new CustomizationModule
       )
 
       val pluginMergeConfig = PluginMergeConfig(
@@ -98,7 +98,7 @@ class OpinionatedDIAppTest extends WordSpec {
           assert(context.find[Conflict].exists(_.isInstanceOf[ConflictB]))
 
           assert(context.get[TestApp].config.value == "test")
-          //assert(context.get[TestApp].setTest.size == 1)
+          assert(context.get[TestApp].setTest.size == 1)
 
           ()
       })
