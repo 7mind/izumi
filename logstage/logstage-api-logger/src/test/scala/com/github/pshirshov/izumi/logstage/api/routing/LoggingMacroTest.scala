@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.logstage.api.routing
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log, TestSink}
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
+import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log, TestSink}
 import org.scalatest.WordSpec
 
 import scala.util.Random
