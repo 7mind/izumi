@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.provisioning.cglib
+package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 
 import java.lang.reflect.Method
 
@@ -40,7 +40,7 @@ protected[distage] class CgLibTraitMethodInterceptor
         fields.put(index.setters(method.getName).name, objects.head)
       }.asInstanceOf[AnyRef]
     } else {
-      CglibTools.invokeExistingMethod(o, method, objects)
+      CglibProxyProvider.invokeExistingMethod(o, method, objects)
     }
   }
 

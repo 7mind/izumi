@@ -66,22 +66,22 @@ object DefaultBootstrapContext {
 
     new ProvisionerDefaultImpl(
       new SetStrategyDefaultImpl
-      //, new ProxyStrategyDefaultImpl(reflectionProvider)
       , new ProxyStrategyFailingImpl
-      , new FactoryStrategyDefaultImpl
-      , new TraitStrategyDefaultImpl
+      , new FactoryStrategyFailingImpl
+      , new TraitStrategyFailingImpl
       , new ProviderStrategyDefaultImpl(loggerHook)
       , new ClassStrategyDefaultImpl
       , new ImportStrategyDefaultImpl
-      , new CustomStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
-//      , new ProvisionerHookDefaultImpl
-//      , new ProvisionerIntrospectorDefaultImpl
-//      , loggerHook
     )
   }
 
-  final lazy val defaultBootstrapContextDefinition: ModuleDef = TrivialModuleDef
+  final lazy val noCogen: ModuleDef = TrivialModuleDef
+    .bind[ProxyStrategy].as[ProxyStrategyFailingImpl]
+    .bind[FactoryStrategy].as[FactoryStrategyFailingImpl]
+    .bind[TraitStrategy].as[TraitStrategyFailingImpl]
+
+  final lazy val defaultBootstrap: ModuleDef = TrivialModuleDef
     .bind[CustomOpHandler].as(CustomOpHandler.NullCustomOpHander)
     .bind[LookupInterceptor].as(NullLookupInterceptor)
     .bind[ReflectionProvider.Runtime].as[ReflectionProviderDefaultImpl.Runtime]
@@ -97,19 +97,18 @@ object DefaultBootstrapContext {
     .bind[ForwardingRefResolver].as[ForwardingRefResolverDefaultImpl]
     .bind[SanityChecker].as[SanityCheckerDefaultImpl]
     .bind[Planner].as[PlannerDefaultImpl]
-    .bind[ProvisionerHook].as[ProvisionerHookDefaultImpl]
-    .bind[ProvisionerIntrospector].as[ProvisionerIntrospectorDefaultImpl]
     .bind[LoggerHook].as[LoggerHookDefaultImpl]
     .bind[SetStrategy].as[SetStrategyDefaultImpl]
-    .bind[ProxyStrategy].as[ProxyStrategyDefaultImpl]
-    .bind[FactoryStrategy].as[FactoryStrategyDefaultImpl]
-    .bind[TraitStrategy].as[TraitStrategyDefaultImpl]
     .bind[ProviderStrategy].as[ProviderStrategyDefaultImpl]
     .bind[ClassStrategy].as[ClassStrategyDefaultImpl]
     .bind[ImportStrategy].as[ImportStrategyDefaultImpl]
-    .bind[CustomStrategy].as[CustomStrategyDefaultImpl]
     .bind[InstanceStrategy].as[InstanceStrategyDefaultImpl]
     .bind[Provisioner].as[ProvisionerDefaultImpl]
     .set[PlanningHook]
-      .element[PlanningHookDefaultImpl]
+    .element[PlanningHookDefaultImpl]
+
+
+  final lazy val noCogenBootstrap = defaultBootstrap ++ noCogen
 }
+
+

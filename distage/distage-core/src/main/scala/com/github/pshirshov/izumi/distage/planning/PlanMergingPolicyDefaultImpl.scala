@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
@@ -86,7 +85,7 @@ class PlanMergingPolicyDefaultImpl(
     val issuesMap =
       ops.groupBy(_.target)
         .filter(_._2.lengthCompare(1) > 0)
-        .filterNot(_._2.forall(_.isInstanceOf[SetOp]))
+        .filterNot(_._2.forall(_.isInstanceOf[CreateSet]))
 
     Issues(issuesMap)
   }

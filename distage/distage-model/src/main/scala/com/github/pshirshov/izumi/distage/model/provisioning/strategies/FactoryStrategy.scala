@@ -6,6 +6,5 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, Operatio
 
 trait FactoryStrategy {
   def makeFactory(context: ProvisioningContext, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult]
-
 }
 

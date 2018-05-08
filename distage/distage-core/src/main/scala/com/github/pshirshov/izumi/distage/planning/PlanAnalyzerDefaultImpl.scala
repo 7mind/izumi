@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp.CreateSet
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
 import com.github.pshirshov.izumi.distage.model.references.RefTable

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.provisioning.cglib
+package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 
 import java.lang.reflect.Method
 
@@ -12,6 +12,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
 import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
 import net.sf.cglib.proxy.MethodProxy
+
+
 
 protected[distage] class CgLibFactoryMethodInterceptor
 (

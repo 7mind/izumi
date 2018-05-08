@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.provisioning.cglib
+package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 
 import java.lang.reflect.Method
 

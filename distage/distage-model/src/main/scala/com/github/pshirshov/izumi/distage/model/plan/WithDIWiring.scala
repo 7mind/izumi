@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.CustomDef
 import com.github.pshirshov.izumi.distage.model.references.WithDIKey
 import com.github.pshirshov.izumi.distage.model.reflection.universe._
 
@@ -42,9 +41,6 @@ trait WithDIWiring {
       }
 
     }
-
-    case class CustomWiring(customDef: CustomDef, associations: Seq[Association]) extends Wiring
-
 
     case class FactoryMethod(factoryType: TypeFull, factoryMethods: Seq[FactoryMethod.WithContext], fieldDependencies: Seq[Association.AbstractMethod]) extends Wiring {
       /**
