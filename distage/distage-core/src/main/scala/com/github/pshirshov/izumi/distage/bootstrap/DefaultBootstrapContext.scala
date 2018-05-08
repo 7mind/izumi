@@ -14,6 +14,7 @@ import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
 class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLocator {
@@ -78,29 +79,30 @@ object DefaultBootstrapContext {
     make[TraitStrategy].from[TraitStrategyFailingImpl]
   }
 
-  final lazy val defaultBootstrap: ModuleDef = TrivialModuleDef
-    .bind[LookupInterceptor].as(NullLookupInterceptor)
-    .bind[ReflectionProvider.Runtime].as[ReflectionProviderDefaultImpl.Runtime]
-    .bind[SymbolIntrospector.Runtime].as[SymbolIntrospectorDefaultImpl.Runtime]
-    .bind[DependencyKeyProvider.Runtime].as[DependencyKeyProviderDefaultImpl.Runtime]
-    .bind[PlanningObserver].as[PlanningObserverDefaultImpl]
-    //.bind[PlanningObserver](new BootstrapPlanningObserver(new TrivialLoggerImpl(SystemOutStringSink)))
-    .bind[PlanResolver].as[PlanResolverDefaultImpl]
-    .bind[PlanAnalyzer].as[PlanAnalyzerDefaultImpl]
-    .bind[PlanMergingPolicy].as[PlanMergingPolicyDefaultImpl]
-    .bind[TheFactoryOfAllTheFactories].as[TheFactoryOfAllTheFactoriesDefaultImpl]
-    .bind[ForwardingRefResolver].as[ForwardingRefResolverDefaultImpl]
-    .bind[SanityChecker].as[SanityCheckerDefaultImpl]
-    .bind[Planner].as[PlannerDefaultImpl]
-    .bind[LoggerHook].as[LoggerHookDefaultImpl]
-    .bind[SetStrategy].as[SetStrategyDefaultImpl]
-    .bind[ProviderStrategy].as[ProviderStrategyDefaultImpl]
-    .bind[ClassStrategy].as[ClassStrategyDefaultImpl]
-    .bind[ImportStrategy].as[ImportStrategyDefaultImpl]
-    .bind[InstanceStrategy].as[InstanceStrategyDefaultImpl]
-    .bind[Provisioner].as[ProvisionerDefaultImpl]
-    .set[PlanningHook]
-    .element[PlanningHookDefaultImpl]
+  final lazy val defaultBootstrap: ModuleBase = new ModuleDef {
+    make[LookupInterceptor].from(NullLookupInterceptor)
+    make[ReflectionProvider.Runtime].from[ReflectionProviderDefaultImpl.Runtime]
+    make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
+    make[DependencyKeyProvider.Runtime].from[DependencyKeyProviderDefaultImpl.Runtime]
+    make[PlanningObserver].from[PlanningObserverDefaultImpl]
+    //make[PlanningObserver](new BootstrapPlanningObserver(new TrivialLoggerImpl(SystemOutStringSink)))
+    make[PlanResolver].from[PlanResolverDefaultImpl]
+    make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
+    make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
+    make[TheFactoryOfAllTheFactories].from[TheFactoryOfAllTheFactoriesDefaultImpl]
+    make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
+    make[SanityChecker].from[SanityCheckerDefaultImpl]
+    make[Planner].from[PlannerDefaultImpl]
+    make[LoggerHook].from[LoggerHookDefaultImpl]
+    make[SetStrategy].from[SetStrategyDefaultImpl]
+    make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
+    make[ClassStrategy].from[ClassStrategyDefaultImpl]
+    make[ImportStrategy].from[ImportStrategyDefaultImpl]
+    make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
+    make[Provisioner].from[ProvisionerDefaultImpl]
+    many[PlanningHook]
+      .add[PlanningHookDefaultImpl]
+  }
 
 
   final lazy val noCogenBootstrap = defaultBootstrap ++ noCogen
