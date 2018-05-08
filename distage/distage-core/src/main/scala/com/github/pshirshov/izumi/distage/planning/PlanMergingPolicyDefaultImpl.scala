@@ -6,47 +6,47 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection
-import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.implicitConversions
 
 // TODO: move unify graph ops with PlanAnalyzer
 class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy {
+
   override def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
-    currentOp.provisions.foreach {
+    (currentOp.provisions ++ currentOp.sets.values).foreach {
       op =>
         val target = op.target
 
         val issues = findIssues(currentPlan, op)
         if (issues.isEmpty) {
-          val opDeps: Set[universe.RuntimeDIUniverse.DIKey] = getTransitiveDependencies(currentPlan, op)
-          currentPlan.operations.put(target, op)
+          val opDeps = transitiveDeps(currentPlan, op)
+          val old = currentPlan.operations.get(target)
+          val merged = merge(old, op)
+          currentPlan.operations.put(target, merged)
           registerDep(currentPlan, target, opDeps)
         } else {
           currentPlan.issues ++= issues
         }
     }
 
-    currentOp.sets.values.foreach {
-      op =>
-        val target = op.target
-        val opDeps: Set[universe.RuntimeDIUniverse.DIKey] = getTransitiveDependencies(currentPlan, op)
-
-        val old = currentPlan.operations.getOrElseUpdate(target, op)
-        val merged = op.copy(members = old.asInstanceOf[CreateSet].members ++ op.members)
-
-        currentPlan.operations.put(target, merged)
-        registerDep(currentPlan, target, opDeps)
-    }
-
     currentPlan
   }
 
-  private def getTransitiveDependencies(plan: DodgyPlan, op: InstantiationOp): Set[reflection.universe.RuntimeDIUniverse.DIKey] = {
+  private def merge(old: Option[InstantiationOp], op: InstantiationOp): InstantiationOp = {
+    (old, op) match {
+      case (Some(oldset: CreateSet), newset: CreateSet) =>
+        newset.copy(members = oldset.members ++ newset.members)
+      case (None, newop) =>
+        newop
+      case other =>
+        throw new DIException(s"Unexpected pair: $other", null)
+    }
+  }
+
+  private def transitiveDeps(plan: DodgyPlan, op: InstantiationOp): Set[reflection.universe.RuntimeDIUniverse.DIKey] = {
     val opDeps = requirements(op).flatMap {
       req =>
         plan.dependencies.getOrElse(req, mutable.Set.empty[DIKey]) + req
@@ -57,6 +57,7 @@ class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy {
   private def registerDep(plan: DodgyPlan, target: RuntimeDIUniverse.DIKey, opDeps: Set[RuntimeDIUniverse.DIKey]): Unit = {
     plan.dependencies.getOrElseUpdate(target, mutable.Set.empty[DIKey])
     plan.dependees.getOrElseUpdate(target, mutable.Set.empty[DIKey])
+
     opDeps.foreach {
       opDep =>
         plan.dependees.addBinding(opDep, target)
@@ -69,10 +70,15 @@ class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy {
 
     val issues = mutable.ArrayBuffer.empty[PlanningFailure]
 
-    if (currentPlan.dependencies.contains(op.target)) {
-      issues += PlanningFailure.UnsolvableConflict(target, Seq.empty)
-    } else if (currentPlan.operations.contains(target)) {
-      issues += PlanningFailure.UnsolvableConflict(target, Seq.empty)
+    currentPlan.operations.get(target) match {
+      case Some(existing) =>
+        (existing, op) match {
+          case (_: CreateSet, _: CreateSet) =>
+
+          case (e, o) =>
+            issues += PlanningFailure.ConflictingOperation(target, e, o)
+        }
+      case None =>
     }
 
     issues

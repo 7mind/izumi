@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBind
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, TraitInitializationFailedException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
-import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.UnsolvableConflict
+import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.ConflictingOperation
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
 import org.scalatest.WordSpec
@@ -246,7 +246,7 @@ class InjectorTest extends WordSpec {
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
-      assert(exc.badSteps.lengthCompare(1) == 0 && exc.badSteps.exists(_.isInstanceOf[UnsolvableConflict]))
+      assert(exc.badSteps.lengthCompare(1) == 0 && exc.badSteps.exists(_.isInstanceOf[ConflictingOperation]))
     }
 
     "handle factory injections" in {
