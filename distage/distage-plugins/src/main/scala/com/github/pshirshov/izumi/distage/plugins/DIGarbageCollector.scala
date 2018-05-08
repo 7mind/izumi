@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.plugins
 
-import com.github.pshirshov.izumi.distage.model.definition.TrivialModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.SimpleModuleDef
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
@@ -34,7 +34,7 @@ object TracingDIGC extends DIGarbageCollector {
     val toLeave = mutable.HashSet[RuntimeDIUniverse.DIKey]()
     toLeave ++= plan.steps.map(_.target).filter(isRoot)
     allDeps(plan.steps.map(v => v.target -> v).toMap, toLeave.toSet, toLeave)
-    val refinedPlan = TrivialModuleDef(plan.definition.bindings.filter(b => toLeave.contains(b.key)))
+    val refinedPlan = SimpleModuleDef(plan.definition.bindings.filter(b => toLeave.contains(b.key)))
     val steps = plan.steps.filter(s => toLeave.contains(s.target))
     FinalPlanImmutableImpl(refinedPlan, steps)
   }

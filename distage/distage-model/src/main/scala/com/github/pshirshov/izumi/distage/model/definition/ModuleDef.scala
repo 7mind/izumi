@@ -1,100 +1,231 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.fundamentals.collections.IzCollections
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDef.{BindDSL, IdentSet, SetDSL}
+import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
-import scala.language.implicitConversions
+import scala.collection.mutable
 
-trait ModuleDef {
-  def bindings: Set[Binding]
+trait ModuleDef extends ModuleBase {
 
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case that: ModuleDef => bindings == that.bindings
-    case _ => false
+  protected def initialState: mutable.Set[Binding] = mutable.HashSet.empty[Binding]
+
+  protected def freeze(state: mutable.Set[Binding]): Set[Binding] = state.toSet
+
+  final private[this] val mutableState: mutable.Set[Binding] = initialState
+
+  final override def bindings: Set[Binding] = freeze(mutableState)
+
+  final protected def make[T: Tag]: BindDSL[T] = {
+    val binding = Bindings.binding[T]
+    val uniq = mutableState.add(binding)
+
+    new BindDSL(mutableState, binding, uniq)
   }
 
-  override def hashCode(): Int = bindings.hashCode()
+  final protected def many[T: Tag]: SetDSL[T] = {
+    val binding = Bindings.emptySet[T]
+    val uniq = mutableState.add(binding)
 
-  override def toString: String = bindings.toString()
-}
+    val startingSet: Set[Binding] = if (uniq) Set(binding) else Set.empty
 
-final case class TrivialModuleDef(bindings: Set[Binding]) extends ModuleDef
+    new SetDSL(mutableState, IdentSet(binding.key, Set()), startingSet)
+  }
 
-object TrivialModuleDef extends ModuleDef {
-  override def bindings: Set[Binding] = Set.empty
-
-  def empty: TrivialModuleDef = TrivialModuleDef(Set.empty)
 }
 
 object ModuleDef {
 
-  implicit final class ModuleDefSeqExt(private val defs: Seq[ModuleDef]) extends AnyVal {
-    def merge(): ModuleDef = {
-      defs.reduceLeftOption[ModuleDef](_ ++ _).getOrElse(TrivialModuleDef.empty)
+  // DSL state machine...
+
+  // .bind{.as, .provider}{.named}
+
+  private[definition] final class BindDSL[T]
+  (
+    protected val mutableState: mutable.Set[Binding]
+    , protected val binding: SingletonBinding[DIKey.TypeKey]
+    , protected val ownBinding: Boolean
+  ) extends BindDSLMutBase[T] {
+
+    def named(name: String): BindNamedDSL[T] = {
+      val newBinding = binding.copy(key = binding.key.named(name))
+
+      val uniq = replace(newBinding)
+
+      new BindNamedDSL[T](mutableState, newBinding, uniq)
+    }
+
+    def tagged(tags: String*): BindDSL[T] = {
+      val newBinding = binding.copy(tags = binding.tags ++ tags)
+
+      val uniq = replace(newBinding)
+
+      new BindDSL[T](mutableState, newBinding, uniq)
+    }
+
+  }
+
+  private[definition] final class BindNamedDSL[T]
+  (
+    protected val mutableState: mutable.Set[Binding]
+    , protected val binding: Binding.SingletonBinding[DIKey]
+    , protected val ownBinding: Boolean
+  ) extends BindDSLMutBase[T] {
+
+    def tagged(tags: String*): BindNamedDSL[T] = {
+      val newBinding = binding.copy(tags = binding.tags ++ tags)
+
+      val uniq = replace(newBinding)
+
+      new BindNamedDSL[T](mutableState, newBinding, uniq)
+    }
+
+  }
+
+  private[definition] sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {
+    protected def mutableState: mutable.Set[Binding]
+    protected val binding: SingletonBinding[DIKey]
+    protected val ownBinding: Boolean
+
+    protected def replace(newBinding: Binding): Boolean = {
+      if (ownBinding) {
+        mutableState -= binding
+      }
+      mutableState.add(newBinding)
+    }
+
+    override protected def bind(impl: ImplDef): Unit = discard {
+      replace(binding.withImpl(impl))
     }
   }
 
-  implicit final class ModuleDefCombine(private val moduleDef: ModuleDef) extends AnyVal {
-    def ++(binding: Binding): ModuleDef = {
-      TrivialModuleDef(moduleDef.bindings + binding)
+  // .set{.element, .elementProvider}{.named}
+
+  private[definition] final case class IdentSet[+D <: DIKey](key: D, tags: Set[String]) {
+    def sameIdent(binding: Binding): Boolean =
+      key == binding.key && tags == binding.tags
+  }
+
+  private[definition] final class SetDSL[T]
+  (
+    protected val mutableState: mutable.Set[Binding]
+    , protected val identifier: IdentSet[DIKey.TypeKey]
+    , protected val currentBindings: Set[Binding]
+  ) extends SetDSLMutBase[T] {
+
+    def named(name: String): SetNamedDSL[T] = {
+      val newIdent = identifier.copy(key = identifier.key.named(name))
+
+      val newBindings = replaceIdent(newIdent)
+
+      new SetNamedDSL(mutableState, newIdent, newBindings)
     }
 
-    def ++(that: ModuleDef): ModuleDef = {
-      TrivialModuleDef(moduleDef.bindings ++ that.bindings)
+    def tagged(tags: String*): SetDSL[T] = {
+      val newIdent = identifier.copy(tags = identifier.tags ++ tags)
+
+      val newBindings = replaceIdent(newIdent)
+
+      new SetDSL[T](mutableState, newIdent, newBindings)
     }
 
-    def overridenBy(that: ModuleDef): ModuleDef = {
-      // we replace existing items in-place and appending new at the end
-      // set bindings should not be touched
+  }
 
-      val existingSetElements = moduleDef.bindings.collect({case b: SetElementBinding[_] => b})
-      val newSetElements = that.bindings.collect({case b: SetElementBinding[_] => b})
-      val mergedSetElements = existingSetElements ++ newSetElements
+  private[definition] final class SetNamedDSL[T]
+  (
+    protected val mutableState: mutable.Set[Binding]
+    , protected val identifier: IdentSet[DIKey]
+    , protected val currentBindings: Set[Binding]
+  ) extends SetDSLMutBase[T] {
 
-      val existingSets = moduleDef.bindings.collect({case b: EmptySetBinding[_] => b})
-      val newSets = that.bindings.collect({case b: EmptySetBinding[_] => b})
-      val mergedSets = existingSets ++ newSets
+    def tagged(tags: String*): SetNamedDSL[T] = {
+      val newIdent = identifier.copy(tags = identifier.tags ++ tags)
 
-      val mergedSetOperations = mergedSets ++ mergedSetElements
+      val newBindings = replaceIdent(newIdent)
 
-      val setOps = mergedSetOperations.map(_.key)
+      new SetNamedDSL[T](mutableState, newIdent, newBindings)
+    }
 
-      val existingSingletons = moduleDef.bindings.collect({case b: SingletonBinding[_] => b})
-      val newSingletons = that.bindings.collect({case b: SingletonBinding[_] => b})
+  }
 
-      import IzCollections._
-      val existingIndex = existingSingletons.map(b => b.key -> b).toMultimap
-      val newIndex = newSingletons.map(b => b.key -> b).toMultimap
-      val mergedKeys = existingIndex.keySet ++ newIndex.keySet
+  private[definition] final class SetElementDSL[T]
+  (
+    protected val mutableState: mutable.Set[Binding]
+    , protected val identifier: IdentSet[DIKey]
+    , protected val currentBindings: Set[Binding]
+    , protected val bindingCursor: Binding
+  ) extends SetDSLMutBase[T] {
 
-      val badKeys = setOps.intersect(mergedKeys)
-      if (badKeys.nonEmpty) {
-        throw new DIException(s"Cannot override bindings, unsolvable conflicts: $badKeys", null)
+    def tagged(tags: String*): SetElementDSL[T] = {
+      val newBindingCursor = bindingCursor.withTags(tags = bindingCursor.tags ++ tags)
+
+      mutableState -= bindingCursor
+      val newCurrentBindings = currentBindings - bindingCursor
+
+      append(newBindingCursor)
+
+      new SetElementDSL[T](mutableState, identifier, newCurrentBindings + newBindingCursor, newBindingCursor)
+    }
+
+  }
+
+  private[definition] sealed trait SetDSLMutBase[T] extends SetDSLBase[T, SetElementDSL[T]]{
+    protected def mutableState: mutable.Set[Binding]
+    protected def identifier: IdentSet[DIKey]
+    protected def currentBindings: Set[Binding]
+
+    protected def append(binding: Binding): Unit = discard {
+      mutableState += binding
+    }
+
+    protected def replaceIdent(newIdent: IdentSet[DIKey]): Set[Binding] = {
+      val newBindings = (currentBindings + EmptySetBinding(newIdent.key, newIdent.tags)).map {
+        _.withTarget(newIdent.key) // tags only apply to EmptySet
       }
 
-      val mergedSingletons =  mergedKeys.flatMap {
-        k =>
-          val existingMappings = existingIndex.getOrElse(k, Set.empty)
-          val newMappings = newIndex.getOrElse(k, Set.empty)
+      mutableState --= currentBindings
+      mutableState ++= newBindings
 
-          if (existingMappings.isEmpty) {
-            newMappings
-          } else if (newMappings.isEmpty) {
-            existingMappings
-          } else {
-            newMappings
-          }
-      }
+      newBindings
+    }
 
+    override protected def appendElement(newElement: ImplDef): SetElementDSL[T] = {
+      val newBinding: Binding = SetElementBinding(identifier.key, newElement)
 
+      append(newBinding)
 
-      TrivialModuleDef(mergedSingletons ++ mergedSetOperations)
+      new SetElementDSL[T](mutableState, identifier, currentBindings + newBinding, newBinding)
     }
   }
 
-  // FIXME: remove BindingDSL
-  implicit def moduleDefToBindingDSL(mod: ModuleDef): BindingDSL =
-    new BindingDSL(mod.bindings)
+  // base
+
+  trait BindDSLBase[T, AfterBind] {
+    final def from[I <: T: Tag]: AfterBind =
+      bind(ImplDef.TypeImpl(SafeType.get[I]))
+
+    final def from[I <: T: Tag](instance: I): AfterBind =
+      bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
+
+    final def from[I <: T: Tag](f: DIKeyWrappedFunction[I]): AfterBind =
+      bind(ImplDef.ProviderImpl(SafeType.get[I], f))
+
+    protected def bind(impl: ImplDef): AfterBind
+  }
+
+  trait SetDSLBase[T, AfterAdd] {
+    final def add[I <: T: Tag]: AfterAdd =
+      appendElement(ImplDef.TypeImpl(SafeType.get[I]))
+
+    final def add[I <: T: Tag](instance: I): AfterAdd =
+      appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
+
+    final def add[I <: T: Tag](f: DIKeyWrappedFunction[I]): AfterAdd =
+      appendElement(ImplDef.ProviderImpl(f.ret, f))
+
+    protected def appendElement(newImpl: ImplDef): AfterAdd
+  }
 
 }

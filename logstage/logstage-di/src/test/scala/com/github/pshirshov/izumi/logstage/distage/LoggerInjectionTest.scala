@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.distage
 
 import com.github.pshirshov.izumi.distage.Injectors
-import com.github.pshirshov.izumi.distage.model.definition.TrivialModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.{ModuleDef, SimpleModuleDef}
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import org.scalatest.WordSpec
@@ -26,9 +26,10 @@ class LoggerInjectionTest extends WordSpec {
       val testSink = new TestSink()
       val router = LoggingMacroTest.mkRouter(testSink)
 
-      val definition = TrivialModuleDef
-        .bind[ExampleService]
-        .bind[ExampleApp]
+      val definition = new ModuleDef {
+        make[ExampleService]
+        make[ExampleApp]
+      }
 
       val loggerModule = new LogstageModule(router)
 

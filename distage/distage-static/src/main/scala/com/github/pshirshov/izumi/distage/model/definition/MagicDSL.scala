@@ -1,29 +1,43 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.BindingDSL.{BindDSLBase, BindOnlyNameableDSL}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDef.{BindDSLBase, SetDSLBase}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
 import com.github.pshirshov.izumi.distage.provisioning.{AbstractConstructor, AnyConstructor, ConcreteConstructor}
 
 object MagicDSL {
 
   implicit final class MagicBindDSL[T, AfterBind](private val dsl: BindDSLBase[T, AfterBind]) extends AnyVal {
-    def magically[I <: T: Tag: AnyConstructor]: AfterBind =
-      implicitly[AnyConstructor[I]] match {
+    def magically(implicit ev: AnyConstructor[T], ev1: Tag[T]): AfterBind =
+      fromMagic[T]
+
+    def fromMagic[I <: T: Tag: AnyConstructor]: AfterBind =
+      AnyConstructor[I] match {
         case ctor: AbstractConstructor[I] =>
-          dsl.provided[I](ctor.function)
+          dsl.from[I](ctor.function)
         case _: ConcreteConstructor[I] =>
-          dsl.as[I]
+          dsl.from[I]
       }
   }
 
-  implicit final class MagicBindingDSL[B <: ModuleDef](private val dsl: B)(implicit ev: B => BindingDSL) {
-    @inline
-    def magic[T: Tag: AnyConstructor]: BindOnlyNameableDSL =
-      implicitly[AnyConstructor[T]] match {
+  // FIXME: add tests
+  implicit final class MagicSetDSL[T, AfterAdd](private val dsl: SetDSLBase[T, AfterAdd]) extends AnyVal {
+    def addMagic[I <: T: Tag: AnyConstructor]: AfterAdd =
+      AnyConstructor[I] match {
+        case ctor: AbstractConstructor[I] =>
+          dsl.add(ctor.function)
+        case _: ConcreteConstructor[I] =>
+          dsl.add[I]
+      }
+  }
+
+  implicit final class MagicBinding(private val binding: ImplBinding) extends AnyVal {
+    def fromMagic[T: Tag: AnyConstructor]: ImplBinding =
+      AnyConstructor[T] match {
         case ctor: AbstractConstructor[T] =>
-          dsl.bind[T].provided(ctor.function)
+          binding.withImpl(ctor.function)
         case _: ConcreteConstructor[T] =>
-          dsl.bind[T]
+          binding.withImpl[T]
       }
   }
 

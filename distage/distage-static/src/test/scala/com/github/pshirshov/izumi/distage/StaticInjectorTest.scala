@@ -16,12 +16,13 @@ class StaticInjectorTest extends WordSpec {
     "handle macro factory injections" in  {
       import Case5._
 
-      val definition = TrivialModuleDef
-        .magic[Factory]
-        .magic[Dependency]
-        .magic[OverridingFactory]
-        .magic[AssistedFactory]
-        .magic[AbstractFactory]
+      val definition = new ModuleDef {
+        make[Factory].magically
+        make[Dependency].magically
+        make[OverridingFactory].magically
+        make[AssistedFactory].magically
+        make[AbstractFactory].magically
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -46,9 +47,10 @@ class StaticInjectorTest extends WordSpec {
     "handle generic arguments in macro factory methods" in {
       import Case5._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .magic[GenericAssistedFactory]
-        .bind[Dependency](ConcreteDep())
+      val definition: ModuleBase = new ModuleDef {
+        make[GenericAssistedFactory].magically
+        make[Dependency].from(ConcreteDep())
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -64,9 +66,10 @@ class StaticInjectorTest extends WordSpec {
     "handle assisted dependencies in macro factory methods" in {
       import Case5._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .magic[AssistedFactory]
-        .bind[Dependency](ConcreteDep())
+      val definition: ModuleBase = new ModuleDef {
+        make[AssistedFactory].magically
+        make[Dependency].from(ConcreteDep())
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -80,11 +83,12 @@ class StaticInjectorTest extends WordSpec {
     "handle named assisted dependencies in macro factory methods" in {
       import Case5._
 
-      val definition: ModuleDef = TrivialModuleDef
-        .magic[NamedAssistedFactory]
-        .magic[Dependency]
-        .bind[Dependency](SpecialDep()).named("special")
-        .bind[Dependency](VerySpecialDep()).named("veryspecial")
+      val definition: ModuleBase = new ModuleDef {
+        make[NamedAssistedFactory].magically
+        make[Dependency].magically
+        make[Dependency].named("special").from(SpecialDep())
+        make[Dependency].named("veryspecial").from(VerySpecialDep())
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -99,9 +103,10 @@ class StaticInjectorTest extends WordSpec {
     "handle one-arg trait" in {
       import Case7._
 
-      val definition = TrivialModuleDef
-        .bind[Dependency1]
-        .magic[TestTrait]
+      val definition = new ModuleDef {
+        make[Dependency1].magically
+        make[TestTrait].magically
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -115,10 +120,11 @@ class StaticInjectorTest extends WordSpec {
     "handle named one-arg trait" in {
       import Case7._
 
-      val definition = TrivialModuleDef
-        .bind[Dependency1]
-        .magic[TestTrait]
-        .named("named-trait")
+      val definition = new ModuleDef {
+        make[Dependency1].magically
+        make[TestTrait].named("named-trait")
+          .magically
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -132,13 +138,14 @@ class StaticInjectorTest extends WordSpec {
     "handle mixed sub-trait with protected autowires" in {
       import Case8._
 
-      val definition = TrivialModuleDef
-        .magic[Trait3]
-        .magic[Trait2]
-        .magic[Trait1]
-        .bind[Dependency3]
-        .bind[Dependency2]
-        .bind[Dependency1]
+      val definition = new ModuleDef {
+        make[Trait3].magically
+        make[Trait2].magically
+        make[Trait1].magically
+        make[Dependency3]
+        make[Dependency2]
+        make[Dependency1]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -159,11 +166,12 @@ class StaticInjectorTest extends WordSpec {
     "handle sub-type trait" in {
       import Case8._
 
-      val definition = TrivialModuleDef
-        .bind[Trait2].magically[Trait3]
-        .bind[Dependency3]
-        .bind[Dependency2]
-        .bind[Dependency1]
+      val definition = new ModuleDef {
+        make[Trait2].fromMagic[Trait3]
+        make[Dependency3]
+        make[Dependency2]
+        make[Dependency1]
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -177,11 +185,12 @@ class StaticInjectorTest extends WordSpec {
     "support named bindings in macro traits" in {
       import Case10._
 
-      val definition = TrivialModuleDef
-        .bind[Dep].magically[DepA].named("A")
-        .bind[Dep].magically[DepB].named("B")
-        .magic[Trait]
-        .magic[Trait1]
+      val definition = new ModuleDef {
+        make[Dep].named("A").fromMagic[DepA]
+        make[Dep].named("B").fromMagic[DepB]
+        make[Trait].magically
+        make[Trait1].magically
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -201,9 +210,10 @@ class StaticInjectorTest extends WordSpec {
     "override protected defs in macro traits" in {
       import Case14._
 
-      val definition = TrivialModuleDef
-        .magic[TestTrait]
-        .magic[Dep]
+      val definition = new ModuleDef {
+        make[TestTrait].magically
+        make[Dep].magically
+      }
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
