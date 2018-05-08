@@ -55,7 +55,7 @@ object DefaultBootstrapContext {
       , new SanityCheckerDefaultImpl(analyzer)
       , CustomOpHandler.NullCustomOpHander
       , bootstrapObserver
-      , new PlanMergingPolicyDefaultImpl(analyzer)
+      , new PlanMergingPolicyDefaultImpl
       , Set(new PlanningHookDefaultImpl)
     )
   }

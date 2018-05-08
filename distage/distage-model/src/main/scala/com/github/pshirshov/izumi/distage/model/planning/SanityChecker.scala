@@ -4,17 +4,14 @@ import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, F
 
 trait SanityChecker {
 
-  def assertSanity(plan: FinalPlan): Unit
+  def assertFinalPlanSane(plan: FinalPlan): Unit
+
+  def assertStepSane(plan: DodgyPlan): Unit
 
   def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit
 
-  def assertNoDuplicateOps(plan: DodgyPlan): Unit = {
-    //assertNoDuplicateOps(plan.operations) // TODO:
-  }
-
-  def assertNoDuplicateOps(nextOps: NextOps): Unit = {
-    // TODO:
-//    val allOps = nextOps.imports ++ nextOps.provisions ++ nextOps.sets.values
-//    assertNoDuplicateOps(allOps.toSeq)
+  def assertProvisionsSane(nextOps: NextOps): Unit = {
+    val allOps = nextOps.provisions ++ nextOps.sets.values
+    assertNoDuplicateOps(allOps)
   }
 }

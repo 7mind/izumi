@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{DuplicateKeysException, ForwardRefException, MissingRefException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, DuplicateKeysException, ForwardRefException, MissingRefException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, FinalPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -13,7 +13,29 @@ class SanityCheckerDefaultImpl
   protected val planAnalyzer: PlanAnalyzer
 )
   extends SanityChecker {
-  override def assertSanity(plan: FinalPlan): Unit = {
+
+  override def assertStepSane(plan: DodgyPlan): Unit = {
+    plan.dependencies.foreach {
+      kv =>
+        kv._2.foreach {
+          dep =>
+            if (!plan.dependees(dep).contains(kv._1)) {
+              throw new DIException(s"Sanity check failed: deptables assymetric !", null)
+            }
+        }
+    }
+    plan.dependees.foreach {
+      kv =>
+        kv._2.foreach {
+          dep =>
+            if (!plan.dependencies(dep).contains(kv._1)) {
+              throw new DIException(s"Sanity check failed: deptables assymetric !", null)
+            }
+        }
+    }
+  }
+
+  override def assertFinalPlanSane(plan: FinalPlan): Unit = {
     assertNoDuplicateOps(plan.steps)
 
     val reftable = planAnalyzer.computeFwdRefTable(plan.steps.toStream)

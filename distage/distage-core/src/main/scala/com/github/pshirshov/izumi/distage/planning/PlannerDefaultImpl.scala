@@ -31,9 +31,9 @@ class PlannerDefaultImpl
     val plan = context.bindings.foldLeft(DodgyPlan.empty) {
       case (currentPlan, binding) =>
         Value(computeProvisioning(currentPlan, binding))
-          .eff(sanityChecker.assertNoDuplicateOps)
+          .eff(sanityChecker.assertProvisionsSane)
           .map(planMergingPolicy.extendPlan(currentPlan, binding, _))
-          .eff(sanityChecker.assertNoDuplicateOps)
+          .eff(sanityChecker.assertStepSane)
           .map(hook.hookStep(context, currentPlan, binding, _))
           .eff(planningObserver.onSuccessfulStep)
           .get
@@ -45,13 +45,11 @@ class PlannerDefaultImpl
       .eff(planningObserver.onReferencesResolved)
       .map(planResolver.resolve(_, context))
       .eff(planningObserver.onResolvingFinished)
-      .eff(sanityChecker.assertSanity)
+      .eff(sanityChecker.assertFinalPlanSane)
       .map(hook.hookFinal)
-      .eff(sanityChecker.assertSanity)
+      .eff(sanityChecker.assertFinalPlanSane)
       .eff(planningObserver.onFinalPlan)
       .get
-
-    println(finalPlan)
 
     finalPlan
   }
