@@ -104,7 +104,8 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |${renderRegistrations(ts.inheritance.allParents(i.id), i.id.name, imports)}
        """.stripMargin
 
-    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil") GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
+    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\"" && f.tp.testValue() != "nil")
+      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
 
     val tests =
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
@@ -597,7 +598,8 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |${renderRegistrations(ts.inheritance.allParents(i.id), eid.name, imports)}
        """.stripMargin
 
-    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil") GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
+    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\"" && f.tp.testValue() != "nil")
+      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
 
     val tests =
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
