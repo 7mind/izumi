@@ -1,13 +1,13 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetElementBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef, TrivialModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase, SimpleModuleDef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 trait AutoSetHook extends PlanningHookDefaultImpl {
   def elementOf(b: Binding): Option[RuntimeDIUniverse.DIKey]
 
-  override def hookDefinition(defn: ModuleDef): ModuleDef = {
+  override def hookDefinition(defn: ModuleBase): ModuleBase = {
 
     val autoSetsElements = defn.bindings.flatMap {
       b =>
@@ -23,6 +23,6 @@ trait AutoSetHook extends PlanningHookDefaultImpl {
           .toSet
     }
 
-    TrivialModuleDef(defn.bindings ++ autoSetsElements)
+    SimpleModuleDef(defn.bindings ++ autoSetsElements)
   }
 }

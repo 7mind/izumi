@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.app
 
 import com.github.pshirshov.izumi.distage.config.pureconfig.PureConfigInstanceReader
 import com.github.pshirshov.izumi.distage.config.{AppConfig, ConfigModule}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBuilder, ModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -64,10 +64,10 @@ class TestPredicateAutoSet extends AutoSetHook {
   }
 }
 
-class CustomizationModule extends ModuleBuilder {
+class CustomizationModule extends ModuleDef {
 
-  set[PlanningHook]
-    .element[TestPredicateAutoSet]
+  many[PlanningHook]
+    .add[TestPredicateAutoSet]
 
 }
 
