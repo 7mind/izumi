@@ -68,8 +68,14 @@ object TypeScriptImports {
     }
 
     var importOffset = ""
-    (1 to (t.path.toPackage.size - nestedDepth)).foreach(_ => importOffset += "../")
-    val importFile = importOffset + t.path.toPackage.drop(nestedDepth).mkString("/")//+ "/" + t.name
+    var importFile = ""
+
+    if (t.path.toPackage.mkString(".").startsWith(fromPackage.mkString("."))) {
+      importFile = "./" + t.path.toPackage.mkString(".").substring(fromPackage.mkString(".").length + 1)
+    } else {
+      (1 to (t.path.toPackage.size - nestedDepth)).foreach(_ => importOffset += "../")
+      importFile = importOffset + t.path.toPackage.drop(nestedDepth).mkString("/")//+ "/" + t.name
+    }
 
     Seq(importFile)
   }
@@ -108,9 +114,11 @@ object TypeScriptImports {
     case i: Identifier =>
       i.fields.flatMap(f => List(f.typeId) ++ collectTypes(ts, f.typeId))
     case i: Interface =>
-      i.struct.superclasses.all ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId))
+      i.struct.superclasses.interfaces ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)) ++
+          ts.inheritance.allParents(i.id).filterNot(i.struct.superclasses.interfaces.contains).filterNot(ff => ff == i.id).map(ifc => ts.implId(ifc))
     case d: DTO =>
-      d.struct.superclasses.all ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId))
+      d.struct.superclasses.interfaces ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)) ++
+        ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains).map(ifc => ts.implId(ifc))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
   }

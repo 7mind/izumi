@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
 final case class GoLangStruct(
@@ -146,7 +147,9 @@ final case class GoLangStruct(
            |$dest := ${if(forOption) "&" else ""}_$dest
          """.stripMargin
 
-      case _ => throw new IDLException("Should not get into renderPolymorphSerialized")
+      case al: AliasId => renderPolymorphSerialized(ts(al).asInstanceOf[Alias].target, dest, srcOriginal, forOption)
+
+      case _ => throw new IDLException(s"Should not get into renderPolymorphSerialized ${id.name} dest: $dest src: $srcOriginal")
     }
   }
 
@@ -244,7 +247,7 @@ final case class GoLangStruct(
        |    if slice == nil {
        |        return fmt.Errorf("method $method got nil input, expected a valid object")
        |    }
-       |    ${if (!fields.exists(isFieldPolymorph)) "" else "var err error"}
+       |    ${if (!fields.exists(isFieldPolymorph) && !fields.exists(ff => ff.tp.hasSetterError())) "" else "var err error"}
        |${fields.map(f => f.renderAssign("v", s"slice.${f.renderMemberName(true)}", serialized = true, optional = false)).mkString("\n").shift(4)}
        |    return nil
        |}

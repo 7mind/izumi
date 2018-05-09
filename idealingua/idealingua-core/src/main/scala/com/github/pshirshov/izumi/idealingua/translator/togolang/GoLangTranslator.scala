@@ -77,7 +77,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |
        |func init() {
        |    // Here we register current DTO in other interfaces
-       |${interfaces.map(sc => s"Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
+       |${interfaces.map(sc => s"${imports.withImport(sc)}Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
@@ -101,17 +101,17 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       s"""${struct.render()}
          |${struct.renderSerialized()}
          |${struct.renderSlices()}
-         |${renderRegistrations(i.struct.superclasses.interfaces, i.id.name, imports)}
+         |${renderRegistrations(ts.inheritance.allParents(i.id), i.id.name, imports)}
        """.stripMargin
 
+    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\"" && f.tp.testValue() != "nil")
+      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
+
     val tests =
-      s"""import (
-         |    "testing"
-         |    "encoding/json"
-         |)
+      s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
          |
          |func Test${i.id.name}JSONSerialization(t *testing.T) {
-         |    v1 := New${i.id.name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    v1 := New${i.id.name}(${struct.fields.map(f => GoLangType(f.tp.id, testImports, ts).testValue()).mkString(", ")})
          |    serialized, err := json.Marshal(v1)
          |    if err != nil {
          |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
@@ -245,7 +245,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |        t.Errorf("type '%s' Is${m.name} must be true.", "${i.id.name}")
        |    }
        |
-       |${i.alternatives.map(al => if (al.name == m.name) "" else s"""if adt.Is${al.name} {\n    t.Errorf("type '%s' Is${al.name} must be false.", "${i.id.name}")""").mkString("\n").shift(4)}
+       |${i.alternatives.map(al => if (al.name == m.name) "" else s"""if adt.Is${al.name}() {\n    t.Errorf("type '%s' Is${al.name} must be false.", "${i.id.name}")\n}""").mkString("\n").shift(4)}
        |
        |    serialized, err := json.Marshal(adt)
        |    if err != nil {
@@ -288,15 +288,19 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |type $name ${if (i.members.length <= 255) "uint8" else "uint16"}
        |
        |const (
-       |${i.members.map(m => s"// $m enum value\n" + (if (m == i.members.head) s"$m $name = iota" else m)).mkString("\n").shift(4)}
+       |${i.members.map(m => s"// $m enum value\n" + (if (m == i.members.head) s"${name + m} $name = iota" else (name + m))).mkString("\n").shift(4)}
        |)
        |
        |var map${name}ToString = map[$name]string{
-       |${i.members.map(m => s"$m: " + "\"" + m + "\",").mkString("\n").shift(4)}
+       |${i.members.map(m => s"${name + m}: " + "\"" + m + "\",").mkString("\n").shift(4)}
+       |}
+       |
+       |var allOf$name = []$name{
+       |${i.members.map(m => name + m + ",").mkString("\n").shift(4)}
        |}
        |
        |var mapStringTo$name = map[string]$name{
-       |${i.members.map(m => "\"" + m + "\": " + s"$m,").mkString("\n").shift(4)}
+       |${i.members.map(m => "\"" + m + "\": " + s"${name + m},").mkString("\n").shift(4)}
        |}
        |
        |// String converts an enum to a string
@@ -307,6 +311,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |// New$name creates a new enum from string
        |func New$name(e string) $name {
        |    return mapStringTo$name[e]
+       |}
+       |
+       |func GetAll$name() []$name {
+       |    return allOf$name
        |}
        |
        |func NewTest$name() $name {
@@ -359,10 +367,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |
          |    v1 := New${name}("${i.members.head}")
          |    if !IsValid${name}(v1.String()) {
-         |        t.Errorf("type '%s' should be possible to create via New method with '%s' value", "$name", "${i.members.head}")
+         |        t.Errorf("type '%s' should be possible to create via New method with '%s' value", "$name", "${name + i.members.head}")
          |    }
          |
-         |    v2 := ${i.members.head}
+         |    v2 := ${name + i.members.head}
          |    if v1 != v2 {
          |        t.Errorf("type '%s' created from enum const and a corresponding string must return the same value. Got '%+v' and '%+v'", "$name", v1, v2)
          |    }
@@ -473,10 +481,13 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |}
        """.stripMargin
 
+    val testImports = struct.fields.flatMap(f => f.tp.testValuePackage()).distinct
+
     val tests =
       s"""import (
          |    "testing"
          |    "encoding/json"
+         |${testImports.map(fi => "\"" + fi + "\"") .mkString("\n").shift(4)}
          |)
          |
          |func Test${i.id.name}Creation(t *testing.T) {
@@ -584,16 +595,14 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |
          |    return nil, fmt.Errorf("empty content for polymorphic type in Create${i.id.name}")
          |}
-         |${renderRegistrations(i.struct.superclasses.interfaces, eid.name, imports)}
+         |${renderRegistrations(ts.inheritance.allParents(i.id), eid.name, imports)}
        """.stripMargin
 
-    // TODO here above Register methods don't use module, if a package is different - it will fail, needs a fix using the corrent import access
+    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\"" && f.tp.testValue() != "nil")
+      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
 
     val tests =
-      s"""import (
-         |    "testing"
-         |    "encoding/json"
-         |)
+      s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
          |
          |func Test${i.id.name}Creation(t *testing.T) {
          |    v := New${ts.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
