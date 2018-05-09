@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection._
 
 object TraitTools {
 
-  def traitIndex(tpe: RuntimeDIUniverse.TypeFull, methods: Seq[RuntimeDIUniverse.Association.Method]): TraitIndex = {
+  def traitIndex(tpe: RuntimeDIUniverse.TypeFull, methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): TraitIndex = {
     val vals = tpe.tpe.decls.collect {
       case m: RuntimeDIUniverse.u.TermSymbolApi if m.isVal || m.isVar =>
         m
@@ -30,7 +30,7 @@ object TraitTools {
     TraitIndex(makeTraitIndex(methods), getters, setters)
   }
 
-  private def makeTraitIndex(methods: Seq[RuntimeDIUniverse.Association.Method]): Map[Method, RuntimeDIUniverse.Association.Method] = {
+  private def makeTraitIndex(methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): Map[Method, RuntimeDIUniverse.Association.AbstractMethod] = {
     methods.map {
       m =>
         ReflectionUtil.toJavaMethod(m.context.definingClass.tpe, m.symbol) -> m

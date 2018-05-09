@@ -39,13 +39,13 @@ object Fixtures {
       val y = fieldArgDependency
     }
 
-    case class TestCaseClass(a1: TestClass, a2: TestDependency3)
+    final case class TestCaseClass(a1: TestClass, a2: TestDependency3)
 
-    case class TestInstanceBinding(z: String =
+    final case class TestInstanceBinding(z: String =
                                    """R-r-rollin' down the window, white widow, fuck fame
 Forest fire, climbin' higher, real life, it can wait""")
 
-    case class TestCaseClass2(a: TestInstanceBinding)
+    final case class TestCaseClass2(a: TestInstanceBinding)
 
     trait JustTrait {}
 
@@ -86,7 +86,7 @@ Forest fire, climbin' higher, real life, it can wait""")
       }
     }
 
-    case class TestInstanceBinding(z: String =
+    final case class TestInstanceBinding(z: String =
                                    """R-r-rollin' down the window, white widow, fuck fame
 Forest fire, climbin' higher, real life, it can wait""")
 
@@ -177,23 +177,23 @@ Forest fire, climbin' higher, real life, it can wait""")
       def isVerySpecial: Boolean = false
     }
 
-    case class ConcreteDep() extends Dependency
+    final case class ConcreteDep() extends Dependency
 
-    case class SpecialDep() extends Dependency {
+    final case class SpecialDep() extends Dependency {
       override def isSpecial: Boolean = true
     }
 
-    case class VerySpecialDep() extends Dependency {
+    final case class VerySpecialDep() extends Dependency {
       override def isVerySpecial: Boolean = true
     }
 
-    case class TestClass(b: Dependency)
+    final case class TestClass(b: Dependency)
 
-    case class AssistedTestClass(a: Int, b: Dependency)
+    final case class AssistedTestClass(a: Int, b: Dependency)
 
-    case class NamedAssistedTestClass(a: Int, @Id("special") b: Dependency)
+    final case class NamedAssistedTestClass(a: Int, @Id("special") b: Dependency)
 
-    case class GenericAssistedTestClass[T, S](a: List[T], b: List[S], c: Dependency)
+    final case class GenericAssistedTestClass[T, S](a: List[T], b: List[S], c: Dependency)
 
     trait Factory {
       def wiringTargetForDependency: Dependency
@@ -327,15 +327,15 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     trait Dep
 
-    case class DepA() extends Dep
+    final case class DepA() extends Dep
 
-    case class DepB() extends Dep
+    final case class DepB() extends Dep
 
     type TypeAliasDepA = DepA
 
-    case class TestClass[D](inner: List[D])
+    final case class TestClass[D](inner: List[D])
 
-    case class TestClass2[D](inner: D)
+    final case class TestClass2[D](inner: D)
 
     trait TestTrait {
       def dep: TypeAliasDepA
@@ -347,7 +347,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     class Dep()
 
-    case class Parameterized[T](t: T)
+    final case class Parameterized[T](t: T)
 
     trait ParameterizedTrait[T] {
       def t: T
@@ -363,13 +363,13 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     class Dep
 
-    case class TestClass(dep: Dep)(implicit val dummyImplicit: DummyImplicit)
+    final case class TestClass(dep: Dep)(implicit val dummyImplicit: DummyImplicit)
 
   }
 
   object Case14 {
 
-    case class Dep()
+    final case class Dep()
 
     trait TestTrait {
       protected val dep: Dep
@@ -382,9 +382,9 @@ Forest fire, climbin' higher, real life, it can wait""")
   }
 
   object Case15 {
-    case class DummyDep1()
+    final case class DummyDep1()
 
-    case class CustomDep1(d: DummyDep1)
+    final case class CustomDep1(d: DummyDep1)
     object CustomDep1 {
       def empty = CustomDep1(DummyDep1())
     }
@@ -394,9 +394,9 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     class CustomClass(val c: CustomDep2)
 
-    case class CustomDep2(t: CustomTrait, c: CustomDep1)
+    final case class CustomDep2(t: CustomTrait, c: CustomDep1)
 
-    case class CustomApp(customClass: CustomClass, customDep2: CustomDep2)
+    final case class CustomApp(customClass: CustomClass, customDep2: CustomDep2)
   }
 
   object Case16 {
@@ -437,6 +437,23 @@ Forest fire, climbin' higher, real life, it can wait""")
     def implArg(@Id("classdefargann1") arganndep: TestDependency): TestClass = new TestClass(arganndep)
 
     def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
+
+  }
+
+  object Case18 {
+
+    trait SetTrait
+    class SetImpl1 extends SetTrait
+    class SetImpl2 extends SetTrait
+    class SetImpl3 extends SetTrait
+
+    case class Service0(set: Set[SetTrait])
+
+    case class Service1(@Id("n1") set: Set[SetTrait])
+
+    case class Service2(service3: Service3, @Id("n2") set: Set[SetTrait])
+
+    case class Service3(@Id("n3") set: Set[SetTrait])
 
   }
 }

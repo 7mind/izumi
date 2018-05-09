@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import scala.util.{Failure, Try}
 
 
+// TODO: add introspection capabilities
 class ProvisionerDefaultImpl
 (
   setStrategy: SetStrategy
@@ -19,12 +20,7 @@ class ProvisionerDefaultImpl
   , providerStrategy: ProviderStrategy
   , classStrategy: ClassStrategy
   , importStrategy: ImportStrategy
-  , customStrategy: CustomStrategy
   , instanceStrategy: InstanceStrategy
-// TODO: add introspection capabilities
-//  , provisionerHook: ProvisionerHook
-//  , provisionerIntrospector: ProvisionerIntrospector
-//  , loggerHook: LoggerHook
 ) extends Provisioner with OperationExecutor {
   override def provision(plan: FinalPlan, parentContext: Locator): ProvisionImmutable = {
     val activeProvision = ProvisionActive()
@@ -87,11 +83,8 @@ class ProvisionerDefaultImpl
       case op: WiringOp.InstantiateClass =>
         classStrategy.instantiateClass(context, op)
 
-      case op: SetOp.CreateSet =>
+      case op: CreateSet =>
         setStrategy.makeSet(context, op)
-
-      case op: SetOp.AddToSet =>
-        setStrategy.addToSet(context, op)
 
       case op: WiringOp.InstantiateTrait =>
         traitStrategy.makeTrait(context, op)
@@ -104,10 +97,6 @@ class ProvisionerDefaultImpl
 
       case op: ProxyOp.InitProxy =>
         proxyStrategy.initProxy(context, this, op)
-
-      case op: CustomOp =>
-        customStrategy.handle(context, op)
-
     }
   }
 

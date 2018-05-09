@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang.products
 
 object CogenProduct {
-  case class InterfaceProduct(iface: String = ""
+  final case class InterfaceProduct(iface: String = ""
                               , companion: String = ""
                               , header: String = ""
                               , tests: String = ""
@@ -19,7 +19,7 @@ object CogenProduct {
     }
   }
 
-  case class CompositeProduct(more: String = ""
+  final case class CompositeProduct(more: String = ""
                               , header: String = ""
                              , tests: String = ""
                              ) extends RenderableCogenProduct {
@@ -36,7 +36,7 @@ object CogenProduct {
     }
   }
 
-  case class IdentifierProduct(identitier: String = ""
+  final case class IdentifierProduct(identitier: String = ""
                                , header: String = ""
                               , tests: String = ""
                               ) extends RenderableCogenProduct {
@@ -53,7 +53,7 @@ object CogenProduct {
     }
   }
 
-  case class ServiceProduct(client: String = ""
+  final case class ServiceProduct(client: String = ""
                             , header: String = ""
                            ) extends RenderableCogenProduct {
     def render: List[String] = {
@@ -69,7 +69,7 @@ object CogenProduct {
     }
   }
 
-  case class EnumProduct(content: String = ""
+  final case class EnumProduct(content: String = ""
                          , header: String = ""
                         , tests: String = ""
                         ) extends RenderableCogenProduct {
@@ -86,7 +86,7 @@ object CogenProduct {
     }
   }
 
-  case class AliasProduct(content: String = ""
+  final case class AliasProduct(content: String = ""
                           , header: String = ""
                          ) extends RenderableCogenProduct {
     def render: List[String] = {
@@ -102,7 +102,7 @@ object CogenProduct {
     }
   }
 
-  case class AdtProduct(content: String = ""
+  final case class AdtProduct(content: String = ""
                         , header: String = ""
                         , tests: String = ""
                        ) extends RenderableCogenProduct {

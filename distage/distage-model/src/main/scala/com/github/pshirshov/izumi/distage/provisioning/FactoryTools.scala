@@ -26,7 +26,7 @@ object FactoryTools {
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
         WiringOp.InstantiateClass(target, w)
 
-      case w: UnaryWiring.Abstract =>
+      case w: UnaryWiring.AbstractSymbol =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
         WiringOp.InstantiateTrait(target, w)
 

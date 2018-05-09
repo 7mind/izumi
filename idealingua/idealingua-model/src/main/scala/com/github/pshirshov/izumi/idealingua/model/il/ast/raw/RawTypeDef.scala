@@ -11,17 +11,17 @@ sealed trait RawTypeDef {
 
 object RawTypeDef {
 
-  case class Interface(id: InterfaceId, struct: RawStructure) extends RawTypeDef
+  final case class Interface(id: InterfaceId, struct: RawStructure) extends RawTypeDef
 
-  case class DTO(id: DTOId, struct: RawStructure) extends RawTypeDef
+  final case class DTO(id: DTOId, struct: RawStructure) extends RawTypeDef
 
-  case class Enumeration(id: EnumId, members: List[String]) extends RawTypeDef
+  final case class Enumeration(id: EnumId, members: List[String]) extends RawTypeDef
 
-  case class Alias(id: AliasId, target: AbstractIndefiniteId) extends RawTypeDef
+  final case class Alias(id: AliasId, target: AbstractIndefiniteId) extends RawTypeDef
 
-  case class Identifier(id: IdentifierId, fields: RawTuple) extends RawTypeDef
+  final case class Identifier(id: IdentifierId, fields: RawTuple) extends RawTypeDef
 
-  case class Adt(id: AdtId, alternatives: List[RawAdtMember]) extends RawTypeDef
+  final case class Adt(id: AdtId, alternatives: List[RawAdtMember]) extends RawTypeDef
 
 }
 

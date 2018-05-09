@@ -1,14 +1,10 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.SetOp._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-case class NextOps(
-                    imports: Set[ImportDependency]
-                    , sets: Set[CreateSet]
-                    , provisions: Seq[InstantiationOp]
-                  ) {
-  def flatten: Seq[ExecutableOp] = {
-    imports.toSeq ++ sets.toSeq ++ provisions
-  }
-}
+final case class NextOps
+(
+  sets: Map[RuntimeDIUniverse.DIKey, CreateSet]
+  , provisions: Seq[InstantiationOp]
+)

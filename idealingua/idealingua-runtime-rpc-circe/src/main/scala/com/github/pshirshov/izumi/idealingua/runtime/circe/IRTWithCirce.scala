@@ -8,7 +8,7 @@ import scala.reflect.macros.blackbox
 /**
  * Provides circe codecs for case classes (won't work with sealed traits):
  *
- *   case class Abc(a: String, b: String, c: String)
+ *   final case class Abc(a: String, b: String, c: String)
  *
  *   object Abc extends WithCirce[Abc]
  *
@@ -33,12 +33,12 @@ final class MaterializeDerivationMacros(override val c: blackbox.Context) extend
     }
 }
 
-case class DerivationDerivedEncoder[A](value: ObjectEncoder[A])
+final case class DerivationDerivedEncoder[A](value: ObjectEncoder[A])
 object DerivationDerivedEncoder {
   implicit def materialize[A]: DerivationDerivedEncoder[A] = macro MaterializeDerivationMacros.materializeEncoderImpl[A]
 }
 
-case class DerivationDerivedDecoder[A](value: Decoder[A])
+final case class DerivationDerivedDecoder[A](value: Decoder[A])
 object DerivationDerivedDecoder {
   implicit def materialize[A]: DerivationDerivedDecoder[A] = macro MaterializeDerivationMacros.materializeDecoderImpl[A]
 }

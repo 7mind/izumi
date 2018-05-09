@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.platform.console
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+
 import scala.reflect.ClassTag
 
 trait TrivialLogger {
@@ -18,9 +20,13 @@ class TrivialLoggerImpl(sink: AbstractStringSink) extends TrivialLogger {
 }
 
 class TrivialLoggerNullImpl() extends TrivialLogger {
-  override def log(s: => String): Unit = ???
+  override def log(s: => String): Unit = {
+    Quirks.discard(s)
+  }
 
-  override def log(s: String, e: Throwable): Unit = ???
+  override def log(s: String, e: Throwable): Unit = {
+    Quirks.discard(s, e)
+  }
 }
 
 object TrivialLogger {

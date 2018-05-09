@@ -44,13 +44,13 @@ object GreeterServiceWrapped
 
   sealed trait GreeterServiceInput extends AnyRef with Product
 
-  case class GreetInput(name: String, surname: String) extends GreeterServiceInput
-  case class SayHiInput() extends GreeterServiceInput
+  final case class GreetInput(name: String, surname: String) extends GreeterServiceInput
+  final case class SayHiInput() extends GreeterServiceInput
 
   sealed trait GreeterServiceOutput extends AnyRef with Product
 
-  case class GreetOutput(value: String) extends GreeterServiceOutput
-  case class SayHiOutput(value: String) extends GreeterServiceOutput
+  final case class GreetOutput(value: String) extends GreeterServiceOutput
+  final case class SayHiOutput(value: String) extends GreeterServiceOutput
 
 
   override type Input = GreeterServiceInput

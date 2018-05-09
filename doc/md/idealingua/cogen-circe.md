@@ -20,7 +20,7 @@ import io.circe.java8.time._
 
 trait Polymorphic
 
-case class TestPayload(
+final case class TestPayload(
                         zonedDateTime: ZonedDateTime = ZonedDateTime.now()
                         , utcZonedDateTime: ZonedDateTime = ZonedDateTime.now(ZoneId.of("UTC"))
                         , localDateTime: LocalDateTime = LocalDateTime.now()
@@ -33,7 +33,7 @@ object TestPayload {
   implicit val decodeTestPayload: Decoder[TestPayload] = deriveDecoder[TestPayload]
 }
 
-case class AnotherPayload(message: String) extends Polymorphic
+final case class AnotherPayload(message: String) extends Polymorphic
 
 object AnotherPayload {
   implicit val encodeAnotherPayload: Encoder[AnotherPayload] = deriveEncoder[AnotherPayload]
@@ -213,7 +213,7 @@ Please check [identifier codegen example](cogen.md#id-identifier) for additional
 Full example:
 
 ```scala
-case class CompanyId(value: java.util.UUID) {
+final case class CompanyId(value: java.util.UUID) {
   override def toString: String = {
     import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
     val suffix = Seq(this.value).map(part => escape(part.toString)).mkString(":")

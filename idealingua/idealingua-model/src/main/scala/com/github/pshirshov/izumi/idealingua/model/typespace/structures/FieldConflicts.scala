@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.typespace.structures
 import com.github.pshirshov.izumi.idealingua.model.common.ExtendedField
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Field
 
-case class FieldConflicts private(
+final case class FieldConflicts private(
                                    all: Seq[ExtendedField]
                                    , goodFields: Map[String, Seq[ExtendedField]]
                                    , softConflicts: Map[String, Map[Field, Seq[ExtendedField]]]

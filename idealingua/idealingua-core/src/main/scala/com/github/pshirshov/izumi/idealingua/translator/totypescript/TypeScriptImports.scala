@@ -9,9 +9,9 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDe
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
-case class TypeScriptImport(id: TypeId, pkg: String)
+final case class TypeScriptImport(id: TypeId, pkg: String)
 
-case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty) {
+final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty) {
   private def renderTypeImports(id: TypeId, ts: Typespace): String = id match {
     case adt: AdtId => s"${adt.name}, ${adt.name}Helpers"
     case i: InterfaceId => s"${i.name}, ${ts.implId(i).name}, ${ts.implId(i).name}Serialized"

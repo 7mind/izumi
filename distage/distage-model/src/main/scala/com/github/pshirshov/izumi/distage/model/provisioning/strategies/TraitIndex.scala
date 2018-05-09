@@ -4,8 +4,8 @@ import java.lang.reflect.Method
 
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-case class TraitIndex(
-                       methods: Map[Method, Association.Method]
+final case class TraitIndex(
+                       methods: Map[Method, Association.AbstractMethod]
                        , getters: Map[String, TraitField]
                        , setters: Map[String, TraitField]
                      )

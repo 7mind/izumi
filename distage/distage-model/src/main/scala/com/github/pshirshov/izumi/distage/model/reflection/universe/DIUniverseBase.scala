@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.model.reflection.universe
 import scala.reflect.api.Universe
 
 trait DIUniverseBase {
-  this: DISafeType =>
+  this: WithDISafeType =>
 
   val u: Universe
 

@@ -33,11 +33,11 @@ object CalculatorServiceWrapped
 
   sealed trait CalculatorServiceInput extends AnyRef with Product
 
-  case class SumInput(a: Int, b: Int) extends CalculatorServiceInput
+  final case class SumInput(a: Int, b: Int) extends CalculatorServiceInput
 
   sealed trait CalculatorServiceOutput extends Any with Product
 
-  case class SumOutput(value: Int) extends AnyVal with CalculatorServiceOutput
+  final case class SumOutput(value: Int) extends AnyVal with CalculatorServiceOutput
 
   override type Input = CalculatorServiceInput
   override type Output = CalculatorServiceOutput

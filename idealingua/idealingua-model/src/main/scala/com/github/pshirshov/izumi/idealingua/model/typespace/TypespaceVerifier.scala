@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, Simp
 
 import scala.collection.mutable
 
-case class FailedTypespace(id: DomainId, issues: List[Issue]) {
+final case class FailedTypespace(id: DomainId, issues: List[Issue]) {
   import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
   override def toString: TypeName = s"Typespace $id has failed verification:\n${issues.mkString("\n").shift(2)}"
 }
@@ -18,27 +18,27 @@ sealed trait Issue
 
 object Issue {
 
-  case class PrimitiveAdtMember(t: AdtId, members: List[AdtMember]) extends Issue {
+  final case class PrimitiveAdtMember(t: AdtId, members: List[AdtMember]) extends Issue {
     override def toString: TypeName = s"ADT members can't be primitive (implementation limit): ${members.mkString(", ")}"
   }
 
-  case class DuplicateEnumElements(t: EnumId, members: List[String]) extends Issue {
+  final case class DuplicateEnumElements(t: EnumId, members: List[String]) extends Issue {
     override def toString: TypeName = s"Duplicated enumeration members: ${members.mkString(", ")}"
   }
 
-  case class DuplicateAdtElements(t: AdtId, members: List[String]) extends Issue {
+  final case class DuplicateAdtElements(t: AdtId, members: List[String]) extends Issue {
     override def toString: TypeName = s"Duplicated ADT members: ${members.mkString(", ")}"
   }
 
-  case class NoncapitalizedTypename(t: TypeId) extends Issue {
+  final case class NoncapitalizedTypename(t: TypeId) extends Issue {
     override def toString: TypeName = s"All typenames must start with a capital letter: $t"
   }
 
-  case class ReservedTypenamePrefix(t: TypeId) extends Issue {
+  final case class ReservedTypenamePrefix(t: TypeId) extends Issue {
     override def toString: TypeName = s"Typenames can't start with reserved runtime prefixes ${TypespaceVerifier.badNames.mkString(",")}: $t"
   }
 
-  case class MissingDependencies(deps: List[MissingDependency]) extends Issue {
+  final case class MissingDependencies(deps: List[MissingDependency]) extends Issue {
     override def toString: TypeName = s"Missing dependencies: ${deps.mkString(", ")}"
   }
 
@@ -50,29 +50,29 @@ sealed trait MissingDependency {
 
 object MissingDependency {
 
-  case class DepField(definedIn: TypeId, missing: TypeId, tpe: typed.Field) extends MissingDependency {
+  final case class DepField(definedIn: TypeId, missing: TypeId, tpe: typed.Field) extends MissingDependency {
     override def toString: TypeName = s"[field $definedIn::${tpe.name} :$missing]"
   }
 
-  case class DepPrimitiveField(definedIn: TypeId, missing: TypeId, tpe: typed.PrimitiveField) extends MissingDependency {
+  final case class DepPrimitiveField(definedIn: TypeId, missing: TypeId, tpe: typed.PrimitiveField) extends MissingDependency {
     override def toString: TypeName = s"[field $definedIn::${tpe.name} :$missing]"
   }
 
 
-  case class DepParameter(definedIn: TypeId, missing: TypeId) extends MissingDependency {
+  final case class DepParameter(definedIn: TypeId, missing: TypeId) extends MissingDependency {
     override def toString: TypeName = s"[param $definedIn::$missing]"
   }
 
-  case class DepServiceParameter(definedIn: ServiceId, method: String, missing: TypeId) extends MissingDependency {
+  final case class DepServiceParameter(definedIn: ServiceId, method: String, missing: TypeId) extends MissingDependency {
     override def toString: TypeName = s"[sparam $definedIn::$missing]"
   }
 
 
-  case class DepInterface(definedIn: TypeId, missing: InterfaceId) extends MissingDependency {
+  final case class DepInterface(definedIn: TypeId, missing: InterfaceId) extends MissingDependency {
     override def toString: TypeName = s"[interface $definedIn::$missing]"
   }
 
-  case class DepAlias(definedIn: TypeId, missing: TypeId) extends MissingDependency {
+  final case class DepAlias(definedIn: TypeId, missing: TypeId) extends MissingDependency {
     override def toString: TypeName = s"[alias $definedIn::$missing]"
   }
 

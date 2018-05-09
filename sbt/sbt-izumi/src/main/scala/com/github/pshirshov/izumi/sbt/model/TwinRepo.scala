@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.sbt.model
 import sbt.librarymanagement.Resolver
 
 
-case class TwinRepo(name: String, base: String, releases: String, snapshots: String) extends Repositories {
+final case class TwinRepo(name: String, base: String, releases: String, snapshots: String) extends Repositories {
   override def get(filter: Repo => Boolean): Seq[Resolver] = {
     import sbt.librarymanagement.syntax._
 

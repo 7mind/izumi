@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, Package, Pa
 
 import scala.reflect._
 
-case class JavaType(pkg: Package, name: String) {
+final case class JavaType(pkg: Package, name: String) {
   def parent: JavaType = {
     JavaType(pkg.init, pkg.last)
   }

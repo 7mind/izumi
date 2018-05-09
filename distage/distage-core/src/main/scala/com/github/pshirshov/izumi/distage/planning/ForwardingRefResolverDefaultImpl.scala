@@ -1,25 +1,23 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
+import com.github.pshirshov.izumi.distage.model.plan.{ResolvedCyclesPlan, ResolvedSetsPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.collection.mutable
 
 
-
 class ForwardingRefResolverDefaultImpl
 (
   protected val planAnalyzer: PlanAnalyzer
 ) extends ForwardingRefResolver {
-  override def resolve(plan: DodgyPlan): DodgyPlan = {
+  override def resolve(plan: ResolvedSetsPlan): ResolvedCyclesPlan = {
     val statements = plan.statements
     val reftable = planAnalyzer.computeFwdRefTable(statements)
 
     import reftable._
 
-    val proxyInits = mutable.HashMap[RuntimeDIUniverse.DIKey, mutable.Set[RuntimeDIUniverse.DIKey]]()
     val proxies = mutable.HashMap[RuntimeDIUniverse.DIKey, ProxyOp.MakeProxy]()
 
     val resolvedSteps = plan.steps.flatMap {
@@ -28,23 +26,15 @@ class ForwardingRefResolverDefaultImpl
         proxies += (step.target -> op)
         Seq(op)
 
-      case step if dependsOn.contains(step.target) =>
-        dependsOn(step.target).foreach {
-          proxy =>
-            proxyInits.getOrElseUpdate(proxy, mutable.Set.empty) += step.target
-        }
-
-        Seq(step)
-
       case step =>
         Seq(step)
     }
 
-    val proxyOps = proxyInits.foldLeft(Seq.empty[ProxyOp.InitProxy]) {
+    val proxyOps = proxies.foldLeft(Seq.empty[ProxyOp.InitProxy]) {
       case (acc, (proxyKey, proxyDep)) =>
-        acc :+ ProxyOp.InitProxy(proxyKey, proxyDep.toSet, proxies(proxyKey))
+        acc :+ ProxyOp.InitProxy(proxyKey, proxyDep.forwardRefs, proxies(proxyKey))
     }
 
-    plan.copy(steps = resolvedSteps, proxies = proxyOps)
+    ResolvedCyclesPlan(imports = plan.imports, steps = resolvedSteps ++ proxyOps, issues = plan.issues)
   }
 }

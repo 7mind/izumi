@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
-case class GoLangField(
+final case class GoLangField(
                       name: String,
                       tp: GoLangType,
                       structName: String,

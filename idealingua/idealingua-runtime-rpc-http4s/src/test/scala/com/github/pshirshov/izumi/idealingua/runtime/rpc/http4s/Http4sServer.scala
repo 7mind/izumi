@@ -20,7 +20,7 @@ import org.scalatest.WordSpec
 import scala.language.higherKinds
 
 
-case class DummyContext(ip: String)
+final case class DummyContext(ip: String)
 
 class DemoContext[R[_] : IRTServiceResult : Monad, Ctx] {
   private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]

@@ -1,26 +1,28 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStrategy
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.provisioning.cglib.{CglibNullMethodInterceptor, CglibRefDispatcher, CglibTools, ProxyParams}
+
+// CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
+trait FakeSet[A] extends Set[A]
 
 /**
   * Limitations:
   * - Will not work for any class which performs any operations on forwarding refs within constructor
   * - Untested on constructors accepting primitive values, will fail most likely
   */
-class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) extends ProxyStrategy {
+class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, proxyProvider: ProxyProvider) extends ProxyStrategy {
   def initProxy(context: ProvisioningContext, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(initProxy.target)
     context.fetchKey(key) match {
-      case Some(adapter: CglibRefDispatcher) =>
+      case Some(adapter: ProxyDispatcher) =>
         executor.execute(context, initProxy.proxy.op).head match {
           case OpResult.NewInstance(_, instance) =>
-            adapter.reference.set(instance.asInstanceOf[AnyRef])
+            adapter.init(instance.asInstanceOf[AnyRef])
           case r =>
             throw new DIException(s"Unexpected operation result for $key: $r", null)
         }
@@ -40,6 +42,10 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) e
         op.wiring.instanceType
       case op: WiringOp.InstantiateFactory =>
         op.wiring.factoryType
+      case _: CreateSet =>
+        // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
+        RuntimeDIUniverse.SafeType.get[FakeSet[_]]
+        //op.target.symbol
       case op =>
         throw new DIException(s"Operation unsupported by proxy mechanism: $op", null)
     }
@@ -53,36 +59,34 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime) e
     } else {
       val params = reflectionProvider.constructorParameters(makeProxy.op.target.symbol)
 
-      val args  = params.map {
-        case p if makeProxy.forwardRefs.contains(p.wireWith) =>
-          RuntimeDIUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> null
+      val args = params.map {
+        param =>
+          val value = param match {
+            case p if makeProxy.forwardRefs.contains(p.wireWith) =>
+              null
 
-        case p =>
-          RuntimeDIUniverse.mirror.runtimeClass(p.wireWith.symbol.tpe) -> context.fetchKey(p.wireWith)
+            case p =>
+              context.fetchKey(p.wireWith).orNull.asInstanceOf[AnyRef]
+          }
+
+          RuntimeDIUniverse.mirror.runtimeClass(param.wireWith.symbol.tpe) -> value
       }
 
       ProxyParams.Params(args.map(_._1).toArray, args.map(_._2).toArray)
     }
 
-    val nullDispatcher = new CglibNullMethodInterceptor(makeProxy.target)
-    val nullProxy = CglibTools.mkDynamic(nullDispatcher, runtimeClass, makeProxy, params) {
-      proxyInstance =>
-        proxyInstance
-    }
+    val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
 
-    val dispatcher = new CglibRefDispatcher(nullProxy)
 
-    CglibTools.mkDynamic(dispatcher, runtimeClass, makeProxy, params) {
-      proxyInstance =>
-        Seq(
-          OpResult.NewInstance(makeProxy.target, proxyInstance)
-          , OpResult.NewInstance(proxyKey(makeProxy.target), dispatcher)
-        )
-    }
+    val proxyInstance = proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
+    Seq(
+      OpResult.NewInstance(makeProxy.target, proxyInstance.proxy)
+      , OpResult.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
+    )
   }
 
   private def proxyKey(m: RuntimeDIUniverse.DIKey) = {
-    RuntimeDIUniverse.DIKey.ProxyElementKey(m, RuntimeDIUniverse.SafeType.get[CglibRefDispatcher])
+    RuntimeDIUniverse.DIKey.ProxyElementKey(m, RuntimeDIUniverse.SafeType.get[ProxyDispatcher])
   }
 
 }

@@ -3,7 +3,7 @@ import sbt._
 object D {
 
   object R {
-    val scala212 = "2.12.5"
+    val scala212 = "2.12.6"
     val scala_compiler = "org.scala-lang" % "scala-compiler" % scala212
     val scala_library = "org.scala-lang" % "scala-library" % scala212
     val scala_reflect = "org.scala-lang" % "scala-reflect" % scala212
@@ -18,7 +18,10 @@ object D {
 
     val better_files = "com.github.pathikrit" %% "better-files" % "3.4.0"
 
-    val fast_classpath_scanner = "io.github.lukehutch" % "fast-classpath-scanner" % "2.18.2"
+    val fast_classpath_scanner = "io.github.lukehutch" % "fast-classpath-scanner" % "2.19.0"
+
+    val typesafe_config = "com.typesafe" % "config" % "1.3.3"
+    val pureconfig = "com.github.pureconfig" %% "pureconfig" % "0.9.1"
 
     val kamon = Seq(
       "io.kamon" %% "kamon-core" % "1.0.0"

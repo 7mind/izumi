@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
 
 trait FinalPlan {
-  def definition: ModuleDef
+  def definition: ModuleBase
   def steps: Seq[ExecutableOp]
 
   final def flatMap(f: ExecutableOp => Seq[ExecutableOp]): FinalPlan =

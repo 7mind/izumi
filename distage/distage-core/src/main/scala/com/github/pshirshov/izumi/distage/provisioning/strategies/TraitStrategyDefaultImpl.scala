@@ -1,14 +1,15 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.commons.TraitTools
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitStrategy
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibTraitMethodInterceptor, CglibTools, ProxyParams}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 
-class TraitStrategyDefaultImpl extends TraitStrategy {
+class TraitStrategyDefaultImpl(proxyProvider: ProxyProvider) extends TraitStrategy {
   def makeTrait(context: ProvisioningContext, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
     val traitDeps = context.narrow(op.wiring.associations.map(_.wireWith).toSet)
 
@@ -16,14 +17,17 @@ class TraitStrategyDefaultImpl extends TraitStrategy {
 
     val instanceType = op.wiring.instanceType
     val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(instanceType.tpe)
-    val dispatcher = new CgLibTraitMethodInterceptor(wiredMethodIndex, traitDeps)
 
-    CglibTools.mkDynamic(dispatcher, runtimeClass, op, ProxyParams.Empty) {
-      instance =>
-        TraitTools.initTrait(instanceType, runtimeClass, instance)
-        Seq(OpResult.NewInstance(op.target, instance))
-    }
+    val traitProxy = proxyProvider.makeTraitProxy(TraitContext(wiredMethodIndex, traitDeps), ProxyContext(runtimeClass, op, ProxyParams.Empty))
+    TraitTools.initTrait(instanceType, runtimeClass, traitProxy)
+    Seq(OpResult.NewInstance(op.target, traitProxy))
   }
 
 }
 
+class TraitStrategyFailingImpl extends TraitStrategy {
+  override def makeTrait(context: ProvisioningContext, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
+    Quirks.discard(context)
+    throw new DIException(s"TraitStrategyFailingImpl does not support proxies, failed op: $op", null)
+  }
+}

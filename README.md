@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/pshirshov/izumi-r2.svg?branch=develop)](https://travis-ci.org/pshirshov/izumi-r2)
 [![codecov](https://codecov.io/gh/pshirshov/izumi-r2/branch/develop/graph/badge.svg)](https://codecov.io/gh/pshirshov/izumi-r2)
+[![CodeFactor](https://www.codefactor.io/repository/github/pshirshov/izumi-r2/badge)](https://www.codefactor.io/repository/github/pshirshov/izumi-r2)
 [![Latest Release](https://img.shields.io/github/tag/pshirshov/izumi-r2.svg)](https://github.com/pshirshov/izumi-r2/releases)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.pshirshov.izumi.r2/izumi-r2_2.12.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.github.pshirshov.izumi.r2%22)
 [![Sonatype releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/com.github.pshirshov.izumi.r2/izumi-r2_2.12.svg)](https://oss.sonatype.org/content/repositories/releases/com/github/pshirshov/izumi/r2/)
@@ -14,7 +15,7 @@ Izumi (*jap. 泉水, spring*) is a set of non-coupled tools allowing you to sign
 including the following components:
 
 1. Generative and introspectable runtime DI framework, [distage](doc/md/distage.md) 
-2. Effortless structured logging framework, [logstage](doc/md/distage.md)
+2. Effortless structured logging framework, [logstage](doc/md/logstage/logstage.md)
 3. Staged Interface Definition and Data Modeling language, [idealingua](doc/md/idealingua/idealingua.md) supporting many target languages including Go, Typescript and C#
 4. A set of opinionated [SBT plugins](doc/md/sbt.md) allowing you to significantly increase clarity of your builds and compactify build files
 5. [Percept-plan-execute-repeat (PPER)](doc/md/pper.md) toolchain, allowing you to model very complex domain and orchestrate deadly complex processes without an issue

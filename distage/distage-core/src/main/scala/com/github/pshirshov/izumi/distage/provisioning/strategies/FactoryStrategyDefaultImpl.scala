@@ -1,15 +1,16 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.commons.TraitTools
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryStrategy
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.provisioning.cglib.{CgLibFactoryMethodInterceptor, CglibTools, ProxyParams}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
 
-class FactoryStrategyDefaultImpl extends FactoryStrategy {
+class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider) extends FactoryStrategy {
   def makeFactory(context: ProvisioningContext, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
     // at this point we definitely have all the dependencies instantiated
 
@@ -21,7 +22,8 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
 
     val instanceType = op.wiring.factoryType
     val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(instanceType.tpe)
-    val dispatcher = new CgLibFactoryMethodInterceptor(
+
+    val factoryContext = FactoryContext(
       factoryMethodIndex
       , traitIndex
       , narrowedContext
@@ -29,11 +31,9 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
       , op
     )
 
-    CglibTools.mkDynamic(dispatcher, runtimeClass, op, ProxyParams.Empty) {
-      instance =>
-        TraitTools.initTrait(instanceType, runtimeClass, instance)
-        Seq(OpResult.NewInstance(op.target, instance))
-    }
+    val proxyInstance = proxyProvider.makeFactoryProxy(factoryContext, ProxyContext(runtimeClass, op, ProxyParams.Empty))
+    TraitTools.initTrait(instanceType, runtimeClass, proxyInstance)
+    Seq(OpResult.NewInstance(op.target, proxyInstance))
   }
 
   private def makeFactoryIndex(op: WiringOp.InstantiateFactory) = {
@@ -45,3 +45,9 @@ class FactoryStrategyDefaultImpl extends FactoryStrategy {
 }
 
 
+class FactoryStrategyFailingImpl extends FactoryStrategy {
+  override def makeFactory(context: ProvisioningContext, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
+    Quirks.discard(context, executor)
+    throw new DIException(s"FactoryStrategyFailingImpl does not support proxies, failed op: $op", null)
+  }
+}

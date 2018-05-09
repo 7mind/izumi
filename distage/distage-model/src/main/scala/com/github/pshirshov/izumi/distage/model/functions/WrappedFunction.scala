@@ -1,15 +1,15 @@
 package com.github.pshirshov.izumi.distage.model.functions
 
-import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
-import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
+import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
 import scala.reflect.macros.blackbox
 
-sealed trait WrappedFunction[+R] extends RuntimeDIUniverse.Callable {
+private [functions] sealed trait WrappedFunction[+R] extends RuntimeDIUniverse.Callable {
   protected def fun: Any
 
   override def toString: String = {
@@ -62,15 +62,18 @@ object WrappedFunction {
   * */
   class DIKeyWrappedFunction[+R](val diKeys: Seq[DIKey]
                                , val ret: TypeFull
-                               , val fun: Seq[Any] => R
+                               , val fun: Seq[Any] => Any
   ) extends WrappedFunction[R] with Provider {
     override protected def call(args: Any*): R = {
       val seq: Seq[Any] = args
-      fun.apply(seq)
+      fun.apply(seq).asInstanceOf[R]
     }
   }
 
   object DIKeyWrappedFunction {
+
+    def mkRuntime[R](associations: Seq[Association], ret: TypeFull, fun: Seq[Any] => Any): DIKeyWrappedFunction[R] =
+      new DIKeyWrappedFunction[R](associations.map(_.wireWith), ret, fun)
 
     implicit def apply[R](funcExpr: () => R): DIKeyWrappedFunction[R] = macro DIKeyWrappedFunctionMacroImpl.impl[R]
     implicit def apply[R](funcExpr: _ => R): DIKeyWrappedFunction[R] = macro DIKeyWrappedFunctionMacroImpl.impl[R]
@@ -98,68 +101,51 @@ object WrappedFunction {
 
     class DIKeyWrappedFunctionMacroImpl(val c: blackbox.Context) {
 
-      // FIXME: use symbolIntrospector
+      final val macroUniverse = StaticDIUniverse(c)
+      private final val logger = MacroUtil.mkLogger[DIKeyWrappedFunctionMacroImpl](c)
+      private final val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
+      private final val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
 
-      val macroUniverse = StaticDIUniverse(c)
-      private val logger = MacroUtil.mkLogger[DIKeyWrappedFunctionMacroImpl](c)
-
-      import macroUniverse._
       import c.universe._
+      import macroUniverse._
+      import macroUniverse.DependencyContext.ParameterContext
 
-      case class ExtractedInfo(paramsInfo: List[ParamInfo], isValReference: Boolean)
+      case class ExtractedInfo(keys: List[DIKey], isValReference: Boolean)
 
-      case class ParamInfo(typ: Type, ann: Option[u.Annotation])
-      object ParamInfo {
-        def apply(typ: Type): ParamInfo =
-          ParamInfo(typ, AnnotationTools.findTypeAnnotation[Id](u)(typ))
+      private def context(tpe: TypeFull) =
+        DependencyContext.ConstructorParameterContext(tpe)
 
-        def apply(sym: Symbol): ParamInfo =
-          ParamInfo(sym.typeSignature, AnnotationTools.find[Id](u)(sym))
-      }
-
-      // FIXME: use SymbolIntrospector
       def impl[R: c.WeakTypeTag](funcExpr: c.Expr[_]): c.Expr[DIKeyWrappedFunction[R]] = {
 
         val logger = MacroUtil.mkLogger[this.type](c)
 
         val argTree = funcExpr.tree
+        val ret = SafeType.getWeak[R]
 
-        val ExtractedInfo(paramsInfo, isValReference) = analyze(argTree)
+        val ExtractedInfo(keys, isValReference) = analyze(argTree, context(ret))
 
-        val idsList: List[Option[String]] =
-          paramsInfo.map {
-            _.ann.flatMap {
-              _.tree.children.tail.collectFirst {
-                case Literal(Constant(s: String)) => s
-                case Constant(s: String) => s
-                case err =>
-                  c.abort(
-                    c.enclosingPosition
-                    ,
-                    s"""Error when parsing argument $err to @Id annotation - only string constants are supported, as in @Id("myclass")"""
-                  )
-              }
-            }
-          }
+        // FIXME preserve annotations
+        val keysTree = keys.map {
+          case DIKey.TypeKey(t) =>
+            q"${symbolOf[RuntimeDIUniverse.type].asClass.module}.DIKey.get[${t.tpe}]"
+          case DIKey.IdKey(t, id) =>
+            q"${symbolOf[RuntimeDIUniverse.type].asClass.module}.DIKey.get[${t.tpe}].named(${id.toString})"
+        }
 
         val wrappedFunction = symbolOf[WrappedFunction.type].asClass.module
         val result = c.Expr[DIKeyWrappedFunction[R]] {
           q"""{
             val wrapped = $wrappedFunction.apply[${weakTypeOf[R]}]($funcExpr)
 
-            val idsList: ${typeOf[List[Option[String]]]} = $idsList
+            val diKeys: ${typeOf[List[RuntimeDIUniverse.DIKey]]} = $keysTree
 
-            _root_.scala.Predef.assert(wrapped.argTypes.length == idsList.length, "Impossible Happened! argTypes has different length than idsList")
-
-            val diKeys = idsList.zip(wrapped.argTypes).map {
-                case (None, t) => $RuntimeDIUniverse.DIKey.TypeKey(t)
-                case (Some(str), t) => $RuntimeDIUniverse.DIKey.IdKey[String](t, str)
-              }
+            _root_.scala.Predef.assert(wrapped.argTypes.length == diKeys.length, "Impossible Happened! args list has different length than diKeys list")
 
             new $wrappedFunction.DIKeyWrappedFunction[${weakTypeOf[R]}](
               diKeys
               , wrapped.ret
-              , s => wrapped.unsafeApply(s.zip(wrapped.argTypes).map{ case (v, t) => $RuntimeDIUniverse.TypedRef(v, t) }: _*)
+              , s => wrapped.unsafeApply(s.zip(wrapped.argTypes).map{ case (v, t) =>
+                ${symbolOf[RuntimeDIUniverse.type].asClass.module}.TypedRef.apply(v, t) }: _*)
             )
           }"""
         }
@@ -168,11 +154,10 @@ object WrappedFunction {
           s"""Macro expansion info:
              | Symbol: ${argTree.symbol}\n
              | IsMethodSymbol: ${Option(argTree.symbol).exists(_.isMethod)}\n
-             | Annotations: $paramsInfo\n
+             | Extracted Keys: $keys\n
              | IsValReference: $isValReference\n
-             | IdsList: $idsList\n
-             | argument: ${c.universe.showCode(argTree)}\n
-             | argumentTree: ${c.universe.showRaw(argTree)}\n
+             | argument: ${showCode(argTree)}\n
+             | argumentTree: ${showRaw(argTree)}\n
              | argumentType: ${argTree.tpe}
              | Result code: ${showCode(result.tree)}""".stripMargin
         )
@@ -180,18 +165,14 @@ object WrappedFunction {
         result
       }
 
-      def analyze: c.Tree => ExtractedInfo = {
-        case Block(List(), tree) =>
-          analyze(tree)
+      def analyze(tree: c.Tree, ctx: ParameterContext): ExtractedInfo = tree match {
+        case Block(List(), inner) =>
+          analyze(inner, ctx)
         case Function(args, body) =>
-          ExtractedInfo(analyzeMethodRef(args.map(_.symbol), body), isValReference = false)
-        case tree if Option(tree.symbol).exists(_.isMethod) =>
-          val sig = tree.symbol.typeSignature.finalResultType
-
-          val pars = sig.typeArgs.init.map(ParamInfo(_))
-
-          ExtractedInfo(pars, isValReference = true)
-        case tree =>
+          analyzeMethodRef(args.map(_.symbol), body, ctx)
+        case _ if Option(tree.symbol).exists(_.isMethod) =>
+          analyzeValRef(tree.symbol, ctx)
+        case _ =>
           c.abort(c.enclosingPosition
             , s"""
                | Can handle only method references of form (method _) or lambda bodies of form (body => ???).\n
@@ -201,29 +182,45 @@ object WrappedFunction {
                | Hint: Try appending _ to your method name""".stripMargin)
       }
 
-      def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[ParamInfo] = {
-        val lambdaAnnotations: List[ParamInfo] =
-          lambdaArgs.map(ParamInfo(_))
+      def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ctx: ParameterContext): ExtractedInfo = {
+        val lambdaKeys: List[DIKey] =
+          lambdaArgs.map(keyProvider.keyFromParameter(ctx, _))
 
-        val methodReferenceAnnotations: List[ParamInfo] = body match {
-          case Apply(n, _) =>
-            logger.log(s"Matched function body as a method reference - consists of a single call to a function $n - ${showRaw(body)}")
+        val methodReferenceKeys: List[DIKey] = body match {
+          case Apply(f, _) =>
+            logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
 
-            val params = n.symbol.asMethod.typeSignature.paramLists.flatten
-            params.map(ParamInfo(_))
+            val params = f.symbol.asMethod.typeSignature.paramLists.flatten
+            params.map(keyProvider.keyFromParameter(ctx, _))
           case _ =>
             logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
 
             List()
         }
 
-        if (methodReferenceAnnotations.flatMap(_.ann).isEmpty)
-          lambdaAnnotations
-        else
-          methodReferenceAnnotations
+        val methodRefIds = methodReferenceKeys.collect { case i: DIKey.IdKey[_] => i }
+
+        val keys = if (methodRefIds.isEmpty || methodReferenceKeys.size != lambdaKeys.size) {
+          lambdaKeys
+        } else {
+          methodReferenceKeys
+        }
+
+        ExtractedInfo(keys, isValReference = false)
       }
 
+      def analyzeValRef(symbol: Symbol, ctx: ParameterContext): ExtractedInfo = {
+        val sig = symbol.typeSignature.finalResultType
+
+        val keys = sig.typeArgs.init.map {
+          tpe =>
+            keyProvider.keyFromParameterType(ctx, SafeType(tpe))
+        }
+
+        ExtractedInfo(keys, isValReference = true)
+      }
     }
+
   }
 
   implicit class W0[R: u.WeakTypeTag](override protected val fun: () => R) extends WrappedFunction[R] {

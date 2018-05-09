@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.Planner
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef, ImplDef}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CustomOp, ImportDependency, SetOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
@@ -19,31 +19,34 @@ class PlannerDefaultImpl
   , protected val forwardingRefResolver: ForwardingRefResolver
   , protected val reflectionProvider: ReflectionProvider.Runtime
   , protected val sanityChecker: SanityChecker
-  , protected val customOpHandler: CustomOpHandler
   , protected val planningObserver: PlanningObserver
   , protected val planMergingPolicy: PlanMergingPolicy
-  , protected val planningHook: PlanningHook
+  , protected val planningHooks: Set[PlanningHook]
 )
   extends Planner {
+  private val hook = new PlanningHookAggregate(planningHooks)
 
-  override def plan(context: ModuleDef): FinalPlan = {
-    val plan = context.bindings.foldLeft(DodgyPlan.empty) {
+  override def plan(context: ModuleBase): FinalPlan = {
+    val plan = hook.hookDefinition(context).bindings.foldLeft(DodgyPlan.empty) {
       case (currentPlan, binding) =>
         Value(computeProvisioning(currentPlan, binding))
-          .eff(sanityChecker.assertNoDuplicateOps)
+          .eff(sanityChecker.assertProvisionsSane)
           .map(planMergingPolicy.extendPlan(currentPlan, binding, _))
-          .eff(sanityChecker.assertNoDuplicateOps)
-          .map(planningHook.hookStep(context, currentPlan, binding, _))
+          .eff(sanityChecker.assertStepSane)
+          .map(hook.hookStep(context, currentPlan, binding, _))
           .eff(planningObserver.onSuccessfulStep)
           .get
     }
 
     val finalPlan = Value(plan)
+      .map(planMergingPolicy.resolve)
       .map(forwardingRefResolver.resolve)
       .eff(planningObserver.onReferencesResolved)
       .map(planResolver.resolve(_, context))
       .eff(planningObserver.onResolvingFinished)
-      .eff(sanityChecker.assertSanity)
+      .eff(sanityChecker.assertFinalPlanSane)
+      .map(hook.hookFinal)
+      .eff(sanityChecker.assertFinalPlanSane)
       .eff(planningObserver.onFinalPlan)
       .get
 
@@ -55,28 +58,28 @@ class PlannerDefaultImpl
       case c: SingletonBinding[_] =>
         val newOps = provisioning(c)
 
-        val imports = computeImports(currentPlan, binding, newOps.wiring)
         NextOps(
-          imports
-          , Set.empty
+          Map.empty
           , Seq(newOps.op)
         )
 
-      case s: SetBinding[_] =>
+      case s: SetElementBinding[_] =>
         val target = s.key
         val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
-
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
+        val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.symbol, Set.empty))
+        val newSet = oldSet.copy(members = oldSet.members + elementKey)
+
         NextOps(
-          next.imports
-          , next.sets + SetOp.CreateSet(target, target.symbol)
-          , next.provisions :+ SetOp.AddToSet(target, elementKey)
+          next.sets.updated(target, newSet)
+          , next.provisions
         )
 
       case s: EmptySetBinding[_] =>
+        val newSet = CreateSet(s.key, s.key.symbol, Set.empty)
+
         NextOps(
-          Set.empty
-          , Set(SetOp.CreateSet(s.key, s.key.symbol))
+          Map(s.key -> newSet)
           , Seq.empty
         )
     }
@@ -84,12 +87,13 @@ class PlannerDefaultImpl
 
   private def provisioning(binding: Binding.ImplBinding): Step = {
     val target = binding.key
-    val wiring = implToWireable(binding.implementation)
+    val wiring = hook.hookWiring(binding, bindingToWireable(binding))
+
     wiring match {
       case w: Constructor =>
         Step(wiring, WiringOp.InstantiateClass(target, w))
 
-      case w: Abstract =>
+      case w: AbstractSymbol =>
         Step(wiring, WiringOp.InstantiateTrait(target, w))
 
       case w: FactoryMethod =>
@@ -100,30 +104,18 @@ class PlannerDefaultImpl
 
       case w: Instance =>
         Step(wiring, WiringOp.ReferenceInstance(target, w))
-
-      case w: CustomWiring =>
-        Step(wiring, CustomOp(target, w))
     }
   }
 
-  private def computeImports(currentPlan: DodgyPlan, binding: Binding, deps: RuntimeDIUniverse.Wiring): Set[ImportDependency] = {
-    val knownTargets = currentPlan.statements.map(_.target).toSet
-    val (_, unresolved) = deps.associations.partition(dep => knownTargets.contains(dep.wireWith))
-    // we don't need resolved deps, we already have them in finalPlan
-    val toImport = unresolved.map(dep => ImportDependency(dep.wireWith, Set(binding.key)))
-    toImport.toSet
-  }
 
-  private def implToWireable(impl: ImplDef): RuntimeDIUniverse.Wiring = {
-    impl match {
+  private def bindingToWireable(binding: Binding.ImplBinding): RuntimeDIUniverse.Wiring = {
+    binding.implementation match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)
       case i: ImplDef.InstanceImpl =>
         UnaryWiring.Instance(i.implType, i.instance)
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerToWiring(p.function)
-      case c: ImplDef.CustomImpl =>
-        customOpHandler.getDeps(c)
     }
   }
 
@@ -135,8 +127,6 @@ class PlannerDefaultImpl
         i.implType
       case p: ImplDef.ProviderImpl =>
         p.implType
-      case c: ImplDef.CustomImpl =>
-        customOpHandler.getSymbol(c)
     }
   }
 }

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
+import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
@@ -16,14 +17,21 @@ object FactoryConstructorMacro {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
+
+    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
+    val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
+    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
+    val tools = DIUniverseMacros(macroUniverse)
+    val logger = MacroUtil.mkLogger[this.type](c)
+
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._
 
-    val keyProvider = DependencyKeyProviderDefaultImpl.Static.instance(macroUniverse)
-    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static.instance(macroUniverse)
-    val reflectionProvider = ReflectionProviderDefaultImpl.Static.instance(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = MacroUtil.mkLogger[this.type](c)
+    import tools.liftableRuntimeUniverse
+    import tools.liftableDIKey
+    import tools.liftableTypeKey
+    import tools.liftableSafeType
 
     val targetType = weakTypeOf[T]
 
@@ -32,49 +40,30 @@ object FactoryConstructorMacro {
     )
 
     val (dependencyArgs, dependencyMethods) = dependencies.map {
-      // FIXME: FIXME COPYPASTA with below and with TraitStrategyMacro
-      case Method(_, methodSymbol, targetKey) =>
-        val tpe = targetKey.symbol.tpe
+      case AbstractMethod(_, methodSymbol, key) =>
+        val tpe = key.symbol.tpe
         val methodName = methodSymbol.asMethod.name.toTermName
         val argName = c.freshName(methodName)
 
-        val anns = targetKey match {
-          case idKey: DIKey.IdKey[_] =>
-            import idKey._
-            val ann = q"new _root_.com.github.pshirshov.izumi.distage.model.definition.Id($id)"
-            Modifiers.apply(NoFlags, typeNames.EMPTY, List(ann))
-          case _ =>
-            Modifiers()
-        }
+        val anns = tools.annotationsFromDIKey(key)
 
         (q"$anns val $argName: $tpe", q"override val $methodName: $tpe = $argName")
     }.unzip
 
     // FIXME transitive dependencies request (HACK pulling up dependencies from factory methods to ensure correct plan ordering)
     val transitiveDependenciesArgsHACK = factoryInfo.associations.map {
-          // FIXME: FIXME COPYPASTA with above and with TraitStrategyMacro
       assoc =>
         val key = assoc.wireWith
+        val anns = tools.annotationsFromDIKey(key)
 
-        val anns = key match {
-          case idKey: DIKey.IdKey[_] =>
-            import idKey._
-            val ann = q"new _root_.com.github.pshirshov.izumi.distage.model.definition.Id($id)"
-            Modifiers.apply(NoFlags, typeNames.EMPTY, List(ann))
-          case _ =>
-            Modifiers()
-        }
-
-        val typeFull = key.symbol
-        q"$anns val ${TermName(c.freshName("transitive"))}: ${typeFull.tpe}"
+        q"$anns val ${TermName(c.freshName("transitive"))}: ${key.symbol.tpe}"
     }
 
     val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor].typeSymbol
-    val executorArg = q"$executorName: $executorType"
     val factoryTools = symbolOf[FactoryTools.type].asClass.module
 
-    // FIXME we can't remove runtime dependency on scala.reflect right now because:
-    //  1. provisioner depends on RuntimeUniverse scala.reflect Types
+    // FIXME we can't remove runtime dependency on scala-reflect right now because:
+    //  1. provisioner depends on RuntimeUniverse scala-reflect Types
     //  2. we need to lift DIKey & SafeType types (by calling RuntimeUniverse reflection)
     //
     //  Solution:
@@ -100,11 +89,22 @@ object FactoryConstructorMacro {
 
         val wiringInfo = productConstructor match {
           case w: UnaryWiring.Constructor =>
-            q"{ $w }"
-          case w: UnaryWiring.Abstract =>
+            val associations: List[Tree] = w.associations.map {
+              case Association.Parameter(context, name, tpe, wireWith) =>
+                val contextTree = q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}) }"
+                q"{ new $RuntimeDIUniverse.Association.Parameter($contextTree, $name, $tpe, $wireWith)}"
+            }.toList
+
+            q"{ $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor(${w.instanceType}, $associations) }"
+          case w: UnaryWiring.AbstractSymbol =>
             q"""{
             val fun = ${symbolOf[AbstractConstructor.type].asClass.module}.apply[${w.instanceType.tpe}].function
-            $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun)
+
+            val context = $RuntimeDIUniverse.DependencyContext.CallableParameterContext(fun)
+
+            val associations = fun.diKeys.map($RuntimeDIUniverse.Association.Parameter.fromDIKey(context, _))
+
+            $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun, associations)
             }"""
         }
 
@@ -113,11 +113,15 @@ object FactoryConstructorMacro {
           val symbolDeps: ${typeOf[RuntimeDIUniverse.Wiring.UnaryWiring]} = $wiringInfo
 
           val executorArgs: ${typeOf[Map[RuntimeDIUniverse.DIKey, Any]]} =
-            ${if (executorArgs.nonEmpty)
-              // ensure referential equality for typetags inside symbolDeps and inside executableOps (to support weakTypeTag generics)
-              q"{ symbolDeps.associations.map(_.wireWith).zip(${executorArgs.toList}).toMap }"
-             else
-              q"{ ${Map.empty[Unit, Unit]} } "
+            ${
+          if (executorArgs.nonEmpty)
+          // ensure pointer equality for typetags inside symbolDeps and inside executableOps
+          // to support weakTypeTag generics since they are pointer equality based
+          {
+            q"{ symbolDeps.associations.map(_.wireWith).zip(${executorArgs.toList}).toMap }"
+          } else {
+            q"{ ${Map.empty[Unit, Unit]} } "
+          }
              }
 
           $factoryTools.interpret(
@@ -133,12 +137,14 @@ object FactoryConstructorMacro {
         """
     }
 
+    val executorArg = q"$executorName: $executorType"
     val allArgs = (executorArg +: dependencyArgs) ++ transitiveDependenciesArgsHACK
     val allMethods = producerMethods ++ dependencyMethods
-    val instantiate = if (allMethods.isEmpty)
+    val instantiate = if (allMethods.isEmpty) {
       q"new $targetType {}"
-    else
+    } else {
       q"new $targetType { ..$allMethods }"
+    }
 
     val defConstructor =
       q"""
