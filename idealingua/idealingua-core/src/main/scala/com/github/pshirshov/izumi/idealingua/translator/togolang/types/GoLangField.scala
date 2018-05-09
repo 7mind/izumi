@@ -252,6 +252,8 @@ case class GoLangField(
          |}
            """.stripMargin
 
+    case al: AliasId => renderDeserializedVar(ts(al).asInstanceOf[Alias].target, dest, src)
+
     case _ => throw new IDLException("We should never get here for deserialized field.")
   }
 
