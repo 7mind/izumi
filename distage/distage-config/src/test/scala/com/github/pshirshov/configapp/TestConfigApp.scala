@@ -20,20 +20,20 @@ class EndpoitImpl(@AutoConf val address: HostPort) extends Endpoint {
   Quirks.discard(address)
 }
 
-class CassandraEndpoint(@Conf("cassandra") val address: HostPort) extends Endpoint {
-  Quirks.discard(address)
+class CassandraEndpoint(@Conf("cassandra") val cassAddress: HostPort) extends Endpoint {
+  override def address: HostPort = cassAddress
 }
 
 
 trait TestService
 
-class TestService1(@Id("service1") listener: Endpoint, @Conf("cassandra") cassandra: HostPort) extends TestService {
+class TestService1(@Id("service1") listener: Endpoint, @Conf("cassandra") cassAddress: HostPort) extends TestService {
   Quirks.discard(listener)
-  Quirks.discard(cassandra)
+  Quirks.discard(cassAddress)
 }
 
 class TestService2(@Id("service2") listener: Endpoint, cendpoint: CassandraEndpoint) extends TestService {
-  Quirks.discard(listener)
+  Quirks.discard(listener, cendpoint)
 }
 
 class TestService3(listener: Endpoint) extends TestService {

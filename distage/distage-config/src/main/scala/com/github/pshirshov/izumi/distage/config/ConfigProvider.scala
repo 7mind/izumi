@@ -4,8 +4,6 @@ import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.model.reflection.universe
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.typesafe.config.Config
 
@@ -76,7 +74,7 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
       .map {
         case ConfigImport(ci) =>
           try {
-            val requirement = toRequirement(plan.index, ci)
+            val requirement = toRequirement(ci)
             TranslationResult.Success(translate(requirement))
           } catch {
             case NonFatal(t) =>
@@ -100,7 +98,7 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
 
 
   private def translate(step: RequiredConfigEntry): ExecutableOp = {
-    val results = step.paths.map(p => Try(config.config.getConfig(p.toPath)))
+    val results = step.paths.map(p => Try((p.toPath, config.config.getConfig(p.toPath))))
     val loaded = results.collect({ case scala.util.Success(value) => value })
 
     if (loaded.isEmpty) {
@@ -109,8 +107,13 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
     }
 
     val section = loaded.head
-    val product = reader.read(section, step.targetClass)
-    ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.symbol, product))
+    try {
+      val product = reader.read(section._2, step.targetClass)
+      ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.symbol, product))
+    } catch {
+      case NonFatal(t) =>
+        throw new DIException(s"Cannot read ${step.targetClass} out of ${section._1} ==> ${section._2}", null)
+    }
   }
 
   implicit class TypeExt(t: TypeFull) {
@@ -127,43 +130,54 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
 
   case class DependencyContext(dep: DepType, usage: DepUsage)
 
-  private def toRequirement(index: Map[RuntimeDIUniverse.DIKey, ExecutableOp], op: ConfigImport): RequiredConfigEntry = {
-    val dc = DependencyContext(structInfo(index, op), usageInfo(op))
+  private def toRequirement(op: ConfigImport): RequiredConfigEntry = {
+    val dc = DependencyContext(structInfo(op), usageInfo(op))
 
     val paths = Seq(
       ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier)
       , ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.name ++ dc.dep.qualifier)
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier)
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name ++ dc.dep.qualifier)
+
+      , ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.fqName)
+      , ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.name)
+      , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName)
+      , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name)
     )
 
-    //println(paths.map(_.toPath))
+    //println(paths.map(_.toPath).mkString("\n  "))
     val runtimeClass = mirror.runtimeClass(op.imp.target.symbol.tpe.erasure)
     RequiredConfigEntry(paths, runtimeClass, op.imp.target)
   }
 
 
-  private def structInfo(index: Map[universe.RuntimeDIUniverse.DIKey, ExecutableOp], op: ConfigImport) = {
-    //println(op.imp.references.map(index.apply))
+  private def structInfo(op: ConfigImport) = {
+    val qualifier = op.id match {
+      case id: AutoConfId =>
+        id.parameter.name
+      case id: ConfId =>
+        id.parameter.name
+    }
+
 
     val structFqName = op.imp.target.symbol.name
     val structFqParts = structFqName.split('.').toSeq
-    DepType(structFqParts, Seq("%")) // TODO: extract para name from index
+    DepType(structFqParts, Seq(qualifier))
   }
 
   private def usageInfo(op: ConfigImport) = {
     val usageKeyFqName = op.id match {
       case id: AutoConfId =>
-        id.context.symbol.name
+        id.binding.symbol.name
       case id: ConfId =>
-        id.context
+        id.nameOverride
     }
 
     val usageKeyParts: Seq[String] = usageKeyFqName.split('.').toSeq
 
     val usageKeyQualifier = op.id match {
       case id: AutoConfId =>
-        id.context match {
+        id.binding match {
           case k: DIKey.IdKey[_] =>
             Some(k.id.toString) // TODO: not nice, better to use IdContract
 
@@ -174,7 +188,7 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
       case _ =>
         None
     }
-    val usageQualifier = Seq(usageKeyQualifier.getOrElse("%"))
+    val usageQualifier = usageKeyQualifier.toSeq
     DepUsage(usageKeyParts, usageQualifier)
   }
 }

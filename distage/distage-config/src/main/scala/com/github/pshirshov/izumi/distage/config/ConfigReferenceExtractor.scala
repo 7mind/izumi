@@ -44,7 +44,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
       _ =>
         association.wireWith match {
           case k: DIKey.TypeKey =>
-            k.named(AutoConfId(binding.key))
+            k.named(AutoConfId(binding.key, association))
 
           case o =>
             throw new DIException(s"Cannot rewire @AutoConf parameter $reflected: unexpected binding $o", null)
@@ -59,7 +59,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
         ann =>
           association.wireWith match {
             case k: DIKey.TypeKey =>
-              k.named(ConfId(ann))
+              k.named(ConfId(binding.key, association, ann))
 
             case o =>
               throw new DIException(s"Cannot rewire @Conf parameter $reflected: unexpected binding $o", null)
