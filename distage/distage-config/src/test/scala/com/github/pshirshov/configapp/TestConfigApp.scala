@@ -32,7 +32,7 @@ class TestService1(@Id("service1") listener: Endpoint, @Conf("cassandra") cassan
   Quirks.discard(cassandra)
 }
 
-class TestService2(@Id("service2") listener: Endpoint) extends TestService {
+class TestService2(@Id("service2") listener: Endpoint, cendpoint: CassandraEndpoint) extends TestService {
   Quirks.discard(listener)
 }
 

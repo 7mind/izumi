@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.reflection.universe
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.typesafe.config.Config
 
@@ -39,8 +40,6 @@ final class AutoConf() extends scala.annotation.StaticAnnotation
 final class Conf(val name: String) extends scala.annotation.StaticAnnotation
 
 
-
-
 private case class ConfigImport(id: AbstractConfId, imp: ImportDependency)
 
 private object ConfigImport {
@@ -71,11 +70,14 @@ private object ConfigImport {
 
 class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends PlanningHook {
   override def hookFinal(plan: FinalPlan): FinalPlan = {
+
+
     val updatedSteps = plan.steps
       .map {
         case ConfigImport(ci) =>
           try {
-            TranslationResult.Success(translate(toRequirement(ci)))
+            val requirement = toRequirement(plan.index, ci)
+            TranslationResult.Success(translate(requirement))
           } catch {
             case NonFatal(t) =>
               TranslationResult.Failure(t)
@@ -115,17 +117,51 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
     def name: String = t.tpe.typeSymbol.asClass.fullName
   }
 
-  private def toRequirement(op: ConfigImport): RequiredConfigEntry = {
-    val configStructTypeFqName = op.imp.target.symbol.name
+  case class DepType(fqName: Seq[String], qualifier: Seq[String]) {
+    def name: Seq[String] = Seq(fqName.last)
+  }
 
-    val configContextTypeFqName = op.id match {
+  case class DepUsage(fqName: Seq[String], qualifier: Seq[String]) {
+    def name: Seq[String] = Seq(fqName.last)
+  }
+
+  case class DependencyContext(dep: DepType, usage: DepUsage)
+
+  private def toRequirement(index: Map[RuntimeDIUniverse.DIKey, ExecutableOp], op: ConfigImport): RequiredConfigEntry = {
+    val dc = DependencyContext(structInfo(index, op), usageInfo(op))
+
+    val paths = Seq(
+      ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier)
+      , ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.name ++ dc.dep.qualifier)
+      , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier)
+      , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name ++ dc.dep.qualifier)
+    )
+
+    //println(paths.map(_.toPath))
+    val runtimeClass = mirror.runtimeClass(op.imp.target.symbol.tpe.erasure)
+    RequiredConfigEntry(paths, runtimeClass, op.imp.target)
+  }
+
+
+  private def structInfo(index: Map[universe.RuntimeDIUniverse.DIKey, ExecutableOp], op: ConfigImport) = {
+    //println(op.imp.references.map(index.apply))
+
+    val structFqName = op.imp.target.symbol.name
+    val structFqParts = structFqName.split('.').toSeq
+    DepType(structFqParts, Seq("%")) // TODO: extract para name from index
+  }
+
+  private def usageInfo(op: ConfigImport) = {
+    val usageKeyFqName = op.id match {
       case id: AutoConfId =>
         id.context.symbol.name
       case id: ConfId =>
         id.context
     }
 
-    val configContextQualifier = op.id match {
+    val usageKeyParts: Seq[String] = usageKeyFqName.split('.').toSeq
+
+    val usageKeyQualifier = op.id match {
       case id: AutoConfId =>
         id.context match {
           case k: DIKey.IdKey[_] =>
@@ -138,30 +174,9 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
       case _ =>
         None
     }
-
-
-    //println(Map("configStructTypeFqName" -> configStructTypeFqName, "configContextTypeFqName" -> configContextTypeFqName, "qual" -> configContextQualifier))
-
-    val configStructParts = configStructTypeFqName.split('.').toSeq
-    val configStructName = configStructParts.last
-    val configContextParts = configContextTypeFqName.split('.').toSeq
-    val configContextName = configContextParts.last
-
-    val q = configContextQualifier.getOrElse("%")
-
-    val paths = Seq(
-      ConfigPath(configContextParts ++ configStructParts ++ Seq(q))
-      , ConfigPath(configContextParts ++ Seq(configStructName, q))
-      , ConfigPath(Seq(configContextName) ++ configStructParts ++ Seq(q))
-      , ConfigPath(Seq(configContextName, configStructName, q))
-    )
-
-    //println(paths.map(_.toPath))
-    val runtimeClass = mirror.runtimeClass(op.imp.target.symbol.tpe.erasure)
-    RequiredConfigEntry(paths, runtimeClass, op.imp.target)
+    val usageQualifier = Seq(usageKeyQualifier.getOrElse("%"))
+    DepUsage(usageKeyParts, usageQualifier)
   }
-
-
 }
 
 
