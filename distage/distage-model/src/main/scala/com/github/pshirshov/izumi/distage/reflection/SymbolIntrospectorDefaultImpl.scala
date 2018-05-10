@@ -9,11 +9,15 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
   override def selectConstructor(symb: u.TypeFull): SelectedConstructor = {
     // val constructors = symb.symbol.members.filter(_.isConstructor)
     // TODO: list should not be empty (?) and should has only one element (?)
-    val selectedConstructor = symb.tpe.decl(u.u.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
+    val selectedConstructor = selectConstructorMethod(symb)
     // TODO: param list should not be empty (?), what to do with multiple lists?..
     // TODO: what to do with implicits
     val paramLists = selectedConstructor.typeSignatureIn(symb.tpe).paramLists.flatten
     SelectedConstructor(selectedConstructor, paramLists)
+  }
+
+  override def selectConstructorMethod(tpe: u.TypeFull): u.MethodSymb = {
+    tpe.tpe.decl(u.u.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
   }
 
   override def selectParameters(symb: u.MethodSymb): List[u.Symb] = {

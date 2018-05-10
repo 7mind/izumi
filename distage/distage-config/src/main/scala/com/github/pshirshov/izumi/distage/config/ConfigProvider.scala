@@ -5,68 +5,15 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependen
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.typesafe.config.Config
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
 import scala.util.Try
 import scala.util.control.NonFatal
 
+class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends PlanningHook {
 
-final case class AppConfig(config: Config)
+  import ConfigProvider._
 
-final case class ConfiguredPlan(configured: FinalPlan)
-
-trait ConfigResolver {
-  def resolve(plan: FinalPlan): ConfiguredPlan
-}
-
-/**
-  * This annotation tells config resolution mechanism to use all the context information
-  * to resolve config entry, namely:
-  * - Config class name
-  * - Binding class name for the binding requiring the config value
-  * - Binding name for the binding requiring the config value
-  *
-  * So, altogether config path structure for autoconf entry would be
-  *
-  * {binding_type|fq_binding_type}.{config_type|fq_config_type}.{binding_name?|%}
-  */
-final class AutoConf() extends scala.annotation.StaticAnnotation
-
-/**
-  * This annotation is the same as [[AutoConf]] one but does not use binding names
-  */
-final class Conf(val name: String) extends scala.annotation.StaticAnnotation
-
-
-private case class ConfigImport(id: AbstractConfId, imp: ImportDependency)
-
-private object ConfigImport {
-  def unapply(op: ExecutableOp): Option[ConfigImport] = {
-    op match {
-      case i: ImportDependency =>
-        unapply(op.target).map(id => ConfigImport(id, i))
-      case _ =>
-        None
-    }
-  }
-
-  private def unapply(arg: DIKey): Option[AbstractConfId] = {
-    arg match {
-      case k: DIKey.IdKey[_] =>
-        k.id match {
-          case id: AbstractConfId =>
-            Some(id)
-          case _ =>
-            None
-        }
-
-      case _ =>
-        None
-    }
-  }
-}
-
-class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends PlanningHook {
   override def hookFinal(plan: FinalPlan): FinalPlan = {
 
 
@@ -88,7 +35,7 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
     val errors = updatedSteps.collect({ case TranslationResult.Failure(op) => op })
 
     if (errors.nonEmpty) {
-      throw new DIException(s"Cannot resolve config:\n${errors.map(_.getMessage).mkString("\n")}", errors.head)
+      throw new DIException(s"Cannot resolve config:\n${errors.map(_.stackTrace).mkString("\n")}", errors.head)
     }
 
     val ops = updatedSteps.collect({ case TranslationResult.Success(op) => op })
@@ -96,23 +43,22 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
     newPlan
   }
 
-
   private def translate(step: RequiredConfigEntry): ExecutableOp = {
-    val results = step.paths.map(p => Try((p.toPath, config.config.getConfig(p.toPath))))
+    val results = step.paths.map(p => Try((p.toPath, config.config.getValue(p.toPath))))
     val loaded = results.collect({ case scala.util.Success(value) => value })
 
     if (loaded.isEmpty) {
       val tried = step.paths.mkString("{", "|", "}")
-      throw new DIException(s"Cannot load config value for ${step.target} from: $tried", null)
+      throw new DIException(s"Cannot find config value for ${step.target} from paths: $tried", null)
     }
 
     val section = loaded.head
     try {
-      val product = reader.read(section._2, step.targetClass)
+      val product = reader.read(section._2, step.targetType)
       ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.symbol, product))
     } catch {
       case NonFatal(t) =>
-        throw new DIException(s"Cannot read ${step.targetClass} out of ${section._1} ==> ${section._2}", null)
+        throw new DIException(s"Cannot read ${step.targetType} out of ${section._1} ==> ${section._2}", null)
     }
   }
 
@@ -144,10 +90,7 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName)
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name)
     )
-
-    //println(paths.map(_.toPath).mkString("\n  "))
-    val runtimeClass = mirror.runtimeClass(op.imp.target.symbol.tpe.erasure)
-    RequiredConfigEntry(paths, runtimeClass, op.imp.target)
+    RequiredConfigEntry(paths, op.imp.target.symbol, op.imp.target)
   }
 
 
@@ -179,7 +122,7 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
       case id: AutoConfId =>
         id.binding match {
           case k: DIKey.IdKey[_] =>
-            Some(k.id.toString) // TODO: not nice, better to use IdContract
+            Some(k.id.toString) // TODO: not nice, better use IdContract
 
           case _ =>
             None
@@ -191,8 +134,61 @@ class ConfigProvider(config: AppConfig, reader: ConfigInstanceReader) extends Pl
     val usageQualifier = usageKeyQualifier.toSeq
     DepUsage(usageKeyParts, usageQualifier)
   }
+
 }
 
+object ConfigProvider {
+
+  private case class RequiredConfigEntry(paths: Seq[ConfigPath], targetType: TypeFull, target: DIKey) {
+    override def toString: String = {
+      val allPaths = paths.map(_.toPath).mkString("\n  ")
+
+      s"""type: $targetType, target: $target
+         |$allPaths""".stripMargin
+    }
+  }
 
 
+  private case class ConfigPath(parts: Seq[String]) {
+    def toPath: String = parts.mkString(".")
+  }
 
+  private sealed trait TranslationResult
+
+  private object TranslationResult {
+
+    final case class Success(op: ExecutableOp) extends TranslationResult
+
+    final case class Failure(f: Throwable) extends TranslationResult
+
+  }
+
+  private case class ConfigImport(id: AbstractConfId, imp: ImportDependency)
+
+  private object ConfigImport {
+    def unapply(op: ExecutableOp): Option[ConfigImport] = {
+      op match {
+        case i: ImportDependency =>
+          unapply(op.target).map(id => ConfigImport(id, i))
+        case _ =>
+          None
+      }
+    }
+
+    private def unapply(arg: DIKey): Option[AbstractConfId] = {
+      arg match {
+        case k: DIKey.IdKey[_] =>
+          k.id match {
+            case id: AbstractConfId =>
+              Some(id)
+            case _ =>
+              None
+          }
+
+        case _ =>
+          None
+      }
+    }
+  }
+
+}

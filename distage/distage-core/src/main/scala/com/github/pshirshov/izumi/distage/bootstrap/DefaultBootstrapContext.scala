@@ -67,7 +67,7 @@ object DefaultBootstrapContext {
       , new FactoryStrategyFailingImpl
       , new TraitStrategyFailingImpl
       , new ProviderStrategyDefaultImpl(loggerHook)
-      , new ClassStrategyDefaultImpl
+      , new ClassStrategyDefaultImpl(symbolIntrospector)
       , new ImportStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
     )

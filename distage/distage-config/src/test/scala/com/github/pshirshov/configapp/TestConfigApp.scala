@@ -1,16 +1,10 @@
 package com.github.pshirshov.configapp
 
-import com.github.pshirshov.izumi.distage.config.pureconfig.WithPureConfig
-import com.github.pshirshov.izumi.distage.config.pureconfig.WithPureConfig.R
 import com.github.pshirshov.izumi.distage.config.{AutoConf, Conf}
 import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 case class HostPort(port: Int, host: String)
-
-object HostPort extends WithPureConfig[HostPort] {
-  override def reader: R[HostPort] = implicitly
-}
 
 trait Endpoint {
   def address: HostPort
@@ -23,7 +17,6 @@ class EndpoitImpl(@AutoConf val address: HostPort) extends Endpoint {
 class CassandraEndpoint(@Conf("cassandra") val cassAddress: HostPort) extends Endpoint {
   override def address: HostPort = cassAddress
 }
-
 
 trait TestService
 
@@ -42,6 +35,11 @@ class TestService3(listener: Endpoint) extends TestService {
 
 class TestConfigApp(val services: Set[TestService])
 
+case class MapCaseClass(@Conf("map") map: Map[String, HostPort])
+
+case class ListCaseClass(@Conf("list") list: List[Set[Wrapper[HostPort]]])
+
+case class Wrapper[A](wrap: A)
 
 object TestConfigApp {
   final val definition = new ModuleDef {
@@ -54,5 +52,13 @@ object TestConfigApp {
     make[Endpoint].named("service2").from[EndpoitImpl]
     make[Endpoint].from[EndpoitImpl]
     make[CassandraEndpoint]
+  }
+
+  final val mapDefinition = new ModuleDef {
+    make[MapCaseClass]
+  }
+
+  final val listDefinition = new ModuleDef {
+    make[ListCaseClass]
   }
 }
