@@ -11,6 +11,7 @@ import scala.util.Try
 import scala.util.control.NonFatal
 
 class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends PlanningHook {
+
   import ConfigProvider._
 
   override def hookFinal(plan: FinalPlan): FinalPlan = {
@@ -57,7 +58,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
       ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.symbol, product))
     } catch {
       case NonFatal(t) =>
-        throw new DIException(s"Cannot read ${step.targetClass} out of ${section._1} ==> ${section._2}", null)
+        throw new DIException(s"Cannot read ${step.targetType} out of ${section._1} ==> ${section._2}", null)
     }
   }
 
@@ -89,10 +90,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName)
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name)
     )
-
-    //println(paths.map(_.toPath).mkString("\n  "))
-    val runtimeClass = mirror.runtimeClass(op.imp.target.symbol.tpe.erasure)
-    RequiredConfigEntry(paths, runtimeClass, op.imp.target)
+    RequiredConfigEntry(paths, op.imp.target.symbol, op.imp.target)
   }
 
 
@@ -136,6 +134,29 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
     val usageQualifier = usageKeyQualifier.toSeq
     DepUsage(usageKeyParts, usageQualifier)
   }
+
+}
+
+object ConfigProvider {
+
+  private case class RequiredConfigEntry(paths: Seq[ConfigPath], targetType: TypeFull, target: DIKey) {
+    override def toString: String = {
+      val allPaths = paths.map(_.toPath).mkString("\n  ")
+
+      s"""type: $targetType, target: $target
+         |$allPaths""".stripMargin
+    }
+  }
+
+
+  private case class ConfigPath(parts: Seq[String]) {
+    def toPath: String = parts.mkString(".")
+  }
+
+  private sealed trait TranslationResult
+
+  private object TranslationResult {
+
     final case class Success(op: ExecutableOp) extends TranslationResult
 
     final case class Failure(f: Throwable) extends TranslationResult
