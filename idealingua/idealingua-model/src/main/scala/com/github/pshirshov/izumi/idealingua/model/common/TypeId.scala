@@ -90,7 +90,7 @@ trait Primitive extends Builtin with ScalarId {
 object Primitive {
 
   case object TBool extends Primitive {
-    override def aliases: List[TypeName] = List("bool", "boolean")
+    override def aliases: List[TypeName] = List("bit", "bool", "boolean")
   }
 
   case object TString extends Primitive {
@@ -114,11 +114,11 @@ object Primitive {
   }
 
   case object TFloat extends Primitive {
-    override def aliases: List[TypeName] = List("flt", "float")
+    override def aliases: List[TypeName] = List("f32", "flt", "float")
   }
 
   case object TDouble extends Primitive {
-    override def aliases: List[TypeName] = List("dbl", "double")
+    override def aliases: List[TypeName] = List("f64", "dbl", "double")
   }
 
   case object TUUID extends Primitive {
