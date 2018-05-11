@@ -15,7 +15,9 @@ final case class CogenProduct[T <: Defn](
                                   ) extends AbstractCogenProduct[T] {
   def render: List[Defn] = {
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
-    List(defn) ++ more ++ List(companion.appendDefinitions(tools))
+
+    val implicitClass = Seq(tools).filter(_.templ.stats.nonEmpty)
+    List(defn) ++ more ++ List(companion.appendDefinitions(implicitClass: _*))
   }
 }
 
