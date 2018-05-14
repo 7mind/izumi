@@ -12,12 +12,14 @@ import scala.util.{Failure, Success, Try}
 
 case class FileSinkConfig(maxAllowedSize: Int)
 
-case class FileSink[T <: LogFile](
-                                   renderingPolicy: RenderingPolicy
-                                   , fileService: FileService[T]
-                                   , rotation: FileRotation
-                                   , config: FileSinkConfig
+abstract class FileSink[T <: LogFile](
+                                   val renderingPolicy: RenderingPolicy
+                                   , val fileService: FileService[T]
+                                   , val rotation: FileRotation
+                                   , val config: FileSinkConfig
                                  ) extends LogSink {
+
+  def recoverOnFail(e: String): Unit
 
   val sinkState: AtomicReference[FileSinkState] = {
     val currentState = restoreSinkState.getOrElse(initState)
@@ -70,18 +72,21 @@ case class FileSink[T <: LogFile](
   }
 
   override def flush(e: Log.Entry): Unit = synchronized {
+    val renderedMessage = renderingPolicy.render(e)
+
     val oldState = sinkState.get()
     val res = for {
       s1 <- Try(processCurrentFile(oldState))
       s2 <- Try(adjustByRotate(s1))
-      s3 <- performWriting(s2, renderingPolicy.render(e))
+      s3 <- performWriting(s2, renderedMessage)
     } yield s3
     res match {
       case Failure(f) =>
+        recoverOnFail(s"Error while writing log to file. Cause: ${f.toString}")
+        recoverOnFail(renderedMessage)
       case Success(newState) =>
         sinkState.set(newState)
     }
-
   }
 
 }

@@ -3,16 +3,18 @@ package com.github.pshirshov.izumi
 import com.github.pshirshov.izumi.FileServiceImpl.RealFile
 import com.github.pshirshov.izumi.FileServiceUtils._
 import com.github.pshirshov.izumi.FileSink.FileIdentity
-import com.github.pshirshov.izumi.LoggingFileSinkTest._
+import com.github.pshirshov.izumi.LoggingFileSinkTest.{FileSinkBrokenImpl, _}
 import com.github.pshirshov.izumi.dummy.{DummyFile, DummyFileServiceImpl}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
-import com.github.pshirshov.izumi.models.{FileRotation, LogFile}
+import com.github.pshirshov.izumi.models.{FileRotation, FileSinkState, LogFile}
 import org.scalatest.{Assertion, GivenWhenThen, WordSpec}
+import LoggingFileSinkTest.randomInt
 
-import scala.util.Random
+import scala.collection.mutable.ListBuffer
+import scala.util.{Failure, Random, Try}
 
 
 trait FileServiceUtils[T <: LogFile] {
@@ -40,6 +42,7 @@ object FileServiceUtils {
 @ExposedTestScope
 trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
+
   def fileSvcUtils: FileServiceUtils[T]
 
   "File sink" should {
@@ -65,7 +68,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
     "continue writing data starts from existing non-empty file" in {
 
       val prefilledFiles = fileSvcUtils.provideSvc(dummyFolder)
-      val randomFileSize = Random.nextInt(100) + 1
+      val randomFileSize = randomInt() + 1
 
       Given("empty file in storage")
       prefilledFiles.withPreparedData {
@@ -82,7 +85,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
           assert(curState.currentFileSize == 1)
       }
 
-      val lastPos = Random.nextInt(randomFileSize - 1)
+      val lastPos = randomInt(randomFileSize - 1)
 
       Given("full and randomly filled files in storage")
 
@@ -172,7 +175,23 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       }
     }
 
+    "recover when error on writing occurred" in {
+
+      val fileSize = randomInt()
+
+      val svc = fileSvcUtils.provideSvc(dummyFolder)
+
+      withFileLogger(withoutRotation(policy, fileSize = fileSize, fileService = svc, broken = true)) {
+        (sink, logger) =>
+          (0 until fileSize) foreach {
+            i => logger.info(s"dummy $i")
+          }
+          assert(sink.asInstanceOf[FileSinkBrokenImpl[T]].recoveredMessages.lengthCompare(2 * fileSize) == 0)
+      }
+    }
   }
+
+
 }
 
 class DummyFileSinkTest extends LoggingFileSinkTest[DummyFile] {
@@ -187,16 +206,24 @@ class RealFileSinkTest extends LoggingFileSinkTest[RealFile] {
 
 object LoggingFileSinkTest {
 
-  def dummySink[F <: LogFile](renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, fileService: FileService[F]): FileSink[F] = {
-    new FileSink(renderingPolicy, fileService, r, FileSinkConfig(fileSize))
+  private val randomSeed = 100
+
+  def randomInt(seed : Int = randomSeed) : Int = Random.nextInt(seed)
+
+  def dummySink[F <: LogFile](renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, fileService: FileService[F], broken: Boolean): FileSink[F] = {
+    if (broken) {
+      new FileSinkBrokenImpl(renderingPolicy, fileService, r, FileSinkConfig(fileSize))
+    } else {
+      new FileSinkTestImpl(renderingPolicy, fileService, r, FileSinkConfig(fileSize))
+    }
   }
 
-  def withoutRotation[F <: LogFile](renderingPolicy: RenderingPolicy, fileSize: Int, fileService: FileService[F]): FileSink[F] = {
-    dummySink(renderingPolicy, FileRotation.DisabledRotation, fileSize, fileService)
+  def withoutRotation[F <: LogFile](renderingPolicy: RenderingPolicy, fileSize: Int, fileService: FileService[F], broken: Boolean = false): FileSink[F] = {
+    dummySink(renderingPolicy, FileRotation.DisabledRotation, fileSize, fileService, broken)
   }
 
-  def withRotation[F <: LogFile](renderingPolicy: RenderingPolicy, fileSize: Int, fileService: FileService[F], filesLimit: Int): FileSink[F] = {
-    dummySink(renderingPolicy, FileRotation.FileLimiterRotation(filesLimit), fileSize, fileService)
+  def withRotation[F <: LogFile](renderingPolicy: RenderingPolicy, fileSize: Int, fileService: FileService[F], filesLimit: Int, broken: Boolean = false): FileSink[F] = {
+    dummySink(renderingPolicy, FileRotation.FileLimiterRotation(filesLimit), fileSize, fileService, broken)
   }
 
   def withFileLogger[F <: LogFile](f: => FileSink[F])(f2: (FileSink[F], IzLogger) => Assertion): Unit = {
@@ -207,6 +234,32 @@ object LoggingFileSinkTest {
     } finally {
       val svc = fileSink.fileService
       svc.scanDirectory.foreach(svc.removeFile)
+    }
+  }
+
+  class FileSinkTestImpl[F <: LogFile](override val renderingPolicy: RenderingPolicy
+                                       , override val fileService: FileService[F]
+                                       , override val rotation: FileRotation
+                                       , override val config: FileSinkConfig) extends FileSink[F](renderingPolicy, fileService, rotation, config) {
+
+    override def recoverOnFail(e: String): Unit = println
+  }
+
+  class FileSinkBrokenImpl[F <: LogFile](override val renderingPolicy: RenderingPolicy
+                                         , override val fileService: FileService[F]
+                                         , override val rotation: FileRotation
+                                         , override val config: FileSinkConfig) extends FileSink[F](renderingPolicy, fileService, rotation, config) {
+
+    val recoveredMessages: ListBuffer[String] = ListBuffer.empty[String]
+
+    override def recoverOnFail(e: String): Unit = {
+      recoveredMessages += e
+    }
+
+    override def performWriting(state: FileSinkState, payload: String): Try[FileSinkState] = {
+      Failure {
+        throw new Exception("Error while writing to file sink")
+      }
     }
   }
 
