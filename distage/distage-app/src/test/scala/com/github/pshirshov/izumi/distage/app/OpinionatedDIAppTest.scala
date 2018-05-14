@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.app
 
-import com.github.pshirshov.izumi.distage.config.pureconfig.PureConfigInstanceReader
-import com.github.pshirshov.izumi.distage.config.{AppConfig, ConfigModule}
+import com.github.pshirshov.izumi.distage.config.{AppConfig, ConfigModule, RuntimeConfigReaderDefaultImpl}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe
@@ -65,10 +64,8 @@ class TestPredicateAutoSet extends AutoSetHook {
 }
 
 class CustomizationModule extends ModuleDef {
-
   many[PlanningHook]
     .add[TestPredicateAutoSet]
-
 }
 
 
@@ -78,7 +75,7 @@ class OpinionatedDIAppTest extends WordSpec {
     "support dynamic app loading" in {
       val config = AppConfig(ConfigFactory.load())
       val modules = Seq(
-        new ConfigModule(config, PureConfigInstanceReader)
+        new ConfigModule(config)
         , new CustomizationModule
       )
 

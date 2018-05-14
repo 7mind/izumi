@@ -8,10 +8,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
-
-
-
-
 class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvider.Runtime) extends PlanningHook {
   import u._
   override def hookWiring(binding: Binding.ImplBinding, wiring: Wiring): Wiring = {
@@ -44,7 +40,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
       _ =>
         association.wireWith match {
           case k: DIKey.TypeKey =>
-            k.named(AutoConfId(binding.key))
+            k.named(AutoConfId(binding.key, association))
 
           case o =>
             throw new DIException(s"Cannot rewire @AutoConf parameter $reflected: unexpected binding $o", null)
@@ -59,7 +55,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
         ann =>
           association.wireWith match {
             case k: DIKey.TypeKey =>
-              k.named(ConfId(ann))
+              k.named(ConfId(binding.key, association, ann))
 
             case o =>
               throw new DIException(s"Cannot rewire @Conf parameter $reflected: unexpected binding $o", null)

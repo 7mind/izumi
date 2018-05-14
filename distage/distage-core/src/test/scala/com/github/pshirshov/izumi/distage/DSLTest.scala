@@ -50,6 +50,67 @@ class DSLTest extends WordSpec {
       ))
     }
 
+    "correctly handle sets" in {
+      import Case18._
+
+      val definition = new ModuleDef {
+        make[Service2]
+        make[Service0]
+        make[Service1]
+        make[Service3]
+
+        many[SetTrait]
+          .add[SetImpl1]
+          .add[SetImpl2]
+          .add[SetImpl3]
+
+        many[SetTrait].named("n1")
+          .add[SetImpl1]
+          .add[SetImpl2]
+          .add[SetImpl3]
+
+        many[SetTrait].named("n2")
+          .add[SetImpl1]
+          .add[SetImpl2]
+          .add[SetImpl3]
+
+        many[SetTrait].named("n3")
+          .add[SetImpl1]
+          .add[SetImpl2]
+          .add[SetImpl3]
+      }
+
+      assert(definition == SimpleModuleDef(
+        Set(
+          Bindings.emptySet[SetTrait]
+          , Bindings.setElement[SetTrait, SetImpl1]
+          , Bindings.setElement[SetTrait, SetImpl2]
+          , Bindings.setElement[SetTrait, SetImpl3]
+
+          , Bindings.binding[Service0]
+          , Bindings.binding[Service1]
+          , Bindings.binding[Service2]
+          , Bindings.binding[Service3]
+
+          , Bindings.emptySet[SetTrait].named("n1")
+          , Bindings.setElement[SetTrait, SetImpl1].named("n1")
+          , Bindings.setElement[SetTrait, SetImpl2].named("n1")
+          , Bindings.setElement[SetTrait, SetImpl3].named("n1")
+
+          , Bindings.emptySet[SetTrait].named("n2")
+          , Bindings.setElement[SetTrait, SetImpl1].named("n2")
+          , Bindings.setElement[SetTrait, SetImpl2].named("n2")
+          , Bindings.setElement[SetTrait, SetImpl3].named("n2")
+
+          , Bindings.emptySet[SetTrait].named("n3")
+          , Bindings.setElement[SetTrait, SetImpl1].named("n3")
+          , Bindings.setElement[SetTrait, SetImpl2].named("n3")
+          , Bindings.setElement[SetTrait, SetImpl3].named("n3")
+        )
+      )
+      )
+    }
+
     "allow monoidal operations between different types of binding dsls" in {
       import Case1._
 

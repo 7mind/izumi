@@ -4,11 +4,15 @@ import com.github.pshirshov.izumi.distage.model.exceptions.InvalidPlanException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 //import scala.reflect.runtime.{currentMirror, universe}
 
-class ClassStrategyDefaultImpl extends ClassStrategy {
+class ClassStrategyDefaultImpl
+(
+  symbolIntrospector: SymbolIntrospector.Runtime
+) extends ClassStrategy {
   def instantiateClass(context: ProvisioningContext, op: WiringOp.InstantiateClass): Seq[OpResult.NewInstance] = {
 
     import op._
@@ -28,8 +32,9 @@ class ClassStrategyDefaultImpl extends ClassStrategy {
 
     val refUniverse = RuntimeDIUniverse.mirror
     val refClass = refUniverse.reflectClass(targetType.tpe.typeSymbol.asClass)
-    val ctorNotInstantiated = targetType.tpe.decl(RuntimeDIUniverse.u.termNames.CONSTRUCTOR).asMethod
-    val refCtor = refClass.reflectConstructor(ctorNotInstantiated)
+
+    val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
+    val refCtor = refClass.reflectConstructor(ctorSymbol)
 
     val instance = refCtor.apply(args: _*)
     Seq(OpResult.NewInstance(target, instance))

@@ -32,7 +32,7 @@ abstract class OpinionatedDiApp {
 
     val bootstrapCustomDef = (Seq(new ModuleDef {
       make[LogRouter].from(router)
-    } : ModuleBase) ++ bootstrapModules).merge()
+    } : ModuleBase) ++ bootstrapModules).merge
 
     val appDef = appLoader.loadDefinition(mergeStrategy)
     logger.trace(s"Have bootstrap definition\n$appDef")
@@ -56,7 +56,7 @@ abstract class OpinionatedDiApp {
 
   protected def router: LogRouter
 
-  protected def bootstrapModules: Seq[ModuleDef] = Seq.empty
+  protected def bootstrapModules: Seq[ModuleBase] = Seq.empty
 
   protected def requiredComponents: Set[RuntimeDIUniverse.DIKey]
 

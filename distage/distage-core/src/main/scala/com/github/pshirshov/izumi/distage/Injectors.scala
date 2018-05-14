@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, DefaultBootstrapContext}
 import com.github.pshirshov.izumi.distage.model._
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef, SimpleModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, SimpleModuleDef}
 
 
 object Injectors {

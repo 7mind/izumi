@@ -40,6 +40,9 @@ final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
 }
 
 object GoLangImports {
+  def apply(types: List[TypeId], fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord]): GoLangImports =
+    new GoLangImports(fromTypes(types, fromPkg, extra))
+
   def apply(imports: List[GoLangImportRecord]): GoLangImports =
     new GoLangImports(imports)
 
@@ -52,8 +55,8 @@ object GoLangImports {
   protected def withImport(t: TypeId, fromPackage: Package): Seq[Seq[String]] = {
     t match {
       case Primitive.TTime => return Seq(Seq("time"), Seq("strings"), Seq("strconv"))
-      case Primitive.TTs => return Seq(Seq("time"), Seq("strings"), Seq("strconv"))
-      case Primitive.TTsTz => return Seq(Seq("time"), Seq("strings"), Seq("strconv"))
+      case Primitive.TTs => return Seq(Seq("time"))
+      case Primitive.TTsTz => return Seq(Seq("time"))
       case Primitive.TDate => return Seq(Seq("time"), Seq("strings"), Seq("strconv"))
       case Primitive.TUUID => return Seq(Seq("regexp"))
       case g: Generic => g match {
@@ -77,7 +80,7 @@ object GoLangImports {
       return Seq.empty
     }
 
-    return Seq(t.path.toPackage)
+    Seq(t.path.toPackage)
   }
 
   protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[GoLangImportRecord] = List.empty): List[GoLangImportRecord] = {
@@ -100,7 +103,7 @@ object GoLangImports {
     } ++ extra
   }
 
-  protected def collectTypes(id: TypeId): List[TypeId] = id match {
+  def collectTypes(id: TypeId): List[TypeId] = id match {
     case p: Primitive => List(p)
     case g: Generic => g match {
       case gm: Generic.TMap => List(gm) ++ collectTypes(gm.valueType)
@@ -125,9 +128,9 @@ object GoLangImports {
     case i: Identifier =>
       i.fields.flatMap(f => List(f.typeId) ++ collectTypes(f.typeId))
     case i: Interface =>
-      i.struct.superclasses.all ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId))
+      i.struct.superclasses.interfaces ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId))
     case d: DTO =>
-      d.struct.superclasses.all ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId))
+      d.struct.superclasses.interfaces ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(al.typeId))
   }

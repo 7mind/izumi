@@ -12,7 +12,7 @@ trait PluginMergeStrategy[T <: LoadedPlugins] {
 
 object SimplePluginMergeStrategy extends PluginMergeStrategy[LoadedPlugins] {
   override def merge[D <: PluginBase](defs: Seq[D]): LoadedPlugins = {
-    val merged = defs.merge()
+    val merged = defs.merge
     JustLoadedPlugins(merged)
   }
 }
@@ -30,7 +30,7 @@ case class PluginMergeConfig
 class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginMergeStrategy[LoadedPlugins] {
   override def merge[D <: PluginBase](defs: Seq[D]): LoadedPlugins = {
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-    val allBindings = defs.merge().bindings
+    val allBindings = defs.merge.bindings
 
     val resolved = allBindings
       .filterNot(isDisabled)

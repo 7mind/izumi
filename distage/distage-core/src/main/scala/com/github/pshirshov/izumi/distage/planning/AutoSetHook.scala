@@ -20,7 +20,6 @@ trait AutoSetHook extends PlanningHookDefaultImpl {
 
               }
           }
-          .toSet
     }
 
     SimpleModuleDef(defn.bindings ++ autoSetsElements)

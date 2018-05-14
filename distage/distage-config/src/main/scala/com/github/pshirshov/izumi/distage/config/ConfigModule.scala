@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.distage.config
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 
-class ConfigModule(config: AppConfig, reader: ConfigInstanceReader) extends ModuleDef {
+class ConfigModule(config: AppConfig) extends ModuleDef {
   make[AppConfig].from(config)
-  make[ConfigInstanceReader].from(reader)
+  make[RuntimeConfigReader].from[RuntimeConfigReaderDefaultImpl]
   many[PlanningHook]
     .add[ConfigReferenceExtractor]
 
