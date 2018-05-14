@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
-import com.github.pshirshov.izumi.models.{FileRotation, FileSinkState, LogFile}
+import com.github.pshirshov.izumi.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
 import org.scalatest.{Assertion, GivenWhenThen, WordSpec}
 import LoggingFileSinkTest.randomInt
 
@@ -210,20 +210,27 @@ object LoggingFileSinkTest {
 
   def randomInt(seed : Int = randomSeed) : Int = Random.nextInt(seed)
 
-  def dummySink[F <: LogFile](renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, fileService: FileService[F], broken: Boolean): FileSink[F] = {
-    if (broken) {
-      new FileSinkBrokenImpl(renderingPolicy, fileService, r, FileSinkConfig(fileSize))
+  def dummySink[F <: LogFile](renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, fileService: FileService[F], broken: Boolean, softLimit : Boolean): FileSink[F] = {
+
+    val cfg = (if (softLimit) {
+      FileSinkConfig.soft(_ : Int)
     } else {
-      new FileSinkTestImpl(renderingPolicy, fileService, r, FileSinkConfig(fileSize))
+      FileSinkConfig.inBytes(_ : Int)
+    })(fileSize)
+
+    if (broken) {
+      new FileSinkBrokenImpl(renderingPolicy, fileService, r, cfg)
+    } else {
+      new FileSinkTestImpl(renderingPolicy, fileService, r, cfg)
     }
   }
 
-  def withoutRotation[F <: LogFile](renderingPolicy: RenderingPolicy, fileSize: Int, fileService: FileService[F], broken: Boolean = false): FileSink[F] = {
-    dummySink(renderingPolicy, FileRotation.DisabledRotation, fileSize, fileService, broken)
+  def withoutRotation[F <: LogFile](renderingPolicy: RenderingPolicy, fileSize: Int, fileService: FileService[F], broken: Boolean = false, softLimit: Boolean = true): FileSink[F] = {
+    dummySink(renderingPolicy, FileRotation.DisabledRotation, fileSize, fileService, broken, softLimit)
   }
 
-  def withRotation[F <: LogFile](renderingPolicy: RenderingPolicy, fileSize: Int, fileService: FileService[F], filesLimit: Int, broken: Boolean = false): FileSink[F] = {
-    dummySink(renderingPolicy, FileRotation.FileLimiterRotation(filesLimit), fileSize, fileService, broken)
+  def withRotation[F <: LogFile](renderingPolicy: RenderingPolicy, fileSize: Int, fileService: FileService[F], filesLimit: Int, broken: Boolean = false, softLimit: Boolean = true): FileSink[F] = {
+    dummySink(renderingPolicy, FileRotation.FileLimiterRotation(filesLimit), fileSize, fileService, broken, softLimit)
   }
 
   def withFileLogger[F <: LogFile](f: => FileSink[F])(f2: (FileSink[F], IzLogger) => Assertion): Unit = {
