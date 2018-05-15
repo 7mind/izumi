@@ -2,11 +2,10 @@ package com.github.pshirshov.izumi.idealingua.model.typespace.structures
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
 import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, StructureId}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Super
 
 
-class Struct private
+class Struct
 (
   val id: StructureId
   , val superclasses: Super
@@ -30,19 +29,6 @@ class Struct private
       .map(_.definedBy)
       .collect({ case i: InterfaceId => i })
       .distinct
-  }
-}
-
-object Struct {
-  def apply(id: StructureId, superclasses: Super, all: List[ExtendedField]): Struct = {
-    val conflicts = FieldConflicts(all)
-
-    // TODO: shitty side effect
-    if (conflicts.hardConflicts.nonEmpty) {
-      throw new IDLException(s"Conflicting fields: ${conflicts.hardConflicts}")
-    }
-
-    new Struct(id, superclasses, conflicts)
   }
 }
 

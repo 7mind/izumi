@@ -43,8 +43,8 @@ mixin LamNode {
 
 mixin IfNode {
   cond: AST
-  then: AST
-  else: AST
+  thenNode: AST
+  elseNode: AST
 }
 
 // typed AST

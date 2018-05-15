@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, Struct
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
+import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, FieldConflicts, PlainStruct, Struct}
 
 protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver: TypeResolver, inheritance: InheritanceQueries) extends StructuralQueries {
   def structure(defn: IdentifierId): PlainStruct = {
@@ -28,7 +28,38 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
         i.struct.superclasses
     }
 
-    Struct(defn.id, parts, extractFields(defn))
+    mkStruct(defn.id, parts, extractFields(defn))
+  }
+
+  private def findConflicts(fields: Seq[ExtendedField]): FieldConflicts = {
+    val conflicts = fields
+      .groupBy(_.field.name)
+
+    val (goodFields: Map[String, Seq[ExtendedField]], conflictingFields) = conflicts.partition(_._2.lengthCompare(1) == 0)
+
+    val (softConflicts: Map[String, Map[Field, Seq[ExtendedField]]], hardConflicts: Map[String, Map[Field, Seq[ExtendedField]]]) = conflictingFields
+      .map(kv => (kv._1, kv._2.groupBy(_.field)))
+      .partition(_._2.size == 1)
+
+    FieldConflicts(fields, goodFields, softConflicts, hardConflicts)
+  }
+
+  private def mkStruct(id: StructureId, superclasses: Super, all: List[ExtendedField]): Struct = {
+    val conflicts = findConflicts(all)
+
+    // TODO: shitty side effect
+    if (conflicts.hardConflicts.nonEmpty) {
+      throw new IDLException(s"Conflicting fields: ${conflicts.hardConflicts}")
+    }
+
+    val output = new Struct(id, superclasses, conflicts)
+
+    val conflictsLeft = output.all.groupBy(_.field.name).filter(_._2.size > 1)
+    if (conflictsLeft.nonEmpty) {
+      throw new IDLException(s"IDL compiler bug. Field resolution failed: $conflictsLeft")
+    }
+
+    output
   }
 
   def conversions(id: InterfaceId): List[ConverterDef] = {

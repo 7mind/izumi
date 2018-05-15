@@ -42,6 +42,7 @@ object IDLTestTools {
     settings.d.value = ctarget.toString
     settings.feature.value = true
     settings.warnUnused.add("_")
+    settings.deprecation.value = true
     settings.embeddedDefaults(this.getClass.getClassLoader)
 
     if (!isRunningUnderSbt) {
