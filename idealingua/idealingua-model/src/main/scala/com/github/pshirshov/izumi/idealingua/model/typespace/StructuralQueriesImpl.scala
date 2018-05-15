@@ -103,7 +103,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       case t: Interface =>
         val struct = t.struct
         val superFields = compositeFields(struct.superclasses.interfaces)
-          .map(_.copy(definedBy = t.id)) // for interfaces super field is ok to consider as defined by this interface
+          //.map(_.copy(definedBy = t.id)) // for interfaces super field is ok to consider as defined by this interface
         filterFields(t.id, superFields, struct)
 
       case t: DTO =>
