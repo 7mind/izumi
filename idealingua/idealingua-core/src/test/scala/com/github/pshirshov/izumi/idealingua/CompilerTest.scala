@@ -11,9 +11,11 @@ class CompilerTest extends WordSpec {
     "be able to compile into scala" in {
       assert(compilesScala(getClass.getSimpleName, loadDefs()))
     }
-
     "be able to compile into typescript" in {
       assert(compilesTypeScript(getClass.getSimpleName, loadDefs()))
+    }
+    "be able to compile into golang" in {
+      assert(compilesGolang(getClass.getSimpleName, loadDefs()))
     }
   }
 }

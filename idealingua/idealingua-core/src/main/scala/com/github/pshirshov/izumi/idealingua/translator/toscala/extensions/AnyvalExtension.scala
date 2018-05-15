@@ -37,15 +37,11 @@ object AnyvalExtension extends ScalaTranslatorExtension {
   }
 
   private def withAnyval(ctx: STContext,struct: Struct): List[Init] = {
-    addAnyBase(ctx, struct, "AnyVal")
+    doModify(ctx, "AnyVal", struct.isScalar && struct.all.forall(f => canBeAnyValField(ctx, f.field.typeId)))
   }
 
   private def withAny(ctx: STContext,struct: Struct): List[Init] = {
-    addAnyBase(ctx, struct, "Any")
-  }
-
-  private def addAnyBase(ctx: STContext, struct: Struct, base: String): List[Init] = {
-    doModify(ctx, base, struct.isScalar && struct.all.forall(f => canBeAnyValField(ctx, f.field.typeId)))
+    doModify(ctx, "Any", (struct.isScalar || struct.isEmpty) && struct.all.forall(f => canBeAnyValField(ctx, f.field.typeId)))
   }
 
   private def doModify(ctx: STContext, base: String, modify: Boolean): List[Init] = {

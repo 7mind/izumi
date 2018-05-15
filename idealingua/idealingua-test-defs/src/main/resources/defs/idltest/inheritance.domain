@@ -19,3 +19,11 @@ data Point {
   & Metadata
   + IntPair
 }
+
+mixin Empty {
+}
+
+data Str {
+  & Empty
+  str: str
+}
