@@ -52,7 +52,11 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       throw new IDLException(s"Conflicting fields: ${conflicts.hardConflicts}")
     }
 
-    val output = new Struct(id, superclasses, conflicts)
+    val unambigious: List[ExtendedField] = conflicts.goodFields.flatMap(_._2).toList
+    
+    val ambigious: List[ExtendedField] = conflicts.softConflicts.flatMap(_._2).map(_._2.head).toList
+
+    val output = new Struct(id, superclasses, unambigious, ambigious)
 
     val conflictsLeft = output.all.groupBy(_.field.name).filter(_._2.size > 1)
     if (conflictsLeft.nonEmpty) {

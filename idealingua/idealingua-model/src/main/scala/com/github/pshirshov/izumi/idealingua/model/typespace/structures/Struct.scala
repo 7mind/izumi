@@ -9,16 +9,11 @@ class Struct
 (
   val id: StructureId
   , val superclasses: Super
-  , val conflicts: FieldConflicts
+  , val unambigious: List[ExtendedField]
+  , val ambigious: List[ExtendedField]
 ) extends ConstAbstractStruct[ExtendedField] {
-  override def all: List[ExtendedField] = {
-    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-    conflicts.all.distinctBy(_.field).toList
-  }
 
-  override def unambigious: List[ExtendedField] = conflicts.goodFields.flatMap(_._2).toList
-
-  override def ambigious: List[ExtendedField] = conflicts.softConflicts.flatMap(_._2).map(_._2.head).toList
+  override def all: List[ExtendedField] = unambigious ++ ambigious
 
   override protected def isLocal(f: ExtendedField): Boolean = {
     f.definedBy == id
