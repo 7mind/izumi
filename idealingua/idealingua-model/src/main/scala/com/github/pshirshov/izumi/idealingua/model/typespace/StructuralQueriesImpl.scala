@@ -7,6 +7,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, FieldConflicts, PlainStruct, Struct}
 
+import scala.collection.mutable
+
 protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver: TypeResolver, inheritance: InheritanceQueries) extends StructuralQueries {
   def structure(defn: IdentifierId): PlainStruct = {
     structure(resolver.get(defn))
@@ -34,38 +36,61 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
     val all = extractor.extractFields(defn)
 
-    if (defn.id.path.domain.toString.contains("inheritance")) {
-      println(all.sortBy(_.defn.distance).mkString("\n  "))
-    }
+    val conflicts = findConflicts(all)
 
+    val output = new Struct(defn.id, parts, conflicts.good, conflicts.soft)
+    assert(output.all.groupBy(_.field.name).forall(_._2.size == 1), s"IDL Compiler Bug: contradictive structure for ${defn.id}: ${output.all.mkString("\n  ")}")
+    output
+  }
+
+  private def findConflicts(all: List[ExtendedField]) = {
     val conflicts = all
       .groupBy(_.field.name)
 
-    val (goodFields: Map[String, Seq[ExtendedField]], conflictingFields) = conflicts.partition(_._2.lengthCompare(1) == 0)
+    val goodFields = mutable.LinkedHashMap.empty[String, ExtendedField]
+    val softConflicts = mutable.LinkedHashMap.empty[String, ExtendedField]
+    val hardConflicts = mutable.LinkedHashMap.empty[String, Seq[ExtendedField]]
 
-    val (softConflicts: Map[String, Map[Field, Seq[ExtendedField]]], hardConflicts: Map[String, Map[Field, Seq[ExtendedField]]]) = conflictingFields
-      .map(kv => (kv._1, kv._2.groupBy(_.field)))
-      .partition(_._2.size == 1)
+    conflicts.foreach {
+      case (k, v) if v.size == 1 =>
+        goodFields.put(k, v.head)
+      case (k, NonContradictive(v)) =>
+        softConflicts.put(k, v)
 
-    val allConflicts = FieldConflicts(all, goodFields, softConflicts, hardConflicts)
+      case (k, v) =>
+        hardConflicts.put(k, v)
+    }
 
+    val fc = FieldConflicts(goodFields, softConflicts, hardConflicts)
     // TODO: shitty side effect
-    if (allConflicts.hardConflicts.nonEmpty) {
-      throw new IDLException(s"Conflicting fields: ${allConflicts.hardConflicts}")
+    if (fc.hardConflicts.nonEmpty) {
+      throw new IDLException(s"Conflicting fields: ${fc.hardConflicts}")
     }
+    fc
+  }
 
-    val unambigious: List[ExtendedField] = allConflicts.goodFields.flatMap(_._2).toList
+  private object NonContradictive {
+    def unapply(fields: List[ExtendedField]): Option[ExtendedField] = {
+      // check that all parent fields have the same type
+      if (fields.map(_.field).toSet.size == 1) {
+        return Some(fields.head)
+      }
 
-    val ambigious: List[ExtendedField] = allConflicts.softConflicts.flatMap(_._2).map(_._2.head).toList
+      // check covariance - all fields have compatible type
+      val x = fields.sortBy(_.defn.distance)
+      val sorted = x.map(_.field)
+      val primary = sorted.head
 
-    val output = new Struct(defn.id, parts, unambigious, ambigious)
+      if (sorted.tail.forall(f => isParent(primary.typeId, f.typeId))) {
+        return Some(x.head)
+      }
 
-    val conflictsLeft = output.all.groupBy(_.field.name).filter(_._2.size > 1)
-    if (conflictsLeft.nonEmpty) {
-      throw new IDLException(s"IDL compiler bug. Field resolution failed: $conflictsLeft")
+      None
     }
+  }
 
-    output
+  private def isParent(typeId: TypeId, maybeParent: TypeId): Boolean = {
+    inheritance.parentsInherited(typeId).contains(maybeParent)
   }
 
   def conversions(id: InterfaceId): List[ConverterDef] = {
@@ -113,9 +138,11 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
             .toSet
           val all = istruct.all.map(_.field).toSet
 
-          val filteredParentFields = parentInstanceFields.diff(localFields)
+          val localNames = localFields.map(_.name)
 
-          val mixinInstanceFields = istruct
+          val filteredParentFields = parentInstanceFields.filterNot(f => localNames.contains(f.name))
+
+          val mixinInstanceFieldsCandidates = istruct
             .unambigiousInherited
             .map(_.defn.definedBy)
             .collect({ case i: InterfaceId => i })
@@ -123,7 +150,39 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
             .filter(f => all.contains(f.field)) // to drop removed fields
             .filterNot(f => parentInstanceFields.contains(f.field))
             .filterNot(f => localFields.contains(f.field))
-            .toSet
+
+          val resolvedMixinInstanceFields = findConflicts(mixinInstanceFieldsCandidates)
+          val mixinInstanceFields = resolvedMixinInstanceFields.all
+
+          val allFields = mixinInstanceFields.map(_.field) ++ filteredParentFields.toList ++ localFields.toList
+
+//          // TODO: XXX
+//          if (id.path.domain.toString.contains("inheritance")) {
+//            println(s"""${id}:
+//                       |Filtered parents:
+//                       |${filteredParentFields.mkString("\n  ")}
+//                       |
+//               |Mixins:
+//                       |${mixinInstanceFields.mkString("\n  ")}
+//                       |
+//               |Local:
+//                       |${localFields.mkString("\n  ")}
+//                       |""".stripMargin)
+//          }
+//          // TODO: XXX
+
+
+          assert(allFields.groupBy(_.name).forall(_._2.size == 1),
+            s"""IDL Compiler bug: contradictive converters for $id:
+               |Filtered parents:
+               |${filteredParentFields.mkString("\n  ")}
+               |
+               |Mixins:
+               |${mixinInstanceFields.mkString("\n  ")}
+               |
+               |Local:
+               |${localFields.mkString("\n  ")}
+               |""".stripMargin)
 
           // TODO: pass definition instead of id
           ConverterDef(

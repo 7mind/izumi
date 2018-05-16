@@ -7,5 +7,5 @@ final case class ConverterDef(
                                   typeToConstruct: StructureId
                                   , parentInstanceFields: Set[Field]
                                   , localFields: Set[Field]
-                                  , mixinsInstancesFields: Set[ExtendedField]
+                                  , mixinsInstancesFields: List[ExtendedField]
                                 )

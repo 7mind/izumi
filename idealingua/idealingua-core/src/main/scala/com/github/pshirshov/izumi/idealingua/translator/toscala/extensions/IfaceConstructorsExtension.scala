@@ -19,7 +19,7 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
         val localFields = t.localFields
 
         val constructorSignature = Seq(
-          childMixinFields.map(_.defn.definedBy).map(f => (ctx.tools.idToParaName(f), ctx.conv.toScala(f).typeFull))
+          childMixinFields.map(_.defn.definedBy).distinct.map(f => (ctx.tools.idToParaName(f), ctx.conv.toScala(f).typeFull))
           , localFields.map(f => (Term.Name(f.name), ctx.conv.toScala(f.typeId).typeFull))
         ).flatten.toParams
 
