@@ -204,22 +204,22 @@ class ILParser {
     final val inclusion = kw(kw.include, sym.String)
       .map(v => ILInclude(v))
 
-    final val aliasBlock = structure.starting(kw.alias, "=" ~ inline ~ ids.identifier)
-      .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
-
     final val mixinBlock = structure.block(kw.mixin, defs.struct)
       .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
 
     final val dtoBlock = structure.block(kw.data, defs.struct)
       .map(v => ILDef(v._2.toDto(v._1.toDataId)))
 
-    final val adtBlock = structure.starting(kw.adt, structure.enclosed(defs.adt(sepAdt)) | ("=" ~ inline ~ defs.adt(sepAdtInline)))
-      .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
-
     final val idBlock = structure.block(kw.id, defs.aggregate)
       .map(v => ILDef(Identifier(v._1.toIdId, v._2.toList)))
 
-    final val enumBlock = structure.starting(kw.enum, structure.enclosed(defs.enum(sepEnum)) | ("=" ~ inline ~ defs.enum(sepEnumInline)))
+    final val aliasBlock = structure.starting(kw.alias, "=" ~/ inline ~ ids.identifier)
+      .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
+
+    final val adtBlock = structure.starting(kw.adt, structure.enclosed(defs.adt(sepAdt)) | (any ~ "=" ~/ inline ~ defs.adt(sepAdtInline)))
+      .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
+
+    final val enumBlock = structure.starting(kw.enum, structure.enclosed(defs.enum(sepEnum)) | (any ~ "=" ~/ inline ~ defs.enum(sepEnumInline)))
       .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
 
     final val serviceBlock = structure.block(kw.service, services.methods)

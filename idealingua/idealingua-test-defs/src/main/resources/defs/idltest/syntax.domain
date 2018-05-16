@@ -10,3 +10,8 @@ data TestDto {
 }
 
 data TestOneliners { _: TestDto, _: str, _: i08 }
+
+adt Ast
+  = TestMixin
+  | TestDto
+  | TestOneliners
