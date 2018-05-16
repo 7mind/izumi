@@ -11,3 +11,45 @@ mixin WithRecordId {
 mixin UserData {
   id: WithRecordId
 }
+
+//
+data SimpleAnyValRecord {
+  _: str
+}
+
+//
+/*
+data Test00Data1AnyVal {
+  _: str
+}
+
+data Test00Data2AnyVal {
+  + Test00Data1AnyVal
+  _: i08
+}
+*/
+
+//
+mixin Test01MixinAnyVal {
+  _: str
+}
+
+data Test01DataAnyVal1 {
+  & Test01MixinAnyVal
+  _: i08
+}
+
+data Test01DataAnyVal2 {
+  + Test01MixinAnyVal
+  _: i08
+}
+
+//
+data Test02DtoAnyVal {
+  _: str
+}
+
+data Test02UserAnyVal {
+  _: Test02DtoAnyVal
+  _: i08
+}
