@@ -125,6 +125,22 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       .toList
   }
 
+  def constructor(struct: Struct): List[ConverterDef] = {
+    val local = struct.localOrAmbigious
+    val localNamesSet = local.map(_.field.name).toSet
+
+
+    val constructorCode = struct.all
+      .filterNot(f => localNamesSet.contains(f.field.name))
+      .map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
+
+    val constructorCodeNonUnique = local
+      .map(f => SigParam(f.field.name, SigParamSource(f.field.typeId, f.field.name), None))
+
+    val cdef = tools.mkConverter(List.empty, constructorCode ++ constructorCodeNonUnique, struct.id)
+    List(cdef)
+  }
+
   protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
     val struct = structure(resolver.get(id))
     val parentInstanceFields = struct.unambigious.map(_.field).toSet
