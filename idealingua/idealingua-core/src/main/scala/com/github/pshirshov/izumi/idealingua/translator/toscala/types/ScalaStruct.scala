@@ -15,7 +15,7 @@ class ScalaStruct
   override lazy val all: List[ScalaField] = unambigious ++ ambigious
 
   override protected def isLocal(f: ScalaField): Boolean = {
-    f.field.definedBy == id
+    f.field.defn.definedBy == id
   }
 }
 

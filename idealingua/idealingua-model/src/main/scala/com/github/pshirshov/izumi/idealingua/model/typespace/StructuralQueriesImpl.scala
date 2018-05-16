@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{IdentifierId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, StructureId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, FieldDef, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
@@ -13,7 +13,8 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   }
 
   def structure(defn: Identifier): PlainStruct = {
-    PlainStruct(extractFields(defn))
+    val extractor = new FieldExtractor(types, resolver, defn.id)
+    PlainStruct(extractor.extractFields(defn))
   }
 
   def structure(id: StructureId): Struct = {
@@ -21,6 +22,8 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   }
 
   def structure(defn: WithStructure): Struct = {
+    val extractor = new FieldExtractor(types, resolver, defn.id)
+
     val parts = resolver.get(defn.id) match {
       case i: Interface =>
         i.struct.superclasses
@@ -28,7 +31,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
         i.struct.superclasses
     }
 
-    mkStruct(defn.id, parts, extractFields(defn))
+    mkStruct(defn.id, parts, extractor.extractFields(defn))
   }
 
   private def findConflicts(fields: Seq[ExtendedField]): FieldConflicts = {
@@ -53,7 +56,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     }
 
     val unambigious: List[ExtendedField] = conflicts.goodFields.flatMap(_._2).toList
-    
+
     val ambigious: List[ExtendedField] = conflicts.softConflicts.flatMap(_._2).map(_._2.head).toList
 
     val output = new Struct(id, superclasses, unambigious, ambigious)
@@ -115,7 +118,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
           val mixinInstanceFields = istruct
             .unambigiousInherited
-            .map(_.definedBy)
+            .map(_.defn.definedBy)
             .collect({ case i: InterfaceId => i })
             .flatMap(mi => structure(resolver.get(mi)).all)
             .filter(f => all.contains(f.field)) // to drop removed fields
@@ -133,24 +136,35 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       }
   }
 
-  protected def extractFields(defn: TypeDef): List[ExtendedField] = {
+  protected def signature(defn: WithStructure): List[Field] = {
+    structure(defn).all.map(_.field).sortBy(_.name)
+  }
+}
+
+private class FieldExtractor(types: TypeCollection, resolver: TypeResolver, user: TypeId) {
+  def extractFields(defn: TypeDef): List[ExtendedField] = {
+    extractFields(defn, 0)
+  }
+
+  protected def extractFields(defn: TypeDef, depth: Int): List[ExtendedField] = {
+    val nextDepth = depth + 1
     val fields = defn match {
       case t: Interface =>
         val struct = t.struct
-        val superFields = compositeFields(struct.superclasses.interfaces)
-          //.map(_.copy(definedBy = t.id)) // for interfaces super field is ok to consider as defined by this interface
-        filterFields(t.id, superFields, struct)
+        val superFields = compositeFields(nextDepth, struct.superclasses.interfaces)
+        //.map(_.copy(definedBy = t.id)) // for interfaces super field is ok to consider as defined by this interface
+        filterFields(nextDepth, t.id, superFields, struct)
 
       case t: DTO =>
         val struct = t.struct
-        val superFields = compositeFields(struct.superclasses.interfaces)
-        filterFields(t.id, superFields, struct)
+        val superFields = compositeFields(nextDepth, struct.superclasses.interfaces)
+        filterFields(nextDepth, t.id, superFields, struct)
 
       case t: Adt =>
-        t.alternatives.map(_.typeId).map(resolver.apply).flatMap(extractFields)
+        t.alternatives.map(_.typeId).map(resolver.apply).flatMap(extractFields(_, nextDepth))
 
       case t: Identifier =>
-        toExtendedPrimitiveFields(t.fields, t.id)
+        toExtendedPrimitiveFields(nextDepth, t.fields, t.id)
 
       case _: Enumeration =>
         List()
@@ -162,10 +176,21 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     fields.distinct
   }
 
+  protected def compositeFields(nextDepth: Int, composite: Interfaces): List[ExtendedField] = {
+    composite.flatMap(i => extractFields(types.index(i), nextDepth))
+  }
 
-  private def filterFields(id: StructureId, superFields: List[ExtendedField], struct: Structure): List[ExtendedField] = {
-    val embeddedFields = struct.superclasses.concepts.map(resolver.apply).flatMap(extractFields)
-    val thisFields = toExtendedFields(struct.fields, id)
+  protected def toExtendedFields(nextDepth: Int, fields: Tuple, id: TypeId): List[ExtendedField] = {
+    fields.map(f => ExtendedField(f, FieldDef(id, user, nextDepth - 1)))
+  }
+
+  protected def toExtendedPrimitiveFields(nextDepth: Int, fields: PrimitiveTuple, id: TypeId): List[ExtendedField] = {
+    fields.map(f => ExtendedField(Field(f.typeId, f.name), FieldDef(id, user, nextDepth - 1)))
+  }
+
+  private def filterFields(nextDepth: Int, id: StructureId, superFields: List[ExtendedField], struct: Structure): List[ExtendedField] = {
+    val embeddedFields = struct.superclasses.concepts.map(resolver.apply).flatMap(extractFields(_, nextDepth))
+    val thisFields = toExtendedFields(nextDepth, struct.fields, id)
 
     val removable = embeddedFields ++ thisFields
 
@@ -192,21 +217,5 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     }
 
     fields.distinct
-  }
-
-  protected def compositeFields(composite: Interfaces): List[ExtendedField] = {
-    composite.flatMap(i => extractFields(types.index(i)))
-  }
-
-  protected def toExtendedFields(fields: Tuple, id: TypeId): List[ExtendedField] = {
-    fields.map(f => ExtendedField(f, id: TypeId))
-  }
-
-  protected def toExtendedPrimitiveFields(fields: PrimitiveTuple, id: TypeId): List[ExtendedField] = {
-    fields.map(f => ExtendedField(Field(f.typeId, f.name), id: TypeId))
-  }
-
-  protected def signature(defn: WithStructure): List[Field] = {
-    structure(defn).all.map(_.field).sortBy(_.name)
   }
 }

@@ -58,7 +58,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
       ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.symbol, product))
     } catch {
       case NonFatal(t) =>
-        throw new DIException(s"Cannot read ${step.targetType} out of ${section._1} ==> ${section._2}", null)
+        throw new DIException(s"Cannot read ${step.targetType} out of ${section._1} ==> ${section._2}", t)
     }
   }
 

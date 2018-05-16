@@ -19,7 +19,7 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
         val localFields = t.localFields
 
         val constructorSignature = Seq(
-          childMixinFields.map(_.definedBy).map(f => (ctx.tools.idToParaName(f), ctx.conv.toScala(f).typeFull))
+          childMixinFields.map(_.defn.definedBy).map(f => (ctx.tools.idToParaName(f), ctx.conv.toScala(f).typeFull))
           , localFields.map(f => (Term.Name(f.name), ctx.conv.toScala(f.typeId).typeFull))
         ).flatten.toParams
 
@@ -30,7 +30,7 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
         val constructorCodeOthers = childMixinFields.map {
           f =>
-            q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
+            q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.defn.definedBy)}.${Term.Name(f.field.name)}  """
         }
 
         val constructorCodeNonUnique = localFields.map {

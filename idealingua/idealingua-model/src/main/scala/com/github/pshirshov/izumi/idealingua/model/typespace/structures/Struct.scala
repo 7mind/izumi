@@ -16,12 +16,12 @@ class Struct
   override def all: List[ExtendedField] = unambigious ++ ambigious
 
   override protected def isLocal(f: ExtendedField): Boolean = {
-    f.definedBy == id
+    f.defn.definedBy == id
   }
 
   def requiredInterfaces: List[InterfaceId] = {
     all
-      .map(_.definedBy)
+      .map(_.defn.definedBy)
       .collect({ case i: InterfaceId => i })
       .distinct
   }

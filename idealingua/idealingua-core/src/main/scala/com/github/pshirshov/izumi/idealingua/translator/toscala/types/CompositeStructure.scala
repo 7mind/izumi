@@ -33,7 +33,7 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
       .filterNot(f => localNames.contains(f.field.name))
       .map {
         f =>
-          q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
+          q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.defn.definedBy)}.${Term.Name(f.field.name)}  """
       }
 
     val constructorCodeNonUnique = local.distinct.map {
