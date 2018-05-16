@@ -31,11 +31,14 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
         i.struct.superclasses
     }
 
-    mkStruct(defn.id, parts, extractor.extractFields(defn))
-  }
 
-  private def findConflicts(fields: Seq[ExtendedField]): FieldConflicts = {
-    val conflicts = fields
+    val all = extractor.extractFields(defn)
+
+    if (defn.id.path.domain.toString.contains("inheritance")) {
+      println(all.sortBy(_.defn.distance).mkString("\n  "))
+    }
+
+    val conflicts = all
       .groupBy(_.field.name)
 
     val (goodFields: Map[String, Seq[ExtendedField]], conflictingFields) = conflicts.partition(_._2.lengthCompare(1) == 0)
@@ -44,22 +47,18 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       .map(kv => (kv._1, kv._2.groupBy(_.field)))
       .partition(_._2.size == 1)
 
-    FieldConflicts(fields, goodFields, softConflicts, hardConflicts)
-  }
-
-  private def mkStruct(id: StructureId, superclasses: Super, all: List[ExtendedField]): Struct = {
-    val conflicts = findConflicts(all)
+    val allConflicts = FieldConflicts(all, goodFields, softConflicts, hardConflicts)
 
     // TODO: shitty side effect
-    if (conflicts.hardConflicts.nonEmpty) {
-      throw new IDLException(s"Conflicting fields: ${conflicts.hardConflicts}")
+    if (allConflicts.hardConflicts.nonEmpty) {
+      throw new IDLException(s"Conflicting fields: ${allConflicts.hardConflicts}")
     }
 
-    val unambigious: List[ExtendedField] = conflicts.goodFields.flatMap(_._2).toList
+    val unambigious: List[ExtendedField] = allConflicts.goodFields.flatMap(_._2).toList
 
-    val ambigious: List[ExtendedField] = conflicts.softConflicts.flatMap(_._2).map(_._2.head).toList
+    val ambigious: List[ExtendedField] = allConflicts.softConflicts.flatMap(_._2).map(_._2.head).toList
 
-    val output = new Struct(id, superclasses, unambigious, ambigious)
+    val output = new Struct(defn.id, parts, unambigious, ambigious)
 
     val conflictsLeft = output.all.groupBy(_.field.name).filter(_._2.size > 1)
     if (conflictsLeft.nonEmpty) {

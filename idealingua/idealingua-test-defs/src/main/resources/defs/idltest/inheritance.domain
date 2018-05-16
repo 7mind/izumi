@@ -27,3 +27,26 @@ data Str {
   & Empty
   str: str
 }
+
+// Covariance
+mixin Covariant {
+
+}
+
+mixin CovariantA {
+  & Covariant
+}
+
+mixin CovariantB {
+  & Covariant
+}
+
+mixin WithCovariance {
+  field: Covariant
+}
+
+mixin InheritedCovariant {
+  & WithCovariance
+
+  field: CovariantA
+}
