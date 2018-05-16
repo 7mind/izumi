@@ -1,0 +1,9 @@
+domain idltest.syntax
+
+mixin TestMixin {
+
+}
+
+data TestDto {
+  _ : TestMixin
+}

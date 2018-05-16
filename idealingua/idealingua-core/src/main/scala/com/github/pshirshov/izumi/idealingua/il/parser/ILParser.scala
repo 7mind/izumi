@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.Service._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import fastparse.CharPredicates._
 import fastparse.all._
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 
 class ILParser {
@@ -38,7 +39,7 @@ class ILParser {
 
     final val line = P(End | SepLineBase.rep(1))
     final val inline = P(WsComment | wss)
-    final val any = P(End |(wss ~ (WsComment | SepLineBase).rep ~ wss))
+    final val any = P(End | (wss ~ (WsComment | SepLineBase).rep ~ wss))
 
     final val sepAdt = P("|" | sym.NLC | ws).rep(min = 1)
     final val sepAdtInline = P("|" | ws).rep(min = 1)
@@ -89,9 +90,13 @@ class ILParser {
     final lazy val generic = P("[" ~/ inline ~ fulltype.rep(sep = ",") ~ inline ~ "]")
   }
 
+
   object defs {
-    final val field = P(ids.symbol ~ inline ~ ":" ~/ inline ~ ids.fulltype)
+    final val field = P((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.fulltype)
       .map {
+        case (name, tpe) if name.isEmpty =>
+          RawField(tpe, tpe.name.lowerFirst)
+
         case (name, tpe) =>
           RawField(tpe, name)
       }
@@ -133,7 +138,7 @@ class ILParser {
     final val aggregate = P((inline ~ field ~ inline)
       .rep(sep = line))
 
-    final val adtMember = P(ids.identifier ~ (inline ~"as" ~/ inline ~ ids.symbol).?).map {
+    final val adtMember = P(ids.identifier ~ (inline ~ "as" ~/ inline ~ ids.symbol).?).map {
       case (tpe, alias) =>
         RawAdtMember(tpe.toTypeId, alias)
     }
@@ -157,7 +162,6 @@ class ILParser {
       starting(keyword, enclosed(defparser))
     }
   }
-
 
 
   object services {
