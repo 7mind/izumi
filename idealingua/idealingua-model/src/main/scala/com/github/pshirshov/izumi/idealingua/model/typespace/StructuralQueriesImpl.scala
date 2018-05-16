@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{Convert
 
 import scala.collection.mutable
 
-protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver: TypeResolver, inheritance: InheritanceQueries) extends StructuralQueries {
+protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver: TypeResolver, inheritance: InheritanceQueries, tools: TypespaceTools) extends StructuralQueries {
   def structure(defn: IdentifierId): PlainStruct = {
     structure(resolver.get(defn))
   }
@@ -184,12 +184,26 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
                |${localFields.mkString("\n  ")}
                |""".stripMargin)
 
+          val instanceFields = filteredParentFields.toList
+          val childMixinFields = mixinInstanceFields
+          val localFields1 = localFields.toList
+
+          val innerFields = instanceFields.map(f => ParamX(f.name, ParamSource(id, "_value"), Some(f.name)))
+          val outerFields = localFields1.map(f => ParamX(f.name, ParamSource(f.typeId, f.name), None)) ++
+            childMixinFields.map(f => ParamX(f.field.name, ParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
+          val allFields1 = innerFields ++ outerFields
+          val outerParams = outerFields.map(_.source).distinct
+
+          assert(innerFields.groupBy(_.targetFieldName).forall(_._2.size == 1))
+          assert(outerFields.groupBy(_.targetFieldName).forall(_._2.size == 1))
+          assert(allFields1.groupBy(_.targetFieldName).forall(_._2.size == 1))
+          assert(outerParams.groupBy(_.sourceName).forall(_._2.size == 1), s"$id: Contradictive outer params: ${outerParams.mkString("\n  ")}")
+
           // TODO: pass definition instead of id
           ConverterDef(
             istruct.id
-            , filteredParentFields
-            , localFields
-            , mixinInstanceFields
+            , allFields1
+            , outerParams
           )
       }
   }
@@ -198,6 +212,11 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     structure(defn).all.map(_.field).sortBy(_.name)
   }
 }
+
+case class ParamSource(sourceType: TypeId, sourceName: String)
+
+case class ParamX(targetFieldName: String, source: ParamSource, sourceFieldName: Option[String])
+
 
 private class FieldExtractor(types: TypeCollection, resolver: TypeResolver, user: TypeId) {
   def extractFields(defn: TypeDef): List[ExtendedField] = {

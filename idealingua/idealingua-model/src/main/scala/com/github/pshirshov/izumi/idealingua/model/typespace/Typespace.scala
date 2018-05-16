@@ -59,10 +59,16 @@ trait StructuralQueries {
   protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef]
 }
 
+trait TypespaceTools {
+  def idToParaName(id: TypeId): String
+}
+
 trait Typespace {
   def inheritance: InheritanceQueries
 
   def structure: StructuralQueries
+
+  def tools: TypespaceTools
 
   def domain: DomainDefinition
 
@@ -71,6 +77,7 @@ trait Typespace {
   def apply(id: ServiceId): Service
 
   def implId(id: InterfaceId): DTOId
+
 
   protected[typespace] def types: TypeCollection
   protected[typespace] def referenced: Map[DomainId, Typespace]

@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenPr
 
 import scala.meta._
 
+
 object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
   import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaField._
@@ -14,35 +15,27 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     val constructors = ctx.typespace.structure.conversions(interface.id).map {
       t =>
-        val instanceFields = t.parentInstanceFields
-        val childMixinFields = t.mixinsInstancesFields
-        val localFields = t.localFields
 
-        val constructorSignature = Seq(
-          childMixinFields.map(_.defn.definedBy).distinct.map(f => (ctx.tools.idToParaName(f), ctx.conv.toScala(f).typeFull))
-          , localFields.map(f => (Term.Name(f.name), ctx.conv.toScala(f.typeId).typeFull))
-        ).flatten.toParams
-
-        val constructorCodeThis = instanceFields.toList.map {
+        val constructorCode = t.allFields.map {
           f =>
-            q""" ${Term.Name(f.name)} = _value.${Term.Name(f.name)}  """
+            f.sourceFieldName match {
+              case Some(sourceFieldName) =>
+                q""" ${Term.Name(f.targetFieldName)} = ${Term.Name(f.source.sourceName)}.${Term.Name(sourceFieldName)}  """
+
+              case None =>
+                q""" ${Term.Name(f.targetFieldName)} = ${Term.Name(f.source.sourceName)}  """
+
+            }
         }
 
-        val constructorCodeOthers = childMixinFields.map {
-          f =>
-            q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.defn.definedBy)}.${Term.Name(f.field.name)}  """
-        }
-
-        val constructorCodeNonUnique = localFields.map {
-          f =>
-            val term = Term.Name(f.name)
-            q""" $term = $term """
-        }
+        val constructorSignature = t.outerParams
+          .map(f => (Term.Name(f.sourceName), ctx.conv.toScala(f.sourceType).typeFull))
+          .toParams
 
         val impl = t.typeToConstruct
 
         q"""def ${Term.Name("to" + impl.name)}(..$constructorSignature): ${ctx.conv.toScala(impl).typeFull} = {
-            ${ctx.conv.toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers ++ constructorCodeNonUnique})
+            ${ctx.conv.toScala(impl).termFull}(..$constructorCode)
             }
           """
     }

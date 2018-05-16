@@ -15,5 +15,5 @@ class ScalaTranslationTools(ctx: STContext) {
   }
 
 
-  def idToParaName(id: TypeId) = Term.Name(id.name.toLowerCase)
+  def idToParaName(id: TypeId): Term.Name = Term.Name(ctx.typespace.tools.idToParaName(id))
 }
