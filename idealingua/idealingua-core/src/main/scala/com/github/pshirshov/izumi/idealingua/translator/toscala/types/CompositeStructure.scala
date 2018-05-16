@@ -13,49 +13,26 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
 
   val composite: Interfaces = fields.fields.superclasses.interfaces
 
-  val explodedSignature: List[Term.Param] = fields.all.toParams
+  val constructors: List[Defn.Def] = {
+    val struct = fields.fields
 
-  val constructorSignature: List[Term.Param] = {
-    val params = fields.fields.requiredInterfaces
-      .map {
-        d =>
-          (ctx.tools.idToParaName(d), ctx.conv.toScala(d).typeFull)
-      }.toParams
-    val fieldParams = fields.localOrAmbigious.toParams
-    params ++ fieldParams
-  }
+    ctx.typespace.structure.constructor(struct).map {
+      cdef =>
+        val constructorSignature: List[Term.Param] = ctx.tools.makeParams(cdef)
+        val fullConstructorCode = ctx.tools.makeConstructor(cdef)
 
-  def instantiator: Term.Apply = {
-    val local = fields.localOrAmbigious
-    val localNames = local.map(_.field.field.name).toSet
-
-    val constructorCode = fields.fields.all
-      .filterNot(f => localNames.contains(f.field.name))
-      .map {
-        f =>
-          q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
-      }
-
-    val constructorCodeNonUnique = local.distinct.map {
-      f =>
-        q""" ${f.name} = ${f.name}  """
-    }
-
-    q"""
-         ${t.termFull}(..${constructorCode ++ constructorCodeNonUnique})
+        val instantiator =
+          q"""
+         ${t.termFull}(..$fullConstructorCode)
          """
 
-  }
-
-  val constructors: List[Defn.Def] = {
-
-    List(
-      q"""def apply(..$constructorSignature): ${t.typeFull} = {
+        q"""def apply(..$constructorSignature): ${t.typeFull} = {
          $instantiator
          }"""
-    )
-
+    }
   }
+
+
 
   val decls: List[Term.Param] = fields.all.toParams
 

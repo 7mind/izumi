@@ -40,6 +40,9 @@ class IzString(s: String) {
     limited.leftPad(limit, ' ')
   }
 
+  @inline def upperFirst: String = s(0).toUpper + s.substring(1)
+  @inline def lowerFirst: String = s(0).toLower + s.substring(1)
+
 }
 
 object IzString {

@@ -6,43 +6,20 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenPr
 
 import scala.meta._
 
-object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
-  import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaField._
+object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
 
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     val constructors = ctx.typespace.structure.conversions(interface.id).map {
       t =>
-        val instanceFields = t.parentInstanceFields
-        val childMixinFields = t.mixinsInstancesFields
-        val localFields = t.localFields
 
-        val constructorSignature = Seq(
-          childMixinFields.map(_.definedBy).map(f => (ctx.tools.idToParaName(f), ctx.conv.toScala(f).typeFull))
-          , localFields.map(f => (Term.Name(f.name), ctx.conv.toScala(f.typeId).typeFull))
-        ).flatten.toParams
-
-        val constructorCodeThis = instanceFields.toList.map {
-          f =>
-            q""" ${Term.Name(f.name)} = _value.${Term.Name(f.name)}  """
-        }
-
-        val constructorCodeOthers = childMixinFields.map {
-          f =>
-            q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.definedBy)}.${Term.Name(f.field.name)}  """
-        }
-
-        val constructorCodeNonUnique = localFields.map {
-          f =>
-            val term = Term.Name(f.name)
-            q""" $term = $term """
-        }
-
+        val constructorCode = ctx.tools.makeConstructor(t)
+        val constructorSignature = ctx.tools.makeParams(t)
         val impl = t.typeToConstruct
 
         q"""def ${Term.Name("to" + impl.name)}(..$constructorSignature): ${ctx.conv.toScala(impl).typeFull} = {
-            ${ctx.conv.toScala(impl).termFull}(..${constructorCodeThis ++ constructorCodeOthers ++ constructorCodeNonUnique})
+            ${ctx.conv.toScala(impl).termFull}(..$constructorCode)
             }
           """
     }
@@ -51,4 +28,6 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
     product.copy(tools = product.tools.appendDefinitions(constructors))
   }
+
+
 }

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
@@ -24,7 +25,7 @@ class ILParser {
       P("/*" ~ CommentChunk.rep ~ "*/").rep(1)
     }
 
-    final lazy val ShortComment = P("//" ~ CharsWhile(c => c != '\n' && c != '\r') ~ (sym.NLC | End))
+    final lazy val ShortComment = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r') ~ sym.NLC))
   }
 
   object sep {
@@ -34,16 +35,18 @@ class ILParser {
     import comments._
 
     private val WsComment = wss ~ MultilineComment ~ wss
-    private val SepLineBase = P(sym.NLC | (WsComment ~ (sym.NLC | End) | (wss ~ ShortComment)))
+    private val SepLineBase = P(sym.NLC | (WsComment ~ sym.NLC | (wss ~ ShortComment)))
 
-    final val line = P(End | SepLineBase.rep(1))
     final val inline = P(WsComment | wss)
-    final val any = P(End |(wss ~ (WsComment | SepLineBase).rep ~ wss))
+    final val any = P(wss ~ (WsComment | SepLineBase).rep ~ wss)
 
-    final val sepAdt = P("|" | sym.NLC | ws).rep(min = 1)
-    final val sepAdtInline = P("|" | ws).rep(min = 1)
-    final val sepEnum = P("|" | "," | sym.NLC | ws).rep(min = 1)
-    final val sepEnumInline = P("|" | "," | ws).rep(min = 1)
+    final val sepStruct = P(";" | "," | SepLineBase | ws).rep(min = 1)
+
+    final val sepAdt = P("|" | ";" | "," |  ws | SepLineBase).rep(min = 1)
+    final val sepAdtInline = P("|" | ";" | "," | ws).rep(min = 1)
+
+    final val sepEnum = P("|" | ";" | "," | ws | SepLineBase).rep(min = 1)
+    final val sepEnumInline = P("|" | ";" | "," | ws).rep(min = 1)
   }
 
   import sep._
@@ -89,16 +92,20 @@ class ILParser {
     final lazy val generic = P("[" ~/ inline ~ fulltype.rep(sep = ",") ~ inline ~ "]")
   }
 
+
   object defs {
-    final val field = P(ids.symbol ~ inline ~ ":" ~/ inline ~ ids.fulltype)
+    final val field = P((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.fulltype)
       .map {
+        case (name, tpe) if name.isEmpty =>
+          RawField(tpe, tpe.name.lowerFirst)
+
         case (name, tpe) =>
           RawField(tpe, name)
       }
 
 
     final val struct = {
-      val sepEntry = line
+      val sepEntry = sepStruct
       val sepInline = inline
 
       val plus = P(("&" ~ "&&".?) ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Extend)
@@ -131,17 +138,17 @@ class ILParser {
     }
 
     final val aggregate = P((inline ~ field ~ inline)
-      .rep(sep = line))
+      .rep(sep = sepStruct))
 
-    final val adtMember = P(ids.identifier ~ (inline ~"as" ~/ inline ~ ids.symbol).?).map {
+    final val adtMember = P(ids.identifier ~ (inline ~ "as" ~/ inline ~ ids.symbol).?).map {
       case (tpe, alias) =>
         RawAdtMember(tpe.toTypeId, alias)
     }
 
-    final def adt(sep: Parser[Unit]) = P(adtMember.rep(min = 1, sep = sep))
+    final def adt(sep: Parser[Unit]): Parser[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
       .map(_.toList).map(AlgebraicType)
 
-    final def enum(sep: Parser[Unit]) = P(ids.symbol.rep(min = 1, sep = sep))
+    final def enum(sep: Parser[Unit]): Parser[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
   }
 
   object structure {
@@ -157,7 +164,6 @@ class ILParser {
       starting(keyword, enclosed(defparser))
     }
   }
-
 
 
   object services {
@@ -198,22 +204,22 @@ class ILParser {
     final val inclusion = kw(kw.include, sym.String)
       .map(v => ILInclude(v))
 
-    final val aliasBlock = structure.starting(kw.alias, "=" ~ inline ~ ids.identifier)
-      .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
-
     final val mixinBlock = structure.block(kw.mixin, defs.struct)
       .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
 
     final val dtoBlock = structure.block(kw.data, defs.struct)
       .map(v => ILDef(v._2.toDto(v._1.toDataId)))
 
-    final val adtBlock = structure.starting(kw.adt, structure.enclosed(defs.adt(sepAdt)) | ("=" ~ inline ~ defs.adt(sepAdtInline)))
-      .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
-
     final val idBlock = structure.block(kw.id, defs.aggregate)
       .map(v => ILDef(Identifier(v._1.toIdId, v._2.toList)))
 
-    final val enumBlock = structure.starting(kw.enum, structure.enclosed(defs.enum(sepEnum)) | ("=" ~ inline ~ defs.enum(sepEnumInline)))
+    final val aliasBlock = structure.starting(kw.alias, "=" ~/ inline ~ ids.identifier)
+      .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
+
+    final val adtBlock = structure.starting(kw.adt, structure.enclosed(defs.adt(sepAdt)) | (any ~ "=" ~/ inline ~ defs.adt(sepAdt)))
+      .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
+
+    final val enumBlock = structure.starting(kw.enum, structure.enclosed(defs.enum(sepEnum)) | (any ~ "=" ~/ inline ~ defs.enum(sepEnum)))
       .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
 
     final val serviceBlock = structure.block(kw.service, services.methods)
@@ -236,12 +242,12 @@ class ILParser {
     final val importBlock = kw(kw.`import`, domainId)
   }
 
-  final val modelDef = P(any ~ blocks.anyBlock.rep(sep = any) ~ any).map {
+  final val modelDef = P(any ~ blocks.anyBlock.rep(sep = any) ~ any ~ End).map {
     defs =>
       ParsedModel(defs)
   }
 
-  final val fullDomainDef = P(domains.domainBlock ~ any ~ domains.importBlock.rep(sep = any) ~ modelDef).map {
+  final val fullDomainDef = P(any ~ domains.domainBlock ~ any ~ domains.importBlock.rep(sep = any) ~ modelDef).map {
     case (did, imports, defs) =>
       ParsedDomain(did, imports, defs)
   }

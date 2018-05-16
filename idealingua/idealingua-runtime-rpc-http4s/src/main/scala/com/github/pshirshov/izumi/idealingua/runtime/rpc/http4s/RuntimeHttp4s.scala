@@ -4,7 +4,6 @@ import cats._
 import cats.implicits._
 import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTClientMarshallers, IRTServerMarshallers}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.Stream
 import org.http4s._
 import org.http4s.client.Client

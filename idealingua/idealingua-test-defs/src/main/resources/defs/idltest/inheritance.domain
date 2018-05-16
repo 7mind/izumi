@@ -19,3 +19,42 @@ data Point {
   & Metadata
   + IntPair
 }
+
+mixin Empty {
+}
+
+data Str {
+  & Empty
+  str: str
+}
+
+// Covariance
+mixin Covariant {
+
+}
+
+mixin CovariantA {
+  & Covariant
+}
+
+mixin CovariantB {
+  & Covariant
+}
+
+mixin WithCovariance {
+  field: Covariant
+}
+
+mixin InheritedCovariant {
+  & WithCovariance
+
+  field: CovariantA
+}
+
+data CovariantDTO1 {
+  & WithCovariance
+}
+
+data CovariantDTO2 {
+  & InheritedCovariant
+}

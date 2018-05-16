@@ -1,0 +1,18 @@
+// now we support comments at the beginning
+domain idltest.syntax
+
+mixin TestMixin {
+
+}
+
+data TestDto {
+  _ : TestMixin
+}
+
+
+data TestOneliners { _: TestDto, _: str, _: i08 }
+
+adt Ast
+  = TestMixin
+  | TestDto
+  | TestOneliners

@@ -1,11 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace.structures
 
-import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, StructureId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Field
+import com.github.pshirshov.izumi.idealingua.model.common.{SigParam, SigParamSource, StructureId}
 
 final case class ConverterDef(
-                                  typeToConstruct: StructureId
-                                  , parentInstanceFields: Set[Field]
-                                  , localFields: Set[Field]
-                                  , mixinsInstancesFields: Set[ExtendedField]
-                                )
+                               typeToConstruct: StructureId
+                               , allFields: List[SigParam]
+                               , outerParams: List[SigParamSource]
+                             )

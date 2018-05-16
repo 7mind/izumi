@@ -24,6 +24,10 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
     val domains = parseDomains(files)
     val models = parseModels(files)
 
+    resolve(domains, models)
+  }
+
+  def resolve(domains: Map[DomainId, ParsedDomain], models: Map[Path, ParsedModel]): Seq[TypespaceImpl] = {
     val typespaces = domains.map {
       case (_, domain) =>
         new LocalDomainProcessor(root, classpath, domain, domains, models).postprocess()

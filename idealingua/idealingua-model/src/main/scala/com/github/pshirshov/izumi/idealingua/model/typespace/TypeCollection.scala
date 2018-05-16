@@ -82,7 +82,7 @@ class TypeCollection(domain: DomainDefinition) {
   }
 
   protected def verified(types: Seq[TypeDef]): Seq[TypeDef] = {
-    val conflictingTypes = types.groupBy(_.id).filter(_._2.lengthCompare(1) > 0)
+    val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
     if (conflictingTypes.nonEmpty) {
       throw new IDLException(s"Conflicting types in: $conflictingTypes")
     }

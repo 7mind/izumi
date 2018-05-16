@@ -35,9 +35,19 @@ class TestService3(listener: Endpoint) extends TestService {
 
 class TestConfigApp(val services: Set[TestService])
 
-case class MapCaseClass(@Conf("map") map: Map[String, HostPort])
+case class MapCaseClass(@Conf("mymap") m: Map[String, HostPort])
 
-case class ListCaseClass(@Conf("list") list: List[Set[Wrapper[HostPort]]])
+case class ListCaseClass(@Conf("mylist") l: List[Set[Wrapper[HostPort]]])
+
+case class OptionCaseClass(
+                            @Conf("myoptint") optInt: Option[Int]
+                            , @Conf("myoptdouble") optDouble: Option[Double]
+                            , @Conf("myoptstring") optString: Option[String]
+                          )
+
+case class OptionCaseClass2(@Conf("opt") opt: Opt)
+
+case class Opt(optInt: Option[Int])
 
 case class Wrapper[A](wrap: A)
 
@@ -60,5 +70,10 @@ object TestConfigApp {
 
   final val listDefinition = new ModuleDef {
     make[ListCaseClass]
+  }
+
+  final val optDefinition = new ModuleDef {
+    make[OptionCaseClass]
+    make[OptionCaseClass2]
   }
 }

@@ -6,18 +6,19 @@ import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.models.FileRotation.{DisabledRotation, FileLimiterRotation}
-import com.github.pshirshov.izumi.models.{FileRotation, FileSinkState, LogFile}
+import com.github.pshirshov.izumi.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
 
 import scala.util.{Failure, Success, Try}
 
-case class FileSinkConfig(maxAllowedSize: Int)
+abstract class FileSink[T <: LogFile](
+                                       val renderingPolicy: RenderingPolicy
+                                       , val fileService: FileService[T]
+                                       , val rotation: FileRotation
+                                       , val config: FileSinkConfig
+                                     ) extends LogSink {
 
-case class FileSink[T <: LogFile](
-                                   renderingPolicy: RenderingPolicy
-                                   , fileService: FileService[T]
-                                   , rotation: FileRotation
-                                   , config: FileSinkConfig
-                                 ) extends LogSink {
+  def recoverOnFail(e: String): Unit
+
 
   val sinkState: AtomicReference[FileSinkState] = {
     val currentState = restoreSinkState.getOrElse(initState)
@@ -65,23 +66,26 @@ case class FileSink[T <: LogFile](
     current.headOption foreach fileService.removeFile
     fileService.writeToFile(state.currentFileId, payload).map {
       _ =>
-        state.copy(currentFileSize = state.currentFileSize + 1, forRotate = others)
+        state.copy(currentFileSize = state.currentFileSize +config.calculateMessageSize(payload), forRotate = others)
     }
   }
 
   override def flush(e: Log.Entry): Unit = synchronized {
+    val renderedMessage = renderingPolicy.render(e)
+
     val oldState = sinkState.get()
     val res = for {
       s1 <- Try(processCurrentFile(oldState))
       s2 <- Try(adjustByRotate(s1))
-      s3 <- performWriting(s2, renderingPolicy.render(e))
+      s3 <- performWriting(s2, renderedMessage)
     } yield s3
     res match {
       case Failure(f) =>
+        recoverOnFail(s"Error while writing log to file. Cause: ${f.toString}")
+        recoverOnFail(renderedMessage)
       case Success(newState) =>
         sinkState.set(newState)
     }
-
   }
 
 }

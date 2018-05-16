@@ -1,26 +1,16 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace.structures
 
 import com.github.pshirshov.izumi.idealingua.model.common.ExtendedField
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Field
 
-final case class FieldConflicts private(
-                                   all: Seq[ExtendedField]
-                                   , goodFields: Map[String, Seq[ExtendedField]]
-                                   , softConflicts: Map[String, Map[Field, Seq[ExtendedField]]]
-                                   , hardConflicts: Map[String, Map[Field, Seq[ExtendedField]]]
-                                 )
+import scala.collection.mutable
 
-object FieldConflicts {
-  def apply(fields: Seq[ExtendedField]): FieldConflicts = {
-    val conflicts = fields
-      .groupBy(_.field.name)
-
-    val (goodFields: Map[String, Seq[ExtendedField]], conflictingFields) = conflicts.partition(_._2.lengthCompare(1) == 0)
-
-    val (softConflicts: Map[String, Map[Field, Seq[ExtendedField]]], hardConflicts: Map[String, Map[Field, Seq[ExtendedField]]]) = conflictingFields
-      .map(kv => (kv._1, kv._2.groupBy(_.field)))
-      .partition(_._2.size == 1)
-
-    FieldConflicts(fields, goodFields, softConflicts, hardConflicts)
-  }
+final case class FieldConflicts(
+                                 goodFields: mutable.LinkedHashMap[String, ExtendedField]
+                                 , softConflicts: mutable.LinkedHashMap[String, ExtendedField]
+                                 , hardConflicts: mutable.LinkedHashMap[String, Seq[ExtendedField]]
+                               ) {
+  def good: List[ExtendedField] = goodFields.values.toList
+  def soft: List[ExtendedField] = softConflicts.values.toList
+  def all: List[ExtendedField] = good ++ soft
 }
+

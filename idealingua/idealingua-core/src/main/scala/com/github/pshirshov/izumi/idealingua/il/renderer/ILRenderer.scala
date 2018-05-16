@@ -13,7 +13,10 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 class ILRenderer(domain: DomainDefinition) {
   def render(): String = {
     val sb = new StringBuffer()
-    sb.append(render(domain.id))
+    sb.append(s"domain ${render(domain.id)}")
+
+    sb.append("\n\n")
+    sb.append(domain.referenced.keys.map(renderImport).mkString("\n"))
 
     sb.append("\n\n")
     sb.append(domain.types.map(render).map(_.trim).mkString("\n\n"))
@@ -22,6 +25,10 @@ class ILRenderer(domain: DomainDefinition) {
     sb.append(domain.services.map(render).map(_.trim).mkString("\n\n"))
 
     sb.toString
+  }
+
+  def renderImport(domain: DomainId): String = {
+    s"import ${render(domain)}"
   }
 
   def render(tpe: TypeDef): String = {
@@ -187,7 +194,7 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def render(domainId: DomainId): String = {
-    s"domain ${domainId.toPackage.mkString(".")}"
+    domainId.toPackage.mkString(".")
   }
 
   def renderString(s: String): String = {
