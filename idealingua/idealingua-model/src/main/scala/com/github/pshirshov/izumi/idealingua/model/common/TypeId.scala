@@ -9,6 +9,8 @@ sealed trait AbstractIndefiniteId {
 
 final case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractIndefiniteId
 
+final case class IndefiniteMixin(pkg: Package, name: TypeName) extends AbstractIndefiniteId
+
 object IndefiniteId {
   def parse(s: String): IndefiniteId = {
     val parts = s.split('.')

@@ -57,7 +57,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
   }
 
   protected def toSuper(struct: raw.RawStructure): typed.Super = {
-    typed.Super(interfaces = fixSimpleIds(struct.interfaces), concepts = fixSimpleIds(struct.concepts), removedConcepts = fixSimpleIds(struct.removedConcepts))
+    typed.Super(interfaces = fixSimpleIds(struct.interfaces), concepts = fixMixinIds(struct.concepts), removedConcepts = fixMixinIds(struct.removedConcepts))
   }
 
   protected def fixService(defn: raw.Service): typed.Service = {
@@ -77,6 +77,20 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
   protected def fixSimpleIds[T <: TypeId, R <: TypeId](d: List[T]): List[R] = {
     d.map(fixSimpleId[T, R])
+  }
+
+  protected def fixMixinIds(d: List[IndefiniteMixin]): List[StructureId] = {
+    d.map {
+      id =>
+        mapping.get(toIndefinite(id)) match {
+          case Some(v: DTOId) =>
+            v
+          case Some(v: InterfaceId) =>
+            v
+          case o =>
+            throw new IDLException(s"Expected mixin at key $id, found $o")
+        }
+    }
   }
 
   protected def fixFields(fields: raw.RawTuple): typed.Tuple = {
@@ -112,7 +126,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
 
   protected def fixStructure(s: raw.RawSimpleStructure): typed.SimpleStructure = {
-    typed.SimpleStructure(concepts = fixSimpleIds(s.concepts), fields = fixFields(s.fields))
+    typed.SimpleStructure(concepts = fixMixinIds(s.concepts), fields = fixFields(s.fields))
   }
 
 

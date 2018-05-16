@@ -31,6 +31,7 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
     if (index.contains(id)) {
       index(id)
     } else {
+      System.err.println(id)
       referenced(id.path.domain).apply(id)
     }
   }

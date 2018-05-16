@@ -91,7 +91,7 @@ class ILRenderer(domain: DomainDefinition) {
      """.stripMargin
   }
 
-  def renderComposite(aggregate: Interfaces, prefix: String): String = {
+  def renderComposite(aggregate: Structures, prefix: String): String = {
     aggregate
       .map(render)
       .map(t => s"$prefix$t")

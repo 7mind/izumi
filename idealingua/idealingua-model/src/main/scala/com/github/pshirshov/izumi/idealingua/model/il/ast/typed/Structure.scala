@@ -9,15 +9,15 @@ final case class Field(typeId: TypeId, name: String) {
 
 final case class PrimitiveField(typeId: Primitive, name: String)
 
-final case class SimpleStructure(concepts: Interfaces, fields: Tuple)
+final case class SimpleStructure(concepts: Structures, fields: Tuple)
 
 
 final case class Super(
                   interfaces: Interfaces
-                  , concepts: Interfaces
-                  , removedConcepts: Interfaces
+                  , concepts: Structures
+                  , removedConcepts: Structures
                 ) {
-  val all: List[InterfaceId] = interfaces ++ concepts
+  val all: Structures = interfaces ++ concepts
 }
 
 object Super {

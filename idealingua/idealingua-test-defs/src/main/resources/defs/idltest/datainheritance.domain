@@ -1,0 +1,22 @@
+domain idltest.datainheritance
+
+data TestData1 {
+  _: str
+  _: i32
+}
+
+data TestData2 {
+ + TestData1
+  _: i08
+}
+
+/*
+data TestData1 {
+  _: str
+}
+
+data TestData2 {
+ + TestData1
+  _: i08
+}
+*/
