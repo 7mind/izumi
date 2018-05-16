@@ -27,8 +27,8 @@ class ConfigTest extends WordSpec {
 
       val context = injector.produce(plan)
 
-      assert(context.get[MapCaseClass].map.keySet == Set("service1", "service2", "service3"))
-      assert(context.get[MapCaseClass].map.values.forall(_.host == "localhost"))
+      assert(context.get[MapCaseClass].m.keySet == Set("service1", "service2", "service3"))
+      assert(context.get[MapCaseClass].m.values.forall(_.host == "localhost"))
     }
 
     "resolve config lists" in {
@@ -38,13 +38,24 @@ class ConfigTest extends WordSpec {
 
       val context = injector.produce(plan)
 
-      assert(context.get[ListCaseClass].list.head ==
+      assert(context.get[ListCaseClass].l.head ==
         Set(
           Wrapper(HostPort(80, "localhost"))
           , Wrapper(HostPort(8080, "localhost"))
           , Wrapper(HostPort(8888, "localhost"))
         )
       )
+    }
+
+    "resolve config options" in {
+      val config = AppConfig(ConfigFactory.load("opt-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val plan = injector.plan(TestConfigApp.optDefinition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[OptionCaseClass] == OptionCaseClass(Some(1), Some(5.0), None))
+      assert(context.get[OptionCaseClass2].opt == Opt(None))
     }
   }
 

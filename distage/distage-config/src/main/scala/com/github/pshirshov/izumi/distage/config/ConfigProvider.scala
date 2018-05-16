@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, F
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+import com.typesafe.config.ConfigValueFactory
 
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -44,7 +45,14 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   }
 
   private def translate(step: RequiredConfigEntry): ExecutableOp = {
-    val results = step.paths.map(p => Try((p.toPath, config.config.getValue(p.toPath))))
+    val results = step.paths.map {
+      p => Try {
+        val cv = if (config.config.getIsNull(p.toPath))
+            ConfigValueFactory.fromAnyRef(null)
+          else config.config.getValue(p.toPath)
+        p.toPath -> cv
+      }
+    }
     val loaded = results.collect({ case scala.util.Success(value) => value })
 
     if (loaded.isEmpty) {

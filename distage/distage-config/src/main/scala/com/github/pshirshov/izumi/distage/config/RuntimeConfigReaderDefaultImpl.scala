@@ -1,16 +1,15 @@
 package com.github.pshirshov.izumi.distage.config
 
 import java.io.File
-import java.lang.reflect.Member
 import java.math.BigInteger
 import java.net.{URI, URL}
 import java.time._
 import java.util.UUID
 import java.util.regex.Pattern
 
-import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.typesafe.config.{Config, ConfigList, ConfigObject, ConfigValue}
+import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
+import com.typesafe.config._
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -44,11 +43,13 @@ class RuntimeConfigReaderDefaultImpl
         objectMapReader(tpe.tpe)
       // FIXME use collection's scala.collection.GenericCompanion to instantiate any collection
       case _ if tpe.tpe.dealias.erasure =:= u.typeOf[List[_]].dealias.erasure =>
-        listReader(tpe.tpe, _.toList)
+        listReader(tpe.tpe.dealias, _.toList)
       case _ if tpe.tpe.dealias.erasure =:= u.typeOf[Seq[_]].dealias.erasure =>
-        listReader(tpe.tpe, _.toSeq)
+        listReader(tpe.tpe.dealias, _.toSeq)
       case _ if tpe.tpe.dealias.erasure =:= u.typeOf[Set[_]].dealias.erasure =>
-        listReader(tpe.tpe, _.toSet)
+        listReader(tpe.tpe.dealias, _.toSet)
+      case _ if tpe.tpe.dealias.erasure =:= u.typeOf[Option[_]].dealias.erasure =>
+        optionReader(tpe.tpe.dealias)
       case _ =>
         deriveCaseClassReader(tpe)
     }
@@ -113,6 +114,17 @@ class RuntimeConfigReaderDefaultImpl
       Failure(new ConfigReadException(
         s"""Can't read config value as a list $listType, config value is not a list.
            | ConfigValue was: $cv""".stripMargin))
+  }
+
+  def optionReader(optionType: TypeNative): ConfigReader[Option[_]] = {
+    cv => Try {
+      if (cv.valueType == ConfigValueType.NULL) {
+        None
+      } else {
+        val tyParam = SafeType(optionType.typeArgs.head)
+        Option(anyReader(tyParam)(cv).get)
+      }
+    }
   }
 }
 
