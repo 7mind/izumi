@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
+import com.github.pshirshov.izumi.idealingua.model.common.{SigParam, SigParamSource}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Interfaces
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
@@ -13,41 +14,27 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
 
   val composite: Interfaces = fields.fields.superclasses.interfaces
 
-  //val explodedSignature: List[Term.Param] = fields.all.toParams
+  val constructors: List[Defn.Def] = {
+    val local = fields.fields.localOrAmbigious
+    val localNames = local.map(_.field.name).distinct
+    val localNamesSet = localNames.toSet
 
-  private val constructorSignature: List[Term.Param] = {
-    val params = fields.fields.requiredInterfaces
-      .map {
-        d =>
-          (ctx.tools.idToParaName(d), ctx.conv.toScala(d).typeFull)
-      }.toParams
-    val fieldParams = fields.localOrAmbigious.toParams
-    params ++ fieldParams
-  }
-
-  private def instantiator: Term.Apply = {
-    val local = fields.localOrAmbigious
-    val localNames = local.map(_.field.field.name).toSet
 
     val constructorCode = fields.fields.all
-      .filterNot(f => localNames.contains(f.field.name))
-      .map {
-        f =>
-          q""" ${Term.Name(f.field.name)} = ${ctx.tools.idToParaName(f.defn.definedBy)}.${Term.Name(f.field.name)}  """
-      }
+      .filterNot(f => localNamesSet.contains(f.field.name))
+      .map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, ctx.typespace.tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
 
-    val constructorCodeNonUnique = local.distinct.map {
-      f =>
-        q""" ${f.name} = ${f.name}  """
-    }
+    val constructorCodeNonUnique = local
+      .map(f => SigParam(f.field.name, SigParamSource(f.field.typeId, f.field.name), None))
 
-    q"""
-         ${t.termFull}(..${constructorCode ++ constructorCodeNonUnique})
+    val cdef = ctx.typespace.tools.mkConverter(List.empty, constructorCode ++ constructorCodeNonUnique, fields.id)
+    val constructorSignature: List[Term.Param] =  ctx.tools.makeParams(cdef)
+    val fullConstructorCode = ctx.tools.makeConstructor(cdef) //.allFields.map(ctx.tools.toAssignment)
+
+    val instantiator =
+      q"""
+         ${t.termFull}(..$fullConstructorCode)
          """
-
-  }
-
-  val constructors: List[Defn.Def] = {
 
     List(
       q"""def apply(..$constructorSignature): ${t.typeFull} = {

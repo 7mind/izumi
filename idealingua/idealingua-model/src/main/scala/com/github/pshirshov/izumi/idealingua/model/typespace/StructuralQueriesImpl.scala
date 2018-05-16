@@ -175,22 +175,14 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
           val innerFields = instanceFields.map(f => SigParam(f.name, SigParamSource(id, "_value"), Some(f.name)))
           val outerFields = localFields1.map(f => SigParam(f.name, SigParamSource(f.typeId, f.name), None)) ++
             childMixinFields.map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
-          val allFields = innerFields ++ outerFields
-          val outerParams = outerFields.map(_.source).distinct
 
-          assert(innerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$id: Contradictive inner fields: ${innerFields.mkString("\n  ")}")
-          assert(outerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$id: Contradictive outer fields: ${outerFields.mkString("\n  ")}")
-          assert(allFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$id: Contradictive fields: ${allFields.mkString("\n  ")}")
-          assert(outerParams.groupBy(_.sourceName).forall(_._2.size == 1), s"$id: Contradictive outer params: ${outerParams.mkString("\n  ")}")
+          val targetId = istruct.id
 
-          // TODO: pass definition instead of id
-          ConverterDef(
-            istruct.id
-            , allFields
-            , outerParams
-          )
+          tools.mkConverter(innerFields, outerFields, targetId)
       }
   }
+
+
 
   protected def signature(defn: WithStructure): List[Field] = {
     structure(defn).all.map(_.field).sortBy(_.name)
