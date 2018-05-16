@@ -50,3 +50,11 @@ mixin InheritedCovariant {
 
   field: CovariantA
 }
+
+data CovariantDTO1 {
+  & WithCovariance
+}
+
+data CovariantDTO2 {
+  & InheritedCovariant
+}
