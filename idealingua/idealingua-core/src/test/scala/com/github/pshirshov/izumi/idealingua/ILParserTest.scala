@@ -12,8 +12,8 @@ class ILParserTest extends WordSpec {
   "IL parser" should {
     "parse imports" in {
       assertParses(parser.domains.importBlock, "import a.b.c")
-      assertParses(parser.domains.importBlock, "import     a.b.c ")
-      assertParses(parser.domains.importBlock, "import a ")
+      assertParses(parser.domains.importBlock, "import     a.b.c")
+      assertParses(parser.domains.importBlock, "import a")
     }
 
     "parse aliases" in {
@@ -60,12 +60,14 @@ class ILParserTest extends WordSpec {
     }
 
     "parse complex comments" in {
-      assertParses(parser.sep.any, "// test")
       assertParses(parser.sep.any,
         """// test
           |/*test*/
           | /* test/**/*/
         """.stripMargin)
+      assertParses(parser.comments.ShortComment, "// test\n")
+      assertParses(parser.sep.any, "// test\n")
+
     }
 
     "parse service defintions" in {
@@ -79,8 +81,9 @@ class ILParserTest extends WordSpec {
     }
 
     "parse identifiers" in {
-      assertParses(parser.ids.identifier, "x.y.z")
-      assertParses(parser.domains.domainId, "domain x.y.z")
+      assertParses(parser.domains.domainBlock, "domain x.y.z")
+      assertParses(parser.domains.domainId, "x.y.z")
+      assertParses(parser.ids.identifier, "x.y#z")
     }
 
     "parse fields" in {
@@ -92,9 +95,10 @@ class ILParserTest extends WordSpec {
 
     "parse adt members" in {
       assertParses(parser.defs.adtMember, "X")
-      assertParses(parser.defs.adtMember, "a.b.c.X")
-      assertParses(parser.defs.adtMember, "a.b.c.X as T")
       assertParses(parser.defs.adtMember, "X as T")
+
+      assertParses(parser.defs.adtMember, "a.b.c#X")
+      assertParses(parser.defs.adtMember, "a.b.c#X as T")
     }
 
     "parse adt blocks" in {
@@ -198,17 +202,24 @@ class ILParserTest extends WordSpec {
   }
 
   private def assertParses[T](p: Parser[T], str: String): T = {
+    assertParseable(p, str)
+    assertParseable(p ~ End, str)
+  }
+
+  private def assertParseable[T](p: Parser[T], str: String): T = {
     p.parse(str) match {
-      case Parsed.Success(v, _) =>
+      case Parsed.Success(v, index) =>
+        assert(index == str.length)
         v
       case Parsed.Failure(lp, idx, e) =>
         throw new IllegalStateException(s"Parsing failed: $lp, $idx, $e, ${e.traced}, ${e.traced.trace}")
     }
+
   }
 
 
   private def assertDomainParses(str: String): Unit = {
-    val parsed = assertParses(parser.fullDomainDef, str)
+    val parsed = assertParseable(parser.fullDomainDef, str)
     assert(parsed.model.definitions.nonEmpty)
     ()
   }
