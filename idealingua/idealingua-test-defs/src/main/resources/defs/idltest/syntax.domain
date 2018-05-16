@@ -1,3 +1,4 @@
+// now we support comments at the beginning
 domain idltest.syntax
 
 mixin TestMixin {

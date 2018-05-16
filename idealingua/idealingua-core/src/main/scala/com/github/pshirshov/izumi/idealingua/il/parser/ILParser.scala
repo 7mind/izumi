@@ -247,7 +247,7 @@ class ILParser {
       ParsedModel(defs)
   }
 
-  final val fullDomainDef = P(domains.domainBlock ~ any ~ domains.importBlock.rep(sep = any) ~ modelDef).map {
+  final val fullDomainDef = P(any ~ domains.domainBlock ~ any ~ domains.importBlock.rep(sep = any) ~ modelDef).map {
     case (did, imports, defs) =>
       ParsedDomain(did, imports, defs)
   }
