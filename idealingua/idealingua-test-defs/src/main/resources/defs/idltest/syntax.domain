@@ -7,3 +7,5 @@ mixin TestMixin {
 data TestDto {
   _ : TestMixin
 }
+
+data TestOneliners { _: TestDto, _: str, _: i08 }

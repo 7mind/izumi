@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
@@ -7,7 +8,6 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.Service._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import fastparse.CharPredicates._
 import fastparse.all._
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 
 class ILParser {
@@ -37,14 +37,16 @@ class ILParser {
     private val WsComment = wss ~ MultilineComment ~ wss
     private val SepLineBase = P(sym.NLC | (WsComment ~ (sym.NLC | End) | (wss ~ ShortComment)))
 
-    final val line = P(End | SepLineBase.rep(1))
     final val inline = P(WsComment | wss)
     final val any = P(End | (wss ~ (WsComment | SepLineBase).rep ~ wss))
 
-    final val sepAdt = P("|" | sym.NLC | ws).rep(min = 1)
-    final val sepAdtInline = P("|" | ws).rep(min = 1)
-    final val sepEnum = P("|" | "," | sym.NLC | ws).rep(min = 1)
-    final val sepEnumInline = P("|" | "," | ws).rep(min = 1)
+    final val sepStruct = P(";" | "," | SepLineBase | ws).rep(min = 1)
+
+    final val sepAdt = P("|" | ";" | "," | SepLineBase | ws).rep(min = 1)
+    final val sepAdtInline = P("|" | ";" | "," | ws).rep(min = 1)
+
+    final val sepEnum = P("|" | ";" | "," | SepLineBase | ws).rep(min = 1)
+    final val sepEnumInline = P("|" | ";" | "," | ws).rep(min = 1)
   }
 
   import sep._
@@ -103,7 +105,7 @@ class ILParser {
 
 
     final val struct = {
-      val sepEntry = line
+      val sepEntry = sepStruct
       val sepInline = inline
 
       val plus = P(("&" ~ "&&".?) ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Extend)
@@ -136,17 +138,17 @@ class ILParser {
     }
 
     final val aggregate = P((inline ~ field ~ inline)
-      .rep(sep = line))
+      .rep(sep = sepStruct))
 
     final val adtMember = P(ids.identifier ~ (inline ~ "as" ~/ inline ~ ids.symbol).?).map {
       case (tpe, alias) =>
         RawAdtMember(tpe.toTypeId, alias)
     }
 
-    final def adt(sep: Parser[Unit]) = P(adtMember.rep(min = 1, sep = sep))
+    final def adt(sep: Parser[Unit]): Parser[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
       .map(_.toList).map(AlgebraicType)
 
-    final def enum(sep: Parser[Unit]) = P(ids.symbol.rep(min = 1, sep = sep))
+    final def enum(sep: Parser[Unit]): Parser[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
   }
 
   object structure {
