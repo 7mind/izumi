@@ -20,9 +20,13 @@ import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguag
 
 @ExposedTestScope
 object IDLTestTools {
-  def loadDefs(): Seq[Typespace] = {
+  def makeLoader(): LocalModelLoader = {
     val src = new File(getClass.getResource("/defs").toURI).toPath
-    val loader = new LocalModelLoader(src, Seq.empty)
+    new LocalModelLoader(src, Seq.empty)
+  }
+
+  def loadDefs(): Seq[Typespace] = loadDefs(makeLoader())
+  def loadDefs(loader: LocalModelLoader): Seq[Typespace] = {
     val loaded = loader.load()
 
     val loadableCount = loader.enumerate().count(_._1.toString.endsWith(LocalModelLoader.domainExt))

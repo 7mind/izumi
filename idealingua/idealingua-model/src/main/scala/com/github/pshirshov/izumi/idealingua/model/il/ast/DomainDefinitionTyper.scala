@@ -138,7 +138,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
           case Some(d) =>
             new DomainDefinitionTyper(d).makeDefinite(v)
           case None =>
-            throw new IDLException(s"Domain $referencedDomain is missing from context of $domainId")
+            throw new IDLException(s"Domain $referencedDomain is missing from context of $domainId: ${defn.referenced.keySet.mkString("\n  ")}")
         }
 
     }
