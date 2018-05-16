@@ -9,14 +9,3 @@ data TestData2 {
  + TestData1
   _: i08
 }
-
-/*
-data TestData1 {
-  _: str
-}
-
-data TestData2 {
- + TestData1
-  _: i08
-}
-*/

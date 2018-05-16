@@ -25,7 +25,7 @@ class ILParser {
       P("/*" ~ CommentChunk.rep ~ "*/").rep(1)
     }
 
-    final lazy val ShortComment = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r') ~ sym.NLC))
+    final lazy val ShortComment = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r', min = 0) ~ sym.NLC))
   }
 
   object sep {
