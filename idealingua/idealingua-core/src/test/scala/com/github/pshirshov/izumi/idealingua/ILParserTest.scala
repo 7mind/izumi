@@ -194,8 +194,6 @@ class ILParserTest extends WordSpec {
           |""".stripMargin
 
       assertDomainParses(domaindef)
-
-
     }
   }
 
