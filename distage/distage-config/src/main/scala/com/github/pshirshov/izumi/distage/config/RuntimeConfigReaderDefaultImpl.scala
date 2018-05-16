@@ -36,7 +36,7 @@ class RuntimeConfigReaderDefaultImpl
       case Some(primitiveValueReader) =>
         primitiveValueReader
       case _ if tpe.tpe.erasure.baseClasses.contains(SafeType.get[Enum[_]].tpe.erasure.typeSymbol) =>
-        val clazz = mirror.runtimeClas-ss(tpe.tpe)
+        val clazz = mirror.runtimeClass(tpe.tpe)
 
         ConfigReaderInstances.javaEnumReader(ClassTag(clazz))
       case _ if tpe <:< SafeType.get[scala.collection.immutable.Map[String, Any]] =>
