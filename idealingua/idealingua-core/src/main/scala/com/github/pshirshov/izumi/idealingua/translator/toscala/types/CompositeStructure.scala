@@ -13,9 +13,9 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
 
   val composite: Interfaces = fields.fields.superclasses.interfaces
 
-  val explodedSignature: List[Term.Param] = fields.all.toParams
+  //val explodedSignature: List[Term.Param] = fields.all.toParams
 
-  val constructorSignature: List[Term.Param] = {
+  private val constructorSignature: List[Term.Param] = {
     val params = fields.fields.requiredInterfaces
       .map {
         d =>
@@ -25,7 +25,7 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
     params ++ fieldParams
   }
 
-  def instantiator: Term.Apply = {
+  private def instantiator: Term.Apply = {
     val local = fields.localOrAmbigious
     val localNames = local.map(_.field.field.name).toSet
 

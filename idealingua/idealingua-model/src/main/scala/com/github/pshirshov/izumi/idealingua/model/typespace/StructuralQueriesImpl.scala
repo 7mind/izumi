@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{IdentifierId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, FieldDef, StructureId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
@@ -154,25 +154,9 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
           val resolvedMixinInstanceFields = findConflicts(mixinInstanceFieldsCandidates)
           val mixinInstanceFields = resolvedMixinInstanceFields.all
 
-          val allFields = mixinInstanceFields.map(_.field) ++ filteredParentFields.toList ++ localFields.toList
+          val allFieldCandidates = mixinInstanceFields.map(_.field) ++ filteredParentFields.toList ++ localFields.toList
 
-//          // TODO: XXX
-//          if (id.path.domain.toString.contains("inheritance")) {
-//            println(s"""${id}:
-//                       |Filtered parents:
-//                       |${filteredParentFields.mkString("\n  ")}
-//                       |
-//               |Mixins:
-//                       |${mixinInstanceFields.mkString("\n  ")}
-//                       |
-//               |Local:
-//                       |${localFields.mkString("\n  ")}
-//                       |""".stripMargin)
-//          }
-//          // TODO: XXX
-
-
-          assert(allFields.groupBy(_.name).forall(_._2.size == 1),
+          assert(allFieldCandidates.groupBy(_.name).forall(_._2.size == 1),
             s"""IDL Compiler bug: contradictive converters for $id:
                |Filtered parents:
                |${filteredParentFields.mkString("\n  ")}
@@ -188,21 +172,21 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
           val childMixinFields = mixinInstanceFields
           val localFields1 = localFields.toList
 
-          val innerFields = instanceFields.map(f => ParamX(f.name, ParamSource(id, "_value"), Some(f.name)))
-          val outerFields = localFields1.map(f => ParamX(f.name, ParamSource(f.typeId, f.name), None)) ++
-            childMixinFields.map(f => ParamX(f.field.name, ParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
-          val allFields1 = innerFields ++ outerFields
+          val innerFields = instanceFields.map(f => SigParam(f.name, SigParamSource(id, "_value"), Some(f.name)))
+          val outerFields = localFields1.map(f => SigParam(f.name, SigParamSource(f.typeId, f.name), None)) ++
+            childMixinFields.map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
+          val allFields = innerFields ++ outerFields
           val outerParams = outerFields.map(_.source).distinct
 
-          assert(innerFields.groupBy(_.targetFieldName).forall(_._2.size == 1))
-          assert(outerFields.groupBy(_.targetFieldName).forall(_._2.size == 1))
-          assert(allFields1.groupBy(_.targetFieldName).forall(_._2.size == 1))
+          assert(innerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$id: Contradictive inner fields: ${innerFields.mkString("\n  ")}")
+          assert(outerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$id: Contradictive outer fields: ${outerFields.mkString("\n  ")}")
+          assert(allFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$id: Contradictive fields: ${allFields.mkString("\n  ")}")
           assert(outerParams.groupBy(_.sourceName).forall(_._2.size == 1), s"$id: Contradictive outer params: ${outerParams.mkString("\n  ")}")
 
           // TODO: pass definition instead of id
           ConverterDef(
             istruct.id
-            , allFields1
+            , allFields
             , outerParams
           )
       }
@@ -212,11 +196,6 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     structure(defn).all.map(_.field).sortBy(_.name)
   }
 }
-
-case class ParamSource(sourceType: TypeId, sourceName: String)
-
-case class ParamX(targetFieldName: String, source: ParamSource, sourceFieldName: Option[String])
-
 
 private class FieldExtractor(types: TypeCollection, resolver: TypeResolver, user: TypeId) {
   def extractFields(defn: TypeDef): List[ExtendedField] = {
