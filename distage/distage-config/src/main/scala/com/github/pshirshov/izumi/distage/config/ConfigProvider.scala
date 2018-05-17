@@ -115,7 +115,8 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
       , ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.name)
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName)
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name)
-    )
+    ).distinct
+    
     RequiredConfigEntry(paths, op.imp.target.symbol, op.imp.target)
   }
 
