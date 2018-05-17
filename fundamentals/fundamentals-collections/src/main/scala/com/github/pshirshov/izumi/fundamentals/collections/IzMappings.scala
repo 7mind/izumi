@@ -10,5 +10,5 @@ class IzMappings[A, B, Repr](list: IterableLike[(A, B), Repr]) {
     }
   }
 
-  def toMultimap: ImmutableultiMap[A, B] = toMutableMultimap.map { case (k, v) => (k, v.toSet) }.toMap
+  def toMultimap: ImmutableMultiMap[A, B] = toMutableMultimap.map { case (k, v) => (k, v.toSet) }.toMap
 }

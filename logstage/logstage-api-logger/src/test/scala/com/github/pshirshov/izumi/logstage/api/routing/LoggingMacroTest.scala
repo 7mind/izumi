@@ -19,7 +19,7 @@ class ExampleService(logger: IzLogger) {
     val arg = "this is an argument"
 
     loggerWithContext.trace(s"This would be automatically extended")
-    logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}")
+    logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}:random")
     loggerWithSubcontext.info("Just a string")
     logger.warn("Just an integer: " + 1)
     val arg1 = 5

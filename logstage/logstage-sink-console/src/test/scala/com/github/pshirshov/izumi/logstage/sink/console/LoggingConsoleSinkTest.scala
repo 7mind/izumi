@@ -19,33 +19,33 @@ class LoggingConsoleSinkTest extends WordSpec {
 
 
     "support console backend with custom rendering policy" in {
-      val policy = s"$${level} $${ts}\t\t$${thread}\t$${location}$${custom-ctx}$${msg}$$"
+      val policy = s"$${level} $${ts}\t\t$${thread}\t$${location} $${custom-ctx} $${msg}"
       new ExampleService(setupConsoleLogger(coloringPolicy(Some(policy)))).start()
     }
 
 
     "fail with duplicated entries in custom rendering policy" in {
       val duplicate = "level"
-      val policy = s"""$${$duplicate} $${$duplicate} $${ts}\t\t$${thread}\t$${location}$${custom-ctx}$${msg}"""
+      val policy = s"""$${$duplicate} $${$duplicate} $${ts}\t\t$${thread}\t$${location} $${custom-ctx} $${msg}"""
       Try {
         new ExampleService(setupConsoleLogger(coloringPolicy(Some(policy)))).start()
       } match {
-        case Success(_) => fail("Logger must be unavailable when duplicates are")
-        case Failure(f) => {
+        case Success(_) =>
+          fail("Logger must be unavailable when duplicates are")
+        case Failure(f) =>
           assert(f.getMessage.contains(duplicate))
-        }
       }
     }
 
     "fail with enclosed braces in custom rendering policy" in {
-      val policy = s"""$${ts{\t\t$${thread}\t$${location}$${custom-ctx}$${msg}"""
+      val policy = s"""$${ts{\t\t$${thread}\t$${location} $${custom-ctx} $${msg}"""
       Try {
         new ExampleService(setupConsoleLogger(coloringPolicy(Some(policy)))).start()
       } match {
-        case Success(_) => fail("Logger must be unavailable when duplicates are")
-        case Failure(_) => {
-         assert(true)
-        }
+        case Success(_) =>
+          fail("Logger must be unavailable when duplicates are")
+        case Failure(_) =>
+          assert(true)
       }
     }
   }

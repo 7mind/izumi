@@ -6,6 +6,8 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.rendering.{ConsoleColors, RenderedMessage}
 
+import scala.collection.mutable
+
 case class Margin(elipsed: Boolean, size: Int)
 
 sealed trait LogUnit {
@@ -156,34 +158,44 @@ object LogUnit {
   def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
     val templateBuilder = new StringBuilder()
     val messageBuilder = new StringBuilder()
-    //    val rawMessageBuilder = new StringBuilder()
 
     val head = entry.message.template.parts.head
     templateBuilder.append(StringContext.treatEscapes(head))
     messageBuilder.append(StringContext.treatEscapes(head))
-    //    rawMessageBuilder.append(head)
 
     val balanced = entry.message.template.parts.tail.zip(entry.message.args)
     val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
 
     val argToStringColored: Any => String = argValue => argToString(argValue, withColors)
 
+    val parameters = new mutable.HashMap[String, mutable.Set[String]] with mutable.MultiMap[String, String]
+
     balanced.foreach {
       case (part, (argName, argValue)) =>
+
+        val (argNameToUse, partToUse) = if (part.startsWith(":") && part.length > 1) {
+          val spaceIdx = part.indexOf(' ')
+
+          val idx = if (spaceIdx > 0) {
+            spaceIdx
+          } else {
+            part.length
+          }
+
+          (part.substring(1, idx), part.substring(idx))
+        } else {
+          (argName, part)
+        }
+
+        parameters.addBinding(argNameToUse, argValue.toString)
+
         templateBuilder.append('{')
-        templateBuilder.append(argName)
+        templateBuilder.append(argNameToUse)
         templateBuilder.append('}')
-        templateBuilder.append(StringContext.treatEscapes(part))
+        templateBuilder.append(StringContext.treatEscapes(partToUse))
 
-        messageBuilder.append(formatKv(withColors)((argName, argToStringColored(argValue))))
-        messageBuilder.append(StringContext.treatEscapes(part))
-
-      //        rawMessageBuilder.append('{')
-      //        rawMessageBuilder.append(argName)
-      //        rawMessageBuilder.append('=')
-      //        rawMessageBuilder.append(argToString(argValue))
-      //        rawMessageBuilder.append('}')
-
+        messageBuilder.append(formatKv(withColors)((argNameToUse, argToStringColored(argValue))))
+        messageBuilder.append(StringContext.treatEscapes(partToUse))
     }
 
     unbalanced.foreach {
@@ -193,7 +205,7 @@ object LogUnit {
         messageBuilder.append(formatKv(withColors)((argName, argToStringColored(argValue))))
     }
 
-    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString())
+    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.mapValues(_.toSet).toMap)
   }
 
   private def argToString(argValue: Any, withColors: Boolean): String = {
