@@ -55,11 +55,21 @@ class TypeCollection(domain: DomainDefinition) {
       }
   }
 
+  val dtoEphemerals: Seq[Interface] = {
+    (domain.types ++ serviceEphemerals)
+      .collect {
+        case i: DTO =>
+          val iid = InterfaceId(i.id, toInterfaceName(i.id))
+          Interface(iid, i.struct)
+      }
+  }
+
   val all: Seq[TypeDef] = {
     val definitions = Seq(
       domain.types
       , serviceEphemerals
       , interfaceEphemerals
+      , dtoEphemerals
     ).flatten
 
     verified(definitions)
@@ -75,6 +85,16 @@ class TypeCollection(domain: DomainDefinition) {
     id match {
       case _: InterfaceId =>
         s"${id.name}Struct"
+      case _ =>
+        s"${id.name}"
+
+    }
+  }
+
+  def toInterfaceName(id: TypeId): String = {
+    id match {
+      case _: DTOId =>
+        s"${id.name}Defn"
       case _ =>
         s"${id.name}"
 

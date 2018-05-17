@@ -5,10 +5,10 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProudct, IdentifierProudct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaStruct
 
 import scala.meta._
@@ -18,14 +18,17 @@ object AnyvalExtension extends ScalaTranslatorExtension {
   import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
 
+  override def handleInterfaceMirror(ctx: STContext, interface: ScalaStruct, product: CogenProduct.IfaceMirrorProduct): CogenProduct.IfaceMirrorProduct = {
+    product.copy(defn = product.defn.prependBase(withAny(ctx, interface.fields)))
+  }
+
   override def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = {
     product.copy(defn = product.defn.prependBase(withAnyval(ctx, struct.fields)))
   }
 
-  override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
-    val struct = ctx.typespace.structure.structure(interface)
-    product.copy(defn = product.defn.prependBase(withAny(ctx, struct)))
-  }
+//  override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
+//
+//  }
 
   override def handleIdentifier(ctx: STContext, id: TypeDef.Identifier, product: IdentifierProudct): IdentifierProudct = {
     val struct = ctx.typespace.structure.structure(id.id)

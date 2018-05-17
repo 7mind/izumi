@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.common
 
 sealed trait AbstractIndefiniteId {
   def pkg: Package
+
   def name: TypeName
 }
 
@@ -23,6 +24,7 @@ final case class IndefiniteGeneric(pkg: Package, name: TypeName, args: List[Abst
 
 sealed trait TypeId {
   def path: TypePath
+
   def name: TypeName
 
   override def toString: TypeName = s"${getClass.getSimpleName}:$path#$name"
@@ -44,6 +46,10 @@ sealed trait TimeTypeId {
 object TypeId {
 
   final case class InterfaceId(path: TypePath, name: TypeName) extends StructureId
+
+  object InterfaceId {
+    def apply(parent: TypeId, name: TypeName): InterfaceId = new InterfaceId(parent.path.sub(parent.name), name)
+  }
 
   final case class DTOId(path: TypePath, name: TypeName) extends StructureId
 
