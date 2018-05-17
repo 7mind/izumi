@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProudct, IdentifierProudct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProduct, IdentifierProudct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaStruct
 
 import scala.meta._
@@ -22,7 +22,7 @@ object AnyvalExtension extends ScalaTranslatorExtension {
     product.copy(defn = product.defn.prependBase(withAny(ctx, interface.fields)))
   }
 
-  override def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = {
+  override def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProduct): CompositeProduct = {
     product.copy(defn = product.defn.prependBase(withAnyval(ctx, struct.fields)))
   }
 

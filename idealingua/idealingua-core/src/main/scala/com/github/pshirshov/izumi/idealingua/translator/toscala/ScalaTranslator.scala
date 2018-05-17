@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Interfaces, Ser
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{AdtElementProduct, AdtProduct, EnumProduct, TraitProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
 
@@ -483,8 +483,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }
        """
 
-    val input = CogenPair(q"sealed trait ${sp.serviceInputBase.typeName} extends Any with Product", q"object ${sp.serviceInputBase.termName} {}")
-    val output = CogenPair(q"sealed trait ${sp.serviceOutputBase.typeName} extends Any with Product", q"object ${sp.serviceOutputBase.termName} {}")
+    import CogenServiceProduct._
+
+    val input = Pair(q"sealed trait ${sp.serviceInputBase.typeName} extends Any with Product", q"object ${sp.serviceInputBase.termName} {}")
+    val output = Pair(q"sealed trait ${sp.serviceOutputBase.typeName} extends Any with Product", q"object ${sp.serviceOutputBase.termName} {}")
 
     // TODO: move Any into extensions
     val qqBaseCompanion =
@@ -498,10 +500,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
 
     val out = CogenServiceProduct(
-      CogenPair(qqService, qqServiceCompanion)
-      , CogenPair(qqClient, qqClientCompanion)
-      , CogenPair(qqWrapped, qqWrappedCompanion)
-      , products.CogenServiceDefs(qqBaseCompanion, input, output)
+      Pair(qqService, qqServiceCompanion)
+      , Pair(qqClient, qqClientCompanion)
+      , Pair(qqWrapped, qqWrappedCompanion)
+      , Defs(qqBaseCompanion, input, output)
       , List(runtime.Import.from(runtime.Pkg.language, "higherKinds"), rt.services.`import`)
     )
 

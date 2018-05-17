@@ -5,8 +5,8 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTCirceWrappedServiceDefinition, IRTMuxingCodecProvider, IRTOpinionatedMarshalers}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProudct, IdentifierProudct, InterfaceProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, CogenServiceProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CogenServiceProduct, CompositeProduct, IdentifierProudct, InterfaceProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{FullServiceContext, ScalaStruct, ScalaType, runtime}
 
@@ -25,14 +25,14 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     import ctx.conv._
     val boilerplate = withParseable(ctx, id.id)
     val init = toScala(id.id).sibling(boilerplate.name).init()
-    product.copy(xcompanion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
+    product.copy(companionBase = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
-  override def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = {
+  override def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProduct): CompositeProduct = {
     import ctx.conv._
     val boilerplate = withDerivedClass(ctx, struct.id)
     val init = toScala(struct.id).sibling(boilerplate.name).init()
-    product.copy(xcompanion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
+    product.copy(companionBase = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
   override def handleAdt(ctx: STContext, adt: Adt, product: CogenProduct.AdtProduct): CogenProduct.AdtProduct = {
@@ -109,7 +109,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
           }
       """)
     val init = toScala(interface.id).sibling(boilerplate.name).init()
-    product.copy(xcompanion = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
+    product.copy(companionBase = product.companion.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
 

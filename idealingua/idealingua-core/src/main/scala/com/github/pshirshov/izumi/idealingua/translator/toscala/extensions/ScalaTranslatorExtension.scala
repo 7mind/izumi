@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.TranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenServiceProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{FullServiceContext, ScalaStruct}
 
 
@@ -23,7 +22,7 @@ trait ScalaTranslatorExtension extends TranslatorExtension {
     product
   }
 
-  def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = {
+  def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProduct): CompositeProduct = {
     discard(ctx, struct)
     product
   }
