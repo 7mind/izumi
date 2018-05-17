@@ -9,7 +9,6 @@ import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, F
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
-import com.typesafe.config.ConfigValueFactory
 
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -48,15 +47,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   }
 
   private def translate(step: RequiredConfigEntry): ExecutableOp = {
-    val results = step.paths.map {
-      p =>
-        Try {
-          val cv = if (config.config.getIsNull(p.toPath))
-            ConfigValueFactory.fromAnyRef(null)
-          else config.config.getValue(p.toPath)
-          p.toPath -> cv
-        }
-    }
+    val results = step.paths.map(p => Try((p.toPath, config.config.getConfig(p.toPath))))
     val loaded = results.collect({ case scala.util.Success(value) => value })
 
     if (loaded.isEmpty) {
@@ -66,7 +57,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
     val section = loaded.head
     try {
-      val product = reader.read(section._2, step.targetType)
+      val product = reader.readConfig(section._2, step.targetType)
       ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.symbol, product))
     } catch {
       case NonFatal(t) =>
