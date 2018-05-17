@@ -18,19 +18,18 @@ trait ScalaTranslatorExtension extends TranslatorExtension {
     acc
   }
 
-  def handleInterfaceMirror(ctx: STContext, interface: ScalaStruct, product: IfaceMirrorProduct): IfaceMirrorProduct = {
-    discard(ctx, interface)
-    product
-  }
-
-
-  def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
-    discard(ctx, interface)
+  def handleTrait(ctx: STContext, struct: ScalaStruct, product: TraitProduct): TraitProduct = {
+    discard(ctx, struct)
     product
   }
 
   def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = {
     discard(ctx, struct)
+    product
+  }
+
+  def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
+    discard(ctx, interface)
     product
   }
 

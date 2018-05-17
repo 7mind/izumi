@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Interfaces, Ser
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{AdtElementProduct, AdtProduct, EnumProduct, IfaceMirrorProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{AdtElementProduct, AdtProduct, EnumProduct, TraitProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
 
@@ -160,7 +160,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
           ..$decls
           }
        """
-    ext.extend(fields, IfaceMirrorProduct(qqInterface), _.handleInterfaceMirror).render.head.asInstanceOf[Defn.Trait]
+    // TODO: XXX: get rid of cast
+    ext.extend(fields, TraitProduct(qqInterface), _.handleTrait).render.head.asInstanceOf[Defn.Trait]
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {

@@ -18,17 +18,13 @@ object AnyvalExtension extends ScalaTranslatorExtension {
   import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
 
-  override def handleInterfaceMirror(ctx: STContext, interface: ScalaStruct, product: CogenProduct.IfaceMirrorProduct): CogenProduct.IfaceMirrorProduct = {
+  override def handleTrait(ctx: STContext, interface: ScalaStruct, product: CogenProduct.TraitProduct): CogenProduct.TraitProduct = {
     product.copy(defn = product.defn.prependBase(withAny(ctx, interface.fields)))
   }
 
   override def handleComposite(ctx: STContext, struct: ScalaStruct, product: CompositeProudct): CompositeProudct = {
     product.copy(defn = product.defn.prependBase(withAnyval(ctx, struct.fields)))
   }
-
-//  override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
-//
-//  }
 
   override def handleIdentifier(ctx: STContext, id: TypeDef.Identifier, product: IdentifierProudct): IdentifierProudct = {
     val struct = ctx.typespace.structure.structure(id.id)

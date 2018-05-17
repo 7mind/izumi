@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.common.{SigParam, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.ConverterDef
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.CompositeStructure
@@ -32,7 +33,18 @@ class ScalaTranslationTools(ctx: STContext) {
 
   def makeParams(t: ConverterDef): List[Term.Param] = {
     t.outerParams
-      .map(f => (Term.Name(f.sourceName), ctx.conv.toScala(f.sourceType).typeFull))
+      .map {
+        f =>
+          val source = f.sourceType match {
+            case s: DTOId =>
+              ctx.typespace.defnId(s)
+
+            case o =>
+              o
+          }
+
+          (Term.Name(f.sourceName), ctx.conv.toScala(source).typeFull)
+      }
       .toParams
   }
 

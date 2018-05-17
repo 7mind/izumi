@@ -18,7 +18,6 @@ data SimpleAnyValRecord {
 }
 
 //
-/*
 data Test00Data1AnyVal {
   _: str
 }
@@ -27,7 +26,7 @@ data Test00Data2AnyVal {
   + Test00Data1AnyVal
   _: i08
 }
-*/
+
 
 //
 mixin Test01MixinAnyVal {
