@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, AutoConfId, Conf, ConfId}
+import com.github.pshirshov.izumi.distage.config.annotations._
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
@@ -34,37 +34,69 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
 
 
   protected def rewire(binding: Binding.ImplBinding, reflected: Association.ExtendedParameter, association: Association.Parameter): DIKey = {
+    val confPathAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[ConfPath], reflected.symb)
     val autoConfAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[AutoConf], reflected.symb)
     val confAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[Conf], reflected.symb)
 
-    autoConfAnno.map {
-      _ =>
+    confPathAnno match {
+      case Some(ann) =>
+        ann.tree.children.tail.collectFirst {
+          case Literal(Constant(path: String)) =>
+            path
+        } match {
+          case Some(path) =>
+            association.wireWith match {
+              case k: DIKey.TypeKey =>
+                return k.named(ConfPathId(binding.key, association, path))
+
+              case o =>
+                throw new DIException(s"Cannot rewire @ConfPath parameter $reflected: unexpected binding $o", null)
+            }
+          case None =>
+            throw new DIException(s"Cannot rewire @ConfPath parameter $reflected: undefined path", null)
+
+        }
+
+      case _ =>
+    }
+
+    confAnno match {
+      case Some(ann) =>
+        ann.tree.children.tail.collectFirst {
+          case Literal(Constant(name: String)) =>
+            name
+        } match {
+          case Some(name) =>
+            association.wireWith match {
+              case k: DIKey.TypeKey =>
+                return k.named(ConfId(binding.key, association, name))
+
+              case o =>
+                throw new DIException(s"Cannot rewire @Conf parameter $reflected: unexpected binding $o", null)
+            }
+          case None =>
+            throw new DIException(s"Cannot rewire @Conf parameter $reflected: undefined name", null)
+
+        }
+
+      case _ =>
+    }
+
+    autoConfAnno match {
+      case Some(_) =>
         association.wireWith match {
           case k: DIKey.TypeKey =>
-            k.named(AutoConfId(binding.key, association))
+            return k.named(AutoConfId(binding.key, association))
 
           case o =>
             throw new DIException(s"Cannot rewire @AutoConf parameter $reflected: unexpected binding $o", null)
         }
-    }.orElse {
-      confAnno.flatMap {
-        _.tree.children.tail.collectFirst {
-          case Literal(Constant(name: String)) =>
-            name
-        }
-      }.map {
-        ann =>
-          association.wireWith match {
-            case k: DIKey.TypeKey =>
-              k.named(ConfId(binding.key, association, ann))
 
-            case o =>
-              throw new DIException(s"Cannot rewire @Conf parameter $reflected: unexpected binding $o", null)
-          }
-      }
-    }.getOrElse {
-      association.wireWith
+      case _ =>
     }
+
+
+    association.wireWith
   }
 
 }

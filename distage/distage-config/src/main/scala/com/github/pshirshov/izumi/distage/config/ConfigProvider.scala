@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.config.annotations.{AbstractConfId, AutoConfId, ConfId}
+import com.github.pshirshov.izumi.distage.config.annotations._
 import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReader
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
@@ -49,12 +49,13 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
   private def translate(step: RequiredConfigEntry): ExecutableOp = {
     val results = step.paths.map {
-      p => Try {
-        val cv = if (config.config.getIsNull(p.toPath))
+      p =>
+        Try {
+          val cv = if (config.config.getIsNull(p.toPath))
             ConfigValueFactory.fromAnyRef(null)
           else config.config.getValue(p.toPath)
-        p.toPath -> cv
-      }
+          p.toPath -> cv
+        }
     }
     val loaded = results.collect({ case scala.util.Success(value) => value })
 
@@ -88,6 +89,20 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   case class DependencyContext(dep: DepType, usage: DepUsage)
 
   private def toRequirement(op: ConfigImport): RequiredConfigEntry = {
+    op.id match {
+      case p: ConfPathId =>
+        val paths = Seq(
+          ConfigPath(p.pathOverride.split('.'))
+        )
+        RequiredConfigEntry(paths, op.imp.target.symbol, op.imp.target)
+
+      case _: AutomaticConfId =>
+        toRequirementAuto(op)
+    }
+
+  }
+
+  private def toRequirementAuto(op: ConfigImport): RequiredConfigEntry = {
     val dc = DependencyContext(structInfo(op), usageInfo(op))
 
     val paths = Seq(
@@ -104,13 +119,14 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
     RequiredConfigEntry(paths, op.imp.target.symbol, op.imp.target)
   }
 
-
   private def structInfo(op: ConfigImport) = {
     val qualifier = op.id match {
       case id: AutoConfId =>
         id.parameter.name
       case id: ConfId =>
         id.parameter.name
+      case _ =>
+        throw new IllegalArgumentException(s"Unexpected op: $op")
     }
 
 
@@ -125,6 +141,8 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
         id.binding.symbol.name
       case id: ConfId =>
         id.nameOverride
+      case _ =>
+        throw new IllegalArgumentException(s"Unexpected op: $op")
     }
 
     val usageKeyParts: Seq[String] = usageKeyFqName.split('.').toSeq

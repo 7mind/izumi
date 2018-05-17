@@ -1,7 +1,6 @@
 package com.github.pshirshov.configapp
 
-import com.github.pshirshov.izumi.distage.config.Conf
-import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, Conf}
+import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, Conf, ConfPath}
 import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
@@ -21,9 +20,12 @@ class CassandraEndpoint(@Conf("cassandra") val cassAddress: HostPort) extends En
 
 trait TestService
 
-class TestService1(@Id("service1") listener: Endpoint, @Conf("cassandra") cassAddress: HostPort) extends TestService {
-  Quirks.discard(listener)
-  Quirks.discard(cassAddress)
+case class TestService1(
+                    @Id("service1") listener: Endpoint
+                    , @Conf("cassandra") cassAddress: HostPort
+                    , @ConfPath("absolute.path") googleAddress: HostPort
+                  ) extends TestService {
+  Quirks.discard(listener, cassAddress, googleAddress)
 }
 
 class TestService2(@Id("service2") listener: Endpoint, cendpoint: CassandraEndpoint) extends TestService {
@@ -55,6 +57,8 @@ case class Wrapper[A](wrap: A)
 object TestConfigApp {
   final val definition = new ModuleDef {
     make[TestConfigApp]
+    make[TestService1]
+
     many[TestService]
       .add[TestService1]
       .add[TestService2]

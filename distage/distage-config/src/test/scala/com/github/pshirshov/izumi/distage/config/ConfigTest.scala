@@ -19,6 +19,9 @@ class ConfigTest extends WordSpec {
       assert(context.get[Endpoint]("service2").address.port == 8080)
       assert(context.get[Endpoint].address.port == 8888)
       assert(context.get[CassandraEndpoint].address.port == 9000)
+      //assert(context.get[Set[TestService]].exists(_ eq context.get[TestService1]))
+      assert(context.get[TestService1].googleAddress.host == "google.com")
+
     }
 
     "resolve config maps" in {

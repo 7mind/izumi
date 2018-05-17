@@ -10,5 +10,7 @@ package com.github.pshirshov.izumi.distage.config.annotations
   * So, altogether config path structure for autoconf entry would be
   *
   * {binding_type|fq_binding_type}.{config_type|fq_config_type}.{binding_name?|%}
+  *
+  * Use this annotation when you need to inject one config section into <i>one</i> component
   */
 final class AutoConf extends scala.annotation.StaticAnnotation
