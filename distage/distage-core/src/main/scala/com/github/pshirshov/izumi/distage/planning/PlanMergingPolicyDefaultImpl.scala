@@ -6,13 +6,11 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.model.reflection
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.fundamentals.collections.Graphs
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 
-// TODO: move unify graph ops with PlanAnalyzer
 class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPolicy {
 
   override def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
@@ -26,7 +24,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
           val old = currentPlan.operations.get(target)
           val merged = merge(old, op)
           currentPlan.operations.put(target, merged)
-          registerDep(currentPlan, target, opDeps)
+          currentPlan.topology.register(target, opDeps)
         } else {
           currentPlan.issues ++= issues
         }
@@ -49,20 +47,9 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
   private def transitiveDeps(plan: DodgyPlan, op: InstantiationOp): Set[reflection.universe.RuntimeDIUniverse.DIKey] = {
     val opDeps = analyzer.requirements(op).flatMap {
       req =>
-        plan.dependencies.getOrElse(req, mutable.Set.empty[DIKey]) + req
+        plan.topology.dependencies.getOrElse(req, mutable.Set.empty[DIKey]) + req
     }
     opDeps
-  }
-
-  private def registerDep(plan: DodgyPlan, target: RuntimeDIUniverse.DIKey, opDeps: Set[RuntimeDIUniverse.DIKey]): Unit = {
-    plan.dependencies.getOrElseUpdate(target, mutable.Set.empty[DIKey])
-    plan.dependees.getOrElseUpdate(target, mutable.Set.empty[DIKey])
-
-    opDeps.foreach {
-      opDep =>
-        plan.dependees.addBinding(opDep, target)
-        plan.dependencies.addBinding(target, opDep)
-    }
   }
 
   private def findIssues(currentPlan: DodgyPlan, op: InstantiationOp) = {
@@ -84,25 +71,11 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     issues
   }
 
-  @tailrec
-  private def topoSort(toPreds: Map[DIKey, Set[DIKey]], done: Seq[DIKey]): Seq[DIKey] = {
-    val (noPreds, hasPreds) = toPreds.partition { _._2.isEmpty }
 
-    if (noPreds.isEmpty) {
-      if (hasPreds.isEmpty) {
-        done
-      } else { // circular dependency, trying to break it by removing head
-        val found = Seq(hasPreds.head._1)
-        topoSort(hasPreds.tail.mapValues { _ -- found }, done ++ found)
-      }
-    } else {
-      val found = noPreds.keys
-      topoSort(hasPreds.mapValues { _ -- found }, done ++ found)
-    }
-  }
 
   override def resolve(completedPlan: DodgyPlan): ResolvedSetsPlan = {
     val imports = completedPlan
+      .topology
       .dependees
       .filterKeys(k => !completedPlan.operations.contains(k))
       .map {
@@ -110,11 +83,14 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
           missing -> ImportDependency(missing, refs.toSet)
       }
 
-    val ops = completedPlan.dependencies.mapValues(_.toSet).toMap
+    val sortedKeys = Graphs.toposort.cycleBreaking(completedPlan.topology.depMap ++ imports.mapValues(v => Set.empty[DIKey]), Seq.empty)
 
-    val sortedKeys = topoSort(ops ++ imports.mapValues(v => Set.empty[DIKey]), Seq.empty)
+
     val sortedOps = sortedKeys.flatMap(k => completedPlan.operations.get(k).toSeq)
     val out = ResolvedSetsPlan(imports.toMap, sortedOps, completedPlan.issues)
     out
   }
 }
+
+
+
