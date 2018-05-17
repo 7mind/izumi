@@ -84,8 +84,8 @@ class TypeCollection(domain: DomainDefinition) {
   def toDtoName(id: TypeId): String = {
     id match {
       case _: InterfaceId =>
-        s"${id.name}Struct"
-        //s"Struct"
+        //s"${id.name}Struct"
+        s"Struct"
       case _ =>
         s"${id.name}"
 
@@ -95,9 +95,9 @@ class TypeCollection(domain: DomainDefinition) {
   def toInterfaceName(id: TypeId): String = {
     id match {
       case _: DTOId =>
-      s"${id.name}Defn"
+        //s"${id.name}Defn"
 
-      //s"Defn"
+        s"Defn"
       case _ =>
         s"${id.name}"
 

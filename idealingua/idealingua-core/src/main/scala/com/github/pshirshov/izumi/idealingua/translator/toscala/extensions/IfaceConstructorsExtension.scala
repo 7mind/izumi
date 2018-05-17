@@ -18,7 +18,7 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
         val constructorSignature = ctx.tools.makeParams(t)
         val impl = t.typeToConstruct
 
-        q"""def ${Term.Name("to" + impl.name)}(..$constructorSignature): ${ctx.conv.toScala(impl).typeFull} = {
+        q"""def ${Term.Name("to" + impl.uniqueDomainName)}(..$constructorSignature): ${ctx.conv.toScala(impl).typeFull} = {
             ${ctx.conv.toScala(impl).termFull}(..$constructorCode)
             }
           """

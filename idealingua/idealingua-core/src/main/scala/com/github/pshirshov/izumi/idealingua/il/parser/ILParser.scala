@@ -97,7 +97,7 @@ class ILParser {
     final val field = P((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.fulltype)
       .map {
         case (name, tpe) if name.isEmpty =>
-          RawField(tpe, tpe.name.lowerFirst)
+          RawField(tpe, tpe.name.uncapitalize)
 
         case (name, tpe) =>
           RawField(tpe, name)

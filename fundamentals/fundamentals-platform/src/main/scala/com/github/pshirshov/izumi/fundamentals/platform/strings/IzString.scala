@@ -28,7 +28,7 @@ class IzString(s: String) {
   }
 
   @inline def ellipsedLeftPad(limit: Int): String = {
-    val limited = if (s.length > limit && s.length >3) {
+    val limited = if (s.length > limit && s.length > 3) {
       s"...${s.takeRight(limit - 3)}"
     } else if (s.length > limit && s.length <= 3) {
       s"${s.takeRight(limit)}"
@@ -40,8 +40,16 @@ class IzString(s: String) {
     limited.leftPad(limit, ' ')
   }
 
-  @inline def upperFirst: String = s(0).toUpper + s.substring(1)
-  @inline def lowerFirst: String = s(0).toLower + s.substring(1)
+  def uncapitalize: String = {
+    if (s == null) null
+    else if (s.length == 0) ""
+    else if (s.charAt(0).isLower) s
+    else {
+      val chars = s.toCharArray
+      chars(0) = chars(0).toLower
+      new String(chars)
+    }
+  }
 
 }
 

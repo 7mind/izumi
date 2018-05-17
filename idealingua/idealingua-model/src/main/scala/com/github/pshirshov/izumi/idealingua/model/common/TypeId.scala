@@ -27,8 +27,9 @@ sealed trait TypeId {
 
   def name: TypeName
 
-  override def toString: TypeName = s"${getClass.getSimpleName}:$path#$name"
+  def uniqueDomainName: String = path.within.mkString("") ++ name.capitalize
 
+  override def toString: TypeName = s"${getClass.getSimpleName}:$path#$name"
 }
 
 sealed trait StructureId extends TypeId
