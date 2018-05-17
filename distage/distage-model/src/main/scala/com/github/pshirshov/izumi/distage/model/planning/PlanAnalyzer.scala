@@ -14,13 +14,5 @@ trait PlanAnalyzer {
 
   def computeFullRefTable(plan: Iterable[ExecutableOp]): RefTable
 
-  def computeFwdRefTable(
-                          plan: Iterable[ExecutableOp]
-                          , refFilter: Accumulator => DIKey => Boolean
-                          , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
-                        ): RefTable
-
-  def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]]
-
   def requirements(op: InstantiationOp): Set[DIKey]
 }

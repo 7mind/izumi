@@ -11,7 +11,7 @@ import scala.collection.mutable
 
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
 
-  override def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable = {
+  def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable = {
     computeFwdRefTable(
       plan
       , (acc) => (key) => acc.contains(key)
@@ -19,7 +19,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
     )
   }
 
-  override def computeFullRefTable(plan: Iterable[ExecutableOp]): RefTable = {
+  def computeFullRefTable(plan: Iterable[ExecutableOp]): RefTable = {
     computeFwdRefTable(
       plan
       , (acc) => (key) => false
@@ -27,36 +27,8 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
     )
   }
 
-  override def computeFwdRefTable(
-                                   plan: Iterable[ExecutableOp]
-                                 , refFilter: Accumulator => DIKey => Boolean
-                                 , postFilter: ((DIKey, mutable.Set[DIKey])) => Boolean
-                                 ): RefTable = {
-
-    val dependencies = plan.toList.foldLeft(new Accumulator) {
-      case (acc, op: InstantiationOp) =>
-        acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= requirements(op).filterNot(refFilter(acc))
-        acc
-
-      case (acc, op) =>
-        acc.getOrElseUpdate(op.target, mutable.Set.empty)
-        acc
-    }
-      .filter(postFilter)
-      .mapValues(_.toSet).toMap
-
-    val dependants = reverseReftable(dependencies)
-    RefTable(dependencies, dependants)
-  }
-
-  override def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {
-    val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[DIKey, DIKey]) {
-      case (acc, (reference, referencee)) =>
-        referencee.foreach(acc.addBinding(_, reference))
-        acc
-    }
-    dependants.mapValues(_.toSet).toMap
-  }
+  type RefFilter = Accumulator => DIKey => Boolean
+  type PostFilter = ((DIKey, mutable.Set[DIKey])) => Boolean
 
   def requirements(op: InstantiationOp): Set[DIKey] = {
     op match {
@@ -75,5 +47,32 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
       case _ =>
         Set.empty
     }
+  }
+
+  private def computeFwdRefTable(plan: Iterable[ExecutableOp], refFilter: RefFilter, postFilter: PostFilter): RefTable = {
+
+    val dependencies = plan.toList.foldLeft(new Accumulator) {
+      case (acc, op: InstantiationOp) =>
+        acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= requirements(op).filterNot(refFilter(acc))
+        acc
+
+      case (acc, op) =>
+        acc.getOrElseUpdate(op.target, mutable.Set.empty)
+        acc
+    }
+      .filter(postFilter)
+      .mapValues(_.toSet).toMap
+
+    val dependants = reverseReftable(dependencies)
+    RefTable(dependencies, dependants)
+  }
+
+  private def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {
+    val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[DIKey, DIKey]) {
+      case (acc, (reference, referencee)) =>
+        referencee.foreach(acc.addBinding(_, reference))
+        acc
+    }
+    dependants.mapValues(_.toSet).toMap
   }
 }
