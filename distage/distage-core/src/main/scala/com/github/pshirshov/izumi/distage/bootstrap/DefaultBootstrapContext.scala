@@ -53,7 +53,7 @@ object DefaultBootstrapContext {
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
       , bootstrapObserver
-      , new PlanMergingPolicyDefaultImpl
+      , new PlanMergingPolicyDefaultImpl(analyzer)
       , Set(new PlanningHookDefaultImpl)
     )
   }

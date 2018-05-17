@@ -24,7 +24,7 @@ object ConfigReaderInstances {
   implicit final val charConfigReader: ConfigReader[Char] = ConfigReader.fromString[Char](s =>
     s.length match {
       case 1 => s.charAt(0)
-      case len => throw new ConfigReadException(s"Expected a single Char, but string `$s` is more than 1 character long.")
+      case len => throw new ConfigReadException(s"Expected a single Char, but string `$s` is $len character long")
     })
   implicit final val booleanConfigReader: ConfigReader[Boolean] = ConfigReader.fromString[Boolean]{
     case "yes" | "on" => true

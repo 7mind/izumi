@@ -17,7 +17,7 @@ trait WithDIAssociation {
   }
 
   object Association {
-    @deprecated
+    @deprecated("We need to carry symb in parametercontext", "2018/may")
     case class ExtendedParameter(symb: Symb, parameter: Parameter) {
       val wireWith: DIKey = parameter.wireWith
       val name: String = parameter.name

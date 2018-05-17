@@ -19,7 +19,7 @@ class LoggingConsoleSinkTest extends WordSpec {
 
 
     "support console backend with custom rendering policy" in {
-      val policy = "${level} ${ts}\t\t${thread}\t${location}${custom-ctx}${msg}$"
+      val policy = s"$${level} $${ts}\t\t$${thread}\t$${location}$${custom-ctx}$${msg}$$"
       new ExampleService(setupConsoleLogger(coloringPolicy(Some(policy)))).start()
     }
 

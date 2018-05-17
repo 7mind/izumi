@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
+import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.model.reflection
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -13,7 +13,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 // TODO: move unify graph ops with PlanAnalyzer
-class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy {
+class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPolicy {
 
   override def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
     (currentOp.provisions ++ currentOp.sets.values).foreach {
@@ -47,7 +47,7 @@ class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy {
   }
 
   private def transitiveDeps(plan: DodgyPlan, op: InstantiationOp): Set[reflection.universe.RuntimeDIUniverse.DIKey] = {
-    val opDeps = requirements(op).flatMap {
+    val opDeps = analyzer.requirements(op).flatMap {
       req =>
         plan.dependencies.getOrElse(req, mutable.Set.empty[DIKey]) + req
     }
@@ -116,27 +116,5 @@ class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy {
     val sortedOps = sortedKeys.flatMap(k => completedPlan.operations.get(k).toSeq)
     val out = ResolvedSetsPlan(imports.toMap, sortedOps, completedPlan.issues)
     out
-  }
-
-  private def requirements(op: InstantiationOp): Set[DIKey] = {
-    op match {
-      case w: WiringOp =>
-        w.wiring match {
-          case r: Wiring.UnaryWiring.Reference =>
-            Set(r.key)
-
-          case o =>
-            o.associations.map(_.wireWith).toSet
-        }
-
-      case c: CreateSet =>
-        c.members
-
-      case p: ProxyOp =>
-        throw new DIException(s"Unexpected op: $p", null)
-
-      case _ =>
-        Set.empty
-    }
   }
 }
