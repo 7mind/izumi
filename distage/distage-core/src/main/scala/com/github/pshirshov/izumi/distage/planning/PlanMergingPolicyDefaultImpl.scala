@@ -63,6 +63,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
           case (_: CreateSet, _: CreateSet) =>
 
           case (e, o) =>
+            System.err println  s"FUUUUUCK $existing  __ $e "
             issues += PlanningFailure.ConflictingOperation(target, e, o)
         }
       case None =>

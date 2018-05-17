@@ -27,6 +27,8 @@ class ConfigTest extends WordSpec {
       assert(context.get[TestAppService]("puller5").asInstanceOf[DataPuller2].target.port == 10020)
       assert(context.get[TestAppService]("puller6").asInstanceOf[DataPuller3].target.port == 9003)
 
+      assert(context.get[TestAppService]("puller1") eq context.get[DataPuller1])
+      assert(context.get[Set[TestAppService]]("puller1").exists(_ eq context.get[TestAppService]("puller1")))
     }
 
     "resolve config maps" in {

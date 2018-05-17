@@ -43,7 +43,7 @@ object ModuleDef {
 
   // DSL state machine...
 
-  // .bind{.as, .provider}{.named}
+  // .bind{.from, .using}{.named, .tagged}
 
   private[definition] final class BindDSL[T]
   (
@@ -105,7 +105,7 @@ object ModuleDef {
     }
   }
 
-  // .set{.element, .elementProvider}{.named}
+  // .set{.add}{.named, .tagged}
 
   private[definition] final case class IdentSet[+D <: DIKey](key: D, tags: Set[String]) {
     def sameIdent(binding: Binding): Boolean =
@@ -162,9 +162,10 @@ object ModuleDef {
     , protected val bindingCursor: Binding
   ) extends SetDSLMutBase[T] {
 
-    def tagged(tags: String*): SetElementDSL[T] = {
-      val newBindingCursor = bindingCursor.withTags(tags = bindingCursor.tags ++ tags)
+    def tagged(tags: String*): SetElementDSL[T] =
+      replaceCursor(bindingCursor.withTags(tags = bindingCursor.tags ++ tags))
 
+    private def replaceCursor(newBindingCursor: Binding): SetElementDSL[T] = {
       mutableState -= bindingCursor
       val newCurrentBindings = currentBindings - bindingCursor
 
@@ -198,11 +199,7 @@ object ModuleDef {
     }
 
     override protected def appendElement(newElement: ImplDef): SetElementDSL[T] = {
-      appendElement(identifier.key, newElement)
-    }
-
-    override protected def appendElement(key: DIKey, newElement: ImplDef): SetElementDSL[T] = {
-      val newBinding: Binding = SetElementBinding(key, newElement)
+      val newBinding: Binding = SetElementBinding(identifier.key, newElement)
 
       append(newBinding)
 
@@ -223,23 +220,20 @@ object ModuleDef {
       bind(ImplDef.ProviderImpl(SafeType.get[I], f))
 
     final def using[I <: T : Tag]: AfterBind =
-      bind(ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].key))
+      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I]))
 
     final def using[I <: T : Tag](name: String): AfterBind =
-      bind(ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].named(name).key))
+      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name)))
 
     protected def bind(impl: ImplDef): AfterBind
   }
 
   trait SetDSLBase[T, AfterAdd] {
-    // TODO: maybe this needs to be cleaned/improved
     final def ref[I <: T : Tag]: AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].key))
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I]))
 
-    // TODO: shitty
     final def ref[I <: T : Tag](name: String): AfterAdd =
-      appendElement(identifier.key.asInstanceOf[DIKey.TypeKey].named(name), ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].named(name).key))
-
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name)))
 
     final def add[I <: T : Tag]: AfterAdd =
       appendElement(ImplDef.TypeImpl(SafeType.get[I]))
@@ -251,8 +245,6 @@ object ModuleDef {
       appendElement(ImplDef.ProviderImpl(f.ret, f))
 
     protected def appendElement(newImpl: ImplDef): AfterAdd
-
-    protected def appendElement(key: DIKey, newElement: ImplDef): AfterAdd
 
     protected def identifier: IdentSet[DIKey]
   }
