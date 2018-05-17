@@ -37,6 +37,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
     val confPathAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[ConfPath], reflected.symb)
     val autoConfAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[AutoConf], reflected.symb)
     val confAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[Conf], reflected.symb)
+    val caseClassConfAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[CaseClassConf], reflected.symb)
 
     confPathAnno match {
       case Some(ann) =>
@@ -95,6 +96,24 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
       case _ =>
     }
 
+    caseClassConfAnno match {
+      case Some(ann) =>
+        val prefix = ann.tree.children.tail.collectFirst {
+          case Literal(Constant(path: String)) =>
+            path
+        }.getOrElse("")
+
+        association.wireWith match {
+          case k: DIKey.TypeKey =>
+            val path = s"$prefix.${reflected.tpe.tpe.typeSymbol.name}".stripPrefix(".")
+            return k.named(ConfPathId(binding.key, association, path))
+
+          case o =>
+            throw new DIException(s"Cannot rewire @CaseClassConf parameter $reflected: unexpected binding $o", null)
+        }
+
+      case _ =>
+    }
 
     association.wireWith
   }

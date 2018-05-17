@@ -1,6 +1,6 @@
 package com.github.pshirshov.configapp
 
-import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, Conf, ConfPath}
+import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, CaseClassConf, Conf, ConfPath}
 import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
@@ -36,6 +36,12 @@ class TestService3(listener: Endpoint) extends TestService {
   Quirks.discard(listener)
 }
 
+case class TestService4(@CaseClassConf conf: TestServiceConf)
+
+case class TestService5(@CaseClassConf("service5") conf: TestServiceConf)
+
+case class TestServiceConf(flag: Boolean, num: Int, hostPort: HostPort)
+
 class TestConfigApp(val services: Set[TestService])
 
 case class MapCaseClass(@Conf("mymap") m: Map[String, HostPort])
@@ -58,6 +64,8 @@ object TestConfigApp {
   final val definition = new ModuleDef {
     make[TestConfigApp]
     make[TestService1]
+    make[TestService4]
+    make[TestService5]
 
     many[TestService]
       .add[TestService1]
