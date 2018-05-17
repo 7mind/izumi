@@ -70,11 +70,23 @@ object TestConfigApp {
       .ref[HttpServer1]
       .ref[HttpServer2]
       .ref[HttpServer3]
+
+    many[TestAppService].named("puller1")
       .ref[TestAppService]("puller1")
+
+    many[TestAppService].named("puller2")
       .ref[TestAppService]("puller2")
+
+    many[TestAppService].named("puller3")
       .ref[TestAppService]("puller3")
+
+    many[TestAppService].named("puller4")
       .ref[TestAppService]("puller4")
+
+    many[TestAppService].named("puller5")
       .ref[TestAppService]("puller5")
+
+    many[TestAppService].named("puller6")
       .ref[TestAppService]("puller6")
 
     make[TestConfigApp]
