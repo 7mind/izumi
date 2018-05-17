@@ -1,6 +1,7 @@
 package com.github.pshirshov.configapp
 
-import com.github.pshirshov.izumi.distage.config.{AutoConf, Conf}
+import com.github.pshirshov.izumi.distage.config.Conf
+import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, Conf}
 import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 

@@ -1,6 +1,6 @@
 package com.github.pshirshov.test.testapp
 
-import com.github.pshirshov.izumi.distage.config.AutoConf
+import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 
 case class Config(value: String)

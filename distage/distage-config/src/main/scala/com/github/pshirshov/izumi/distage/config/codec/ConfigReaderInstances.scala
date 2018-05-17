@@ -1,22 +1,20 @@
-package com.github.pshirshov.izumi.distage.config
+package com.github.pshirshov.izumi.distage.config.codec
 
 import java.io.File
-import java.math.{BigInteger, MathContext}
+import java.math.{BigInteger, MathContext, BigDecimal => JavaBigDecimal}
 import java.net.{URI, URL}
 import java.nio.file.{Path, Paths}
-import java.time._
+import java.time.{Duration => JavaDuration, _}
 import java.util.UUID
 import java.util.regex.Pattern
 
+import com.github.pshirshov.izumi.distage.config.model.ConfigReadException
 import com.typesafe.config.{Config, ConfigList, ConfigObject, ConfigValue}
 
 import scala.math.{BigDecimal, BigInt}
+import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.util.{Success, Try}
-import java.time.{Duration => JavaDuration}
-import java.math.{BigDecimal => JavaBigDecimal}
-
-import scala.reflect.ClassTag
 
 // copypasta from pureconfig.BasicReaders
 

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.config
+package com.github.pshirshov.izumi.distage.config.annotations
 
 /**
   * This annotation tells config resolution mechanism to use all the context information

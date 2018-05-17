@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.config
+package com.github.pshirshov.izumi.distage.config.model
 
 import com.typesafe.config.Config
 

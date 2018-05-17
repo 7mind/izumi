@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.config
 
 import com.github.pshirshov.configapp._
 import com.github.pshirshov.izumi.distage.Injectors
+import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.typesafe.config._
 import org.scalatest.WordSpec
 

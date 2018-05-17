@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.config
+package com.github.pshirshov.izumi.distage.config.annotations
 
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 

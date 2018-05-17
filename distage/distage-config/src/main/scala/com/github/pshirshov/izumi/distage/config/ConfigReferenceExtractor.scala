@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.config
 
+import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, AutoConfId, Conf, ConfId}
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
