@@ -48,10 +48,11 @@ object CogenProduct {
     , defn: T
     , companion: Defn.Object
     , converters: List[Defn.Def]
-    , more: List[Defn] = List.empty
+    , evenMore: List[Defn] = List.empty
     , preamble: String = ""
   ) extends AccompaniedCogenProduct[T] {
-    override def render: List[Defn] = List(defn) ++ more ++ converters ++ List(companion)
+
+    override def more: List[Defn] = evenMore ++ converters
   }
 
   final case class AdtProduct

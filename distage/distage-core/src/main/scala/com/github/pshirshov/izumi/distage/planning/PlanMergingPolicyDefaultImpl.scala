@@ -74,6 +74,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
 
 
   override def resolve(completedPlan: DodgyPlan): ResolvedSetsPlan = {
+    // TODO: further unification with PlanAnalyzer
     val imports = completedPlan
       .topology
       .dependees
