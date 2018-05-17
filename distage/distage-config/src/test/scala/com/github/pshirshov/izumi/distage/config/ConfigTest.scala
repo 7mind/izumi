@@ -52,9 +52,8 @@ class ConfigTest extends WordSpec {
 
       val context = injector.produce(plan)
 
-      assert(context.get[ListCaseClass].l.isInstanceOf[IndexedSeq[_]])
-      assert(context.get[ListCaseClass].l.head.isInstanceOf[ListSet[_]])
-      assert(context.get[ListCaseClass].l.head ==
+      assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[_]])
+      assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[_]])
       assert(context.get[Service[ListCaseClass]].conf.mylist.head ==
         Set(
           Wrapper(HostPort(80, "localhost"))

@@ -3,9 +3,12 @@ package com.github.pshirshov.configapp
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 
-case class MapCaseClass(mymap: Map[String, HostPort])
+import scala.collection.immutable.ListSet
+import scala.collection.mutable
 
-case class ListCaseClass(mylist: List[Set[Wrapper[HostPort]]])
+case class MapCaseClass(mymap: mutable.ListMap[String, HostPort])
+
+case class ListCaseClass(mylist: IndexedSeq[ListSet[Wrapper[HostPort]]])
 
 case class OptionCaseClass(optInt: Option[Int])
 
