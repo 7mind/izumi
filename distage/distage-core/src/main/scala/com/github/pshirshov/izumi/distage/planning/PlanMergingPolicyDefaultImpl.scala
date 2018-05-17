@@ -121,7 +121,13 @@ class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy {
   private def requirements(op: InstantiationOp): Set[DIKey] = {
     op match {
       case w: WiringOp =>
-        w.wiring.associations.map(_.wireWith).toSet
+        w.wiring match {
+          case r: Wiring.UnaryWiring.Reference =>
+            Set(r.key)
+
+          case o =>
+            o.associations.map(_.wireWith).toSet
+        }
 
       case c: CreateSet =>
         c.members

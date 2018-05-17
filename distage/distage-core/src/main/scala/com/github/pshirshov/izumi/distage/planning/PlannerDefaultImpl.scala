@@ -104,6 +104,9 @@ class PlannerDefaultImpl
 
       case w: Instance =>
         Step(wiring, WiringOp.ReferenceInstance(target, w))
+
+      case w: Reference =>
+        Step(wiring, WiringOp.ReferenceKey(target, w))
     }
   }
 
@@ -112,10 +115,12 @@ class PlannerDefaultImpl
     binding.implementation match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)
-      case i: ImplDef.InstanceImpl =>
-        UnaryWiring.Instance(i.implType, i.instance)
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerToWiring(p.function)
+      case i: ImplDef.InstanceImpl =>
+        UnaryWiring.Instance(i.implType, i.instance)
+      case r: ImplDef.ReferenceImpl =>
+        UnaryWiring.Reference(r.implType, r.key)
     }
   }
 
@@ -127,6 +132,8 @@ class PlannerDefaultImpl
         i.implType
       case p: ImplDef.ProviderImpl =>
         p.implType
+      case r: ImplDef.ReferenceImpl =>
+        r.implType
     }
   }
 }

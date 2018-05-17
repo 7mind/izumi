@@ -37,6 +37,10 @@ object FactoryTools {
       case w: UnaryWiring.Instance =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
         WiringOp.ReferenceInstance(target, w)
+
+      case w: UnaryWiring.Reference =>
+        val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
+        WiringOp.ReferenceKey(target, w)
     }
 
 }

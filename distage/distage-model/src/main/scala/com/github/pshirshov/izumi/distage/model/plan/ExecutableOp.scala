@@ -58,6 +58,13 @@ object ExecutableOp {
       }
     }
 
+    final case class ReferenceKey(target: DIKey, wiring: UnaryWiring.Reference) extends WiringOp {
+      override def format: String = {
+        s"$target := ${wiring.key}"
+      }
+    }
+
+
   }
 
   sealed trait ProxyOp extends ExecutableOp {}

@@ -219,6 +219,14 @@ object ModuleDef {
   }
 
   trait SetDSLBase[T, AfterAdd] {
+    // TODO: maybe this needs to be cleaned/improved
+    final def ref[I <: T: Tag]: AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].key))
+
+    final def ref[I <: T: Tag](name: String): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].named(name).key))
+
+
     final def add[I <: T: Tag]: AfterAdd =
       appendElement(ImplDef.TypeImpl(SafeType.get[I]))
 

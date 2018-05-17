@@ -456,4 +456,9 @@ Forest fire, climbin' higher, real life, it can wait""")
     case class Service3(@Id("n3") set: Set[SetTrait])
 
   }
+
+  object Case19 {
+    trait Service
+    class Service1 extends Service
+  }
 }

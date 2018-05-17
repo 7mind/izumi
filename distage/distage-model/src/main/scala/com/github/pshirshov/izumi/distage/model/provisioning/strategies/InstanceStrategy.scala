@@ -5,4 +5,5 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, Provisio
 
 trait InstanceStrategy {
   def getInstance(context: ProvisioningContext, op: WiringOp.ReferenceInstance): Seq[OpResult]
+  def getInstance(context: ProvisioningContext, op: WiringOp.ReferenceKey): Seq[OpResult]
 }

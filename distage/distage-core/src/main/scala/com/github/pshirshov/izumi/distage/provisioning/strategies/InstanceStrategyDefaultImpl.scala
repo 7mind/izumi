@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.InstanceStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
@@ -7,5 +8,15 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, Provisio
 class InstanceStrategyDefaultImpl extends InstanceStrategy {
   def getInstance(context: ProvisioningContext, op: WiringOp.ReferenceInstance): Seq[OpResult] = {
     Seq(OpResult.NewInstance(op.target, op.wiring.instance))
+  }
+
+  def getInstance(context: ProvisioningContext, op: WiringOp.ReferenceKey): Seq[OpResult] = {
+    context.fetchKey(op.wiring.key) match {
+      case Some(value) =>
+        Seq(OpResult.NewInstance(op.target, value))
+
+      case None =>
+        throw new DIException(s"Cannot find ${op.wiring.key} in context", null)
+    }
   }
 }

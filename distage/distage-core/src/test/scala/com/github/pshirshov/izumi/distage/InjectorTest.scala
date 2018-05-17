@@ -545,6 +545,25 @@ class InjectorTest extends WordSpec {
       assert(definition.bindings.count(_.tags == Set("B")) == 1)
     }
 
+
+    "set elements are the same as global bindings" in {
+      import Case19._
+
+      val definition = new ModuleDef {
+        make[Service1]
+
+        many[Service]
+          .ref[Service1]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+      val svc = context.get[Service1]
+      val set = context.get[Set[Service]]
+      assert(set.head eq svc)
+    }
   }
 
 }

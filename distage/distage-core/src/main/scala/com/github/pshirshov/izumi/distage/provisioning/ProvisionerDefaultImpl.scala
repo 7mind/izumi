@@ -77,6 +77,9 @@ class ProvisionerDefaultImpl
       case op: WiringOp.ReferenceInstance =>
         instanceStrategy.getInstance(context, op)
 
+      case op: WiringOp.ReferenceKey =>
+        instanceStrategy.getInstance(context, op)
+
       case op: WiringOp.CallProvider =>
         providerStrategy.callProvider(context, this, op)
 
