@@ -58,9 +58,9 @@ object TestConfigApp {
     make[DataPuller2]
     make[DataPuller3]
 
-    make[TestAppService].named("puller1").fromRef[DataPuller1]
-    make[TestAppService].named("puller2").fromRef[DataPuller2]
-    make[TestAppService].named("puller3").fromRef[DataPuller3]
+    make[TestAppService].named("puller1").using[DataPuller1]
+    make[TestAppService].named("puller2").using[DataPuller2]
+    make[TestAppService].named("puller3").using[DataPuller3]
 
     make[TestAppService].named("puller4").from[DataPuller1]
     make[TestAppService].named("puller5").from[DataPuller2]

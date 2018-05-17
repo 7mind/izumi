@@ -222,10 +222,10 @@ object ModuleDef {
     final def from[I <: T : Tag](f: DIKeyWrappedFunction[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], f))
 
-    final def fromRef[I <: T : Tag]: AfterBind =
+    final def using[I <: T : Tag]: AfterBind =
       bind(ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].key))
 
-    final def fromRef[I <: T : Tag](name: String): AfterBind =
+    final def using[I <: T : Tag](name: String): AfterBind =
       bind(ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].named(name).key))
 
     protected def bind(impl: ImplDef): AfterBind
