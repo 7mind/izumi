@@ -116,7 +116,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName)
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name)
     ).distinct
-    
+
     RequiredConfigEntry(paths, op.imp.target.symbol, op.imp.target)
   }
 
@@ -152,7 +152,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
       case id: AutoConfId =>
         id.binding match {
           case k: DIKey.IdKey[_] =>
-            Some(k.id.toString) // TODO: not nice, better use IdContract
+            Some(k.idContract.repr(k.id))
 
           case _ =>
             None

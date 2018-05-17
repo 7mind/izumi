@@ -39,12 +39,10 @@ trait WithDIKey {
     }
   }
 
-  trait IdContract[T]
+  trait IdContract[T] {
+    def repr(v: T): String
+  }
 
   implicit def stringIdContract: IdContract[String]
   implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S]
-//
-//  implicit val stringIdContract: IdContract[String] = null.asInstanceOf[IdContract[String]] //new IdContract[String]
-//  implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = null.asInstanceOf[IdContract[S]] //new IdContract[S]
-
 }
