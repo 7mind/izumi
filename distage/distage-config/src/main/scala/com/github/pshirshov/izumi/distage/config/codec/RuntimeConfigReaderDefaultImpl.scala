@@ -26,8 +26,8 @@ class RuntimeConfigReaderDefaultImpl
 
   import RuntimeConfigReaderDefaultImpl._
 
-  override def read(config: ConfigValue, tpe: TypeFull): Any = {
-    anyReader(tpe)(config).get
+  override def readConfig(config: Config, tpe: TypeFull): Any = {
+    deriveCaseClassReader(tpe)(config.root()).get
   }
 
   def anyReader(tpe: TypeFull): ConfigReader[_] = {
