@@ -198,11 +198,7 @@ object ModuleDef {
     }
 
     override protected def appendElement(newElement: ImplDef): SetElementDSL[T] = {
-      appendElement(identifier.key, newElement)
-    }
-
-    override protected def appendElement(key: DIKey, newElement: ImplDef): SetElementDSL[T] = {
-      val newBinding: Binding = SetElementBinding(key, newElement)
+      val newBinding: Binding = SetElementBinding(identifier.key, newElement)
 
       append(newBinding)
 
@@ -238,7 +234,7 @@ object ModuleDef {
 
     // TODO: shitty
     final def ref[I <: T : Tag](name: String): AfterAdd =
-      appendElement(identifier.key.asInstanceOf[DIKey.TypeKey].named(name), ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].named(name).key))
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], Bindings.binding[I].named(name).key))
 
 
     final def add[I <: T : Tag]: AfterAdd =
@@ -251,8 +247,6 @@ object ModuleDef {
       appendElement(ImplDef.ProviderImpl(f.ret, f))
 
     protected def appendElement(newImpl: ImplDef): AfterAdd
-
-    protected def appendElement(key: DIKey, newElement: ImplDef): AfterAdd
 
     protected def identifier: IdentSet[DIKey]
   }

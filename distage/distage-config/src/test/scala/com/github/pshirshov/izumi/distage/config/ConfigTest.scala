@@ -26,6 +26,7 @@ class ConfigTest extends WordSpec {
       assert(context.get[TestAppService]("puller4").asInstanceOf[DataPuller1].target.port == 10010)
       assert(context.get[TestAppService]("puller5").asInstanceOf[DataPuller2].target.port == 10020)
       assert(context.get[TestAppService]("puller6").asInstanceOf[DataPuller3].target.port == 9003)
+      assert(context.get[Set[TestAppService]].size == 9)
 
     }
 

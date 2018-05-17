@@ -32,8 +32,9 @@ trait WithDIKey {
       override def hashCode(): Int = toString.hashCode()
     }
 
-    case class SetElementKey(set: DIKey, symbol: TypeFull) extends DIKey {
-      override def toString: String = s"$set##${symbol.toString}"
+    // todo: this disambiguating .index is kinda shitty
+    case class SetElementKey(set: DIKey, index: Int, symbol: TypeFull) extends DIKey {
+      override def toString: String = s"$set##${symbol.toString}.$index"
 
       override def hashCode(): Int = toString.hashCode()
     }
