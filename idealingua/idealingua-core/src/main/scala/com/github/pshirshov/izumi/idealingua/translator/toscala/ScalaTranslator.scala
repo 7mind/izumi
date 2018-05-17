@@ -101,7 +101,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val tools = struct.t.within(s"${struct.fields.id.name.capitalize}Extensions")
 
-    val qqComposite = q"""case class ${struct.t.typeName}(..${struct.decls}) extends ..$superClasses {}"""
+    val qqComposite = q"""final case class ${struct.t.typeName}(..${struct.decls}) extends ..$superClasses {}"""
 
     val qqTools = q""" implicit class ${tools.typeName}(_value: ${struct.t.typeFull}) { }"""
 
@@ -126,7 +126,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         val mt = t.within(memberName)
         val original = conv.toScala(m.typeId)
 
-        val qqElement = q"""case class ${mt.typeName}(value: ${original.typeAbsolute}) extends ..${List(t.init())}"""
+        val qqElement = q"""final case class ${mt.typeName}(value: ${original.typeAbsolute}) extends ..${List(t.init())}"""
         val qqCompanion = q""" object ${mt.termName} {} """
 
 
@@ -158,7 +158,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       m =>
         val mt = t.within(m)
         val element =
-          q"""case object ${mt.termName} extends ${t.init()} {
+          q"""final case object ${mt.termName} extends ${t.init()} {
               override def toString: String = ${Lit.String(m)}
             }"""
 
@@ -219,7 +219,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       }"""
 
     val qqIdentifier =
-      q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
+      q"""final case class ${t.typeName} (..$decls) extends ..$superClasses {
             override def toString: String = {
               import ${rt.tIDLIdentifier.termBase}._
               val suffix = Seq(..$parts).map(part => escape(part.toString)).mkString(":")
