@@ -54,7 +54,7 @@ object CogenProduct {
   type CompositeProudct = CogenProduct[Defn.Class]
   type IdentifierProudct = CogenProduct[Defn.Class]
 
-  final case class TraitProduct(defn: Defn.Trait, more: List[Defn] = List.empty, preamble: String = "") extends UnaryCogenProduct[Defn.Trait]
+  final case class TraitProduct(defn: Defn.Trait, more: List[Defn] = List.empty, preamble: String = "") extends MultipleCogenProduct[Defn.Trait]
 
   final case class EnumProduct(
                                 defn: Defn.Trait

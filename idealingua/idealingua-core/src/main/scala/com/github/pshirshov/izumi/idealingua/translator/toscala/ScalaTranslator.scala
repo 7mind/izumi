@@ -160,8 +160,8 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
           ..$decls
           }
        """
-    // TODO: XXX: get rid of cast
-    ext.extend(fields, TraitProduct(qqInterface), _.handleTrait).render.head.asInstanceOf[Defn.Trait]
+
+    ext.extend(fields, TraitProduct(qqInterface), _.handleTrait).defn
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {

@@ -1,4 +1,4 @@
-domain test.anyvals
+domain idltest.anyvals
 
 id RecordId {
   value: uid
@@ -12,12 +12,14 @@ mixin UserData {
   id: WithRecordId
 }
 
+
 //
 data SimpleAnyValRecord {
   _: str
 }
 
-//
+
+// ANYVAL:ERASURE: primary test case
 data Test00Data1AnyVal {
   _: str
 }

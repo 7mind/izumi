@@ -85,6 +85,7 @@ class TypeCollection(domain: DomainDefinition) {
     id match {
       case _: InterfaceId =>
         s"${id.name}Struct"
+        //s"Struct"
       case _ =>
         s"${id.name}"
 
@@ -94,7 +95,9 @@ class TypeCollection(domain: DomainDefinition) {
   def toInterfaceName(id: TypeId): String = {
     id match {
       case _: DTOId =>
-        s"${id.name}Defn"
+      s"${id.name}Defn"
+
+      //s"Defn"
       case _ =>
         s"${id.name}"
 
@@ -102,7 +105,8 @@ class TypeCollection(domain: DomainDefinition) {
   }
 
   protected def verified(types: Seq[TypeDef]): Seq[TypeDef] = {
-    val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
+    val conflictingTypes = types.groupBy(id => (id.id.path , id.id.name)).filter(_._2.lengthCompare(1) > 0)
+
     if (conflictingTypes.nonEmpty) {
       throw new IDLException(s"Conflicting types in: $conflictingTypes")
     }

@@ -9,6 +9,7 @@ import scala.meta._
 
 
 class ScalaTranslationTools(ctx: STContext) {
+
   import ctx.conv._
   import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaField._
 
@@ -35,6 +36,11 @@ class ScalaTranslationTools(ctx: STContext) {
     t.outerParams
       .map {
         f =>
+          /*
+          ANYVAL:ERASURE
+           this is a workaround for anyval/scala erasure issue.
+           We prohibit to use DTOs directly in parameters and using mirrors instead
+            */
           val source = f.sourceType match {
             case s: DTOId =>
               ctx.typespace.defnId(s)
