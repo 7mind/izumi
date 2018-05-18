@@ -21,6 +21,7 @@ object MagicDSL {
   }
 
   // FIXME: add tests
+  // FIXME: modify cursor instead of adding new element
   implicit final class MagicSetDSL[T, AfterAdd](private val dsl: SetDSLBase[T, AfterAdd]) extends AnyVal {
     def addMagic[I <: T: Tag: AnyConstructor]: AfterAdd =
       AnyConstructor[I] match {

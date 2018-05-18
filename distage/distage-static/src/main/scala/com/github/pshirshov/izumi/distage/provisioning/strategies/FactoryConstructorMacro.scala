@@ -92,9 +92,10 @@ object FactoryConstructorMacro {
             val associations: List[Tree] = w.associations.map {
               case Association.Parameter(context: DependencyContext.ConstructorParameterContext, name, tpe, wireWith) =>
                 val contextTree = q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.symb}, ${context.definingClass}) }"
+                c.abort(c.enclosingPosition, showCode(contextTree))
                 q"{ new $RuntimeDIUniverse.Association.Parameter($contextTree, $name, $tpe, $wireWith)}"
               case Association.Parameter(context, name, tpe, wireWith) =>
-                throw new IllegalArgumentException(s"Expected ConstructorParameterContext but got $context")
+                c.abort(c.enclosingPosition, s"Expected ConstructorParameterContext but got $context")
             }.toList
 
             q"{ $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor(${w.instanceType}, $associations) }"

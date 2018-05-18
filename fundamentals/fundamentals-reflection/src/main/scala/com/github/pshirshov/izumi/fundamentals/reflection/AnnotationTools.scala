@@ -13,12 +13,18 @@ object AnnotationTools {
       symb.annotations.find(annotationTypeEq(u)(annType, _))
 
   def findTypeAnnotation(u: Universe)(annType: u.Type, typ: u.Type): Option[u.Annotation] =
+    getAllTypeAnnotations(u)(typ).find(annotationTypeEq(u)(annType, _))
+
+  def getAllAnnotations(u: Universe)(symb: u.Symbol): List[u.Annotation] =
+    symb.annotations ++ getAllTypeAnnotations(u)(symb.typeSignature.finalResultType)
+
+  def getAllTypeAnnotations(u: Universe)(typ: u.Type): List[u.Annotation] =
     typ match {
-      case t: u.AnnotatedTypeApi =>
-        t.annotations.find(annotationTypeEq(u)(annType, _))
-      case _ =>
-        None
-    }
+       case t: u.AnnotatedTypeApi =>
+         t.annotations
+       case _ =>
+         List()
+     }
 
   def annotationTypeEq(u: Universe)(tpe: u.Type, ann: u.Annotation): Boolean =
     ann.tree.tpe.erasure =:= tpe.erasure
