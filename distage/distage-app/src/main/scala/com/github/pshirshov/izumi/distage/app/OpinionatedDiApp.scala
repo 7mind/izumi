@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.app
 import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -29,13 +30,15 @@ abstract class OpinionatedDiApp {
     val appLoader = mkLoader(appConfig)
 
     val bootstrapAutoDef = bootstrapLoader.loadDefinition(mergeStrategy)
+    val appDef = appLoader.loadDefinition(mergeStrategy)
+
+    validate(bootstrapAutoDef, appDef)
 
     val bootstrapCustomDef = (Seq(new ModuleDef {
       make[LogRouter].from(router)
     } : ModuleBase) ++ bootstrapModules).merge
 
     val bsdef = bootstrapAutoDef.definition ++ bootstrapCustomDef
-    val appDef = appLoader.loadDefinition(mergeStrategy)
 
     logger.trace(s"Have bootstrap definition\n$bsdef")
     logger.trace(s"Have app definition\n$appDef")
@@ -48,6 +51,17 @@ abstract class OpinionatedDiApp {
     val context = injector.produce(refinedPlan)
     logger.trace(s"Context produced")
     start(context)
+  }
+
+  protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {
+    val conflicts = bootstrapAutoDef.definition.bindings.map(_.key).intersect(appDef.definition.bindings.map(_.key))
+    if (conflicts.nonEmpty) {
+      throw new DIException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...", null)
+    }
+
+    if (appDef.definition.bindings.isEmpty) {
+      throw new DIException(s"Empty app context. Most likely you have no plugins defined or your app plugin config is wrong, terminating...", null)
+    }
   }
 
   protected def start(context: Locator): Unit
