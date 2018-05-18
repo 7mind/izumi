@@ -316,7 +316,7 @@ lazy val fastparseShaded = inShade.as.module
   .settings(ShadingSettings)
 
 lazy val idealinguaCore = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler, T.scala_library))
+  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
   .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
   .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
   .settings(ShadingSettings)

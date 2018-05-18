@@ -1,7 +1,7 @@
 scalaVersion := "2.12.6"
 
 // https://github.com/coursier/coursier#sbt-plugin
-val coursier = "1.0.3"
+val coursier = "1.1.0-M3"
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % coursier)
 addSbtPlugin("io.get-coursier" % "sbt-shading" % coursier)
 

@@ -11,14 +11,14 @@ object D {
     //val scala_asm = "org.scala-lang.modules" % "scala-asm" % "6.0.0-scala-1"
     //val scala_arm = "com.jsuereth" %% "scala-arm" % "2.0"
 
-    private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0"
+    private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0"
     val essentials = Seq(scala_java8_compat)
 
     val kind_projector = "org.spire-math" % "kind-projector" % "0.9.6" cross CrossVersion.binary
 
     val better_files = "com.github.pathikrit" %% "better-files" % "3.4.0"
 
-    val fast_classpath_scanner = "io.github.lukehutch" % "fast-classpath-scanner" % "2.19.0"
+    val fast_classpath_scanner = "io.github.lukehutch" % "fast-classpath-scanner" % "2.21"
 
     val typesafe_config = "com.typesafe" % "config" % "1.3.3"
 
@@ -28,7 +28,7 @@ object D {
     )
 
     private val cats_version = "1.1.0"
-    private val cats_effect_version = "0.10"
+    private val cats_effect_version = "0.10.1"
     val cats_kernel = "org.typelevel" %% "cats-kernel" % cats_version
     val cats_all: Seq[ModuleID] = Seq(
       "org.typelevel" %% "cats-core"
@@ -37,7 +37,7 @@ object D {
     ).map(_ % cats_effect_version)
 
 
-    val scalameta = "org.scalameta" %% "scalameta" % "3.3.1" // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
+    val scalameta = "org.scalameta" %% "scalameta" % "3.7.4" // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
     val cglib_nodep = "cglib" % "cglib-nodep" % "3.2.6" // TODO: It would be good to completely get rid of cglib and build our own proxy generator on top of scala-asm
     val fastparse = "com.lihaoyi" %% "fastparse" % "1.0.0" % "shaded"
     val json4s_native = "org.json4s" %% "json4s-native" % "3.5.3"
@@ -55,7 +55,7 @@ object D {
     ).map(_ % circeVersion) ++ Seq(
       "io.circe" %% "circe-derivation" % circeDerivationVersion)
 
-    val http4s_version = "0.18.9"
+    val http4s_version = "0.18.11"
     val http4s_client: Seq[ModuleID] = Seq(
       "org.http4s" %% "http4s-blaze-client"
     ).map(_ % http4s_version)
@@ -74,9 +74,9 @@ object D {
   }
 
   object T {
-    private val scalatest = "org.scalatest" %% "scalatest" % "3.0.4" % "test"
+    private val scalatest = "org.scalatest" %% "scalatest" % "3.0.5" % "test"
     val scala_compiler = R.scala_compiler % "test"
-    val scala_library = R.scala_library % "test"
+    //val scala_library = R.scala_library % "test"
     val slf4j_simple = R.slf4j_simple % "test"
     val essentials = Seq(scalatest)
 
