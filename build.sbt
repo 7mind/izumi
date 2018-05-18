@@ -1,4 +1,4 @@
-import D._
+import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
@@ -339,13 +339,16 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
 lazy val sbtIzumi = inSbt.as
   .module
 
+lazy val sbtIzumiBuild = inSbt.as
+  .module
+
 lazy val sbtIdealingua = inSbt.as
   .module
   .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce)
 
 lazy val sbtTests = inSbt.as
   .module
-  .depends(sbtIzumi, sbtIdealingua)
+  .depends(sbtIzumiBuild, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageDi

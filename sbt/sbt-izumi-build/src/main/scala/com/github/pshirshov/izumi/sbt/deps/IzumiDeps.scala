@@ -1,6 +1,8 @@
+package com.github.pshirshov.izumi.sbt.deps
+
 import sbt._
 
-object D {
+object IzumiDeps {
 
   object R {
     val scala212 = "2.12.6"
