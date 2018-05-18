@@ -4,3 +4,25 @@ libraryDependencies ++= Seq(
 )
 
 sbtPlugin := true
+
+def generateBuildInfo(packageName: String, objectName: String): Setting[_] =
+  sourceGenerators in Compile += Def.task {
+    val file =
+      packageName
+        .split('.')
+        .foldLeft((sourceManaged in Compile).value)(_ / _) / s"$objectName.scala"
+
+    IO.write(
+      file,
+      s"""package $packageName
+         |
+         |object $objectName {
+         |  final val version = "${version.value}"
+         |}
+         |""".stripMargin
+    )
+
+    Seq(file)
+  }.taskValue
+
+generateBuildInfo("com.github.pshirshov.izumi.sbt.deps", "Izumi")
