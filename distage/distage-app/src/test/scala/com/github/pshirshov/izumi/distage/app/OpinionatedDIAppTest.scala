@@ -107,3 +107,74 @@ class OpinionatedDIAppTest extends WordSpec {
 
 }
 
+
+
+// TODO : Remove after
+object StackOverflowSample1 extends OpinionatedDiApp {
+  override protected def start(context: Locator): Unit = {
+    context.get[Test]
+  }
+
+
+  val testSink = new TestSink()
+
+  override protected def bootstrapModules: Seq[ModuleDef] = Seq.empty
+
+  override protected def router: LogRouter = {
+    LoggingMacroTest.mkRouter(testSink)
+  }
+
+  val bootstrapConfig: PluginConfig = PluginConfig(debug = false
+    , Seq("com.github.pshirshov.izumi")
+    , Seq.empty
+  )
+
+  val appConfig: PluginConfig = PluginConfig(debug = false
+    , Seq(classOf[Test].getPackage.getName)
+    , Seq.empty
+  )
+
+  override protected def requiredComponents: Set[reflection.universe.RuntimeDIUniverse.DIKey] = Set(
+    RuntimeDIUniverse.DIKey.get[Test]
+  )
+}
+
+// TODO : impact on stack overflow
+class Plugin extends PluginDef {
+  make[Test]
+}
+
+case class Valid(really : Boolean)
+case class Test (valid : Valid)
+
+
+// TODO : Remove after
+object StackOverflowSample2 extends OpinionatedDiApp {
+  override protected def start(context: Locator): Unit = {
+    context.get[Test]
+  }
+
+
+  val testSink = new TestSink()
+
+  override protected def bootstrapModules: Seq[ModuleDef] = Seq.empty
+
+  override protected def router: LogRouter = {
+    LoggingMacroTest.mkRouter(testSink)
+  }
+
+  val bootstrapConfig: PluginConfig = PluginConfig(debug = false
+    , Seq("com.github.pshirshov.izumi")
+    , Seq.empty
+  )
+
+  val appConfig: PluginConfig = PluginConfig(debug = false
+//    , Seq(classOf[Test].getPackage.getName)
+    , Seq.empty
+    , Seq.empty
+  )
+
+  override protected def requiredComponents: Set[reflection.universe.RuntimeDIUniverse.DIKey] = Set(
+    RuntimeDIUniverse.DIKey.get[Test]
+  )
+}
