@@ -336,7 +336,7 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
 lazy val sbtIzumi = inSbt.as
   .module
 
-lazy val sbtIzumiBuild = inSbt.as
+lazy val sbtIzumiDeps = inSbt.as
   .module
 
 lazy val sbtIdealingua = inSbt.as
@@ -345,7 +345,7 @@ lazy val sbtIdealingua = inSbt.as
 
 lazy val sbtTests = inSbt.as
   .module
-  .depends(sbtIzumiBuild, sbtIzumi, sbtIdealingua)
+  .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageDi

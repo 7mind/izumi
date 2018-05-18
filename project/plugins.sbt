@@ -9,9 +9,9 @@ addSbtPlugin("io.get-coursier" % "sbt-shading" % coursier)
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.6")
 
 // bootstrap
-lazy val izumiBuildPlugin = RootProject(file("../sbt/sbt-izumi-build"))
+lazy val izumiDepsPlugin = RootProject(file("../sbt/sbt-izumi-deps"))
 lazy val izumiPlugin = RootProject(file("../sbt/sbt-izumi"))
-lazy val root = project.in(file(".")).dependsOn(izumiBuildPlugin, izumiPlugin)
+lazy val root = project.in(file(".")).dependsOn(izumiDepsPlugin, izumiPlugin)
 
 //
 libraryDependencies += {
