@@ -6,8 +6,6 @@ import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, SimpleMo
 
 
 object Injectors {
-
-
   def bootstrap(extensions: LocatorExtension*): Injector = {
     bootstrap(SimpleModuleDef.empty, extensions :_*)
   }

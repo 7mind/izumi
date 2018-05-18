@@ -34,11 +34,13 @@ abstract class OpinionatedDiApp {
       make[LogRouter].from(router)
     } : ModuleBase) ++ bootstrapModules).merge
 
+    val bsdef = bootstrapAutoDef.definition ++ bootstrapCustomDef
     val appDef = appLoader.loadDefinition(mergeStrategy)
-    logger.trace(s"Have bootstrap definition\n$appDef")
+
+    logger.trace(s"Have bootstrap definition\n$bsdef")
     logger.trace(s"Have app definition\n$appDef")
 
-    val injector = Injectors.bootstrap(bootstrapAutoDef.definition ++ bootstrapCustomDef)
+    val injector = Injectors.bootstrap(bsdef)
     val plan = injector.plan(appDef.definition)
     logger.trace(s"Planning completed\n$plan")
     val refinedPlan = gc.gc(plan, DIGarbageCollector.isRoot(requiredComponents))
