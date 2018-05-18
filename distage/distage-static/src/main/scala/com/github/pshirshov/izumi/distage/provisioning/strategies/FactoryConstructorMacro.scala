@@ -90,12 +90,15 @@ object FactoryConstructorMacro {
         val wiringInfo = productConstructor match {
           case w: UnaryWiring.Constructor =>
             val associations: List[Tree] = w.associations.map {
-              case Association.Parameter(context, name, tpe, wireWith) =>
-                val contextTree = q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}) }"
+              case Association.Parameter(context: DependencyContext.ConstructorParameterContext, name, tpe, wireWith) =>
+                val contextTree = q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.symb}, ${context.definingClass}) }"
                 q"{ new $RuntimeDIUniverse.Association.Parameter($contextTree, $name, $tpe, $wireWith)}"
+              case Association.Parameter(context, name, tpe, wireWith) =>
+                throw new IllegalArgumentException(s"Expected ConstructorParameterContext but got $context")
             }.toList
 
             q"{ $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor(${w.instanceType}, $associations) }"
+
           case w: UnaryWiring.AbstractSymbol =>
             q"""{
             val fun = ${symbolOf[AbstractConstructor.type].asClass.module}.apply[${w.instanceType.tpe}].function

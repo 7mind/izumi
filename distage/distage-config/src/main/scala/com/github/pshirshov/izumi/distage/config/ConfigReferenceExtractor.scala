@@ -9,8 +9,12 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
+import scala.reflect.runtime.universe
+
 class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvider.Runtime) extends PlanningHook {
+
   import u._
+
   override def hookWiring(binding: Binding.ImplBinding, wiring: Wiring): Wiring = {
     wiring match {
       case w: Wiring.UnaryWiring.Constructor =>
@@ -32,12 +36,22 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
     }
   }
 
+  protected def findAnno[T: TypeTag](association: Association.Parameter): Option[universe.Annotation] = {
+    association.context match {
+      case c: DependencyContext.ConstructorParameterContext =>
+        AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[T], c.symb)
+      case _ =>
+        None
+    }
+  }
 
-  protected def rewire(binding: Binding.ImplBinding, reflected: Association.ExtendedParameter, association: Association.Parameter): DIKey = {
-    val confPathAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[ConfPath], reflected.symb)
-    val autoConfAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[AutoConf], reflected.symb)
-    val confAnno = AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[Conf], reflected.symb)
 
+  protected def rewire(binding: Binding.ImplBinding, reflected: Association.Parameter, association: Association.Parameter): DIKey = {
+    val confPathAnno = findAnno[ConfPath](association)
+    val confAnno = findAnno[Conf](association)
+    val autoConfAnno = findAnno[AutoConf](association)
+
+    // TODO: can we decopypaste?
     confPathAnno match {
       case Some(ann) =>
         ann.tree.children.tail.collectFirst {

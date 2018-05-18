@@ -14,7 +14,7 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
     withOptionalName(parameterSymbol, typeKey)
   }
 
-  override def keyFromParameterType(context: u.DependencyContext.ParameterContext, parameterType: u.TypeFull): u.DIKey = {
+  override def keyFromParameterType(parameterType: u.TypeFull): u.DIKey = {
     val typeKey = DIKey.TypeKey(parameterType)
     symbolIntrospector.findTypeAnnotation(typeOfIdAnnotation, parameterType) match {
       case Some(Id(name)) =>

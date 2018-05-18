@@ -56,8 +56,8 @@ class DIUniverseMacros[D <: StaticDIUniverse](val u: D) {
   }
 
   implicit val liftableSetElementKey: Liftable[DIKey.SetElementKey] = {
-    case DIKey.SetElementKey(set, symbol) => q"""
-    { new $RuntimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, $symbol) }
+    case DIKey.SetElementKey(set, index, symbol) => q"""
+    { new $RuntimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, $index, $symbol) }
       """
   }
 
