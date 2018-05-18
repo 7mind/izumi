@@ -21,9 +21,6 @@ val LibSettings = SettingsGroupId()
 val SbtSettings = SettingsGroupId()
 val ShadingSettings = SettingsGroupId()
 
-val scala_212 = R.scala212
-val scala_213 = "2.13.0-M3"
-
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("com.github.pshirshov.izumi")
 
@@ -33,7 +30,7 @@ val baseSettings = new GlobalSettings {
       override val settings: Seq[sbt.Setting[_]] = Seq(
         organization := "com.github.pshirshov.izumi.r2"
         , crossScalaVersions := Seq(
-          scala_212
+          V.scala_212
         )
         , publishMavenStyle in Global := true
         , sonatypeProfileName := "com.github.pshirshov"
@@ -121,7 +118,7 @@ val baseSettings = new GlobalSettings {
           , scriptedBufferLog := false
 
           , crossScalaVersions := Seq(
-            scala_212
+            V.scala_212
           )
           , libraryDependencies ++= Seq(
             "org.scala-sbt" % "sbt" % sbtVersion.value
