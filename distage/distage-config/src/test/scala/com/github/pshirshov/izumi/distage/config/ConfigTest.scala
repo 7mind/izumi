@@ -6,6 +6,9 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.typesafe.config._
 import org.scalatest.WordSpec
 
+import scala.collection.immutable.ListSet
+import scala.collection.mutable
+
 class ConfigTest extends WordSpec {
   "Config resolver" should {
     "resolve config references" in {
@@ -37,6 +40,7 @@ class ConfigTest extends WordSpec {
 
       val context = injector.produce(plan)
 
+      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[mutable.ListMap[_, _]])
       assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3"))
       assert(context.get[Service[MapCaseClass]].conf.mymap.values.forall(_.host == "localhost"))
     }
@@ -48,6 +52,8 @@ class ConfigTest extends WordSpec {
 
       val context = injector.produce(plan)
 
+      assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[_]])
+      assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[_]])
       assert(context.get[Service[ListCaseClass]].conf.mylist.head ==
         Set(
           Wrapper(HostPort(80, "localhost"))
