@@ -125,7 +125,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       .toList
   }
 
-  def constructor(struct: Struct): List[ConverterDef] = {
+  def constructors(struct: Struct): List[ConverterDef] = {
     val local = struct.localOrAmbigious
     val localNamesSet = local.map(_.field.name).toSet
 

@@ -4,11 +4,11 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Interfaces, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{AdtElementProduct, AdtProduct, EnumProduct}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
 
@@ -88,11 +88,19 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   }
 
   protected def renderDto(i: DTO): RenderableCogenProduct = {
-    defns(ctx.tools.mkStructure(i.id))
+    defns(ctx.tools.mkStructure(i.id), withMirror = true)
   }
 
-  protected def defns(struct: CompositeStructure, bases: List[Init] = List.empty): RenderableCogenProduct = {
-    val ifDecls = struct.composite.map {
+  protected def defns(struct: CompositeStructure, withMirror: Boolean, bases: List[Init] = List.empty): RenderableCogenProduct = {
+
+    val (mirrorInterface: List[Defn.Trait], moreBases: Interfaces) = if (withMirror) {
+      val eid = typespace.defnId(struct.fields.id)
+      val implStructure = ctx.tools.mkStructure(eid)
+      (List(mkTrait(List.empty, conv.toScala(eid), implStructure.fields)), List(eid))
+    } else {
+      (List.empty, List.empty)
+    }
+    val ifDecls = (struct.composite ++ moreBases).map {
       iface =>
         ctx.conv.toScala(iface).init()
     }
@@ -101,16 +109,59 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val tools = struct.t.within(s"${struct.fields.id.name.capitalize}Extensions")
 
-    val qqComposite = q"""case class ${struct.t.typeName}(..${struct.decls}) extends ..$superClasses {}"""
+    val qqComposite = q"""final case class ${struct.t.typeName}(..${struct.decls}) extends ..$superClasses {}"""
 
     val qqTools = q""" implicit class ${tools.typeName}(_value: ${struct.t.typeFull}) { }"""
 
+
+
     val qqCompositeCompanion =
       q"""object ${struct.t.termName} {
+          ..$mirrorInterface
+
           ..${struct.constructors}
          }"""
 
-    ctx.ext.extend(struct.fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools, List.empty), _.handleComposite)
+    ext.extend(struct.fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools, List.empty), _.handleComposite)
+  }
+
+  protected def renderInterface(i: Interface): RenderableCogenProduct = {
+    val fields = typespace.structure.structure(i).toScala
+    val t = conv.toScala(i.id)
+
+    val qqInterface = mkTrait(i.struct.superclasses.interfaces, t, fields)
+
+    val eid = typespace.implId(i.id)
+    val implStructure = ctx.tools.mkStructure(eid)
+    val impl = defns(implStructure, withMirror = false).render
+    val qqInterfaceCompanion =
+      q"""object ${t.termName} {
+             def apply(..${implStructure.decls}) = ${conv.toScala(eid).termName}(..${implStructure.names})
+             ..$impl
+         }"""
+
+    val tools = t.within(s"${i.id.name}Extensions")
+    val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
+
+    ext.extend(i, CogenProduct(qqInterface, qqInterfaceCompanion, qqTools, List.empty), _.handleInterface)
+  }
+
+  private def mkTrait(supers: Interfaces, t: ScalaType, fields: ScalaStruct): Defn.Trait = {
+    val decls = fields.all.map {
+      f =>
+        Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
+    }
+
+    val ifDecls = (rt.generated +: supers.map(conv.toScala)).map(_.init())
+
+
+    val qqInterface =
+      q"""trait ${t.typeName} extends ..$ifDecls {
+          ..$decls
+          }
+       """
+
+    ext.extend(fields, TraitProduct(qqInterface), _.handleTrait).defn
   }
 
   protected def renderAlias(i: Alias): Seq[Defn] = {
@@ -126,7 +177,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
         val mt = t.within(memberName)
         val original = conv.toScala(m.typeId)
 
-        val qqElement = q"""case class ${mt.typeName}(value: ${original.typeAbsolute}) extends ..${List(t.init())}"""
+        val qqElement = q"""final case class ${mt.typeName}(value: ${original.typeAbsolute}) extends ..${List(t.init())}"""
         val qqCompanion = q""" object ${mt.termName} {} """
 
 
@@ -158,7 +209,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       m =>
         val mt = t.within(m)
         val element =
-          q"""case object ${mt.termName} extends ${t.init()} {
+          q"""final case object ${mt.termName} extends ${t.init()} {
               override def toString: String = ${Lit.String(m)}
             }"""
 
@@ -219,7 +270,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       }"""
 
     val qqIdentifier =
-      q"""case class ${t.typeName} (..$decls) extends ..$superClasses {
+      q"""final case class ${t.typeName} (..$decls) extends ..$superClasses {
             override def toString: String = {
               import ${rt.tIDLIdentifier.termBase}._
               val suffix = Seq(..$parts).map(part => escape(part.toString)).mkString(":")
@@ -231,41 +282,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     ext.extend(i, CogenProduct(qqIdentifier, qqCompanion, qqTools, List.empty), _.handleIdentifier)
   }
 
-  protected def renderInterface(i: Interface): RenderableCogenProduct = {
-    val fields = typespace.structure.structure(i).toScala
-    val decls = fields.all.map {
-      f =>
-        Decl.Def(List.empty, f.name, List.empty, List.empty, f.fieldType)
-    }
-
-    val ifDecls = (rt.generated +: i.struct.superclasses.interfaces.map(conv.toScala)).map(_.init())
-
-    val t = conv.toScala(i.id)
-    val eid = typespace.implId(i.id)
-
-    val implStructure = ctx.tools.mkStructure(eid)
-    val impl = defns(implStructure).render
-
-    val tools = t.within(s"${i.id.name}Extensions")
-    val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
-
-    val qqInterface =
-      q"""trait ${t.typeName} extends ..$ifDecls {
-          ..$decls
-          }
-
-       """
-
-    val qqInterfaceCompanion =
-      q"""object ${t.termName} {
-             def apply(..${implStructure.decls}) = ${conv.toScala(eid).termName}(..${implStructure.names})
-             ..$impl
-         }"""
-
-    ext.extend(i, CogenProduct(qqInterface, qqInterfaceCompanion, qqTools, List.empty), _.handleInterface)
-  }
-
-
   protected def renderService(svc: Service): RenderableCogenProduct = {
     val sp = ServiceContext(ctx, svc)
     val decls = svc.methods.collect({ case c: RPCMethod => c })
@@ -274,13 +290,13 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val inputs = decls.map(_.inputIdWrapped).map({
       dto =>
         val struct = ctx.tools.mkStructure(dto)
-        defns(struct, List(sp.serviceInputBase.init()))
+        defns(struct, withMirror = true, List(sp.serviceInputBase.init()))
     }).flatMap(_.render)
 
     val outputs = decls.map(_.outputIdWrapped).map({
       case dto: DTOId =>
         val struct = ctx.tools.mkStructure(dto)
-        defns(struct, List(sp.serviceOutputBase.init()))
+        defns(struct, withMirror = true, List(sp.serviceOutputBase.init()))
       case adt: AdtId =>
         renderAdt(typespace.apply(adt).asInstanceOf[Adt], List(sp.serviceOutputBase.init()))
       case o =>
@@ -467,8 +483,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
          }
        """
 
-    val input = CogenPair(q"sealed trait ${sp.serviceInputBase.typeName} extends Any with Product", q"object ${sp.serviceInputBase.termName} {}")
-    val output = CogenPair(q"sealed trait ${sp.serviceOutputBase.typeName} extends Any with Product", q"object ${sp.serviceOutputBase.termName} {}")
+    import CogenServiceProduct._
+
+    val input = Pair(q"sealed trait ${sp.serviceInputBase.typeName} extends Any with Product", q"object ${sp.serviceInputBase.termName} {}")
+    val output = Pair(q"sealed trait ${sp.serviceOutputBase.typeName} extends Any with Product", q"object ${sp.serviceOutputBase.termName} {}")
 
     // TODO: move Any into extensions
     val qqBaseCompanion =
@@ -482,10 +500,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
 
     val out = CogenServiceProduct(
-      CogenPair(qqService, qqServiceCompanion)
-      , CogenPair(qqClient, qqClientCompanion)
-      , CogenPair(qqWrapped, qqWrappedCompanion)
-      , products.CogenServiceDefs(qqBaseCompanion, input, output)
+      Pair(qqService, qqServiceCompanion)
+      , Pair(qqClient, qqClientCompanion)
+      , Pair(qqWrapped, qqWrappedCompanion)
+      , Defs(qqBaseCompanion, input, output)
       , List(runtime.Import.from(runtime.Pkg.language, "higherKinds"), rt.services.`import`)
     )
 

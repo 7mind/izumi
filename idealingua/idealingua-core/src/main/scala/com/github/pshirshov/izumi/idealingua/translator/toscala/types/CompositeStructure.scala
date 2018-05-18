@@ -16,7 +16,7 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val constructors: List[Defn.Def] = {
     val struct = fields.fields
 
-    ctx.typespace.structure.constructor(struct).map {
+    ctx.typespace.structure.constructors(struct).map {
       cdef =>
         val constructorSignature: List[Term.Param] = ctx.tools.makeParams(cdef)
         val fullConstructorCode = ctx.tools.makeConstructor(cdef)

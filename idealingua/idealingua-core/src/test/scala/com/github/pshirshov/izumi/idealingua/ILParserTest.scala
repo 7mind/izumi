@@ -66,6 +66,8 @@ class ILParserTest extends WordSpec {
           | /* test/**/*/
         """.stripMargin)
       assertParses(parser.comments.ShortComment, "// test\n")
+      assertParses(parser.comments.ShortComment, "//\n")
+      assertParses(parser.sep.any, "//\n")
       assertParses(parser.sep.any, "// test\n")
 
     }

@@ -6,22 +6,20 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.mutable
 
+
 final case class DodgyPlan(
-                            dependees: ReverseDepMap
-                            , dependencies: DepMap
-                            , operations: OpMap
+                            operations: OpMap
+                            , topology: PlanTopology
                             , issues: mutable.ArrayBuffer[PlanningFailure]
                           )
 
 object DodgyPlan {
-  type ReverseDepMap = mutable.HashMap[DIKey, mutable.Set[DIKey]] with mutable.MultiMap[DIKey, DIKey]
-  type DepMap = mutable.HashMap[DIKey, mutable.Set[DIKey]] with mutable.MultiMap[DIKey, DIKey]
+
   type OpMap = mutable.HashMap[DIKey, InstantiationOp]
 
   def empty: DodgyPlan = DodgyPlan(
-    new mutable.HashMap[DIKey, mutable.Set[DIKey]] with mutable.MultiMap[DIKey, DIKey]
-    , new mutable.HashMap[DIKey, mutable.Set[DIKey]] with mutable.MultiMap[DIKey, DIKey]
-    , new OpMap
+    new OpMap
+    , PlanTopology.empty
     , mutable.ArrayBuffer.empty[PlanningFailure]
   )
 }

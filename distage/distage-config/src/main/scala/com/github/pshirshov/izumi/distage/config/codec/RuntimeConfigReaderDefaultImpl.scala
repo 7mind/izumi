@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.config
+package com.github.pshirshov.izumi.distage.config.codec
 
 import java.io.File
 import java.math.BigInteger
@@ -7,11 +7,14 @@ import java.time._
 import java.util.UUID
 import java.util.regex.Pattern
 
+import com.github.pshirshov.izumi.distage.config.model.ConfigReadException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
 import com.typesafe.config._
 
 import scala.collection.JavaConverters._
+import scala.collection.generic.GenMapFactory
+import scala.collection.{GenMap, GenTraversable}
 import scala.reflect.ClassTag
 import scala.reflect.io.Path
 import scala.util.matching.Regex
@@ -25,8 +28,8 @@ class RuntimeConfigReaderDefaultImpl
 
   import RuntimeConfigReaderDefaultImpl._
 
-  override def read(config: ConfigValue, tpe: TypeFull): Any = {
-    anyReader(tpe)(config).get
+  override def readConfig(config: Config, tpe: TypeFull): Any = {
+    deriveCaseClassReader(tpe)(config.root()).get
   }
 
   def anyReader(tpe: TypeFull): ConfigReader[_] = {
@@ -39,15 +42,10 @@ class RuntimeConfigReaderDefaultImpl
         val clazz = mirror.runtimeClass(tpe.tpe)
 
         ConfigReaderInstances.javaEnumReader(ClassTag(clazz))
-      case _ if tpe <:< SafeType.get[scala.collection.immutable.Map[String, Any]] =>
-        objectMapReader(tpe.tpe)
-      // FIXME use collection's scala.collection.GenericCompanion to instantiate any collection
-      case _ if tpe.tpe.dealias.erasure =:= u.typeOf[List[_]].dealias.erasure =>
-        listReader(tpe.tpe.dealias, _.toList)
-      case _ if tpe.tpe.dealias.erasure =:= u.typeOf[Seq[_]].dealias.erasure =>
-        listReader(tpe.tpe.dealias, _.toSeq)
-      case _ if tpe.tpe.dealias.erasure =:= u.typeOf[Set[_]].dealias.erasure =>
-        listReader(tpe.tpe.dealias, _.toSet)
+      case _ if tpe <:< SafeType.get[GenMap[String, Any]] =>
+        objectMapReader(tpe.tpe.dealias)
+      case _ if tpe <:< SafeType.get[GenTraversable[Any]] =>
+        listReader(tpe.tpe.dealias)
       case _ if tpe.tpe.dealias.erasure =:= u.typeOf[Option[_]].dealias.erasure =>
         optionReader(tpe.tpe.dealias)
       case _ =>
@@ -88,12 +86,19 @@ class RuntimeConfigReaderDefaultImpl
       }
     }
 
-  def objectMapReader(mapType: TypeNative): ConfigReader[Map[String, _]] = {
+  def objectMapReader(mapType: TypeNative): ConfigReader[GenMap[String, _]] = {
     case co: ConfigObject => Try {
-      val tyParam = SafeType(mapType.typeArgs(1))
-      co.asScala.toMap.mapValues {
-        value =>
-          anyReader(tyParam)(value).get
+      val tyParam = SafeType(mapType.dealias.typeArgs.last)
+      mirror.reflectModule(mapType.dealias.companion.typeSymbol.asClass.module.asModule).instance match {
+        case companionFactory: GenMapFactory[GenMap] @unchecked =>
+          val kvs = co.asScala.toMap.mapValues(anyReader(tyParam)(_).get)
+          companionFactory.apply(kvs.toSeq: _*)
+        case c =>
+          throw new ConfigReadException(
+            s"""When trying to read a Map type $mapType: can't instantiate class. Expected a companion object of type
+               | scala.collection.generic.GenMapFactory to be present, but $mapType companion object has type: ${c.getClass}.
+               |
+               | ConfigValue was: $co""".stripMargin)
       }
     }
     case cv =>
@@ -102,13 +107,21 @@ class RuntimeConfigReaderDefaultImpl
            | ConfigValue was: $cv""".stripMargin))
   }
 
-  def listReader[R](listType: TypeNative, ctor: Seq[_] => R): ConfigReader[R] = {
+  def listReader(listType: TypeNative): ConfigReader[GenTraversable[_]] = {
     case cl: ConfigList => Try {
-      val tyParam = SafeType(listType.typeArgs.head)
-      ctor.apply(cl.asScala.map {
-        value =>
-          anyReader(tyParam)(value).get
-      })
+      val tyParam = SafeType(listType.dealias.typeArgs.last)
+
+      mirror.reflectModule(listType.dealias.companion.typeSymbol.asClass.module.asModule).instance match {
+        case companionFactory: scala.collection.generic.GenericCompanion[GenTraversable] @unchecked =>
+          val values: Seq[_] = cl.asScala.map(anyReader(tyParam)(_).get)
+          companionFactory(values: _*)
+        case c =>
+          throw new ConfigReadException(
+            s"""When trying to read a collection type $listType: can't instantiate class. Expected a companion object of type
+               | scala.collection.generic.GenericCompanion to be present, but $listType companion object has type: ${c.getClass}.
+               |
+               | ConfigValue was: $cl""".stripMargin)
+      }
     }
     case cv =>
       Failure(new ConfigReadException(

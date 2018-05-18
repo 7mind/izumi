@@ -18,7 +18,11 @@ final case class ParsedId(pkg: Seq[String], name: String) {
 
   def toIdId: IdentifierId = IdentifierId(typePath, name)
 
-  def toMixinId: InterfaceId = InterfaceId(typePath, name)
+  def toInterfaceId: InterfaceId = InterfaceId(typePath, name)
+
+  def toParentId: InterfaceId = toInterfaceId
+
+  def toMixinId: IndefiniteMixin = IndefiniteMixin(pkg, name)
 
   def toDataId: DTOId = DTOId(typePath, name)
 

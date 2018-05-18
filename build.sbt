@@ -1,4 +1,4 @@
-import D._
+import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
@@ -21,9 +21,6 @@ val LibSettings = SettingsGroupId()
 val SbtSettings = SettingsGroupId()
 val ShadingSettings = SettingsGroupId()
 
-val scala_212 = R.scala212
-val scala_213 = "2.13.0-M3"
-
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("com.github.pshirshov.izumi")
 
@@ -33,7 +30,7 @@ val baseSettings = new GlobalSettings {
       override val settings: Seq[sbt.Setting[_]] = Seq(
         organization := "com.github.pshirshov.izumi.r2"
         , crossScalaVersions := Seq(
-          scala_212
+          V.scala_212
         )
         , publishMavenStyle in Global := true
         , sonatypeProfileName := "com.github.pshirshov"
@@ -121,7 +118,7 @@ val baseSettings = new GlobalSettings {
           , scriptedBufferLog := false
 
           , crossScalaVersions := Seq(
-            scala_212
+            V.scala_212
           )
           , libraryDependencies ++= Seq(
             "org.scala-sbt" % "sbt" % sbtVersion.value
@@ -316,7 +313,7 @@ lazy val fastparseShaded = inShade.as.module
   .settings(ShadingSettings)
 
 lazy val idealinguaCore = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler, T.scala_library))
+  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
   .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
   .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
   .settings(ShadingSettings)
@@ -339,13 +336,16 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
 lazy val sbtIzumi = inSbt.as
   .module
 
+lazy val sbtIzumiDeps = inSbt.as
+  .module
+
 lazy val sbtIdealingua = inSbt.as
   .module
   .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce)
 
 lazy val sbtTests = inSbt.as
   .module
-  .depends(sbtIzumi, sbtIdealingua)
+  .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageDi

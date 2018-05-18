@@ -5,7 +5,9 @@ trait RuntimeDIUniverse extends DIUniverse {
 
   val mirror: u.Mirror = scala.reflect.runtime.currentMirror
 
-  class IdContractImpl[T] extends IdContract[T]
+  class IdContractImpl[T] extends IdContract[T] {
+    override def repr(value: T): String = value.toString
+  }
 
   override implicit def stringIdContract: IdContract[String] = new IdContractImpl[String]
   override implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = new IdContractImpl[S]

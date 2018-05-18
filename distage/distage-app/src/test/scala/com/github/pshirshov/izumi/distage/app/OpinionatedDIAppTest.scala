@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.distage.app
 
-import com.github.pshirshov.izumi.distage.config.{AppConfig, ConfigModule, RuntimeConfigReaderDefaultImpl}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleDef}
+import com.github.pshirshov.izumi.distage.config.ConfigModule
+import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.{Locator, reflection}
-import com.github.pshirshov.izumi.distage.planning.AutoSetHook
+import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.logstage.api.TestSink
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
@@ -51,21 +51,9 @@ class TestAppLauncher(modules: Seq[ModuleDef], pluginMergeConfig: PluginMergeCon
 }
 
 
-class TestPredicateAutoSet extends AutoSetHook {
-  override def elementOf(b: Binding): Option[universe.RuntimeDIUniverse.DIKey] = {
-    val mirror = RuntimeDIUniverse.mirror
-    val keyClass = mirror.runtimeClass(b.key.symbol.tpe)
-    if (keyClass.isAssignableFrom(classOf[Conflict])) {
-      Some(RuntimeDIUniverse.DIKey.get[Set[Conflict]])
-    } else {
-      None
-    }
-  }
-}
-
 class CustomizationModule extends ModuleDef {
   many[PlanningHook]
-    .add[TestPredicateAutoSet]
+    .add(new AssignableFromAutoSetHook[Conflict])
 }
 
 

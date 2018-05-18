@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependen
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ImportStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{FactoryExecutor, OpResult, ProvisioningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 class ImportStrategyDefaultImpl extends ImportStrategy {
   override def importDependency(context: ProvisioningContext, op: ImportDependency): Seq[OpResult] = {
@@ -20,6 +21,16 @@ class ImportStrategyDefaultImpl extends ImportStrategy {
         throw new MissingInstanceException(s"Instance is not available in the context: $target. " +
           s"required by refs: $references", target)
     }
+  }
+}
+
+
+class ImportStrategyFailingImpl extends ImportStrategy {
+  override def importDependency(context: ProvisioningContext, op: ImportDependency): Seq[OpResult] = {
+    Quirks.discard(context)
+
+    import op._
+    throw new MissingInstanceException(s"Imports are disabled and instance is not available in the context: $target. required by refs: $references", target)
   }
 }
 

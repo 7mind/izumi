@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.model.definition.Bindings._
 import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
-import com.github.pshirshov.izumi.distage.model.definition.{Bindings, ModuleDef, ModuleBase, SimpleModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import org.scalatest.WordSpec
 
 class MagicDSLTest extends WordSpec {

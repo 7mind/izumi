@@ -21,6 +21,8 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
 
   override def implId(id: InterfaceId): DTOId = DTOId(id, types.toDtoName(id))
 
+  override def defnId(id: StructureId): InterfaceId = InterfaceId(id, types.toInterfaceName(id))
+
   def toDtoName(id: TypeId): String = types.toDtoName(id)
 
   def apply(id: ServiceId): Service = {
@@ -31,6 +33,7 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
     if (index.contains(id)) {
       index(id)
     } else {
+      System.err.println(id)
       referenced(id.path.domain).apply(id)
     }
   }

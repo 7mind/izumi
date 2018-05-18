@@ -108,12 +108,10 @@ object WrappedFunction {
 
       import c.universe._
       import macroUniverse._
-      import macroUniverse.DependencyContext.ParameterContext
 
       case class ExtractedInfo(keys: List[DIKey], isValReference: Boolean)
 
-      private def context(tpe: TypeFull) =
-        DependencyContext.ConstructorParameterContext(tpe)
+      type Ctx = TypeFull
 
       def impl[R: c.WeakTypeTag](funcExpr: c.Expr[_]): c.Expr[DIKeyWrappedFunction[R]] = {
 
@@ -122,7 +120,7 @@ object WrappedFunction {
         val argTree = funcExpr.tree
         val ret = SafeType.getWeak[R]
 
-        val ExtractedInfo(keys, isValReference) = analyze(argTree, context(ret))
+        val ExtractedInfo(keys, isValReference) = analyze(argTree, ret)
 
         // FIXME preserve annotations
         val keysTree = keys.map {
@@ -165,13 +163,13 @@ object WrappedFunction {
         result
       }
 
-      def analyze(tree: c.Tree, ctx: ParameterContext): ExtractedInfo = tree match {
+      def analyze(tree: c.Tree, ctx: Ctx): ExtractedInfo = tree match {
         case Block(List(), inner) =>
           analyze(inner, ctx)
         case Function(args, body) =>
           analyzeMethodRef(args.map(_.symbol), body, ctx)
         case _ if Option(tree.symbol).exists(_.isMethod) =>
-          analyzeValRef(tree.symbol, ctx)
+          analyzeValRef(tree.symbol)
         case _ =>
           c.abort(c.enclosingPosition
             , s"""
@@ -182,16 +180,19 @@ object WrappedFunction {
                | Hint: Try appending _ to your method name""".stripMargin)
       }
 
-      def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ctx: ParameterContext): ExtractedInfo = {
+      private def context(symb: Symb, tpe: TypeFull) =
+        DependencyContext.ConstructorParameterContext(symb, tpe)
+
+      def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ctx: Ctx): ExtractedInfo = {
         val lambdaKeys: List[DIKey] =
-          lambdaArgs.map(keyProvider.keyFromParameter(ctx, _))
+          lambdaArgs.map(arg => keyProvider.keyFromParameter(context(arg, ctx), arg))
 
         val methodReferenceKeys: List[DIKey] = body match {
           case Apply(f, _) =>
             logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
 
             val params = f.symbol.asMethod.typeSignature.paramLists.flatten
-            params.map(keyProvider.keyFromParameter(ctx, _))
+            params.map(p => keyProvider.keyFromParameter(context(p, ctx), p))
           case _ =>
             logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
 
@@ -209,12 +210,12 @@ object WrappedFunction {
         ExtractedInfo(keys, isValReference = false)
       }
 
-      def analyzeValRef(symbol: Symbol, ctx: ParameterContext): ExtractedInfo = {
+      def analyzeValRef(symbol: Symbol): ExtractedInfo = {
         val sig = symbol.typeSignature.finalResultType
 
         val keys = sig.typeArgs.init.map {
           tpe =>
-            keyProvider.keyFromParameterType(ctx, SafeType(tpe))
+            keyProvider.keyFromParameterType(SafeType(tpe))
         }
 
         ExtractedInfo(keys, isValReference = true)

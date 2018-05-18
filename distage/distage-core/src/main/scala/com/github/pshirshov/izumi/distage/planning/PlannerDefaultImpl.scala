@@ -65,7 +65,7 @@ class PlannerDefaultImpl
 
       case s: SetElementBinding[_] =>
         val target = s.key
-        val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation))
+        val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, currentPlan.operations.size, setElementKeySymbol(s.implementation))
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
         val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.symbol, Set.empty))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
@@ -104,6 +104,9 @@ class PlannerDefaultImpl
 
       case w: Instance =>
         Step(wiring, WiringOp.ReferenceInstance(target, w))
+
+      case w: Reference =>
+        Step(wiring, WiringOp.ReferenceKey(target, w))
     }
   }
 
@@ -112,10 +115,12 @@ class PlannerDefaultImpl
     binding.implementation match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)
-      case i: ImplDef.InstanceImpl =>
-        UnaryWiring.Instance(i.implType, i.instance)
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerToWiring(p.function)
+      case i: ImplDef.InstanceImpl =>
+        UnaryWiring.Instance(i.implType, i.instance)
+      case r: ImplDef.ReferenceImpl =>
+        UnaryWiring.Reference(r.implType, r.key)
     }
   }
 
@@ -127,6 +132,8 @@ class PlannerDefaultImpl
         i.implType
       case p: ImplDef.ProviderImpl =>
         p.implType
+      case r: ImplDef.ReferenceImpl =>
+        r.implType
     }
   }
 }

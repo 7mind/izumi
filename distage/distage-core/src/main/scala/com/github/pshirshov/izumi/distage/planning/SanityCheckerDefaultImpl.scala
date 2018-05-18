@@ -15,20 +15,20 @@ class SanityCheckerDefaultImpl
   extends SanityChecker {
 
   override def assertStepSane(plan: DodgyPlan): Unit = {
-    plan.dependencies.foreach {
+    plan.topology.dependencies.foreach {
       kv =>
         kv._2.foreach {
           dep =>
-            if (!plan.dependees(dep).contains(kv._1)) {
+            if (!plan.topology.dependees(dep).contains(kv._1)) {
               throw new DIException(s"Sanity check failed: deptables assymetric !", null)
             }
         }
     }
-    plan.dependees.foreach {
+    plan.topology.dependees.foreach {
       kv =>
         kv._2.foreach {
           dep =>
-            if (!plan.dependencies(dep).contains(kv._1)) {
+            if (!plan.topology.dependencies(dep).contains(kv._1)) {
               throw new DIException(s"Sanity check failed: deptables assymetric !", null)
             }
         }

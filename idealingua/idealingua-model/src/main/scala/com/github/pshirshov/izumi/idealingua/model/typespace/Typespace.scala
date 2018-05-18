@@ -44,7 +44,7 @@ trait InheritanceQueries {
 trait StructuralQueries {
   def conversions(id: InterfaceId): List[ConverterDef]
 
-  def constructor(struct: Struct): List[ConverterDef]
+  def constructors(struct: Struct): List[ConverterDef]
 
   def structuralParents(id: Interface): List[Struct]
 
@@ -82,8 +82,10 @@ trait Typespace {
 
   def implId(id: InterfaceId): DTOId
 
+  def defnId(id: StructureId): InterfaceId
 
   protected[typespace] def types: TypeCollection
+
   protected[typespace] def referenced: Map[DomainId, Typespace]
 }
 

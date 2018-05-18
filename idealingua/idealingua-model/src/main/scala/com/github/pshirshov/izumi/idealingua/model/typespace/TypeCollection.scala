@@ -55,11 +55,21 @@ class TypeCollection(domain: DomainDefinition) {
       }
   }
 
+  val dtoEphemerals: Seq[Interface] = {
+    (domain.types ++ serviceEphemerals)
+      .collect {
+        case i: DTO =>
+          val iid = InterfaceId(i.id, toInterfaceName(i.id))
+          Interface(iid, i.struct)
+      }
+  }
+
   val all: Seq[TypeDef] = {
     val definitions = Seq(
       domain.types
       , serviceEphemerals
       , interfaceEphemerals
+      , dtoEphemerals
     ).flatten
 
     verified(definitions)
@@ -74,7 +84,20 @@ class TypeCollection(domain: DomainDefinition) {
   def toDtoName(id: TypeId): String = {
     id match {
       case _: InterfaceId =>
-        s"${id.name}Struct"
+        //s"${id.name}Struct"
+        s"Struct"
+      case _ =>
+        s"${id.name}"
+
+    }
+  }
+
+  def toInterfaceName(id: TypeId): String = {
+    id match {
+      case _: DTOId =>
+        //s"${id.name}Defn"
+
+        s"Defn"
       case _ =>
         s"${id.name}"
 
@@ -82,7 +105,8 @@ class TypeCollection(domain: DomainDefinition) {
   }
 
   protected def verified(types: Seq[TypeDef]): Seq[TypeDef] = {
-    val conflictingTypes = types.groupBy(_.id.name).filter(_._2.lengthCompare(1) > 0)
+    val conflictingTypes = types.groupBy(id => (id.id.path , id.id.name)).filter(_._2.lengthCompare(1) > 0)
+
     if (conflictingTypes.nonEmpty) {
       throw new IDLException(s"Conflicting types in: $conflictingTypes")
     }

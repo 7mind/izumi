@@ -55,19 +55,19 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     Wiring.UnaryWiring.Function(function, associations)
   }
 
-  override def constructorParameters(symbl: TypeFull): List[Association.ExtendedParameter] = {
+  override def constructorParameters(symbl: TypeFull): List[Association.Parameter] = {
     val args: List[u.Symb] = symbolIntrospector.selectConstructor(symbl).arguments
 
-    val context = DependencyContext.ConstructorParameterContext(symbl)
     args.map {
       parameter =>
+        val context = DependencyContext.ConstructorParameterContext(parameter, symbl)
         val p = Association.Parameter(
           context
           , parameter.name.toTermName.toString
           , SafeType(parameter.typeSignatureIn(symbl.tpe))
           , keyProvider.keyFromParameter(context, parameter)
         )
-        Association.ExtendedParameter(parameter, p)
+        p
     }
   }
 
@@ -79,7 +79,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private def unarySymbolDeps(symbl: TypeFull): UnaryWiring.ProductWiring = symbl match {
     case ConcreteSymbol(symb) =>
-      UnaryWiring.Constructor(symb, constructorParameters(symb).map(_.parameter))
+      UnaryWiring.Constructor(symb, constructorParameters(symb))
 
     case AbstractSymbol(symb) =>
       UnaryWiring.AbstractSymbol(symb, traitMethods(symb))

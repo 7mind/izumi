@@ -21,22 +21,28 @@ class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLoc
 
   import DefaultBootstrapContext._
 
-  lazy val parent: Option[AbstractLocator] = None
+  val parent: Option[AbstractLocator] = None
 
-  lazy val plan: FinalPlan = bootstrapPlanner.plan(contextDefinition)
+  val plan: FinalPlan = bootstrapPlanner.plan(contextDefinition)
 
-  def enumerate: Stream[IdentifiedRef] = bootstrappedContext.enumerate
+  protected val bootstrappedContext: ProvisionImmutable = {
+    bootstrapProducer.provision(plan, this)
+  }
 
-  protected lazy val bootstrappedContext: ProvisionImmutable = bootstrapProducer.provision(plan, this)
+  def enumerate: Stream[IdentifiedRef] = {
+    bootstrappedContext.enumerate
+  }
 
-  protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] = bootstrappedContext.get(key)
+  protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] = {
+    bootstrappedContext.get(key)
+  }
 
 }
 
 object DefaultBootstrapContext {
-  val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
+  protected val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
 
-  val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
+  protected val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
     new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
     , symbolIntrospector
   )
@@ -53,7 +59,7 @@ object DefaultBootstrapContext {
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
       , bootstrapObserver
-      , new PlanMergingPolicyDefaultImpl
+      , new PlanMergingPolicyDefaultImpl(analyzer)
       , Set(new PlanningHookDefaultImpl)
     )
   }
@@ -68,7 +74,7 @@ object DefaultBootstrapContext {
       , new TraitStrategyFailingImpl
       , new ProviderStrategyDefaultImpl(loggerHook)
       , new ClassStrategyDefaultImpl(symbolIntrospector)
-      , new ImportStrategyDefaultImpl
+      , new ImportStrategyFailingImpl
       , new InstanceStrategyDefaultImpl
     )
   }

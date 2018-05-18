@@ -9,6 +9,8 @@ object ImplDef {
     def implType: RuntimeDIUniverse.TypeFull
   }
 
+  final case class ReferenceImpl(implType: RuntimeDIUniverse.TypeFull, key: RuntimeDIUniverse.DIKey) extends WithImplType
+
   final case class TypeImpl(implType: RuntimeDIUniverse.TypeFull) extends WithImplType
 
   final case class InstanceImpl(implType: RuntimeDIUniverse.TypeFull, instance: Any) extends WithImplType

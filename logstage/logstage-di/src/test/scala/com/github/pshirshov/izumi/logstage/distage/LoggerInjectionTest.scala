@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.distage
 
 import com.github.pshirshov.izumi.distage.Injectors
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleDef, SimpleModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import org.scalatest.WordSpec

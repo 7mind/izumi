@@ -10,18 +10,19 @@ trait AutoSetHook extends PlanningHookDefaultImpl {
   override def hookDefinition(defn: ModuleBase): ModuleBase = {
 
     val autoSetsElements = defn.bindings.flatMap {
-      b =>
-        elementOf(b)
-          .map {
+      case i: ImplBinding =>
+        elementOf(i)
+          .flatMap {
             key =>
-              b match {
-                case i: ImplBinding =>
-                  SetElementBinding(key, i.implementation, Set("izumi.autoset"))
-
-              }
+              Some(SetElementBinding(key, i.implementation, Set("izumi.autoset")))
           }
+          .toSeq
+
+      case _ =>
+        None
     }
 
     SimpleModuleDef(defn.bindings ++ autoSetsElements)
   }
 }
+

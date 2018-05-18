@@ -179,10 +179,12 @@ class TypespaceVerifier(ts: Typespace) {
     definition match {
       case _: Enumeration =>
         Seq.empty
+
       case d: Interface =>
         d.struct.superclasses.interfaces.map(i => MissingDependency.DepInterface(d.id, i)) ++
           d.struct.superclasses.concepts.flatMap(c => extractDependencies(ts.apply(c))) ++
           d.struct.fields.map(f => MissingDependency.DepField(d.id, f.typeId, f))
+
       case d: DTO =>
         d.struct.superclasses.interfaces.map(i => MissingDependency.DepInterface(d.id, i)) ++
           d.struct.superclasses.concepts.flatMap(c => extractDependencies(ts.apply(c))) ++

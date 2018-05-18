@@ -25,7 +25,7 @@ class ILParser {
       P("/*" ~ CommentChunk.rep ~ "*/").rep(1)
     }
 
-    final lazy val ShortComment = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r') ~ sym.NLC))
+    final lazy val ShortComment = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r', min = 0) ~ sym.NLC))
   }
 
   object sep {
@@ -97,7 +97,7 @@ class ILParser {
     final val field = P((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.fulltype)
       .map {
         case (name, tpe) if name.isEmpty =>
-          RawField(tpe, tpe.name.lowerFirst)
+          RawField(tpe, tpe.name.uncapitalize)
 
         case (name, tpe) =>
           RawField(tpe, name)
@@ -108,7 +108,7 @@ class ILParser {
       val sepEntry = sepStruct
       val sepInline = inline
 
-      val plus = P(("&" ~ "&&".?) ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Extend)
+      val plus = P(("&" ~ "&&".?) ~/ sepInline ~ ids.identifier).map(_.toParentId).map(StructOp.Extend)
       val embed = P((("+" ~ "++".?) | "...") ~/ sepInline ~ ids.identifier).map(_.toMixinId).map(StructOp.Mix)
       val minus = P(("-" ~ "--".?) ~/ sepInline ~ (field | ids.identifier)).map {
         case v: RawField =>
@@ -205,7 +205,7 @@ class ILParser {
       .map(v => ILInclude(v))
 
     final val mixinBlock = structure.block(kw.mixin, defs.struct)
-      .map(v => ILDef(v._2.toInterface(v._1.toMixinId)))
+      .map(v => ILDef(v._2.toInterface(v._1.toInterfaceId)))
 
     final val dtoBlock = structure.block(kw.data, defs.struct)
       .map(v => ILDef(v._2.toDto(v._1.toDataId)))

@@ -40,6 +40,9 @@ trait WithDIWiring {
         override def associations: Seq[Association] = Seq.empty
       }
 
+      case class Reference(instanceType: TypeFull, key: DIKey) extends UnaryWiring {
+        override def associations: Seq[Association] = Seq.empty
+      }
     }
 
     case class FactoryMethod(factoryType: TypeFull, factoryMethods: Seq[FactoryMethod.WithContext], fieldDependencies: Seq[Association.AbstractMethod]) extends Wiring {

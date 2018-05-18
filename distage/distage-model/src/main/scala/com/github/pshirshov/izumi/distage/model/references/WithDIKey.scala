@@ -32,19 +32,18 @@ trait WithDIKey {
       override def hashCode(): Int = toString.hashCode()
     }
 
-    case class SetElementKey(set: DIKey, symbol: TypeFull) extends DIKey {
-      override def toString: String = s"$set##${symbol.toString}"
+    // todo: this disambiguating .index is kinda shitty
+    case class SetElementKey(set: DIKey, index: Int, symbol: TypeFull) extends DIKey {
+      override def toString: String = s"$set##${symbol.toString}.$index"
 
       override def hashCode(): Int = toString.hashCode()
     }
   }
 
-  trait IdContract[T]
+  trait IdContract[T] {
+    def repr(v: T): String
+  }
 
   implicit def stringIdContract: IdContract[String]
   implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S]
-//
-//  implicit val stringIdContract: IdContract[String] = null.asInstanceOf[IdContract[String]] //new IdContract[String]
-//  implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = null.asInstanceOf[IdContract[S]] //new IdContract[S]
-
 }

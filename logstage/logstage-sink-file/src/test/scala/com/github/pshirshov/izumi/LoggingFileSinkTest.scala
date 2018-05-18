@@ -3,18 +3,18 @@ package com.github.pshirshov.izumi
 import com.github.pshirshov.izumi.FileServiceImpl.RealFile
 import com.github.pshirshov.izumi.FileServiceUtils._
 import com.github.pshirshov.izumi.FileSink.FileIdentity
-import com.github.pshirshov.izumi.LoggingFileSinkTest.{FileSinkBrokenImpl, _}
+import com.github.pshirshov.izumi.LoggingFileSinkTest.{FileSinkBrokenImpl, randomInt, _}
 import com.github.pshirshov.izumi.dummy.{DummyFile, DummyFileServiceImpl}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
 import com.github.pshirshov.izumi.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
 import org.scalatest.{Assertion, GivenWhenThen, WordSpec}
-import LoggingFileSinkTest.randomInt
 
 import scala.collection.mutable.ListBuffer
-import scala.util.{Failure, Random, Try}
+import scala.util.{Random, Try}
 
 
 trait FileServiceUtils[T <: LogFile] {
@@ -237,7 +237,7 @@ object LoggingFileSinkTest {
     val fileSink = f
     val logger = LoggingMacroTest.configureLogger(Seq(fileSink))
     try {
-      f2(fileSink, logger)
+      Quirks.discard(f2(fileSink, logger))
     } finally {
       val svc = fileSink.fileService
       svc.scanDirectory.foreach(svc.removeFile)
@@ -264,7 +264,7 @@ object LoggingFileSinkTest {
     }
 
     override def performWriting(state: FileSinkState, payload: String): Try[FileSinkState] = {
-      Failure {
+      Try {
         throw new Exception("Error while writing to file sink")
       }
     }

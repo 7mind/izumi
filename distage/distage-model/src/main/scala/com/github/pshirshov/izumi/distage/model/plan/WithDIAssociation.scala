@@ -17,13 +17,6 @@ trait WithDIAssociation {
   }
 
   object Association {
-    @deprecated
-    case class ExtendedParameter(symb: Symb, parameter: Parameter) {
-      val wireWith: DIKey = parameter.wireWith
-      val name: String = parameter.name
-      val context: DependencyContext.ParameterContext = parameter.context
-      val tpe: TypeFull = parameter.tpe
-    }
     case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: TypeFull, wireWith: DIKey) extends Association {
       override def format: String = s"""par $name: $tpe = lookup($wireWith)"""
     }
