@@ -338,6 +338,7 @@ lazy val sbtIzumi = inSbt.as
 
 lazy val sbtIzumiDeps = inSbt.as
   .module
+  .settings(generateBuildInfo("com.github.pshirshov.izumi.sbt.deps", "Izumi"))
 
 lazy val sbtIdealingua = inSbt.as
   .module

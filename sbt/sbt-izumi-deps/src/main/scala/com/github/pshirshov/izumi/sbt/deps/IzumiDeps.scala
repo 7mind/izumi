@@ -2,6 +2,8 @@ package com.github.pshirshov.izumi.sbt.deps
 
 import sbt._
 
+
+
 object IzumiDeps {
 
   object V {
