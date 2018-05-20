@@ -109,19 +109,16 @@ object IzumiBuildInfoPlugin extends AutoPlugin {
         packageName
           .split('.')
           .foldLeft((sourceManaged in Compile).value)(_ / _) / s"$objectName.scala"
-
-      val st = state.value
-      val extracted = Project extract st
-      val empty = extracted.structure.data
-
+      
+      val sd = settingsData.in(Global).value
       val ver = (version in LocalRootProject).value
       val group = (organization in LocalRootProject).value
 
       val allProjectRefs = loadedBuild.value.allProjectRefs
 
-      val depmap = buildDepMap.value.map(_.evaluate(empty)).toMap
-      val vermap = buildVersionMap.value.map(_.evaluate(empty)).toMap
-      val groupmap = buildGroupIdMap.value.map(_.evaluate(empty)).toMap
+      val depmap = buildDepMap.value.map(_.evaluate(sd)).toMap
+      val vermap = buildVersionMap.value.map(_.evaluate(sd)).toMap
+      val groupmap = buildGroupIdMap.value.map(_.evaluate(sd)).toMap
 
 
       val allProjects = allProjectRefs.map {
