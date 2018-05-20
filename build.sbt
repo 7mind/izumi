@@ -388,9 +388,11 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregate(allProjects: _*)
-  .enablePlugins(ParadoxSitePlugin, SitePlugin)
+  .enablePlugins(ParadoxSitePlugin, SitePlugin, GhpagesPlugin)
   .settings(
     paradoxTheme := Some(builtinParadoxTheme("generic"))
     , sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
     , previewFixedPort := Some(9999)
+    , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
+    , git.remoteRepo := scmInfo.value.get.connection
   )
