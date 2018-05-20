@@ -8,7 +8,7 @@ import coursier.ShadingPlugin.autoImport.shadingNamespace
 import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
 import sbtassembly.Assembly
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
-
+import com.typesafe.sbt.SbtGit.GitKeys.{gitBranch, gitRemoteRepo}
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -395,4 +395,5 @@ lazy val `izumi-r2` = inRoot.as
     , previewFixedPort := Some(9999)
     , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
     , git.remoteRepo := scmInfo.value.get.connection
+    , gitBranch in ghpagesUpdatedRepository := Some("gh-pages")
   )
