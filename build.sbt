@@ -2,9 +2,10 @@ import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.lightbend.paradox.sbt.ParadoxPlugin.autoImport.paradoxTheme
 import com.typesafe.sbt.pgp.PgpSettings
 import coursier.ShadingPlugin.autoImport.shadingNamespace
-import sbt.Keys.{pomExtra, publishMavenStyle}
+import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
 import sbtassembly.Assembly
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
@@ -20,6 +21,7 @@ val AppSettings = SettingsGroupId()
 val LibSettings = SettingsGroupId()
 val SbtSettings = SettingsGroupId()
 val ShadingSettings = SettingsGroupId()
+val WithoutBadPlugins = SettingsGroupId()
 
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("com.github.pshirshov.izumi")
@@ -80,8 +82,6 @@ val baseSettings = new GlobalSettings {
           , libraryDependencies ++= T.essentials
         )
       ).flatten
-
-      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin)
     }
     , ShadingSettings -> new ProjectSettings {
       override val plugins: Set[Plugins] = Set(ShadingPlugin)
@@ -106,7 +106,6 @@ val baseSettings = new GlobalSettings {
     }
     , SbtSettings -> new ProjectSettings {
       override val plugins: Set[Plugins] = Set(ScriptedPlugin)
-      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin)
 
       override val settings: Seq[sbt.Setting[_]] = Seq(
         Seq(
@@ -128,26 +127,37 @@ val baseSettings = new GlobalSettings {
       ).flatten
     }
     , AppSettings -> new ProjectSettings {
+      override val disabledPlugins: Set[AutoPlugin] = Set(SitePlugin)
       override val plugins = Set(AssemblyPlugin)
+    }
+    , WithoutBadPlugins -> new ProjectSettings {
+      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin)
     }
   )
 }
 // --------------------------------------------
 
 val inRoot = In(".")
+
 val inShade = In("shade")
+  .withModuleSettings(WithoutBadPlugins)
 
 val inSbt = In("sbt")
   .withModuleSettings(SbtSettings)
+  .withModuleSettings(WithoutBadPlugins)
 val inDiStage = In("distage")
   .withModuleSettings(LibSettings)
+  .withModuleSettings(WithoutBadPlugins)
 val inLogStage = In("logstage")
   .withModuleSettings(LibSettings)
+  .withModuleSettings(WithoutBadPlugins)
 val inFundamentals = In("fundamentals")
   .withModuleSettings(LibSettings)
+  .withModuleSettings(WithoutBadPlugins)
 val inIdealinguaBase = In("idealingua")
 val inIdealingua = inIdealinguaBase
   .withModuleSettings(LibSettings)
+  .withModuleSettings(WithoutBadPlugins)
 
 
 // --------------------------------------------
@@ -378,3 +388,9 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregate(allProjects: _*)
+  .enablePlugins(ParadoxSitePlugin, SitePlugin)
+  .settings(
+    paradoxTheme := Some(builtinParadoxTheme("generic"))
+    , sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
+    , previewFixedPort := Some(9999)
+  )
