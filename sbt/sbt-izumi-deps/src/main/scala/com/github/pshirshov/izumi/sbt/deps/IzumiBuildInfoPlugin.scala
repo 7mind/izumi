@@ -51,6 +51,8 @@ object IzumiBuildInfoPlugin extends AutoPlugin {
       case _: Patch =>
         "% /* PATCH */"
     }
+    // TODO: should we support classifiers with m.explicitArtifacts ?
+
     Seq(m.organization.quoted, sep, m.name.quoted, "%", verstr).mkString(" ")
   }
 
@@ -109,7 +111,7 @@ object IzumiBuildInfoPlugin extends AutoPlugin {
         packageName
           .split('.')
           .foldLeft((sourceManaged in Compile).value)(_ / _) / s"$objectName.scala"
-      
+
       val sd = settingsData.in(Global).value
       val ver = (version in LocalRootProject).value
       val group = (organization in LocalRootProject).value
