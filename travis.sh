@@ -20,18 +20,14 @@ function scripted {
   sbt clean "scripted sbt-izumi-plugins/*" || exit 1
 }
 
-
-
 function deploy {
-  echo "PUBLISH..."
   if [[ -f .secrets/credentials.sonatype-nexus.properties ]] ; then
+    echo "PUBLISH..."
     sbt ++$TRAVIS_SCALA_VERSION +clean +publishSigned || exit 1
 
     if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
         sbt ++$TRAVIS_SCALA_VERSION sonatypeRelease || exit 1
     fi
-  else
-    sbt +clean +package || exit 1
   fi
 }
 
