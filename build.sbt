@@ -400,4 +400,7 @@ lazy val `izumi-r2` = inRoot.as
     , previewFixedPort := Some(9999)
     , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
     , git.remoteRepo := scmInfo.value.get.connection
+    , excludeFilter in ghpagesCleanSite := new FileFilter {
+      def accept(f: File) = (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath
+    }
   )
