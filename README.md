@@ -14,19 +14,17 @@ Izumi (*jap. 泉水, spring*) is a set of non-coupled tools allowing you to sign
  
 including the following components:
 
-1. Generative and introspectable runtime DI framework, [distage](doc/md/distage.md) 
-2. Effortless structured logging framework, [logstage](doc/md/logstage/logstage.md)
-3. Staged Interface Definition and Data Modeling language, [idealingua](doc/md/idealingua/idealingua.md) supporting many target languages including Go, Typescript and C#
-4. A set of opinionated [SBT plugins](doc/md/sbt.md) allowing you to significantly increase clarity of your builds and compactify build files
-5. [Percept-plan-execute-repeat (PPER)](doc/md/pper.md) toolchain, allowing you to model very complex domain and orchestrate deadly complex processes without an issue
+1. [Percept-plan-execute-repeat (PPER)](https://izumi.7mind.io//pper) toolchain, allowing you to model 
+   very complex domains and orchestrate deadly complex processes lot easier than you get used to,
+1. Generative and introspectable runtime DI framework, [distage](https://izumi.7mind.io/distage), 
+2. Effortless structured logging framework, [logstage](https://izumi.7mind.io/logstage),
+3. Staged Interface Definition and Data Modeling language, [idealingua](https://izumi.7mind.io/idealingua) 
+   supporting many target languages including Go, Typescript and C#,
+4. A set of opinionated [SBT plugins](https://izumi.7mind.io/sbt) allowing you to significantly 
+   increase clarity of your builds and compactify build files.
 
-The work is still in progress. We are looking for early adopters, contributors and sponsors.
-
-In the future we are going to (or just may) implement the following tools based on PPER approach:
-
-1. Best in the world build system
-2. Best in the world cluster orchestration tool
-3. Best in the world load testing/macrobenchmark tool
+Documentation [https://izumi.7mind.io](https://izumi.7mind.io)
+Scaladoc [https://izumi.7mind.io/api](https://izumi.7mind.io/api)
 
 Key goals 
 =========
@@ -38,8 +36,22 @@ We aim to provide tools which are:
 3. Introspectable
 4. Better than anything else :3
 
+Current state and future plans
+==============================
+
+We are looking for early adopters, contributors and sponsors.
+
+The work is still in progress.
+
+In the future we are going to (or just may) implement the following tools based on PPER approach:
+
+1. Best in the world build system
+2. Best in the world cluster orchestration tool
+3. Best in the world load testing/macrobenchmark tool
+
+
 See also
---------
+========
 
 - [Build notes](doc/md/build.md)
 - [Project flow](doc/md/flow.md)

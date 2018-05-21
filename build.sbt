@@ -393,14 +393,21 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregate(allProjects: _*)
-  .enablePlugins(ParadoxSitePlugin, SitePlugin, GhpagesPlugin)
+  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
-    paradoxTheme := Some(builtinParadoxTheme("generic"))
-    , sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
+    sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
+    , siteSubdirName in ScalaUnidoc := "api"
     , previewFixedPort := Some(9999)
     , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
     , git.remoteRepo := scmInfo.value.get.connection
     , excludeFilter in ghpagesCleanSite := new FileFilter {
       def accept(f: File) = (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath
     }
+    , paradoxProperties ++= Map(
+      "github.root.base_dir" -> s"ZZZZ"
+      ,"github.base_dir" -> s"ZZZZ"
+      , "scaladoc.izumi.base_url" -> s"/api/com/github/pshirshov/"
+    )
   )
+  .settings(addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
+  .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))

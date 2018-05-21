@@ -1,44 +1,60 @@
 #!/bin/bash -xe
 
+function block_open {
+    echo -en "travis_fold:start:$1\\r"
+}
+
+function block_close {
+    echo -en "travis_fold:end:$1\\r"
+}
+
+function bopen {
+    block_open ${FUNCNAME[1]}
+}
+
+function bclose {
+    block_close ${FUNCNAME[1]}
+}
+
 function csbt {
-    eval "time sbt -jvm-opts ./.sbtopts.travis -v ++$TRAVIS_SCALA_VERSION $*"
+    COMMAND="time sbt -jvm-opts ./.sbtopts.travis -v ++$TRAVIS_SCALA_VERSION $*"
+    bopen $COMMAND
+    eval $COMMAND
+    bclose $COMMAND
 }
 
 function versionate {
+  bopen
   if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then
     echo "Setting version suffix to $TRAVIS_BRANCH"
     csbt "addVersionSuffix $TRAVIS_BRANCH"
   else
     echo "No version suffix required"
   fi
+  bclose
 }
 
 function coverage {
-  echo "COVERAGE..."
+  bopen
   csbt clean coverage test coverageReport || exit 1
   bash <(curl -s https://codecov.io/bash)
-}
-
-function requote() {
-    local res=""
-    for x in "${@}" ; do
-        # try to figure out if quoting was required for the $x:
-        grep -q "[[:space:]]" <<< "$x" && res="${res} '${x}'" || res="${res} ${x}"
-    done
-    # remove first space and print:
-    sed -e 's/^ //' <<< "${res}"
+  bclose
 }
 
 function scripted {
-  echo "SCRIPTED..."
+  bopen
   csbt clean '"scripted sbt-izumi-plugins/*"' || exit 1
+  bclose
 }
 
 function site {
+  bopen
   csbt ghpagesPushSite || exit 1
+  bclose
 }
 
 function publish {
+  bopen
   if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
     return 0
   fi
@@ -53,6 +69,7 @@ function publish {
   if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
     csbt sonatypeRelease || exit 1
   fi
+  bclose
 }
 
 function deploy {
@@ -68,6 +85,10 @@ SKIP=()
 for i in "$@"
 do
 case $i in
+    nothing)
+        echo "Doing nothing..."
+    ;;
+
     versionate)
         versionate
     ;;
