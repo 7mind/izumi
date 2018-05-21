@@ -53,7 +53,7 @@ function deploy {
 }
 
 function site {
-  sbt ghpagesPushSite
+  csbt ghpagesPushSite
 }
 
 PARAMS=()
