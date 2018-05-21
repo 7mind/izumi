@@ -1,14 +1,13 @@
-import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import com.lightbend.paradox.sbt.ParadoxPlugin.autoImport.paradoxTheme
+import com.typesafe.sbt.SbtGit.GitKeys.gitBranch
 import com.typesafe.sbt.pgp.PgpSettings
 import coursier.ShadingPlugin.autoImport.shadingNamespace
 import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
-import sbtassembly.Assembly
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
-import com.typesafe.sbt.SbtGit.GitKeys.{gitBranch, gitRemoteRepo}
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -22,6 +21,7 @@ val LibSettings = SettingsGroupId()
 val SbtSettings = SettingsGroupId()
 val ShadingSettings = SettingsGroupId()
 val WithoutBadPlugins = SettingsGroupId()
+val SbtScriptedSettings = SettingsGroupId()
 
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("com.github.pshirshov.izumi")
@@ -42,7 +42,7 @@ val baseSettings = new GlobalSettings {
           else
             Opts.resolver.sonatypeStaging
         )
-        , credentials in Global ++= Seq(new File("credentials.sonatype-nexus.properties")).filter(_.exists()).map(Credentials(_))
+        , credentials in Global ++= Seq(new File(".secrets/credentials.sonatype-nexus.properties")).filter(_.exists()).map(Credentials(_))
         , pomExtra in Global := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
           <licenses>
             <license>
@@ -105,17 +105,9 @@ val baseSettings = new GlobalSettings {
       ).flatten
     }
     , SbtSettings -> new ProjectSettings {
-      override val plugins: Set[Plugins] = Set(ScriptedPlugin)
-
       override val settings: Seq[sbt.Setting[_]] = Seq(
         Seq(
           target ~= { t => t.toPath.resolve("primary").toFile }
-          , scriptedLaunchOpts := {
-            scriptedLaunchOpts.value ++
-              Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-          }
-          , scriptedBufferLog := false
-
           , crossScalaVersions := Seq(
             V.scala_212
           )
@@ -123,6 +115,19 @@ val baseSettings = new GlobalSettings {
             "org.scala-sbt" % "sbt" % sbtVersion.value
           )
           , sbtPlugin := true
+        )
+      ).flatten
+    }
+    , SbtScriptedSettings -> new ProjectSettings {
+      override val plugins: Set[Plugins] = Set(ScriptedPlugin)
+
+      override val settings: Seq[sbt.Setting[_]] = Seq(
+        Seq(
+          scriptedLaunchOpts := {
+            scriptedLaunchOpts.value ++
+              Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+          }
+          , scriptedBufferLog := false
         )
       ).flatten
     }
@@ -143,21 +148,21 @@ val inShade = In("shade")
   .withModuleSettings(WithoutBadPlugins)
 
 val inSbt = In("sbt")
-  .withModuleSettings(SbtSettings)
-  .withModuleSettings(WithoutBadPlugins)
+  .withModuleSettings(SbtSettings, SbtScriptedSettings, WithoutBadPlugins)
+
 val inDiStage = In("distage")
-  .withModuleSettings(LibSettings)
-  .withModuleSettings(WithoutBadPlugins)
+  .withModuleSettings(LibSettings, WithoutBadPlugins)
+
 val inLogStage = In("logstage")
-  .withModuleSettings(LibSettings)
-  .withModuleSettings(WithoutBadPlugins)
+  .withModuleSettings(LibSettings, WithoutBadPlugins)
+
 val inFundamentals = In("fundamentals")
-  .withModuleSettings(LibSettings)
-  .withModuleSettings(WithoutBadPlugins)
+  .withModuleSettings(LibSettings, WithoutBadPlugins)
+
 val inIdealinguaBase = In("idealingua")
+
 val inIdealingua = inIdealinguaBase
-  .withModuleSettings(LibSettings)
-  .withModuleSettings(WithoutBadPlugins)
+  .withModuleSettings(LibSettings, WithoutBadPlugins)
 
 
 // --------------------------------------------
@@ -395,5 +400,4 @@ lazy val `izumi-r2` = inRoot.as
     , previewFixedPort := Some(9999)
     , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
     , git.remoteRepo := scmInfo.value.get.connection
-    , gitBranch in ghpagesUpdatedRepository := Some("gh-pages")
   )

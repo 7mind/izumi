@@ -1,8 +1,8 @@
 .idea
 build/project
 local.sbt
-credentials.sonatype-nexus.properties
-.gnupg*
+.secrets/credentials.sonatype-nexus.properties
+.secrets
 secrets.tar
 .DS_Store
 

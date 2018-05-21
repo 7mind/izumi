@@ -100,8 +100,8 @@ object IzumiDslPlugin extends AutoPlugin {
     }
 
     class In(val directory: String, val settingsGroups: Seq[SettingsGroupId]) {
-      def withModuleSettings(groupId: SettingsGroupId) = {
-        new In(directory, settingsGroups :+ groupId)
+      def withModuleSettings(groupId: SettingsGroupId*) = {
+        new In(directory, settingsGroups ++ groupId)
       }
 
       def as: WithBase = macro ExtendedProjectMacro.projectUnifiedDslMacro
