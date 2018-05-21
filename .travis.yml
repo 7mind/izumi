@@ -1,18 +1,29 @@
 language: scala
+
 jdk:
   - oraclejdk9
+
 scala:
   - 2.12.6
+
+branches:
+  except:
+  - gh-pages
+
 cache:
   directories:
   - $HOME/.sbt
   - $HOME/.ivy2
   - $HOME/.coursier
   - $HOME/.m2
-script:
+
+before_script:
   - bash travis.sh versionate
+
+script:
   - bash travis.sh coverage
   - bash travis.sh scripted
+
 before_deploy:
   - git config --global user.name "$USER"
   - git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"

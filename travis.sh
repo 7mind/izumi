@@ -41,7 +41,7 @@ case $i in
         versionate
     ;;
 
-    coverate)
+    coverage)
         coverage
     ;;
 
