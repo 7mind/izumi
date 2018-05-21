@@ -35,14 +35,21 @@ function scripted {
 }
 
 function deploy {
-  if [[ -f .secrets/credentials.sonatype-nexus.properties ]] ; then
-    echo "PUBLISH..."
-    csbt +clean +publishSigned || exit 1
-
-    if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
-        csbt sonatypeRelease || exit 1
-    fi
+  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
+    return 0
   fi
+
+  if [[ "$TRAVIS_PULL_REQUEST" != "false"  ]] ; then
+    return 0
+  fi
+
+  echo "PUBLISH..."
+  csbt +clean +publishSigned || exit 1
+
+  if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
+    csbt sonatypeRelease || exit 1
+  fi
+
 }
 
 PARAMS=()
