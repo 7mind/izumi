@@ -18,9 +18,7 @@ function bclose {
 
 function csbt {
     COMMAND="time sbt -jvm-opts ./.sbtopts.travis -v ++$TRAVIS_SCALA_VERSION $*"
-    bopen $COMMAND
     eval $COMMAND
-    bclose $COMMAND
 }
 
 function versionate {
