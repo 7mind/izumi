@@ -1,6 +1,7 @@
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys._
 import com.github.pshirshov.izumi.sbt.IdealinguaPlugin.Keys._
+import com.github.pshirshov.izumi.sbt.deps.{Izumi, IzumiDeps => Iz}
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -14,7 +15,7 @@ lazy val pluginVersion = if (sys.props.isDefinedAt("plugin.version")) {
 // -- build settings, root artifact settings, etc
 name := "sbt-izumi-idl-test"
 crossScalaVersions in ThisBuild := Seq(
-  "2.12.6"
+  Iz.V.scala_212
 )
 
 // unfortunately we have to use this bcs conditional settings in plugins don't work
@@ -35,10 +36,10 @@ val baseSettings = new GlobalSettings {
 
       // these dependencies will be added into each project handled by Izumi
       override val sharedDeps = Set(
-        "com.github.pshirshov.izumi.r2" %% "idealingua-model" % pluginVersion
-        , "com.github.pshirshov.izumi.r2" %% "idealingua-runtime-rpc-circe" % pluginVersion
-        , "com.github.pshirshov.izumi.r2" %% "idealingua-runtime-rpc-cats" % pluginVersion
-        , "com.github.pshirshov.izumi.r2" %% "idealingua-runtime-rpc-http4s" % pluginVersion
+        Izumi.R.idealingua_model
+        , Izumi.R.idealingua_runtime_rpc_http4s
+        , Izumi.R.idealingua_runtime_rpc_circe
+        , Izumi.R.idealingua_runtime_rpc_cats
       )
     }
     , AppSettings -> new ProjectSettings {

@@ -37,11 +37,9 @@ deploy:
     script: bash travis.sh deploy
     skip_cleanup: true
     on:
-      tags: true
       condition: $TRAVIS_PULL_REQUEST = false
   - provider: script
     script: sbt ghpagesPushSite
     skip_cleanup: true
     on:
-      tags: true
       condition: $TRAVIS_PULL_REQUEST = false
