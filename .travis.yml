@@ -21,7 +21,7 @@ before_script:
   - bash travis.sh versionate
 
 script:
-  - bash "echo SKIPPED"
+  - bash -c "echo SKIPPED"
   #- bash travis.sh coverage
   #- bash travis.sh scripted
 
@@ -40,7 +40,7 @@ deploy:
     on:
       condition: $TRAVIS_PULL_REQUEST = false
   - provider: script
-    script: sbt ghpagesPushSite
+    script: bash travis.sh site
     skip_cleanup: true
     on:
       all_branches: true

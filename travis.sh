@@ -52,6 +52,10 @@ function deploy {
 
 }
 
+function site {
+  sbt ghpagesPushSite
+}
+
 PARAMS=()
 SOFT=0
 SKIP=()
@@ -72,6 +76,10 @@ case $i in
 
     deploy)
         deploy
+    ;;
+
+    site)
+        site
     ;;
 
     *)
