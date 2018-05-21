@@ -34,7 +34,11 @@ function scripted {
   csbt clean '"scripted sbt-izumi-plugins/*"' || exit 1
 }
 
-function deploy {
+function site {
+  csbt ghpagesPushSite || exit 1
+}
+
+function publish {
   if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
     return 0
   fi
@@ -49,12 +53,14 @@ function deploy {
   if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
     csbt sonatypeRelease || exit 1
   fi
-
 }
 
-function site {
-  csbt ghpagesPushSite
+function deploy {
+  publish
+  site
 }
+
+
 
 PARAMS=()
 SOFT=0
@@ -76,10 +82,6 @@ case $i in
 
     deploy)
         deploy
-    ;;
-
-    site)
-        site
     ;;
 
     *)

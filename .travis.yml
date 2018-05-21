@@ -39,10 +39,5 @@ deploy:
     script: bash travis.sh deploy
     skip_cleanup: true
     on:
-      condition: $TRAVIS_PULL_REQUEST = false
-  - provider: script
-    script: bash travis.sh site
-    skip_cleanup: true
-    on:
       all_branches: true
       condition: $TRAVIS_PULL_REQUEST = false
