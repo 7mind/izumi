@@ -1,7 +1,7 @@
 #!/bin/bash -xe
 
 function csbt {
-sbt ++$TRAVIS_SCALA_VERSION -jvm-opts ./.sbtopts.travis $*
+sbt ++$TRAVIS_SCALA_VERSION -jvm-opts ./.sbtopts.travis -v $*
 }
 
 function versionate {
@@ -21,7 +21,7 @@ function coverage {
 
 function scripted {
   echo "SCRIPTED..."
-  csbt clean "scripted sbt-izumi-plugins/*" || exit 1
+  csbt clean "'scripted sbt-izumi-plugins/*'" || exit 1
 }
 
 function deploy {
