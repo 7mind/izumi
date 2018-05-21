@@ -1,7 +1,7 @@
 #!/bin/bash -xe
 
 function csbt {
-sbt ++$TRAVIS_SCALA_VERSION -jvm-opts ./.sbtopts.travis -v $*
+    eval "sbt -jvm-opts ./.sbtopts.travis -v ++$TRAVIS_SCALA_VERSION $*"
 }
 
 function versionate {
@@ -19,9 +19,19 @@ function coverage {
   bash <(curl -s https://codecov.io/bash)
 }
 
+function requote() {
+    local res=""
+    for x in "${@}" ; do
+        # try to figure out if quoting was required for the $x:
+        grep -q "[[:space:]]" <<< "$x" && res="${res} '${x}'" || res="${res} ${x}"
+    done
+    # remove first space and print:
+    sed -e 's/^ //' <<< "${res}"
+}
+
 function scripted {
   echo "SCRIPTED..."
-  csbt clean "'scripted sbt-izumi-plugins/*'" || exit 1
+  csbt clean '"scripted sbt-izumi-plugins/*"' || exit 1
 }
 
 function deploy {
