@@ -21,9 +21,8 @@ before_script:
   - bash travis.sh versionate
 
 script:
-  - bash -c "echo SKIPPED"
-  #- bash travis.sh coverage
-  #- bash travis.sh scripted
+  - bash travis.sh coverage
+  - bash travis.sh scripted
 
 before_deploy:
   - git config --global user.name "$USER"
