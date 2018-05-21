@@ -1,9 +1,9 @@
 .idea
-build/project
-local.sbt
-.secrets/credentials.sonatype-nexus.properties
+/local.sbt
 .secrets
+
 secrets.tar
+build/project
 .DS_Store
 
 # Created by .ignore support plugin (hsz.mobi)
