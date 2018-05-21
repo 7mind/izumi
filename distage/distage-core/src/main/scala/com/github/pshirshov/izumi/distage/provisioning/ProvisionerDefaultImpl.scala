@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 
 // TODO: add introspection capabilities
@@ -21,21 +21,33 @@ class ProvisionerDefaultImpl
   , classStrategy: ClassStrategy
   , importStrategy: ImportStrategy
   , instanceStrategy: InstanceStrategy
+  , failureHandler: ProvisioningFailureInterceptor
 ) extends Provisioner with OperationExecutor {
   override def provision(plan: FinalPlan, parentContext: Locator): ProvisionImmutable = {
-    val activeProvision = ProvisionActive()
-
-    val provisions = plan.steps.foldLeft(activeProvision) {
+    val provisions = plan.steps.foldLeft(ProvisionActive()) {
       case (active, step) =>
-        execute(LocatorContext(active.toImmutable, parentContext), step).foldLeft(active) {
-          case (acc, result) =>
-            Try(interpretResult(active, result)) match {
-              case Failure(f) =>
-                throw new DIException(s"Provisioning unexpectedly failed on result handling for $step", f)
-              case _ =>
-                acc
+
+        val context = ProvisioningFailureContext(parentContext, active, step)
+
+        Try(execute(LocatorContext(active.toImmutable, parentContext), step))
+          .recoverWith(failureHandler.onExecutionFailed(context)) match {
+          case Success(results) =>
+            results.foldLeft(active) {
+              case (acc, result) =>
+                Try(interpretResult(active, result))
+                  .recoverWith(failureHandler.onBadResult(context)) match {
+                  case Success(_) =>
+                    acc
+                  case Failure(f) =>
+                    failureHandler.onStepOperationFailure(context, result, f)
+                }
             }
+
+
+          case Failure(f) =>
+            failureHandler.onStepFailure(context, f)
         }
+
     }
 
     ProvisionImmutable(provisions.instances, provisions.imports)
@@ -69,7 +81,7 @@ class ProvisionerDefaultImpl
     }
   }
 
-  def execute(context: ProvisioningContext, step: ExecutableOp): Seq[OpResult] = {
+  def execute(context: ProvisioningKeyProvider, step: ExecutableOp): Seq[OpResult] = {
     step match {
       case op: ImportDependency =>
         importStrategy.importDependency(context, op)

@@ -1,6 +1,5 @@
-package com.github.pshirshov.izumi.distage.provisioning
+package com.github.pshirshov.izumi.distage.model.provisioning
 
-import com.github.pshirshov.izumi.distage.model.provisioning.{Provision, ProvisionImmutable}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.collection.mutable

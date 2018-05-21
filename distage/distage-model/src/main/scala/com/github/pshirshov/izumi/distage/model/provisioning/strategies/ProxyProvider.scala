@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.{OperationExecutor, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.provisioning.{OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 trait ProxyDispatcher {
@@ -26,14 +26,14 @@ object ProxyParams {
 
 case class TraitContext(
                          index: TraitIndex
-                         , context: ProvisioningContext
+                         , context: ProvisioningKeyProvider
                        )
 
 
 case class FactoryContext(
                            factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.FactoryMethod.WithContext]
                            , dependencyMethodIndex: TraitIndex
-                           , narrowedContext: ProvisioningContext
+                           , narrowedContext: ProvisioningKeyProvider
                            , executor: OperationExecutor
                            , op: WiringOp.InstantiateFactory
                          )

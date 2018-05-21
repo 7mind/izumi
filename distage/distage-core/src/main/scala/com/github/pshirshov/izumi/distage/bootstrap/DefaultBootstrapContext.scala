@@ -76,6 +76,7 @@ object DefaultBootstrapContext {
       , new ClassStrategyDefaultImpl(symbolIntrospector)
       , new ImportStrategyFailingImpl
       , new InstanceStrategyDefaultImpl
+      , new ProvisioningFailureInterceptorDefaultImpl
     )
   }
 
@@ -106,6 +107,7 @@ object DefaultBootstrapContext {
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
     make[Provisioner].from[ProvisionerDefaultImpl]
+    make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptorDefaultImpl]
     many[PlanningHook]
       .add[PlanningHookDefaultImpl]
   }

@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition._
-import com.github.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, TraitInitializationFailedException, UnsupportedWiringException, UntranslatablePlanException}
+import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.ConflictingOperation
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -32,7 +32,7 @@ class InjectorTest extends WordSpec {
       val plan = injector.plan(definition)
       assert(plan.steps.exists(_.isInstanceOf[ImportDependency]))
 
-      intercept[MissingInstanceException] {
+      intercept[ProvisioningException] {
         injector.produce(plan)
       }
 
@@ -210,10 +210,11 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val exc = intercept[TraitInitializationFailedException] {
+      val exc = intercept[ProvisioningException] {
         injector.produce(plan)
       }
-      assert(exc.getCause.isInstanceOf[RuntimeException])
+      assert(exc.getCause.isInstanceOf[TraitInitializationFailedException])
+      assert(exc.getCause.getCause.isInstanceOf[RuntimeException])
 
     }
 

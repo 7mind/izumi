@@ -4,14 +4,14 @@ import com.github.pshirshov.izumi.distage.commons.TraitTools
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
 
 class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider) extends FactoryStrategy {
-  def makeFactory(context: ProvisioningContext, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
+  def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
     // at this point we definitely have all the dependencies instantiated
 
     val allRequiredKeys = op.wiring.associations.map(_.wireWith).toSet
@@ -46,7 +46,7 @@ class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider) extends FactorySt
 
 
 class FactoryStrategyFailingImpl extends FactoryStrategy {
-  override def makeFactory(context: ProvisioningContext, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
+  override def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
     Quirks.discard(context, executor)
     throw new DIException(s"FactoryStrategyFailingImpl does not support proxies, failed op: $op", null)
   }

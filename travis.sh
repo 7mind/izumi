@@ -1,7 +1,7 @@
 #!/bin/bash -xe
 
 function csbt {
-    eval "sbt -jvm-opts ./.sbtopts.travis -v ++$TRAVIS_SCALA_VERSION $*"
+    eval "time sbt -jvm-opts ./.sbtopts.travis -v ++$TRAVIS_SCALA_VERSION $*"
 }
 
 function versionate {

@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExecutor, TraitIndex}
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
@@ -19,7 +19,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 (
   factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.FactoryMethod.WithContext]
   , dependencyMethodIndex: TraitIndex
-  , narrowedContext: ProvisioningContext
+  , narrowedContext: ProvisioningKeyProvider
   , executor: OperationExecutor
   , op: WiringOp.InstantiateFactory
 ) extends CgLibTraitMethodInterceptor(dependencyMethodIndex, narrowedContext) {
