@@ -207,10 +207,6 @@ lazy val distagePlugins = inDiStage.as.module
     libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
 
-lazy val distageApp = inDiStage.as.module
-  .depends(distageCore, distagePlugins, distageConfig, logstageDi)
-
-
 lazy val distageConfig = inDiStage.as.module
   .depends(distageCore)
   .settings(
@@ -219,6 +215,8 @@ lazy val distageConfig = inDiStage.as.module
     )
   )
 
+lazy val distageApp = inDiStage.as.module
+  .depends(distageCore, distagePlugins, distageConfig, logstageDi)
 
 lazy val distageCore = inDiStage.as.module
   .depends(fundamentalsFunctional, distageModel, distageProxyCglib)
@@ -228,14 +226,6 @@ lazy val distageCore = inDiStage.as.module
     )
   )
 
-lazy val distageStatic = inDiStage.as.module
-  .depends(distageCore)
-  .settings(
-    libraryDependencies += R.shapeless
-  )
-
-lazy val logstageApiBase = inLogStage.as.module
-
 lazy val distageCats = inDiStage.as.module
   .depends(distageModel, distageCore.testOnlyRef)
   .settings(
@@ -243,6 +233,16 @@ lazy val distageCats = inDiStage.as.module
     , libraryDependencies ++= T.cats_all
   )
 
+
+lazy val distageStatic = inDiStage.as.module
+  .depends(distageCore)
+  .settings(
+    libraryDependencies += R.shapeless
+  )
+
+//-----------------------------------------------------------------------------
+
+lazy val logstageApiBase = inLogStage.as.module
 
 lazy val logstageApiBaseMacro = inLogStage.as.module
   .depends(logstageApiBase)
@@ -255,21 +255,6 @@ lazy val logstageApiBaseMacro = inLogStage.as.module
 lazy val logstageApiLogger = inLogStage.as.module
   .depends(logstageApiBaseMacro)
 
-
-lazy val logstageSinkConsole = inLogStage.as.module
-  .depends(logstageApiBase)
-  .depends(Seq(
-    logstageApiLogger
-  ).map(_.testOnlyRef): _*)
-
-lazy val logstageAdapterSlf4j = inLogStage.as.module
-  .depends(logstageApiLogger)
-  .settings(
-    libraryDependencies += R.slf4j_api
-    , compileOrder in Compile := CompileOrder.Mixed
-    , compileOrder in Test := CompileOrder.Mixed
-  )
-
 lazy val logstageDi = inLogStage.as.module
   .depends(
     logstageApiLogger
@@ -279,12 +264,27 @@ lazy val logstageDi = inLogStage.as.module
     distageCore
   ).map(_.testOnlyRef): _*)
 
+
+lazy val logstageAdapterSlf4j = inLogStage.as.module
+  .depends(logstageApiLogger)
+  .settings(
+    libraryDependencies += R.slf4j_api
+    , compileOrder in Compile := CompileOrder.Mixed
+    , compileOrder in Test := CompileOrder.Mixed
+  )
+
 lazy val logstageRenderingJson4s = inLogStage.as.module
   .depends(logstageApiLogger)
   .depends(Seq(
     logstageSinkConsole
   ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= Seq(R.json4s_native))
+
+lazy val logstageSinkConsole = inLogStage.as.module
+  .depends(logstageApiBase)
+  .depends(Seq(
+    logstageApiLogger
+  ).map(_.testOnlyRef): _*)
 
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApiBase)
@@ -298,8 +298,11 @@ lazy val logstageSinkSlf4j = inLogStage.as.module
     logstageApiLogger
   ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
+//-----------------------------------------------------------------------------
 
-
+lazy val fastparseShaded = inShade.as.module
+  .settings(libraryDependencies ++= Seq(R.fastparse))
+  .settings(ShadingSettings)
 
 lazy val idealinguaModel = inIdealingua.as.module
   .settings()
@@ -307,6 +310,13 @@ lazy val idealinguaModel = inIdealingua.as.module
 lazy val idealinguaRuntimeRpc = inIdealingua.as.module
 
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpc, idealinguaRuntimeRpcCirce)
+
+lazy val idealinguaCore = inIdealingua.as.module
+  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
+  .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
+  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
+  .settings(ShadingSettings)
+
 
 lazy val idealinguaRuntimeRpcCirce = inIdealingua.as.module
   .depends(idealinguaRuntimeRpc)
@@ -321,17 +331,6 @@ lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats)
   .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= R.http4s_all)
-
-
-lazy val fastparseShaded = inShade.as.module
-  .settings(libraryDependencies ++= Seq(R.fastparse))
-  .settings(ShadingSettings)
-
-lazy val idealinguaCore = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
-  .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
-  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
-  .settings(ShadingSettings)
 
 lazy val idealinguaExtensionRpcFormatCirce = inIdealingua.as.module
   .depends(idealinguaCore, idealinguaRuntimeRpcCirce)
@@ -364,20 +363,21 @@ lazy val sbtTests = inSbt.as
   .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
-  logstageDi
-  , logstageApiLogger
+   logstageApiLogger
+  , logstageDi
   , logstageSinkConsole
   , logstageSinkFile
   , logstageSinkSlf4j
   , logstageAdapterSlf4j
+  , logstageRenderingJson4s
 )
 lazy val distage: Seq[ProjectReference] = Seq(
-  distageCore
-  , distageApp
+  distageApp
+  , distageCats
+  //, distageStatic
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
-  , idealinguaRuntimeRpc
   , idealinguaRuntimeRpcHttp4s
   , idealinguaRuntimeRpcCats
   , idealinguaRuntimeRpcCirce
