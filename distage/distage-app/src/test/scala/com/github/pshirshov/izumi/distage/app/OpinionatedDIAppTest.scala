@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.app
 
 import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.{Locator, reflection}
@@ -31,17 +31,22 @@ class TestAppLauncher(modules: Seq[ModuleDef], pluginMergeConfig: PluginMergeCon
 
   val testSink = new TestSink()
 
-  override protected def bootstrapModules: Seq[ModuleDef] = modules
 
-  val bootstrapConfig: PluginConfig = PluginConfig(debug = false
-    , Seq("com.github.pshirshov.izumi")
-    , Seq.empty
-  )
+  override protected def bootstrapConfig(args: EmptyCfg): PluginConfig = {
+    PluginConfig(debug = false
+      , Seq("com.github.pshirshov.izumi")
+      , Seq.empty
+    )
+  }
 
-  val appConfig: PluginConfig = PluginConfig(debug = false
-    , Seq(classOf[TestApp].getPackage.getName)
-    , Seq.empty
-  )
+  override protected def appConfig(args: EmptyCfg): PluginConfig = {
+    PluginConfig(debug = false
+      , Seq(classOf[TestApp].getPackage.getName)
+      , Seq.empty
+    )
+  }
+
+  override protected def bootstrapModules(args: EmptyCfg): Seq[ModuleBase] = modules
 
   override protected def requiredComponents: Set[reflection.universe.RuntimeDIUniverse.DIKey] = Set(
     RuntimeDIUniverse.DIKey.get[TestApp]
