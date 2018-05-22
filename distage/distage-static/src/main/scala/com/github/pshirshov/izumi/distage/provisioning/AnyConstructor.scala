@@ -14,7 +14,7 @@ sealed trait AbstractConstructor[T] extends AnyConstructor[T] {
 
 final case class ConcreteConstructor[T](implType: SafeType) extends AnyConstructor[T]
 
-final case class TraitConstructor[T](function: DIKeyWrappedFunction[T]) extends AbstractConstructor[T]
+final case class TraitConstructor[T](function: DIKeyWrappedFunction[T], tree: Seq[u.Annotation]) extends AbstractConstructor[T]
 
 final case class FactoryConstructor[T](function: DIKeyWrappedFunction[T]) extends AbstractConstructor[T]
 

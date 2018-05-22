@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
 trait WithDISafeType {
-  this: DIUniverseBase
-  =>
+  this: DIUniverseBase =>
 
   type TypeFull = SafeType
 
