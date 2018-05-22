@@ -31,8 +31,8 @@ abstract class OpinionatedDiApp[T] {
     val loggerRouter = router(parsedArgs)
 
     val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
-    val bootstrapLoader = mkBootstrapLoader(bootstrapConfig)
-    val appLoader = mkLoader(appConfig)
+    val bootstrapLoader = mkBootstrapLoader(bootstrapConfig(parsedArgs))
+    val appLoader = mkLoader(appConfig(parsedArgs))
 
     val bootstrapAutoDef = bootstrapLoader.loadDefinition(mergeStrategy)
     val appDef = appLoader.loadDefinition(mergeStrategy)
@@ -41,7 +41,7 @@ abstract class OpinionatedDiApp[T] {
 
     val bootstrapCustomDef = (Seq(new ModuleDef {
       make[LogRouter].from(loggerRouter)
-    } : ModuleBase) ++ bootstrapModules).merge
+    } : ModuleBase) ++ bootstrapModules(parsedArgs)).merge
 
     val bsdef = bootstrapAutoDef.definition ++ bootstrapCustomDef
 
@@ -71,13 +71,13 @@ abstract class OpinionatedDiApp[T] {
 
   protected def start(context: Locator, args : T): Unit
 
-  protected def bootstrapConfig: PluginConfig
+  protected def bootstrapConfig(args : T): PluginConfig
 
-  protected val appConfig: PluginConfig
+  protected def appConfig(args : T): PluginConfig
 
   protected def router(args : T): LogRouter
 
-  protected def bootstrapModules: Seq[ModuleBase] = Seq.empty
+  protected def bootstrapModules(args : T): Seq[ModuleBase] = Seq.empty
 
   protected def requiredComponents: Set[RuntimeDIUniverse.DIKey]
 
