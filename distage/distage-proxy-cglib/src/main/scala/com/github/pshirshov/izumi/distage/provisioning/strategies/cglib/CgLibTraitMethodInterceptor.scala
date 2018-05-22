@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 import java.lang.reflect.Method
 
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingRefException
-import com.github.pshirshov.izumi.distage.model.provisioning.ProvisioningContext
+import com.github.pshirshov.izumi.distage.model.provisioning.ProvisioningKeyProvider
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitIndex
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
@@ -12,7 +12,7 @@ import scala.collection.mutable
 protected[distage] class CgLibTraitMethodInterceptor
 (
   index: TraitIndex
-  , context: ProvisioningContext
+  , context: ProvisioningKeyProvider
 ) extends MethodInterceptor {
 
   private val fields = mutable.HashMap[String, Any]()

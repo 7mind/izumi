@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -16,7 +16,7 @@ trait FakeSet[A] extends Set[A]
   * - Untested on constructors accepting primitive values, will fail most likely
   */
 class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, proxyProvider: ProxyProvider) extends ProxyStrategy {
-  def initProxy(context: ProvisioningContext, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
+  def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(initProxy.target)
     context.fetchKey(key) match {
       case Some(adapter: ProxyDispatcher) =>
@@ -34,7 +34,7 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
     Seq()
   }
 
-  def makeProxy(context: ProvisioningContext, makeProxy: ProxyOp.MakeProxy): Seq[OpResult] = {
+  def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[OpResult] = {
     val tpe = makeProxy.op match {
       case op: WiringOp.InstantiateTrait =>
         op.wiring.instanceType

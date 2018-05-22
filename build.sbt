@@ -1,13 +1,13 @@
-import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
+import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
+import com.lightbend.paradox.sbt.ParadoxPlugin.autoImport.paradoxTheme
+import com.typesafe.sbt.SbtGit.GitKeys.gitBranch
 import com.typesafe.sbt.pgp.PgpSettings
 import coursier.ShadingPlugin.autoImport.shadingNamespace
-import sbt.Keys.{pomExtra, publishMavenStyle}
-import sbtassembly.Assembly
+import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
-
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -20,6 +20,8 @@ val AppSettings = SettingsGroupId()
 val LibSettings = SettingsGroupId()
 val SbtSettings = SettingsGroupId()
 val ShadingSettings = SettingsGroupId()
+val WithoutBadPlugins = SettingsGroupId()
+val SbtScriptedSettings = SettingsGroupId()
 
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("com.github.pshirshov.izumi")
@@ -40,7 +42,7 @@ val baseSettings = new GlobalSettings {
           else
             Opts.resolver.sonatypeStaging
         )
-        , credentials in Global ++= Seq(new File("credentials.sonatype-nexus.properties")).filter(_.exists()).map(Credentials(_))
+        , credentials in Global ++= Seq(new File(".secrets/credentials.sonatype-nexus.properties")).filter(_.exists()).map(Credentials(_))
         , pomExtra in Global := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
           <licenses>
             <license>
@@ -80,8 +82,6 @@ val baseSettings = new GlobalSettings {
           , libraryDependencies ++= T.essentials
         )
       ).flatten
-
-      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin)
     }
     , ShadingSettings -> new ProjectSettings {
       override val plugins: Set[Plugins] = Set(ShadingPlugin)
@@ -105,18 +105,9 @@ val baseSettings = new GlobalSettings {
       ).flatten
     }
     , SbtSettings -> new ProjectSettings {
-      override val plugins: Set[Plugins] = Set(ScriptedPlugin)
-      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin)
-
       override val settings: Seq[sbt.Setting[_]] = Seq(
         Seq(
           target ~= { t => t.toPath.resolve("primary").toFile }
-          , scriptedLaunchOpts := {
-            scriptedLaunchOpts.value ++
-              Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-          }
-          , scriptedBufferLog := false
-
           , crossScalaVersions := Seq(
             V.scala_212
           )
@@ -127,27 +118,51 @@ val baseSettings = new GlobalSettings {
         )
       ).flatten
     }
+    , SbtScriptedSettings -> new ProjectSettings {
+      override val plugins: Set[Plugins] = Set(ScriptedPlugin)
+
+      override val settings: Seq[sbt.Setting[_]] = Seq(
+        Seq(
+          scriptedLaunchOpts := {
+            scriptedLaunchOpts.value ++
+              Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+          }
+          , scriptedBufferLog := false
+        )
+      ).flatten
+    }
     , AppSettings -> new ProjectSettings {
+      override val disabledPlugins: Set[AutoPlugin] = Set(SitePlugin)
       override val plugins = Set(AssemblyPlugin)
+    }
+    , WithoutBadPlugins -> new ProjectSettings {
+      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin)
     }
   )
 }
 // --------------------------------------------
 
 val inRoot = In(".")
+
 val inShade = In("shade")
+  .withModuleSettings(WithoutBadPlugins)
 
 val inSbt = In("sbt")
-  .withModuleSettings(SbtSettings)
+  .withModuleSettings(SbtSettings, SbtScriptedSettings, WithoutBadPlugins)
+
 val inDiStage = In("distage")
-  .withModuleSettings(LibSettings)
+  .withModuleSettings(LibSettings, WithoutBadPlugins)
+
 val inLogStage = In("logstage")
-  .withModuleSettings(LibSettings)
+  .withModuleSettings(LibSettings, WithoutBadPlugins)
+
 val inFundamentals = In("fundamentals")
-  .withModuleSettings(LibSettings)
+  .withModuleSettings(LibSettings, WithoutBadPlugins)
+
 val inIdealinguaBase = In("idealingua")
+
 val inIdealingua = inIdealinguaBase
-  .withModuleSettings(LibSettings)
+  .withModuleSettings(LibSettings, WithoutBadPlugins)
 
 
 // --------------------------------------------
@@ -192,10 +207,6 @@ lazy val distagePlugins = inDiStage.as.module
     libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
 
-lazy val distageApp = inDiStage.as.module
-  .depends(distageCore, distagePlugins, distageConfig, logstageDi)
-
-
 lazy val distageConfig = inDiStage.as.module
   .depends(distageCore)
   .settings(
@@ -204,6 +215,8 @@ lazy val distageConfig = inDiStage.as.module
     )
   )
 
+lazy val distageApp = inDiStage.as.module
+  .depends(distageCore, distagePlugins, distageConfig, logstageDi)
 
 lazy val distageCore = inDiStage.as.module
   .depends(fundamentalsFunctional, distageModel, distageProxyCglib)
@@ -213,14 +226,6 @@ lazy val distageCore = inDiStage.as.module
     )
   )
 
-lazy val distageStatic = inDiStage.as.module
-  .depends(distageCore)
-  .settings(
-    libraryDependencies += R.shapeless
-  )
-
-lazy val logstageApiBase = inLogStage.as.module
-
 lazy val distageCats = inDiStage.as.module
   .depends(distageModel, distageCore.testOnlyRef)
   .settings(
@@ -228,6 +233,16 @@ lazy val distageCats = inDiStage.as.module
     , libraryDependencies ++= T.cats_all
   )
 
+
+lazy val distageStatic = inDiStage.as.module
+  .depends(distageCore)
+  .settings(
+    libraryDependencies += R.shapeless
+  )
+
+//-----------------------------------------------------------------------------
+
+lazy val logstageApiBase = inLogStage.as.module
 
 lazy val logstageApiBaseMacro = inLogStage.as.module
   .depends(logstageApiBase)
@@ -240,21 +255,6 @@ lazy val logstageApiBaseMacro = inLogStage.as.module
 lazy val logstageApiLogger = inLogStage.as.module
   .depends(logstageApiBaseMacro)
 
-
-lazy val logstageSinkConsole = inLogStage.as.module
-  .depends(logstageApiBase)
-  .depends(Seq(
-    logstageApiLogger
-  ).map(_.testOnlyRef): _*)
-
-lazy val logstageAdapterSlf4j = inLogStage.as.module
-  .depends(logstageApiLogger)
-  .settings(
-    libraryDependencies += R.slf4j_api
-    , compileOrder in Compile := CompileOrder.Mixed
-    , compileOrder in Test := CompileOrder.Mixed
-  )
-
 lazy val logstageDi = inLogStage.as.module
   .depends(
     logstageApiLogger
@@ -264,12 +264,27 @@ lazy val logstageDi = inLogStage.as.module
     distageCore
   ).map(_.testOnlyRef): _*)
 
+
+lazy val logstageAdapterSlf4j = inLogStage.as.module
+  .depends(logstageApiLogger)
+  .settings(
+    libraryDependencies += R.slf4j_api
+    , compileOrder in Compile := CompileOrder.Mixed
+    , compileOrder in Test := CompileOrder.Mixed
+  )
+
 lazy val logstageRenderingJson4s = inLogStage.as.module
   .depends(logstageApiLogger)
   .depends(Seq(
     logstageSinkConsole
   ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= Seq(R.json4s_native))
+
+lazy val logstageSinkConsole = inLogStage.as.module
+  .depends(logstageApiBase)
+  .depends(Seq(
+    logstageApiLogger
+  ).map(_.testOnlyRef): _*)
 
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApiBase)
@@ -283,8 +298,11 @@ lazy val logstageSinkSlf4j = inLogStage.as.module
     logstageApiLogger
   ).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
+//-----------------------------------------------------------------------------
 
-
+lazy val fastparseShaded = inShade.as.module
+  .settings(libraryDependencies ++= Seq(R.fastparse))
+  .settings(ShadingSettings)
 
 lazy val idealinguaModel = inIdealingua.as.module
   .settings()
@@ -292,6 +310,13 @@ lazy val idealinguaModel = inIdealingua.as.module
 lazy val idealinguaRuntimeRpc = inIdealingua.as.module
 
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpc, idealinguaRuntimeRpcCirce)
+
+lazy val idealinguaCore = inIdealingua.as.module
+  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
+  .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
+  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
+  .settings(ShadingSettings)
+
 
 lazy val idealinguaRuntimeRpcCirce = inIdealingua.as.module
   .depends(idealinguaRuntimeRpc)
@@ -306,17 +331,6 @@ lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats)
   .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
   .settings(libraryDependencies ++= R.http4s_all)
-
-
-lazy val fastparseShaded = inShade.as.module
-  .settings(libraryDependencies ++= Seq(R.fastparse))
-  .settings(ShadingSettings)
-
-lazy val idealinguaCore = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
-  .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
-  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
-  .settings(ShadingSettings)
 
 lazy val idealinguaExtensionRpcFormatCirce = inIdealingua.as.module
   .depends(idealinguaCore, idealinguaRuntimeRpcCirce)
@@ -349,20 +363,21 @@ lazy val sbtTests = inSbt.as
   .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
-  logstageDi
-  , logstageApiLogger
+   logstageApiLogger
+  , logstageDi
   , logstageSinkConsole
   , logstageSinkFile
   , logstageSinkSlf4j
   , logstageAdapterSlf4j
+  , logstageRenderingJson4s
 )
 lazy val distage: Seq[ProjectReference] = Seq(
-  distageCore
-  , distageApp
+  distageApp
+  , distageCats
+  //, distageStatic
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
-  , idealinguaRuntimeRpc
   , idealinguaRuntimeRpcHttp4s
   , idealinguaRuntimeRpcCats
   , idealinguaRuntimeRpcCirce
@@ -378,3 +393,19 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregate(allProjects: _*)
+  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
+  .settings(
+    sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
+    , siteSubdirName in ScalaUnidoc := "api"
+    , previewFixedPort := Some(9999)
+    , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
+    , git.remoteRepo := scmInfo.value.get.connection
+    , excludeFilter in ghpagesCleanSite := new FileFilter {
+      def accept(f: File) = (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath
+    }
+    , paradoxProperties ++= Map(
+      "scaladoc.izumi.base_url" -> s"/api/com/github/pshirshov/"
+    )
+  )
+  .settings(addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
+  .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))

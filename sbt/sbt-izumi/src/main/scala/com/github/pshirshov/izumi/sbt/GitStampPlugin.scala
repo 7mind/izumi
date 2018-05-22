@@ -13,42 +13,42 @@ object GitStampPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()
 
   object Keys {
-    lazy val gitObject = settingKey[Git]("Git object")
-    lazy val gitRepositoryObject = settingKey[Repository]("Git repository object")
-    lazy val gitRevision = settingKey[String]("Git revision")
-    lazy val gitBranch = settingKey[String]("Git branch")
-    lazy val gitIsClean = settingKey[Boolean]("Git working dir status")
+    lazy val izGitObject = settingKey[Git]("Git object")
+    lazy val izGitRepositoryObject = settingKey[Repository]("Git repository object")
+    lazy val izGitRevision = settingKey[String]("Git revision")
+    lazy val izGitBranch = settingKey[String]("Git branch")
+    lazy val izGitIsClean = settingKey[Boolean]("Git working dir status")
   }
 
   import Keys._
 
   override def globalSettings = Seq(
-    gitObject := {
-      new Git(gitRepositoryObject.value)
+    izGitObject := {
+      new Git(izGitRepositoryObject.value)
     }
-    , gitRepositoryObject := {
+    , izGitRepositoryObject := {
       val builder = new FileRepositoryBuilder
       builder.readEnvironment.findGitDir.build
     }
-    , gitRevision := {
-      val repository = gitRepositoryObject.value
+    , izGitRevision := {
+      val repository = izGitRepositoryObject.value
       val head = repository.exactRef(Constants.HEAD)
       ObjectId.toString(head.getObjectId)
     }
-    , gitBranch := {
-      val repository = gitRepositoryObject.value
+    , izGitBranch := {
+      val repository = izGitRepositoryObject.value
       repository.getBranch
     }
-    , gitIsClean := {
-      val git = gitObject.value
+    , izGitIsClean := {
+      val git = izGitObject.value
       val status = git.status.call
       status.isClean
     }
     , packageOptions += Def.task {
       val gitValues = Map(
-        "X-Git-Branch" -> gitBranch.value
-        , "X-Git-Repo-Is-Clean" -> gitIsClean.value.toString
-        , "X-Git-Head-Rev" -> gitRevision.value
+        "X-Git-Branch" -> izGitBranch.value
+        , "X-Git-Repo-Is-Clean" -> izGitIsClean.value.toString
+        , "X-Git-Head-Rev" -> izGitRevision.value
       )
 
       gitValues.foreach {

@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGro
 import com.github.pshirshov.izumi.sbt.definitions.{GlobalSettings, IzumiDsl}
 import sbt.internal.util.ConsoleLogger
 import sbt.io.syntax.File
-import sbt.{AutoPlugin, ExtendedProjectMacro, Plugins, Project, ProjectReference}
+import sbt.{AutoPlugin, Def, ExtendedProjectMacro, Plugins, Project, ProjectReference}
 
 import scala.language.experimental.macros
 
@@ -57,7 +57,7 @@ object IzumiDslPlugin extends AutoPlugin {
             val groupSettings = getInstance.globalSettings.allSettings(groupId)
             groupSettings.extenders
         }
-        
+
         logger.debug(s"Applying ${extenders.size} transformers to ${project.id}...")
 
         extenders.foldLeft(project) {
@@ -67,9 +67,36 @@ object IzumiDslPlugin extends AutoPlugin {
       }
 
       def transitiveAggregate(refs: ProjectReference*): Project = {
+        import sbt.Keys._
         logger.info(s"Project ${project.id} is aggregating ${refs.size} projects and ${getInstance.allProjects.size} transitive projects...")
+        val toAggregate = refs ++ getInstance.allProjects
+
         project
-          .aggregate(refs ++ getInstance.allProjects: _*)
+          .aggregate(toAggregate: _*)
+          .settings(compile in sbt.Compile := Def.taskDyn {
+            val ctask = (compile in sbt.Compile).value
+
+            Def.task {
+              val loadedReferences = loadedBuild.value.allProjectRefs.map(_._1.project).toSet
+
+              val knownReferences = toAggregate.collect {
+                case l: sbt.LocalProject =>
+                  l.project
+                case p: sbt.ProjectRef =>
+                  p.project
+              }.toSet ++ Set(project.id)
+
+              val notAggregated = loadedReferences.diff(knownReferences)
+
+              if (notAggregated.nonEmpty) {
+                logger.warn(s"!!! WARNING !!! WARNING !!! WARNING !!! ")
+                logger.warn(s"The following projects are loaded but not aggregated by `${project.id}` project:\n${notAggregated.mkString("\n")}")
+              }
+
+
+              ctask
+            }
+          }.value)
       }
 
       private def getInstance: IzumiDsl = {
@@ -100,8 +127,8 @@ object IzumiDslPlugin extends AutoPlugin {
     }
 
     class In(val directory: String, val settingsGroups: Seq[SettingsGroupId]) {
-      def withModuleSettings(groupId: SettingsGroupId) = {
-        new In(directory, settingsGroups :+ groupId)
+      def withModuleSettings(groupId: SettingsGroupId*) = {
+        new In(directory, settingsGroups ++ groupId)
       }
 
       def as: WithBase = macro ExtendedProjectMacro.projectUnifiedDslMacro

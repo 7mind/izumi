@@ -1,4 +1,8 @@
-# Logstage
+---
+out: index.html
+---
+Logstage
+========
 
 
 ## [Logging contexts](contexts.md)

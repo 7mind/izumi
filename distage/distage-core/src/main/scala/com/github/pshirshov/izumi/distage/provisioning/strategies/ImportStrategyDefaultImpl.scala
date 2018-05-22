@@ -3,12 +3,12 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ImportStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{FactoryExecutor, OpResult, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.provisioning.{FactoryExecutor, OpResult, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 class ImportStrategyDefaultImpl extends ImportStrategy {
-  override def importDependency(context: ProvisioningContext, op: ImportDependency): Seq[OpResult] = {
+  override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[OpResult] = {
     import op._
 
     context.importKey(target) match {
@@ -26,7 +26,7 @@ class ImportStrategyDefaultImpl extends ImportStrategy {
 
 
 class ImportStrategyFailingImpl extends ImportStrategy {
-  override def importDependency(context: ProvisioningContext, op: ImportDependency): Seq[OpResult] = {
+  override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[OpResult] = {
     Quirks.discard(context)
 
     import op._

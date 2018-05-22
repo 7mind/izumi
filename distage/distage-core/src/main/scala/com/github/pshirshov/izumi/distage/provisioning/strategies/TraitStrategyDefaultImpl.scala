@@ -4,13 +4,13 @@ import com.github.pshirshov.izumi.distage.commons.TraitTools
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningContext}
+import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 
 class TraitStrategyDefaultImpl(proxyProvider: ProxyProvider) extends TraitStrategy {
-  def makeTrait(context: ProvisioningContext, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
+  def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
     val traitDeps = context.narrow(op.wiring.associations.map(_.wireWith).toSet)
 
     val wiredMethodIndex = TraitTools.traitIndex(op.wiring.instanceType, op.wiring.associations)
@@ -26,7 +26,7 @@ class TraitStrategyDefaultImpl(proxyProvider: ProxyProvider) extends TraitStrate
 }
 
 class TraitStrategyFailingImpl extends TraitStrategy {
-  override def makeTrait(context: ProvisioningContext, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
+  override def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
     Quirks.discard(context)
     throw new DIException(s"TraitStrategyFailingImpl does not support proxies, failed op: $op", null)
   }

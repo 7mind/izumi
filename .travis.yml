@@ -1,15 +1,56 @@
+sudo: required
+dist: trusty
+
 language: scala
+
+jdk:
+  - oraclejdk9
+
+scala:
+  - 2.12.6
+
+
+
+before_script:
+  - bash travis.sh versionate
+
+script:
+  - bash travis.sh coverage
+  - bash travis.sh scripted
+
+before_deploy:
+  - git config --global user.name "$USER"
+  - git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"
+  - openssl aes-256-cbc -K $encrypted_8eadf24ba628_key -iv $encrypted_8eadf24ba628_iv -in secrets.tar.enc -out secrets.tar -d
+  - tar xvf secrets.tar
+  - ln -s .secrets/local.sbt local.sbt
+  - chmod 600 .secrets/travis-deploy-key
+  - eval "$(ssh-agent -s)"
+  - ssh-add .secrets/travis-deploy-key
+
+deploy:
+  - provider: script
+    script: bash travis.sh deploy
+    skip_cleanup: true
+    on:
+      all_branches: true
+      condition: $TRAVIS_PULL_REQUEST = false
+
+
+# Some static settings
+branches:
+  except:
+  - gh-pages
+
 cache:
   directories:
   - $HOME/.sbt
   - $HOME/.ivy2
   - $HOME/.coursier
   - $HOME/.m2
-scala:
-  - 2.12.6
-jdk:
-  - oraclejdk9
-before_install:
-  - ( openssl aes-256-cbc -K $encrypted_b9da041c62db_key -iv $encrypted_b9da041c62db_iv -in secrets.tar.enc -out secrets.tar -d && tar xvf secrets.tar ) || true
-script:
-  - bash travis.sh build
+
+before_cache:
+  - du -h -d 1 $HOME/.ivy2/cache
+  - du -h -d 2 $HOME/.sbt/
+  - find $HOME/.sbt -name "*.lock" -type f -delete
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete

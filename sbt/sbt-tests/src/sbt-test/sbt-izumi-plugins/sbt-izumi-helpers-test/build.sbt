@@ -1,5 +1,6 @@
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys._
+import com.github.pshirshov.izumi.sbt.deps.{Izumi, IzumiDeps => Iz}
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -7,7 +8,7 @@ enablePlugins(IzumiDslPlugin)
 // -- build settings, root artifact settings, etc
 name := "sbt-izumi-helpers-test"
 crossScalaVersions in ThisBuild := Seq(
-  "2.12.6"
+  Iz.V.scala_212
   , "2.11.12"
 )
 
