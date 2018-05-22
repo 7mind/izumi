@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 
 // TODO: startables
 // TODO: config mapping/injection
@@ -17,14 +18,14 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 abstract class OpinionatedDiApp {
   def main(args: Array[String]): Unit = {
     try {
-      doMain()
+      doMain(args)
     } catch {
       case t: Throwable =>
         handler.onError(t)
     }
   }
 
-  protected def doMain(): Unit = {
+  protected def doMain(args : Array[String]): Unit = {
     val logger = new IzLogger(router, CustomContext.empty) // TODO: add instance/machine id here?
     val bootstrapLoader = mkBootstrapLoader(bootstrapConfig)
     val appLoader = mkLoader(appConfig)
@@ -50,7 +51,7 @@ abstract class OpinionatedDiApp {
     logger.trace(s"Unrequired components disabled\n$refinedPlan")
     val context = injector.produce(refinedPlan)
     logger.trace(s"Context produced")
-    start(context)
+    start(context, args)
   }
 
   protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {
@@ -64,7 +65,7 @@ abstract class OpinionatedDiApp {
     }
   }
 
-  protected def start(context: Locator): Unit
+  protected def start(context: Locator, args: Array[String]): Unit
 
   protected def bootstrapConfig: PluginConfig
 
