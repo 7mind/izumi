@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.app
 
 import com.github.pshirshov.izumi.distage.Injectors
+import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
@@ -14,34 +15,98 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 // TODO: config mapping/injection
 // TODO: cli parser?..
 // TODO: split into di-plugins and di-app
-abstract class OpinionatedDiApp[T] {
+
+
+trait BootstrapContext[CommandlineConfig <: AnyRef] {
+  def cliConfig: CommandlineConfig
+
+  def bootstrapConfig: PluginConfig
+
+  def pluginConfig: PluginConfig
+
+  def appConfig: AppConfig
+}
+
+case class BootstrapContextDefaultImpl[CommandlineConfig <: AnyRef]
+(
+  cliConfig: CommandlineConfig
+  , bootstrapConfig: PluginConfig
+  , pluginConfig: PluginConfig
+  , appConfig: AppConfig
+) extends BootstrapContext[CommandlineConfig]
+
+trait ApplicationBootstrapStrategy[CommandlineConfig <: AnyRef] {
+  type Context = BootstrapContext[CommandlineConfig]
+
+  def context: Context
+
+  def requiredComponents: Set[RuntimeDIUniverse.DIKey]
+
+  def mergeStrategy: PluginMergeStrategy[LoadedPlugins]
+
+  def gc: DIGarbageCollector
+
+  def router(): LogRouter
+
+  def bootstrapModules(): Seq[ModuleBase]
+
+  def mkBootstrapLoader(): PluginLoader
+
+  def mkLoader(): PluginLoader
+}
+
+
+abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig <: AnyRef]
+(
+  override val context: BootstrapContext[CommandlineConfig]
+) extends ApplicationBootstrapStrategy[CommandlineConfig] {
+  def requiredComponents: Set[RuntimeDIUniverse.DIKey]
+
+  def gc: DIGarbageCollector = TracingDIGC
+
+  def mergeStrategy: PluginMergeStrategy[LoadedPlugins] = SimplePluginMergeStrategy
+
+  def bootstrapModules(): Seq[ModuleBase] = Seq.empty
+
+  def mkBootstrapLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.bootstrapConfig)
+
+  def mkLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.pluginConfig)
+}
+
+
+abstract class OpinionatedDiApp {
+  type CommandlineConfig <: AnyRef
+
+  type Strategy = ApplicationBootstrapStrategy[CommandlineConfig]
+  type BootstrapContext = Strategy#Context
+
   def main(args: Array[String]): Unit = {
     try {
-      doMain(args)
+      doMain(context(args))
     } catch {
       case t: Throwable =>
         handler.onError(t)
     }
   }
 
-  protected def argumentParser(args : Array[String]) : T
+  protected def context(args: Array[String]): Strategy
 
-  protected def doMain(args : Array[String]): Unit = {
-    val parsedArgs = argumentParser(args)
-    val loggerRouter = router(parsedArgs)
+  protected def doMain(strategy: Strategy): Unit = {
+    val loggerRouter = strategy.router()
 
     val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
-    val bootstrapLoader = mkBootstrapLoader(bootstrapConfig(parsedArgs))
-    val appLoader = mkLoader(appConfig(parsedArgs))
+    //val parsedArgs = argumentParser(args)
+    val bootstrapLoader = strategy.mkBootstrapLoader()
+    val appLoader = strategy.mkLoader()
 
-    val bootstrapAutoDef = bootstrapLoader.loadDefinition(mergeStrategy)
-    val appDef = appLoader.loadDefinition(mergeStrategy)
+    val bootstrapAutoDef = bootstrapLoader.loadDefinition(strategy.mergeStrategy)
+    val appDef = appLoader.loadDefinition(strategy.mergeStrategy)
 
     validate(bootstrapAutoDef, appDef)
 
     val bootstrapCustomDef = (Seq(new ModuleDef {
       make[LogRouter].from(loggerRouter)
-    } : ModuleBase) ++ bootstrapModules(parsedArgs)).merge
+    }: ModuleBase) ++ strategy.bootstrapModules).merge
 
     val bsdef = bootstrapAutoDef.definition ++ bootstrapCustomDef
 
@@ -51,11 +116,11 @@ abstract class OpinionatedDiApp[T] {
     val injector = Injectors.bootstrap(bsdef)
     val plan = injector.plan(appDef.definition)
     logger.trace(s"Planning completed\n$plan")
-    val refinedPlan = gc.gc(plan, DIGarbageCollector.isRoot(requiredComponents))
+    val refinedPlan = strategy.gc.gc(plan, DIGarbageCollector.isRoot(strategy.requiredComponents))
     logger.trace(s"Unrequired components disabled\n$refinedPlan")
     val context = injector.produce(refinedPlan)
     logger.trace(s"Context produced")
-    start(context, parsedArgs)
+    start(context, strategy.context)
   }
 
   protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {
@@ -69,26 +134,7 @@ abstract class OpinionatedDiApp[T] {
     }
   }
 
-  protected def start(context: Locator, args : T): Unit
+  protected def start(context: Locator, bootstrapContext: Strategy#Context): Unit
 
-  protected def bootstrapConfig(args : T): PluginConfig
-
-  protected def appConfig(args : T): PluginConfig
-
-  protected def router(args : T): LogRouter
-
-  protected def bootstrapModules(args : T): Seq[ModuleBase] = Seq.empty
-
-  protected def requiredComponents: Set[RuntimeDIUniverse.DIKey]
-
-  // sane defaults
-  protected def gc: DIGarbageCollector = TracingDIGC
-
-  protected def mergeStrategy: PluginMergeStrategy[LoadedPlugins] = SimplePluginMergeStrategy
-
-  protected def handler: AppFailureHandler = TerminatingHandler
-
-  protected def mkBootstrapLoader(config: PluginConfig): PluginLoader = new PluginLoaderDefaultImpl(config)
-
-  protected def mkLoader(config: PluginConfig): PluginLoader = new PluginLoaderDefaultImpl(config)
+  def handler: AppFailureHandler = TerminatingHandler
 }
