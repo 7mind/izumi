@@ -239,7 +239,6 @@ lazy val distageStatic = inDiStage.as.module
     libraryDependencies += R.shapeless
   )
 
-
 //-----------------------------------------------------------------------------
 
 lazy val logstageApiBase = inLogStage.as.module
