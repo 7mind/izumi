@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.TraitConstructor
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
@@ -25,7 +25,6 @@ object TraitConstructorMacro {
     val tools = DIUniverseMacros(macroUniverse)
     val logger = MacroUtil.mkLogger[this.type](c)
 
-    import tools.liftableRuntimeUniverse
     import tools.liftableAnnotation
 
     val targetType = weakTypeOf[T]

@@ -3,11 +3,13 @@ package com.github.pshirshov.izumi.distage.config
 import com.github.pshirshov.configapp._
 import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.typesafe.config._
 import org.scalatest.WordSpec
 
 import scala.collection.immutable.ListSet
 import scala.collection.mutable
+import scala.util.Try
 
 class ConfigTest extends WordSpec {
   "Config resolver" should {
@@ -72,6 +74,25 @@ class ConfigTest extends WordSpec {
 
       assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
     }
+
+    "Progression test: inject config currently doesn't work for factory products" in {
+      assert(Try {
+        import Fixtures.FactoryCase._
+
+        val config = AppConfig(ConfigFactory.load("factory-test.conf"))
+        val injector = Injectors.bootstrap(new ConfigModule(config))
+
+        val definition = new ModuleDef {
+          make[TestFactory]
+        }
+        val plan = injector.plan(definition)
+        val context = injector.produce(plan)
+
+        val instantiated = context.get[TestFactory].make(5)
+        assert(instantiated == TestClass(TestConf(true), 5))
+      }.isFailure)
+    }
+
   }
 
 }
