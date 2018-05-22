@@ -9,13 +9,12 @@ import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 
 // TODO: startables
 // TODO: config mapping/injection
 // TODO: cli parser?..
 // TODO: split into di-plugins and di-app
-abstract class OpinionatedDiApp {
+abstract class OpinionatedDiApp[T] {
   def main(args: Array[String]): Unit = {
     try {
       doMain(args)
@@ -25,8 +24,13 @@ abstract class OpinionatedDiApp {
     }
   }
 
+  protected def argumentParser(args : Array[String]) : T
+
   protected def doMain(args : Array[String]): Unit = {
-    val logger = new IzLogger(router, CustomContext.empty) // TODO: add instance/machine id here?
+    val parsedArgs = argumentParser(args)
+    val loggerRouter = router(parsedArgs)
+
+    val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
     val bootstrapLoader = mkBootstrapLoader(bootstrapConfig)
     val appLoader = mkLoader(appConfig)
 
@@ -36,7 +40,7 @@ abstract class OpinionatedDiApp {
     validate(bootstrapAutoDef, appDef)
 
     val bootstrapCustomDef = (Seq(new ModuleDef {
-      make[LogRouter].from(router)
+      make[LogRouter].from(loggerRouter)
     } : ModuleBase) ++ bootstrapModules).merge
 
     val bsdef = bootstrapAutoDef.definition ++ bootstrapCustomDef
@@ -51,7 +55,7 @@ abstract class OpinionatedDiApp {
     logger.trace(s"Unrequired components disabled\n$refinedPlan")
     val context = injector.produce(refinedPlan)
     logger.trace(s"Context produced")
-    start(context, args)
+    start(context, parsedArgs)
   }
 
   protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {
@@ -65,13 +69,13 @@ abstract class OpinionatedDiApp {
     }
   }
 
-  protected def start(context: Locator, args: Array[String]): Unit
+  protected def start(context: Locator, args : T): Unit
 
   protected def bootstrapConfig: PluginConfig
 
   protected val appConfig: PluginConfig
 
-  protected def router: LogRouter
+  protected def router(args : T): LogRouter
 
   protected def bootstrapModules: Seq[ModuleBase] = Seq.empty
 
