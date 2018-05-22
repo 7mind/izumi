@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.app
 
 import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.{Locator, reflection}
@@ -15,27 +15,38 @@ import com.github.pshirshov.test.testapp._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
-class TestAppLauncher(modules: Seq[ModuleDef], pluginMergeConfig: PluginMergeConfig, callback: Locator => Unit) extends OpinionatedDiApp {
-  override protected def start(context: Locator): Unit = callback(context)
+case class EmptyCfg()
+
+class TestAppLauncher(modules: Seq[ModuleDef], pluginMergeConfig: PluginMergeConfig, callback: Locator => Unit) extends OpinionatedDiApp[EmptyCfg] {
+
+  override protected def argumentParser(args: Array[String]): EmptyCfg = EmptyCfg()
+
+  override protected def start(context: Locator, args: EmptyCfg): Unit = {
+    callback(context)
+  }
+
+  override protected def router(args: EmptyCfg): LogRouter = {
+    LoggingMacroTest.mkRouter(testSink)
+  }
 
   val testSink = new TestSink()
 
 
-  override protected def bootstrapModules: Seq[ModuleDef] = modules
-
-  override protected def router: LogRouter = {
-    LoggingMacroTest.mkRouter(testSink)
+  override protected def bootstrapConfig(args: EmptyCfg): PluginConfig = {
+    PluginConfig(debug = false
+      , Seq("com.github.pshirshov.izumi")
+      , Seq.empty
+    )
   }
 
-  val bootstrapConfig: PluginConfig = PluginConfig(debug = false
-    , Seq("com.github.pshirshov.izumi")
-    , Seq.empty
-  )
+  override protected def appConfig(args: EmptyCfg): PluginConfig = {
+    PluginConfig(debug = false
+      , Seq(classOf[TestApp].getPackage.getName)
+      , Seq.empty
+    )
+  }
 
-  val appConfig: PluginConfig = PluginConfig(debug = false
-    , Seq(classOf[TestApp].getPackage.getName)
-    , Seq.empty
-  )
+  override protected def bootstrapModules(args: EmptyCfg): Seq[ModuleBase] = modules
 
   override protected def requiredComponents: Set[reflection.universe.RuntimeDIUniverse.DIKey] = Set(
     RuntimeDIUniverse.DIKey.get[TestApp]

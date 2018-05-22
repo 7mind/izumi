@@ -14,20 +14,25 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 // TODO: config mapping/injection
 // TODO: cli parser?..
 // TODO: split into di-plugins and di-app
-abstract class OpinionatedDiApp {
+abstract class OpinionatedDiApp[T] {
   def main(args: Array[String]): Unit = {
     try {
-      doMain()
+      doMain(args)
     } catch {
       case t: Throwable =>
         handler.onError(t)
     }
   }
 
-  protected def doMain(): Unit = {
-    val logger = new IzLogger(router, CustomContext.empty) // TODO: add instance/machine id here?
-    val bootstrapLoader = mkBootstrapLoader(bootstrapConfig)
-    val appLoader = mkLoader(appConfig)
+  protected def argumentParser(args : Array[String]) : T
+
+  protected def doMain(args : Array[String]): Unit = {
+    val parsedArgs = argumentParser(args)
+    val loggerRouter = router(parsedArgs)
+
+    val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
+    val bootstrapLoader = mkBootstrapLoader(bootstrapConfig(parsedArgs))
+    val appLoader = mkLoader(appConfig(parsedArgs))
 
     val bootstrapAutoDef = bootstrapLoader.loadDefinition(mergeStrategy)
     val appDef = appLoader.loadDefinition(mergeStrategy)
@@ -35,8 +40,8 @@ abstract class OpinionatedDiApp {
     validate(bootstrapAutoDef, appDef)
 
     val bootstrapCustomDef = (Seq(new ModuleDef {
-      make[LogRouter].from(router)
-    } : ModuleBase) ++ bootstrapModules).merge
+      make[LogRouter].from(loggerRouter)
+    } : ModuleBase) ++ bootstrapModules(parsedArgs)).merge
 
     val bsdef = bootstrapAutoDef.definition ++ bootstrapCustomDef
 
@@ -50,7 +55,7 @@ abstract class OpinionatedDiApp {
     logger.trace(s"Unrequired components disabled\n$refinedPlan")
     val context = injector.produce(refinedPlan)
     logger.trace(s"Context produced")
-    start(context)
+    start(context, parsedArgs)
   }
 
   protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {
@@ -64,15 +69,15 @@ abstract class OpinionatedDiApp {
     }
   }
 
-  protected def start(context: Locator): Unit
+  protected def start(context: Locator, args : T): Unit
 
-  protected def bootstrapConfig: PluginConfig
+  protected def bootstrapConfig(args : T): PluginConfig
 
-  protected val appConfig: PluginConfig
+  protected def appConfig(args : T): PluginConfig
 
-  protected def router: LogRouter
+  protected def router(args : T): LogRouter
 
-  protected def bootstrapModules: Seq[ModuleBase] = Seq.empty
+  protected def bootstrapModules(args : T): Seq[ModuleBase] = Seq.empty
 
   protected def requiredComponents: Set[RuntimeDIUniverse.DIKey]
 
