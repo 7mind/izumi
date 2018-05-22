@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.Injector
-import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
 import org.scalatest.WordSpec
@@ -11,7 +10,7 @@ class StaticInjectorTest extends WordSpec {
 
   def mkInjector(): Injector = Injectors.bootstrap()
 
-  "DI planner" should{
+  "DI planner" should {
 
     "handle macro factory injections" in  {
       import Case5._
@@ -223,6 +222,7 @@ class StaticInjectorTest extends WordSpec {
 
       assert(instantiated.rd == Dep().toString)
     }
+
   }
 
 }

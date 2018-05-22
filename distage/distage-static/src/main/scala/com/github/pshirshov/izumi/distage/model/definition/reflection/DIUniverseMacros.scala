@@ -7,7 +7,7 @@ class DIUniverseMacros[D <: StaticDIUniverse](val u: D) {
   import u._
   import u.u._
 
-  @deprecated("should preserve all additional annotations too", "")
+  @deprecated("should preserve ALL annotations of a symbol, not just reconstruct from DIKey, also make ALL annotations available in WrappedFunction", "")
   def annotationsFromDIKey(key: u.DIKey): u.u.Modifiers = {
     key match {
       case idKey: u.DIKey.IdKey[_] =>
@@ -59,6 +59,32 @@ class DIUniverseMacros[D <: StaticDIUniverse](val u: D) {
     case DIKey.SetElementKey(set, index, symbol) => q"""
     { new $RuntimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, $index, $symbol) }
       """
+  }
+
+  // SymbolInfo
+
+  implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
+    info => q"""
+    { $RuntimeDIUniverse.SymbolInfo(name = ${info.name}, tpe = ${info.tpe}, annotations = ${info.annotations}, isMethodSymbol = ${info.isMethodSymbol}) }
+       """
+  }
+
+  // Annotations
+
+  implicit val liftableAnnotation: Liftable[Annotation] = {
+    case Annotation(tpe, args, _) => q"""{
+    _root_.scala.reflect.runtime.universe.Annotation.apply(${SafeType(tpe)}.tpe, ${args.map(LiteralTree(_))}, _root_.scala.collection.immutable.ListMap.empty)
+    }"""
+  }
+
+  case class LiteralTree(tree: Tree)
+
+  implicit val liftableLiteralTree: Liftable[LiteralTree] = {
+    case LiteralTree(tree) => q"""{
+    import _root_.scala.reflect.runtime.universe._
+
+    _root_.scala.StringContext(${showCode(tree, printRootPkg = true)}).q.apply()
+    }"""
   }
 
 }

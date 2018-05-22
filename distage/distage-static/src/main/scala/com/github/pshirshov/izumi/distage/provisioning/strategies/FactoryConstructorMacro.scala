@@ -27,11 +27,7 @@ object FactoryConstructorMacro {
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._
-
-    import tools.liftableRuntimeUniverse
-    import tools.liftableDIKey
-    import tools.liftableTypeKey
-    import tools.liftableSafeType
+    import tools._
 
     val targetType = weakTypeOf[T]
 
@@ -92,7 +88,6 @@ object FactoryConstructorMacro {
             val associations: List[Tree] = w.associations.map {
               case Association.Parameter(context: DependencyContext.ConstructorParameterContext, name, tpe, wireWith) =>
                 val contextTree = q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.symb}, ${context.definingClass}) }"
-                c.abort(c.enclosingPosition, showCode(contextTree))
                 q"{ new $RuntimeDIUniverse.Association.Parameter($contextTree, $name, $tpe, $wireWith)}"
               case Association.Parameter(context, name, tpe, wireWith) =>
                 c.abort(c.enclosingPosition, s"Expected ConstructorParameterContext but got $context")
@@ -120,7 +115,7 @@ object FactoryConstructorMacro {
             ${
           if (executorArgs.nonEmpty)
           // ensure pointer equality for typetags inside symbolDeps and inside executableOps
-          // to support weakTypeTag generics since they are pointer equality based
+          // to support weakTypeTag-based generics since they are pointer equality based
           {
             q"{ symbolDeps.associations.map(_.wireWith).zip(${executorArgs.toList}).toMap }"
           } else {

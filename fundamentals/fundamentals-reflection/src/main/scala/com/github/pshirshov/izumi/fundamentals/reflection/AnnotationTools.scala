@@ -32,4 +32,10 @@ object AnnotationTools {
   def findMatchingBody[T: u.TypeTag, R](u: Universe)(symb: u.Symbol, matcher: PartialFunction[u.Tree, R]): Option[R] =
     find(u)(u.typeOf[T], symb).map(_.tree.children.tail).flatMap(_.collectFirst[R](matcher))
 
+  def findArgument[R](ann: Universe#Annotation)(matcher: PartialFunction[Universe#Tree, R]): Option[R] =
+    ann.tree.children.tail.collectFirst(matcher)
+
+  def collectArguments[R](ann: Universe#Annotation)(matcher: PartialFunction[Universe#Tree, R]): List[R] =
+    ann.tree.children.tail.collect(matcher)
+
 }

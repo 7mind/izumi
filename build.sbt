@@ -233,12 +233,12 @@ lazy val distageCats = inDiStage.as.module
     , libraryDependencies ++= T.cats_all
   )
 
-
 lazy val distageStatic = inDiStage.as.module
-  .depends(distageCore)
+  .depends(distageCore, distageApp.testOnlyRef)
   .settings(
     libraryDependencies += R.shapeless
   )
+
 
 //-----------------------------------------------------------------------------
 
@@ -374,7 +374,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 lazy val distage: Seq[ProjectReference] = Seq(
   distageApp
   , distageCats
-  //, distageStatic
+  , distageStatic
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
