@@ -370,6 +370,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
   , logstageSinkFile
   , logstageSinkSlf4j
   , logstageAdapterSlf4j
+  , logstageRenderingJson4s
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageCore
