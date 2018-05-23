@@ -129,6 +129,9 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     val local = struct.localOrAmbigious
     val localNamesSet = local.map(_.field.name).toSet
 
+    if (struct.all.isEmpty) {
+      return List.empty
+    }
 
     val constructorCode = struct.all
       .filterNot(f => localNamesSet.contains(f.field.name))

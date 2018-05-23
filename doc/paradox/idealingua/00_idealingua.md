@@ -22,7 +22,7 @@ Keyword     | Aliases                | Explanation                              
 `adt`       | `choice`               | Algebraic Data Type                         |
 `id`        |                        | Identifier, named collection of scalars     |
 `service`   |                        | Service interface                           |
-`def`       | `fn`, `fun`            | Method                                      |
+`def`       | `fn`, `func`, `fun`    | Method                                      |
 
 ## Inheritance operators
 

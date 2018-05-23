@@ -55,14 +55,15 @@ class ScalaTranslationTools(ctx: STContext) {
 
       case None =>
         val sourceType = f.source.sourceType
+
         val defnid = sourceType match {
           case d: DTOId =>
             ctx.typespace.tools.defnId(d)
           case o =>
             o
         }
-        if (defnid == sourceType) {
 
+        if (defnid == sourceType) {
           q""" ${Term.Name(f.targetFieldName)} = ${Term.Name(f.source.sourceName)}  """
         } else {
           q""" ${Term.Name(f.targetFieldName)} = ${ctx.conv.toScala(sourceType).termFull}(${Term.Name(f.source.sourceName)})"""

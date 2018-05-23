@@ -71,7 +71,7 @@ class ILParser {
     final val data = kw("data", "dto", "struct")
     final val service = kw("service")
 
-    final val defm = kw("def", "fn", "fun")
+    final val defm = kw("def", "fn", "fun", "func")
 
     def apply[T](kw: Parser[Unit], defparser: Parser[T]): Parser[T] = {
       P(kw ~/ defparser)
