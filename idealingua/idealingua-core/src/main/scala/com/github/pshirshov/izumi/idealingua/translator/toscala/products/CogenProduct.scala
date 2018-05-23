@@ -15,7 +15,7 @@ final case class CogenProduct[T <: Defn](
                                         ) extends AccompaniedCogenProduct[T] {
   override def companion: Defn.Object = {
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
-    val implicitClass = Seq(tools).filter(_.templ.stats.nonEmpty)
+    val implicitClass = filterEmptyClasses(List(tools))
     companionBase.appendDefinitions(implicitClass: _*)
   }
 }

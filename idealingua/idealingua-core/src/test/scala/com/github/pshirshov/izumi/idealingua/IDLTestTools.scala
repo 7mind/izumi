@@ -82,7 +82,7 @@ object IDLTestTools {
     Quirks.discard(tmpdir.toFile.mkdirs())
 
     // TODO: clashes still may happen in case of parallel runs with the same ID
-    val stablePrefix = s"${language.toString}-$id"
+    val stablePrefix = s"$id-${language.toString}"
     val vmPrefix = s"$stablePrefix-u${ManagementFactory.getRuntimeMXBean.getStartTime}"
     val dirPrefix = s"$vmPrefix-ts${System.currentTimeMillis()}"
     val runDir = tmpdir.resolve(dirPrefix)

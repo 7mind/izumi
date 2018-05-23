@@ -5,11 +5,8 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
-
-import scala.reflect.runtime.universe
 
 class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvider.Runtime) extends PlanningHook {
 
@@ -36,15 +33,14 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
     }
   }
 
-  protected def findAnno[T: TypeTag](association: Association.Parameter): Option[universe.Annotation] = {
+  protected def findAnno[T: TypeTag](association: Association.Parameter): Option[Annotation] = {
     association.context match {
       case c: DependencyContext.ConstructorParameterContext =>
-        AnnotationTools.find(RuntimeDIUniverse.u)(typeOf[T], c.symb)
+        c.symb.annotations.find(AnnotationTools.annotationTypeEq(u)(typeOf[T], _))
       case _ =>
         None
     }
   }
-
 
   protected def rewire(binding: Binding.ImplBinding, reflected: Association.Parameter, association: Association.Parameter): DIKey = {
     val confPathAnno = findAnno[ConfPath](association)

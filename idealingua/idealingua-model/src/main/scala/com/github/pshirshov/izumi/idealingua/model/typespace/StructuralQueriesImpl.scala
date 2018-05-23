@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{IdentifierId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, IdentifierId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -129,6 +129,9 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     val local = struct.localOrAmbigious
     val localNamesSet = local.map(_.field.name).toSet
 
+    if (struct.all.isEmpty) {
+      return List.empty
+    }
 
     val constructorCode = struct.all
       .filterNot(f => localNamesSet.contains(f.field.name))
@@ -138,7 +141,27 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       .map(f => SigParam(f.field.name, SigParamSource(f.field.typeId, f.field.name), None))
 
     val cdef = tools.mkConverter(List.empty, constructorCode ++ constructorCodeNonUnique, struct.id)
-    List(cdef)
+
+    struct.id match {
+      case dto: DTOId if !types.isInterfaceEphemeral(dto) =>
+        val mirrorId = tools.defnId(dto)
+
+        val source = SigParamSource(mirrorId, tools.idToParaName(mirrorId))
+        val constructorCode = struct.all
+          .map(f => SigParam(f.field.name, source, Some(f.field.name)))
+
+        val mcdef = ConverterDef(
+          struct.id
+          , constructorCode
+          , List(source)
+        )
+
+        List(cdef, mcdef)
+
+      case _ =>
+        List(cdef)
+    }
+
   }
 
   protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
@@ -186,10 +209,9 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
           val instanceFields = filteredParentFields.toList
           val childMixinFields = mixinInstanceFields
-          val localFields1 = localFields.toList
-
           val innerFields = instanceFields.map(f => SigParam(f.name, SigParamSource(id, "_value"), Some(f.name)))
-          val outerFields = localFields1.map(f => SigParam(f.name, SigParamSource(f.typeId, f.name), None)) ++
+
+          val outerFields = localFields.toList.map(f => SigParam(f.name, SigParamSource(f.typeId, f.name), None)) ++
             childMixinFields.map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
 
           val targetId = istruct.id
@@ -197,7 +219,6 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
           tools.mkConverter(innerFields, outerFields, targetId)
       }
   }
-
 
 
   protected def signature(defn: WithStructure): List[Field] = {

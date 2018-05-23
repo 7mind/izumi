@@ -1,27 +1,32 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.config.ConfigModule
+import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Injector
-import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
 import com.github.pshirshov.izumi.distage.model.definition._
-import com.github.pshirshov.izumi.distage.model.definition.MagicDSL._
+import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
+import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
+import shapeless.test
+
+import scala.util.Try
 
 class StaticInjectorTest extends WordSpec {
 
   def mkInjector(): Injector = Injectors.bootstrap()
 
-  "DI planner" should{
+  "DI planner" should {
 
-    "handle macro factory injections" in  {
+    "handle macro factory injections" in {
       import Case5._
 
       val definition = new ModuleDef {
-        make[Factory].magically
-        make[Dependency].magically
-        make[OverridingFactory].magically
-        make[AssistedFactory].magically
-        make[AbstractFactory].magically
+        make[Factory].statically
+        make[Dependency].statically
+        make[OverridingFactory].statically
+        make[AssistedFactory].statically
+        make[AbstractFactory].statically
       }
 
       val injector = mkInjector()
@@ -48,7 +53,7 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition: ModuleBase = new ModuleDef {
-        make[GenericAssistedFactory].magically
+        make[GenericAssistedFactory].statically
         make[Dependency].from(ConcreteDep())
       }
 
@@ -67,7 +72,7 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition: ModuleBase = new ModuleDef {
-        make[AssistedFactory].magically
+        make[AssistedFactory].statically
         make[Dependency].from(ConcreteDep())
       }
 
@@ -84,8 +89,8 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition: ModuleBase = new ModuleDef {
-        make[NamedAssistedFactory].magically
-        make[Dependency].magically
+        make[NamedAssistedFactory].statically
+        make[Dependency].statically
         make[Dependency].named("special").from(SpecialDep())
         make[Dependency].named("veryspecial").from(VerySpecialDep())
       }
@@ -104,8 +109,8 @@ class StaticInjectorTest extends WordSpec {
       import Case7._
 
       val definition = new ModuleDef {
-        make[Dependency1].magically
-        make[TestTrait].magically
+        make[Dependency1].statically
+        make[TestTrait].statically
       }
 
       val injector = mkInjector()
@@ -121,9 +126,9 @@ class StaticInjectorTest extends WordSpec {
       import Case7._
 
       val definition = new ModuleDef {
-        make[Dependency1].magically
+        make[Dependency1].statically
         make[TestTrait].named("named-trait")
-          .magically
+          .statically
       }
 
       val injector = mkInjector()
@@ -139,9 +144,9 @@ class StaticInjectorTest extends WordSpec {
       import Case8._
 
       val definition = new ModuleDef {
-        make[Trait3].magically
-        make[Trait2].magically
-        make[Trait1].magically
+        make[Trait3].statically
+        make[Trait2].statically
+        make[Trait1].statically
         make[Dependency3]
         make[Dependency2]
         make[Dependency1]
@@ -167,7 +172,7 @@ class StaticInjectorTest extends WordSpec {
       import Case8._
 
       val definition = new ModuleDef {
-        make[Trait2].fromMagic[Trait3]
+        make[Trait2].fromStatic[Trait3]
         make[Dependency3]
         make[Dependency2]
         make[Dependency1]
@@ -186,10 +191,10 @@ class StaticInjectorTest extends WordSpec {
       import Case10._
 
       val definition = new ModuleDef {
-        make[Dep].named("A").fromMagic[DepA]
-        make[Dep].named("B").fromMagic[DepB]
-        make[Trait].magically
-        make[Trait1].magically
+        make[Dep].named("A").fromStatic[DepA]
+        make[Dep].named("B").fromStatic[DepB]
+        make[Trait].statically
+        make[Trait1].statically
       }
 
       val injector = mkInjector()
@@ -211,8 +216,8 @@ class StaticInjectorTest extends WordSpec {
       import Case14._
 
       val definition = new ModuleDef {
-        make[TestTrait].magically
-        make[Dep].magically
+        make[TestTrait].statically
+        make[Dep].statically
       }
 
       val injector = mkInjector()
@@ -223,6 +228,25 @@ class StaticInjectorTest extends WordSpec {
 
       assert(instantiated.rd == Dep().toString)
     }
+
+    "Progression test: config doesn't work as expected yet for a concrete macro factory products" in {
+      assert(Try {
+        import com.github.pshirshov.configapp.Fixtures.FactoryCase._
+
+        val config = AppConfig(ConfigFactory.load("macro-factory-test.conf"))
+        val injector = Injectors.bootstrap(new ConfigModule(config))
+
+        val definition = new ModuleDef {
+          make[TestFactory].statically
+        }
+        val plan = injector.plan(definition)
+        val context = injector.produce(plan)
+
+        val instantiated = context.get[TestFactory].make(5)
+        assert(instantiated == TestClass(TestConf(true), 5))
+      }.isFailure)
+    }
+
   }
 
 }

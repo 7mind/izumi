@@ -149,7 +149,7 @@ object WrappedFunction {
         }
 
         logger.log(
-          s"""Macro expansion info:
+          s"""DIKeyWrappedFunction info:
              | Symbol: ${argTree.symbol}\n
              | IsMethodSymbol: ${Option(argTree.symbol).exists(_.isMethod)}\n
              | Extracted Keys: $keys\n

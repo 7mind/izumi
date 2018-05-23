@@ -1,17 +1,20 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.products
 
-import scala.meta.Defn
+import scala.meta.{Defn, Template}
 
 
 trait RenderableCogenProduct {
   def preamble: String
+
   def render: List[Defn]
+
   def isEmpty: Boolean = render.isEmpty
 }
 
 object RenderableCogenProduct {
   def empty: RenderableCogenProduct = new RenderableCogenProduct {
     override def render: List[Defn] = List.empty
+
     override def preamble: String = ""
   }
 }
@@ -38,7 +41,17 @@ trait MultipleCogenProduct[T <: Defn] extends UnaryCogenProduct[T] {
 trait AccompaniedCogenProduct[T <: Defn] extends MultipleCogenProduct[T] {
   def companion: Defn.Object
 
+  protected def filterEmptyClasses(defns: List[Defn.Class]): List[Defn.Class] = {
+    defns.filterNot(p => isEmpty(p.templ))
+  }
+
+  protected def filterEmptyObjects(defns: List[Defn.Object]): List[Defn.Object] = {
+    defns.filterNot(p => isEmpty(p.templ))
+  }
+
+  private def isEmpty(t: Template): Boolean = t.stats.isEmpty && t.inits.isEmpty
+
   override def render: List[Defn] = {
-    super.render ++ List(companion).filter(_.templ.stats.nonEmpty)
+    super.render ++ filterEmptyObjects(List(companion))
   }
 }

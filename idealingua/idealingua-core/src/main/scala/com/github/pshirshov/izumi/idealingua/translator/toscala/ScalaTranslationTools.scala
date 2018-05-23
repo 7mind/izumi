@@ -21,17 +21,6 @@ class ScalaTranslationTools(ctx: STContext) {
 
   def idToParaName(id: TypeId): Term.Name = Term.Name(ctx.typespace.tools.idToParaName(id))
 
-  private def toAssignment(f: SigParam): Term.Assign = {
-    f.sourceFieldName match {
-      case Some(sourceFieldName) =>
-        q""" ${Term.Name(f.targetFieldName)} = ${Term.Name(f.source.sourceName)}.${Term.Name(sourceFieldName)}  """
-
-      case None =>
-        q""" ${Term.Name(f.targetFieldName)} = ${Term.Name(f.source.sourceName)}  """
-
-    }
-  }
-
   def makeParams(t: ConverterDef): List[Term.Param] = {
     t.outerParams
       .map {
@@ -55,7 +44,31 @@ class ScalaTranslationTools(ctx: STContext) {
   }
 
   def makeConstructor(t: ConverterDef): List[Term.Assign] = {
-    t.allFields.map(ctx.tools.toAssignment)
+    t.allFields.map(toAssignment)
+  }
+
+  private def toAssignment(f: SigParam): Term.Assign = {
+    f.sourceFieldName match {
+      case Some(sourceFieldName) =>
+        q""" ${Term.Name(f.targetFieldName)} = ${Term.Name(f.source.sourceName)}.${Term.Name(sourceFieldName)}  """
+
+
+      case None =>
+        val sourceType = f.source.sourceType
+
+        val defnid = sourceType match {
+          case d: DTOId =>
+            ctx.typespace.tools.defnId(d)
+          case o =>
+            o
+        }
+
+        if (defnid == sourceType) {
+          q""" ${Term.Name(f.targetFieldName)} = ${Term.Name(f.source.sourceName)}  """
+        } else {
+          q""" ${Term.Name(f.targetFieldName)} = ${ctx.conv.toScala(sourceType).termFull}(${Term.Name(f.source.sourceName)})"""
+        }
+    }
   }
 
 

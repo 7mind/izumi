@@ -8,6 +8,13 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.{definition => valuedef}
 import shapeless.{::, HList, HNil, Witness}
 
+/**
+* Sketch of a DSL that exposes rich type information that can then be picked up and used by a macro to do planning & checks
+* at compile time. Note that the DSL is, by necessity, immutable, which is a mismatch with standard ModuleDef.
+*
+* A macro analysing syntax trees may instead be employed, to not burden the user with a different version of the syntax.
+* Esp. that ModuleDef syntax is quite simple (but macro will lose user extensions)
+*/
 object TypeLevelDSL {
 
   sealed trait DIKey

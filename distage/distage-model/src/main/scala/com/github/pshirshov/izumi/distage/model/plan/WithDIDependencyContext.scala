@@ -5,7 +5,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe._
 trait WithDIDependencyContext {
   this: DIUniverseBase
     with WithDISafeType
-    with WithDICallable =>
+    with WithDICallable
+    with WithDISymbolInfo =>
 
   sealed trait DependencyContext {
     def definingClass: TypeFull
@@ -21,9 +22,9 @@ trait WithDIDependencyContext {
 
     sealed trait ParameterContext extends DependencyContext
 
-    case class ConstructorParameterContext(symb: Symb, definingClass: TypeFull) extends ParameterContext
+    case class ConstructorParameterContext(symb: SymbolInfo, definingClass: TypeFull) extends ParameterContext
 
-    case class MethodParameterContext(factoryClass: TypeFull, factoryMethod: MethodSymb) extends ParameterContext {
+    case class MethodParameterContext(factoryClass: TypeFull, factoryMethod: SymbolInfo) extends ParameterContext {
       override def definingClass: TypeFull = factoryClass
     }
 
