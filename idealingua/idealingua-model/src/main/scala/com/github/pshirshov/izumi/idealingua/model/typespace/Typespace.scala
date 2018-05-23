@@ -64,6 +64,10 @@ trait StructuralQueries {
 trait TypespaceTools {
   def idToParaName(id: TypeId): String
 
+  def implId(id: InterfaceId): DTOId
+
+  def defnId(id: StructureId): InterfaceId
+
   def mkConverter(innerFields: List[SigParam], outerFields: List[SigParam], targetId: StructureId): ConverterDef
 }
 

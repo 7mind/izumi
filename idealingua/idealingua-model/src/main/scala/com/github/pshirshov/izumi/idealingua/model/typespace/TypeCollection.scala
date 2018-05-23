@@ -46,23 +46,34 @@ class TypeCollection(domain: DomainDefinition) {
     }
   }).flatten.toSeq
 
-  val interfaceEphemerals: Seq[DTO] = {
+  val interfaceEphemeralIndex: Map[InterfaceId, DTO] = {
     domain.types
       .collect {
         case i: Interface =>
           val iid = DTOId(i.id, toDtoName(i.id))
-          DTO(iid, Structure.interfaces(List(i.id)))
-      }
+          i.id -> DTO(iid, Structure.interfaces(List(i.id)))
+      }.toMap
   }
 
-  val dtoEphemerals: Seq[Interface] = {
+  val interfaceEphemeralsReversed: Map[DTOId, InterfaceId] = {
+    interfaceEphemeralIndex.map(kv => kv._2.id -> kv._1)
+  }
+
+  def isInterfaceEphemeral(dto: DTOId): Boolean = interfaceEphemeralsReversed.contains(dto)
+
+  val dtoEphemeralIndex: Map[DTOId, Interface] = {
     (domain.types ++ serviceEphemerals)
       .collect {
         case i: DTO =>
           val iid = InterfaceId(i.id, toInterfaceName(i.id))
-          Interface(iid, i.struct)
-      }
+          i.id -> Interface(iid, i.struct)
+      }.toMap
+
   }
+
+  val interfaceEphemerals: Seq[DTO] = interfaceEphemeralIndex.values.toSeq
+
+  val dtoEphemerals: Seq[Interface] = dtoEphemeralIndex.values.toSeq
 
   val all: Seq[TypeDef] = {
     val definitions = Seq(
@@ -76,6 +87,10 @@ class TypeCollection(domain: DomainDefinition) {
   }
 
   val structures: Seq[WithStructure] = all.collect { case t: WithStructure => t }
+
+  def domainIndex: Map[TypeId, TypeDef] = {
+    domain.types.map(t => (t.id, t)).toMap
+  }
 
   def index: Map[TypeId, TypeDef] = {
     all.map(t => (t.id, t)).toMap
@@ -105,7 +120,7 @@ class TypeCollection(domain: DomainDefinition) {
   }
 
   protected def verified(types: Seq[TypeDef]): Seq[TypeDef] = {
-    val conflictingTypes = types.groupBy(id => (id.id.path , id.id.name)).filter(_._2.lengthCompare(1) > 0)
+    val conflictingTypes = types.groupBy(id => (id.id.path, id.id.name)).filter(_._2.lengthCompare(1) > 0)
 
     if (conflictingTypes.nonEmpty) {
       throw new IDLException(s"Conflicting types in: $conflictingTypes")

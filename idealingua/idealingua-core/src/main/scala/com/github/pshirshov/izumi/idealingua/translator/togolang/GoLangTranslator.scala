@@ -530,7 +530,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
 
     val fields = typespace.structure.structure(i)
     val distinctFields = fields.all.groupBy(_.field.name).map(_._2.head.field)
-    val eid = typespace.implId(i.id)
+    val eid = typespace.tools.implId(i.id)
 
     val struct = GoLangStruct(
       eid.name,
@@ -605,7 +605,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
          |
          |func Test${i.id.name}Creation(t *testing.T) {
-         |    v := New${ts.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    v := New${ts.tools.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
          |    if v == nil {
          |        t.Errorf("interface of type ${i.id.name} should be possible to create with New method.")
          |    }

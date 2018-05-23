@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common.{SigParam, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.ConverterDef
 
-class TypespaceToolsImpl() extends TypespaceTools {
+class TypespaceToolsImpl(types: TypeCollection) extends TypespaceTools {
   def idToParaName(id: TypeId): String = id.name.toLowerCase
 
   def mkConverter(innerFields: List[SigParam], outerFields: List[SigParam], targetId: StructureId): ConverterDef = {
@@ -23,4 +24,20 @@ class TypespaceToolsImpl() extends TypespaceTools {
     )
   }
 
+  override def implId(id: InterfaceId): DTOId = {
+    DTOId(id, types.toDtoName(id))
+  }
+
+  override def defnId(id: StructureId): InterfaceId = {
+    id match {
+      case d: DTOId if types.isInterfaceEphemeral(d) =>
+        types.interfaceEphemeralsReversed(d)
+
+      case d: DTOId =>
+        InterfaceId(id, types.toInterfaceName(id))
+
+      case i: InterfaceId =>
+        i
+    }
+  }
 }
