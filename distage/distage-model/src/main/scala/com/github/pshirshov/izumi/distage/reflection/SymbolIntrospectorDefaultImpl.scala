@@ -20,6 +20,7 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     tpe.tpe.decl(u.u.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
   }
 
+  @deprecated("Add a test checking that generic parameters depending on class type parameter work in factories")
   override def selectParameters(symb: u.MethodSymb): List[u.Symb] = {
     symb.paramLists.head
   }
@@ -53,10 +54,8 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     }
   }
 
-  override def findSymbolAnnotation(annType: u.TypeFull, symb: u.Symb): Option[u.u.Annotation] = {
-    val univ: u.u.type = u.u // intellij
-    AnnotationTools.find(univ)(annType.tpe, symb)
-  }
+  override def findSymbolAnnotation(annType: u.TypeFull, symb: u.SymbolInfo): Option[u.u.Annotation] =
+    symb.findAnnotation(annType)
 
   override def findTypeAnnotation(annType: u.TypeFull, tpe: u.TypeFull): Option[u.u.Annotation] = {
     val univ: u.u.type = u.u // intellij

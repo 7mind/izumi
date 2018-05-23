@@ -49,7 +49,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val unmatchedTypes = providedValues.filter {
       case (key, value) =>
-        val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(key.symbol.tpe.erasure)
+        val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(key.tpe.tpe.erasure)
         !TypeUtil.isAssignableFrom(runtimeClass, value)
     }
 

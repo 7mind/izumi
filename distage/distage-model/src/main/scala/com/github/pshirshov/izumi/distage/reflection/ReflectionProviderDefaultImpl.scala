@@ -16,13 +16,13 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
           factoryMethod =>
-            val resultType: SafeType = keyProvider.resultOfFactoryMethod(DependencyContext.FactoryMethodContext(symbl), factoryMethod)
+            val context = DependencyContext.MethodParameterContext(symbl, SymbolInfo(factoryMethod, symbl))
 
-            val context = DependencyContext.MethodParameterContext(symbl, factoryMethod)
+            val resultType: SafeType = keyProvider.resultOfFactoryMethod(context)
 
             val alreadyInSignature = symbolIntrospector
               .selectParameters(factoryMethod)
-              .map(keyProvider.keyFromParameter(context, _))
+              .map(p => keyProvider.keyFromParameter(context, SymbolInfo(p, symbl)))
 
             //val symbolsAlreadyInSignature = alreadyInSignature.map(_.symbol).toSet
 
@@ -40,7 +40,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         val context = DependencyContext.MethodContext(symbl)
         val materials = dependencyMethods.map {
           method =>
-            Association.AbstractMethod(context, method, keyProvider.keyFromMethod(context, method))
+            val methodSymb = SymbolInfo.RuntimeSymbol(method, symbl)
+            Association.AbstractMethod(context, methodSymb, keyProvider.keyFromMethod(context, methodSymb))
         }
 
         Wiring.FactoryMethod(symbl, mw, materials)
@@ -60,14 +61,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
     args.map {
       parameter =>
-        val context = DependencyContext.ConstructorParameterContext(parameter, symbl)
-        val p = Association.Parameter(
-          context
-          , parameter.name.toTermName.toString
-          , SafeType(parameter.typeSignatureIn(symbl.tpe))
-          , keyProvider.keyFromParameter(context, parameter)
-        )
-        p
+        val context = DependencyContext.ConstructorParameterContext(symbl)
+        val symb = SymbolInfo(parameter, symbl)
+        Association.Parameter(context, symb, keyProvider.keyFromParameter(context, symb))
     }
   }
 
@@ -94,13 +90,14 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   private def traitMethods(symb: TypeFull): Seq[Association.AbstractMethod] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
     val declaredAbstractMethods = symb.tpe.members
-      .sorted // implicit invariant: preserve definition ordering
+      .sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
       .filter(symbolIntrospector.isWireableMethod(symb, _))
       .map(_.asMethod)
     val context = DependencyContext.MethodContext(symb)
     declaredAbstractMethods.map {
       method =>
-        Association.AbstractMethod(context, method, keyProvider.keyFromMethod(context, method))
+        val methodSymb = SymbolInfo.RuntimeSymbol(method, symb)
+        Association.AbstractMethod(context, methodSymb, keyProvider.keyFromMethod(context, methodSymb))
     }
   }
 

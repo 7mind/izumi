@@ -111,8 +111,6 @@ object WrappedFunction {
 
       case class ExtractedInfo(keys: List[DIKey], isValReference: Boolean)
 
-      type Ctx = TypeFull
-
       def impl[R: c.WeakTypeTag](funcExpr: c.Expr[_]): c.Expr[DIKeyWrappedFunction[R]] = {
 
         val logger = MacroUtil.mkLogger[this.type](c)
@@ -163,11 +161,11 @@ object WrappedFunction {
         result
       }
 
-      def analyze(tree: c.Tree, ctx: Ctx): ExtractedInfo = tree match {
+      def analyze(tree: c.Tree, parent: TypeFull): ExtractedInfo = tree match {
         case Block(List(), inner) =>
-          analyze(inner, ctx)
+          analyze(inner, parent)
         case Function(args, body) =>
-          analyzeMethodRef(args.map(_.symbol), body, ctx)
+          analyzeMethodRef(args.map(_.symbol), body, parent)
         case _ if Option(tree.symbol).exists(_.isMethod) =>
           analyzeValRef(tree.symbol)
         case _ =>
@@ -180,19 +178,19 @@ object WrappedFunction {
                | Hint: Try appending _ to your method name""".stripMargin)
       }
 
-      private def context(symb: Symb, tpe: TypeFull) =
-        DependencyContext.ConstructorParameterContext(symb, tpe)
+      private def context(tpe: TypeFull) =
+        DependencyContext.ConstructorParameterContext(tpe)
 
-      def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ctx: Ctx): ExtractedInfo = {
+      def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, parent: TypeFull): ExtractedInfo = {
         val lambdaKeys: List[DIKey] =
-          lambdaArgs.map(arg => keyProvider.keyFromParameter(context(arg, ctx), arg))
+          lambdaArgs.map(arg => keyProvider.keyFromParameter(context(parent), SymbolInfo(arg, parent)))
 
         val methodReferenceKeys: List[DIKey] = body match {
           case Apply(f, _) =>
             logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
 
             val params = f.symbol.asMethod.typeSignature.paramLists.flatten
-            params.map(p => keyProvider.keyFromParameter(context(p, ctx), p))
+            params.map(p => keyProvider.keyFromParameter(context(parent), SymbolInfo(p, parent)))
           case _ =>
             logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
 

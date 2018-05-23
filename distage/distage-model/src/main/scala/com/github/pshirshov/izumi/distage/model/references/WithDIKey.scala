@@ -7,34 +7,34 @@ trait WithDIKey {
     with WithDISafeType =>
 
   sealed trait DIKey {
-    def symbol: TypeFull
+    def tpe: TypeFull
   }
 
   object DIKey {
 
     def get[K: Tag]: TypeKey = TypeKey(SafeType.get[K])
 
-    case class TypeKey(symbol: TypeFull) extends DIKey {
-      override def toString: String = symbol.toString
+    case class TypeKey(tpe: TypeFull) extends DIKey {
+      override def toString: String = tpe.toString
 
-      def named[I: IdContract](id: I): IdKey[I] = IdKey(symbol, id)
+      def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id)
     }
 
-    case class IdKey[I: IdContract](symbol: TypeFull, id: I) extends DIKey {
+    case class IdKey[I: IdContract](tpe: TypeFull, id: I) extends DIKey {
       val idContract: IdContract[I] = implicitly[IdContract[I]]
 
-      override def toString: String = s"${symbol.toString}#$id"
+      override def toString: String = s"${tpe.toString}#$id"
     }
 
-    case class ProxyElementKey(proxied: DIKey, symbol: TypeFull) extends DIKey {
+    case class ProxyElementKey(proxied: DIKey, tpe: TypeFull) extends DIKey {
       override def toString: String = s"Proxy[${proxied.toString}]"
 
       override def hashCode(): Int = toString.hashCode()
     }
 
     // todo: this disambiguating .index is kinda shitty
-    case class SetElementKey(set: DIKey, index: Int, symbol: TypeFull) extends DIKey {
-      override def toString: String = s"$set##${symbol.toString}.$index"
+    case class SetElementKey(set: DIKey, index: Int, tpe: TypeFull) extends DIKey {
+      override def toString: String = s"$set##${tpe.toString}.$index"
 
       override def hashCode(): Int = toString.hashCode()
     }

@@ -10,27 +10,36 @@ trait WithDIAssociation {
     with WithDICallable
     with WithDIKey
     with WithDIDependencyContext
+    with WithDISymbolInfo
   =>
 
   sealed trait Association extends Formattable {
     def wireWith: DIKey
+    def symbol: SymbolInfo
   }
 
   object Association {
-    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: TypeFull, wireWith: DIKey) extends Association {
-      override def format: String = s"""par $name: $tpe = lookup($wireWith)"""
+    case class Parameter(context: DependencyContext.ParameterContext, symbol: SymbolInfo, wireWith: DIKey) extends Association {
+      override def format: String = s"""par ${symbol.name}: ${symbol.finalResultType} = lookup($wireWith)"""
     }
 
     object Parameter {
+      @deprecated("Provider should have the necessary SymbolInfo")
       def fromDIKey(context: DependencyContext.ParameterContext, key: DIKey): Parameter = {
-        val name = key.symbol.tpe.typeSymbol.name.decodedName.toString
+        // FIXME ???
+        val smb = SymbolInfo.StaticSymbol(
+          key.tpe.tpe.typeSymbol.name.decodedName.toString
+          , key.tpe
+          , Nil
+          , isMethodSymbol = false
+        )
 
-        Association.Parameter(context, name, tpe = key.symbol, key)
+        Association.Parameter(context, smb, key)
       }
     }
 
-    case class AbstractMethod(context: DependencyContext.MethodContext, symbol: Symb, wireWith: DIKey) extends Association {
-      override def format: String = s"""def ${symbol.info.typeSymbol.name}: ${symbol.info.resultType} = lookup($wireWith)"""
+    case class AbstractMethod(context: DependencyContext.MethodContext, symbol: SymbolInfo.RuntimeSymbol, wireWith: DIKey) extends Association {
+      override def format: String = s"""def ${symbol.name}: ${symbol.finalResultType} = lookup($wireWith)"""
     }
 
   }

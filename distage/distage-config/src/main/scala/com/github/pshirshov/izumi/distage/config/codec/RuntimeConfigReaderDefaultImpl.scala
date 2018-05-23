@@ -64,7 +64,7 @@ class RuntimeConfigReaderDefaultImpl
       cv match {
         case obj: ConfigObject =>
           val params = reflectionProviderDefaultImpl.constructorParameters(targetType).map {
-            p => (p.name, p.tpe)
+            p => p.symbol.name -> p.symbol.finalResultType
           }
           val constructorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
 

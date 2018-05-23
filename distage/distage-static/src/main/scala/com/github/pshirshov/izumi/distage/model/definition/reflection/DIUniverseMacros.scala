@@ -1,23 +1,14 @@
 package com.github.pshirshov.izumi.distage.model.definition.reflection
 
-import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 
 class DIUniverseMacros[D <: StaticDIUniverse](val u: D) {
   import u._
   import u.u._
 
-  @deprecated("should preserve ALL annotations of a symbol, not just reconstruct from DIKey, also make ALL annotations available in WrappedFunction", "")
-  def annotationsFromDIKey(key: u.DIKey): u.u.Modifiers = {
-    key match {
-      case idKey: u.DIKey.IdKey[_] =>
-        import idKey._
-        val ann = q"""new ${typeOf[Id]}(${id.toString})"""
-        Modifiers.apply(NoFlags, typeNames.EMPTY, List(ann))
-      case _ =>
-        Modifiers()
-    }
-  }
+  def modifiersForAnns(anns: List[Annotation]): Modifiers =
+    Modifiers(NoFlags, typeNames.EMPTY, anns.map(_.tree))
+
 
   implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] =
     { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
@@ -37,7 +28,7 @@ class DIUniverseMacros[D <: StaticDIUniverse](val u: D) {
     case idKey: DIKey.IdKey[_] =>
       import idKey._
       val lift = idContract.asInstanceOf[IdContractImpl[Any]].liftable
-      q"""{ new $RuntimeDIUniverse.DIKey.IdKey($symbol, ${lift(id)}) }"""
+      q"""{ new $RuntimeDIUniverse.DIKey.IdKey($tpe, ${lift(id)}) }"""
   }
 
   implicit val liftableDIKey: Liftable[DIKey] = {
@@ -61,11 +52,17 @@ class DIUniverseMacros[D <: StaticDIUniverse](val u: D) {
       """
   }
 
+  // ParameterContext
+
+  implicit val liftableConstructorParameterContext: Liftable[DependencyContext.ConstructorParameterContext] = {
+    context => q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}) }"
+  }
+
   // SymbolInfo
 
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info => q"""
-    { $RuntimeDIUniverse.SymbolInfo(name = ${info.name}, tpe = ${info.tpe}, annotations = ${info.annotations}, isMethodSymbol = ${info.isMethodSymbol}) }
+    { $RuntimeDIUniverse.SymbolInfo.StaticSymbol(${info.name}, ${info.finalResultType}, ${info.annotations}, ${info.isMethodSymbol}) }
        """
   }
 

@@ -16,12 +16,12 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
     wiring match {
       case w: Wiring.UnaryWiring.Constructor =>
         val parameters = reflectionProvider.constructorParameters(w.instanceType)
-          .map(p => p.name -> p)
+          .map(p => p.symbol.name -> p)
           .toMap
 
         val newAssociactions = w.associations.map {
           a =>
-            val parameter = parameters(a.name)
+            val parameter = parameters(a.symbol.name)
 
             a.copy(wireWith = rewire(binding, parameter, a))
         }
@@ -33,14 +33,8 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
     }
   }
 
-  protected def findAnno[T: TypeTag](association: Association.Parameter): Option[Annotation] = {
-    association.context match {
-      case c: DependencyContext.ConstructorParameterContext =>
-        c.symb.annotations.find(AnnotationTools.annotationTypeEq(u)(typeOf[T], _))
-      case _ =>
-        None
-    }
-  }
+  protected def findAnno[T: TypeTag](association: Association.Parameter): Option[Annotation] =
+    association.symbol.findAnnotation(SafeType.get[T])
 
   protected def rewire(binding: Binding.ImplBinding, reflected: Association.Parameter, association: Association.Parameter): DIKey = {
     val confPathAnno = findAnno[ConfPath](association)

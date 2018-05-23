@@ -31,18 +31,16 @@ object TraitConstructorMacro {
 
     val UnaryWiring.AbstractSymbol(_, wireables) = reflectionProvider.symbolToWiring(SafeType(targetType))
 
-    val (wireArgs, w) = wireables.map {
+    val (wireArgs, wireMethods) = wireables.map {
       case AbstractMethod(_, methodSymbol, key) =>
-        val tpe = key.symbol.tpe
-        val methodName = methodSymbol.asMethod.name.toTermName
-        val argName = c.freshName(methodName)
+        val tpe = key.tpe.tpe
+        val methodName: TermName = TermName(methodSymbol.name)
+        val argName: TermName = c.freshName(methodName)
 
-        val anns = tools.annotationsFromDIKey(key)
+        val mods = tools.modifiersForAnns(methodSymbol.annotations)
 
-        (q"$anns val $argName: $tpe", (q"override val $methodName: $tpe = $argName", anns))
+        q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
     }.unzip
-
-    val (wireMethods, mods) = w.unzip
 
     val instantiate = if (wireMethods.isEmpty)
       q"new $targetType {}"
@@ -59,14 +57,12 @@ object TraitConstructorMacro {
 
     val dikeyWrappedFunction = symbolOf[DIKeyWrappedFunction.type].asClass.module
 
-    val anns = mods.flatMap(_.annotations).map(Annotation(_)).toList
-
     val res = c.Expr[TraitConstructor[T]] {
       q"""
           {
           $constructorDef
 
-          new ${weakTypeOf[TraitConstructor[T]]}($dikeyWrappedFunction.apply[$targetType](constructor _), $anns)
+          new ${weakTypeOf[TraitConstructor[T]]}($dikeyWrappedFunction.apply[$targetType](constructor _))
           }
        """
     }

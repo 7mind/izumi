@@ -49,7 +49,7 @@ trait WithDICallable {
   trait Provider extends Callable {
     def diKeys: Seq[DIKey]
 
-    override final val argTypes: Seq[TypeFull] = diKeys.map(_.symbol).to
+    override final val argTypes: Seq[TypeFull] = diKeys.map(_.tpe).to
   }
 
   class UnsafeCallArgsMismatched(message: String, val expected: Seq[TypeFull], val actual: Seq[TypeFull], val actualValues: Seq[Any])

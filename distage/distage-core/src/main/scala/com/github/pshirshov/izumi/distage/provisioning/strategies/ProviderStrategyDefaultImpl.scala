@@ -15,7 +15,7 @@ class ProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends ProviderStrate
       key =>
         context.fetchKey(key.wireWith) match {
           case Some(dep) =>
-            RuntimeDIUniverse.TypedRef(dep, key.wireWith.symbol)
+            RuntimeDIUniverse.TypedRef(dep, key.wireWith.tpe)
           // FIXME: this is specifically to support FactoryStrategyMacro
           case _ if key.wireWith == RuntimeDIUniverse.DIKey.get[FactoryExecutor] =>
             RuntimeDIUniverse.TypedRef(mkExecutor(context, executor))

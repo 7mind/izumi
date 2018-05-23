@@ -43,7 +43,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
 
   protected def resolve(kv: (reflection.universe.RuntimeDIUniverse.DIKey, Set[Binding])): Binding = {
     val (key, alternatives) = kv
-    val name = key.symbol.tpe.typeSymbol.asClass.fullName
+    val name = key.tpe.tpe.typeSymbol.asClass.fullName
     val prefs = config.preferences.get(name)
       .orElse(config.preferences.get(name.split('.').last))
 
@@ -92,7 +92,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
 
     val hasDisabledName = maybeImplName.isDefined
     val hasDisabledImplName = {
-      val keyName = binding.key.symbol.tpe.typeSymbol.asClass.fullName
+      val keyName = binding.key.tpe.tpe.typeSymbol.asClass.fullName
 
       config.disabledImplementations.contains(keyName) ||
         config.disabledImplementations.contains(keyName.split('.').last)

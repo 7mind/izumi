@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
-import shapeless.test
 
 import scala.util.Try
 
@@ -22,7 +21,7 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition = new ModuleDef {
-        make[Factory].statically
+          make[Factory].statically
         make[Dependency].statically
         make[OverridingFactory].statically
         make[AssistedFactory].statically
@@ -191,7 +190,7 @@ class StaticInjectorTest extends WordSpec {
       import Case10._
 
       val definition = new ModuleDef {
-        make[Dep].named("A").fromStatic[DepA]
+          make[Dep].named("A").fromStatic[DepA]
         make[Dep].named("B").fromStatic[DepB]
         make[Trait].statically
         make[Trait1].statically

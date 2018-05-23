@@ -37,22 +37,22 @@ object FactoryConstructorMacro {
 
     val (dependencyArgs, dependencyMethods) = dependencies.map {
       case AbstractMethod(_, methodSymbol, key) =>
-        val tpe = key.symbol.tpe
-        val methodName = methodSymbol.asMethod.name.toTermName
-        val argName = c.freshName(methodName)
+        val tpe = key.tpe.tpe
+        val methodName: TermName = TermName(methodSymbol.name)
+        val argName: TermName = c.freshName(methodName)
 
-        val anns = tools.annotationsFromDIKey(key)
+        val mods = tools.modifiersForAnns(methodSymbol.annotations)
 
-        (q"$anns val $argName: $tpe", q"override val $methodName: $tpe = $argName")
+        (q"$mods val $argName: $tpe", q"override val $methodName: $tpe = $argName")
     }.unzip
 
     // FIXME transitive dependencies request (HACK pulling up dependencies from factory methods to ensure correct plan ordering)
     val transitiveDependenciesArgsHACK = factoryInfo.associations.map {
       assoc =>
         val key = assoc.wireWith
-        val anns = tools.annotationsFromDIKey(key)
+        val anns = tools.modifiersForAnns(assoc.symbol.annotations)
 
-        q"$anns val ${TermName(c.freshName("transitive"))}: ${key.symbol.tpe}"
+        q"$anns val ${TermName(c.freshName("transitive"))}: ${key.tpe.tpe}"
     }
 
     val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor].typeSymbol
@@ -75,7 +75,7 @@ object FactoryConstructorMacro {
         val (methodArgs, executorArgs) = methodArguments.map {
           dIKey =>
             val name = TermName(c.freshName())
-            q"$name: ${dIKey.symbol.tpe}" -> q"{ $name }"
+            q"$name: ${dIKey.tpe.tpe}" -> q"{ $name }"
         }.unzip
 
         val typeParams = factoryMethod.typeParams.map(ty => c.internal.typeDef(ty))
@@ -86,10 +86,9 @@ object FactoryConstructorMacro {
         val wiringInfo = productConstructor match {
           case w: UnaryWiring.Constructor =>
             val associations: List[Tree] = w.associations.map {
-              case Association.Parameter(context: DependencyContext.ConstructorParameterContext, name, tpe, wireWith) =>
-                val contextTree = q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.symb}, ${context.definingClass}) }"
-                q"{ new $RuntimeDIUniverse.Association.Parameter($contextTree, $name, $tpe, $wireWith)}"
-              case Association.Parameter(context, _, _, _) =>
+              case Association.Parameter(context: DependencyContext.ConstructorParameterContext, symb, wireWith) =>
+                q"{ new $RuntimeDIUniverse.Association.Parameter($context, $symb, $wireWith)}"
+              case Association.Parameter(context, _, _) =>
                 c.abort(c.enclosingPosition, s"Expected ConstructorParameterContext but got $context")
             }.toList
 
