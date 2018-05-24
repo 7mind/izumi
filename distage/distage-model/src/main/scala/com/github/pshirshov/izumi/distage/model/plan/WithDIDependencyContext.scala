@@ -24,10 +24,6 @@ trait WithDIDependencyContext {
       override def definingClass: TypeFull = factoryClass
     }
 
-    case class CallableParameterContext(definingCallable: Provider) extends ParameterContext {
-      override def definingClass: TypeFull = definingCallable.ret
-    }
-
   }
 
 }
