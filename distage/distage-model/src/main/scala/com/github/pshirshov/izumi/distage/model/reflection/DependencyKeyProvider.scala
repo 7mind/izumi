@@ -7,11 +7,15 @@ trait DependencyKeyProvider {
 
   def keyFromParameter(context: u.DependencyContext.ParameterContext, parameterSymbol: u.SymbolInfo): u.DIKey
 
+  def associationFromParameter(parameterSymbol: u.SymbolInfo): u.Association.Parameter
+
+  final def associationFromParameter(symb: u.Symb, definingClass: u.TypeFull): u.Association.Parameter = {
+    associationFromParameter(u.SymbolInfo(symb, definingClass))
+  }
+
   def keyFromMethod(context: u.DependencyContext.MethodContext, methodSymbol: u.SymbolInfo): u.DIKey
 
   def resultOfFactoryMethod(context: u.DependencyContext.MethodParameterContext): u.TypeFull
-
-  def keyFromParameterType(parameterType: u.TypeFull): u.DIKey
 }
 
 object DependencyKeyProvider {

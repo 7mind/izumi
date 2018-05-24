@@ -20,7 +20,7 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     tpe.tpe.decl(u.u.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
   }
 
-  @deprecated("Add a test checking that generic parameters depending on class type parameter work in factories")
+  // FIXME ??? @deprecated("Add a test checking that generic parameters depending on class type parameter work in factories")
   override def selectParameters(symb: u.MethodSymb): List[u.Symb] = {
     symb.paramLists.head
   }

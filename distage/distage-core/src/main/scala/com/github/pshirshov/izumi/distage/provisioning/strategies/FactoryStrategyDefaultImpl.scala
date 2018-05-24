@@ -39,7 +39,7 @@ class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider) extends FactorySt
   private def makeFactoryIndex(op: WiringOp.InstantiateFactory) = {
     op.wiring.factoryMethods.map {
       wiring =>
-        ReflectionUtil.toJavaMethod(op.wiring.factoryType.tpe, wiring.factoryMethod) -> wiring
+        ReflectionUtil.toJavaMethod(op.wiring.factoryType.tpe, wiring.factoryMethod.underlying) -> wiring
     }.toMap
   }
 }

@@ -23,21 +23,6 @@ trait WithDIAssociation {
       override def format: String = s"""par ${symbol.name}: ${symbol.finalResultType} = lookup($wireWith)"""
     }
 
-    object Parameter {
-      @deprecated("Provider should have the necessary SymbolInfo")
-      def fromDIKey(context: DependencyContext.ParameterContext, key: DIKey): Parameter = {
-        // FIXME ???
-        val smb = SymbolInfo.StaticSymbol(
-          key.tpe.tpe.typeSymbol.name.decodedName.toString
-          , key.tpe
-          , Nil
-          , isMethodSymbol = false
-        )
-
-        Association.Parameter(context, smb, key)
-      }
-    }
-
     case class AbstractMethod(context: DependencyContext.MethodContext, symbol: SymbolInfo.RuntimeSymbol, wireWith: DIKey) extends Association {
       override def format: String = s"""def ${symbol.name}: ${symbol.finalResultType} = lookup($wireWith)"""
     }

@@ -1,12 +1,14 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.distage.model.plan.WithDIAssociation
 import com.github.pshirshov.izumi.distage.model.references.{WithDIKey, WithDITypedRef}
 
 trait WithDICallable {
   this: DIUniverseBase
     with WithDISafeType
     with WithDITypedRef
-    with WithDIKey =>
+    with WithDIKey
+    with WithDIAssociation =>
 
   trait Callable {
     def argTypes: Seq[TypeFull]
@@ -47,9 +49,9 @@ trait WithDICallable {
   }
 
   trait Provider extends Callable {
-    def diKeys: Seq[DIKey]
+    def associations: Seq[Association.Parameter]
 
-    override final val argTypes: Seq[TypeFull] = diKeys.map(_.tpe).to
+    override final val argTypes: Seq[TypeFull] = associations.map(_.wireWith.tpe)
   }
 
   class UnsafeCallArgsMismatched(message: String, val expected: Seq[TypeFull], val actual: Seq[TypeFull], val actualValues: Seq[Any])

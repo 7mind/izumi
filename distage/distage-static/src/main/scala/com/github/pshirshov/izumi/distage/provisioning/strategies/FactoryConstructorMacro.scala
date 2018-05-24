@@ -78,10 +78,10 @@ object FactoryConstructorMacro {
             q"$name: ${dIKey.tpe.tpe}" -> q"{ $name }"
         }.unzip
 
-        val typeParams = factoryMethod.typeParams.map(ty => c.internal.typeDef(ty))
+        val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(c.internal.typeDef(_))
 
-        val resultTypeOfMethod = factoryMethod.typeSignature.finalResultType
-        val instanceType = productConstructor.instanceType
+        val resultTypeOfMethod: Type = factoryMethod.finalResultType.tpe
+        val instanceType: TypeFull = productConstructor.instanceType
 
         val wiringInfo = productConstructor match {
           case w: UnaryWiring.Constructor =>
@@ -107,7 +107,7 @@ object FactoryConstructorMacro {
         }
 
         q"""
-        override def ${factoryMethod.name}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
+        override def ${TermName(factoryMethod.name)}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
           val symbolDeps: ${typeOf[RuntimeDIUniverse.Wiring.UnaryWiring]} = $wiringInfo
 
           val executorArgs: ${typeOf[Map[RuntimeDIUniverse.DIKey, Any]]} =

@@ -16,7 +16,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
           factoryMethod =>
-            val context = DependencyContext.MethodParameterContext(symbl, SymbolInfo(factoryMethod, symbl))
+            val factoryMethodSymb = SymbolInfo.RuntimeSymbol(factoryMethod, symbl)
+
+            val context = DependencyContext.MethodParameterContext(symbl, factoryMethodSymb)
 
             val resultType: SafeType = keyProvider.resultOfFactoryMethod(context)
 
@@ -34,7 +36,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
               throw new DIException(s"Factory method signature contains symbols which are not required for target product: $excessiveSymbols", null)
             }
 
-            Wiring.FactoryMethod.WithContext(factoryMethod, methodTypeWireable, alreadyInSignature)
+            Wiring.FactoryMethod.WithContext(factoryMethodSymb, methodTypeWireable, alreadyInSignature)
         }
 
         val context = DependencyContext.MethodContext(symbl)
@@ -52,25 +54,13 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   override def providerToWiring(function: u.Provider): u.Wiring = {
-    val associations = providerParameters(function)
-    Wiring.UnaryWiring.Function(function, associations)
+    Wiring.UnaryWiring.Function(function, function.associations)
   }
 
   override def constructorParameters(symbl: TypeFull): List[Association.Parameter] = {
     val args: List[u.Symb] = symbolIntrospector.selectConstructor(symbl).arguments
 
-    args.map {
-      parameter =>
-        val context = DependencyContext.ConstructorParameterContext(symbl)
-        val symb = SymbolInfo(parameter, symbl)
-        Association.Parameter(context, symb, keyProvider.keyFromParameter(context, symb))
-    }
-  }
-
-  private def providerParameters(provider: Provider): Seq[Association.Parameter] = {
-    val context = DependencyContext.CallableParameterContext(provider)
-
-    provider.diKeys.map(Association.Parameter.fromDIKey(context, _))
+    args.map(keyProvider.associationFromParameter(_, symbl))
   }
 
   private def unarySymbolDeps(symbl: TypeFull): UnaryWiring.ProductWiring = symbl match {

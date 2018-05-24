@@ -10,6 +10,7 @@ trait WithDIWiring {
     with WithDIKey
     with WithDIAssociation
     with WithDIDependencyContext
+    with WithDISymbolInfo
   =>
 
   sealed trait Wiring {
@@ -63,7 +64,7 @@ trait WithDIWiring {
 
     object FactoryMethod {
 
-      case class WithContext(factoryMethod: MethodSymb, wireWith: UnaryWiring.ProductWiring, methodArguments: Seq[DIKey])
+      case class WithContext(factoryMethod: SymbolInfo.RuntimeSymbol, wireWith: UnaryWiring.ProductWiring, methodArguments: Seq[DIKey])
 
     }
 

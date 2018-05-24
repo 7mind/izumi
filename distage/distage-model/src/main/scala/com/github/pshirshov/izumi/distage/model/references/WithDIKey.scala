@@ -14,13 +14,15 @@ trait WithDIKey {
 
     def get[K: Tag]: TypeKey = TypeKey(SafeType.get[K])
 
-    case class TypeKey(tpe: TypeFull) extends DIKey {
+    sealed trait BasicKey extends DIKey
+
+    case class TypeKey(tpe: TypeFull) extends BasicKey {
       override def toString: String = tpe.toString
 
       def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id)
     }
 
-    case class IdKey[I: IdContract](tpe: TypeFull, id: I) extends DIKey {
+    case class IdKey[I: IdContract](tpe: TypeFull, id: I) extends BasicKey {
       val idContract: IdContract[I] = implicitly[IdContract[I]]
 
       override def toString: String = s"${tpe.toString}#$id"

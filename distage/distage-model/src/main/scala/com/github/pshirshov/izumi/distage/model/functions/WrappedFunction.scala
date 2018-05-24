@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.model.functions
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -60,10 +60,13 @@ object WrappedFunction {
   *   Bindings.provider[Unit](constructor) // Will summon regular Int, not a "special" Int from DI context
   *
   * */
-  class DIKeyWrappedFunction[+R](val diKeys: Seq[DIKey]
+  class DIKeyWrappedFunction[+R](val associations: Seq[Association.Parameter]
                                , val ret: TypeFull
                                , val fun: Seq[Any] => Any
   ) extends WrappedFunction[R] with Provider {
+
+    def diKeys: Seq[DIKey] = associations.map(_.wireWith)
+
     override protected def call(args: Any*): R = {
       val seq: Seq[Any] = args
       fun.apply(seq).asInstanceOf[R]
@@ -72,8 +75,8 @@ object WrappedFunction {
 
   object DIKeyWrappedFunction {
 
-    def mkRuntime[R](associations: Seq[Association], ret: TypeFull, fun: Seq[Any] => Any): DIKeyWrappedFunction[R] =
-      new DIKeyWrappedFunction[R](associations.map(_.wireWith), ret, fun)
+    def mkRuntime[R](associations: Seq[Association.Parameter], ret: TypeFull, fun: Seq[Any] => Any): DIKeyWrappedFunction[R] =
+      new DIKeyWrappedFunction[R](associations, ret, fun)
 
     implicit def apply[R](funcExpr: () => R): DIKeyWrappedFunction[R] = macro DIKeyWrappedFunctionMacroImpl.impl[R]
     implicit def apply[R](funcExpr: _ => R): DIKeyWrappedFunction[R] = macro DIKeyWrappedFunctionMacroImpl.impl[R]
@@ -109,7 +112,7 @@ object WrappedFunction {
       import c.universe._
       import macroUniverse._
 
-      case class ExtractedInfo(keys: List[DIKey], isValReference: Boolean)
+      case class ExtractedInfo(associations: List[Association.Parameter], isValReference: Boolean)
 
       def impl[R: c.WeakTypeTag](funcExpr: c.Expr[_]): c.Expr[DIKeyWrappedFunction[R]] = {
 
@@ -118,29 +121,21 @@ object WrappedFunction {
         val argTree = funcExpr.tree
         val ret = SafeType.getWeak[R]
 
-        val ExtractedInfo(keys, isValReference) = analyze(argTree, ret)
-
-        // FIXME preserve annotations
-        val keysTree = keys.map {
-          case DIKey.TypeKey(t) =>
-            q"${symbolOf[RuntimeDIUniverse.type].asClass.module}.DIKey.get[${t.tpe}]"
-          case DIKey.IdKey(t, id) =>
-            q"${symbolOf[RuntimeDIUniverse.type].asClass.module}.DIKey.get[${t.tpe}].named(${id.toString})"
-        }
+        val ExtractedInfo(associations, isValReference) = analyze(argTree, ret)
 
         val wrappedFunction = symbolOf[WrappedFunction.type].asClass.module
         val result = c.Expr[DIKeyWrappedFunction[R]] {
           q"""{
             val wrapped = $wrappedFunction.apply[${weakTypeOf[R]}]($funcExpr)
 
-            val diKeys: ${typeOf[List[RuntimeDIUniverse.DIKey]]} = $keysTree
+            val associations: ${typeOf[List[RuntimeDIUniverse.Association.Parameter]]} = $associations
 
-            _root_.scala.Predef.assert(wrapped.argTypes.length == diKeys.length, "Impossible Happened! args list has different length than diKeys list")
+            _root_.scala.Predef.assert(wrapped.argTypes.length == associations.length, "Impossible Happened! args list has different length than associations list")
 
             new $wrappedFunction.DIKeyWrappedFunction[${weakTypeOf[R]}](
-              diKeys
+              associations
               , wrapped.ret
-              , s => wrapped.unsafeApply(s.zip(wrapped.argTypes).map{ case (v, t) =>
+              , s => wrapped.unsafeApply(s.zip(wrapped.argTypes).map { case (v, t) =>
                 ${symbolOf[RuntimeDIUniverse.type].asClass.module}.TypedRef.apply(v, t) }: _*)
             )
           }"""
@@ -150,7 +145,7 @@ object WrappedFunction {
           s"""DIKeyWrappedFunction info:
              | Symbol: ${argTree.symbol}\n
              | IsMethodSymbol: ${Option(argTree.symbol).exists(_.isMethod)}\n
-             | Extracted Keys: $keys\n
+             | Extracted Associations: $associations\n
              | IsValReference: $isValReference\n
              | argument: ${showCode(argTree)}\n
              | argumentTree: ${showRaw(argTree)}\n
@@ -161,43 +156,45 @@ object WrappedFunction {
         result
       }
 
-      def analyze(tree: c.Tree, parent: TypeFull): ExtractedInfo = tree match {
+      def analyze(tree: c.Tree, ret: TypeFull): ExtractedInfo = tree match {
         case Block(List(), inner) =>
-          analyze(inner, parent)
+          analyze(inner, ret)
         case Function(args, body) =>
-          analyzeMethodRef(args.map(_.symbol), body, parent)
+          analyzeMethodRef(args.map(_.symbol), body, ret)
         case _ if Option(tree.symbol).exists(_.isMethod) =>
-          analyzeValRef(tree.symbol)
+          analyzeValRef(tree.symbol, ret)
         case _ =>
           c.abort(c.enclosingPosition
-            , s"""
-               | Can handle only method references of form (method _) or lambda bodies of form (body => ???).\n
+            ,
+            s"""
+               | Can handle only method references of form (method _) or lambda bodies of form (args => body).\n
                | Argument doesn't seem to be a method reference or a lambda:\n
                |   argument: ${showCode(tree)}\n
                |   argumentTree: ${showRaw(tree)}\n
-               | Hint: Try appending _ to your method name""".stripMargin)
+               | Hint: Try appending _ to your method name""".stripMargin
+          )
       }
 
-      private def context(tpe: TypeFull) =
-        DependencyContext.ConstructorParameterContext(tpe)
+      private def association(ret: TypeFull)(p: Symb): Association.Parameter =
+        keyProvider.associationFromParameter(SymbolInfo(p, ret))
 
-      def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, parent: TypeFull): ExtractedInfo = {
-        val lambdaKeys: List[DIKey] =
-          lambdaArgs.map(arg => keyProvider.keyFromParameter(context(parent), SymbolInfo(arg, parent)))
+      def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ret: TypeFull): ExtractedInfo = {
+        val lambdaKeys: List[Association.Parameter] =
+          lambdaArgs.map(association(ret))
 
-        val methodReferenceKeys: List[DIKey] = body match {
+        val methodReferenceKeys: List[Association.Parameter] = body match {
           case Apply(f, _) =>
             logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
 
             val params = f.symbol.asMethod.typeSignature.paramLists.flatten
-            params.map(p => keyProvider.keyFromParameter(context(parent), SymbolInfo(p, parent)))
+            params.map(association(ret))
           case _ =>
             logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
 
             List()
         }
 
-        val methodRefIds = methodReferenceKeys.collect { case i: DIKey.IdKey[_] => i }
+        val methodRefIds = methodReferenceKeys.map(_.wireWith).collect { case i: DIKey.IdKey[_] => i }
 
         val keys = if (methodRefIds.isEmpty || methodReferenceKeys.size != lambdaKeys.size) {
           lambdaKeys
@@ -208,16 +205,112 @@ object WrappedFunction {
         ExtractedInfo(keys, isValReference = false)
       }
 
-      def analyzeValRef(symbol: Symbol): ExtractedInfo = {
-        val sig = symbol.typeSignature.finalResultType
+      def analyzeValRef(valRef: Symbol, ret: TypeFull): ExtractedInfo = {
+        val sig = valRef.typeSignature.finalResultType
 
-        val keys = sig.typeArgs.init.map {
+        val associations = sig.typeArgs.init.map(SafeType(_)).map {
           tpe =>
-            keyProvider.keyFromParameterType(SafeType(tpe))
+            val symbol = SymbolInfo.StaticSymbol(
+              c.freshName(tpe.tpe.typeSymbol.name.toString)
+              , tpe
+              , AnnotationTools.getAllTypeAnnotations(u)(tpe.tpe)
+              , isMethodSymbol = false
+              , ret
+            )
+
+            keyProvider.associationFromParameter(symbol)
         }
 
-        ExtractedInfo(keys, isValReference = true)
+        ExtractedInfo(associations, isValReference = true)
       }
+
+
+
+      implicit val liftableParameter: Liftable[Association.Parameter] = {
+        case Association.Parameter(context: DependencyContext.ConstructorParameterContext, symb, wireWith) =>
+          q"{ new $RuntimeDIUniverse.Association.Parameter($context, $symb, $wireWith)}"
+        case Association.Parameter(context, _, _) =>
+          throw new RuntimeException(s"Expected ConstructorParameterContext but got $context")
+        }
+
+
+
+
+
+      implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] =
+        { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
+
+      implicit val liftableSafeType: Liftable[SafeType] =
+        value => q"{ $RuntimeDIUniverse.SafeType.getWeak[${Liftable.liftType(value.tpe)}] }"
+
+      // DIKey
+
+      implicit val liftableTypeKey: Liftable[DIKey.TypeKey] = {
+        case DIKey.TypeKey(symbol) => q"""
+        { new $RuntimeDIUniverse.DIKey.TypeKey($symbol) }
+          """
+      }
+
+      implicit val liftableIdKey: Liftable[DIKey.IdKey[_]] = {
+        case idKey: DIKey.IdKey[_] =>
+          import idKey._
+          val lift = idContract.asInstanceOf[IdContractImpl[Any]].liftable
+          q"""{ new $RuntimeDIUniverse.DIKey.IdKey($tpe, ${lift(id)}) }"""
+      }
+
+      implicit val liftableDIKey: Liftable[DIKey] = {
+        Liftable[DIKey] {
+          case t: DIKey.TypeKey => q"$t"
+          case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
+          case p: DIKey.ProxyElementKey => q"$p"
+          case s: DIKey.SetElementKey => q"$s"
+        }
+      }
+
+      implicit val liftableProxyElementKey: Liftable[DIKey.ProxyElementKey] = {
+        case DIKey.ProxyElementKey(proxied, symbol) => q"""
+        { new $RuntimeDIUniverse.DIKey.ProxyElementKey(${liftableDIKey(proxied)}, $symbol) }
+          """
+      }
+
+      implicit val liftableSetElementKey: Liftable[DIKey.SetElementKey] = {
+        case DIKey.SetElementKey(set, index, symbol) => q"""
+        { new $RuntimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, $index, $symbol) }
+          """
+      }
+
+      // ParameterContext
+
+      implicit val liftableConstructorParameterContext: Liftable[DependencyContext.ConstructorParameterContext] = {
+        context => q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}) }"
+      }
+
+      // SymbolInfo
+
+      implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
+        info => q"""
+        { $RuntimeDIUniverse.SymbolInfo.StaticSymbol(${info.name}, ${info.finalResultType}, ${info.annotations}, ${info.isMethodSymbol}, ${info.definingClass}) }
+           """
+      }
+
+      // Annotations
+
+      case class TreeLiteral(tree: Tree)
+
+      implicit val liftableLiteralTree: Liftable[TreeLiteral] = {
+        case TreeLiteral(tree) => q"""{
+        import _root_.scala.reflect.runtime.universe._
+
+        _root_.scala.StringContext(${showCode(tree, printRootPkg = true)}).q.apply()
+        }"""
+      }
+
+      implicit val liftableAnnotation: Liftable[Annotation] = {
+        case Annotation(tpe, args, _) => q"""{
+        _root_.scala.reflect.runtime.universe.Annotation.apply(${SafeType(tpe)}.tpe, ${args.map(TreeLiteral)}, _root_.scala.collection.immutable.ListMap.empty)
+        }"""
+      }
+
     }
 
   }

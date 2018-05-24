@@ -7,8 +7,7 @@ class DIUniverseMacros[D <: StaticDIUniverse](val u: D) {
   import u.u._
 
   def modifiersForAnns(anns: List[Annotation]): Modifiers =
-    Modifiers(NoFlags, typeNames.EMPTY, anns.map(_.tree))
-
+    Modifiers.apply(NoFlags, typeNames.EMPTY, anns.map(_.tree))
 
   implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] =
     { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
@@ -62,25 +61,25 @@ class DIUniverseMacros[D <: StaticDIUniverse](val u: D) {
 
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info => q"""
-    { $RuntimeDIUniverse.SymbolInfo.StaticSymbol(${info.name}, ${info.finalResultType}, ${info.annotations}, ${info.isMethodSymbol}) }
+    { $RuntimeDIUniverse.SymbolInfo.StaticSymbol(${info.name}, ${info.finalResultType}, ${info.annotations}, ${info.isMethodSymbol}, ${info.definingClass}) }
        """
   }
 
   // Annotations
 
-  implicit val liftableAnnotation: Liftable[Annotation] = {
-    case Annotation(tpe, args, _) => q"""{
-    _root_.scala.reflect.runtime.universe.Annotation.apply(${SafeType(tpe)}.tpe, ${args.map(LiteralTree(_))}, _root_.scala.collection.immutable.ListMap.empty)
-    }"""
-  }
+  case class TreeLiteral(tree: Tree)
 
-  case class LiteralTree(tree: Tree)
-
-  implicit val liftableLiteralTree: Liftable[LiteralTree] = {
-    case LiteralTree(tree) => q"""{
+  implicit val liftableLiteralTree: Liftable[TreeLiteral] = {
+    case TreeLiteral(tree) => q"""{
     import _root_.scala.reflect.runtime.universe._
 
     _root_.scala.StringContext(${showCode(tree, printRootPkg = true)}).q.apply()
+    }"""
+  }
+
+  implicit val liftableAnnotation: Liftable[Annotation] = {
+    case Annotation(tpe, args, _) => q"""{
+    _root_.scala.reflect.runtime.universe.Annotation.apply(${SafeType(tpe)}.tpe, ${args.map(TreeLiteral(_))}, _root_.scala.collection.immutable.ListMap.empty)
     }"""
   }
 
