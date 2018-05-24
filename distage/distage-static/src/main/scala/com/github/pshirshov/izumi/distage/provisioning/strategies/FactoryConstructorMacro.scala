@@ -98,11 +98,7 @@ object FactoryConstructorMacro {
             q"""{
             val fun = ${symbolOf[AbstractConstructor.type].asClass.module}.apply[${w.instanceType.tpe}].function
 
-            val context = $RuntimeDIUniverse.DependencyContext.CallableParameterContext(fun)
-
-            val associations = fun.diKeys.map($RuntimeDIUniverse.Association.Parameter.fromDIKey(context, _))
-
-            $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun, associations)
+            $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun, fun.associations)
             }"""
         }
 

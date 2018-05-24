@@ -25,8 +25,6 @@ object TraitConstructorMacro {
     val tools = DIUniverseMacros(macroUniverse)
     val logger = MacroUtil.mkLogger[this.type](c)
 
-    import tools.liftableAnnotation
-
     val targetType = weakTypeOf[T]
 
     val UnaryWiring.AbstractSymbol(_, wireables) = reflectionProvider.symbolToWiring(SafeType(targetType))
