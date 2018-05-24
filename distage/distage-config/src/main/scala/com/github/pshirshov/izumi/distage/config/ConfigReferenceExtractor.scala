@@ -29,20 +29,6 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
     val confAnno = findAnno[Conf](association)
     val autoConfAnno = findAnno[AutoConf](association)
 
-    // TODO: can we decopypaste?
-//    val typeKeyMatcher: PartialFunction[DIKey, DIKey.TypeKey] = { case t: DIKey.TypeKey => t }
-//    val assocTypeKey = typeKeyMatcher.lift(association.wireWith)
-//
-//    confPathAnno.map {
-//      findArgument(_).zip(assocTypeKey).headOption
-//        .fold[DIKey](throw new DIException(s"Cannot rewire @ConfPath parameter $association: undefined path", null)) {
-//        case (path, k) =>
-//          k.named(ConfPathId(binding.key, association, path))
-//      }
-//    } orElse {
-//      ???
-//    }
-
     confPathAnno match {
       case Some(ann) =>
         findArgument(ann) match {
