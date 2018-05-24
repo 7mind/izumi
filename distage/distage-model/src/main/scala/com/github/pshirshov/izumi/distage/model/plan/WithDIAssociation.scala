@@ -14,19 +14,29 @@ trait WithDIAssociation {
   =>
 
   sealed trait Association extends Formattable {
+    def name: String
     def wireWith: DIKey
-    def symbol: SymbolInfo
+    def context: DependencyContext
   }
 
   object Association {
-    case class Parameter(context: DependencyContext.ParameterContext, symbol: SymbolInfo, wireWith: DIKey) extends Association {
-      override def format: String = s"""par ${symbol.name}: ${symbol.finalResultType} = lookup($wireWith)"""
+    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: TypeFull, wireWith: DIKey) extends Association {
+      override def format: String = s"""par $name: $tpe = lookup($wireWith)"""
     }
 
-    case class AbstractMethod(context: DependencyContext.MethodContext, symbol: SymbolInfo.RuntimeSymbol, wireWith: DIKey) extends Association {
-      override def format: String = s"""def ${symbol.name}: ${symbol.finalResultType} = lookup($wireWith)"""
+    case class AbstractMethod(context: DependencyContext.MethodContext, name: String, tpe: TypeFull, wireWith: DIKey) extends Association {
+      override def format: String = s"""def $name: $tpe = lookup($wireWith)"""
     }
 
+    implicit class ParameterWithWireWith(p: Association.Parameter) {
+      def withWireWith(key: DIKey): Association.Parameter =
+        p.copy(wireWith = key)
+    }
+
+    implicit class MethodWithWireWith(m: Association.AbstractMethod) {
+      def withWireWith(key: DIKey): Association.AbstractMethod =
+        m.copy(wireWith = key)
+    }
   }
 
 }

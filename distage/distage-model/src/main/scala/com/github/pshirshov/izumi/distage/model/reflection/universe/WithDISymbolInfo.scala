@@ -19,7 +19,7 @@ trait WithDISymbolInfo {
     /**
     * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
     **/
-    case class RuntimeSymbol(underlying: Symb, definingClass: TypeFull) extends SymbolInfo {
+    case class Runtime(underlying: Symb, definingClass: TypeFull) extends SymbolInfo {
       override val name: String = underlying.name.toTermName.toString
 
       override val finalResultType: TypeFull = SafeType(underlying.typeSignatureIn(definingClass.tpe).finalResultType)
@@ -27,10 +27,10 @@ trait WithDISymbolInfo {
       override val annotations: List[u.Annotation] = AnnotationTools.getAllAnnotations(u: u.type)(underlying)
     }
 
-    case class StaticSymbol(name: String, finalResultType: TypeFull, annotations: List[u.Annotation], definingClass: TypeFull) extends SymbolInfo
+    case class Static(name: String, finalResultType: TypeFull, annotations: List[u.Annotation], definingClass: TypeFull) extends SymbolInfo
 
     def apply(symb: Symb, definingClass: TypeFull): SymbolInfo =
-      RuntimeSymbol(symb, definingClass)
+      Runtime(symb, definingClass)
 
     implicit final class SymbolInfoExtensions(symbolInfo: SymbolInfo) {
       def findAnnotation(annType: TypeFull): Option[u.Annotation] =

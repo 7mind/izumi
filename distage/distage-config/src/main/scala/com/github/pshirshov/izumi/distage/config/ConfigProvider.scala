@@ -114,9 +114,9 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   private def structInfo(op: ConfigImport) = {
     val qualifier = op.id match {
       case id: AutoConfId =>
-        id.parameter.symbol.name
+        id.parameter.name
       case id: ConfId =>
-        id.parameter.symbol.name
+        id.parameter.name
       case _ =>
         throw new IllegalArgumentException(s"Unexpected op: $op")
     }

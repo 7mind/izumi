@@ -5,9 +5,9 @@ import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
 
 import scala.reflect.macros.blackbox
 
-trait StaticDIUniverse
-  extends DIUniverse
-  with WithDILiftables {
+trait StaticDIUniverse0 {
+  this: DIUniverse =>
+
   override val u: SingletonUniverse
 
   class IdContractImpl[T: u.Liftable] extends IdContract[T] {
@@ -15,6 +15,9 @@ trait StaticDIUniverse
 
     val liftable: u.Liftable[T] = implicitly[u.Liftable[T]]
   }
+}
+
+trait StaticDIUniverse extends DIUniverse with StaticDIUniverse0 with WithDILiftables {
 }
 
 object StaticDIUniverse {

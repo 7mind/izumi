@@ -284,6 +284,12 @@ class InjectorTest extends WordSpec {
       val abstractFactory = context.get[AbstractFactory]
       assert(abstractFactory.x().isInstanceOf[AbstractDependencyImpl])
 
+      val fullyAbstract1 = abstractFactory.y()
+      val fullyAbstract2 = abstractFactory.y()
+      assert(fullyAbstract1.isInstanceOf[FullyAbstractDependency])
+      assert(fullyAbstract1.a.isInstanceOf[Dependency])
+      assert(!fullyAbstract1.eq(fullyAbstract2))
+
       val overridingFactory = context.get[OverridingFactory]
       assert(overridingFactory.x(ConcreteDep()).b.isInstanceOf[ConcreteDep])
 

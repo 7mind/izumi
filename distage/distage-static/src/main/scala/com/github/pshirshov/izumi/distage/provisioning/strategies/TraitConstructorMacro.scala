@@ -28,12 +28,12 @@ object TraitConstructorMacro {
     val UnaryWiring.AbstractSymbol(_, wireables) = reflectionProvider.symbolToWiring(SafeType(targetType))
 
     val (wireArgs, wireMethods) = wireables.map {
-      case AbstractMethod(_, methodSymbol, key) =>
+      case AbstractMethod(ctx, name, _, key) =>
         val tpe = key.tpe.tpe
-        val methodName: TermName = TermName(methodSymbol.name)
+        val methodName: TermName = TermName(name)
         val argName: TermName = c.freshName(methodName)
 
-        val mods = AnnotationTools.mkModifiers(u)(methodSymbol.annotations)
+        val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
 
         q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
     }.unzip

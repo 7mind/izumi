@@ -223,11 +223,17 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     trait AbstractDependency
 
-    class AbstractDependencyImpl extends AbstractDependency
+    case class AbstractDependencyImpl(a: Dependency) extends AbstractDependency
+
+    trait FullyAbstractDependency {
+      def a: Dependency
+    }
 
     trait AbstractFactory {
       @With[AbstractDependencyImpl]
       def x(): AbstractDependency
+
+      def y(): FullyAbstractDependency
     }
 
 

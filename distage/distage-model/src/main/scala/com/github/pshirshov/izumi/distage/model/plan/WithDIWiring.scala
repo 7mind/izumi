@@ -64,8 +64,57 @@ trait WithDIWiring {
 
     object FactoryMethod {
 
-      case class WithContext(factoryMethod: SymbolInfo.RuntimeSymbol, wireWith: UnaryWiring.ProductWiring, methodArguments: Seq[DIKey])
+      case class WithContext(factoryMethod: SymbolInfo.Runtime, wireWith: UnaryWiring.ProductWiring, methodArguments: Seq[DIKey])
 
+    }
+
+    implicit class WiringReplaceKeys(wiring: Wiring) {
+      def replaceKeys(f: Association => DIKey): Wiring =
+        wiring match {
+          case w: UnaryWiring => w.replaceKeys(f)
+          case w: FactoryMethod => w.replaceKeys(f)
+        }
+    }
+
+    implicit class UnaryWiringReplaceKeys(wiring: UnaryWiring) {
+      def replaceKeys(f: Association => DIKey): UnaryWiring =
+        wiring match {
+          case w: UnaryWiring.ProductWiring => w.replaceKeys(f)
+          case w: UnaryWiring.Function => w.replaceKeys(f)
+          case w: UnaryWiring.Instance => w
+          case w: UnaryWiring.Reference => w
+        }
+    }
+
+    implicit class ProductWiringReplaceKeys(wiring: UnaryWiring.ProductWiring) {
+      def replaceKeys(f: Association => DIKey): UnaryWiring.ProductWiring =
+        wiring match {
+          case w: UnaryWiring.Constructor => w.replaceKeys(f)
+          case w: UnaryWiring.AbstractSymbol => w.replaceKeys(f)
+        }
+    }
+
+    implicit class ConstructorReplaceKeys(constructor: UnaryWiring.Constructor) {
+      def replaceKeys(f: Association.Parameter => DIKey): UnaryWiring.Constructor =
+        constructor.copy(associations = constructor.associations.map(a => a.withWireWith(f(a))))
+    }
+
+    implicit class AbstractSymbolReplaceKeys(abstractSymbol: UnaryWiring.AbstractSymbol) {
+      def replaceKeys(f: Association.AbstractMethod => DIKey): UnaryWiring.AbstractSymbol =
+        abstractSymbol.copy(associations = abstractSymbol.associations.map(a => a.withWireWith(f(a))))
+    }
+
+    implicit class FunctionReplaceKeys(function: UnaryWiring.Function) {
+      def replaceKeys(f: Association.Parameter => DIKey): UnaryWiring.Function =
+        function.copy(associations = function.associations.map(a => a.withWireWith(f(a))))
+    }
+
+    implicit class FactoryMethodReplaceKeys(factoryMethod: FactoryMethod) {
+      def replaceKeys(f: Association => DIKey): FactoryMethod =
+        factoryMethod.copy(
+          fieldDependencies = factoryMethod.fieldDependencies.map(a => a.withWireWith(f(a)))
+          , factoryMethods = factoryMethod.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
+        )
     }
 
   }

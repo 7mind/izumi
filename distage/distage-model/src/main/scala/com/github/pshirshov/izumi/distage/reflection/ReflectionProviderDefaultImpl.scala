@@ -16,7 +16,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
           factoryMethod =>
-            val factoryMethodSymb = SymbolInfo.RuntimeSymbol(factoryMethod, symbl)
+            val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, symbl)
 
             val context = DependencyContext.MethodParameterContext(symbl, factoryMethodSymb)
 
@@ -39,11 +39,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             Wiring.FactoryMethod.WithContext(factoryMethodSymb, methodTypeWireable, alreadyInSignature)
         }
 
-        val context = DependencyContext.MethodContext(symbl)
         val materials = dependencyMethods.map {
           method =>
-            val methodSymb = SymbolInfo.RuntimeSymbol(method, symbl)
-            Association.AbstractMethod(context, methodSymb, keyProvider.keyFromMethod(context, methodSymb))
+            val methodSymb = SymbolInfo.Runtime(method, symbl)
+            val context = DependencyContext.MethodContext(symbl, methodSymb)
+            Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyProvider.keyFromMethod(context, methodSymb))
         }
 
         Wiring.FactoryMethod(symbl, mw, materials)
@@ -83,11 +83,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       .sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
       .filter(symbolIntrospector.isWireableMethod(symb, _))
       .map(_.asMethod)
-    val context = DependencyContext.MethodContext(symb)
     declaredAbstractMethods.map {
       method =>
-        val methodSymb = SymbolInfo.RuntimeSymbol(method, symb)
-        Association.AbstractMethod(context, methodSymb, keyProvider.keyFromMethod(context, methodSymb))
+        val methodSymb = SymbolInfo.Runtime(method, symb)
+        val context = DependencyContext.MethodContext(symb, methodSymb)
+        Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyProvider.keyFromMethod(context, methodSymb))
     }
   }
 

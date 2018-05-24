@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.config.ConfigModule
+import com.github.pshirshov.izumi.distage.config.ConfigFixtures._
+import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
+import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition._
@@ -21,7 +23,7 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition = new ModuleDef {
-        make[Factory].statically
+          make[Factory].statically
         make[Dependency].statically
         make[OverridingFactory].statically
         make[AssistedFactory].statically
@@ -39,6 +41,12 @@ class StaticInjectorTest extends WordSpec {
 
       val abstractFactory = context.get[AbstractFactory]
       assert(abstractFactory.x().isInstanceOf[AbstractDependencyImpl])
+
+      val fullyAbstract1 = abstractFactory.y()
+      val fullyAbstract2 = abstractFactory.y()
+      assert(fullyAbstract1.isInstanceOf[FullyAbstractDependency])
+      assert(fullyAbstract1.a.isInstanceOf[Dependency])
+      assert(!fullyAbstract1.eq(fullyAbstract2))
 
       val overridingFactory = context.get[OverridingFactory]
       assert(overridingFactory.x(ConcreteDep()).b.isInstanceOf[ConcreteDep])
@@ -228,22 +236,64 @@ class StaticInjectorTest extends WordSpec {
       assert(instantiated.rd == Dep().toString)
     }
 
-    "Progression test: config doesn't work as expected yet for a concrete macro factory products" in {
-      assert(Try {
-        import com.github.pshirshov.configapp.Fixtures.FactoryCase._
+    "Inject config works for trait methods" in {
+      import ConfigFixtures._
 
-        val config = AppConfig(ConfigFactory.load("macro-factory-test.conf"))
-        val injector = Injectors.bootstrap(new ConfigModule(config))
+      val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
 
-        val definition = new ModuleDef {
-          make[TestFactory].statically
-        }
-        val plan = injector.plan(definition)
-        val context = injector.produce(plan)
+      val definition = new ModuleDef {
+        make[TestConf].from[TestConf](instance = null)
+        make[TestDependency].statically
+        make[TestTrait].statically
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
 
-        val instantiated = context.get[TestFactory].make(5)
-        assert(instantiated == TestClass(TestConf(true), 5))
-      }.isFailure)
+      assert(context.get[TestTrait].x == TestDependency(TestConf(false)))
+      assert(context.get[TestTrait].testConf == TestConf(true))
+      assert(context.get[TestDependency] == TestDependency(TestConf(false)))
+    }
+
+    "Inject config works for concrete and abstract factory products and factory methods" in {
+      import ConfigFixtures._
+
+      val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
+
+      val definition = new ModuleDef {
+        make[TestDependency].statically
+        make[TestFactory].statically
+        make[TestGenericConfFactory[TestConfAlias]].statically
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val factory = context.get[TestFactory]
+      assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))
+      assert(factory.makeTrait().testConf == TestConf(true))
+      assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
+
+      assert(factory.x == TestDependency(TestConf(false)))
+      assert(context.get[TestDependency] == TestDependency(TestConf(false)))
+
+      assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
+    }
+
+    "Inject config works for providers" in {
+      import ConfigFixtures._
+
+      val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
+
+      val definition = new ModuleDef {
+        make[Int].named("depInt").from(5)
+        make[ConcreteProduct].from((conf: TestConf @AutoConf, i: Int @Id("depInt")) => ConcreteProduct(conf, i * 10))
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[ConcreteProduct] == ConcreteProduct(TestConf(false), 50))
     }
 
   }

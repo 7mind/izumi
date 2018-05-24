@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
+import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
-import com.github.pshirshov.izumi.distage.provisioning.{AbstractConstructor, FactoryConstructor, FactoryTools}
+import com.github.pshirshov.izumi.distage.provisioning.{FactoryConstructor, FactoryTools}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
 
@@ -21,7 +22,9 @@ object FactoryConstructorMacro {
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
     val logger = MacroUtil.mkLogger[this.type](c)
+    val tools = DIUniverseMacros(macroUniverse)
 
+    import tools.liftableProductWiring
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._
@@ -33,12 +36,12 @@ object FactoryConstructorMacro {
     )
 
     val (dependencyArgs, dependencyMethods) = dependencies.map {
-      case AbstractMethod(_, methodSymbol, key) =>
+      case AbstractMethod(ctx, name, _, key) =>
         val tpe = key.tpe.tpe
-        val methodName: TermName = TermName(methodSymbol.name)
+        val methodName: TermName = TermName(name)
         val argName: TermName = c.freshName(methodName)
 
-        val mods = AnnotationTools.mkModifiers(u)(methodSymbol.annotations)
+        val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
 
         (q"$mods val $argName: $tpe", q"override val $methodName: $tpe = $argName")
     }.unzip
@@ -47,7 +50,7 @@ object FactoryConstructorMacro {
     val transitiveDependenciesArgsHACK = factoryInfo.associations.map {
       assoc =>
         val key = assoc.wireWith
-        val anns = AnnotationTools.mkModifiers(u)(assoc.symbol.annotations)
+        val anns = AnnotationTools.mkModifiers(u)(assoc.context.symbol.annotations)
 
         q"$anns val ${TermName(c.freshName("transitive"))}: ${key.tpe.tpe}"
     }
@@ -75,33 +78,14 @@ object FactoryConstructorMacro {
             q"$name: ${dIKey.tpe.tpe}" -> q"{ $name }"
         }.unzip
 
-        val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(c.internal.typeDef(_))
+        val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(symbol => c.internal.typeDef(symbol))
 
         val resultTypeOfMethod: Type = factoryMethod.finalResultType.tpe
         val instanceType: TypeFull = productConstructor.instanceType
 
-        val wiringInfo = productConstructor match {
-          case w: UnaryWiring.Constructor =>
-            val associations: List[Tree] = w.associations.map {
-              case Association.Parameter(context: DependencyContext.ConstructorParameterContext, symb, wireWith) =>
-                q"{ new $RuntimeDIUniverse.Association.Parameter($context, $symb, $wireWith)}"
-              case Association.Parameter(context, _, _) =>
-                c.abort(c.enclosingPosition, s"Expected ConstructorParameterContext but got $context")
-            }.toList
-
-            q"{ $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor(${w.instanceType}, $associations) }"
-
-          case w: UnaryWiring.AbstractSymbol =>
-            q"""{
-            val fun = ${symbolOf[AbstractConstructor.type].asClass.module}.apply[${w.instanceType.tpe}].function
-
-            $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun, fun.associations)
-            }"""
-        }
-
         q"""
         override def ${TermName(factoryMethod.name)}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
-          val symbolDeps: ${typeOf[RuntimeDIUniverse.Wiring.UnaryWiring]} = $wiringInfo
+          val symbolDeps: ${typeOf[RuntimeDIUniverse.Wiring.UnaryWiring]} = $productConstructor
 
           val executorArgs: ${typeOf[Map[RuntimeDIUniverse.DIKey, Any]]} =
             ${

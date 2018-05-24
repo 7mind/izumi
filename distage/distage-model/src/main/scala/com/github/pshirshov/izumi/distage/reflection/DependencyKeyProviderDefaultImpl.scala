@@ -15,8 +15,8 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
   }
 
   override def associationFromParameter(parameterSymbol: u.SymbolInfo): u.Association.Parameter = {
-    val context = DependencyContext.ConstructorParameterContext(parameterSymbol.definingClass)
-    Association.Parameter(context, parameterSymbol, keyFromParameter(context, parameterSymbol))
+    val context = DependencyContext.ConstructorParameterContext(parameterSymbol.definingClass, parameterSymbol)
+    Association.Parameter(context, parameterSymbol.name, parameterSymbol.finalResultType, keyFromParameter(context, parameterSymbol))
   }
 
   override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: SymbolInfo): DIKey = {

@@ -1,9 +1,17 @@
 package com.github.pshirshov.izumi.distage.model.reflection.macros
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
+import com.github.pshirshov.izumi.distage.model.plan.{WithDIAssociation, WithDIDependencyContext}
+import com.github.pshirshov.izumi.distage.model.references.WithDIKey
+import com.github.pshirshov.izumi.distage.model.reflection.universe._
 
 trait WithDILiftables {
-  this: StaticDIUniverse =>
+  this: DIUniverseBase
+    with WithDISafeType
+    with WithDIKey
+    with WithDISymbolInfo
+    with WithDIAssociation
+    with WithDIDependencyContext
+    with StaticDIUniverse0 =>
 
   import u._
 
@@ -28,15 +36,6 @@ trait WithDILiftables {
       q"""{ new $RuntimeDIUniverse.DIKey.IdKey($tpe, ${lift(id)}) }"""
   }
 
-  implicit val liftableDIKey: Liftable[DIKey] = {
-    Liftable[DIKey] {
-      case t: DIKey.TypeKey => q"$t"
-      case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
-      case p: DIKey.ProxyElementKey => q"$p"
-      case s: DIKey.SetElementKey => q"$s"
-    }
-  }
-
   implicit val liftableProxyElementKey: Liftable[DIKey.ProxyElementKey] = {
     case DIKey.ProxyElementKey(proxied, symbol) => q"""
     { new $RuntimeDIUniverse.DIKey.ProxyElementKey(${liftableDIKey(proxied)}, $symbol) }
@@ -49,10 +48,19 @@ trait WithDILiftables {
       """
   }
 
+  implicit def liftableDIKey: Liftable[DIKey] = {
+    Liftable[DIKey] {
+      case t: DIKey.TypeKey => q"$t"
+      case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
+      case p: DIKey.ProxyElementKey => q"$p"
+      case s: DIKey.SetElementKey => q"$s"
+    }
+  }
+
   // ParameterContext
 
   implicit val liftableConstructorParameterContext: Liftable[DependencyContext.ConstructorParameterContext] = {
-    context => q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}) }"
+    context => q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}, ${context.parameterSymbol}) }"
   }
 
   implicit val liftableMethodParameterContext: Liftable[DependencyContext.MethodParameterContext] = {
@@ -68,17 +76,15 @@ trait WithDILiftables {
 
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info => q"""
-    { $RuntimeDIUniverse.SymbolInfo.StaticSymbol(${info.name}, ${info.finalResultType}, ${info.annotations}, ${info.definingClass}) }
+    { $RuntimeDIUniverse.SymbolInfo.Static(${info.name}, ${info.finalResultType}, ${info.annotations}, ${info.definingClass}) }
        """
   }
 
   // Associations
 
   implicit val liftableParameter: Liftable[Association.Parameter] = {
-    case Association.Parameter(context, symb, wireWith) =>
-      q"{ new $RuntimeDIUniverse.Association.Parameter($context, $symb, $wireWith)}"
-    case Association.Parameter(context, _, _) =>
-      throw new RuntimeException(s"Expected ConstructorParameterContext but got $context")
+    case Association.Parameter(context, name, tpe, wireWith) =>
+      q"{ new $RuntimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith)}"
     }
 
   // Annotations
@@ -87,7 +93,7 @@ trait WithDILiftables {
 
   implicit val liftableLiteralTree: Liftable[TreeLiteral] = {
     case TreeLiteral(Literal(c: Constant)) => q"""{
-      _root_scala.reflect.runtime.universe.Literal(_root_scala.reflect.runtime.universe.Constant($c))
+      _root_.scala.reflect.runtime.universe.Literal(_root_.scala.reflect.runtime.universe.Constant($c))
       }"""
     case TreeLiteral(tree) => q"""{
       import _root_.scala.reflect.runtime.universe._

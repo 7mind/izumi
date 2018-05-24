@@ -210,7 +210,7 @@ object WrappedFunction {
 
         val associations = sig.typeArgs.init.map(SafeType(_)).map {
           tpe =>
-            val symbol = SymbolInfo.StaticSymbol(
+            val symbol = SymbolInfo.Static(
               c.freshName(tpe.tpe.typeSymbol.name.toString)
               , tpe
               , AnnotationTools.getAllTypeAnnotations(u)(tpe.tpe)
