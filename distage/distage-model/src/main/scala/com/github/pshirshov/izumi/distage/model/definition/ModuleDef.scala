@@ -9,15 +9,17 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import scala.collection.mutable
 
 trait ModuleDef extends ModuleBase {
+  final private[this] val mutableState: mutable.Set[Binding] = initialState
+  final private[this] val mutableTags: mutable.Set[String] = initialTags
 
-  def tagAll: Set[String] = Set()
-
-  protected def freeze(state: mutable.Set[Binding]): Set[Binding] =
-    state.map(b => b.withTags(b.tags ++ tagAll)).toSet
+  protected def freeze(mutState: mutable.Set[Binding]): Set[Binding] = {
+    val frozenTags = mutableTags.toSet
+    mutState.map(b => b.withTags(b.tags ++ frozenTags)).toSet
+  }
 
   protected def initialState: mutable.Set[Binding] = mutable.HashSet.empty[Binding]
 
-  final private[this] val mutableState: mutable.Set[Binding] = initialState
+  protected def initialTags: mutable.Set[String] = mutable.HashSet.empty[String]
 
   final override def bindings: Set[Binding] = freeze(mutableState)
 
@@ -35,6 +37,10 @@ trait ModuleDef extends ModuleBase {
     val startingSet: Set[Binding] = if (uniq) Set(binding) else Set.empty
 
     new SetDSL(mutableState, IdentSet(binding.key, Set()), startingSet)
+  }
+
+  final protected def tag(tags: String*): Unit = discard {
+    mutableTags ++= tags
   }
 
   final protected def append(that: ModuleBase): Unit = discard {

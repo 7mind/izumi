@@ -158,10 +158,10 @@ class DSLTest extends WordSpec {
       import Case1._
 
       val definition: ModuleBase = new ModuleDef {
-        override def tagAll: Set[String] = Set("tag1", "tag2")
-
+        tag("tag1")
         make[TestClass]
         make[TestDependency0].tagged("sniv")
+        tag("tag2")
       }
 
       assert(definition.bindings == Set(
