@@ -13,9 +13,9 @@ class BasicTraitCompilerTest extends WordSpec {
 
   "Trait compiler (whitebox tests)" should {
     "construct a basic trait" in {
-      val traitCtor = AbstractConstructor[Aaa].function
+      val traitCtor = AbstractConstructor[Aaa].function.get
 
-      val value = traitCtor.unsafeApply(TypedRef(5), TypedRef(false))
+      val value = traitCtor.unsafeApply(TypedRef(5), TypedRef(false)).asInstanceOf[Aaa]
 
       assert(value.a == 5)
       assert(value.b == false)

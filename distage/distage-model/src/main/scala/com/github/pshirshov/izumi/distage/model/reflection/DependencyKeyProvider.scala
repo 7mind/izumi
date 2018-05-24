@@ -5,13 +5,17 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse,
 trait DependencyKeyProvider {
   val u: DIUniverse
 
-  def keyFromParameter(context: u.DependencyContext.ParameterContext, parameterSymbol: u.Symb): u.DIKey
+  def keyFromParameter(context: u.DependencyContext.ParameterContext, parameterSymbol: u.SymbolInfo): u.DIKey
 
-  def keyFromMethod(context: u.DependencyContext.MethodContext, methodSymbol: u.MethodSymb): u.DIKey
+  def associationFromParameter(parameterSymbol: u.SymbolInfo): u.Association.Parameter
 
-  def resultOfFactoryMethod(context: u.DependencyContext.FactoryMethodContext, factoryMethod: u.MethodSymb): u.SafeType
+  final def associationFromParameter(symb: u.Symb, definingClass: u.TypeFull): u.Association.Parameter = {
+    associationFromParameter(u.SymbolInfo(symb, definingClass))
+  }
 
-  def keyFromParameterType(parameterType: u.TypeFull): u.DIKey
+  def keyFromMethod(context: u.DependencyContext.MethodContext, methodSymbol: u.SymbolInfo): u.DIKey
+
+  def resultOfFactoryMethod(context: u.DependencyContext.MethodParameterContext): u.TypeFull
 }
 
 object DependencyKeyProvider {

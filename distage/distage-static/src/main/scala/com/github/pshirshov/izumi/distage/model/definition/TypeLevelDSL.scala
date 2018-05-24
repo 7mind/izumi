@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.model.definition
 import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.Binding._
 import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.DIKey._
 import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.ImplDef._
-import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.{definition => valuedef}
 import shapeless.{::, HList, HNil, Witness}
@@ -50,10 +50,9 @@ object TypeLevelDSL {
       def apply[T <: AnyRef](impl: T with Singleton): InstanceImpl[T, impl.type] = new InstanceImpl[T, impl.type] {}
     }
 
-    trait ProviderImpl[T, I <: RuntimeDIUniverse.Provider with Singleton] extends ImplDef {
+    trait ProviderImpl[T, I <: ProviderMagnet[T] with Singleton] extends ImplDef {
       def repr(implicit ev: RuntimeDIUniverse.Tag[I], w: Witness.Aux[I]): valuedef.ImplDef.ProviderImpl =
-        valuedef.ImplDef.ProviderImpl(RuntimeDIUniverse.SafeType.get[I], w.value
-        )
+        valuedef.ImplDef.ProviderImpl(RuntimeDIUniverse.SafeType.get[I], w.value.get)
     }
 
   }
@@ -81,7 +80,7 @@ object TypeLevelDSL {
     def bind[T: RuntimeDIUniverse.Tag](instance: T with AnyRef with Singleton): Bindings[SingletonBinding[TypeKey[T], InstanceImpl[T, instance.type]] :: BS] =
       new Bindings[SingletonBinding[TypeKey[T], InstanceImpl[T, instance.type]] :: BS]
 
-    def provider[T: RuntimeDIUniverse.Tag](f: DIKeyWrappedFunction[T] with Singleton): Bindings[SingletonBinding[TypeKey[T], ProviderImpl[T, f.type]] :: BS] =
+    def provider[T: RuntimeDIUniverse.Tag](f: ProviderMagnet[T] with Singleton): Bindings[SingletonBinding[TypeKey[T], ProviderImpl[T, f.type]] :: BS] =
       new Bindings[SingletonBinding[TypeKey[T], ProviderImpl[T, f.type ]] :: BS]
 
     // sets
@@ -94,7 +93,7 @@ object TypeLevelDSL {
     def element[T: RuntimeDIUniverse.Tag](instance: T with AnyRef with Singleton): Bindings[SetBinding[TypeKey[Set[T]], InstanceImpl[T, instance.type]] :: BS] =
       new Bindings[SetBinding[TypeKey[Set[T]], InstanceImpl[T, instance.type]] :: BS]
 
-    def elementProvider[T: RuntimeDIUniverse.Tag](f: RuntimeDIUniverse.Provider with Singleton): Bindings[SetBinding[TypeKey[Set[T]], ProviderImpl[T, f.type]] :: BS] =
+    def elementProvider[T: RuntimeDIUniverse.Tag](f: ProviderMagnet[T] with Singleton): Bindings[SetBinding[TypeKey[Set[T]], ProviderImpl[T, f.type]] :: BS] =
       new Bindings[SetBinding[TypeKey[Set[T]], ProviderImpl[T, f.type]] :: BS]
 
     // TODO named bindings

@@ -1,12 +1,15 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.plan.WithDIAssociation
 import com.github.pshirshov.izumi.distage.model.references.{WithDIKey, WithDITypedRef}
 
 trait WithDICallable {
   this: DIUniverseBase
     with WithDISafeType
     with WithDITypedRef
-    with WithDIKey =>
+    with WithDIKey
+    with WithDIAssociation =>
 
   trait Callable {
     def argTypes: Seq[TypeFull]
@@ -47,12 +50,33 @@ trait WithDICallable {
   }
 
   trait Provider extends Callable {
-    def diKeys: Seq[DIKey]
+    def associations: Seq[Association.Parameter]
+    def diKeys: Seq[DIKey] = associations.map(_.wireWith)
 
-    override final val argTypes: Seq[TypeFull] = diKeys.map(_.symbol).to
+    override final val argTypes: Seq[TypeFull] = associations.map(_.wireWith.tpe)
+  }
+
+  object Provider {
+
+    case class ProviderImpl[+R](associations: Seq[Association.Parameter], ret: TypeFull, fun: Seq[Any] => Any) extends Provider {
+      override protected def call(args: Any*): R =
+        fun.apply(args: Seq[Any]).asInstanceOf[R]
+
+      override def toString: String =
+        s"$fun(${argTypes.mkString(", ")}): $ret"
+
+      override def unsafeApply(refs: TypedRef[_]*): R =
+        super.unsafeApply(refs: _*).asInstanceOf[R]
+    }
+
+    object ProviderImpl {
+      def apply[R: Tag](associations: Seq[Association.Parameter], fun: Seq[Any] => Any): ProviderImpl[R] =
+        new ProviderImpl[R](associations, SafeType.get[R], fun)
+    }
+
   }
 
   class UnsafeCallArgsMismatched(message: String, val expected: Seq[TypeFull], val actual: Seq[TypeFull], val actualValues: Seq[Any])
-    extends RuntimeException(message, null)
+    extends DIException(message, null)
 
 }

@@ -1,14 +1,14 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.config.ConfigModule
+import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
+import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
-import shapeless.test
 
 import scala.util.Try
 
@@ -40,6 +40,12 @@ class StaticInjectorTest extends WordSpec {
 
       val abstractFactory = context.get[AbstractFactory]
       assert(abstractFactory.x().isInstanceOf[AbstractDependencyImpl])
+
+      val fullyAbstract1 = abstractFactory.y()
+      val fullyAbstract2 = abstractFactory.y()
+      assert(fullyAbstract1.isInstanceOf[FullyAbstractDependency])
+      assert(fullyAbstract1.a.isInstanceOf[Dependency])
+      assert(!fullyAbstract1.eq(fullyAbstract2))
 
       val overridingFactory = context.get[OverridingFactory]
       assert(overridingFactory.x(ConcreteDep()).b.isInstanceOf[ConcreteDep])
@@ -103,6 +109,46 @@ class StaticInjectorTest extends WordSpec {
 
       assert(instantiated.dep.isVerySpecial)
       assert(instantiated.x(5).b.isSpecial)
+    }
+
+    "macro factory cannot produce factories" in {
+      assertTypeError(
+        """
+          |import Case5._
+          |
+          |val definition: ModuleBase = new ModuleDef {
+          |  make[FactoryProducingFactory].statically
+          |  make[Dependency].statically
+          |}
+          |
+          |val injector = mkInjector()
+          |val plan = injector.plan(definition)
+          |val context = injector.produce(plan)
+          |
+          |val instantiated = context.get[FactoryProducingFactory]
+          |
+          |assert(instantiated.x().x().b == context.get[Dependency])
+        """.stripMargin
+      )
+    }
+
+    "macro factory always produces new instances" in {
+      import Case5._
+
+      val definition: ModuleBase = new ModuleDef {
+          make[Dependency].statically
+        make[TestClass].statically
+        make[Factory].statically
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[Factory]
+
+      assert(!instantiated.x().eq(context.get[TestClass]))
+      assert(!instantiated.x().eq(instantiated.x()))
     }
 
     "handle one-arg trait" in {
@@ -172,7 +218,7 @@ class StaticInjectorTest extends WordSpec {
       import Case8._
 
       val definition = new ModuleDef {
-        make[Trait2].fromStatic[Trait3]
+        make[Trait2].static[Trait3]
         make[Dependency3]
         make[Dependency2]
         make[Dependency1]
@@ -191,8 +237,8 @@ class StaticInjectorTest extends WordSpec {
       import Case10._
 
       val definition = new ModuleDef {
-        make[Dep].named("A").fromStatic[DepA]
-        make[Dep].named("B").fromStatic[DepB]
+          make[Dep].named("A").static[DepA]
+        make[Dep].named("B").static[DepB]
         make[Trait].statically
         make[Trait1].statically
       }
@@ -220,7 +266,7 @@ class StaticInjectorTest extends WordSpec {
         make[Dep].statically
       }
 
-      val injector = mkInjector()
+        val injector = mkInjector()
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan)
@@ -229,22 +275,84 @@ class StaticInjectorTest extends WordSpec {
       assert(instantiated.rd == Dep().toString)
     }
 
-    "Progression test: config doesn't work as expected yet for a concrete macro factory products" in {
-      assert(Try {
-        import com.github.pshirshov.configapp.Fixtures.FactoryCase._
+    "Inject config works for macro trait methods" in {
+      import ConfigFixtures._
 
-        val config = AppConfig(ConfigFactory.load("macro-factory-test.conf"))
+      val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
+
+      val definition = new ModuleDef {
+        make[TestDependency].statically
+        make[TestTrait].statically
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestTrait].x == TestDependency(TestConf(false)))
+      assert(context.get[TestTrait].testConf == TestConf(true))
+      assert(context.get[TestDependency] == TestDependency(TestConf(false)))
+    }
+
+    "Inject config works for macro factory methods (not products)" in {
+      import ConfigFixtures._
+
+      val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
+
+      val definition = new ModuleDef {
+        make[TestDependency].statically
+        make[TestGenericConfFactory[TestConfAlias]].statically
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestDependency] == TestDependency(TestConf(false)))
+      assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
+    }
+
+    "Progression test: Inject config doesn't work for macro factory products" in {
+      // FactoryMethod wirings are generated at compile-time and inacessible to ConfigModule, so method ends up depending on TestConf, not TestConf#auto[..]. To fix this, need a new type of binding that would include all factory reflected info
+      val fail = Try {
+        import ConfigFixtures._
+
+        val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
         val injector = Injectors.bootstrap(new ConfigModule(config))
 
         val definition = new ModuleDef {
+          make[TestDependency].statically
           make[TestFactory].statically
+          make[TestGenericConfFactory[TestConfAlias]].statically
         }
         val plan = injector.plan(definition)
         val context = injector.produce(plan)
 
-        val instantiated = context.get[TestFactory].make(5)
-        assert(instantiated == TestClass(TestConf(true), 5))
-      }.isFailure)
+        val factory = context.get[TestFactory]
+        assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))
+        assert(factory.makeTrait().testConf == TestConf(true))
+        assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
+
+        assert(context.get[TestDependency] == TestDependency(TestConf(false)))
+
+        assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
+        assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
+      }.isFailure
+      assert(fail)
+    }
+
+    "Inject config works for providers" in {
+        import ConfigFixtures._
+
+      val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
+
+      val definition = new ModuleDef {
+        make[Int].named("depInt").from(5)
+        make[ConcreteProduct].from((conf: TestConf @AutoConf, i: Int @Id("depInt")) => ConcreteProduct(conf, i * 10))
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[ConcreteProduct] == ConcreteProduct(TestConf(false), 50))
     }
 
   }

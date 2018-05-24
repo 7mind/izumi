@@ -15,7 +15,7 @@ class ProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends ProviderStrate
       key =>
         context.fetchKey(key.wireWith) match {
           case Some(dep) =>
-            RuntimeDIUniverse.TypedRef(dep, key.wireWith.symbol)
+            RuntimeDIUniverse.TypedRef(dep, key.wireWith.tpe)
           // FIXME: this is specifically to support FactoryStrategyMacro
           case _ if key.wireWith == RuntimeDIUniverse.DIKey.get[FactoryExecutor] =>
             RuntimeDIUniverse.TypedRef(mkExecutor(context, executor))
@@ -31,23 +31,21 @@ class ProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends ProviderStrate
 
   private def mkExecutor(context: ProvisioningKeyProvider, executor: OperationExecutor): FactoryExecutor =
     (args, step) => {
-      loggerHook.log(s"FactoryExecutor! Executing $step with ${args.values.toList}")
+      loggerHook.log(s"FactoryExecutor: Executing $step with ${args.values.toList} in context $context")
 
       val productDeps = step.wiring.associations.map(_.wireWith)
+      loggerHook.log(s"FactoryExecutor: Product dependencies are $productDeps")
 
       val narrowedContext = context.narrow(productDeps.toSet)
-      loggerHook.log(s"FactoryExecutor! context narrowed to $narrowedContext, requested dependencies were $productDeps")
+      loggerHook.log(s"FactoryExecutor: context narrowed to $narrowedContext, requested dependencies were $productDeps")
 
       val extendedContext = narrowedContext.extend(args)
-      loggerHook.log(s"FactoryExecutor! context extended to $extendedContext by adding ${args.keys.toList}")
+      loggerHook.log(s"FactoryExecutor: context extended to $extendedContext by adding ${args.keys.toList}")
 
-      val sideBySide = args.keySet.zip(productDeps)
-
-      loggerHook.log(s"Here are args and dep keys side by side:\n${sideBySide.mkString("\n")}")
-      assert(sideBySide forall { case (x, y) => x equals y })
+      loggerHook.log(s"FactoryExecutor: Here are args keys $args and dep keys $productDeps")
 
       val res: Seq[OpResult] = executor.execute(extendedContext, step)
-      loggerHook.log(s"FactoryExecutor! Successfully produced instances [${res.mkString(",")}]")
+      loggerHook.log(s"FactoryExecutor: Successfully produced instances [${res.mkString(",")}]")
 
       res
     }

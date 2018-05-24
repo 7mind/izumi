@@ -14,9 +14,11 @@ object AnyConstructorMacro {
     val macroUniverse = StaticDIUniverse(c)
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val tools = DIUniverseMacros(macroUniverse)
-    import tools.liftableSafeType
 
-    val safe = macroUniverse.SafeType(weakTypeOf[T])
+    import tools.liftableSafeType
+    import macroUniverse._
+
+    val safe = SafeType(weakTypeOf[T])
 
     if (symbolIntrospector.isConcrete(safe)) {
       c.Expr[AnyConstructor[T]] {

@@ -38,4 +38,6 @@ object AnnotationTools {
   def collectArguments[R](ann: Universe#Annotation)(matcher: PartialFunction[Universe#Tree, R]): List[R] =
     ann.tree.children.tail.collect(matcher)
 
+  def mkModifiers(u: Universe)(anns: List[u.Annotation]): u.Modifiers =
+    u.Modifiers.apply(u.NoFlags, u.typeNames.EMPTY, anns.map(_.tree))
 }

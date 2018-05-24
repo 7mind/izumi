@@ -57,7 +57,7 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
     val params = if (constructors.isEmpty || hasTrivial) {
       ProxyParams.Empty
     } else {
-      val params = reflectionProvider.constructorParameters(makeProxy.op.target.symbol)
+      val params = reflectionProvider.constructorParameters(makeProxy.op.target.tpe)
 
       val args = params.map {
         param =>
@@ -69,7 +69,7 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
               context.fetchKey(p.wireWith).orNull.asInstanceOf[AnyRef]
           }
 
-          RuntimeDIUniverse.mirror.runtimeClass(param.wireWith.symbol.tpe) -> value
+          RuntimeDIUniverse.mirror.runtimeClass(param.wireWith.tpe.tpe) -> value
       }
 
       ProxyParams.Params(args.map(_._1).toArray, args.map(_._2).toArray)
