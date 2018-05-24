@@ -10,9 +10,12 @@ import scala.collection.mutable
 
 trait ModuleDef extends ModuleBase {
 
-  protected def initialState: mutable.Set[Binding] = mutable.HashSet.empty[Binding]
+  def tagAll: Set[String] = Set()
 
-  protected def freeze(state: mutable.Set[Binding]): Set[Binding] = state.toSet
+  protected def freeze(state: mutable.Set[Binding]): Set[Binding] =
+    state.map(b => b.withTags(b.tags ++ tagAll)).toSet
+
+  protected def initialState: mutable.Set[Binding] = mutable.HashSet.empty[Binding]
 
   final private[this] val mutableState: mutable.Set[Binding] = initialState
 
