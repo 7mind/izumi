@@ -7,11 +7,10 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
-import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.provisioning.{AbstractConstructor, FactoryTools}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
+
+import scala.util.Try
 
 class StaticInjectorTest extends WordSpec {
 
@@ -236,7 +235,7 @@ class StaticInjectorTest extends WordSpec {
       assert(instantiated.rd == Dep().toString)
     }
 
-    "Inject config works for trait methods" in {
+    "Inject config works for macro trait methods" in {
       import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
@@ -254,66 +253,51 @@ class StaticInjectorTest extends WordSpec {
       assert(context.get[TestDependency] == TestDependency(TestConf(false)))
     }
 
-    "Inject config works for concrete and abstract factory products and factory methods" in {
+    "Inject config works for macro factory methods (not products)" in {
       import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
       val injector = Injectors.bootstrap(new ConfigModule(config))
 
       val definition = new ModuleDef {
-          make[TestDependency].statically
-        make[TestFactory].statically
+        make[TestDependency].statically
         make[TestGenericConfFactory[TestConfAlias]].statically
       }
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
-      val factory = context.get[TestFactory]
-      assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))
-      assert(factory.makeTrait().testConf == TestConf(true))
-      assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
-
       assert(context.get[TestDependency] == TestDependency(TestConf(false)))
-
       assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
-      assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
     }
 
-//    Information:(263, 27) Final syntax tree of factory com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory:
-//    Expr[com.github.pshirshov.izumi.distage.provisioning.FactoryConstructor[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory]]({
-//      def constructor(executor$macro$46: FactoryExecutor, x$macro$44: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestDependency, @new com.github.pshirshov.izumi.distage.config.annotations.AutoConf() transitive$macro$45: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf, @new com.github.pshirshov.izumi.distage.config.annotations.AutoConf() transitive$macro$47: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf, @new com.github.pshirshov.izumi.distage.config.annotations.AutoConf() transitive$macro$48: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf, transitive$macro$49: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestDependency): com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory = {
-//      final class $anon extends com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory {
-//        def <init>() = {
-//          super.<init>();
-//          ()
-//        };
-//        override def make(fresh$macro$50: Int): com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct = {
-//          val symbolDeps: com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring =
-//            RuntimeDIUniverse.Wiring.UnaryWiring.Constructor(
-//              RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]
-//              , scala.collection.immutable.List(
-//                new RuntimeDIUniverse.Association.Parameter(
-//                  context = new RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct], RuntimeDIUniverse.SymbolInfo.Static("testConf", RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf], scala.collection.immutable.List(_root_.scala.reflect.runtime.universe.Annotation.apply(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.annotations.AutoConf].tpe, scala.collection.immutable.List(), _root_.scala.collection.immutable.ListMap.empty)), RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]))
-//
-//                  , name = "testConf"
-//                  , tpe = RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf]
-//                  , wireWith = new RuntimeDIUniverse.DIKey.TypeKey(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf])
-//                ), new RuntimeDIUniverse.Association.Parameter(
-//                  context = new RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct], RuntimeDIUniverse.SymbolInfo.Static("int", RuntimeDIUniverse.SafeType.getWeak[Int], scala.collection.immutable.List(), RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]))
-//                  , name = "int"
-//                  , tpe = RuntimeDIUniverse.SafeType.getWeak[Int]
-//                  , wireWith = new RuntimeDIUniverse.DIKey.TypeKey(RuntimeDIUniverse.SafeType.getWeak[Int]))));
-//          val executorArgs: Map[com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey,Any] = symbolDeps.associations.map(((x$8) => x$8.wireWith)).zip(scala.collection.immutable.List(fresh$macro$50)).toMap;
-//          FactoryTools.interpret(executor$macro$46.execute(executorArgs, FactoryTools.mkExecutableOp(new RuntimeDIUniverse.DIKey.TypeKey(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]), symbolDeps))).asInstanceOf[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]
-//        };
-//        override val x: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestDependency = x$macro$44
-//      };
-//      new $anon()
-//    }.asInstanceOf[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory];
-//      new com.github.pshirshov.izumi.distage.provisioning.FactoryConstructor[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory](DIKeyWrappedFunction.apply[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory]((constructor: (() => <empty>))))
-//    })
-//            make[TestFactory].statically
+    "Progression test: Inject config doesn't work for macro factory products" in {
+      // FactoryMethod wirings are generated at compile-time and inacessible to ConfigModule, so method ends up depending on TestConf, not TestConf#auto[..]. To fix this, need a new type of binding that would include all factory reflected info
+      val fail = Try {
+        import ConfigFixtures._
 
+        val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+        val injector = Injectors.bootstrap(new ConfigModule(config))
+
+        val definition = new ModuleDef {
+          make[TestDependency].statically
+          make[TestFactory].statically
+          make[TestGenericConfFactory[TestConfAlias]].statically
+        }
+        val plan = injector.plan(definition)
+        val context = injector.produce(plan)
+
+        val factory = context.get[TestFactory]
+        assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))
+        assert(factory.makeTrait().testConf == TestConf(true))
+        assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
+
+        assert(context.get[TestDependency] == TestDependency(TestConf(false)))
+
+        assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
+        assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
+      }.isFailure
+      assert(fail)
+    }
 
     "Inject config works for providers" in {
         import ConfigFixtures._

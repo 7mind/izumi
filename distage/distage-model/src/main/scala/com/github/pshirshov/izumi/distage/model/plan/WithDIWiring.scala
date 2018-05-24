@@ -73,7 +73,11 @@ trait WithDIWiring {
     implicit class WiringReplaceKeys(wiring: Wiring) {
       def replaceKeys(f: Association => DIKey): Wiring =
         wiring match {
-          case w: UnaryWiring => w.replaceKeys(f)
+          case w: UnaryWiring.Constructor => w.replaceKeys(f) // duplication only because of 'the outer reference in this type test cannot be checked at runtime warning'
+          case w: UnaryWiring.AbstractSymbol => w.replaceKeys(f)
+          case w: UnaryWiring.Function => w.replaceKeys(f)
+          case w: UnaryWiring.Instance => w.replaceKeys(f)
+          case w: UnaryWiring.Reference => w.replaceKeys(f)
           case w: FactoryMethod => w.replaceKeys(f)
         }
     }
@@ -81,7 +85,8 @@ trait WithDIWiring {
     implicit class UnaryWiringReplaceKeys(wiring: UnaryWiring) {
       def replaceKeys(f: Association => DIKey): UnaryWiring =
         wiring match {
-          case w: UnaryWiring.ProductWiring => w.replaceKeys(f)
+          case w: UnaryWiring.Constructor => w.replaceKeys(f)
+          case w: UnaryWiring.AbstractSymbol => w.replaceKeys(f)
           case w: UnaryWiring.Function => w.replaceKeys(f)
           case w: UnaryWiring.Instance => w
           case w: UnaryWiring.Reference => w
