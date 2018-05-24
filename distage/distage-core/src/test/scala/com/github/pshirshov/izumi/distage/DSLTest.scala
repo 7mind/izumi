@@ -153,6 +153,22 @@ class DSLTest extends WordSpec {
 
       assert(combinedModules == complexModule)
     }
+
+    "support allTags in module def" in {
+      import Case1._
+
+      val definition: ModuleBase = new ModuleDef {
+        tag("tag1")
+        make[TestClass]
+        make[TestDependency0].tagged("sniv")
+        tag("tag2")
+      }
+
+      assert(definition.bindings == Set(
+        Bindings.binding[TestClass].withTags("tag1", "tag2")
+        , Bindings.binding[TestDependency0].withTags("tag1", "tag2", "sniv"))
+      )
+    }
   }
 
 }
