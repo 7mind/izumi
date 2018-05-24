@@ -85,7 +85,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
           assert(curState.currentFileSize == 1)
       }
 
-      val lastPos = randomFileSize - 1
+      val lastPos = randomInt(randomFileSize - 1)
 
       Given("full and randomly filled files in storage")
 
@@ -208,7 +208,12 @@ object LoggingFileSinkTest {
 
   private val maxRandom = 100
 
-  def randomInt(until: Int = maxRandom): Int = Random.nextInt(maxRandom)
+  def randomInt(until: Int = maxRandom): Int =
+    if (until == 0) {
+      0
+    } else {
+      Random.nextInt(until)
+    }
 
   def dummySink[F <: LogFile](renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, fileService: FileService[F], broken: Boolean, softLimit : Boolean): FileSink[F] = {
 
