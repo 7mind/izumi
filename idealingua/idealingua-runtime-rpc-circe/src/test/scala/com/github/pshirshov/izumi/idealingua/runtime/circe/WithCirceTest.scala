@@ -49,7 +49,7 @@ object WithCirceTest {
       // Not DerivedObjectEncoder directly because DerivedObjectEncoder <: Encoder, so when it's in scope it gets picked up
       // instead of implicit def instance in WithCirceGeneric
       implicit val enc: Lazy[DerivedObjectEncoder[Abc]] = Lazy(new DerivedObjectEncoder[Abc] {
-        override def encodeObject(a: Abc): JsonObject = throw new RuntimeException("panic")
+        override def encodeObject(a: Abc): JsonObject = throw new NotImplementedError("testError")
       })
     }
   }
