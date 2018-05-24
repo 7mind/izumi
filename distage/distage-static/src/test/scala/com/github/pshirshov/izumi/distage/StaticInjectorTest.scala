@@ -218,7 +218,7 @@ class StaticInjectorTest extends WordSpec {
       import Case8._
 
       val definition = new ModuleDef {
-        make[Trait2].fromStatic[Trait3]
+        make[Trait2].static[Trait3]
         make[Dependency3]
         make[Dependency2]
         make[Dependency1]
@@ -237,8 +237,8 @@ class StaticInjectorTest extends WordSpec {
       import Case10._
 
       val definition = new ModuleDef {
-          make[Dep].named("A").fromStatic[DepA]
-        make[Dep].named("B").fromStatic[DepB]
+          make[Dep].named("A").static[DepA]
+        make[Dep].named("B").static[DepB]
         make[Trait].statically
         make[Trait1].statically
       }

@@ -40,6 +40,17 @@ trait WithDIKey {
 
       override def hashCode(): Int = toString.hashCode()
     }
+
+    implicit class WithTpe(key: DIKey) {
+      def withTpe(tpe: TypeFull) = {
+        key match {
+          case k: TypeKey => k.copy(tpe = tpe)
+          case k: IdKey[_] => k.copy(tpe = tpe)(k.idContract)
+          case k: ProxyElementKey => k.copy(tpe = tpe)
+          case k: SetElementKey => k.copy(tpe = tpe)
+        }
+      }
+    }
   }
 
   trait IdContract[T] {

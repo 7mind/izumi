@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection.macros
 
-import com.github.pshirshov.izumi.distage.model.functions.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
@@ -29,9 +29,9 @@ class DIKeyWrappedFunctionMacroImpl(val c: blackbox.Context) {
 
     val ExtractedInfo(associations, isValReference) = analyze(argTree, ret)
 
-    val funcExprTypes = funcExpr.actualType.finalResultType.typeArgs.init
+    // val funcExprTypes = funcExpr.actualType.finalResultType.typeArgs.init
 
-    val casts = funcExprTypes.zipWithIndex.map {
+    val casts = associations.map(_.tpe.tpe).zipWithIndex.map {
       case (t, i) =>
         q"{ seqAny($i).asInstanceOf[$t] }"
     }
@@ -65,7 +65,6 @@ class DIKeyWrappedFunctionMacroImpl(val c: blackbox.Context) {
          | argument: ${showCode(argTree)}\n
          | argumentTree: ${showRaw(argTree)}\n
          | argumentType: ${argTree.tpe}
-         | argumentFuncExprTypes: $funcExprTypes
          | Result code: ${showCode(result.tree)}""".stripMargin
     )
 
@@ -110,11 +109,18 @@ class DIKeyWrappedFunctionMacroImpl(val c: blackbox.Context) {
         List()
     }
 
+    logger.log(s"lambda keys: $lambdaKeys")
+    logger.log(s"method ref keys: $methodReferenceKeys")
+
     val annotationsOnLambda: List[u.Annotation] = lambdaKeys.flatMap(_.context.symbol.annotations)
     val annotationsOnMethod: List[u.Annotation] = methodReferenceKeys.flatMap(_.context.symbol.annotations)
 
     val keys = if (methodReferenceKeys.size == lambdaKeys.size && annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
-      methodReferenceKeys
+      // still use the types from lambda, since param lists somehow lose path-dependent parent type...
+      methodReferenceKeys.zip(lambdaKeys).map {
+        case (m, l) =>
+          m.copy(tpe = l.tpe, wireWith = m.wireWith.withTpe(l.wireWith.tpe)) // gotcha: symbol not altered
+      }
     } else {
       lambdaKeys
     }

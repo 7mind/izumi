@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.WithDIAssociation
 import com.github.pshirshov.izumi.distage.model.references.{WithDIKey, WithDITypedRef}
 
@@ -55,6 +56,6 @@ trait WithDICallable {
   }
 
   class UnsafeCallArgsMismatched(message: String, val expected: Seq[TypeFull], val actual: Seq[TypeFull], val actualValues: Seq[Any])
-    extends RuntimeException(message, null)
+    extends DIException(message, null)
 
 }

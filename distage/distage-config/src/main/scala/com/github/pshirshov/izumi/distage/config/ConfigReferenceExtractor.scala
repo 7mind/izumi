@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvider.Runtime) extends PlanningHook {
 
@@ -17,18 +18,34 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
   protected def findAnno[T: TypeTag](association: Association): Option[Annotation] =
     association.context.symbol.findAnnotation(SafeType.get[T])
 
+  protected def findArgument(ann: Annotation): Option[String] =
+    AnnotationTools.findArgument(ann) {
+      case Literal(Constant(str: String)) =>
+        str
+    }
+
   protected def rewire(binding: Binding.ImplBinding, association: Association): DIKey = {
     val confPathAnno = findAnno[ConfPath](association)
     val confAnno = findAnno[Conf](association)
     val autoConfAnno = findAnno[AutoConf](association)
 
     // TODO: can we decopypaste?
+//    val typeKeyMatcher: PartialFunction[DIKey, DIKey.TypeKey] = { case t: DIKey.TypeKey => t }
+//    val assocTypeKey = typeKeyMatcher.lift(association.wireWith)
+//
+//    confPathAnno.map {
+//      findArgument(_).zip(assocTypeKey).headOption
+//        .fold[DIKey](throw new DIException(s"Cannot rewire @ConfPath parameter $association: undefined path", null)) {
+//        case (path, k) =>
+//          k.named(ConfPathId(binding.key, association, path))
+//      }
+//    } orElse {
+//      ???
+//    }
+
     confPathAnno match {
       case Some(ann) =>
-        ann.tree.children.tail.collectFirst {
-          case Literal(Constant(path: String)) =>
-            path
-        } match {
+        findArgument(ann) match {
           case Some(path) =>
             association.wireWith match {
               case k: DIKey.TypeKey =>
@@ -47,10 +64,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
 
     confAnno match {
       case Some(ann) =>
-        ann.tree.children.tail.collectFirst {
-          case Literal(Constant(name: String)) =>
-            name
-        } match {
+        findArgument(ann) match {
           case Some(name) =>
             association.wireWith match {
               case k: DIKey.TypeKey =>
@@ -79,7 +93,6 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
 
       case _ =>
     }
-
 
     association.wireWith
   }

@@ -612,6 +612,27 @@ class InjectorTest extends WordSpec {
       val set = context.get[Set[Service]]
       assert(set.head eq svc)
     }
-  }
 
+    "progression test: can't handle path-dependent injections" in {
+      val fail = Try {
+        import Case16._
+
+        val testProviderModule = new TestProviderModule
+
+        val definition = new ModuleDef {
+          make[testProviderModule.TestClass]
+          make[testProviderModule.TestDependency]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+
+        val context = injector.produce(plan)
+
+        assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
+      }.isFailure
+      assert(fail)
+    }
+
+  }
 }

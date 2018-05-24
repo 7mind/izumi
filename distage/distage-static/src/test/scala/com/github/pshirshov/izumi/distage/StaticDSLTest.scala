@@ -13,7 +13,7 @@ class StaticDSLTest extends WordSpec {
       import Case1._
       val definition: ModuleBase = new ModuleDef {
         make[TestClass].statically
-        make[TestDependency0].fromStatic[TestImpl0]
+        make[TestDependency0].static[TestImpl0]
         make[TestInstanceBinding].from(TestInstanceBinding())
 
         make[TestClass].named("named.test.class")
@@ -25,13 +25,13 @@ class StaticDSLTest extends WordSpec {
         many[JustTrait]
           .named("named.empty.set")
         many[JustTrait]
-          .add[Impl0]
+          .addStatic[Impl0]
           .add(new Impl1)
           .addStatic[JustTrait]
         many[JustTrait].named("named.set")
           .add(new Impl2())
         many[JustTrait].named("named.set")
-          .add[Impl3]
+          .addStatic[Impl3]
       }
 
       assert(definition != null)

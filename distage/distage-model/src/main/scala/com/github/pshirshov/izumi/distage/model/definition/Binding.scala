@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.functions.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 sealed trait Binding {

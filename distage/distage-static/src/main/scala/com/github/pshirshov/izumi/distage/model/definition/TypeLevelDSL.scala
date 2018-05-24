@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.model.definition
 import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.Binding._
 import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.DIKey._
 import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL.ImplDef._
-import com.github.pshirshov.izumi.distage.model.functions.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.{definition => valuedef}
 import shapeless.{::, HList, HNil, Witness}

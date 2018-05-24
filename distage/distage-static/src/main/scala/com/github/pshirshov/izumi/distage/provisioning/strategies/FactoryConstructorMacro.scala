@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
-import com.github.pshirshov.izumi.distage.model.functions.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.{FactoryConstructor, FactoryTools}

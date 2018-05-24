@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.model.functions
+package com.github.pshirshov.izumi.distage.model.providers
 
 import com.github.pshirshov.izumi.distage.model.reflection.macros.DIKeyWrappedFunctionMacroImpl
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -59,8 +59,8 @@ class DIKeyWrappedFunction[+R](val associations: Seq[Association.Parameter]
 
 object DIKeyWrappedFunction {
 
-  def mkRuntime[R](associations: Seq[Association.Parameter], ret: TypeFull, fun: Seq[Any] => Any): DIKeyWrappedFunction[R] =
-    new DIKeyWrappedFunction[R](associations, ret, fun)
+  def apply[R: Tag](associations: Seq[Association.Parameter], fun: Seq[Any] => Any): DIKeyWrappedFunction[R] =
+    new DIKeyWrappedFunction[R](associations, SafeType.get[R], fun)
 
   implicit def apply[R](funcExpr: () => R): DIKeyWrappedFunction[R] = macro DIKeyWrappedFunctionMacroImpl.impl[R]
   implicit def apply[R](funcExpr: _ => R): DIKeyWrappedFunction[R] = macro DIKeyWrappedFunctionMacroImpl.impl[R]
