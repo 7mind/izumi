@@ -145,7 +145,8 @@ object WrappedFunction {
           s"""DIKeyWrappedFunction info:
              | Symbol: ${argTree.symbol}\n
              | IsMethodSymbol: ${Option(argTree.symbol).exists(_.isMethod)}\n
-             | Extracted Associations: $associations\n
+             | Extracted Annotations: ${associations.flatMap(_.context.symbol.annotations)}\n
+             | Extracted DIKeys: ${associations.map(_.wireWith)}\n
              | IsValReference: $isValReference\n
              | argument: ${showCode(argTree)}\n
              | argumentTree: ${showRaw(argTree)}\n
@@ -194,12 +195,13 @@ object WrappedFunction {
             List()
         }
 
-        val methodRefIds = methodReferenceKeys.map(_.wireWith).collect { case i: DIKey.IdKey[_] => i }
+        val annotationsOnLambda: List[u.Annotation] = lambdaKeys.flatMap(_.context.symbol.annotations)
+        val annotationsOnMethod: List[u.Annotation] = methodReferenceKeys.flatMap(_.context.symbol.annotations)
 
-        val keys = if (methodRefIds.isEmpty || methodReferenceKeys.size != lambdaKeys.size) {
-          lambdaKeys
-        } else {
+        val keys = if (methodReferenceKeys.size == lambdaKeys.size && annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
           methodReferenceKeys
+        } else {
+          lambdaKeys
         }
 
         ExtractedInfo(keys, isValReference = false)

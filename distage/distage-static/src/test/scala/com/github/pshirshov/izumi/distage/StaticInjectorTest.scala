@@ -1,17 +1,17 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.config.ConfigFixtures._
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
 import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
+import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.provisioning.{AbstractConstructor, FactoryTools}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
-
-import scala.util.Try
 
 class StaticInjectorTest extends WordSpec {
 
@@ -23,7 +23,7 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition = new ModuleDef {
-          make[Factory].statically
+         make[Factory].statically
         make[Dependency].statically
         make[OverridingFactory].statically
         make[AssistedFactory].statically
@@ -227,7 +227,7 @@ class StaticInjectorTest extends WordSpec {
         make[Dep].statically
       }
 
-      val injector = mkInjector()
+        val injector = mkInjector()
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan)
@@ -243,7 +243,6 @@ class StaticInjectorTest extends WordSpec {
       val injector = Injectors.bootstrap(new ConfigModule(config))
 
       val definition = new ModuleDef {
-        make[TestConf].from[TestConf](instance = null)
         make[TestDependency].statically
         make[TestTrait].statically
       }
@@ -262,7 +261,7 @@ class StaticInjectorTest extends WordSpec {
       val injector = Injectors.bootstrap(new ConfigModule(config))
 
       val definition = new ModuleDef {
-        make[TestDependency].statically
+          make[TestDependency].statically
         make[TestFactory].statically
         make[TestGenericConfFactory[TestConfAlias]].statically
       }
@@ -274,14 +273,50 @@ class StaticInjectorTest extends WordSpec {
       assert(factory.makeTrait().testConf == TestConf(true))
       assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
 
-      assert(factory.x == TestDependency(TestConf(false)))
       assert(context.get[TestDependency] == TestDependency(TestConf(false)))
 
+      assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
       assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
     }
 
+//    Information:(263, 27) Final syntax tree of factory com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory:
+//    Expr[com.github.pshirshov.izumi.distage.provisioning.FactoryConstructor[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory]]({
+//      def constructor(executor$macro$46: FactoryExecutor, x$macro$44: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestDependency, @new com.github.pshirshov.izumi.distage.config.annotations.AutoConf() transitive$macro$45: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf, @new com.github.pshirshov.izumi.distage.config.annotations.AutoConf() transitive$macro$47: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf, @new com.github.pshirshov.izumi.distage.config.annotations.AutoConf() transitive$macro$48: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf, transitive$macro$49: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestDependency): com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory = {
+//      final class $anon extends com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory {
+//        def <init>() = {
+//          super.<init>();
+//          ()
+//        };
+//        override def make(fresh$macro$50: Int): com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct = {
+//          val symbolDeps: com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring =
+//            RuntimeDIUniverse.Wiring.UnaryWiring.Constructor(
+//              RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]
+//              , scala.collection.immutable.List(
+//                new RuntimeDIUniverse.Association.Parameter(
+//                  context = new RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct], RuntimeDIUniverse.SymbolInfo.Static("testConf", RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf], scala.collection.immutable.List(_root_.scala.reflect.runtime.universe.Annotation.apply(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.annotations.AutoConf].tpe, scala.collection.immutable.List(), _root_.scala.collection.immutable.ListMap.empty)), RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]))
+//
+//                  , name = "testConf"
+//                  , tpe = RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf]
+//                  , wireWith = new RuntimeDIUniverse.DIKey.TypeKey(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestConf])
+//                ), new RuntimeDIUniverse.Association.Parameter(
+//                  context = new RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct], RuntimeDIUniverse.SymbolInfo.Static("int", RuntimeDIUniverse.SafeType.getWeak[Int], scala.collection.immutable.List(), RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]))
+//                  , name = "int"
+//                  , tpe = RuntimeDIUniverse.SafeType.getWeak[Int]
+//                  , wireWith = new RuntimeDIUniverse.DIKey.TypeKey(RuntimeDIUniverse.SafeType.getWeak[Int]))));
+//          val executorArgs: Map[com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey,Any] = symbolDeps.associations.map(((x$8) => x$8.wireWith)).zip(scala.collection.immutable.List(fresh$macro$50)).toMap;
+//          FactoryTools.interpret(executor$macro$46.execute(executorArgs, FactoryTools.mkExecutableOp(new RuntimeDIUniverse.DIKey.TypeKey(RuntimeDIUniverse.SafeType.getWeak[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]), symbolDeps))).asInstanceOf[com.github.pshirshov.izumi.distage.config.ConfigFixtures.ConcreteProduct]
+//        };
+//        override val x: com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestDependency = x$macro$44
+//      };
+//      new $anon()
+//    }.asInstanceOf[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory];
+//      new com.github.pshirshov.izumi.distage.provisioning.FactoryConstructor[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory](DIKeyWrappedFunction.apply[com.github.pshirshov.izumi.distage.config.ConfigFixtures.TestFactory]((constructor: (() => <empty>))))
+//    })
+//            make[TestFactory].statically
+
+
     "Inject config works for providers" in {
-      import ConfigFixtures._
+        import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
       val injector = Injectors.bootstrap(new ConfigModule(config))

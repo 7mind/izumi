@@ -111,9 +111,9 @@ class ConfigTest extends WordSpec {
       assert(factory.makeTrait().testConf == TestConf(true))
       assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
 
-      assert(factory.x == TestDependency(TestConf(false)))
       assert(context.get[TestDependency] == TestDependency(TestConf(false)))
 
+      assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
       assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
     }
 

@@ -23,8 +23,6 @@ object ConfigFixtures {
   type TestConfAlias = TestConf
 
   trait TestFactory {
-    def x: TestDependency
-
     def make(int: Int): ConcreteProduct
 
     def makeTrait(): FullyAbstractProduct
@@ -39,6 +37,8 @@ object ConfigFixtures {
   }
 
   trait TestGenericConfFactory[T] {
+    def x: TestDependency
+
     def make(): FullyAbstractGenericConfProduct[T]
   }
 

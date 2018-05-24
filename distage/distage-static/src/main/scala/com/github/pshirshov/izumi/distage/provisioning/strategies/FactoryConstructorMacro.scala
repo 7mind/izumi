@@ -70,7 +70,7 @@ object FactoryConstructorMacro {
     //      * provided dependencies seem to be correctly transitive, at least shapeless doesn't require the user to
     //        to add provided scala-reflect to his .sbt
     val producerMethods = wireables.map {
-      case FactoryMethod.WithContext(factoryMethod, productConstructor, methodArguments) =>
+      case method@FactoryMethod.WithContext(factoryMethod, productConstructor, methodArguments) =>
 
         val (methodArgs, executorArgs) = methodArguments.map {
           dIKey =>
@@ -83,21 +83,35 @@ object FactoryConstructorMacro {
         val resultTypeOfMethod: Type = factoryMethod.finalResultType.tpe
         val instanceType: TypeFull = productConstructor.instanceType
 
+        val externalKeys = method.providedAssociations.map(_.wireWith).toList
+
         q"""
         override def ${TermName(factoryMethod.name)}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
           val symbolDeps: ${typeOf[RuntimeDIUniverse.Wiring.UnaryWiring]} = $productConstructor
 
           val executorArgs: ${typeOf[Map[RuntimeDIUniverse.DIKey, Any]]} =
-            ${
-          if (executorArgs.nonEmpty)
-          // ensure pointer equality for typetags inside symbolDeps and inside executableOps
-          // to support weakTypeTag-based generics since they are pointer equality based
-          {
-            q"{ symbolDeps.associations.map(_.wireWith).zip(${executorArgs.toList}).toMap }"
-          } else {
-            q"{ ${Map.empty[Unit, Unit]} } "
-          }
-             }
+            ${if (executorArgs.nonEmpty)
+              // zip directly instead of creating new keys to ensure pointer equality for typetags inside symbolDeps and inside executableOps
+              // to support weakTypeTag-based generics since they are pointer equality based
+              {
+                q"""{
+                  val allAssociations = symbolDeps.associations
+                  val arguments: ${typeOf[List[Any]]} = ${executorArgs.toList}
+
+                  val externalKeys: ${typeOf[Set[RuntimeDIUniverse.DIKey]]} = $externalKeys.toSet
+                  val associations = allAssociations.filterNot(externalKeys contains _.wireWith)
+
+                  if (associations.size != arguments.size) {
+                    throw new _root_.com.github.pshirshov.izumi.distage.model.exceptions.DIException(
+                      "Divergence between constructor arguments and dependencies: " + arguments + " vs " + associations, null)
+                  }
+
+                  associations.map(_.wireWith).zip(arguments).toMap
+                }"""
+              } else {
+                q"{ ${Map.empty[Unit, Unit]} } "
+              }
+            }
 
           $factoryTools.interpret(
             $executorName.execute(

@@ -175,6 +175,8 @@ Forest fire, climbin' higher, real life, it can wait""")
       def isSpecial: Boolean = false
 
       def isVerySpecial: Boolean = false
+
+      override def toString: String = s"Dependency($isSpecial, $isVerySpecial)"
     }
 
     final case class ConcreteDep() extends Dependency
@@ -189,9 +191,9 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     final case class TestClass(b: Dependency)
 
-    final case class AssistedTestClass(a: Int, b: Dependency)
+    final case class AssistedTestClass(b: Dependency, a: Int)
 
-    final case class NamedAssistedTestClass(a: Int, @Id("special") b: Dependency)
+    final case class NamedAssistedTestClass(@Id("special") b: Dependency, a: Int)
 
     final case class GenericAssistedTestClass[T, S](a: List[T], b: List[S], c: Dependency)
 

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.LoggerHook
-import com.github.pshirshov.izumi.distage.model.exceptions.InvalidPlanException
+import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, InvalidPlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProviderStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{FactoryExecutor, OpResult, OperationExecutor, ProvisioningKeyProvider}
@@ -41,10 +41,7 @@ class ProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends ProviderStrate
       val extendedContext = narrowedContext.extend(args)
       loggerHook.log(s"FactoryExecutor! context extended to $extendedContext by adding ${args.keys.toList}")
 
-      val sideBySide = args.keySet.zip(productDeps)
-
-      loggerHook.log(s"Here are args and dep keys side by side:\n${sideBySide.mkString("\n")}")
-      assert(sideBySide forall { case (x, y) => x equals y })
+      loggerHook.log(s"Here are args keys $args and dep keys $productDeps")
 
       val res: Seq[OpResult] = executor.execute(extendedContext, step)
       loggerHook.log(s"FactoryExecutor! Successfully produced instances [${res.mkString(",")}]")

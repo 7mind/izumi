@@ -64,7 +64,9 @@ trait WithDIWiring {
 
     object FactoryMethod {
 
-      case class WithContext(factoryMethod: SymbolInfo.Runtime, wireWith: UnaryWiring.ProductWiring, methodArguments: Seq[DIKey])
+      case class WithContext(factoryMethod: SymbolInfo.Runtime, wireWith: UnaryWiring.ProductWiring, methodArguments: Seq[DIKey]) {
+        def providedAssociations: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
+      }
 
     }
 
