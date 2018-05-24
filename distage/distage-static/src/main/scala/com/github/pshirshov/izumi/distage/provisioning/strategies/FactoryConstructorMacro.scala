@@ -24,7 +24,7 @@ object FactoryConstructorMacro {
     val logger = MacroUtil.mkLogger[this.type](c)
     val tools = DIUniverseMacros(macroUniverse)
 
-    import tools.liftableProductWiring
+    import tools.{liftableProductWiring, liftableDIKey, liftableTypeKey}
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._

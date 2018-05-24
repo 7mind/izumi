@@ -1,13 +1,14 @@
 package com.github.pshirshov.izumi.distage.model.definition.reflection
 
+import com.github.pshirshov.izumi.distage.model.reflection.macros.DIUniverseLiftables
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.AbstractConstructor
 
-class DIUniverseMacros[D <: StaticDIUniverse](val u: D) {
+class DIUniverseMacros[D <: StaticDIUniverse](override val u: D) extends DIUniverseLiftables[D](u) {
   import u._
   import u.u._
 
-  implicit val liftableProductWiring: Liftable[Wiring.UnaryWiring.ProductWiring] = {
+  implicit final val liftableProductWiring: Liftable[Wiring.UnaryWiring.ProductWiring] = {
     case w: Wiring.UnaryWiring.Constructor =>
       q"{ $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor(${w.instanceType}, ${w.associations.toList}) }"
 

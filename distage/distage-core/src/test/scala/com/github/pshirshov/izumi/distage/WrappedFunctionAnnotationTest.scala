@@ -67,7 +67,7 @@ class WrappedFunctionAnnotationTest extends WordSpec {
     "handle opaque local references with argument annotations" in {
       def locargannfn(@Id("locargann") x: Int): Unit = {val _ = x}
 
-      val fn = DIKeyWrappedFunction (locargannfn _)
+      val fn = DIKeyWrappedFunction(locargannfn _)
       assert(fn.diKeys contains DIKey.get[Int].named("locargann"))
     }
 

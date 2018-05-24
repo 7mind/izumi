@@ -1,80 +1,74 @@
 package com.github.pshirshov.izumi.distage.model.reflection.macros
 
-import com.github.pshirshov.izumi.distage.model.plan.{WithDIAssociation, WithDIDependencyContext}
-import com.github.pshirshov.izumi.distage.model.references.WithDIKey
 import com.github.pshirshov.izumi.distage.model.reflection.universe._
 
-trait WithDILiftables {
-  this: DIUniverseBase
-    with WithDISafeType
-    with WithDIKey
-    with WithDISymbolInfo
-    with WithDIAssociation
-    with WithDIDependencyContext
-    with StaticDIUniverse0 =>
+class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   import u._
+  import u.u._
 
-  implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] =
+  implicit final val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] =
     { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
 
-  implicit val liftableSafeType: Liftable[SafeType] =
+  implicit final val liftableSafeType: Liftable[SafeType] =
     value => q"{ $RuntimeDIUniverse.SafeType.getWeak[${Liftable.liftType(value.tpe)}] }"
 
   // DIKey
 
-  implicit val liftableTypeKey: Liftable[DIKey.TypeKey] = {
+  implicit final val liftableTypeKey: Liftable[DIKey.TypeKey] = {
     case DIKey.TypeKey(symbol) => q"""
     { new $RuntimeDIUniverse.DIKey.TypeKey($symbol) }
       """
   }
 
-  implicit val liftableIdKey: Liftable[DIKey.IdKey[_]] = {
+  implicit final val liftableIdKey: Liftable[DIKey.IdKey[_]] = {
     case idKey: DIKey.IdKey[_] =>
       import idKey._
       val lift = idContract.asInstanceOf[IdContractImpl[Any]].liftable
       q"""{ new $RuntimeDIUniverse.DIKey.IdKey($tpe, ${lift(id)}) }"""
   }
 
-  implicit val liftableProxyElementKey: Liftable[DIKey.ProxyElementKey] = {
+  implicit final val liftableProxyElementKey: Liftable[DIKey.ProxyElementKey] = {
     case DIKey.ProxyElementKey(proxied, symbol) => q"""
     { new $RuntimeDIUniverse.DIKey.ProxyElementKey(${liftableDIKey(proxied)}, $symbol) }
       """
   }
 
-  implicit val liftableSetElementKey: Liftable[DIKey.SetElementKey] = {
+  implicit final val liftableSetElementKey: Liftable[DIKey.SetElementKey] = {
     case DIKey.SetElementKey(set, index, symbol) => q"""
     { new $RuntimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, $index, $symbol) }
       """
   }
 
-  implicit def liftableDIKey: Liftable[DIKey] = {
+  implicit final val liftableDIKey: Liftable[DIKey] = {
     Liftable[DIKey] {
-      case t: DIKey.TypeKey => q"$t"
-      case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
-      case p: DIKey.ProxyElementKey => q"$p"
-      case s: DIKey.SetElementKey => q"$s"
+      d => (d: @unchecked) match {
+        case t: DIKey.TypeKey => q"$t"
+        case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
+        case p: DIKey.ProxyElementKey => q"$p"
+        case s: DIKey.SetElementKey => q"$s"
+      }
     }
   }
 
   // ParameterContext
 
-  implicit val liftableConstructorParameterContext: Liftable[DependencyContext.ConstructorParameterContext] = {
+  implicit final val liftableConstructorParameterContext: Liftable[DependencyContext.ConstructorParameterContext] = {
     context => q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}, ${context.parameterSymbol}) }"
   }
 
-  implicit val liftableMethodParameterContext: Liftable[DependencyContext.MethodParameterContext] = {
+  implicit final val liftableMethodParameterContext: Liftable[DependencyContext.MethodParameterContext] = {
     context => q"{ new $RuntimeDIUniverse.DependencyContext.MethodParameterContext(${context.definingClass}, ${context.factoryMethod}) }"
   }
 
-  implicit val liftableParameterContext: Liftable[DependencyContext.ParameterContext] = {
+  implicit final val liftableParameterContext: Liftable[DependencyContext.ParameterContext] = {
     case context: DependencyContext.ConstructorParameterContext => q"$context"
     case context: DependencyContext.MethodParameterContext => q"$context"
   }
 
   // SymbolInfo
 
-  implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
+  implicit final val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info => q"""
     { $RuntimeDIUniverse.SymbolInfo.Static(${info.name}, ${info.finalResultType}, ${info.annotations}, ${info.definingClass}) }
        """
@@ -82,7 +76,7 @@ trait WithDILiftables {
 
   // Associations
 
-  implicit val liftableParameter: Liftable[Association.Parameter] = {
+  implicit final val liftableParameter: Liftable[Association.Parameter] = {
     case Association.Parameter(context, name, tpe, wireWith) =>
       q"{ new $RuntimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith)}"
     }
@@ -91,7 +85,7 @@ trait WithDILiftables {
 
   case class TreeLiteral(tree: Tree)
 
-  implicit val liftableLiteralTree: Liftable[TreeLiteral] = {
+  implicit final val liftableLiteralTree: Liftable[TreeLiteral] = {
     case TreeLiteral(Literal(c: Constant)) => q"""{
       _root_.scala.reflect.runtime.universe.Literal(_root_.scala.reflect.runtime.universe.Constant($c))
       }"""
@@ -102,9 +96,14 @@ trait WithDILiftables {
       }"""
   }
 
-  implicit val liftableAnnotation: Liftable[Annotation] = {
+  implicit final val liftableAnnotation: Liftable[Annotation] = {
     case Annotation(tpe, args, _) => q"""{
     _root_.scala.reflect.runtime.universe.Annotation.apply(${SafeType(tpe)}.tpe, ${args.map(TreeLiteral)}, _root_.scala.collection.immutable.ListMap.empty)
     }"""
   }
+
+}
+
+object DIUniverseLiftables {
+  def apply(u: StaticDIUniverse): DIUniverseLiftables[u.type] = new DIUniverseLiftables[u.type](u)
 }

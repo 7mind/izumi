@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.functions
 
+import com.github.pshirshov.izumi.distage.model.reflection.macros.DIUniverseLiftables
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
@@ -108,7 +109,9 @@ object WrappedFunction {
       private final val logger = MacroUtil.mkLogger[DIKeyWrappedFunctionMacroImpl](c)
       private final val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
       private final val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
+      private final val tools = DIUniverseLiftables(macroUniverse)
 
+      import tools.liftableParameter
       import c.universe._
       import macroUniverse._
 
