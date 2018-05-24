@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.providers.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 object Bindings {
@@ -15,8 +15,8 @@ object Bindings {
   def binding[T: Tag, I <: T: Tag](instance: I): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(SafeType.get[I], instance))
 
-  def provider[T: Tag](f: DIKeyWrappedFunction[T]): SingletonBinding[DIKey.TypeKey] =
-    SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(f.ret, f))
+  def provider[T: Tag](f: ProviderMagnet[T]): SingletonBinding[DIKey.TypeKey] =
+    SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(f.get.ret, f.get))
 
   def emptySet[T: Tag]: EmptySetBinding[DIKey.TypeKey] =
     EmptySetBinding(DIKey.get[Set[T]])
@@ -27,6 +27,6 @@ object Bindings {
   def setElement[T: Tag, I <: T: Tag](instance: I): SetElementBinding[DIKey.TypeKey] =
     SetElementBinding(DIKey.get[Set[T]], ImplDef.InstanceImpl(SafeType.get[T], instance))
 
-  def setElementProvider[T: Tag](f: DIKeyWrappedFunction[T]): SetElementBinding[DIKey.TypeKey] =
-    SetElementBinding(DIKey.get[Set[T]], ImplDef.ProviderImpl(f.ret, f))
+  def setElementProvider[T: Tag](f: ProviderMagnet[T]): SetElementBinding[DIKey.TypeKey] =
+    SetElementBinding(DIKey.get[Set[T]], ImplDef.ProviderImpl(f.get.ret, f.get))
 }

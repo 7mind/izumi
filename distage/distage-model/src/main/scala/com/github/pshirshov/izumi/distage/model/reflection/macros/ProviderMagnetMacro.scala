@@ -1,16 +1,16 @@
 package com.github.pshirshov.izumi.distage.model.reflection.macros
 
-import com.github.pshirshov.izumi.distage.model.providers.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
 
 import scala.reflect.macros.blackbox
 
-class DIKeyWrappedFunctionMacroImpl(val c: blackbox.Context) {
+class ProviderMagnetMacro(val c: blackbox.Context) {
 
   final val macroUniverse = StaticDIUniverse(c)
-  private final val logger = MacroUtil.mkLogger[DIKeyWrappedFunctionMacroImpl](c)
+  private final val logger = MacroUtil.mkLogger[ProviderMagnetMacro](c)
   private final val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
   private final val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
   private final val tools = DIUniverseLiftables(macroUniverse)
@@ -21,10 +21,10 @@ class DIKeyWrappedFunctionMacroImpl(val c: blackbox.Context) {
 
   case class ExtractedInfo(associations: List[Association.Parameter], isValReference: Boolean)
 
-  def impl[R: c.WeakTypeTag](funcExpr: c.Expr[_]): c.Expr[DIKeyWrappedFunction[R]] = {
+  def impl[R: c.WeakTypeTag](fun: c.Expr[_]): c.Expr[ProviderMagnet[R]] = {
     val logger = MacroUtil.mkLogger[this.type](c)
 
-    val argTree = funcExpr.tree
+    val argTree = fun.tree
     val ret = SafeType.getWeak[R]
 
     val ExtractedInfo(associations, isValReference) = analyze(argTree, ret)
@@ -36,22 +36,24 @@ class DIKeyWrappedFunctionMacroImpl(val c: blackbox.Context) {
         q"{ seqAny($i).asInstanceOf[$t] }"
     }
 
-    val result = c.Expr[DIKeyWrappedFunction[R]] {
+    val result = c.Expr[ProviderMagnet[R]] {
       q"""{
-        val fun = $funcExpr
+        val fun = $fun
 
         val associations: ${typeOf[List[RuntimeDIUniverse.Association.Parameter]]} = $associations
 
-        new ${weakTypeOf[DIKeyWrappedFunction[R]]}(
-          associations
-          , $ret
-          , {
-            seqAny =>
-              _root_.scala.Predef.assert(seqAny.size == associations.size, "Impossible Happened! args list has different length than associations list")
+        new ${weakTypeOf[ProviderMagnet[R]]}(
+          new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[R]]}(
+            associations
+            , $ret
+            , {
+              seqAny =>
+                _root_.scala.Predef.assert(seqAny.size == associations.size, "Impossible Happened! args list has different length than associations list")
 
-              fun(..$casts)
-            }
+                fun(..$casts)
+              }
           )
+        )
       }"""
     }
 

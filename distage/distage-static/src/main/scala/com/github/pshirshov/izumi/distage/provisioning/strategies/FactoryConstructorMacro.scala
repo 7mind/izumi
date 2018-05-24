@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
-import com.github.pshirshov.izumi.distage.model.providers.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.{FactoryConstructor, FactoryTools}
@@ -141,13 +141,13 @@ object FactoryConstructorMacro {
         ($instantiate).asInstanceOf[$targetType]
       """
 
-    val dikeyWrappedFunction = symbolOf[DIKeyWrappedFunction.type].asClass.module
+    val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
     val res = c.Expr[FactoryConstructor[T]] {
       q"""
           {
           $defConstructor
 
-          new ${weakTypeOf[FactoryConstructor[T]]}($dikeyWrappedFunction.apply[$targetType](constructor _))
+          new ${weakTypeOf[FactoryConstructor[T]]}($providerMagnet.apply[$targetType](constructor _))
           }
        """
     }

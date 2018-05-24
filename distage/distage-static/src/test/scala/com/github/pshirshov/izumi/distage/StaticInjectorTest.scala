@@ -22,7 +22,7 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition = new ModuleDef {
-         make[Factory].statically
+        make[Factory].statically
         make[Dependency].statically
         make[OverridingFactory].statically
         make[AssistedFactory].statically
@@ -136,7 +136,7 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition: ModuleBase = new ModuleDef {
-        make[Dependency].statically
+          make[Dependency].statically
         make[TestClass].statically
         make[Factory].statically
       }

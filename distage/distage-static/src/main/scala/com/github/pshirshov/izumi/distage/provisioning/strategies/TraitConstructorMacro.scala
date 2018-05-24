@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.providers.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.TraitConstructor
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
@@ -51,14 +51,14 @@ object TraitConstructorMacro {
       }
       """
 
-    val dikeyWrappedFunction = symbolOf[DIKeyWrappedFunction.type].asClass.module
+    val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
 
     val res = c.Expr[TraitConstructor[T]] {
       q"""
           {
           $constructorDef
 
-          new ${weakTypeOf[TraitConstructor[T]]}($dikeyWrappedFunction.apply[$targetType](constructor _))
+          new ${weakTypeOf[TraitConstructor[T]]}($providerMagnet.apply[$targetType](constructor _))
           }
        """
     }

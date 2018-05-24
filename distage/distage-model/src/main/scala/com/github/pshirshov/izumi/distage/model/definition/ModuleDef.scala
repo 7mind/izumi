@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef.{BindDSL, IdentSet, SetDSL}
-import com.github.pshirshov.izumi.distage.model.providers.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
@@ -206,8 +206,8 @@ object ModuleDef {
     final def from[I <: T : Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
-    final def from[I <: T : Tag](f: DIKeyWrappedFunction[I]): AfterBind =
-      bind(ImplDef.ProviderImpl(SafeType.get[I], f))
+    final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
+      bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
     final def using[I <: T : Tag]: AfterBind =
       bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I]))
@@ -231,8 +231,8 @@ object ModuleDef {
     final def add[I <: T : Tag](instance: I): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
-    final def add[I <: T : Tag](f: DIKeyWrappedFunction[I]): AfterAdd =
-      appendElement(ImplDef.ProviderImpl(f.ret, f))
+    final def add[I <: T : Tag](f: ProviderMagnet[I]): AfterAdd =
+      appendElement(ImplDef.ProviderImpl(f.get.ret, f.get))
 
     protected def appendElement(newImpl: ImplDef): AfterAdd
 

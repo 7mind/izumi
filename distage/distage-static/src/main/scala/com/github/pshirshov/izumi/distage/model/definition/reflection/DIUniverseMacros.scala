@@ -14,7 +14,7 @@ class DIUniverseMacros[D <: StaticDIUniverse](override val u: D) extends DIUnive
 
     case w: Wiring.UnaryWiring.AbstractSymbol =>
       q"""{
-      val fun = ${symbolOf[AbstractConstructor.type].asClass.module}.apply[${w.instanceType.tpe}].function
+      val fun = ${symbolOf[AbstractConstructor.type].asClass.module}.apply[${w.instanceType.tpe}].function.get
 
       $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun, fun.associations)
       }"""
