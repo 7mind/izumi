@@ -111,6 +111,46 @@ class StaticInjectorTest extends WordSpec {
       assert(instantiated.x(5).b.isSpecial)
     }
 
+    "macro factory cannot produce factories" in {
+      assertTypeError(
+        """
+          |import Case5._
+          |
+          |val definition: ModuleBase = new ModuleDef {
+          |  make[FactoryProducingFactory].statically
+          |  make[Dependency].statically
+          |}
+          |
+          |val injector = mkInjector()
+          |val plan = injector.plan(definition)
+          |val context = injector.produce(plan)
+          |
+          |val instantiated = context.get[FactoryProducingFactory]
+          |
+          |assert(instantiated.x().x().b == context.get[Dependency])
+        """.stripMargin
+      )
+    }
+
+    "macro factory always produces new instances" in {
+      import Case5._
+
+      val definition: ModuleBase = new ModuleDef {
+        make[Dependency].statically
+        make[TestClass].statically
+        make[Factory].statically
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[Factory]
+
+      assert(!instantiated.x().eq(context.get[TestClass]))
+      assert(!instantiated.x().eq(instantiated.x()))
+    }
+
     "handle one-arg trait" in {
       import Case7._
 

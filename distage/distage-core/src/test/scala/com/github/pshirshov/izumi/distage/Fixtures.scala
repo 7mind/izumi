@@ -238,6 +238,9 @@ Forest fire, climbin' higher, real life, it can wait""")
       def y(): FullyAbstractDependency
     }
 
+    trait FactoryProducingFactory {
+      def x(): Factory
+    }
 
   }
 

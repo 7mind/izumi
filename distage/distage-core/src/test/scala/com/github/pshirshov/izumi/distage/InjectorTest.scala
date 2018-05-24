@@ -11,6 +11,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
 import org.scalatest.WordSpec
 
+import scala.util.Try
+
 class InjectorTest extends WordSpec {
 
   def mkInjector(): Injector = Injectors.bootstrap()
@@ -339,6 +341,45 @@ class InjectorTest extends WordSpec {
 
       assert(instantiated.dep.isVerySpecial)
       assert(instantiated.x(5).b.isSpecial)
+    }
+
+    "cglib factory cannot produce factories" in {
+      val fail = Try {
+        import Case5._
+
+        val definition: ModuleBase = new ModuleDef {
+          make[FactoryProducingFactory]
+          make[Dependency]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+        val context = injector.produce(plan)
+
+        val instantiated = context.get[FactoryProducingFactory]
+
+        assert(instantiated.x().x().b == context.get[Dependency])
+      }.isFailure
+      assert(fail)
+    }
+
+    "cglib factory always produces new instances" in {
+      import Case5._
+
+      val definition: ModuleBase = new ModuleDef {
+        make[Dependency]
+        make[TestClass]
+        make[Factory]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[Factory]
+
+      assert(!instantiated.x().eq(context.get[TestClass]))
+      assert(!instantiated.x().eq(instantiated.x()))
     }
 
     // BasicProvisionerTest
