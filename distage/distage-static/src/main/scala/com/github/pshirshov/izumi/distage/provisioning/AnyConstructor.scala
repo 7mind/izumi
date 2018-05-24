@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.functions.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.provisioning.strategies.{AbstractConstructorMacro, AnyConstructorMacro, FactoryConstructorMacro, TraitConstructorMacro}
 
