@@ -1,12 +1,11 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.provisioning.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.{AbstractConstructor, FactoryConstructor, FactoryTools}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
 
 import scala.reflect.macros.blackbox
 
@@ -21,13 +20,11 @@ object FactoryConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val tools = DIUniverseMacros(macroUniverse)
     val logger = MacroUtil.mkLogger[this.type](c)
 
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._
-    import tools._
 
     val targetType = weakTypeOf[T]
 
@@ -41,7 +38,7 @@ object FactoryConstructorMacro {
         val methodName: TermName = TermName(methodSymbol.name)
         val argName: TermName = c.freshName(methodName)
 
-        val mods = tools.modifiersForAnns(methodSymbol.annotations)
+        val mods = AnnotationTools.mkModifiers(u)(methodSymbol.annotations)
 
         (q"$mods val $argName: $tpe", q"override val $methodName: $tpe = $argName")
     }.unzip
@@ -50,7 +47,7 @@ object FactoryConstructorMacro {
     val transitiveDependenciesArgsHACK = factoryInfo.associations.map {
       assoc =>
         val key = assoc.wireWith
-        val anns = tools.modifiersForAnns(assoc.symbol.annotations)
+        val anns = AnnotationTools.mkModifiers(u)(assoc.symbol.annotations)
 
         q"$anns val ${TermName(c.freshName("transitive"))}: ${key.tpe.tpe}"
     }

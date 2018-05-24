@@ -1,11 +1,10 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
 import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.TraitConstructor
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
 
 import scala.reflect.macros.blackbox
 
@@ -22,7 +21,6 @@ object TraitConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val tools = DIUniverseMacros(macroUniverse)
     val logger = MacroUtil.mkLogger[this.type](c)
 
     val targetType = weakTypeOf[T]
@@ -35,7 +33,7 @@ object TraitConstructorMacro {
         val methodName: TermName = TermName(methodSymbol.name)
         val argName: TermName = c.freshName(methodName)
 
-        val mods = tools.modifiersForAnns(methodSymbol.annotations)
+        val mods = AnnotationTools.mkModifiers(u)(methodSymbol.annotations)
 
         q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
     }.unzip

@@ -1,10 +1,13 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.distage.model.reflection.macros.WithDILiftables
 import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
 
 import scala.reflect.macros.blackbox
 
-trait StaticDIUniverse extends DIUniverse {
+trait StaticDIUniverse
+  extends DIUniverse
+  with WithDILiftables {
   override val u: SingletonUniverse
 
   class IdContractImpl[T: u.Liftable] extends IdContract[T] {

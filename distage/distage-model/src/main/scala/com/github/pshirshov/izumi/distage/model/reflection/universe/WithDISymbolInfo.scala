@@ -10,7 +10,6 @@ trait WithDISymbolInfo {
     def name: String
     def finalResultType: TypeFull
     def annotations: List[u.Annotation]
-    def isMethodSymbol: Boolean
     def definingClass: TypeFull
 
     override def toString: String = name
@@ -26,11 +25,9 @@ trait WithDISymbolInfo {
       override val finalResultType: TypeFull = SafeType(underlying.typeSignatureIn(definingClass.tpe).finalResultType)
 
       override val annotations: List[u.Annotation] = AnnotationTools.getAllAnnotations(u: u.type)(underlying)
-
-      override val isMethodSymbol: Boolean = underlying.isMethod
     }
 
-    case class StaticSymbol(name: String, finalResultType: TypeFull, annotations: List[u.Annotation], isMethodSymbol: Boolean, definingClass: TypeFull) extends SymbolInfo
+    case class StaticSymbol(name: String, finalResultType: TypeFull, annotations: List[u.Annotation], definingClass: TypeFull) extends SymbolInfo
 
     def apply(symb: Symb, definingClass: TypeFull): SymbolInfo =
       RuntimeSymbol(symb, definingClass)

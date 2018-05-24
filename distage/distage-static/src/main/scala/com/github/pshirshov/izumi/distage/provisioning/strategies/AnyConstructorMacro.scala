@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.{AnyConstructor, ConcreteConstructor}
 import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
@@ -13,10 +12,9 @@ object AnyConstructorMacro {
 
     val macroUniverse = StaticDIUniverse(c)
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
-    val tools = DIUniverseMacros(macroUniverse)
-    import tools.liftableSafeType
+    import macroUniverse._
 
-    val safe = macroUniverse.SafeType(weakTypeOf[T])
+    val safe = SafeType(weakTypeOf[T])
 
     if (symbolIntrospector.isConcrete(safe)) {
       c.Expr[AnyConstructor[T]] {
