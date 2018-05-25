@@ -67,7 +67,7 @@ class PlannerDefaultImpl
         val target = s.key
         val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, currentPlan.operations.size, setElementKeySymbol(s.implementation))
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
-        val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.symbol, Set.empty))
+        val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.tpe, Set.empty))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
         NextOps(
@@ -76,7 +76,7 @@ class PlannerDefaultImpl
         )
 
       case s: EmptySetBinding[_] =>
-        val newSet = CreateSet(s.key, s.key.symbol, Set.empty)
+        val newSet = CreateSet(s.key, s.key.tpe, Set.empty)
 
         NextOps(
           Map(s.key -> newSet)

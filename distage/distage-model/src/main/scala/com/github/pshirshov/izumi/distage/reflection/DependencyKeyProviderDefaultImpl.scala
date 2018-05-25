@@ -9,42 +9,36 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
 
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
-  override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: Symb): DIKey = {
-    val typeKey = DIKey.TypeKey(SafeType(parameterSymbol.typeSignatureIn(context.definingClass.tpe)))
+  override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: SymbolInfo): DIKey = {
+    val typeKey = DIKey.TypeKey(parameterSymbol.finalResultType)
     withOptionalName(parameterSymbol, typeKey)
   }
 
-  override def keyFromParameterType(parameterType: u.TypeFull): u.DIKey = {
-    val typeKey = DIKey.TypeKey(parameterType)
-    symbolIntrospector.findTypeAnnotation(typeOfIdAnnotation, parameterType) match {
-      case Some(Id(name)) =>
-        typeKey.named(name)
-      case _ =>
-        typeKey
-    }
+  override def associationFromParameter(parameterSymbol: u.SymbolInfo): u.Association.Parameter = {
+    val context = DependencyContext.ConstructorParameterContext(parameterSymbol.definingClass, parameterSymbol)
+    Association.Parameter(context, parameterSymbol.name, parameterSymbol.finalResultType, keyFromParameter(context, parameterSymbol))
   }
 
-  override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: MethodSymb): DIKey = {
-    val typeKey = DIKey.TypeKey(SafeType(methodSymbol.typeSignatureIn(context.definingClass.tpe).finalResultType))
+  override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: SymbolInfo): DIKey = {
+    val typeKey = DIKey.TypeKey(methodSymbol.finalResultType)
     withOptionalName(methodSymbol, typeKey)
   }
 
-  override def resultOfFactoryMethod(context: u.DependencyContext.FactoryMethodContext, factoryMethod: u.MethodSymb): u.SafeType =
-    symbolIntrospector.findSymbolAnnotation(typeOfWithAnnotation, factoryMethod) match {
+  override def resultOfFactoryMethod(context: u.DependencyContext.MethodParameterContext): u.SafeType =
+    context.factoryMethod.findAnnotation(typeOfWithAnnotation) match {
       case Some(With(tpe)) =>
         tpe
       case _ =>
-        SafeType(factoryMethod.returnType)
+        context.factoryMethod.finalResultType
     }
 
-  private def withOptionalName(parameterSymbol: Symb, typeKey: DIKey.TypeKey) = {
+  private def withOptionalName(parameterSymbol: SymbolInfo, typeKey: DIKey.TypeKey) =
     symbolIntrospector.findSymbolAnnotation(typeOfIdAnnotation, parameterSymbol) match {
       case Some(Id(name)) =>
         typeKey.named(name)
       case _ =>
         typeKey
     }
-  }
 
   protected def typeOfWithAnnotation: u.SafeType
   protected def typeOfIdAnnotation: u.SafeType

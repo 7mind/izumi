@@ -1,11 +1,10 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
-import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.TraitConstructor
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
 
 import scala.reflect.macros.blackbox
 
@@ -22,27 +21,22 @@ object TraitConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val tools = DIUniverseMacros(macroUniverse)
     val logger = MacroUtil.mkLogger[this.type](c)
-
-    import tools.liftableAnnotation
 
     val targetType = weakTypeOf[T]
 
     val UnaryWiring.AbstractSymbol(_, wireables) = reflectionProvider.symbolToWiring(SafeType(targetType))
 
-    val (wireArgs, w) = wireables.map {
-      case AbstractMethod(_, methodSymbol, key) =>
-        val tpe = key.symbol.tpe
-        val methodName = methodSymbol.asMethod.name.toTermName
-        val argName = c.freshName(methodName)
+    val (wireArgs, wireMethods) = wireables.map {
+      case AbstractMethod(ctx, name, _, key) =>
+        val tpe = key.tpe.tpe
+        val methodName: TermName = TermName(name)
+        val argName: TermName = c.freshName(methodName)
 
-        val anns = tools.annotationsFromDIKey(key)
+        val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
 
-        (q"$anns val $argName: $tpe", (q"override val $methodName: $tpe = $argName", anns))
+        q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
     }.unzip
-
-    val (wireMethods, mods) = w.unzip
 
     val instantiate = if (wireMethods.isEmpty)
       q"new $targetType {}"
@@ -57,16 +51,14 @@ object TraitConstructorMacro {
       }
       """
 
-    val dikeyWrappedFunction = symbolOf[DIKeyWrappedFunction.type].asClass.module
-
-    val anns = mods.flatMap(_.annotations).map(Annotation(_)).toList
+    val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
 
     val res = c.Expr[TraitConstructor[T]] {
       q"""
           {
           $constructorDef
 
-          new ${weakTypeOf[TraitConstructor[T]]}($dikeyWrappedFunction.apply[$targetType](constructor _), $anns)
+          new ${weakTypeOf[TraitConstructor[T]]}($providerMagnet.apply[$targetType](constructor _))
           }
        """
     }

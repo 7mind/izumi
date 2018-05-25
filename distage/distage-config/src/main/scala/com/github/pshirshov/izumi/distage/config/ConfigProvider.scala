@@ -58,7 +58,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
     val section = loaded.head
     try {
       val product = reader.readConfig(section._2, step.targetType)
-      ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.symbol, product))
+      ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product))
     } catch {
       case NonFatal(t) =>
         throw new DIException(s"Cannot read ${step.targetType} out of ${section._1} ==> ${section._2}", t)
@@ -85,7 +85,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
         val paths = Seq(
           ConfigPath(p.pathOverride.split('.'))
         )
-        RequiredConfigEntry(paths, op.imp.target.symbol, op.imp.target)
+        RequiredConfigEntry(paths, op.imp.target.tpe, op.imp.target)
 
       case _: AutomaticConfId =>
         toRequirementAuto(op)
@@ -108,7 +108,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name)
     ).distinct
 
-    RequiredConfigEntry(paths, op.imp.target.symbol, op.imp.target)
+    RequiredConfigEntry(paths, op.imp.target.tpe, op.imp.target)
   }
 
   private def structInfo(op: ConfigImport) = {
@@ -122,7 +122,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
     }
 
 
-    val structFqName = op.imp.target.symbol.name
+    val structFqName = op.imp.target.tpe.name
     val structFqParts = structFqName.split('.').toSeq
     DepType(structFqParts, Seq(qualifier))
   }
@@ -130,7 +130,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   private def usageInfo(op: ConfigImport) = {
     val usageKeyFqName = op.id match {
       case id: AutoConfId =>
-        id.binding.symbol.name
+        id.binding.tpe.name
       case id: ConfId =>
         id.nameOverride
       case _ =>

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.functions.WrappedFunction.DIKeyWrappedFunction
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 sealed trait Binding {
@@ -50,8 +50,8 @@ object Binding {
     def withImpl[T: Tag](instance: T): ImplBinding =
       withImpl(ImplDef.InstanceImpl(SafeType.get[T], instance))
 
-    def withImpl[T: Tag](f: DIKeyWrappedFunction[T]): ImplBinding =
-      withImpl(ImplDef.ProviderImpl(f.ret, f))
+    def withImpl[T: Tag](f: ProviderMagnet[T]): ImplBinding =
+      withImpl(ImplDef.ProviderImpl(f.get.ret, f.get))
 
     def withImpl(impl: ImplDef): ImplBinding =
       binding match {

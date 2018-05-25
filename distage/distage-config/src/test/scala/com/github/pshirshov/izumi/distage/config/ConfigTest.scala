@@ -9,7 +9,6 @@ import org.scalatest.WordSpec
 
 import scala.collection.immutable.ListSet
 import scala.collection.mutable
-import scala.util.Try
 
 class ConfigTest extends WordSpec {
   "Config resolver" should {
@@ -75,22 +74,47 @@ class ConfigTest extends WordSpec {
       assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
     }
 
-    "Progression test: inject config currently doesn't work for factory products" in {
-      assert(Try {
-        import Fixtures.FactoryCase._
+    "Inject config works for trait methods" in {
+      import ConfigFixtures._
 
-        val config = AppConfig(ConfigFactory.load("factory-test.conf"))
-        val injector = Injectors.bootstrap(new ConfigModule(config))
+      val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
 
-        val definition = new ModuleDef {
-          make[TestFactory]
-        }
-        val plan = injector.plan(definition)
-        val context = injector.produce(plan)
+      val definition = new ModuleDef {
+        make[TestDependency]
+        make[TestTrait]
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
 
-        val instantiated = context.get[TestFactory].make(5)
-        assert(instantiated == TestClass(TestConf(true), 5))
-      }.isFailure)
+      assert(context.get[TestTrait].x == TestDependency(TestConf(false)))
+      assert(context.get[TestTrait].testConf == TestConf(true))
+      assert(context.get[TestDependency] == TestDependency(TestConf(false)))
+    }
+
+    "Inject config works for concrete and abstract factory products and factory methods" in {
+      import ConfigFixtures._
+
+      val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
+
+      val definition = new ModuleDef {
+        make[TestDependency]
+        make[TestFactory]
+        make[TestGenericConfFactory[TestConfAlias]]
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val factory = context.get[TestFactory]
+      assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))
+      assert(factory.makeTrait().testConf == TestConf(true))
+      assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
+
+      assert(context.get[TestDependency] == TestDependency(TestConf(false)))
+
+      assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
+      assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
     }
 
   }

@@ -34,7 +34,7 @@ class TypespaceToolsImpl(types: TypeCollection) extends TypespaceTools {
         types.interfaceEphemeralsReversed(d)
 
       case d: DTOId =>
-        InterfaceId(id, types.toInterfaceName(id))
+        InterfaceId(d, types.toInterfaceName(d))
 
       case i: InterfaceId =>
         i

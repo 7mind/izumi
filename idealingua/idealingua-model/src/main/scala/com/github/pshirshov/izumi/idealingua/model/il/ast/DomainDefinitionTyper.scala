@@ -88,7 +88,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
           case Some(v: InterfaceId) =>
             v
           case o =>
-            throw new IDLException(s"Expected mixin at key $id, found $o")
+            throw new IDLException(s"Expected mixin at key $id, found $o in $domainId")
         }
     }
   }
@@ -164,7 +164,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         Primitive.mapping(p.name)
 
       case o =>
-        throw new IDLException(s"Unexpected non-primitive id: $o")
+        throw new IDLException(s"Unexpected non-primitive id in $domainId: $o")
     }
   }
 
@@ -181,6 +181,9 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
       case n if Generic.TMap.aliases.contains(n) =>
         Generic.TMap(toScalar(makeDefinite(generic.args.head)), makeDefinite(generic.args.last))
+
+      case o =>
+        throw new IDLException(s"Unexpected generic in $domainId: $o")
     }
   }
 

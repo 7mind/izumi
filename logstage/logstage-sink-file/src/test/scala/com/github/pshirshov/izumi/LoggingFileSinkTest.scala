@@ -206,9 +206,14 @@ class RealFileSinkTest extends LoggingFileSinkTest[RealFile] {
 
 object LoggingFileSinkTest {
 
-  private val randomSeed = 100
+  private val maxRandom = 100
 
-  def randomInt(seed : Int = randomSeed) : Int = Random.nextInt(seed)
+  def randomInt(until: Int = maxRandom): Int =
+    if (until == 0) {
+      0
+    } else {
+      Random.nextInt(until)
+    }
 
   def dummySink[F <: LogFile](renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, fileService: FileService[F], broken: Boolean, softLimit : Boolean): FileSink[F] = {
 

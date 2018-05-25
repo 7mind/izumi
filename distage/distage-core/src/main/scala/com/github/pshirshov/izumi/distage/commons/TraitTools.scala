@@ -33,7 +33,7 @@ object TraitTools {
   private def makeTraitIndex(methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): Map[Method, RuntimeDIUniverse.Association.AbstractMethod] = {
     methods.map {
       m =>
-        ReflectionUtil.toJavaMethod(m.context.definingClass.tpe, m.symbol) -> m
+        ReflectionUtil.toJavaMethod(m.context.definingClass.tpe, m.context.methodSymbol.underlying) -> m
     }.toMap
   }
 

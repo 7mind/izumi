@@ -27,7 +27,7 @@ object FormattingUtils {
       case FactoryMethod(factoryType, wireables, dependencies) =>
         val wirings = wireables.map {
           w =>
-            s"${w.factoryMethod}: ${w.factoryMethod.returnType} ~= ${doFormat(w.wireWith)}".shift(2)
+            s"${w.factoryMethod}: ${w.factoryMethod.finalResultType} ~= ${doFormat(w.wireWith)}".shift(2)
         }
 
         val depsRepr = dependencies.map(_.format)

@@ -10,26 +10,25 @@ trait WithDIDependencyContext {
 
   sealed trait DependencyContext {
     def definingClass: TypeFull
+    def symbol: SymbolInfo
   }
 
   object DependencyContext {
 
-    case class MethodContext(definingClass: TypeFull) extends DependencyContext
-
-    case class FactoryMethodContext(factoryClass: TypeFull) extends DependencyContext {
-      override def definingClass: TypeFull = factoryClass
+    case class MethodContext(definingClass: TypeFull, methodSymbol: SymbolInfo.Runtime) extends DependencyContext {
+      override def symbol: SymbolInfo = methodSymbol
     }
 
     sealed trait ParameterContext extends DependencyContext
 
-    case class ConstructorParameterContext(symb: SymbolInfo, definingClass: TypeFull) extends ParameterContext
+    case class ConstructorParameterContext(definingClass: TypeFull, parameterSymbol: SymbolInfo) extends ParameterContext {
+      override def symbol: SymbolInfo = parameterSymbol
+    }
 
     case class MethodParameterContext(factoryClass: TypeFull, factoryMethod: SymbolInfo) extends ParameterContext {
       override def definingClass: TypeFull = factoryClass
-    }
 
-    case class CallableParameterContext(definingCallable: Provider) extends ParameterContext {
-      override def definingClass: TypeFull = definingCallable.ret
+      override def symbol: SymbolInfo = factoryMethod
     }
 
   }

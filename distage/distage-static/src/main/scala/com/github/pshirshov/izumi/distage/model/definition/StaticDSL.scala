@@ -9,9 +9,9 @@ object StaticDSL {
 
   implicit final class MagicBindDSL[T, AfterBind](private val dsl: BindDSLBase[T, AfterBind]) extends AnyVal {
     def statically(implicit ev: AnyConstructor[T], ev1: Tag[T]): AfterBind =
-      fromStatic[T]
+      static[T]
 
-    def fromStatic[I <: T: Tag: AnyConstructor]: AfterBind =
+    def static[I <: T: Tag: AnyConstructor]: AfterBind =
       AnyConstructor[I] match {
         case ctor: AbstractConstructor[I] =>
           dsl.from[I](ctor.function)
@@ -33,7 +33,7 @@ object StaticDSL {
   }
 
   implicit final class MagicBinding(private val binding: ImplBinding) extends AnyVal {
-    def fromStatic[T: Tag: AnyConstructor]: ImplBinding =
+    def withStaticImpl[T: Tag: AnyConstructor]: ImplBinding =
       AnyConstructor[T] match {
         case ctor: AbstractConstructor[T] =>
           binding.withImpl(ctor.function)

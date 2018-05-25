@@ -24,7 +24,6 @@ class ILParserTest extends WordSpec {
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X Y Zz}")
       assertParses(parser.blocks.enumBlock, "enum MyEnum { X Y Z }")
       assertParses(parser.blocks.enumBlock, "enum MyEnum {  X  Y  Z  }")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum = X | Y | Z")
       assertParses(parser.blocks.enumBlock,
         """enum MyEnum {
           |X
@@ -33,8 +32,21 @@ class ILParserTest extends WordSpec {
           |}""".stripMargin)
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X,Y,Z}")
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X|Y|Z}")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum { X|Y|Z }")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum {X | Y | Z}")
       assertParses(parser.blocks.enumBlock, "enum MyEnum { X | Y | Z }")
       assertParses(parser.blocks.enumBlock, "enum MyEnum { X , Y , Z }")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum = X | Y | Z")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum = X | /**/ Y | Z")
+      assertParses(parser.blocks.enumBlock,
+        """enum MyEnum = X
+          ||Y
+          || Z""".stripMargin)
+      assertParses(parser.blocks.enumBlock,
+        """enum MyEnum =
+          || X
+          | | Y
+          || Z""".stripMargin)
     }
 
     "parse empty blocks" in {
@@ -122,6 +134,18 @@ class ILParserTest extends WordSpec {
           |}""".stripMargin)
     }
 
+    "parse service definition" in {
+      assertParses(parser.services.method, "def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )")
+      assertParseableCompletely(parser.services.methods,
+        """def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
+          |def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )""".stripMargin)
+
+      assertParseableCompletely(parser.blocks.serviceBlock,
+        """service FileService {
+          |  def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
+          |}""".stripMargin)
+    }
+
     "parse domain definition" in {
       val domaindef1 =
         """domain x.y.z
@@ -200,18 +224,36 @@ class ILParserTest extends WordSpec {
           |""".stripMargin
 
       assertDomainParses(domaindef)
+
+      val badenums =
+        """domain idltest.enums
+          |
+          |enum ShortSyntaxEnum = Element1 | Element2
+          |
+          |
+          |data SomeGenerics {
+          |  test: map[TestEnum, TestEnum]
+          |}
+          |
+        """.stripMargin
+
+      assertDomainParses(badenums)
     }
   }
 
   private def assertParses[T](p: Parser[T], str: String): T = {
+    assertParseableCompletely(p, str)
     assertParseable(p, str)
+  }
+
+  private def assertParseableCompletely[T](p: Parser[T], str: String): T = {
     assertParseable(p ~ End, str)
   }
 
   private def assertParseable[T](p: Parser[T], str: String): T = {
     p.parse(str) match {
       case Parsed.Success(v, index) =>
-        assert(index == str.length)
+        assert(index == str.length, s"Seems like value wasn't parsed completely: $v")
         v
       case Parsed.Failure(lp, idx, e) =>
         throw new IllegalStateException(s"Parsing failed: $lp, $idx, $e, ${e.traced}, ${e.traced.trace}")

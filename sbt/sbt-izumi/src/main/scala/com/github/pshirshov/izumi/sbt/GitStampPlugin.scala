@@ -22,6 +22,11 @@ object GitStampPlugin extends AutoPlugin {
 
   import Keys._
 
+  object autoImport {
+    lazy val SbtGitStamp: GitStampPlugin.type = GitStampPlugin
+    lazy val GitStampPluginKeys: GitStampPlugin.Keys.type = GitStampPlugin.Keys
+  }
+
   override def globalSettings = Seq(
     izGitObject := {
       new Git(izGitRepositoryObject.value)
@@ -59,5 +64,6 @@ object GitStampPlugin extends AutoPlugin {
       Package.ManifestAttributes(gitValues.toSeq :_*)
     }.value
   )
+
 
 }

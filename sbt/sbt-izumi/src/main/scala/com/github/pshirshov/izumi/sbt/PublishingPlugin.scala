@@ -4,13 +4,27 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 import com.typesafe.sbt.pgp.PgpKeys._
-import sbt.Keys._
+import laughedelic.sbt.PublishMore
+import sbt.Keys.{credentials, _}
 import sbt.internal.util.ConsoleLogger
+import sbt.io.syntax.File
 import sbt.librarymanagement.PublishConfiguration
 import sbt.sbtpgp.Compat.publishSignedConfigurationTask
-import sbt.{AutoPlugin, Package, ThisBuild}
+import sbt.{AutoPlugin, Credentials, MavenRepository, Package, ThisBuild, _}
 
 object PublishingPlugin extends AutoPlugin {
+
+  override def requires = super.requires && PublishMore
+
+  case class MavenTarget(id: String, credentials: Credentials, repo: MavenRepository)
+
+  object Keys {
+    lazy val sonatypeTarget = settingKey[MavenRepository]("Sonatype repository based on isSnapshot value")
+    lazy val publishTargets = settingKey[Seq[MavenTarget]]("Publishing target")
+  }
+
+  import Keys._
+
   protected val logger: ConsoleLogger = ConsoleLogger()
 
   override def trigger = allRequirements
@@ -30,13 +44,24 @@ object PublishingPlugin extends AutoPlugin {
       }
       Package.ManifestAttributes(attributes.toSeq: _*)
     }
+    , publishTargets := Seq.empty
   )
+
+  import laughedelic.sbt.PublishMore.autoImport._
 
   override lazy val projectSettings = Seq(
     publishConfiguration := withOverwrite(publishConfiguration.value, isSnapshot.value)
     , publishSignedConfiguration := withOverwrite(publishSignedConfigurationTask.value, isSnapshot.value)
     , publishLocalConfiguration ~= withOverwriteEnabled
     , publishLocalSignedConfiguration ~= withOverwriteEnabled
+    , sonatypeTarget := {
+      if (isSnapshot.value)
+        Opts.resolver.sonatypeSnapshots
+      else
+        Opts.resolver.sonatypeStaging
+    }
+    , credentials ++= publishTargets.value.map(_.credentials)
+    , publishResolvers ++= publishTargets.value.map(_.repo)
   )
 
   private def withOverwriteEnabled(config: PublishConfiguration) = {
@@ -49,4 +74,48 @@ object PublishingPlugin extends AutoPlugin {
     // in case overwrite is already enabled (snapshots, smth else) we should not disable it
     config.withOverwrite(doOverwrite || config.overwrite || isSnapshot)
   }
+
+
+  object autoImport {
+    lazy val PublishingPluginKeys: PublishingPlugin.Keys.type = PublishingPlugin.Keys
+    lazy val SbtPublishing: PublishingPlugin.type = PublishingPlugin
+
+    object PublishTarget {
+      def filter(targets: Option[MavenTarget]*): Seq[MavenTarget] = {
+        targets.flatMap(_.toSeq)
+      }
+
+      def env(prefix: String): Option[MavenTarget] = {
+        val props = List(
+          Option(System.getProperty(s"${prefix}_USER"))
+          , Option(System.getProperty(s"${prefix}_PASSWORD"))
+          , Option(System.getProperty(s"${prefix}_REALM_NAME"))
+          , Option(System.getProperty(s"${prefix}_REALM"))
+          , Option(System.getProperty(s"${prefix}_URL"))
+        )
+
+        props match {
+          case Some(user) :: Some(password) :: Some(realmname) :: Some(realm) :: Some(url) :: Nil =>
+            import sbt.librarymanagement.syntax._
+            Some(MavenTarget(realm, Credentials(realmname, realm, user, password), realm at url))
+
+          case _ =>
+            None
+        }
+      }
+
+      def file(realm: String, url: String, path: File): Option[MavenTarget] = {
+        if (path.exists()) {
+          import sbt.librarymanagement.syntax._
+          Some(MavenTarget(realm, Credentials(path), realm at url))
+        } else {
+          None
+        }
+      }
+    }
+
+
+
+  }
+
 }

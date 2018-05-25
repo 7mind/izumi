@@ -11,6 +11,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
 import org.scalatest.WordSpec
 
+import scala.util.Try
+
 class InjectorTest extends WordSpec {
 
   def mkInjector(): Injector = Injectors.bootstrap()
@@ -284,6 +286,12 @@ class InjectorTest extends WordSpec {
       val abstractFactory = context.get[AbstractFactory]
       assert(abstractFactory.x().isInstanceOf[AbstractDependencyImpl])
 
+      val fullyAbstract1 = abstractFactory.y()
+      val fullyAbstract2 = abstractFactory.y()
+      assert(fullyAbstract1.isInstanceOf[FullyAbstractDependency])
+      assert(fullyAbstract1.a.isInstanceOf[Dependency])
+      assert(!fullyAbstract1.eq(fullyAbstract2))
+
       val overridingFactory = context.get[OverridingFactory]
       assert(overridingFactory.x(ConcreteDep()).b.isInstanceOf[ConcreteDep])
 
@@ -333,6 +341,45 @@ class InjectorTest extends WordSpec {
 
       assert(instantiated.dep.isVerySpecial)
       assert(instantiated.x(5).b.isSpecial)
+    }
+
+    "cglib factory cannot produce factories" in {
+      val fail = Try {
+        import Case5._
+
+        val definition: ModuleBase = new ModuleDef {
+          make[FactoryProducingFactory]
+          make[Dependency]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+        val context = injector.produce(plan)
+
+        val instantiated = context.get[FactoryProducingFactory]
+
+        assert(instantiated.x().x().b == context.get[Dependency])
+      }.isFailure
+      assert(fail)
+    }
+
+    "cglib factory always produces new instances" in {
+      import Case5._
+
+      val definition: ModuleBase = new ModuleDef {
+        make[Dependency]
+        make[TestClass]
+        make[Factory]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[Factory]
+
+      assert(!instantiated.x().eq(context.get[TestClass]))
+      assert(!instantiated.x().eq(instantiated.x()))
     }
 
     // BasicProvisionerTest
@@ -565,6 +612,27 @@ class InjectorTest extends WordSpec {
       val set = context.get[Set[Service]]
       assert(set.head eq svc)
     }
-  }
 
+    "progression test: can't handle path-dependent injections" in {
+      val fail = Try {
+        import Case16._
+
+        val testProviderModule = new TestProviderModule
+
+        val definition = new ModuleDef {
+          make[testProviderModule.TestClass]
+          make[testProviderModule.TestDependency]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+
+        val context = injector.produce(plan)
+
+        assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
+      }.isFailure
+      assert(fail)
+    }
+
+  }
 }

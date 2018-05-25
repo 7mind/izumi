@@ -23,7 +23,7 @@ trait SymbolIntrospector {
 
   def isFactoryMethod(tpe: u.TypeFull, decl: u.Symb): Boolean
 
-  def findSymbolAnnotation(annType: u.TypeFull, symb: u.Symb): Option[u.u.Annotation]
+  def findSymbolAnnotation(annType: u.TypeFull, symb: u.SymbolInfo): Option[u.u.Annotation]
 
   def findTypeAnnotation(annType: u.TypeFull, tpe: u.TypeFull): Option[u.u.Annotation]
 }

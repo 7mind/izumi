@@ -1,17 +1,30 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
-import com.github.pshirshov.izumi.idealingua.model.common.{SigParam, StructureId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, SigParam, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.ConverterDef
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.CompositeStructure
 
 import scala.meta._
 
+case class Params(params: List[Term.Param], assertions: List[Term.ApplyInfix]) {
+  def assertion: List[Term] = {
+    if (assertions.isEmpty) {
+      List.empty
+    } else {
+      val expr = assertions.tail.foldLeft(assertions.head) {
+        case (a, acc) =>
+          q"$acc && $a"
+      }
+      List(q"assert($expr)")
+    }
+  }
+}
 
 class ScalaTranslationTools(ctx: STContext) {
 
-  import ctx.conv._
   import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaField._
+  import ctx.conv._
 
   def mkStructure(id: StructureId): CompositeStructure = {
     val fields = ctx.typespace.structure.structure(id).toScala
@@ -21,8 +34,8 @@ class ScalaTranslationTools(ctx: STContext) {
 
   def idToParaName(id: TypeId): Term.Name = Term.Name(ctx.typespace.tools.idToParaName(id))
 
-  def makeParams(t: ConverterDef): List[Term.Param] = {
-    t.outerParams
+  def makeParams(t: ConverterDef): Params = {
+    val out = t.outerParams
       .map {
         f =>
           /*
@@ -38,9 +51,26 @@ class ScalaTranslationTools(ctx: STContext) {
               o
           }
 
-          (Term.Name(f.sourceName), ctx.conv.toScala(source).typeFull)
+          f.sourceType.isInstanceOf[Builtin]
+          val scalaType = ctx.conv.toScala(source)
+          val name = Term.Name(f.sourceName)
+
+
+
+          (f, (name, scalaType.typeFull))
       }
-      .toParams
+
+    // this allows us to get rid of "unused" warnings and do a good thing
+    val assertions = out.map {
+      case (field, (name, _)) =>
+        if (!ctx.typespace.dealias(field.sourceType).isInstanceOf[Builtin]) {
+          List(q"$name != null")
+        } else {
+          List.empty
+        }
+    }
+
+    Params(out.map(_._2).toParams, assertions.flatten)
   }
 
   def makeConstructor(t: ConverterDef): List[Term.Assign] = {

@@ -12,58 +12,36 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
 
   import u._
 
-  override def hookWiring(binding: Binding.ImplBinding, wiring: Wiring): Wiring = {
-    wiring match {
-      case w: Wiring.UnaryWiring.Constructor =>
-        val parameters = reflectionProvider.constructorParameters(w.instanceType)
-          .map(p => p.name -> p)
-          .toMap
+  override def hookWiring(binding: Binding.ImplBinding, wiring: Wiring): Wiring =
+    wiring.replaceKeys(rewire(binding, _))
 
-        val newAssociactions = w.associations.map {
-          a =>
-            val parameter = parameters(a.name)
+  protected def findAnno[T: TypeTag](association: Association): Option[Annotation] =
+    association.context.symbol.findAnnotation(SafeType.get[T])
 
-            a.copy(wireWith = rewire(binding, parameter, a))
-        }
-
-        w.copy(associations = newAssociactions)
-
-      case w =>
-        w
+  protected def findArgument(ann: Annotation): Option[String] =
+    AnnotationTools.findArgument(ann) {
+      case Literal(Constant(str: String)) =>
+        str
     }
-  }
 
-  protected def findAnno[T: TypeTag](association: Association.Parameter): Option[Annotation] = {
-    association.context match {
-      case c: DependencyContext.ConstructorParameterContext =>
-        c.symb.annotations.find(AnnotationTools.annotationTypeEq(u)(typeOf[T], _))
-      case _ =>
-        None
-    }
-  }
-
-  protected def rewire(binding: Binding.ImplBinding, reflected: Association.Parameter, association: Association.Parameter): DIKey = {
+  protected def rewire(binding: Binding.ImplBinding, association: Association): DIKey = {
     val confPathAnno = findAnno[ConfPath](association)
     val confAnno = findAnno[Conf](association)
     val autoConfAnno = findAnno[AutoConf](association)
 
-    // TODO: can we decopypaste?
     confPathAnno match {
       case Some(ann) =>
-        ann.tree.children.tail.collectFirst {
-          case Literal(Constant(path: String)) =>
-            path
-        } match {
+        findArgument(ann) match {
           case Some(path) =>
             association.wireWith match {
               case k: DIKey.TypeKey =>
                 return k.named(ConfPathId(binding.key, association, path))
 
               case o =>
-                throw new DIException(s"Cannot rewire @ConfPath parameter $reflected: unexpected binding $o", null)
+                throw new DIException(s"Cannot rewire @ConfPath parameter $association: unexpected binding $o", null)
             }
           case None =>
-            throw new DIException(s"Cannot rewire @ConfPath parameter $reflected: undefined path", null)
+            throw new DIException(s"Cannot rewire @ConfPath parameter $association: undefined path", null)
 
         }
 
@@ -72,20 +50,17 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
 
     confAnno match {
       case Some(ann) =>
-        ann.tree.children.tail.collectFirst {
-          case Literal(Constant(name: String)) =>
-            name
-        } match {
+        findArgument(ann) match {
           case Some(name) =>
             association.wireWith match {
               case k: DIKey.TypeKey =>
                 return k.named(ConfId(binding.key, association, name))
 
               case o =>
-                throw new DIException(s"Cannot rewire @Conf parameter $reflected: unexpected binding $o", null)
+                throw new DIException(s"Cannot rewire @Conf parameter $association: unexpected binding $o", null)
             }
           case None =>
-            throw new DIException(s"Cannot rewire @Conf parameter $reflected: undefined name", null)
+            throw new DIException(s"Cannot rewire @Conf parameter $association: undefined name", null)
 
         }
 
@@ -99,12 +74,11 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
             return k.named(AutoConfId(binding.key, association))
 
           case o =>
-            throw new DIException(s"Cannot rewire @AutoConf parameter $reflected: unexpected binding $o", null)
+            throw new DIException(s"Cannot rewire @AutoConf parameter $association: unexpected binding $o", null)
         }
 
       case _ =>
     }
-
 
     association.wireWith
   }

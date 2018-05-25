@@ -1,13 +1,10 @@
-import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
-import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
-import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
-import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
-import com.lightbend.paradox.sbt.ParadoxPlugin.autoImport.paradoxTheme
-import com.typesafe.sbt.SbtGit.GitKeys.gitBranch
 import com.typesafe.sbt.pgp.PgpSettings
-import coursier.ShadingPlugin.autoImport.shadingNamespace
 import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
-import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
+import SbtConvenienceTasks.Keys._
+import SbtPublishing.Keys._
+import ReleaseTransformations._
+
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -15,154 +12,161 @@ enablePlugins(GitStampPlugin)
 disablePlugins(AssemblyPlugin)
 
 name := "izumi-r2"
-
-val AppSettings = SettingsGroupId()
-val LibSettings = SettingsGroupId()
-val SbtSettings = SettingsGroupId()
-val ShadingSettings = SettingsGroupId()
-val WithoutBadPlugins = SettingsGroupId()
-val SbtScriptedSettings = SettingsGroupId()
-
+organization in ThisBuild := "com.github.pshirshov.izumi.r2"
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
-defaultStubPackage := Some("com.github.pshirshov.izumi")
+defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
+publishMavenStyle in ThisBuild := true
+sonatypeProfileName in ThisBuild := "com.github.pshirshov"
+pomExtra in ThisBuild := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
+  <licenses>
+    <license>
+      <name>BSD-style</name>
+      <url>http://www.opensource.org/licenses/bsd-license.php</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>pshirshov</id>
+      <name>Pavel Shirshov</name>
+      <url>https://github.com/pshirshov</url>
+    </developer>
+  </developers>
 
-val baseSettings = new GlobalSettings {
-  override protected val settings: Map[SettingsGroupId, ProjectSettings] = Map(
-    GlobalSettingsGroup -> new ProjectSettings {
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        organization := "com.github.pshirshov.izumi.r2"
-        , crossScalaVersions := Seq(
-          V.scala_212
-        )
-        , publishMavenStyle in Global := true
-        , sonatypeProfileName := "com.github.pshirshov"
-        , publishTo := Some(
-          if (isSnapshot.value)
-            Opts.resolver.sonatypeSnapshots
-          else
-            Opts.resolver.sonatypeStaging
-        )
-        , credentials in Global ++= Seq(new File(".secrets/credentials.sonatype-nexus.properties")).filter(_.exists()).map(Credentials(_))
-        , pomExtra in Global := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
-          <licenses>
-            <license>
-              <name>BSD-style</name>
-              <url>http://www.opensource.org/licenses/bsd-license.php</url>
-              <distribution>repo</distribution>
-            </license>
-          </licenses>
-          <developers>
-            <developer>
-              <id>pshirshov</id>
-              <name>Pavel Shirshov</name>
-              <url>https://github.com/pshirshov</url>
-            </developer>
-          </developers>
+releaseProcess in ThisBuild := Seq[ReleaseStep](
+  checkSnapshotDependencies, // : ReleaseStep
+  inquireVersions, // : ReleaseStep
+  runClean, // : ReleaseStep
+  runTest, // : ReleaseStep
+  setReleaseVersion, // : ReleaseStep
+  commitReleaseVersion, // : ReleaseStep, performs the initial git checks
+  tagRelease, // : ReleaseStep
+  //publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
+  setNextVersion, // : ReleaseStep
+  commitNextVersion, // : ReleaseStep
+  pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
+)
 
-        , releaseProcess := Seq[ReleaseStep](
-          checkSnapshotDependencies, // : ReleaseStep
-          inquireVersions, // : ReleaseStep
-          runClean, // : ReleaseStep
-          runTest, // : ReleaseStep
-          setReleaseVersion, // : ReleaseStep
-          commitReleaseVersion, // : ReleaseStep, performs the initial git checks
-          tagRelease, // : ReleaseStep
-          //publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
-          setNextVersion, // : ReleaseStep
-          commitNextVersion, // : ReleaseStep
-          pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
-        )
-        , addCompilerPlugin(R.kind_projector)
-      )
-    }
-    , LibSettings -> new ProjectSettings {
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        Seq(
-          libraryDependencies ++= R.essentials
-          , libraryDependencies ++= T.essentials
-        )
-      ).flatten
-    }
-    , ShadingSettings -> new ProjectSettings {
-      override val plugins: Set[Plugins] = Set(ShadingPlugin)
+publishTargets in ThisBuild := PublishTarget.filter(
+  PublishTarget.env("PUBLISH"),
+  PublishTarget.file("sonatype", sonatypeTarget.value.root, file(".secrets/credentials.sonatype-nexus.properties")),
+  PublishTarget.file("sonatype", sonatypeTarget.value.root, Path.userHome / ".sbt/credentials.sonatype-nexus.properties"),
+)
 
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ PublishingPlugin.projectSettings) ++
-          _root_.coursier.ShadingPlugin.projectSettings ++
-          Seq(
-            publish := publish.in(Shading).value
-            , publishLocal := publishLocal.in(Shading).value
-            , PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value
-            , PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
-            , shadingNamespace := "izumi.shaded"
-            , shadeNamespaces ++= Set(
-              "fastparse"
-              , "sourcecode"
-              //            , "net.sf.cglib"
-              //            , "org.json4s"
-            )
-          )
-      ).flatten
-    }
-    , SbtSettings -> new ProjectSettings {
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        Seq(
-          target ~= { t => t.toPath.resolve("primary").toFile }
-          , crossScalaVersions := Seq(
-            V.scala_212
-          )
-          , libraryDependencies ++= Seq(
-            "org.scala-sbt" % "sbt" % sbtVersion.value
-          )
-          , sbtPlugin := true
-        )
-      ).flatten
-    }
-    , SbtScriptedSettings -> new ProjectSettings {
-      override val plugins: Set[Plugins] = Set(ScriptedPlugin)
-
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        Seq(
-          scriptedLaunchOpts := {
-            scriptedLaunchOpts.value ++
-              Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-          }
-          , scriptedBufferLog := false
-        )
-      ).flatten
-    }
-    , AppSettings -> new ProjectSettings {
-      override val disabledPlugins: Set[AutoPlugin] = Set(SitePlugin)
-      override val plugins = Set(AssemblyPlugin)
-    }
-    , WithoutBadPlugins -> new ProjectSettings {
-      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin)
-    }
+val GlobalSettings = new SettingsGroup {
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    crossScalaVersions := Seq(
+      V.scala_212
+    )
+    , addCompilerPlugin(R.kind_projector)
   )
 }
+
+val AppSettings = new SettingsGroup {
+  override val disabledPlugins: Set[AutoPlugin] = Set(SitePlugin)
+  override val plugins = Set(AssemblyPlugin)
+}
+
+
+val LibSettings = new SettingsGroup {
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      libraryDependencies ++= R.essentials
+      , libraryDependencies ++= T.essentials
+    )
+  ).flatten
+}
+
+val SbtSettings = new SettingsGroup {
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      target ~= { t => t.toPath.resolve("primary").toFile }
+      , crossScalaVersions := Seq(
+        V.scala_212
+      )
+      , libraryDependencies ++= Seq(
+        "org.scala-sbt" % "sbt" % sbtVersion.value
+      )
+      , sbtPlugin := true
+    )
+  ).flatten
+}
+
+val ShadingSettings = new SettingsGroup {
+  override val plugins: Set[Plugins] = Set(ShadingPlugin)
+
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ PublishingPlugin.projectSettings) ++
+      _root_.coursier.ShadingPlugin.projectSettings ++
+      Seq(
+        publish := publish.in(Shading).value
+        , publishLocal := publishLocal.in(Shading).value
+        , PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value
+        , PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
+        , shadingNamespace := "izumi.shaded"
+        , shadeNamespaces ++= Set(
+          "fastparse"
+          , "sourcecode"
+          //            , "net.sf.cglib"
+          //            , "org.json4s"
+        )
+      )
+  ).flatten
+}
+
+val WithoutBadPlugins = new SettingsGroup {
+  override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin)
+
+}
+
+val SbtScriptedSettings = new SettingsGroup {
+  override val plugins: Set[Plugins] = Set(ScriptedPlugin)
+
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      scriptedLaunchOpts := {
+        scriptedLaunchOpts.value ++
+          Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+      }
+      , scriptedBufferLog := false
+    )
+  ).flatten
+}
+
+
+
+
 // --------------------------------------------
 
-val inRoot = In(".")
+lazy val inRoot = In(".")
+  .settings(GlobalSettings)
 
-val inShade = In("shade")
-  .withModuleSettings(WithoutBadPlugins)
+lazy val base = Seq(GlobalSettings, LibSettings, WithoutBadPlugins)
 
-val inSbt = In("sbt")
-  .withModuleSettings(SbtSettings, SbtScriptedSettings, WithoutBadPlugins)
+lazy val fbase = base ++ Seq(WithFundamentals)
 
-val inDiStage = In("distage")
-  .withModuleSettings(LibSettings, WithoutBadPlugins)
+lazy val inFundamentals = In("fundamentals")
+  .settingsSeq(base)
 
-val inLogStage = In("logstage")
-  .withModuleSettings(LibSettings, WithoutBadPlugins)
+lazy val inShade = In("shade")
+  .settingsSeq(base)
 
-val inFundamentals = In("fundamentals")
-  .withModuleSettings(LibSettings, WithoutBadPlugins)
+lazy val inSbt = In("sbt")
+  .settings(GlobalSettings, WithFundamentals, WithoutBadPlugins)
+  .settings(SbtSettings, SbtScriptedSettings)
 
-val inIdealinguaBase = In("idealingua")
+lazy val inDiStage = In("distage")
+  .settingsSeq(fbase)
 
-val inIdealingua = inIdealinguaBase
-  .withModuleSettings(LibSettings, WithoutBadPlugins)
+lazy val inLogStage = In("logstage")
+  .settingsSeq(fbase)
+
+lazy val inIdealinguaBase = In("idealingua")
+  .settings(GlobalSettings, WithFundamentals)
+
+lazy val inIdealingua = inIdealinguaBase
+  .settingsSeq(fbase)
+
 
 
 // --------------------------------------------
@@ -171,14 +175,13 @@ lazy val fundamentalsCollections = inFundamentals.as.module
 lazy val fundamentalsPlatform = inFundamentals.as.module
 lazy val fundamentalsFunctional = inFundamentals.as.module
 
-lazy val fundamentals: Seq[ProjectReferenceEx] = Seq(
-  fundamentalsCollections
-  , fundamentalsPlatform
-  , fundamentalsFunctional
-)
-// --------------------------------------------
-val globalDefs = setup(baseSettings)
-  .withSharedLibs(fundamentals: _*)
+lazy val WithFundamentals = new SettingsGroup {
+  override def sharedLibs: Seq[ProjectReferenceEx] = Seq(
+    fundamentalsCollections
+    , fundamentalsPlatform
+    , fundamentalsFunctional
+  )
+}
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module
@@ -259,9 +262,9 @@ lazy val logstageDi = inLogStage.as.module
     logstageApiLogger
     , distageModel
   )
-  .depends(Seq(
+  .dependsSeq(Seq(
     distageCore
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
 
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
@@ -274,28 +277,28 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
 
 lazy val logstageRenderingJson4s = inLogStage.as.module
   .depends(logstageApiLogger)
-  .depends(Seq(
+  .dependsSeq(Seq(
     logstageSinkConsole
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
   .settings(libraryDependencies ++= Seq(R.json4s_native))
 
 lazy val logstageSinkConsole = inLogStage.as.module
   .depends(logstageApiBase)
-  .depends(Seq(
+  .dependsSeq(Seq(
     logstageApiLogger
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
 
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApiBase)
-  .depends(Seq(
+  .dependsSeq(Seq(
     logstageApiLogger
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApiBase)
-  .depends(Seq(
+  .dependsSeq(Seq(
     logstageApiLogger
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 //-----------------------------------------------------------------------------
 
@@ -313,7 +316,7 @@ lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntime
 lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
   .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
-  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
+  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(ShadingSettings)
 
 
@@ -328,12 +331,12 @@ lazy val idealinguaRuntimeRpcCats = inIdealingua.as.module
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats)
-  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
+  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(libraryDependencies ++= R.http4s_all)
 
 lazy val idealinguaExtensionRpcFormatCirce = inIdealingua.as.module
   .depends(idealinguaCore, idealinguaRuntimeRpcCirce)
-  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
+  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
 
 
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
@@ -362,7 +365,7 @@ lazy val sbtTests = inSbt.as
   .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
-   logstageApiLogger
+  logstageApiLogger
   , logstageDi
   , logstageSinkConsole
   , logstageSinkFile
@@ -391,7 +394,7 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 
 lazy val `izumi-r2` = inRoot.as
   .root
-  .transitiveAggregate(allProjects: _*)
+  .transitiveAggregateSeq(allProjects)
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
     sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
