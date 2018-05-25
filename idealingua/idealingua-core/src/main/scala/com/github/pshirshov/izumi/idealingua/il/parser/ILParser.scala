@@ -197,7 +197,7 @@ class ILParser {
 
     // other method kinds should be added here
     final val method: Parser[DefMethod] = P(defMethod)
-    final val methods: Parser[Seq[DefMethod]] = P(any ~ method.rep(sep = any) ~ any)
+    final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = any))
   }
 
   object blocks {

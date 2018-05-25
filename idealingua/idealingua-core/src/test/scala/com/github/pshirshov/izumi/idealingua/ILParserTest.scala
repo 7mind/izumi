@@ -122,6 +122,18 @@ class ILParserTest extends WordSpec {
           |}""".stripMargin)
     }
 
+    "parse service definition" in {
+      assertParses(parser.services.method, "def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )")
+      assertParseableCompletely(parser.services.methods,
+        """def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
+          |def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )""".stripMargin)
+
+      assertParseableCompletely(parser.blocks.serviceBlock,
+        """service FileService {
+          |  def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
+          |}""".stripMargin)
+    }
+
     "parse domain definition" in {
       val domaindef1 =
         """domain x.y.z
@@ -205,13 +217,17 @@ class ILParserTest extends WordSpec {
 
   private def assertParses[T](p: Parser[T], str: String): T = {
     assertParseable(p, str)
+    assertParseableCompletely(p, str)
+  }
+
+  private def assertParseableCompletely[T](p: Parser[T], str: String): T = {
     assertParseable(p ~ End, str)
   }
 
   private def assertParseable[T](p: Parser[T], str: String): T = {
     p.parse(str) match {
       case Parsed.Success(v, index) =>
-        assert(index == str.length)
+        assert(index == str.length, s"Seems like value wasn't parsed completely: $v")
         v
       case Parsed.Failure(lp, idx, e) =>
         throw new IllegalStateException(s"Parsing failed: $lp, $idx, $e, ${e.traced}, ${e.traced.trace}")

@@ -129,20 +129,22 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     val local = struct.localOrAmbigious
     val localNamesSet = local.map(_.field.name).toSet
 
-    if (struct.all.isEmpty) {
-      return List.empty
+    val cdef = if (struct.all.nonEmpty) {
+      val constructorCode = struct.all
+        .filterNot(f => localNamesSet.contains(f.field.name))
+        .map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
+
+      val constructorCodeNonUnique = local
+        .map(f => SigParam(f.field.name, SigParamSource(f.field.typeId, f.field.name), None))
+
+      List(tools.mkConverter(List.empty, constructorCode ++ constructorCodeNonUnique, struct.id))
+
+    } else {
+      List.empty
     }
 
-    val constructorCode = struct.all
-      .filterNot(f => localNamesSet.contains(f.field.name))
-      .map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
 
-    val constructorCodeNonUnique = local
-      .map(f => SigParam(f.field.name, SigParamSource(f.field.typeId, f.field.name), None))
-
-    val cdef = tools.mkConverter(List.empty, constructorCode ++ constructorCodeNonUnique, struct.id)
-
-    struct.id match {
+    val mcdef = struct.id match {
       case dto: DTOId if !types.isInterfaceEphemeral(dto) =>
         val mirrorId = tools.defnId(dto)
 
@@ -150,18 +152,16 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
         val constructorCode = struct.all
           .map(f => SigParam(f.field.name, source, Some(f.field.name)))
 
-        val mcdef = ConverterDef(
+        List(ConverterDef(
           struct.id
           , constructorCode
           , List(source)
-        )
-
-        List(cdef, mcdef)
-
+        ))
       case _ =>
-        List(cdef)
+        List.empty
     }
 
+    cdef ++ mcdef
   }
 
   protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
