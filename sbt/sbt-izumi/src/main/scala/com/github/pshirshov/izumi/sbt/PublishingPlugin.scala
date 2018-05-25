@@ -18,12 +18,12 @@ object PublishingPlugin extends AutoPlugin {
 
   case class MavenTarget(id: String, credentials: Credentials, repo: MavenRepository)
 
-  object PublishingPluginKeys {
+  object Keys {
     lazy val sonatypeTarget = settingKey[MavenRepository]("Sonatype repository based on isSnapshot value")
     lazy val publishTargets = settingKey[Seq[MavenTarget]]("Publishing target")
   }
 
-  import PublishingPluginKeys._
+  import Keys._
 
   protected val logger: ConsoleLogger = ConsoleLogger()
 
@@ -77,7 +77,8 @@ object PublishingPlugin extends AutoPlugin {
 
 
   object autoImport {
-    lazy val PublishingPluginKeys: PublishingPlugin.PublishingPluginKeys.type = PublishingPlugin.PublishingPluginKeys
+    lazy val PublishingPluginKeys: PublishingPlugin.Keys.type = PublishingPlugin.Keys
+    lazy val SbtPublishing: PublishingPlugin.type = PublishingPlugin
 
     object PublishTarget {
       def filter(targets: Option[MavenTarget]*): Seq[MavenTarget] = {

@@ -39,26 +39,28 @@ object IdealinguaPlugin extends AutoPlugin {
     val idlDefaultExtensionsGolang = settingKey[Seq[GoLangTranslatorExtension]]("Default list of translator extensions for golang")
   }
 
+  import Keys._
+
   private val logger: ConsoleLogger = ConsoleLogger()
 
   override def requires = JvmPlugin
 
 
   override lazy val projectSettings = Seq(
-    Keys.idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions ++ Seq(
+    idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions ++ Seq(
       CirceDerivationTranslatorExtension
     )
 
-    , Keys.idlDefaultExtensionsTypescript := TypeScriptTranslator.defaultExtensions
-    , Keys.idlDefaultExtensionsGolang := GoLangTranslator.defaultExtensions
+    , idlDefaultExtensionsTypescript := TypeScriptTranslator.defaultExtensions
+    , idlDefaultExtensionsGolang := GoLangTranslator.defaultExtensions
 
-    , Keys.compilationTargets := Seq(
-      Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Sources)
-      , Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Artifact)
+    , compilationTargets := Seq(
+      Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Sources)
+      , Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Artifact)
 
-      , Invokation(CompilerOptions(IDLLanguage.Typescript, Keys.idlDefaultExtensionsTypescript.value), Mode.Sources)
+      , Invokation(CompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.Sources)
 
-      , Invokation(CompilerOptions(IDLLanguage.Go, Keys.idlDefaultExtensionsGolang.value), Mode.Sources)
+      , Invokation(CompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.Sources)
     )
 
     , sourceGenerators in Compile += Def.task {
@@ -66,7 +68,7 @@ object IdealinguaPlugin extends AutoPlugin {
       val scopes = Seq(
         Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
       )
-      compileSources(scopes, Keys.compilationTargets.value, (dependencyClasspath in Compile).value)
+      compileSources(scopes, compilationTargets.value, (dependencyClasspath in Compile).value)
     }.taskValue
 
     , resourceGenerators in Compile += Def.task {
@@ -85,13 +87,13 @@ object IdealinguaPlugin extends AutoPlugin {
     }.taskValue
 
     , artifacts ++= {
-      val ctargets = Keys.compilationTargets.value
+      val ctargets = compilationTargets.value
       val pname = name.value
       artifactTargets(ctargets, pname).map(_._1)
     }
 
     , packagedArtifacts := {
-      val ctargets = Keys.compilationTargets.value
+      val ctargets = compilationTargets.value
       val pname = name.value
       val src = sourceDirectory.value.toPath
       val versionValue = version.value
@@ -107,7 +109,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
           val result = doCompile(Seq(scope), t, (dependencyClasspath in Compile).value)
           val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip"
-          IO.zip(result.map(r => (r, scope.target.relativize(r.toPath).toString )), zipFile)
+          IO.zip(result.map(r => (r, scope.target.relativize(r.toPath).toString)), zipFile)
           a -> zipFile
       }.toMap
 
@@ -159,7 +161,8 @@ object IdealinguaPlugin extends AutoPlugin {
   }
 
   object autoImport {
-    val IdealinguaPlugin = com.github.pshirshov.izumi.sbt.IdealinguaPlugin
+    lazy val SbtIdealingua: IdealinguaPlugin.type = IdealinguaPlugin
+    lazy val IdealinguaPluginKeys: Keys.type = IdealinguaPlugin.Keys
   }
 
 }

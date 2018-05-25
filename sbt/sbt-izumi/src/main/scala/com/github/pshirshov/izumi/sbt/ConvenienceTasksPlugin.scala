@@ -23,6 +23,11 @@ object ConvenienceTasksPlugin extends AutoPlugin {
 
   import Keys._
 
+  object autoImport {
+    lazy val ConvenienceTasksPluginKeys: Keys.type = ConvenienceTasksPlugin.Keys
+    lazy val SbtConvenienceTasks: ConvenienceTasksPlugin.type = ConvenienceTasksPlugin
+  }
+
   override def projectSettings = Seq(
     addVersionSuffix := {
       val suffix: String = (token(Space) ~> token(StringBasic, "suffix"))
