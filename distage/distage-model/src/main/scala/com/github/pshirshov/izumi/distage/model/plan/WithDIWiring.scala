@@ -56,9 +56,26 @@ trait WithDIWiring {
       override def associations: Seq[Association] = {
         val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
 
-        val productsDepsNotInMethods = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.wireWith))
+        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.wireWith))
 
-        productsDepsNotInMethods ++ fieldDependencies
+        factorySuppliedProductDeps ++ fieldDependencies
+      }
+    }
+
+    // FIXME: ???
+    case class FactoryFunction(provider: Provider, factoryMethods: Seq[Provider.FactoryProvider.FactoryProduct], providerArguments: Seq[Association.Parameter]) extends Wiring {
+      /**
+        * this method returns product dependencies which aren't present in any signature of factory methods.
+        * Though it's kind of a heuristic which can be spoiled at the time of plan initialization
+        *
+        * Complete check can only be performed at runtime.
+        */
+      override def associations: Seq[Association] = {
+        val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
+
+        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.wireWith))
+
+        factorySuppliedProductDeps ++ providerArguments
       }
     }
 
@@ -79,6 +96,7 @@ trait WithDIWiring {
           case w: UnaryWiring.Instance => w.replaceKeys(f)
           case w: UnaryWiring.Reference => w.replaceKeys(f)
           case w: FactoryMethod => w.replaceKeys(f)
+          case w: FactoryFunction => w.replaceKeys(f)
         }
     }
 
@@ -124,6 +142,13 @@ trait WithDIWiring {
         )
     }
 
-  }
+    implicit class FactoryFunctionReplaceKeys(factoryMethod: FactoryFunction) {
+      def replaceKeys(f: Association => DIKey): FactoryFunction =
+        factoryMethod.copy(
+          providerArguments = factoryMethod.providerArguments.map(a => a.withWireWith(f(a)))
+          , factoryMethods = factoryMethod.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
+        )
+    }
 
+  }
 }

@@ -38,6 +38,20 @@ object FormattingUtils {
           , "fact", ('(', ')'), ('{', '}')
         )
 
+      case FactoryFunction(factoryType, wireables, dependencies) =>
+        val wirings = wireables.map {
+          w =>
+            s"${w.factoryMethod}: ${w.factoryMethod.finalResultType} ~= ${doFormat(w.wireWith)}".shift(2)
+        }
+
+        val depsRepr = dependencies.map(_.format)
+
+        doFormat(
+          factoryType.toString
+          , wirings ++ depsRepr
+          , "callFact", ('(', ')'), ('{', '}')
+        )
+
       case other =>
         s"UNEXPECTED WIREABLE: $other"
     }

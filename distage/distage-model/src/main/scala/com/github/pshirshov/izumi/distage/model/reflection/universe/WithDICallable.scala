@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.distage.model.plan.WithDIAssociation
+import com.github.pshirshov.izumi.distage.model.plan.{WithDIAssociation, WithDIWiring}
 import com.github.pshirshov.izumi.distage.model.references.{WithDIKey, WithDITypedRef}
 
 trait WithDICallable {
@@ -9,7 +9,9 @@ trait WithDICallable {
     with WithDISafeType
     with WithDITypedRef
     with WithDIKey
-    with WithDIAssociation =>
+    with WithDISymbolInfo
+    with WithDIAssociation
+    with WithDIWiring =>
 
   trait Callable {
     def argTypes: Seq[TypeFull]
@@ -54,16 +56,22 @@ trait WithDICallable {
     def diKeys: Seq[DIKey] = associations.map(_.wireWith)
 
     override final val argTypes: Seq[TypeFull] = associations.map(_.wireWith.tpe)
+
+    // FIXME
+    def fun: Seq[Any] => Any
+
+    override protected def call(args: Any*): Any =
+      fun.apply(args: Seq[Any])
+
+    override def toString: String =
+      s"$fun(${argTypes.mkString(", ")}): $ret"
   }
 
   object Provider {
 
     case class ProviderImpl[+R](associations: Seq[Association.Parameter], ret: TypeFull, fun: Seq[Any] => Any) extends Provider {
       override protected def call(args: Any*): R =
-        fun.apply(args: Seq[Any]).asInstanceOf[R]
-
-      override def toString: String =
-        s"$fun(${argTypes.mkString(", ")}): $ret"
+        super.call(args: _*).asInstanceOf[R]
 
       override def unsafeApply(refs: TypedRef[_]*): R =
         super.unsafeApply(refs: _*).asInstanceOf[R]
@@ -72,6 +80,26 @@ trait WithDICallable {
     object ProviderImpl {
       def apply[R: Tag](associations: Seq[Association.Parameter], fun: Seq[Any] => Any): ProviderImpl[R] =
         new ProviderImpl[R](associations, SafeType.get[R], fun)
+    }
+
+    trait FactoryProvider extends Provider {
+      import FactoryProvider._
+      def factoryMethods: Seq[FactoryProduct]
+    }
+
+    object FactoryProvider {
+      // FIXME TODO Wiring.UnaryWiring.Function
+      case class FactoryProduct(factoryMethod: SymbolInfo, wireWith: Wiring.UnaryWiring, methodArguments: Seq[DIKey]) {
+        def providedAssociations: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
+      }
+
+      def apply(provider: Provider, seq: Seq[FactoryProduct]): FactoryProvider =
+        new FactoryProvider {
+          override def factoryMethods: Seq[FactoryProduct] = seq
+          override def associations: Seq[Association.Parameter] = provider.associations
+          override def ret: TypeFull = provider.ret
+          override def fun: Seq[Any] => Any = provider.fun
+        }
     }
 
   }

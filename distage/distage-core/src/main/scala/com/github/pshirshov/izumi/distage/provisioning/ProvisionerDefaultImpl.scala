@@ -95,6 +95,12 @@ class ProvisionerDefaultImpl
       case op: WiringOp.CallProvider =>
         providerStrategy.callProvider(context, this, op)
 
+      case op: WiringOp.CallFactoryProvider =>
+        // FIXME ???
+        import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+        providerStrategy.callProvider(context, this,
+          WiringOp.CallProvider(op.target, Wiring.UnaryWiring.Function(op.wiring.provider, op.wiring.providerArguments)))
+
       case op: WiringOp.InstantiateClass =>
         classStrategy.instantiateClass(context, op)
 

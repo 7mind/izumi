@@ -24,7 +24,7 @@ object FactoryConstructorMacro {
     val logger = MacroUtil.mkLogger[this.type](c)
     val tools = DIUniverseMacros(macroUniverse)
 
-    import tools.{liftableProductWiring, liftableDIKey, liftableTypeKey}
+    import tools.{liftableProductWiring, liftableDIKey, liftableTypeKey, liftableRuntimeUniverse, liftableSymbolInfo}
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._
@@ -46,15 +46,6 @@ object FactoryConstructorMacro {
         (q"$mods val $argName: $tpe", q"override val $methodName: $tpe = $argName")
     }.unzip
 
-    // FIXME transitive dependencies request (HACK pulling up dependencies from factory methods to ensure correct plan ordering)
-    val transitiveDependenciesArgsHACK = factoryInfo.associations.map {
-      assoc =>
-        val key = assoc.wireWith
-        val anns = AnnotationTools.mkModifiers(u)(assoc.context.symbol.annotations)
-
-        q"$anns val ${TermName(c.freshName("transitive"))}: ${key.tpe.tpe}"
-    }
-
     val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor].typeSymbol
     val factoryTools = symbolOf[FactoryTools.type].asClass.module
 
@@ -69,8 +60,8 @@ object FactoryConstructorMacro {
     //    * make scala-reflect dependency (% Provided) for distage-static
     //      * provided dependencies seem to be correctly transitive, at least shapeless doesn't require the user to
     //        to add provided scala-reflect to his .sbt
-    val producerMethods = wireables.map {
-      case method@FactoryMethod.WithContext(factoryMethod, productConstructor, methodArguments) =>
+    val producerMethods = wireables.zipWithIndex.map {
+      case (method@FactoryMethod.WithContext(factoryMethod, productConstructor, methodArguments), i) =>
 
         val (methodArgs, executorArgs) = methodArguments.map {
           dIKey =>
@@ -87,15 +78,15 @@ object FactoryConstructorMacro {
 
         q"""
         override def ${TermName(factoryMethod.name)}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
-          val symbolDeps: ${typeOf[RuntimeDIUniverse.Wiring.UnaryWiring]} = $productConstructor
+          val wiring: ${typeOf[RuntimeDIUniverse.Wiring.UnaryWiring]} = withContexts($i).wireWith //ensure pointer equality
 
           val executorArgs: ${typeOf[Map[RuntimeDIUniverse.DIKey, Any]]} =
             ${if (executorArgs.nonEmpty)
-              // zip directly instead of creating new keys to ensure pointer equality for typetags inside symbolDeps and inside executableOps
+              // zip directly instead of creating new keys to ensure pointer equality for typetags inside wiring and inside executableOps
               // to support weakTypeTag-based generics since they are pointer equality based
               {
                 q"""{
-                  val allAssociations = symbolDeps.associations
+                  val allAssociations = wiring.associations
                   val arguments: ${typeOf[List[Any]]} = ${executorArgs.toList}
 
                   val externalKeys: ${typeOf[Set[RuntimeDIUniverse.DIKey]]} = $externalKeys.toSet
@@ -118,7 +109,7 @@ object FactoryConstructorMacro {
               executorArgs
               , $factoryTools.mkExecutableOp(
                   ${DIKey.TypeKey(instanceType)}
-                  , symbolDeps
+                  , wiring
                 )
             )
           ).asInstanceOf[$resultTypeOfMethod]
@@ -126,8 +117,16 @@ object FactoryConstructorMacro {
         """
     }
 
+    val withContexts = wireables.map {
+      case FactoryMethod.WithContext(factoryMethod, productConstructor, methodArguments) =>
+        q"""
+            val ctor = $productConstructor
+           $RuntimeDIUniverse.Provider.FactoryProvider.FactoryProduct(${factoryMethod: SymbolInfo}
+           , ctor, ctor.associations.map(_.wireWith)) // ensure pointer equality of contained scala.reflect.Types"""
+    }.toList
+
     val executorArg = q"$executorName: $executorType"
-    val allArgs = (executorArg +: dependencyArgs) ++ transitiveDependenciesArgsHACK
+    val allArgs = executorArg +: dependencyArgs
     val allMethods = producerMethods ++ dependencyMethods
     val instantiate = if (allMethods.isEmpty) {
       q"new $targetType {}"
@@ -145,9 +144,14 @@ object FactoryConstructorMacro {
     val res = c.Expr[FactoryConstructor[T]] {
       q"""
           {
+          val withContexts = $withContexts // Referred inside defConstructor, remove FIXME ???
+
           $defConstructor
 
-          new ${weakTypeOf[FactoryConstructor[T]]}($providerMagnet.apply[$targetType](constructor _))
+          val magnetized = $providerMagnet.apply[$targetType](constructor _)
+          val res = new ${weakTypeOf[ProviderMagnet[T]]}($RuntimeDIUniverse.Provider.FactoryProvider.apply(magnetized.get, withContexts))
+
+          new ${weakTypeOf[FactoryConstructor[T]]}(res)
           }
        """
     }
