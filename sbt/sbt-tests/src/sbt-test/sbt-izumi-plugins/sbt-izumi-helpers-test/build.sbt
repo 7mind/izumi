@@ -45,7 +45,7 @@ val globalDefs = setup(baseSettings)
 // -- common project directories
 val inRoot = In(".")
 val inLib = In("lib")
-val inApp = In("app").withModuleSettings(AppSettings)
+val inApp = In("app").settings(AppSettings)
 
 // -- shared definitions (will be added into each project extened with Izumi
 lazy val sharedLib = inLib.as.module

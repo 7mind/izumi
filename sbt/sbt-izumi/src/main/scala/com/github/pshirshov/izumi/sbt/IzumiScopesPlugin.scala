@@ -37,7 +37,7 @@ object IzumiScopesPlugin extends AutoPlugin {
         ClasspathRef((project: ProjectReference) % conf)
       }
 
-      def depends(deps: ProjectReferenceEx*): Project = {
+      def dependsSeq(deps: Seq[ProjectReferenceEx]): Project = {
         val refinedDeps = deps.map {
           case ClasspathRef(ref) =>
             ref
@@ -58,6 +58,10 @@ object IzumiScopesPlugin extends AutoPlugin {
         logger.debug(s""" * ${project.id} <-- ${refinedDeps.map(d =>  s"[ ${d.project} ${d.configuration.getOrElse("_")} ]").mkString(", ")}""")
 
         project.dependsOn(refinedDeps: _*)
+      }
+
+      def depends(deps: ProjectReferenceEx*): Project = {
+        dependsSeq(deps)
       }
     }
   }

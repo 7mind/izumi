@@ -138,30 +138,35 @@ val SbtScriptedSettings = new SettingsGroup {
 
 // --------------------------------------------
 
-val inRoot = In(".")
-  .withModuleSettings(GlobalSettings)
+lazy val inRoot = In(".")
+  .settings(GlobalSettings)
 
-val inFundamentals = In("fundamentals")
-  .withModuleSettings(GlobalSettings, LibSettings, WithoutBadPlugins)
+lazy val base = Seq(GlobalSettings, LibSettings, WithoutBadPlugins)
 
+lazy val fbase = base ++ Seq(WithFundamentals)
+
+lazy val inFundamentals = In("fundamentals")
+  .settingsSeq(base)
 
 lazy val inShade = In("shade")
-  .withModuleSettings(GlobalSettings, WithFundamentals, WithoutBadPlugins)
+  .settingsSeq(base)
 
 lazy val inSbt = In("sbt")
-  .withModuleSettings(GlobalSettings, WithFundamentals, SbtSettings, SbtScriptedSettings, WithoutBadPlugins)
+  .settings(GlobalSettings, WithFundamentals, WithoutBadPlugins)
+  .settings(SbtSettings, SbtScriptedSettings)
 
 lazy val inDiStage = In("distage")
-  .withModuleSettings(GlobalSettings, WithFundamentals, LibSettings, WithoutBadPlugins)
+  .settingsSeq(fbase)
 
 lazy val inLogStage = In("logstage")
-  .withModuleSettings(GlobalSettings, WithFundamentals, LibSettings, WithoutBadPlugins)
+  .settingsSeq(fbase)
 
 lazy val inIdealinguaBase = In("idealingua")
-  .withModuleSettings(GlobalSettings, WithFundamentals)
+  .settings(GlobalSettings, WithFundamentals)
 
 lazy val inIdealingua = inIdealinguaBase
-  .withModuleSettings(GlobalSettings, WithFundamentals, LibSettings, WithoutBadPlugins)
+  .settingsSeq(fbase)
+
 
 
 // --------------------------------------------
@@ -257,9 +262,9 @@ lazy val logstageDi = inLogStage.as.module
     logstageApiLogger
     , distageModel
   )
-  .depends(Seq(
+  .dependsSeq(Seq(
     distageCore
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
 
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
@@ -272,28 +277,28 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
 
 lazy val logstageRenderingJson4s = inLogStage.as.module
   .depends(logstageApiLogger)
-  .depends(Seq(
+  .dependsSeq(Seq(
     logstageSinkConsole
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
   .settings(libraryDependencies ++= Seq(R.json4s_native))
 
 lazy val logstageSinkConsole = inLogStage.as.module
   .depends(logstageApiBase)
-  .depends(Seq(
+  .dependsSeq(Seq(
     logstageApiLogger
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
 
 lazy val logstageSinkFile = inLogStage.as.module
   .depends(logstageApiBase)
-  .depends(Seq(
+  .dependsSeq(Seq(
     logstageApiLogger
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApiBase)
-  .depends(Seq(
+  .dependsSeq(Seq(
     logstageApiLogger
-  ).map(_.testOnlyRef): _*)
+  ).map(_.testOnlyRef))
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 //-----------------------------------------------------------------------------
 
@@ -311,7 +316,7 @@ lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntime
 lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
   .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
-  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
+  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(ShadingSettings)
 
 
@@ -326,12 +331,12 @@ lazy val idealinguaRuntimeRpcCats = inIdealingua.as.module
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats)
-  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
+  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(libraryDependencies ++= R.http4s_all)
 
 lazy val idealinguaExtensionRpcFormatCirce = inIdealingua.as.module
   .depends(idealinguaCore, idealinguaRuntimeRpcCirce)
-  .depends(Seq(idealinguaTestDefs).map(_.testOnlyRef): _*)
+  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
 
 
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
@@ -389,7 +394,7 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 
 lazy val `izumi-r2` = inRoot.as
   .root
-  .transitiveAggregate(allProjects: _*)
+  .transitiveAggregateSeq(allProjects)
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
     sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
