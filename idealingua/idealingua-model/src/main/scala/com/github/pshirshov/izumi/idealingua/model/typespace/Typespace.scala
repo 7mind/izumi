@@ -84,6 +84,8 @@ trait Typespace {
 
   def apply(id: ServiceId): Service
 
+  def dealias(t: TypeId): TypeId
+
   def implId(id: InterfaceId): DTOId
 
   def defnId(id: StructureId): InterfaceId

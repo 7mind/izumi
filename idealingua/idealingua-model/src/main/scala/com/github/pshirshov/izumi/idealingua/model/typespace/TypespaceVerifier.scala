@@ -138,7 +138,7 @@ class TypespaceVerifier(ts: Typespace) {
         val builtins = t.alternatives.collect {
           case m@AdtMember(_: Builtin, _) =>
             m
-          case m@AdtMember(a: AliasId, _) if dealias(a).isInstanceOf[Builtin] =>
+          case m@AdtMember(a: AliasId, _) if ts.dealias(a).isInstanceOf[Builtin] =>
             m
         }
         if (builtins.nonEmpty) {
@@ -161,15 +161,7 @@ class TypespaceVerifier(ts: Typespace) {
     issues.toList
   }
 
-  private def dealias(t: TypeId): TypeId = {
-    t match {
-      case a: AliasId =>
-        dealias(ts.apply(a).asInstanceOf[Alias].target)
 
-      case o =>
-        o
-    }
-  }
 
   private def extractDeps(ss: SimpleStructure) = {
     ss.fields.map(f => f.typeId) ++ ss.concepts
