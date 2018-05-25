@@ -42,11 +42,13 @@ class ILParser {
 
     final val sepStruct = P(";" | "," | SepLineBase | ws).rep(min = 1)
 
-    final val sepAdt = P("|" | ";" | "," |  ws | SepLineBase).rep(min = 1)
-    final val sepAdtInline = P("|" | ";" | "," | ws).rep(min = 1)
+    final val sepAdt = P(
+      (wss ~ (WsComment | SepLineBase).rep(min = 0, max = 1) ~ wss ~ ("|" | ";" | ",") ~ wss ~ (WsComment | SepLineBase).rep(min = 0, max = 1) ~ wss) |
+      ((wss  | WsComment) ~ SepLineBase  ~ (wss | WsComment)) |
+        ws.rep(min=1)
+    )
 
-    final val sepEnum = P("|" | ";" | "," | ws | SepLineBase).rep(min = 1)
-    final val sepEnumInline = P("|" | ";" | "," | ws).rep(min = 1)
+    final val sepEnum = sepAdt
   }
 
   import sep._
@@ -216,10 +218,16 @@ class ILParser {
     final val aliasBlock = structure.starting(kw.alias, "=" ~/ inline ~ ids.identifier)
       .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
 
-    final val adtBlock = structure.starting(kw.adt, structure.enclosed(defs.adt(sepAdt)) | (any ~ "=" ~/ inline ~ defs.adt(sepAdt)))
+    final val adtBlock = structure.starting(kw.adt,
+      structure.enclosed(defs.adt(sepAdt))
+        | (any ~ "=" ~/ sepAdt ~ defs.adt(sepAdt))
+    )
       .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
 
-    final val enumBlock = structure.starting(kw.enum, structure.enclosed(defs.enum(sepEnum)) | (any ~ "=" ~/ inline ~ defs.enum(sepEnum)))
+    final val enumBlock = structure.starting(kw.enum
+      , structure.enclosed(defs.enum(sepEnum)) |
+        (any ~ "=" ~/ sepEnum ~ defs.enum(sepEnum))
+    )
       .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
 
     final val serviceBlock = structure.block(kw.service, services.methods)

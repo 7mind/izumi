@@ -24,7 +24,6 @@ class ILParserTest extends WordSpec {
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X Y Zz}")
       assertParses(parser.blocks.enumBlock, "enum MyEnum { X Y Z }")
       assertParses(parser.blocks.enumBlock, "enum MyEnum {  X  Y  Z  }")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum = X | Y | Z")
       assertParses(parser.blocks.enumBlock,
         """enum MyEnum {
           |X
@@ -33,8 +32,20 @@ class ILParserTest extends WordSpec {
           |}""".stripMargin)
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X,Y,Z}")
       assertParses(parser.blocks.enumBlock, "enum MyEnum {X|Y|Z}")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum { X|Y|Z }")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum {X | Y | Z}")
       assertParses(parser.blocks.enumBlock, "enum MyEnum { X | Y | Z }")
       assertParses(parser.blocks.enumBlock, "enum MyEnum { X , Y , Z }")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum = X | Y | Z")
+      assertParses(parser.blocks.enumBlock,
+        """enum MyEnum = X
+          ||Y
+          || Z""".stripMargin)
+      assertParses(parser.blocks.enumBlock,
+        """enum MyEnum =
+          || X
+          | | Y
+          || Z""".stripMargin)
     }
 
     "parse empty blocks" in {
@@ -212,12 +223,26 @@ class ILParserTest extends WordSpec {
           |""".stripMargin
 
       assertDomainParses(domaindef)
+
+      val badenums =
+        """domain idltest.enums
+          |
+          |enum ShortSyntaxEnum = Element1 | Element2
+          |
+          |
+          |data SomeGenerics {
+          |  test: map[TestEnum, TestEnum]
+          |}
+          |
+        """.stripMargin
+
+      assertDomainParses(badenums)
     }
   }
 
   private def assertParses[T](p: Parser[T], str: String): T = {
-    assertParseable(p, str)
     assertParseableCompletely(p, str)
+    assertParseable(p, str)
   }
 
   private def assertParseableCompletely[T](p: Parser[T], str: String): T = {
