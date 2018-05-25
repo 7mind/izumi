@@ -4,6 +4,8 @@ import java.nio.file.Path
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
+import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
+import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
@@ -34,6 +36,7 @@ object IdealinguaPlugin extends AutoPlugin {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
     val idlDefaultExtensionsScala = settingKey[Seq[ScalaTranslatorExtension]]("Default list of translator extensions for scala")
     val idlDefaultExtensionsTypescript = settingKey[Seq[TypeScriptTranslatorExtension]]("Default list of translator extensions for typescript")
+    val idlDefaultExtensionsGolang = settingKey[Seq[GoLangTranslatorExtension]]("Default list of translator extensions for golang")
   }
 
   private val logger: ConsoleLogger = ConsoleLogger()
@@ -47,12 +50,16 @@ object IdealinguaPlugin extends AutoPlugin {
     )
 
     , Keys.idlDefaultExtensionsTypescript := TypeScriptTranslator.defaultExtensions
+    , Keys.idlDefaultExtensionsGolang := GoLangTranslator.defaultExtensions
 
     , Keys.compilationTargets := Seq(
       Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Sources)
       , Invokation(CompilerOptions(IDLLanguage.Scala, Keys.idlDefaultExtensionsScala.value), Mode.Artifact)
 
       , Invokation(CompilerOptions(IDLLanguage.Typescript, Keys.idlDefaultExtensionsTypescript.value), Mode.Sources)
+
+      , Invokation(CompilerOptions(IDLLanguage.Go, Keys.idlDefaultExtensionsGolang.value), Mode.Sources)
+      , Invokation(CompilerOptions(IDLLanguage.Go, Keys.idlDefaultExtensionsGolang.value), Mode.Artifact)
     )
 
     , sourceGenerators in Compile += Def.task {
