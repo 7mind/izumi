@@ -39,13 +39,14 @@ val GlobalSettings = new SettingsGroup {
 // -- common project directories
 lazy val base = Seq(GlobalSettings)
 lazy val inRoot = In(".").settingsSeq(base)
-lazy val inLib = In("lib").settingsSeq(base)
+lazy val inLibShared = In("lib").settingsSeq(base)
 lazy val sbase = base ++ Seq(WithShared)
+lazy val inLib = In("lib").settingsSeq(sbase)
 lazy val inApp = In("app").settingsSeq(sbase).settings(AppSettings)
 
 // -- shared definitions (will be added into each project extened with Izumi
-lazy val sharedLib = inLib.as.module
-lazy val testOnlySharedLib = inLib.as.module
+lazy val sharedLib = inLibShared.as.module
+lazy val testOnlySharedLib = inLibShared.as.module
 
 // this library definition is not being processed by Izumi
 lazy val `non-izumi-shared-lib` = project in file("lib/non-izumi-shared-lib")
@@ -66,6 +67,6 @@ lazy val justApp = inApp.as.module
 
 lazy val root = inRoot.as.root
   .transitiveAggregate(
-    justApp
+    justApp, `non-izumi-shared-lib`
   )
 
