@@ -37,6 +37,7 @@ class ILParserTest extends WordSpec {
       assertParses(parser.blocks.enumBlock, "enum MyEnum { X | Y | Z }")
       assertParses(parser.blocks.enumBlock, "enum MyEnum { X , Y , Z }")
       assertParses(parser.blocks.enumBlock, "enum MyEnum = X | Y | Z")
+      assertParses(parser.blocks.enumBlock, "enum MyEnum = X | /**/ Y | Z")
       assertParses(parser.blocks.enumBlock,
         """enum MyEnum = X
           ||Y
