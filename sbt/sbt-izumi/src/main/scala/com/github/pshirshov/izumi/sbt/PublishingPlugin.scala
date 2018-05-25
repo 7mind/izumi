@@ -77,7 +77,7 @@ object PublishingPlugin extends AutoPlugin {
 
 
   object autoImport {
-    final val PublishingPluginKeys = PublishingPlugin.PublishingPluginKeys
+    lazy val PublishingPluginKeys: PublishingPlugin.PublishingPluginKeys.type = PublishingPlugin.PublishingPluginKeys
 
     object PublishTarget {
       def filter(targets: Option[MavenTarget]*): Seq[MavenTarget] = {

@@ -1,15 +1,12 @@
+import com.typesafe.sbt.pgp.PgpSettings
+import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
 import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys.defaultStubPackage
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
-import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId._
 import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
-import com.lightbend.paradox.sbt.ParadoxPlugin.autoImport.paradoxTheme
-import com.typesafe.sbt.SbtGit.GitKeys.gitBranch
-import com.typesafe.sbt.pgp.PgpSettings
-import coursier.ShadingPlugin.autoImport.shadingNamespace
-import org.eclipse.jgit.api.Git
-import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
-import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+import SettingsGroupId._
 import PublishingPluginKeys._
+import ReleaseTransformations._
+
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
