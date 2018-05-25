@@ -14,7 +14,7 @@ object IzumiScopesPlugin extends AutoPlugin {
 
   //noinspection TypeAnnotation
   object autoImport {
-
+    type ProjectReferenceEx = IzumiScopesPlugin.ProjectReferenceEx
 
     implicit def toClasspathRef(ref: ClasspathDep[ProjectReference]): ClasspathRef = ClasspathRef(ref)
     implicit def toImprovedProjectRef(ref: Project): ImprovedProjectRef = ImprovedProjectRef(ref)
