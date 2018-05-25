@@ -33,7 +33,7 @@ pomExtra in ThisBuild := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
     </developer>
   </developers>
 
-releaseProcess in ThisBuild := Seq[ReleaseStep](
+releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies, // : ReleaseStep
   inquireVersions, // : ReleaseStep
   runClean, // : ReleaseStep
