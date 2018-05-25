@@ -6,8 +6,10 @@ import com.lightbend.paradox.sbt.ParadoxPlugin.autoImport.paradoxTheme
 import com.typesafe.sbt.SbtGit.GitKeys.gitBranch
 import com.typesafe.sbt.pgp.PgpSettings
 import coursier.ShadingPlugin.autoImport.shadingNamespace
+import org.eclipse.jgit.api.Git
 import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+import PublishingPluginKeys._
 
 enablePlugins(IzumiEnvironmentPlugin)
 enablePlugins(IzumiDslPlugin)
@@ -15,6 +17,46 @@ enablePlugins(GitStampPlugin)
 disablePlugins(AssemblyPlugin)
 
 name := "izumi-r2"
+organization in ThisBuild := "com.github.pshirshov.izumi.r2"
+scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
+defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
+publishMavenStyle in ThisBuild := true
+sonatypeProfileName in ThisBuild := "com.github.pshirshov"
+pomExtra in ThisBuild := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
+  <licenses>
+    <license>
+      <name>BSD-style</name>
+      <url>http://www.opensource.org/licenses/bsd-license.php</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>pshirshov</id>
+      <name>Pavel Shirshov</name>
+      <url>https://github.com/pshirshov</url>
+    </developer>
+  </developers>
+
+releaseProcess in ThisBuild := Seq[ReleaseStep](
+  checkSnapshotDependencies, // : ReleaseStep
+  inquireVersions, // : ReleaseStep
+  runClean, // : ReleaseStep
+  runTest, // : ReleaseStep
+  setReleaseVersion, // : ReleaseStep
+  commitReleaseVersion, // : ReleaseStep, performs the initial git checks
+  tagRelease, // : ReleaseStep
+  //publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
+  setNextVersion, // : ReleaseStep
+  commitNextVersion, // : ReleaseStep
+  pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
+)
+
+publishTargets in ThisBuild := Seq(PublishTarget.filter(
+  PublishTarget.env("PUBLISH"),
+  PublishTarget.file("sonatype", sonatypeTarget.value.root, file(".secrets/credentials.sonatype-nexus.properties")),
+  PublishTarget.file("sonatype", sonatypeTarget.value.root, Path.userHome / ".sbt/credentials.sonatype-nexus.properties"),
+).head)
 
 val AppSettings = SettingsGroupId()
 val LibSettings = SettingsGroupId()
@@ -23,54 +65,12 @@ val ShadingSettings = SettingsGroupId()
 val WithoutBadPlugins = SettingsGroupId()
 val SbtScriptedSettings = SettingsGroupId()
 
-scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
-defaultStubPackage := Some("com.github.pshirshov.izumi")
-
 val baseSettings = new GlobalSettings {
   override protected val settings: Map[SettingsGroupId, ProjectSettings] = Map(
     GlobalSettingsGroup -> new ProjectSettings {
       override val settings: Seq[sbt.Setting[_]] = Seq(
-        organization := "com.github.pshirshov.izumi.r2"
-        , crossScalaVersions := Seq(
+        crossScalaVersions := Seq(
           V.scala_212
-        )
-        , publishMavenStyle in Global := true
-        , sonatypeProfileName := "com.github.pshirshov"
-        , publishTo := Some(
-          if (isSnapshot.value)
-            Opts.resolver.sonatypeSnapshots
-          else
-            Opts.resolver.sonatypeStaging
-        )
-        , credentials in Global ++= Seq(new File(".secrets/credentials.sonatype-nexus.properties")).filter(_.exists()).map(Credentials(_))
-        , pomExtra in Global := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
-          <licenses>
-            <license>
-              <name>BSD-style</name>
-              <url>http://www.opensource.org/licenses/bsd-license.php</url>
-              <distribution>repo</distribution>
-            </license>
-          </licenses>
-          <developers>
-            <developer>
-              <id>pshirshov</id>
-              <name>Pavel Shirshov</name>
-              <url>https://github.com/pshirshov</url>
-            </developer>
-          </developers>
-
-        , releaseProcess := Seq[ReleaseStep](
-          checkSnapshotDependencies, // : ReleaseStep
-          inquireVersions, // : ReleaseStep
-          runClean, // : ReleaseStep
-          runTest, // : ReleaseStep
-          setReleaseVersion, // : ReleaseStep
-          commitReleaseVersion, // : ReleaseStep, performs the initial git checks
-          tagRelease, // : ReleaseStep
-          //publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
-          setNextVersion, // : ReleaseStep
-          commitNextVersion, // : ReleaseStep
-          pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
         )
         , addCompilerPlugin(R.kind_projector)
       )
@@ -362,7 +362,7 @@ lazy val sbtTests = inSbt.as
   .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
-   logstageApiLogger
+  logstageApiLogger
   , logstageDi
   , logstageSinkConsole
   , logstageSinkFile
