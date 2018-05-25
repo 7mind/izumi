@@ -1,6 +1,5 @@
 import sbt.Keys._
 import com.github.pshirshov.izumi.sbt.deps.{Izumi, IzumiDeps => Iz}
-import SettingsGroupId._
 import SbtConvenienceTasks.Keys._
 
 enablePlugins(IzumiEnvironmentPlugin)
@@ -23,10 +22,6 @@ scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrgani
 defaultStubPackage := Some("org.test.project")
 
 // -- settings groups identifiers
-val AppSettings = new SettingsGroup {
-
-}
-
 val GlobalSettings = new SettingsGroup {
   // these settings will be added into each project handled by Izumi
   override val settings: Seq[sbt.Setting[_]] = Seq(
@@ -42,12 +37,10 @@ val GlobalSettings = new SettingsGroup {
   )
 }
 
-// settings groups are saved in
-val globalDefs = setup(GlobalSettings)
 
 // -- common project directories
-val inRoot = In(".")
-val inLib = In("lib")
+val inRoot = In(".").settings(GlobalSettings)
+val inLib = In("lib").settings(GlobalSettings)
 
 // the rest
 lazy val sharedLib = inLib.as.module.enablePlugins(IdealinguaPlugin)
