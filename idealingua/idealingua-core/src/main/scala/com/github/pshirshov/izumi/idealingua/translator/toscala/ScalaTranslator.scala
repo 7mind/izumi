@@ -253,7 +253,10 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val sortedFields = fields.all.sortBy(_.field.field.name)
 
     val parsers = sortedFields.zipWithIndex
-      .map(fi => q"parsePart[${fi._1.fieldType}](parts(${Lit.Int(fi._2)}), classOf[${fi._1.fieldType}])")
+      .map {
+        case (field, idx) =>
+          q"${field.name} = parsePart[${field.fieldType}](parts(${Lit.Int(idx)}), classOf[${field.fieldType}])"
+      }
 
     val parts = sortedFields.map(fi => q"this.${fi.name}")
 

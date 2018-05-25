@@ -8,3 +8,9 @@ id UserId {
   value: uid
   company: uid
 }
+
+id BucketID {
+    app: uid
+    user: uid
+    bucket: str
+}
