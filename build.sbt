@@ -49,11 +49,11 @@ releaseProcess in ThisBuild := Seq[ReleaseStep](
   pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
 )
 
-publishTargets in ThisBuild := Seq(PublishTarget.filter(
+publishTargets in ThisBuild := PublishTarget.filter(
   PublishTarget.env("PUBLISH"),
   PublishTarget.file("sonatype", sonatypeTarget.value.root, file(".secrets/credentials.sonatype-nexus.properties")),
   PublishTarget.file("sonatype", sonatypeTarget.value.root, Path.userHome / ".sbt/credentials.sonatype-nexus.properties"),
-).head)
+)
 
 val AppSettings = SettingsGroupId()
 val LibSettings = SettingsGroupId()
