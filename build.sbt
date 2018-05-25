@@ -77,6 +77,7 @@ val LibSettings = new SettingsGroup {
     )
   ).flatten
 }
+
 val SbtSettings = new SettingsGroup {
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
@@ -91,6 +92,7 @@ val SbtSettings = new SettingsGroup {
     )
   ).flatten
 }
+
 val ShadingSettings = new SettingsGroup {
   override val plugins: Set[Plugins] = Set(ShadingPlugin)
 
@@ -112,10 +114,12 @@ val ShadingSettings = new SettingsGroup {
       )
   ).flatten
 }
+
 val WithoutBadPlugins = new SettingsGroup {
   override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin)
 
 }
+
 val SbtScriptedSettings = new SettingsGroup {
   override val plugins: Set[Plugins] = Set(ScriptedPlugin)
 
@@ -130,29 +134,35 @@ val SbtScriptedSettings = new SettingsGroup {
   ).flatten
 }
 
+
+
+
 // --------------------------------------------
 
 val inRoot = In(".")
-
-val inShade = In("shade")
-  .withModuleSettings(WithoutBadPlugins)
-
-val inSbt = In("sbt")
-  .withModuleSettings(SbtSettings, SbtScriptedSettings, WithoutBadPlugins)
-
-val inDiStage = In("distage")
-  .withModuleSettings(LibSettings, WithoutBadPlugins)
-
-val inLogStage = In("logstage")
-  .withModuleSettings(LibSettings, WithoutBadPlugins)
+  .withModuleSettings(GlobalSettings)
 
 val inFundamentals = In("fundamentals")
-  .withModuleSettings(LibSettings, WithoutBadPlugins)
+  .withModuleSettings(GlobalSettings, LibSettings, WithoutBadPlugins)
 
-val inIdealinguaBase = In("idealingua")
 
-val inIdealingua = inIdealinguaBase
-  .withModuleSettings(LibSettings, WithoutBadPlugins)
+lazy val inShade = In("shade")
+  .withModuleSettings(GlobalSettings, WithFundamentals, WithoutBadPlugins)
+
+lazy val inSbt = In("sbt")
+  .withModuleSettings(GlobalSettings, WithFundamentals, SbtSettings, SbtScriptedSettings, WithoutBadPlugins)
+
+lazy val inDiStage = In("distage")
+  .withModuleSettings(GlobalSettings, WithFundamentals, LibSettings, WithoutBadPlugins)
+
+lazy val inLogStage = In("logstage")
+  .withModuleSettings(GlobalSettings, WithFundamentals, LibSettings, WithoutBadPlugins)
+
+lazy val inIdealinguaBase = In("idealingua")
+  .withModuleSettings(GlobalSettings, WithFundamentals)
+
+lazy val inIdealingua = inIdealinguaBase
+  .withModuleSettings(GlobalSettings, WithFundamentals, LibSettings, WithoutBadPlugins)
 
 
 // --------------------------------------------
@@ -161,17 +171,13 @@ lazy val fundamentalsCollections = inFundamentals.as.module
 lazy val fundamentalsPlatform = inFundamentals.as.module
 lazy val fundamentalsFunctional = inFundamentals.as.module
 
-lazy val fundamentals: Seq[ProjectReferenceEx] = Seq(
-  fundamentalsCollections
-  , fundamentalsPlatform
-  , fundamentalsFunctional
-)
-
-// --------------------------------------------
-
-val globalDefs = setup(GlobalSettings)
-  .withSharedLibs(fundamentals: _*)
-
+lazy val WithFundamentals = new SettingsGroup {
+  override def sharedLibs: Seq[ProjectReferenceEx] = Seq(
+    fundamentalsCollections
+    , fundamentalsPlatform
+    , fundamentalsFunctional
+  )
+}
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module

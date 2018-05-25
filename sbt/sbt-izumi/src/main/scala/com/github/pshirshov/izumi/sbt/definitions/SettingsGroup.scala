@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.sbt.definitions
 
-import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.ProjectReferenceEx
+import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.autoImport._
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
 import sbt.Keys._
 import sbt.librarymanagement.{InclExclRule, ModuleID}
@@ -13,7 +13,7 @@ trait AbstractSettingsGroup {
 
   def sharedDeps: Set[ModuleID] = Set.empty
 
-  def sharedLibs: Set[ProjectReferenceEx] = Set.empty
+  def sharedLibs: Seq[ProjectReferenceEx] = Seq.empty
 
   def exclusions: Set[InclExclRule] = Set.empty
 
@@ -25,6 +25,7 @@ trait AbstractSettingsGroup {
     p
       .enablePlugins(plugins.toSeq: _*)
       .disablePlugins(disabledPlugins.toSeq: _*)
+      .depends(sharedLibs :_*)
       .settings(
         libraryDependencies ++= sharedDeps.toSeq
         , excludeDependencies ++= exclusions.toSeq
@@ -51,7 +52,7 @@ case class SettingsGroupImpl
   , override val exclusions: Set[InclExclRule] = Set.empty
   , override val plugins: Set[Plugins] = Set.empty
   , override val disabledPlugins: Set[AutoPlugin] = Set.empty
-  , override val sharedLibs: Set[ProjectReferenceEx] = Set.empty
+  , override val sharedLibs: Seq[ProjectReferenceEx] = Seq.empty
 ) extends AbstractSettingsGroup
 
 object SettingsGroupImpl {
