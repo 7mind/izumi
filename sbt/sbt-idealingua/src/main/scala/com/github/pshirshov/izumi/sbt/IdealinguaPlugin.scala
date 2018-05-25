@@ -57,10 +57,8 @@ object IdealinguaPlugin extends AutoPlugin {
     , compilationTargets := Seq(
       Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Sources)
       , Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Artifact)
-
-      , Invokation(CompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.Sources)
-
-      , Invokation(CompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.Sources)
+      , Invokation(CompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.Artifact)
+      , Invokation(CompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.Artifact)
     )
 
     , sourceGenerators in Compile += Def.task {
@@ -126,7 +124,7 @@ object IdealinguaPlugin extends AutoPlugin {
   }
 
   private def compileSources(scopes: Seq[Scope], ctargets: Seq[Invokation], classpath: Classpath) = {
-    ctargets.filter(i => i.mode == Mode.Sources).flatMap {
+    ctargets.filter(i => i.options.language == IDLLanguage.Scala && i.mode == Mode.Sources).flatMap {
       invokation =>
         doCompile(scopes, invokation, classpath)
     }
