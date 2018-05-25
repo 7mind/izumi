@@ -67,7 +67,7 @@ object IzumiDslPlugin extends AutoPlugin {
 
       def addSettings(groupsIds: SettingsGroupId*): Project = {
         val groups = groupsIds.map(getInstance.globalSettings.allSettings)
-        settings(groups: _*)
+        settings(groups:_*)
       }
 
       def transitiveAggregate(refs: ProjectReference*): Project = {

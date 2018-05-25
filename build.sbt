@@ -169,15 +169,7 @@ lazy val fundamentals: Seq[ProjectReferenceEx] = Seq(
 
 // --------------------------------------------
 
-val globalDefs = setup(
-  GlobalSettings
-  , AppSettings
-  , LibSettings
-  , SbtSettings
-  , ShadingSettings
-  , WithoutBadPlugins
-  , SbtScriptedSettings
-)
+val globalDefs = setup(GlobalSettings)
   .withSharedLibs(fundamentals: _*)
 
 // --------------------------------------------

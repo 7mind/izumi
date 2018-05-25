@@ -59,5 +59,5 @@ object SettingsGroupImpl {
 }
 
 trait SettingsGroup extends AbstractSettingsGroup {
-  override def id: SettingsGroupId = new SettingsGroupId {}
+  override def id: SettingsGroupId = SettingsGroupId(getClass.getName)
 }
