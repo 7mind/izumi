@@ -54,88 +54,82 @@ publishTargets in ThisBuild := PublishTarget.filter(
   PublishTarget.file("sonatype", sonatypeTarget.value.root, Path.userHome / ".sbt/credentials.sonatype-nexus.properties"),
 )
 
-val AppSettings = SettingsGroupId()
-val LibSettings = SettingsGroupId()
-val SbtSettings = SettingsGroupId()
-val ShadingSettings = SettingsGroupId()
-val WithoutBadPlugins = SettingsGroupId()
-val SbtScriptedSettings = SettingsGroupId()
-
-val baseSettings = new GlobalSettings {
-  override protected val settings: Map[SettingsGroupId, ProjectSettings] = Map(
-    GlobalSettingsGroup -> new ProjectSettings {
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        crossScalaVersions := Seq(
-          V.scala_212
-        )
-        , addCompilerPlugin(R.kind_projector)
-      )
-    }
-    , LibSettings -> new ProjectSettings {
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        Seq(
-          libraryDependencies ++= R.essentials
-          , libraryDependencies ++= T.essentials
-        )
-      ).flatten
-    }
-    , ShadingSettings -> new ProjectSettings {
-      override val plugins: Set[Plugins] = Set(ShadingPlugin)
-
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ PublishingPlugin.projectSettings) ++
-          _root_.coursier.ShadingPlugin.projectSettings ++
-          Seq(
-            publish := publish.in(Shading).value
-            , publishLocal := publishLocal.in(Shading).value
-            , PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value
-            , PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
-            , shadingNamespace := "izumi.shaded"
-            , shadeNamespaces ++= Set(
-              "fastparse"
-              , "sourcecode"
-              //            , "net.sf.cglib"
-              //            , "org.json4s"
-            )
-          )
-      ).flatten
-    }
-    , SbtSettings -> new ProjectSettings {
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        Seq(
-          target ~= { t => t.toPath.resolve("primary").toFile }
-          , crossScalaVersions := Seq(
-            V.scala_212
-          )
-          , libraryDependencies ++= Seq(
-            "org.scala-sbt" % "sbt" % sbtVersion.value
-          )
-          , sbtPlugin := true
-        )
-      ).flatten
-    }
-    , SbtScriptedSettings -> new ProjectSettings {
-      override val plugins: Set[Plugins] = Set(ScriptedPlugin)
-
-      override val settings: Seq[sbt.Setting[_]] = Seq(
-        Seq(
-          scriptedLaunchOpts := {
-            scriptedLaunchOpts.value ++
-              Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-          }
-          , scriptedBufferLog := false
-        )
-      ).flatten
-    }
-    , AppSettings -> new ProjectSettings {
-      override val disabledPlugins: Set[AutoPlugin] = Set(SitePlugin)
-      override val plugins = Set(AssemblyPlugin)
-    }
-    , WithoutBadPlugins -> new ProjectSettings {
-      override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin)
-    }
+val GlobalSettings = new SettingsGroup {
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    crossScalaVersions := Seq(
+      V.scala_212
+    )
+    , addCompilerPlugin(R.kind_projector)
   )
 }
+
+val AppSettings = new SettingsGroup {
+  override val disabledPlugins: Set[AutoPlugin] = Set(SitePlugin)
+  override val plugins = Set(AssemblyPlugin)
+}
+
+
+val LibSettings = new SettingsGroup {
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      libraryDependencies ++= R.essentials
+      , libraryDependencies ++= T.essentials
+    )
+  ).flatten
+}
+val SbtSettings = new SettingsGroup {
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      target ~= { t => t.toPath.resolve("primary").toFile }
+      , crossScalaVersions := Seq(
+        V.scala_212
+      )
+      , libraryDependencies ++= Seq(
+        "org.scala-sbt" % "sbt" % sbtVersion.value
+      )
+      , sbtPlugin := true
+    )
+  ).flatten
+}
+val ShadingSettings = new SettingsGroup {
+  override val plugins: Set[Plugins] = Set(ShadingPlugin)
+
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ PublishingPlugin.projectSettings) ++
+      _root_.coursier.ShadingPlugin.projectSettings ++
+      Seq(
+        publish := publish.in(Shading).value
+        , publishLocal := publishLocal.in(Shading).value
+        , PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value
+        , PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
+        , shadingNamespace := "izumi.shaded"
+        , shadeNamespaces ++= Set(
+          "fastparse"
+          , "sourcecode"
+          //            , "net.sf.cglib"
+          //            , "org.json4s"
+        )
+      )
+  ).flatten
+}
+val WithoutBadPlugins = new SettingsGroup {
+  override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin)
+
+}
+val SbtScriptedSettings = new SettingsGroup {
+  override val plugins: Set[Plugins] = Set(ScriptedPlugin)
+
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      scriptedLaunchOpts := {
+        scriptedLaunchOpts.value ++
+          Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+      }
+      , scriptedBufferLog := false
+    )
+  ).flatten
+}
+
 // --------------------------------------------
 
 val inRoot = In(".")
@@ -172,9 +166,20 @@ lazy val fundamentals: Seq[ProjectReferenceEx] = Seq(
   , fundamentalsPlatform
   , fundamentalsFunctional
 )
+
 // --------------------------------------------
-val globalDefs = setup(baseSettings)
+
+val globalDefs = setup(
+  GlobalSettings
+  , AppSettings
+  , LibSettings
+  , SbtSettings
+  , ShadingSettings
+  , WithoutBadPlugins
+  , SbtScriptedSettings
+)
   .withSharedLibs(fundamentals: _*)
+
 // --------------------------------------------
 
 lazy val fundamentalsReflection = inFundamentals.as.module

@@ -5,27 +5,31 @@ import com.github.pshirshov.izumi.sbt._
 import sbt.librarymanagement.syntax
 import sbt.{Defaults, Project}
 
+object ItSettingsGroup extends AbstractSettingsGroup {
+  override def id: SettingsGroupId = SettingsGroupId.ItSettingsGroup
+
+  override def applyTo(p: Project) = {
+    super
+      .applyTo(p)
+      .configs(syntax.IntegrationTest)
+  }
+
+  override def settings: Seq[sbt.Setting[_]] = {
+    Seq(Defaults.itSettings, InheritedTestScopesPlugin.itSettings).flatten
+  }
+
+}
 
 trait GlobalSettings {
-  final def allSettings: Map[SettingsGroupId, ProjectSettings] = defaultSettings ++ settings
+  final def allSettings: Map[SettingsGroupId, AbstractSettingsGroup] = defaultSettings ++ settings
 
-  protected def settings: Map[SettingsGroupId, ProjectSettings] = Map()
+  def settings: Map[SettingsGroupId, AbstractSettingsGroup] = Map()
 
-  protected def defaultSettings: Map[SettingsGroupId, ProjectSettings] = {
+  final def defaultSettings: Map[SettingsGroupId, AbstractSettingsGroup] = {
     Map(
-      SettingsGroupId.GlobalSettingsGroup -> ProjectSettings.empty
-      , SettingsGroupId.RootSettingsGroup -> ProjectSettings.empty
-      , SettingsGroupId.ItSettingsGroup -> ProjectSettings(
-        settings = Seq(Defaults.itSettings, InheritedTestScopesPlugin.itSettings).flatten
-        , moreExtenders = {
-          (self, existing) =>
-            existing ++ Set(
-              new Extender {
-                override def extend(p: Project) = p.configs(syntax.IntegrationTest)
-              }
-            )
-        }
-      )
+      SettingsGroupId.GlobalSettingsGroup -> SettingsGroupImpl.empty(SettingsGroupId.GlobalSettingsGroup)
+      , SettingsGroupId.RootSettingsGroup -> SettingsGroupImpl.empty(SettingsGroupId.RootSettingsGroup)
+      , SettingsGroupId.ItSettingsGroup -> ItSettingsGroup
     )
   }
 }

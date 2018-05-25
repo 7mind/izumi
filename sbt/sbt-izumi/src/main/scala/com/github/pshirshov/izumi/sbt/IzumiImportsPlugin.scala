@@ -24,7 +24,7 @@ object IzumiImportsPlugin extends AutoPlugin {
     val IzumiSettingsGroups = com.github.pshirshov.izumi.sbt.IzumiSettingsGroups
 
     type GlobalSettings = definitions.GlobalSettings
-    type ProjectSettings = definitions.ProjectSettings
+    type SettingsGroup = definitions.SettingsGroup
     type SettingsGroupId = IzumiSettingsGroups.autoImport.SettingsGroupId
   }
 

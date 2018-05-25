@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.sbt
 
+
 import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
-import com.github.pshirshov.izumi.sbt.definitions.{GlobalSettings, IzumiDsl}
+import com.github.pshirshov.izumi.sbt.definitions._
 import sbt.internal.util.ConsoleLogger
 import sbt.io.syntax.File
 import sbt.{AutoPlugin, Def, ExtendedProjectMacro, Plugins, Project, ProjectReference}
@@ -25,9 +26,15 @@ object IzumiDslPlugin extends AutoPlugin {
   object autoImport {
 
 
-    def setup(settings: GlobalSettings): IzumiDsl = {
+    def setup(newSettings: AbstractSettingsGroup*): IzumiDsl = {
       instance
-        .withTransformedSettings(_ => settings)
+        .withTransformedSettings {
+          s =>
+            val indexed = newSettings.map(g => g.id -> g).toMap
+            new GlobalSettings {
+              override def settings: Map[SettingsGroupId, AbstractSettingsGroup] = s.settings ++ indexed
+            }
+        }
     }
 
     implicit class ProjectExtensions(project: Project) {
@@ -38,32 +45,29 @@ object IzumiDslPlugin extends AutoPlugin {
 
       def rootSettings: Project = {
         project
-          .settings(SettingsGroupId.GlobalSettingsGroup)
-          .settings(SettingsGroupId.RootSettingsGroup)
+          .addSettings(SettingsGroupId.GlobalSettingsGroup)
+          .addSettings(SettingsGroupId.RootSettingsGroup)
       }
 
       def itSettings: Project = {
         project
-          .settings(SettingsGroupId.ItSettingsGroup)
+          .addSettings(SettingsGroupId.ItSettingsGroup)
       }
 
       def globalSettings: Project = {
-        settings(SettingsGroupId.GlobalSettingsGroup)
+        addSettings(SettingsGroupId.GlobalSettingsGroup)
       }
 
-      def settings(groupIds: SettingsGroupId*): Project = {
-        val extenders = groupIds.flatMap {
-          groupId =>
-            val groupSettings = getInstance.globalSettings.allSettings(groupId)
-            groupSettings.extenders
+      def settings(groups: AbstractSettingsGroup*): Project = {
+        groups.foldLeft(project) {
+          case (acc, g) =>
+            g.applyTo(acc)
         }
+      }
 
-        logger.debug(s"Applying ${extenders.size} transformers to ${project.id}...")
-
-        extenders.foldLeft(project) {
-          case (acc, t) =>
-            t.extend(acc)
-        }
+      def addSettings(groupsIds: SettingsGroupId*): Project = {
+        val groups = groupsIds.map(getInstance.globalSettings.allSettings)
+        settings(groups: _*)
       }
 
       def transitiveAggregate(refs: ProjectReference*): Project = {
@@ -112,7 +116,7 @@ object IzumiDslPlugin extends AutoPlugin {
       }
     }
 
-    class WithBase(name: String, base: String, settingsGroups: Seq[SettingsGroupId]) {
+    class WithBase(name: String, base: String, settingsGroups: Seq[SettingsGroup]) {
       private def dirProject = Project(name, new File(base))
 
       private def moduleProject = Project(name, new File(s"$base/$name"))
@@ -126,9 +130,9 @@ object IzumiDslPlugin extends AutoPlugin {
       def module: Project = moduleProject.globalSettings.settings(settingsGroups: _*).remember
     }
 
-    class In(val directory: String, val settingsGroups: Seq[SettingsGroupId]) {
-      def withModuleSettings(groupId: SettingsGroupId*) = {
-        new In(directory, settingsGroups ++ groupId)
+    class In(val directory: String, val settingsGroups: Seq[SettingsGroup]) {
+      def withModuleSettings(group: SettingsGroup*) = {
+        new In(directory, settingsGroups ++ group)
       }
 
       def as: WithBase = macro ExtendedProjectMacro.projectUnifiedDslMacro
