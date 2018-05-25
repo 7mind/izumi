@@ -5,4 +5,10 @@ enum TestEnum {
   Element2
 }
 
+data KVEnumGeneric {
+  test: map[TestEnum, TestEnum]
+}
+
+
 enum ShortSyntaxEnum = Element1 | Element2
+

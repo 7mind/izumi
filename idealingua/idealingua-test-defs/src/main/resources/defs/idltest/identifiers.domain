@@ -14,3 +14,7 @@ id BucketID {
     user: uid
     bucket: str
 }
+
+data KVIDGeneric {
+  test: map[BucketID, BucketID]
+}
