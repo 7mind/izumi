@@ -59,7 +59,6 @@ object IdealinguaPlugin extends AutoPlugin {
       , Invokation(CompilerOptions(IDLLanguage.Typescript, Keys.idlDefaultExtensionsTypescript.value), Mode.Sources)
 
       , Invokation(CompilerOptions(IDLLanguage.Go, Keys.idlDefaultExtensionsGolang.value), Mode.Sources)
-      , Invokation(CompilerOptions(IDLLanguage.Go, Keys.idlDefaultExtensionsGolang.value), Mode.Artifact)
     )
 
     , sourceGenerators in Compile += Def.task {
