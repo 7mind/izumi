@@ -1,61 +1,28 @@
 package com.github.pshirshov.izumi.sbt
 
 
-import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
 import com.github.pshirshov.izumi.sbt.definitions._
 import sbt.internal.util.ConsoleLogger
 import sbt.io.syntax.File
 import sbt.{AutoPlugin, Def, ExtendedProjectMacro, Plugins, Project, ProjectReference}
 
+import scala.collection.mutable
 import scala.language.experimental.macros
 
 object IzumiDslPlugin extends AutoPlugin {
   private val logger: ConsoleLogger = ConsoleLogger()
 
-
-  override def requires: Plugins = super.requires &&
-    IzumiScopesPlugin &&
-    IzumiSettingsGroups
+  protected[izumi] val allProjects: mutable.HashSet[ProjectReference] = scala.collection.mutable.HashSet[ProjectReference]()
 
 
-  protected[izumi] var instance: IzumiDsl = new IzumiDsl {
-    override protected[izumi] def globalSettings: GlobalSettings = new GlobalSettings {}
-  }
+  override def requires: Plugins = super.requires && IzumiScopesPlugin
 
   //noinspection TypeAnnotation
   object autoImport {
-
-
-    def setup(newSettings: AbstractSettingsGroup*): IzumiDsl = {
-      instance
-        .withTransformedSettings {
-          s =>
-            val indexed = newSettings.map(g => g.id -> g).toMap
-            new GlobalSettings {
-              override def settings: Map[SettingsGroupId, AbstractSettingsGroup] = s.settings ++ indexed
-            }
-        }
-    }
-
     implicit class ProjectExtensions(project: Project) {
       def remember: Project = {
-        getInstance.allProjects += project
+        allProjects += project
         project
-      }
-
-      def rootSettings: Project = {
-        project
-          .addSettings(SettingsGroupId.GlobalSettingsGroup)
-          .addSettings(SettingsGroupId.RootSettingsGroup)
-      }
-
-      def itSettings: Project = {
-        project
-          .addSettings(SettingsGroupId.ItSettingsGroup)
-      }
-
-      def globalSettings: Project = {
-        addSettings(SettingsGroupId.GlobalSettingsGroup)
       }
 
       def settings(groups: AbstractSettingsGroup*): Project = {
@@ -65,15 +32,10 @@ object IzumiDslPlugin extends AutoPlugin {
         }
       }
 
-      def addSettings(groupsIds: SettingsGroupId*): Project = {
-        val groups = groupsIds.map(getInstance.globalSettings.allSettings)
-        settings(groups:_*)
-      }
-
       def transitiveAggregate(refs: ProjectReference*): Project = {
         import sbt.Keys._
-        logger.info(s"Project ${project.id} is aggregating ${refs.size} projects and ${getInstance.allProjects.size} transitive projects...")
-        val toAggregate = refs ++ getInstance.allProjects
+        logger.info(s"Project ${project.id} is aggregating ${refs.size} projects and ${allProjects.size} transitive projects...")
+        val toAggregate = refs ++ allProjects
 
         project
           .aggregate(toAggregate: _*)
@@ -102,18 +64,6 @@ object IzumiDslPlugin extends AutoPlugin {
             }
           }.value)
       }
-
-      private def getInstance: IzumiDsl = {
-        if (instance == null) {
-          val message = s"Cannot extend project ${project.id}: ExtendedProjectsGlobalDefs trait was not instantiated in build"
-          logger.error(message)
-          throw new IllegalStateException(message)
-        }
-
-        logger.debug(s"Defs instance = $instance...")
-
-        instance
-      }
     }
 
     class WithBase(name: String, base: String, settingsGroups: Seq[SettingsGroup]) {
@@ -125,9 +75,9 @@ object IzumiDslPlugin extends AutoPlugin {
 
       def project: Project = moduleProject.remember
 
-      def root: Project = dirProject.rootSettings
+      def root: Project = new ProjectExtensions(dirProject).settings(settingsGroups: _*)
 
-      def module: Project = moduleProject.globalSettings.settings(settingsGroups: _*).remember
+      def module: Project = new ProjectExtensions(moduleProject).settings(settingsGroups: _*).remember
     }
 
     class In(val directory: String, val settingsGroups: Seq[SettingsGroup]) {

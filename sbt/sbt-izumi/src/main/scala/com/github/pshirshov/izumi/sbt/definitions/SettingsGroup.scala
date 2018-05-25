@@ -1,10 +1,26 @@
 package com.github.pshirshov.izumi.sbt.definitions
 
 import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.autoImport._
-import com.github.pshirshov.izumi.sbt.IzumiSettingsGroups.autoImport.SettingsGroupId
 import sbt.Keys._
 import sbt.librarymanagement.{InclExclRule, ModuleID}
 import sbt.{AutoPlugin, Plugins, Project}
+
+trait SettingsGroupId {
+  def name: String
+
+  override def toString: String = s"$name:${hashCode()}"
+}
+
+object SettingsGroupId {
+  def apply(n: String): SettingsGroupId = new SettingsGroupId() {
+    override def name: String = n
+  }
+
+  case object ItSettingsGroup extends SettingsGroupId{
+    override def name: String = "it"
+  }
+
+}
 
 trait AbstractSettingsGroup {
   def id: SettingsGroupId
@@ -25,7 +41,7 @@ trait AbstractSettingsGroup {
     p
       .enablePlugins(plugins.toSeq: _*)
       .disablePlugins(disabledPlugins.toSeq: _*)
-      .depends(sharedLibs :_*)
+      .depends(sharedLibs: _*)
       .settings(
         libraryDependencies ++= sharedDeps.toSeq
         , excludeDependencies ++= exclusions.toSeq

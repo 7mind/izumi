@@ -62,7 +62,7 @@ class ScalaTranslationTools(ctx: STContext) {
 
     // this allows us to get rid of "unused" warnings and do a good thing
     val assertions = out.map {
-      case (field, (name, st)) =>
+      case (field, (name, _)) =>
         if (!ctx.typespace.dealias(field.sourceType).isInstanceOf[Builtin]) {
           List(q"$name != null")
         } else {

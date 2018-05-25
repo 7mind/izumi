@@ -1,7 +1,6 @@
 import com.typesafe.sbt.pgp.PgpSettings
 import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
 import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
-import SettingsGroupId._
 import SbtConvenienceTasks.Keys._
 import SbtPublishing.Keys._
 import ReleaseTransformations._
