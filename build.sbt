@@ -16,7 +16,6 @@ organization in ThisBuild := "com.github.pshirshov.izumi.r2"
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
 publishMavenStyle in ThisBuild := true
-sonatypeProfileName in ThisBuild := "com.github.pshirshov"
 pomExtra in ThisBuild := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
   <licenses>
     <license>
@@ -58,6 +57,7 @@ val GlobalSettings = new SettingsGroup {
     crossScalaVersions := Seq(
       V.scala_212
     )
+    , sonatypeProfileName := "com.github.pshirshov"
     , addCompilerPlugin(R.kind_projector)
   )
 }
