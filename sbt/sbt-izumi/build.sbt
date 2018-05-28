@@ -5,6 +5,11 @@ libraryDependencies ++= Seq(
 
 sbtPlugin := true
 
+// https://github.com/coursier/coursier#sbt-plugin
+val coursier = "1.1.0-M3"
+addSbtPlugin("io.get-coursier" % "sbt-coursier" % coursier)
+addSbtPlugin("io.get-coursier" % "sbt-shading" % coursier)
+
 // https://github.com/scoverage/sbt-scoverage
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 
@@ -20,9 +25,6 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 // https://github.com/orrsella/sbt-stats
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.7")
 
-// https://github.com/laughedelic/sbt-publish-more
-addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
-
 // https://github.com/xerial/sbt-sonatype
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.0")
 
@@ -35,6 +37,8 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
 // https://github.com/rtimush/sbt-updates
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
 
+// https://github.com/laughedelic/sbt-publish-more // TODO: signed publishers: https://github.com/laughedelic/sbt-publish-more/issues/7
+addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 
 // https://github.com/sbt/sbt-bintray
 //addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.1")
