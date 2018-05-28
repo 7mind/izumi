@@ -14,6 +14,7 @@ crossScalaVersions in ThisBuild := Seq(
 // unfortunately we have to use this bcs conditional settings in plugins don't work
 scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage := Some("org.test.project")
+organization in ThisBuild := "com.github.pshirshov.izumi.test.idl"
 
 // -- settings groups identifiers
 val AppSettings = new SettingsGroup {
@@ -23,9 +24,7 @@ val AppSettings = new SettingsGroup {
 // -- settings groups definitions
 val GlobalSettings = new SettingsGroup {
   // these settings will be added into each project handled by Izumi
-  override val settings: Seq[sbt.Setting[_]] = Seq(
-    organization := "com.github.pshirshov.izumi.test"
-  )
+  override val settings: Seq[sbt.Setting[_]] = Seq()
 
   // these dependencies will be added into each project handled by Izumi
   override val sharedDeps = Set(
