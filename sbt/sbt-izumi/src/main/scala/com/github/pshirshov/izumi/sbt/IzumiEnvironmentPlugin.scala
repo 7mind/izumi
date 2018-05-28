@@ -5,10 +5,9 @@ import sbt.{AutoPlugin, Plugins}
 object IzumiEnvironmentPlugin extends AutoPlugin {
 
   override def requires: Plugins = super.requires &&
-    PublishingPlugin &&
     InheritedTestScopesPlugin &&
-    CompilerOptionsPlugin &&
     ConvenienceTasksPlugin &&
     IzumiPropertiesPlugin &&
+    PublishingPlugin &&
     ResolverPlugin
 }

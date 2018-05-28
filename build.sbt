@@ -53,6 +53,8 @@ publishTargets in ThisBuild := PublishTarget.filter(
 )
 
 val GlobalSettings = new SettingsGroup {
+  override val plugins = Set(CompilerOptionsPlugin)
+
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
       V.scala_212

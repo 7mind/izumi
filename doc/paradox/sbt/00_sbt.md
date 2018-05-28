@@ -47,6 +47,40 @@ So, now you may use classes from the test scope of `myLibrary` within test scope
 
 ### Test Scope Separation
 
+`InheritedTestScopesPlugin` works in pair with `IzumiScopesPlugin` and provides you an unique feature:
+only the classes you marked with `@ExposedTestScope` are being exposed to dependant artifacts.
+
+So, let's assume that:
+- you have two artifacts, `Library` and `App`,
+- `App` depends on `Library`,
+- In the test scope of `Library` you have a class named `TestSuite`,
+- In the test scope of `Library` you have another class named `TestUtil`,
+- `TestUtil` is marked with `@ExposedTestScope` anotation,
+
+in that case you may use `@TestUtil` in the test scope of `App`, but `TestSuite` would not be visible.
+
+A diagram:
+
+```text
++-----------------------------------------+     +-----------------------------------------+
+| Library                                 |     | App                                     |
+|-----------------------------------------|     |-----------------------------------------|
+| Main scope                              |     | Main scope                              |
+|                                     <---+-----+--                                       |
+| UtilityClass                            |     | AppMain                                 |
+|-----------------------------------------|     |-----------------------------------------+
+| Private Test Scope | Exposed test scope |     | Test scope                              |
+|                    |                <---+-----+--                                       |
+| TestSuite          | TestUtil           |     | Private Test Scope | Exposed test scope |
++-----------------------------------------+     +-----------------------------------------+
+```
+
+Notes:
+
+- IDEA doesn't support overriden classpaths so when you run your tests under IDEA the whole test scopes are visible in dependencies,
+- At the moment the implementation of `@ExposedTestScope` (substring presence check) is imperfect and has to be improved,
+- **Transitive dependencies are not checked**, so in case you expose a class but didn't expose it's dependencies your build would work under IDEA but you will get a weird and obscure classloading exception running your tests under SNYT. This is going to [improved](https://github.com/pshirshov/izumi-r2/issues/6) in future.
+
 ### Test Scope Publishing
 
 The whole content of test scopes is being published by default with `test` qualifier.
@@ -56,7 +90,6 @@ Settings DSL
 ------------
 
 `IzumiDslPlugin` provides you a DSL inteded to simplify definitions of complex project layouts.
-
 
 To activate the plugin add the following statement into your root project:
 
@@ -174,6 +207,20 @@ Optional settings
 #### Publishing credentials and targets
 
 ### Compiler options
+
+`CompilerOptionsPlugin` provides you some sane compiler option presets (linting, optimizations).
+
+You should explicitly enable this plugin in each project you want to use it. When you want to enable it globally, use a settings group:
+
+```scala
+val GlobalSettings = new SettingsGroup {
+  override val plugins = Set(
+      CompilerOptionsPlugin,
+      // ...
+  )
+  // ...
+}
+```
 
 ### Resolvers
 

@@ -27,24 +27,24 @@ object CompilerOptionsPlugin extends AutoPlugin {
         , "-Ywarn-unused:_"
         , "-Ypartial-unification"
         , "-Yno-adapted-args"
-        , "-explaintypes"                     // Explain type errors in more detail.
-        , "-Xlint:adapted-args"               // Warn if an argument list is modified to match the receiver.
-        , "-Xlint:by-name-right-associative"  // By-name parameter of right associative operator.
-        , "-Xlint:constant"                   // Evaluation of a constant arithmetic expression results in an error.
-        , "-Xlint:delayedinit-select"         // Selecting member of DelayedInit.
-        , "-Xlint:doc-detached"               // A Scaladoc comment appears to be detached from its element.
-        , "-Xlint:inaccessible"               // Warn about inaccessible types in method signatures.
-        , "-Xlint:infer-any"                  // Warn when a type argument is inferred to be `Any`.
-        , "-Xlint:missing-interpolator"       // A string literal appears to be missing an interpolator id.
-        , "-Xlint:nullary-override"           // Warn when non-nullary `def f()' overrides nullary `def f'.
-        , "-Xlint:nullary-unit"               // Warn when nullary methods return Unit.
-        , "-Xlint:option-implicit"            // Option.apply used implicit view.
-        , "-Xlint:package-object-classes"     // Class or object defined in package object.
-        , "-Xlint:poly-implicit-overload"     // Parameterized overloaded implicit methods are not visible as view bounds.
-        , "-Xlint:private-shadow"             // A private field (or class parameter) shadows a superclass field.
-        , "-Xlint:stars-align"                // Pattern sequence wildcard must align with sequence component.
-        , "-Xlint:type-parameter-shadow"      // A local type parameter shadows a type already in scope.
-        , "-Xlint:unsound-match"              // Pattern match may not be typesafe.
+        , "-explaintypes" // Explain type errors in more detail.
+        , "-Xlint:adapted-args" // Warn if an argument list is modified to match the receiver.
+        , "-Xlint:by-name-right-associative" // By-name parameter of right associative operator.
+        , "-Xlint:constant" // Evaluation of a constant arithmetic expression results in an error.
+        , "-Xlint:delayedinit-select" // Selecting member of DelayedInit.
+        , "-Xlint:doc-detached" // A Scaladoc comment appears to be detached from its element.
+        , "-Xlint:inaccessible" // Warn about inaccessible types in method signatures.
+        , "-Xlint:infer-any" // Warn when a type argument is inferred to be `Any`.
+        , "-Xlint:missing-interpolator" // A string literal appears to be missing an interpolator id.
+        , "-Xlint:nullary-override" // Warn when non-nullary `def f()' overrides nullary `def f'.
+        , "-Xlint:nullary-unit" // Warn when nullary methods return Unit.
+        , "-Xlint:option-implicit" // Option.apply used implicit view.
+        , "-Xlint:package-object-classes" // Class or object defined in package object.
+        , "-Xlint:poly-implicit-overload" // Parameterized overloaded implicit methods are not visible as view bounds.
+        , "-Xlint:private-shadow" // A private field (or class parameter) shadows a superclass field.
+        , "-Xlint:stars-align" // Pattern sequence wildcard must align with sequence component.
+        , "-Xlint:type-parameter-shadow" // A local type parameter shadows a type already in scope.
+        , "-Xlint:unsound-match" // Pattern match may not be typesafe.
       )
       case _ =>
         Seq()
@@ -52,8 +52,8 @@ object CompilerOptionsPlugin extends AutoPlugin {
     val orgSettings =
       if (scalaOrganization == "org.typelevel") {
         Seq(
-          "-Yinduction-heuristics"       // speeds up the compilation of inductive implicit resolution
-          , "-Xstrict-patmat-analysis"     // more accurate reporting of failures of match exhaustivity
+          "-Yinduction-heuristics" // speeds up the compilation of inductive implicit resolution
+          , "-Xstrict-patmat-analysis" // more accurate reporting of failures of match exhaustivity
           , "-Xlint:strict-unsealed-patmat" // warn on inexhaustive matches against unsealed traits
         )
       } else {
@@ -64,51 +64,52 @@ object CompilerOptionsPlugin extends AutoPlugin {
 
   // TODO: conditionals in plugins don't work o_O
   //  override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
-//    scalacOptions ++= releaseSettings(scalaVersion.value, isSnapshot.value)
-//  )
+  //    scalacOptions ++= releaseSettings(scalaVersion.value, isSnapshot.value)
+  //  )
 
   override lazy val globalSettings: Seq[Def.Setting[_]] = Seq(
-      scalacOptions := Seq(
-        "-encoding", "UTF-8"
-        , "-target:jvm-1.8"
+    scalacOptions := Seq(
+      "-encoding", "UTF-8"
+      , "-target:jvm-1.8"
 
-        //, "-Xfatal-warnings"
+      //, "-Xfatal-warnings"
 
-        , "-Xfuture"
+      , "-Xfuture"
 
-        , "-feature"
-        , "-unchecked"
-        , "-deprecation"
-        // , "-opt-warnings:_" //2.12 only
-        //, "-Ywarn-extra-implicit"        // Warn when more than one implicit parameter section is defined.
-        //, "-Ywarn-unused:_"              // Enable or disable specific `unused' warnings: `_' for all, `-Ywarn-unused:help' to list choices.
+      , "-feature"
+      , "-unchecked"
+      , "-deprecation"
+      // , "-opt-warnings:_" //2.12 only
+      //, "-Ywarn-extra-implicit"        // Warn when more than one implicit parameter section is defined.
+      //, "-Ywarn-unused:_"              // Enable or disable specific `unused' warnings: `_' for all, `-Ywarn-unused:help' to list choices.
 
-        , "-Xlint:_"
+      , "-Xlint:_"
 
 
-        , "-Ywarn-adapted-args"          // Warn if an argument list is modified to match the receiver.
-        , "-Ywarn-dead-code"             // Warn when dead code is identified.
-        , "-Ywarn-inaccessible"          // Warn about inaccessible types in method signatures.
-        , "-Ywarn-infer-any"             // Warn when a type argument is inferred to be `Any`.
-        , "-Ywarn-nullary-override"      // Warn when non-nullary `def f()' overrides nullary `def f'.
-        , "-Ywarn-nullary-unit"          // Warn when nullary methods return Unit.
-        , "-Ywarn-numeric-widen"         // Warn when numerics are widened.
-        , "-Ywarn-unused-import"         // Warn when imports are unused.
-        , "-Ywarn-value-discard"         // Warn when non-Unit expression results are unused.
-      )
+      , "-Ywarn-adapted-args" // Warn if an argument list is modified to match the receiver.
+      , "-Ywarn-dead-code" // Warn when dead code is identified.
+      , "-Ywarn-inaccessible" // Warn about inaccessible types in method signatures.
+      , "-Ywarn-infer-any" // Warn when a type argument is inferred to be `Any`.
+      , "-Ywarn-nullary-override" // Warn when non-nullary `def f()' overrides nullary `def f'.
+      , "-Ywarn-nullary-unit" // Warn when nullary methods return Unit.
+      , "-Ywarn-numeric-widen" // Warn when numerics are widened.
+      , "-Ywarn-unused-import" // Warn when imports are unused.
+      , "-Ywarn-value-discard" // Warn when non-Unit expression results are unused.
+    )
 
-      , javacOptions ++= Seq(
-        "-encoding", "UTF-8"
-        , "-source", "1.8"
-        , "-target", "1.8"
-        , "-deprecation"
-        , "-parameters"
-        , "-Xlint:all"
-        , "-XDignore.symbol.file"
+    , javacOptions ++= Seq(
+      "-encoding", "UTF-8"
+      , "-source", "1.8"
+      , "-target", "1.8"
+      , "-deprecation"
+      , "-parameters"
+      , "-Xlint:all"
+      , "-XDignore.symbol.file"
       //, "-Xdoclint:all" // causes hard to track NPEs
     )
-    // TODO: conditionals in plugins don't work o_O
-//      , scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
   )
 
+  override def projectSettings: Seq[Def.Setting[_]] = Seq(
+    scalacOptions ++= dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
+  )
 }
