@@ -38,7 +38,7 @@ object FormattingUtils {
           , "fact", ('(', ')'), ('{', '}')
         )
 
-      case FactoryFunction(factoryType, wireables, dependencies) =>
+      case FactoryFunction(factoryType, wireables, _, dependencies) =>
         val wirings = wireables.map {
           w =>
             s"${w.factoryMethod}: ${w.factoryMethod.finalResultType} ~= ${doFormat(w.wireWith)}".shift(2)

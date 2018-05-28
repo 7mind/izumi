@@ -54,11 +54,9 @@ trait WithDICallable {
   trait Provider extends Callable {
     def associations: Seq[Association.Parameter]
     def diKeys: Seq[DIKey] = associations.map(_.wireWith)
-
-    override final val argTypes: Seq[TypeFull] = associations.map(_.wireWith.tpe)
-
-    // FIXME
     def fun: Seq[Any] => Any
+
+    override val argTypes: Seq[TypeFull] = associations.map(_.wireWith.tpe)
 
     override protected def call(args: Any*): Any =
       fun.apply(args: Seq[Any])
@@ -83,23 +81,15 @@ trait WithDICallable {
     }
 
     trait FactoryProvider extends Provider {
-      import FactoryProvider._
-      def factoryMethods: Seq[FactoryProduct]
+      def factoryIndex: Map[Int, Wiring.FactoryFunction.WithContext]
     }
 
     object FactoryProvider {
-      // FIXME TODO Wiring.UnaryWiring.Function
-      case class FactoryProduct(factoryMethod: SymbolInfo, wireWith: Wiring.UnaryWiring, methodArguments: Seq[DIKey]) {
-        def providedAssociations: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
+      case class FactoryProviderImpl(provider: Provider, factoryIndex: Map[Int, Wiring.FactoryFunction.WithContext]) extends FactoryProvider {
+        override def associations: Seq[Association.Parameter] = provider.associations
+        override def ret: TypeFull = provider.ret
+        override def fun: Seq[Any] => Any = provider.fun
       }
-
-      def apply(provider: Provider, seq: Seq[FactoryProduct]): FactoryProvider =
-        new FactoryProvider {
-          override def factoryMethods: Seq[FactoryProduct] = seq
-          override def associations: Seq[Association.Parameter] = provider.associations
-          override def ret: TypeFull = provider.ret
-          override def fun: Seq[Any] => Any = provider.fun
-        }
     }
 
   }

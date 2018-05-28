@@ -17,6 +17,7 @@ class ProvisionerDefaultImpl
   , proxyStrategy: ProxyStrategy
   , factoryStrategy: FactoryStrategy
   , traitStrategy: TraitStrategy
+  , factoryProviderStrategy: FactoryProviderStrategy
   , providerStrategy: ProviderStrategy
   , classStrategy: ClassStrategy
   , importStrategy: ImportStrategy
@@ -96,10 +97,7 @@ class ProvisionerDefaultImpl
         providerStrategy.callProvider(context, this, op)
 
       case op: WiringOp.CallFactoryProvider =>
-        // FIXME ???
-        import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-        providerStrategy.callProvider(context, this,
-          WiringOp.CallProvider(op.target, Wiring.UnaryWiring.Function(op.wiring.provider, op.wiring.providerArguments)))
+        factoryProviderStrategy.callFactoryProvider(context, this, op)
 
       case op: WiringOp.InstantiateClass =>
         classStrategy.instantiateClass(context, op)

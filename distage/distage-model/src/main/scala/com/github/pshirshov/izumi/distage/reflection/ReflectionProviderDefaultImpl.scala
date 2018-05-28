@@ -55,9 +55,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   override def providerToWiring(function: Provider): Wiring = {
     function match {
-      case f: Provider.FactoryProvider @unchecked =>
-        Wiring.FactoryFunction(f, f.factoryMethods, f.associations)
-      case Provider.ProviderImpl(_, _, _) =>
+      case factory: Provider.FactoryProvider @unchecked =>
+        Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
+      case _ =>
         Wiring.UnaryWiring.Function(function, function.associations)
     }
   }
