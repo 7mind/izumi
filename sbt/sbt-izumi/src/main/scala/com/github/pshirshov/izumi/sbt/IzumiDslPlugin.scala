@@ -81,13 +81,21 @@ object IzumiDslPlugin extends AutoPlugin {
 
       private def moduleProject = Project(name, new File(s"$base/$name"))
 
-      def just: Project = moduleProject
+      def just: Project = {
+        moduleProject
+      }
 
-      def project: Project = moduleProject.remember
+      def root: Project = {
+        new ProjectExtensions(dirProject).settings(settingsGroups.distinct: _*)
+      }
 
-      def root: Project = new ProjectExtensions(dirProject).settings(settingsGroups.distinct: _*)
+      def project: Project = {
+        moduleProject.remember
+      }
 
-      def module: Project = new ProjectExtensions(moduleProject).settings(settingsGroups.distinct: _*).remember
+      def module: Project = {
+        new ProjectExtensions(moduleProject).settings(settingsGroups.distinct: _*).remember
+      }
     }
 
     class In(val directory: String, val settingsGroups: Seq[AbstractSettingsGroup]) {

@@ -105,7 +105,20 @@ enablePlugins(IzumiDslPlugin)
 
 ### Automatic Aggregation
 
+When you use `.as.project` or `.as.module` syntax to define a project, that project is stored in a global singleton.
+
+You may use `transitiveAggregate` or `transitiveAggregateSeq` methods instead of standard `aggregate`,
+in that case all the transitive dependencies of the projects provided will be also added into aggregation list. This allows you to simplify your definitions by avoiding specifing all the modules in `.aggregate`.
+
+In case you don't want your project to be recorded, you shoud use `.as.just` syntax.
+
 ### Aggregation Safety Check
+
+When you invoke `transitiveAggregate` or `transitiveAggregateSeq` on your root project it checks
+if the accumulated set of known project is the same as the set of project loaded by sbt.
+
+In case of discrepancies you will get a warning. So in case you use automatic aggregation it's unlikely
+that you may accidentally forget to aggregate a module of a multi-module project.
 
 Build Descriptors
 -----------------
@@ -202,9 +215,15 @@ Optional settings
 
 ### Publishing
 
+TODO
+
 #### Publishing settings
 
+TODO
+
 #### Publishing credentials and targets
+
+TODO
 
 ### Compiler options
 
