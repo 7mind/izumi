@@ -16,7 +16,7 @@ object SettingsGroupId {
     override def name: String = n
   }
 
-  case object ItSettingsGroup extends SettingsGroupId{
+  case object ItSettingsGroup extends SettingsGroupId {
     override def name: String = "it"
   }
 

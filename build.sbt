@@ -406,7 +406,8 @@ lazy val `izumi-r2` = inRoot.as
       def accept(f: File) = (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath
     }
     , paradoxProperties ++= Map(
-      "scaladoc.izumi.base_url" -> s"/api/com/github/pshirshov/"
+      "scaladoc.izumi.base_url" -> s"/api/com/github/pshirshov/",
+      "izumi.version" -> version.value,
     )
   )
   .settings(addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))

@@ -10,6 +10,5 @@ object ResolverPlugin extends AutoPlugin {
       .value
       .withCachedResolution(true)
       .withGigahorse(true)
-    , pomIncludeRepository := (_ => false)
   )
 }

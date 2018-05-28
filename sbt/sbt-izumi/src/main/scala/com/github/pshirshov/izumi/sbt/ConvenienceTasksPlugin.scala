@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.sbt
 
-import sbt.Keys.version
-import sbt._
+import sbt.Keys._
+import sbt.{Def, _}
 import complete.DefaultParsers._
 import sbt.internal.util.ConsoleLogger
 import sbt.internal.util.complete.Parser.token
@@ -27,6 +27,11 @@ object ConvenienceTasksPlugin extends AutoPlugin {
     lazy val ConvenienceTasksPluginKeys: Keys.type = ConvenienceTasksPlugin.Keys
     lazy val SbtConvenienceTasks: ConvenienceTasksPlugin.type = ConvenienceTasksPlugin
   }
+
+
+  override def globalSettings: Seq[Def.Setting[_]] = Seq(
+    defaultStubPackage := Some((organization in ThisBuild).value)
+  )
 
   override def projectSettings = Seq(
     addVersionSuffix := {
@@ -69,10 +74,22 @@ object ConvenienceTasksPlugin extends AutoPlugin {
       IO.delete(dirs)
     }
     , newModule := {
-      val name: String = (token(Space) ~> token(StringBasic, "moduleName"))
-        .parsed
+      val args = spaceDelimited("<args>").parsed
+      val moduleName = args.head
+      val pkgSuffix = args.tail.headOption
 
-      mkDefaultModule(name, defaultStubPackage.value, mkJavaDirs.value)
+      val pkg = (defaultStubPackage.value, pkgSuffix) match {
+        case (Some(p), None) =>
+          Some(p)
+        case (None, Some(suffix)) =>
+          Some(suffix)
+        case (Some(p), Some(suffix)) =>
+          Some(s"$p.$suffix")
+        case (None, None) =>
+          None
+      }
+
+      mkDefaultModule(moduleName, pkg, mkJavaDirs.value)
     }
     , newStub := {
       val args = spaceDelimited("<args>").parsed
@@ -80,7 +97,6 @@ object ConvenienceTasksPlugin extends AutoPlugin {
       val stubId = args.tail.headOption.getOrElse("default")
       mkModule(moduleName, stubId)
     }
-    , defaultStubPackage := None
     , mkJavaDirs := false
   )
 
@@ -115,10 +131,8 @@ object ConvenienceTasksPlugin extends AutoPlugin {
       scalaDirs ++ javaDirs
     }
 
-
-
     val stubs = pkg match {
-      case Some(d) => 
+      case Some(d) =>
         stubBases.map(s => s"""$s/${d.replace(".", "/")}""")
       case None =>
         stubBases
