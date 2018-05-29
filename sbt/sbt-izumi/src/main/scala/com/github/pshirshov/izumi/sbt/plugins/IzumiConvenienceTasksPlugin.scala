@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt
+package com.github.pshirshov.izumi.sbt.plugins
 
 import sbt.Keys._
 import sbt.{Def, _}
@@ -7,7 +7,7 @@ import sbt.internal.util.ConsoleLogger
 import sbt.internal.util.complete.Parser.token
 import sbtrelease.Version
 
-object ConvenienceTasksPlugin extends AutoPlugin {
+object IzumiConvenienceTasksPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()
 
   object Keys {
@@ -22,12 +22,6 @@ object ConvenienceTasksPlugin extends AutoPlugin {
   }
 
   import Keys._
-
-  object autoImport {
-    lazy val ConvenienceTasksPluginKeys: Keys.type = ConvenienceTasksPlugin.Keys
-    lazy val SbtConvenienceTasks: ConvenienceTasksPlugin.type = ConvenienceTasksPlugin
-  }
-
 
   override def globalSettings: Seq[Def.Setting[_]] = Seq(
     defaultStubPackage := Some((organization in ThisBuild).value)

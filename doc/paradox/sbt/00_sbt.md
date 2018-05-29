@@ -125,7 +125,9 @@ Build Descriptors
 
 ### Bills of Materials
 
-### Git Manifests
+### Build Manifest entries
+
+### Git Manifest entries
 
 `GitStampPlugin` adds the following values into `MANIFEST.MF` of each `jar` artifact produced:
 
@@ -209,6 +211,11 @@ sys.props.asBoolean("my.property", default = false)
 sys.props.asInt("my.property", default = 123)
 ```
 You may activate this plugin with the following statement in root project:
+
+
+### Transitive Artifact Downloader
+
+TODO
 
 Optional settings
 -----------------

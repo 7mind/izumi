@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt
+package com.github.pshirshov.izumi.sbt.plugins
 
 import java.nio.file.Path
 
@@ -10,15 +10,13 @@ import xsbti.compile.CompileAnalysis
 import scala.util.control.NonFatal
 
 
+object IzumiInheritedTestScopesPlugin extends AutoPlugin {
 
-object InheritedTestScopesPlugin extends AutoPlugin {
   import Keys._
-
-  override def trigger = allRequirements
 
   protected val logger: ConsoleLogger = ConsoleLogger()
 
-  val testSettings: Seq[Def.Setting[_]] =  Seq(
+  val testSettings: Seq[Def.Setting[_]] = Seq(
     compile in Test := Def.task {
       extractExposableTestScopeParts(
         streams.value
@@ -36,7 +34,7 @@ object InheritedTestScopesPlugin extends AutoPlugin {
   )
 
   val itSettings: Seq[Def.Setting[_]] = Seq(
-     compile in IntegrationTest := Def.task {
+    compile in IntegrationTest := Def.task {
       extractExposableTestScopeParts(
         streams.value
         , (classDirectory in IntegrationTest).value
@@ -57,7 +55,7 @@ object InheritedTestScopesPlugin extends AutoPlugin {
   private def modifyTestScopeDependency(
                                          streams: TaskStreams
                                          , classpath: Classpath
-                                          , directoryNameToModify: String
+                                         , directoryNameToModify: String
                                        ): Seq[Attributed[File]] = {
     val logger = streams.log
     classpath.flatMap {

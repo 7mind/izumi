@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.sbt
+package com.github.pshirshov.izumi.sbt.plugins
 
 import sbt.Keys._
 import sbt._
 
-object ResolverPlugin extends AutoPlugin {
+object IzumiResolverPlugin extends AutoPlugin {
 
   override lazy val globalSettings = Seq(
     updateOptions := updateOptions

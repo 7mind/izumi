@@ -1,19 +1,16 @@
 import com.typesafe.sbt.pgp.PgpSettings
 import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
 import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
-import SbtConvenienceTasks.Keys._
-import SbtPublishing.Keys._
+import IzumiConvenienceTasksPlugin.Keys._
+import IzumiPublishingPlugin.Keys._
 import ReleaseTransformations._
 
 
 enablePlugins(IzumiEnvironmentPlugin)
-enablePlugins(IzumiDslPlugin)
-enablePlugins(GitStampPlugin)
 disablePlugins(AssemblyPlugin)
 
 name := "izumi-r2"
 organization in ThisBuild := "com.github.pshirshov.izumi.r2"
-scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
 defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
 publishMavenStyle in ThisBuild := true
 pomExtra in ThisBuild := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
@@ -46,14 +43,10 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
 )
 
-publishTargets in ThisBuild := PublishTarget.filter(
-  PublishTarget.env("PUBLISH"),
-  PublishTarget.file("sonatype", sonatypeTarget.value.root, file(".secrets/credentials.sonatype-nexus.properties")),
-  PublishTarget.file("sonatype", sonatypeTarget.value.root, Path.userHome / ".sbt/credentials.sonatype-nexus.properties"),
-)
+publishTargets in ThisBuild := PublishTarget.typical("sonatype", sonatypeTarget.value.root)
 
 val GlobalSettings = new SettingsGroup {
-  override val plugins = Set(CompilerOptionsPlugin)
+  override val plugins = Set(IzumiCompilerOptionsPlugin)
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
@@ -98,7 +91,7 @@ val ShadingSettings = new SettingsGroup {
   override val plugins: Set[Plugins] = Set(ShadingPlugin)
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
-    inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ PublishingPlugin.projectSettings) ++
+    inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ IzumiPublishingPlugin.projectSettings) ++
       _root_.coursier.ShadingPlugin.projectSettings ++
       Seq(
         publish := publish.in(Shading).value
@@ -378,7 +371,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 lazy val distage: Seq[ProjectReference] = Seq(
   distageApp
   , distageCats
-  , distageStatic
+  //, distageStatic
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore

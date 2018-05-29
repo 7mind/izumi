@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt
+package com.github.pshirshov.izumi.sbt.plugins
 
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.syntax

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.sbt.definitions
 
-import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.autoImport._
+import com.github.pshirshov.izumi.sbt.plugins.IzumiScopesPlugin.autoImport._
 import sbt.Keys._
 import sbt.librarymanagement.{InclExclRule, ModuleID}
 import sbt.{AutoPlugin, Plugins, Project}
