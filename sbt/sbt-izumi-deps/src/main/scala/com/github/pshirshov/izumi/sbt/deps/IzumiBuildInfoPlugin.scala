@@ -215,6 +215,14 @@ object IzumiBuildInfoPlugin extends AutoPlugin {
            |  }
            |}
            |
+           |object ${objectName}Plugin extends AutoPlugin {
+           |  override def trigger = allRequirements
+           |
+           |  object autoImport {
+           |    val $objectName: $packageName.$objectName.type = $packageName.$objectName
+           |  }
+           |}
+           |
          """.stripMargin
       )
 

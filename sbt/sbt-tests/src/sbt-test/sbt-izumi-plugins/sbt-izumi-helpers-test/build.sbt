@@ -1,5 +1,3 @@
-import com.github.pshirshov.izumi.sbt.deps.{Izumi, IzumiDeps => Iz}
-
 import IzumiConvenienceTasksPlugin.Keys._
 
 enablePlugins(IzumiEnvironmentPlugin)
@@ -7,7 +5,7 @@ enablePlugins(IzumiEnvironmentPlugin)
 // -- build settings, root artifact settings, etc
 name := "sbt-izumi-helpers-test"
 crossScalaVersions in ThisBuild := Seq(
-  Iz.V.scala_212
+  IzumiRootDeps.V.scala_212
   , "2.11.12"
 )
 

@@ -125,3 +125,11 @@ object IzumiDeps {
   }
 
 }
+
+object IzumiDepsPlugin extends AutoPlugin {
+  override def trigger = allRequirements
+
+  object autoImport {
+    val IzumiRootDeps: IzumiDeps.type = com.github.pshirshov.izumi.sbt.deps.IzumiDeps
+  }
+}
