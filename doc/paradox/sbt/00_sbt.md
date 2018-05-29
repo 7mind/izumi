@@ -94,7 +94,7 @@ Inherited Test Scopes
 `IzumiScopesPlugin` extends SBT `Project` with several implicit methods:
 
 - `testOnlyRef` - provides you a project reference which is equivalent to `% "test"` dependency,
-- `dependsSeq` and `depends` - allow you to add dependencies to your project the way test scopes of your dependencies are visible within test scopes of your project. So, essentially when you use these methods your dependencies are added into your projects with the following qualifier:           `"test->compile,test;it->compile,test,it"`
+- `dependsSeq` and `depends` - allow you to add dependencies to your project the way test scopes of your dependencies are visible within test scopes of your project. So, essentially when you use these methods your dependencies are added into your projects with the following qualifier: `"test->compile,test;it->compile,test,it"`
 
 You need to activate `DefaultItSettingsGroup` on your projects (see "Setting Groups" below) in order to make this working on `it` scope.
 
@@ -174,6 +174,13 @@ You may use `transitiveAggregate` or `transitiveAggregateSeq` methods instead of
 in that case all the transitive dependencies of the projects provided will be also added into aggregation list. This allows you to simplify your definitions by avoiding specifing all the modules in `.aggregate`.
 
 In case you don't want your project to be recorded, you shoud use `.as.just` syntax.
+
+@@@ warning { title='Important note: sbt is lazy!' }
+We just store project reference in a singleton list, we don't analyze dependency graph. Though sbt relies on `lazy val` declarations.
+*So, in fact the singleton initializes at the moment you invoke aggregation.*
+In case you don't add a project into aggregation list such a project still will be initialized by sbt and added into the singleton,
+but it would happen *later* than evaluation  of aggregation list so the project will not be aggregated.
+@@@
 
 ### Aggregation Safety Check
 
