@@ -45,9 +45,7 @@ releaseProcess := Seq[ReleaseStep](
 
 publishTargets in ThisBuild := PublishTarget.typical("sonatype", sonatypeTarget.value.root)
 
-val GlobalSettings = new SettingsGroup {
-    override val plugins = Set(IzumiCompilerOptionsPlugin, IzumiPublishingPlugin)
-
+val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
       V.scala_212

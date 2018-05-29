@@ -6,7 +6,7 @@ import sbt.{AutoPlugin, ClasspathDep, Project, ProjectReference}
 
 import scala.language.implicitConversions
 
-object IzumiScopesPlugin extends AutoPlugin {
+object IzumiInheritedTestScopesPlugin extends AutoPlugin {
   sealed trait ProjectReferenceEx
   final case class ClasspathRef(ref: ClasspathDep[ProjectReference]) extends ProjectReferenceEx
   final case class ImprovedProjectRef(ref: Project) extends ProjectReferenceEx
@@ -14,7 +14,7 @@ object IzumiScopesPlugin extends AutoPlugin {
 
   //noinspection TypeAnnotation
   object autoImport {
-    type ProjectReferenceEx = IzumiScopesPlugin.ProjectReferenceEx
+    type ProjectReferenceEx = IzumiInheritedTestScopesPlugin.ProjectReferenceEx
 
     implicit def toClasspathRef(ref: ClasspathDep[ProjectReference]): ClasspathRef = ClasspathRef(ref)
     implicit def toImprovedProjectRef(ref: Project): ImprovedProjectRef = ImprovedProjectRef(ref)

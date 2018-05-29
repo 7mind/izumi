@@ -11,7 +11,7 @@ trait IzumiEnvironmentBase extends AutoPlugin {
     plugins.IzumiDslPlugin &&
     plugins.IzumiPropertiesPlugin &&
     plugins.IzumiResolverPlugin &&
-    plugins.IzumiScopesPlugin
+    plugins.IzumiInheritedTestScopesPlugin
 }
 
 

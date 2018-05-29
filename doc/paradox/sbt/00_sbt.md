@@ -26,7 +26,7 @@ We provide you the following kinds of plugins:
 
 Important notes:
 
-1. Please keep in mind that only one intrusive Izumi plugin, `IzumiInheritedTestScopesPlugin` is activated automatically. In case you want to disable it, you should use a global Settings Group (see below),
+1. Please keep in mind no plugins are being activated automatically,
 2. The rest of Izumi plugins are optional. You may use a preset to activate them or combine them manually as you wish (using settings groups),
 3. Some plugins requires to be installed for each project so cannot be activated via preset due to sbt limitations. You should use Settings Groups in order to activate them.
 
@@ -35,7 +35,6 @@ Important notes:
 Plugin                             | Description                                        |
 ----------------------------------------------------------------------------------------|
 IzumiImportsPlugin                 | Makes all the Izumi imports visible by default     |
-IzumiInheritedTestScopesPlugin     | Maintains test scope separation                    |
 
 ### Environmental plugins
 
@@ -47,7 +46,7 @@ IzumiDslPlugin                     | Compact build definitions                  
 IzumiGitStampPlugin                | Adds GIT status into jar manifests                 |
 IzumiPropertiesPlugin              | Convenience helpers for `sys.props`                |
 IzumiResolverPlugin                | Better defaults for artifact resolution            |
-IzumiScopesPlugin                  | Convenience helpers for test scope inheritance     |
+IzumiInheritedTestScopesPlugin     | Convenience helpers for test scope inheritance     |
 
 ### Presets
 
@@ -60,9 +59,11 @@ IzumiGitEnvironment                | All the environmental plugins with GIT one 
 
 Plugin                             | Description                                        |
 ----------------------------------------------------------------------------------------|
+IzumiExposedTestScopesPlugin       | Maintains test scope separation                    |
 IzumiCompilerOptionsPlugin         | Some linting/optimization presets for scalac/javac |
 IzumiFetchPlugin                   | Allows you to transitively download artifacts from remote repositories|
 IzumiPublishingPlugin              | Some convenience helpers and improvements for artifact publishing |
+IzumiBuildInfoPlugin               | Generates Bills of Materials                       |
 
 ### Installation
 To activate all the plugins add the following statements into your root project:

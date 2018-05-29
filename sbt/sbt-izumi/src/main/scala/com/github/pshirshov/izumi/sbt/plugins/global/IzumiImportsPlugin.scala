@@ -11,7 +11,7 @@ object IzumiImportsPlugin extends AutoPlugin {
     val IzumiEnvironmentPlugin = plugins.presets.IzumiEnvironmentPlugin
     val IzumiGitEnvironmentPlugin = plugins.presets.IzumiGitEnvironmentPlugin
 
-    val IzumiInheritedTestScopesPlugin = plugins.global.IzumiInheritedTestScopesPlugin
+    val IzumiInheritedTestScopesPlugin = plugins.IzumiInheritedTestScopesPlugin
 
     val IzumiGitStampPlugin = plugins.IzumiGitStampPlugin
 
@@ -20,13 +20,15 @@ object IzumiImportsPlugin extends AutoPlugin {
     val IzumiDslPlugin = plugins.IzumiDslPlugin
     val IzumiPropertiesPlugin = plugins.IzumiPropertiesPlugin
     val IzumiResolverPlugin = plugins.IzumiResolverPlugin
-    val IzumiScopesPlugin = plugins.IzumiScopesPlugin
+    val IzumiScopesPlugin = plugins.IzumiInheritedTestScopesPlugin
 
     val IzumiCompilerOptionsPlugin = plugins.optional.IzumiCompilerOptionsPlugin
-    val IzumiPublishingPlugin =  plugins.optional.IzumiPublishingPlugin
+    val IzumiExposedTestScopesPlugin = plugins.optional.IzumiExposedTestScopesPlugin
     val IzumiFetchPlugin = plugins.optional.IzumiFetchPlugin
+    val IzumiPublishingPlugin =  plugins.optional.IzumiPublishingPlugin
 
     type SettingsGroup = definitions.SettingsGroup
+    type DefaultGlobalSettingsGroup = definitions.DefaultGlobalSettingsGroup
   }
 
 }

@@ -23,9 +23,7 @@ organization in ThisBuild := "com.github.pshirshov.izumi.test.idl"
 
 
 // -- settings groups identifiers
-val GlobalSettings = new SettingsGroup {
-  override val plugins = Set(IzumiCompilerOptionsPlugin, IzumiPublishingPlugin)
-
+val GlobalSettings = new DefaultGlobalSettingsGroup {
   // these settings will be added into each project handled by Izumi
   override val settings: Seq[sbt.Setting[_]] = Seq()
 

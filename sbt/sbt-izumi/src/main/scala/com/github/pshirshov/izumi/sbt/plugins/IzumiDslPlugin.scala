@@ -14,7 +14,7 @@ object IzumiDslPlugin extends AutoPlugin {
   protected[izumi] val allProjects: mutable.HashSet[ProjectReference] = scala.collection.mutable.HashSet[ProjectReference]()
 
 
-  override def requires: Plugins = super.requires && IzumiScopesPlugin
+  override def requires: Plugins = super.requires && IzumiInheritedTestScopesPlugin
 
   //noinspection TypeAnnotation
   object autoImport {
