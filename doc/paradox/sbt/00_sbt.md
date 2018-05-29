@@ -81,12 +81,7 @@ enablePlugins(IzumiEnvironmentPlugin)
 Also most likely you would like to activate the following plugins with your global Settings Group:
 
 ```scala
-val GlobalSettings = new SettingsGroup {
-  override val plugins = Set(
-      IzumiCompilerOptionsPlugin,
-      IzumiPublishingPlugin,
-      // ...
-  )
+val GlobalSettings = new DefaultSettingsGroup {
   // ...
 }
 ```
@@ -147,7 +142,7 @@ Notes:
 
 - IDEA doesn't support overriden classpaths so when you run your tests under IDEA the whole test scopes are visible in dependencies,
 - At the moment the implementation of `@ExposedTestScope` (substring presence check) is imperfect and has to be improved,
-- **Transitive dependencies are not checked**, so in case you expose a class but didn't expose it's dependencies your build would work under IDEA but you will get a weird and obscure classloading exception running your tests under SNYT. This is going to [improved](https://github.com/pshirshov/izumi-r2/issues/6) in future.
+- **Transitive dependencies are not checked**, so in case you expose a class but didn't expose it's dependencies your build would work under IDEA but you will get a weird and obscure classloading exception running your tests under IDEA. This is going to [improved](https://github.com/pshirshov/izumi-r2/issues/6) in future.
 
 ### Test Scope Publishing
 
