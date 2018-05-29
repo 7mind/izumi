@@ -100,7 +100,6 @@ class PlannerDefaultImpl
         Step(wiring, WiringOp.InstantiateFactory(target, w))
 
       case w: FactoryFunction =>
-        /// ???
         Step(wiring, WiringOp.CallFactoryProvider(target, w))
 
       case w: Function =>

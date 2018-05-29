@@ -10,8 +10,6 @@ import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
-import scala.util.Try
-
 class StaticInjectorTest extends WordSpec {
 
   def mkInjector(): Injector = Injectors.bootstrap()
