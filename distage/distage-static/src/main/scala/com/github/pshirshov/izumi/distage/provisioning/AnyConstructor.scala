@@ -17,7 +17,6 @@ final case class ConcreteConstructor[T](implType: SafeType) extends AnyConstruct
 final case class TraitConstructor[T](function: ProviderMagnet[T]) extends AbstractConstructor[T]
 
 final case class FactoryConstructor[T](function: ProviderMagnet[T]) extends AbstractConstructor[T]
-// FIXME: final case class FactorConstructor[T](factoryCtor: DIKeyWrappedFunction[T], factoryMethods: Seq[FactoryMethod.WithContext], fieldDependencies: Seq[Association.AbstractMethod])
 
 object AnyConstructor {
   def apply[T: AnyConstructor]: AnyConstructor[T] = implicitly[AnyConstructor[T]]

@@ -99,6 +99,9 @@ class PlannerDefaultImpl
       case w: FactoryMethod =>
         Step(wiring, WiringOp.InstantiateFactory(target, w))
 
+      case w: FactoryFunction =>
+        Step(wiring, WiringOp.CallFactoryProvider(target, w))
+
       case w: Function =>
         Step(wiring, WiringOp.CallProvider(target, w))
 

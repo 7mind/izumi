@@ -10,8 +10,6 @@ import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
-import scala.util.Try
-
 class StaticInjectorTest extends WordSpec {
 
   def mkInjector(): Injector = Injectors.bootstrap()
@@ -310,33 +308,30 @@ class StaticInjectorTest extends WordSpec {
       assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
     }
 
-    "Progression test: Inject config doesn't work for macro factory products" in {
+    "Inject config works for macro factory products" in {
       // FactoryMethod wirings are generated at compile-time and inacessible to ConfigModule, so method ends up depending on TestConf, not TestConf#auto[..]. To fix this, need a new type of binding that would include all factory reflected info
-      val fail = Try {
-        import ConfigFixtures._
+      import ConfigFixtures._
 
-        val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
-        val injector = Injectors.bootstrap(new ConfigModule(config))
+      val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+      val injector = Injectors.bootstrap(new ConfigModule(config))
 
-        val definition = new ModuleDef {
-          make[TestDependency].statically
-          make[TestFactory].statically
-          make[TestGenericConfFactory[TestConfAlias]].statically
-        }
-        val plan = injector.plan(definition)
-        val context = injector.produce(plan)
+      val definition = new ModuleDef {
+        make[TestDependency].statically
+        make[TestFactory].statically
+        make[TestGenericConfFactory[TestConfAlias]].statically
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
 
-        val factory = context.get[TestFactory]
-        assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))
-        assert(factory.makeTrait().testConf == TestConf(true))
-        assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
+      val factory = context.get[TestFactory]
+      assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))
+      assert(factory.makeTrait().testConf == TestConf(true))
+      assert(factory.makeTraitWith().asInstanceOf[AbstractProductImpl].testConf == TestConf(true))
 
-        assert(context.get[TestDependency] == TestDependency(TestConf(false)))
+      assert(context.get[TestDependency] == TestDependency(TestConf(false)))
 
-        assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
-        assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
-      }.isFailure
-      assert(fail)
+      assert(context.get[TestGenericConfFactory[TestConf]].x == TestDependency(TestConf(false)))
+      assert(context.get[TestGenericConfFactory[TestConf]].make().testConf == TestConf(false))
     }
 
     "Inject config works for providers" in {

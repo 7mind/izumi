@@ -72,7 +72,8 @@ object DefaultBootstrapContext {
       , new ProxyStrategyFailingImpl
       , new FactoryStrategyFailingImpl
       , new TraitStrategyFailingImpl
-      , new ProviderStrategyDefaultImpl(loggerHook)
+      , new FactoryProviderStrategyDefaultImpl(loggerHook)
+      , new ProviderStrategyDefaultImpl
       , new ClassStrategyDefaultImpl(symbolIntrospector)
       , new ImportStrategyFailingImpl
       , new InstanceStrategyDefaultImpl
@@ -105,6 +106,7 @@ object DefaultBootstrapContext {
     make[Planner].from[PlannerDefaultImpl]
     make[SetStrategy].from[SetStrategyDefaultImpl]
     make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
+    make[FactoryProviderStrategy].from[FactoryProviderStrategyDefaultImpl]
     make[ClassStrategy].from[ClassStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
