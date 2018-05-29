@@ -49,25 +49,46 @@ trait WithDIWiring {
     case class FactoryMethod(factoryType: TypeFull, factoryMethods: Seq[FactoryMethod.WithContext], fieldDependencies: Seq[Association.AbstractMethod]) extends Wiring {
       /**
         * this method returns product dependencies which aren't present in any signature of factory methods.
-        * Though it's kind of a heuristic which can be spoiled at the time of plan initialization
+        * Though it's a kind of a heuristic that can be spoiled at the time of plan initialization
         *
         * Complete check can only be performed at runtime.
         */
       override def associations: Seq[Association] = {
         val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
 
-        val productsDepsNotInMethods = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.wireWith))
+        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.wireWith))
 
-        productsDepsNotInMethods ++ fieldDependencies
+        factorySuppliedProductDeps ++ fieldDependencies
       }
     }
 
     object FactoryMethod {
-
       case class WithContext(factoryMethod: SymbolInfo.Runtime, wireWith: UnaryWiring.ProductWiring, methodArguments: Seq[DIKey]) {
-        def providedAssociations: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
+        def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
       }
+    }
 
+    case class FactoryFunction(
+                                provider: Provider
+                                , factoryIndex: Map[Int, FactoryFunction.WithContext]
+                                , providerArguments: Seq[Association.Parameter]
+                              ) extends Wiring {
+      val factoryMethods: Seq[FactoryFunction.WithContext] = factoryIndex.values.toSeq
+
+      override def associations: Seq[Association] = {
+        val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
+
+        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.wireWith))
+
+        factorySuppliedProductDeps ++ providerArguments
+      }
+    }
+
+    object FactoryFunction {
+      // FIXME: wireWith should be Wiring.UnaryWiring.Function - generate providers for concrete classes in distage-static, instead of using reflection
+      case class WithContext(factoryMethod: SymbolInfo, wireWith: Wiring.UnaryWiring, methodArguments: Seq[DIKey]) {
+        def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
+      }
     }
 
     implicit class WiringReplaceKeys(wiring: Wiring) {
@@ -79,6 +100,7 @@ trait WithDIWiring {
           case w: UnaryWiring.Instance => w.replaceKeys(f)
           case w: UnaryWiring.Reference => w.replaceKeys(f)
           case w: FactoryMethod => w.replaceKeys(f)
+          case w: FactoryFunction => w.replaceKeys(f)
         }
     }
 
@@ -124,6 +146,13 @@ trait WithDIWiring {
         )
     }
 
-  }
+    implicit class FactoryFunctionReplaceKeys(factoryMethod: FactoryFunction) {
+      def replaceKeys(f: Association => DIKey): FactoryFunction =
+        factoryMethod.copy(
+          providerArguments = factoryMethod.providerArguments.map(a => a.withWireWith(f(a)))
+          , factoryIndex = factoryMethod.factoryIndex.mapValues(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
+        )
+    }
 
+  }
 }

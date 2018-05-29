@@ -12,6 +12,7 @@ class DIUniverseMacros[D <: StaticDIUniverse](override val u: D) extends DIUnive
     case w: Wiring.UnaryWiring.Constructor =>
       q"{ $RuntimeDIUniverse.Wiring.UnaryWiring.Constructor(${w.instanceType}, ${w.associations.toList}) }"
 
+      // FIXME: Macro call in liftable that substitutes for a different type (not just in a different universe...)
     case w: Wiring.UnaryWiring.AbstractSymbol =>
       q"""{
       val fun = ${symbolOf[AbstractConstructor.type].asClass.module}.apply[${w.instanceType.tpe}].function.get
