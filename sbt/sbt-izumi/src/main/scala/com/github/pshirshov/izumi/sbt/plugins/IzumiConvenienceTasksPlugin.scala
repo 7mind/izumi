@@ -27,6 +27,7 @@ object IzumiConvenienceTasksPlugin extends AutoPlugin {
     defaultStubPackage := Some((organization in ThisBuild).value)
   )
 
+  // These settings are only suitable for root project, it's okay to activate this plugin on root level only
   override def projectSettings = Seq(
     addVersionSuffix := {
       val suffix: String = (token(Space) ~> token(StringBasic, "suffix"))

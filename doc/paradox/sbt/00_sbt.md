@@ -4,7 +4,9 @@ out: index.html
 SBT Toolkit
 ===========
 
-Add the following into your `project/plugins.sbt`:
+Izumi provides you a bunch of sbt plugins allowing you to significantly reduce size and increase clarity of huge multi-module builds.
+
+To start using Izumi plugins add the following into your `project/plugins.sbt`:
 
 @@@vars
 ```scala
@@ -15,12 +17,77 @@ addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi-deps" % izumi_version)
 ```
 @@@
 
+We provide you the following kinds of plugins:
+
+1. *Global Plugin*: adds some convenience helpers, activated automatically,
+2. *Environmental Plugin*: changes some aspects of sbt behavior in opinioneted way, intended to be activated within root project,
+3. *Preset* - an opinionated set of environmental plugins,
+4. *Optional plugin*: provides you some convenience tasks, intended to be activated manually, per-project.
+
+Important notes:
+
+1. Please keep in mind that only one intrusive Izumi plugin, `IzumiInheritedTestScopesPlugin` is activated automatically. In case you want to disable it, you should use a global Settings Group (see below),
+2. The rest of Izumi plugins are optional. You may use a preset to activate them or combine them manually as you wish (using settings groups),
+3. Some plugins requires to be installed for each project so cannot be activated via preset due to sbt limitations. You should use Settings Groups in order to activate them.
+
+### Global plugins
+
+Plugin                             | Description                                        |
+----------------------------------------------------------------------------------------|
+IzumiImportsPlugin                 | Makes all the Izumi imports visible by default     |
+IzumiInheritedTestScopesPlugin     | Maintains test scope separation                    |
+
+### Environmental plugins
+
+Plugin                             | Description                                        |
+----------------------------------------------------------------------------------------|
+IzumiBuildManifestPlugin           | Adds build info into jar manifests                 |
+IzumiConvenienceTasksPlugin        | Devops/workflow helpers                            |
+IzumiDslPlugin                     | Compact build definitions                          |
+IzumiGitStampPlugin                | Adds GIT status into jar manifests                 |
+IzumiPropertiesPlugin              | Convenience helpers for `sys.props`                |
+IzumiResolverPlugin                | Better defaults for artifact resolution            |
+IzumiScopesPlugin                  | Convenience helpers for test scope inheritance     |
+
+### Presets
+
+Plugin                             | Description                                        |
+----------------------------------------------------------------------------------------|
+IzumiEnvironment                   | All the environmental plugins except of GIT one    |
+IzumiGitEnvironment                | All the environmental plugins with GIT one         |
+
+### Optional Plugins
+
+Plugin                             | Description                                        |
+----------------------------------------------------------------------------------------|
+IzumiCompilerOptionsPlugin         | Some linting/optimization presets for scalac/javac |
+IzumiFetchPlugin                   | Allows you to transitively download artifacts from remote repositories|
+IzumiPublishingPlugin              | Some convenience helpers and improvements for artifact publishing |
+
+### Installation
 To activate all the plugins add the following statements into your root project:
 
 ```scala
+enablePlugins(IzumiGitEnvironmentPlugin)
+```
+
+In case you don't use GIT, use this preset:
+
+```scala
 enablePlugins(IzumiEnvironmentPlugin)
-enablePlugins(IzumiDslPlugin)
-enablePlugins(GitStampPlugin)
+```
+
+Also most likely you would like to activate the following plugins with your global Settings Group:
+
+```scala
+val GlobalSettings = new SettingsGroup {
+  override val plugins = Set(
+      IzumiCompilerOptionsPlugin,
+      IzumiPublishingPlugin,
+      // ...
+  )
+  // ...
+}
 ```
 
 Inherited Test Scopes

@@ -1,5 +1,6 @@
-package com.github.pshirshov.izumi.sbt.plugins
+package com.github.pshirshov.izumi.sbt.plugins.optional
 
+import com.github.pshirshov.izumi.sbt.plugins.IzumiPropertiesPlugin
 import com.typesafe.sbt.pgp.PgpKeys._
 import laughedelic.sbt.PublishMore
 import sbt.Keys.{credentials, _}

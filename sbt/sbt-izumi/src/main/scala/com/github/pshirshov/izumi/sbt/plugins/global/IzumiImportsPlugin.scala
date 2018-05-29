@@ -9,18 +9,21 @@ object IzumiImportsPlugin extends AutoPlugin {
   //noinspection TypeAnnotation
   object autoImport {
     val IzumiEnvironmentPlugin = plugins.presets.IzumiEnvironmentPlugin
+    val IzumiGitEnvironmentPlugin = plugins.presets.IzumiGitEnvironmentPlugin
+
+    val IzumiInheritedTestScopesPlugin = plugins.global.IzumiInheritedTestScopesPlugin
+
+    val IzumiGitStampPlugin = plugins.IzumiGitStampPlugin
 
     val IzumiBuildManifestPlugin = plugins.IzumiBuildManifestPlugin
     val IzumiConvenienceTasksPlugin = plugins.IzumiConvenienceTasksPlugin
     val IzumiDslPlugin = plugins.IzumiDslPlugin
-    val IzumiGitStampPlugin = plugins.IzumiGitStampPlugin
-    val IzumiInheritedTestScopesPlugin = plugins.IzumiInheritedTestScopesPlugin
     val IzumiPropertiesPlugin = plugins.IzumiPropertiesPlugin
-    val IzumiPublishingPlugin = plugins.IzumiPublishingPlugin
     val IzumiResolverPlugin = plugins.IzumiResolverPlugin
     val IzumiScopesPlugin = plugins.IzumiScopesPlugin
 
     val IzumiCompilerOptionsPlugin = plugins.optional.IzumiCompilerOptionsPlugin
+    val IzumiPublishingPlugin =  plugins.optional.IzumiPublishingPlugin
     val IzumiFetchPlugin = plugins.optional.IzumiFetchPlugin
 
     type SettingsGroup = definitions.SettingsGroup

@@ -6,7 +6,7 @@ import IzumiPublishingPlugin.Keys._
 import ReleaseTransformations._
 
 
-enablePlugins(IzumiEnvironmentPlugin)
+enablePlugins(IzumiGitEnvironmentPlugin)
 disablePlugins(AssemblyPlugin)
 
 name := "izumi-r2"
@@ -46,7 +46,7 @@ releaseProcess := Seq[ReleaseStep](
 publishTargets in ThisBuild := PublishTarget.typical("sonatype", sonatypeTarget.value.root)
 
 val GlobalSettings = new SettingsGroup {
-  override val plugins = Set(IzumiCompilerOptionsPlugin)
+    override val plugins = Set(IzumiCompilerOptionsPlugin, IzumiPublishingPlugin)
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(

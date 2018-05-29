@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.sbt.plugins.optional
 
 import java.io.File
 
-import com.github.pshirshov.izumi.sbt.plugins.IzumiPublishingPlugin.Keys.publishTargets
-import com.github.pshirshov.izumi.sbt.plugins.IzumiPublishingPlugin.MavenTarget
+import IzumiPublishingPlugin.Keys.publishTargets
+import IzumiPublishingPlugin.MavenTarget
 import coursier.Fetch.Metadata
 import coursier._
 import coursier.core.Authentication

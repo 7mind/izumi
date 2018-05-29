@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.sbt.definitions
 
-import com.github.pshirshov.izumi.sbt.plugins.IzumiInheritedTestScopesPlugin
+import com.github.pshirshov.izumi.sbt.plugins.global.IzumiInheritedTestScopesPlugin
 import sbt.librarymanagement.syntax
 import sbt.{Defaults, Project}
 

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt.plugins
+package com.github.pshirshov.izumi.sbt.plugins.global
 
 import java.nio.file.Path
 
@@ -11,6 +11,7 @@ import scala.util.control.NonFatal
 
 
 object IzumiInheritedTestScopesPlugin extends AutoPlugin {
+  override def trigger = allRequirements
 
   import Keys._
 
