@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.sbt.definitions
 
-import com.github.pshirshov.izumi.sbt._
+import com.github.pshirshov.izumi.sbt.plugins.optional.IzumiExposedTestScopesPlugin
 import sbt.librarymanagement.syntax
 import sbt.{Defaults, Project}
 
@@ -14,7 +14,7 @@ object DefaultItSettingsGroup extends AbstractSettingsGroup {
   }
 
   override def settings: Seq[sbt.Setting[_]] = {
-    Seq(Defaults.itSettings, InheritedTestScopesPlugin.itSettings).flatten
+    Seq(Defaults.itSettings, IzumiExposedTestScopesPlugin.itSettings).flatten
   }
 
 }

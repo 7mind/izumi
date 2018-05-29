@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.sbt.definitions
 
-import com.github.pshirshov.izumi.sbt.IzumiScopesPlugin.autoImport._
+import com.github.pshirshov.izumi.sbt.plugins.IzumiInheritedTestScopesPlugin.autoImport._
+import com.github.pshirshov.izumi.sbt.plugins.optional.{IzumiCompilerOptionsPlugin, IzumiExposedTestScopesPlugin, IzumiPublishingPlugin}
 import sbt.Keys._
 import sbt.librarymanagement.{InclExclRule, ModuleID}
 import sbt.{AutoPlugin, Plugins, Project}
@@ -16,7 +17,7 @@ object SettingsGroupId {
     override def name: String = n
   }
 
-  case object ItSettingsGroup extends SettingsGroupId{
+  case object ItSettingsGroup extends SettingsGroupId {
     override def name: String = "it"
   }
 
@@ -77,4 +78,8 @@ object SettingsGroupImpl {
 
 trait SettingsGroup extends AbstractSettingsGroup {
   override def id: SettingsGroupId = SettingsGroupId(getClass.getName)
+}
+
+trait DefaultGlobalSettingsGroup extends SettingsGroup {
+  override def plugins: Set[Plugins] =  Set(IzumiCompilerOptionsPlugin, IzumiPublishingPlugin, IzumiExposedTestScopesPlugin)
 }

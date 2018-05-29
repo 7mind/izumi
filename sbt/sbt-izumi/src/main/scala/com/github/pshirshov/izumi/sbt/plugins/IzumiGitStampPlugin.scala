@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt
+package com.github.pshirshov.izumi.sbt.plugins
 
 // copypasted https://bitbucket.org/atlassianlabs/sbt-git-stamp from due to obsolete jgit dependency
 
@@ -9,7 +9,7 @@ import sbt.Keys._
 import sbt._
 import sbt.internal.util.ConsoleLogger
 
-object GitStampPlugin extends AutoPlugin {
+object IzumiGitStampPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()
 
   object Keys {
@@ -21,11 +21,6 @@ object GitStampPlugin extends AutoPlugin {
   }
 
   import Keys._
-
-  object autoImport {
-    lazy val SbtGitStamp: GitStampPlugin.type = GitStampPlugin
-    lazy val GitStampPluginKeys: GitStampPlugin.Keys.type = GitStampPlugin.Keys
-  }
 
   override def globalSettings = Seq(
     izGitObject := {
@@ -61,7 +56,7 @@ object GitStampPlugin extends AutoPlugin {
           logger.info(s"Manifest value: $k = $v")
       }
 
-      Package.ManifestAttributes(gitValues.toSeq :_*)
+      Package.ManifestAttributes(gitValues.toSeq: _*)
     }.value
   )
 

@@ -1,8 +1,8 @@
-import com.github.pshirshov.izumi.sbt.ConvenienceTasksPlugin.Keys._
 import com.github.pshirshov.izumi.sbt.deps.{Izumi, IzumiDeps => Iz}
 
+import IzumiConvenienceTasksPlugin.Keys._
+
 enablePlugins(IzumiEnvironmentPlugin)
-enablePlugins(IzumiDslPlugin)
 
 // -- build settings, root artifact settings, etc
 name := "sbt-izumi-helpers-test"
@@ -11,9 +11,8 @@ crossScalaVersions in ThisBuild := Seq(
   , "2.11.12"
 )
 
-// unfortunately we have to use this bcs conditional settings in plugins don't work
-scalacOptions in ThisBuild ++= CompilerOptionsPlugin.dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
-defaultStubPackage := Some("org.test.project")
+defaultStubPackage in ThisBuild:= Some("org.test.project")
+organization in ThisBuild := "com.github.pshirshov.izumi.test.idl"
 
 // -- settings groups identifiers
 val AppSettings = new SettingsGroup {
@@ -21,11 +20,9 @@ val AppSettings = new SettingsGroup {
 }
 
 // -- settings groups definitions
-val GlobalSettings = new SettingsGroup {
+val GlobalSettings = new DefaultGlobalSettingsGroup {
   // these settings will be added into each project handled by Izumi
-  override val settings: Seq[sbt.Setting[_]] = Seq(
-    organization := "com.github.pshirshov.izumi.test"
-  )
+  override val settings: Seq[sbt.Setting[_]] = Seq()
 
   // these dependencies will be added into each project handled by Izumi
   override val sharedDeps = Set(

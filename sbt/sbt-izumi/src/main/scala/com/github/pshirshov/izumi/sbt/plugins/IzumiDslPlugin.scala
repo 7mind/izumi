@@ -1,5 +1,4 @@
-package com.github.pshirshov.izumi.sbt
-
+package com.github.pshirshov.izumi.sbt.plugins
 
 import com.github.pshirshov.izumi.sbt.definitions._
 import sbt.internal.util.ConsoleLogger
@@ -15,7 +14,7 @@ object IzumiDslPlugin extends AutoPlugin {
   protected[izumi] val allProjects: mutable.HashSet[ProjectReference] = scala.collection.mutable.HashSet[ProjectReference]()
 
 
-  override def requires: Plugins = super.requires && IzumiScopesPlugin
+  override def requires: Plugins = super.requires && IzumiInheritedTestScopesPlugin
 
   //noinspection TypeAnnotation
   object autoImport {
@@ -81,13 +80,21 @@ object IzumiDslPlugin extends AutoPlugin {
 
       private def moduleProject = Project(name, new File(s"$base/$name"))
 
-      def just: Project = moduleProject
+      def just: Project = {
+        moduleProject
+      }
 
-      def project: Project = moduleProject.remember
+      def root: Project = {
+        new ProjectExtensions(dirProject).settings(settingsGroups.distinct: _*)
+      }
 
-      def root: Project = new ProjectExtensions(dirProject).settings(settingsGroups.distinct: _*)
+      def project: Project = {
+        moduleProject.remember
+      }
 
-      def module: Project = new ProjectExtensions(moduleProject).settings(settingsGroups.distinct: _*).remember
+      def module: Project = {
+        new ProjectExtensions(moduleProject).settings(settingsGroups.distinct: _*).remember
+      }
     }
 
     class In(val directory: String, val settingsGroups: Seq[AbstractSettingsGroup]) {

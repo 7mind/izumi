@@ -1,18 +1,17 @@
-package com.github.pshirshov.izumi.sbt
+package com.github.pshirshov.izumi.sbt.plugins.optional
 
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-
+import com.github.pshirshov.izumi.sbt.plugins.IzumiPropertiesPlugin
 import com.typesafe.sbt.pgp.PgpKeys._
 import laughedelic.sbt.PublishMore
 import sbt.Keys.{credentials, _}
 import sbt.internal.util.ConsoleLogger
+import sbt.io.syntax
 import sbt.io.syntax.File
 import sbt.librarymanagement.PublishConfiguration
 import sbt.sbtpgp.Compat.publishSignedConfigurationTask
-import sbt.{AutoPlugin, Credentials, MavenRepository, Package, ThisBuild, _}
+import sbt.{AutoPlugin, Credentials, MavenRepository, _}
 
-object PublishingPlugin extends AutoPlugin {
+object IzumiPublishingPlugin extends AutoPlugin {
 
   override def requires = super.requires && PublishMore
 
@@ -27,23 +26,8 @@ object PublishingPlugin extends AutoPlugin {
 
   protected val logger: ConsoleLogger = ConsoleLogger()
 
-  override def trigger = allRequirements
-
   override lazy val globalSettings = Seq(
     pomIncludeRepository := (_ => false)
-    , packageOptions += {
-      val attributes = Map(
-        "X-Built-By" -> System.getProperty("user.name")
-        , "X-Build-JDK" -> System.getProperty("java.version")
-        , "X-Version" -> (version in ThisBuild).value
-        , "X-Build-Timestamp" -> DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(ZonedDateTime.now())
-      )
-      attributes.foreach {
-        case (k, v) =>
-          logger.info(s"Manifest value: $k = $v")
-      }
-      Package.ManifestAttributes(attributes.toSeq: _*)
-    }
     , publishTargets := Seq.empty
   )
 
@@ -77,10 +61,15 @@ object PublishingPlugin extends AutoPlugin {
 
 
   object autoImport {
-    lazy val PublishingPluginKeys: PublishingPlugin.Keys.type = PublishingPlugin.Keys
-    lazy val SbtPublishing: PublishingPlugin.type = PublishingPlugin
-
     object PublishTarget {
+      def typical(realmId: String, url: String): Seq[MavenTarget] = {
+        filter(
+          env("PUBLISH"),
+          file(realmId, url, syntax.file(s".secrets/credentials.$realmId.properties")),
+          file(realmId, url, Path.userHome / s".sbt/credentials.$realmId.properties"),
+        )
+      }
+
       def filter(targets: Option[MavenTarget]*): Seq[MavenTarget] = {
         targets.flatMap(_.toSeq)
       }
@@ -95,27 +84,24 @@ object PublishingPlugin extends AutoPlugin {
         )
 
         props match {
-          case Some(user) :: Some(password) :: Some(realmname) :: Some(realm) :: Some(url) :: Nil =>
+          case Some(user) :: Some(password) :: Some(realmname) :: Some(realmId) :: Some(url) :: Nil =>
             import sbt.librarymanagement.syntax._
-            Some(MavenTarget(realm, Credentials(realmname, realm, user, password), realm at url))
+            Some(MavenTarget(realmId, Credentials(realmname, realmId, user, password), realmId at url))
 
           case _ =>
             None
         }
       }
 
-      def file(realm: String, url: String, path: File): Option[MavenTarget] = {
+      def file(realmId: String, url: String, path: File): Option[MavenTarget] = {
         if (path.exists()) {
           import sbt.librarymanagement.syntax._
-          Some(MavenTarget(realm, Credentials(path), realm at url))
+          Some(MavenTarget(realmId, Credentials(path), realmId at url))
         } else {
           None
         }
       }
     }
-
-
-
   }
 
 }
