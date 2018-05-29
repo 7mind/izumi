@@ -35,7 +35,7 @@ object FormattingUtils {
         doFormat(
           factoryType.toString
           , wirings ++ depsRepr
-          , "fact", ('(', ')'), ('{', '}')
+          , "factory", ('(', ')'), ('{', '}')
         )
 
       case FactoryFunction(factoryType, wireables, dependencies) =>
@@ -49,7 +49,7 @@ object FormattingUtils {
         doFormat(
           factoryType.toString
           , wirings ++ depsRepr
-          , "callFact", ('(', ')'), ('{', '}')
+          , "call factory", ('(', ')'), ('{', '}')
         )
 
       case other =>
