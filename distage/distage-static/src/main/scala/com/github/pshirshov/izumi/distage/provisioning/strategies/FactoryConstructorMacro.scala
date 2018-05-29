@@ -84,6 +84,7 @@ object FactoryConstructorMacro {
 
         val providedKeys = method.associationsFromContext.map(_.wireWith)
 
+        // FIXME: remove asInstanceOf[ProductWiring] by generating providers for classes too, so the only wiring allowed is Function
         val methodInfo =q"""{
           val wiring = ${productConstructor.asInstanceOf[Wiring.UnaryWiring.ProductWiring]}
 

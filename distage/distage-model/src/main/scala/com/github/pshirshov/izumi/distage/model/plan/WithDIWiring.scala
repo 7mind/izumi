@@ -85,6 +85,7 @@ trait WithDIWiring {
     }
 
     object FactoryFunction {
+      // FIXME: wireWith should be Wiring.UnaryWiring.Function - generate providers for concrete classes in distage-static, instead of using reflection
       case class WithContext(factoryMethod: SymbolInfo, wireWith: Wiring.UnaryWiring, methodArguments: Seq[DIKey]) {
         def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
       }
