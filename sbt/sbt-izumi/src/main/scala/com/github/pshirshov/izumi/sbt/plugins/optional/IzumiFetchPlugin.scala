@@ -58,7 +58,6 @@ object IzumiFetchPlugin extends AutoPlugin {
       IO.createDirectory(targetDir)
       val resolved = resolveArtifacts.value
       IO.copy(resolved.map(r => (r, targetDir.toPath.resolve(r.getName).toFile)), CopyOptions(overwrite = true, preserveLastModified = true, preserveExecutable = true))
-      ()
     }
     , packageBin in lm.syntax.Compile := Def.taskDyn {
       copyArtifacts.value

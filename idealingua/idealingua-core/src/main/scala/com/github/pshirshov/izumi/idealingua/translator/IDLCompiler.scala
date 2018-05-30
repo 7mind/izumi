@@ -3,6 +3,8 @@ package com.github.pshirshov.izumi.idealingua.translator
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
+import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
+import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources.RecursiveCopyOutput
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
 import com.github.pshirshov.izumi.idealingua.translator.togolang.FinalTranslatorGoLangImpl
@@ -15,6 +17,12 @@ class IDLCompiler(typespace: Typespace) {
     val translator = toTranslator(options)
     val modules = translator.translate(typespace, options.extensions)
 
+    val stubs = if (options.withRuntime) {
+      IzResources.copyFromJar(s"runtime/${options.language.toString}", target)
+    } else {
+      IzResources.RecursiveCopyOutput(0)
+    }
+
     val files = modules.map {
       module =>
         val parts = module.id.path :+ module.id.name
@@ -23,7 +31,7 @@ class IDLCompiler(typespace: Typespace) {
         Files.write(modulePath, module.content.getBytes(StandardCharsets.UTF_8))
         modulePath
     }
-    IDLCompiler.IDLSuccess(files)
+    IDLCompiler.IDLSuccess(files, stubs)
   }
 
   private def toTranslator(options: CompilerOptions): FinalTranslator = {
@@ -42,11 +50,15 @@ class IDLCompiler(typespace: Typespace) {
 
 object IDLCompiler {
 
-  final case class CompilerOptions(language: IDLLanguage, extensions: Seq[TranslatorExtension])
+  final case class CompilerOptions(
+                                    language: IDLLanguage
+                                    , extensions: Seq[TranslatorExtension]
+                                    , withRuntime: Boolean = true
+                                  )
 
   trait IDLResult
 
-  final case class IDLSuccess(paths: Seq[Path]) extends IDLResult
+  final case class IDLSuccess(paths: Seq[Path], stubs: RecursiveCopyOutput) extends IDLResult
 
   final case class IDLFailure() extends IDLResult
 

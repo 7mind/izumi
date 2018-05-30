@@ -35,13 +35,16 @@ object IzResources {
     }
   }
 
-  def copyFromJar(sourcePath: String, target: Path)(onCopyStartHook: (Path, BasicFileAttributes) => Unit = {(_, _) => }): Unit = {
+  case class RecursiveCopyOutput(count: Int)
+
+  def copyFromJar(sourcePath: String, target: Path): RecursiveCopyOutput = {
     val pathReference = getPath(sourcePath)
     if (pathReference.isEmpty) {
-      return
+      return RecursiveCopyOutput(0)
     }
 
     val jarPath: Path = pathReference.get.path
+    var cc = 0
     Files.walkFileTree(
       jarPath,
       new SimpleFileVisitor[Path]() {
@@ -57,14 +60,16 @@ object IzResources {
 
         override def visitFile(file: Path,
                                attrs: BasicFileAttributes): FileVisitResult = {
-          onCopyStartHook(file, attrs)
+          cc += 1
           Files.copy(file,
             target.resolve(jarPath.relativize(file).toString),
             StandardCopyOption.REPLACE_EXISTING)
           FileVisitResult.CONTINUE
         }
       }
-    ).discard()
+    )
+
+    RecursiveCopyOutput(cc)
   }
 
 }

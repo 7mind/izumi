@@ -7,6 +7,10 @@ import java.nio.file.attribute.BasicFileAttributes
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 object IzFiles {
+  def recreateDirs(paths: Path*): Unit = {
+    paths.foreach(recreateDir)
+  }
+
   def recreateDir(path: Path): Unit = {
     val asFile = path.toFile
 
@@ -30,7 +34,11 @@ object IzFiles {
       }
 
     })
+  }
 
+  def refreshSymlink(symlink: Path, target: Path): Unit = {
 
+    Quirks.discard(symlink.toFile.delete())
+    Quirks.discard(Files.createSymbolicLink(symlink, target.toFile.getCanonicalFile.toPath))
   }
 }

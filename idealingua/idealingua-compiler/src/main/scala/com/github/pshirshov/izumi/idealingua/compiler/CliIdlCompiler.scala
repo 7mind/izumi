@@ -74,18 +74,6 @@ object CliIdlCompiler {
       option =>
         val itarget = target.resolve(option.language.toString)
         IzFiles.recreateDir(itarget)
-
-        conf.runtime
-          .filter(_ == true)
-          .foreach {
-            _ =>
-              var cc: Int = 0
-              IzResources.copyFromJar(s"runtime/${option.language.toString}", itarget) {
-                (_, _) => cc += 1
-              }
-
-              println(s"Stubs: $cc files copied")
-          }
     }
     println()
 
@@ -111,6 +99,7 @@ object CliIdlCompiler {
             }
 
             println(s"${out.paths.size} source files produced in `$itarget` in ${out.duration.toMillis}ms")
+            println(s"Stubs: ${out.stubs.count} ${option.language.toString} files copied")
 
             val ztarget = target.resolve(s"${option.language.toString}.zip")
             zip(ztarget, enumerate(itarget))
@@ -134,19 +123,19 @@ object CliIdlCompiler {
     })
   }
 
-//  private def copyDir(src: Path, dest: Path): Unit = {
-//
-//    val rt = Files.walk(src).iterator()
-//      .asScala
-//      .filter(_.toFile.isFile).toList
-//
-//    rt.foreach((f: Path) => {
-//      val t = dest.resolve(src.relativize(f))
-//      t.getParent.toFile.mkdirs()
-//      Files.copy(f, t, StandardCopyOption.REPLACE_EXISTING)
-//    })
-//    println(s"${rt.size} stub file(s) copied into $dest")
-//  }
+  //  private def copyDir(src: Path, dest: Path): Unit = {
+  //
+  //    val rt = Files.walk(src).iterator()
+  //      .asScala
+  //      .filter(_.toFile.isFile).toList
+  //
+  //    rt.foreach((f: Path) => {
+  //      val t = dest.resolve(src.relativize(f))
+  //      t.getParent.toFile.mkdirs()
+  //      Files.copy(f, t, StandardCopyOption.REPLACE_EXISTING)
+  //    })
+  //    println(s"${rt.size} stub file(s) copied into $dest")
+  //  }
 
   final case class ZE(name: String, file: Path)
 

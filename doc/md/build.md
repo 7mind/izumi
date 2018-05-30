@@ -1,6 +1,16 @@
 Build notes
 ===========
 
+Prerequisites
+-------------
+
+On mac:
+
+```
+brew install npm sbt
+npm i -g typescript
+```
+
 Build options
 -------------
 
