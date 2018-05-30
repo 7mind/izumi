@@ -2,6 +2,8 @@ package com.github.pshirshov.izumi.fundamentals.platform.resources
 
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+import java.io.{BufferedReader, InputStreamReader}
+import java.util.stream.Collectors
 
 
 object IzResources {
@@ -71,10 +73,6 @@ object IzResources {
     RecursiveCopyOutput(cc)
   }
 
-  import java.io.BufferedReader
-  import java.io.InputStream
-  import java.io.InputStreamReader
-  import java.util.stream.Collectors
 
   def readAsString(fileName: String): String = {
     val is = getClass.getClassLoader.getResourceAsStream(fileName)
