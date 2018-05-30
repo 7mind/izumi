@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
-import com.github.pshirshov.izumi.idealingua.translator.{ExtensionId, IDLCompiler, IDLLanguage, TranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator._
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 
 
@@ -61,14 +61,6 @@ object CliIdlCompiler {
         println(s"  ${e.mkString(",")}")
     }
 
-    println(s"Preparing targets...")
-    options.foreach {
-      option =>
-        val itarget = target.resolve(option.language.toString)
-        IzFiles.recreateDir(itarget)
-    }
-    println()
-
     println(s"Loading definitions from `$path`...")
     val toCompile = Timed {
       new LocalModelLoader(path, Seq.empty).load()
@@ -76,33 +68,28 @@ object CliIdlCompiler {
     println(s"Done: ${toCompile.size} in ${toCompile.duration.toMillis}ms")
     println()
 
-    toCompile.value.foreach {
-      domain =>
-        println(s"Processing domain ${domain.domain.id}...")
-        val compiler = new IDLCompiler(domain)
-        options.foreach {
-          option =>
-            val itarget = target.resolve(option.language.toString)
+    options.foreach {
+      option =>
+        val itarget = target.resolve(option.language.toString)
 
-            val out = Timed {
-
-              print(s"  - Compiling into ${option.language}: ")
-              compiler.compile(itarget, option) match {
-                case s: IDLSuccess =>
-                  s
-
-                case _ =>
-                  throw new IllegalStateException(s"Cannot compile model ${domain.domain.id}")
-              }
-            }
-
-            println(s"${out.paths.size} source files produced in `$itarget` in ${out.duration.toMillis}ms")
-            println(s"Stubs: ${out.stubs.count} ${option.language.toString} files copied")
-
-            val ztarget = target.resolve(s"${option.language.toString}.zip")
-            zip(ztarget, enumerate(itarget))
+        val out = Timed {
+          new CompilerIvokation(toCompile)
+            .compile(target, option)
         }
 
+        val allPaths = out.invokation.flatMap {
+          case (_, s: IDLSuccess) =>
+            s.paths
+
+          case (id, failure) =>
+            throw new IllegalStateException(s"Cannot compile model $id: $failure")
+        }
+
+        val ztarget = target.resolve(s"${option.language.toString}.zip")
+        zip(ztarget, enumerate(itarget))
+
+        println(s"${allPaths.size} source files from ${out.invokation.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
+        println(s"Stubs: ${out.stubs.count} ${option.language.toString} files copied")
     }
   }
 
@@ -120,20 +107,6 @@ object CliIdlCompiler {
       ZE(src.relativize(f).toString, f)
     })
   }
-
-  //  private def copyDir(src: Path, dest: Path): Unit = {
-  //
-  //    val rt = Files.walk(src).iterator()
-  //      .asScala
-  //      .filter(_.toFile.isFile).toList
-  //
-  //    rt.foreach((f: Path) => {
-  //      val t = dest.resolve(src.relativize(f))
-  //      t.getParent.toFile.mkdirs()
-  //      Files.copy(f, t, StandardCopyOption.REPLACE_EXISTING)
-  //    })
-  //    println(s"${rt.size} stub file(s) copied into $dest")
-  //  }
 
   final case class ZE(name: String, file: Path)
 

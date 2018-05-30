@@ -3,8 +3,9 @@ package com.github.pshirshov.izumi.idealingua.translator
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
+import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources.RecursiveCopyOutput
+import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
 import com.github.pshirshov.izumi.idealingua.translator.togolang.FinalTranslatorGoLangImpl
@@ -12,16 +13,42 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorS
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.FinalTranslatorTypeScriptImpl
 
 
-class IDLCompiler(typespace: Typespace) {
-  def compile(target: Path, options: CompilerOptions): IDLResult = {
-    val translator = toTranslator(options)
-    val modules = translator.translate(typespace, options.extensions)
+class CompilerIvokation(toCompile: Seq[Typespace]) {
+  def compile(target: Path, options: CompilerOptions): CompilerIvokation.Result = {
+    IzFiles.recreateDir(target)
+
+    val result = toCompile.map {
+      typespace =>
+
+        typespace.domain.id -> invokeCompiler(target, options, typespace)
+    }
 
     val stubs = if (options.withRuntime) {
       IzResources.copyFromJar(s"runtime/${options.language.toString}", target)
     } else {
       IzResources.RecursiveCopyOutput(0)
     }
+
+    CompilerIvokation.Result(result.toMap, stubs)
+  }
+
+  protected def invokeCompiler(target: Path, options: CompilerOptions, typespace: Typespace): IDLResult = {
+    val compiler = new IDLCompiler(typespace)
+    compiler.compile(target, options)
+  }
+}
+
+object CompilerIvokation {
+
+  case class Result(invokation: Map[DomainId, IDLResult], stubs: IzResources.RecursiveCopyOutput)
+
+}
+
+
+class IDLCompiler(typespace: Typespace) {
+  def compile(target: Path, options: CompilerOptions): IDLResult = {
+    val translator = toTranslator(options)
+    val modules = translator.translate(typespace, options.extensions)
 
     val files = modules.map {
       module =>
@@ -31,7 +58,7 @@ class IDLCompiler(typespace: Typespace) {
         Files.write(modulePath, module.content.getBytes(StandardCharsets.UTF_8))
         modulePath
     }
-    IDLCompiler.IDLSuccess(files, stubs)
+    IDLCompiler.IDLSuccess(target, files)
   }
 
   private def toTranslator(options: CompilerOptions): FinalTranslator = {
@@ -58,7 +85,7 @@ object IDLCompiler {
 
   trait IDLResult
 
-  final case class IDLSuccess(paths: Seq[Path], stubs: RecursiveCopyOutput) extends IDLResult
+  final case class IDLSuccess(target: Path, paths: Seq[Path]) extends IDLResult
 
   final case class IDLFailure() extends IDLResult
 

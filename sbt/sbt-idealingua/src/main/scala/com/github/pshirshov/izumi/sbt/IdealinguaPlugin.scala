@@ -6,11 +6,11 @@ import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
+import com.github.pshirshov.izumi.idealingua.translator.{CompilerIvokation, IDLLanguage}
 import sbt.Keys.{sourceGenerators, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger
@@ -142,19 +142,15 @@ object IdealinguaPlugin extends AutoPlugin {
           logger.info(s"""Going to compile the following models: ${toCompile.map(_.domain.id).mkString(",")}""")
         }
 
-        toCompile.flatMap {
-          typespace =>
-            logger.info(s"Compiling model ${typespace.domain.id} into $target...")
-            val compiler = new IDLCompiler(typespace)
-            compiler.compile(target, invokation.options) match {
-              case s: IDLSuccess =>
-                logger.debug(s"Model ${typespace.domain.id} produces ${s.paths.size} source files...")
-                s.paths.map(_.toFile)
-              case _ =>
-                throw new IllegalStateException(s"Cannot compile model ${typespace.domain.id}")
-            }
+        new CompilerIvokation(toCompile)
+          .compile(target, invokation.options)
+          .invokation.flatMap {
+          case (id, s: IDLSuccess) =>
+            logger.debug(s"Model $id produces ${s.paths.size} source files...")
+            s.paths.map(_.toFile)
+          case (id, failure) =>
+            throw new IllegalStateException(s"Cannot compile model $id: $failure")
         }
-
     }
   }
 
@@ -164,3 +160,4 @@ object IdealinguaPlugin extends AutoPlugin {
   }
 
 }
+

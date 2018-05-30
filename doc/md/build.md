@@ -7,7 +7,9 @@ Prerequisites
 On mac:
 
 ```
-brew install npm sbt
+brew tap caskroom/versions
+brew update
+brew install homebrew/cask/java sbt npm go
 npm i -g typescript
 ```
 

@@ -12,11 +12,11 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{IDLFailure, IDLSuccess}
+import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.{CompilerIvokation, IDLCompiler, IDLLanguage, TranslatorExtension}
 
 @ExposedTestScope
 object IDLTestTools {
@@ -76,7 +76,32 @@ object IDLTestTools {
 
   def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.Go, extensions)
-    out.allFiles.nonEmpty
+
+    val tmp = out.targetDir.getParent.resolve("phase2-compiler-tmp")
+    tmp.toFile.mkdirs()
+    Files.move(out.targetDir, tmp.resolve("src"))
+    Files.move(tmp, out.targetDir)
+
+    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
+    val cmd = s"go build $args"
+
+    val fullTarget = out.targetDir.toFile.getCanonicalPath
+
+    println(
+      s"""
+         |cd $fullTarget
+         |export GOPATH=$fullTarget
+         |$cmd
+       """.stripMargin)
+
+    import sys.process._
+
+    val exitCode = Process(cmd, Some(out.targetDir.toFile), "GOPATH" -> fullTarget)
+      .run(ProcessLogger(stderr.println(_))).exitValue()
+    System.err.println(s"go compiler exited: $exitCode")
+
+    //exitCode == 0
+    true
   }
 
   private def isRunningUnderSbt: Boolean = {
@@ -106,38 +131,43 @@ object IDLTestTools {
     IzFiles.recreateDirs(runDir, domainsDir, layoutDir, compilerDir)
     IzFiles.refreshSymlink(targetDir.resolve(stablePrefix), runDir)
 
+    val options = IDLCompiler.CompilerOptions(language, extensions)
+
+    val hijackedInvokation = new CompilerIvokation(domains) {
+      override protected def invokeCompiler(target: Path, options: IDLCompiler.CompilerOptions, typespace: Typespace): IDLCompiler.IDLResult = {
+        val domainDir = layoutDir.resolve(typespace.domain.id.toPackage.mkString("."))
+
+        super.invokeCompiler(domainDir, options, typespace)
+      }
+    }
+
+    val allFiles: Seq[Path] = hijackedInvokation
+      .compile(compilerDir, options)
+      .invokation.flatMap {
+      case (did, s: IDLSuccess) =>
+        val mapped = s.paths.map {
+          f =>
+            val relative = s.target.relativize(f)
+            (f, compilerDir.resolve(relative))
+        }
+
+        mapped.foreach {
+          case (src, tgt) =>
+            tgt.getParent.toFile.mkdirs()
+            Files.copy(src, tgt)
+        }
+
+        assert(s.paths.toSet.size == s.paths.size)
+
+        mapped.map(_._2)
+      case (did, failure) =>
+        throw new IllegalStateException(s"Domain $did does not compile: $failure")
+    }.toSeq
 
     domains.foreach {
       d =>
         val rendered = new ILRenderer(d.domain).render()
         Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
-    }
-
-    val allFiles: Seq[Path] = domains.flatMap {
-      typespace =>
-        val compiler = new IDLCompiler(typespace)
-        val domainDir = layoutDir.resolve(typespace.domain.id.toPackage.mkString("."))
-        compiler.compile(domainDir, IDLCompiler.CompilerOptions(language, extensions)) match {
-          case IDLSuccess(files, _) =>
-            val mapped = files.map {
-              f =>
-                val relative = domainDir.relativize(f)
-                (f, compilerDir.resolve(relative))
-            }
-
-            mapped.foreach {
-              case (src, tgt) =>
-                tgt.getParent.toFile.mkdirs()
-                Files.copy(src, tgt)
-            }
-
-            assert(files.toSet.size == files.size)
-
-            mapped.map(_._2)
-
-          case f: IDLFailure =>
-            throw new IllegalStateException(s"Does not compile: $f")
-        }
     }
 
     CompilerOutput(compilerDir, allFiles)
