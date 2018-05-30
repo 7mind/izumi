@@ -133,22 +133,14 @@ object IDLTestTools {
 
     val options = TypespaceCompiler.CompilerOptions(language, extensions)
 
-    val hijackedInvokation = new IDLCompiler(domains) {
-      override protected def invokeCompiler(target: Path, options: TypespaceCompiler.CompilerOptions, typespace: Typespace): TypespaceCompiler.IDLResult = {
-        val domainDir = layoutDir.resolve(typespace.domain.id.toPackage.mkString("."))
-
-        super.invokeCompiler(domainDir, options, typespace)
-      }
-    }
-
-    val allFiles: Seq[Path] = hijackedInvokation
+    val allFiles: Seq[Path] = new IDLCompiler(domains)
       .compile(compilerDir, options)
       .invokation.flatMap {
       case (did, s: IDLSuccess) =>
         val mapped = s.paths.map {
           f =>
-            val relative = s.target.relativize(f)
-            (f, compilerDir.resolve(relative))
+            val domainDir = layoutDir.resolve(did.toPackage.mkString("."))
+            (f, domainDir.resolve(f.toFile.getName))
         }
 
         mapped.foreach {
@@ -159,7 +151,7 @@ object IDLTestTools {
 
         assert(s.paths.toSet.size == s.paths.size)
 
-        mapped.map(_._2)
+        s.paths
       case (did, failure) =>
         throw new IllegalStateException(s"Domain $did does not compile: $failure")
     }.toSeq
