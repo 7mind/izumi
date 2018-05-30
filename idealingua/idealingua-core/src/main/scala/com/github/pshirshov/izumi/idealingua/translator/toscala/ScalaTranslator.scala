@@ -314,7 +314,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val methodIds = decls.map {
       decl =>
-        q""" val ${Pat.Var(decl.fullMethodIdValName)} = ${decl.fullMethodId} """
+        q""" val ${Pat.Var(decl.fullMethodIdName)} = ${decl.fullMethodId} """
     }
 
     val zeroargCases: List[Case] = decls.filter(_.methodArity == 0).map({
