@@ -8,6 +8,7 @@ import java.nio.file._
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
@@ -16,7 +17,6 @@ import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslato
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension}
-
 
 @ExposedTestScope
 object IDLTestTools {
@@ -59,13 +59,21 @@ object IDLTestTools {
     run.runIsAt(run.jvmPhase.next)
   }
 
-  private def isRunningUnderSbt: Boolean = {
-    Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
-  }
-
   def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.Typescript, extensions)
-    out.allFiles.nonEmpty
+
+    val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
+    val tsconfigBytes = getClass.getClassLoader.getResourceAsStream("tsconfig-compiler-test.json").readAllBytes()
+    Files.write(outputTsconfigPath, tsconfigBytes)
+
+    val tsRuntimeResources = s"runtime/${IDLLanguage.Typescript}"
+    out.allDomainDirs.foreach {
+      IzResources.copyFromJar(tsRuntimeResources, _)()
+    }
+
+    import sys.process._
+    val exitCode = s"tsc -p $outputTsconfigPath".run(ProcessLogger(stderr.println(_))).exitValue()
+    exitCode == 0
   }
 
   def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
@@ -73,7 +81,11 @@ object IDLTestTools {
     out.allFiles.nonEmpty
   }
 
-  final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
+  private def isRunningUnderSbt: Boolean = {
+    Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
+  }
+
+  final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path], allDomainDirs: Seq[Path])
 
   private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
     val targetDir = Paths.get("target")
@@ -112,10 +124,15 @@ object IDLTestTools {
         Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
     }
 
-    val allFiles: Seq[Path] = domains.flatMap {
+    val allDomainDirs: Seq[Path] = domains.map {
       typespace =>
+        runDir.resolve(typespace.domain.id.toPackage.mkString("."))
+    }
+
+    val allFiles: Seq[Path] = domains.zip(allDomainDirs).flatMap {
+      case (typespace, domainDir) =>
         val compiler = new IDLCompiler(typespace)
-        compiler.compile(runDir.resolve(typespace.domain.id.toPackage.mkString(".")), IDLCompiler.CompilerOptions(language, extensions)) match {
+        compiler.compile(domainDir, IDLCompiler.CompilerOptions(language, extensions)) match {
           case IDLSuccess(files) =>
             assert(files.toSet.size == files.size)
             files
@@ -125,7 +142,7 @@ object IDLTestTools {
         }
     }
 
-    CompilerOutput(runDir, allFiles)
+    CompilerOutput(runDir, allFiles, allDomainDirs)
   }
 
 

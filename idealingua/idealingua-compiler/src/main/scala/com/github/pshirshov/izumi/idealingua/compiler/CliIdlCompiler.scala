@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.nio.file._
-import java.nio.file.attribute.BasicFileAttributes
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
@@ -23,7 +23,6 @@ class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
 
 
   verify()
-
 }
 
 // TODO: XXX: io is shitty here
@@ -80,7 +79,12 @@ object CliIdlCompiler {
           .filter(_ == true)
           .foreach {
             _ =>
-              copyFromJar(s"runtime/${option.language.toString}", itarget)
+              var cc: Int = 0
+              IzResources.copyFromJar(s"runtime/${option.language.toString}", itarget) {
+                (_, _) => cc += 1
+              }
+
+              println(s"Stubs: $cc files copied")
           }
     }
     println()
@@ -143,71 +147,6 @@ object CliIdlCompiler {
 //    })
 //    println(s"${rt.size} stub file(s) copied into $dest")
 //  }
-
-  class PathReference(val path: Path, val fileSystem: FileSystem) extends AutoCloseable {
-    override def close(): Unit = {
-      if (this.fileSystem != null) this.fileSystem.close()
-    }
-  }
-
-  def getPath(resPath: String): Option[PathReference] = {
-    if (Paths.get(resPath).toFile.exists()) {
-      return Some(new PathReference(Paths.get(resPath), null))
-    }
-
-    val u = getClass.getClassLoader.getResource(resPath)
-    if ( u == null ) {
-      return None
-    }
-
-    try {
-      Some(new PathReference(Paths.get(u.toURI), null))
-    } catch {
-      case _: FileSystemNotFoundException => {
-        val env: Map[String, _] = Map.empty
-        import scala.collection.JavaConverters._
-
-        val fs: FileSystem = FileSystems.newFileSystem(u.toURI, env.asJava)
-        Some(new PathReference(fs.provider().getPath(u.toURI), fs))
-      }
-
-    }
-  }
-
-
-  def copyFromJar(sourcePath: String, target: Path): Unit = {
-    val pathReference= getPath(sourcePath)
-    if (pathReference.isEmpty) {
-      return
-    }
-
-    val jarPath: Path = pathReference.get.path
-    var cc = 0
-    Files.walkFileTree(
-      jarPath,
-      new SimpleFileVisitor[Path]() {
-        private var currentTarget: Path = _
-
-        override def preVisitDirectory(
-                                        dir: Path,
-                                        attrs: BasicFileAttributes): FileVisitResult = {
-          currentTarget = target.resolve(jarPath.relativize(dir).toString)
-          Files.createDirectories(currentTarget)
-          FileVisitResult.CONTINUE
-        }
-
-        override def visitFile(file: Path,
-                               attrs: BasicFileAttributes): FileVisitResult = {
-          cc += 1
-          Files.copy(file,
-            target.resolve(jarPath.relativize(file).toString),
-            StandardCopyOption.REPLACE_EXISTING)
-          FileVisitResult.CONTINUE
-        }
-      }
-    )
-    println(s"Stubs: $cc files copied")
-  }
 
   final case class ZE(name: String, file: Path)
 
