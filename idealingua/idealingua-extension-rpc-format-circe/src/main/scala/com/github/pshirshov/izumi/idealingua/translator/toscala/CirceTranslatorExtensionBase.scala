@@ -119,28 +119,28 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
     val requestEncoders = sCtx.methods.map {
       m =>
-        q"{ case IRTReqBody(v: ${m.inputTypeWrapped.typeFull}) => v.asJson }"
+        p"case IRTReqBody(v: ${m.inputTypeWrapped.typeFull}) => v.asJson"
     }
 
     val responseEncoders = sCtx.methods.map {
       m =>
-        q"{ case IRTResBody(v: ${m.outputTypeWrapped.typeFull}) => v.asJson }"
+        p"case IRTResBody(v: ${m.outputTypeWrapped.typeFull}) => v.asJson"
     }
 
     val requestDecoders = sCtx.methods.map {
       m =>
-        q"""{
+        p"""
               case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId.value == ${Lit.String(m.method.name)}=>
                   packet.as[${m.inputTypeWrapped.typeFull}].map(v => IRTReqBody(v))
-            }"""
+            """
     }
 
     val responseDecoders = sCtx.methods.map {
       m =>
-        q"""{
+        p"""
               case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId.value == ${Lit.String(m.method.name)}=>
                   packet.as[${m.outputTypeWrapped.typeFull}].map(v => IRTResBody(v))
-            }"""
+            """
     }
 
     val codecProvider =
@@ -149,13 +149,13 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
         import _root_.io.circe.syntax._
         import io.circe.Decoder.Result
 
-        def requestEncoders: List[PartialFunction[IRTReqBody, Json]] = List(..$requestEncoders)
+        def requestEncoders: List[PartialFunction[IRTReqBody, Json]] = List({..case $requestEncoders})
 
-        def responseEncoders: List[PartialFunction[IRTResBody, Json]] = List(..$responseEncoders)
+        def responseEncoders: List[PartialFunction[IRTResBody, Json]] = List({..case $responseEncoders})
 
-        def requestDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTReqBody]]] = List(..$requestDecoders)
+        def requestDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTReqBody]]] = List({..case $requestDecoders})
 
-        def responseDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTResBody]]] =  List(..$responseDecoders)
+        def responseDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTResBody]]] =  List({..case $responseDecoders})
       }"""
 
     // doesn't work because of circe derivation issue: https://github.com/circe/circe/issues/868
