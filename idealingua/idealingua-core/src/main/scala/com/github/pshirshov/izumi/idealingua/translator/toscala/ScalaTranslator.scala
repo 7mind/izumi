@@ -312,9 +312,14 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val unpacking = decls.map(_.bodyServer)
     val dispatchers = decls.map(_.dispatching)
 
+    val methodIds = decls.map {
+      decl =>
+        q""" val ${Pat.Var(decl.fullMethodIdValName)} = ${decl.fullMethodId} """
+    }
+
     val zeroargCases: List[Case] = decls.filter(_.methodArity == 0).map({
       method =>
-        p"""case IRTMethod(`serviceId`, ${method.methodIdPat}) =>
+        p"""case ${method.fullMethodIdName}  =>
               Some(${method.inputTypeWrapped.termFull}())"""
     })
 
@@ -367,10 +372,11 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     def dispatch(input: IRTInContext[${sp.serviceInputBase.typeFull}, C]): Result[${sp.serviceOutputBase.typeFull}] = {
       input match {
         ..case $dispatchers
-      }
+               }
     }
 
     def identifier: IRTServiceId = serviceId
+
 
     private def toZeroargBody(v: IRTMethod): Option[${sp.serviceInputBase.typeFull}] = {
       v match {
@@ -477,6 +483,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
           $qqSafeToUnsafeBridge
           $qqUnpackingDispatcher
           $qqUnpackingDispatcherCompanion
+          ..$methodIds
          }
        """
 

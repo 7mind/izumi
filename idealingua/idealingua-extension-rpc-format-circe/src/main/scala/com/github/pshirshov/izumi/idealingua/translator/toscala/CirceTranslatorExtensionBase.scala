@@ -130,7 +130,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     val requestDecoders = sCtx.methods.map {
       m =>
         p"""
-              case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId.value == ${Lit.String(m.method.name)}=>
+              case IRTCursorForMethod(m, packet) if m == ${m.fullMethodIdName}=>
                   packet.as[${m.inputTypeWrapped.typeFull}].map(v => IRTReqBody(v))
             """
     }
@@ -138,7 +138,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     val responseDecoders = sCtx.methods.map {
       m =>
         p"""
-              case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId.value == ${Lit.String(m.method.name)}=>
+              case IRTCursorForMethod(m, packet) if m == ${m.fullMethodIdName}=>
                   packet.as[${m.outputTypeWrapped.typeFull}].map(v => IRTResBody(v))
             """
     }

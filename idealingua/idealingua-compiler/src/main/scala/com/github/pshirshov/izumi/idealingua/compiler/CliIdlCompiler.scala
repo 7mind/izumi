@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.idealingua.compiler
 import java.nio.file._
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
@@ -108,7 +107,7 @@ object CliIdlCompiler {
   }
 
 
-  import java.nio.file.{Files, Path, StandardCopyOption}
+  import java.nio.file.{Files, Path}
 
   import scala.collection.JavaConverters._
 

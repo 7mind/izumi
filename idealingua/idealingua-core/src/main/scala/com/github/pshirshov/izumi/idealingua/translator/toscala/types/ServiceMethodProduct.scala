@@ -101,14 +101,15 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
 
   def methodId: Term.Apply = q"IRTMethodId(${Lit.String(method.name)})"
-  def methodIdPat: Pat.Extract = p"IRTMethodId(${Lit.String(method.name)})"
+  def fullMethodId = q"IRTMethod(`serviceId`, $methodId)"
+  def fullMethodIdName = Term.Name(s"Met${method.name.capitalize}")
 
   def inputMatcher: Case =  {
-    p" case _: ${inputTypeWrapped.typeFull} => IRTMethod(serviceId, $methodId)"
+    p" case _: ${inputTypeWrapped.typeFull} => $fullMethodIdName"
   }
 
   def outputMatcher: Case =  {
-    p" case _: ${outputTypeWrapped.typeFull} => IRTMethod(serviceId, $methodId)"
+    p" case _: ${outputTypeWrapped.typeFull} => $fullMethodIdName"
   }
 
   protected def outputType: ScalaType = {
