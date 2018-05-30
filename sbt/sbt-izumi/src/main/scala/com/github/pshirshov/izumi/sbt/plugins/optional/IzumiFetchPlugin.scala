@@ -22,7 +22,7 @@ object IzumiFetchPlugin extends AutoPlugin {
     lazy val fetchArtifacts = settingKey[Seq[ModuleID]]("Jars to fetch from outside")
     lazy val artifactsTargetDir = settingKey[File]("Jars to fetch from outside")
     lazy val resolveArtifacts = taskKey[Seq[File]]("Performs transitive resolution with Coursier")
-    lazy val copyArtifacts = taskKey[Unit]("Copy artifacts into target directory")
+    lazy val copyArtifacts = taskKey[Set[File]]("Copy artifacts into target directory")
 
   }
 
@@ -54,12 +54,11 @@ object IzumiFetchPlugin extends AutoPlugin {
       resolved
     }.value
     , copyArtifacts := Def.task {
-      // import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
       val targetDir = artifactsTargetDir.value
-      IO.createDirectory(targetDir)
       val resolved = resolveArtifacts.value
+      IO.createDirectory(targetDir)
       IO.copy(resolved.map(r => (r, targetDir.toPath.resolve(r.getName).toFile)), CopyOptions(overwrite = true, preserveLastModified = true, preserveExecutable = true))
-    }
+    }.value
     , packageBin in lm.syntax.Compile := Def.taskDyn {
       copyArtifacts.value
 
