@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
@@ -80,23 +81,24 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   case class DependencyContext(dep: DepType, usage: DepUsage)
 
   private def toRequirement(op: ConfigImport): RequiredConfigEntry = {
-    op.id match {
+    val paths = op.id match {
       case p: ConfPathId =>
-        val paths = Seq(
+        Seq(
           ConfigPath(p.pathOverride.split('.'))
         )
-        RequiredConfigEntry(paths, op.imp.target.tpe, op.imp.target)
 
       case _: AutomaticConfId =>
         toRequirementAuto(op)
     }
 
+    RequiredConfigEntry(paths, op.imp.target.tpe, op.imp.target)
+
   }
 
-  private def toRequirementAuto(op: ConfigImport): RequiredConfigEntry = {
+  private def toRequirementAuto(op: ConfigImport): Seq[ConfigPath] = {
     val dc = DependencyContext(structInfo(op), usageInfo(op))
 
-    val paths = Seq(
+    Seq(
       ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier)
       , ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.name ++ dc.dep.qualifier)
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier)
@@ -107,8 +109,6 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName)
       , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name)
     ).distinct
-
-    RequiredConfigEntry(paths, op.imp.target.tpe, op.imp.target)
   }
 
   private def structInfo(op: ConfigImport) = {
@@ -128,6 +128,16 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   }
 
   private def usageInfo(op: ConfigImport) = {
+    /* we may get set type the following way:
+
+     case id: AutomaticConfId =>
+      id.binding match {
+        case b: RuntimeDIUniverse.DIKey.SetElementKey =>
+          b.set.tpe.tpe.typeArgs.head.typeSymbol.name.decodedName.toString
+
+     Though in that case we need to disambiguate set members somehow
+     */
+
     val usageKeyFqName = op.id match {
       case id: AutoConfId =>
         id.binding.tpe.name

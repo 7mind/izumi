@@ -4,7 +4,9 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 sealed trait AbstractConfId
 
-sealed trait AutomaticConfId extends AbstractConfId
+sealed trait AutomaticConfId extends AbstractConfId {
+  def binding: DIKey
+}
 
 final case class AutoConfId(binding: DIKey, parameter: Association) extends AutomaticConfId {
   override def toString: String = s"auto[binding: ${binding.toString}, parameter: $parameter]"
