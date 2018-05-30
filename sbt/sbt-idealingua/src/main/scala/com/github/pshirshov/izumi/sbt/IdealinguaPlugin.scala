@@ -3,14 +3,14 @@ package com.github.pshirshov.izumi.sbt
 import java.nio.file.Path
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLSuccess}
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, IDLSuccess}
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.{CompilerIvokation, IDLLanguage}
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
 import sbt.Keys.{sourceGenerators, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger
@@ -63,10 +63,16 @@ object IdealinguaPlugin extends AutoPlugin {
 
     , sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath
-      val scopes = Seq(
-        Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
-      )
-      compileSources(scopes, compilationTargets.value, (dependencyClasspath in Compile).value)
+      val scope = Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
+      val result = compileSources(scope, compilationTargets.value, (dependencyClasspath in Compile).value)
+
+      val files = result.flatMap(_.invokation).flatMap {
+        case (_, s: IDLSuccess) =>
+          s.paths
+        case (id, failure) =>
+          throw new IllegalStateException(s"Cannot compile model $id: $failure")
+      }
+      files.map(_.toFile)
     }.taskValue
 
     , resourceGenerators in Compile += Def.task {
@@ -105,9 +111,10 @@ object IdealinguaPlugin extends AutoPlugin {
 
           val scope = Scope(src.resolve("main/izumi"), targetDir.toPath)
 
-          val result = doCompile(Seq(scope), t, (dependencyClasspath in Compile).value)
+          val result = doCompile(scope, t, (dependencyClasspath in Compile).value)
           val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip"
-          IO.zip(result.map(r => (r, scope.target.relativize(r.toPath).toString)), zipFile)
+          IO.move(result.sources.toFile, zipFile)
+          //IO.zip(result.map(r => (r, scope.target.relativize(r.toPath).toString)), zipFile)
           a -> zipFile
       }.toMap
 
@@ -116,42 +123,42 @@ object IdealinguaPlugin extends AutoPlugin {
   )
 
 
-  private def artifactTargets(ctargets: Seq[Invokation], pname: String) = {
+  private def artifactTargets(ctargets: Seq[Invokation], pname: String): Seq[(Artifact, Invokation)] = {
     ctargets.filter(i => i.mode == Mode.Artifact).map {
       target =>
         Artifact(pname, "src", "zip", target.options.language.toString) -> target
     }
   }
 
-  private def compileSources(scopes: Seq[Scope], ctargets: Seq[Invokation], classpath: Classpath) = {
-    ctargets.filter(i => i.options.language == IDLLanguage.Scala && i.mode == Mode.Sources).flatMap {
+  private def compileSources(scope: Scope, ctargets: Seq[Invokation], classpath: Classpath): Seq[IDLCompiler.Result] = {
+    ctargets.filter(i => i.options.language == IDLLanguage.Scala && i.mode == Mode.Sources).map {
       invokation =>
-        doCompile(scopes, invokation, classpath)
+        doCompile(scope, invokation, classpath)
     }
   }
 
-  private def doCompile(scopes: Seq[Scope], invokation: Invokation, classpath: Classpath): Seq[File] = {
-    scopes.flatMap {
-      scope =>
-        val cp = classpath.map(_.data)
-        val target = scope.target
-        logger.debug(s"""Loading models from $scope...""")
+  private def doCompile(scope: Scope, invokation: Invokation, classpath: Classpath): IDLCompiler.Result = {
 
-        val toCompile = new LocalModelLoader(scope.source, cp).load()
-        if (toCompile.nonEmpty) {
-          logger.info(s"""Going to compile the following models: ${toCompile.map(_.domain.id).mkString(",")}""")
-        }
+    val cp = classpath.map(_.data)
+    val target = scope.target
+    logger.debug(s"""Loading models from $scope...""")
 
-        new CompilerIvokation(toCompile)
-          .compile(target, invokation.options)
-          .invokation.flatMap {
-          case (id, s: IDLSuccess) =>
-            logger.debug(s"Model $id produces ${s.paths.size} source files...")
-            s.paths.map(_.toFile)
-          case (id, failure) =>
-            throw new IllegalStateException(s"Cannot compile model $id: $failure")
-        }
+    val toCompile = new LocalModelLoader(scope.source, cp).load()
+    if (toCompile.nonEmpty) {
+      logger.info(s"""Going to compile the following models: ${toCompile.map(_.domain.id).mkString(",")}""")
     }
+
+    val result = new IDLCompiler(toCompile)
+      .compile(target, invokation.options)
+
+    result.invokation.foreach {
+      case (id, s: IDLSuccess) =>
+        logger.debug(s"Model $id produced ${s.paths.size} source files...")
+      case (id, failure) =>
+        throw new IllegalStateException(s"Cannot compile model $id: $failure")
+    }
+
+    result
   }
 
   object autoImport {

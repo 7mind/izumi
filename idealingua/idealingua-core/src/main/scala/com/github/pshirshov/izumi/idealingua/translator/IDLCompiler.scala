@@ -1,20 +1,15 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.Path
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.{CompilerOptions, IDLResult}
-import com.github.pshirshov.izumi.idealingua.translator.togolang.FinalTranslatorGoLangImpl
-import com.github.pshirshov.izumi.idealingua.translator.toscala.FinalTranslatorScalaImpl
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.FinalTranslatorTypeScriptImpl
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, IDLResult}
 
-
-class CompilerIvokation(toCompile: Seq[Typespace]) {
-  def compile(target: Path, options: CompilerOptions): CompilerIvokation.Result = {
+class IDLCompiler(toCompile: Seq[Typespace]) {
+  def compile(target: Path, options: CompilerOptions): IDLCompiler.Result = {
     IzFiles.recreateDir(target)
 
     val result = toCompile.map {
@@ -29,64 +24,67 @@ class CompilerIvokation(toCompile: Seq[Typespace]) {
       IzResources.RecursiveCopyOutput(0)
     }
 
-    CompilerIvokation.Result(result.toMap, stubs)
+    val ztarget = target.getParent.resolve(s"${options.language.toString}.zip")
+    zip(ztarget, enumerate(target))
+
+    IDLCompiler.Result(result.toMap, stubs, ztarget)
   }
 
   protected def invokeCompiler(target: Path, options: CompilerOptions, typespace: Typespace): IDLResult = {
-    val compiler = new IDLCompiler(typespace)
+    val compiler = new TypespaceCompiler(typespace)
     compiler.compile(target, options)
   }
-}
 
-object CompilerIvokation {
+  import java.nio.file.{Files, Path}
 
-  case class Result(invokation: Map[DomainId, IDLResult], stubs: IzResources.RecursiveCopyOutput)
+  import scala.collection.JavaConverters._
 
-}
+  private def enumerate(src: Path): List[ZE] = {
+    val files = Files.walk(src).iterator()
+      .asScala
+      .filter(_.toFile.isFile).toList
 
-
-class IDLCompiler(typespace: Typespace) {
-  def compile(target: Path, options: CompilerOptions): IDLResult = {
-    val translator = toTranslator(options)
-    val modules = translator.translate(typespace, options.extensions)
-
-    val files = modules.map {
-      module =>
-        val parts = module.id.path :+ module.id.name
-        val modulePath = parts.foldLeft(target) { case (path, part) => path.resolve(part) }
-        modulePath.getParent.toFile.mkdirs()
-        Files.write(modulePath, module.content.getBytes(StandardCharsets.UTF_8))
-        modulePath
-    }
-    IDLCompiler.IDLSuccess(target, files)
+    files.map(f => {
+      ZE(src.relativize(f).toString, f)
+    })
   }
 
-  private def toTranslator(options: CompilerOptions): FinalTranslator = {
-    options.language match {
-      case IDLLanguage.Scala =>
-        new FinalTranslatorScalaImpl()
-      case IDLLanguage.Go =>
-        new FinalTranslatorGoLangImpl()
-      case IDLLanguage.Typescript =>
-        new FinalTranslatorTypeScriptImpl()
-      case IDLLanguage.UnityCSharp =>
-        ??? // c# transpiler is not ready
+  final case class ZE(name: String, file: Path)
+
+  def zip(out: Path, files: Iterable[ZE]): Unit = {
+    import java.io.{BufferedInputStream, FileInputStream, FileOutputStream}
+    import java.util.zip.{ZipEntry, ZipOutputStream}
+
+    val outFile = out.toFile
+    if (outFile.exists()) {
+      outFile.delete()
     }
+
+    val zip = new ZipOutputStream(new FileOutputStream(outFile))
+
+    files.foreach { name =>
+      zip.putNextEntry(new ZipEntry(name.name))
+      val in = new BufferedInputStream(new FileInputStream(name.file.toFile))
+      var b = in.read()
+      while (b > -1) {
+        zip.write(b)
+        b = in.read()
+      }
+      in.close()
+      zip.closeEntry()
+    }
+    zip.close()
   }
 }
 
 object IDLCompiler {
 
-  final case class CompilerOptions(
-                                    language: IDLLanguage
-                                    , extensions: Seq[TranslatorExtension]
-                                    , withRuntime: Boolean = true
-                                  )
+  case class Result(
+                     invokation: Map[DomainId, IDLResult]
+                     , stubs: IzResources.RecursiveCopyOutput
+                     , sources: Path
+                   )
 
-  trait IDLResult
 
-  final case class IDLSuccess(target: Path, paths: Seq[Path]) extends IDLResult
-
-  final case class IDLFailure() extends IDLResult
 
 }

@@ -2,14 +2,13 @@ package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.nio.file._
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.IDLSuccess
+import com.github.pshirshov.izumi.idealingua.translator._
+import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
-import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
-import com.github.pshirshov.izumi.idealingua.translator._
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 
 
@@ -48,7 +47,7 @@ object CliIdlCompiler {
     val options = languages.map {
       case (name, ext) =>
         val lang = IDLLanguage.parse(name)
-        IDLCompiler.CompilerOptions(lang, getExt(lang, ext))
+        TypespaceCompiler.CompilerOptions(lang, getExt(lang, ext))
     }
 
     val path = conf.source()
@@ -73,7 +72,7 @@ object CliIdlCompiler {
         val itarget = target.resolve(option.language.toString)
 
         val out = Timed {
-          new CompilerIvokation(toCompile)
+          new IDLCompiler(toCompile)
             .compile(target, option)
         }
 
@@ -85,53 +84,12 @@ object CliIdlCompiler {
             throw new IllegalStateException(s"Cannot compile model $id: $failure")
         }
 
-        val ztarget = target.resolve(s"${option.language.toString}.zip")
-        zip(ztarget, enumerate(itarget))
-
         println(s"${allPaths.size} source files from ${out.invokation.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
-        println(s"Stubs: ${out.stubs.count} ${option.language.toString} files copied")
+        println(s"Stubs  : ${out.stubs.count} ${option.language.toString} files copied")
+        println(s"Archive: ${out.sources}")
     }
   }
 
 
-  import java.nio.file.{Files, Path}
 
-  import scala.collection.JavaConverters._
-
-  private def enumerate(src: Path): List[ZE] = {
-    val files = Files.walk(src).iterator()
-      .asScala
-      .filter(_.toFile.isFile).toList
-
-    files.map(f => {
-      ZE(src.relativize(f).toString, f)
-    })
-  }
-
-  final case class ZE(name: String, file: Path)
-
-  def zip(out: Path, files: Iterable[ZE]): Unit = {
-    import java.io.{BufferedInputStream, FileInputStream, FileOutputStream}
-    import java.util.zip.{ZipEntry, ZipOutputStream}
-
-    val outFile = out.toFile
-    if (outFile.exists()) {
-      outFile.delete()
-    }
-
-    val zip = new ZipOutputStream(new FileOutputStream(outFile))
-
-    files.foreach { name =>
-      zip.putNextEntry(new ZipEntry(name.name))
-      val in = new BufferedInputStream(new FileInputStream(name.file.toFile))
-      var b = in.read()
-      while (b > -1) {
-        zip.write(b)
-        b = in.read()
-      }
-      in.close()
-      zip.closeEntry()
-    }
-    zip.close()
-  }
 }

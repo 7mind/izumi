@@ -12,11 +12,11 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.IDLCompiler.IDLSuccess
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.IDLSuccess
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
-import com.github.pshirshov.izumi.idealingua.translator.{CompilerIvokation, IDLCompiler, IDLLanguage, TranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, TypespaceCompiler, IDLLanguage, TranslatorExtension}
 
 @ExposedTestScope
 object IDLTestTools {
@@ -131,10 +131,10 @@ object IDLTestTools {
     IzFiles.recreateDirs(runDir, domainsDir, layoutDir, compilerDir)
     IzFiles.refreshSymlink(targetDir.resolve(stablePrefix), runDir)
 
-    val options = IDLCompiler.CompilerOptions(language, extensions)
+    val options = TypespaceCompiler.CompilerOptions(language, extensions)
 
-    val hijackedInvokation = new CompilerIvokation(domains) {
-      override protected def invokeCompiler(target: Path, options: IDLCompiler.CompilerOptions, typespace: Typespace): IDLCompiler.IDLResult = {
+    val hijackedInvokation = new IDLCompiler(domains) {
+      override protected def invokeCompiler(target: Path, options: TypespaceCompiler.CompilerOptions, typespace: Typespace): TypespaceCompiler.IDLResult = {
         val domainDir = layoutDir.resolve(typespace.domain.id.toPackage.mkString("."))
 
         super.invokeCompiler(domainDir, options, typespace)
