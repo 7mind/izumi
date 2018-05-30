@@ -62,13 +62,6 @@ object CliIdlCompiler {
         println(s"  ${e.mkString(",")}")
     }
 
-    println(s"Loading definitions from `$path`...")
-    val toCompile = Timed {
-      new LocalModelLoader(path, Seq.empty).load()
-    }
-    println(s"Done: ${toCompile.size} in ${toCompile.duration.toMillis}ms")
-    println()
-
     println(s"Preparing targets...")
     options.foreach {
       option =>
@@ -77,6 +70,12 @@ object CliIdlCompiler {
     }
     println()
 
+    println(s"Loading definitions from `$path`...")
+    val toCompile = Timed {
+      new LocalModelLoader(path, Seq.empty).load()
+    }
+    println(s"Done: ${toCompile.size} in ${toCompile.duration.toMillis}ms")
+    println()
 
     toCompile.value.foreach {
       domain =>

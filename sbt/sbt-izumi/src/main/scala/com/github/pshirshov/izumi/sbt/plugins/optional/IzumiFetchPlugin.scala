@@ -54,6 +54,7 @@ object IzumiFetchPlugin extends AutoPlugin {
       resolved
     }.value
     , copyArtifacts := Def.task {
+      // import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
       val targetDir = artifactsTargetDir.value
       IO.createDirectory(targetDir)
       val resolved = resolveArtifacts.value

@@ -64,8 +64,8 @@ object IDLTestTools {
     val out = compiles(id, domains, IDLLanguage.Typescript, extensions)
 
     val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
-    val tsconfigBytes = getClass.getClassLoader.getResourceAsStream("tsconfig-compiler-test.json").readAllBytes()
-    Files.write(outputTsconfigPath, tsconfigBytes)
+    val tsconfigBytes = IzResources.readAsString("tsconfig-compiler-test.json")
+    Files.write(outputTsconfigPath, tsconfigBytes.getBytes)
 
     import sys.process._
     val exitCode = s"tsc -p $outputTsconfigPath".run(ProcessLogger(stderr.println(_))).exitValue()
@@ -94,8 +94,9 @@ object IDLTestTools {
     // TODO: clashes still may happen in case of parallel runs with the same ID
     val stablePrefix = s"$id-${language.toString}"
     val vmPrefix = s"$stablePrefix-u${ManagementFactory.getRuntimeMXBean.getStartTime}"
-
     val dirPrefix = s"$vmPrefix-ts${System.currentTimeMillis()}"
+
+    dropOldRunsData(tmpdir, stablePrefix, vmPrefix)
 
     val runDir = tmpdir.resolve(dirPrefix)
     val domainsDir = runDir.resolve("phase0-rerender")
@@ -105,15 +106,6 @@ object IDLTestTools {
     IzFiles.recreateDirs(runDir, domainsDir, layoutDir, compilerDir)
     IzFiles.refreshSymlink(targetDir.resolve(stablePrefix), runDir)
 
-    tmpdir
-      .toFile
-      .listFiles()
-      .toList
-      .filter(f => f.isDirectory && f.getName.startsWith(stablePrefix) && !f.getName.startsWith(vmPrefix))
-      .foreach {
-        f =>
-          Quirks.discard(IzFiles.removeDir(f.toPath))
-      }
 
     domains.foreach {
       d =>
@@ -121,16 +113,10 @@ object IDLTestTools {
         Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
     }
 
-
-    val allDomainDirs: Seq[Path] = domains.map {
+    val allFiles: Seq[Path] = domains.flatMap {
       typespace =>
-        layoutDir.resolve(typespace.domain.id.toPackage.mkString("."))
-    }
-
-
-    val allFiles: Seq[Path] = domains.zip(allDomainDirs).flatMap {
-      case (typespace, domainDir) =>
         val compiler = new IDLCompiler(typespace)
+        val domainDir = layoutDir.resolve(typespace.domain.id.toPackage.mkString("."))
         compiler.compile(domainDir, IDLCompiler.CompilerOptions(language, extensions)) match {
           case IDLSuccess(files, _) =>
             val mapped = files.map {
@@ -158,4 +144,15 @@ object IDLTestTools {
   }
 
 
+  private def dropOldRunsData(tmpdir: Path, stablePrefix: String, vmPrefix: String): Unit = {
+    tmpdir
+      .toFile
+      .listFiles()
+      .toList
+      .filter(f => f.isDirectory && f.getName.startsWith(stablePrefix) && !f.getName.startsWith(vmPrefix))
+      .foreach {
+        f =>
+          Quirks.discard(IzFiles.removeDir(f.toPath))
+      }
+  }
 }

@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.fundamentals.platform.resources
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 object IzResources {
 
@@ -72,4 +71,17 @@ object IzResources {
     RecursiveCopyOutput(cc)
   }
 
+  import java.io.BufferedReader
+  import java.io.InputStream
+  import java.io.InputStreamReader
+  import java.util.stream.Collectors
+
+  def readAsString(fileName: String): String = {
+    val is = getClass.getClassLoader.getResourceAsStream(fileName)
+    if (is != null) {
+      val reader = new BufferedReader(new InputStreamReader(is))
+      return reader.lines.collect(Collectors.joining(System.lineSeparator))
+    }
+    null
+  }
 }
