@@ -5,6 +5,8 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.io.{BufferedReader, InputStreamReader}
 import java.util.stream.Collectors
 
+import scala.collection.mutable
+
 
 object IzResources {
 
@@ -36,16 +38,20 @@ object IzResources {
     }
   }
 
-  case class RecursiveCopyOutput(count: Int)
+  case class RecursiveCopyOutput(files: Seq[Path])
 
-  def copyFromJar(sourcePath: String, target: Path): RecursiveCopyOutput = {
+  object RecursiveCopyOutput {
+    def empty: RecursiveCopyOutput = RecursiveCopyOutput(Seq.empty)
+  }
+
+  def copyFromJar(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
     val pathReference = getPath(sourcePath)
     if (pathReference.isEmpty) {
-      return RecursiveCopyOutput(0)
+      return RecursiveCopyOutput.empty
     }
 
     val jarPath: Path = pathReference.get.path
-    var cc = 0
+    val targets = mutable.ArrayBuffer.empty[Path]
     Files.walkFileTree(
       jarPath,
       new SimpleFileVisitor[Path]() {
@@ -54,23 +60,26 @@ object IzResources {
         override def preVisitDirectory(
                                         dir: Path,
                                         attrs: BasicFileAttributes): FileVisitResult = {
-          currentTarget = target.resolve(jarPath.relativize(dir).toString)
+          currentTarget = targetDir.resolve(jarPath.relativize(dir).toString)
           Files.createDirectories(currentTarget)
           FileVisitResult.CONTINUE
         }
 
         override def visitFile(file: Path,
                                attrs: BasicFileAttributes): FileVisitResult = {
-          cc += 1
-          Files.copy(file,
-            target.resolve(jarPath.relativize(file).toString),
-            StandardCopyOption.REPLACE_EXISTING)
+          val target = targetDir.resolve(jarPath.relativize(file).toString)
+          targets += target
+          Files.copy(
+            file
+            , target
+            , StandardCopyOption.REPLACE_EXISTING
+          )
           FileVisitResult.CONTINUE
         }
       }
     )
 
-    RecursiveCopyOutput(cc)
+    RecursiveCopyOutput(targets)
   }
 
 

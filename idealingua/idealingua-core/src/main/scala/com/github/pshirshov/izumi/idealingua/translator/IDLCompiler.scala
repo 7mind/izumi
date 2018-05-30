@@ -2,11 +2,12 @@ package com.github.pshirshov.izumi.idealingua.translator
 
 import java.nio.file.Path
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, IDLResult}
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, IDLFailure, IDLResult, IDLSuccess}
+import java.nio.file.Path
 
 class IDLCompiler(toCompile: Seq[Typespace]) {
   def compile(target: Path, options: CompilerOptions): IDLCompiler.Result = {
@@ -14,20 +15,36 @@ class IDLCompiler(toCompile: Seq[Typespace]) {
 
     val result = toCompile.map {
       typespace =>
-
         typespace.domain.id -> invokeCompiler(target, options, typespace)
     }
 
+    val success = result.collect({ case (id, success: IDLSuccess) => id -> success })
+    val failure = result.collect({ case (id, failure: IDLFailure) => s"$id: $failure" })
+
+    if (failure.nonEmpty) {
+      throw new IllegalStateException(s"Cannot compile models: ${failure.mkString("\n  ")}")
+    }
+
+    // copy stubs
     val stubs = if (options.withRuntime) {
       IzResources.copyFromJar(s"runtime/${options.language.toString}", target)
     } else {
-      IzResources.RecursiveCopyOutput(0)
+      IzResources.RecursiveCopyOutput.empty
     }
 
+    // pack output
+    import IzZip._
     val ztarget = target.getParent.resolve(s"${options.language.toString}.zip")
-    zip(ztarget, enumerate(target))
+    val toPack = stubs.files.map {
+      stub =>
+        ZE(target.relativize(stub).toString, stub)
+    } ++ success.flatMap {
+      case (_, s) =>
+        s.paths.map(p => ZE(s.target.relativize(p).toString, p))
+    }
+    zip(ztarget, toPack)
 
-    IDLCompiler.Result(result.toMap, stubs, ztarget)
+    IDLCompiler.Result(success.toMap, stubs, ztarget)
   }
 
   protected def invokeCompiler(target: Path, options: CompilerOptions, typespace: Typespace): IDLResult = {
@@ -35,56 +52,17 @@ class IDLCompiler(toCompile: Seq[Typespace]) {
     compiler.compile(target, options)
   }
 
-  import java.nio.file.{Files, Path}
 
-  import scala.collection.JavaConverters._
 
-  private def enumerate(src: Path): List[ZE] = {
-    val files = Files.walk(src).iterator()
-      .asScala
-      .filter(_.toFile.isFile).toList
-
-    files.map(f => {
-      ZE(src.relativize(f).toString, f)
-    })
-  }
-
-  final case class ZE(name: String, file: Path)
-
-  def zip(out: Path, files: Iterable[ZE]): Unit = {
-    import java.io.{BufferedInputStream, FileInputStream, FileOutputStream}
-    import java.util.zip.{ZipEntry, ZipOutputStream}
-
-    val outFile = out.toFile
-    if (outFile.exists()) {
-      outFile.delete()
-    }
-
-    val zip = new ZipOutputStream(new FileOutputStream(outFile))
-
-    files.foreach { name =>
-      zip.putNextEntry(new ZipEntry(name.name))
-      val in = new BufferedInputStream(new FileInputStream(name.file.toFile))
-      var b = in.read()
-      while (b > -1) {
-        zip.write(b)
-        b = in.read()
-      }
-      in.close()
-      zip.closeEntry()
-    }
-    zip.close()
-  }
 }
 
 object IDLCompiler {
 
   case class Result(
-                     invokation: Map[DomainId, IDLResult]
+                     invokation: Map[DomainId, IDLSuccess]
                      , stubs: IzResources.RecursiveCopyOutput
                      , sources: Path
                    )
-
 
 
 }

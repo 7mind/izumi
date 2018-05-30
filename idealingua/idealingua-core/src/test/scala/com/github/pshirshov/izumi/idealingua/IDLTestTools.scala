@@ -12,11 +12,10 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.IDLSuccess
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, TypespaceCompiler, IDLLanguage, TranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension, TypespaceCompiler}
 
 @ExposedTestScope
 object IDLTestTools {
@@ -83,6 +82,7 @@ object IDLTestTools {
     Files.move(tmp, out.targetDir)
 
     val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
+    //val cmd = s"go build -o ../phase3-go $args" // go build: cannot use -o with multiple packages
     val cmd = s"go build $args"
 
     val fullTarget = out.targetDir.toFile.getCanonicalPath
@@ -136,7 +136,7 @@ object IDLTestTools {
     val allFiles: Seq[Path] = new IDLCompiler(domains)
       .compile(compilerDir, options)
       .invokation.flatMap {
-      case (did, s: IDLSuccess) =>
+      case (did, s) =>
         val mapped = s.paths.map {
           f =>
             val domainDir = layoutDir.resolve(did.toPackage.mkString("."))
@@ -152,8 +152,6 @@ object IDLTestTools {
         assert(s.paths.toSet.size == s.paths.size)
 
         s.paths
-      case (did, failure) =>
-        throw new IllegalStateException(s"Domain $did does not compile: $failure")
     }.toSeq
 
     domains.foreach {

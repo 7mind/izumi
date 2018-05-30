@@ -4,7 +4,6 @@ import java.nio.file._
 
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.IDLSuccess
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
@@ -76,16 +75,10 @@ object CliIdlCompiler {
             .compile(target, option)
         }
 
-        val allPaths = out.invokation.flatMap {
-          case (_, s: IDLSuccess) =>
-            s.paths
-
-          case (id, failure) =>
-            throw new IllegalStateException(s"Cannot compile model $id: $failure")
-        }
+        val allPaths = out.invokation.flatMap(_._2.paths)
 
         println(s"${allPaths.size} source files from ${out.invokation.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
-        println(s"Stubs  : ${out.stubs.count} ${option.language.toString} files copied")
+        println(s"Stubs  : ${out.stubs.files.size} ${option.language.toString} files copied")
         println(s"Archive: ${out.sources}")
     }
   }

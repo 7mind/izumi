@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.sbt
 import java.nio.file.Path
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, IDLSuccess}
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.CompilerOptions
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
@@ -66,12 +66,7 @@ object IdealinguaPlugin extends AutoPlugin {
       val scope = Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
       val result = compileSources(scope, compilationTargets.value, (dependencyClasspath in Compile).value)
 
-      val files = result.flatMap(_.invokation).flatMap {
-        case (_, s: IDLSuccess) =>
-          s.paths
-        case (id, failure) =>
-          throw new IllegalStateException(s"Cannot compile model $id: $failure")
-      }
+      val files = result.flatMap(_.invokation).flatMap(_._2.paths)
       files.map(_.toFile)
     }.taskValue
 
@@ -152,10 +147,8 @@ object IdealinguaPlugin extends AutoPlugin {
       .compile(target, invokation.options)
 
     result.invokation.foreach {
-      case (id, s: IDLSuccess) =>
+      case (id, s) =>
         logger.debug(s"Model $id produced ${s.paths.size} source files...")
-      case (id, failure) =>
-        throw new IllegalStateException(s"Cannot compile model $id: $failure")
     }
 
     result
