@@ -14,11 +14,7 @@ import org.rogach.scallop.{ScallopConf, ScallopOption}
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
   val source: ScallopOption[Path] = opt[Path](name = "source", default = Some(Paths.get("source")), descr = "Input directory")
   val target: ScallopOption[Path] = opt[Path](name = "target", default = Some(Paths.get("target")), descr = "Output directory")
-  val runtime: ScallopOption[Boolean] = opt[Boolean](name = "runtime", descr = "Copy embedded runtime", default = Some(false))
-
   val languages: Map[String, String] = props[String]('L', descr = "Key is language id, value is extension filter. Example: -L scala=-AnyvalExtension;-CirceDerivationTranslatorExtension")
-
-
   verify()
 }
 
