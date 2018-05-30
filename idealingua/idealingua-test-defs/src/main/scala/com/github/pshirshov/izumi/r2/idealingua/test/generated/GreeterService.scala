@@ -78,6 +78,16 @@ object GreeterServiceWrapped
     client(new SafeToUnsafeBridge[R](dispatcher))
   }
 
+  object SayHiInput {
+    implicit val encode: Encoder[SayHiInput] = deriveEncoder
+    implicit val decode: Decoder[SayHiInput] = deriveDecoder
+  }
+
+  object SayHiOutput {
+    implicit val encode: Encoder[SayHiOutput] = deriveEncoder
+    implicit val decode: Decoder[SayHiOutput] = deriveDecoder
+  }
+
   object GreetInput {
     implicit val encode: Encoder[GreetInput] = deriveEncoder
     implicit val decode: Decoder[GreetInput] = deriveDecoder
@@ -87,17 +97,6 @@ object GreeterServiceWrapped
     implicit val encode: Encoder[GreetOutput] = deriveEncoder
     implicit val decode: Decoder[GreetOutput] = deriveDecoder
   }
-
-  object GreeterServiceInput {
-    implicit val encode: Encoder[GreeterServiceInput] = deriveEncoder
-    implicit val decode: Decoder[GreeterServiceInput] = deriveDecoder
-  }
-
-  object GreeterServiceOutput {
-    implicit val encode: Encoder[GreeterServiceOutput] = deriveEncoder
-    implicit val decode: Decoder[GreeterServiceOutput] = deriveDecoder
-  }
-
 
   val serviceId =  IRTServiceId("GreeterService")
 
@@ -111,10 +110,10 @@ object GreeterServiceWrapped
       val packed = SayHiInput()
       val dispatched = dispatcher.dispatch(packed)
       _ServiceResult.map(dispatched) {
-        case o: GreetOutput =>
+        case o: SayHiOutput =>
           o.value
         case o =>
-          throw new IRTTypeMismatchException(s"Unexpected input in GreeterServiceDispatcherPacking.greet: $o", o, None)
+          throw new IRTTypeMismatchException(s"Unexpected input in GreeterServiceDispatcherPacking.sayhi: $o", o, None)
       }
 
     }
@@ -243,14 +242,18 @@ object GreeterServiceWrapped
 
     override def requestEncoders: List[PartialFunction[IRTReqBody, Json]] = List(
       {
-        case IRTReqBody(v: GreeterServiceInput) =>
+        case IRTReqBody(v: GreetInput) =>
+          v.asJson
+        case IRTReqBody(v: SayHiInput) =>
           v.asJson
       }
     )
 
     override def responseEncoders: List[PartialFunction[IRTResBody, Json]] = List(
       {
-        case IRTResBody(v: GreeterServiceOutput) =>
+        case IRTResBody(v: GreetOutput) =>
+          v.asJson
+        case IRTResBody(v: SayHiOutput) =>
           v.asJson
       }
     )
@@ -258,15 +261,19 @@ object GreeterServiceWrapped
 
     override def requestDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTReqBody]]] = List(
       {
-        case IRTCursorForMethod(m, packet) if m.service == serviceId =>
-          packet.as[GreeterServiceInput].map(v => IRTReqBody(v))
+        case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId == IRTMethodId("sayhi") =>
+          packet.as[SayHiInput].map(v => IRTReqBody(v))
+        case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId == IRTMethodId("greet") =>
+          packet.as[GreetInput].map(v => IRTReqBody(v))
       }
     )
 
     override def responseDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTResBody]]] =  List(
       {
-        case IRTCursorForMethod(m, packet) if m.service == serviceId =>
-          packet.as[GreeterServiceOutput].map(v => IRTResBody(v))
+        case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId == IRTMethodId("sayhi") =>
+          packet.as[SayHiOutput].map(v => IRTResBody(v))
+        case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId == IRTMethodId("greet") =>
+          packet.as[GreetOutput].map(v => IRTResBody(v))
       }
     )
   }

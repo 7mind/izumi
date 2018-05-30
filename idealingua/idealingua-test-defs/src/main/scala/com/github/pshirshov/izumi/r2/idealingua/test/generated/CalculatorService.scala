@@ -75,24 +75,6 @@ object CalculatorServiceWrapped
     implicit val decodeTestPayload: Decoder[SumOutput] = deriveDecoder
   }
 
-  object CalculatorServiceInput {
-    implicit val encodeTestPayload: Encoder[CalculatorServiceWrapped.CalculatorServiceInput] = deriveEncoder
-    implicit val decodeTestPayload: Decoder[CalculatorServiceWrapped.CalculatorServiceInput] = deriveDecoder
-  }
-
-  object CalculatorServiceOutput extends CalculatorServiceWrapped.CalculatorServiceOutputCirce
-  trait CalculatorServiceOutputCirce extends _root_.io.circe.java8.time.TimeInstances {
-    import _root_.io.circe._
-    import _root_.io.circe.generic.semiauto._
-    implicit val encodeInTestService: Encoder[CalculatorServiceOutput] = deriveEncoder[CalculatorServiceOutput]
-    implicit val decodeInTestService: Decoder[CalculatorServiceOutput] = deriveDecoder[CalculatorServiceOutput]
-  }
-
-//  object CalculatorServiceOutput {
-//    implicit val encodeTestPayload: Encoder[CalculatorServiceWrapped.CalculatorServiceOutput] = deriveEncoder
-//    implicit val decodeTestPayload: Decoder[CalculatorServiceWrapped.CalculatorServiceOutput] = deriveDecoder
-//  }
-
   val serviceId = IRTServiceId("CalculatorService")
 
   trait PackingDispatcher[R[_]]
@@ -209,29 +191,29 @@ object CalculatorServiceWrapped
 
     override def requestEncoders: List[PartialFunction[IRTReqBody, Json]] = List(
       {
-        case IRTReqBody(v: CalculatorServiceInput) =>
+        case IRTReqBody(v: SumInput) =>
           v.asJson
       }
     )
 
     override def responseEncoders: List[PartialFunction[IRTResBody, Json]] = List(
       {
-        case IRTResBody(v: CalculatorServiceOutput) =>
+        case IRTResBody(v: SumOutput) =>
           v.asJson
       }
     )
 
     override def requestDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTReqBody]]] = List(
       {
-        case IRTCursorForMethod(m, packet) if m.service == serviceId =>
-          packet.as[CalculatorServiceInput].map(v => IRTReqBody(v))
+        case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId.value == "sum" =>
+          packet.as[SumInput].map(v => IRTReqBody(v))
       }
     )
 
     override def responseDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTResBody]]] = List(
       {
-        case IRTCursorForMethod(m, packet) if m.service == serviceId =>
-          packet.as[CalculatorServiceOutput].map(v => IRTResBody(v))
+        case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId.value == "sum" =>
+          packet.as[SumOutput].map(v => IRTResBody(v))
       }
     )
   }
