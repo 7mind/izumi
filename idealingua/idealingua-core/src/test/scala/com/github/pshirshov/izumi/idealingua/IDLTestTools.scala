@@ -12,6 +12,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
@@ -68,9 +69,9 @@ object IDLTestTools {
 
     import sys.process._
     val exitCode = s"tsc -p $outputTsconfigPath".run(ProcessLogger(stderr.println(_))).exitValue()
-    System.err.println(s"ts compiler exited: $exitCode")
-    //exitCode == 0
-    true
+//    System.err.println(s"ts compiler exited: $exitCode")
+    exitCode == 0
+//    true
   }
 
   def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
@@ -101,6 +102,11 @@ object IDLTestTools {
     System.err.println(s"go compiler exited: $exitCode")
 
     //exitCode == 0
+    true
+  }
+
+  def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
+    val out = compiles(id, domains, IDLLanguage.CSharp, extensions)
     true
   }
 

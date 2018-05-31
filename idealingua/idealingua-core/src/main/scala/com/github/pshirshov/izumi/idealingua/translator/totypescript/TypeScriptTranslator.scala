@@ -87,10 +87,14 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
   protected def renderDtoInterfaceSerializer(iid: InterfaceId): String = {
     val fields = typespace.structure.structure(iid)
-    s"""public to${iid.name}(): ${typespace.implId(iid).name}Serialized {
+    s"""public to${iid.name}Serialized(): ${iid.name}${typespace.implId(iid).name}Serialized {
        |    return {
        |${renderSerializedObject(fields.all.map(_.field)).shift(8)}
        |    };
+       |}
+       |
+       |public to${iid.name}(): ${iid.name}${typespace.implId(iid).name} {
+       |    return new ${iid.name}${typespace.implId(iid).name}(this.to${iid.name}Serialized());
        |}
      """.stripMargin
   }
@@ -109,7 +113,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
     val extendsInterfacesSerialized =
       if (i.struct.superclasses.interfaces.nonEmpty) {
-        "extends " + i.struct.superclasses.interfaces.map(iface => s"${typespace.implId(iface).name}Serialized").mkString(", ") + " "
+        "extends " + i.struct.superclasses.interfaces.map(iface => s"${iface.name}${typespace.implId(iface).name}Serialized").mkString(", ") + " "
       } else {
         ""
       }
@@ -140,7 +144,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${distinctFields.map(f => s"${conv.toNativeTypeName(f.name, f.typeId)}: ${conv.toNativeType(f.typeId, ts, forSerialized = true)};").mkString("\n").shift(4)}
          |}
          |
-         |${ts.inheritance.allParents(i.id).map(sc => typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
+         |${ts.inheritance.parentsInherited(i.id).map(sc => sc.name + typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
          """.stripMargin
 
     CompositeProduct(dto, imports.render(ts), s"// ${i.id.name} DTO")
@@ -179,15 +183,15 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       s"""export type ${i.id.name} = ${i.alternatives.map(alt => alt.typeId.name).mkString(" | ")};
          |
          |export class ${i.id.name}Helpers {
-         |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (if (alt.typeId.isInstanceOf[InterfaceId]) typespace.implId(alt.typeId.asInstanceOf[InterfaceId]).name else alt.typeId.name) + "Serialized").mkString(" | ")}} {
-         |        const className = adt.getClassName();
+         |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (if (alt.typeId.isInstanceOf[InterfaceId]) alt.name + typespace.implId(alt.typeId.asInstanceOf[InterfaceId]).name else alt.typeId.name) + "Serialized").mkString(" | ")}} {
+         |        let className = adt.getClassName();
          |${i.alternatives.filter(al => al.memberName.isDefined).map(a => s"if (className == '${a.typeId.name}') {\n    className = '${a.memberName.get}'\n}").mkString("\n").shift(8)}
          |        return {
          |            [className]: adt.serialize()
          |        };
          |    }
          |
-         |    public static deserialize(data: {[key: string]: ${i.alternatives.map(alt => (if (alt.typeId.isInstanceOf[InterfaceId]) typespace.implId(alt.typeId.asInstanceOf[InterfaceId]).name else alt.typeId.name) + "Serialized").mkString(" | ")}}): ${i.id.name} {
+         |    public static deserialize(data: {[key: string]: ${i.alternatives.map(alt => (if (alt.typeId.isInstanceOf[InterfaceId]) alt.name + typespace.implId(alt.typeId.asInstanceOf[InterfaceId]).name else alt.typeId.name) + "Serialized").mkString(" | ")}}): ${i.id.name} {
          |        const id = Object.keys(data)[0];
          |        const content = data[id];
          |        switch (id) {
@@ -292,37 +296,39 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
     val extendsInterfacesSerialized =
       if (i.struct.superclasses.interfaces.nonEmpty) {
-        "extends " + i.struct.superclasses.interfaces.map(iface => typespace.implId(iface).name + "Serialized").mkString(", ") + " "
+        "extends " + i.struct.superclasses.interfaces.map(iface => iface.name + typespace.implId(iface).name + "Serialized").mkString(", ") + " "
       } else {
         ""
       }
 
     val fields = typespace.structure.structure(i)
     val distinctFields = fields.all.groupBy(_.field.name).map(_._2.head.field)
-    val eid = typespace.implId(i.id)
+    var implId = typespace.implId(i.id)
+    val eid = i.id.name + implId.name
+
 
     val iface =
       s"""export interface ${i.id.name} $extendsInterfaces{
          |    getPackageName(): string;
          |    getClassName(): string;
          |    getFullClassName(): string;
-         |    serialize(): ${eid.name}Serialized;
+         |    serialize(): ${eid}Serialized;
          |
          |${fields.all.map(f => s"${conv.toNativeTypeName(conv.safeName(f.field.name), f.field.typeId)}: ${conv.toNativeType(f.field.typeId, ts)};").mkString("\n").shift(4)}
          |}
          |
-         |export interface ${eid.name}Serialized $extendsInterfacesSerialized{
+         |export interface ${eid}Serialized $extendsInterfacesSerialized{
          |${fields.all.map(f => s"${conv.toNativeTypeName(f.field.name, f.field.typeId)}: ${conv.toNativeType(f.field.typeId, ts, forSerialized = true)};").mkString("\n").shift(4)}
          |}
        """.stripMargin
 
     val companion =
-      s"""export class ${eid.name} implements ${i.id.name} {
-         |${renderRuntimeNames(eid).shift(4)}
+      s"""export class ${eid} implements ${i.id.name} {
+         |${renderRuntimeNames(implId.path.toPackage.mkString("."), implId.name, eid).shift(4)}
          |${fields.all.map(f => conv.toFieldMember(f.field, ts)).mkString("\n").shift(4)}
          |
          |${fields.all.map(f => conv.toFieldMethods(f.field, ts)).mkString("\n").shift(4)}
-         |    constructor(data: ${eid.name}Serialized = undefined) {
+         |    constructor(data: ${eid}Serialized = undefined) {
          |        if (typeof data === 'undefined' || data === null) {
          |            return;
          |        }
@@ -330,36 +336,36 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${distinctFields.map(f => s"${conv.deserializeName("this." + f.name, f.typeId)} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
          |    }
          |
-         |    public serialize(): ${eid.name}Serialized {
+         |    public serialize(): ${eid}Serialized {
          |        return {
          |${renderSerializedObject(distinctFields.toList).shift(12)}
          |        };
          |    }
          |
-         |    // Polymorphic section below. If a new type to be registered, use ${eid.name}.register method
+         |    // Polymorphic section below. If a new type to be registered, use ${eid}.register method
          |    // which will add it to the known list. You can also overwrite the existing registrations
          |    // in order to provide extended functionality on existing models, preserving the original class name.
          |
-         |    private static _knownPolymorphic: {[key: string]: {new (data?: ${eid.name} | ${eid.name}Serialized): ${i.id.name}}} = {
-         |        [${eid.name}.FullClassName]: ${eid.name}
+         |    private static _knownPolymorphic: {[key: string]: {new (data?: ${eid} | ${eid}Serialized): ${i.id.name}}} = {
+         |        [${eid}.FullClassName]: ${eid}
          |    };
          |
-         |    public static register(className: string, ctor: {new (data?: ${eid.name} | ${eid.name}Serialized): ${i.id.name}}): void {
+         |    public static register(className: string, ctor: {new (data?: ${eid} | ${eid}Serialized): ${i.id.name}}): void {
          |        this._knownPolymorphic[className] = ctor;
          |    }
          |
-         |    public static create(data: {[key: string]: ${eid.name}Serialized}): ${i.id.name} {
+         |    public static create(data: {[key: string]: ${eid}Serialized}): ${i.id.name} {
          |        const polymorphicId = Object.keys(data)[0];
-         |        const ctor = ${eid.name}._knownPolymorphic[polymorphicId];
+         |        const ctor = ${eid}._knownPolymorphic[polymorphicId];
          |        if (!ctor) {
-         |          throw new Error('Unknown polymorphic type ' + polymorphicId + ' for ${eid.name}.Create');
+         |          throw new Error('Unknown polymorphic type ' + polymorphicId + ' for ${eid}.Create');
          |        }
          |
          |        return new ctor(data[polymorphicId]);
          |    }
          |}
          |
-         |${ts.inheritance.allParents(i.id).map(sc => typespace.implId(sc).name + s".register(${eid.name}.FullClassName, ${eid.name});").mkString("\n")}
+         |${ts.inheritance.parentsInherited(i.id).map(sc => sc.name + typespace.implId(sc).name + s".register(${eid}.FullClassName, ${eid});").mkString("\n")}
        """.stripMargin
 
     ext.extend(i, InterfaceProduct(iface, companion, imports.render(ts), s"// ${i.id.name} Interface"), _.handleInterface)

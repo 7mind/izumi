@@ -210,7 +210,7 @@ final case class GoLangType (
     }
     case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
     case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${id.name}()"
-    case i: InterfaceId => s"${im.withImport(id)}NewTest${ts.implId(i).name}()"
+    case i: InterfaceId => s"${im.withImport(id)}NewTest${i.name + ts.implId(i).name}()"
     case _ => "nil"
   }
 
@@ -219,7 +219,7 @@ final case class GoLangType (
       // TODO For testing we might want to import from other packages...
 //    case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValuePackage()
 //    case _: IdentifierId | _: DTOId | _: EnumId => s"NewTest${id.name}()"
-//    case i: InterfaceId => s"NewTest${ts.implId(i).name}()"
+//    case i: InterfaceId => s"NewTest${i.name + ts.implId(i).name}()"
     case _ => List.empty
   }
 }

@@ -25,6 +25,8 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
 
   override def implId(id: InterfaceId): DTOId = tools.implId(id)
 
+  override def sourceId(id: DTOId): Option[InterfaceId] = tools.sourceId(id)
+
   override def defnId(id: StructureId): InterfaceId = tools.defnId(id)
 
   def apply(id: ServiceId): Service = {
