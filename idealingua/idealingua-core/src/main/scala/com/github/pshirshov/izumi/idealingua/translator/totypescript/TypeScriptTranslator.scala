@@ -144,7 +144,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${distinctFields.map(f => s"${conv.toNativeTypeName(f.name, f.typeId)}: ${conv.toNativeType(f.typeId, ts, forSerialized = true)};").mkString("\n").shift(4)}
          |}
          |
-         |${ts.inheritance.allParents(i.id).map(sc => sc.name + typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
+         |${ts.inheritance.parentsInherited(i.id).map(sc => sc.name + typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
          """.stripMargin
 
     CompositeProduct(dto, imports.render(ts), s"// ${i.id.name} DTO")
@@ -184,7 +184,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |
          |export class ${i.id.name}Helpers {
          |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (if (alt.typeId.isInstanceOf[InterfaceId]) alt.name + typespace.implId(alt.typeId.asInstanceOf[InterfaceId]).name else alt.typeId.name) + "Serialized").mkString(" | ")}} {
-         |        const className = adt.getClassName();
+         |        let className = adt.getClassName();
          |${i.alternatives.filter(al => al.memberName.isDefined).map(a => s"if (className == '${a.typeId.name}') {\n    className = '${a.memberName.get}'\n}").mkString("\n").shift(8)}
          |        return {
          |            [className]: adt.serialize()
@@ -365,7 +365,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |    }
          |}
          |
-         |${ts.inheritance.allParents(i.id).map(sc => sc.name + typespace.implId(sc).name + s".register(${eid}.FullClassName, ${eid});").mkString("\n")}
+         |${ts.inheritance.parentsInherited(i.id).map(sc => sc.name + typespace.implId(sc).name + s".register(${eid}.FullClassName, ${eid});").mkString("\n")}
        """.stripMargin
 
     ext.extend(i, InterfaceProduct(iface, companion, imports.render(ts), s"// ${i.id.name} Interface"), _.handleInterface)

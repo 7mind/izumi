@@ -15,7 +15,15 @@ final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty)
   private def renderTypeImports(id: TypeId, ts: Typespace): String = id match {
     case adt: AdtId => s"${adt.name}, ${adt.name}Helpers"
     case i: InterfaceId => s"${i.name}, ${i.name + ts.implId(i).name}, ${i.name + ts.implId(i).name}Serialized"
-    case d: DTOId => s"${d.name}, ${d.name}Serialized"
+    case d: DTOId => {
+      val mirrorInterface = ts.sourceId(d)
+      if (mirrorInterface.isDefined) {
+        s"${mirrorInterface.get.name + d.name}, ${mirrorInterface.get.name + d.name}Serialized"
+      } else {
+        s"${d.name}, ${d.name}Serialized"
+      }
+    }
+
     case _ => id.name
   }
 
@@ -120,7 +128,7 @@ object TypeScriptImports {
     case d: DTO =>
       d.struct.superclasses.interfaces ++
       ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id) ++
-      ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains)//.map(ifc => ts.implId(ifc))
+      ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains).map(ifc => ts.implId(ifc))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
   }
