@@ -145,7 +145,7 @@ lazy val inShade = In("shade")
   .settingsSeq(base)
 
 lazy val inSbt = In("sbt")
-  .settings(GlobalSettings, WithFundamentals, WithoutBadPlugins)
+  .settings(GlobalSettings, WithoutBadPlugins)
   .settings(SbtSettings, SbtScriptedSettings)
 
 lazy val inDiStage = In("distage")

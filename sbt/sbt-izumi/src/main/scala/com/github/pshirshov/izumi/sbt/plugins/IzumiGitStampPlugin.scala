@@ -2,13 +2,15 @@ package com.github.pshirshov.izumi.sbt.plugins
 
 // copypasted https://bitbucket.org/atlassianlabs/sbt-git-stamp from due to obsolete jgit dependency
 
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzumiManifest
+import java.time.format.DateTimeFormatter
+
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib._
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import sbt.Keys._
 import sbt._
 import sbt.internal.util.ConsoleLogger
+
 
 object IzumiGitStampPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()

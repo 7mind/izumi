@@ -1,9 +1,6 @@
 package com.github.pshirshov.izumi.sbt.plugins
 
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzumiManifest
 import sbt.Keys.{packageOptions, version}
 import sbt.internal.util.ConsoleLogger
 import sbt.{AutoPlugin, Package, ThisBuild}
