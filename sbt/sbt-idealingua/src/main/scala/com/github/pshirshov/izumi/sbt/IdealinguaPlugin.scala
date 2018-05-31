@@ -63,10 +63,25 @@ object IdealinguaPlugin extends AutoPlugin {
 
     , sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath
-      val scope = Scope(src.resolve("main/izumi"), (sourceManaged in Compile).value.toPath)
-      val result = compileSources(scope, compilationTargets.value, (dependencyClasspath in Compile).value)
+      val srcManaged = (sourceManaged in Compile).value.toPath
+      val resManaged = (resourceManaged in Compile).value.toPath
 
-      val files = result.flatMap(_.invokation).flatMap(_._2.paths)
+      val izumiSrcDir = src.resolve("main/izumi")
+
+      val scope = Scope(izumiSrcDir, srcManaged)
+
+      val (scalaTargets, nonScalaTargets) = compilationTargets.value.partition(i => i.options.language == IDLLanguage.Scala)
+
+      val depClasspath = (dependencyClasspath in Compile).value
+      val scala_result = compileSources(scope, scalaTargets, depClasspath)
+
+      nonScalaTargets.foreach {
+        t =>
+          val nonScalaScope = Scope(izumiSrcDir, (resManaged.toFile / s"${t.options.language}").toPath)
+          compileSources(nonScalaScope, Seq(t), depClasspath)
+      }
+
+      val files = scala_result.flatMap(_.invokation).flatMap(_._2.paths)
       files.map(_.toFile)
     }.taskValue
 
@@ -126,7 +141,7 @@ object IdealinguaPlugin extends AutoPlugin {
   }
 
   private def compileSources(scope: Scope, ctargets: Seq[Invokation], classpath: Classpath): Seq[IDLCompiler.Result] = {
-    ctargets.filter(i => i.options.language == IDLLanguage.Scala && i.mode == Mode.Sources).map {
+    ctargets.filter(i => i.mode == Mode.Sources).map {
       invokation =>
         doCompile(scope, invokation, classpath)
     }
