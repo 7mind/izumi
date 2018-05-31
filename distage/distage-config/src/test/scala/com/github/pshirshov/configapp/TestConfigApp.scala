@@ -79,4 +79,9 @@ object TestConfigApp {
 
     make[TestConfigApp]
   }
+
+  final val setDefinition = new ModuleDef {
+    many[TestAppService]
+        .add[DataPuller1]
+  }
 }

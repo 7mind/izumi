@@ -34,9 +34,9 @@ trait TypeResolver {
 trait InheritanceQueries {
   def allParents(id: TypeId): List[InterfaceId]
 
-  def implementingDtos(id: InterfaceId): List[DTOId]
+  def parentsInherited(id: TypeId): List[InterfaceId]
 
-  protected[typespace] def parentsInherited(id: TypeId): List[InterfaceId]
+  def implementingDtos(id: InterfaceId): List[DTOId]
 
   protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId]
 }
@@ -66,6 +66,8 @@ trait TypespaceTools {
 
   def implId(id: InterfaceId): DTOId
 
+  def sourceId(id: DTOId): Option[InterfaceId]
+
   def defnId(id: StructureId): InterfaceId
 
   def mkConverter(innerFields: List[SigParam], outerFields: List[SigParam], targetId: StructureId): ConverterDef
@@ -88,9 +90,11 @@ trait Typespace {
 
   def implId(id: InterfaceId): DTOId
 
+  def sourceId(id: DTOId): Option[InterfaceId]
+
   def defnId(id: StructureId): InterfaceId
 
-  protected[typespace] def types: TypeCollection
+  def types: TypeCollection
 
   protected[typespace] def referenced: Map[DomainId, Typespace]
 }

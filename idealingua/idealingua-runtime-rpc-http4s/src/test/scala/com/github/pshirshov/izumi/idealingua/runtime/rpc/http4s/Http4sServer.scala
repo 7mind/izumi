@@ -81,6 +81,7 @@ class Http4sTransportTest extends WordSpec {
           try {
             assert(greeterClient.greet("John", "Smith").unsafeRunSync() == "Hi, John Smith!")
             assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
+            assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
             ()
           } finally {
             server.shutdownNow()

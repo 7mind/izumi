@@ -28,6 +28,15 @@ class TypespaceToolsImpl(types: TypeCollection) extends TypespaceTools {
     DTOId(id, types.toDtoName(id))
   }
 
+  override def sourceId(id: DTOId): Option[InterfaceId] = {
+    // TODO We can probably skip isEphemeral in this case since map will give an option anyway?
+    if (types.isInterfaceEphemeral(id)) {
+      types.interfaceEphemeralsReversed.get(id)
+    } else {
+      None
+    }
+  }
+
   override def defnId(id: StructureId): InterfaceId = {
     id match {
       case d: DTOId if types.isInterfaceEphemeral(d) =>

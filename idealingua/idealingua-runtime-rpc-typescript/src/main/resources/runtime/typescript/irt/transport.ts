@@ -3,8 +3,7 @@ export interface IRTServiceClientInData {
     serialize(): any;
 }
 
-export interface IRTServiceClientOutData {
-}
+export type IRTServiceClientOutData = any;
 
 export interface IRTClientTransport {
     send(service: string, method: string, data: IRTServiceClientInData): Promise<IRTServiceClientOutData>

@@ -17,6 +17,7 @@ class ProvisionerDefaultImpl
   , proxyStrategy: ProxyStrategy
   , factoryStrategy: FactoryStrategy
   , traitStrategy: TraitStrategy
+  , factoryProviderStrategy: FactoryProviderStrategy
   , providerStrategy: ProviderStrategy
   , classStrategy: ClassStrategy
   , importStrategy: ImportStrategy
@@ -94,6 +95,9 @@ class ProvisionerDefaultImpl
 
       case op: WiringOp.CallProvider =>
         providerStrategy.callProvider(context, this, op)
+
+      case op: WiringOp.CallFactoryProvider =>
+        factoryProviderStrategy.callFactoryProvider(context, this, op)
 
       case op: WiringOp.InstantiateClass =>
         classStrategy.instantiateClass(context, op)

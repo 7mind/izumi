@@ -21,10 +21,7 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
         val constructorSignature = ctx.tools.makeParams(cdef)
         val fullConstructorCode = ctx.tools.makeConstructor(cdef)
 
-        val instantiator =
-          q"""
-         ${t.termFull}(..$fullConstructorCode)
-         """
+        val instantiator = q" new ${t.typeFull}(..$fullConstructorCode) "
 
         q"""def apply(..${constructorSignature.params}): ${t.typeFull} = {
            ..${constructorSignature.assertion}

@@ -1,6 +1,18 @@
 Build notes
 ===========
 
+Prerequisites
+-------------
+
+On mac:
+
+```
+brew tap caskroom/versions
+brew update
+brew install homebrew/cask/java sbt npm go
+npm i -g typescript
+```
+
 Build options
 -------------
 

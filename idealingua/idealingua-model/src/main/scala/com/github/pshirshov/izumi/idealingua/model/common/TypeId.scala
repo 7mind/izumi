@@ -70,7 +70,7 @@ object TypeId {
 
   final case class AliasId(path: TypePath, name: TypeName) extends TypeId
 
-  final case class EnumId(path: TypePath, name: TypeName) extends TypeId
+  final case class EnumId(path: TypePath, name: TypeName) extends ScalarId
 
   // TODO: remove superclass?
   final case class ServiceId(domain: DomainId, name: TypeName)

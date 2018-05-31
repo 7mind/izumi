@@ -145,7 +145,7 @@ lazy val inShade = In("shade")
   .settingsSeq(base)
 
 lazy val inSbt = In("sbt")
-  .settings(GlobalSettings, WithFundamentals, WithoutBadPlugins)
+  .settings(GlobalSettings, WithoutBadPlugins)
   .settings(SbtSettings, SbtScriptedSettings)
 
 lazy val inDiStage = In("distage")
@@ -308,7 +308,7 @@ lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntime
 
 lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
-  .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded)
+  .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded, idealinguaRuntimeRpcTypescript, idealinguaRuntimeRpcGo)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(ShadingSettings)
 
@@ -321,7 +321,6 @@ lazy val idealinguaRuntimeRpcCats = inIdealingua.as.module
   .depends(idealinguaRuntimeRpc)
   .settings(libraryDependencies ++= R.cats_all)
 
-
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
@@ -332,11 +331,17 @@ lazy val idealinguaExtensionRpcFormatCirce = inIdealingua.as.module
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
 
 
+lazy val idealinguaRuntimeRpcTypescript = inIdealingua.as.module
+
+
+lazy val idealinguaRuntimeRpcGo = inIdealingua.as.module
+
+
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
-  .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce)
+  .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce, idealinguaRuntimeRpcTypescript, idealinguaRuntimeRpcGo)
   .settings(AppSettings)
   .settings(
-    libraryDependencies ++= Seq(R.scallop)
+    libraryDependencies ++= Seq(R.scopt)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CliIdlCompiler")
   )
   .settings(addArtifact(artifact in(Compile, assembly), assembly))

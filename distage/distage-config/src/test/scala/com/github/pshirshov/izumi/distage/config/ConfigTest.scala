@@ -31,7 +31,16 @@ class ConfigTest extends WordSpec {
       assert(context.get[TestAppService]("puller5").asInstanceOf[DataPuller2].target.port == 10020)
       assert(context.get[TestAppService]("puller6").asInstanceOf[DataPuller3].target.port == 9003)
       assert(context.get[Set[TestAppService]].size == 9)
+    }
 
+    "resolve config references in set elements" in {
+      val config = AppConfig(ConfigFactory.load())
+      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val plan = injector.plan(TestConfigApp.setDefinition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[Set[TestAppService]].head.asInstanceOf[DataPuller1].target.port == 9001)
     }
 
     "resolve config maps" in {

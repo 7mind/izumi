@@ -52,6 +52,10 @@ object ExecutableOp {
       override def format: String = FormattingUtils.doFormat(target, wiring)
     }
 
+    final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction) extends WiringOp {
+      override def format: String = FormattingUtils.doFormat(target, wiring)
+    }
+
     final case class ReferenceInstance(target: DIKey, wiring: UnaryWiring.Instance) extends WiringOp {
       override def format: String = {
         s"$target := ${wiring.instance.getClass.getTypeName}#${wiring.instance.hashCode()}"

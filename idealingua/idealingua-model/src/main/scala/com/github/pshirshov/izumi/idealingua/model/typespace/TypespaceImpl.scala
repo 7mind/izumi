@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
 
 class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeResolver {
-  protected[typespace] lazy val types: TypeCollection = new TypeCollection(domain)
+  lazy val types: TypeCollection = new TypeCollection(domain)
   protected[typespace] lazy val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new TypespaceImpl(d))
   private lazy val index: Map[TypeId, TypeDef] = types.index
 
@@ -24,6 +24,8 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
 
 
   override def implId(id: InterfaceId): DTOId = tools.implId(id)
+
+  override def sourceId(id: DTOId): Option[InterfaceId] = tools.sourceId(id)
 
   override def defnId(id: StructureId): InterfaceId = tools.defnId(id)
 

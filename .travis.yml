@@ -11,6 +11,10 @@ scala:
 
 
 
+
+before_install:
+  - npm i -g 'typescript@2.8.3'
+
 before_script:
   - bash travis.sh versionate
 

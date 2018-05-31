@@ -1,5 +1,4 @@
 import sbt.Keys._
-import com.github.pshirshov.izumi.sbt.deps.{Izumi, IzumiDeps => Iz}
 
 import IzumiConvenienceTasksPlugin.Keys._
 enablePlugins(IzumiEnvironmentPlugin)
@@ -14,7 +13,7 @@ lazy val pluginVersion = if (sys.props.isDefinedAt("plugin.version")) {
 // -- build settings, root artifact settings, etc
 name := "sbt-izumi-idl-test"
 crossScalaVersions in ThisBuild := Seq(
-  Iz.V.scala_212
+  IzumiRootDeps.V.scala_212
 )
 
 // unfortunately we have to use this bcs conditional settings in plugins don't work

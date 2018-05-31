@@ -168,6 +168,19 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     }
   }
 
+  protected def toScalar(typeId: TypeId): ScalarId = {
+    typeId match {
+      case p: Primitive =>
+        p
+      case o: IdentifierId =>
+        o
+      case o: EnumId =>
+        o
+      case o =>
+        throw new IDLException(s"Unexpected non-scalar id at scalar place: $domainId: $o")
+    }
+  }
+
   protected def toGeneric(generic: IndefiniteGeneric): Generic = {
     generic.name match {
       case n if Generic.TSet.aliases.contains(n) =>
@@ -180,7 +193,9 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         Generic.TOption(makeDefinite(generic.args.head))
 
       case n if Generic.TMap.aliases.contains(n) =>
-        Generic.TMap(toScalar(makeDefinite(generic.args.head)), makeDefinite(generic.args.last))
+        val indefinite = generic.args.head
+        val definite = makeDefinite(indefinite)
+        Generic.TMap(toScalar(definite), makeDefinite(generic.args.last))
 
       case o =>
         throw new IDLException(s"Unexpected generic in $domainId: $o")
@@ -224,15 +239,6 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
       case t: Builtin =>
         t
     }).asInstanceOf[R]
-  }
-
-  protected def toScalar(typeId: TypeId): ScalarId = {
-    typeId match {
-      case p: Primitive =>
-        p
-      case o =>
-        IdentifierId(o.path, o.name)
-    }
   }
 
   protected def toIndefinite(typeId: TypeId): IndefiniteId = {

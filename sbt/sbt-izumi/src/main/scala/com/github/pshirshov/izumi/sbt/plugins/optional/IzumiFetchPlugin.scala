@@ -22,7 +22,7 @@ object IzumiFetchPlugin extends AutoPlugin {
     lazy val fetchArtifacts = settingKey[Seq[ModuleID]]("Jars to fetch from outside")
     lazy val artifactsTargetDir = settingKey[File]("Jars to fetch from outside")
     lazy val resolveArtifacts = taskKey[Seq[File]]("Performs transitive resolution with Coursier")
-    lazy val copyArtifacts = taskKey[Unit]("Copy artifacts into target directory")
+    lazy val copyArtifacts = taskKey[Set[File]]("Copy artifacts into target directory")
 
   }
 
@@ -55,10 +55,10 @@ object IzumiFetchPlugin extends AutoPlugin {
     }.value
     , copyArtifacts := Def.task {
       val targetDir = artifactsTargetDir.value
-      IO.createDirectory(targetDir)
       val resolved = resolveArtifacts.value
+      IO.createDirectory(targetDir)
       IO.copy(resolved.map(r => (r, targetDir.toPath.resolve(r.getName).toFile)), CopyOptions(overwrite = true, preserveLastModified = true, preserveExecutable = true))
-    }
+    }.value
     , packageBin in lm.syntax.Compile := Def.taskDyn {
       copyArtifacts.value
 
@@ -119,6 +119,8 @@ object CoursierCompat {
 }
 
 object CoursierFetch {
+  protected val logger: ConsoleLogger = ConsoleLogger()
+
   def resolve(repositories: Seq[MavenRepository], modules: Seq[Dependency]): Seq[File] = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -126,6 +128,15 @@ object CoursierFetch {
     val start: Resolution = Resolution(modules.toSet)
     val fetch: Metadata[Task] = Fetch.from(withCache, Cache.fetch[Task]())
     val resolution = start.process.run(fetch).unsafeRun()
+
+    if (resolution.errors.nonEmpty) {
+      logger.error(s"Fetch finished with ${resolution.errors.size} errors: ${resolution.errors.mkString("\n")}")
+    }
+
+    if (resolution.conflicts.nonEmpty) {
+      logger.error(s"Fetch finished with ${resolution.conflicts.size} conflicts: ${resolution.conflicts.mkString("\n")}")
+    }
+
     val localArtifacts: Seq[Either[FileError, File]] = Gather[Task].gather(
       resolution.artifacts.map(Cache.file[Task](_).run)
     ).unsafeRun()

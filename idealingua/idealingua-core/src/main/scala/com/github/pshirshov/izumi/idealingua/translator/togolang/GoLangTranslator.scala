@@ -530,13 +530,14 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
 
     val fields = typespace.structure.structure(i)
     val distinctFields = fields.all.groupBy(_.field.name).map(_._2.head.field)
-    val eid = typespace.tools.implId(i.id)
+    val implId = typespace.tools.implId(i.id)
+    val eid = i.id.name + typespace.tools.implId(i.id).name
 
     val struct = GoLangStruct(
-      eid.name,
       eid,
+      implId,
       i.struct.superclasses.interfaces ++ List(i.id),
-      distinctFields.map(df => GoLangField(df.name, GoLangType(df.typeId, imports, ts), eid.name, imports, ts)).toList,
+      distinctFields.map(df => GoLangField(df.name, GoLangType(df.typeId, imports, ts), eid, imports, ts)).toList,
       imports,
       ts,
       List(i.id)
@@ -563,12 +564,12 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |
          |type ${i.id.name}Constructor func() ${i.id.name}
          |
-         |func ctor${eid.name}() ${i.id.name} {
-         |    return &${eid.name}{}
+         |func ctor${eid}() ${i.id.name} {
+         |    return &${eid}{}
          |}
          |
          |var known${i.id.name}Polymorphic = map[string]${i.id.name}Constructor {
-         |    rtti${eid.name}FullClassName: ctor${eid.name},
+         |    rtti${eid}FullClassName: ctor${eid},
          |}
          |
          |// Register${i.id.name} registers a new constructor for a polymorphic type ${i.id.name}
@@ -595,7 +596,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |
          |    return nil, fmt.Errorf("empty content for polymorphic type in Create${i.id.name}")
          |}
-         |${renderRegistrations(ts.inheritance.allParents(i.id), eid.name, imports)}
+         |${renderRegistrations(ts.inheritance.allParents(i.id), eid, imports)}
        """.stripMargin
 
     val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\"" && f.tp.testValue() != "nil")
@@ -605,19 +606,19 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
          |
          |func Test${i.id.name}Creation(t *testing.T) {
-         |    v := New${ts.tools.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    v := New${i.id.name + ts.tools.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
          |    if v == nil {
          |        t.Errorf("interface of type ${i.id.name} should be possible to create with New method.")
          |    }
          |}
          |
          |func Test${i.id.name}JSONSerialization(t *testing.T) {
-         |    v1 := New${ts.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    v1 := New${i.id.name + ts.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
          |    serialized, err := json.Marshal(v1)
          |    if err != nil {
          |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
          |    }
-         |    var v2 ${ts.implId(i.id).name}
+         |    var v2 ${i.id.name + ts.implId(i.id).name}
          |    err = json.Unmarshal(serialized, &v2)
          |    if err != nil {
          |        t.Fatalf("Type '%s' should deserialize from JSON using Unmarshal. %s", "${i.id.name}", err.Error())

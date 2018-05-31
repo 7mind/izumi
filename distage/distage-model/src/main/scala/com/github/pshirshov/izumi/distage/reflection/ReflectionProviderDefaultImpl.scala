@@ -53,8 +53,13 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def providerToWiring(function: u.Provider): u.Wiring = {
-    Wiring.UnaryWiring.Function(function, function.associations)
+  override def providerToWiring(function: Provider): Wiring = {
+    function match {
+      case factory: Provider.FactoryProvider @unchecked =>
+        Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
+      case _ =>
+        Wiring.UnaryWiring.Function(function, function.associations)
+    }
   }
 
   override def constructorParameters(symbl: TypeFull): List[Association.Parameter] = {

@@ -32,7 +32,7 @@ object IzumiDeps {
     // good to drop
     val cglib_nodep = "3.2.6"
     val json4s = "3.5.3"
-    val scallop = "3.1.2"
+    val scopt = "3.7.0"
 
     // unused
     val better_files = "3.4.0"
@@ -109,7 +109,8 @@ object IzumiDeps {
     val slf4j_api = "org.slf4j" % "slf4j-api" % V.slf4j
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % V.slf4j
 
-    val scallop = "org.rogach" %% "scallop" % V.scallop
+    val scopt = "com.github.scopt" %% "scopt" % V.scopt
+
   }
 
   object T {
@@ -124,4 +125,12 @@ object IzumiDeps {
     val cats_all: Seq[ModuleID] = R.cats_all.map(_ % "test")
   }
 
+}
+
+object IzumiDepsPlugin extends AutoPlugin {
+  override def trigger = allRequirements
+
+  object autoImport {
+    val IzumiRootDeps: IzumiDeps.type = com.github.pshirshov.izumi.sbt.deps.IzumiDeps
+  }
 }
