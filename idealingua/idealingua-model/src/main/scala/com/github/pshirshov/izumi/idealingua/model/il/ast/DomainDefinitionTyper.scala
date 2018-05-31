@@ -177,7 +177,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
       case o: EnumId =>
         o
       case o =>
-        throw new IDLException(s"Unexpected non-primitive id at scalar place: $domainId: $o")
+        throw new IDLException(s"Unexpected non-scalar id at scalar place: $domainId: $o")
     }
   }
 
