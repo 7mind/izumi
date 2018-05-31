@@ -65,7 +65,7 @@ object IDLTestTools {
 
     val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
     val tsconfigBytes = IzResources.readAsString("tsconfig-compiler-test.json")
-    Files.write(outputTsconfigPath, tsconfigBytes.getBytes)
+    Files.write(outputTsconfigPath, tsconfigBytes.get.getBytes)
 
     val cmd = s"tsc -p ${outputTsconfigPath.toFile.getName}"
     val exitCode = run(out, cmd, Map.empty, "tsc")
