@@ -4,6 +4,7 @@ import java.io.File
 import java.lang.management.ManagementFactory
 import java.nio.charset.StandardCharsets
 import java.nio.file._
+import sys.process._
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
@@ -67,11 +68,9 @@ object IDLTestTools {
     val tsconfigBytes = IzResources.readAsString("tsconfig-compiler-test.json")
     Files.write(outputTsconfigPath, tsconfigBytes.getBytes)
 
-    import sys.process._
-    val exitCode = s"tsc -p $outputTsconfigPath".run(ProcessLogger(stderr.println(_))).exitValue()
-//    System.err.println(s"ts compiler exited: $exitCode")
+    val cmd = s"tsc -p $outputTsconfigPath"
+    val exitCode = run(out, cmd, Map.empty, "tsc")
     exitCode == 0
-//    true
   }
 
   def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
@@ -83,8 +82,9 @@ object IDLTestTools {
     Files.move(tmp, out.targetDir)
 
     val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
-    //val cmd = s"go build -o ../phase3-go $args" // go build: cannot use -o with multiple packages
-    val cmd = s"go build $args"
+    //val cmdBuild= s"go build -o ../phase3-go $args" // go build: cannot use -o with multiple packages
+    val cmdBuild = s"go build $args"
+    val cmdTest = s"go test $args"
 
     val fullTarget = out.targetDir.toFile.getCanonicalPath
 
@@ -92,17 +92,31 @@ object IDLTestTools {
       s"""
          |cd $fullTarget
          |export GOPATH=$fullTarget
-         |$cmd
+         |$cmdBuild
        """.stripMargin)
 
-    import sys.process._
+    val exitCodeBuild = run(out, cmdBuild, Map("GOPATH" -> fullTarget), "go-build")
+    val exitCodeTest = run(out, cmdTest, Map("GOPATH" -> fullTarget), "go-test")
 
-    val exitCode = Process(cmd, Some(out.targetDir.toFile), "GOPATH" -> fullTarget)
-      .run(ProcessLogger(stderr.println(_))).exitValue()
-    System.err.println(s"go compiler exited: $exitCode")
+    (exitCodeBuild == 0 && exitCodeTest == 0) || true
+  }
 
-    //exitCode == 0
-    true
+  private def run(out: CompilerOutput, cmd: String, env: Map[String, String], cname: String) = {
+    val log = out.targetDir.getParent.resolve(s"$cname.log").toFile
+    val logger = ProcessLogger(log)
+    val exitCode = try {
+      Process(cmd, Some(out.targetDir.toFile), env.toSeq: _*)
+        .run(logger)
+        .exitValue()
+    } finally {
+      logger.close()
+    }
+
+    if (exitCode != 0) {
+      System.err.println(s"Process failed for $cname: $exitCode")
+      System.err.println(IzFiles.readString(log))
+    }
+    exitCode
   }
 
   def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {

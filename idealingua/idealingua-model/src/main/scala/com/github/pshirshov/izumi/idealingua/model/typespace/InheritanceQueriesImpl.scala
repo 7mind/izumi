@@ -17,14 +17,7 @@ protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeC
     }.toList
   }
 
-  protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId] = {
-    types.index.collect {
-      case (tid, d: DTO) if allParents(tid).contains(id) =>
-        d.id
-    }.toList
-  }
-
-  protected[typespace] def parentsInherited(id: TypeId): List[InterfaceId] = {
+  def parentsInherited(id: TypeId): List[InterfaceId] = {
     id match {
       case i: InterfaceId =>
         val defn = ts.get(i)
@@ -48,6 +41,13 @@ protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeC
       case e: Builtin =>
         throw new IDLException(s"Unexpected id: $e")
     }
+  }
+
+  protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId] = {
+    types.index.collect {
+      case (tid, d: DTO) if allParents(tid).contains(id) =>
+        d.id
+    }.toList
   }
 
   private def parentsConcepts(id: TypeId): List[InterfaceId] = {
