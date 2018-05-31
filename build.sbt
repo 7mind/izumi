@@ -341,7 +341,7 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
   .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce, idealinguaRuntimeRpcTypescript, idealinguaRuntimeRpcGo)
   .settings(AppSettings)
   .settings(
-    libraryDependencies ++= Seq(R.scallop)
+    libraryDependencies ++= Seq(R.scopt)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CliIdlCompiler")
   )
   .settings(addArtifact(artifact in(Compile, assembly), assembly))

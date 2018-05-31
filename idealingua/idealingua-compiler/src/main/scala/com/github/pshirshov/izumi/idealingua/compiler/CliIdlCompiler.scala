@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
+import java.io.File
 import java.nio.file._
 
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
@@ -8,19 +9,34 @@ import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
-import org.rogach.scallop.{ScallopConf, ScallopOption}
-
-
-class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
-  val source: ScallopOption[Path] = opt[Path](name = "source", default = Some(Paths.get("source")), descr = "Input directory")
-  val target: ScallopOption[Path] = opt[Path](name = "target", default = Some(Paths.get("target")), descr = "Output directory")
-  val languages: Map[String, String] = props[String]('L', descr = "Key is language id, value is extension filter. Example: -L scala=-AnyvalExtension;-CirceDerivationTranslatorExtension")
-  verify()
-}
-
-// TODO: XXX: io is shitty here
+import scopt.OptionParser
 
 object CliIdlCompiler {
+
+  case class CliArgs(source: Path, target: Path, languages: Map[String, String])
+
+  private val parser: OptionParser[CliArgs] = new scopt.OptionParser[CliArgs]("idlc") {
+    head("idlc")
+
+    opt[File]('s', "source").required().valueName("<dir>")
+      .action((x, c) => c.copy(source = x.toPath))
+      .text("source directory")
+
+    opt[File]('t', "target").required().valueName("<dir>")
+      .action((x, c) => c.copy(source = x.toPath))
+      .text("target directory")
+
+
+    opt[(String, String)]("lang")
+      .minOccurs(0)
+      .unbounded()
+      .action({
+        case ((k, v), c) => c.copy(languages = c.languages.updated(k, v))
+      })
+      .keyValueName("<language>", "<extspec>")
+      .text("languages to use and rules, like --lang:scala=-AnyvalExtension;-CirceDerivationTranslatorExtension --lang:go=*")
+  }
+
   private def extensions: Map[IDLLanguage, Seq[TranslatorExtension]] = Map(
     IDLLanguage.Scala -> (ScalaTranslator.defaultExtensions ++ Seq(CirceDerivationTranslatorExtension))
     , IDLLanguage.Typescript -> TypeScriptTranslator.defaultExtensions
@@ -35,9 +51,25 @@ object CliIdlCompiler {
   }
 
   def main(args: Array[String]): Unit = {
-    val conf = new Conf(args)
+    val default = CliArgs(
+      Paths.get("source")
+      , Paths.get("target")
+      , Map.empty
+    )
+    val conf = parser.parse(args, default) match {
+      case Some(c) =>
+        c
+      case _ =>
+        parser.showUsage()
+        throw new IllegalArgumentException(s"Unexpected commandline")
+    }
+    //    val conf = new Conf(args)
 
-    val languages = conf.languages
+    val languages = if (conf.languages.nonEmpty) {
+      conf.languages
+    } else {
+      Map("scala" -> "*", "go" -> "*", "typescript" -> "*")
+    }
 
     val options = languages.map {
       case (name, ext) =>
@@ -45,8 +77,8 @@ object CliIdlCompiler {
         TypespaceCompiler.CompilerOptions(lang, getExt(lang, ext))
     }
 
-    val path = conf.source()
-    val target = conf.target()
+    val path = conf.source
+    val target = conf.target
     println(s"Targets")
     options.foreach {
       o =>
@@ -78,7 +110,6 @@ object CliIdlCompiler {
         println(s"Archive: ${out.sources}")
     }
   }
-
 
 
 }
