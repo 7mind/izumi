@@ -50,7 +50,6 @@ object IDLTestTools {
     settings.warnUnused.add("_")
     settings.deprecation.value = true
     settings.embeddedDefaults(this.getClass.getClassLoader)
-
     if (!isRunningUnderSbt) {
       settings.usejavacp.value = true
     }
@@ -68,7 +67,7 @@ object IDLTestTools {
     val tsconfigBytes = IzResources.readAsString("tsconfig-compiler-test.json")
     Files.write(outputTsconfigPath, tsconfigBytes.getBytes)
 
-    val cmd = s"tsc -p $outputTsconfigPath"
+    val cmd = s"tsc -p ${outputTsconfigPath.toFile.getName}"
     val exitCode = run(out, cmd, Map.empty, "tsc")
     exitCode == 0
   }
