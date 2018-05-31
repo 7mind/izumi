@@ -132,7 +132,7 @@ object TypeScriptImports {
 
   protected def fromService(ts: Typespace, svc: Service, fromPkg: Package, extra: List[TypeScriptImport] = List.empty): List[TypeScriptImport] = {
     val types = svc.methods.flatMap {
-      case m: RPCMethod => m.signature.input.fields.map(f => f.typeId) ++ (m.signature.output match {
+      case m: RPCMethod => m.signature.input.fields.flatMap(f => collectTypes(ts, f.typeId)) ++ (m.signature.output match {
         case st: Struct => st.struct.fields.flatMap(ff => collectTypes(ts, ff.typeId))
         case ad: Algebraic => ad.alternatives.flatMap(al => collectTypes(ts, al.typeId))
         case si: Singular => collectTypes(ts, si.typeId)
