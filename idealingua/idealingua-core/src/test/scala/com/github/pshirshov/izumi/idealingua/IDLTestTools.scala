@@ -69,9 +69,9 @@ object IDLTestTools {
 
     import sys.process._
     val exitCode = s"tsc -p $outputTsconfigPath".run(ProcessLogger(stderr.println(_))).exitValue()
-    System.err.println(s"ts compiler exited: $exitCode")
-    //exitCode == 0
-    true
+//    System.err.println(s"ts compiler exited: $exitCode")
+    exitCode == 0
+//    true
   }
 
   def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
