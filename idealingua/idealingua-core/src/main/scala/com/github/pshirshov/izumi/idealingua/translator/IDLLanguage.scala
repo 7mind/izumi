@@ -12,8 +12,8 @@ object IDLLanguage {
   case object Typescript extends IDLLanguage {
     override val toString: String = "typescript"
   }
-  case object UnityCSharp extends IDLLanguage {
-    override val toString: String = "csharp-unity"
+  case object CSharp extends IDLLanguage {
+    override val toString: String = "csharp"
   }
 
   def parse(s: String): IDLLanguage = {
@@ -24,8 +24,8 @@ object IDLLanguage {
         Go
       case Typescript.toString  =>
         Typescript
-      case UnityCSharp.toString  =>
-        UnityCSharp
+      case CSharp.toString  =>
+        CSharp
     }
   }
 }

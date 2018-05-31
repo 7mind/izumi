@@ -54,8 +54,8 @@ final case class GoLangStruct(
 
   def renderSlices(): String = {
     val refined = implements.filterNot(ignoreSlices.contains)
-    s"""${refined.map(intf => renderSlice(s"To${ts.implId(intf).name}Serialized", s"${ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
-       |${refined.map(intf => renderLoadSlice(s"Load${ts.implId(intf).name}Serialized", s"${ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
+    s"""${refined.map(intf => renderSlice(s"To${intf.name + ts.implId(intf).name}Serialized", s"${intf.name + ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
+       |${refined.map(intf => renderLoadSlice(s"Load${intf.name + ts.implId(intf).name}Serialized", s"${intf.name + ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
      """.stripMargin
   }
 

@@ -17,6 +17,9 @@ class CompilerTest extends WordSpec {
     "be able to compile into golang" in {
       assert(compilesGolang(getClass.getSimpleName, loadDefs()))
     }
+    "be able to compile into csharp" in {
+      assert(compilesCSharp(getClass.getSimpleName, loadDefs()))
+    }
   }
 }
 

@@ -14,7 +14,7 @@ final case class TypeScriptImport(id: TypeId, pkg: String)
 final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty) {
   private def renderTypeImports(id: TypeId, ts: Typespace): String = id match {
     case adt: AdtId => s"${adt.name}, ${adt.name}Helpers"
-    case i: InterfaceId => s"${i.name}, ${ts.implId(i).name}, ${ts.implId(i).name}Serialized"
+    case i: InterfaceId => s"${i.name}, ${i.name + ts.implId(i).name}, ${i.name + ts.implId(i).name}Serialized"
     case d: DTOId => s"${d.name}, ${d.name}Serialized"
     case _ => id.name
   }
@@ -114,11 +114,13 @@ object TypeScriptImports {
     case i: Identifier =>
       i.fields.flatMap(f => List(f.typeId) ++ collectTypes(ts, f.typeId))
     case i: Interface =>
-      i.struct.superclasses.interfaces ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)) ++
-          ts.inheritance.allParents(i.id).filterNot(i.struct.superclasses.interfaces.contains).filterNot(ff => ff == i.id).map(ifc => ts.implId(ifc))
+      i.struct.superclasses.interfaces ++
+      ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id) ++
+      ts.inheritance.allParents(i.id).filterNot(i.struct.superclasses.interfaces.contains).filterNot(ff => ff == i.id).map(ifc => ts.implId(ifc))
     case d: DTO =>
-      d.struct.superclasses.interfaces ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)) ++
-        ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains).map(ifc => ts.implId(ifc))
+      d.struct.superclasses.interfaces ++
+      ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id) ++
+      ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains)//.map(ifc => ts.implId(ifc))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
   }
