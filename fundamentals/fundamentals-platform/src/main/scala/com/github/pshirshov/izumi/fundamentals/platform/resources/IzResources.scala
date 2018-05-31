@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.resources
 
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.io.{BufferedReader, InputStreamReader}
+import java.io.{BufferedReader, InputStream, InputStreamReader}
 import java.util.stream.Collectors
 
 import scala.collection.mutable
@@ -22,7 +22,7 @@ object IzResources {
     }
 
     val u = getClass.getClassLoader.getResource(resPath)
-    if ( u == null ) {
+    if (u == null) {
       return None
     }
 
@@ -83,12 +83,15 @@ object IzResources {
   }
 
 
-  def readAsString(fileName: String): String = {
-    val is = getClass.getClassLoader.getResourceAsStream(fileName)
-    if (is != null) {
-      val reader = new BufferedReader(new InputStreamReader(is))
-      return reader.lines.collect(Collectors.joining(System.lineSeparator))
+  def read(fileName: String): Option[InputStream] = {
+    Option(getClass.getClassLoader.getResourceAsStream(fileName))
+  }
+
+  def readAsString(fileName: String): Option[String] = {
+    read(fileName).map {
+      is =>
+        val reader = new BufferedReader(new InputStreamReader(is))
+        reader.lines.collect(Collectors.joining(System.lineSeparator))
     }
-    null
   }
 }

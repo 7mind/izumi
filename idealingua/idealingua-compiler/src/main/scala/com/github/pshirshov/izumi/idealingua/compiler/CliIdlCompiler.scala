@@ -63,7 +63,6 @@ object CliIdlCompiler {
         parser.showUsage()
         throw new IllegalArgumentException(s"Unexpected commandline")
     }
-    //    val conf = new Conf(args)
 
     val languages = if (conf.languages.nonEmpty) {
       conf.languages

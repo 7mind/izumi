@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.sbt.plugins
 
 // copypasted https://bitbucket.org/atlassianlabs/sbt-git-stamp from due to obsolete jgit dependency
 
+import com.github.pshirshov.izumi.fundamentals.platform.resources.IzumiManifest
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib._
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
@@ -46,9 +47,9 @@ object IzumiGitStampPlugin extends AutoPlugin {
     }
     , packageOptions += Def.task {
       val gitValues = Map(
-        "X-Git-Branch" -> izGitBranch.value
-        , "X-Git-Repo-Is-Clean" -> izGitIsClean.value.toString
-        , "X-Git-Head-Rev" -> izGitRevision.value
+        IzumiManifest.GitBranch -> izGitBranch.value
+        , IzumiManifest.GitRepoIsClean -> izGitIsClean.value.toString
+        , IzumiManifest.GitHeadRev -> izGitRevision.value
       )
 
       gitValues.foreach {
