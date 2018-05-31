@@ -50,6 +50,8 @@ trait ApplicationBootstrapStrategy[CommandlineConfig <: AnyRef] {
 
   def bootstrapModules(): Seq[ModuleBase]
 
+  def appModules(): Seq[ModuleBase]
+
   def mkBootstrapLoader(): PluginLoader
 
   def mkLoader(): PluginLoader
@@ -67,6 +69,8 @@ abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig <: AnyRef]
   def mergeStrategy: PluginMergeStrategy[LoadedPlugins] = SimplePluginMergeStrategy
 
   def bootstrapModules(): Seq[ModuleBase] = Seq.empty
+
+  def appModules(): Seq[ModuleBase] = Seq.empty
 
   def mkBootstrapLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.bootstrapConfig)
 
@@ -100,21 +104,22 @@ abstract class OpinionatedDiApp {
     val appLoader = strategy.mkLoader()
 
     val bootstrapAutoDef = bootstrapLoader.loadDefinition(strategy.mergeStrategy)
-    val appDef = appLoader.loadDefinition(strategy.mergeStrategy)
+    val appAutoDef = appLoader.loadDefinition(strategy.mergeStrategy)
 
-    validate(bootstrapAutoDef, appDef)
+    validate(bootstrapAutoDef, appAutoDef)
 
     val bootstrapCustomDef = (Seq(new ModuleDef {
       make[LogRouter].from(loggerRouter)
     }: ModuleBase) ++ strategy.bootstrapModules).merge
 
     val bsdef = bootstrapAutoDef.definition ++ bootstrapCustomDef
+    val appDef = appAutoDef.definition ++ strategy.appModules().merge
 
     logger.trace(s"Have bootstrap definition\n$bsdef")
     logger.trace(s"Have app definition\n$appDef")
 
     val injector = Injectors.bootstrap(bsdef)
-    val plan = injector.plan(appDef.definition)
+    val plan = injector.plan(appDef)
     logger.trace(s"Planning completed\n$plan")
     val refinedPlan = strategy.gc.gc(plan, DIGarbageCollector.isRoot(strategy.requiredComponents))
     logger.trace(s"Unrequired components disabled\n$refinedPlan")
