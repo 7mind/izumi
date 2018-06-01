@@ -104,7 +104,7 @@ object CliIdlCompiler {
 
         val out = Timed {
           new IDLCompiler(toCompile)
-            .compile(target, option)
+            .compile(itarget, option)
         }
 
         val allPaths = out.invokation.flatMap(_._2.paths)
