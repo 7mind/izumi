@@ -10,7 +10,8 @@ import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{Compi
 import java.nio.file.Path
 
 class IDLCompiler(toCompile: Seq[Typespace]) {
-  def compile(target: Path, options: CompilerOptions): IDLCompiler.Result = {
+  def compile(relTarget: Path, options: CompilerOptions): IDLCompiler.Result = {
+    val target = relTarget.toAbsolutePath
     IzFiles.recreateDir(target)
 
     val result = toCompile.map {
@@ -34,7 +35,11 @@ class IDLCompiler(toCompile: Seq[Typespace]) {
 
     // pack output
     import IzZip._
-    val ztarget = target.getParent.resolve(s"${options.language.toString}.zip")
+
+    val ztarget = target
+      .getParent
+      .resolve(s"${options.language.toString}.zip")
+
     val toPack = stubs.files.map {
       stub =>
         ZE(target.relativize(stub).toString, stub)
