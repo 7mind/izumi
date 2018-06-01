@@ -33,6 +33,125 @@ final case class GoLangField(
       res.capitalize
   }
 
+  private def renderPolymorphSerialized(id: TypeId, dest: String, srcOriginal: String, forOption: Boolean = false): String = {
+    val src =  if (forOption) s"(*$srcOriginal)" else srcOriginal
+
+    id match {
+      case _: InterfaceId =>
+        s"""_$dest, err := json.Marshal($src)
+           |if err != nil {
+           |    return nil, err
+           |}
+           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}map[string]json.RawMessage{$src.GetFullClassName(): _$dest}
+         """.stripMargin
+
+      case _: AdtId =>
+        s"""_$dest, err := json.Marshal($src)
+           |if err != nil {
+           |    return nil, err
+           |}
+           |$dest ${if(forOption) "" else ":"}= ${if(forOption) s"interface{}(&_$dest).(*json.RawMessage) // A bit hacky, but the underlying type for json.RawMessage is []byte, so should be legit" else s"_$dest"}
+         """.stripMargin
+
+      case _: IdentifierId | _: EnumId =>
+        s"""_$dest := $src.String()
+           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}_$dest
+       """.stripMargin
+
+      case _: DTOId =>
+        s"""_$dest, err := $src.Serialize()
+           |if err != nil {
+           |    return nil, err
+           |}
+           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}_$dest
+         """.stripMargin
+
+      case al: AliasId => renderPolymorphSerialized(ts.dealias(al), dest, srcOriginal, forOption)
+
+      case _ => throw new IDLException(s"Should not get into renderPolymorphSerialized ${id.name} dest: $dest src: $srcOriginal")
+    }
+  }
+
+  private def renderPolymorphSerializedVar(id: TypeId, dest: String, src: String): String = {
+    id match {
+      case _: AliasId => renderPolymorphSerializedVar(ts.dealias(id), dest, src)
+
+      case _: InterfaceId | _: AdtId | _: IdentifierId | _: DTOId | _: EnumId =>
+        renderPolymorphSerialized(id, dest, src)
+
+      case g: Generic => g match {
+        case go: Generic.TOption =>
+          s"""var $dest ${GoLangType(id, im, ts).renderType(serialized = true)} = nil
+             |if $src != nil {
+             |${
+            if (GoLangType(id, im, ts).isPolymorph(go.valueType))
+              renderPolymorphSerialized(go.valueType, dest, src, forOption = true).shift(4)
+            else
+              s"    $dest = $src"}
+             |}
+           """.stripMargin
+
+        case _: Generic.TList | _: Generic.TSet => {
+          val vt = g match {
+            case gl: Generic.TList => gl.valueType
+            case gs: Generic.TSet => gs.valueType
+            case _ => throw new IDLException("Just preventing a warning here...")
+          }
+
+          val tempVal = s"_$dest"
+
+          // TODO This is not going to work well for nested lists
+          if (GoLangType(null, im, ts).isPrimitive(vt))
+            s"$dest := $src"
+          else
+            s"""$tempVal := make(${GoLangType(id, im, ts).renderType(serialized = true)}, len($src))
+               |for ${tempVal}Index, ${tempVal}Val := range $src {
+               |${
+              if (vt.isInstanceOf[Generic])
+                renderPolymorphSerializedVar(vt, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
+                (renderPolymorphSerialized(vt, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)
+            }
+               |}
+               |$dest := $tempVal
+                 """.stripMargin
+        }
+
+        case gm: Generic.TMap => {
+          val vt = GoLangType(gm.valueType, im, ts)
+          val tempVal = s"_$dest"
+
+          if (GoLangType(null, im, ts).isPrimitive(vt.id))
+            s"$dest := $src"
+          else
+            s"""$tempVal := make(${GoLangType(gm, im, ts).renderType(serialized = true)})
+               |for ${tempVal}Key, ${tempVal}Val := range $src {
+               |${if (vt.isInstanceOf[Generic])
+              renderPolymorphSerializedVar(vt.id, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
+              (renderPolymorphSerialized(vt.id, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
+               |}
+               |$dest := $tempVal
+                 """.stripMargin
+        }
+      }
+
+      case _ => throw new IDLException("Should never get into renderPolymorphSerializedVar with other types... " + id.name + " " + id.getClass().getName())
+    }
+  }
+
+  def renderPolymorphSerializedVar(dest: String, src: String): String = {
+    renderPolymorphSerializedVar(tp.id, dest, src)
+  }
+
+  def renderSerializedVar(): String = {
+    tp.id match {
+      case Primitive.TTsTz => renderMemberName(true) + "AsString()"
+      case Primitive.TTs => renderMemberName(true) + "AsString()"
+      case Primitive.TDate => renderMemberName(true) + "AsString()"
+      case Primitive.TTime => renderMemberName(true) + "AsString()"
+      case _ => renderMemberName(false)
+    }
+  }
+
   def renderInterfaceMethods(): String = {
     s"""${renderMemberName(true)}() ${tp.renderType()}
        |Set${renderMemberName(true)}(value ${tp.renderType()})${if (tp.hasSetterError()) " error" else ""}
@@ -106,20 +225,20 @@ final case class GoLangField(
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
        |    parts := strings.Split(value, ":")
        |    if len(parts) != 3 {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the DD:MM:YYYY format. Got %s", value)
+       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DD format. Got %s", value)
        |    }
        |
-       |    day, err := strconv.Atoi(parts[0])
+       |    day, err := strconv.Atoi(parts[2])
        |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the DD:MM:YYYY format, day is invalid. Got %s", value)
+       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DD format, day is invalid. Got %s", value)
        |    }
        |    month, err := strconv.Atoi(parts[1])
        |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the DD:MM:YYYY format, month is invalid. Got %s", value)
+       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DD format, month is invalid. Got %s", value)
        |    }
-       |    year, err := strconv.Atoi(parts[2])
+       |    year, err := strconv.Atoi(parts[0])
        |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the DD:MM:YYYY format, year is invalid. Got %s", value)
+       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DD format, year is invalid. Got %s", value)
        |    }
        |
        |    v.${renderMemberName(false)} = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
@@ -151,7 +270,7 @@ final case class GoLangField(
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the HH:MM:SS.MS format. Got %s", value)
        |    }
        |    lastParts := strings.Split(parts[2], ".")
-       |    if len(parts) != 2 {
+       |    if len(lastParts) != 2 {
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the HH:MM:SS.MS format, ms is missing. Got %s", value)
        |    }
        |
@@ -220,34 +339,28 @@ final case class GoLangField(
 
     case _: AdtId =>
       s"""$dest := &${im.withImport(id)}${id.name}{}
-         |err = json.Unmarshal($src, $dest)
-         |if err != nil {
+         |if err := json.Unmarshal($src, $dest); err != nil {
          |    return err
          |}
            """.stripMargin
 
     case _: DTOId =>
       s"""$dest := &${im.withImport(id)}${id.name}{}
-         |err = $dest.LoadSerialized($src)
-         |if err != nil {
+         |if err := $dest.LoadSerialized($src); err != nil {
          |    return err
          |}
            """.stripMargin
 
     case _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
       s"""if !${im.withImport(id)}IsValid${id.name}($src) {
-         |    err = fmt.Errorf("Invalid ${id.name} enum value %s", $src)
-         |}
-         |if err != nil {
-         |    return err
+         |    return fmt.Errorf("Invalid ${id.name} enum value %s", $src)
          |}
          |$dest := ${im.withImport(id)}New${id.name}($src)
            """.stripMargin
 
     case _: IdentifierId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
       s"""$dest := &${im.withImport(id)}${id.name}{}
-         |err = $dest.LoadSerialized($src)
-         |if err != nil {
+         |if err := $dest.LoadSerialized($src); err != nil {
          |    return err
          |}
            """.stripMargin
@@ -262,8 +375,7 @@ final case class GoLangField(
       val assignVar = if (optional || !tp.hasSetterError())
         s"$struct.Set${renderMemberName(true)}($variable)"
       else
-        s"""err = $struct.Set${renderMemberName(true)}($variable)
-           |if err != nil {
+        s"""if err := $struct.Set${renderMemberName(true)}($variable); err != nil {
            |    return err
            |}
          """.stripMargin
@@ -272,8 +384,7 @@ final case class GoLangField(
       val assignTemp = if (optional || !tp.hasSetterError())
         s"$struct.Set${renderMemberName(true)}(${(if (optional) "&" else "") + tempVal})"
       else
-        s"""err = $struct.Set${renderMemberName(true)}($tempVal)
-           |if err != nil {
+        s"""if err := $struct.Set${renderMemberName(true)}($tempVal); err != nil {
            |    return err
            |}
          """.stripMargin
@@ -330,8 +441,7 @@ final case class GoLangField(
             }
           }
         case Primitive.TTsTz | Primitive.TTs | Primitive.TTime | Primitive.TDate =>
-          s"""err = $struct.Set${renderMemberName(true)}FromString($variable)
-             |if err != nil {
+          s"""if err := $struct.Set${renderMemberName(true)}FromString($variable); err != nil {
              |    return err
              |}
            """.stripMargin
@@ -347,7 +457,7 @@ final case class GoLangField(
       if (optional || !tp.hasSetterError())
         res
       else
-        s"err := $res\nif err != nil {\n    return err\n}"
+        s"if err := $res; err != nil {\n    return err\n}"
     }
   }
 }

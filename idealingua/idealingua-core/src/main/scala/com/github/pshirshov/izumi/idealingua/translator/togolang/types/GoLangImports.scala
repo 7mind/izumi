@@ -40,8 +40,8 @@ final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
 }
 
 object GoLangImports {
-  def apply(types: List[TypeId], fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord]): GoLangImports =
-    new GoLangImports(fromTypes(types, fromPkg, extra))
+  def apply(types: List[TypeId], fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord], forTest: Boolean): GoLangImports =
+    new GoLangImports(fromTypes(types, fromPkg, extra, forTest))
 
   def apply(imports: List[GoLangImportRecord]): GoLangImports =
     new GoLangImports(imports)
@@ -52,13 +52,13 @@ object GoLangImports {
   def apply(i: Service, fromPkg: Package, extra: List[GoLangImportRecord]): GoLangImports =
     GoLangImports(fromService(i, fromPkg, extra))
 
-  protected def withImport(t: TypeId, fromPackage: Package): Seq[Seq[String]] = {
+  protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[Seq[String]] = {
     t match {
-      case Primitive.TTime => return Seq(Seq("time"), Seq("strings"), Seq("strconv"))
+      case Primitive.TTime => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("strings"), Seq("strconv"))
       case Primitive.TTs => return Seq(Seq("time"))
       case Primitive.TTsTz => return Seq(Seq("time"))
-      case Primitive.TDate => return Seq(Seq("time"), Seq("strings"), Seq("strconv"))
-      case Primitive.TUUID => return Seq(Seq("regexp"))
+      case Primitive.TDate => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("strings"), Seq("strconv"))
+      case Primitive.TUUID => return if (forTest) Seq.empty else Seq(Seq("regexp"))
       case g: Generic => g match {
         case _: Generic.TOption => return Seq.empty
         case _: Generic.TMap => return Seq.empty
@@ -83,13 +83,13 @@ object GoLangImports {
     Seq(t.path.toPackage)
   }
 
-  protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[GoLangImportRecord] = List.empty): List[GoLangImportRecord] = {
+  protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[GoLangImportRecord] = List.empty, forTest: Boolean = false): List[GoLangImportRecord] = {
     val imports = types.distinct
     if (fromPkg.isEmpty) {
       return List.empty
     }
 
-    val packages = imports.flatMap( i =>  this.withImport(i, fromPkg).map(wi => (i, Some(None), wi))).filterNot(_._3.isEmpty)
+    val packages = imports.flatMap( i =>  this.withImport(i, fromPkg, forTest).map(wi => (i, Some(None), wi))).filterNot(_._3.isEmpty)
       // We might get duplicate packages due to time used for multiple primitives, etc. We need to further reduce the list
       .groupBy(_._3.mkString(".")).map(_._2.head).toList
 
@@ -103,13 +103,13 @@ object GoLangImports {
     } ++ extra
   }
 
-  def collectTypes(id: TypeId): List[TypeId] = id match {
-    case p: Primitive => List(p)
+  def collectTypes(id: TypeId, skipPrimitive: Boolean = false): List[TypeId] = id match {
+    case p: Primitive => if(skipPrimitive) List.empty else List(p)
     case g: Generic => g match {
-      case gm: Generic.TMap => List(gm) ++ collectTypes(gm.valueType)
-      case gl: Generic.TList => List(gl) ++ collectTypes(gl.valueType)
-      case gs: Generic.TSet => List(gs) ++ collectTypes(gs.valueType)
-      case go: Generic.TOption => List(go) ++ collectTypes(go.valueType)
+      case gm: Generic.TMap => List(gm) ++ collectTypes(gm.valueType, skipPrimitive = true)
+      case gl: Generic.TList => List(gl) ++ collectTypes(gl.valueType, skipPrimitive = true)
+      case gs: Generic.TSet => List(gs) ++ collectTypes(gs.valueType, skipPrimitive = true)
+      case go: Generic.TOption => List(go) ++ collectTypes(go.valueType, skipPrimitive = true)
     }
     case a: AdtId => List(a)
     case i: InterfaceId => List(i)

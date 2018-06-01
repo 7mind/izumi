@@ -29,18 +29,18 @@ final case class GoLangType (
     }
   }
 
-  def renderType(serialized: Boolean = false, forAlias: Boolean = false): String = {
-    renderNativeType(id, serialized, forAlias)
+  def renderType(serialized: Boolean = false, forAlias: Boolean = false, forMap: Boolean = false): String = {
+    renderNativeType(id, serialized, forAlias, forMap)
   }
 
-  private def renderNativeType(id: TypeId, serialized: Boolean, forAlias: Boolean = false): String = id match {
-    case g: Generic => renderGenericType(g, serialized)
+  private def renderNativeType(id: TypeId, serialized: Boolean, forAlias: Boolean = false, forMap: Boolean = false): String = id match {
+    case g: Generic => renderGenericType(g, serialized, forMap)
     case p: Primitive => renderPrimitiveType(p, serialized)
-    case _ => renderUserType(id, serialized, forAlias)
+    case _ => renderUserType(id, serialized, forAlias, forMap)
   }
 
-  private def renderGenericType(generic: Generic, serialized: Boolean): String = generic match {
-    case gm: Generic.TMap => s"map[${renderNativeType(gm.keyType, serialized)}]${renderNativeType(gm.valueType, serialized)}"
+  private def renderGenericType(generic: Generic, serialized: Boolean, forMap: Boolean): String = generic match {
+    case gm: Generic.TMap => s"map[${renderNativeType(gm.keyType, serialized, forMap = true)}]${renderNativeType(gm.valueType, serialized)}"
     case gl: Generic.TList => s"[]${renderNativeType(gl.valueType, serialized)}"
     case gs: Generic.TSet => s"[]${renderNativeType(gs.valueType, serialized)}"
     case go: Generic.TOption => s"*${renderNativeType(go.valueType, serialized)}"
@@ -96,41 +96,36 @@ final case class GoLangType (
     case Primitive.TTsTz => if (serialized) "string" else "time.Time"
   }
 
-  protected def renderUserType(id: TypeId, serialized: Boolean = false, forAlias: Boolean = false): String = {
+  protected def renderUserType(id: TypeId, serialized: Boolean = false, forAlias: Boolean = false, forMap: Boolean = false): String = {
     if (serialized) {
       id match {
         case _: InterfaceId => s"map[string]json.RawMessage"
         case _: AdtId => s"json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
         case _: IdentifierId | _: EnumId => s"string"
         case d: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(d)}${d.name}Serialized"
-        case al: AliasId => if (isPrimitive(ts(al).asInstanceOf[Alias].target)) id.name else renderNativeType(ts(al).asInstanceOf[Alias].target, serialized)
+        case al: AliasId => if (isPrimitive(ts.dealias(al))) id.name else renderNativeType(ts.dealias(al), serialized)
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
     } else {
       id match {
-        case _: EnumId => s"${im.withImport(id)}${id.name}"
+        case _: EnumId => if(forMap) "string" else s"${im.withImport(id)}${id.name}"
         case _: InterfaceId => s"${im.withImport(id)}${id.name}"
-        case _: AdtId | _: DTOId | _: IdentifierId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
-        case al: AliasId => if (isPrimitive(ts(al).asInstanceOf[Alias].target)) id.name else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+        case _: IdentifierId => if(forMap) "string" else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+        case _: AdtId | _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+        case al: AliasId => if (isPrimitive(ts.dealias(al))) id.name else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
     }
   }
 
-  private def renderCheckError(): String = {
-      s"""if err != nil {
-         |    return err
-         |}
-       """.stripMargin
-  }
-
-  private def renderUnmarshalShared(in: String, out: String, errorCheck: Boolean, errorFirst: Boolean): String = {
+  private def renderUnmarshalShared(in: String, out: String, errorCheck: Boolean): String = {
     if (!errorCheck) {
       return s"json.Unmarshal($in, $out)"
     }
 
-    s"""err ${if (errorFirst) ":=" else "="} json.Unmarshal($in, $out)
-       |${renderCheckError()}
+    s"""if err := json.Unmarshal($in, $out); err != nil {
+       |    return err
+       |}
      """.stripMargin
   }
 
@@ -139,14 +134,20 @@ final case class GoLangType (
 
     id match {
       case _: InterfaceId =>
-        s"""$tempContent, err := Create${id.name}($content)
-           |${renderCheckError()}
+        s"""var rawMap${content.capitalize} map[string]json.RawMessage
+           |if err := json.Unmarshal($content, &rawMap${content.capitalize}); err != nil {
+           |    return err
+           |}
+           |$tempContent, err := Create${id.name}(rawMap${content.capitalize})
+           |if err != nil {
+           |    return err
+           |}
            |$assignLeft$tempContent$assignRight
          """.stripMargin
 
       case _: AdtId | _: DTOId | _: IdentifierId | _: AliasId =>
         s"""$tempContent := &${renderType(forAlias = true)}{}
-           |${renderUnmarshalShared(content, tempContent, errorCheck = true, errorFirst = true)}
+           |${renderUnmarshalShared(content, tempContent, errorCheck = true)}
            |$assignLeft$tempContent$assignRight
          """.stripMargin
 
@@ -203,7 +204,7 @@ final case class GoLangType (
     case Primitive.TTs => "time.Now()" // "\"2010-12-01T15:10:10.10001\""
     case Primitive.TTsTz => "time.Now()" // "\"2010-12-01T15:10:10.10001[UTC]\""
     case g: Generic => g match {
-      case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType()}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
+      case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType(forMap = true)}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
       case gl: Generic.TList => s"[]${GoLangType(gl.valueType, im, ts).renderType()}{}"
       case gs: Generic.TSet => s"[]${GoLangType(gs.valueType, im, ts).renderType()}{}"
       case _: Generic.TOption => "nil"

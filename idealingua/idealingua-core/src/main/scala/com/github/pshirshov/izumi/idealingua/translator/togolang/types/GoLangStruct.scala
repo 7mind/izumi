@@ -69,8 +69,8 @@ final case class GoLangStruct(
     val constSection =
     s"""const (
        |    rtti${name}PackageName = "$pkg"
-       |    rtti${name}ClassName = "$name"
-       |    rtti${name}FullClassName = "$pkg.$name"
+       |    rtti${name}ClassName = "${typeId.name}"
+       |    rtti${name}FullClassName = "$pkg.${typeId.name}"
        |)
      """.stripMargin
 
@@ -114,129 +114,12 @@ final case class GoLangStruct(
     }
   }
 
-  private def renderPolymorphSerialized(id: TypeId, dest: String, srcOriginal: String, forOption: Boolean = false): String = {
-    val src =  if (forOption) s"(*$srcOriginal)" else srcOriginal
-
-    id match {
-      case _: InterfaceId =>
-        s"""_$dest, err := json.Marshal($src)
-           |if err != nil {
-           |    return nil, err
-           |}
-           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}map[string]json.RawMessage{v.GetFullClassName(): _$dest}
-         """.stripMargin
-
-      case _: AdtId =>
-        s"""_$dest, err ${if(forOption) "" else ":"}= json.Marshal($src)
-           |if err != nil {
-           |    return nil, err
-           |}
-           |$dest := ${if(forOption) "&" else ""}_$dest
-         """.stripMargin
-
-      case _: IdentifierId | _: EnumId =>
-        s"""_$dest := $src.String()
-           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}_$dest
-       """.stripMargin
-
-      case _: DTOId =>
-        s"""_$dest, err ${if(forOption) "" else ":"}= $src.Serialize()
-           |if err != nil {
-           |    return nil, err
-           |}
-           |$dest := ${if(forOption) "&" else ""}_$dest
-         """.stripMargin
-
-      case al: AliasId => renderPolymorphSerialized(ts(al).asInstanceOf[Alias].target, dest, srcOriginal, forOption)
-
-      case _ => throw new IDLException(s"Should not get into renderPolymorphSerialized ${id.name} dest: $dest src: $srcOriginal")
-    }
-  }
-
-  private def renderPolymorphSerializedVar(id: TypeId, dest: String, src: String): String = {
-    id match {
-      case _: InterfaceId | _: AdtId | _: IdentifierId | _: DTOId | _: EnumId =>
-        renderPolymorphSerialized(id, dest, src)
-
-      case g: Generic => g match {
-        case go: Generic.TOption =>
-          s"""var $dest ${GoLangType(id, imports, ts).renderType(serialized = true)} = nil
-             |if $src != nil {
-             |${
-                  if (GoLangType(id, imports, ts).isPolymorph(go.valueType))
-                    renderPolymorphSerialized(go.valueType, dest, src, forOption = true).shift(4)
-                  else
-                    s"    $dest = $src"}
-             |}
-           """.stripMargin
-
-        case _: Generic.TList | _: Generic.TSet => {
-          val vt = g match {
-            case gl: Generic.TList => gl.valueType
-            case gs: Generic.TSet => gs.valueType
-            case _ => throw new IDLException("Just preventing a warning here...")
-          }
-
-          val tempVal = s"_$dest"
-
-          // TODO This is not going to work well for nested lists
-          if (GoLangType(null, imports, ts).isPrimitive(vt))
-            s"$dest := $src"
-          else
-            s"""$tempVal := make(${GoLangType(id, imports, ts).renderType(serialized = true)}, len($src))
-               |for ${tempVal}Index, ${tempVal}Val := range $src {
-               |${
-                  if (vt.isInstanceOf[Generic])
-                    renderPolymorphSerializedVar(vt, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
-                    (renderPolymorphSerialized(vt, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)
-                }
-               |}
-               |$dest := $tempVal
-                 """.stripMargin
-        }
-
-        case gm: Generic.TMap => {
-          val vt = GoLangType(gm.valueType, imports, ts)
-          val tempVal = s"_$dest"
-
-          if (GoLangType(null, imports, ts).isPrimitive(vt.id))
-            s"$dest := $src"
-          else
-            s"""$tempVal := make(${GoLangType(gm, imports, ts).renderType(serialized = true)})
-               |for ${tempVal}Key, ${tempVal}Val := range $src {
-               |${if (vt.isInstanceOf[Generic])
-                  renderPolymorphSerializedVar(vt.id, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
-                  (renderPolymorphSerialized(vt.id, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
-               |}
-               |$dest := $tempVal
-                 """.stripMargin
-        }
-      }
-
-      case _ => throw new IDLException("Should never get into renderPolymorphSerializedVar with other types... " + id.name)
-    }
-  }
-
-  private def renderPolymorphSerializedVar(f: GoLangField): String = {
-      renderPolymorphSerializedVar(f.tp.id, s"ps${f.renderMemberName(true)}", s"v.${f.renderMemberName(false)}")
-  }
-
-  private def renderSerializedVar(f: GoLangField): String = {
-    f.tp.id match {
-      case Primitive.TTsTz => f.renderMemberName(true) + "AsString()"
-      case Primitive.TTs => f.renderMemberName(true) + "AsString()"
-      case Primitive.TDate => f.renderMemberName(true) + "AsString()"
-      case Primitive.TTime => f.renderMemberName(true) + "AsString()"
-      case _ => f.renderMemberName(false)
-    }
-  }
-
   def renderSlice(method: String, slice: String, fields: List[GoLangField]): String = {
     s"""func (v *$name) $method() (*$slice, error) {
-       |${getRefinedFields(fields, polymorph = true).map(pf => renderPolymorphSerializedVar(pf)).mkString("\n").shift(4)}
+       |${getRefinedFields(fields, polymorph = true).map(pf => pf.renderPolymorphSerializedVar(s"ps${pf.renderMemberName(true)}", s"v.${pf.renderMemberName(false)}")).mkString("\n").shift(4)}
        |    return &$slice{
        |${getRefinedFields(fields, polymorph = true).map(f => s"${f.renderMemberName(true)}: ps${f.renderMemberName(true)},").mkString("\n").shift(8)}
-       |${getRefinedFields(fields, polymorph = false).map(f => s"${f.renderMemberName(true)}: v.${renderSerializedVar(f)},").mkString("\n").shift(8)}
+       |${getRefinedFields(fields, polymorph = false).map(f => s"${f.renderMemberName(true)}: v.${f.renderSerializedVar()},").mkString("\n").shift(8)}
        |    }, nil
        |}
      """.stripMargin
@@ -247,7 +130,6 @@ final case class GoLangStruct(
        |    if slice == nil {
        |        return fmt.Errorf("method $method got nil input, expected a valid object")
        |    }
-       |    ${if (!fields.exists(isFieldPolymorph) && !fields.exists(ff => ff.tp.hasSetterError())) "" else "var err error"}
        |${fields.map(f => f.renderAssign("v", s"slice.${f.renderMemberName(true)}", serialized = true, optional = false)).mkString("\n").shift(4)}
        |    return nil
        |}
