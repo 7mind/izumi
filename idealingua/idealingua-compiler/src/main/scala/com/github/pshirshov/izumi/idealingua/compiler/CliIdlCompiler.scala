@@ -23,7 +23,7 @@ object CliIdlCompiler {
       .text("source directory")
 
     opt[File]('t', "target").required().valueName("<dir>")
-      .action((x, c) => c.copy(source = x.toPath))
+      .action((x, c) => c.copy(target = x.toPath))
       .text("target directory")
 
 
