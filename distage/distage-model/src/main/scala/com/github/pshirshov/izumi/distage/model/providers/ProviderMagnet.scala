@@ -42,7 +42,7 @@ import scala.language.experimental.macros
 *
 * DO:
 *
-*   Bindings.provider(new Abc(_, _, _)
+*   Bindings.provider(new Abc(_, _, _))
 *
 * DON'T:
 *
