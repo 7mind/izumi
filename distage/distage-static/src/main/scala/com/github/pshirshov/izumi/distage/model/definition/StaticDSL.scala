@@ -3,43 +3,28 @@ package com.github.pshirshov.izumi.distage.model.definition
 import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef.{BindDSLBase, SetDSLBase}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
-import com.github.pshirshov.izumi.distage.provisioning.{AbstractConstructor, AnyConstructor, ConcreteConstructor}
+import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
 
 object StaticDSL {
 
   implicit final class MagicBindDSL[T, AfterBind](private val dsl: BindDSLBase[T, AfterBind]) extends AnyVal {
     def statically(implicit ev: AnyConstructor[T], ev1: Tag[T]): AfterBind =
-      static[T]
+      stat[T]
 
-    def static[I <: T: Tag: AnyConstructor]: AfterBind =
-      AnyConstructor[I] match {
-        case ctor: AbstractConstructor[I] =>
-          dsl.from[I](ctor.function)
-        case _: ConcreteConstructor[I] =>
-          dsl.from[I]
-      }
+    def stat[I <: T: Tag: AnyConstructor]: AfterBind =
+      dsl.from[I](AnyConstructor[I].provider)
   }
 
   // FIXME: add tests
   // FIXME: modify cursor instead of adding new element
   implicit final class MagicSetDSL[T, AfterAdd](private val dsl: SetDSLBase[T, AfterAdd]) extends AnyVal {
     def addStatic[I <: T: Tag: AnyConstructor]: AfterAdd =
-      AnyConstructor[I] match {
-        case ctor: AbstractConstructor[I] =>
-          dsl.add(ctor.function)
-        case _: ConcreteConstructor[I] =>
-          dsl.add[I]
-      }
+      dsl.add[I](AnyConstructor[I].provider)
   }
 
   implicit final class MagicBinding(private val binding: ImplBinding) extends AnyVal {
     def withStaticImpl[T: Tag: AnyConstructor]: ImplBinding =
-      AnyConstructor[T] match {
-        case ctor: AbstractConstructor[T] =>
-          binding.withImpl(ctor.function)
-        case _: ConcreteConstructor[T] =>
-          binding.withImpl[T]
-      }
+      binding.withImpl[T](AnyConstructor[T].provider)
   }
 
 }
