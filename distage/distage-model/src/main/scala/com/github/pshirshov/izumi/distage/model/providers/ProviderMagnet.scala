@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 import scala.language.experimental.macros
 
 /**
-* A fun that receives its arguments from DI context, including named instances via @Id annotation.
+* A function that receives its arguments from DI context, including named instances via [[Id]] annotation.
 *
 * Prefer passing a method reference such as (method _)
 *
@@ -37,6 +37,16 @@ import scala.language.experimental.macros
 *   val constructor = constructorMethod _
 *
 *   Bindings.provider[Unit](constructor) // Will summon regular Int, not a "special" Int from DI context
+*
+* Annotations will also be lost when passing case class's .apply method.
+*
+* DO:
+*
+*   Bindings.provider(new Abc(_, _, _)
+*
+* DON'T:
+*
+*   Bindings.provider(Abc.apply _)
 *
 * */
 case class ProviderMagnet[+R](get: Provider)

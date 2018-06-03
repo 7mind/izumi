@@ -1,25 +1,36 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.bootstrap.{BootstrapPlanningObserver, DefaultBootstrapContext}
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
 import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.Injector
+import com.github.pshirshov.izumi.distage.model.{Injector, LoggerHook}
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
+import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
+import com.github.pshirshov.izumi.fundamentals.platform.console.{SystemOutStringSink, TrivialLogger, TrivialLoggerImpl}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
 class StaticInjectorTest extends WordSpec {
 
-  def mkInjector(): Injector = Injectors.bootstrap()
+  def mkInjector(overrides: ModuleBase*): Injector =
+    Injectors.bootstrap(
+      base = DefaultBootstrapContext.noReflectionBootstrap
+      , overrides = (new ModuleDef {
+        make[PlanningObserver].from[BootstrapPlanningObserver]
+        make[LoggerHook].from[LoggerHookDebugImpl]
+        make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringSink))
+      } +: overrides).overrideLeft
+    )
 
   "DI planner" should {
 
     "handle macro factory injections" in {
       import Case5._
 
-      val definition = new ModuleDef {
+      val definition = new StaticModuleDef {
         make[Factory].statically
         make[Dependency].statically
         make[OverridingFactory].statically
@@ -56,7 +67,7 @@ class StaticInjectorTest extends WordSpec {
     "handle generic arguments in macro factory methods" in {
       import Case5._
 
-      val definition: ModuleBase = new ModuleDef {
+      val definition: ModuleBase = new StaticModuleDef {
         make[GenericAssistedFactory].statically
         make[Dependency].from(ConcreteDep())
       }
@@ -75,7 +86,7 @@ class StaticInjectorTest extends WordSpec {
     "handle assisted dependencies in macro factory methods" in {
       import Case5._
 
-      val definition: ModuleBase = new ModuleDef {
+      val definition: ModuleBase = new StaticModuleDef {
         make[AssistedFactory].statically
         make[Dependency].from(ConcreteDep())
       }
@@ -92,7 +103,7 @@ class StaticInjectorTest extends WordSpec {
     "handle named assisted dependencies in macro factory methods" in {
       import Case5._
 
-      val definition: ModuleBase = new ModuleDef {
+      val definition: ModuleBase = new StaticModuleDef {
         make[NamedAssistedFactory].statically
         make[Dependency].statically
         make[Dependency].named("special").from(SpecialDep())
@@ -114,7 +125,7 @@ class StaticInjectorTest extends WordSpec {
         """
           |import Case5._
           |
-          |val definition: ModuleBase = new ModuleDef {
+          |val definition: ModuleBase = new StaticModuleDef {
           |  make[FactoryProducingFactory].statically
           |  make[Dependency].statically
           |}
@@ -133,7 +144,7 @@ class StaticInjectorTest extends WordSpec {
     "macro factory always produces new instances" in {
       import Case5._
 
-      val definition: ModuleBase = new ModuleDef {
+      val definition: ModuleBase = new StaticModuleDef {
           make[Dependency].statically
         make[TestClass].statically
         make[Factory].statically
@@ -152,7 +163,7 @@ class StaticInjectorTest extends WordSpec {
     "handle one-arg trait" in {
       import Case7._
 
-      val definition = new ModuleDef {
+      val definition = new StaticModuleDef {
         make[Dependency1].statically
         make[TestTrait].statically
       }
@@ -169,10 +180,9 @@ class StaticInjectorTest extends WordSpec {
     "handle named one-arg trait" in {
       import Case7._
 
-      val definition = new ModuleDef {
-        make[Dependency1].statically
-        make[TestTrait].named("named-trait")
-          .statically
+      val definition = new StaticModuleDef {
+        stat[Dependency1]
+        make[TestTrait].named("named-trait").statically
       }
 
       val injector = mkInjector()
@@ -187,13 +197,13 @@ class StaticInjectorTest extends WordSpec {
     "handle mixed sub-trait with protected autowires" in {
       import Case8._
 
-      val definition = new ModuleDef {
-        make[Trait3].statically
-        make[Trait2].statically
-        make[Trait1].statically
-        make[Dependency3]
-        make[Dependency2]
-        make[Dependency1]
+      val definition = new StaticModuleDef {
+        stat[Trait3]
+        stat[Trait2]
+        stat[Trait1]
+        stat[Dependency3]
+        stat[Dependency2]
+        stat[Dependency1]
       }
 
       val injector = mkInjector()
@@ -215,11 +225,11 @@ class StaticInjectorTest extends WordSpec {
     "handle sub-type trait" in {
       import Case8._
 
-      val definition = new ModuleDef {
-        make[Trait2].static[Trait3]
-        make[Dependency3]
-        make[Dependency2]
-        make[Dependency1]
+      val definition = new StaticModuleDef {
+        make[Trait2].stat[Trait3]
+        stat[Dependency3]
+        stat[Dependency2]
+        stat[Dependency1]
       }
 
       val injector = mkInjector()
@@ -234,11 +244,11 @@ class StaticInjectorTest extends WordSpec {
     "support named bindings in macro traits" in {
       import Case10._
 
-      val definition = new ModuleDef {
-          make[Dep].named("A").static[DepA]
-        make[Dep].named("B").static[DepB]
-        make[Trait].statically
-        make[Trait1].statically
+      val definition = new StaticModuleDef {
+        make[Dep].named("A").stat[DepA]
+        make[Dep].named("B").stat[DepB]
+        stat[Trait]
+        stat[Trait1]
       }
 
       val injector = mkInjector()
@@ -259,7 +269,7 @@ class StaticInjectorTest extends WordSpec {
     "override protected defs in macro traits" in {
       import Case14._
 
-      val definition = new ModuleDef {
+      val definition = new StaticModuleDef {
         make[TestTrait].statically
         make[Dep].statically
       }
@@ -277,9 +287,9 @@ class StaticInjectorTest extends WordSpec {
       import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = mkInjector(new ConfigModule(config))
 
-      val definition = new ModuleDef {
+      val definition = new StaticModuleDef {
         make[TestDependency].statically
         make[TestTrait].statically
       }
@@ -295,9 +305,9 @@ class StaticInjectorTest extends WordSpec {
       import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = mkInjector(new ConfigModule(config))
 
-      val definition = new ModuleDef {
+      val definition = new StaticModuleDef {
         make[TestDependency].statically
         make[TestGenericConfFactory[TestConfAlias]].statically
       }
@@ -313,9 +323,9 @@ class StaticInjectorTest extends WordSpec {
       import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = mkInjector(new ConfigModule(config))
 
-      val definition = new ModuleDef {
+      val definition = new StaticModuleDef {
         make[TestDependency].statically
         make[TestFactory].statically
         make[TestGenericConfFactory[TestConfAlias]].statically
@@ -338,9 +348,9 @@ class StaticInjectorTest extends WordSpec {
         import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = mkInjector(new ConfigModule(config))
 
-      val definition = new ModuleDef {
+      val definition = new StaticModuleDef {
         make[Int].named("depInt").from(5)
         make[ConcreteProduct].from((conf: TestConf @AutoConf, i: Int @Id("depInt")) => ConcreteProduct(conf, i * 10))
       }

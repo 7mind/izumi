@@ -23,6 +23,10 @@ object ModuleBase {
     def merge: ModuleBase = {
       defs.reduceLeftOption[ModuleBase](_ ++ _).getOrElse(SimpleModuleDef.empty)
     }
+
+    def overrideLeft: ModuleBase = {
+      defs.reduceOption[ModuleBase](_ overridenBy _).getOrElse(SimpleModuleDef.empty)
+    }
   }
 
   implicit final class ModuleDefCombine(private val moduleDef: ModuleBase) extends AnyVal {

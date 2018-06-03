@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.Fixtures.Case16._
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import org.scalatest.WordSpec
 
 class WrappedFunctionAnnotationTest extends WordSpec {
+  import com.github.pshirshov.izumi.distage.Fixtures.Case16._
+
   def priv(@Id("locargann") x: Int): Unit = {val _ = x}
 
   val locargannfnval: Int @Id("loctypeann") => Unit = priv
@@ -103,6 +104,48 @@ class WrappedFunctionAnnotationTest extends WordSpec {
       val testProviderModule = new TestProviderModule {}
       assert(ProviderMagnet(testProviderModule.implArg _).get.ret <:< SafeType.get[TestProviderModule#TestClass])
       assert(ProviderMagnet(testProviderModule.implType _).get.ret <:< SafeType.get[TestProviderModule#TestClass])
+    }
+
+    "handle constructor references with argument annotations" in {
+      val fn = ProviderMagnet.apply(new ClassArgAnn(_, _)).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("classargann1"))
+      assert(fn.diKeys contains DIKey.get[Int].named("classargann2"))
+    }
+
+    "handle constructor references with type annotations" in {
+      val fn = ProviderMagnet.apply(new ClassTypeAnn(_, _)).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
+      assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
+    }
+
+    "handle constructor references with argument annotations with a lossy wrapper lambda" in {
+      val fn = ProviderMagnet.apply((x, y) => new ClassArgAnn(x, y)).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("classargann1"))
+      assert(fn.diKeys contains DIKey.get[Int].named("classargann2"))
+    }
+
+    "handle constructor references with type annotations with a lossy wrapper lambda" in {
+      val fn = ProviderMagnet.apply((x, y) => new ClassTypeAnn(x, y)).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
+      assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
+    }
+
+    "progression test: FAILS to handle case class .apply references with argument annotations" in {
+      val fn = ProviderMagnet.apply(ClassArgAnn.apply _).get
+
+      assert(!fn.diKeys.contains(DIKey.get[String].named("classargann1")))
+      assert(!fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
+    }
+
+    "handle case class .apply references with type annotations" in {
+      val fn = ProviderMagnet.apply(ClassTypeAnn.apply _).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
+      assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
     }
   }
 
