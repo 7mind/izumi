@@ -83,7 +83,7 @@ To install snapshot:
 
 ```bash
 # install snapshot
-coursier launch -r https://oss.sonatype.org/content/repositories/snapshots/ com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.6.0-SNAPSHOT -o idlc
+coursier bootstrap -r https://oss.sonatype.org/content/repositories/snapshots/ com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.6.0-SNAPSHOT -o idlc
 
 ./idlc --help
 ```
