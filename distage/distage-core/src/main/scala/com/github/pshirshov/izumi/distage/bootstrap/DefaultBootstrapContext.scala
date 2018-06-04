@@ -116,6 +116,9 @@ object DefaultBootstrapContext {
       .add[PlanningHookDefaultImpl]
   }
 
-
   final lazy val noCogenBootstrap = defaultBootstrap ++ noCogen
+
+  final lazy val noReflectionBootstrap: ModuleBase = noCogenBootstrap overridenBy new ModuleDef {
+    make[ClassStrategy].from[ClassStrategyFailingImpl]
+  }
 }

@@ -21,11 +21,19 @@ object AnyConstructorMacro {
     val safe = SafeType(weakTypeOf[T])
 
     if (symbolIntrospector.isConcrete(safe)) {
-      c.Expr[AnyConstructor[T]] {
-        q"""new ${weakTypeOf[ConcreteConstructor[T]]}($safe)"""
-      }
+      ConcreteConstructorMacro.mkConcreteConstructor[T](c)
+    } else if (symbolIntrospector.isFactory(safe)) {
+      FactoryConstructorMacro.mkFactoryConstructor[T](c)
+    } else if (symbolIntrospector.isWireableAbstract(safe)) {
+      TraitConstructorMacro.mkTraitConstructor[T](c)
     } else {
-      AbstractConstructorMacro.mkAbstractConstructor[T](c)
+      c.abort(
+        c.enclosingPosition
+        , s"""
+           |The impossible happened! Cannot generate implementation for class $safe!
+           |Because it's neither a concrete class, nor a factory, nor a trait!
+         """.stripMargin
+      )
     }
   }
 }

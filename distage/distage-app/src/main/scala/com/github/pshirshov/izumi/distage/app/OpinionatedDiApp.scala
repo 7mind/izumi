@@ -1,16 +1,11 @@
 package com.github.pshirshov.izumi.distage.app
 
-import com.github
-import com.github.pshirshov
-import com.github.pshirshov.izumi
-import com.github.pshirshov.izumi.distage
-import com.github.pshirshov.izumi.distage.{Injectors, model}
+import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.{Locator, reflection}
+import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
-import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
