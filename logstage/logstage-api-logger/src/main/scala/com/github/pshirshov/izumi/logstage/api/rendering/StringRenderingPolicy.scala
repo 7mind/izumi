@@ -165,19 +165,15 @@ case class WithConstants[T <: LogUnit](unit: Option[WithMargin[T]] = None) {
 
   private val xs = ListBuffer.empty[Constant]
 
-  def append(cons: Constant*): Unit = {
-    xs ++= cons
-  }
+  def append(cons: Constant*): Unit = xs ++= cons
 
-  def constants: Vector[LogMessageItem] = {
-    xs.toVector
-  }
+  def constants: Vector[LogMessageItem] = xs.toVector
 }
 
 
 object StringRenderingPolicy {
 
-  val defaultRendering = "ssss${level} ${ts} ${thread}\t${location} ${custom-ctx} ${msg}"
+  val defaultRendering = "ssss${level} ${ts} ${thread} ${location} ${custom-ctx} ${msg}"
 
   sealed trait LogMessageItem {
     def perform(e: Log.Entry, withColor: Boolean): String
