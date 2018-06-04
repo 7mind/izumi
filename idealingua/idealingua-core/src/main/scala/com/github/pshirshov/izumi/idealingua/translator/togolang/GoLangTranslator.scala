@@ -217,7 +217,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |})
        """.stripMargin
     } else {
-      s"""serialized, err := json.Marshal(v.value)
+      """serialized, err := json.Marshal(v.value)
          |if err != nil {
          |    return nil, err
          |}
@@ -865,8 +865,8 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
 
   protected def renderServiceMethodDefaultResult(i: Service, method: Service.DefMethod, imports: GoLangImports): String = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
-      case st: Struct => s"nil"
-      case al: Algebraic => s"nil"
+      case st: Struct => "nil"
+      case al: Algebraic => "nil"
       case si: Singular => GoLangType(si.typeId, imports, ts).defaultValue()
     }
   }

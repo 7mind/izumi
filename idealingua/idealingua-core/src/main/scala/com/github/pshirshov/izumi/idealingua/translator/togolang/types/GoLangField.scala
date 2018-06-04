@@ -109,7 +109,7 @@ final case class GoLangField(
                |${
               if (vt.isInstanceOf[Generic])
                 renderPolymorphSerializedVar(vt, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
-                (renderPolymorphSerialized(vt, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)
+                (renderPolymorphSerialized(vt, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)
             }
                |}
                |$dest := $tempVal
@@ -154,7 +154,7 @@ final case class GoLangField(
 
   def renderInterfaceMethods(): String = {
     s"""${renderMemberName(true)}() ${tp.renderType()}
-       |Set${renderMemberName(true)}(value ${tp.renderType()})${if (tp.hasSetterError()) " error" else ""}
+       |Set${renderMemberName(true)}(value ${tp.renderType()})${if (tp.hasSetterError) " error" else ""}
      """.stripMargin
   }
 
@@ -183,9 +183,9 @@ final case class GoLangField(
        |    return v.${renderMemberName(false)}
        |}
        |
-       |func (v *$structName) Set${renderMemberName(true)}(value ${tp.renderType()}) ${if (tp.hasSetterError()) "error " else ""}{
+       |func (v *$structName) Set${renderMemberName(true)}(value ${tp.renderType()}) ${if (tp.hasSetterError) "error " else ""}{
        |    ${if (tp.hasSetterError()) renderSetterNilCheck() else ""}
-       |    v.${renderMemberName(false)} = value${if (tp.hasSetterError()) "\n    return nil" else ""}
+       |    v.${renderMemberName(false)} = value${if (tp.hasSetterError) "\n    return nil" else ""}
        |}
      """.stripMargin
   }
@@ -372,7 +372,7 @@ final case class GoLangField(
 
   private def renderAssignImpl(struct: String, id: TypeId, variable: String, serialized: Boolean, optional: Boolean): String = {
     if (serialized) {
-      val assignVar = if (optional || !tp.hasSetterError())
+      val assignVar = if (optional || !tp.hasSetterError)
         s"$struct.Set${renderMemberName(true)}($variable)"
       else
         s"""if err := $struct.Set${renderMemberName(true)}($variable); err != nil {
@@ -381,7 +381,7 @@ final case class GoLangField(
          """.stripMargin
 
       val tempVal = s"m${name.capitalize}"
-      val assignTemp = if (optional || !tp.hasSetterError())
+      val assignTemp = if (optional || !tp.hasSetterError)
         s"$struct.Set${renderMemberName(true)}(${(if (optional) "&" else "") + tempVal})"
       else
         s"""if err := $struct.Set${renderMemberName(true)}($tempVal); err != nil {
@@ -454,7 +454,7 @@ final case class GoLangField(
 //          s"$struct.Set${renderMemberName(true)}FromString($variable)"
         case _ => s"$struct.Set${renderMemberName(true)}($variable)"
       }
-      if (optional || !tp.hasSetterError())
+      if (optional || !tp.hasSetterError)
         res
       else
         s"if err := $res; err != nil {\n    return err\n}"

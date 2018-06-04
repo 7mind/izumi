@@ -13,7 +13,7 @@ final case class GoLangType (
                         ts: Typespace = null
                       ) {
 
-  def hasSetterError(): Boolean = {
+  def hasSetterError: Boolean = {
     hasSetterErrorImpl(id)
   }
 
