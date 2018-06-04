@@ -80,7 +80,7 @@ object CliIdlCompiler {
     val target = conf.target.toAbsolutePath
     target.toFile.mkdirs()
 
-    println(s"Compilation Targets")
+    println("Compilation Targets:")
     options.foreach {
       o =>
         val e = o.extensions.map(_.id)

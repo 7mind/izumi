@@ -32,19 +32,19 @@ mixin SymNode {
 }
 
 mixin AppNode {
-  fun: AST
+  fun: opt[AST]
   args: list[AST]
 }
 
 mixin LamNode {
   paramNames: list[str]
-  body: AST
+  body: opt[AST]
 }
 
 mixin IfNode {
-  cond: AST
-  thenNode: AST
-  elseNode: AST
+  cond: opt[AST]
+  thenNode: opt[AST]
+  elseNode: opt[AST]
 }
 
 // typed AST
