@@ -8,6 +8,8 @@ import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy.{Constant, LogMessageItem, WithMargin}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.{LogUnit, Margin}
 
+import scala.collection.mutable.ListBuffer
+
 class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[String] = None) extends RenderingPolicy {
   protected val withColors: Boolean = {
     (
@@ -17,7 +19,7 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
       !GraphicsEnvironment.isHeadless
   }
 
-  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse("${level} ${ts} ${thread}\t${location}${custom-ctx}${msg}"))
+  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse(StringRenderingPolicy.defaultRendering))
 
   override def render(entry: Log.Entry): String = {
     val sb = new StringBuffer(performRendering(entry, withColors))
@@ -46,9 +48,6 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
         ""
     }
   }
-
-  // todo : maybe polish notation we need to use for checking braces and theirs closing
-  // todo : inner props i.e. margins
 
   private def renderedLayout(pattern: String): Iterable[LogMessageItem] = {
     def parseLogUnit(chars: List[Char]): (List[Char], List[Char]) = {
@@ -106,9 +105,14 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
 
 
   private def performRendering(e: Log.Entry, withColor: Boolean)(implicit builder: Iterable[LogMessageItem]): String = {
-    builder
-      .map(_.perform(e, withColor))
-      .mkString("")
+
+    val trimedBuilder = trimLogItems(builder).map(item => (item.unit, item.constants)).flatMap {
+      case (Some(k), constants) if k.unit.undefined(e) => constants.dropWhile(_.isSpace)
+      case (Some(key), constants) => key +: constants
+      case (_, constants) => constants
+    }
+
+    trimedBuilder.foldLeft("")(_ + _.perform(e, withColor)) // @pshirshov this one or use string interpolator?
   }
 
   private def parseLogUnitWithMargin(chars: List[Char]): Option[WithMargin[_]] = {
@@ -141,21 +145,62 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
         WithMargin(unit, maybeMargin)
     }
   }
+
+  private def trimLogItems(builder: Iterable[LogMessageItem]): Vector[WithConstants[_ <: LogUnit]] = {
+    builder.toSeq.foldLeft(ListBuffer.empty[WithConstants[_ <: LogUnit]]) {
+      case (acc, logUnit: WithMargin[_]) =>
+        acc += WithConstants(Some(logUnit))
+      case (acc, constant: Constant) =>
+        if (acc.isEmpty) {
+          val item = WithConstants()
+          acc += item
+        }
+        acc.last.append(constant)
+        acc
+    }
+  }.toVector
+}
+
+case class WithConstants[T <: LogUnit](unit: Option[WithMargin[T]] = None) {
+
+  private val xs = ListBuffer.empty[Constant]
+
+  def append(cons: Constant*): Unit = xs ++= cons
+
+  def constants: Vector[LogMessageItem] = xs.toVector
 }
 
 
 object StringRenderingPolicy {
 
+  val defaultRendering = "ssss${level} ${ts} ${thread} ${location} ${custom-ctx} ${msg}"
+
   sealed trait LogMessageItem {
     def perform(e: Log.Entry, withColor: Boolean): String
+
+    def isSpace: Boolean
   }
 
-  case class Constant[T](i: T) extends LogMessageItem {
+  object LogMessageItem {
+    val space = " "
+
+  }
+
+  case class Constant(i: String) extends LogMessageItem {
     override def perform(e: Log.Entry, withColor: Boolean): String = i.toString
+
+    override def isSpace: Boolean = i.contains(LogMessageItem.space)
+  }
+
+  object Constant {
+    def apply(i: Char): Constant = new Constant(i.toString)
   }
 
   case class WithMargin[T <: LogUnit](unit: LogUnit, margin: Option[Margin]) extends LogMessageItem {
     override def perform(e: Log.Entry, withColor: Boolean): String = unit.renderUnit(e, withColor, margin)
+
+    override val isSpace: Boolean = false
   }
+
 
 }
