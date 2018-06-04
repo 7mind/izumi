@@ -184,7 +184,7 @@ final case class GoLangField(
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}(value ${tp.renderType()}) ${if (tp.hasSetterError) "error " else ""}{
-       |    ${if (tp.hasSetterError()) renderSetterNilCheck() else ""}
+       |    ${if (tp.hasSetterError) renderSetterNilCheck() else ""}
        |    v.${renderMemberName(false)} = value${if (tp.hasSetterError) "\n    return nil" else ""}
        |}
      """.stripMargin

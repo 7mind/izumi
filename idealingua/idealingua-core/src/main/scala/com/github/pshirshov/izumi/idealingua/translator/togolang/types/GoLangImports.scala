@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang.types
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
@@ -40,8 +41,10 @@ final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
 }
 
 object GoLangImports {
-  def apply(types: List[TypeId], fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord], forTest: Boolean): GoLangImports =
+  def apply(types: List[TypeId], fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord], forTest: Boolean): GoLangImports = {
+    Quirks.discard(ts)
     new GoLangImports(fromTypes(types, fromPkg, extra, forTest))
+  }
 
   def apply(imports: List[GoLangImportRecord]): GoLangImports =
     new GoLangImports(imports)

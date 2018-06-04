@@ -303,7 +303,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
     val fields = typespace.structure.structure(i)
     val distinctFields = fields.all.groupBy(_.field.name).map(_._2.head.field)
-    var implId = typespace.implId(i.id)
+    val implId = typespace.implId(i.id)
     val eid = i.id.name + implId.name
 
 

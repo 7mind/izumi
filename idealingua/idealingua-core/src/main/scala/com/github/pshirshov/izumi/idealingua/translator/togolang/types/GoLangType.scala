@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang.types
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -40,11 +41,14 @@ final case class GoLangType (
     case _ => renderUserType(id, serialized, forAlias, forMap)
   }
 
-  private def renderGenericType(generic: Generic, serialized: Boolean, forMap: Boolean): String = generic match {
-    case gm: Generic.TMap => s"map[${renderNativeType(gm.keyType, serialized, forMap = true)}]${renderNativeType(gm.valueType, serialized)}"
-    case gl: Generic.TList => s"[]${renderNativeType(gl.valueType, serialized)}"
-    case gs: Generic.TSet => s"[]${renderNativeType(gs.valueType, serialized)}"
-    case go: Generic.TOption => s"*${renderNativeType(go.valueType, serialized)}"
+  private def renderGenericType(generic: Generic, serialized: Boolean, forMap: Boolean): String = {
+    Quirks.discard(forMap)
+    generic match {
+      case gm: Generic.TMap => s"map[${renderNativeType(gm.keyType, serialized, forMap = true)}]${renderNativeType(gm.valueType, serialized)}"
+      case gl: Generic.TList => s"[]${renderNativeType(gl.valueType, serialized)}"
+      case gs: Generic.TSet => s"[]${renderNativeType(gs.valueType, serialized)}"
+      case go: Generic.TOption => s"*${renderNativeType(go.valueType, serialized)}"
+    }
   }
 
   def isPrimitive(id: TypeId): Boolean = id match {

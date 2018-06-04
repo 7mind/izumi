@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
@@ -141,7 +142,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       val goType = GoLangType(i.target, imports, ts)
 
       val aliases = ts.dealias(i.id) match {
-        case dt: DTOId =>
+        case _: DTOId =>
           s"""type ${i.id.name}Serialized = ${goType.renderType(forAlias = true)}Serialized
            """.stripMargin
         case i: InterfaceId =>
@@ -863,11 +864,14 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
      """.stripMargin
   }
 
-  protected def renderServiceMethodDefaultResult(i: Service, method: Service.DefMethod, imports: GoLangImports): String = method match {
-    case m: DefMethod.RPCMethod => m.signature.output match {
-      case st: Struct => "nil"
-      case al: Algebraic => "nil"
-      case si: Singular => GoLangType(si.typeId, imports, ts).defaultValue()
+  protected def renderServiceMethodDefaultResult(i: Service, method: Service.DefMethod, imports: GoLangImports): String = {
+    Quirks.discard(i)
+    method match {
+      case m: DefMethod.RPCMethod => m.signature.output match {
+        case _: Struct => "nil"
+        case _: Algebraic => "nil"
+        case si: Singular => GoLangType(si.typeId, imports, ts).defaultValue()
+      }
     }
   }
 
