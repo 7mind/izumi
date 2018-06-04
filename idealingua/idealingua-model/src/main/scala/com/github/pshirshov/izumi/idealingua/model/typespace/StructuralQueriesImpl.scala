@@ -82,7 +82,8 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       val primary = sorted.head
 
       if (sorted.tail.forall(f => isParent(primary.typeId, f.typeId))) {
-        return Some(x.head)
+        val bestField = x.head
+        return Some(bestField.copy(defn = bestField.defn.copy(variance = sorted)))
       }
 
       None

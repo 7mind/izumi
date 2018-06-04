@@ -13,7 +13,7 @@ class StaticDSLTest extends WordSpec {
       import Case1._
       val definition: ModuleBase = new ModuleDef {
         make[TestClass].statically
-        make[TestDependency0].static[TestImpl0]
+        make[TestDependency0].stat[TestImpl0]
         make[TestInstanceBinding].from(TestInstanceBinding())
 
         make[TestClass].named("named.test.class")

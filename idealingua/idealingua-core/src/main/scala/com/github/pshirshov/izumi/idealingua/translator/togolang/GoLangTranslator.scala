@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
@@ -85,8 +86,8 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   protected def renderDto(i: DTO): RenderableCogenProduct = {
     val imports = GoLangImports(i, i.id.path.toPackage, ts)
 
-    val fields = typespace.structure.structure(i).all
-    val distinctFields = fields.groupBy(_.field.name).map(_._2.head.field)
+    val fields = typespace.structure.structure(i).all.map(f => if (f.defn.variance.nonEmpty) f.defn.variance.last else f.field )
+    val distinctFields = fields.groupBy(_.name).map(_._2.head)
 
     val struct = GoLangStruct(
       i.id.name,
@@ -101,11 +102,11 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       s"""${struct.render()}
          |${struct.renderSerialized()}
          |${struct.renderSlices()}
-         |${renderRegistrations(ts.inheritance.allParents(i.id), i.id.name, imports)}
+         |${renderRegistrations(ts.inheritance.parentsInherited(i.id), i.id.name, imports)}
        """.stripMargin
 
-    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\"" && f.tp.testValue() != "nil")
-      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
+    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil")
+      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty, forTest = true)
 
     val tests =
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
@@ -140,9 +141,24 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       val imports = GoLangImports(i, i.id.path.toPackage, ts)
       val goType = GoLangType(i.target, imports, ts)
 
+      val aliases = ts.dealias(i.id) match {
+        case _: DTOId =>
+          s"""type ${i.id.name}Serialized = ${goType.renderType(forAlias = true)}Serialized
+           """.stripMargin
+        case i: InterfaceId =>
+          s"""type ${i.name + ts.implId(i).name} = ${goType.renderType(forAlias = true)}Struct
+             |type ${i.name + ts.implId(i).name}Serialized = ${GoLangType(ts.implId(i), imports, ts).renderType(forAlias = true)}Serialized
+           """.stripMargin
+        case _ => s""
+      }
+
       AliasProduct(
         s"""// ${i.id.name} alias
            |type ${i.id.name} = ${goType.renderType(forAlias = true)}
+           |$aliases
+           |func NewTest${i.id.name}() ${goType.renderType()} {
+           |    return ${goType.testValue()}
+           |}
          """.stripMargin,
         imports.renderImports()
       )
@@ -182,15 +198,57 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
      """.stripMargin
   }
 
+  protected def renderAdtSerialization(member: AdtMember, imports: GoLangImports): String = {
+    val glt = GoLangType(member.typeId, imports, ts)
+    val glf = GoLangField("value", glt, "v", imports, ts)
+    if (glt.isPolymorph(glt.id)) {
+      s"""polyVar, ok := v.value.(${glt.renderType()})
+         |if !ok {
+         |    return nil, fmt.Errorf("Out of sync stored object type %s and actual object.", v.valueType)
+         |}
+         |
+         |${glf.renderPolymorphSerializedVar("polymorphRaw", "polyVar")}
+         |serialized, err := json.Marshal(polymorphRaw)
+         |if err != nil {
+         |    return nil, err
+         |}
+         |
+         |return json.Marshal(&map[string]json.RawMessage {
+         |    v.valueType: serialized,
+         |})
+       """.stripMargin
+    } else {
+      """serialized, err := json.Marshal(v.value)
+         |if err != nil {
+         |    return nil, err
+         |}
+         |
+         |return json.Marshal(&map[string]json.RawMessage {
+         |    v.valueType: serialized,
+         |})
+       """.stripMargin
+    }
+  }
+
   protected def renderAdtImpl(name: String, alternatives: List[AdtMember], imports: GoLangImports, withTest: Boolean = true): String = {
       val test =
         s"""
            |func NewTest$name() *$name {
            |    res := &$name{}
-           |    res.Set${alternatives.head.name}(NewTest${alternatives.head.name}())
+           |    res.Set${alternatives.head.name}(NewTest${alternatives.head.typeId.name + (alternatives.head.typeId match { case iface: InterfaceId => ts.implId(iface).name; case _ => "" })}())
            |    return res
            |}
          """.stripMargin
+
+      // TODO Rebuild with type switcher
+//    func typeSwitch(tst interface{}) {
+//      switch v := tst.(type) {
+//        case Stringer:
+//        fmt.Println("Stringer:", v)
+//        default:
+//          fmt.Println("Unknown")
+//      }
+//    }
 
       s"""type $name struct {
          |    value interface{}
@@ -206,14 +264,11 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |        return nil, fmt.Errorf("trying to serialize a non-initialized Adt $name")
          |    }
          |
-         |    serialized, err := json.Marshal(v.value)
-         |    if err != nil {
-         |        return nil, err
+         |    switch v.valueType {
+         |${alternatives.map(al => "case \"" + al.name + "\": {\n" + renderAdtSerialization(al, imports).shift(4) + "\n}").mkString("\n").shift(8)}
+         |        default:
+         |            return nil, fmt.Errorf("$name encountered an unknown type '%s' during serialization", v.valueType)
          |    }
-         |
-         |    return json.Marshal(&map[string]json.RawMessage {
-         |      v.valueType: serialized,
-         |    })
          |}
          |
          |func (v *$name) UnmarshalJSON(data []byte) error {
@@ -227,7 +282,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |        switch className {
          |${alternatives.map(al => "case \"" + al.name + "\": {\n" + GoLangType(al.typeId, imports, ts).renderUnmarshal("content", "v.value = ").shift(4) + "\n    return nil\n}").mkString("\n").shift(12)}
          |            default:
-         |                return fmt.Errorf("$name encountered an unknown type %s during deserialization", className)
+         |                return fmt.Errorf("$name encountered an unknown type '%s' during deserialization", className)
          |        }
          |    }
          |
@@ -236,10 +291,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        """.stripMargin
   }
 
-  protected def renderAdtAlternativeTest(i: Adt, m: AdtMember): String = {
+  protected def renderAdtAlternativeTest(i: Adt, m: AdtMember, im: GoLangImports): String = {
     s"""func Test${i.id.name}As${m.name}(t *testing.T) {
        |    adt := &${i.id.name}{}
-       |    adt.Set${m.name}(NewTest${m.typeId.name}())
+       |    adt.Set${m.name}(${GoLangType(m.typeId, im, ts).testValue()})
        |
        |    if !adt.Is${m.name}() {
        |        t.Errorf("type '%s' Is${m.name} must be true.", "${i.id.name}")
@@ -255,7 +310,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |    adt2 := &${i.id.name}{}
        |    err = json.Unmarshal(serialized, adt2)
        |    if err != nil {
-       |        t.Errorf("type '%s' json deserialization failed. %+v", "${i.id.name}", err)
+       |        t.Errorf("type '%s' json deserialization failed. %+v, json: %s", "${i.id.name}", err, string(serialized))
        |    }
        |
        |    if !adt2.Is${m.name}() {
@@ -275,7 +330,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |    "encoding/json"
          |)
          |
-         |${i.alternatives.map(al => renderAdtAlternativeTest(i, al)).mkString("\n")}
+         |${i.alternatives.map(al => renderAdtAlternativeTest(i, al, imports)).mkString("\n")}
        """.stripMargin
 
     AdtProduct(renderAdtImpl(name, i.alternatives, imports), imports.renderImports(Seq("fmt", "encoding/json")), tests)
@@ -528,8 +583,9 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   protected def renderInterface(i: Interface): RenderableCogenProduct = {
     val imports = GoLangImports(i, i.id.path.toPackage, ts)
 
-    val fields = typespace.structure.structure(i)
-    val distinctFields = fields.all.groupBy(_.field.name).map(_._2.head.field)
+    val fields = typespace.structure.structure(i).all.map(f => if (f.defn.variance.nonEmpty) f.defn.variance.last else f.field )
+    val distinctFields = fields.groupBy(_.name).map(_._2.head)
+
     val implId = typespace.tools.implId(i.id)
     val eid = i.id.name + typespace.tools.implId(i.id).name
 
@@ -582,7 +638,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |    for className, content := range data {
          |        ctor, ok := known${i.id.name}Polymorphic[className]
          |        if !ok {
-         |            return nil, fmt.Errorf("unknown polymorphic type %s for Create${i.id.name}", className)
+         |            return nil, fmt.Errorf("unknown polymorphic type '%s' for Create${i.id.name}", className)
          |        }
          |
          |        instance := ctor()
@@ -596,11 +652,11 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
          |
          |    return nil, fmt.Errorf("empty content for polymorphic type in Create${i.id.name}")
          |}
-         |${renderRegistrations(ts.inheritance.allParents(i.id), eid, imports)}
+         |${renderRegistrations(ts.inheritance.parentsInherited(i.id), eid, imports)}
        """.stripMargin
 
-    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\"" && f.tp.testValue() != "nil")
-      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
+    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil")
+      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty, forTest = true)
 
     val tests =
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
@@ -637,14 +693,14 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
     InterfaceProduct(iface, companion, imports.renderImports(List("encoding/json", "fmt")), tests)
   }
 
-  protected def inName(i: Service, name: String, public: Boolean = false): String = {
+  protected def inName(i: Service, name: String, public: Boolean): String = {
     if (public)
       s"In${i.id.name.capitalize}${name.capitalize}"
     else
       s"in${i.id.name.capitalize}${name.capitalize}"
   }
 
-  protected def outName(i: Service, name: String, public: Boolean = true): String = {
+  protected def outName(i: Service, name: String, public: Boolean): String = {
     if (public)
       s"Out${i.id.name.capitalize}${name.capitalize}"
     else
@@ -659,15 +715,15 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
           val fields = m.signature.input.fields.map(f => f.name + " " + GoLangType(f.typeId, imports, ts).renderType()).mkString(", ")
           s"${m.name.capitalize}($context$fields) ${renderServiceMethodOutputSignature(i, m, imports)}"
         } else {
-          s"${m.name.capitalize}(${context}input: ${inName(i, m.name)}) ${renderServiceMethodOutputSignature(i, m, imports)}"
+          s"${m.name.capitalize}(${context}input: ${inName(i, m.name, public = true)}) ${renderServiceMethodOutputSignature(i, m, imports)}"
         }
       }
     }
   }
 
   protected def renderServiceMethodOutputModel(i: Service, method: DefMethod.RPCMethod, imports: GoLangImports): String = method.signature.output match {
-    case _: Struct => s"*${outName(i, method.name)}"
-    case _: Algebraic => s"*${outName(i, method.name)}"
+    case _: Struct => s"*${outName(i, method.name, public = true)}"
+    case _: Algebraic => s"*${outName(i, method.name, public = true)}"
     case si: Singular => s"${GoLangType(si.typeId, imports, ts).renderType()}"
   }
 
@@ -679,23 +735,24 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct | _: Algebraic =>
         s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := new${inName(i, m.name)}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")})" }
-           |    outData := &${outName(i, m.name)}{}
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")})" }
+           |    outData := &${outName(i, m.name, public = true)}{}
            |    err := c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
            |    if err != nil {
-           |        return nil, err
+           |        return ${renderServiceMethodDefaultResult(i, method, imports)}, err
            |    }
            |    return outData, nil
            |}
        """.stripMargin
 
       case so: Singular =>
+        val resType = GoLangType(so.typeId, imports, ts)
         s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := new${inName(i, m.name)}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")})" }
-           |    outData := &${GoLangType(so.typeId, imports, ts).renderType(forAlias = true)}
-           |    err := c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")})" }
+           |    ${if (resType.isPrimitive(so.typeId)) s"var outData ${resType.renderType(forAlias = true)}" else s"outData := &${resType.renderType(forAlias = true)}{}"}
+           |    err := c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, ${if (resType.isPrimitive(so.typeId)) "&" else ""}outData)
            |    if err != nil {
-           |        return nil, err
+           |        return ${renderServiceMethodDefaultResult(i, method, imports)}, err
            |    }
            |    return outData, nil
            |}
@@ -741,7 +798,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   protected def renderServiceDispatcherHandler(i: Service, method: Service.DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""case "${m.name}": {
-         |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"dataIn, ok := data.(*${inName(i, m.name)})\n    if !ok {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + "\")\n    }"}
+         |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"dataIn, ok := data.(*${inName(i, m.name, public = true)})\n    if !ok {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + "\")\n    }"}
          |    return v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"dataIn.${f.name.capitalize}()").mkString(", ")})
          |}
          |
@@ -750,7 +807,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
 
   protected def renderServiceDispatcherPreHandler(i: Service, method: Service.DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
-      s"""case "${m.name}": ${if (m.signature.input.fields.isEmpty) "return nil, nil" else s"return &${inName(i, m.name)}{}, nil"}""".stripMargin
+      s"""case "${m.name}": ${if (m.signature.input.fields.isEmpty) "return nil, nil" else s"return &${inName(i, m.name, public = true)}{}, nil"}""".stripMargin
   }
 
   protected def renderServiceDispatcher(i: Service, imports: GoLangImports): String = {
@@ -807,6 +864,17 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
      """.stripMargin
   }
 
+  protected def renderServiceMethodDefaultResult(i: Service, method: Service.DefMethod, imports: GoLangImports): String = {
+    Quirks.discard(i)
+    method match {
+      case m: DefMethod.RPCMethod => m.signature.output match {
+        case _: Struct => "nil"
+        case _: Algebraic => "nil"
+        case si: Singular => GoLangType(si.typeId, imports, ts).defaultValue()
+      }
+    }
+  }
+
   protected def renderServiceServerDummy(i: Service, imports: GoLangImports): String = {
     val name = s"${i.id.name}ServerDummy"
     s"""// $name is a dummy for implementation references
@@ -814,14 +882,14 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |    // Implements ${i.id.name}Server interface
        |}
        |
-       |${i.methods.map(m => s"func (d *$name) " + renderServiceMethodSignature(i, m, imports, spread = true, withContext = true) + s""" {\n    return nil, fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
+       |${i.methods.map(m => s"func (d *$name) " + renderServiceMethodSignature(i, m, imports, spread = true, withContext = true) + s""" {\n    return ${renderServiceMethodDefaultResult(i, m, imports)}, fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
      """.stripMargin
   }
 
   protected def renderServiceMethodOutModel(i: Service, name: String, out: Service.DefMethod.Output, imports: GoLangImports): String = out match {
     case st: Struct => renderServiceMethodInModel(i, name, st.struct, imports)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
-    case _ => s""
+    case si: Singular => s"// ${ si.typeId}"
   }
 
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure, imports: GoLangImports): String = {
@@ -829,15 +897,16 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       structure.fields.map(ef => GoLangField(ef.name, GoLangType(ef.typeId, imports, ts), name, imports, ts)),
       imports, ts
     )
-    s"""${struct.render(makePrivate = true, withTest = false)}
-       |${struct.renderSerialized(makePrivate = true)}
+    s"""${struct.render(withTest = false)}
+       |${struct.renderSerialized()}
      """.stripMargin
   }
 
   protected def renderServiceMethodModels(i: Service, method: Service.DefMethod, imports: GoLangImports): String = method match {
     case m: DefMethod.RPCMethod =>
-      s"""${if(m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, inName(i, m.name), m.signature.input, imports)}
-         |${renderServiceMethodOutModel(i, outName(i, m.name), m.signature.output, imports)}
+      s"""// Method ${m.name} models
+         |${if(m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, inName(i, m.name, public = true), m.signature.input, imports)}
+         |${renderServiceMethodOutModel(i, outName(i, m.name, public = true), m.signature.output, imports)}
        """.stripMargin
 
   }

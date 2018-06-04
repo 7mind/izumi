@@ -2,8 +2,6 @@ package com.github.pshirshov.izumi.sbt.plugins
 
 // copypasted https://bitbucket.org/atlassianlabs/sbt-git-stamp from due to obsolete jgit dependency
 
-import java.time.format.DateTimeFormatter
-
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib._
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder

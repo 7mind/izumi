@@ -23,7 +23,7 @@ object CliIdlCompiler {
       .text("source directory")
 
     opt[File]('t', "target").required().valueName("<dir>")
-      .action((x, c) => c.copy(source = x.toPath))
+      .action((x, c) => c.copy(target = x.toPath))
       .text("target directory")
 
 
@@ -76,15 +76,18 @@ object CliIdlCompiler {
         TypespaceCompiler.CompilerOptions(lang, getExt(lang, ext))
     }
 
-    val path = conf.source
-    val target = conf.target
-    println(s"Targets")
+    val path = conf.source.toAbsolutePath
+    val target = conf.target.toAbsolutePath
+    target.toFile.mkdirs()
+
+    println("Compilation Targets:")
     options.foreach {
       o =>
         val e = o.extensions.map(_.id)
-        println(s"${o.language}")
-        println(s"  ${e.mkString(",")}")
+        println(s"- ${o.language}")
+        println(s"${e.mkString("  + ", "\n  + ", "")}")
     }
+    println()
 
     println(s"Loading definitions from `$path`...")
     val toCompile = Timed {
@@ -95,18 +98,21 @@ object CliIdlCompiler {
 
     options.foreach {
       option =>
-        val itarget = target.resolve(option.language.toString)
+        val langId = option.language.toString
+        println(s"Working on $langId")
+        val itarget = target.resolve(langId)
 
         val out = Timed {
           new IDLCompiler(toCompile)
-            .compile(target, option)
+            .compile(itarget, option)
         }
 
         val allPaths = out.invokation.flatMap(_._2.paths)
 
         println(s"${allPaths.size} source files from ${out.invokation.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
-        println(s"Stubs  : ${out.stubs.files.size} ${option.language.toString} files copied")
+        println(s"Stubs  : ${out.stubs.files.size} $langId files copied")
         println(s"Archive: ${out.sources}")
+        println("")
     }
   }
 
