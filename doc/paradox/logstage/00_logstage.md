@@ -12,3 +12,9 @@ Logstage
 ## [Examples](sample.md)
 
 
+@@@ index
+
+* [Rendering policy](policy.md)
+* [Examples](sample.md)
+
+@@@

@@ -1,10 +1,5 @@
 # Code generator reference 
 
-Notes:
-
-1. All the examples are given in minimal form
-2. Omitted things: marshallers, implicit conversions, type info 
-
 We support the following concepts: 
 
 1. Enumerations
@@ -70,6 +65,12 @@ trait PointLike extends Metadata {
 }      
 ``` 
 
+# Constructs
+
+*Notes:*
+
+1. All the examples of generated code are given in minimal form
+2. Generated code for codecs, implicit conversions and type info is omitted
 
 ## `mixin`: Mixin
 
@@ -93,9 +94,8 @@ trait Person {
 
 Differences between Mixins and Data Classes:
 
-1. Data class cannot define fields
-2. Data class cannot be subclassed
-3. Data class is always redered as DTO/case class, Mixin is always rendered as pair of an Interface and an Implementation  
+1. Data classes cannot be subclassed
+2. Data classes are always rendered as case classes, Mixins are always rendered as pair of Interface and Implementation  
 
 ```idealingua
  data HumanUser {
@@ -189,6 +189,7 @@ object Gender {
 ## `id`: Identifier
 
 Notes:
+
 1. You can use only scalar builtin types for identifier fields 
 2. We provide both parser and sane `.toString` implementation
 3. `.toString` uses the following format: `Name#urlencoded(part1):urlencoded(part2):...`
@@ -242,7 +243,7 @@ mixin UserData {
 }
 
 mixin PrivateUserData {
-  balance: dbl
+  balance: f64
 }
 
 service UserService {
@@ -253,6 +254,7 @@ service UserService {
 ```
 
 Notes: 
+
 1. Service signature cannot accept anything except of Mixins (improvements planned)
 2. `ServerDispatcher` allows you to route wrapped result type to an appropriate method of an abstract implementation
 3. `ClientDispatcher` just passes input to an abstract receiver

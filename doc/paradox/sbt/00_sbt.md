@@ -19,16 +19,16 @@ addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi-deps" % izumi_version)
 
 We provide you the following kinds of plugins:
 
-1. *Global Plugin*: adds some convenience helpers, activated automatically,
-2. *Environmental Plugin*: changes some aspects of sbt behavior in opinioneted way, intended to be activated within root project,
-3. *Preset* - an opinionated set of environmental plugins,
-4. *Optional plugin*: provides you some convenience tasks, intended to be activated manually, per-project.
+1. *Global plugins*: they add some helper sbt tasks, enabled automatically,
+2. *Environmental plugins*: they change some aspects of sbt behavior in an opinionated way, intended to be enabled in the root project,
+3. *Presets* - opinionated sets of environmental plugins,
+4. *Optional plugins*: they provide some convenience sbt tasks, intended to be enabled manually, per-project.
 
 Important notes:
 
-1. Please keep in mind no plugins are being activated automatically,
+1. Please keep in mind no plugins are being enabled automatically,
 2. The rest of Izumi plugins are optional. You may use a preset to activate them or combine them manually as you wish (using settings groups),
-3. Some plugins requires to be installed for each project so cannot be activated via preset due to sbt limitations. You should use Settings Groups in order to activate them.
+3. Some plugins can't be enabled globally due to sbt limitations – they have to be enabled per-project. You should use Settings Groups in order to enable them.
 
 ### Global plugins
 
@@ -55,7 +55,7 @@ Plugin                             | Description                                
 IzumiEnvironment                   | All the environmental plugins except of GIT one    |
 IzumiGitEnvironment                | All the environmental plugins with GIT one         |
 
-### Optional Plugins
+### Optional plugins
 
 Plugin                             | Description                                        |
 ----------------------------------------------------------------------------------------|
@@ -63,7 +63,7 @@ IzumiExposedTestScopesPlugin       | Maintains test scope separation            
 IzumiCompilerOptionsPlugin         | Some linting/optimization presets for scalac/javac |
 IzumiFetchPlugin                   | Allows you to transitively download artifacts from remote repositories|
 IzumiPublishingPlugin              | Some convenience helpers and improvements for artifact publishing |
-IzumiBuildInfoPlugin               | Generates Bills of Materials                       |
+IzumiBuildInfoPlugin               | Generates sbt-compatible BOMs – [Bills of Materials](#bills-of-materials) |
 
 ### Installation
 To activate all the plugins add the following statements into your root project:
@@ -72,17 +72,17 @@ To activate all the plugins add the following statements into your root project:
 enablePlugins(IzumiGitEnvironmentPlugin)
 ```
 
-In case you don't use GIT, use this preset:
+If you don't use `git` in your project, use this preset instead:
 
 ```scala
 enablePlugins(IzumiEnvironmentPlugin)
 ```
 
-Also most likely you would like to activate the following plugins with your global Settings Group:
+To activate Comp
 
 ```scala
-val GlobalSettings = new DefaultSettingsGroup {
-  // ...
+val GlobalSettings = new DefaultGlobalSettingsGroup {
+  override val plugins = Set(IzumiCompilerOptionsPlugin, IzumiExposedTestScopesPlugin)
 }
 ```
 
@@ -114,13 +114,14 @@ So, now you may use classes from the test scope of `myLibrary` within test scope
 only the classes you marked with `@ExposedTestScope` are being exposed to dependant artifacts.
 
 So, let's assume that:
+
 - you have two artifacts, `Library` and `App`,
 - `App` depends on `Library`,
 - In the test scope of `Library` you have a class named `TestSuite`,
 - In the test scope of `Library` you have another class named `TestUtil`,
-- `TestUtil` is marked with `@ExposedTestScope` anotation,
+- `TestUtil` is annotated with `@ExposedTestScope`,
 
-in that case you may use `@TestUtil` in the test scope of `App`, but `TestSuite` would not be visible.
+in that case `TestUtil` will be visible in `App`'s test scope, but `TestSuite` will not be visible.
 
 A diagram:
 
@@ -140,9 +141,11 @@ A diagram:
 
 Notes:
 
-- IDEA doesn't support overriden classpaths so when you run your tests under IDEA the whole test scopes are visible in dependencies,
+- Intellij IDEA doesn't support overriden classpaths so when you run your tests under IDEA the whole test scopes are visible in dependencies,
 - At the moment the implementation of `@ExposedTestScope` (substring presence check) is imperfect and has to be improved,
-- **Transitive dependencies are not checked**, so in case you expose a class but didn't expose it's dependencies your build would work under IDEA but you will get a weird and obscure classloading exception running your tests under IDEA. This is going to [improved](https://github.com/pshirshov/izumi-r2/issues/6) in future.
+- **Transitive dependencies are not checked**, so in case you expose a class but do not expose it's dependencies your build will
+  work under IDEA, but you will a classloading exception under sbt. 
+  This is going to be [improved](https://github.com/pshirshov/izumi-r2/issues/6) in the future.
 
 ### Test Scope Publishing
 
@@ -152,7 +155,7 @@ Test scope separation has no effect on test scope publishing.
 Settings DSL
 ------------
 
-`IzumiDslPlugin` provides you a DSL inteded to simplify definitions of complex project layouts.
+`IzumiDslPlugin` comes with a DSL intended to simplify definition of complex project layouts.
 
 To activate the plugin add the following statement into your root project:
 
@@ -161,6 +164,29 @@ enablePlugins(IzumiDslPlugin)
 ```
 
 ### Simplified Identifiers
+
+DSL provides syntax to simplify project definitions. A definition such as this:
+
+```scala
+lazy val petstoreApp = In("app").as.module
+```
+
+expands to
+
+    lazy val petstoreApp = project.in("app/petstore-app")
+    
+You can attach settings and dependencies to the `In` part, that way you can apply common settings to all the projects in a directory:
+
+```scala
+val ApiSettings: SettingsGroup = new SettingsGroup {
+  override val plugins = Set(IdealinguaPlugin)
+}
+
+lazy val inApi = In("api")
+
+lazy val petstoreApi = inApi.as.module
+lazy val todomvcApi = inApi.as.module
+```
 
 ### Setting Groups
 
@@ -185,10 +211,10 @@ but it would happen *later* than evaluation  of aggregation list so the project 
 ### Aggregation Safety Check
 
 When you invoke `transitiveAggregate` or `transitiveAggregateSeq` on your root project it checks
-if the accumulated set of known project is the same as the set of project loaded by sbt.
+if the accumulated set of known project is the same as the set of all projects loaded by sbt.
 
-In case of discrepancies you will get a warning. So in case you use automatic aggregation it's unlikely
-that you may accidentally forget to aggregate a module of a multi-module project.
+In case module is missing you'll get a warning. This makes it unlikely for you to accidentally forget 
+to aggregate a module in multi-module project.
 
 Build Descriptors
 -----------------
@@ -225,8 +251,8 @@ Convenience Helpers
 
 Setting                                            | Description                                  |
 ---------------------------------------------------|----------------------------------------------|
-ConvenienceTasksPlugin.Keys.mkJavaDirs             | Adds `src/*/java` paths into generated stubs |
-ConvenienceTasksPlugin.Keys.defaultStubPackage     | Default stub package `(sbt.Keys.organization in ThisBuild).value`|
+ConvenienceTasksPlugin.Keys.mkJavaDirs             | Also adds `src/*/java` directories into generated stubs |
+ConvenienceTasksPlugin.Keys.defaultStubPackage     | Default stub package. By default same as project's `organization` |
 
 ### Version Suffixes
 
@@ -311,7 +337,7 @@ You should explicitly enable this plugin in each project you want to use it. Whe
 ```scala
 val GlobalSettings = new SettingsGroup {
   override val plugins = Set(
-      CompilerOptionsPlugin,
+      IzumiCompilerOptionsPlugin,
       // ...
   )
   // ...
