@@ -1,22 +1,19 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.provisioning.strategies.{AbstractConstructorMacro, AnyConstructorMacro, FactoryConstructorMacro, TraitConstructorMacro}
+import com.github.pshirshov.izumi.distage.provisioning.strategies.{AnyConstructorMacro, ConcreteConstructorMacro, FactoryConstructorMacro, TraitConstructorMacro}
 
 import scala.language.experimental.macros
 
-sealed trait AnyConstructor[T]
-
-sealed trait AbstractConstructor[T] extends AnyConstructor[T] {
-  def function: ProviderMagnet[T]
+sealed trait AnyConstructor[T] {
+  def provider: ProviderMagnet[T]
 }
 
-final case class ConcreteConstructor[T](implType: SafeType) extends AnyConstructor[T]
+final case class ConcreteConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
 
-final case class TraitConstructor[T](function: ProviderMagnet[T]) extends AbstractConstructor[T]
+final case class TraitConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
 
-final case class FactoryConstructor[T](function: ProviderMagnet[T]) extends AbstractConstructor[T]
+final case class FactoryConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
 
 object AnyConstructor {
   def apply[T: AnyConstructor]: AnyConstructor[T] = implicitly[AnyConstructor[T]]
@@ -24,10 +21,10 @@ object AnyConstructor {
   implicit def derive[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructor[T]
 }
 
-object AbstractConstructor {
-  def apply[T: AbstractConstructor]: AbstractConstructor[T] = implicitly[AbstractConstructor[T]]
+object ConcreteConstructor {
+  def apply[T: ConcreteConstructor]: ConcreteConstructor[T] = implicitly[ConcreteConstructor[T]]
 
-  implicit def derive[T]: AbstractConstructor[T] = macro AbstractConstructorMacro.mkAbstractConstructor[T]
+  implicit def derive[T]: ConcreteConstructor[T] = macro ConcreteConstructorMacro.mkConcreteConstructor[T]
 }
 
 object TraitConstructor {

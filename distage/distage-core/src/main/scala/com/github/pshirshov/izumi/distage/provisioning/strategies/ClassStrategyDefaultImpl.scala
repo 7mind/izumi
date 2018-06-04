@@ -1,11 +1,12 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.InvalidPlanException
+import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, InvalidPlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 //import scala.reflect.runtime.{currentMirror, universe}
 
@@ -41,3 +42,9 @@ class ClassStrategyDefaultImpl
   }
 }
 
+class ClassStrategyFailingImpl extends ClassStrategy {
+  override def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[OpResult.NewInstance] = {
+    Quirks.discard(context)
+    throw new DIException(s"ClassStrategyFailingImpl does not support instantiation, failed op: $op", null)
+  }
+}

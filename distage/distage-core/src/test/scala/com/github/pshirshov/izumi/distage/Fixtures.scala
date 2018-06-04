@@ -426,6 +426,9 @@ Forest fire, climbin' higher, real life, it can wait""")
     val testVal3: Long @Id("valsbtypeann1") => String @Id("valsbtypeann2") => Long =
       { x: Long @Id("valsbtypeann3") => _ => x }
 
+    case class ClassArgAnn(@Id("classargann1") x: String, @Id("classargann2") y: Int)
+    case class ClassTypeAnn(x: String @Id("classtypeann1"), y: Int @Id("classtypeann2"))
+
     class TestProviderModule {
 
       class TestDependency
