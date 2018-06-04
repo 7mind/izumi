@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy.{Constant, LogMessageItem, WithMargin}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.{LogUnit, Margin}
 
-import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[String] = None) extends RenderingPolicy {
   protected val withColors: Boolean = {
@@ -106,15 +106,13 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
 
   private def performRendering(e: Log.Entry, withColor: Boolean)(implicit builder: Iterable[LogMessageItem]): String = {
 
-    val trimmedBuilder = withSpaces(builder) flatMap {
-      case (k, constants) if k.unit.undefined(e) =>
-        constants.dropWhile(_.isSpace)
-      case (k, constants)  =>
-        k +: constants
+    val trimedBuilder = trimLogItems(builder).map(item => (item.unit, item.constants)).flatMap {
+      case (Some(k), constants) if k.unit.undefined(e) => constants.dropWhile(_.isSpace)
+      case (Some(key), constants) => key +: constants
+      case (_, constants) => constants
     }
-    trimmedBuilder
-      .map(_.perform(e, withColor))
-      .mkString("")
+
+    trimedBuilder.foldLeft("")(_ + _.perform(e, withColor)) // @pshirshov this one or use string interpolator?
   }
 
   private def parseLogUnitWithMargin(chars: List[Char]): Option[WithMargin[_]] = {
@@ -148,39 +146,38 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
     }
   }
 
-  private def withSpaces(builder: Iterable[LogMessageItem]): scala.collection.mutable.LinkedHashMap[WithMargin[_], Seq[LogMessageItem]] = {
-    val map = scala.collection.mutable.LinkedHashMap.empty[Int, Seq[LogMessageItem]]
-    val list = builder.toList
-    var i = 0
-    var curIdx = i
-    val end = list.size
-    while (i < end) {
-      val item = list(i)
-      item match {
-        case _: WithMargin[_] =>
-          curIdx = i
-          map.put(curIdx, Seq.empty)
-        case constant =>
-          map.get(curIdx).foreach {
-            items =>
-              map.update(curIdx, items :+ constant)
-          }
-      }
-      i += 1
+  private def trimLogItems(builder: Iterable[LogMessageItem]): Vector[WithConstants[_ <: LogUnit]] = {
+    builder.toSeq.foldLeft(ListBuffer.empty[WithConstants[_ <: LogUnit]]) {
+      case (acc, logUnit: WithMargin[_]) =>
+        acc += WithConstants(Some(logUnit))
+      case (acc, constant: Constant) =>
+        if (acc.isEmpty) {
+          val item = WithConstants()
+          acc += item
+        }
+        acc.last.append(constant)
+        acc
     }
+  }.toVector
+}
 
-    map.foldLeft(mutable.LinkedHashMap.empty[WithMargin[_], Seq[LogMessageItem]]) {
-      case (res, (k, v)) =>
-        res.put(list(k).asInstanceOf[WithMargin[_ <: LogUnit]], v)
-        res
-    }
+case class WithConstants[T <: LogUnit](unit: Option[WithMargin[T]] = None) {
+
+  private val xs = ListBuffer.empty[Constant]
+
+  def append(cons: Constant*): Unit = {
+    xs ++= cons
+  }
+
+  def constants: Vector[LogMessageItem] = {
+    xs.toVector
   }
 }
 
 
 object StringRenderingPolicy {
 
-  val defaultRendering = "${level} ${ts} ${thread}\t${location} ${custom-ctx} ${msg}"
+  val defaultRendering = "ssss${level} ${ts} ${thread}\t${location} ${custom-ctx} ${msg}"
 
   sealed trait LogMessageItem {
     def perform(e: Log.Entry, withColor: Boolean): String
@@ -192,8 +189,10 @@ object StringRenderingPolicy {
     val space = " "
 
   }
+
   case class Constant(i: String) extends LogMessageItem {
     override def perform(e: Log.Entry, withColor: Boolean): String = i.toString
+
     override def isSpace: Boolean = i.contains(LogMessageItem.space)
   }
 
