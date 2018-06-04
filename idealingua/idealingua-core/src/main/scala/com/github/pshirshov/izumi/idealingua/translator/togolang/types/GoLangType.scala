@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, T
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Enumeration
 
 final case class GoLangType (
                         id: TypeId,
@@ -187,6 +188,33 @@ final case class GoLangType (
     } else {
       throw new IDLException(s"Render from string for non unescaped ones is not supported yet!")
     }
+  }
+
+  def defaultValue(): String = id match {
+    case Primitive.TBool => "false"
+    case Primitive.TString => "\"\""
+    case Primitive.TInt8 => "0"
+    case Primitive.TInt16 => "0"
+    case Primitive.TInt32 => "0"
+    case Primitive.TInt64 => "0"
+    case Primitive.TFloat => "0"
+    case Primitive.TDouble => "0"
+    case Primitive.TUUID => "\"00000000-0000-0000-0000-000000000000\""
+    case Primitive.TTime => "\"00:00:00.000000\""
+    case Primitive.TDate => "\"0000-00-00\""
+    case Primitive.TTs => "\"0000-00-00T00:00:00.00000\""
+    case Primitive.TTsTz => "\"0000-00-00T00:00:00.00000[UTC]\""
+    case g: Generic => g match {
+      case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType(forMap = true)}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
+      case gl: Generic.TList => s"[]${GoLangType(gl.valueType, im, ts).renderType()}{}"
+      case gs: Generic.TSet => s"[]${GoLangType(gs.valueType, im, ts).renderType()}{}"
+      case _: Generic.TOption => "nil"
+    }
+    case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).defaultValue()
+    case e: EnumId => ts(e).asInstanceOf[Enumeration].members.head
+    case _: IdentifierId | _: DTOId => s"nil"
+    case _: InterfaceId => s"nil"
+    case _ => "nil"
   }
 
   def testValue(): String = id match {

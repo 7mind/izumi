@@ -16,12 +16,10 @@ final case class GoLangStruct(
                           ts: Typespace = null,
                           ignoreSlices: List[InterfaceId] = List.empty
                        ) {
-  def render(rtti: Boolean = true, makePrivate: Boolean = false, withTest: Boolean = true): String = {
-    val name = if (makePrivate) (Character.toLowerCase(this.name.charAt(0)) + this.name.substring(1)) else this.name
-
+  def render(rtti: Boolean = true, withTest: Boolean = true): String = {
     val test =
       s"""
-         |func ${if (makePrivate) "newTest" else "NewTest"}$name() *$name {
+         |func NewTest$name() *$name {
          |    res := &$name{}
          |${fields.map(f => f.renderAssign("res", f.tp.testValue(), serialized = false, optional = true)).mkString("\n").shift(4)}
          |    return res
@@ -37,7 +35,7 @@ final case class GoLangStruct(
        |
        |${fields.map(f => f.renderMethods()).filterNot(_.isEmpty).mkString("\n")}
        |
-       |func ${if (makePrivate) "new" else "New"}$name(${fields.map(f => f.renderMemberName(false) + " " + f.tp.renderType()).mkString(", ")}) *$name {
+       |func New$name(${fields.map(f => f.renderMemberName(false) + " " + f.tp.renderType()).mkString(", ")}) *$name {
        |    res := &$name{}
        |${fields.map(f => f.renderAssign("res", f.renderMemberName(false), serialized = false, optional = true)).mkString("\n").shift(4)}
        |    return res
@@ -136,9 +134,7 @@ final case class GoLangStruct(
      """.stripMargin
   }
 
-  def renderSerialized(makePrivate: Boolean = false): String = {
-    val name = if (makePrivate) Character.toLowerCase(this.name.charAt(0)) + this.name.substring(1) else this.name
-
+  def renderSerialized(): String = {
     s"""type ${name}Serialized struct {
        |${fields.map(f => s"${f.renderMemberName(true)} ${f.tp.renderType(true)} `json:" + "\"" + f.name + (if (f.tp.id.isInstanceOf[Generic.TOption]) ",omitempty" else "") + "\"`").mkString("\n").shift(4)}
        |}
