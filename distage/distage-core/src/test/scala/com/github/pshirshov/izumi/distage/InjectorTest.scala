@@ -1,33 +1,21 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.bootstrap.{BootstrapPlanningObserver, CglibBootstrap}
+import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.ConflictingOperation
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
-import com.github.pshirshov.izumi.distage.model.{Injector, LoggerHook}
-import com.github.pshirshov.izumi.fundamentals.platform.console.{SystemOutStringSink, TrivialLogger, TrivialLoggerImpl}
 import org.scalatest.WordSpec
 
 import scala.util.Try
 
 class InjectorTest extends WordSpec {
 
-  def mkInjector(): Injector = {
-    Injectors.bootstrap(
-      base = CglibBootstrap.cogenBootstrap
-      , overrides = new ModuleDef {
-        make[PlanningObserver].from[BootstrapPlanningObserver]
-        make[LoggerHook].from[LoggerHookDebugImpl]
-        make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringSink))
-      }
-    )
-  }
+  def mkInjector(): Injector = Injectors.bootstrap()
 
   "DI planner" should {
 
