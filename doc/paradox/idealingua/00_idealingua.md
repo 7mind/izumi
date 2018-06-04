@@ -4,110 +4,146 @@ out: index.html
 Idealingua DML/IDL
 ==================
 
-The following examples will show what IdeaLingua looks like and how to use.
+The following examples will show what IdeaLingua looks like and how to use it to connect your distributed application.
 
-# Language Reference
+## Pet Store
 
-## Keywords and aliases
+See [izumi-petstore](https://github.com/kaishh/izumi-petstore) project for complete samples in Scala, TypeScript and other languages.
 
-Keyword     | Aliases                | Explanation                                 |
-------------| ---------------------- | ------------------------------------------- |
-`domain`    | `package`, `namespace` | Namespace containing collection of entities |
-`import`    |                        | References a domain by id                   |
-`include`   |                        | Includes `*.model` file by name             |
-`alias`     | `type`, `using`        | Type alias                                  |
-`enum`      |                        | Enumeration                                 |
-`mixin`     | `interface`            | Mixin, named collection of fields           |
-`data`      | `dto`, `struct`        | Data                                        |
-`adt`       | `choice`               | Algebraic Data Type                         |
-`id`        |                        | Identifier, named collection of scalars     |
-`service`   |                        | Service interface                           |
-`def`       | `fn`, `func`, `fun`    | Method                                      |
+## User Service
 
-## Inheritance operators
+Example definition of a user database service:
 
-Keyword     | Aliases                | Explanation                                          | Example                       |  
-------------| ---------------------- | ---------------------------------------------------- | ------------------------------|
-`+`         | `+++`, `...`           | Inherit structure (copy fields)                      | `+ Mixin`                     |
-`&`         | `&&&`                  | Inherit interface                                    | `& Mixin`                     | 
-`-`         | `---`                  | Drop structure (doesn't work for interfaces)         | `- Mixin`, `- field: str`     |
+```
+package user.api
 
-## Embedded data types
+enum Gender = Male | Female
 
-Notes
+id EntityID {
+  uuid: uuid
+}
 
-1. When it's impossible to represent a numeric type with target language we use minimal numeric type with bigger range
-2. When it's not possible to represent time type or UUID with target language we use string representation
-  
+mixin Entity {
+  id: EntityID
+}
 
-### Scalar types
+mixin Person {
+  name: str
+  surname: str
+  gender: Gender
+}
 
-Type name   | Aliases                | Explanation                                 | Scala mapping                |
-------------| ---------------------- | ------------------------------------------- | -----------------------------|
-`str`       | `string`               | String                                      | `String`                     |
-`bool`      | `boolean`, `bit`       | Boolean                                     | `Boolean`                    |
-`i08`       | `byte`, `int8`         | 8-bit integer                               | `Byte`                       |
-`i16`       | `short`, `int16`       | 16-bit integer                              | `Short`                      |
-`i32`       | `int`, `int32`         | 32-bit integer                              | `Int`                        |
-`i64`       | `long`, `int64`        | 64-bit integer                              | `Long`                       |
-`f32`       | `float`, `flt`         | Single precision floating point             | `Float`                      |
-`f64`       | `double`, `dbl`        | Double precision floating point             | `Double`                     |
-`uid`       | `uuid`                 | UUID                                        | `java.util.UUID`             |
-`tsz`       | `dtl`, `datetimel`     | Timestamp with timezone                     | `java.time.ZonedDateTime`    |
-`tsl`       | `dtz`, `datetimez`     | Local timestamp                             | `java.time.LocalDateTime`    |
-`time`      | `time`                 | Time                                        | `java.time.LocalTime`        |
-`date`      | `date`                 | Date                                        | `java.time.LocalDate`        |
+data User {
+  & Entity
+  + Person
+  password: str
+}
 
-### Generics
+data PublicUser {
+  + User
+  - password: str
+}
 
-Type name    | Explanation                                 | Scala mapping  | 
------------- | ------------------------------------------- | -------------- |
-`list[T]`    | List                                        | `List`         |
-`map[K, V]`  | Map (only scalar keys supported)            | `Map`          |
-`opt[T]`     | Optional value                              | `Option`       |
-`set[T]`     | Set (no guarantees for traversal ordering)  | `Set`          |
+adt Result = Success | Failure
 
+data Success {
+  message: str
+}
 
-## Standalone compiler
+data Failure {
+  code: int8
+}
 
-The compiler is built as an uberjar and published onto central.
+service UserService {
+  def saveUser(user: User): Result
+  def findUserByName(name: str): list[PublicUser] | Failure
+}
+```
 
-You may use [https://github.com/coursier/coursier](Coursier) to run it:
+# Installation
+
+## Using the standalone compiler
+
+The compiler executable is built as an uberjar and published on [Maven Central](https://search.maven.org/).
+
+The preferred way to install the compiler is with [coursier](https://github.com/coursier/coursier#command-line)
+
+@@@vars
 
 ```bash
-# release
-coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- --help
+# install release executable
+coursier bootstrap com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:$izumi.version$ -o idlc
 
-# snapshot
-coursier launch -r https://oss.sonatype.org/content/repositories/snapshots/ com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0-SNAPSHOT -- --help
+./idlc --help
+```
+
+@@@
+
+To install snapshot:
+
+```bash
+# install snapshot
+coursier launch -r https://oss.sonatype.org/content/repositories/snapshots/ com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.6.0-SNAPSHOT -o idlc
+
+./idlc --help
 ```
 
 Commandline examples:
 
 ```
-coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- -s src -t target -L scala=* -L typescript=*
+./idlc -s src -t target -L scala=* -L typescript=*
 ```
 
 ```
-coursier launch com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.5.0 -- -s src -t target -L scala=-AnyvalExtension -L typescript=*
+./idlc -s src -t target -L scala=-AnyvalExtension -L typescript=*
 ```
 
-## Http4s Transport
+## Using SBT Plugin
 
-Most likely you would need to use [Kind Projector](https://github.com/non/kind-projector) compiler plugin and partial unification enabled:
+Add the following to your `project/plugins.sbt` file:
+
+@@@vars
+
+```scala
+val izumi_version = "$izumi.version$"
+addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-idealingua" % izumi_version)
+```
+
+@@@
+
+Place your domain definitions into `/src/main/izumi` directory, then enable the plugin for that project: 
+
+```scala
+izumiProject.enablePlugins(IdealinguaPlugin)
+```
+
+You can depend on the code generated by Idealinguain in your other Scala projects:
+
+```scala
+project.dependsOn(izumiProject)
+```
+
+## Scala http4s Transport
+
+Most likely you will need to use [Kind Projector](https://github.com/non/kind-projector) compiler plugin and enable partial unification:
 
 ```scala
 scalacOptions += "-Ypartial-unification"
+
 resolvers += Resolver.sonatypeRepo("releases")
+
 addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.6" cross CrossVersion.binary)
 ``` 
 
-You may find a test for the whole http4s pipeline [here](blob/develop/idealingua/idealingua-runtime-rpc-http4s/src/test/scala/com/github/pshirshov/izumi/idealingua/runtime/rpc/http4s/Http4sServer.scala).
-Please note that service definitons for that test are implemented manually, you may find them [here](https://github.com/pshirshov/izumi-r2/tree/develop/idealingua/idealingua-test-defs/src/main/scala/com/github/pshirshov/izumi/r2/idealingua/test).
+You may find a test suite for the whole http4s pipeline [here](blob/develop/idealingua/idealingua-runtime-rpc-http4s/src/test/scala/com/github/pshirshov/izumi/idealingua/runtime/rpc/http4s/Http4sServer.scala).
+
+Please note that service definitons for the test suite are _not_ generated from Idealingua definitions, you can find the Scala sources [here](https://github.com/pshirshov/izumi-r2/tree/develop/idealingua/idealingua-test-defs/src/main/scala/com/github/pshirshov/izumi/r2/idealingua/test).
 
 @@@ index
 
-* [Examples of generated code in Scala](cogen.md)
-* [JSON codecs generated by Scala Circe plugin](cogen-circe.md)
+* [Language Syntax and Types Reference](language-reference.md)
+* [JSON Wire Format Specification](json.md)
+* [Scala Codegen: Examples of generated code in Scala](cogen.md)
+* [Scala Codegen: JSON codecs generated by Scala Circe plugin](cogen-circe.md)
 
 @@@

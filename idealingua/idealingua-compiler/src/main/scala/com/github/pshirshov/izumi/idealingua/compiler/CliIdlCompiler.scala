@@ -26,6 +26,7 @@ object CliIdlCompiler {
       .action((x, c) => c.copy(target = x.toPath))
       .text("target directory")
 
+    help("help")
 
     opt[(String, String)]("lang")
       .minOccurs(0)

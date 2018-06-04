@@ -19,7 +19,7 @@ val izumi_version = "$izumi.version$"
 // sbt toolkit
 addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi" % izumi_version)
 
-// This is a Izumi's Bill of Materials, see below
+// This is a Izumi's BOM (Bill of Materials), see below
 addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi-deps" % izumi_version)
 
 // idealingua compiler
