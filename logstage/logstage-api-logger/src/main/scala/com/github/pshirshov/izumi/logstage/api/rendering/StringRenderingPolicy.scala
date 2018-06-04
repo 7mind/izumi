@@ -8,6 +8,8 @@ import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy.{Constant, LogMessageItem, WithMargin}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.{LogUnit, Margin}
 
+import scala.collection.mutable
+
 class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[String] = None) extends RenderingPolicy {
   protected val withColors: Boolean = {
     (
@@ -17,7 +19,7 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
       !GraphicsEnvironment.isHeadless
   }
 
-  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse("${level} ${ts} ${thread}\t${location}${custom-ctx}${msg}"))
+  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse(StringRenderingPolicy.defaultRendering))
 
   override def render(entry: Log.Entry): String = {
     val sb = new StringBuffer(performRendering(entry, withColors))
@@ -46,9 +48,6 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
         ""
     }
   }
-
-  // todo : maybe polish notation we need to use for checking braces and theirs closing
-  // todo : inner props i.e. margins
 
   private def renderedLayout(pattern: String): Iterable[LogMessageItem] = {
     def parseLogUnit(chars: List[Char]): (List[Char], List[Char]) = {
@@ -106,7 +105,14 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
 
 
   private def performRendering(e: Log.Entry, withColor: Boolean)(implicit builder: Iterable[LogMessageItem]): String = {
-    builder
+
+    val trimmedBuilder = withSpaces(builder) flatMap {
+      case (k, constants) if k.unit.undefined(e) =>
+        constants.dropWhile(_.isSpace)
+      case (k, constants)  =>
+        k +: constants
+    }
+    trimmedBuilder
       .map(_.perform(e, withColor))
       .mkString("")
   }
@@ -141,21 +147,65 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
         WithMargin(unit, maybeMargin)
     }
   }
+
+  private def withSpaces(builder: Iterable[LogMessageItem]): scala.collection.mutable.LinkedHashMap[WithMargin[_], Seq[LogMessageItem]] = {
+    val map = scala.collection.mutable.LinkedHashMap.empty[Int, Seq[LogMessageItem]]
+    val list = builder.toList
+    var i = 0
+    var curIdx = i
+    val end = list.size
+    while (i < end) {
+      val item = list(i)
+      item match {
+        case _: WithMargin[_] =>
+          curIdx = i
+          map.put(curIdx, Seq.empty)
+        case constant =>
+          map.get(curIdx).foreach {
+            items =>
+              map.update(curIdx, items :+ constant)
+          }
+      }
+      i += 1
+    }
+
+    map.foldLeft(mutable.LinkedHashMap.empty[WithMargin[_], Seq[LogMessageItem]]) {
+      case (res, (k, v)) =>
+        res.put(list(k).asInstanceOf[WithMargin[_ <: LogUnit]], v)
+        res
+    }
+  }
 }
 
 
 object StringRenderingPolicy {
 
+  val defaultRendering = "${level} ${ts} ${thread}\t${location} ${custom-ctx} ${msg}"
+
   sealed trait LogMessageItem {
     def perform(e: Log.Entry, withColor: Boolean): String
+
+    def isSpace: Boolean
   }
 
-  case class Constant[T](i: T) extends LogMessageItem {
+  object LogMessageItem {
+    val space = " "
+
+  }
+  case class Constant(i: String) extends LogMessageItem {
     override def perform(e: Log.Entry, withColor: Boolean): String = i.toString
+    override def isSpace: Boolean = i.contains(LogMessageItem.space)
+  }
+
+  object Constant {
+    def apply(i: Char): Constant = new Constant(i.toString)
   }
 
   case class WithMargin[T <: LogUnit](unit: LogUnit, margin: Option[Margin]) extends LogMessageItem {
     override def perform(e: Log.Entry, withColor: Boolean): String = unit.renderUnit(e, withColor, margin)
+
+    override val isSpace: Boolean = false
   }
+
 
 }

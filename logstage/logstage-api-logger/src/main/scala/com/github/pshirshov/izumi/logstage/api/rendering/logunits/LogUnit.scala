@@ -11,9 +11,12 @@ import scala.collection.mutable
 case class Margin(elipsed: Boolean, size: Int)
 
 sealed trait LogUnit {
+
   def aliases: Vector[String]
 
   def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String
+
+  def undefined(entry: Log.Entry) : Boolean
 }
 
 object LogUnit {
@@ -50,6 +53,7 @@ object LogUnit {
 
     }
 
+    override def undefined(entry: Log.Entry): Boolean = false
   }
 
   case object TimestampUnit extends LogUnit {
@@ -75,6 +79,9 @@ object LogUnit {
       }
       withMargin(builder.toString(), margin)
     }
+
+    override def undefined(entry: Log.Entry): Boolean = false
+
   }
 
   case object LevelUnit extends LogUnit {
@@ -96,6 +103,9 @@ object LogUnit {
       builder.append(Console.RESET)
       builder.toString()
     }
+
+    override def undefined(entry: Log.Entry): Boolean = false
+
   }
 
   case object LocationUnit extends LogUnit {
@@ -104,9 +114,12 @@ object LogUnit {
     )
 
     override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
-      withMargin(s"(${entry.context.static.file}:${entry.context.static.line})", margin)
+      withMargin(s"(${entry.context.static.file}:${entry.context.static.line})", None)
 
     }
+
+    override def undefined(entry: Log.Entry): Boolean = false
+
   }
 
   case object MessageUnit extends LogUnit {
@@ -117,6 +130,8 @@ object LogUnit {
     override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
       formatMessage(entry, withColors).message
     }
+
+    override def undefined(entry: Log.Entry): Boolean = false
   }
 
   case object CustomContextUnit extends LogUnit {
@@ -135,6 +150,11 @@ object LogUnit {
 
       builder.toString()
     }
+
+    override def undefined(entry: Log.Entry): Boolean = {
+      entry.context.customContext.values.isEmpty
+    }
+
   }
 
   def apply(alias: String): Option[LogUnit] = {
