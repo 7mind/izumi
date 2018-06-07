@@ -74,11 +74,13 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       return ""
     }
 
-    s"""${interfaces.map(sc => renderRegistrationCtor(sc, structName, imports)).mkString("\n")}
+    val uniqueInterfaces = interfaces.groupBy(_.name).map(_._2.head)
+
+    s"""${uniqueInterfaces.map(sc => renderRegistrationCtor(sc, structName, imports)).mkString("\n")}
        |
        |func init() {
        |    // Here we register current DTO in other interfaces
-       |${interfaces.map(sc => s"${imports.withImport(sc)}Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
+       |${uniqueInterfaces.map(sc => s"${imports.withImport(sc)}Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
        |}
      """.stripMargin
   }

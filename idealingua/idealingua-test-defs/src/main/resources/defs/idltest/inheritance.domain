@@ -58,3 +58,24 @@ data CovariantDTO1 {
 data CovariantDTO2 {
   & InheritedCovariant
 }
+
+mixin Notification {
+}
+
+mixin NotificationWithA{
+    &Notification
+}
+
+mixin NotificationWithB {
+    &Notification
+}
+
+mixin NotificationWithAB {
+    &NotificationWithA
+    &NotificationWithB
+}
+
+data DataWithAB {
+    &NotificationWithA
+    &NotificationWithB
+}

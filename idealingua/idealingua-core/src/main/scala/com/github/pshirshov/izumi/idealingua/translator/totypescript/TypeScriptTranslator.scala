@@ -118,6 +118,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
         ""
       }
 
+    val uniqueInterfaces = ts.inheritance.parentsInherited(i.id).groupBy(_.name).map(_._2.head)
     val dto =
       s"""export class ${i.id.name} $implementsInterfaces {
          |${renderRuntimeNames(i.id).shift(4)}
@@ -144,7 +145,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${distinctFields.map(f => s"${conv.toNativeTypeName(f.name, f.typeId)}: ${conv.toNativeType(f.typeId, ts, forSerialized = true)};").mkString("\n").shift(4)}
          |}
          |
-         |${ts.inheritance.parentsInherited(i.id).map(sc => sc.name + typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
+         |${uniqueInterfaces.map(sc => sc.name + typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
          """.stripMargin
 
     CompositeProduct(dto, imports.render(ts), s"// ${i.id.name} DTO")
@@ -322,6 +323,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |}
        """.stripMargin
 
+    val uniqueInterfaces = ts.inheritance.parentsInherited(i.id).groupBy(_.name).map(_._2.head)
     val companion =
       s"""export class ${eid} implements ${i.id.name} {
          |${renderRuntimeNames(implId.path.toPackage.mkString("."), implId.name, eid).shift(4)}
@@ -365,7 +367,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |    }
          |}
          |
-         |${ts.inheritance.parentsInherited(i.id).map(sc => sc.name + typespace.implId(sc).name + s".register(${eid}.FullClassName, ${eid});").mkString("\n")}
+         |${uniqueInterfaces.map(sc => sc.name + typespace.implId(sc).name + s".register(${eid}.FullClassName, ${eid});").mkString("\n")}
        """.stripMargin
 
     ext.extend(i, InterfaceProduct(iface, companion, imports.render(ts), s"// ${i.id.name} Interface"), _.handleInterface)
