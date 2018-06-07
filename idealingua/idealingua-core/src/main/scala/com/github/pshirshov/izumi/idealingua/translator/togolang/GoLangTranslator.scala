@@ -149,6 +149,15 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
           s"""type ${i.name + ts.implId(i).name} = ${goType.renderType(forAlias = true)}Struct
              |type ${i.name + ts.implId(i).name}Serialized = ${GoLangType(ts.implId(i), imports, ts).renderType(forAlias = true)}Serialized
            """.stripMargin
+        case _: EnumId =>
+          s"""func New${i.id.name}(e string) ${i.id.name} {
+             |    return ${imports.withImport(i.target)}New${i.target.name}(e)
+             |}
+             |
+             |func IsValid${i.id.name}(e string) bool {
+             |    return ${imports.withImport(i.target)}IsValid${i.target.name}(e)
+             |}
+           """.stripMargin
         case _ => s""
       }
 

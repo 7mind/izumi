@@ -1,5 +1,10 @@
 domain idltest.services
 
+enum TestServiceEnum {
+    Value1
+    Value2
+}
+
 mixin SuccessData {
   greeting: str
 }
@@ -18,6 +23,7 @@ service TestService {
   def simpleMethod(a: str): str
   def simpleMethodWithGenerics(a: list[str]): list[str]
   def simple(+Request): (+Request)
+  def simpleEnum(v: TestServiceEnum): str
 
   // simple instance
   def greetSingularOut(firstName: str, secondName: str) => str

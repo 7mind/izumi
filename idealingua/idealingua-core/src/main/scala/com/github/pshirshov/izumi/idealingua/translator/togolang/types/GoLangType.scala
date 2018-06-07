@@ -117,7 +117,7 @@ final case class GoLangType (
         case _: InterfaceId => s"${im.withImport(id)}${id.name}"
         case _: IdentifierId => if(forMap) "string" else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
         case _: AdtId | _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
-        case al: AliasId => if (isPrimitive(ts.dealias(al))) id.name else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+        case al: AliasId => if (isPrimitive(ts.dealias(al)) || ts.dealias(al).isInstanceOf[EnumId]) id.name else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
     }

@@ -196,7 +196,7 @@ final case class GoLangField(
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}(value string) error {
-       |    pattern := regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$$`)
+       |    pattern := regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$$`)
        |    matched := pattern.MatchString(value)
        |    if !matched {
        |        return fmt.Errorf("Set${renderMemberName(true)} expects the value to be a valid UUID. Got %s", value)
@@ -307,15 +307,15 @@ final case class GoLangField(
        |}
        |
        |func (v *$structName) ${renderMemberName(true)}AsString() string {
-       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z[UTC]" else "-07:00[MST]"}"
+       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z" else "-07:00"}"
        |    return v.${renderMemberName(false)}${if (utc) ".UTC()" else ""}.Format(layout)
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
-       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z[UTC]" else "-07:00[MST]"}"
+       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z" else "-07:00"}"
        |    t, err := time.Parse(layout, value)
        |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DDTHH:MM:SS.MICROS${if (utc) "Z[UTC]" else "+00:00[Zone/Region]"} format. Got %s", value)
+       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DDTHH:MM:SS.MICROS${if (utc) "Z" else "+00:00"} format. Got %s", value)
        |    }
        |
        |    v.${renderMemberName(false)} = t
