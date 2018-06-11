@@ -15,7 +15,7 @@ class ModuleTools() {
         Seq.empty
 
       case _ =>
-        val code = product.render.mkString("\n")
+        val code = product.render.mkString("\n").shift(4)
         val header = product.renderHeader.mkString("\n")
         val content: String = withPackage(id.toPackage, header, code)
 
@@ -35,9 +35,10 @@ class ModuleTools() {
       code
     } else {
       s"""// Auto-generated, any modifications may be overwritten in the future.
-         |package ${pkg.last}
          |${ if (header.length > 0) s"\n$header\n" else ""}
+         |namespace ${pkg.mkString(".")} {
          |${code}
+         |}
        """.stripMargin
     }
     content.densify()

@@ -120,7 +120,29 @@ object IDLTestTools {
 
   def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.CSharp, extensions)
-    true
+
+    val tmp = out.targetDir.getParent.resolve("phase2-compiler-tmp")
+    tmp.toFile.mkdirs()
+    Files.move(out.targetDir, tmp.resolve("src"))
+    Files.move(tmp, out.targetDir)
+
+    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
+    val cmdBuild = s"csc -target:library -out:lib.dll -recurse:src\\*.cs"
+//    val cmdTest = s"go test $args"
+
+    val fullTarget = out.targetDir.toFile.getCanonicalPath
+
+    println(
+      s"""
+         |cd $fullTarget
+         |$cmdBuild
+       """.stripMargin)
+
+    val exitCodeBuild = run(out, cmdBuild, Map.empty, "go-build")
+    val exitCodeTest = 0
+//    val exitCodeTest = run(out, cmdTest, Map("GOPATH" -> fullTarget), "go-test")
+
+    (exitCodeBuild == 0 && exitCodeTest == 0) || true
   }
 
   private def isRunningUnderSbt: Boolean = {

@@ -112,7 +112,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //       """.stripMargin
 //
 //    CompositeProduct(dto, imports.renderImports(List("encoding/json", "fmt")), tests)
-      CompositeProduct("dto")
+      CompositeProduct("/*dto*/")
 
   }
 
@@ -126,7 +126,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //         """.stripMargin,
 //      imports.renderImports()
 //    )
-    CompositeProduct("alias")
+    CompositeProduct("/*alias*/")
   }
 
 //  protected def renderAdtMember(structName: String, member: AdtMember, im: GoLangImports): String = {
@@ -231,84 +231,45 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //       """.stripMargin
 //
 //    AdtProduct(renderAdtImpl(name, i.alternatives, imports), imports.renderImports(Seq("fmt", "encoding/json")), tests)
-    CompositeProduct("adt")
+    CompositeProduct("/*adt*/")
   }
 
   protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
-//    val name = i.id.name
-//    val decl =
-//      s"""// $name Enumeration
-//         |type $name ${if (i.members.length <= 255) "uint8" else "uint16"}
-//         |
-//       |const (
-//         |${i.members.map(m => s"// $m enum value\n" + (if (m == i.members.head) s"${name + m} $name = iota" else (name + m))).mkString("\n").shift(4)}
-//         |)
-//         |
-//       |var map${name}ToString = map[$name]string{
-//         |${i.members.map(m => s"${name + m}: " + "\"" + m + "\",").mkString("\n").shift(4)}
-//         |}
-//         |
-//       |var allOf$name = []$name{
-//         |${i.members.map(m => name + m + ",").mkString("\n").shift(4)}
-//         |}
-//         |
-//       |var mapStringTo$name = map[string]$name{
-//         |${i.members.map(m => "\"" + m + "\": " + s"${name + m},").mkString("\n").shift(4)}
-//         |}
-//         |
-//       |// String converts an enum to a string
-//         |func (e $name) String() string {
-//         |    return map${name}ToString[e]
-//         |}
-//         |
-//       |// New$name creates a new enum from string
-//         |func New$name(e string) $name {
-//         |    return mapStringTo$name[e]
-//         |}
-//         |
-//       |func GetAll$name() []$name {
-//         |    return allOf$name
-//         |}
-//         |
-//       |func NewTest$name() $name {
-//         |    return mapStringTo$name["${i.members.head}"]
-//         |}
-//         |
-//       |// IsValid$name checks if the string value can be converted to an enum
-//         |func IsValid$name(e string) bool {
-//         |    _, ok := mapStringTo$name[e]
-//         |    return ok
-//         |}
-//         |
-//       |// MarshalJSON deserialization for the enumeration
-//         |func (e $name) MarshalJSON() ([]byte, error) {
-//         |    // Enums are encoded into a string
-//         |    buffer := bytes.NewBufferString(`"`)
-//         |    buffer.WriteString(e.String())
-//         |    buffer.WriteString(`"`)
-//         |    return buffer.Bytes(), nil
-//         |}
-//         |
-//       |// UnmarshalJSON deserialization for the enumeration
-//         |func (e *$name) UnmarshalJSON(b []byte) error {
-//         |    // Restore enum from a string
-//         |    var s string
-//         |    err := json.Unmarshal(b, &s)
-//         |    if err != nil {
-//         |        return err
-//         |    }
-//         |
-//       |    *e = New$name(s)
-//         |    return nil
-//         |}
-//     """.stripMargin
-//
-//    EnumProduct(
-//      decl,
-//      GoLangImports(List.empty).renderImports(Seq("encoding/json", "bytes")),
-//      tests
-//    )
-    CompositeProduct("enum")
+      val name = i.id.name
+      val decl =
+        s"""// $name Enumeration
+           |public enum $name {
+           |${i.members.map(m => s"$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(4)}
+           |}
+           |
+           |public static class ${name}EnumerationExtensions{
+           |    public static $name From(string value) {
+           |        $name v;
+           |        if (Enum.TryParse(value, out v)) {
+           |            return v;
+           |        }
+           |        throw new ArgumentOutOfRangeException(value);
+           |    }
+           |
+           |    public static bool IsValid(string value) {
+           |        return Enum.IsDefined(typeof($name), value);
+           |    }
+           |
+           |    private static $name[] all = new $name[] {
+           |${i.members.map(m => s"$name.$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(8)}
+           |    };
+           |
+           |    public static $name[] GetAll() {
+           |        return ${name}EnumerationExtensions.all;
+           |    }
+           |}
+         """.stripMargin
+
+    EnumProduct(
+      decl,
+      "using System;",
+      ""
+    )
   }
 
   protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
@@ -393,7 +354,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //      tests
 //    )
 
-    CompositeProduct("id")
+    CompositeProduct("/*id*/")
   }
 
   protected def renderInterface(i: Interface): RenderableCogenProduct = {
@@ -470,7 +431,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //       """.stripMargin
 
 //    InterfaceProduct(iface, companion, imports.renderImports(List("encoding/json", "fmt")), tests)
-    CompositeProduct("iface")
+    CompositeProduct("/*iface*/")
   }
 
 //  protected def renderServiceMethodSignature(i: Service, method: Service.DefMethod, imports: GoLangImports, spread: Boolean = false, withContext: Boolean = false): String = {
@@ -686,7 +647,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //         """.stripMargin
 //
 //    ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "irt")))
-    CompositeProduct("service")
+    CompositeProduct("/*service*/")
   }
 }
 
