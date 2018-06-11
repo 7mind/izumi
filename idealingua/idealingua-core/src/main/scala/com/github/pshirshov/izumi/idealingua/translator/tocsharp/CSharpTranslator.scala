@@ -12,6 +12,7 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSh
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpType
 //import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types._
 
 object CSharpTranslator {
@@ -117,16 +118,20 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 
   protected def renderAlias(i: Alias): RenderableCogenProduct = {
-//    val imports = GoLangImports(i, i.id.path.toPackage, ts)
-//    val goType = GoLangType(i.target, imports, ts)
-//
-//    AliasProduct(
-//      s"""// ${i.id.name} alias
-//         |type ${i.id.name} = ${goType.renderType(forAlias = true)}
-//         """.stripMargin,
-//      imports.renderImports()
-//    )
-    CompositeProduct("/*alias*/")
+    val imports = CSharpImports(ts, i, i.id.path.toPackage)
+    val cstype = CSharpType(i.target, imports, ts)
+
+    AliasProduct(
+      s"""// C# does not natively support full type aliases. They usually
+         |// live only within the current file scope, making it impossible
+         |// to make them type aliases within another namespace.
+         |//
+         |// Had it been fully supported, the code would be something like:
+         |// using ${i.id.name} = ${cstype.renderType()}
+         |//
+         |// For the time being, please use the target type everywhere you need.
+         """.stripMargin
+    )
   }
 
 //  protected def renderAdtMember(structName: String, member: AdtMember, im: GoLangImports): String = {
