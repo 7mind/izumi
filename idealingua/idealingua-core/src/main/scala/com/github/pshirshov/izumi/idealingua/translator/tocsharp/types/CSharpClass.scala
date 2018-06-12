@@ -44,6 +44,10 @@ final case class CSharpClass (
        |${eidClass.fields.map(f => s"res.${f.renderMemberName()} = this.${f.renderMemberName()};").mkString("\n").shift(4)}
        |    return res;
        |}
+       |
+       |public void Load${i.name}(${i.name} value) {
+       |${eidClass.fields.map(f => s"this.${f.renderMemberName()} = value.${f.renderMemberName()};").mkString("\n").shift(4)}
+       |}
      """.stripMargin
   }
 

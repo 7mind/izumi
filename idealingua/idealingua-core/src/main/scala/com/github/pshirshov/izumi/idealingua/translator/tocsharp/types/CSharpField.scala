@@ -43,7 +43,11 @@ final case class CSharpField(
 
 
     val finalName = name.capitalize
-    return if (reserved.contains(name)) s"@$finalName" else finalName
+    if (finalName == structName) {
+      s"@${finalName}_"
+    } else {
+      if (reserved.contains(name)) s"@$finalName" else finalName
+    }
   }
 
   private def renderMemberImpl(forInterface: Boolean, by: String): String = {
