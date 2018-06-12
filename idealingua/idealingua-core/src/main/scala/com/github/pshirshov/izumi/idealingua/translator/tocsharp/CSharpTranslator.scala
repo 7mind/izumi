@@ -104,109 +104,56 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
     )
   }
 
-//  protected def renderAdtMember(structName: String, member: AdtMember, im: GoLangImports): String = {
-//    val serializationName =  member.name
-//    val typeName = GoLangType(member.typeId, im, ts).renderType()
-//
-//    s"""func (v *$structName) Is$serializationName() bool {
-//       |    return v.valueType == "$serializationName"
-//       |}
-//       |
-//       |func (v *$structName) Get$serializationName() $typeName {
-//       |    if !v.Is$serializationName() {
-//       |        return nil
-//       |    }
-//       |
-//       |    obj, ok := v.value.($typeName)
-//       |    if !ok {
-//       |        return nil
-//       |    }
-//       |
-//       |    return obj
-//       |}
-//       |
-//       |func (v *$structName) Set$serializationName(obj $typeName) {
-//       |    v.value = obj
-//       |    v.valueType = "$serializationName"
-//       |}
-//       |
-//       |func New${structName}From${member.typeId.name}(v $typeName) *$structName {
-//       |    res := &$structName{}
-//       |    res.Set$serializationName(v)
-//       |    return res
-//       |}
-//     """.stripMargin
-//  }
-//
-//  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], imports: GoLangImports, withTest: Boolean = true): String = {
-//    val test =
-//      s"""
-//         |func NewTest$name() *$name {
-//         |    res := &$name{}
-//         |    res.Set${alternatives.head.name}(NewTest${alternatives.head.name}())
-//         |    return res
-//         |}
-//         """.stripMargin
-//
-//    s"""type $name struct {
-//       |    value interface{}
-//       |    valueType string
-//       |}
-//       |
-//         |${alternatives.map(al => renderAdtMember(name, al, imports)).mkString("\n")}
-//       |
-//         |${if (withTest) test else ""}
-//       |
-//         |func (v *$name) MarshalJSON() ([]byte, error) {
-//       |    if v.value == nil {
-//       |        return nil, fmt.Errorf("trying to serialize a non-initialized Adt $name")
-//       |    }
-//       |
-//         |    serialized, err := json.Marshal(v.value)
-//       |    if err != nil {
-//       |        return nil, err
-//       |    }
-//       |
-//         |    return json.Marshal(&map[string]json.RawMessage {
-//       |      v.valueType: serialized,
-//       |    })
-//       |}
-//       |
-//         |func (v *$name) UnmarshalJSON(data []byte) error {
-//       |    raw := map[string]json.RawMessage{}
-//       |    if err := json.Unmarshal(data, &raw); err != nil {
-//       |        return err
-//       |    }
-//       |
-//         |    for className, content := range raw {
-//       |        v.valueType = className
-//       |        switch className {
-//       |${alternatives.map(al => "case \"" + al.name + "\": {\n" + GoLangType(al.typeId, imports, ts).renderUnmarshal("content", "v.value = ").shift(4) + "\n    return nil\n}").mkString("\n").shift(12)}
-//       |            default:
-//       |                return fmt.Errorf("$name encountered an unknown type %s during deserialization", className)
-//       |        }
-//       |    }
-//       |
-//         |    return fmt.Errorf("$name expects a root key to be present, empty object found")
-//       |}
-//       """.stripMargin
-//  }
+  protected def renderAdtMember(adtName: String, member: AdtMember)(implicit im: CSharpImports, ts: Typespace): String = {
+    val operators =
+      s"""    public static explicit operator _${member.name}(${member.name} m) {
+         |        return m.value;
+         |    }
+         |
+         |    public static explicit operator ${member.name}(_${member.name} m) {
+         |        return new ${member.name}(m);
+         |    }
+       """.stripMargin
+
+    var operatorsDummy =
+      s"""    // We would normally want to have an operator, but unfortunately if it is an interface,
+         |    // it will fail on "user-defined conversions to or from an interface are now allowed".
+         |    // public static explicit operator _${member.name}(${member.name} m) {
+         |    //     return m.value;
+         |    // }
+         |    //
+         |    // public static explicit operator ${member.name}(_${member.name} m) {
+         |    //     return new ${member.name}(m);
+         |    // }
+       """.stripMargin
+
+    val memberType = CSharpType(member.typeId)
+    s"""public sealed class ${member.name}: ${adtName} {
+       |    public _${member.name} Value { get; private set; }
+       |    public ${member.name}(_${member.name} value) {
+       |        Value = value;
+       |    }
+       |
+       |${if (member.typeId.isInstanceOf[InterfaceId]) operatorsDummy else operators}
+       |}
+     """.stripMargin
+  }
+
+  protected def renderAdtImpl(adtName: String, members: List[AdtMember])(implicit im: CSharpImports, ts: Typespace): String = {
+    s"""${members.map(m => s"using _${m.name} = ${CSharpType(m.typeId).renderType()};").mkString("\n")}
+       |
+       |public abstract class $adtName {
+       |    private $adtName() {}
+       |${members.map(m => renderAdtMember(adtName, m)).mkString("\n").shift(4)}
+       |}
+     """.stripMargin
+  }
 
   protected def renderAdt(i: Adt): RenderableCogenProduct = {
-//    val imports = GoLangImports(i, i.id.path.toPackage, ts)
-//    val name = i.id.name
-//
-//    val tests =
-//      s"""import (
-//         |    "testing"
-//         |    "encoding/json"
-//         |)
-//         |
-//         |${i.alternatives.map(al => renderAdtAlternativeTest(i, al)).mkString("\n")}
-//       """.stripMargin
-//
-//    AdtProduct(renderAdtImpl(name, i.alternatives, imports), imports.renderImports(Seq("fmt", "encoding/json")), tests)
-    CompositeProduct(s"public class ${i.id.name} {/*adt*/}")
+    implicit val ts: Typespace = this.ts
+    implicit val imports: CSharpImports = CSharpImports(i, i.id.path.toPackage)
+
+    AdtProduct(renderAdtImpl(i.id.name, i.alternatives), "using System;")
   }
 
   protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
