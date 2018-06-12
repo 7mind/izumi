@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
 
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSTContext
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct.EnumProduct
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct.{EnumProduct, IdentifierProduct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 
 object JsonNetExtension extends CSharpTranslatorExtension {
@@ -28,6 +28,10 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 //       """.stripMargin
 //
 //    EnumProduct(product.content + extension, product.preamble)
+  }
+
+  override def handleIdentifier(ctx: CSTContext, id: Identifier, product: IdentifierProduct): IdentifierProduct = {
+    product
   }
 }
 

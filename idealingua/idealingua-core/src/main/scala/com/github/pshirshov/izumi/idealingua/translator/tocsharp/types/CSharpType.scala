@@ -11,8 +11,39 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
 final case class CSharpType (
                               id: TypeId)(implicit im: CSharpImports, ts: Typespace) {
 
-  def isNative(): Boolean = {
-    isNativeImpl(id)
+  def isNative: Boolean = isNativeImpl(id)
+  def isNullable: Boolean = isNullableImpl(id)
+
+  def isNullableImpl(id: TypeId): Boolean = id match {
+    case g: Generic => g match {
+      case _: Generic.TMap => true
+      case _: Generic.TList => true
+      case _: Generic.TSet => true
+      case _: Generic.TOption => true
+    }
+    case p: Primitive => p match {
+      case Primitive.TBool => false
+      case Primitive.TString => true
+      case Primitive.TInt8 => false
+      case Primitive.TInt16 => false
+      case Primitive.TInt32 => false
+      case Primitive.TInt64 => false
+      case Primitive.TFloat => false
+      case Primitive.TDouble => false
+      case Primitive.TUUID => true
+      case Primitive.TTime => true
+      case Primitive.TDate => true
+      case Primitive.TTs => true
+      case Primitive.TTsTz => true
+    }
+    case _ => id match {
+      case _: EnumId => false
+      case _: InterfaceId => true
+      case _: IdentifierId => true
+      case _: AdtId | _: DTOId => true
+      case al: AliasId => isNullableImpl(ts.dealias(al))
+      case _ => throw new IDLException(s"Impossible isNullableImpl type: ${id.name}")
+    }
   }
 
   private def isNativeImpl(id: TypeId): Boolean = id match {
@@ -92,7 +123,7 @@ final case class CSharpType (
       case gm: Generic.TMap => s"Dictionary<${renderNativeType(gm.keyType, serialized)}, ${renderNativeType(gm.valueType, serialized)}>"
       case gl: Generic.TList => s"List<${renderNativeType(gl.valueType, serialized)}>"
       case gs: Generic.TSet => s"List<${renderNativeType(gs.valueType, serialized)}>"
-      case go: Generic.TOption => s"Nullable<${renderNativeType(go.valueType, serialized)}>"
+      case go: Generic.TOption => if (!isNullableImpl(go.valueType)) s"Nullable<${renderNativeType(go.valueType, serialized)}>" else renderNativeType(go.valueType, serialized)
     }
   }
 
@@ -107,7 +138,7 @@ final case class CSharpType (
     case Primitive.TDouble => "double"
     case Primitive.TUUID => "Guid"
     case Primitive.TTime => if (serialized) "string" else "TimeSpan"
-    case Primitive.TDate => if (serialized) "string" else "Date"
+    case Primitive.TDate => if (serialized) "string" else "DateTime" // Could be Date
     case Primitive.TTs => if (serialized) "string" else "DateTime"
     case Primitive.TTsTz => if (serialized) "string" else "DateTime"
   }

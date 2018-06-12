@@ -64,20 +64,16 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 
   protected def renderDto(i: DTO): RenderableCogenProduct = {
-//    val imports = GoLangImports(i, i.id.path.toPackage, ts)
-//
-//    val fields = typespace.structure.structure(i).all
-//    val distinctFields = fields.groupBy(_.field.name).map(_._2.head.field)
-//
-//    val struct = GoLangStruct(
-//      i.id.name,
-//      i.id,
-//      i.struct.superclasses.interfaces,
-//      distinctFields.map(df => GoLangField(df.name, GoLangType(df.typeId, imports, ts), i.id.name, imports, ts)).toList,
-//      imports,
-//      ts
-//    )
-//
+    implicit val ts = this.ts
+    implicit val imports = CSharpImports(i, i.id.path.toPackage)
+    val structure = typespace.structure.structure(i)
+
+    val struct = CSharpClass(i.id, i.id.name, structure, List.empty)
+
+    val dto =
+      s"""${struct.render(withWrapper = true, withSlices = true)}
+       """.stripMargin
+
 //    val dto =
 //      s"""${struct.render()}
 //         |${struct.renderSerialized()}
@@ -85,36 +81,8 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //         |${renderRegistrations(ts.inheritance.allParents(i.id), i.id.name, imports)}
 //       """.stripMargin
 //
-//    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\"" && f.tp.testValue() != "nil")
-//      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty)
-//
-//    val tests =
-//      s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
-//         |
-//         |func Test${i.id.name}JSONSerialization(t *testing.T) {
-//         |    v1 := New${i.id.name}(${struct.fields.map(f => GoLangType(f.tp.id, testImports, ts).testValue()).mkString(", ")})
-//         |    serialized, err := json.Marshal(v1)
-//         |    if err != nil {
-//         |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
-//         |    }
-//         |    var v2 ${i.id.name}
-//         |    err = json.Unmarshal(serialized, &v2)
-//         |    if err != nil {
-//         |        t.Fatalf("Type '%s' should deserialize from JSON using Unmarshal. %s", "${i.id.name}", err.Error())
-//         |    }
-//         |    serialized2, err := json.Marshal(&v2)
-//         |    if err != nil {
-//         |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
-//         |    }
-//         |
-//         |    if string(serialized) != string(serialized2) {
-//         |        t.Errorf("type '%s' serialization to JSON and from it afterwards must return the same value. Got '%s' and '%s'", "${i.id.name}", string(serialized), string(serialized2))
-//         |    }
-//         |}
-//       """.stripMargin
-//
 //    CompositeProduct(dto, imports.renderImports(List("encoding/json", "fmt")), tests)
-      CompositeProduct("/*dto*/")
+      CompositeProduct(dto, "using System;\nusing System.Collections;\nusing System.Collections.Generic;")
 
   }
 
@@ -238,7 +206,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //       """.stripMargin
 //
 //    AdtProduct(renderAdtImpl(name, i.alternatives, imports), imports.renderImports(Seq("fmt", "encoding/json")), tests)
-    CompositeProduct("/*adt*/")
+    CompositeProduct(s"public class ${i.id.name} {/*adt*/}")
   }
 
   protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
@@ -292,13 +260,13 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
       val fields = ts.structure.structure(i).all.map(f => CSharpField(f.field, i.id.name))
       val fieldsSorted = fields.sortBy(_.name)
-      val csClass = CSharpClass(i.id, fields)
+      val csClass = CSharpClass(i.id, i.id.name, fields)
       val prefixLength = i.id.name.length + 1
 
       val decl =
         s"""${csClass.renderHeader()} {
            |    private static char[] idSplitter = new char[]{':'};
-           |${csClass.render(withWrapper = false).shift(4)}
+           |${csClass.render(withWrapper = false, withSlices = false).shift(4)}
            |    public override string ToString() {
            |        var suffix = ${fieldsSorted.map(f => f.tp.renderToString(f.renderMemberName(), escape = true)).mkString(" + \":\" + ")};
            |        return "${i.id.name}#" + suffix;
@@ -325,66 +293,6 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |}
          """.stripMargin
 
-
-//    val struct = GoLangStruct(
-//      i.id.name,
-//      i.id,
-//      List.empty,
-//      sortedFields.map(sf => GoLangField(sf.field.name, GoLangType(sf.field.typeId, imports, ts), i.id.name, imports, ts)),
-//      imports,
-//      ts
-//    )
-
-//    val decl =
-//      s"""${struct.render()}
-//         |
-//         |// String converts an identifier to a string
-//         |func (v *${i.id.name}) String() string {
-//         |    suffix := ${sortedFields.map(f => "url.QueryEscape(" + GoLangType(f.field.typeId).renderToString(s"v.${f.field.name}") + ")").mkString(" + \":\" + ")}
-//         |    return "${i.id.name}#" + suffix
-//         |}
-//         |
-//         |func (v *${i.id.name}) Serialize() string {
-//         |    return v.String()
-//         |}
-//         |
-//         |func (v *${i.id.name}) LoadSerialized(s string) error {
-//         |    if !strings.HasPrefix(s, "${i.id.name}#") {
-//         |        return fmt.Errorf("expected identifier for type ${i.id.name}, got %s", s)
-//         |    }
-//         |
-//         |    parts := strings.Split(s[${i.id.name.length + 1}:], ":")
-//         |    if len(parts) != ${struct.fields.length} {
-//         |        return fmt.Errorf("expected identifier for type ${i.id.name} with ${struct.fields.length} parts, got %d in string %s", len(parts), s)
-//         |    }
-//         |
-//         |${struct.fields.zipWithIndex.map { case (f, index) => f.tp.renderFromString(f.renderMemberName(false), s"parts[$index]", unescape = true) }.mkString("\n").shift(4)}
-//         |
-//         |${struct.fields.map(f => f.renderAssign("v", f.renderMemberName(false), serialized = false, optional = false)).mkString("\n").shift(4)}
-//         |    return nil
-//         |}
-//         |
-//         |// MarshalJSON serialization for the identifier
-//         |func (v *${i.id.name}) MarshalJSON() ([]byte, error) {
-//         |    buffer := bytes.NewBufferString(`"`)
-//         |    buffer.WriteString(v.String())
-//         |    buffer.WriteString(`"`)
-//         |    return buffer.Bytes(), nil
-//         |}
-//         |
-//         |// UnmarshalJSON deserialization for the identifier
-//         |func (v *${i.id.name}) UnmarshalJSON(b []byte) error {
-//         |    var s string
-//         |    err := json.Unmarshal(b, &s)
-//         |    if err != nil {
-//         |        return err
-//         |    }
-//         |
-//         |    return v.LoadSerialized(s)
-//         |}
-//       """.stripMargin
-
-
     IdentifierProduct(
       decl,
       "using System;"// imports.render(ts)
@@ -392,33 +300,26 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 
   protected def renderInterface(i: Interface): RenderableCogenProduct = {
-//    val imports = GoLangImports(i, i.id.path.toPackage, ts)
-//
-//    val fields = typespace.structure.structure(i)
-//    val distinctFields = fields.all.groupBy(_.field.name).map(_._2.head.field)
-//    val eid = typespace.tools.implId(i.id)
-//
-//    val struct = GoLangStruct(
-//      eid.name,
-//      eid,
-//      i.struct.superclasses.interfaces ++ List(i.id),
-//      distinctFields.map(df => GoLangField(df.name, GoLangType(df.typeId, imports, ts), eid.name, imports, ts)).toList,
-//      imports,
-//      ts,
-//      List(i.id)
-//    )
-//
-//    val iface =
-//      s"""type ${i.id.name} interface {
-//         |${i.struct.superclasses.interfaces.map(ifc => s"// implements ${ifc.name} interface").mkString("\n").shift(4)}
-//         |${struct.fields.map(f => f.renderInterfaceMethods()).mkString("\n").shift(4)}
-//         |    GetPackageName() string
-//         |    GetClassName() string
-//         |    GetFullClassName() string
-//         |}
-//       """.stripMargin
-//
-//    val companion =
+    implicit val ts = this.ts
+    implicit val imports = CSharpImports(i, i.id.path.toPackage)
+
+    val structure = typespace.structure.structure(i)
+    val eid = typespace.tools.implId(i.id)
+    val ifaceFields = structure.all.filterNot(f => i.struct.superclasses.interfaces.contains(f.defn.definedBy)).map(f => CSharpField(f.field, eid.name, Seq.empty))
+
+    val struct = CSharpClass(eid, i.id.name + eid.name, structure, List(i.id))
+  // .map(f => if (f.defn.variance.nonEmpty) f.defn.variance.last else f.field )
+    val ifaceImplements = if (i.struct.superclasses.interfaces.isEmpty) "" else " : " +
+      i.struct.superclasses.interfaces.map(ifc => ifc.name).mkString(", ")
+
+    val iface =
+      s"""public interface ${i.id.name}$ifaceImplements {
+         |${ifaceFields.map(f => f.renderMember(true)).mkString("\n").shift(4)}
+         |}
+       """.stripMargin
+
+    val companion = struct.render(withWrapper = true, withSlices = true)
+
 //      s"""${struct.render()}
 //         |${struct.renderSerialized()}
 //         |${struct.renderSlices()}
@@ -464,8 +365,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //         |${renderRegistrations(ts.inheritance.allParents(i.id), eid.name, imports)}
 //       """.stripMargin
 
-//    InterfaceProduct(iface, companion, imports.renderImports(List("encoding/json", "fmt")), tests)
-    CompositeProduct("/*iface*/")
+    InterfaceProduct(iface, companion, "using System;\nusing System.Collections;\nusing System.Collections.Generic;")
   }
 
 //  protected def renderServiceMethodSignature(i: Service, method: Service.DefMethod, imports: GoLangImports, spread: Boolean = false, withContext: Boolean = false): String = {

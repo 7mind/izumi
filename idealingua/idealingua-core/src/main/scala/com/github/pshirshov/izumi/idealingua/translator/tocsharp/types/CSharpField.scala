@@ -13,7 +13,8 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpTyp
 final case class CSharpField(
                               name: String,
                               tp: CSharpType,
-                              structName: String
+                              structName: String,
+                              by: Seq[String]
                             ) (implicit im: CSharpImports, ts: Typespace) {
   def renderMemberName(): String = {
     safeName(name)
@@ -28,29 +29,44 @@ final case class CSharpField(
       "short", "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true", "try",
       "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "using", "static", "virtual", "void",
       "volatile", "while")
-    /*
-      Contextual words in C#, not reserved:
-      add	alias	ascending
-      async	await	descending
-      dynamic	from	get
-      global	group	into
-      join	let	nameof
-      orderby	partial (type)	partial (method)
-      remove	select	set
-      value	var	when (filter condition)
-      where (generic type constraint)	where (query clause)	yield
-     */
+
+//      Contextual words in C#, not reserved:
+//      add	alias	ascending
+//      async	await	descending
+//      dynamic	from	get
+//      global	group	into
+//      join	let	nameof
+//      orderby	partial (type)	partial (method)
+//      remove	select	set
+//      value	var	when (filter condition)
+//      where (generic type constraint)	where (query clause)	yield
+
 
     val finalName = name.capitalize
     return if (reserved.contains(name)) s"@$finalName" else finalName
   }
 
-  def renderMember(): String = {
-    if (tp.isNative()) {
-      s"""public ${tp.renderType()} ${renderMemberName()} { get; set; }
-       """.stripMargin
+  private def renderMemberImpl(forInterface: Boolean, by: String): String = {
+    if (tp.isNative) {
+      s"${if (forInterface) "" else "public "}${tp.renderType()} ${if (by.isEmpty) "" else s"$by."}${renderMemberName()} { get; set; }"
     } else {
       s"""Not Implemented renderMember()""".stripMargin
+    }
+  }
+
+  def renderMember(forInterface: Boolean): String = {
+    if (forInterface) {
+      if (by.isEmpty) {
+        renderMemberImpl(forInterface, "")
+      } else {
+        s"new ${renderMemberImpl(forInterface, "")}"
+      }
+    } else {
+      if (by.isEmpty) {
+        renderMemberImpl(forInterface, "")
+      } else {
+        by.map(b => renderMemberImpl(forInterface, b)).mkString("\n")
+      }
     }
   }
 
@@ -487,6 +503,7 @@ final case class CSharpField(
 object CSharpField {
   def apply(
             field: Field,
-            structName: String
-          ) (implicit im: CSharpImports, ts: Typespace): CSharpField = new CSharpField(field.name, CSharpType(field.typeId), structName)
+            structName: String,
+            by: Seq[String] = Seq.empty
+          ) (implicit im: CSharpImports, ts: Typespace): CSharpField = new CSharpField(field.name, CSharpType(field.typeId), structName, by)
 }

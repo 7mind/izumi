@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
 
 import com.github.pshirshov.izumi.idealingua.translator.TranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSTContext
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct.EnumProduct
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct.{EnumProduct, IdentifierProduct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 
 trait CSharpTranslatorExtension extends TranslatorExtension {
@@ -17,11 +17,11 @@ trait CSharpTranslatorExtension extends TranslatorExtension {
       discard(ctx, enum)
       product
     }
-  //
-  //  def handleIdentifier(ctx: TSTContext, identifier: TypeDef.Identifier, product: IdentifierProduct): IdentifierProduct = {
-  //    discard(ctx, identifier)
-  //    product
-  //  }
+
+    def handleIdentifier(ctx: CSTContext, id: Identifier, product: IdentifierProduct): IdentifierProduct = {
+      discard(ctx, id)
+      product
+    }
 }
 
 
