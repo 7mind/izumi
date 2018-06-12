@@ -57,12 +57,11 @@ object CSharpImports {
   def apply(imports: List[CSharpImport]): CSharpImports =
     new CSharpImports(imports)
 
-  def apply(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[CSharpImport] = List.empty): CSharpImports =
+  def apply(definition: TypeDef, fromPkg: Package, extra: List[CSharpImport] = List.empty)(implicit ts: Typespace): CSharpImports =
     CSharpImports(fromDefinition(ts, definition, fromPkg, extra))
 
-  def apply(ts: Typespace, i: Service, fromPkg: Package, extra: List[CSharpImport]): CSharpImports =
+  def apply(i: Service, fromPkg: Package, extra: List[CSharpImport])(implicit ts: Typespace): CSharpImports =
     CSharpImports(fromService(ts, i, fromPkg, extra))
-
 
   protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[Seq[String]] = {
 //    t match {

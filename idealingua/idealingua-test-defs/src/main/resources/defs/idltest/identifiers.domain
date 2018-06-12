@@ -2,6 +2,7 @@ domain idltest.identifiers
 
 id CompanyId {
   value: uid
+  iid: i64
 }
 
 id UserId {
@@ -14,6 +15,19 @@ id BucketID {
     user: uid
     bucket: str
 }
+
+/*
+enum DepartmentEnum {
+    Engineering
+    Sales
+}
+
+id UserWithEnumId {
+    value: uid
+    company: uid
+    dept: DepartmentEnum
+}
+*/
 
 data KVIDGeneric {
   test: map[BucketID, BucketID]

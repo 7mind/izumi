@@ -11,8 +11,9 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, Unity3DExtension}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.translator.csharp.types.CSharpField
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpType
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpType}
 //import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types._
 
 object CSharpTranslator {
@@ -118,8 +119,9 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 
   protected def renderAlias(i: Alias): RenderableCogenProduct = {
-    val imports = CSharpImports(ts, i, i.id.path.toPackage)
-    val cstype = CSharpType(i.target, imports, ts)
+    implicit val ts: Typespace = this.ts
+    implicit val imports = CSharpImports(i, i.id.path.toPackage)
+    val cstype = CSharpType(i.target)
 
     AliasProduct(
       s"""// C# does not natively support full type aliases. They usually
@@ -247,7 +249,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |${i.members.map(m => s"$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(4)}
            |}
            |
-           |public static class ${name}EnumerationExtensions{
+           |public static class ${name}Helpers {
            |    public static $name From(string value) {
            |        $name v;
            |        if (Enum.TryParse(value, out v)) {
@@ -260,12 +262,19 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |        return Enum.IsDefined(typeof($name), value);
            |    }
            |
-           |    private static $name[] all = new $name[] {
+           |    // The elements in the array are still changeable, please use with care.
+           |    private static readonly $name[] all = new $name[] {
            |${i.members.map(m => s"$name.$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(8)}
            |    };
            |
            |    public static $name[] GetAll() {
-           |        return ${name}EnumerationExtensions.all;
+           |        return ${name}Helpers.all;
+           |    }
+           |
+           |    // Extensions
+           |
+           |    public static string ToString(this $name e) {
+           |        return Enum.GetName(typeof($name), e);
            |    }
            |}
          """.stripMargin
@@ -278,11 +287,45 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 
   protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
-//    val imports = GoLangImports(i, i.id.path.toPackage, ts)
-//
-//    val fields = typespace.structure.structure(i)
-//    val sortedFields = fields.all.sortBy(_.field.name)
-//
+      implicit val ts = this.ts
+      implicit val imports = CSharpImports(i, i.id.path.toPackage)
+
+      val fields = ts.structure.structure(i).all.map(f => CSharpField(f.field, i.id.name))
+      val fieldsSorted = fields.sortBy(_.name)
+      val csClass = CSharpClass(i.id, fields)
+      val prefixLength = i.id.name.length + 1
+
+      val decl =
+        s"""${csClass.renderHeader()} {
+           |    private static char[] idSplitter = new char[]{':'};
+           |${csClass.render(withWrapper = false).shift(4)}
+           |    public override string ToString() {
+           |        var suffix = ${fieldsSorted.map(f => f.tp.renderToString(f.renderMemberName(), escape = true)).mkString(" + \":\" + ")};
+           |        return "${i.id.name}#" + suffix;
+           |    }
+           |
+           |    public static ${i.id.name} From(string value) {
+           |        if (value == null) {
+           |            throw new ArgumentNullException("value");
+           |        }
+           |
+           |        if (!value.StartsWith("${i.id.name}#")) {
+           |            throw new ArgumentException(string.Format("Expected identifier for type ${i.id.name}, got {0}", value));
+           |        }
+           |
+           |        var parts = value.Substring($prefixLength, value.Length - $prefixLength).Split(idSplitter, StringSplitOptions.None);
+           |        if (parts.Length != ${fields.length}) {
+           |            throw new ArgumentException(string.Format("Expected identifier for type ${i.id.name} with ${fields.length} parts, got {0} in string {1}", parts.Length, value));
+           |        }
+           |
+           |        var res = new ${i.id.name}();
+           |${fieldsSorted.zipWithIndex.map { case (f, index) => s"res.${f.renderMemberName()} = ${f.tp.renderFromString(s"parts[$index]", unescape = true)};"}.mkString("\n").shift(8)}
+           |        return res;
+           |    }
+           |}
+         """.stripMargin
+
+
 //    val struct = GoLangStruct(
 //      i.id.name,
 //      i.id,
@@ -291,15 +334,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //      imports,
 //      ts
 //    )
-//
-//    val needsStrconv = struct.fields.exists(f => f.tp.id match {
-//      case Primitive.TInt8 => true
-//      case Primitive.TInt16 => true
-//      case Primitive.TInt32 => true
-//      case Primitive.TInt64 => true
-//      case _ => false
-//    })
-//
+
 //    val decl =
 //      s"""${struct.render()}
 //         |
@@ -350,16 +385,10 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //       """.stripMargin
 
 
-//    IdentifierProduct(decl, imports.renderImports(
-//      if (needsStrconv)
-//        List("encoding/json", "bytes", "net/url", "fmt", "strings", "strconv")
-//      else
-//        List("encoding/json", "bytes", "net/url", "strings", "fmt")
-//    ),
-//      tests
-//    )
-
-    CompositeProduct("/*id*/")
+    IdentifierProduct(
+      decl,
+      "using System;"// imports.render(ts)
+    )
   }
 
   protected def renderInterface(i: Interface): RenderableCogenProduct = {

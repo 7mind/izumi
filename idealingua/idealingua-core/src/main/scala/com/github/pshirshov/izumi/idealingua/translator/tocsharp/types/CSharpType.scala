@@ -9,10 +9,73 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Enumerat
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
 
 final case class CSharpType (
-                              id: TypeId,
-                              im: CSharpImports = CSharpImports(List.empty),
-                              ts: Typespace = null
-                            ) {
+                              id: TypeId)(implicit im: CSharpImports, ts: Typespace) {
+
+  def isNative(): Boolean = {
+    isNativeImpl(id)
+  }
+
+  private def isNativeImpl(id: TypeId): Boolean = id match {
+    case g: Generic => g match {
+      case _: Generic.TMap => true
+      case _: Generic.TList => true
+      case _: Generic.TSet => true
+      case _: Generic.TOption => true
+    }
+    case p: Primitive => p match {
+      case Primitive.TBool => true
+      case Primitive.TString => true
+      case Primitive.TInt8 => true
+      case Primitive.TInt16 => true
+      case Primitive.TInt32 => true
+      case Primitive.TInt64 => true
+      case Primitive.TFloat => true
+      case Primitive.TDouble => true
+      case Primitive.TUUID => true
+      case Primitive.TTime => true
+      case Primitive.TDate => true
+      case Primitive.TTs => true
+      case Primitive.TTsTz => true
+    }
+    case _ => id match {
+      case _: EnumId => true
+      case _: InterfaceId => true
+      case _: IdentifierId => true
+      case _: AdtId | _: DTOId => true
+      case al: AliasId => isNativeImpl(ts.dealias(al))
+      case _ => throw new IDLException(s"Impossible isNativeImpl type: ${id.name}")
+    }
+  }
+
+    def renderToString(name: String, escape: Boolean): String = {
+      val res = id match {
+        case Primitive.TString => name
+        case Primitive.TInt8 => return s"$name.ToString()"  // No Escaping needed for integers
+        case Primitive.TInt16 => return s"$name.ToString()"
+        case Primitive.TInt32 => return s"$name.ToString()"
+        case Primitive.TInt64 => return s"$name.ToString()"
+        case Primitive.TUUID => s"$name.ToString()"
+        case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
+      }
+      if (escape) {
+        s"Uri.EscapeDataString($res)"
+      } else {
+        res
+      }
+    }
+
+    def renderFromString(src: String, unescape: Boolean): String = {
+      val source = if (unescape) s"Uri.UnescapeDataString($src)" else src
+      id match {
+          case Primitive.TString => source
+          case Primitive.TInt8 => s"sbyte.Parse($src)"   // No Escaping needed for integers
+          case Primitive.TInt16 => s"short.Parse($src)"
+          case Primitive.TInt32 => s"int.Parse($src)"
+          case Primitive.TInt64 => s"long.Parse($src)"
+          case Primitive.TUUID => s"new Guid($source)"
+          case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
+      }
+    }
 
   def renderType(serialized: Boolean = false): String = {
     renderNativeType(id, serialized)
@@ -42,7 +105,7 @@ final case class CSharpType (
     case Primitive.TInt64 => "long"
     case Primitive.TFloat => "float"
     case Primitive.TDouble => "double"
-    case Primitive.TUUID => "GUID"
+    case Primitive.TUUID => "Guid"
     case Primitive.TTime => if (serialized) "string" else "TimeSpan"
     case Primitive.TDate => if (serialized) "string" else "Date"
     case Primitive.TTs => if (serialized) "string" else "DateTime"
@@ -145,8 +208,6 @@ final case class CSharpType (
 
 object CSharpType {
   def apply(
-             id: TypeId,
-             im: CSharpImports = CSharpImports(List.empty),
-             ts: Typespace = null
-           ): CSharpType = new CSharpType(id, im, ts)
+             id: TypeId
+           )(implicit im: CSharpImports, ts: Typespace): CSharpType = new CSharpType(id)
 }

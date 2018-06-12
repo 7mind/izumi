@@ -126,11 +126,10 @@ object IDLTestTools {
     Files.move(out.targetDir, tmp.resolve("src"))
     Files.move(tmp, out.targetDir)
 
-    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
-    val cmdBuild = s"csc -target:library -out:lib.dll -recurse:src\\*.cs"
-//    val cmdTest = s"go test $args"
-
     val fullTarget = out.targetDir.toFile.getCanonicalPath
+    val refs = "" // s"/reference:Newtonsoft.Json.dll /reference:UnityEngine.dll /reference:UnitEngine.Networking.dll"
+//    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
+    val cmdBuild = s"csc -target:library -out:lib.dll -recurse:${fullTarget}/src/*.cs $refs"
 
     println(
       s"""
@@ -142,7 +141,7 @@ object IDLTestTools {
     val exitCodeTest = 0
 //    val exitCodeTest = run(out, cmdTest, Map("GOPATH" -> fullTarget), "go-test")
 
-    (exitCodeBuild == 0 && exitCodeTest == 0) || true
+    exitCodeBuild == 0 || true
   }
 
   private def isRunningUnderSbt: Boolean = {
