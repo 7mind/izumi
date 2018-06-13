@@ -70,7 +70,7 @@ object CglibProxyProvider extends ProxyProvider {
   }
 
 
-  private final val TRUSTED_METHOD_HANDLES = {
+  private final lazy val TRUSTED_METHOD_HANDLES = {
     val methodHandles = classOf[MethodHandles.Lookup].getDeclaredField("IMPL_LOOKUP")
     methodHandles.setAccessible(true)
     methodHandles.get(null).asInstanceOf[MethodHandles.Lookup]
