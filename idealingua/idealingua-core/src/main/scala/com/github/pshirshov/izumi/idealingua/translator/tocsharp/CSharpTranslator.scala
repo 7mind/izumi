@@ -131,9 +131,13 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
      """.stripMargin
   }
 
-  protected def renderAdtImpl(adtName: String, members: List[AdtMember])(implicit im: CSharpImports, ts: Typespace): String = {
+  protected def renderAdtUsings(m: AdtMember)(implicit im: CSharpImports, ts: Typespace): String = {
+    s"using _${m.name} = ${CSharpType(m.typeId).renderType()};"
+  }
+
+  protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true)(implicit im: CSharpImports, ts: Typespace): String = {
     s"""${im.renderUsings()}
-       |${members.map(m => s"using _${m.name} = ${CSharpType(m.typeId).renderType()};").mkString("\n")}
+       |${if (renderUsings) members.map(m => renderAdtUsings(m)).mkString("\n") else ""}
        |
        |public abstract class $adtName {
        |    private $adtName() {}
@@ -363,40 +367,51 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //    }
 //  }
 //
-//  protected def renderServiceClient(i: Service, imports: GoLangImports): String = {
-//    val name = s"${i.id.name}Client"
-//
-//    s"""type ${i.id.name} interface {
-//       |${i.methods.map(m => renderServiceMethodSignature(i, m, imports, spread = true)).mkString("\n").shift(4)}
-//       |}
-//       |
-//       |type $name struct {
-//       |    ${i.id.name}
-//       |    transport irt.ServiceClientTransport
-//       |}
-//       |
-//       |func (v *$name) SetTransport(t irt.ServiceClientTransport) error {
-//       |    if t == nil {
-//       |        return fmt.Errorf("method SetTransport requires a valid transport, got nil")
-//       |    }
-//       |
-//       |    v.transport = t
-//       |    return nil
-//       |}
-//       |
-//       |func (v *$name) SetHTTPTransport(endpoint string, timeout int, skipSSLVerify bool) {
-//       |    v.transport = irt.NewHTTPClientTransport(endpoint, timeout, skipSSLVerify)
-//       |}
-//       |
-//       |func New${name}OverHTTP(endpoint string) *$name{
-//       |    res := &$name{}
-//       |    res.SetHTTPTransport(endpoint, 15000, false)
-//       |    return res
-//       |}
-//       |
-//       |${i.methods.map(me => renderServiceClientMethod(i, me, imports)).mkString("\n")}
-//     """.stripMargin
-//  }
+  protected def renderServiceClient(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val name = s"${i.id.name}Client"
+
+  // ${i.methods.map(m => renderServiceMethodSignature(i, m, imports, spread = true)).mkString("\n").shift(4)}
+    s"""public interface I${name} {
+       |// From comment here
+       |}
+       |
+       |public class ${name}: I${name} {
+       |    public int Transport { get; private set; }
+       |
+       |    public ${name}(int t) {
+       |        Transport = t;
+       |    }
+       |}
+     """.stripMargin
+  /*
+
+type $name struct {
+    ${i.id.name}
+    transport irt.ServiceClientTransport
+}
+
+func (v *$name) SetTransport(t irt.ServiceClientTransport) error {
+    if t == nil {
+        return fmt.Errorf("method SetTransport requires a valid transport, got nil")
+    }
+
+    v.transport = t
+    return nil
+}
+
+func (v *$name) SetHTTPTransport(endpoint string, timeout int, skipSSLVerify bool) {
+    v.transport = irt.NewHTTPClientTransport(endpoint, timeout, skipSSLVerify)
+}
+
+func New${name}OverHTTP(endpoint string) *$name{
+    res := &$name{}
+    res.SetHTTPTransport(endpoint, 15000, false)
+    return res
+}
+
+${i.methods.map(me => renderServiceClientMethod(i, me, imports)).mkString("\n")}
+   */
+  }
 //
 //  protected def renderServiceDispatcherHandler(i: Service, method: Service.DefMethod): String = method match {
 //    case m: DefMethod.RPCMethod =>
@@ -478,53 +493,63 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //     """.stripMargin
 //  }
 //
-//  protected def renderServiceMethodOutModel(i: Service, name: String, out: Service.DefMethod.Output, imports: GoLangImports): String = out match {
-//    case st: Struct => renderServiceMethodInModel(i, name, st.struct, imports)
-//    case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
-//    case _ => s""
-//  }
-//
-//  protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure, imports: GoLangImports): String = {
-//    val struct = GoLangStruct(name, DTOId(i.id, name), List.empty,
-//      structure.fields.map(ef => GoLangField(ef.name, GoLangType(ef.typeId, imports, ts), name, imports, ts)),
-//      imports, ts
-//    )
-//    s"""${struct.render(makePrivate = true, withTest = false)}
-//       |${struct.renderSerialized(makePrivate = true)}
-//     """.stripMargin
-//  }
-//
-//  protected def renderServiceMethodModels(i: Service, method: Service.DefMethod, imports: GoLangImports): String = method match {
-//    case m: DefMethod.RPCMethod =>
-//      s"""${if(m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, inName(i, m.name), m.signature.input, imports)}
-//         |${renderServiceMethodOutModel(i, outName(i, m.name), m.signature.output, imports)}
-//       """.stripMargin
-//
-//  }
-//
-//  protected def renderServiceModels(i: Service, imports: GoLangImports): String = {
-//    i.methods.map(me => renderServiceMethodModels(i, me, imports)).mkString("\n")
-//  }
+  protected def renderServiceMethodOutModel(i: Service, name: String, out: Service.DefMethod.Output)(implicit imports: CSharpImports, ts: Typespace): String = out match {
+    case st: Struct => renderServiceMethodInModel(i, name, st.struct)
+    case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
+    case si: Singular => s"// ${ si.typeId}"
+  }
+
+  protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val csClass = CSharpClass(DTOId(i.id, name), structure)
+
+    s"""${csClass.render(withWrapper = true, withSlices = false)}""".stripMargin
+  }
+
+  protected def renderServiceMethodModels(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
+    case m: DefMethod.RPCMethod =>
+      s"""${if(m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, s"In${m.name.capitalize}", m.signature.input)}
+         |${renderServiceMethodOutModel(i, s"Out${m.name.capitalize}", m.signature.output)}
+       """.stripMargin
+
+  }
+
+  protected def renderServiceMethodAdtUsings(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): List[String] = method match {
+    case m: DefMethod.RPCMethod => m.signature.output match {
+      case al: Algebraic => al.alternatives.map(adtm => renderAdtUsings(adtm))
+      case _ => List.empty
+    }
+  }
+
+  protected def renderServiceModels(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
+    i.methods.map(me => renderServiceMethodModels(i, me)).mkString("\n")
+  }
+
+  protected def renderServiceUsings(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
+    i.methods.flatMap(me => renderServiceMethodAdtUsings(i, me)).distinct.mkString("\n")
+  }
 
   protected def renderService(i: Service): RenderableCogenProduct = {
-//    val imports = GoLangImports(i, i.id.domain.toPackage, List.empty)
-//
-//    val svc =
-//      s"""// ============== Service models ==============
-//         |${renderServiceModels(i, imports)}
-//         |
-//           |// ============== Service Client ==============
-//         |${renderServiceClient(i, imports)}
-//         |
-//           |// ============== Service Dispatcher ==============
-//         |${renderServiceDispatcher(i, imports)}
-//         |
-//           |// ============== Service Server Dummy ==============
-//         |${renderServiceServerDummy(i, imports)}
-//         """.stripMargin
-//
-//    ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "irt")))
-    CompositeProduct("/*service*/")
+      implicit val ts: Typespace = this.ts
+      implicit val imports: CSharpImports = CSharpImports(i, i.id.domain.toPackage, List.empty)
+
+      val svc =
+        s"""${renderServiceUsings(i)}
+           |
+           |public static class ${i.id.name} {
+           |${renderServiceModels(i).shift(4)}
+           |}
+           |
+           |${renderServiceClient(i).shift(4)}
+           |    // ============== Service Dispatcher ==============
+           |
+           |    // ============== Service Server Dummy ==============
+           |
+           |    // ============== Listener Dispatcher ==============
+           |
+           |    // ============== Listener Dummy ==============
+         """.stripMargin
+
+    ServiceProduct(svc, imports.renderImports()) //imports.renderImports(List("irt")))
   }
 }
 
