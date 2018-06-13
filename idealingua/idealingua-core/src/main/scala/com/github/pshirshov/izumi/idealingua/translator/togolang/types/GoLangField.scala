@@ -196,7 +196,7 @@ final case class GoLangField(
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}(value string) error {
-       |    pattern := regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$$`)
+       |    pattern := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$$`)
        |    matched := pattern.MatchString(value)
        |    if !matched {
        |        return fmt.Errorf("Set${renderMemberName(true)} expects the value to be a valid UUID. Got %s", value)
