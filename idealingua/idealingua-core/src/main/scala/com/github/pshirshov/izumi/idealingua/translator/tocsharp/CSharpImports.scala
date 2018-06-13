@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 
+import com.github.pshirshov.izumi.idealingua.model.common.Generic.{TList, TMap, TOption, TSet}
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -8,53 +9,45 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpType
 
-final case class CSharpImport(id: TypeId, namespaces: Seq[String], usingName: String)
+final case class CSharpImport(id: TypeId, namespace: Seq[String], usingName: String)
 
-final case class CSharpImports(imports: List[CSharpImport] = List.empty) {
-  private def renderTypeImports(id: TypeId, ts: Typespace): String = id match {
-    case adt: AdtId => s"${adt.name}, ${adt.name}Helpers"
-    case i: InterfaceId => s"${i.name}, ${i.name + ts.implId(i).name}, ${i.name + ts.implId(i).name}Serialized"
-    case d: DTOId => {
-      val mirrorInterface = ts.sourceId(d)
-      if (mirrorInterface.isDefined) {
-        s"${mirrorInterface.get.name + d.name}, ${mirrorInterface.get.name + d.name}Serialized"
-      } else {
-        s"${d.name}, ${d.name}Serialized"
-      }
+final case class CSharpImports(imports: List[CSharpImport] = List.empty)(implicit ts: Typespace) {
+  def renderImports(extra: List[String] = List.empty): String = {
+    if (imports.isEmpty && extra.isEmpty) {
+      return ""
     }
 
-    case _ => id.name
+    val usings = imports.flatMap(i => if (i.namespace.nonEmpty) i.namespace.map(n => s"using $n;") else List("")) ++
+      extra.map(e => s"using $e;")
+    usings.distinct.mkString("\n")
   }
 
-  def render(ts: Typespace): String = {
+  def renderUsings(): String = {
     if (imports.isEmpty) {
       return ""
     }
 
-    return "// Import not implemnented"
-//
-//    imports.filterNot(_.id.isInstanceOf[AliasId]).groupBy(_.namespaces)
-//      .map(i => "import {" + (if (i._2.length > 1) "\n" else " ") + i._2.map(i2 => (if (i._2.length > 1) "    " else "") + renderTypeImports(i2.id, ts))
-//      .mkString(if (i._2.length > 1) ",\n" else "") + (if (i._2.length > 1) "\n" else " ") + s"} from '${i._1}';").mkString("\n")
+    imports.map(i => if (i.usingName != "") s"using ${i.usingName} = ${i.id.path.toPackage.mkString(".")}.${i.id.name};" else "").mkString("\n")
   }
 
   def findImport(id: TypeId): Option[CSharpImport] = {
-    return imports.find(i => i.id == id)
+    imports.find(i => i.id == id)
   }
 
   def withImport(id: TypeId): String = {
     val rec = findImport(id)
-    if (rec.isDefined) {
-      rec.get.usingName + "."
+    if (rec.isDefined && rec.get.usingName != "") {
+      rec.get.usingName
     } else {
-      ""
+      id.name
     }
   }
 }
 
 object CSharpImports {
-  def apply(imports: List[CSharpImport]): CSharpImports =
+  def apply(imports: List[CSharpImport])(implicit ts: Typespace): CSharpImports =
     new CSharpImports(imports)
 
   def apply(definition: TypeDef, fromPkg: Package, extra: List[CSharpImport] = List.empty)(implicit ts: Typespace): CSharpImports =
@@ -63,22 +56,22 @@ object CSharpImports {
   def apply(i: Service, fromPkg: Package, extra: List[CSharpImport])(implicit ts: Typespace): CSharpImports =
     CSharpImports(fromService(ts, i, fromPkg, extra))
 
-  protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[Seq[String]] = {
-//    t match {
-//      case Primitive.TTime => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("strings"), Seq("strconv"))
-//      case Primitive.TTs => return Seq(Seq("time"))
-//      case Primitive.TTsTz => return Seq(Seq("time"))
-//      case Primitive.TDate => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("strings"), Seq("strconv"))
-//      case Primitive.TUUID => return if (forTest) Seq.empty else Seq(Seq("regexp"))
-//      case g: Generic => g match {
-//        case _: Generic.TOption => return Seq.empty
-//        case _: Generic.TMap => return Seq.empty
-//        case _: Generic.TList => return Seq.empty
-//        case _: Generic.TSet => return Seq.empty
-//      }
-//      case _: Primitive => return Seq.empty
-//      case _ =>
-//    }
+  protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[String] = {
+    t match {
+      case Primitive.TTime => return Seq("System")
+      case Primitive.TTs => return Seq("System")
+      case Primitive.TTsTz => return Seq("System")
+      case Primitive.TDate => return Seq("System")
+      case Primitive.TUUID => return Seq("System")
+      case g: Generic => g match {
+        case _: Generic.TOption => return Seq("System")
+        case _: Generic.TMap => return Seq("System.Collections", "System.Collections.Generic")
+        case _: Generic.TList => return Seq("System.Collections", "System.Collections.Generic")
+        case _: Generic.TSet => return Seq("System.Collections", "System.Collections.Generic")
+      }
+      case _: Primitive => return Seq.empty
+      case _ =>
+    }
 
     if (t.path.toPackage.isEmpty) {
       return Seq.empty
@@ -91,7 +84,7 @@ object CSharpImports {
       return Seq.empty
     }
 
-    Seq(t.path.toPackage)
+    Seq(t.path.toPackage.mkString("."))
   }
 
   protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[CSharpImport] = List.empty): List[CSharpImport] = {
@@ -100,17 +93,18 @@ object CSharpImports {
       return List.empty
     }
 
-    val packages = imports.flatMap( i =>  this.withImport(i, fromPkg).map(wi => (i, Some(None), wi))).filterNot(_._3.isEmpty)
-      .groupBy(_._1.name).map(_._2.head).toList
+    val packages = imports.map(i => (i, this.withImport(i, fromPkg))).filterNot(_._2.isEmpty).groupBy(_._1.name)
 
-    // For each type, which package ends with the same path, we need to add a unique number of import so it can be
-    // distinctly used in the types reference
-    packages.zipWithIndex.map{ case (tp, index) =>
-      if (packages.exists(p => p._3.last == tp._3.last && p._1 != tp._1))
-        CSharpImport(tp._1, tp._3, s"imp_$index")
+    // For each type, which has more of the same names in the current module, we need to add a unique number of
+    // import so it can be distinctly used in the types reference
+    packages.flatMap(pt =>
+      if (pt._2.length == 1 || pt._2.head._1.isInstanceOf[Generic])
+        Seq(CSharpImport(pt._2.head._1, pt._2.head._2, ""))
       else
-        CSharpImport(tp._1, tp._3, tp._3.last)
-    } ++ extra
+        pt._2.zipWithIndex.map { case (pt2, index) =>
+          CSharpImport(pt2._1, pt2._2, s"${pt2._1.name}_$index")
+        }
+    ).toList ++ extra
   }
 
   protected def collectTypes(ts: Typespace, id: TypeId): List[TypeId] = id match {
@@ -119,11 +113,11 @@ object CSharpImports {
       case gm: Generic.TMap => List(gm) ++ collectTypes(ts, gm.valueType)
       case gl: Generic.TList => List(gl) ++ collectTypes(ts, gl.valueType)
       case gs: Generic.TSet => List(gs) ++ collectTypes(ts, gs.valueType)
-      case go: Generic.TOption => List(go) ++ collectTypes(ts, go.valueType)
+      case go: Generic.TOption => (if (CSharpType(go.valueType)(im = null, ts).isNullable) List(go) else List.empty) ++ collectTypes(ts, go.valueType)
     }
     case a: AdtId => List(a)
     case i: InterfaceId => List(i)
-    case _: AliasId => List(ts(id).asInstanceOf[Alias].target)
+    case _: AliasId => collectTypes(ts, ts.dealias(id))
     case id: IdentifierId => List(id)
     case e: EnumId => List(e)
     case dto: DTOId => List(dto)
@@ -139,12 +133,10 @@ object CSharpImports {
       i.fields.flatMap(f => List(f.typeId) ++ collectTypes(ts, f.typeId))
     case i: Interface =>
       i.struct.superclasses.interfaces ++
-      ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id) ++
-      ts.inheritance.allParents(i.id).filterNot(i.struct.superclasses.interfaces.contains).filterNot(ff => ff == i.id).map(ifc => ts.implId(ifc))
+      ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id)
     case d: DTO =>
       d.struct.superclasses.interfaces ++
-      ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id) ++
-      ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains).map(ifc => ts.implId(ifc))
+      ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id)
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
   }

@@ -26,8 +26,19 @@ final case class CSharpClass (
   def render(withWrapper: Boolean, withSlices: Boolean): String = {
       val indent = if (withWrapper) 4 else 0
 
+      val ctorWithParams =
+        s"""public $name(${fields.map(f => s"${f.tp.renderType()} ${f.renderMemberName().uncapitalize}").mkString(", ")}) {
+           |${fields.map(f => s"this.${f.renderMemberName()} = ${f.renderMemberName().uncapitalize};").mkString("\n").shift(4)}
+           |}
+         """.stripMargin
+
       s"""${if (withWrapper) s"${renderHeader()} {" else ""}
          |${fields.map(f => f.renderMember(false)).mkString("\n").shift(indent)}
+         |
+         |    public $name() {
+         |    }
+         |
+         |${if (!fields.isEmpty) ctorWithParams.shift(4) else ""}
          |${if (withSlices) ("\n" + renderSlices()).shift(indent) else ""}
          |${if (withWrapper) "}" else ""}
        """.stripMargin
@@ -66,6 +77,6 @@ object CSharpClass {
 
   def apply(id: TypeId, name: String, st: Struct, implements: List[InterfaceId])(implicit im: CSharpImports, ts: Typespace): CSharpClass =
     new CSharpClass(id, name, st.all.groupBy(_.field.name)
-      .map(f => CSharpField(f._2.head.field, name, if (f._2.length > 1) f._2.map(ef => ef.defn.definedBy.name) else Seq.empty)).toSeq,
+      .map(f => CSharpField(if (f._2.head.defn.variance.nonEmpty) f._2.head.defn.variance.last else f._2.head.field, name, if (f._2.length > 1) f._2.map(ef => ef.defn.definedBy.name) else Seq.empty)).toSeq,
       st.superclasses.interfaces ++ implements)
 }

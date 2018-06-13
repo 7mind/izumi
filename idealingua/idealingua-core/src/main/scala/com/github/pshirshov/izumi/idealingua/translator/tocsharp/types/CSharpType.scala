@@ -155,11 +155,11 @@ final case class CSharpType (
 //      }
 //    } else {
       id match {
-        case _: EnumId => s"${im.withImport(id)}${id.name}"
-        case _: InterfaceId => s"${im.withImport(id)}${id.name}"
-        case _: IdentifierId => s"${im.withImport(id)}${id.name}"
-        case _: AdtId | _: DTOId => s"${im.withImport(id)}${id.name}"
-        case al: AliasId => s"${im.withImport(id)}${id.name}"
+        case _: EnumId => s"${im.withImport(id)}"
+        case _: InterfaceId => s"${im.withImport(id)}"
+        case _: IdentifierId => s"${im.withImport(id)}"
+        case _: AdtId | _: DTOId => s"${im.withImport(id)}"
+        case al: AliasId => renderNativeType(ts.dealias(al), serialized)
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
 //    }
