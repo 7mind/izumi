@@ -99,6 +99,24 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
      """.stripMargin
   }
 
+  protected def renderDefaultValue(id: TypeId): Option[String] = id match {
+    case g: Generic => g match {
+      case _: Generic.TOption => None
+      case _: Generic.TMap => Some("{}")
+      case _: Generic.TList => Some("[]")
+      case _: Generic.TSet => Some("[]")
+    }
+    case _ => None
+  }
+
+  protected def renderDefaultAssign(to: String, id: TypeId): String = {
+    val defVal = renderDefaultValue(id)
+    if (defVal.isDefined)
+      s"$to = ${defVal.get};"
+    else
+      s""
+  }
+
   protected def renderDto(i: DTO): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage)
     val fields = typespace.structure.structure(i).all
@@ -127,6 +145,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${distinctFields.map(f => conv.toFieldMethods(f, ts)).mkString("\n").shift(4)}
          |    constructor(data: ${i.id.name}Serialized = undefined) {
          |        if (typeof data === 'undefined' || data === null) {
+         |${distinctFields.map(f => renderDefaultAssign(conv.deserializeName("this." + f.name, f.typeId), f.typeId)).filterNot(_.isEmpty).mkString("\n").shift(12)}
          |            return;
          |        }
          |
@@ -332,6 +351,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${fields.all.map(f => conv.toFieldMethods(f.field, ts)).mkString("\n").shift(4)}
          |    constructor(data: ${eid}Serialized = undefined) {
          |        if (typeof data === 'undefined' || data === null) {
+         |${distinctFields.map(f => renderDefaultAssign(conv.deserializeName("this." + f.name, f.typeId), f.typeId)).filterNot(_.isEmpty).mkString("\n").shift(12)}
          |            return;
          |        }
          |
