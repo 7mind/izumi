@@ -74,7 +74,7 @@ class TypeScriptTypeConverter() {
     case d: DTOId => s"new ${d.name}(${variable + (if (asAny) " as any" else "")})"
     case al: AliasId => deserializeType(variable, ts.dealias(al), ts)
     case id: IdentifierId => s"new ${id.name}($variable)"
-    case _: EnumId => s"$variable"
+    case en: EnumId => s"${en.name}[$variable]"
 
     case _ => s"'$variable: Error here! Not Implemented! ${target.name}'"
   }
@@ -102,7 +102,7 @@ class TypeScriptTypeConverter() {
         case _: AdtId => s"{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
         case al: AliasId => toNativeType(ts(al).asInstanceOf[Alias].target, ts, forSerialized)
         case _: DTOId => s"${id.name}Serialized"
-        case _: EnumId => if (forMap) "string" else id.name
+        case _: EnumId => "string"
         case _: IdentifierId => s"string"
         case _ => s"${id.name}"
       }
@@ -186,7 +186,7 @@ class TypeScriptTypeConverter() {
     case _: DTOId => s"$name.serialize()"
     case al: AliasId => serializeValue(name, ts(al).asInstanceOf[Alias].target, ts)
     case _: IdentifierId => s"$name.serialize()"
-    case _: EnumId => name
+    case en: EnumId => s"${en.name}[$name]"
 
     case _ => s"'$name: Error here! Not Implemented! ${id.name}'"
   }
