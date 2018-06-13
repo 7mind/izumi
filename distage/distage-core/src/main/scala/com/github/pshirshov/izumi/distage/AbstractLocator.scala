@@ -4,14 +4,12 @@ import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceExcept
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.{Locator, LookupInterceptor}
 
-import scala.reflect.runtime.universe._
-
 trait AbstractLocator extends Locator {
   protected def unsafeLookup(key: DIKey): Option[Any]
 
   protected[distage] def lookup[T: Tag](key: DIKey): Option[TypedRef[T]] = {
     unsafeLookup(key)
-      .filter(_ => key.tpe.tpe.baseClasses.contains(typeTag[T].tpe.typeSymbol))
+      .filter(_ => key.tpe.tpe.baseClasses.contains(Tag[T].tag.tpe.typeSymbol))
       .map {
         value =>
           TypedRef[T](value.asInstanceOf[T])

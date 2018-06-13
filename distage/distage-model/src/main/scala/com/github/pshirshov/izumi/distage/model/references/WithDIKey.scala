@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.distage.model.references
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{WithDISafeType, DIUniverseBase}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType, WithDITypeTags}
 
 trait WithDIKey {
   this: DIUniverseBase
-    with WithDISafeType =>
+    with WithDISafeType
+    with WithDITypeTags =>
 
   sealed trait DIKey {
     def tpe: TypeFull
