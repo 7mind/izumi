@@ -1,15 +1,13 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.bootstrap.{BootstrapPlanningObserver, DefaultBootstrapContext}
+import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
-import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.{Injector, LoggerHook}
-import com.github.pshirshov.izumi.distage.model.definition._
+import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
+import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
-import com.github.pshirshov.izumi.fundamentals.platform.console.{SystemOutStringSink, TrivialLogger, TrivialLoggerImpl}
+import com.github.pshirshov.izumi.distage.model.definition._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
@@ -20,11 +18,7 @@ class StaticInjectorTest extends WordSpec {
   def mkInjector(overrides: ModuleBase*): Injector =
     Injectors.bootstrap(
       base = DefaultBootstrapContext.noReflectionBootstrap
-      , overrides = (new ModuleDef {
-        make[PlanningObserver].from[BootstrapPlanningObserver]
-        make[LoggerHook].from[LoggerHookDebugImpl]
-        make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringSink))
-      } +: overrides).overrideLeft
+      , overrides = overrides.overrideLeft
     )
 
   "DI planner" should {
