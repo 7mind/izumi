@@ -1,0 +1,31 @@
+SRCSRV: ini ------------------------------------------------
+VERSION=2
+SRCSRV: variables ------------------------------------------
+RAWURL=https://raw.github.com/nunit/nunit/502a844c0b104731c7f5d57ef6d0df436d4b75af/%var2%
+SRCSRVVERCTRL=https
+SRCSRVTRG=%RAWURL%
+SRCSRV: source files ---------------------------------------
+c:\src\nunit\nunit\src\nunitframework\nunitlite\autorun.cs*src/NUnitFramework/nunitlite/AutoRun.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\colorconsole.cs*src/NUnitFramework/nunitlite/ColorConsole.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\colorconsolewriter.cs*src/NUnitFramework/nunitlite/ColorConsoleWriter.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\commandlineoptions.cs*src/NUnitFramework/nunitlite/CommandLineOptions.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\debugwriter.cs*src/NUnitFramework/nunitlite/DebugWriter.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\defaultoptionsprovider.cs*src/NUnitFramework/nunitlite/DefaultOptionsProvider.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\extendedtextwrapper.cs*src/NUnitFramework/nunitlite/ExtendedTextWrapper.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\nunitliteoptions.cs*src/NUnitFramework/nunitlite/NUnitLiteOptions.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\options.cs*src/NUnitFramework/nunitlite/Options.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\outputmanager.cs*src/NUnitFramework/nunitlite/OutputManager.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\outputspecification.cs*src/NUnitFramework/nunitlite/OutputSpecification.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\outputwriters\nunit2xmloutputwriter.cs*src/NUnitFramework/nunitlite/OutputWriters/NUnit2XmlOutputWriter.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\outputwriters\nunit3xmloutputwriter.cs*src/NUnitFramework/nunitlite/OutputWriters/NUnit3XmlOutputWriter.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\outputwriters\outputwriter.cs*src/NUnitFramework/nunitlite/OutputWriters/OutputWriter.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\outputwriters\testcaseoutputwriter.cs*src/NUnitFramework/nunitlite/OutputWriters/TestCaseOutputWriter.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\resultsummary.cs*src/NUnitFramework/nunitlite/ResultSummary.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\teamcityeventlistener.cs*src/NUnitFramework/nunitlite/TeamCityEventListener.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\testnameparser.cs*src/NUnitFramework/nunitlite/TestNameParser.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\testselectionparser.cs*src/NUnitFramework/nunitlite/TestSelectionParser.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\testselectionparserexception.cs*src/NUnitFramework/nunitlite/TestSelectionParserException.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\textrunner.cs*src/NUnitFramework/nunitlite/TextRunner.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\textui.cs*src/NUnitFramework/nunitlite/TextUI.cs
+c:\src\nunit\nunit\src\nunitframework\nunitlite\tokenizer.cs*src/NUnitFramework/nunitlite/Tokenizer.cs
+SRCSRV: end ------------------------------------------------

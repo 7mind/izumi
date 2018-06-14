@@ -1,0 +1,9 @@
+SRCSRV: ini ------------------------------------------------
+VERSION=2
+SRCSRV: variables ------------------------------------------
+RAWURL=https://raw.github.com/nunit/nunit/502a844c0b104731c7f5d57ef6d0df436d4b75af/%var2%
+SRCSRVVERCTRL=https
+SRCSRVTRG=%RAWURL%
+SRCSRV: source files ---------------------------------------
+c:\src\nunit\nunit\src\nunitframework\nunitlite-runner\program.cs*src/NUnitFramework/nunitlite-runner/Program.cs
+SRCSRV: end ------------------------------------------------

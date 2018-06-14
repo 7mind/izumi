@@ -21,6 +21,7 @@ mixin Request {
 service TestService {
   def parameterless(): str
   def simpleMethod(a: str): str
+  def simpleIntMethod(a: i32): i32
   def simpleMethodWithGenerics(a: list[str]): list[str]
   def simple(+Request): (+Request)
   def simpleEnum(v: TestServiceEnum): str

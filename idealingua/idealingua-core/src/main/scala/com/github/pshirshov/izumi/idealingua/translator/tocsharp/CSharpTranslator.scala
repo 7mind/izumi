@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, Unity3DExtension}
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, NUnitExtension, Unity3DExtension}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.csharp.types.CSharpField
@@ -19,7 +19,8 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpCl
 object CSharpTranslator {
   final val defaultExtensions = Seq(
     JsonNetExtension,
-    Unity3DExtension
+    Unity3DExtension,
+    NUnitExtension
   )
 }
 
@@ -315,184 +316,132 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
     InterfaceProduct(iface, companion, imports.renderImports())
   }
 
-//  protected def renderServiceMethodSignature(i: Service, method: Service.DefMethod, imports: GoLangImports, spread: Boolean = false, withContext: Boolean = false): String = {
-//    method match {
-//      case m: DefMethod.RPCMethod => {
-//        val context = if (withContext) s"context interface{}${if (m.signature.input.fields.isEmpty) "" else ", "}" else ""
-//        if (spread) {
-//          val fields = m.signature.input.fields.map(f => f.name + " " + GoLangType(f.typeId, imports, ts).renderType()).mkString(", ")
-//          s"${m.name.capitalize}($context$fields) ${renderServiceMethodOutputSignature(i, m, imports)}"
-//        } else {
-//          s"${m.name.capitalize}(${context}input: ${inName(i, m.name)}) ${renderServiceMethodOutputSignature(i, m, imports)}"
-//        }
-//      }
-//    }
-//  }
-//
-//  protected def renderServiceMethodOutputModel(i: Service, method: DefMethod.RPCMethod, imports: GoLangImports): String = method.signature.output match {
-//    case _: Struct => s"*${outName(i, method.name)}"
-//    case _: Algebraic => s"*${outName(i, method.name)}"
-//    case si: Singular => s"${GoLangType(si.typeId, imports, ts).renderType()}"
-//  }
-//
-//  protected def renderServiceMethodOutputSignature(i: Service, method: DefMethod.RPCMethod, imports: GoLangImports): String = {
-//    s"(${renderServiceMethodOutputModel(i, method, imports)}, error)"
-//  }
-//
-//  protected def renderServiceClientMethod(i: Service, method: Service.DefMethod, imports: GoLangImports): String = method match {
-//    case m: DefMethod.RPCMethod => m.signature.output match {
-//      case _: Struct | _: Algebraic =>
-//        s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
-//           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := new${inName(i, m.name)}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")})" }
-//           |    outData := &${outName(i, m.name)}{}
-//           |    err := c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
-//           |    if err != nil {
-//           |        return nil, err
-//           |    }
-//           |    return outData, nil
-//           |}
-//       """.stripMargin
-//
-//      case so: Singular =>
-//        s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
-//           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := new${inName(i, m.name)}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")})" }
-//           |    outData := &${GoLangType(so.typeId, imports, ts).renderType(forAlias = true)}
-//           |    err := c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
-//           |    if err != nil {
-//           |        return nil, err
-//           |    }
-//           |    return outData, nil
-//           |}
-//       """.stripMargin
-//    }
-//  }
-//
+  protected def renderServiceMethodSignature(i: Service, method: Service.DefMethod, forClient: Boolean)
+                                            (implicit imports: CSharpImports, ts: Typespace): String = {
+    val callbacks = s""
+    method match {
+      case m: DefMethod.RPCMethod => {
+        val callback = s"${if (m.signature.input.fields.isEmpty) "" else ", "}Action<${renderServiceMethodOutputSignature(i, m)}> onSuccess, Action<Exception> onFailure, Action onAny = null"
+        val fields = m.signature.input.fields.map(f => CSharpType(f.typeId).renderType() + " " + f.name).mkString(", ")
+        val context = s"C ctx${if (m.signature.input.fields.isEmpty) "" else ", "}"
+        if (forClient) {
+          s"void ${m.name.capitalize}($fields$callback)"
+        } else {
+          s"${renderServiceMethodOutputSignature(i, m)} ${m.name.capitalize}($context$fields)"
+        }
+      }
+    }
+  }
+
+  protected def renderServiceMethodOutputModel(i: Service, method: DefMethod.RPCMethod)(implicit imports: CSharpImports, ts: Typespace): String = method.signature.output match {
+    case _: Struct => s"${i.id.name}.Out${method.name.capitalize}"
+    case _: Algebraic => s"${i.id.name}.Out${method.name.capitalize}"
+    case si: Singular => s"${CSharpType(si.typeId).renderType()}"
+  }
+
+  protected def renderServiceMethodOutputSignature(i: Service, method: DefMethod.RPCMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
+    s"${renderServiceMethodOutputModel(i, method)}"
+  }
+
+  protected def renderServiceClientMethod(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
+    case m: DefMethod.RPCMethod => m.signature.output match {
+      case _: Struct | _: Algebraic =>
+        s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});" }
+           |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
+           |        new TransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny));
+           |}
+       """.stripMargin
+
+      case so: Singular =>
+        s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});" }
+           |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
+           |        new TransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny));
+           |}
+       """.stripMargin
+    }
+  }
+
   protected def renderServiceClient(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
     val name = s"${i.id.name}Client"
 
-  // ${i.methods.map(m => renderServiceMethodSignature(i, m, imports, spread = true)).mkString("\n").shift(4)}
     s"""public interface I${name} {
-       |// From comment here
+       |${i.methods.map(m => renderServiceMethodSignature(i, m, forClient = true) + ";").mkString("\n").shift(4)}
        |}
        |
        |public class ${name}: I${name} {
-       |    public int Transport { get; private set; }
+       |    public ITransport Transport { get; private set; }
        |
-       |    public ${name}(int t) {
+       |    public ${name}(ITransport t) {
        |        Transport = t;
+       |    }
+       |
+       |    public void SetHTTPTransport(string endpoint, IJsonMarshaller marshaller, bool blocking = false, int timeout = 60) {
+       |        if (blocking) {
+       |            this.Transport = new SyncHttpTransport(endpoint, marshaller, timeout);
+       |        } else {
+       |            this.Transport = new AsyncHttpTransport(endpoint, marshaller, timeout);
+       |        }
+       |    }
+       |${i.methods.map(me => renderServiceClientMethod(i, me)).mkString("\n").shift(4)}
+       |}
+     """.stripMargin
+  }
+
+  protected def renderServiceDispatcherHandler(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
+    case m: DefMethod.RPCMethod =>
+      s"""case "${m.name}": {
+         |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var obj = marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}>(data);"}
+         |    return marshaller.Marshal<${renderServiceMethodOutputModel(i, m)}>(\n        server.${m.name.capitalize}(ctx${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${f.name.capitalize}").mkString(", ")})\n    );
+         |}
+       """.stripMargin
+  }
+
+  protected def renderServiceDispatcher(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val name = s"${i.id.name}Dispatcher"
+
+    s"""public interface I${i.id.name}Server<C> {
+       |${i.methods.map(m => renderServiceMethodSignature(i, m, forClient = false) + ";").mkString("\n").shift(4)}
+       |}
+       |
+       |public class ${i.id.name}Dispatcher<C, D>: IServiceDispatcher<C, D> {
+       |    private static readonly string[] methods = { ${i.methods.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "\"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"" else "").mkString(", ")} };
+       |    private IMarshaller<D> marshaller;
+       |    private I${i.id.name}Server<C> server;
+       |
+       |    public ${i.id.name}Dispatcher(IMarshaller<D> marshaller, I${i.id.name}Server<C> server) {
+       |        this.marshaller = marshaller;
+       |        this.server = server;
+       |    }
+       |
+       |    public string GetSupportedService() {
+       |        return "${i.id.name}";
+       |    }
+       |
+       |    public string[] GetSupportedMethods() {
+       |        return ${i.id.name}Dispatcher<C, D>.methods;
+       |    }
+       |
+       |    public D Dispatch(C ctx, string method, D data) {
+       |        switch(method) {
+       |${i.methods.map(m => renderServiceDispatcherHandler(i, m)).mkString("\n").shift(12)}
+       |            default:
+       |                throw new DispatcherException(string.Format("Method {0} is not supported by ${i.id.name}Dispatcher.", method));
+       |        }
        |    }
        |}
      """.stripMargin
-  /*
-
-type $name struct {
-    ${i.id.name}
-    transport irt.ServiceClientTransport
-}
-
-func (v *$name) SetTransport(t irt.ServiceClientTransport) error {
-    if t == nil {
-        return fmt.Errorf("method SetTransport requires a valid transport, got nil")
-    }
-
-    v.transport = t
-    return nil
-}
-
-func (v *$name) SetHTTPTransport(endpoint string, timeout int, skipSSLVerify bool) {
-    v.transport = irt.NewHTTPClientTransport(endpoint, timeout, skipSSLVerify)
-}
-
-func New${name}OverHTTP(endpoint string) *$name{
-    res := &$name{}
-    res.SetHTTPTransport(endpoint, 15000, false)
-    return res
-}
-
-${i.methods.map(me => renderServiceClientMethod(i, me, imports)).mkString("\n")}
-   */
   }
-//
-//  protected def renderServiceDispatcherHandler(i: Service, method: Service.DefMethod): String = method match {
-//    case m: DefMethod.RPCMethod =>
-//      s"""case "${m.name}": {
-//         |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"dataIn, ok := data.(*${inName(i, m.name)})\n    if !ok {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + "\")\n    }"}
-//         |    return v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"dataIn.${f.name.capitalize}()").mkString(", ")})
-//         |}
-//         |
-//       """.stripMargin
-//  }
-//
-//  protected def renderServiceDispatcherPreHandler(i: Service, method: Service.DefMethod): String = method match {
-//    case m: DefMethod.RPCMethod =>
-//      s"""case "${m.name}": ${if (m.signature.input.fields.isEmpty) "return nil, nil" else s"return &${inName(i, m.name)}{}, nil"}""".stripMargin
-//  }
-//
-//  protected def renderServiceDispatcher(i: Service, imports: GoLangImports): String = {
-//    val name = s"${i.id.name}Dispatcher"
-//
-//    s"""type ${i.id.name}Server interface {
-//       |${i.methods.map(m => renderServiceMethodSignature(i, m, imports, spread = true, withContext = true)).mkString("\n").shift(4)}
-//       |}
-//       |
-//       |type $name struct {
-//       |    service ${i.id.name}Server
-//       |}
-//       |
-//       |func (v *$name) SetServer(s ${i.id.name}Server) error {
-//       |    if s == nil {
-//       |        return fmt.Errorf("method SetServer requires a valid server implementation, got nil")
-//       |    }
-//       |
-//       |    v.service = s
-//       |    return nil
-//       |}
-//       |
-//       |func (v *$name) GetSupportedService() string {
-//       |    return "${i.id.name}"
-//       |}
-//       |
-//       |func (v *$name) GetSupportedMethods() []string {
-//       |    return []string{
-//       |${i.methods.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "\"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"," else "").mkString("\n").shift(8)}
-//       |    }
-//       |}
-//       |
-//       |func (v *$name) PreDispatchModel(context interface{}, method string) (interface{}, error) {
-//       |    switch method {
-//       |${i.methods.map(m => renderServiceDispatcherPreHandler(i, m)).mkString("\n").shift(8)}
-//       |        default:
-//       |            return nil, fmt.Errorf("$name dispatch doesn't support method %s", method)
-//       |    }
-//       |}
-//       |
-//       |func (v *$name) Dispatch(context interface{}, method string, data interface{}) (interface{}, error) {
-//       |    switch method {
-//       |${i.methods.map(m => renderServiceDispatcherHandler(i, m)).mkString("\n").shift(8)}
-//       |        default:
-//       |            return nil, fmt.Errorf("$name dispatch doesn't support method %s", method)
-//       |    }
-//       |}
-//       |
-//       |func New${name}(service ${i.id.name}Server) *$name{
-//       |    res := &$name{}
-//       |    res.SetServer(service)
-//       |    return res
-//       |}
-//     """.stripMargin
-//  }
-//
-//  protected def renderServiceServerDummy(i: Service, imports: GoLangImports): String = {
-//    val name = s"${i.id.name}ServerDummy"
-//    s"""// $name is a dummy for implementation references
-//       |type $name struct {
-//       |    // Implements ${i.id.name}Server interface
-//       |}
-//       |
-//       |${i.methods.map(m => s"func (d *$name) " + renderServiceMethodSignature(i, m, imports, spread = true, withContext = true) + s""" {\n    return nil, fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
-//     """.stripMargin
-//  }
-//
+
+  protected def renderServiceServerDummy(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val name = s"${i.id.name}ServerDummy"
+    s"""public class $name<C>: I${i.id.name}Server<C> {
+       |${i.methods.map(m => s"public ${renderServiceMethodSignature(i, m, forClient = false)} {\n    return null;\n}").mkString("\n").shift(4)}
+       |}
+     """.stripMargin
+  }
+
   protected def renderServiceMethodOutModel(i: Service, name: String, out: Service.DefMethod.Output)(implicit imports: CSharpImports, ts: Typespace): String = out match {
     case st: Struct => renderServiceMethodInModel(i, name, st.struct)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
@@ -539,17 +488,77 @@ ${i.methods.map(me => renderServiceClientMethod(i, me, imports)).mkString("\n")}
            |${renderServiceModels(i).shift(4)}
            |}
            |
-           |${renderServiceClient(i).shift(4)}
-           |    // ============== Service Dispatcher ==============
+           |// ============== Service Client ==============
+           |${renderServiceClient(i)}
            |
-           |    // ============== Service Server Dummy ==============
+           |// ============== Service Dispatcher ==============
+           |${renderServiceDispatcher(i)}
            |
-           |    // ============== Listener Dispatcher ==============
-           |
-           |    // ============== Listener Dummy ==============
+           |// ============== Service Server Dummy ==============
+           |${renderServiceServerDummy(i)}
          """.stripMargin
 
-    ServiceProduct(svc, imports.renderImports()) //imports.renderImports(List("irt")))
+    ServiceProduct(svc, imports.renderImports(List("irt", "System"))) //imports.renderImports(List("irt")))
   }
 }
 
+
+/*
+public interface IDiscoveryServiceServer<C> {
+        DiscoveryService.OutExplore Explore(C ctx, OffsetLimit iterator);
+        DiscoveryService.OutFind Find(C ctx, string text);
+    }
+
+    public class DiscoveryServiceDispatcher<C, D>: IServiceDispatcher<C, D> {
+        private static readonly string[] methods = { "explore", "find" };
+        private IMarshaller<D> marshaller;
+        private IDiscoveryServiceServer server;
+
+        public D Dispatch(C ctx, string method, D data) {
+            switch(method) {
+                case "explore": {
+                    var obj = marshaller.Unmarshal<DiscoveryService.InExplore>(data);
+                    return marshaller.Marshal<DiscoveryService.OutExplore>(
+                        server.Explore(ctx, obj.Iterator)
+                    );
+                }
+
+                case "find": {
+                    var obj = marshaller.Unmarshal<DiscoveryService.InFind>(data);
+                    return marshaller.Marshal<DiscoveryService.OutFind>(
+                        server.Find(ctx, obj.Text)
+                    );
+                }
+
+                default:
+                    throw new DispatcherException(string.Format("Method {0} is not supported by DiscoveryServiceDispatcher.", method));
+            }
+        }
+
+        public string GetSupportedService() {
+            return "DiscoveryService";
+        }
+
+        public string[] GetSupportedMethods() {
+            return DiscoveryServiceDispatcher<C, D>.methods;
+        }
+
+        public DiscoveryServiceDispatcher(IMarshaller<D> marshaller, IDiscoveryServiceServer server) {
+            this.marshaller = marshaller;
+            this.server = server;
+        }
+    }
+
+    public class DiscoveryServiceServerDummy<C>: IDiscoveryServiceServer {
+        public DiscoveryServiceServerDummy() {
+        }
+
+        public DiscoveryService.OutExplore Explore(C ctx, OffsetLimit iterator) {
+            return null;
+        }
+
+        public DiscoveryService.OutFind Find(C ctx, string text) {
+            return null;
+        }
+    }
+*/
