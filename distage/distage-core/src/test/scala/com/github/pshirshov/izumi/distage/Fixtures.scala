@@ -478,6 +478,8 @@ Forest fire, climbin' higher, real life, it can wait""")
   }
 
   object Case20 {
+    type id[A] = A
+
     trait Pointed[F[_]] {
       def point[A](a: A): F[A]
     }
@@ -493,6 +495,11 @@ Forest fire, climbin' higher, real life, it can wait""")
       implicit final val pointedSet: Pointed[Set] =
         new Pointed[Set] {
           override def point[A](a: A): Set[A] = Set(a)
+        }
+
+      implicit final val pointedId: Pointed[id] =
+        new Pointed[id] {
+          override def point[A](a: A): id[A] = a
         }
     }
 
