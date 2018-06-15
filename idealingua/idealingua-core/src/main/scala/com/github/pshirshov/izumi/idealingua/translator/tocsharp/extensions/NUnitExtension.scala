@@ -52,3 +52,72 @@ public class HelloTest
     }
 }
  */
+
+/*
+
+using NUnit.Framework;
+using irt;
+
+namespace idltest.enums
+{
+    [TestFixture]
+    public class TestEnum_ShouldSerialize
+    {
+        IJsonMarshaller marshaller;
+        public TestEnum_ShouldSerialize() {
+            marshaller = new JsonNetMarshaller();
+        }
+
+        [Test]
+        public void Serialize() {
+            var v = TestEnum.Element1;
+            var json = marshaller.Marshal<TestEnum>(v);
+            Assert.AreEqual("\"Element1\"", json);
+        }
+
+        [Test]
+        public void Deserialize() {
+            var v = marshaller.Unmarshal<TestEnum>("\"Element1\"");
+            Assert.AreEqual(v, TestEnum.Element1);
+        }
+
+        [Test]
+        public void SerializeDeserialize() {
+            var v1 = TestEnum.Element1;
+            var json = marshaller.Marshal<TestEnum>(v1);
+            var v2 = marshaller.Unmarshal<TestEnum>(json);
+            Assert.AreEqual(v1, v2);
+        }
+    }
+}
+ */
+
+/*
+
+using NUnit.Framework;
+using irt;
+using System;
+
+namespace idltest.identifiers
+{
+    [TestFixture]
+    public class BucketID_ShouldSerialize
+    {
+        IJsonMarshaller marshaller;
+
+        public BucketID_ShouldSerialize() {
+            marshaller = new JsonNetMarshaller();
+        }
+
+        [Test]
+        public void SerializeDeserialize() {
+            var v1 = new BucketID(new Guid("ee9be762-ab1c-4f1e-ab73-a98dd1312fa3"), new Guid("2800324c-4235-415b-937c-d7d0bbb65b26"), "str");
+            var json1 = marshaller.Marshal<BucketID>(v1);
+            var v2 = marshaller.Unmarshal<BucketID>(json1);
+            var json2 = marshaller.Marshal<BucketID>(v2);
+            Assert.AreEqual(v1.ToString(), v2.ToString());
+            Assert.AreEqual(json1.ToString(), json2.ToString());
+        }
+    }
+}
+ */

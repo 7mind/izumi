@@ -155,6 +155,9 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 
   protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
+    implicit val ts: Typespace = this.ts
+    implicit val imports: CSharpImports = CSharpImports(i, i.id.path.toPackage)
+
       val name = i.id.name
       val decl =
         s"""// $name Enumeration
@@ -190,13 +193,15 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |        return Enum.GetName(typeof($name), e);
            |    }
            |}
+           |
+           |${ext.postModelEmit(ctx, i)}
          """.stripMargin
 
-    EnumProduct(
+    ext.postModuleEmit(i, EnumProduct(
       decl,
-      "using System;",
+      imports.renderImports(List("System") ++ ext.imports(ctx, i)),
       ""
-    )
+    ), _.handleEnum)
   }
 
   protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
@@ -210,6 +215,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
       val decl =
         s"""${imports.renderUsings()}
+           |${ext.preModelEmit(ctx, i)}
            |${csClass.renderHeader()} {
            |    private static char[] idSplitter = new char[]{':'};
            |${csClass.render(withWrapper = false, withSlices = false).shift(4)}
@@ -237,11 +243,13 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |        return res;
            |    }
            |}
+           |
+           |${ext.postModelEmit(ctx, i)}
          """.stripMargin
 
     IdentifierProduct(
       decl,
-      imports.renderImports(List("System"))
+      imports.renderImports(List("System") ++ ext.imports(ctx, i))
     )
   }
 

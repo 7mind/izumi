@@ -13,6 +13,8 @@ trait CSharpTranslatorExtension extends TranslatorExtension {
   //    product
   //  }
   //
+
+
     def handleEnum(ctx: CSTContext, enum: Enumeration, product: EnumProduct): EnumProduct = {
       discard(ctx, enum)
       product
@@ -21,6 +23,36 @@ trait CSharpTranslatorExtension extends TranslatorExtension {
     def handleIdentifier(ctx: CSTContext, id: Identifier, product: IdentifierProduct): IdentifierProduct = {
       discard(ctx, id)
       product
+    }
+
+    def preModelEmit(ctx: CSTContext, id: Enumeration): String = {
+      discard(ctx, id)
+      ""
+    }
+
+    def postModelEmit(ctx: CSTContext, id: Enumeration): String = {
+      discard(ctx, id)
+      ""
+    }
+
+    def imports(ctx: CSTContext, id: Enumeration): List[String] = {
+      discard(ctx, id)
+      List.empty
+    }
+
+    def preModelEmit(ctx: CSTContext, id: Identifier): String = {
+      discard(ctx, id)
+      ""
+    }
+
+    def postModelEmit(ctx: CSTContext, id: Identifier): String = {
+      discard(ctx, id)
+      ""
+    }
+
+    def imports(ctx: CSTContext, id: Identifier): List[String] = {
+      discard(ctx, id)
+      List.empty
     }
 }
 

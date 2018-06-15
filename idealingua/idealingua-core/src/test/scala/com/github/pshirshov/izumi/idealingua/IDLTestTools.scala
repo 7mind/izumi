@@ -123,7 +123,7 @@ object IDLTestTools {
       "Newtonsoft.Json.dll",
       "UnityEngine.dll",
       "UnityEngine.Networking.dll",
-      "nunitlite.dll"
+      "2.4.8-net2.0-nunit.framework.dll"
     )
     val out = compiles(id, domains, IDLLanguage.CSharp, extensions, refDlls)
 
@@ -135,19 +135,19 @@ object IDLTestTools {
     val fullTarget = out.targetDir.toFile.getCanonicalPath
     val refs = s"/reference:${refDlls.map(dll => fullTarget + "/src/" + dll).mkString(",")}"
 //    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
-    val cmdBuild = s"csc -target:library -out:lib.dll -recurse:${fullTarget}/src/*.cs $refs"
-
+    val cmdBuild = s"csc -target:library -out:${fullTarget}/src/lib.dll -recurse:${fullTarget}/src/*.cs $refs"
+    val cmdTest = s"nunit-console ${fullTarget}/src/lib.dll"
     println(
       s"""
          |cd $fullTarget
          |$cmdBuild
+         |$cmdTest
        """.stripMargin)
 
-    val exitCodeBuild = run(out, cmdBuild, Map.empty, "go-build")
-    val exitCodeTest = 0
-//    val exitCodeTest = run(out, cmdTest, Map("GOPATH" -> fullTarget), "go-test")
+    val exitCodeBuild = run(out, cmdBuild, Map.empty, "cs-build")
+    val exitCodeTest = run(out, cmdTest, Map.empty, "cs-test")
 
-    exitCodeBuild == 0 || true
+    exitCodeBuild == 0 && exitCodeTest == 0
   }
 
   private def isRunningUnderSbt: Boolean = {
