@@ -1,0 +1,10 @@
+-Xmx3G
+-XX:+UseG1GC
+-XX:ReservedCodeCacheSize=256m
+-XX:MaxMetaspaceSize=1512m
+-noverify
+-server
+-XX:+OmitStackTraceInFastThrow
+-Dsun.io.useCanonCaches=false
+-XX:SoftRefLRUPolicyMSPerMB=50
+-XX:+AggressiveOpts
