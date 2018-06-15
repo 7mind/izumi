@@ -54,10 +54,8 @@ object FactoryConstructorMacro {
     //  2. we need to lift DIKey & SafeType types (by calling RuntimeUniverse reflection)
     //
     //  Solution:
-    //    * Provisioning shouldn't call reflection, all necessary info should be collected at binding
+    //    * Provisioning shouldn't call mirror reflection, all necessary info should be collected at binding [done with -static module]
     //    * Universe types(DIKey, SafeType) should be interfaces not directly referencing scala-reflect types
-    //    * API builder methods shouldn't require TypeTag
-    //    * make scala-reflect dependency (% Provided) for distage-static
     //      * provided dependencies seem to be correctly transitive, at least shapeless doesn't require the user to
     //        to add provided scala-reflect to his .sbt
     val (producerMethods, withContexts) = wireables.zipWithIndex.map {

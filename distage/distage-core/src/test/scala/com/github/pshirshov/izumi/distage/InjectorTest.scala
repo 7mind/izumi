@@ -1,33 +1,23 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.bootstrap.{BootstrapPlanningObserver, CglibBootstrap}
+import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.ConflictingOperation
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
-import com.github.pshirshov.izumi.distage.model.{Injector, LoggerHook}
-import com.github.pshirshov.izumi.fundamentals.platform.console.{SystemOutStringSink, TrivialLogger, TrivialLoggerImpl}
 import org.scalatest.WordSpec
 
+import scala.language.higherKinds
 import scala.util.Try
 
 class InjectorTest extends WordSpec {
 
-  def mkInjector(): Injector = {
-    Injectors.bootstrap(
-      base = CglibBootstrap.cogenBootstrap
-      , overrides = new ModuleDef {
-        make[PlanningObserver].from[BootstrapPlanningObserver]
-        make[LoggerHook].from[LoggerHookDebugImpl]
-        make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringSink))
-      }
-    )
-  }
+  def mkInjector(): Injector = Injectors.bootstrap()
 
   "DI planner" should {
 
@@ -644,6 +634,48 @@ class InjectorTest extends WordSpec {
         assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
       }.isFailure
       assert(fail)
+    }
+
+    "support tagless final style module definitions" in {
+      import Case20._
+
+      case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
+        // hmmm, what to do with this
+        make[Pointed[F]].from(Pointed[F])
+
+        make[TestTrait].from[TestServiceClass[F]]
+        make[TestServiceClass[F]]
+        make[TestServiceTrait[F]]
+        make[Int].named("TestService").from(getResult)
+        make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
+      }
+
+      val listInjector = mkInjector()
+      val listPlan = listInjector.plan(Definition[List](5))
+      val listContext = listInjector.produce(listPlan)
+
+      assert(listContext.get[TestTrait].get == List(5))
+      assert(listContext.get[TestServiceClass[List]].get == List(5))
+      assert(listContext.get[TestServiceTrait[List]].get == List(10))
+      assert(listContext.get[List[String]] == List("Hello 5!"))
+
+      val setInjector = mkInjector()
+      val setPlan = setInjector.plan(Definition[Set](5))
+      val setContext = setInjector.produce(setPlan)
+
+      assert(setContext.get[TestTrait].get == Set(5))
+      assert(setContext.get[TestServiceClass[Set]].get == Set(5))
+      assert(setContext.get[TestServiceTrait[Set]].get == Set(10))
+      assert(setContext.get[Set[String]] == Set("Hello 5!"))
+
+      val idInjector = mkInjector()
+      val idPlan = idInjector.plan(Definition[id](5))
+      val idContext = idInjector.produce(idPlan)
+
+      assert(idContext.get[TestTrait].get == 5)
+      assert(idContext.get[TestServiceClass[id]].get == 5)
+      assert(idContext.get[TestServiceTrait[id]].get == 10)
+      assert(idContext.get[id[String]] == "Hello 5!")
     }
 
   }

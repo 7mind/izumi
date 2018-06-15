@@ -1,28 +1,24 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.bootstrap.{BootstrapPlanningObserver, DefaultBootstrapContext}
+import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
-import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.{Injector, LoggerHook}
-import com.github.pshirshov.izumi.distage.model.definition._
+import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
+import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
-import com.github.pshirshov.izumi.fundamentals.platform.console.{SystemOutStringSink, TrivialLogger, TrivialLoggerImpl}
+import com.github.pshirshov.izumi.distage.model.definition._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
+
+import scala.language.higherKinds
 
 class StaticInjectorTest extends WordSpec {
 
   def mkInjector(overrides: ModuleBase*): Injector =
     Injectors.bootstrap(
       base = DefaultBootstrapContext.noReflectionBootstrap
-      , overrides = (new ModuleDef {
-        make[PlanningObserver].from[BootstrapPlanningObserver]
-        make[LoggerHook].from[LoggerHookDebugImpl]
-        make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringSink))
-      } +: overrides).overrideLeft
+      , overrides = overrides.overrideLeft
     )
 
   "DI planner" should {
@@ -31,11 +27,11 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition = new StaticModuleDef {
-        make[Factory].statically
-        make[Dependency].statically
-        make[OverridingFactory].statically
-        make[AssistedFactory].statically
-        make[AbstractFactory].statically
+        stat[Factory]
+        stat[Dependency]
+        stat[OverridingFactory]
+        stat[AssistedFactory]
+        stat[AbstractFactory]
       }
 
       val injector = mkInjector()
@@ -68,7 +64,7 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition: ModuleBase = new StaticModuleDef {
-        make[GenericAssistedFactory].statically
+        stat[GenericAssistedFactory]
         make[Dependency].from(ConcreteDep())
       }
 
@@ -87,7 +83,7 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition: ModuleBase = new StaticModuleDef {
-        make[AssistedFactory].statically
+        stat[AssistedFactory]
         make[Dependency].from(ConcreteDep())
       }
 
@@ -104,8 +100,8 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition: ModuleBase = new StaticModuleDef {
-        make[NamedAssistedFactory].statically
-        make[Dependency].statically
+        stat[NamedAssistedFactory]
+        stat[Dependency]
         make[Dependency].named("special").from(SpecialDep())
         make[Dependency].named("veryspecial").from(VerySpecialDep())
       }
@@ -126,8 +122,8 @@ class StaticInjectorTest extends WordSpec {
           |import Case5._
           |
           |val definition: ModuleBase = new StaticModuleDef {
-          |  make[FactoryProducingFactory].statically
-          |  make[Dependency].statically
+          |  stat[FactoryProducingFactory]
+          |  stat[Dependency]
           |}
           |
           |val injector = mkInjector()
@@ -145,9 +141,9 @@ class StaticInjectorTest extends WordSpec {
       import Case5._
 
       val definition: ModuleBase = new StaticModuleDef {
-          make[Dependency].statically
-        make[TestClass].statically
-        make[Factory].statically
+        stat[Dependency]
+        stat[TestClass]
+        stat[Factory]
       }
 
       val injector = mkInjector()
@@ -164,8 +160,8 @@ class StaticInjectorTest extends WordSpec {
       import Case7._
 
       val definition = new StaticModuleDef {
-        make[Dependency1].statically
-        make[TestTrait].statically
+        stat[Dependency1]
+        stat[TestTrait]
       }
 
       val injector = mkInjector()
@@ -270,8 +266,8 @@ class StaticInjectorTest extends WordSpec {
       import Case14._
 
       val definition = new StaticModuleDef {
-        make[TestTrait].statically
-        make[Dep].statically
+        stat[TestTrait]
+        stat[Dep]
       }
 
         val injector = mkInjector()
@@ -290,8 +286,8 @@ class StaticInjectorTest extends WordSpec {
       val injector = mkInjector(new ConfigModule(config))
 
       val definition = new StaticModuleDef {
-        make[TestDependency].statically
-        make[TestTrait].statically
+        stat[TestDependency]
+        stat[TestTrait]
       }
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
@@ -308,8 +304,8 @@ class StaticInjectorTest extends WordSpec {
       val injector = mkInjector(new ConfigModule(config))
 
       val definition = new StaticModuleDef {
-        make[TestDependency].statically
-        make[TestGenericConfFactory[TestConfAlias]].statically
+        stat[TestDependency]
+        stat[TestGenericConfFactory[TestConfAlias]]
       }
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
@@ -326,9 +322,9 @@ class StaticInjectorTest extends WordSpec {
       val injector = mkInjector(new ConfigModule(config))
 
       val definition = new StaticModuleDef {
-        make[TestDependency].statically
-        make[TestFactory].statically
-        make[TestGenericConfFactory[TestConfAlias]].statically
+        stat[TestDependency]
+        stat[TestFactory]
+        stat[TestGenericConfFactory[TestConfAlias]]
       }
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
@@ -345,7 +341,7 @@ class StaticInjectorTest extends WordSpec {
     }
 
     "Inject config works for providers" in {
-        import ConfigFixtures._
+      import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
       val injector = mkInjector(new ConfigModule(config))
@@ -358,6 +354,43 @@ class StaticInjectorTest extends WordSpec {
       val context = injector.produce(plan)
 
       assert(context.get[ConcreteProduct] == ConcreteProduct(TestConf(false), 50))
+    }
+
+    """Progression test: macros do not yet support tagless final style module definitions bcs they don't support multiple parameter lists
+      | g(but they can also support implicits directly by injecting `implicitly` calls and avoid that make[Pointed[F]]...)""".stripMargin in {
+      assertTypeError("""
+        import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+        import Case20._
+
+        case class Definition[F[_] : TagK : Pointed](getResult: Int) extends StaticModuleDef {
+          // hmmm, what to do with this
+          make[Pointed[F]].from(Pointed[F])
+
+          make[TestTrait].stat[TestServiceClass[F]]
+          stat[TestServiceClass[F]]
+          stat[TestServiceTrait[F]]
+          make[Int].named("TestService").from(getResult)
+          make[F[String]].from { res: Int@Id("TestService") => Pointed[F].point(s"Hello $res!") }
+        }
+
+        val listInjector = mkInjector()
+        val listPlan = listInjector.plan(Definition[List](5))
+        val listContext = listInjector.produce(listPlan)
+
+        assert(listContext.get[TestTrait].get == List(5))
+        assert(listContext.get[TestServiceClass[List]].get == List(5))
+        assert(listContext.get[TestServiceTrait[List]].get == List(10))
+        assert(listContext.get[List[String]] == List("Hello 5!"))
+
+        val setInjector = mkInjector()
+        val setPlan = setInjector.plan(Definition[Set](5))
+        val setContext = setInjector.produce(setPlan)
+
+        assert(setContext.get[TestTrait].get == Set(5))
+        assert(setContext.get[TestServiceClass[Set]].get == Set(5))
+        assert(setContext.get[TestServiceTrait[Set]].get == Set(10))
+        assert(setContext.get[Set[String]] == Set("Hello 5!"))
+      """)
     }
 
   }

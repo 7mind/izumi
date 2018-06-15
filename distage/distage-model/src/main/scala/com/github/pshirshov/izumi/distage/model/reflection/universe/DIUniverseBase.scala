@@ -7,7 +7,6 @@ trait DIUniverseBase {
 
   val u: Universe
 
-  type Tag[T] = u.TypeTag[T]
   type TypeNative = u.Type
   type Symb = u.Symbol
   type MethodSymb = u.MethodSymbol
