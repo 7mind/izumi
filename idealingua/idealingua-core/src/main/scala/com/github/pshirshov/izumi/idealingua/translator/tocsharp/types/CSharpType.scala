@@ -13,6 +13,7 @@ final case class CSharpType (
 
   def isNative: Boolean = isNativeImpl(id)
   def isNullable: Boolean = isNullableImpl(id)
+  def defaultValue: String = getDefaultValue(id)
 
   def isNullableImpl(id: TypeId): Boolean = id match {
     case g: Generic => g match {
@@ -75,6 +76,38 @@ final case class CSharpType (
       case _: AdtId | _: DTOId => true
       case al: AliasId => isNativeImpl(ts.dealias(al))
       case _ => throw new IDLException(s"Impossible isNativeImpl type: ${id.name}")
+    }
+  }
+
+  private def getDefaultValue(id: TypeId): String = id match {
+    case g: Generic => g match {
+      case _: Generic.TMap => "null"
+      case _: Generic.TList => "null"
+      case _: Generic.TSet => "null"
+      case _: Generic.TOption => "null"
+    }
+    case p: Primitive => p match {
+      case Primitive.TBool => "false"
+      case Primitive.TString => "null"
+      case Primitive.TInt8 => "0"
+      case Primitive.TInt16 => "0"
+      case Primitive.TInt32 => "0"
+      case Primitive.TInt64 => "0"
+      case Primitive.TFloat => "0.0f"
+      case Primitive.TDouble => "0.0"
+      case Primitive.TUUID => "null"
+      case Primitive.TTime => "null"
+      case Primitive.TDate => "0"
+      case Primitive.TTs => "0"
+      case Primitive.TTsTz => "0"
+    }
+    case _ => id match {
+      case e: EnumId => s"${e.name}.${ts(e).asInstanceOf[Enumeration].members.head}"
+      case _: InterfaceId => "null"
+      case _: IdentifierId => "null"
+      case _: AdtId | _: DTOId => "null"
+      case al: AliasId => getDefaultValue(ts.dealias(al))
+      case _ => throw new IDLException(s"Impossible getDefaultValue type: ${id.name}")
     }
   }
 

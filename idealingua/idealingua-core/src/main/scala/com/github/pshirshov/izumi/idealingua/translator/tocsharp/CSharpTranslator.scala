@@ -434,10 +434,24 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
      """.stripMargin
   }
 
+  protected def renderServiceServerDummyMethod(i: Service, member: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val retValue = member match {
+      case m: DefMethod.RPCMethod => m.signature.output match {
+        case _: Struct | _: Algebraic => "null"
+        case s: Singular => CSharpType(s.typeId).defaultValue;
+      }
+      case _ => throw new Exception("Unsupported renderServiceServerDummyMethod case.")
+    }
+    s"""public ${renderServiceMethodSignature(i, member, forClient = false)} {
+       |    return $retValue;
+       |}
+     """.stripMargin
+  }
+
   protected def renderServiceServerDummy(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
     val name = s"${i.id.name}ServerDummy"
     s"""public class $name<C>: I${i.id.name}Server<C> {
-       |${i.methods.map(m => s"public ${renderServiceMethodSignature(i, m, forClient = false)} {\n    return null;\n}").mkString("\n").shift(4)}
+       |${i.methods.map(m => renderServiceServerDummyMethod(i, m)).mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
@@ -502,63 +516,3 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 }
 
-
-/*
-public interface IDiscoveryServiceServer<C> {
-        DiscoveryService.OutExplore Explore(C ctx, OffsetLimit iterator);
-        DiscoveryService.OutFind Find(C ctx, string text);
-    }
-
-    public class DiscoveryServiceDispatcher<C, D>: IServiceDispatcher<C, D> {
-        private static readonly string[] methods = { "explore", "find" };
-        private IMarshaller<D> marshaller;
-        private IDiscoveryServiceServer server;
-
-        public D Dispatch(C ctx, string method, D data) {
-            switch(method) {
-                case "explore": {
-                    var obj = marshaller.Unmarshal<DiscoveryService.InExplore>(data);
-                    return marshaller.Marshal<DiscoveryService.OutExplore>(
-                        server.Explore(ctx, obj.Iterator)
-                    );
-                }
-
-                case "find": {
-                    var obj = marshaller.Unmarshal<DiscoveryService.InFind>(data);
-                    return marshaller.Marshal<DiscoveryService.OutFind>(
-                        server.Find(ctx, obj.Text)
-                    );
-                }
-
-                default:
-                    throw new DispatcherException(string.Format("Method {0} is not supported by DiscoveryServiceDispatcher.", method));
-            }
-        }
-
-        public string GetSupportedService() {
-            return "DiscoveryService";
-        }
-
-        public string[] GetSupportedMethods() {
-            return DiscoveryServiceDispatcher<C, D>.methods;
-        }
-
-        public DiscoveryServiceDispatcher(IMarshaller<D> marshaller, IDiscoveryServiceServer server) {
-            this.marshaller = marshaller;
-            this.server = server;
-        }
-    }
-
-    public class DiscoveryServiceServerDummy<C>: IDiscoveryServiceServer {
-        public DiscoveryServiceServerDummy() {
-        }
-
-        public DiscoveryService.OutExplore Explore(C ctx, OffsetLimit iterator) {
-            return null;
-        }
-
-        public DiscoveryService.OutFind Find(C ctx, string text) {
-            return null;
-        }
-    }
-*/

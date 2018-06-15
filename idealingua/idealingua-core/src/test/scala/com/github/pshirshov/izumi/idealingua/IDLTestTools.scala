@@ -119,7 +119,13 @@ object IDLTestTools {
   }
 
   def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, IDLLanguage.CSharp, extensions)
+    val refDlls = Seq[String] (
+      "Newtonsoft.Json.dll",
+      "UnityEngine.dll",
+      "UnityEngine.Networking.dll",
+      "nunitlite.dll"
+    )
+    val out = compiles(id, domains, IDLLanguage.CSharp, extensions, refDlls)
 
     val tmp = out.targetDir.getParent.resolve("phase2-compiler-tmp")
     tmp.toFile.mkdirs()
@@ -127,7 +133,7 @@ object IDLTestTools {
     Files.move(tmp, out.targetDir)
 
     val fullTarget = out.targetDir.toFile.getCanonicalPath
-    val refs = "" // s"/reference:Newtonsoft.Json.dll /reference:UnityEngine.dll /reference:UnitEngine.Networking.dll"
+    val refs = s"/reference:${refDlls.map(dll => fullTarget + "/src/" + dll).mkString(",")}"
 //    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
     val cmdBuild = s"csc -target:library -out:lib.dll -recurse:${fullTarget}/src/*.cs $refs"
 
@@ -150,7 +156,7 @@ object IDLTestTools {
 
   final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
 
-  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
+  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension], refFiles: Seq[String] = Seq.empty): CompilerOutput = {
     val targetDir = Paths.get("target")
     val tmpdir = targetDir.resolve("idl-output")
 
@@ -193,6 +199,11 @@ object IDLTestTools {
 
         s.paths
     }.toSeq
+
+    val fileRefs = new File(getClass.getResource("/refs/" + language.toString).toURI).toPath
+    refFiles.map(f => {
+      Files.copy(fileRefs.resolve(f), compilerDir.resolve(f))
+    })
 
     domains.foreach {
       d =>
