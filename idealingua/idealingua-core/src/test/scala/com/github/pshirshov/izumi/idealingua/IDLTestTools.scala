@@ -97,7 +97,7 @@ object IDLTestTools {
     val exitCodeBuild = run(out, cmdBuild, Map("GOPATH" -> fullTarget), "go-build")
     val exitCodeTest = run(out, cmdTest, Map("GOPATH" -> fullTarget), "go-test")
 
-    (exitCodeBuild == 0 && exitCodeTest == 0) || true
+    exitCodeBuild == 0 && exitCodeTest == 0
   }
 
   private def run(out: CompilerOutput, cmd: String, env: Map[String, String], cname: String) = {
