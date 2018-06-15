@@ -667,6 +667,15 @@ class InjectorTest extends WordSpec {
       assert(setContext.get[TestServiceClass[Set]].get == Set(5))
       assert(setContext.get[TestServiceTrait[Set]].get == Set(10))
       assert(setContext.get[Set[String]] == Set("Hello 5!"))
+
+      val idInjector = mkInjector()
+      val idPlan = idInjector.plan(Definition[id](5))
+      val idContext = idInjector.produce(idPlan)
+
+      assert(idContext.get[TestTrait].get == 5)
+      assert(idContext.get[TestServiceClass[id]].get == 5)
+      assert(idContext.get[TestServiceTrait[id]].get == 10)
+      assert(idContext.get[id[String]] == "Hello 5!")
     }
 
   }
