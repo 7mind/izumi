@@ -12,9 +12,9 @@ scala:
 before_install:
   - npm i -g 'typescript@2.9.2'
   - sudo apt-get install golang-go
-  - echo "Go version: `go version`"
-  - echo "TS version: `tsc -version`"
-  - echo "Java version: `java -version`"
+  - echo "Go `go version`"
+  - echo "TS `tsc -version`"
+  - echo "Java `java -version`"
 
 before_script:
   - bash travis.sh versionate
