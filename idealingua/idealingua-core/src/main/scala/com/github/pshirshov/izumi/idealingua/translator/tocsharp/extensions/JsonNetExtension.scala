@@ -75,8 +75,8 @@ object JsonNetExtension extends CSharpTranslatorExtension {
   }
 
 
-  override def handleEnum(ctx: CSTContext, enum: Enumeration, product: EnumProduct): EnumProduct = {
-    product
+//  override def handleEnum(ctx: CSTContext, enum: Enumeration, product: EnumProduct): EnumProduct = {
+//    product
 //    val it = enum.members.iterator
 //    val values = it.map { m =>
 //      s"${enum.id.name}.${m}" + (if (it.hasNext) "," else "")
@@ -96,11 +96,11 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 //       """.stripMargin
 //
 //    EnumProduct(product.content + extension, product.preamble)
-  }
-
-  override def handleIdentifier(ctx: CSTContext, id: Identifier, product: IdentifierProduct): IdentifierProduct = {
-    product
-  }
+//  }
+//
+//  override def handleIdentifier(ctx: CSTContext, id: Identifier, product: IdentifierProduct): IdentifierProduct = {
+//    product
+//  }
 }
 
 /*

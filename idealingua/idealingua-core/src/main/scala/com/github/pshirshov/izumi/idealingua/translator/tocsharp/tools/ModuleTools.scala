@@ -46,16 +46,6 @@ class ModuleTools() {
 
   def toModuleId(defn: TypeDef): ModuleId = {
     toModuleId(defn.id)
-    /*
-    defn match {
-      case i: Alias =>
-        val concrete = i.id
-        ModuleId(concrete.pkg, s"${concrete.pkg.last}.ts")
-
-      case other =>
-        toModuleId(other.id)
-    }
-    */
   }
 
   def toModuleId(id: TypeId): ModuleId = {
@@ -64,5 +54,26 @@ class ModuleTools() {
 
   def toModuleId(id: ServiceId): ModuleId = {
     ModuleId(id.domain.toPackage, s"${id.name}.cs")
+  }
+
+  def toTestSource(id: DomainId, moduleId: ModuleId, header: String, code: String): Seq[Module] = {
+    val text =
+      s"""#if IRT_NO_TESTS
+         |    // Define IRT_NO_TESTS in case you want to exclude tests from compilation
+         |#else
+         |
+         |${withPackage(id.toPackage, header, code.shift(4))}
+         |
+         |#endif
+       """.stripMargin
+    Seq(Module(moduleId, text))
+  }
+
+  def toTestModuleId(id: TypeId): ModuleId = {
+    ModuleId(id.path.toPackage, s"${id.name}_test.cs")
+  }
+
+  def toTestModuleId(id: ServiceId): ModuleId = {
+    ModuleId(id.domain.toPackage, s"${id.name}_test.cs")
   }
 }

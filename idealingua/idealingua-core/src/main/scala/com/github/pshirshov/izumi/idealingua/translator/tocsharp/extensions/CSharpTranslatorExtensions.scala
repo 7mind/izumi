@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSTContext
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
+import com.github.pshirshov.izumi.idealingua.model.output.Module
 
 class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslatorExtension]) {
   def preModelEmit(ctx: CSTContext, id: TypeDef): String = id match {
@@ -20,6 +21,12 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
   def imports(ctx: CSTContext, id: TypeDef): Seq[String] = id match {
     case i: Identifier => extensions.flatMap(ex => ex.imports(ctx, i))
     case e: Enumeration => extensions.flatMap(ex => ex.imports(ctx, e))
+    case _ => List.empty
+  }
+
+  def postEmitModules(ctx: CSTContext, id: TypeDef): Seq[Module] = id match {
+    case i: Identifier => extensions.flatMap(ex => ex.postEmitModules(ctx, i))
+    case e: Enumeration => extensions.flatMap(ex => ex.postEmitModules(ctx, e))
     case _ => List.empty
   }
 

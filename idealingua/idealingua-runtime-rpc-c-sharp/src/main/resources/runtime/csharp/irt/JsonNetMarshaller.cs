@@ -23,4 +23,28 @@ namespace irt {
             return JsonConvert.DeserializeObject<O>(data, settings);
         }
     }
+
+    class JsonNetDateConverter : IsoDateTimeConverter {
+        public JsonNetDateConverter() {
+            base.DateTimeFormat = "yyyy-MM-dd";
+        }
+    }
+
+    class JsonNetTimeConverter : IsoDateTimeConverter {
+        public JsonNetTimeConverter() {
+            base.DateTimeFormat = "HH:mm:ss";
+        }
+    }
+
+    class JsonNetDateTimeLocalConverter : IsoDateTimeConverter {
+        public JsonNetDateTimeLocalConverter() {
+            base.DateTimeFormat = "yyyy-MM-ddTHH:mm:ss.FFFFFFFzzz";
+        }
+    }
+
+    class JsonNetDateTimeUTCConverter : IsoDateTimeConverter {
+        public JsonNetDateTimeUTCConverter() {
+            base.DateTimeFormat = "yyyy-MM-ddTHH:mm:ss.FFFFFFFZ";
+        }
+    }
 }

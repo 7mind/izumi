@@ -1,10 +1,56 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSTContext
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Enumeration
+import com.github.pshirshov.izumi.idealingua.model.output.Module
 
 object NUnitExtension extends CSharpTranslatorExtension {
+  override def postEmitModules(ctx: CSTContext, id: Enumeration): Seq[Module] = {
+    val name = id.id.name
+    val testMember = id.members.head
+    val code =
+        s"""[TestFixture]
+           |public class ${name}_ShouldSerialize
+           |{
+           |    IJsonMarshaller marshaller;
+           |    public ${name}_ShouldSerialize() {
+           |        marshaller = new JsonNetMarshaller();
+           |    }
+           |
+           |    [Test]
+           |    public void Serialize() {
+           |        var v = ${name}.${testMember};
+           |        var json = marshaller.Marshal<${name}>(v);
+           |        Assert.AreEqual("\\"${testMember}\\"", json);
+           |    }
+           |
+           |    [Test]
+           |    public void Deserialize() {
+           |        var v = marshaller.Unmarshal<${name}>("\\"${testMember}\\"");
+           |        Assert.AreEqual(v, ${name}.${testMember});
+           |    }
+           |
+           |    [Test]
+           |    public void SerializeDeserialize() {
+           |        var v1 = ${name}.${testMember};
+           |        var json = marshaller.Marshal<${name}>(v1);
+           |        var v2 = marshaller.Unmarshal<${name}>(json);
+           |        Assert.AreEqual(v1, v2);
+           |    }
+           |}
+         """.stripMargin
+
+    val header =
+      s"""using irt;
+         |using NUnit.Framework;
+       """.stripMargin
+
+    ctx.modules.toTestSource(id.id.path.domain, ctx.modules.toTestModuleId(id.id), header, code)
+  }
+
   //  override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct): EnumProduct = {
   //    val it = enum.members.iterator
   //    val values = it.map { m =>
@@ -55,41 +101,7 @@ public class HelloTest
 
 /*
 
-using NUnit.Framework;
-using irt;
 
-namespace idltest.enums
-{
-    [TestFixture]
-    public class TestEnum_ShouldSerialize
-    {
-        IJsonMarshaller marshaller;
-        public TestEnum_ShouldSerialize() {
-            marshaller = new JsonNetMarshaller();
-        }
-
-        [Test]
-        public void Serialize() {
-            var v = TestEnum.Element1;
-            var json = marshaller.Marshal<TestEnum>(v);
-            Assert.AreEqual("\"Element1\"", json);
-        }
-
-        [Test]
-        public void Deserialize() {
-            var v = marshaller.Unmarshal<TestEnum>("\"Element1\"");
-            Assert.AreEqual(v, TestEnum.Element1);
-        }
-
-        [Test]
-        public void SerializeDeserialize() {
-            var v1 = TestEnum.Element1;
-            var json = marshaller.Marshal<TestEnum>(v1);
-            var v2 = marshaller.Unmarshal<TestEnum>(json);
-            Assert.AreEqual(v1, v2);
-        }
-    }
-}
  */
 
 /*

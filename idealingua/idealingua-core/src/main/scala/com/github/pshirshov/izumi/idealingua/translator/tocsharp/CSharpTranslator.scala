@@ -61,7 +61,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
         RenderableCogenProduct.empty
     }
 
-    ctx.modules.toSource(definition.id.path.domain, ctx.modules.toModuleId(definition), defns)
+    ctx.modules.toSource(definition.id.path.domain, ctx.modules.toModuleId(definition), defns) ++ ext.postEmitModules(ctx, definition)
   }
 
   protected def renderDto(i: DTO): RenderableCogenProduct = {
@@ -197,11 +197,11 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |${ext.postModelEmit(ctx, i)}
          """.stripMargin
 
-    ext.postModuleEmit(i, EnumProduct(
+    EnumProduct(
       decl,
       imports.renderImports(List("System") ++ ext.imports(ctx, i)),
       ""
-    ), _.handleEnum)
+    )
   }
 
   protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
