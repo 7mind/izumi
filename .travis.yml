@@ -11,7 +11,7 @@ scala:
 
 before_install:
   - npm i -g 'typescript@2.9.2'
-  - sudo apt-get install golang-go
+  - sudo apt-get -y install golang-go
   - echo "Go `go version`"
   - echo "TS `tsc -version`"
   - echo "Java `java -version`"
