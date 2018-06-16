@@ -2,6 +2,8 @@ sudo: required
 dist: trusty
 
 language: scala
+#go:
+#  - "1.10"
 
 jdk:
   - oraclejdk9
@@ -9,11 +11,13 @@ jdk:
 scala:
   - 2.12.6
 
-
-
-
 before_install:
-  - npm i -g 'typescript@2.8.3'
+  - jdk_switcher use oraclejdk9
+  - npm i -g 'typescript@2.9.2'
+  - GIMME_OUTPUT="$(gimme 1.10 | tee -a $HOME/.bashrc)" && eval "$GIMME_OUTPUT"
+  - echo "Go `go version`"
+  - echo "TS `tsc -version`"
+  - echo "Java `java -version`"
 
 before_script:
   - bash travis.sh versionate
