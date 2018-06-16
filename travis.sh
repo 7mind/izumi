@@ -75,7 +75,8 @@ function deploy {
   site
 }
 
-
+go version
+tsc -version
 
 PARAMS=()
 SOFT=0
