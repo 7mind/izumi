@@ -1,5 +1,8 @@
 #!/bin/bash -xe
 
+export GOPATH=$HOME/gopath
+export PATH=$HOME/gopath/bin:$PATH
+
 function block_open {
     echo -en "travis_fold:start:$1\\r"
 }
@@ -74,9 +77,6 @@ function deploy {
   publish
   site
 }
-
-go version
-tsc -version
 
 PARAMS=()
 SOFT=0
