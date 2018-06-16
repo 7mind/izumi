@@ -12,7 +12,7 @@ scala:
 before_install:
   - npm i -g 'typescript@2.9.2'
   - sudo apt-get purge golang*
-  - sudo add-apt-repository ppa:gophers/archive
+  - sudo add-apt-repository -y ppa:gophers/archive
   - sudo apt-get update
   - sudo apt-get -y install golang-1.10-go
   #- sudo apt-get -y install golang-go
