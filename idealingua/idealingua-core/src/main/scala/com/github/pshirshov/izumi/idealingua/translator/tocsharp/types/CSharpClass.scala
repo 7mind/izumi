@@ -36,6 +36,7 @@ final case class CSharpClass (
          |${fields.map(f => f.renderMember(false)).mkString("\n").shift(indent)}
          |
          |    public $name() {
+         |${fields.map(f => if(f.tp.getInitValue.isDefined) f.renderMemberName() + " = " + f.tp.getInitValue.get + ";" else "").filterNot(_.isEmpty).mkString("\n").shift(8)}
          |    }
          |
          |${if (!fields.isEmpty) ctorWithParams.shift(4) else ""}

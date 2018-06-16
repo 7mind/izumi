@@ -15,6 +15,7 @@ final case class CSharpType (
   def isNullable: Boolean = isNullableImpl(id)
   def defaultValue: String = getDefaultValue(id)
   def getRandomValue: String = getRandomValue(id)
+  def getInitValue: Option[String] = getInitValue(id)
 
   def isNullableImpl(id: TypeId): Boolean = id match {
     case g: Generic => g match {
@@ -112,6 +113,38 @@ final case class CSharpType (
     }
   }
 
+  private def getInitValue(id: TypeId): Option[String] = id match {
+    case g: Generic => g match {
+      case _: Generic.TMap => Some(s"new ${renderType()}()")
+      case _: Generic.TList => Some(s"new ${renderType()}()")
+      case _: Generic.TSet => Some(s"new ${renderType()}()")
+      case _: Generic.TOption => None
+    }
+    case p: Primitive => p match {
+      case Primitive.TBool => None
+      case Primitive.TString => None
+      case Primitive.TInt8 => None
+      case Primitive.TInt16 => None
+      case Primitive.TInt32 => None
+      case Primitive.TInt64 => None
+      case Primitive.TFloat => None
+      case Primitive.TDouble => None
+      case Primitive.TUUID => None
+      case Primitive.TTime => None
+      case Primitive.TDate => None
+      case Primitive.TTs => None
+      case Primitive.TTsTz => None
+    }
+    case _ => id match {
+      case e: EnumId => None
+      case _: InterfaceId => None
+      case _: IdentifierId => None
+      case _: AdtId | _: DTOId => None
+      case al: AliasId => getInitValue(ts.dealias(al))
+      case _ => throw new IDLException(s"Impossible getInitValue type: ${id.name}")
+    }
+  }
+
   private def getRandomValue(id: TypeId): String = {
     val rnd = new scala.util.Random()
     id match {
@@ -145,7 +178,7 @@ final case class CSharpType (
         case _: IdentifierId => "null"
         case _: AdtId | _: DTOId => "null"
         case al: AliasId => getRandomValue(ts.dealias(al))
-        case _ => throw new IDLException(s"Impossible getDefaultValue type: ${id.name}")
+        case _ => throw new IDLException(s"Impossible getRandomValue type: ${id.name}")
       }
     }
   }
