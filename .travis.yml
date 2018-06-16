@@ -11,13 +11,11 @@ scala:
 
 before_install:
   - npm i -g 'typescript@2.9.2'
-  - sudo apt-get purge golang*
   - sudo add-apt-repository -y ppa:gophers/archive
   - sudo apt-get update
   - sudo apt-get -y install golang-1.10-go
-  #- sudo apt-get -y install golang-go
-  #- sudo update-alternatives --install "/usr/bin/go" "go" "/usr/local/go/bin/go" 0
-  - sudo update-alternatives --set go /usr/lib/go-1.10/bin
+  - sudo update-alternatives --quiet --install /usr/local/go go /usr/lib/go-1.10/bin 1.10
+  #- sudo update-alternatives --set go /usr/lib/go-1.10/bin
   - echo "Go `go version`"
   - echo "TS `tsc -version`"
   - echo "Java `java -version`"
