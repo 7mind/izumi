@@ -14,6 +14,7 @@ final case class CSharpType (
   def isNative: Boolean = isNativeImpl(id)
   def isNullable: Boolean = isNullableImpl(id)
   def defaultValue: String = getDefaultValue(id)
+  def getRandomValue: String = getRandomValue(id)
 
   def isNullableImpl(id: TypeId): Boolean = id match {
     case g: Generic => g match {
@@ -108,6 +109,44 @@ final case class CSharpType (
       case _: AdtId | _: DTOId => "null"
       case al: AliasId => getDefaultValue(ts.dealias(al))
       case _ => throw new IDLException(s"Impossible getDefaultValue type: ${id.name}")
+    }
+  }
+
+  private def getRandomValue(id: TypeId): String = {
+    val rnd = new scala.util.Random()
+    id match {
+      case g: Generic => g match {
+        case _: Generic.TMap => "null"
+        case _: Generic.TList => "null"
+        case _: Generic.TSet => "null"
+        case _: Generic.TOption => "null"
+      }
+      case p: Primitive => p match {
+        case Primitive.TBool => rnd.nextBoolean().toString
+        case Primitive.TString => "null"
+        case Primitive.TInt8 => rnd.nextInt(255).toString
+        case Primitive.TInt16 => (256 + rnd.nextInt(32767 - 255)).toString
+        case Primitive.TInt32 => (32768 + rnd.nextInt(2147483647 - 32767)).toString
+        case Primitive.TInt64 => (2147483648L + rnd.nextInt(2147483647)).toString
+        case Primitive.TFloat => rnd.nextFloat().toString
+        case Primitive.TDouble => (2147483648L + rnd.nextFloat()).toString
+        case Primitive.TUUID => java.util.UUID.randomUUID.toString
+        case Primitive.TTime => s"${rnd.nextInt(24)}:${rnd.nextInt(60)}:${rnd.nextInt(60)}"
+        case Primitive.TDate => s"${1984 + rnd.nextInt(20)}:${rnd.nextInt(12)}:${rnd.nextInt(28)}"
+        case Primitive.TTs => s"${1984 + rnd.nextInt(20)}:${rnd.nextInt(12)}:${rnd.nextInt(28)}T${rnd.nextInt(24)}:${rnd.nextInt(60)}:${rnd.nextInt(60)}.${10000 + rnd.nextInt(10000)}+10:00"
+        case Primitive.TTsTz => s"${1984 + rnd.nextInt(20)}:${rnd.nextInt(12)}:${rnd.nextInt(28)}T${rnd.nextInt(24)}:${rnd.nextInt(60)}:${rnd.nextInt(60)}.${10000 + rnd.nextInt(10000)}Z"
+      }
+      case _ => id match {
+        case e: EnumId => {
+          val enu = ts(e).asInstanceOf[Enumeration]
+          s"${e.name}.${enu.members(rnd.nextInt(enu.members.length))}"
+        }
+        case _: InterfaceId => "null"
+        case _: IdentifierId => "null"
+        case _: AdtId | _: DTOId => "null"
+        case al: AliasId => getRandomValue(ts.dealias(al))
+        case _ => throw new IDLException(s"Impossible getDefaultValue type: ${id.name}")
+      }
     }
   }
 
