@@ -48,6 +48,8 @@ trait WithDITypeTags {
       }
       Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
     }
+
+    // hmm, it works, but not always...
     implicit final val tagNothing: Tag[Nothing] =
       new Tag[Nothing] {
         override val tag: TypeTag[Nothing] = typeTag[Nothing]
@@ -56,10 +58,22 @@ trait WithDITypeTags {
 
   trait TagInstances0 extends TagInstances1 {
     // `Any` is apparently kind polymorphic (only inside the compiler, you can't use that ._.), which breaks other instances, so it's handled separately.
-    implicit final val tagAny: Tag[Any] =
+    implicit val tagAny: Tag[Any] =
       new Tag[Any] {
         override val tag: TypeTag[Any] = typeTag[Any]
       }
+
+//
+//    implicit final val tagNothing: Tag[Nothing] =
+//      new Tag[Nothing] {
+//        override val tag: TypeTag[Nothing] = typeTag[Nothing]
+//      }
+//
+//    implicit def tagDNothing[A <: Nothing]: Tag[A] = ???
+//
+//    implicit def tagFromTypeTagA[A: TypeTag]: Tag[A] = Tag(typeTag[A])
+
+    implicit def tagUNothing[A >: Nothing](implicit ev: A =:= Nothing): Tag[A] = ???
 
   }
 

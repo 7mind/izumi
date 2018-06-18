@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.Fixtures.Case16.TestProviderModule
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
@@ -357,7 +358,25 @@ class StaticInjectorTest extends WordSpec {
       assert(context.get[ConcreteProduct] == ConcreteProduct(TestConf(false), 50))
     }
 
-    "progression test: can't handle path-dependent injections" in {
+    "macros can handle class local path-dependent injections" in {
+      val definition = new StaticModuleDef {
+        stat[TopLevelPathDepTest.TestClass]
+        stat[TopLevelPathDepTest.TestDependency]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[TopLevelPathDepTest.TestClass].a != null)
+    }
+
+    "macros can handle inner path-dependent injections" in {
+      new InnerPathDepTest().testCase
+    }
+
+    "progression test: macros can't handle function local path-dependent injections" in {
       val fail = Try {
         import Case16._
 
@@ -373,7 +392,7 @@ class StaticInjectorTest extends WordSpec {
 
         val context = injector.produce(plan)
 
-        assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
+        assert(context.get[testProviderModule.TestClass].a != null)
       }.isFailure
       assert(fail)
     }
@@ -416,5 +435,23 @@ class StaticInjectorTest extends WordSpec {
     }
 
   }
+
+  class InnerPathDepTest extends TestProviderModule {
+    private val definition = new StaticModuleDef {
+      stat[TestClass]
+      stat[TestDependency]
+    }
+
+    def testCase = {
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].a != null)
+    }
+  }
+
+  object TopLevelPathDepTest extends TestProviderModule
 
 }
