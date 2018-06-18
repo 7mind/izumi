@@ -12,6 +12,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
+import scala.util.Try
 
 class StaticInjectorTest extends WordSpec {
 
@@ -354,6 +355,27 @@ class StaticInjectorTest extends WordSpec {
       val context = injector.produce(plan)
 
       assert(context.get[ConcreteProduct] == ConcreteProduct(TestConf(false), 50))
+    }
+
+    "progression test: can't handle path-dependent injections" in {
+      val fail = Try {
+        import Case16._
+
+        val testProviderModule = new TestProviderModule
+
+        val definition = new StaticModuleDef {
+          stat[testProviderModule.TestClass]
+          stat[testProviderModule.TestDependency]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+
+        val context = injector.produce(plan)
+
+        assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
+      }.isFailure
+      assert(fail)
     }
 
     """Progression test: macros do not yet support tagless final style module definitions bcs they don't support multiple parameter lists

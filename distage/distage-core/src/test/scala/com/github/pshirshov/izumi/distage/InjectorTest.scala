@@ -648,6 +648,9 @@ class InjectorTest extends WordSpec {
         make[TestServiceTrait[F]]
         make[Int].named("TestService").from(getResult)
         make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
+        make[Either[String, Int]].from(Right(1))
+        make[F[Nothing]]
+        make[Either[String, F[Int]]].from(Right[Nothing, F[Int]](Pointed[F].point(1)))
       }
 
       val listInjector = mkInjector()
@@ -658,6 +661,8 @@ class InjectorTest extends WordSpec {
       assert(listContext.get[TestServiceClass[List]].get == List(5))
       assert(listContext.get[TestServiceTrait[List]].get == List(10))
       assert(listContext.get[List[String]] == List("Hello 5!"))
+      assert(listContext.get[Either[String, Int]] == Right(1))
+      assert(listContext.get[Either[String, List[Int]]] == Right(List(1)))
 
       val setInjector = mkInjector()
       val setPlan = setInjector.plan(Definition[Set](5))
