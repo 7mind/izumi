@@ -2,24 +2,21 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, NUnitExtension, Unity3DExtension}
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, NUnitExtension}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.translator.csharp.types.CSharpField
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpType}
-//import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types._
 
 object CSharpTranslator {
   final val defaultExtensions = Seq(
     JsonNetExtension,
-    Unity3DExtension,
     NUnitExtension
   )
 }
@@ -40,10 +37,15 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
 
   protected def translateService(definition: Service): Seq[Module] = {
+    implicit val ts: Typespace = this.ts
+    implicit val imports: CSharpImports = CSharpImports(definition, definition.id.domain.toPackage, List.empty)
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderService(definition))
   }
 
   protected def translateDef(definition: TypeDef): Seq[Module] = {
+    implicit val ts: Typespace = this.ts
+    implicit val imports: CSharpImports = CSharpImports(definition, definition.id.path.toPackage)
+
     val defns = definition match {
       case i: Alias =>
         renderAlias(i)
@@ -64,24 +66,23 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
     ctx.modules.toSource(definition.id.path.domain, ctx.modules.toModuleId(definition), defns) ++ ext.postEmitModules(ctx, definition)
   }
 
-  protected def renderDto(i: DTO): RenderableCogenProduct = {
-    implicit val ts: Typespace = this.ts
-    implicit val imports: CSharpImports = CSharpImports(i, i.id.path.toPackage)
-    val structure = typespace.structure.structure(i)
-
+  protected def renderDto(i: DTO)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
+    val structure = ts.structure.structure(i)
     val struct = CSharpClass(i.id, i.id.name, structure, List.empty)
 
     val dto =
-      s"""${imports.renderUsings()}
-         |${struct.render(withWrapper = true, withSlices = true)}
+      s"""${im.renderUsings()}
+         |${ext.preModelEmit(ctx, i)}
+         |${struct.renderHeader()} {
+         |${struct.render(withWrapper = false, withSlices = true).shift(4)}
+         |}
+         |${ext.postModelEmit(ctx, i)}
        """.stripMargin
 
-      CompositeProduct(dto, imports.renderImports())
+      CompositeProduct(dto, im.renderImports(ext.imports(ctx, i).toList))
   }
 
-  protected def renderAlias(i: Alias): RenderableCogenProduct = {
-    implicit val ts: Typespace = this.ts
-    implicit val imports: CSharpImports = CSharpImports(i, i.id.path.toPackage)
+  protected def renderAlias(i: Alias)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
     val cstype = CSharpType(i.target)
 
     AliasProduct(
@@ -147,17 +148,12 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
      """.stripMargin
   }
 
-  protected def renderAdt(i: Adt): RenderableCogenProduct = {
-    implicit val ts: Typespace = this.ts
-    implicit val imports: CSharpImports = CSharpImports(i, i.id.path.toPackage)
+  protected def renderAdt(i: Adt)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
 
-    AdtProduct(renderAdtImpl(i.id.name, i.alternatives), imports.renderImports())
+    AdtProduct(renderAdtImpl(i.id.name, i.alternatives), im.renderImports(ext.imports(ctx, i).toList))
   }
 
-  protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
-    implicit val ts: Typespace = this.ts
-    implicit val imports: CSharpImports = CSharpImports(i, i.id.path.toPackage)
-
+  protected def renderEnumeration(i: Enumeration)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
       val name = i.id.name
       val decl =
         s"""// $name Enumeration
@@ -199,14 +195,12 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
     EnumProduct(
       decl,
-      imports.renderImports(List("System") ++ ext.imports(ctx, i)),
+      im.renderImports(List("System") ++ ext.imports(ctx, i)),
       ""
     )
   }
 
-  protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
-      implicit val ts: Typespace = this.ts
-      implicit val imports: CSharpImports = CSharpImports(i, i.id.path.toPackage)
+  protected def renderIdentifier(i: Identifier)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
 
       val fields = ts.structure.structure(i).all.map(f => CSharpField(f.field, i.id.name))
       val fieldsSorted = fields.sortBy(_.name)
@@ -214,7 +208,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
       val prefixLength = i.id.name.length + 1
 
       val decl =
-        s"""${imports.renderUsings()}
+        s"""${im.renderUsings()}
            |${ext.preModelEmit(ctx, i)}
            |${csClass.renderHeader()} {
            |    private static char[] idSplitter = new char[]{':'};
@@ -249,32 +243,37 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
     IdentifierProduct(
       decl,
-      imports.renderImports(List("System") ++ ext.imports(ctx, i))
+      im.renderImports(List("System") ++ ext.imports(ctx, i))
     )
   }
 
-  protected def renderInterface(i: Interface): RenderableCogenProduct = {
-    implicit val ts: Typespace = this.ts
-    implicit val imports: CSharpImports = CSharpImports(i, i.id.path.toPackage)
-
+  protected def renderInterface(i: Interface)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
     val structure = typespace.structure.structure(i)
     val eid = typespace.tools.implId(i.id)
     val ifaceFields = structure.all.filterNot(f => i.struct.superclasses.interfaces.contains(f.defn.definedBy)).map(f =>
       (if (f.defn.variance.nonEmpty) true else false, CSharpField(/*if (f.defn.variance.nonEmpty) f.defn.variance.last else */f.field, eid.name, Seq.empty)))
 
     val struct = CSharpClass(eid, i.id.name + eid.name, structure, List(i.id))
-  // .map(f => if (f.defn.variance.nonEmpty) f.defn.variance.last else f.field )
     val ifaceImplements = if (i.struct.superclasses.interfaces.isEmpty) "" else " : " +
       i.struct.superclasses.interfaces.map(ifc => ifc.name).mkString(", ")
 
+
     val iface =
-      s"""${imports.renderUsings()}
+      s"""${im.renderUsings()}
+         |${ext.preModelEmit(ctx, i)}
          |public interface ${i.id.name}$ifaceImplements {
          |${ifaceFields.map(f => s"${if (f._1) "// Would have been covariance, but C# doesn't support it:\n// " else ""}${f._2.renderMember(true)}").mkString("\n").shift(4)}
          |}
+         |${ext.postModelEmit(ctx, i)}
        """.stripMargin
 
-    val companion = struct.render(withWrapper = true, withSlices = true)
+    val companion =
+      s"""${ext.preModelEmit(ctx, i)}
+         |${struct.renderHeader()} {
+         |${struct.render(withWrapper = false, withSlices = true).shift(4)}
+         |}
+         |${ext.postModelEmit(ctx, i)}
+       """.stripMargin
 
 //      s"""${struct.render()}
 //         |${struct.renderSerialized()}
@@ -320,8 +319,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 //         |}
 //         |${renderRegistrations(ts.inheritance.allParents(i.id), eid.name, imports)}
 //       """.stripMargin
-
-    InterfaceProduct(iface, companion, imports.renderImports())
+    InterfaceProduct(iface, companion, im.renderImports(ext.imports(ctx, i).toList))
   }
 
   protected def renderServiceMethodSignature(i: Service, method: Service.DefMethod, forClient: Boolean)
@@ -499,10 +497,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
     i.methods.flatMap(me => renderServiceMethodAdtUsings(i, me)).distinct.mkString("\n")
   }
 
-  protected def renderService(i: Service): RenderableCogenProduct = {
-      implicit val ts: Typespace = this.ts
-      implicit val imports: CSharpImports = CSharpImports(i, i.id.domain.toPackage, List.empty)
-
+  protected def renderService(i: Service)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
       val svc =
         s"""${renderServiceUsings(i)}
            |
@@ -520,7 +515,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |${renderServiceServerDummy(i)}
          """.stripMargin
 
-    ServiceProduct(svc, imports.renderImports(List("irt", "System"))) //imports.renderImports(List("irt")))
+    ServiceProduct(svc, im.renderImports(List("irt", "System"))) //imports.renderImports(List("irt")))
   }
 }
 

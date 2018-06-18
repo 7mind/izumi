@@ -11,11 +11,17 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpTyp
 
 
 object NUnitExtension extends CSharpTranslatorExtension {
-  override def postEmitModules(ctx: CSTContext, id: Enumeration): Seq[Module] = {
+  override def postEmitModules(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
     val name = id.id.name
     val testMember = id.members.head
     val code =
-        s"""[TestFixture]
+        s"""public static class ${name}TestHelper {
+           |    public static ${name} Create() {
+           |        return ${name}.${testMember};
+           |    }
+           |}
+           |
+           |[TestFixture]
            |public class ${name}_ShouldSerialize {
            |    IJsonMarshaller marshaller;
            |    public ${name}_ShouldSerialize() {
@@ -24,7 +30,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
            |
            |    [Test]
            |    public void Serialize() {
-           |        var v = ${name}.${testMember};
+           |        var v = ${name}TestHelper.Create();
            |        var json = marshaller.Marshal<${name}>(v);
            |        Assert.AreEqual("\\"${testMember}\\"", json);
            |    }
@@ -37,7 +43,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
            |
            |    [Test]
            |    public void SerializeDeserialize() {
-           |        var v1 = ${name}.${testMember};
+           |        var v1 = ${name}TestHelper.Create();
            |        var json = marshaller.Marshal<${name}>(v1);
            |        var v2 = marshaller.Unmarshal<${name}>(json);
            |        Assert.AreEqual(v1, v2);
@@ -53,13 +59,16 @@ object NUnitExtension extends CSharpTranslatorExtension {
     ctx.modules.toTestSource(id.id.path.domain, ctx.modules.toTestModuleId(id.id), header, code)
   }
 
-  override def postEmitModules(ctx: CSTContext, id: Identifier): Seq[Module] = {
-    implicit val ts: Typespace = ctx.typespace
-    implicit val im: CSharpImports = new CSharpImports()
-
+  override def postEmitModules(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
     val name = id.id.name
     val code =
-      s"""[TestFixture]
+      s"""public static class ${name}TestHelper {
+         |    public static ${name} Create() {
+         |        return new ${name}(${id.fields.map(f => CSharpType(f.typeId).getRandomValue).mkString(", ")});
+         |    }
+         |}
+         |
+         |[TestFixture]
          |public class ${name}_ShouldSerialize {
          |    IJsonMarshaller marshaller;
          |
@@ -69,7 +78,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
          |
          |    [Test]
          |    public void SerializeDeserialize() {
-         |        var v1 = new $name(${id.fields.map(f => CSharpType(f.typeId).getRandomValue).mkString(", ")});
+         |        var v1 = ${name}TestHelper.Create();
          |        var json1 = marshaller.Marshal<$name>(v1);
          |        var v2 = marshaller.Unmarshal<$name>(json1);
          |        var json2 = marshaller.Marshal<$name>(v2);

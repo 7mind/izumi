@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
@@ -191,6 +192,8 @@ final case class CSharpType (
         case Primitive.TInt32 => return s"$name.ToString()"
         case Primitive.TInt64 => return s"$name.ToString()"
         case Primitive.TUUID => s"$name.ToString()"
+        case _: EnumId => s"$name.ToString()"
+        case _: IdentifierId => s"$name.ToString()"
         case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
       }
       if (escape) {
@@ -209,30 +212,32 @@ final case class CSharpType (
           case Primitive.TInt32 => s"int.Parse($src)"
           case Primitive.TInt64 => s"long.Parse($src)"
           case Primitive.TUUID => s"new Guid($source)"
+          case e: EnumId => s"${e.name}Helpers.From(${src})"
+          case i: IdentifierId => s"${i.name}.From(${src})"
           case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
       }
     }
 
-  def renderType(serialized: Boolean = false): String = {
-    renderNativeType(id, serialized)
+  def renderType(): String = {
+    renderNativeType(id)
   }
 
-  private def renderNativeType(id: TypeId, serialized: Boolean): String = id match {
-    case g: Generic => renderGenericType(g, serialized)
-    case p: Primitive => renderPrimitiveType(p, serialized)
-    case _ => renderUserType(id, serialized)
+  private def renderNativeType(id: TypeId): String = id match {
+    case g: Generic => renderGenericType(g)
+    case p: Primitive => renderPrimitiveType(p)
+    case _ => renderUserType(id)
   }
 
-  private def renderGenericType(generic: Generic, serialized: Boolean): String = {
+  private def renderGenericType(generic: Generic): String = {
     generic match {
-      case gm: Generic.TMap => s"Dictionary<${renderNativeType(gm.keyType, serialized)}, ${renderNativeType(gm.valueType, serialized)}>"
-      case gl: Generic.TList => s"List<${renderNativeType(gl.valueType, serialized)}>"
-      case gs: Generic.TSet => s"List<${renderNativeType(gs.valueType, serialized)}>"
-      case go: Generic.TOption => if (!isNullableImpl(go.valueType)) s"Nullable<${renderNativeType(go.valueType, serialized)}>" else renderNativeType(go.valueType, serialized)
+      case gm: Generic.TMap => s"Dictionary<${renderNativeType(gm.keyType)}, ${renderNativeType(gm.valueType)}>"
+      case gl: Generic.TList => s"List<${renderNativeType(gl.valueType)}>"
+      case gs: Generic.TSet => s"List<${renderNativeType(gs.valueType)}>"
+      case go: Generic.TOption => if (!isNullableImpl(go.valueType)) s"Nullable<${renderNativeType(go.valueType)}>" else renderNativeType(go.valueType)
     }
   }
 
-  protected def renderPrimitiveType(primitive: Primitive, serialized: Boolean = false): String = primitive match {
+  protected def renderPrimitiveType(primitive: Primitive): String = primitive match {
     case Primitive.TBool => "bool"
     case Primitive.TString => "string"
     case Primitive.TInt8 => "sbyte"
@@ -242,32 +247,22 @@ final case class CSharpType (
     case Primitive.TFloat => "float"
     case Primitive.TDouble => "double"
     case Primitive.TUUID => "Guid"
-    case Primitive.TTime => if (serialized) "string" else "TimeSpan"
-    case Primitive.TDate => if (serialized) "string" else "DateTime" // Could be Date
-    case Primitive.TTs => if (serialized) "string" else "DateTime"
-    case Primitive.TTsTz => if (serialized) "string" else "DateTime"
+    case Primitive.TTime => "TimeSpan"
+    case Primitive.TDate => "DateTime" // Could be Date
+    case Primitive.TTs => "DateTime"
+    case Primitive.TTsTz => "DateTime"
   }
 
-  protected def renderUserType(id: TypeId, serialized: Boolean = false, forAlias: Boolean = false, forMap: Boolean = false): String = {
-//    if (serialized) {
-//      id match {
-//        case _: InterfaceId => s"map[string]json.RawMessage"
-//        case _: AdtId => s"json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
-//        case _: IdentifierId | _: EnumId => s"string"
-//        case d: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(d)}${d.name}Serialized"
-//        case al: AliasId => if (isPrimitive(ts.dealias(al))) id.name else renderNativeType(ts.dealias(al), serialized)
-//        case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
-//      }
-//    } else {
+  protected def renderUserType(id: TypeId, forAlias: Boolean = false, forMap: Boolean = false): String = {
+
       id match {
         case _: EnumId => s"${im.withImport(id)}"
         case _: InterfaceId => s"${im.withImport(id)}"
         case _: IdentifierId => s"${im.withImport(id)}"
         case _: AdtId | _: DTOId => s"${im.withImport(id)}"
-        case al: AliasId => renderNativeType(ts.dealias(al), serialized)
+        case al: AliasId => renderNativeType(ts.dealias(al))
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
-//    }
   }
 //
 //  private def renderUnmarshalShared(in: String, out: String, errorCheck: Boolean): String = {

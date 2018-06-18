@@ -32,16 +32,20 @@ final case class CSharpClass (
            |}
          """.stripMargin
 
-      s"""${if (withWrapper) s"${renderHeader()} {" else ""}
-         |${fields.map(f => f.renderMember(false)).mkString("\n").shift(indent)}
-         |
-         |    public $name() {
-         |${fields.map(f => if(f.tp.getInitValue.isDefined) f.renderMemberName() + " = " + f.tp.getInitValue.get + ";" else "").filterNot(_.isEmpty).mkString("\n").shift(8)}
-         |    }
-         |
-         |${if (!fields.isEmpty) ctorWithParams.shift(4) else ""}
-         |${if (withSlices) ("\n" + renderSlices()).shift(indent) else ""}
-         |${if (withWrapper) "}" else ""}
+      val content =
+        s"""${fields.map(f => f.renderMember(false)).mkString("\n")}
+           |
+           |public $name() {
+           |${fields.map(f => if(f.tp.getInitValue.isDefined) f.renderMemberName() + " = " + f.tp.getInitValue.get + ";" else "").filterNot(_.isEmpty).mkString("\n").shift(4)}
+           |}
+           |
+           |${if (!fields.isEmpty) ctorWithParams else ""}
+           |${if (withSlices) ("\n" + renderSlices()) else ""}
+         """.stripMargin
+
+    s"""${if (withWrapper) s"${renderHeader()} {" else ""}
+       |${content.shift(indent)}
+       |${if (withWrapper) "}" else ""}
        """.stripMargin
   }
 

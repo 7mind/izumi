@@ -21,6 +21,8 @@ final case class CSharpField(
   }
 
   protected def safeName(name: String): String = {
+    val systemReserved = Seq("Type")
+
     val reserved = Seq("abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked",
       "class", "const", "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event",
       "explicit", "extern", "false", "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit", "in",
@@ -29,6 +31,8 @@ final case class CSharpField(
       "short", "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true", "try",
       "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "using", "static", "virtual", "void",
       "volatile", "while")
+
+    val all = systemReserved ++ reserved
 
 //      Contextual words in C#, not reserved:
 //      add	alias	ascending
@@ -41,12 +45,11 @@ final case class CSharpField(
 //      value	var	when (filter condition)
 //      where (generic type constraint)	where (query clause)	yield
 
-
     val finalName = name.capitalize
     if (finalName == structName) {
       s"@${finalName}_"
     } else {
-      if (reserved.contains(name)) s"@$finalName" else finalName
+      if (all.contains(name)) s"@$finalName" else finalName
     }
   }
 

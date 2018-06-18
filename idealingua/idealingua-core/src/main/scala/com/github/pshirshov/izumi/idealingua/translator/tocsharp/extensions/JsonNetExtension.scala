@@ -1,131 +1,348 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSTContext
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct.{EnumProduct, IdentifierProduct}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
+import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.csharp.types.CSharpField
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpType}
 
 object JsonNetExtension extends CSharpTranslatorExtension {
-  override def preModelEmit(ctx: CSTContext, id: Identifier): String = {
+  override def preModelEmit(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
     s"[JsonConverter(typeof(${id.id.name}_JsonNetConverter))]"
   }
 
-  override def postModelEmit(ctx: CSTContext, id: Identifier): String = {
+  override def postModelEmit(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
     s"""public class ${id.id.name}_JsonNetConverter: JsonConverter
        |{
-       |    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-       |    {
+       |    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
        |        ${id.id.name} id = (${id.id.name})value;
        |        writer.WriteValue(id.ToString());
        |    }
        |
-       |    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-       |    {
+       |    public override object ReadJson(JsonReader reader, System.Type objectType, object existingValue, JsonSerializer serializer) {
        |        return ${id.id.name}.From((string)reader.Value);
        |    }
        |
-       |    public override bool CanConvert(Type objectType)
-       |    {
+       |    public override bool CanConvert(System.Type objectType) {
        |        return objectType == typeof(${id.id.name});
        |    }
        |}
      """.stripMargin
   }
 
-  override def imports(ctx: CSTContext, id: Identifier): List[String] = {
+  override def imports(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
     List("Newtonsoft.Json")
   }
 
-  override def preModelEmit(ctx: CSTContext, id: Enumeration): String = {
+  override def preModelEmit(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
     s"[JsonConverter(typeof(${id.id.name}_JsonNetConverter))]"
   }
 
-  override def postModelEmit(ctx: CSTContext, id: Enumeration): String = {
+  override def postModelEmit(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
     s"""public class ${id.id.name}_JsonNetConverter: JsonConverter
        |{
-       |    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-       |    {
+       |    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
        |        ${id.id.name} v = (${id.id.name})value;
        |        writer.WriteValue(v.ToString());
        |    }
        |
-       |    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-       |    {
+       |    public override object ReadJson(JsonReader reader, System.Type objectType, object existingValue, JsonSerializer serializer) {
        |        return ${id.id.name}Helpers.From((string)reader.Value);
        |    }
        |
-       |    public override bool CanConvert(Type objectType)
-       |    {
+       |    public override bool CanConvert(System.Type objectType) {
        |        return objectType == typeof(${id.id.name});
        |    }
        |}
      """.stripMargin
   }
 
-
-  override def imports(ctx: CSTContext, id: Enumeration): List[String] = {
+  override def imports(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
     List("Newtonsoft.Json")
   }
 
+  override def preModelEmit(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): String = {
+    discard(ctx)
+    s"[JsonConverter(typeof(${id.id.name}_JsonNetConverter))]"
+  }
 
-//  override def handleEnum(ctx: CSTContext, enum: Enumeration, product: EnumProduct): EnumProduct = {
-//    product
-//    val it = enum.members.iterator
-//    val values = it.map { m =>
-//      s"${enum.id.name}.${m}" + (if (it.hasNext) "," else "")
-//    }.mkString("\n")
-//
-//    val extension =
-//      s"""
-//         |export class ${enum.id.name}Helpers {
-//         |    public static readonly all = [
-//         |${values.shift(8)}
-//         |    ]
-//         |
-//         |    public static isValid(value: string): boolean {
-//         |        return ${enum.id.name}Helpers.all.indexOf(value as ${enum.id.name}) >= 0;
-//         |    }
-//         |}
-//       """.stripMargin
-//
-//    EnumProduct(product.content + extension, product.preamble)
-//  }
-//
-//  override def handleIdentifier(ctx: CSTContext, id: Identifier, product: IdentifierProduct): IdentifierProduct = {
-//    product
-//  }
+  override def postModelEmit(ctx: CSTContext, i: DTO)(implicit im: CSharpImports, ts: Typespace): String = {
+    discard(ctx)
+    val structure = ts.structure.structure(i)
+    val struct = CSharpClass(i.id, i.id.name, structure, List.empty)
+
+    s"""public class ${i.id.name}_JsonNetConverter: JsonConverter
+       |{
+       |    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+       |        ${i.id.name} v = (${i.id.name})value;
+       |        writer.WriteStartObject();
+       |${struct.fields.map(f => writeProperty(f)).mkString("\n").shift(8)}
+       |        writer.WriteEndObject();
+       |    }
+       |
+       |    public override object ReadJson(JsonReader reader, System.Type objectType, object existingValue, JsonSerializer serializer) {
+       |        var json = JObject.Load(reader);
+       |${struct.fields.map(f => prepareReadProperty(f)).filter(_.isDefined).map(_.get).mkString("\n").shift(8)}
+       |        return new ${i.id.name}(
+       |${struct.fields.map(f => readProperty(f)).mkString(", \n").shift(12)}
+       |        );
+       |    }
+       |
+       |    public override bool CanConvert(System.Type objectType) {
+       |        return objectType == typeof(${i.id.name});
+       |    }
+       |}
+     """.stripMargin
+  }
+
+  override def imports(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): List[String] = {
+    discard(ctx)
+    List("Newtonsoft.Json", "Newtonsoft.Json.Linq")
+  }
+
+  private def writePropertyValue(src: String, t: CSharpType, key: Option[String] = None)(implicit im: CSharpImports, ts: Typespace): String = {
+    t.id match {
+      case g: Generic.TOption => {
+        s"""if (${if (t.isNullable) src + " != null" else src + ".HasValue"}) {
+           |${writePropertyValue(if (t.isNullable) src else src + ".Value", CSharpType(g.valueType), key).shift(4)}
+           |}
+         """.stripMargin
+      }
+      case _ => {
+        (if (key.isDefined) s"""writer.WritePropertyName("${key.get}");\n""" else "") + (
+          t.id match {
+            case g: Generic => g match {
+              case m: Generic.TMap =>
+                s"""writer.WriteStartObject();
+                   |foreach(var mkv in ${src}) {
+                   |    writer.WritePropertyName(mkv.Key.ToString());
+                   |${writePropertyValue("mkv.Value", CSharpType(m.valueType)).shift(4)}
+                   |}
+                   |writer.WriteEndObject();
+                 """.stripMargin
+              case l: Generic.TList =>
+                s"""writer.WriteStartArray();
+                   |foreach (var lv in ${src}) {
+                   |${writePropertyValue("lv", CSharpType(l.valueType)).shift(4)}
+                   |}
+                   |writer.WriteEndArray();
+                 """.stripMargin
+              case s: Generic.TSet =>
+                s"""writer.WriteStartArray();
+                   |foreach (var lv in ${src}) {
+                   |${writePropertyValue("lv", CSharpType(s.valueType)).shift(4)}
+                   |}
+                   |writer.WriteEndArray();
+                 """.stripMargin
+            }
+            case p: Primitive => p match {
+              case Primitive.TBool => s"writer.WriteValue(${src});"
+              case Primitive.TString => s"writer.WriteValue(${src});"
+              case Primitive.TInt8 => s"writer.WriteValue(${src});"
+              case Primitive.TInt16 => s"writer.WriteValue(${src});"
+              case Primitive.TInt32 => s"writer.WriteValue(${src});"
+              case Primitive.TInt64 => s"writer.WriteValue(${src});"
+              case Primitive.TFloat => s"writer.WriteValue(${src});"
+              case Primitive.TDouble => s"writer.WriteValue(${src});"
+              case Primitive.TUUID => s"writer.WriteValue(${src}.ToString());"
+              case Primitive.TTime => s"""writer.WriteValue(string.Format("{0:00}:{1:00}:{2:00}", (int)${src}.TotalHours, ${src}.Minutes, ${src}.Seconds));"""
+              case Primitive.TDate => s"""writer.WriteValue(${src}.ToString("yyyy-MM-dd"));"""
+              case Primitive.TTs => s"""writer.WriteValue(${src}.ToString("yyyy-MM-ddTHH:mm:ss.ffffffzzz"));"""
+              case Primitive.TTsTz => s"""writer.WriteValue(${src}.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ"));"""
+            }
+
+            case _ => t.id match {
+              case _: EnumId | _: IdentifierId => s"""writer.WriteValue(${src}.ToString());"""
+              case _: InterfaceId | _: AdtId | _: DTOId => s"""serializer.Serialize(writer, ${src});"""
+              case al: AliasId => writePropertyValue(src, CSharpType(ts.dealias(al)), key)
+              case _ => throw new IDLException(s"Impossible writePropertyValue type: ${t.id}")
+            }
+          }
+        )
+      }
+    }
+  }
+
+  private def writeProperty(f: CSharpField)(implicit im: CSharpImports, ts: Typespace): String = {
+    writePropertyValue("v." + f.renderMemberName(), f.tp, Some(f.name))
+  }
+
+  private def propertyNeedsPrepare(i: TypeId)(implicit im: CSharpImports, ts: Typespace): Boolean = i match {
+    case g: Generic => g match {
+      case _: Generic.TMap => true
+      case _: Generic.TList => true
+      case _: Generic.TSet => true
+      case _: Generic.TOption => true
+    }
+    case p: Primitive => p match {
+      case Primitive.TBool => false
+      case Primitive.TString => false
+      case Primitive.TInt8 => false
+      case Primitive.TInt16 => false
+      case Primitive.TInt32 => false
+      case Primitive.TInt64 => false
+      case Primitive.TFloat => false
+      case Primitive.TDouble => false
+      case Primitive.TUUID => false
+      case Primitive.TTime => false
+      case Primitive.TDate => false
+      case Primitive.TTs => false
+      case Primitive.TTsTz => false
+    }
+    case c => c match {
+      case _: EnumId | _: IdentifierId => false
+      case _: DTOId => true
+      case _: InterfaceId | _: AdtId => false
+      case al: AliasId => propertyNeedsPrepare(ts.dealias(al))
+      case _ => throw new IDLException(s"Impossible propertyNeedsPrepare type: $i")
+    }
+  }
+
+  private def prepareReadProperty(f: CSharpField)(implicit im: CSharpImports, ts: Typespace): Option[String] = {
+    if (!propertyNeedsPrepare(f.tp.id)) {
+      None
+    } else {
+      prepareReadPropertyValue(s"""json["${f.name}"]""", s"_${f.name}", f.tp, createDst = true)
+    }
+  }
+
+  private def prepareReadPropertyValue(src: String, dst: String, i: CSharpType, createDst: Boolean)(implicit im: CSharpImports, ts: Typespace): Option[String] = {
+    if (!propertyNeedsPrepare(i.id)) {
+      None
+    } else {
+      i.id match {
+        case gm: Generic.TMap => {
+          val mk = CSharpType(gm.keyType)
+          val mt = CSharpType(gm.valueType)
+          Some(
+            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
+               |foreach (var ${dst}_kv in ((JObject)${src}).Properties()) {
+               |    ${mt.renderType()} ${dst}_dv;
+               |${(if (propertyNeedsPrepare(mt.id)) prepareReadPropertyValue(dst + "_kv.Value", dst + "_dv", mt, createDst = false).get else s"${dst}_dv = ${readPropertyValue(dst + "_kv.Value", mt)};").shift(4)}
+               |    $dst.Add(${mk.renderFromString(dst + "_kv.Name", unescape = false)}, ${dst}_dv);
+               |}
+             """.stripMargin
+          )
+        }
+
+        case gl: Generic.TList => {
+          val lt = CSharpType(gl.valueType)
+          Some(
+            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
+               |foreach (var ${dst}_sv in (JArray)${src}) {
+               |    ${lt.renderType()} ${dst}_d;
+               |${(if (propertyNeedsPrepare(gl.valueType)) prepareReadPropertyValue(dst + "_sv", dst + "_d", lt, createDst = false).get else s"${dst}_d = ${readPropertyValue(dst + "_sv", lt)};").shift(4)}
+               |    $dst.Add(${dst}_d);
+               |}
+             """.stripMargin
+          )
+        }
+
+        case gs: Generic.TSet => {
+          val st = CSharpType(gs.valueType)
+          Some(
+            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
+               |foreach (var ${dst}_lv in (JArray)${src}) {
+               |    ${st.renderType()} ${dst}_d;
+               |${(if (propertyNeedsPrepare(gs.valueType)) prepareReadPropertyValue(dst + "_lv", dst + "_d", st, createDst = false).get else s"${dst}_d = ${readPropertyValue(dst + "_lv", st)};").shift(4)}
+               |    $dst.Add(${dst}_d);
+               |}
+             """.stripMargin
+          )
+        }
+
+        case o: Generic.TOption => {
+          val ot = CSharpType(o.valueType)
+          Some(
+            s"""${i.renderType()} $dst = null;
+               |if ($src == null) {
+               |${(if (propertyNeedsPrepare(o.valueType)) prepareReadPropertyValue(src, dst, ot, createDst = true).get else s"$dst = ${readPropertyValue(src, ot)};").shift(4)}
+               |}
+             """.stripMargin)
+        }
+
+        case al: AliasId => {
+          prepareReadPropertyValue(src, dst, CSharpType(ts.dealias(al)), createDst = true)
+        }
+
+        case _: DTOId => {
+          Some(
+            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
+               |serializer.Populate($src.CreateReader(), $dst);""".stripMargin
+          )
+        }
+      }
+    }
+  }
+
+  private def readPropertyValue(src: String, t: CSharpType)(implicit im: CSharpImports, ts: Typespace): String = {
+    t.id match {
+      case p: Primitive => p match {
+        case Primitive.TBool => s"$src.Value<bool>()"
+        case Primitive.TString => s"$src.Value<string>()"
+        case Primitive.TInt8 => s"$src.Value<sbyte>()"
+        case Primitive.TInt16 => s"$src.Value<short>()"
+        case Primitive.TInt32 => s"$src.Value<int>()"
+        case Primitive.TInt64 => s"$src.Value<long>()"
+        case Primitive.TFloat => s"$src.Value<float>()"
+        case Primitive.TDouble => s"$src.Value<double>()"
+        case Primitive.TUUID => s"new System.Guid($src.Value<string>())"
+        case Primitive.TTime => s"TimeSpan.Parse($src.Value<string>())"
+        case Primitive.TDate => s"DateTime.Parse($src.Value<string>())"
+        case Primitive.TTs => s"DateTime.Parse($src.Value<string>())"
+        case Primitive.TTsTz => s"DateTime.Parse($src.Value<string>()).ToUniversalTime()"
+      }
+      case _ => t.id match {
+        case _: EnumId => s"${t.renderType()}Helpers.From($src.Value<string>())"
+        case _: IdentifierId => s"${t.renderType()}.From($src.Value<string>())"
+        case _: InterfaceId | _: AdtId => s"/*interface/adtid*/null"
+        case al: AliasId => readPropertyValue(src, CSharpType(ts.dealias(al)))
+        case _ => throw new IDLException(s"Impossible readPropertyValue type: ${t.id}")
+      }
+    }
+  }
+
+  private def readProperty(f: CSharpField)(implicit im: CSharpImports, ts: Typespace): String = {
+    if (propertyNeedsPrepare(f.tp.id))
+      s"_${f.name}"
+    else
+      readPropertyValue(s"""json["${f.name}"]""", f.tp)
+  }
 }
 
 /*
-object EnumHelpersExtension extends TypeScriptTranslatorExtension {
-  override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct): EnumProduct = {
-    val it = enum.members.iterator
-    val values = it.map { m =>
-      s"${enum.id.name}.$m" + (if (it.hasNext) "," else "")
-    }.mkString("\n")
+public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+{
+  JObject json = JObject.Load(reader);
+  return new Success(
+  json["message"].Value<string>()
+  );
+}*/
 
-    val extension =
-      s"""
-         |export class ${enum.id.name}Helpers {
-         |    public static readonly all = [
-         |${values.shift(8)}
-         |    ];
-         |
-         |    public static isValid(value: string): boolean {
-         |        return ${enum.id.name}Helpers.all.indexOf(value as ${enum.id.name}) >= 0;
-         |    }
-         |}
-       """.stripMargin
+/*
+var name = new WeirdName();
+serializer.Populate(jObject.CreateReader(), name);
 
-    EnumProduct(product.content + extension, product.preamble)
-  }
+public override object ReadJson(JsonReader reader, Type objectType,
+object existingValue, JsonSerializer serializer)
+{
+JObject jsonObject = JObject.Load(reader);
+var properties = jsonObject.Properties().ToList();
+return new WeirdName {
+                   Name = properties[0].Name.Replace("$",""),
+                   Value = (string)properties[0].Value
+                 };
 }
 
  */
