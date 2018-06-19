@@ -23,7 +23,7 @@ final case class CSharpClass (
     s"public class $name$impls"
   }
 
-  def render(withWrapper: Boolean, withSlices: Boolean): String = {
+  def render(withWrapper: Boolean, withSlices: Boolean, withRTTI: Boolean, withCTORs: Option[String] = None): String = {
       val indent = if (withWrapper) 4 else 0
 
       val ctorWithParams =
@@ -32,8 +32,58 @@ final case class CSharpClass (
            |}
          """.stripMargin
 
+      val pkg = id.path.toPackage.mkString(".")
+      val rtti =
+        s"""public static readonly string RTTI_PACKAGE = "$pkg";
+           |public static readonly string RTTI_CLASSNAME = "${id.name}";
+           |public static readonly string RTTI_FULLCLASSNAME = "$pkg.${id.name}";
+           |public string GetPackageName() { return $name.RTTI_PACKAGE; }
+           |public string GetClassName() { return $name.RTTI_CLASSNAME; }
+           |public string GetFullClassName() { return $name.RTTI_FULLCLASSNAME; }
+         """.stripMargin
+
+      val ctors = if (withCTORs.isEmpty) "" else
+        s"""private static Dictionary<string, Func<object>> __ctors = new Dictionary<string, Func<object>>();
+           |public static void Register(string id, System.Func<object> ctor) {
+           |    if ($name.__ctors.ContainsKey(id)) {
+           |        $name.__ctors[id] = ctor;
+           |    } else {
+           |        $name.__ctors.Add(id, ctor);
+           |    }
+           |}
+           |
+           |public static void Unregister(string id) {
+           |    if ($name.__ctors.ContainsKey(id)) {
+           |        $name.__ctors.Remove(id);
+           |    }
+           |}
+           |
+           |public static object CreateInstance(string id) {
+           |    if (!$name.__ctors.ContainsKey(id)) {
+           |        throw new Exception("Unknown class name: " + id + " for interface ${withCTORs.get}.");
+           |    }
+           |
+           |    return $name.__ctors[id]();
+           |}
+           |
+           |static $name() {
+           |    var type = typeof(${withCTORs.get});
+           |    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()) {
+           |        foreach (var tp in assembly.GetTypes()) {
+           |            if (type.IsAssignableFrom(tp) && !tp.IsInterface) {
+           |                var rttiID = tp.GetField("RTTI_FULLCLASSNAME");
+           |                if (rttiID != null) {
+           |                    $name.Register((string)rttiID.GetValue(null), () => Activator.CreateInstance(tp));
+           |                }
+           |            }
+           |        }
+           |    }
+           |}
+         """.stripMargin
+
       val content =
-        s"""${fields.map(f => f.renderMember(false)).mkString("\n")}
+        s"""${if (withRTTI) rtti else ""}
+           |${fields.map(f => f.renderMember(false)).mkString("\n")}
            |
            |public $name() {
            |${fields.map(f => if(f.tp.getInitValue.isDefined) f.renderMemberName() + " = " + f.tp.getInitValue.get + ";" else "").filterNot(_.isEmpty).mkString("\n").shift(4)}
@@ -41,6 +91,7 @@ final case class CSharpClass (
            |
            |${if (!fields.isEmpty) ctorWithParams else ""}
            |${if (withSlices) ("\n" + renderSlices()) else ""}
+           |${if (withCTORs.isDefined) ctors else ""}
          """.stripMargin
 
     s"""${if (withWrapper) s"${renderHeader()} {" else ""}

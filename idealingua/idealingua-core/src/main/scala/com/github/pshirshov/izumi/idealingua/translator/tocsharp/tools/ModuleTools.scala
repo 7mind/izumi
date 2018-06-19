@@ -69,8 +69,8 @@ class ModuleTools() {
     Seq(Module(moduleId, text))
   }
 
-  def toTestModuleId(id: TypeId): ModuleId = {
-    ModuleId(id.path.toPackage, s"${id.name}_test.cs")
+  def toTestModuleId(id: TypeId, prefix: Option[String] = None): ModuleId = {
+    ModuleId(id.path.toPackage, s"${if (prefix.isDefined) prefix.get + id.name else id.name}_test.cs")
   }
 
   def toTestModuleId(id: ServiceId): ModuleId = {

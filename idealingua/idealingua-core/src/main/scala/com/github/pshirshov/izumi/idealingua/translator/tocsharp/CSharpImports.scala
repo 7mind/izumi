@@ -59,8 +59,8 @@ object CSharpImports {
   protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[String] = {
     t match {
       case Primitive.TTime => return Seq("System")
-      case Primitive.TTs => return Seq("System")
-      case Primitive.TTsTz => return Seq("System")
+      case Primitive.TTs => return Seq("System", "irt", "System.Globalization")
+      case Primitive.TTsTz => return Seq("System", "irt", "System.Globalization")
       case Primitive.TDate => return Seq("System")
       case Primitive.TUUID => return Seq("System")
       case g: Generic => g match {

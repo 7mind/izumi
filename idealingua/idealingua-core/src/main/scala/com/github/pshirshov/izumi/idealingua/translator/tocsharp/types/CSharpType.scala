@@ -8,6 +8,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Enumeration
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Structure, Super}
 
 final case class CSharpType (
                               id: TypeId)(implicit im: CSharpImports, ts: Typespace) {
@@ -15,8 +17,8 @@ final case class CSharpType (
   def isNative: Boolean = isNativeImpl(id)
   def isNullable: Boolean = isNullableImpl(id)
   def defaultValue: String = getDefaultValue(id)
-  def getRandomValue: String = getRandomValue(id)
   def getInitValue: Option[String] = getInitValue(id)
+  def getRandomValue(depth: Int = 0): String = getRandomValue(id, depth)
 
   def isNullableImpl(id: TypeId): Boolean = id match {
     case g: Generic => g match {
@@ -146,13 +148,13 @@ final case class CSharpType (
     }
   }
 
-  private def getRandomValue(id: TypeId): String = {
+  private def getRandomValue(id: TypeId, depth: Int): String = {
     val rnd = new scala.util.Random()
     id match {
       case g: Generic => g match {
-        case _: Generic.TMap => "null"
-        case _: Generic.TList => "null"
-        case _: Generic.TSet => "null"
+        case gm: Generic.TMap => s"new ${CSharpType(gm).renderType(true)}()"
+        case gl: Generic.TList => s"new ${CSharpType(gl).renderType(true)}()"
+        case gs: Generic.TSet => s"new ${CSharpType(gs).renderType(true)}()"
         case _: Generic.TOption => "null"
       }
       case p: Primitive => p match {
@@ -162,26 +164,64 @@ final case class CSharpType (
         case Primitive.TInt16 => (256 + rnd.nextInt(32767 - 255)).toString
         case Primitive.TInt32 => (32768 + rnd.nextInt(2147483647 - 32767)).toString
         case Primitive.TInt64 => (2147483648L + rnd.nextInt(2147483647)).toString
-        case Primitive.TFloat => rnd.nextFloat().toString
+        case Primitive.TFloat => rnd.nextFloat().toString + "f"
         case Primitive.TDouble => (2147483648L + rnd.nextFloat()).toString
         case Primitive.TUUID => s"""new System.Guid("${java.util.UUID.randomUUID.toString}")"""
-        case Primitive.TTime => s"${rnd.nextInt(24)}:${rnd.nextInt(60)}:${rnd.nextInt(60)}"
-        case Primitive.TDate => s"${1984 + rnd.nextInt(20)}:${rnd.nextInt(12)}:${rnd.nextInt(28)}"
-        case Primitive.TTs => s"${1984 + rnd.nextInt(20)}:${rnd.nextInt(12)}:${rnd.nextInt(28)}T${rnd.nextInt(24)}:${rnd.nextInt(60)}:${rnd.nextInt(60)}.${10000 + rnd.nextInt(10000)}+10:00"
-        case Primitive.TTsTz => s"${1984 + rnd.nextInt(20)}:${rnd.nextInt(12)}:${rnd.nextInt(28)}T${rnd.nextInt(24)}:${rnd.nextInt(60)}:${rnd.nextInt(60)}.${10000 + rnd.nextInt(10000)}Z"
+        case Primitive.TTime => s"""System.TimeSpan.Parse(string.Format("{0:D2}:{1:D2}:{2:D2}", ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}))"""
+        case Primitive.TDate => s"""System.DateTime.Parse(string.Format("{0:D4}-{1:D2}-{2:D2}", ${1984 + rnd.nextInt(20)}, ${rnd.nextInt(12)}, ${rnd.nextInt(28)}))"""
+        case Primitive.TTs => s"""System.DateTime.ParseExact(string.Format("{0:D4}-{1:D2}-{2:D2}T{3:D2}:{4:D2}:{5:D2}.{6:D6}+10:00", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}, ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}, ${10000 + rnd.nextInt(10000)}), JsonNetTimeFormats.Tsl, CultureInfo.InvariantCulture, DateTimeStyles.None)"""
+        case Primitive.TTsTz => s"""System.DateTime.ParseExact(string.Format("{0:D4}-{1:D2}-{2:D2}T{3:D2}:{4:D2}:{5:D2}.{6:D6}Z", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}, ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}, ${10000 + rnd.nextInt(10000)}), JsonNetTimeFormats.Tsz, CultureInfo.InvariantCulture, DateTimeStyles.None)"""
       }
       case _ => id match {
         case e: EnumId => {
           val enu = ts(e).asInstanceOf[Enumeration]
-          s"${e.name}.${enu.members(rnd.nextInt(enu.members.length))}"
+          s"${e.path.toPackage.mkString(".") + "." + e.name}.${enu.members(rnd.nextInt(enu.members.length))}"
         }
-        case _: InterfaceId => "null"
-        case _: IdentifierId => "null"
-        case _: AdtId | _: DTOId => "null"
-        case al: AliasId => getRandomValue(ts.dealias(al))
+        case i: InterfaceId => if (depth <= 0) "null" else randomInterface(i, depth)
+        case i: IdentifierId => randomIdentifier(i, depth)
+        case a: AdtId => if (depth <= 0) "null" else randomAdt(a, depth)
+        case i: DTOId => if (depth <= 0) "null" else randomDto(ts(i).asInstanceOf[DTO], depth)
+        case al: AliasId => getRandomValue(ts.dealias(al), depth)
         case _ => throw new IDLException(s"Impossible getRandomValue type: ${id.name}")
       }
     }
+  }
+
+  private def randomIdentifier(i: IdentifierId, depth: Int): String = {
+    val inst = ts(i).asInstanceOf[Identifier]
+    s"""new ${i.path.toPackage.mkString(".") + "." + i.name}(
+       |${inst.fields.map(f => CSharpType(f.typeId).getRandomValue(depth - 1)).mkString(",\n").shift(4)}
+       |)
+     """.stripMargin
+  }
+
+  private def randomAdt(i: AdtId, depth: Int): String = {
+    val adt = ts(i).asInstanceOf[Adt]
+    s"""new ${i.path.toPackage.mkString(".") + "." + i.name}.${adt.alternatives.head.name}(
+       |${CSharpType(adt.alternatives.head.typeId).getRandomValue(depth - 1).shift(4)}
+       |)
+     """.stripMargin
+  }
+
+  private def randomInterface(i: InterfaceId, depth: Int): String = {
+    val inst = ts(i).asInstanceOf[Interface]
+    val structure = ts.structure.structure(inst)
+    val eid = ts.tools.implId(inst.id)
+    val validFields = structure.all.filterNot(f => inst.struct.superclasses.interfaces.contains(f.defn.definedBy))
+    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(inst.id), List.empty, List.empty)))
+    randomDto(dto, depth)
+  }
+
+  private def randomDto(i: DTO, depth: Int): String = {
+      val structure = ts.structure.structure(i)
+      val struct = CSharpClass(i.id, i.id.name, structure, List.empty)
+      val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
+      val dtoName = if (implIface.isDefined) implIface.get.path.toPackage.mkString(".") + "." + implIface.get.name + i.id.name else
+        i.id.path.toPackage.mkString(".") + "." + i.id.name
+      s"""new ${dtoName}(
+         |${struct.fields.map(f => f.tp.getRandomValue(depth - 1)).mkString(",\n").shift(4)}
+         |)
+       """.stripMargin
   }
 
     def renderToString(name: String, escape: Boolean): String = {
@@ -218,22 +258,22 @@ final case class CSharpType (
       }
     }
 
-  def renderType(): String = {
-    renderNativeType(id)
+  def renderType(withPackage: Boolean = false): String = {
+    renderNativeType(id, withPackage)
   }
 
-  private def renderNativeType(id: TypeId): String = id match {
-    case g: Generic => renderGenericType(g)
+  private def renderNativeType(id: TypeId, withPackage: Boolean): String = id match {
+    case g: Generic => renderGenericType(g, withPackage)
     case p: Primitive => renderPrimitiveType(p)
-    case _ => renderUserType(id)
+    case _ => renderUserType(id, withPackage = withPackage)
   }
 
-  private def renderGenericType(generic: Generic): String = {
+  private def renderGenericType(generic: Generic, withPackage: Boolean): String = {
     generic match {
-      case gm: Generic.TMap => s"Dictionary<${renderNativeType(gm.keyType)}, ${renderNativeType(gm.valueType)}>"
-      case gl: Generic.TList => s"List<${renderNativeType(gl.valueType)}>"
-      case gs: Generic.TSet => s"List<${renderNativeType(gs.valueType)}>"
-      case go: Generic.TOption => if (!isNullableImpl(go.valueType)) s"Nullable<${renderNativeType(go.valueType)}>" else renderNativeType(go.valueType)
+      case gm: Generic.TMap => s"Dictionary<${renderNativeType(gm.keyType, withPackage)}, ${renderNativeType(gm.valueType, withPackage)}>"
+      case gl: Generic.TList => s"List<${renderNativeType(gl.valueType, withPackage)}>"
+      case gs: Generic.TSet => s"List<${renderNativeType(gs.valueType, withPackage)}>"
+      case go: Generic.TOption => if (!isNullableImpl(go.valueType)) s"Nullable<${renderNativeType(go.valueType, withPackage)}>" else renderNativeType(go.valueType, withPackage)
     }
   }
 
@@ -253,88 +293,18 @@ final case class CSharpType (
     case Primitive.TTsTz => "DateTime"
   }
 
-  protected def renderUserType(id: TypeId, forAlias: Boolean = false, forMap: Boolean = false): String = {
-
+  protected def renderUserType(id: TypeId, forAlias: Boolean = false, forMap: Boolean = false, withPackage: Boolean = false): String = {
+      val fullName = id.path.toPackage.mkString(".") + "." + id.name
       id match {
-        case _: EnumId => s"${im.withImport(id)}"
-        case _: InterfaceId => s"${im.withImport(id)}"
-        case _: IdentifierId => s"${im.withImport(id)}"
-        case _: AdtId | _: DTOId => s"${im.withImport(id)}"
-        case al: AliasId => renderNativeType(ts.dealias(al))
+        case _: EnumId => if (withPackage) fullName else s"${im.withImport(id)}"
+        case _: InterfaceId => if (withPackage) fullName else s"${im.withImport(id)}"
+        case _: IdentifierId => if (withPackage) fullName else s"${im.withImport(id)}"
+        case _: AdtId | _: DTOId => if (withPackage) fullName else s"${im.withImport(id)}"
+        case al: AliasId => renderNativeType(ts.dealias(al), withPackage)
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
   }
-//
-//  private def renderUnmarshalShared(in: String, out: String, errorCheck: Boolean): String = {
-//    if (!errorCheck) {
-//      return s"json.Unmarshal($in, $out)"
-//    }
-//
-//    s"""if err := json.Unmarshal($in, $out); err != nil {
-//       |    return err
-//       |}
-//     """.stripMargin
-//  }
-//
-//  def renderUnmarshal(content: String, assignLeft: String, assignRight: String = ""): String = {
-//    val tempContent = s"m${content.capitalize}"
-//
-//    id match {
-//      case _: InterfaceId =>
-//        s"""var rawMap${content.capitalize} map[string]json.RawMessage
-//           |if err := json.Unmarshal($content, &rawMap${content.capitalize}); err != nil {
-//           |    return err
-//           |}
-//           |$tempContent, err := Create${id.name}(rawMap${content.capitalize})
-//           |if err != nil {
-//           |    return err
-//           |}
-//           |$assignLeft$tempContent$assignRight
-//         """.stripMargin
-//
-//      case _: AdtId | _: DTOId | _: IdentifierId | _: AliasId =>
-//        s"""$tempContent := &${renderType(forAlias = true)}{}
-//           |${renderUnmarshalShared(content, tempContent, errorCheck = true)}
-//           |$assignLeft$tempContent$assignRight
-//         """.stripMargin
-//
-//      case g: Generic => g match {
-//        case _: Generic.TMap => s"Not implemented renderUnmarshal.Generic.TMap"
-//        case _: Generic.TList => s"Not implemented renderUnmarshal.Generic.TMap"
-//        case _: Generic.TOption => s"Not implemented renderUnmarshal.Generic.TMap"
-//        case _: Generic.TSet => s"Not implemented renderUnmarshal.Generic.TMap"
-//      }
-//
-//      case _ => throw new IDLException("Primitive types should not be unmarshalled manually")
-//      // case _ => assignLeft + content + assignRight
-//    }
-//  }
-//
-//  def renderToString(name: String): String = id match {
-//    case Primitive.TString => name
-//    case Primitive.TInt8 => s"strconv.FormatInt(int64($name), 10)"
-//    case Primitive.TInt16 => s"strconv.FormatInt(int64($name), 10)"
-//    case Primitive.TInt32 => s"strconv.FormatInt(int64($name), 10)"
-//    case Primitive.TInt64 => s"strconv.FormatInt($name, 10)"
-//    case Primitive.TUUID => name
-//    case _ => throw new IDLException(s"Should never render non int or string types to strings. Used for type ${id.name}")
-//  }
-//
-//  def renderFromString(dest: String, src: String, unescape: Boolean): String = {
-//    if (unescape) {
-//      id match {
-//        case Primitive.TString => s"$dest, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}"
-//        case Primitive.TInt8 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 8)\nif err != nil {\n    return err\n}\n$dest := int8(${dest}64)"
-//        case Primitive.TInt16 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 16)\nif err != nil {\n    return err\n}\n$dest := int16(${dest}64)"
-//        case Primitive.TInt32 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := int32(${dest}64)"
-//        case Primitive.TInt64 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest, err := strconv.ParseInt(${dest}Str, 10, 64)\nif err != nil {\n    return err\n}"
-//        case Primitive.TUUID => s"$dest, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}"
-//        case _ => throw new IDLException(s"Should never parse non int or string types. Used for type ${id.name}")
-//      }
-//    } else {
-//      throw new IDLException(s"Render from string for non unescaped ones is not supported yet!")
-//    }
-//  }
+
 }
 
 object CSharpType {

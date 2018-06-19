@@ -50,7 +50,7 @@ namespace irt {
         public static TransportCallback<T> Empty { get {return new TransportCallback<T>(onSuccess => {}, onFailure => {});} }
     }
 
-    public interface ITransport {
-        void Send<I, O>(string service, string method, I payload, TransportCallback<O> callback);
+    public interface ITransport<C> where C: class {
+        void Send<I, O>(string service, string method, I payload, TransportCallback<O> callback, C ctx = null);
     }
 }

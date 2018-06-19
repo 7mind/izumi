@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
+import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypePath}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -74,12 +75,12 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
       s"""${im.renderUsings()}
          |${ext.preModelEmit(ctx, i)}
          |${struct.renderHeader()} {
-         |${struct.render(withWrapper = false, withSlices = true).shift(4)}
+         |${struct.render(withWrapper = false, withSlices = true, withRTTI = true).shift(4)}
          |}
          |${ext.postModelEmit(ctx, i)}
        """.stripMargin
 
-      CompositeProduct(dto, im.renderImports(ext.imports(ctx, i).toList))
+      CompositeProduct(dto, im.renderImports(List("System", "System.Collections", "System.Collections.Generic") ++ ext.imports(ctx, i).toList))
   }
 
   protected def renderAlias(i: Alias)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
@@ -138,13 +139,16 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 
   protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true)(implicit im: CSharpImports, ts: Typespace): String = {
+    val adt = Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), adtName), members)
     s"""${im.renderUsings()}
        |${if (renderUsings) members.map(m => renderAdtUsings(m)).mkString("\n") else ""}
        |
+       |${ext.preModelEmit(ctx, adt)}
        |public abstract class $adtName {
        |    private $adtName() {}
        |${members.map(m => renderAdtMember(adtName, m)).mkString("\n").shift(4)}
        |}
+       |${ext.postModelEmit(ctx, adt)}
      """.stripMargin
   }
 
@@ -212,7 +216,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |${ext.preModelEmit(ctx, i)}
            |${csClass.renderHeader()} {
            |    private static char[] idSplitter = new char[]{':'};
-           |${csClass.render(withWrapper = false, withSlices = false).shift(4)}
+           |${csClass.render(withWrapper = false, withSlices = false, withRTTI = true).shift(4)}
            |    public override string ToString() {
            |        var suffix = ${fieldsSorted.map(f => f.tp.renderToString(f.renderMemberName(), escape = true)).mkString(" + \":\" + ")};
            |        return "${i.id.name}#" + suffix;
@@ -243,20 +247,21 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
     IdentifierProduct(
       decl,
-      im.renderImports(List("System") ++ ext.imports(ctx, i))
+      im.renderImports(List("System", "System.Collections", "System.Collections.Generic") ++  ext.imports(ctx, i))
     )
   }
 
   protected def renderInterface(i: Interface)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
     val structure = typespace.structure.structure(i)
     val eid = typespace.tools.implId(i.id)
-    val ifaceFields = structure.all.filterNot(f => i.struct.superclasses.interfaces.contains(f.defn.definedBy)).map(f =>
+    val validFields = structure.all.filterNot(f => i.struct.superclasses.interfaces.contains(f.defn.definedBy))
+    val ifaceFields = validFields.map(f =>
       (if (f.defn.variance.nonEmpty) true else false, CSharpField(/*if (f.defn.variance.nonEmpty) f.defn.variance.last else */f.field, eid.name, Seq.empty)))
 
     val struct = CSharpClass(eid, i.id.name + eid.name, structure, List(i.id))
-    val ifaceImplements = if (i.struct.superclasses.interfaces.isEmpty) "" else " : " +
-      i.struct.superclasses.interfaces.map(ifc => ifc.name).mkString(", ")
-
+    val ifaceImplements = if (i.struct.superclasses.interfaces.isEmpty) ": IRTTI" else ": " +
+      i.struct.superclasses.interfaces.map(ifc => ifc.name).mkString(", ") + ", IRTTI"
+    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(i.id), List.empty, List.empty)))
 
     val iface =
       s"""${im.renderUsings()}
@@ -268,58 +273,14 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
        """.stripMargin
 
     val companion =
-      s"""${ext.preModelEmit(ctx, i)}
+      s"""${ext.preModelEmit(ctx, dto)}
          |${struct.renderHeader()} {
-         |${struct.render(withWrapper = false, withSlices = true).shift(4)}
+         |${struct.render(withWrapper = false, withSlices = true, withRTTI = true, withCTORs = Some(i.id.name)).shift(4)}
          |}
-         |${ext.postModelEmit(ctx, i)}
+         |${ext.postModelEmit(ctx, dto)}
        """.stripMargin
 
-//      s"""${struct.render()}
-//         |${struct.renderSerialized()}
-//         |${struct.renderSlices()}
-//         |
-//         |// Polymorphic section below. If a new type to be registered, use Register${i.id.name} method
-//         |// which will add it to the known list. You can also overwrite the existing registrations
-//         |// in order to provide extended functionality on existing models, preserving the original class name.
-//         |
-//         |type ${i.id.name}Constructor func() ${i.id.name}
-//         |
-//         |func ctor${eid.name}() ${i.id.name} {
-//         |    return &${eid.name}{}
-//         |}
-//         |
-//         |var known${i.id.name}Polymorphic = map[string]${i.id.name}Constructor {
-//         |    rtti${eid.name}FullClassName: ctor${eid.name},
-//         |}
-//         |
-//         |// Register${i.id.name} registers a new constructor for a polymorphic type ${i.id.name}
-//         |func Register${i.id.name}(className string, ctor ${i.id.name}Constructor) {
-//         |    known${i.id.name}Polymorphic[className] = ctor
-//         |}
-//         |
-//         |// Create${i.id.name} creates an instance of type ${i.id.name} in a polymorphic way
-//         |func Create${i.id.name}(data map[string]json.RawMessage) (${i.id.name}, error) {
-//         |    for className, content := range data {
-//         |        ctor, ok := known${i.id.name}Polymorphic[className]
-//         |        if !ok {
-//         |            return nil, fmt.Errorf("unknown polymorphic type %s for Create${i.id.name}", className)
-//         |        }
-//         |
-//         |        instance := ctor()
-//         |        err := json.Unmarshal(content, instance)
-//         |        if err != nil {
-//         |            return nil, err
-//         |        }
-//         |
-//         |        return instance, nil
-//         |    }
-//         |
-//         |    return nil, fmt.Errorf("empty content for polymorphic type in Create${i.id.name}")
-//         |}
-//         |${renderRegistrations(ts.inheritance.allParents(i.id), eid.name, imports)}
-//       """.stripMargin
-    InterfaceProduct(iface, companion, im.renderImports(ext.imports(ctx, i).toList))
+    InterfaceProduct(iface, companion, im.renderImports(List("irt", "System", "System.Collections", "System.Collections.Generic") ++ ext.imports(ctx, i).toList))
   }
 
   protected def renderServiceMethodSignature(i: Service, method: Service.DefMethod, forClient: Boolean)
@@ -327,7 +288,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
     val callbacks = s""
     method match {
       case m: DefMethod.RPCMethod => {
-        val callback = s"${if (m.signature.input.fields.isEmpty) "" else ", "}Action<${renderServiceMethodOutputSignature(i, m)}> onSuccess, Action<Exception> onFailure, Action onAny = null"
+        val callback = s"${if (m.signature.input.fields.isEmpty) "" else ", "}Action<${renderServiceMethodOutputSignature(i, m)}> onSuccess, Action<Exception> onFailure, Action onAny = null, C ctx = null"
         val fields = m.signature.input.fields.map(f => CSharpType(f.typeId).renderType() + " " + f.name).mkString(", ")
         val context = s"C ctx${if (m.signature.input.fields.isEmpty) "" else ", "}"
         if (forClient) {
@@ -355,7 +316,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
         s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
            |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});" }
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
-           |        new TransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny));
+           |        new TransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
        """.stripMargin
 
@@ -363,7 +324,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
         s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
            |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});" }
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
-           |        new TransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny));
+           |        new TransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
        """.stripMargin
     }
@@ -372,25 +333,29 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   protected def renderServiceClient(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
     val name = s"${i.id.name}Client"
 
-    s"""public interface I${name} {
+    s"""public interface I${name}<C> where C: class {
        |${i.methods.map(m => renderServiceMethodSignature(i, m, forClient = true) + ";").mkString("\n").shift(4)}
        |}
        |
-       |public class ${name}: I${name} {
-       |    public ITransport Transport { get; private set; }
+       |public class ${name}Generic<C>: I${name}<C> where C: class {
+       |    public ITransport<C> Transport { get; private set; }
        |
-       |    public ${name}(ITransport t) {
+       |    public ${name}Generic(ITransport<C> t) {
        |        Transport = t;
        |    }
        |
        |    public void SetHTTPTransport(string endpoint, IJsonMarshaller marshaller, bool blocking = false, int timeout = 60) {
        |        if (blocking) {
-       |            this.Transport = new SyncHttpTransport(endpoint, marshaller, timeout);
+       |            this.Transport = new SyncHttpTransportGeneric<C>(endpoint, marshaller, timeout);
        |        } else {
-       |            this.Transport = new AsyncHttpTransport(endpoint, marshaller, timeout);
+       |            this.Transport = new AsyncHttpTransportGeneric<C>(endpoint, marshaller, timeout);
        |        }
        |    }
        |${i.methods.map(me => renderServiceClientMethod(i, me)).mkString("\n").shift(4)}
+       |}
+       |
+       |public class ${name}: ${name}Generic<object> {
+       |    public ${name}(ITransport<object> t): base(t) {}
        |}
      """.stripMargin
   }
@@ -471,7 +436,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
     val csClass = CSharpClass(DTOId(i.id, name), structure)
 
-    s"""${csClass.render(withWrapper = true, withSlices = false)}""".stripMargin
+    s"""${csClass.render(withWrapper = true, withSlices = false, withRTTI = true)}""".stripMargin
   }
 
   protected def renderServiceMethodModels(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
@@ -515,7 +480,17 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |${renderServiceServerDummy(i)}
          """.stripMargin
 
-    ServiceProduct(svc, im.renderImports(List("irt", "System"))) //imports.renderImports(List("irt")))
+    val extraImports = i.methods.flatMap(me=> me match {
+      case m: DefMethod.RPCMethod => m.signature.output match {
+        case st: Struct => Seq.empty
+        case al: Algebraic => ext.imports(ctx, Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), "FakeName"), al.alternatives))
+        case si: Singular => Seq.empty
+        case _ => Seq.empty
+      }
+    })
+
+    ServiceProduct(svc, im.renderImports(List("irt", "System", "System.Collections", "System.Collections.Generic") ++ extraImports)) //imports.renderImports(List("irt")))
   }
 }
+
 

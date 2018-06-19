@@ -4,10 +4,11 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Enumeration, Identifier}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, DTO, Enumeration, Identifier}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpType
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpType}
 
 
 object NUnitExtension extends CSharpTranslatorExtension {
@@ -64,7 +65,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
     val code =
       s"""public static class ${name}TestHelper {
          |    public static ${name} Create() {
-         |        return new ${name}(${id.fields.map(f => CSharpType(f.typeId).getRandomValue).mkString(", ")});
+         |        return new ${name}(${id.fields.map(f => CSharpType(f.typeId).getRandomValue(0)).mkString(", ")});
          |    }
          |}
          |
@@ -94,5 +95,95 @@ object NUnitExtension extends CSharpTranslatorExtension {
        """.stripMargin
 
     ctx.modules.toTestSource(id.id.path.domain, ctx.modules.toTestModuleId(id.id), header, code)
+  }
+
+  override def postEmitModules(ctx: CSTContext, i: Adt)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
+    val name = i.id.name
+    val adt = i.alternatives.head
+    val code =
+      s"""public static class ${name}TestHelper {
+         |    public static $name Create() {
+         |        return new $name.${adt.name}(new ${CSharpType(adt.typeId).renderType() + (if (adt.typeId.isInstanceOf[InterfaceId]) "Struct" else "")}());
+         |    }
+         |}
+         |
+         |[TestFixture]
+         |public class ${name}_ShouldSerialize {
+         |    IJsonMarshaller marshaller;
+         |
+         |    public ${name}_ShouldSerialize() {
+         |        marshaller = new JsonNetMarshaller();
+         |    }
+         |
+         |    [Test]
+         |    public void SerializeDeserialize() {
+         |        var v1 = ${name}TestHelper.Create();
+         |        var json1 = marshaller.Marshal<$name>(v1);
+         |        var v2 = marshaller.Unmarshal<$name>(json1);
+         |        var json2 = marshaller.Marshal<$name>(v2);
+         |        Assert.AreEqual(v1.ToString(), v2.ToString());
+         |        Assert.AreEqual(json1.ToString(), json2.ToString());
+         |    }
+         |}
+       """.stripMargin
+
+    val header =
+      s"""using irt;
+         |using System;
+         |using System.Globalization;
+         |using System.Collections;
+         |using System.Collections.Generic;
+         |using NUnit.Framework;
+       """.stripMargin
+
+    ctx.modules.toTestSource(i.id.path.domain, ctx.modules.toTestModuleId(i.id), header, code)
+  }
+
+  override def postEmitModules(ctx: CSTContext, i: DTO)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
+    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
+    val dtoName = if (implIface.isDefined) implIface.get.name + i.id.name else i.id.name
+
+    val structure = ts.structure.structure(i)
+    val struct = CSharpClass(i.id, i.id.name, structure, List.empty)
+
+    val code =
+      s"""public static class ${dtoName}TestHelper {
+         |    public static $dtoName Create() {
+         |        return new $dtoName(
+         |${struct.fields.map(f => f.tp.getRandomValue(3)).mkString(",\n").shift(12)}
+         |        );
+         |    }
+         |}
+         |
+         |[TestFixture]
+         |public class ${dtoName}_ShouldSerialize {
+         |    IJsonMarshaller marshaller;
+         |
+         |    public ${dtoName}_ShouldSerialize() {
+         |        marshaller = new JsonNetMarshaller();
+         |    }
+         |
+         |    [Test]
+         |    public void SerializeDeserialize() {
+         |        var v1 = ${dtoName}TestHelper.Create();
+         |        var json1 = marshaller.Marshal<$dtoName>(v1);
+         |        var v2 = marshaller.Unmarshal<$dtoName>(json1);
+         |        var json2 = marshaller.Marshal<$dtoName>(v2);
+         |        Assert.AreEqual(v1.ToString(), v2.ToString());
+         |        Assert.AreEqual(json1.ToString(), json2.ToString());
+         |    }
+         |}
+       """.stripMargin
+
+    val header =
+      s"""using irt;
+         |using System;
+         |using System.Globalization;
+         |using System.Collections;
+         |using System.Collections.Generic;
+         |using NUnit.Framework;
+       """.stripMargin
+
+    ctx.modules.toTestSource(i.id.path.domain, ctx.modules.toTestModuleId(i.id, if(implIface.isDefined) Some(implIface.get.name) else None), header, code)
   }
 }

@@ -7,7 +7,7 @@ using System.Text;
 using System.Collections.Specialized;
 
 namespace irt {
-    public class SyncHttpTransport: ITransport {
+    public class SyncHttpTransportGeneric<C>: ITransport<C> where C: class {
         private IJsonMarshaller Marshaller;
 
         private string endpoint;
@@ -26,13 +26,13 @@ namespace irt {
         public int Timeout; // In Seconds
         public NameValueCollection HttpHeaders;
 
-        public SyncHttpTransport(string endpoint, IJsonMarshaller marshaller, int timeout = 60) {
+        public SyncHttpTransportGeneric(string endpoint, IJsonMarshaller marshaller, int timeout = 60) {
             Endpoint = endpoint;
             Marshaller = marshaller;
             Timeout = timeout;
         }
 
-        public void Send<I, O>(string service, string method, I payload, TransportCallback<O> callback) {
+        public void Send<I, O>(string service, string method, I payload, TransportCallback<O> callback, C ctx) {
             try {
                 var request = (HttpWebRequest) WebRequest.Create(string.Format("{0}/{1}/{2}", endpoint, service, method));
                 request.Timeout = Timeout * 1000;
@@ -81,5 +81,10 @@ namespace irt {
                 );
             }
         }
+    }
+
+    public class SyncHttpTransport: SyncHttpTransportGeneric<object> {
+        public SyncHttpTransport(string endpoint, IJsonMarshaller marshaller, int timeout = 60):
+                    base(endpoint, marshaller, timeout) {}
     }
 }
