@@ -695,15 +695,9 @@ class InjectorTest extends WordSpec {
       assert(listContext.get[Either[String, List[Int]]] == Right(List(1)))
       assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
-      assert(!(RuntimeDIUniverse.TagK[OptionT[List, ?]].apply[String].tag.tpe.toString contains "OptionT[String]"))
-
       val optionTInjector = mkInjector()
       val optionTPlan = optionTInjector.plan(Definition[OptionT[List, ?]](5))
       val optionTContext = optionTInjector.produce(optionTPlan)
-
-      System.err println optionTPlan.definition.bindings.mkString("\n")
-
-      System.err println optionTPlan.steps.mkString("\n")
 
       assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
       assert(optionTContext.get[TestServiceClass[OptionT[List, ?]]].get == OptionT(List(Option(5))))
