@@ -6,6 +6,7 @@ import java.nio.file._
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator._
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
@@ -42,6 +43,7 @@ object CliIdlCompiler {
     IDLLanguage.Scala -> (ScalaTranslator.defaultExtensions ++ Seq(CirceDerivationTranslatorExtension))
     , IDLLanguage.Typescript -> TypeScriptTranslator.defaultExtensions
     , IDLLanguage.Go -> GoLangTranslator.defaultExtensions
+    , IDLLanguage.CSharp -> CSharpTranslator.defaultExtensions
   )
 
   private def getExt(lang: IDLLanguage, filter: String): Seq[TranslatorExtension] = {
