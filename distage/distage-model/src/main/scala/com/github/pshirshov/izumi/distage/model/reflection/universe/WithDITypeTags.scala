@@ -39,7 +39,14 @@ trait WithDITypeTags {
       }
 
     /**
-    * Helper for creating your own instances
+    * Helper for creating your own instances for type shapes that aren't supported by default instances
+    * (most shapes in `cats` and `stdlib` are supported, but you may need this if you use `scalaz`)
+    *
+    * Example:
+    *
+    *     implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: WeakTypeTag[T[A0, K, A1]): Tag[T[A0, K, A1]] =
+    *       Tag.appliedTag(t, List(Tag[A0].tag, TagK[K].tag, Tag[A1].tag))
+    *
     **/
     def appliedTag[R](tag: WeakTypeTag[_], args: List[TypeTag[_]]): Tag[R] = {
       val appliedTypeCreator = new TypeCreator {
@@ -111,22 +118,22 @@ trait WithDITypeTags {
       Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
 
     implicit def tagFromTagTK[T[_[_]], K[_]: TagK](implicit t: WeakTypeTag[T[K]]): Tag[T[K]] =
-      Tag.appliedTag(t, List(TagK[K].ctorTag))
+      Tag.appliedTag(t, List(TagK[K].tag))
 
     implicit def tagFromTagTKA[T[_[_], _], K[_]: TagK, A: Tag](implicit t: WeakTypeTag[T[K, A]]): Tag[T[K, A]] =
-      Tag.appliedTag(t, List(TagK[K].ctorTag, Tag[A].tag))
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A].tag))
 
     implicit def tagFromTagTKAA[T[_[_], _, _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: WeakTypeTag[T[K, A0, A1]]): Tag[T[K, A0, A1]] =
-      Tag.appliedTag(t, List(TagK[K].ctorTag, Tag[A0].tag, Tag[A1].tag))
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag))
 
     implicit def tagFromTagTKAAA[T[_[_], _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag](implicit t: WeakTypeTag[T[K, A0, A1, A2]]): Tag[T[K, A0, A1, A2]] =
-      Tag.appliedTag(t, List(TagK[K].ctorTag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag))
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag))
 
     implicit def tagFromTagTKAAAA[T[_[_], _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: WeakTypeTag[T[K, A0, A1, A2, A3]]): Tag[T[K, A0, A1, A2, A3]] =
-      Tag.appliedTag(t, List(TagK[K].ctorTag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag))
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag))
 
     implicit def tagFromTagTKAAAAA[T[_[_], _, _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: WeakTypeTag[T[K, A0, A1, A2, A3, A4]]): Tag[T[K, A0, A1, A2, A3, A4]] =
-      Tag.appliedTag(t, List(TagK[K].ctorTag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
   }
 
   /**
@@ -144,7 +151,7 @@ trait WithDITypeTags {
     *
     * You probably want to use `apply` method to replace a `TypeTag` of T[F] with T[K] instead.
     **/
-    def ctorTag: TypeTag[_]
+    def tag: TypeTag[_]
 
     /**
     * Create a [[scala.reflect.api.TypyeTags#TypeTag]] for `K[T]` by applying `K[_]` to `T`
@@ -155,9 +162,9 @@ trait WithDITypeTags {
     *     > typeTag[List[Int]]
     */
     final def apply[T](implicit tag: Tag[T]): Tag[K[T]] =
-      Tag.appliedTag(ctorTag, List(tag.tag))
+      Tag.appliedTag(tag, List(tag.tag))
 
-    override final def toString: String = s"TagK[${ctorTag.tpe}]"
+    override final def toString: String = s"TagK[${tag.tpe}]"
   }
 
   object TagK extends TagKInstances {
@@ -173,7 +180,7 @@ trait WithDITypeTags {
   trait TagKInstances {
     implicit def tagKFromTypeTag[K[_]](implicit t: TypeTag[K[Nothing]]): TagK[K] =
       new TagK[K] {
-        override val ctorTag: TypeTag[_] = {
+        override val tag: TypeTag[_] = {
           val ctorCreator = new TypeCreator {
             override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type =
               t.migrate(m).tpe match {
