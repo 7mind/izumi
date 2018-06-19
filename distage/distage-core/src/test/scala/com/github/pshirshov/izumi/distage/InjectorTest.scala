@@ -664,7 +664,7 @@ class InjectorTest extends WordSpec {
       import Case20._
 
       case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
-        // hmmm, what to do with this
+        // FIXME: hmmm, what to do with this
         make[Pointed[F]].from(Pointed[F])
 
         make[TestTrait].from[TestServiceClass[F]]
@@ -673,9 +673,13 @@ class InjectorTest extends WordSpec {
         make[Int].named("TestService").from(getResult)
         make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
         make[Either[String, Boolean]].from(Right(true))
+
+//        FIXME: Nothing doesn't resolve properly yet when F is unknown...
 //        make[F[Nothing]]
-//        make[Either[String, F[Int]]].from(Right[Nothing, F[Int]](Pointed[F].point(1)))
+//        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
+        make[F[Any]].from(Pointed[F].point(1: Any))
         make[Either[String, F[Int]]].from(Right[String, F[Int]](Pointed[F].point(1)))
+        make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
       }
 
       val listInjector = mkInjector()
@@ -686,14 +690,15 @@ class InjectorTest extends WordSpec {
       assert(listContext.get[TestServiceClass[List]].get == List(5))
       assert(listContext.get[TestServiceTrait[List]].get == List(10))
       assert(listContext.get[List[String]] == List("Hello 5!"))
+      assert(listContext.get[List[Any]] == List(1))
       assert(listContext.get[Either[String, Boolean]] == Right(true))
       assert(listContext.get[Either[String, List[Int]]] == Right(List(1)))
+      assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
       assert(!(RuntimeDIUniverse.TagK[OptionT[List, ?]].apply[String].tag.tpe.toString contains "OptionT[String]"))
 
       val optionTInjector = mkInjector()
-//      val optionTPlan = optionTInjector.plan(Definition[OptionT[List, ?]](5))
-      val optionTPlan = optionTInjector.plan(Definition[({ type l[A] = OptionT[List, A] })#l](5))
+      val optionTPlan = optionTInjector.plan(Definition[OptionT[List, ?]](5))
       val optionTContext = optionTInjector.produce(optionTPlan)
 
       System.err println optionTPlan.definition.bindings.mkString("\n")

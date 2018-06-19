@@ -49,11 +49,6 @@ trait WithDITypeTags {
       Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
     }
 
-    // hmm, it works, but not always...
-    implicit final val tagNothing: Tag[Nothing] =
-      new Tag[Nothing] {
-        override val tag: TypeTag[Nothing] = typeTag[Nothing]
-      }
   }
 
   trait TagInstances0 extends TagInstances1 {
@@ -63,18 +58,11 @@ trait WithDITypeTags {
         override val tag: TypeTag[Any] = typeTag[Any]
       }
 
-//
-//    implicit final val tagNothing: Tag[Nothing] =
-//      new Tag[Nothing] {
-//        override val tag: TypeTag[Nothing] = typeTag[Nothing]
-//      }
-//
-//    implicit def tagDNothing[A <: Nothing]: Tag[A] = ???
-//
-//    implicit def tagFromTypeTagA[A: TypeTag]: Tag[A] = Tag(typeTag[A])
-
-    implicit def tagUNothing[A >: Nothing](implicit ev: A =:= Nothing): Tag[A] = ???
-
+    // hmm, it works, but not always...
+    implicit val tagNothing: Tag[Nothing] =
+      new Tag[Nothing] {
+        override val tag: TypeTag[Nothing] = typeTag[Nothing]
+      }
   }
 
   trait TagInstances1 extends TagInstances2 {
@@ -84,6 +72,12 @@ trait WithDITypeTags {
     implicit def tagFromTypeTagKA[K[_], A](implicit t: TypeTag[K[A]]): Tag[K[A]] = Tag(t)
 
     implicit def tagFromTypeTagKAA[K[_, _], A0, A1](implicit t: TypeTag[K[A0, A1]]): Tag[K[A0, A1]] = Tag(t)
+
+    implicit def tagFromTypeTagKAAA[K[_, _, _], A0, A1, A2](implicit t: TypeTag[K[A0, A1, A2]]): Tag[K[A0, A1, A2]] = Tag(t)
+
+    implicit def tagFromTypeTagKAAAA[K[_, _, _, _], A0, A1, A2, A3](implicit t: TypeTag[K[A0, A1, A2, A3]]): Tag[K[A0, A1, A2, A3]] = Tag(t)
+
+    implicit def tagFromTypeTagKAAAAA[K[_, _, _, _, _], A0, A1, A2, A3, A4](implicit t: TypeTag[K[A0, A1, A2, A3, A4]]): Tag[K[A0, A1, A2, A3, A4]] = Tag(t)
 
     implicit def tagFromTypeTagTK[T[_[_]], K[_]](implicit t: TypeTag[T[K]]): Tag[T[K]] = Tag(t)
 
@@ -106,6 +100,15 @@ trait WithDITypeTags {
 
     implicit def tagFromTagKAA[K[_, _], A0: Tag, A1: Tag](implicit t: WeakTypeTag[K[A0, A1]]): Tag[K[A0, A1]] =
       Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag))
+
+    implicit def tagFromTagKAAA[K[_, _, _], A0: Tag, A1: Tag, A2: Tag](implicit t: WeakTypeTag[K[A0, A1, A2]]): Tag[K[A0, A1, A2]] =
+      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag))
+
+    implicit def tagFromTagKAAAA[K[_, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: WeakTypeTag[K[A0, A1, A2, A3]]): Tag[K[A0, A1, A2, A3]] =
+      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag))
+
+    implicit def tagFromTagKAAAAA[K[_, _, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: WeakTypeTag[K[A0, A1, A2, A3, A4]]): Tag[K[A0, A1, A2, A3, A4]] =
+      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
 
     implicit def tagFromTagTK[T[_[_]], K[_]: TagK](implicit t: WeakTypeTag[T[K]]): Tag[T[K]] =
       Tag.appliedTag(t, List(TagK[K].ctorTag))
@@ -171,11 +174,23 @@ trait WithDITypeTags {
     implicit def tagKFromTypeTag[K[_]](implicit t: TypeTag[K[Nothing]]): TagK[K] =
       new TagK[K] {
         override val ctorTag: TypeTag[_] = {
-          val ctorKCreator = new TypeCreator {
+          val ctorCreator = new TypeCreator {
             override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type =
-              t.migrate(m).tpe.typeConstructor
+              t.migrate(m).tpe match {
+                case r if r.typeArgs.length <= 1 =>
+                  r.typeConstructor
+                case r =>
+                  // create a type lambda preserving embedded arguments
+                  // i.e. OptionT[List, ?] === [A => OptionT[List, A]]
+                  def newTypeParam[A]: m.universe.Type = m.universe.weakTypeOf[A]
+
+                  val freshParam = newTypeParam
+                  val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(1) ++ List(freshParam))
+
+                  m.universe.internal.polyType(List(freshParam.typeSymbol), appliedRes)
+              }
           }
-          TypeTag(t.mirror, ctorKCreator)
+          TypeTag(t.mirror, ctorCreator)
         }
       }
   }
