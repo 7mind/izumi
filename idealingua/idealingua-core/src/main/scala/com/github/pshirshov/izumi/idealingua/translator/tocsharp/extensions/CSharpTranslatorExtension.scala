@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenP
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpClass
 
 trait CSharpTranslatorExtension extends TranslatorExtension {
     import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -79,7 +80,17 @@ trait CSharpTranslatorExtension extends TranslatorExtension {
       ""
     }
 
+    def preModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
+      discard(ctx, id)
+      ""
+    }
+
     def postModelEmit(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): String = {
+      discard(ctx, id)
+      ""
+    }
+
+    def postModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
       discard(ctx, id)
       ""
     }

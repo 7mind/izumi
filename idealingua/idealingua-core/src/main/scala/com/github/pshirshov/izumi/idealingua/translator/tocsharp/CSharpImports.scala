@@ -14,6 +14,11 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpTyp
 final case class CSharpImport(id: TypeId, namespace: Seq[String], usingName: String)
 
 final case class CSharpImports(imports: List[CSharpImport] = List.empty)(implicit ts: Typespace) {
+  protected def isAmbiguousName(name: String): Boolean = {
+    val ambiguous = Seq("Type", "Environment")
+    ambiguous.contains(name)
+  }
+
   def renderImports(extra: List[String] = List.empty): String = {
     if (imports.isEmpty && extra.isEmpty) {
       return ""
@@ -37,11 +42,15 @@ final case class CSharpImports(imports: List[CSharpImport] = List.empty)(implici
   }
 
   def withImport(id: TypeId): String = {
-    val rec = findImport(id)
-    if (rec.isDefined && rec.get.usingName != "") {
-      rec.get.usingName
+    if (isAmbiguousName(id.name)) {
+      id.path.toPackage.mkString(".") + "." + id.name
     } else {
-      id.name
+      val rec = findImport(id)
+      if (rec.isDefined && rec.get.usingName != "") {
+        rec.get.usingName
+      } else {
+        id.name
+      }
     }
   }
 }

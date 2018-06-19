@@ -18,6 +18,11 @@ mixin Request {
   secondName: str
 }
 
+enum Environment {
+    Dev
+    Prod
+}
+
 service TestService {
   def parameterless(): str
   def simpleMethod(a: str): str
@@ -25,6 +30,7 @@ service TestService {
   def simpleMethodWithGenerics(a: list[str]): list[str]
   def simple(+Request): (+Request)
   def simpleEnum(v: TestServiceEnum): str
+  def simpleEnum2(e: Environment): str
 
   // simple instance
   def greetSingularOut(firstName: str, secondName: str) => str

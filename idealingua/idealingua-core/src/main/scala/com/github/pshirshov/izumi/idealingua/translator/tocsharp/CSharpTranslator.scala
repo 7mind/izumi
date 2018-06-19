@@ -167,11 +167,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
            |
            |public static class ${name}Helpers {
            |    public static $name From(string value) {
-           |        $name v;
-           |        if (Enum.TryParse(value, out v)) {
-           |            return v;
-           |        }
-           |        throw new ArgumentOutOfRangeException(value);
+           |        return ($name)Enum.Parse(typeof($name), value);
            |    }
            |
            |    public static bool IsValid(string value) {
@@ -436,7 +432,9 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
     val csClass = CSharpClass(DTOId(i.id, name), structure)
 
-    s"""${csClass.render(withWrapper = true, withSlices = false, withRTTI = true)}""".stripMargin
+    s"""${ext.preModelEmit(ctx, csClass.id.name, csClass)}
+       |${csClass.render(withWrapper = true, withSlices = false, withRTTI = true)}
+       |${ext.postModelEmit(ctx, csClass.id.name, csClass)}""".stripMargin
   }
 
   protected def renderServiceMethodModels(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {

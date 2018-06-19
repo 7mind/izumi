@@ -21,7 +21,7 @@ final case class CSharpField(
   }
 
   protected def safeName(name: String): String = {
-    val systemReserved = Seq("Type")
+    val systemReserved = Seq("Type", "Environment")
 
     val reserved = Seq("abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked",
       "class", "const", "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event",

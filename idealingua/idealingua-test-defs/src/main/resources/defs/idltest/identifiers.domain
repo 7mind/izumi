@@ -32,3 +32,4 @@ id UserWithEnumId {
 data KVIDGeneric {
   test: map[BucketID, BucketID]
 }
+

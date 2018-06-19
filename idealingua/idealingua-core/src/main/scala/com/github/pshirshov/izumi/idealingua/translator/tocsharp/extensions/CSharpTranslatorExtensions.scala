@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CS
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpClass
 
 class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslatorExtension]) {
   def preModelEmit(ctx: CSTContext, id: TypeDef)(implicit im: CSharpImports, ts: Typespace): String = id match {
@@ -16,6 +17,11 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
     case _ => ""
   }
 
+  // This is complimentary to DTO for structs in services responses
+  def preModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
+    extensions.map(ex => ex.preModelEmit(ctx, name, struct)).filterNot(_.isEmpty).mkString("\n")
+  }
+
   def postModelEmit(ctx: CSTContext, id: TypeDef)(implicit im: CSharpImports, ts: Typespace): String = id match {
     case i: Identifier => extensions.map(ex => ex.postModelEmit(ctx, i)).filterNot(_.isEmpty).mkString("\n")
     case e: Enumeration => extensions.map(ex => ex.postModelEmit(ctx, e)).filterNot(_.isEmpty).mkString("\n")
@@ -23,6 +29,11 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
     case i: Interface => extensions.map(ex => ex.postModelEmit(ctx, i)).filterNot(_.isEmpty).mkString("\n")
     case a: Adt => extensions.map(ex => ex.postModelEmit(ctx, a)).filterNot(_.isEmpty).mkString("\n")
     case _ => ""
+  }
+
+  // This is complimentary to DTO for structs in services responses
+  def postModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
+    extensions.map(ex => ex.postModelEmit(ctx, name, struct)).filterNot(_.isEmpty).mkString("\n")
   }
 
   def imports(ctx: CSTContext, id: TypeDef)(implicit im: CSharpImports, ts: Typespace): Seq[String] = id match {

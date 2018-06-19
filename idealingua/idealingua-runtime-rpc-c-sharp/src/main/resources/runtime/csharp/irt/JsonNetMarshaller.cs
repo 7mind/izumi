@@ -19,7 +19,6 @@ namespace irt {
         }
 
         public string Marshal<I>(I data) {
-            // Console.WriteLine("Type: " + typeof(I).ToString() + ". Data: " + data.ToString());
             if (typeof(I).IsInterface) {
                 if (!(data is IRTTI)) {
                     throw new Exception("Trying to serialize an interface which doesn't expose an IRTTI interface: " + typeof(I).ToString());
@@ -32,22 +31,6 @@ namespace irt {
 
         public O Unmarshal<O>(string data) {
             return JsonConvert.DeserializeObject<O>(data, settings);
-        }
-    }
-
-    internal sealed class InterfaceContractResolver : DefaultContractResolver
-    {
-        protected override JsonContract CreateContract(Type objectType)
-        {
-            Console.WriteLine("Contract: " + objectType.ToString());
-            JsonContract contract = base.CreateContract(objectType);
-
-            if (typeof(IRTTI).IsAssignableFrom(objectType)) {
-                Console.WriteLine("Adding interface serializer: " + objectType.ToString());
-                contract.Converter = new InterfaceJsonNetSerializer();
-            }
-
-            return contract;
         }
     }
 
@@ -66,6 +49,25 @@ namespace irt {
 
         public override bool CanConvert(System.Type objectType) {
             return false;
+        }
+    }
+
+    // From here https://github.com/JamesNK/Newtonsoft.Json/blob/master/Src/Newtonsoft.Json/JsonConverter.cs
+    public abstract class JsonNetConverter<T> : JsonConverter {
+        public sealed override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+            WriteJson(writer, (T)value, serializer);
+        }
+
+        public abstract void WriteJson(JsonWriter writer, T value, JsonSerializer serializer);
+
+        public sealed override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
+            return ReadJson(reader, objectType, default(T), false, serializer);
+        }
+
+        public abstract T ReadJson(JsonReader reader, Type objectType, T existingValue, bool hasExistingValue, JsonSerializer serializer);
+
+        public sealed override bool CanConvert(Type objectType) {
+            return typeof(T).IsAssignableFrom(objectType);
         }
     }
 

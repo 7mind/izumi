@@ -14,4 +14,3 @@ data EnumHolder {
 }
 
 enum ShortSyntaxEnum = Element1 | Element2
-
