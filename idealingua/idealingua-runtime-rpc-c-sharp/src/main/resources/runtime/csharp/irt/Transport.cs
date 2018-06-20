@@ -2,6 +2,9 @@
 using System;
 
 namespace irt {
+    public interface IClientTransportContext {
+    }
+
     public class TransportException: Exception {
         public TransportException() {
         }
@@ -13,15 +16,15 @@ namespace irt {
         }
     }
 
-    public interface ITransportCallback {
+    public interface IClientTransportCallback {
     }
 
-    public class TransportCallback<T> : ITransportCallback {
+    public class ClientTransportCallback<T> : IClientTransportCallback {
         public Action<Exception> OnFailureHandler;
         public Action<T> OnSuccessHandler;
         public Action FinalHandler;
 
-        public TransportCallback(Action<T> onSuccess, Action<Exception> onFailure, Action final = null) {
+        public ClientTransportCallback(Action<T> onSuccess, Action<Exception> onFailure, Action final = null) {
             OnSuccessHandler = onSuccess;
             OnFailureHandler = onFailure;
             FinalHandler = final;
@@ -47,10 +50,10 @@ namespace irt {
             }
         }
 
-        public static TransportCallback<T> Empty { get {return new TransportCallback<T>(onSuccess => {}, onFailure => {});} }
+        public static ClientTransportCallback<T> Empty { get {return new ClientTransportCallback<T>(onSuccess => {}, onFailure => {});} }
     }
 
-    public interface ITransport<C> where C: class {
-        void Send<I, O>(string service, string method, I payload, TransportCallback<O> callback, C ctx = null);
+    public interface IClientTransport<C> where C: class, IClientTransportContext {
+        void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx = null);
     }
 }

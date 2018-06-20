@@ -312,7 +312,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
         s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
            |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});" }
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
-           |        new TransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
+           |        new ClientTransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
        """.stripMargin
 
@@ -320,7 +320,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
         s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
            |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});" }
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
-           |        new TransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
+           |        new ClientTransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
        """.stripMargin
     }
@@ -329,14 +329,14 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   protected def renderServiceClient(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
     val name = s"${i.id.name}Client"
 
-    s"""public interface I${name}<C> where C: class {
+    s"""public interface I${name}<C> where C: class, IClientTransportContext {
        |${i.methods.map(m => renderServiceMethodSignature(i, m, forClient = true) + ";").mkString("\n").shift(4)}
        |}
        |
-       |public class ${name}Generic<C>: I${name}<C> where C: class {
-       |    public ITransport<C> Transport { get; private set; }
+       |public class ${name}Generic<C>: I${name}<C> where C: class, IClientTransportContext {
+       |    public IClientTransport<C> Transport { get; private set; }
        |
-       |    public ${name}Generic(ITransport<C> t) {
+       |    public ${name}Generic(IClientTransport<C> t) {
        |        Transport = t;
        |    }
        |
@@ -350,8 +350,8 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
        |${i.methods.map(me => renderServiceClientMethod(i, me)).mkString("\n").shift(4)}
        |}
        |
-       |public class ${name}: ${name}Generic<object> {
-       |    public ${name}(ITransport<object> t): base(t) {}
+       |public class ${name}: ${name}Generic<IClientTransportContext> {
+       |    public ${name}(IClientTransport<IClientTransportContext> t): base(t) {}
        |}
      """.stripMargin
   }

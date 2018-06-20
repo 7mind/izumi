@@ -7,14 +7,14 @@ using System.Text;
 using System.Collections.Specialized;
 
 namespace irt {
-    public class AsyncHttpTransportGeneric<C>: ITransport<C> where C: class {
+    public class AsyncHttpTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
         private class RequestState<O> {
             public HttpWebRequest Request;
-            public TransportCallback<O> Callback;
+            public ClientTransportCallback<O> Callback;
             public O Response;
             public string JsonString;
 
-            public RequestState(HttpWebRequest request, TransportCallback<O> callback, string jsonString) {
+            public RequestState(HttpWebRequest request, ClientTransportCallback<O> callback, string jsonString) {
                 Request = request;
                 Callback = callback;
                 JsonString = jsonString;
@@ -47,7 +47,7 @@ namespace irt {
             ActiveRequests = 0;
         }
 
-        public void Send<I, O>(string service, string method, I payload, TransportCallback<O> callback, C ctx) {
+        public void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx) {
             try {
                 var request = (HttpWebRequest) WebRequest.Create(string.Format("{0}/{1}/{2}", endpoint, service, method));
                 request.Timeout = Timeout * 1000;
@@ -128,7 +128,7 @@ namespace irt {
         }
     }
 
-    public class AsyncHttpTransport: AsyncHttpTransportGeneric<object> {
+    public class AsyncHttpTransport: AsyncHttpTransportGeneric<IClientTransportContext> {
         public AsyncHttpTransport(string endpoint, IJsonMarshaller marshaller, int timeout = 60):
                             base(endpoint, marshaller, timeout) {}
     }

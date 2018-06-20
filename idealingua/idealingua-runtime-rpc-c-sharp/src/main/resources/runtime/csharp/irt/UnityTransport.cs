@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UnityEngine.Networking;
 
 namespace irt.unity {
-    public class UnityTransportGeneric<C>: ITransport<C> where C: class {
+    public class UnityTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
         private const string CACHE_CONTROL_HEADER_KEY = "Cache-Control";
         private const string CACHE_CONTROL_HEADER_VALUES = "private, max-age=0, no-cache, no-store";
         private const string PRAGMA_HEADER_KEY = "Pragma";
@@ -75,7 +75,7 @@ namespace irt.unity {
             return request;
         }
 
-        protected IEnumerator ProcessRequest<O>(UnityWebRequest req, TransportCallback<O> callback) {
+        protected IEnumerator ProcessRequest<O>(UnityWebRequest req, ClientTransportCallback<O> callback) {
             ActiveRequests++;
             yield return req.Send();
             ActiveRequests--;
@@ -88,7 +88,7 @@ namespace irt.unity {
             ProcessResponse(req.downloadHandler.text, req.GetResponseHeaders(), callback);
         }
 
-        protected void ProcessResponse<O>(string text, Dictionary<string, string> headers, TransportCallback<O> callback) {
+        protected void ProcessResponse<O>(string text, Dictionary<string, string> headers, ClientTransportCallback<O> callback) {
             try {
                 if (string.IsNullOrEmpty(text)) {
                     throw new TransportException("Empty response.");
@@ -103,7 +103,7 @@ namespace irt.unity {
             }
         }
 
-        public void Send<I, O>(string service, string method, I payload, TransportCallback<O> callback, C ctx) {
+        public void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx) {
             if (CoroutineProcessor == null) {
                 callback.Failure(
                     new TransportException("UnityTransport requires a coroutine processor to be present before any requests can be executed.")
@@ -125,7 +125,7 @@ namespace irt.unity {
         }
     }
 
-    public class UnityTransport: UnityTransportGeneric<object> {
+    public class UnityTransport: UnityTransportGeneric<IClientTransportContext> {
         public UnityTransport(string endpoint, IJsonMarshaller marshaller, Action<IEnumerator> coroutineProcessor, int timeout = 60):
             base(endpoint, marshaller, coroutineProcessor, timeout) {}
     }
