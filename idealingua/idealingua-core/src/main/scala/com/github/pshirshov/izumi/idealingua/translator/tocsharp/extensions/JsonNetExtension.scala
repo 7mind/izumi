@@ -85,6 +85,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def postModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
+    // ${if (struct.fields.isEmpty) "" else "var json = JObject.Load(reader);"}
 
     s"""public class ${name}_JsonNetConverter: JsonNetConverter<${name}> {
        |    public override void WriteJson(JsonWriter writer, ${name} v, JsonSerializer serializer) {
@@ -94,7 +95,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
        |    }
        |
        |    public override ${name} ReadJson(JsonReader reader, System.Type objectType, ${name} existingValue, bool hasExistingValue, JsonSerializer serializer) {
-       |        var json = JObject.Load(reader);
+       |        ${if (struct.fields.isEmpty) "reader.Skip();" else "var json = JObject.Load(reader);"}
        |${struct.fields.map(f => prepareReadProperty(f)).filter(_.isDefined).map(_.get).mkString("\n").shift(8)}
        |        return new ${name}(
        |${struct.fields.map(f => readProperty(f)).mkString(", \n").shift(12)}
