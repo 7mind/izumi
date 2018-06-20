@@ -250,7 +250,9 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   protected def renderInterface(i: Interface)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
     val structure = typespace.structure.structure(i)
     val eid = typespace.tools.implId(i.id)
-    val validFields = structure.all.filterNot(f => i.struct.superclasses.interfaces.contains(f.defn.definedBy))
+
+    val parentIfaces = ts.inheritance.parentsInherited(i.id).filter(_ != i.id)
+    val validFields = structure.all.filterNot(f => parentIfaces.contains(f.defn.definedBy))
     val ifaceFields = validFields.map(f =>
       (if (f.defn.variance.nonEmpty) true else false, CSharpField(/*if (f.defn.variance.nonEmpty) f.defn.variance.last else */f.field, eid.name, Seq.empty)))
 

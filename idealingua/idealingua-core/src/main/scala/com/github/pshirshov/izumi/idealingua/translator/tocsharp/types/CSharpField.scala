@@ -16,11 +16,11 @@ final case class CSharpField(
                               structName: String,
                               by: Seq[String]
                             ) (implicit im: CSharpImports, ts: Typespace) {
-  def renderMemberName(): String = {
-    safeName(name)
+  def renderMemberName(capitalize: Boolean = true, uncapitalize: Boolean = false): String = {
+    safeName(name, capitalize, uncapitalize)
   }
 
-  protected def safeName(name: String): String = {
+  protected def safeName(name: String, capitalize: Boolean, uncapitalize: Boolean): String = {
     val systemReserved = Seq("Type", "Environment")
 
     val reserved = Seq("abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked",
@@ -45,11 +45,11 @@ final case class CSharpField(
 //      value	var	when (filter condition)
 //      where (generic type constraint)	where (query clause)	yield
 
-    val finalName = name.capitalize
+    val finalName = if (capitalize) name.capitalize else if (uncapitalize) name.uncapitalize else name
     if (finalName == structName) {
       s"@${finalName}_"
     } else {
-      if (all.contains(name)) s"@$finalName" else finalName
+      if (all.contains(finalName)) s"@$finalName" else finalName
     }
   }
 

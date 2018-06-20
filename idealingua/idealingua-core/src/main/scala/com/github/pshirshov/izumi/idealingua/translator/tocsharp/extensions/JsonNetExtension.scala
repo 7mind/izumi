@@ -330,7 +330,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
     val eidName = id.id.name + eid.name
     s"""public class ${id.id.name}_JsonNetConverter: JsonNetConverter<${id.id.name}> {
        |    public override void WriteJson(JsonWriter writer, ${id.id.name} value, JsonSerializer serializer) {
-       |${renderSerialize(id.id, "value").shift(4)}
+       |${renderSerialize(id.id, "value").shift(8)}
        |    }
        |
        |    public override ${id.id.name} ReadJson(JsonReader reader, System.Type objectType, ${id.id.name} existingValue, bool hasExistingValue, JsonSerializer serializer) {
