@@ -22,4 +22,16 @@ trait LogRouter {
 
 object LogRouter {
   final val fallbackPropertyName = "izumi.logstage.routing.log-failures"
+
+  final val nullRouter = new LogRouter {
+    override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = false
+
+    override protected def doLog(entry: Log.Entry): Unit = {}
+  }
+
+  final val debugRouter = new LogRouter {
+    override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = true
+
+    override protected def doLog(entry: Log.Entry): Unit = fallback.log(entry.toString)
+  }
 }
