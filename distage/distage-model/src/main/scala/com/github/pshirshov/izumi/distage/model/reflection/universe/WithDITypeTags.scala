@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
 
 import scala.language.higherKinds
 import scala.reflect.api
-import scala.reflect.api.{TypeCreator, Universe}
+import scala.reflect.api.TypeCreator
 
 trait WithDITypeTags {
   this: DIUniverseBase =>
