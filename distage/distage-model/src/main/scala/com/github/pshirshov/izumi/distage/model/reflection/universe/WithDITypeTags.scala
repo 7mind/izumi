@@ -202,7 +202,7 @@ trait WithDITypeTags {
       }
   }
 
-  implicit class WeakTypeTagExtensions[T](val weakTypeTag: WeakTypeTag[T]) {
+  implicit class WeakTypeTagMigrate[T](val weakTypeTag: WeakTypeTag[T]) {
     def migrate[U <: Universe with Singleton](m: api.Mirror[U]): m.universe.WeakTypeTag[T] =
       weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
   }
