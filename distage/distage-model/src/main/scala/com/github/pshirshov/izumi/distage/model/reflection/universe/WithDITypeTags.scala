@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
+
 import scala.language.higherKinds
 import scala.reflect.api
 import scala.reflect.api.{TypeCreator, Universe}
@@ -50,7 +52,7 @@ trait WithDITypeTags {
     **/
     def appliedTag[R](tag: WeakTypeTag[_], args: List[TypeTag[_]]): Tag[R] = {
       val appliedTypeCreator = new TypeCreator {
-        override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type =
+        override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
           m.universe.appliedType(tag.migrate(m).tpe.typeConstructor, args.map(_.migrate(m).tpe))
       }
       Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
@@ -182,7 +184,7 @@ trait WithDITypeTags {
       new TagK[K] {
         override val tag: TypeTag[_] = {
           val ctorCreator = new TypeCreator {
-            override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type =
+            override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
               t.migrate(m).tpe match {
                 case r if r.typeArgs.length <= 1 =>
                   r.typeConstructor
@@ -203,7 +205,7 @@ trait WithDITypeTags {
   }
 
   implicit class WeakTypeTagMigrate[T](val weakTypeTag: WeakTypeTag[T]) {
-    def migrate[U <: Universe with Singleton](m: api.Mirror[U]): m.universe.WeakTypeTag[T] =
+    def migrate[U <: SingletonUniverse](m: api.Mirror[U]): m.universe.WeakTypeTag[T] =
       weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
   }
 
