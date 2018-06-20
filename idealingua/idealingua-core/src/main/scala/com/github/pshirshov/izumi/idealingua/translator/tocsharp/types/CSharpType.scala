@@ -37,10 +37,10 @@ final case class CSharpType (
       case Primitive.TFloat => false
       case Primitive.TDouble => false
       case Primitive.TUUID => true
-      case Primitive.TTime => true
-      case Primitive.TDate => true
-      case Primitive.TTs => true
-      case Primitive.TTsTz => true
+      case Primitive.TTime => false
+      case Primitive.TDate => false
+      case Primitive.TTs => false
+      case Primitive.TTsTz => false
     }
     case _ => id match {
       case _: EnumId => false

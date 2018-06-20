@@ -112,8 +112,9 @@ object JsonNetExtension extends CSharpTranslatorExtension {
   private def writePropertyValue(src: String, t: CSharpType, key: Option[String] = None)(implicit im: CSharpImports, ts: Typespace): String = {
     t.id match {
       case g: Generic.TOption => {
-        s"""if (${if (t.isNullable) src + " != null" else src + ".HasValue"}) {
-           |${writePropertyValue(if (t.isNullable) src else src + ".Value", CSharpType(g.valueType), key).shift(4)}
+        val optionType = CSharpType(g.valueType)
+        s"""if (${if (optionType.isNullable) src + " != null" else src + ".HasValue"}) {
+           |${writePropertyValue(if (optionType.isNullable) src else src + ".Value", optionType, key).shift(4)}
            |}
          """.stripMargin
       }
