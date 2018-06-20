@@ -162,7 +162,7 @@ trait WithDITypeTags {
     *     > typeTag[List[Int]]
     */
     final def apply[T](implicit tag: Tag[T]): Tag[K[T]] =
-      Tag.appliedTag(tag, List(tag.tag))
+      Tag.appliedTag(this.tag, List(tag.tag))
 
     override final def toString: String = s"TagK[${tag.tpe}]"
   }
