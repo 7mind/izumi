@@ -23,7 +23,7 @@ namespace irt {
                 if (!(data is IRTTI)) {
                     throw new Exception("Trying to serialize an interface which doesn't expose an IRTTI interface: " + typeof(I).ToString());
                 }
-                return JsonConvert.SerializeObject(data, typeof(I), settings);
+                return JsonConvert.SerializeObject(new InterfaceMarshalWorkaround(data as IRTTI), settings);
             } else {
                 return JsonConvert.SerializeObject(data, typeof(I), settings);
             }
@@ -32,23 +32,28 @@ namespace irt {
         public O Unmarshal<O>(string data) {
             return JsonConvert.DeserializeObject<O>(data, settings);
         }
-    }
 
-    public class InterfaceJsonNetSerializer: JsonConverter {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-            IRTTI v = (IRTTI)value;
-            writer.WriteStartObject();
-            writer.WritePropertyName(v.GetFullClassName());
-            serializer.Serialize(writer, v);
-            writer.WriteEndObject();
+        [JsonConverter(typeof(InterfaceMarshalWorkaround_JsonNetConverter))]
+        private class InterfaceMarshalWorkaround {
+            public IRTTI Value;
+            public InterfaceMarshalWorkaround(IRTTI value) {
+                Value = value;
+            }
         }
 
-        public override object ReadJson(JsonReader reader, System.Type objectType, object existingValue, JsonSerializer serializer) {
-            throw new Exception("InterfaceJsonNetSerializer should not be used for deserialization.");
-        }
+        private class InterfaceMarshalWorkaround_JsonNetConverter: JsonNetConverter<InterfaceMarshalWorkaround> {
+            public override void WriteJson(JsonWriter writer, InterfaceMarshalWorkaround holder, JsonSerializer serializer) {
+                // Serializing polymorphic type
+                writer.WriteStartObject();
+                writer.WritePropertyName(holder.Value.GetFullClassName());
+                serializer.Serialize(writer, holder.Value);
+                writer.WriteEndObject();
 
-        public override bool CanConvert(System.Type objectType) {
-            return false;
+            }
+
+            public override InterfaceMarshalWorkaround ReadJson(JsonReader reader, System.Type objectType, InterfaceMarshalWorkaround existingValue, bool hasExistingValue, JsonSerializer serializer) {
+                throw new Exception("Should not be used for Reading, workaround only for writing.");
+            }
         }
     }
 
