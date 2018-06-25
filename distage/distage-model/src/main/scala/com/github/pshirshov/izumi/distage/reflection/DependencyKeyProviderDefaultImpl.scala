@@ -52,7 +52,7 @@ object DependencyKeyProviderDefaultImpl {
                )
     extends DependencyKeyProvider.Runtime
        with DependencyKeyProviderDefaultImpl {
-    // workaround for a scalac bug that fails at runtime if `typeOf` is called or a `TypeTag` is summoned
+    // workaround for a scalac bug that fails at runtime if `typeOf` is called or a `TypeTag` is summoned in source code
     // when the universe is abstract (a parameter, not singleton runtime.universe JavaUniverse), generates runtime exceptions like
     //
     // [info]   scala.ScalaReflectionException: class com.github.pshirshov.izumi.distage.model.definition.Id in JavaMirror with java.net.URLClassLoader@3911c2a7 of type class java.net.URLClassLoader with classpath [file:/Users/mykhailo.feldman/.sbt/boot/scala-2.12.4/lib/scala-library.jar,file:/Users/mykhailo.feldman/.sbt/boot/scala-2.12.4/lib/scala-compiler.jar,file:/Users/mykhailo.feldman/.sbt/boot/scala-2.12.4/lib/jline.jar,file:/Users/mykhailo.feldman/.sbt/boot/scala-2.12.4/lib/scala-reflect.jar,file:/Users/mykhailo.feldman/.sbt/boot/scala-2.12.4/lib/scala-xml_2.12.jar] and parent being xsbt.boot.BootFilteredLoader@200a26bc of type class xsbt.boot.BootFilteredLoader with classpath [<unknown>] and parent being jdk.internal.loader.ClassLoaders$AppClassLoader@4f8e5cde of type class jdk.internal.loader.ClassLoaders$AppClassLoader with classpath [<unknown>] and parent being jdk.internal.loader.ClassLoaders$PlatformClassLoader@1bc6a36e of type class jdk.internal.loader.ClassLoaders$PlatformClassLoader with classpath [<unknown>] and parent being primordial classloader with boot classpath [<unknown>] not found.
@@ -68,7 +68,7 @@ object DependencyKeyProviderDefaultImpl {
     // [info]   at scala.collection.immutable.List.find(List.scala:86)
     // [info]   ...
     //
-    // So these calls are moved to a point in which the universe is instantiated
+    // So these calls are delayed to a point at which the universe is a known concrete type
     override protected val typeOfWithAnnotation: u.SafeType = u.SafeType.get[With[Any]]
     override protected val typeOfIdAnnotation: u.SafeType = u.SafeType.get[Id]
   }
@@ -76,8 +76,8 @@ object DependencyKeyProviderDefaultImpl {
   object Static {
     def apply(macroUniverse: DIUniverse)(symbolintrospector: SymbolIntrospector.Static[macroUniverse.type]): DependencyKeyProvider.Static[macroUniverse.type] = {
       new DependencyKeyProviderDefaultImpl {
-        override val u: macroUniverse.type = macroUniverse
-        override val symbolIntrospector: symbolintrospector.type = symbolintrospector
+        override final val u: macroUniverse.type = macroUniverse
+        override final val symbolIntrospector: symbolintrospector.type = symbolintrospector
 
         override protected val typeOfWithAnnotation: u.SafeType = u.SafeType.get[With[Any]]
         override protected val typeOfIdAnnotation: u.SafeType = u.SafeType.get[Id]
