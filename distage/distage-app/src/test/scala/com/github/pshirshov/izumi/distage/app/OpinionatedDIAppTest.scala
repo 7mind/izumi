@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.TestSink
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
@@ -39,7 +40,8 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
     )
 
     new ApplicationBootstrapStrategyBaseImpl(bsContext) {
-      override def mergeStrategy: PluginMergeStrategy[LoadedPlugins] = {
+      override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
+        Quirks.discard(bs, app)
         new ConfigurablePluginMergeStrategy(pluginMergeConfig)
       }
 
