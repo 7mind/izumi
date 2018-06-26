@@ -27,6 +27,13 @@ class PlanningHookAggregate(hooks: Set[PlanningHook]) extends PlanningHook {
     }
   }
 
+  override def hookResolved(plan: FinalPlan): FinalPlan = {
+    hooks.foldLeft(plan) {
+      case (acc, hook) =>
+        hook.hookResolved(acc)
+    }
+  }
+
   override def hookFinal(plan: FinalPlan): FinalPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>

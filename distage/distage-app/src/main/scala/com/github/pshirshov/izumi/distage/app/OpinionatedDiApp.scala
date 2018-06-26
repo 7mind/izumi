@@ -5,8 +5,6 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
@@ -42,11 +40,7 @@ trait ApplicationBootstrapStrategy[CommandlineConfig <: AnyRef] {
 
   def context: Context
 
-  def requiredComponents(bsdef: ModuleBase, appDef: ModuleBase, plan: FinalPlan): Set[RuntimeDIUniverse.DIKey]
-
   def mergeStrategy: PluginMergeStrategy[LoadedPlugins]
-
-  def gc: DIGarbageCollector
 
   def router(): LogRouter
 
@@ -64,8 +58,6 @@ abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig <: AnyRef]
 (
   override val context: BootstrapContext[CommandlineConfig]
 ) extends ApplicationBootstrapStrategy[CommandlineConfig] {
-  def gc: DIGarbageCollector = TracingDIGC
-
   def mergeStrategy: PluginMergeStrategy[LoadedPlugins] = SimplePluginMergeStrategy
 
   def bootstrapModules(): Seq[ModuleBase] = Seq.empty
@@ -76,6 +68,8 @@ abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig <: AnyRef]
 
   def mkLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.pluginConfig)
 }
+
+
 
 
 abstract class OpinionatedDiApp {
@@ -99,7 +93,6 @@ abstract class OpinionatedDiApp {
     val loggerRouter = strategy.router()
 
     val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
-    //val parsedArgs = argumentParser(args)
     val bootstrapLoader = strategy.mkBootstrapLoader()
     val appLoader = strategy.mkLoader()
 
@@ -121,9 +114,7 @@ abstract class OpinionatedDiApp {
     val injector = Injectors.bootstrap(bsdef)
     val plan = injector.plan(appDef)
     logger.trace(s"Planning completed\n$plan")
-    val refinedPlan = strategy.gc.gc(plan, DIGarbageCollector.isRoot(strategy.requiredComponents(bsdef, appDef, plan)))
-    logger.trace(s"Unrequired components disabled\n$refinedPlan")
-    val context = injector.produce(refinedPlan)
+    val context = injector.produce(plan)
     logger.trace(s"Context produced")
     start(context, strategy.context)
   }
