@@ -531,5 +531,17 @@ Forest fire, climbin' higher, real life, it can wait""")
 
       override def get: F[_] = Pointed[F].point(getResult * 2)
     }
+
+    abstract class TestProvider[A, F[_]: Pointed] {
+      def f(a: A): F[A]
+    }
+
+    abstract class TestProvider0[A, B, F[_]: Pointed] {
+      def f(a: A): F[A]
+    }
+
+    abstract class TestProvider1[A, G[_]: Pointed, F[_]: Pointed] {
+      def f(a: A): F[A]
+    }
   }
 }
