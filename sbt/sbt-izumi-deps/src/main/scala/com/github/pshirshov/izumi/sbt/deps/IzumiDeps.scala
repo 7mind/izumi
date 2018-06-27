@@ -12,15 +12,15 @@ object IzumiDeps {
     val scala_213 = "2.13.0-M3"
 
     val scala_java8_compat = "0.9.0"
-    val kind_projector = "0.9.6"
+    val kind_projector = "0.9.7"
     val scalatest = "3.0.5"
 
     val cats = "1.1.0"
     val cats_effect = "0.10.1"
     val circe = "0.9.3"
-    val circe_derivation = "0.9.0-M3"
+    val circe_derivation = "0.9.0-M5"
     val shapeless = "2.3.3"
-    val http4s = "0.18.11"
+    val http4s = "0.18.13"
 
     val scalameta = "3.7.4"
     val fast_classpath_scanner = "2.21"
@@ -31,7 +31,7 @@ object IzumiDeps {
 
     // good to drop
     val cglib_nodep = "3.2.6"
-    val json4s = "3.5.3"
+    val json4s = "3.5.4"
     val scopt = "3.7.0"
 
     // unused
