@@ -102,7 +102,21 @@ trait WithDITypeTags {
 
   }
 
-  trait TagInstances2  {
+  trait TagInstances2 extends TagInstances3 {
+
+    implicit def tagFromTagTAAK[T[_, _, _[_]], A0: Tag, A1: Tag, K[_]: TagK](implicit t: WeakTypeTag[T[A0, A1, K]]): Tag[T[A0, A1, K]] =
+      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, TagK[K].tag))
+
+  }
+
+  trait TagInstances3 extends TagInstances4 {
+
+    implicit def tagFromTagTAK[T[_, _[_]], A: Tag, K[_]: TagK](implicit t: WeakTypeTag[T[A, K]]): Tag[T[A, K]] =
+      Tag.appliedTag(t, List(Tag[A].tag, TagK[K].tag))
+
+  }
+
+  trait TagInstances4  {
 
     implicit def tagFromTagKA[K[_]: TagK, A: Tag]: Tag[K[A]] =
       TagK[K].apply[A]
