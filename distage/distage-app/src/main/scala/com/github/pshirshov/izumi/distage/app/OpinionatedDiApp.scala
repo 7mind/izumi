@@ -45,9 +45,9 @@ trait ApplicationBootstrapStrategy[CommandlineConfig <: AnyRef] {
 
   def router(): LogRouter
 
-  def bootstrapModules(): Seq[ModuleBase]
+  def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase]
 
-  def appModules(): Seq[ModuleBase]
+  def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase]
 
   def mkBootstrapLoader(): PluginLoader
 
@@ -64,9 +64,15 @@ abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig <: AnyRef]
     SimplePluginMergeStrategy
   }
 
-  def bootstrapModules(): Seq[ModuleBase] = Seq.empty
+  def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
+    Quirks.discard(bs, app)
+    Seq.empty
+  }
 
-  def appModules(): Seq[ModuleBase] = Seq.empty
+  def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
+    Quirks.discard(bs, app)
+    Seq.empty
+  }
 
   def mkBootstrapLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.bootstrapConfig)
 
@@ -109,10 +115,10 @@ abstract class OpinionatedDiApp {
 
     val bootstrapCustomDef = (Seq(new ModuleDef {
       make[LogRouter].from(loggerRouter)
-    }: ModuleBase) ++ strategy.bootstrapModules).merge
+    }: ModuleBase) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
 
     val bsdef = mergedBs.definition ++ bootstrapCustomDef
-    val appDef = mergedApp.definition ++ strategy.appModules().merge
+    val appDef = mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge
 
     logger.trace(s"Have bootstrap definition\n$bsdef")
     logger.trace(s"Have app definition\n$appDef")

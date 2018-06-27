@@ -45,11 +45,14 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
         new ConfigurablePluginMergeStrategy(pluginMergeConfig)
       }
 
-      override def bootstrapModules(): Seq[ModuleBase] = Seq(
-        new ConfigModule(bsContext.appConfig)
-        , new CustomizationModule
-        , new TracingGcModule(Set(RuntimeDIUniverse.DIKey.get[TestApp]))
-      )
+      override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
+        Quirks.discard(bs, app)
+        Seq(
+          new ConfigModule(bsContext.appConfig)
+          , new CustomizationModule
+          , new TracingGcModule(Set(RuntimeDIUniverse.DIKey.get[TestApp]))
+        )
+      }
 
       override def router(): LogRouter = {
         LoggingMacroTest.mkRouter(testSink)
