@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.Fixtures.Case16.TestProviderModule
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
@@ -595,7 +596,6 @@ class InjectorTest extends WordSpec {
       assert(definition.bindings.count(_.tags == Set("B")) == 1)
     }
 
-
     "set elements are the same as global bindings" in {
       import Case19._
 
@@ -615,7 +615,31 @@ class InjectorTest extends WordSpec {
       assert(set.head eq svc)
     }
 
-    "progression test: can't handle path-dependent injections" in {
+    "progression test: cglib can't handle class local path-dependent injections (macros can)" in {
+      val fail = Try {
+        val definition = new ModuleDef {
+          make[TopLevelPathDepTest.TestClass]
+          make[TopLevelPathDepTest.TestDependency]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+
+        val context = injector.produce(plan)
+
+        assert(context.get[TopLevelPathDepTest.TestClass].a != null)
+      }.isFailure
+      assert(fail)
+    }
+
+    "progression test: cglib can't handle inner path-dependent injections (macros can)" in {
+      val fail = Try {
+        new InnerPathDepTest().testCase
+      }.isFailure
+      assert(fail)
+    }
+
+    "progression test: cglib can't handle function local path-dependent injections" in {
       val fail = Try {
         import Case16._
 
@@ -640,7 +664,7 @@ class InjectorTest extends WordSpec {
       import Case20._
 
       case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
-        // hmmm, what to do with this
+        // FIXME: hmmm, what to do with this
         make[Pointed[F]].from(Pointed[F])
 
         make[TestTrait].from[TestServiceClass[F]]
@@ -648,6 +672,14 @@ class InjectorTest extends WordSpec {
         make[TestServiceTrait[F]]
         make[Int].named("TestService").from(getResult)
         make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
+        make[Either[String, Boolean]].from(Right(true))
+
+//        FIXME: Nothing doesn't resolve properly yet when F is unknown...
+//        make[F[Nothing]]
+//        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
+        make[F[Any]].from(Pointed[F].point(1: Any))
+        make[Either[String, F[Int]]].from(Right[String, F[Int]](Pointed[F].point(1)))
+        make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
       }
 
       val listInjector = mkInjector()
@@ -658,15 +690,19 @@ class InjectorTest extends WordSpec {
       assert(listContext.get[TestServiceClass[List]].get == List(5))
       assert(listContext.get[TestServiceTrait[List]].get == List(10))
       assert(listContext.get[List[String]] == List("Hello 5!"))
+      assert(listContext.get[List[Any]] == List(1))
+      assert(listContext.get[Either[String, Boolean]] == Right(true))
+      assert(listContext.get[Either[String, List[Int]]] == Right(List(1)))
+      assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
-      val setInjector = mkInjector()
-      val setPlan = setInjector.plan(Definition[Set](5))
-      val setContext = setInjector.produce(setPlan)
+      val optionTInjector = mkInjector()
+      val optionTPlan = optionTInjector.plan(Definition[OptionT[List, ?]](5))
+      val optionTContext = optionTInjector.produce(optionTPlan)
 
-      assert(setContext.get[TestTrait].get == Set(5))
-      assert(setContext.get[TestServiceClass[Set]].get == Set(5))
-      assert(setContext.get[TestServiceTrait[Set]].get == Set(10))
-      assert(setContext.get[Set[String]] == Set("Hello 5!"))
+      assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
+      assert(optionTContext.get[TestServiceClass[OptionT[List, ?]]].get == OptionT(List(Option(5))))
+      assert(optionTContext.get[TestServiceTrait[OptionT[List, ?]]].get == OptionT(List(Option(10))))
+      assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
       val idInjector = mkInjector()
       val idPlan = idInjector.plan(Definition[id](5))
@@ -679,4 +715,23 @@ class InjectorTest extends WordSpec {
     }
 
   }
+
+  class InnerPathDepTest extends TestProviderModule {
+    private val definition = new ModuleDef {
+      make[TestClass]
+      make[TestDependency]
+    }
+
+    def testCase = {
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].a != null)
+    }
+  }
+
+  object TopLevelPathDepTest extends TestProviderModule
+
 }

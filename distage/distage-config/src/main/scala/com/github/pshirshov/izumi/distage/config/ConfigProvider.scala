@@ -7,8 +7,9 @@ import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+import com.typesafe.config.Config
 
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -18,27 +19,26 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   import ConfigProvider._
 
   override def hookFinal(plan: FinalPlan): FinalPlan = {
-
-
     val updatedSteps = plan.steps
       .map {
         case ConfigImport(ci) =>
           try {
             val requirement = toRequirement(ci)
-            TranslationResult.Success(translate(requirement))
+            translate(ci.imp, requirement)
           } catch {
             case NonFatal(t) =>
-              TranslationResult.Failure(t)
+              TranslationResult.Failure(ci.imp, t)
           }
 
         case s =>
           TranslationResult.Success(s)
       }
 
-    val errors = updatedSteps.collect({ case TranslationResult.Failure(op) => op })
+    val errors = updatedSteps.collect({ case t: TranslationFailure => t })
 
     if (errors.nonEmpty) {
-      throw new DIException(s"Cannot resolve config:\n${errors.map(_.stackTrace).mkString("\n")}", errors.head)
+      // TODO: instead of throwing exception we may just print a warning and leave import in place. It would fail on provisioning anyway
+      throw new DIException(s"Cannot resolve config:\n - ${errors.mkString("\n - ")}", null)
     }
 
     val ops = updatedSteps.collect({ case TranslationResult.Success(op) => op })
@@ -46,22 +46,21 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
     newPlan
   }
 
-  private def translate(step: RequiredConfigEntry): ExecutableOp = {
+  private def translate(op: ExecutableOp, step: RequiredConfigEntry): TranslationResult = {
     val results = step.paths.map(p => Try((p.toPath, config.config.getConfig(p.toPath))))
     val loaded = results.collect({ case scala.util.Success(value) => value })
 
     if (loaded.isEmpty) {
-      val tried = step.paths.mkString("{", "|", "}")
-      throw new DIException(s"Cannot find config value for ${step.target} from paths: $tried", null)
+      return TranslationResult.MissingConfigValue(op, step.paths)
     }
 
     val section = loaded.head
     try {
       val product = reader.readConfig(section._2, step.targetType)
-      ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product))
+      TranslationResult.Success(ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product)))
     } catch {
       case NonFatal(t) =>
-        throw new DIException(s"Cannot read ${step.targetType} out of ${section._1} ==> ${section._2}", t)
+        TranslationResult.ExtractionFailure(op, step.targetType, section._1, section._2, t)
     }
   }
 
@@ -186,12 +185,29 @@ object ConfigProvider {
   }
 
   private sealed trait TranslationResult
+  private sealed trait TranslationFailure extends TranslationResult {
+    def op: ExecutableOp
+    def target: RuntimeDIUniverse.DIKey = op.target
+  }
 
   private object TranslationResult {
 
     final case class Success(op: ExecutableOp) extends TranslationResult
 
-    final case class Failure(f: Throwable) extends TranslationResult
+    final case class MissingConfigValue(op: ExecutableOp, paths: Seq[ConfigPath]) extends TranslationFailure {
+      override def toString: String = {
+        val tried = paths.mkString("{", "|", "}")
+        s"$target: missing config value, tried paths: $tried"
+      }
+    }
+
+    final case class ExtractionFailure(op: ExecutableOp, tpe: TypeFull, path: String, config: Config, f: Throwable) extends TranslationFailure {
+      override def toString: String = s"$target: cannot read $tpe out of $path ==> $config: ${f.getMessage}"
+    }
+
+    final case class Failure(op: ExecutableOp, f: Throwable) extends TranslationFailure {
+      override def toString: String = s"$target: unexpected exception: ${f.getMessage}"
+    }
 
   }
 

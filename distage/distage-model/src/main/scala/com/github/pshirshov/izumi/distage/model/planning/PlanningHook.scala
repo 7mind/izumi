@@ -18,5 +18,7 @@ trait PlanningHook {
     next
   }
 
+  def hookResolved(plan: FinalPlan): FinalPlan = plan
+
   def hookFinal(plan: FinalPlan): FinalPlan = plan
 }

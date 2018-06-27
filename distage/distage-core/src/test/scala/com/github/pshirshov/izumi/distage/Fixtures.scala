@@ -441,6 +441,7 @@ Forest fire, climbin' higher, real life, it can wait""")
       def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
 
     }
+
   }
 
   object Case17 {
@@ -492,16 +493,19 @@ Forest fire, climbin' higher, real life, it can wait""")
           override def point[A](a: A): List[A] = List(a)
         }
 
-      implicit final val pointedSet: Pointed[Set] =
-        new Pointed[Set] {
-          override def point[A](a: A): Set[A] = Set(a)
+      implicit final def pointedOptionT[F[_]: Pointed]: Pointed[OptionT[F, ?]] =
+        new Pointed[OptionT[F, ?]] {
+          override def point[A](a: A): OptionT[F, A] = OptionT(Pointed[F].point(Some(a)))
         }
 
       implicit final val pointedId: Pointed[id] =
         new Pointed[id] {
           override def point[A](a: A): id[A] = a
         }
+
     }
+
+    case class OptionT[F[_], A](value: F[Option[A]])
 
     trait TestTrait {
       type R[_]

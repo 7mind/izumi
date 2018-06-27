@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.plugins
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, SimpleModuleDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.reflection
@@ -36,12 +36,12 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       .filterNot(isDisabled)
       .map(d => d.key -> d)
       .toMultimap
-      .map(resolve)
+      .flatMap(resolve)
 
     JustLoadedPlugins(SimpleModuleDef(resolved.toSet))
   }
 
-  protected def resolve(kv: (reflection.universe.RuntimeDIUniverse.DIKey, Set[Binding])): Binding = {
+  protected def resolve(kv: (reflection.universe.RuntimeDIUniverse.DIKey, Set[Binding])): Set[Binding] = {
     val (key, alternatives) = kv
     val name = key.tpe.tpe.typeSymbol.asClass.fullName
     val prefs = config.preferences.get(name)
@@ -49,7 +49,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
 
     prefs match {
       case None =>
-        oneAlternative(alternatives)
+        choose(key, alternatives)
 
       case Some(p) =>
         val matchingName = p.name match {
@@ -65,19 +65,24 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
 
         p.tag match {
           case Some(tag) =>
-            oneAlternative(matchingName.filter(_.tags.contains(tag)))
+            choose(key, matchingName.filter(_.tags.contains(tag)))
           case None =>
-            oneAlternative(matchingName)
+            choose(key, matchingName)
         }
     }
 
   }
 
-  private def oneAlternative(alternatives: Set[Binding]) = {
-    if (alternatives.size != 1) {
-      throw new DIException(s"Expected one alternative, got $alternatives", null)
+  private def choose(key: reflection.universe.RuntimeDIUniverse.DIKey, alternatives: Set[Binding]): Set[Binding] = {
+    if (alternatives.forall(_.isInstanceOf[SetBinding])) {
+      alternatives
+    } else {
+      if (alternatives.size != 1) {
+        throw new DIException(s"Expected one alternative for $key got:\n${alternatives.mkString(" - ", "\n - ", "")}", null)
+      }
+
+      Set(alternatives.head)
     }
-    alternatives.head
   }
 
   protected def isDisabled(binding: Binding): Boolean = {

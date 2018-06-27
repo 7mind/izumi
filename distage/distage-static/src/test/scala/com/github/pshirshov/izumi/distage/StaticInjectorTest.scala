@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.Fixtures.Case16.TestProviderModule
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
@@ -12,6 +13,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
+import scala.util.Try
 
 class StaticInjectorTest extends WordSpec {
 
@@ -356,6 +358,45 @@ class StaticInjectorTest extends WordSpec {
       assert(context.get[ConcreteProduct] == ConcreteProduct(TestConf(false), 50))
     }
 
+    "macros can handle class local path-dependent injections" in {
+      val definition = new StaticModuleDef {
+        stat[TopLevelPathDepTest.TestClass]
+        stat[TopLevelPathDepTest.TestDependency]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[TopLevelPathDepTest.TestClass].a != null)
+    }
+
+    "macros can handle inner path-dependent injections" in {
+      new InnerPathDepTest().testCase
+    }
+
+    "progression test: macros can't handle function local path-dependent injections" in {
+      val fail = Try {
+        import Case16._
+
+        val testProviderModule = new TestProviderModule
+
+        val definition = new StaticModuleDef {
+          stat[testProviderModule.TestClass]
+          stat[testProviderModule.TestDependency]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+
+        val context = injector.produce(plan)
+
+        assert(context.get[testProviderModule.TestClass].a != null)
+      }.isFailure
+      assert(fail)
+    }
+
     """Progression test: macros do not yet support tagless final style module definitions bcs they don't support multiple parameter lists
       | g(but they can also support implicits directly by injecting `implicitly` calls and avoid that make[Pointed[F]]...)""".stripMargin in {
       assertTypeError("""
@@ -394,5 +435,23 @@ class StaticInjectorTest extends WordSpec {
     }
 
   }
+
+  class InnerPathDepTest extends TestProviderModule {
+    private val definition = new StaticModuleDef {
+      stat[TestClass]
+      stat[TestDependency]
+    }
+
+    def testCase = {
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].a != null)
+    }
+  }
+
+  object TopLevelPathDepTest extends TestProviderModule
 
 }

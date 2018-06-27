@@ -1,8 +1,10 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
+
 import scala.language.higherKinds
 import scala.reflect.api
-import scala.reflect.api.{TypeCreator, Universe}
+import scala.reflect.api.TypeCreator
 
 trait WithDITypeTags {
   this: DIUniverseBase =>
@@ -32,41 +34,108 @@ trait WithDITypeTags {
 
   object Tag extends TagInstances0 {
     def apply[T: Tag]: Tag[T] = implicitly[Tag[T]]
+
+    def apply[T](t: TypeTag[T]): Tag[T] =
+      new Tag[T] {
+        override val tag: TypeTag[T] = t
+      }
+
+    /**
+    * Helper for creating your own instances for type shapes that aren't supported by default instances
+    * (most shapes in `cats` and `stdlib` are supported, but you may need this if you use `scalaz`)
+    *
+    * Example:
+    *
+    *     implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: WeakTypeTag[T[A0, K, A1]): Tag[T[A0, K, A1]] =
+    *       Tag.appliedTag(t, List(Tag[A0].tag, TagK[K].tag, Tag[A1].tag))
+    *
+    **/
+    def appliedTag[R](tag: WeakTypeTag[_], args: List[TypeTag[_]]): Tag[R] = {
+      val appliedTypeCreator = new TypeCreator {
+        override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
+          m.universe.appliedType(tag.migrate(m).tpe.typeConstructor, args.map(_.migrate(m).tpe))
+      }
+      Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
+    }
+
   }
 
   trait TagInstances0 extends TagInstances1 {
-
-    implicit def tagFromTypeTagK[T[_], A](implicit t: TypeTag[T[A]]): Tag[T[A]] =
-      new Tag[T[A]] {
-        override implicit val tag: u.TypeTag[T[A]] = t
+    // `Any` is apparently kind polymorphic (only inside the compiler, you can't use that ._.), which breaks other instances, so it's handled separately.
+    implicit val tagAny: Tag[Any] =
+      new Tag[Any] {
+        override val tag: TypeTag[Any] = typeTag[Any]
       }
 
+    // hmm, it works, but not always...
+    implicit val tagNothing: Tag[Nothing] =
+      new Tag[Nothing] {
+        override val tag: TypeTag[Nothing] = typeTag[Nothing]
+      }
   }
 
   trait TagInstances1 extends TagInstances2 {
 
-    implicit def tagFromTypeTag[T: TypeTag]: Tag[T] =
-      new Tag[T] {
-        override val tag: u.TypeTag[T] = typeTag[T]
-      }
+    implicit def tagFromTypeTagA[A: TypeTag]: Tag[A] = Tag(typeTag[A])
 
-    implicit def tagFromTypeTagKK[T[_[_]], K[_]](implicit t: TypeTag[T[K]]): Tag[T[K]] =
-      new Tag[T[K]] {
-        override implicit val tag: u.TypeTag[T[K]] = t
-      }
+    implicit def tagFromTypeTagKA[K[_], A](implicit t: TypeTag[K[A]]): Tag[K[A]] = Tag(t)
+
+    implicit def tagFromTypeTagKAA[K[_, _], A0, A1](implicit t: TypeTag[K[A0, A1]]): Tag[K[A0, A1]] = Tag(t)
+
+    implicit def tagFromTypeTagKAAA[K[_, _, _], A0, A1, A2](implicit t: TypeTag[K[A0, A1, A2]]): Tag[K[A0, A1, A2]] = Tag(t)
+
+    implicit def tagFromTypeTagKAAAA[K[_, _, _, _], A0, A1, A2, A3](implicit t: TypeTag[K[A0, A1, A2, A3]]): Tag[K[A0, A1, A2, A3]] = Tag(t)
+
+    implicit def tagFromTypeTagKAAAAA[K[_, _, _, _, _], A0, A1, A2, A3, A4](implicit t: TypeTag[K[A0, A1, A2, A3, A4]]): Tag[K[A0, A1, A2, A3, A4]] = Tag(t)
+
+    implicit def tagFromTypeTagTK[T[_[_]], K[_]](implicit t: TypeTag[T[K]]): Tag[T[K]] = Tag(t)
+
+    implicit def tagFromTypeTagTKA[T[_[_], _], K[_], A](implicit t: TypeTag[T[K, A]]): Tag[T[K, A]] = Tag(t)
+
+    implicit def tagFromTypeTagTKAA[T[_[_], _, _], K[_], A0, A1](implicit t: TypeTag[T[K, A0, A1]]): Tag[T[K, A0, A1]] = Tag(t)
+
+    implicit def tagFromTypeTagTKAAA[T[_[_], _, _, _], K[_], A0, A1, A2](implicit t: TypeTag[T[K, A0, A1, A2]]): Tag[T[K, A0, A1, A2]] = Tag(t)
+
+    implicit def tagFromTypeTagTKAAAA[T[_[_], _, _, _, _], K[_], A0, A1, A2, A3](implicit t: TypeTag[T[K, A0, A1, A2, A3]]): Tag[T[K, A0, A1, A2, A3]] = Tag(t)
+
+    implicit def tagFromTypeTagTKAAAAA[T[_[_], _, _, _, _, _], K[_], A0, A1, A2, A3, A4](implicit t: TypeTag[T[K, A0, A1, A2, A3, A4]]): Tag[T[K, A0, A1, A2, A3, A4]] = Tag(t)
+
   }
 
   trait TagInstances2  {
 
-    implicit def tagFromTagKTK[T[_[_]], K[_] : TagK](implicit t: WeakTypeTag[T[K]]): Tag[T[K]] =
-      new Tag[T[K]] {
-        override val tag: u.TypeTag[T[K]] = TagK[K].replaceIn(t)
-      }
+    implicit def tagFromTagKA[K[_]: TagK, A: Tag]: Tag[K[A]] =
+      TagK[K].apply[A]
 
-    implicit def tagFromTagKKT[K[_]: TagK, A](implicit t: Tag[A]): Tag[K[A]] =
-      new Tag[K[A]] {
-        override val tag: u.TypeTag[K[A]] = TagK[K].apply(t.tag)
-      }
+    implicit def tagFromTagKAA[K[_, _], A0: Tag, A1: Tag](implicit t: WeakTypeTag[K[A0, A1]]): Tag[K[A0, A1]] =
+      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag))
+
+    implicit def tagFromTagKAAA[K[_, _, _], A0: Tag, A1: Tag, A2: Tag](implicit t: WeakTypeTag[K[A0, A1, A2]]): Tag[K[A0, A1, A2]] =
+      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag))
+
+    implicit def tagFromTagKAAAA[K[_, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: WeakTypeTag[K[A0, A1, A2, A3]]): Tag[K[A0, A1, A2, A3]] =
+      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag))
+
+    implicit def tagFromTagKAAAAA[K[_, _, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: WeakTypeTag[K[A0, A1, A2, A3, A4]]): Tag[K[A0, A1, A2, A3, A4]] =
+      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
+
+    implicit def tagFromTagTK[T[_[_]], K[_]: TagK](implicit t: WeakTypeTag[T[K]]): Tag[T[K]] =
+      Tag.appliedTag(t, List(TagK[K].tag))
+
+    implicit def tagFromTagTKA[T[_[_], _], K[_]: TagK, A: Tag](implicit t: WeakTypeTag[T[K, A]]): Tag[T[K, A]] =
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A].tag))
+
+    implicit def tagFromTagTKAA[T[_[_], _, _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: WeakTypeTag[T[K, A0, A1]]): Tag[T[K, A0, A1]] =
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag))
+
+    implicit def tagFromTagTKAAA[T[_[_], _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag](implicit t: WeakTypeTag[T[K, A0, A1, A2]]): Tag[T[K, A0, A1, A2]] =
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag))
+
+    implicit def tagFromTagTKAAAA[T[_[_], _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: WeakTypeTag[T[K, A0, A1, A2, A3]]): Tag[T[K, A0, A1, A2, A3]] =
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag))
+
+    implicit def tagFromTagTKAAAAA[T[_[_], _, _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: WeakTypeTag[T[K, A0, A1, A2, A3, A4]]): Tag[T[K, A0, A1, A2, A3, A4]] =
+      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
   }
 
   /**
@@ -80,54 +149,24 @@ trait WithDITypeTags {
   trait TagK[K[_]] {
 
     /**
-    * Create a [[scala.reflect.api.TypeTags#TypeTag]] for `K[T]` by applying `K[_]` to `T`
+    * Internal `TypeTag` holding the `typeConstructor` of type `K`
+    *
+    * You probably want to use `apply` method to replace a `TypeTag` of T[F] with T[K] instead.
+    **/
+    def tag: TypeTag[_]
+
+    /**
+    * Create a [[scala.reflect.api.TypyeTags#TypeTag]] for `K[T]` by applying `K[_]` to `T`
     *
     * Use:
     *     TagK[List].apply[Int]
     *
     *     > typeTag[List[Int]]
     */
-    def apply[T](implicit tag: TypeTag[T]): TypeTag[K[T]] = {
-      val appliedKTCreator = new TypeCreator {
-        override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type =
-          m.universe.appliedType(
-            ctorTag.in(m).tpe.asInstanceOf[m.universe.Type], tag.in(m).tpe.asInstanceOf[m.universe.Type]
-          )
-      }
-      TypeTag(tag.mirror, appliedKTCreator)
-    }
+    final def apply[T](implicit tag: Tag[T]): Tag[K[T]] =
+      Tag.appliedTag(this.tag, List(tag.tag))
 
-    /**
-    * Replace a [[scala.reflect.api.TypeTags#TypeTag]] for T[F] wit a `TypeTag` for T[K]
-    *
-    * This is the main mechanism by which `TagK` works.
-    * First we retrieve a TypeTag for T[Nothing], then we replace the `Nothing` with `K`
-    *
-    * Use:
-    *     TagK[List].replaceIn(weakTypeTag[OptionT[Try]])
-    *
-    *     > typeTag[OptionT[List]]
-    **/
-    def replaceIn[T[_[_]], F[_]](tag: WeakTypeTag[T[F]]): TypeTag[T[K]] = {
-      val appliedTKCreator = new TypeCreator {
-        override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type = {
-          val tCtor = tag.in(m).tpe.typeConstructor
-          m.universe.appliedType(
-            tCtor.asInstanceOf[m.universe.Type], List(ctorTag.in(m).tpe.asInstanceOf[m.universe.Type])
-          )
-        }
-      }
-      TypeTag(tag.mirror, appliedTKCreator)
-    }
-
-    /**
-    * Internal `TypeTag` holding the `typeConstructor` of type `K`
-    *
-    * You probably want to use `apply` method to replace a `TypeTag` of T[F] with T[K] instead.
-    **/
-    def ctorTag: TypeTag[_]
-
-    override def toString: String = s"TagK[${ctorTag.tpe}]"
+    override final def toString: String = s"TagK[${tag.tpe}]"
   }
 
   object TagK extends TagKInstances {
@@ -138,20 +177,36 @@ trait WithDITypeTags {
     *     TagK[Option]
     **/
     def apply[K[_] : TagK]: TagK[K] = implicitly[TagK[K]]
-
   }
 
   trait TagKInstances {
-    implicit def tagKFromTypeTag[K[_]](implicit ev: TypeTag[K[Nothing]]): TagK[K] =
+    implicit def tagKFromTypeTag[K[_]](implicit t: TypeTag[K[Nothing]]): TagK[K] =
       new TagK[K] {
-        override val ctorTag: TypeTag[_] = {
-          val ctorKCreator = new TypeCreator {
-            override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type =
-              ev.in(m).tpe.typeConstructor
+        override val tag: TypeTag[_] = {
+          val ctorCreator = new TypeCreator {
+            override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
+              t.migrate(m).tpe match {
+                case r if r.typeArgs.length <= 1 =>
+                  r.typeConstructor
+                case r =>
+                  // create a type lambda preserving embedded arguments
+                  // i.e. OptionT[List, ?] === [A => OptionT[List, A]]
+                  def newTypeParam[A]: m.universe.Type = m.universe.weakTypeOf[A]
+
+                  val freshParam = newTypeParam
+                  val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(1) ++ List(freshParam))
+
+                  m.universe.internal.polyType(List(freshParam.typeSymbol), appliedRes)
+              }
           }
-          TypeTag.apply(ev.mirror, ctorKCreator)
+          TypeTag(t.mirror, ctorCreator)
         }
       }
+  }
+
+  implicit class WeakTypeTagMigrate[T](val weakTypeTag: WeakTypeTag[T]) {
+    def migrate[U <: SingletonUniverse](m: api.Mirror[U]): m.universe.WeakTypeTag[T] =
+      weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
   }
 
 }

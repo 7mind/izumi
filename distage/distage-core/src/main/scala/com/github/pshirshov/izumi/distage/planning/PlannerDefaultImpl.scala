@@ -43,6 +43,7 @@ class PlannerDefaultImpl
       .map(forwardingRefResolver.resolve)
       .eff(planningObserver.onReferencesResolved)
       .map(planResolver.resolve(_, context))
+      .map(hook.hookResolved)
       .eff(planningObserver.onResolvingFinished)
       .eff(sanityChecker.assertFinalPlanSane)
       .map(hook.hookFinal)
