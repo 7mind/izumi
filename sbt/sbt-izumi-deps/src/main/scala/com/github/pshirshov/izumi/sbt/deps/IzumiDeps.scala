@@ -23,7 +23,7 @@ object IzumiDeps {
     val http4s = "0.18.13"
 
     val scalameta = "3.7.4"
-    val fast_classpath_scanner = "2.21"
+    val fast_classpath_scanner = "3.1.6"
     val fastparse = "1.0.0"
 
     val slf4j = "1.7.25"
