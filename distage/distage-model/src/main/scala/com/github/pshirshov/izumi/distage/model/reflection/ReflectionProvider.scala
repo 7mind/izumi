@@ -10,6 +10,8 @@ trait ReflectionProvider {
   def providerToWiring(function: u.Provider): u.Wiring
 
   def constructorParameters(symbl: u.TypeFull): List[u.Association.Parameter]
+
+  def constructorParameterLists(symbl: u.TypeFull): List[List[u.Association.Parameter]]
 }
 
 object ReflectionProvider {

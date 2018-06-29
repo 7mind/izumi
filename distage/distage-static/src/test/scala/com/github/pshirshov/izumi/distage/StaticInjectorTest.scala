@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
 import com.github.pshirshov.izumi.distage.model.definition._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
@@ -180,7 +181,7 @@ class StaticInjectorTest extends WordSpec {
 
       val definition = new StaticModuleDef {
         stat[Dependency1]
-        make[TestTrait].named("named-trait").statically
+        make[TestTrait].named("named-trait").stat[TestTrait]
       }
 
       val injector = mkInjector()
@@ -272,7 +273,7 @@ class StaticInjectorTest extends WordSpec {
         stat[Dep]
       }
 
-        val injector = mkInjector()
+      val injector = mkInjector()
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan)
@@ -350,7 +351,7 @@ class StaticInjectorTest extends WordSpec {
 
       val definition = new StaticModuleDef {
         make[Int].named("depInt").from(5)
-        make[ConcreteProduct].from((conf: TestConf @AutoConf, i: Int @Id("depInt")) => ConcreteProduct(conf, i * 10))
+        make[ConcreteProduct].from((conf: TestConf@AutoConf, i: Int@Id("depInt")) => ConcreteProduct(conf, i * 10))
       }
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
@@ -397,43 +398,98 @@ class StaticInjectorTest extends WordSpec {
       assert(fail)
     }
 
-    """Progression test: macros do not yet support tagless final style module definitions bcs they don't support multiple parameter lists
-      | g(but they can also support implicits directly by injecting `implicitly` calls and avoid that make[Pointed[F]]...)""".stripMargin in {
-      assertTypeError("""
-        import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-        import Case20._
+    "macros support tagless final style module definitions" in {
+      import Case20._
 
-        case class Definition[F[_] : TagK : Pointed](getResult: Int) extends StaticModuleDef {
-          // hmmm, what to do with this
-          make[Pointed[F]].from(Pointed[F])
+      case class Definition[F[_] : TagK : Pointed](getResult: Int) extends StaticModuleDef {
+        // FIXME: hmmm, what to do with this
+        make[Pointed[F]].from(Pointed[F])
 
-          make[TestTrait].stat[TestServiceClass[F]]
-          stat[TestServiceClass[F]]
-          stat[TestServiceTrait[F]]
-          make[Int].named("TestService").from(getResult)
-          make[F[String]].from { res: Int@Id("TestService") => Pointed[F].point(s"Hello $res!") }
-        }
+        make[TestTrait].stat[TestServiceClass[F]]
+        stat[TestServiceClass[F]]
+        stat[TestServiceTrait[F]]
+        make[Int].named("TestService").from(getResult)
+        make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
+        make[Either[String, Boolean]].from(Right(true))
 
-        val listInjector = mkInjector()
-        val listPlan = listInjector.plan(Definition[List](5))
-        val listContext = listInjector.produce(listPlan)
+        //        FIXME: Nothing doesn't resolve properly yet when F is unknown...
+        //        make[F[Nothing]]
+        //        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
+        make[F[Any]].from(Pointed[F].point(1: Any))
+        make[Either[String, F[Int]]].from { fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]]) }
+        make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
+      }
 
-        assert(listContext.get[TestTrait].get == List(5))
-        assert(listContext.get[TestServiceClass[List]].get == List(5))
-        assert(listContext.get[TestServiceTrait[List]].get == List(10))
-        assert(listContext.get[List[String]] == List("Hello 5!"))
+      val listInjector = mkInjector()
+      val listPlan = listInjector.plan(Definition[List](5))
+      val listContext = listInjector.produce(listPlan)
 
-        val setInjector = mkInjector()
-        val setPlan = setInjector.plan(Definition[Set](5))
-        val setContext = setInjector.produce(setPlan)
+      assert(listContext.get[TestTrait].get == List(5))
+      assert(listContext.get[TestServiceClass[List]].get == List(5))
+      assert(listContext.get[TestServiceTrait[List]].get == List(10))
+      assert(listContext.get[List[String]] == List("Hello 5!"))
+      assert(listContext.get[List[Any]] == List(1))
+      assert(listContext.get[Either[String, Boolean]] == Right(true))
+      assert(listContext.get[Either[String, List[Int]]] == Right(List(1)))
+      assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
-        assert(setContext.get[TestTrait].get == Set(5))
-        assert(setContext.get[TestServiceClass[Set]].get == Set(5))
-        assert(setContext.get[TestServiceTrait[Set]].get == Set(10))
-        assert(setContext.get[Set[String]] == Set("Hello 5!"))
-      """)
+      val optionTInjector = mkInjector()
+      val optionTPlan = optionTInjector.plan(Definition[OptionT[List, ?]](5))
+      val optionTContext = optionTInjector.produce(optionTPlan)
+
+      assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
+      assert(optionTContext.get[TestServiceClass[OptionT[List, ?]]].get == OptionT(List(Option(5))))
+      assert(optionTContext.get[TestServiceTrait[OptionT[List, ?]]].get == OptionT(List(Option(10))))
+      assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
+
+      val idInjector = mkInjector()
+      val idPlan = idInjector.plan(Definition[id](5))
+      val idContext = idInjector.produce(idPlan)
+
+      assert(idContext.get[TestTrait].get == 5)
+      assert(idContext.get[TestServiceClass[id]].get == 5)
+      assert(idContext.get[TestServiceTrait[id]].get == 10)
+      assert(idContext.get[id[String]] == "Hello 5!")
     }
 
+    "Handle multiple parameter lists" in {
+      import Case21._
+
+      val injector = mkInjector()
+
+      val definition = new StaticModuleDef {
+        stat[TestDependency1]
+        stat[TestDependency2]
+        stat[TestDependency3]
+        stat[TestClass]
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].a != null)
+      assert(context.get[TestClass].b != null)
+      assert(context.get[TestClass].c != null)
+      assert(context.get[TestClass].d != null)
+    }
+
+    "Implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
+      import Case21._
+
+      val injector = mkInjector()
+
+      val definition = new StaticModuleDef {
+        implicit val testDependency3: TestDependency3 = new TestDependency3
+
+        stat[TestDependency1]
+        stat[TestDependency2]
+        stat[TestDependency3]
+        stat[TestClass]
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].b == context.get[TestClass].d)
+    }
   }
 
   class InnerPathDepTest extends TestProviderModule {

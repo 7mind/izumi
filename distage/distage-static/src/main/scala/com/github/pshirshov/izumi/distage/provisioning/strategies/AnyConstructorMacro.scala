@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
 import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
@@ -8,23 +7,26 @@ import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultIm
 import scala.reflect.macros.blackbox
 
 object AnyConstructorMacro {
-  def mkAnyConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = {
+  def mkAnyConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = mkAnyConstructorImpl[T](c, generateUnsafeWeakSafeTypes = false)
+
+  def mkAnyConstructorUnsafeWeakSafeTypes[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = mkAnyConstructorImpl[T](c, generateUnsafeWeakSafeTypes = true)
+
+  def mkAnyConstructorImpl[T: c.WeakTypeTag](c: blackbox.Context, generateUnsafeWeakSafeTypes: Boolean): c.Expr[AnyConstructor[T]] = {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
-    val tools = DIUniverseMacros(macroUniverse)
 
     import macroUniverse._
 
     val safe = SafeType(weakTypeOf[T])
 
     if (symbolIntrospector.isConcrete(safe)) {
-      ConcreteConstructorMacro.mkConcreteConstructor[T](c)
+      ConcreteConstructorMacro.mkConcreteConstructorImpl[T](c, generateUnsafeWeakSafeTypes)
     } else if (symbolIntrospector.isFactory(safe)) {
       FactoryConstructorMacro.mkFactoryConstructor[T](c)
     } else if (symbolIntrospector.isWireableAbstract(safe)) {
-      TraitConstructorMacro.mkTraitConstructor[T](c)
+      TraitConstructorMacro.mkTraitConstructorImpl[T](c, generateUnsafeWeakSafeTypes)
     } else {
       c.abort(
         c.enclosingPosition

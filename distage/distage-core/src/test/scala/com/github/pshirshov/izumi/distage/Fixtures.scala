@@ -544,4 +544,12 @@ Forest fire, climbin' higher, real life, it can wait""")
       def f(a: A): F[A]
     }
   }
+
+  object Case21 {
+    class TestDependency1
+    class TestDependency2
+    class TestDependency3
+
+    class TestClass(val a: TestDependency1)(val b: TestDependency3, implicit val c: TestDependency2)(implicit val d: TestDependency3)
+  }
 }

@@ -47,7 +47,7 @@ trait WithDISafeType {
   object SafeType {
     def get[T: Tag]: TypeFull = SafeType(Tag[T].tag.tpe)
 
-    def getWeak[T: u.WeakTypeTag]: TypeFull = SafeType(u.weakTypeTag[T].tpe)
+    def unsafeGetWeak[T: WeakTag]: TypeFull = SafeType(WeakTag[T].tag.tpe)
   }
 
 }

@@ -19,6 +19,8 @@ object AnyConstructor {
   def apply[T: AnyConstructor]: AnyConstructor[T] = implicitly[AnyConstructor[T]]
 
   implicit def derive[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructor[T]
+
+  def generateUnsafeWeakSafeTypes[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructorUnsafeWeakSafeTypes[T]
 }
 
 object ConcreteConstructor {

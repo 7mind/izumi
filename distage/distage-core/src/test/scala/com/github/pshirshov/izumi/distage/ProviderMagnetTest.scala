@@ -5,7 +5,9 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import org.scalatest.WordSpec
 
-class WrappedFunctionAnnotationTest extends WordSpec {
+import scala.language.higherKinds
+
+class ProviderMagnetTest extends WordSpec {
   import com.github.pshirshov.izumi.distage.Fixtures.Case16._
 
   def priv(@Id("locargann") x: Int): Unit = {val _ = x}
@@ -120,6 +122,30 @@ class WrappedFunctionAnnotationTest extends WordSpec {
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
     }
 
+    "handle opaque references with generic parameters" in {
+      def locgenfn[T](t: T): Option[T] = Option(t)
+
+      val fn = ProviderMagnet.apply(locgenfn[Int](_)).get
+
+      assert(fn.diKeys contains DIKey.get[Int])
+    }
+
+    "handle opaque references with annotations and generic parameters" in {
+      def locgenfn[T](@Id("x") t: T): Option[T] = Option(t)
+
+      val fn = ProviderMagnet.apply(locgenfn[Int](_)).get
+
+      assert(fn.diKeys contains DIKey.get[Int].named("x"))
+    }
+
+    "handle opaque lambdas with generic parameters" in {
+      def locgenfn[T](@Id("x") t: T): Option[T] = Option(t)
+
+      val fn = ProviderMagnet.apply { x: Int => locgenfn(x) }.get
+
+      assert(fn.diKeys contains DIKey.get[Int].named("x"))
+    }
+
     "handle constructor references with argument annotations with a lossy wrapper lambda" in {
       val fn = ProviderMagnet.apply((x, y) => new ClassArgAnn(x, y)).get
 
@@ -146,6 +172,33 @@ class WrappedFunctionAnnotationTest extends WordSpec {
 
       assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
+    }
+
+    "handle generic parameters with TypeTag" in {
+      def fn[T: u.TypeTag]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
+
+      assert(fn[Int].diKeys contains DIKey.get[Int].named("gentypeann"))
+      assert(fn[String].diKeys contains DIKey.get[String].named("gentypeann"))
+    }
+
+    "handle generic parameters with Tag" in {
+      def fn[T: Tag]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
+
+      assert(fn[Int].diKeys contains DIKey.get[Int].named("gentypeann"))
+      assert(fn[String].diKeys contains DIKey.get[String].named("gentypeann"))
+    }
+
+    "handle higher-kinded parameters with TagK" in {
+      def fn[F[_]: TagK] = ProviderMagnet.apply((x: F[Int] @Id("gentypeann")) => x).get
+
+      assert(fn[List].diKeys contains DIKey.get[List[Int]].named("gentypeann"))
+      assert(fn[Set].diKeys contains DIKey.get[Set[Int]].named("gentypeann"))
+    }
+
+    "generic parameters without TypeTag should fail" in {
+      assertTypeError(
+        """def fn[T]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get"""
+      )
     }
   }
 
