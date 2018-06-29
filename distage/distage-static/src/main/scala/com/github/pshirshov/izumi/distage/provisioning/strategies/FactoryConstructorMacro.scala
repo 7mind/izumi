@@ -1,16 +1,15 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.definition.reflection.DIUniverseMacros
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
+import com.github.pshirshov.izumi.distage.model.reflection.macros.DIUniverseLiftables
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
-import com.github.pshirshov.izumi.distage.provisioning.{FactoryConstructor, FactoryTools}
+import com.github.pshirshov.izumi.distage.provisioning.{AnyConstructor, FactoryConstructor, FactoryTools}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
 
 import scala.reflect.macros.blackbox
 
-// TODO: Factories can exceed 22 arguments limit on function parameter list
 object FactoryConstructorMacro {
 
   def mkFactoryConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[FactoryConstructor[T]] = {
@@ -22,12 +21,25 @@ object FactoryConstructorMacro {
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
     val logger = MacroUtil.mkLogger[this.type](c)
-    val tools = DIUniverseMacros(macroUniverse)
 
-    import tools.{liftableRuntimeUniverse, liftableProductWiring, liftableSymbolInfo, liftableDIKey}
+    // A hack to support generic methods inside factories. No viable type info is available for generic parameters of these methods
+    // so we have to resort to WeakTypeTags and thread this ugly fucking `if` everywhere ;_;
+    val tools = DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
+
+    import tools.{liftableRuntimeUniverse, liftableSymbolInfo, liftableDIKey}
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._
+
+    val liftableProductWiring: Liftable[Wiring.UnaryWiring.ProductWiring] = {
+      // FIXME: Macro call in liftable that substitutes for a different type (not just in a different universe...)
+      w: Wiring.UnaryWiring.ProductWiring =>
+        q"""{
+        val fun = ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[${w.instanceType.tpe}].provider.get
+
+        $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun, fun.associations)
+        }"""
+    }
 
     val targetType = weakTypeOf[T]
 
@@ -49,15 +61,6 @@ object FactoryConstructorMacro {
     val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor].typeSymbol
     val factoryTools = symbolOf[FactoryTools.type].asClass.module
 
-    // FIXME we can't remove runtime dependency on scala-reflect right now because:
-    //  1. provisioner depends on RuntimeUniverse scala-reflect Types
-    //  2. we need to lift DIKey & SafeType types (by calling RuntimeUniverse reflection)
-    //
-    //  Solution:
-    //    * Provisioning shouldn't call mirror reflection, all necessary info should be collected at binding [done with -static module]
-    //    * Universe types(DIKey, SafeType) should be interfaces not directly referencing scala-reflect types
-    //      * provided dependencies seem to be correctly transitive, at least shapeless doesn't require the user to
-    //        to add provided scala-reflect to his .sbt
     val (producerMethods, withContexts) = wireables.zipWithIndex.map {
       case (method@FactoryMethod.WithContext(factoryMethod, productConstructor, methodArguments), methodIndex) =>
 
@@ -84,7 +87,7 @@ object FactoryConstructorMacro {
 
         // FIXME: remove asInstanceOf[ProductWiring] by generating providers for classes too, so the only wiring allowed is Function
         val methodInfo =q"""{
-          val wiring = ${productConstructor.asInstanceOf[Wiring.UnaryWiring.ProductWiring]}
+          val wiring = ${liftableProductWiring(productConstructor.asInstanceOf[Wiring.UnaryWiring.ProductWiring])}
 
           $RuntimeDIUniverse.Wiring.FactoryFunction.WithContext(
             ${factoryMethod: SymbolInfo}

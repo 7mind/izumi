@@ -23,7 +23,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             val resultType: SafeType = keyProvider.resultOfFactoryMethod(context)
 
             val alreadyInSignature = symbolIntrospector
-              .selectParameters(factoryMethod)
+              .selectNonImplicitParameters(factoryMethod)
+              .flatten
               .map(p => keyProvider.keyFromParameter(context, SymbolInfo(p, symbl)))
 
             //val symbolsAlreadyInSignature = alreadyInSignature.map(_.symbol).toSet
@@ -62,10 +63,13 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def constructorParameters(symbl: TypeFull): List[Association.Parameter] = {
-    val args: List[u.Symb] = symbolIntrospector.selectConstructor(symbl).arguments
+  override final def constructorParameters(symbl: TypeFull): List[Association.Parameter] =
+    constructorParameterLists(symbl).flatten
 
-    args.map(keyProvider.associationFromParameter(_, symbl))
+  override def constructorParameterLists(symbl: TypeFull): List[List[Association.Parameter]] = {
+    val argLists: List[List[u.Symb]] = symbolIntrospector.selectConstructor(symbl).arguments
+
+    argLists.map(_.map(keyProvider.associationFromParameter(_, symbl)))
   }
 
   private def unarySymbolDeps(symbl: TypeFull): UnaryWiring.ProductWiring = symbl match {

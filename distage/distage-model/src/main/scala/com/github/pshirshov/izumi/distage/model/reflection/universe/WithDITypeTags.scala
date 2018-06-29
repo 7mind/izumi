@@ -223,5 +223,32 @@ trait WithDITypeTags {
       weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
   }
 
+  // Workaround needed specifically to support generic methods in factories, see `GenericAssistedFactory` and related tests
+  //
+  // We need to construct a SafeType signature for a generic method, but generic parameters have no type tags
+  // So we resort to weak type parameters and pointer equality
+  trait WeakTag[T] {
+    def tag: WeakTypeTag[T]
+
+    override final def toString: String = s"WeakTag[${tag.tpe}]"
+  }
+
+  object WeakTag extends WeakTagInstances0 {
+    def apply[T: WeakTag]: WeakTag[T] = implicitly[WeakTag[T]]
+
+    def apply[T](t: WeakTypeTag[T]): WeakTag[T] =
+      new WeakTag[T] {
+        override val tag: WeakTypeTag[T] = t
+      }
+  }
+
+  trait WeakTagInstances0 extends WeakTagInstances1 {
+    implicit def weakTagFromTag[T: Tag]: WeakTag[T] = WeakTag(Tag[T].tag)
+  }
+
+  trait WeakTagInstances1 {
+    implicit def weakTagFromWeakTypeTag[T](implicit t: WeakTypeTag[T]): WeakTag[T] = WeakTag(t)
+  }
+
 }
 

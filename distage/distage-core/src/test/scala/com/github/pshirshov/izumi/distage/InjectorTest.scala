@@ -679,7 +679,7 @@ class InjectorTest extends WordSpec {
 //        make[F[Nothing]]
 //        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
         make[F[Any]].from(Pointed[F].point(1: Any))
-        make[Either[String, F[Int]]].from(Right[String, F[Int]](Pointed[F].point(1)))
+        make[Either[String, F[Int]]].from { fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]]) }
         make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
       }
 
@@ -744,6 +744,47 @@ class InjectorTest extends WordSpec {
 
       val fail = Try(assert(new Parent[Int, List, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider1[Int, List, List]])).isFailure
       assert(fail)
+    }
+
+
+
+    "Handle multiple parameter lists" in {
+      import Case21._
+
+      val injector = mkInjector()
+
+      val definition = new ModuleDef {
+        make[TestDependency2]
+        make[TestDependency1]
+        make[TestDependency3]
+        make[TestClass]
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].a != null)
+      assert(context.get[TestClass].b != null)
+      assert(context.get[TestClass].c != null)
+      assert(context.get[TestClass].d != null)
+    }
+
+    "Implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
+      import Case21._
+
+      val injector = mkInjector()
+
+      val definition = new ModuleDef {
+        implicit val testDependency3: TestDependency3 = new TestDependency3
+
+        make[TestDependency1]
+        make[TestDependency2]
+        make[TestDependency3]
+        make[TestClass]
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].b == context.get[TestClass].d)
     }
 
   }

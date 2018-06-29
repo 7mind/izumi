@@ -5,8 +5,9 @@ import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
 
 import StaticDSL._
 
+// TODO: improve
 trait StaticModuleDef extends ModuleDef {
   def stat[T: Tag: AnyConstructor]: Unit = {
-    make[T].statically
+    make[T].stat[T]
   }
 }
