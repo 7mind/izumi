@@ -5,13 +5,13 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse,
 trait SymbolIntrospector {
   val u: DIUniverse
 
-  case class SelectedConstructor(constructorSymbol: u.MethodSymb, arguments: List[u.Symb])
+  case class SelectedConstructor(constructorSymbol: u.MethodSymb, arguments: List[List[u.Symb]])
 
   def selectConstructorMethod(tpe: u.TypeFull): u.MethodSymb
 
   def selectConstructor(tpe: u.TypeFull): SelectedConstructor
 
-  def selectParameters(symb: u.MethodSymb): List[u.Symb]
+  def selectNonImplicitParameters(symb: u.MethodSymb): List[List[u.Symb]]
 
   def isConcrete(tpe: u.TypeFull): Boolean
 
