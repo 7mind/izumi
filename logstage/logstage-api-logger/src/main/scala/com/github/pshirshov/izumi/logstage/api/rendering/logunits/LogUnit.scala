@@ -207,7 +207,7 @@ object LogUnit {
           (argName, part)
         }
 
-        parameters.addBinding(argNameToUse, argValue.toString)
+        parameters.addBinding(argNameToUse, argToString(argValue, withColors = false))
 
         templateBuilder.append('{')
         templateBuilder.append(argNameToUse)
@@ -230,6 +230,13 @@ object LogUnit {
 
   private def argToString(argValue: Any, withColors: Boolean): String = {
     argValue match {
+      case null =>
+        if (withColors) {
+          s"${Console.RED}null${Console.RESET}"
+        } else {
+          "null"
+        }
+
       case e: Throwable =>
         if (withColors) {
           s"${Console.YELLOW}${e.toString}${Console.RESET}"
