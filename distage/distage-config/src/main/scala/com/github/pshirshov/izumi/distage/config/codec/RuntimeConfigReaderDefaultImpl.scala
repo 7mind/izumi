@@ -131,7 +131,7 @@ class RuntimeConfigReaderDefaultImpl
 
   def optionReader(optionType: TypeNative): ConfigReader[Option[_]] = {
     cv => Try {
-      if (cv.valueType == ConfigValueType.NULL) {
+      if (cv == null || cv.valueType == ConfigValueType.NULL) {
         None
       } else {
         val tyParam = SafeType(optionType.typeArgs.head)
