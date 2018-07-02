@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.commons.TraitTools
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, NoopProvisionerImplCalled}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
@@ -28,6 +28,6 @@ class TraitStrategyDefaultImpl(proxyProvider: ProxyProvider) extends TraitStrate
 class TraitStrategyFailingImpl extends TraitStrategy {
   override def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
     Quirks.discard(context)
-    throw new DIException(s"TraitStrategyFailingImpl does not support proxies, failed op: $op", null)
+    throw new NoopProvisionerImplCalled(s"TraitStrategyFailingImpl does not support proxies, failed op: $op", this)
   }
 }

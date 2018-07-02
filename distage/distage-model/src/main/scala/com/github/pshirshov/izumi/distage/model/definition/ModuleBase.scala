@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ModuleMergeException}
 import com.github.pshirshov.izumi.fundamentals.collections.IzCollections
 
 trait ModuleBase {
@@ -64,7 +64,7 @@ object ModuleBase {
 
       val badKeys = setOps.intersect(mergedKeys)
       if (badKeys.nonEmpty) {
-        throw new DIException(s"Cannot override bindings, unsolvable conflicts: $badKeys", null)
+        throw new ModuleMergeException(s"Cannot override bindings, unsolvable conflicts: $badKeys", badKeys)
       }
 
       val mergedSingletons =  mergedKeys.flatMap {

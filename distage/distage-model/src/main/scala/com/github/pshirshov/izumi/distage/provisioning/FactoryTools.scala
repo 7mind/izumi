@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnexpectedFactoryMethodResultException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.OpResult
 import com.github.pshirshov.izumi.distage.model.provisioning.OpResult.{NewImport, NewInstance}
@@ -10,13 +10,20 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 object FactoryTools {
 
   def interpret(results: Seq[OpResult]): AnyRef = {
-    results.headOption match {
-      case Some(i: NewInstance) =>
+    results.toList match {
+      case List(i: NewInstance) =>
         i.value.asInstanceOf[AnyRef]
-      case Some(i: NewImport) =>
+      case List(i: NewImport) =>
         i.value.asInstanceOf[AnyRef]
-      case _ =>
-        throw new DIException(s"Factory cannot interpret $results", null)
+      case List(_) =>
+        throw new UnexpectedFactoryMethodResultException(
+          s"Factory returned a result class other than NewInstance or NewImport in $results", results)
+      case _ :: _ =>
+        throw new UnexpectedFactoryMethodResultException(
+          s"Factory returned more than one result in $results", results)
+      case Nil =>
+        throw new UnexpectedFactoryMethodResultException(
+          s"Factory empty result list: $results", results)
     }
   }
 

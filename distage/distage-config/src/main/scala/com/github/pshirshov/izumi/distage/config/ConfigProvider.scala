@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.distage.config
 
+import com.github.pshirshov.izumi.distage.config.TranslationResult.TranslationFailure
 import com.github.pshirshov.izumi.distage.config.annotations._
 import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReader
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.config.model.{AppConfig, ConfigTranslationException}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
@@ -38,7 +39,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
     if (errors.nonEmpty) {
       // TODO: instead of throwing exception we may just print a warning and leave import in place. It would fail on provisioning anyway
-      throw new DIException(s"Cannot resolve config:\n - ${errors.mkString("\n - ")}", null)
+      throw new ConfigTranslationException(s"Cannot resolve config due to errors:\n - ${errors.mkString("\n - ")}", errors)
     }
 
     val ops = updatedSteps.collect({ case TranslationResult.Success(op) => op })
@@ -175,40 +176,6 @@ object ConfigProvider {
       s"""type: $targetType, target: $target
          |$allPaths""".stripMargin
     }
-  }
-
-
-  private case class ConfigPath(parts: Seq[String]) {
-    def toPath: String = parts.mkString(".")
-
-    override def toString: String = s"cfg:$toPath"
-  }
-
-  private sealed trait TranslationResult
-  private sealed trait TranslationFailure extends TranslationResult {
-    def op: ExecutableOp
-    def target: RuntimeDIUniverse.DIKey = op.target
-  }
-
-  private object TranslationResult {
-
-    final case class Success(op: ExecutableOp) extends TranslationResult
-
-    final case class MissingConfigValue(op: ExecutableOp, paths: Seq[ConfigPath]) extends TranslationFailure {
-      override def toString: String = {
-        val tried = paths.mkString("{", "|", "}")
-        s"$target: missing config value, tried paths: $tried"
-      }
-    }
-
-    final case class ExtractionFailure(op: ExecutableOp, tpe: TypeFull, path: String, config: Config, f: Throwable) extends TranslationFailure {
-      override def toString: String = s"$target: cannot read $tpe out of $path ==> $config: ${f.getMessage}"
-    }
-
-    final case class Failure(op: ExecutableOp, f: Throwable) extends TranslationFailure {
-      override def toString: String = s"$target: unexpected exception: ${f.getMessage}"
-    }
-
   }
 
   private case class ConfigImport(id: AbstractConfId, imp: ImportDependency)
