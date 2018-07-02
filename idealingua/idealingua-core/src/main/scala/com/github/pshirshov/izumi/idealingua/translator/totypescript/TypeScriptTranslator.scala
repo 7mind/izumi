@@ -145,11 +145,11 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${distinctFields.map(f => conv.toFieldMethods(f, ts)).mkString("\n").shift(4)}
          |    constructor(data: ${i.id.name}Serialized = undefined) {
          |        if (typeof data === 'undefined' || data === null) {
-         |${distinctFields.map(f => renderDefaultAssign(conv.deserializeName("this." + f.name, f.typeId), f.typeId)).filterNot(_.isEmpty).mkString("\n").shift(12)}
+         |${distinctFields.map(f => renderDefaultAssign(conv.deserializeName("this." + conv.safeName(f.name), f.typeId), f.typeId)).filterNot(_.isEmpty).mkString("\n").shift(12)}
          |            return;
          |        }
          |
-         |${distinctFields.map(f => s"${conv.deserializeName("this." + f.name, f.typeId)} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
+         |${distinctFields.map(f => s"${conv.deserializeName("this." + conv.safeName(f.name), f.typeId)} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
          |    }
          |
          |${i.struct.superclasses.interfaces.map(si => renderDtoInterfaceSerializer(si)).mkString("\n").shift(4)}
@@ -279,9 +279,9 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |                throw new Error('Identifier must start with $typeName, got ' + data);
            |            }
            |            const parts = data.substr(data.indexOf('#') + 1).split(':');
-           |${sortedFields.zipWithIndex.map{ case (sf, index) => s"this.${sf.field.name} = ${conv.parseTypeFromString(s"decodeURIComponent(parts[$index])", sf.field.typeId)};"}.mkString("\n").shift(12)}
+           |${sortedFields.zipWithIndex.map{ case (sf, index) => s"this.${conv.safeName(sf.field.name)} = ${conv.parseTypeFromString(s"decodeURIComponent(parts[$index])", sf.field.typeId)};"}.mkString("\n").shift(12)}
            |        } else {
-           |${fields.all.map(f => s"this.${f.field.name} = ${conv.deserializeType("data." + f.field.name, f.field.typeId, typespace)};").mkString("\n").shift(12)}
+           |${fields.all.map(f => s"this.${conv.safeName(f.field.name)} = ${conv.deserializeType("data." + f.field.name, f.field.typeId, typespace)};").mkString("\n").shift(12)}
            |        }
            |    }
            |
@@ -351,11 +351,11 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${fields.all.map(f => conv.toFieldMethods(f.field, ts)).mkString("\n").shift(4)}
          |    constructor(data: ${eid}Serialized = undefined) {
          |        if (typeof data === 'undefined' || data === null) {
-         |${distinctFields.map(f => renderDefaultAssign(conv.deserializeName("this." + f.name, f.typeId), f.typeId)).filterNot(_.isEmpty).mkString("\n").shift(12)}
+         |${distinctFields.map(f => renderDefaultAssign(conv.deserializeName("this." + conv.safeName(f.name), f.typeId), f.typeId)).filterNot(_.isEmpty).mkString("\n").shift(12)}
          |            return;
          |        }
          |
-         |${distinctFields.map(f => s"${conv.deserializeName("this." + f.name, f.typeId)} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
+         |${distinctFields.map(f => s"${conv.deserializeName("this." + conv.safeName(f.name), f.typeId)} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
          |    }
          |
          |    public serialize(): ${eid}Serialized {
@@ -396,7 +396,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   protected def renderServiceMethodSignature(method: Service.DefMethod, spread: Boolean = false): String = method match {
     case m: DefMethod.RPCMethod =>
       if (spread) {
-        val fields = m.signature.input.fields.map(f => f.name + s": ${conv.toNativeType(f.typeId, ts)}").mkString(", ")
+        val fields = m.signature.input.fields.map(f => conv.safeName(f.name) + s": ${conv.toNativeType(f.typeId, ts)}").mkString(", ")
         s"""${m.name}($fields): Promise<${renderServiceMethodOutputSignature(m)}>"""
       } else {
         s"""${m.name}(input: In${m.name.capitalize}): Promise<${renderServiceMethodOutputSignature(m)}>"""
@@ -414,7 +414,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       case _: Struct =>
         s"""public ${renderServiceMethodSignature(method, spread = true)} {
            |    const __data = new In${m.name.capitalize}();
-           |${m.signature.input.fields.map(f => s"__data.${f.name} = ${f.name};").mkString("\n").shift(4)}
+           |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
            |    return this.send('${m.name}', __data, In${m.name.capitalize}, ${renderServiceMethodOutputSignature(m)});
            |}
        """.stripMargin
@@ -422,7 +422,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       case al: Algebraic =>
         s"""public ${renderServiceMethodSignature(method, spread = true)} {
            |    const __data = new In${m.name.capitalize}();
-           |${m.signature.input.fields.map(f => s"__data.${f.name} = ${f.name};").mkString("\n").shift(4)}
+           |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
            |    return new Promise((resolve, reject) => {
            |        this._transport.send(${service}Client.ClassName, '${m.name}', __data)
            |            .then(data => {
@@ -450,7 +450,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       case si: Singular =>
         s"""public ${renderServiceMethodSignature(method, spread = true)} {
            |    const __data = new In${m.name.capitalize}();
-           |${m.signature.input.fields.map(f => s"__data.${f.name} = ${f.name};").mkString("\n").shift(4)}
+           |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
            |    return new Promise((resolve, reject) => {
            |        this._transport.send(${service}Client.ClassName, '${m.name}', __data)
            |            .then(data => {
@@ -525,7 +525,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
        |            return;
        |        }
        |
-       |${structure.fields.map(f => s"${conv.deserializeName("this." + f.name, f.typeId)} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
+       |${structure.fields.map(f => s"${conv.deserializeName("this." + conv.safeName(f.name), f.typeId)} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
        |    }
        |
        |    public serialize(): ${name}Serialized {

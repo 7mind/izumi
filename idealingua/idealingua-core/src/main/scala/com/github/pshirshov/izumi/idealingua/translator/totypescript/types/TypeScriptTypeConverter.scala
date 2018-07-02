@@ -141,7 +141,7 @@ class TypeScriptTypeConverter() {
   }
 
   def serializeField(field: Field, ts: Typespace): String = {
-    s"'${field.name}': ${serializeValue("this." + field.name, field.typeId, ts)}"
+    s"'${field.name}': ${serializeValue("this." + safeName(field.name), field.typeId, ts)}"
   }
 
   def serializeValue(name: String, id: TypeId, ts: Typespace): String = id match {
@@ -246,15 +246,14 @@ class TypeScriptTypeConverter() {
   }
 
   def safeName(name: String): String = {
-//    val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
-//      "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",
-//      "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends",
-//      "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "any",
-//      "implements", "instanceof", "namespace", "boolean", "constructor", "declare", "get", "module", "require",
-//      "number", "set", "string", "symbol", "type", "from", "of")
+    val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
+      "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",
+      "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends",
+      "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "any",
+      "implements", "instanceof", "namespace", "boolean", "constructor", "declare", "get", "module", "require",
+      "number", "set", "string", "symbol", "type", "from", "of")
 
-    //    if (ecma1.contains(name)) s"m${name.capitalize}" else name
-    name
+    if (ecma1.contains(name)) s"${name}_" else name
   }
 
   def toPrivateMember(name: String, memberType: String): String = {
