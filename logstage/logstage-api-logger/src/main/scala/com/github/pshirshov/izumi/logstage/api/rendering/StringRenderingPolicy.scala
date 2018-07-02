@@ -173,7 +173,7 @@ case class WithConstants[T <: LogUnit](unit: Option[WithMargin[T]] = None) {
 
 object StringRenderingPolicy {
 
-  val defaultRendering = "ssss${level} ${ts} ${thread} ${location} ${custom-ctx} ${msg}"
+  val defaultRendering = "${level} ${ts} ${thread} ${location} ${custom-ctx} ${msg}"
 
   sealed trait LogMessageItem {
     def perform(e: Log.Entry, withColor: Boolean): String

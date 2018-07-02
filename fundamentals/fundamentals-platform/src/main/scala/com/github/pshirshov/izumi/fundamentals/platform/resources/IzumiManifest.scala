@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter
 import java.util.jar
 
 import scala.util.Try
-import scala.util.control.NonFatal
 
 case class GitStatus(branch: Option[String], repoClean: Boolean, revision: String)
 
@@ -28,28 +27,22 @@ object IzumiManifest {
     }
   }
 
-  def gitStatus(mf: jar.Manifest): Option[GitStatus] = {
-    try {
-      Some(GitStatus(
+  def gitStatus(mf: jar.Manifest): Option[GitStatus] =
+     Try {
+       GitStatus(
         Option(mf.getMainAttributes.getValue(GitBranch))
         , Try(mf.getMainAttributes.getValue(GitRepoIsClean).toBoolean).toOption.getOrElse(false)
         , mf.getMainAttributes.getValue(GitHeadRev)
-      ))
-    } catch {
-      case NonFatal(e) => None
-    }
-  }
+      )
+    }.toOption
 
-  def appVersion(mf: jar.Manifest): Option[AppVersion] = {
-    try {
-      Some(AppVersion(
+  def appVersion(mf: jar.Manifest): Option[AppVersion] =
+    Try {
+      AppVersion(
         mf.getMainAttributes.getValue(Version)
         , mf.getMainAttributes.getValue(BuiltBy)
         , mf.getMainAttributes.getValue(BuildJdk)
         , ZonedDateTime.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(mf.getMainAttributes.getValue(BuildTimestamp)))
-      ))
-    } catch {
-      case NonFatal(e) => None
-    }
-  }
+      )
+    }.toOption
 }

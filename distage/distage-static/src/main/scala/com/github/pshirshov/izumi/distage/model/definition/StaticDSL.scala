@@ -8,9 +8,6 @@ import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
 object StaticDSL {
 
   implicit final class MagicBindDSL[T, AfterBind](private val dsl: BindDSLBase[T, AfterBind]) extends AnyVal {
-    def statically(implicit ev: AnyConstructor[T], ev1: Tag[T]): AfterBind =
-      stat[T]
-
     def stat[I <: T: Tag: AnyConstructor]: AfterBind =
       dsl.from[I](AnyConstructor[I].provider)
   }

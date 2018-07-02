@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
 trait WithDISafeType {
-  this: DIUniverseBase =>
+  this: DIUniverseBase with WithDITypeTags =>
 
   type TypeFull = SafeType
 
@@ -45,9 +45,9 @@ trait WithDISafeType {
   }
 
   object SafeType {
-    def get[T: Tag]: TypeFull = SafeType(u.typeTag[T].tpe)
+    def get[T: Tag]: TypeFull = SafeType(Tag[T].tag.tpe)
 
-    def getWeak[T: u.WeakTypeTag]: TypeFull = SafeType(u.weakTypeTag[T].tpe)
+    def unsafeGetWeak[T: WeakTag]: TypeFull = SafeType(WeakTag[T].tag.tpe)
   }
 
 }

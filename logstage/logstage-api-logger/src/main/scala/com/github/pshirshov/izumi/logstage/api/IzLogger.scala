@@ -26,3 +26,8 @@ class IzLogger
   def apply[V](elems: (String, V)*): IzLogger = elems.toMap
 
 }
+
+object IzLogger {
+  final val NullLogger = new IzLogger(LogRouter.nullRouter, CustomContext.empty)
+  final val DebugLogger = new IzLogger(LogRouter.debugRouter, CustomContext.empty)
+}

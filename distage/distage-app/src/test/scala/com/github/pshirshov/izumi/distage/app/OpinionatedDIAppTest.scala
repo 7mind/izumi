@@ -4,11 +4,10 @@ import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
-import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
+import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.TestSink
@@ -41,19 +40,18 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
     )
 
     new ApplicationBootstrapStrategyBaseImpl(bsContext) {
-      override def mergeStrategy: PluginMergeStrategy[LoadedPlugins] = {
+      override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
+        Quirks.discard(bs, app)
         new ConfigurablePluginMergeStrategy(pluginMergeConfig)
       }
 
-      override def bootstrapModules(): Seq[ModuleBase] = Seq(
-        new ConfigModule(bsContext.appConfig)
-        , new CustomizationModule
-      )
-
-
-      override def requiredComponents(bsdef: ModuleBase, appDef: ModuleBase, plan: FinalPlan): Set[universe.RuntimeDIUniverse.DIKey] = {
-        Quirks.discard(bsdef, appDef, plan)
-        Set(RuntimeDIUniverse.DIKey.get[TestApp])
+      override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
+        Quirks.discard(bs, app)
+        Seq(
+          new ConfigModule(bsContext.appConfig)
+          , new CustomizationModule
+          , new TracingGcModule(Set(RuntimeDIUniverse.DIKey.get[TestApp]))
+        )
       }
 
       override def router(): LogRouter = {

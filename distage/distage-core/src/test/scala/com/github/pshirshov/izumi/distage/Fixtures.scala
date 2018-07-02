@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.model.definition.{Id, With}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 
+import scala.language.higherKinds
 import scala.util.Random
 
 @ExposedTestScope
@@ -440,6 +441,7 @@ Forest fire, climbin' higher, real life, it can wait""")
       def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
 
     }
+
   }
 
   object Case17 {
@@ -474,5 +476,80 @@ Forest fire, climbin' higher, real life, it can wait""")
   object Case19 {
     trait Service
     class Service1 extends Service
+  }
+
+  object Case20 {
+    type id[A] = A
+
+    trait Pointed[F[_]] {
+      def point[A](a: A): F[A]
+    }
+
+    object Pointed {
+      def apply[F[_]: Pointed]: Pointed[F] = implicitly[Pointed[F]]
+
+      implicit final val pointedList: Pointed[List] =
+        new Pointed[List] {
+          override def point[A](a: A): List[A] = List(a)
+        }
+
+      implicit final def pointedOptionT[F[_]: Pointed]: Pointed[OptionT[F, ?]] =
+        new Pointed[OptionT[F, ?]] {
+          override def point[A](a: A): OptionT[F, A] = OptionT(Pointed[F].point(Some(a)))
+        }
+
+      implicit final val pointedId: Pointed[id] =
+        new Pointed[id] {
+          override def point[A](a: A): id[A] = a
+        }
+
+    }
+
+    case class OptionT[F[_], A](value: F[Option[A]])
+
+    trait TestTrait {
+      type R[_]
+
+      def get: R[Int]
+    }
+
+    // TODO: @Id(this)
+    class TestServiceClass[F[_]: Pointed](@Id("TestService") getResult: Int) extends TestTrait {
+      override type R[_] = F[_]
+
+      override def get: F[Int] = {
+        Pointed[F].point(getResult)
+      }
+    }
+
+    trait TestServiceTrait[F[_]] extends TestTrait {
+      override type R[_] = F[_]
+
+      implicit protected val pointed: Pointed[F]
+
+      protected val getResult: Int @Id("TestService")
+
+      override def get: F[_] = Pointed[F].point(getResult * 2)
+    }
+
+    abstract class TestProvider[A, F[_]: Pointed] {
+      def f(a: A): F[A]
+    }
+
+    abstract class TestProvider0[A, B, F[_]: Pointed] {
+      def f(a: A): F[A]
+    }
+
+    abstract class TestProvider1[A, G[_]: Pointed, F[_]: Pointed] {
+      def f(a: A): F[A]
+    }
+  }
+
+  object Case21 {
+    class TestDependency1
+    class TestDependency2
+    class TestDependency3
+
+    class TestClass(val a: TestDependency1)(val b: TestDependency3, implicit val c: TestDependency2)(implicit val d: TestDependency3)
   }
 }

@@ -7,13 +7,24 @@ import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, Macr
 
 import scala.reflect.macros.blackbox
 
+class ProviderMagnetMacroGenerateUnsafeWeakSafeTypes(override val c: blackbox.Context) extends ProviderMagnetMacro(c) {
+  override protected def generateUnsafeWeakSafeTypes: Boolean = true
+}
+
 class ProviderMagnetMacro(val c: blackbox.Context) {
 
+  protected def generateUnsafeWeakSafeTypes: Boolean = false
+
   final val macroUniverse = StaticDIUniverse(c)
+
   private final val logger = MacroUtil.mkLogger[ProviderMagnetMacro](c)
   private final val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
   private final val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
-  private final val tools = DIUniverseLiftables(macroUniverse)
+  private final val tools =
+    if (generateUnsafeWeakSafeTypes)
+      DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
+    else
+      DIUniverseLiftables(macroUniverse)
 
   import tools.{liftableParameter, liftableSafeType}
   import c.universe._
@@ -25,7 +36,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     val logger = MacroUtil.mkLogger[this.type](c)
 
     val argTree = fun.tree
-    val ret = SafeType.getWeak[R]
+    val ret = SafeType(weakTypeOf[R])
 
     val ExtractedInfo(associations, isValReference) = analyze(argTree, ret)
 
@@ -59,6 +70,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
 
     logger.log(
       s"""DIKeyWrappedFunction info:
+         | generateUnsafeWeakSafeTypes: $generateUnsafeWeakSafeTypes\n
          | Symbol: ${argTree.symbol}\n
          | IsMethodSymbol: ${Option(argTree.symbol).exists(_.isMethod)}\n
          | Extracted Annotations: ${associations.flatMap(_.context.symbol.annotations)}\n
@@ -117,8 +129,12 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     val annotationsOnLambda: List[u.Annotation] = lambdaKeys.flatMap(_.context.symbol.annotations)
     val annotationsOnMethod: List[u.Annotation] = methodReferenceKeys.flatMap(_.context.symbol.annotations)
 
-    val keys = if (methodReferenceKeys.size == lambdaKeys.size && annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
-      // still use the types from lambda, since param lists somehow lose path-dependent parent type...
+    val keys = if (
+      methodReferenceKeys.size == lambdaKeys.size &&
+        annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
+      // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved
+      //
+      // (Besides, lambda types are the ones specified by the caller, we should always use them)
       methodReferenceKeys.zip(lambdaKeys).map {
         case (m, l) =>
           m.copy(tpe = l.tpe, wireWith = m.wireWith.withTpe(l.wireWith.tpe)) // gotcha: symbol not altered

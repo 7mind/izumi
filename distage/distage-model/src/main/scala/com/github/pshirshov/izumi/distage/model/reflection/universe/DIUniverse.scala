@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.references._
 
 trait DIUniverse
   extends DIUniverseBase
+    with WithDITypeTags
     with WithDISafeType
     with WithDISymbolInfo
     with WithDITypedRef

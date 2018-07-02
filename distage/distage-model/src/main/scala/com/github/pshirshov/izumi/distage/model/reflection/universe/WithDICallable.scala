@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.distage.model.references.{WithDIKey, WithDITyp
 trait WithDICallable {
   this: DIUniverseBase
     with WithDISafeType
+    with WithDITypeTags
     with WithDITypedRef
     with WithDIKey
     with WithDISymbolInfo

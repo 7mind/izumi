@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
+import com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.TraitConstructor
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
@@ -10,7 +11,9 @@ import scala.reflect.macros.blackbox
 
 object TraitConstructorMacro {
 
-  def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = {
+  def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = mkTraitConstructorImpl[T](c, generateUnsafeWeakSafeTypes = false)
+
+  def mkTraitConstructorImpl[T: c.WeakTypeTag](c: blackbox.Context, generateUnsafeWeakSafeTypes: Boolean): c.Expr[TraitConstructor[T]] = {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
@@ -53,12 +56,18 @@ object TraitConstructorMacro {
 
     val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
 
+    val provided =
+      if (generateUnsafeWeakSafeTypes)
+        q"{ $providerMagnet.generateUnsafeWeakSafeTypes[$targetType](constructor _) }"
+      else
+        q"{ $providerMagnet.apply[$targetType](constructor _) }"
+
     val res = c.Expr[TraitConstructor[T]] {
       q"""
           {
           $constructorDef
 
-          new ${weakTypeOf[TraitConstructor[T]]}($providerMagnet.apply[$targetType](constructor _))
+          new ${weakTypeOf[TraitConstructor[T]]}($provided)
           }
        """
     }

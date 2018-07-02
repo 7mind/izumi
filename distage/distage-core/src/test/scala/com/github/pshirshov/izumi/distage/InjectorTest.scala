@@ -1,33 +1,25 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.Fixtures.Case16.TestProviderModule
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.bootstrap.{BootstrapPlanningObserver, CglibBootstrap}
+import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.ConflictingOperation
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
-import com.github.pshirshov.izumi.distage.model.{Injector, LoggerHook}
-import com.github.pshirshov.izumi.fundamentals.platform.console.{SystemOutStringSink, TrivialLogger, TrivialLoggerImpl}
 import org.scalatest.WordSpec
 
+import scala.language.higherKinds
 import scala.util.Try
 
 class InjectorTest extends WordSpec {
 
-  def mkInjector(): Injector = {
-    Injectors.bootstrap(
-      base = CglibBootstrap.cogenBootstrap
-      , overrides = new ModuleDef {
-        make[PlanningObserver].from[BootstrapPlanningObserver]
-        make[LoggerHook].from[LoggerHookDebugImpl]
-        make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringSink))
-      }
-    )
-  }
+  def mkInjector(): Injector = Injectors.bootstrap()
 
   "DI planner" should {
 
@@ -605,7 +597,6 @@ class InjectorTest extends WordSpec {
       assert(definition.bindings.count(_.tags == Set("B")) == 1)
     }
 
-
     "set elements are the same as global bindings" in {
       import Case19._
 
@@ -625,7 +616,31 @@ class InjectorTest extends WordSpec {
       assert(set.head eq svc)
     }
 
-    "progression test: can't handle path-dependent injections" in {
+    "progression test: cglib can't handle class local path-dependent injections (macros can)" in {
+      val fail = Try {
+        val definition = new ModuleDef {
+          make[TopLevelPathDepTest.TestClass]
+          make[TopLevelPathDepTest.TestDependency]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+
+        val context = injector.produce(plan)
+
+        assert(context.get[TopLevelPathDepTest.TestClass].a != null)
+      }.isFailure
+      assert(fail)
+    }
+
+    "progression test: cglib can't handle inner path-dependent injections (macros can)" in {
+      val fail = Try {
+        new InnerPathDepTest().testCase
+      }.isFailure
+      assert(fail)
+    }
+
+    "progression test: cglib can't handle function local path-dependent injections" in {
       val fail = Try {
         import Case16._
 
@@ -646,5 +661,150 @@ class InjectorTest extends WordSpec {
       assert(fail)
     }
 
+    "support tagless final style module definitions" in {
+      import Case20._
+
+      case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
+        // FIXME: hmmm, what to do with this
+        make[Pointed[F]].from(Pointed[F])
+
+        make[TestTrait].from[TestServiceClass[F]]
+        make[TestServiceClass[F]]
+        make[TestServiceTrait[F]]
+        make[Int].named("TestService").from(getResult)
+        make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
+        make[Either[String, Boolean]].from(Right(true))
+
+//        FIXME: Nothing doesn't resolve properly yet when F is unknown...
+//        make[F[Nothing]]
+//        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
+        make[F[Any]].from(Pointed[F].point(1: Any))
+        make[Either[String, F[Int]]].from { fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]]) }
+        make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
+      }
+
+      val listInjector = mkInjector()
+      val listPlan = listInjector.plan(Definition[List](5))
+      val listContext = listInjector.produce(listPlan)
+
+      assert(listContext.get[TestTrait].get == List(5))
+      assert(listContext.get[TestServiceClass[List]].get == List(5))
+      assert(listContext.get[TestServiceTrait[List]].get == List(10))
+      assert(listContext.get[List[String]] == List("Hello 5!"))
+      assert(listContext.get[List[Any]] == List(1))
+      assert(listContext.get[Either[String, Boolean]] == Right(true))
+      assert(listContext.get[Either[String, List[Int]]] == Right(List(1)))
+      assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
+
+      val optionTInjector = mkInjector()
+      val optionTPlan = optionTInjector.plan(Definition[OptionT[List, ?]](5))
+      val optionTContext = optionTInjector.produce(optionTPlan)
+
+      assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
+      assert(optionTContext.get[TestServiceClass[OptionT[List, ?]]].get == OptionT(List(Option(5))))
+      assert(optionTContext.get[TestServiceTrait[OptionT[List, ?]]].get == OptionT(List(Option(10))))
+      assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
+
+      val idInjector = mkInjector()
+      val idPlan = idInjector.plan(Definition[id](5))
+      val idContext = idInjector.produce(idPlan)
+
+      assert(idContext.get[TestTrait].get == 5)
+      assert(idContext.get[TestServiceClass[id]].get == 5)
+      assert(idContext.get[TestServiceTrait[id]].get == 10)
+      assert(idContext.get[id[String]] == "Hello 5!")
+    }
+
+    "FIXME: Support [A, F[_]] type shape" in {
+      import Case20._
+
+      abstract class Parent[C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
+        make[TestProvider[C, R]]
+      }
+
+      assert(new Parent[Int, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider[Int, List]])
+    }
+
+    "FIXME: Support [A, A, F[_]] type shape" in {
+      import Case20._
+
+      abstract class Parent[A: Tag, C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
+        make[TestProvider0[A, C, R]]
+      }
+
+      assert(new Parent[Int, Boolean, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider0[Int, Boolean, List]])
+    }
+
+    "progression test: No proper support for [A, F[_], G[_]] type shape - false positives generated by scala's type lambda generation during implicit search - leaking unresolved WeakTypeTags" in {
+      import Case20._
+
+      abstract class Parent[A: Tag, F[_]: TagK, R[_]: TagK: Pointed] extends ModuleDef {
+        make[TestProvider1[A, F, R]]
+      }
+
+      val fail = Try(assert(new Parent[Int, List, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider1[Int, List, List]])).isFailure
+      assert(fail)
+    }
+
+
+
+    "Handle multiple parameter lists" in {
+      import Case21._
+
+      val injector = mkInjector()
+
+      val definition = new ModuleDef {
+        make[TestDependency2]
+        make[TestDependency1]
+        make[TestDependency3]
+        make[TestClass]
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].a != null)
+      assert(context.get[TestClass].b != null)
+      assert(context.get[TestClass].c != null)
+      assert(context.get[TestClass].d != null)
+    }
+
+    "Implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
+      import Case21._
+
+      val injector = mkInjector()
+
+      val definition = new ModuleDef {
+        implicit val testDependency3: TestDependency3 = new TestDependency3
+
+        make[TestDependency1]
+        make[TestDependency2]
+        make[TestDependency3]
+        make[TestClass]
+      }
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].b == context.get[TestClass].d)
+    }
+
   }
+
+  class InnerPathDepTest extends TestProviderModule {
+    private val definition = new ModuleDef {
+      make[TestClass]
+      make[TestDependency]
+    }
+
+    def testCase = {
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[TestClass].a != null)
+    }
+  }
+
+  object TopLevelPathDepTest extends TestProviderModule
+
 }
