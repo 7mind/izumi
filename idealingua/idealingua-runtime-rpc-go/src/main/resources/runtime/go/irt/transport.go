@@ -1,13 +1,13 @@
 package irt
 
 import (
-	"net/http"
-	"crypto/tls"
-	"time"
-	"encoding/json"
-	"bytes"
-	"io/ioutil"
-	"fmt"
+    "bytes"
+    "crypto/tls"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "time"
 )
 
 type ServiceClientTransport interface {
@@ -15,22 +15,23 @@ type ServiceClientTransport interface {
 }
 
 type HTTPClientTransport struct {
-    Endpoint string
-    Client *http.Client
-    Transport *http.Transport
+    Endpoint      string
+    Client        *http.Client
+    Transport     *http.Transport
+    Authorization string
 }
 
 func NewHTTPClientTransport(endpoint string, timeout int, skipSSLVerify bool) *HTTPClientTransport {
-    transport := &http.Transport {
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: skipSSLVerify},
+    transport := &http.Transport{
+        TLSClientConfig:       &tls.Config{InsecureSkipVerify: skipSSLVerify},
         ExpectContinueTimeout: time.Millisecond * time.Duration(timeout),
         ResponseHeaderTimeout: time.Millisecond * time.Duration(timeout),
     }
     client := &http.Client{Transport: transport}
     return &HTTPClientTransport{
-        Endpoint: endpoint,
+        Endpoint:  endpoint,
         Transport: transport,
-        Client: client,
+        Client:    client,
     }
 }
 
@@ -51,6 +52,10 @@ func (c *HTTPClientTransport) Send(service string, method string, dataIn interfa
             return err
         }
         req.Header.Set("Content-Type", "application/json")
+    }
+
+    if c.Authorization != "" {
+        req.Header.Set("Authorization", "Bearer "+c.Authorization)
     }
 
     resp, err := c.Client.Do(req)
