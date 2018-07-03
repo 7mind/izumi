@@ -109,18 +109,19 @@ object IDLTestTools {
   def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.Go, extensions)
     val outDir = out.absoluteTargetDir
+
     val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
     tmp.toFile.mkdirs()
     Files.move(outDir, tmp.resolve("src"))
     Files.move(tmp, outDir)
 
-    val args = domains.map(d => d.domain.id.toPackage.mkString("/"))
-    val cmdBuild = Seq("go", "build") ++ args // cannot use `go build -o ../phase3-go $args` with multiple packages
-    val cmdTest = Seq("go", "test") ++ args
+    val cmdBuild = Seq("go", "install", "-pkgdir", out.phase3.toString, "./...")
+    val cmdTest = Seq("go", "test", "./...")
 
     val env = Map("GOPATH" -> out.absoluteTargetDir.toString)
-    val exitCodeBuild = run(out.absoluteTargetDir, cmdBuild, env, "go-build")
-    val exitCodeTest = run(out.absoluteTargetDir, cmdTest, env, "go-test")
+    val goSrc = out.absoluteTargetDir.resolve("src")
+    val exitCodeBuild = run(goSrc, cmdBuild, env, "go-build")
+    val exitCodeTest = run(goSrc, cmdTest, env, "go-test")
 
     exitCodeBuild == 0 && exitCodeTest == 0
   }
