@@ -200,10 +200,13 @@ object IDLTestTools {
         s.paths
     }.toSeq
 
-    val fileRefs = new File(getClass.getResource("/refs/" + language.toString).toURI).toPath
-    refFiles.map(f => {
-      Files.copy(fileRefs.resolve(f), compilerDir.resolve(f))
-    })
+    val refs = getClass.getResource("/refs/" + language.toString)
+    if (refs != null) {
+      val fileRefs = new File(refs.toURI).toPath
+      refFiles.map(f => {
+        Files.copy(fileRefs.resolve(f), compilerDir.resolve(f))
+      })
+    }
 
     domains.foreach {
       d =>

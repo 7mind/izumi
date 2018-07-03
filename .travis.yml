@@ -1,7 +1,10 @@
 sudo: required
 dist: trusty
 
-language: scala
+language: csharp
+solution: solution-name.sln
+
+#language: scala
 #go:
 #  - "1.10"
 
