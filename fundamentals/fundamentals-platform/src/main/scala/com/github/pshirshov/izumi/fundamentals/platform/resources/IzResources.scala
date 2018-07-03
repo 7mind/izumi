@@ -51,8 +51,6 @@ object IzResources {
     }
 
     val jarPath: Path = pathReference.get.path
-    println(sourcePath)
-    println(jarPath)
     val targets = mutable.ArrayBuffer.empty[Path]
     Files.walkFileTree(
       jarPath,

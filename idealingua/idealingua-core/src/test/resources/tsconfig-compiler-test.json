@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "../phase3-tsc",
+    "outDir": "../phase3-compiler-output",
     "module": "commonjs",
     "target": "es5",
     "lib": ["es6", "dom"],
