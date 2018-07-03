@@ -100,24 +100,6 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  private def run(out: CompilerOutput, cmd: String, env: Map[String, String], cname: String) = {
-    val log = out.targetDir.getParent.resolve(s"$cname.log").toFile
-    val logger = ProcessLogger(log)
-    val exitCode = try {
-      Process(cmd, Some(out.targetDir.toFile), env.toSeq: _*)
-        .run(logger)
-        .exitValue()
-    } finally {
-      logger.close()
-    }
-
-    if (exitCode != 0) {
-      System.err.println(s"Process failed for $cname: $exitCode")
-      System.err.println(IzFiles.readString(log))
-    }
-    exitCode
-  }
-
   def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
     val refDlls = Seq[String] (
       "Newtonsoft.Json.dll",
@@ -125,18 +107,20 @@ object IDLTestTools {
       "UnityEngine.Networking.dll",
       "2.4.8-net2.0-nunit.framework.dll"
     )
-    val out = compiles(id, domains, IDLLanguage.CSharp, extensions, refDlls)
+    val lang = IDLLanguage.CSharp
+    val out = compiles(id, domains, lang, extensions, refDlls)
+    val refsDir = out.targetDir.resolve("refs")
+    IzFiles.recreateDirs(refsDir)
+    IzResources.copyFromClasspath(s"refs/${lang.toString}", refsDir)
 
-    val tmp = out.targetDir.getParent.resolve("phase2-compiler-tmp")
-    tmp.toFile.mkdirs()
-    Files.move(out.targetDir, tmp.resolve("src"))
-    Files.move(tmp, out.targetDir)
+    val ctarget = out.targetDir.getParent.resolve("phase3-scalac").toFile.getCanonicalFile.toPath
+    ctarget.toFile.mkdirs()
+
+    val refs = s"/reference:${refDlls.map(dll => s"refs/$dll").mkString(",")}"
+    val cmdBuild = s"csc -target:library -out:$ctarget/test-output.dll -recurse:\\*.cs $refs"
+    val cmdTest = s"nunit-console $ctarget/test-output.dll"
 
     val fullTarget = out.targetDir.toFile.getCanonicalPath
-    val refs = s"/reference:${refDlls.map(dll => fullTarget + "/src/" + dll).mkString(",")}"
-//    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
-    val cmdBuild = s"csc -target:library -out:${fullTarget}/src/lib.dll -recurse:${fullTarget}/src/*.cs $refs"
-    val cmdTest = s"nunit-console ${fullTarget}/src/lib.dll"
     println(
       s"""
          |cd $fullTarget
@@ -144,8 +128,9 @@ object IDLTestTools {
          |$cmdTest
        """.stripMargin)
 
-    val exitCodeBuild = run(out, cmdBuild, Map.empty, "cs-build")
-    val exitCodeTest = run(out, cmdTest, Map.empty, "cs-test")
+    val exitCodeBuild = runIn(out.targetDir, cmdBuild, Map.empty, "cs-build")
+    IzResources.copyFromClasspath(s"refs/${lang.toString}", ctarget)
+    val exitCodeTest = runIn(ctarget, cmdTest, Map.empty, "cs-test")
 
     exitCodeBuild == 0 && exitCodeTest == 0
   }
@@ -200,14 +185,6 @@ object IDLTestTools {
         s.paths
     }.toSeq
 
-    val refs = getClass.getResource("/refs/" + language.toString)
-    if (refs != null) {
-      val fileRefs = new File(refs.toURI).toPath
-      refFiles.map(f => {
-        Files.copy(fileRefs.resolve(f), compilerDir.resolve(f))
-      })
-    }
-
     domains.foreach {
       d =>
         val rendered = new ILRenderer(d.domain).render()
@@ -228,5 +205,27 @@ object IDLTestTools {
         f =>
           Quirks.discard(IzFiles.removeDir(f.toPath))
       }
+  }
+
+  private def run(out: CompilerOutput, cmd: String, env: Map[String, String], cname: String): Int = {
+    runIn(out.targetDir, cmd, env, cname)
+  }
+
+  private def runIn(workDir: Path, cmd: String, env: Map[String, String], cname: String): Int = {
+    val log = workDir.getParent.resolve(s"$cname.log").toFile
+    val logger = ProcessLogger(log)
+    val exitCode = try {
+      Process(cmd, Some(workDir.toFile), env.toSeq: _*)
+        .run(logger)
+        .exitValue()
+    } finally {
+      logger.close()
+    }
+
+    if (exitCode != 0) {
+      System.err.println(s"Process failed for $cname: $exitCode")
+      System.err.println(IzFiles.readString(log))
+    }
+    exitCode
   }
 }

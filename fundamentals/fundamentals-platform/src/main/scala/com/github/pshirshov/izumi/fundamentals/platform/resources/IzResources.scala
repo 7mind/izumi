@@ -44,13 +44,15 @@ object IzResources {
     def empty: RecursiveCopyOutput = RecursiveCopyOutput(Seq.empty)
   }
 
-  def copyFromJar(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
+  def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
     val pathReference = getPath(sourcePath)
     if (pathReference.isEmpty) {
       return RecursiveCopyOutput.empty
     }
 
     val jarPath: Path = pathReference.get.path
+    println(sourcePath)
+    println(jarPath)
     val targets = mutable.ArrayBuffer.empty[Path]
     Files.walkFileTree(
       jarPath,
