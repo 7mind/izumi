@@ -56,7 +56,7 @@ object IDLTestTools {
       , "-classpath", System.getProperty("java.class.path")
     ) ++ out.relativeOutputs
 
-    val exitCode = runIn(out.absoluteTargetDir, cmd, Map.empty, "scalac")
+    val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
     exitCode == 0
 
   }
@@ -73,7 +73,7 @@ object IDLTestTools {
 
     val cmd = Seq("tsc", "-p", outputTsconfigPath.toFile.getName)
 
-    val exitCode = runIn(out.absoluteTargetDir, cmd, Map.empty, "tsc")
+    val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "tsc")
     exitCode == 0
   }
 
@@ -98,10 +98,10 @@ object IDLTestTools {
     val outname = "test-output.dll"
     val refs = s"/reference:${refDlls.map(dll => s"refs/$dll").mkString(",")}"
     val cmdBuild = Seq("csc", "-target:library", s"-out:${out.phase3Relative}/$outname", "-recurse:\\*.cs", refs)
-    val exitCodeBuild = runIn(out.absoluteTargetDir, cmdBuild, Map.empty, "cs-build")
+    val exitCodeBuild = run(out.absoluteTargetDir, cmdBuild, Map.empty, "cs-build")
 
     val cmdTest = Seq("nunit-console", outname)
-    val exitCodeTest = runIn(out.phase3, cmdTest, Map.empty, "cs-test")
+    val exitCodeTest = run(out.phase3, cmdTest, Map.empty, "cs-test")
 
     exitCodeBuild == 0 && exitCodeTest == 0
   }
@@ -114,14 +114,13 @@ object IDLTestTools {
     Files.move(outDir, tmp.resolve("src"))
     Files.move(tmp, outDir)
 
-    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
-    //val cmdBuild= s"go build -o ../phase3-go $args" // go build: cannot use -o with multiple packages
-    val cmdBuild = Seq("go", "build", args)
-    val cmdTest = Seq("go", "test", args)
+    val args = domains.map(d => d.domain.id.toPackage.mkString("/"))
+    val cmdBuild = Seq("go", "build") ++ args // cannot use `go build -o ../phase3-go $args` with multiple packages
+    val cmdTest = Seq("go", "test") ++ args
 
-    val fullTarget = outDir.toFile.getCanonicalPath
-    val exitCodeBuild = run(out, cmdBuild, Map("GOPATH" -> fullTarget), "go-build")
-    val exitCodeTest = run(out, cmdTest, Map("GOPATH" -> fullTarget), "go-test")
+    val env = Map("GOPATH" -> out.absoluteTargetDir.toString)
+    val exitCodeBuild = run(out.absoluteTargetDir, cmdBuild, env, "go-build")
+    val exitCodeTest = run(out.absoluteTargetDir, cmdTest, env, "go-test")
 
     exitCodeBuild == 0 && exitCodeTest == 0
   }
@@ -194,11 +193,7 @@ object IDLTestTools {
       }
   }
 
-  private def run(out: CompilerOutput, cmd: Seq[String], env: Map[String, String], cname: String): Int = {
-    runIn(out.targetDir, cmd, env, cname)
-  }
-
-  private def runIn(workDir: Path, cmd: Seq[String], env: Map[String, String], cname: String): Int = {
+  private def run(workDir: Path, cmd: Seq[String], env: Map[String, String], cname: String): Int = {
     val commands = Seq(s"cd ${workDir.toAbsolutePath}") ++ env.map(kv => s"export ${kv._1}=${kv._2}") ++ Seq(cmd.mkString(" "))
     println(commands.mkString("\n"))
 
