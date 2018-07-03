@@ -32,6 +32,7 @@ class TypeScriptTypeConverter() {
   def deserializeName(name: String, target: TypeId): String = target match {
     case Primitive.TTime => name + "AsString"
     case Primitive.TDate => name + "AsString"
+    case o: Generic.TOption => deserializeName(name, o.valueType)
     case _ => name
   }
 

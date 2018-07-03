@@ -9,13 +9,14 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, TypeScriptTranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension, TypeScriptTranslatorExtension}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
 
 object TypeScriptTranslator {
   final val defaultExtensions = Seq(
-    EnumHelpersExtension
+    EnumHelpersExtension,
+    IntrospectionExtension
   )
 }
 
@@ -167,7 +168,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |${uniqueInterfaces.map(sc => sc.name + typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
          """.stripMargin
 
-    CompositeProduct(dto, imports.render(ts), s"// ${i.id.name} DTO")
+    ext.extend(i, CompositeProduct(dto, imports.render(ts), s"// ${i.id.name} DTO"), _.handleDTO)
   }
 
   protected def renderAlias(i: Alias): RenderableCogenProduct = {
@@ -223,11 +224,12 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
          |}
        """.stripMargin
 
-    AdtProduct(
-      base,
-      imports.render(ts),
-      s"// ${i.id.name} Algebraic Data Type"
-    )
+    ext.extend(i,
+      AdtProduct(
+        base,
+        imports.render(ts),
+        s"// ${i.id.name} Algebraic Data Type"
+      ), _.handleAdt)
   }
 
   protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
