@@ -119,8 +119,35 @@ object IDLTestTools {
   }
 
   def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, IDLLanguage.CSharp, extensions)
-    true
+    val refDlls = Seq[String] (
+      "Newtonsoft.Json.dll",
+      "UnityEngine.dll",
+      "UnityEngine.Networking.dll",
+      "2.4.8-net2.0-nunit.framework.dll"
+    )
+    val out = compiles(id, domains, IDLLanguage.CSharp, extensions, refDlls)
+
+    val tmp = out.targetDir.getParent.resolve("phase2-compiler-tmp")
+    tmp.toFile.mkdirs()
+    Files.move(out.targetDir, tmp.resolve("src"))
+    Files.move(tmp, out.targetDir)
+
+    val fullTarget = out.targetDir.toFile.getCanonicalPath
+    val refs = s"/reference:${refDlls.map(dll => fullTarget + "/src/" + dll).mkString(",")}"
+//    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
+    val cmdBuild = s"csc -target:library -out:${fullTarget}/src/lib.dll -recurse:${fullTarget}/src/*.cs $refs"
+    val cmdTest = s"nunit-console ${fullTarget}/src/lib.dll"
+    println(
+      s"""
+         |cd $fullTarget
+         |$cmdBuild
+         |$cmdTest
+       """.stripMargin)
+
+    val exitCodeBuild = run(out, cmdBuild, Map.empty, "cs-build")
+    val exitCodeTest = run(out, cmdTest, Map.empty, "cs-test")
+
+    exitCodeBuild == 0 && exitCodeTest == 0
   }
 
   private def isRunningUnderSbt: Boolean = {
@@ -129,7 +156,7 @@ object IDLTestTools {
 
   final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
 
-  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
+  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension], refFiles: Seq[String] = Seq.empty): CompilerOutput = {
     val targetDir = Paths.get("target")
     val tmpdir = targetDir.resolve("idl-output")
 
@@ -172,6 +199,11 @@ object IDLTestTools {
 
         s.paths
     }.toSeq
+
+    val fileRefs = new File(getClass.getResource("/refs/" + language.toString).toURI).toPath
+    refFiles.map(f => {
+      Files.copy(fileRefs.resolve(f), compilerDir.resolve(f))
+    })
 
     domains.foreach {
       d =>

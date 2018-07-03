@@ -5,6 +5,8 @@ import izumi.test.domain01
 include "model01.model"
 include "model02.model"
 
+alias RTestEnum = izumi.test.domain01#RTestEnum
+
 mixin TestInterface1 {
   if1Field_overriden: i32
   if1Field_inherited: i32
@@ -42,4 +44,8 @@ mixin Pair1 {
 mixin Pair2 {
   y: str
   x: str
+}
+
+data TestDataWithAlias {
+  a: RTestEnum
 }

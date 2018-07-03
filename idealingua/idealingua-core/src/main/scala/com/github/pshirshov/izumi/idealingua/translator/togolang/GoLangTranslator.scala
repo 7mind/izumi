@@ -74,11 +74,13 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       return ""
     }
 
-    s"""${interfaces.map(sc => renderRegistrationCtor(sc, structName, imports)).mkString("\n")}
+    val uniqueInterfaces = interfaces.groupBy(_.name).map(_._2.head)
+
+    s"""${uniqueInterfaces.map(sc => renderRegistrationCtor(sc, structName, imports)).mkString("\n")}
        |
        |func init() {
        |    // Here we register current DTO in other interfaces
-       |${interfaces.map(sc => s"${imports.withImport(sc)}Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
+       |${uniqueInterfaces.map(sc => s"${imports.withImport(sc)}Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
@@ -148,6 +150,15 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
         case i: InterfaceId =>
           s"""type ${i.name + ts.implId(i).name} = ${goType.renderType(forAlias = true)}Struct
              |type ${i.name + ts.implId(i).name}Serialized = ${GoLangType(ts.implId(i), imports, ts).renderType(forAlias = true)}Serialized
+           """.stripMargin
+        case _: EnumId =>
+          s"""func New${i.id.name}(e string) ${i.id.name} {
+             |    return ${imports.withImport(i.target)}New${i.target.name}(e)
+             |}
+             |
+             |func IsValid${i.id.name}(e string) bool {
+             |    return ${imports.withImport(i.target)}IsValid${i.target.name}(e)
+             |}
            """.stripMargin
         case _ => s""
       }

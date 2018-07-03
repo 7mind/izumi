@@ -15,9 +15,11 @@ export interface IRTClientTransport {
 export class IRTHTTPClientTransport implements IRTClientTransport {
     public endpoint: string;
     private authorization: string;
+    private timeout: number;
 
     constructor(endpoint: string = undefined) {
         this.setEndpoint(endpoint);
+        this.timeout = 60 * 1000;
     }
 
     private get isReady(): boolean {
@@ -55,6 +57,7 @@ export class IRTHTTPClientTransport implements IRTClientTransport {
             req.setRequestHeader('Authorization', 'Bearer ' + this.authorization);
         }
 
+        req.timeout = this.timeout;
         req.send(payload);
     }
 
@@ -76,6 +79,10 @@ export class IRTHTTPClientTransport implements IRTClientTransport {
 
     public setAuthorization(token: string) {
         this.authorization = token;
+    }
+
+    public setTimeout(timeout: number) {
+        this.timeout = timeout;
     }
 
     public send(service: string, method: string, data: IRTServiceClientInData): Promise<any> {

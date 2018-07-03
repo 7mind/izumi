@@ -9,6 +9,8 @@ data KVEnumGeneric {
   test: map[TestEnum, TestEnum]
 }
 
+data EnumHolder {
+    en: TestEnum
+}
 
 enum ShortSyntaxEnum = Element1 | Element2
-

@@ -68,7 +68,7 @@ object TypeScriptImports {
       return Seq.empty
     }
 
-    val nestedDepth = t.path.toPackage.zip(fromPackage).count(x => x._1 == x._2)
+    val nestedDepth = t.path.toPackage.zip(fromPackage).count(x => x._1 == x._2) // TODO Bug here, org.playq and net.playq loook the same when imoprting
 
     if (nestedDepth == t.path.toPackage.size) {
       // On the same level, let's just import the type file
