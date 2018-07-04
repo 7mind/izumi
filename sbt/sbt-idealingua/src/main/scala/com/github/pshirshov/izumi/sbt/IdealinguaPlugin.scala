@@ -13,7 +13,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivation
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
-import sbt.Keys.{sourceGenerators, _}
+import sbt.Keys.{sourceGenerators, watchSources, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger
 import sbt.plugins._
@@ -65,6 +65,8 @@ object IdealinguaPlugin extends AutoPlugin {
       , Invokation(CompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.Artifact)
       , Invokation(CompilerOptions(IDLLanguage.CSharp, idlDefaultExtensionsCSharp.value), Mode.Artifact)
     )
+
+    , watchSources += Watched.WatchSource(baseDirectory.value / "src/main/izumi")
 
     , sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath
