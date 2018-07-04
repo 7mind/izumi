@@ -10,12 +10,12 @@ class CompilerWithCirceTest extends WordSpec {
 
   "IDL compiler" should {
     "be able to compile into scala with circe-derivation" in {
-      assume(IzFiles.haveExecutable("scalac"), "scalac not available")
+      assume(IzFiles.haveExecutables("scalac"), "scalac not available")
       assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(CirceDerivationTranslatorExtension)))
     }
 
     "be able to compile into scala with circe-generic" in {
-      assume(IzFiles.haveExecutable("scalac"), "scalac not available")
+      assume(IzFiles.haveExecutables("scalac"), "scalac not available")
       assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(CirceGenericTranslatorExtension)))
     }
   }

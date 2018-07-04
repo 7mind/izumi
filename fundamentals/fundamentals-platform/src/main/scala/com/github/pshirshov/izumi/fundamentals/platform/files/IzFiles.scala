@@ -61,8 +61,8 @@ object IzFiles {
       .find(p => p.toFile.exists())
   }
 
-  def haveExecutable(name: String): Boolean = {
-    which(name).nonEmpty
+  def haveExecutables(names: String*): Boolean = {
+    names.forall(which(_).nonEmpty)
   }
 
   def which(name: String): Option[Path] = {
