@@ -107,7 +107,7 @@ object IDLTestTools {
 
     val refsSrc = s"refs/${lang.toString.toLowerCase()}"
     val refDlls = IzResources.copyFromClasspath(refsSrc, refsDir).files
-      .filter(_.toFile.isFile).map(f => out.absoluteTargetDir.relativize(f.toAbsolutePath))
+      .filter(f => f.toFile.isFile && f.endsWith(".dll")).map(f => out.absoluteTargetDir.relativize(f.toAbsolutePath))
     IzResources.copyFromClasspath(refsSrc, out.phase3)
 
 
