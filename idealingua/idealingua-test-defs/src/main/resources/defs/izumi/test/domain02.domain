@@ -58,7 +58,9 @@ data AliasedUsageData {
 }
 
 alias RTestObject1 = izumi.test.domain01#RTestObject1
+alias AnyValTest2 = izumi.test.domain01#AnyValTest2
 
 service TestAliasServ {
-    def getMassCoupons(iterator: opt[RTestObject1]) => (i32 | str)
+    def getMassCoupons(iterator: opt[RTestObject1]) => i32
+    def ifaceMethod(va: AnyValTest2) => i32
 }

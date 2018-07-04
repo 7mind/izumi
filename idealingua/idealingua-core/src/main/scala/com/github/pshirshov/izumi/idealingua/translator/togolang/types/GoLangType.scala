@@ -124,6 +124,7 @@ final case class GoLangType (
         case al: AliasId => ts.dealias(al) match {
           case _: Primitive => id.name
           case _: EnumId => id.name
+          case _: InterfaceId => s"${im.withImport(id)}${id.name}"
           case _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(al)}${al.name}"
           case _ => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
         }
@@ -172,7 +173,7 @@ final case class GoLangType (
         case _: Generic.TSet => s"Not implemented renderUnmarshal.Generic.TMap"
       }
 
-      case _ => throw new IDLException("Primitive types should not be unmarshalled manually")
+      case _ => throw new IDLException("Primitive types should not be unmarshalled manually " + id.name)
       // case _ => assignLeft + content + assignRight
     }
   }

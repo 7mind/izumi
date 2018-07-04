@@ -142,14 +142,19 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   protected def renderAlias(i: Alias): RenderableCogenProduct = {
       val imports = GoLangImports(i, i.id.path.toPackage, ts)
       val goType = GoLangType(i.target, imports, ts)
+      var extra: Seq[String] = Seq.empty
 
       val aliases = ts.dealias(i.id) match {
         case _: DTOId =>
           s"""type ${i.id.name}Serialized = ${goType.renderType(forAlias = true)}Serialized
            """.stripMargin
         case ii: InterfaceId =>
+          extra = Seq("encoding/json")
           s"""type ${i.id.name + ts.implId(ii).name} = ${goType.renderType(forAlias = true)}Struct
              |type ${i.id.name + ts.implId(ii).name}Serialized = ${goType.renderType(forAlias = true)}${ts.implId(ii).name}Serialized
+             |func Create${i.id.name}(data map[string]json.RawMessage) (${i.id.name}, error) {
+             |    return ${imports.withImport(i.target)}Create${i.target.name}(data)
+             |}
            """.stripMargin
         case _: EnumId =>
           s"""func New${i.id.name}(e string) ${i.id.name} {
@@ -171,7 +176,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
            |    return ${goType.testValue()}
            |}
          """.stripMargin,
-        imports.renderImports()
+        imports.renderImports(extra)
       )
   }
 
