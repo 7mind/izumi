@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.idealingua
 
 import java.io.File
 import java.lang.management.ManagementFactory
+import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
 import java.nio.file._
-import sys.process._
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
@@ -18,6 +18,20 @@ import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslato
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension, TypespaceCompiler}
+
+import scala.sys.process._
+
+@ExposedTestScope
+final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
+  def absoluteTargetDir: Path = targetDir.toAbsolutePath
+
+  def phase3: Path = absoluteTargetDir.getParent.resolve("phase3-compiler-output")
+
+  def phase3Relative: Path = absoluteTargetDir.relativize(phase3)
+
+  def relativeOutputs: Seq[String] = allFiles.map(p => absoluteTargetDir.relativize(p.toAbsolutePath).toString)
+}
+
 
 @ExposedTestScope
 object IDLTestTools {
@@ -39,25 +53,33 @@ object IDLTestTools {
 
   def compilesScala(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.Scala, extensions)
+    val classLoader = Thread
+      .currentThread
+      .getContextClassLoader
+      .getParent
 
-    val ctarget = out.targetDir.getParent.resolve("phase3-scalac")
-    ctarget.toFile.mkdirs()
 
-    import scala.tools.nsc.{Global, Settings}
-    val settings = new Settings()
-    settings.d.value = ctarget.toString
-    settings.feature.value = true
-    settings.warnUnused.add("_")
-    settings.deprecation.value = true
-    settings.embeddedDefaults(this.getClass.getClassLoader)
-    if (!isRunningUnderSbt) {
-      settings.usejavacp.value = true
+    val classpath = classLoader match {
+      case u: URLClassLoader =>
+        u
+          .getURLs
+          .map(_.getFile)
+          .mkString(System.getProperty("path.separator"))
+      case _ =>
+        System.getProperty("java.class.path")
     }
 
-    val g = new Global(settings)
-    val run = new g.Run
-    run.compile(out.allFiles.map(_.toFile.getCanonicalPath).toList)
-    run.runIsAt(run.jvmPhase.next)
+    val cmd = Seq(
+      "scalac"
+      , "-deprecation"
+      , "-opt-warnings:_"
+      , "-d", out.phase3Relative.toString
+      , "-classpath", classpath
+    ) ++ out.relativeOutputs
+
+    val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
+    exitCode == 0
+
   }
 
   def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
@@ -65,71 +87,67 @@ object IDLTestTools {
 
     val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
     val tsconfigBytes = IzResources.readAsString("tsconfig-compiler-test.json")
-    Files.write(outputTsconfigPath, tsconfigBytes.get.getBytes)
+      .get
+      .replace("../phase3-compiler-output", out.phase3.toString)
 
-    val cmd = s"tsc -p ${outputTsconfigPath.toFile.getName}"
-    val exitCode = run(out, cmd, Map.empty, "tsc")
+    Files.write(outputTsconfigPath, tsconfigBytes.getBytes)
+
+    val cmd = Seq("tsc", "-p", outputTsconfigPath.toFile.getName)
+
+    val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "tsc")
     exitCode == 0
   }
 
-  def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, IDLLanguage.Go, extensions)
+  def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
+    val refDlls = Seq(
+      "Newtonsoft.Json.dll",
+      "UnityEngine.dll",
+      "UnityEngine.Networking.dll",
+      "2.4.8-net2.0-nunit.framework.dll"
+    )
 
-    val tmp = out.targetDir.getParent.resolve("phase2-compiler-tmp")
-    tmp.toFile.mkdirs()
-    Files.move(out.targetDir, tmp.resolve("src"))
-    Files.move(tmp, out.targetDir)
+    val lang = IDLLanguage.CSharp
+    val out = compiles(id, domains, lang, extensions, refDlls)
+    val refsDir = out.absoluteTargetDir.resolve("refs")
 
-    val args = domains.map(d => d.domain.id.toPackage.mkString("/")).mkString(" ")
-    //val cmdBuild= s"go build -o ../phase3-go $args" // go build: cannot use -o with multiple packages
-    val cmdBuild = s"go build $args"
-    val cmdTest = s"go test $args"
+    IzFiles.recreateDirs(refsDir)
 
-    val fullTarget = out.targetDir.toFile.getCanonicalPath
+    IzResources.copyFromClasspath(s"refs/${lang.toString}", refsDir)
+    IzResources.copyFromClasspath(s"refs/${lang.toString}", out.phase3)
 
-    println(
-      s"""
-         |cd $fullTarget
-         |export GOPATH=$fullTarget
-         |$cmdBuild
-       """.stripMargin)
 
-    val exitCodeBuild = run(out, cmdBuild, Map("GOPATH" -> fullTarget), "go-build")
-    val exitCodeTest = run(out, cmdTest, Map("GOPATH" -> fullTarget), "go-test")
+    val outname = "test-output.dll"
+    val refs = s"/reference:${refDlls.map(dll => s"refs/$dll").mkString(",")}"
+    val cmdBuild = Seq("csc", "-target:library", s"-out:${out.phase3Relative}/$outname", "-recurse:\\*.cs", refs)
+    val exitCodeBuild = run(out.absoluteTargetDir, cmdBuild, Map.empty, "cs-build")
+
+    val cmdTest = Seq("nunit-console", outname)
+    val exitCodeTest = run(out.phase3, cmdTest, Map.empty, "cs-test")
 
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  private def run(out: CompilerOutput, cmd: String, env: Map[String, String], cname: String) = {
-    val log = out.targetDir.getParent.resolve(s"$cname.log").toFile
-    val logger = ProcessLogger(log)
-    val exitCode = try {
-      Process(cmd, Some(out.targetDir.toFile), env.toSeq: _*)
-        .run(logger)
-        .exitValue()
-    } finally {
-      logger.close()
-    }
+  def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
+    val out = compiles(id, domains, IDLLanguage.Go, extensions)
+    val outDir = out.absoluteTargetDir
 
-    if (exitCode != 0) {
-      System.err.println(s"Process failed for $cname: $exitCode")
-      System.err.println(IzFiles.readString(log))
-    }
-    exitCode
+    val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
+    tmp.toFile.mkdirs()
+    Files.move(outDir, tmp.resolve("src"))
+    Files.move(tmp, outDir)
+
+    val cmdBuild = Seq("go", "install", "-pkgdir", out.phase3.toString, "./...")
+    val cmdTest = Seq("go", "test", "./...")
+
+    val env = Map("GOPATH" -> out.absoluteTargetDir.toString)
+    val goSrc = out.absoluteTargetDir.resolve("src")
+    val exitCodeBuild = run(goSrc, cmdBuild, env, "go-build")
+    val exitCodeTest = run(goSrc, cmdTest, env, "go-test")
+
+    exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, IDLLanguage.CSharp, extensions)
-    true
-  }
-
-  private def isRunningUnderSbt: Boolean = {
-    Option(System.getProperty("java.class.path")).exists(_.contains("sbt-launch.jar"))
-  }
-
-  final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path])
-
-  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
+  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension], refFiles: Seq[String] = Seq.empty): CompilerOutput = {
     val targetDir = Paths.get("target")
     val tmpdir = targetDir.resolve("idl-output")
 
@@ -145,7 +163,7 @@ object IDLTestTools {
     val runDir = tmpdir.resolve(dirPrefix)
     val domainsDir = runDir.resolve("phase0-rerender")
     val layoutDir = runDir.resolve("phase1-layout")
-    val compilerDir = runDir.resolve("phase2-compiler")
+    val compilerDir = runDir.resolve("phase2-compiler-input")
 
     IzFiles.recreateDirs(runDir, domainsDir, layoutDir, compilerDir)
     IzFiles.refreshSymlink(targetDir.resolve(stablePrefix), runDir)
@@ -179,7 +197,9 @@ object IDLTestTools {
         Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
     }
 
-    CompilerOutput(compilerDir, allFiles)
+    val out = CompilerOutput(compilerDir, allFiles)
+    out.phase3.toFile.mkdirs()
+    out
   }
 
 
@@ -193,5 +213,26 @@ object IDLTestTools {
         f =>
           Quirks.discard(IzFiles.removeDir(f.toPath))
       }
+  }
+
+  private def run(workDir: Path, cmd: Seq[String], env: Map[String, String], cname: String): Int = {
+    val commands = Seq(s"cd ${workDir.toAbsolutePath}") ++ env.map(kv => s"export ${kv._1}=${kv._2}") ++ Seq(cmd.mkString(" "))
+    println(commands.mkString("\n"))
+
+    val log = workDir.getParent.resolve(s"$cname.log").toFile
+    val logger = ProcessLogger(log)
+    val exitCode = try {
+      Process(cmd, Some(workDir.toFile), env.toSeq: _*)
+        .run(logger)
+        .exitValue()
+    } finally {
+      logger.close()
+    }
+
+    if (exitCode != 0) {
+      System.err.println(s"Process failed for $cname: $exitCode")
+      System.err.println(IzFiles.readString(log))
+    }
+    exitCode
   }
 }

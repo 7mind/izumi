@@ -111,11 +111,12 @@ object IzumiDeps {
 
     val scopt = "com.github.scopt" %% "scopt" % V.scopt
 
+    val scalatest = "org.scalatest" %% "scalatest" % V.scalatest
   }
 
   object T {
-    private val scalatest = "org.scalatest" %% "scalatest" % V.scalatest % "test"
 
+    val scalatest = R.scalatest % "test"
     val scala_compiler = R.scala_compiler % "test"
     val slf4j_simple = R.slf4j_simple % "test"
 

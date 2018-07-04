@@ -25,6 +25,21 @@ data TestObject {
   & TestInterface
 }
 
+data GoTimeImportOptional {
+    o: opt[tsl]
+}
+
+mixin GoAliasTest {
+    a: str
+}
+
+enum GoAliasEnumTest {
+    Val1
+    Val2
+}
+
+alias GoAlias2 = GoAliasTest
+
 mixin AllTypes {
   boolean : bool
   string  : str
@@ -45,6 +60,9 @@ mixin AllTypes {
   map     : map[str, AllTypes]
   option  : opt[AllTypes]
   set     : set[AllTypes]
+
+  optionDate: opt[tsl]
+  optionTime: opt[time]
 }
 
 adt AnAdt {

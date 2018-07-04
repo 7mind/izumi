@@ -4,6 +4,8 @@ import java.nio.file.Path
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.CompilerOptions
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
@@ -11,7 +13,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivation
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
-import sbt.Keys.{sourceGenerators, _}
+import sbt.Keys.{sourceGenerators, watchSources, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger
 import sbt.plugins._
@@ -37,6 +39,7 @@ object IdealinguaPlugin extends AutoPlugin {
     val idlDefaultExtensionsScala = settingKey[Seq[ScalaTranslatorExtension]]("Default list of translator extensions for scala")
     val idlDefaultExtensionsTypescript = settingKey[Seq[TypeScriptTranslatorExtension]]("Default list of translator extensions for typescript")
     val idlDefaultExtensionsGolang = settingKey[Seq[GoLangTranslatorExtension]]("Default list of translator extensions for golang")
+    val idlDefaultExtensionsCSharp = settingKey[Seq[CSharpTranslatorExtension]]("Default list of translator extensions for csharp")
   }
 
   import Keys._
@@ -53,13 +56,17 @@ object IdealinguaPlugin extends AutoPlugin {
 
     , idlDefaultExtensionsTypescript := TypeScriptTranslator.defaultExtensions
     , idlDefaultExtensionsGolang := GoLangTranslator.defaultExtensions
+    , idlDefaultExtensionsCSharp := CSharpTranslator.defaultExtensions
 
     , compilationTargets := Seq(
       Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Sources)
       , Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Artifact)
       , Invokation(CompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.Artifact)
       , Invokation(CompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.Artifact)
+      , Invokation(CompilerOptions(IDLLanguage.CSharp, idlDefaultExtensionsCSharp.value), Mode.Artifact)
     )
+
+    , watchSources += Watched.WatchSource(baseDirectory.value / "src/main/izumi")
 
     , sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath

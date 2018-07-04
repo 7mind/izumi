@@ -148,6 +148,13 @@ final case class GoLangField(
       case Primitive.TTs => renderMemberName(true) + "AsString()"
       case Primitive.TDate => renderMemberName(true) + "AsString()"
       case Primitive.TTime => renderMemberName(true) + "AsString()"
+      case g: Generic => g match {
+        case go: Generic.TOption => go.valueType match {
+          case Primitive.TTsTz | Primitive.TTs | Primitive.TDate | Primitive.TTime => renderMemberName(true) + "AsString()"
+          case _ => renderMemberName(false)
+        }
+        case _ => renderMemberName(false)
+      }
       case _ => renderMemberName(false)
     }
   }
@@ -168,6 +175,16 @@ final case class GoLangField(
     case Primitive.TDate => toDateField()
     case Primitive.TTs => toTimeStampField(false)
     case Primitive.TTsTz => toTimeStampField(true)
+    case g: Generic => g match {
+      case go: Generic.TOption => go.valueType match {
+        case Primitive.TTime => toTimeField(optional = true)
+        case Primitive.TDate => toDateField(optional = true)
+        case Primitive.TTs => toTimeStampField(utc = false, optional = true)
+        case Primitive.TTsTz => toTimeStampField(utc = true, optional = true)
+        case _ => toGenericField()
+      }
+      case _ => toGenericField()
+    }
     case _ => toGenericField()
   }
 
@@ -196,7 +213,7 @@ final case class GoLangField(
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}(value string) error {
-       |    pattern := regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$$`)
+       |    pattern := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$$`)
        |    matched := pattern.MatchString(value)
        |    if !matched {
        |        return fmt.Errorf("Set${renderMemberName(true)} expects the value to be a valid UUID. Got %s", value)
@@ -208,18 +225,20 @@ final case class GoLangField(
      """.stripMargin
   }
 
-  def toDateField(): String = {
-    s"""func (v *$structName) ${renderMemberName(true)}() time.Time {
+  def toDateField(optional: Boolean = false): String = {
+    s"""func (v *$structName) ${renderMemberName(true)}() ${if (optional) "*" else ""}time.Time {
        |    return v.${renderMemberName(false)}
        |}
        |
-       |func (v *$structName) Set${renderMemberName(true)}(value time.Time) {
+       |func (v *$structName) Set${renderMemberName(true)}(value ${if (optional) "*" else ""}time.Time) {
        |    v.${renderMemberName(false)} = value
        |}
        |
-       |func (v *$structName) ${renderMemberName(true)}AsString() string {
+       |func (v *$structName) ${renderMemberName(true)}AsString() ${if (optional) "*" else ""}string {
+       |    ${if (optional) s"if v.${renderMemberName(false)} == nil {\n        return nil\n    }" else ""}
        |    year, month, day := v.${renderMemberName(false)}.Date()
-       |    return fmt.Sprintf("%04d:%02d:%02d", year, month, day)
+       |    res := fmt.Sprintf("%04d:%02d:%02d", year, month, day)
+       |    return ${if (optional) "&" else ""}res
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
@@ -241,27 +260,30 @@ final case class GoLangField(
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DD format, year is invalid. Got %s", value)
        |    }
        |
-       |    v.${renderMemberName(false)} = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+       |    res := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+       |    v.${renderMemberName(false)} = ${if (optional) "&" else ""}res
        |    return nil
        |}
      """.stripMargin
   }
 
-  def toTimeField(): String = {
-    s"""func (v *$structName) ${renderMemberName(true)}() time.Time {
+  def toTimeField(optional: Boolean = false): String = {
+    s"""func (v *$structName) ${renderMemberName(true)}() ${if (optional) "*" else ""}time.Time {
        |    return v.${renderMemberName(false)}
        |}
        |
-       |func (v *$structName) Set${renderMemberName(true)}(value time.Time) {
+       |func (v *$structName) Set${renderMemberName(true)}(value ${if (optional) "*" else ""}time.Time) {
        |    v.${renderMemberName(false)} = value
        |}
        |
-       |func (v *$structName) ${renderMemberName(true)}AsString() string {
+       |func (v *$structName) ${renderMemberName(true)}AsString() ${if (optional) "*" else ""}string {
+       |    ${if (optional) s"if v.${renderMemberName(false)} == nil {\n        return nil\n    }" else ""}
        |    hour := v.${renderMemberName(false)}.Hour()
        |    minute := v.${renderMemberName(false)}.Minute()
        |    second := v.${renderMemberName(false)}.Second()
        |    millis := v.${renderMemberName(false)}.Nanosecond() / int((int64(time.Millisecond) / int64(time.Nanosecond)))
-       |    return fmt.Sprintf("%02d:%02d:%02d.%d", hour, minute, second, millis)
+       |    res := fmt.Sprintf("%02d:%02d:%02d.%d", hour, minute, second, millis)
+       |    return ${if (optional) "&" else ""}res;
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
@@ -291,34 +313,38 @@ final case class GoLangField(
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the HH:MM:SS.MS format, millis are invalid. Got %s", value)
        |    }
        |
-       |    v.${renderMemberName(false)} = time.Date(2000, time.January, 1, hour, minute, second, millis * int(time.Millisecond), time.UTC)
+       |    res := time.Date(2000, time.January, 1, hour, minute, second, millis * int(time.Millisecond), time.UTC)
+       |    v.${renderMemberName(false)} = ${if (optional) "&" else ""}res
        |    return nil
        |}
      """.stripMargin
   }
 
-  def toTimeStampField(utc: Boolean): String = {
-    s"""func (v *$structName) ${renderMemberName(true)}() time.Time {
-       |    return v.${renderMemberName(false)}${if (utc) ".UTC()" else ""}
+  def toTimeStampField(utc: Boolean, optional: Boolean = false): String = {
+    s"""func (v *$structName) ${renderMemberName(true)}() ${if (optional) "*" else ""}time.Time {
+       |    ${if (utc) s"res := v.${renderMemberName(false)}.UTC();\n    return ${if (optional) "&" else ""}res" else ""}
+       |    ${if (!utc) s"return v.${renderMemberName(false)}" else ""}
        |}
        |
-       |func (v *$structName) Set${renderMemberName(true)}(value time.Time) {
+       |func (v *$structName) Set${renderMemberName(true)}(value ${if (optional) "*" else ""}time.Time) {
        |    v.${renderMemberName(false)} = value
        |}
        |
-       |func (v *$structName) ${renderMemberName(true)}AsString() string {
-       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z[UTC]" else "-07:00[MST]"}"
-       |    return v.${renderMemberName(false)}${if (utc) ".UTC()" else ""}.Format(layout)
+       |func (v *$structName) ${renderMemberName(true)}AsString() ${if (optional) "*" else ""}string {
+       |    ${if (optional) s"if v.${renderMemberName(false)} == nil {\n        return nil\n    }" else ""}
+       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z" else "-07:00"}"
+       |    res := v.${renderMemberName(false)}${if (utc) ".UTC()" else ""}.Format(layout)
+       |    return ${if (optional) "&" else ""}res
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
-       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z[UTC]" else "-07:00[MST]"}"
+       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z" else "-07:00"}"
        |    t, err := time.Parse(layout, value)
        |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DDTHH:MM:SS.MICROS${if (utc) "Z[UTC]" else "+00:00[Zone/Region]"} format. Got %s", value)
+       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DDTHH:MM:SS.MICROS${if (utc) "Z" else "+00:00"} format. Got %s", value)
        |    }
        |
-       |    v.${renderMemberName(false)} = t
+       |    v.${renderMemberName(false)} = ${if (optional) "&" else ""}t
        |    return nil
        |}
      """.stripMargin
@@ -329,45 +355,48 @@ final case class GoLangField(
     renderAssignImpl(struct, tp.id, variable, serialized, optional)
   }
 
-  private def renderDeserializedVar(id: TypeId, dest: String, src: String): String = id match {
-    case _: InterfaceId =>
-      s"""$dest, err := ${im.withImport(id)}Create${id.name}($src)
-         |if err != nil {
-         |    return err
-         |}
+  private def renderDeserializedVar(refId: TypeId, dest: String, src: String, usageId: Option[TypeId] = None): String = {
+    val id = if (usageId.isDefined) usageId.get else refId
+    refId match {
+      case _: InterfaceId =>
+        s"""$dest, err := ${im.withImport(id)}Create${id.name}($src)
+           |if err != nil {
+           |    return err
+           |}
            """.stripMargin
 
-    case _: AdtId =>
-      s"""$dest := &${im.withImport(id)}${id.name}{}
-         |if err := json.Unmarshal($src, $dest); err != nil {
-         |    return err
-         |}
+      case _: AdtId =>
+        s"""$dest := &${im.withImport(id)}${id.name}{}
+           |if err := json.Unmarshal($src, $dest); err != nil {
+           |    return err
+           |}
            """.stripMargin
 
-    case _: DTOId =>
-      s"""$dest := &${im.withImport(id)}${id.name}{}
-         |if err := $dest.LoadSerialized($src); err != nil {
-         |    return err
-         |}
+      case _: DTOId =>
+        s"""$dest := &${im.withImport(id)}${id.name}{}
+           |if err := $dest.LoadSerialized($src); err != nil {
+           |    return err
+           |}
            """.stripMargin
 
-    case _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
-      s"""if !${im.withImport(id)}IsValid${id.name}($src) {
-         |    return fmt.Errorf("Invalid ${id.name} enum value %s", $src)
-         |}
-         |$dest := ${im.withImport(id)}New${id.name}($src)
+      case _: EnumId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
+        s"""if !${im.withImport(id)}IsValid${id.name}($src) {
+           |    return fmt.Errorf("Invalid ${id.name} enum value %s", $src)
+           |}
+           |$dest := ${im.withImport(id)}New${id.name}($src)
            """.stripMargin
 
-    case _: IdentifierId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
-      s"""$dest := &${im.withImport(id)}${id.name}{}
-         |if err := $dest.LoadSerialized($src); err != nil {
-         |    return err
-         |}
+      case _: IdentifierId => // TODO Consider using automatic unmarshalling by placing in serialized structure just enum or identifier object
+        s"""$dest := &${im.withImport(id)}${id.name}{}
+           |if err := $dest.LoadSerialized($src); err != nil {
+           |    return err
+           |}
            """.stripMargin
 
-    case al: AliasId => renderDeserializedVar(ts(al).asInstanceOf[Alias].target, dest, src)
+      case al: AliasId => renderDeserializedVar(ts.dealias(al), dest, src, Some(al))
 
-    case _ => throw new IDLException("We should never get here for deserialized field.")
+      case _ => throw new IDLException("We should never get here for deserialized field.")
+    }
   }
 
   private def renderAssignImpl(struct: String, id: TypeId, variable: String, serialized: Boolean, optional: Boolean): String = {
@@ -395,7 +424,14 @@ final case class GoLangField(
              |$assignTemp
            """.stripMargin
 
-          case al: AliasId => renderAssignImpl(struct, ts(al).asInstanceOf[Alias].target, variable, serialized, optional)
+          case al: AliasId => ts.dealias(al) match {
+            case _: InterfaceId | _: AdtId | _: DTOId | _: EnumId | _: IdentifierId =>
+              s"""${renderDeserializedVar(ts.dealias(al), tempVal, (if(optional) "*" else "") + variable, Some(al))}
+                 |$assignTemp
+               """.stripMargin
+
+            case _ => renderAssignImpl(struct, ts(al).asInstanceOf[Alias].target, variable, serialized, optional)
+          }
           case g: Generic => g match {
             case go: Generic.TOption =>
               s"""if $variable != nil {
@@ -441,7 +477,7 @@ final case class GoLangField(
             }
           }
         case Primitive.TTsTz | Primitive.TTs | Primitive.TTime | Primitive.TDate =>
-          s"""if err := $struct.Set${renderMemberName(true)}FromString($variable); err != nil {
+          s"""if err := $struct.Set${renderMemberName(true)}FromString(${if (optional) "*" else ""}$variable); err != nil {
              |    return err
              |}
            """.stripMargin

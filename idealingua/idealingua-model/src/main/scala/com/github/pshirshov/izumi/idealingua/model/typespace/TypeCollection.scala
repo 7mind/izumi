@@ -7,6 +7,21 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
+import scala.collection.generic.CanBuildFrom
+
+class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
+  def collect[B, That](pf: PartialFunction[(K, V), B])(implicit bf: CanBuildFrom[Map[K, V], B, That]): That = underlying.collect(pf)
+
+  def contains(key: K): Boolean = underlying.contains(key)
+
+  def fetch(k: K): V = {
+    underlying.get(k) match {
+      case Some(v) => v
+      case None => throw new IDLException(s"Missing value in context $context: $k")
+    }
+  }
+}
+
 class TypeCollection(domain: DomainDefinition) {
   val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
 
@@ -92,8 +107,8 @@ class TypeCollection(domain: DomainDefinition) {
     domain.types.map(t => (t.id, t)).toMap
   }
 
-  def index: Map[TypeId, TypeDef] = {
-    all.map(t => (t.id, t)).toMap
+  def index: CMap[TypeId, TypeDef] = {
+    new CMap(domain.id, all.map(t => (t.id, t)).toMap)
   }
 
   def toDtoName(id: TypeId): String = {

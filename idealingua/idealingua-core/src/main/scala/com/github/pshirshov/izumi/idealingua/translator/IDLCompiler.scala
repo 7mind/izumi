@@ -7,7 +7,6 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, IDLFailure, IDLResult, IDLSuccess}
-import java.nio.file.Path
 
 class IDLCompiler(toCompile: Seq[Typespace]) {
   def compile(relTarget: Path, options: CompilerOptions): IDLCompiler.Result = {
@@ -28,7 +27,7 @@ class IDLCompiler(toCompile: Seq[Typespace]) {
 
     // copy stubs
     val stubs = if (options.withRuntime) {
-      IzResources.copyFromJar(s"runtime/${options.language.toString}", target)
+      IzResources.copyFromClasspath(s"runtime/${options.language.toString}", target)
     } else {
       IzResources.RecursiveCopyOutput.empty
     }

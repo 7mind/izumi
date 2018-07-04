@@ -7,8 +7,7 @@ import java.util.Date
 
 import scala.language.implicitConversions
 
-
-object IzTime {
+trait IzTime {
   final val TZ_UTC: ZoneId = ZoneId.of("UTC")
 
   final val ISO_LOCAL_TIME = {
@@ -59,6 +58,8 @@ object IzTime {
 
   implicit def toRich(timestamp: ZonedDateTime): IzZonedDateTime = new IzZonedDateTime(timestamp)
 
+  implicit def toRich(timestamp: LocalDateTime): IzLocalDateTime = new IzLocalDateTime(timestamp)
+
   implicit def toRich(value: Long): IzLongParsers = new IzLongParsers(value)
 
   def utcNow: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
@@ -66,4 +67,8 @@ object IzTime {
   final val EPOCH = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1), TZ_UTC)
 
   def isoNow: String = utcNow.isoFormat
+}
+
+object IzTime extends IzTime {
+
 }

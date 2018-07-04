@@ -44,7 +44,7 @@ object IzResources {
     def empty: RecursiveCopyOutput = RecursiveCopyOutput(Seq.empty)
   }
 
-  def copyFromJar(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
+  def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
     val pathReference = getPath(sourcePath)
     if (pathReference.isEmpty) {
       return RecursiveCopyOutput.empty

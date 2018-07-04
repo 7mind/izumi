@@ -75,7 +75,7 @@ final case class GoLangType (
     case _: AdtId => true
     case _: InterfaceId => true
     case _: EnumId => true
-    case al: AliasId => isPolymorph(ts(al).asInstanceOf[Alias].target)
+    case al: AliasId => isPolymorph(ts.dealias(al))
     case g: Generic => g match {
       case go: Generic.TOption => isPolymorph(go.valueType)
       case gl: Generic.TList => isPolymorph(gl.valueType)
@@ -107,8 +107,12 @@ final case class GoLangType (
         case _: InterfaceId => s"map[string]json.RawMessage"
         case _: AdtId => s"json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
         case _: IdentifierId | _: EnumId => s"string"
-        case d: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(d)}${d.name}Serialized"
-        case al: AliasId => if (isPrimitive(ts.dealias(al))) id.name else renderNativeType(ts.dealias(al), serialized)
+        case d: DTOId => s"*${im.withImport(d)}${d.name}Serialized"
+        case al: AliasId => ts.dealias(al) match {
+//          case _: Primitive => id.name
+          case _: DTOId => s"*${im.withImport(al)}${al.name}Serialized"
+          case _ => renderNativeType(ts.dealias(al), serialized)
+        }
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
     } else {
@@ -117,7 +121,13 @@ final case class GoLangType (
         case _: InterfaceId => s"${im.withImport(id)}${id.name}"
         case _: IdentifierId => if(forMap) "string" else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
         case _: AdtId | _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
-        case al: AliasId => if (isPrimitive(ts.dealias(al))) id.name else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+        case al: AliasId => ts.dealias(al) match {
+          case _: Primitive => id.name
+          case _: EnumId => id.name
+          case _: InterfaceId => s"${im.withImport(id)}${id.name}"
+          case _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(al)}${al.name}"
+          case _ => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+        }
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
     }
@@ -163,7 +173,7 @@ final case class GoLangType (
         case _: Generic.TSet => s"Not implemented renderUnmarshal.Generic.TMap"
       }
 
-      case _ => throw new IDLException("Primitive types should not be unmarshalled manually")
+      case _ => throw new IDLException("Primitive types should not be unmarshalled manually " + id.name)
       // case _ => assignLeft + content + assignRight
     }
   }
@@ -241,7 +251,11 @@ final case class GoLangType (
       case gs: Generic.TSet => s"[]${GoLangType(gs.valueType, im, ts).renderType()}{}"
       case _: Generic.TOption => "nil"
     }
-    case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
+    case al: AliasId => ts.dealias(al) match {
+      case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${al.name}()"
+      case i: InterfaceId => s"${im.withImport(id)}NewTest${al.name + ts.implId(i).name}()"
+      case _ => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
+    }
     case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${id.name}()"
     case i: InterfaceId => s"${im.withImport(id)}NewTest${i.name + ts.implId(i).name}()"
     case _ => "nil"

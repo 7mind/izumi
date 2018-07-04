@@ -32,6 +32,7 @@ class TypeScriptTypeConverter() {
   def deserializeName(name: String, target: TypeId): String = target match {
     case Primitive.TTime => name + "AsString"
     case Primitive.TDate => name + "AsString"
+    case o: Generic.TOption => deserializeName(name, o.valueType)
     case _ => name
   }
 
@@ -72,9 +73,9 @@ class TypeScriptTypeConverter() {
     case a: AdtId => s"${a.name}Helpers.deserialize($variable)"
     case i: InterfaceId => s"${i.name}Struct.create(${variable + (if (asAny) " as any" else "")})"
     case d: DTOId => s"new ${d.name}(${variable + (if (asAny) " as any" else "")})"
-    case al: AliasId => deserializeType(variable, ts(al).asInstanceOf[Alias].target, ts)
+    case al: AliasId => deserializeType(variable, ts.dealias(al), ts)
     case id: IdentifierId => s"new ${id.name}($variable)"
-    case _: EnumId => s"$variable"
+    case en: EnumId => s"${en.name}[$variable]"
 
     case _ => s"'$variable: Error here! Not Implemented! ${target.name}'"
   }
@@ -102,7 +103,7 @@ class TypeScriptTypeConverter() {
         case _: AdtId => s"{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
         case al: AliasId => toNativeType(ts(al).asInstanceOf[Alias].target, ts, forSerialized)
         case _: DTOId => s"${id.name}Serialized"
-        case _: EnumId => if (forMap) "string" else id.name
+        case _: EnumId => "string"
         case _: IdentifierId => s"string"
         case _ => s"${id.name}"
       }
@@ -141,7 +142,7 @@ class TypeScriptTypeConverter() {
   }
 
   def serializeField(field: Field, ts: Typespace): String = {
-    s"'${field.name}': ${serializeValue("this." + field.name, field.typeId, ts)}"
+    s"'${field.name}': ${serializeValue("this." + safeName(field.name), field.typeId, ts)}"
   }
 
   def serializeValue(name: String, id: TypeId, ts: Typespace): String = id match {
@@ -186,7 +187,7 @@ class TypeScriptTypeConverter() {
     case _: DTOId => s"$name.serialize()"
     case al: AliasId => serializeValue(name, ts(al).asInstanceOf[Alias].target, ts)
     case _: IdentifierId => s"$name.serialize()"
-    case _: EnumId => name
+    case en: EnumId => s"${en.name}[$name]"
 
     case _ => s"'$name: Error here! Not Implemented! ${id.name}'"
   }
@@ -246,15 +247,14 @@ class TypeScriptTypeConverter() {
   }
 
   def safeName(name: String): String = {
-//    val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
-//      "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",
-//      "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends",
-//      "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "any",
-//      "implements", "instanceof", "namespace", "boolean", "constructor", "declare", "get", "module", "require",
-//      "number", "set", "string", "symbol", "type", "from", "of")
+    val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
+      "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",
+      "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends",
+      "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "any",
+      "implements", "instanceof", "namespace", "boolean", "constructor", "declare", "get", "module", "require",
+      "number", "set", "string", "symbol", "type", "from", "of")
 
-    //    if (ecma1.contains(name)) s"m${name.capitalize}" else name
-    name
+    if (ecma1.contains(name)) s"${name}_" else name
   }
 
   def toPrivateMember(name: String, memberType: String): String = {
@@ -361,7 +361,7 @@ class TypeScriptTypeConverter() {
        |        throw new Error('Field ${safeName(name)} expects type string, got ' + value);
        |    }
        |
-       |    if (!value.match('^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$$')) {
+       |    if (!value.match('^[0-9a-fA-f]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$$')) {
        |        throw new Error('Field ${safeName(name)} expects guid format, got ' + value);
        |    }
        |
