@@ -49,3 +49,18 @@ mixin Pair2 {
 data TestDataWithAlias {
   a: RTestEnum
 }
+
+alias AliasedTestObject = izumi.test.domain01#TestObject
+alias AliasedGoAliasEnumTest = izumi.test.domain01#GoAliasEnumTest
+data AliasedUsageData {
+    testObj: AliasedTestObject
+    enum: AliasedGoAliasEnumTest
+}
+
+alias RTestObject1 = izumi.test.domain01#RTestObject1
+alias AnyValTest2 = izumi.test.domain01#AnyValTest2
+
+service TestAliasServ {
+    def getMassCoupons(iterator: opt[RTestObject1]) => i32
+    def ifaceMethod(va: AnyValTest2) => i32
+}

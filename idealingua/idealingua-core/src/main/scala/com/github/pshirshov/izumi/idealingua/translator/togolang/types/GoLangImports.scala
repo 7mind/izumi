@@ -112,7 +112,7 @@ object GoLangImports {
       case gm: Generic.TMap => List(gm) ++ collectTypes(gm.valueType, skipPrimitive = true)
       case gl: Generic.TList => List(gl) ++ collectTypes(gl.valueType, skipPrimitive = true)
       case gs: Generic.TSet => List(gs) ++ collectTypes(gs.valueType, skipPrimitive = true)
-      case go: Generic.TOption => List(go) ++ collectTypes(go.valueType, skipPrimitive = true)
+      case go: Generic.TOption => List(go) ++ collectTypes(go.valueType, skipPrimitive = false)
     }
     case a: AdtId => List(a)
     case i: InterfaceId => List(i)
