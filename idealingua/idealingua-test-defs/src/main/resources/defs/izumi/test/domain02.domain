@@ -56,3 +56,9 @@ data AliasedUsageData {
     testObj: AliasedTestObject
     enum: AliasedGoAliasEnumTest
 }
+
+alias RTestObject1 = izumi.test.domain01#RTestObject1
+
+service TestAliasServ {
+    def getMassCoupons(iterator: opt[RTestObject1]) => (i32 | str)
+}

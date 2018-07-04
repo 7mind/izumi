@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import scala.util.control.Breaks._
 
 final case class TypeScriptImport(id: TypeId, pkg: String)
 
@@ -68,9 +69,27 @@ object TypeScriptImports {
       return Seq.empty
     }
 
-    val nestedDepth = t.path.toPackage.zip(fromPackage).count(x => x._1 == x._2) // TODO Bug here, org.playq and net.playq loook the same when imoprting
+    // left: a.b.c.d
+    // right: a.b.c.e
 
-    if (nestedDepth == t.path.toPackage.size) {
+    var srcPkg = fromPackage
+    var destPkg = t.path.toPackage
+    var matching = 0
+
+    breakable{
+      for( i <- 0 to srcPkg.size - 1){
+        if (destPkg.size < i || srcPkg(i) != destPkg(i)) {
+          break
+        }
+
+        matching += 1
+      }
+    }
+
+    srcPkg = srcPkg.drop(matching)
+    destPkg = destPkg.drop(matching)
+
+    if (srcPkg.size == 0 && destPkg.size == 0) {
       // On the same level, let's just import the type file
       return Seq(s"./${t.name}")
     }
@@ -78,12 +97,13 @@ object TypeScriptImports {
     var importOffset = ""
     var importFile = ""
 
-    if (t.path.toPackage.mkString(".").startsWith(fromPackage.mkString("."))) {
-      importFile = "./" + t.path.toPackage.mkString(".").substring(fromPackage.mkString(".").length + 1)
+    if (srcPkg.size > 0) {
+      (1 to srcPkg.size).foreach(_ => importOffset += "../")
     } else {
-      (1 to (t.path.toPackage.size - nestedDepth)).foreach(_ => importOffset += "../")
-      importFile = importOffset + t.path.toPackage.drop(nestedDepth).mkString("/")//+ "/" + t.name
+      importOffset = "./"
     }
+
+    importFile = importOffset + destPkg.mkString("/")
 
     Seq(importFile)
   }
@@ -107,7 +127,7 @@ object TypeScriptImports {
     }
     case a: AdtId => List(a)
     case i: InterfaceId => List(i)
-    case _: AliasId => List(ts(id).asInstanceOf[Alias].target)
+    case _: AliasId => collectTypes(ts, ts.dealias(id))
     case id: IdentifierId => List(id)
     case e: EnumId => List(e)
     case dto: DTOId => List(dto)
