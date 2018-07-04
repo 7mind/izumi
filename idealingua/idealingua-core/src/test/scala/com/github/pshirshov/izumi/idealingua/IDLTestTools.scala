@@ -99,26 +99,19 @@ object IDLTestTools {
   }
 
   def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
-    val refDlls = Seq(
-      "Newtonsoft.Json.dll",
-      "UnityEngine.dll",
-      "UnityEngine.Networking.dll",
-      "2.4.8-net2.0-nunit.framework.dll"
-    )
-
     val lang = IDLLanguage.CSharp
-    val out = compiles(id, domains, lang, extensions, refDlls)
+    val out = compiles(id, domains, lang, extensions)
     val refsDir = out.absoluteTargetDir.resolve("refs")
 
     IzFiles.recreateDirs(refsDir)
 
     val refsSrc = s"refs/${lang.toString.toLowerCase()}"
-    IzResources.copyFromClasspath(refsSrc, refsDir)
+    val refDlls = IzResources.copyFromClasspath(refsSrc, refsDir).files.filter(_.toFile.isFile).map(f => refsDir.relativize(f.toAbsolutePath))
     IzResources.copyFromClasspath(refsSrc, out.phase3)
 
 
     val outname = "test-output.dll"
-    val refs = s"/reference:${refDlls.map(dll => s"refs/$dll").mkString(",")}"
+    val refs = s"/reference:${refDlls.mkString(",")}"
     val cmdBuild = Seq("csc", "-target:library", s"-out:${out.phase3Relative}/$outname", "-recurse:\\*.cs", refs)
     val exitCodeBuild = run(out.absoluteTargetDir, cmdBuild, Map.empty, "cs-build")
 
@@ -148,7 +141,7 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension], refFiles: Seq[String] = Seq.empty): CompilerOutput = {
+  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
     val targetDir = Paths.get("target")
     val tmpdir = targetDir.resolve("idl-output")
 
