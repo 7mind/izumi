@@ -1,11 +1,20 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
+
+class Fetcher[C, K, V](context: C, val underlying: Map[K, V]) {
+  def fetch(k: K): V = {
+    underlying.get(k) match {
+      case Some(v) => v
+      case None => throw new IDLException(s"Missing value in context $context: $k")
+    }
+  }
+}
 
 class TypeCollection(domain: DomainDefinition) {
   val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
@@ -92,8 +101,8 @@ class TypeCollection(domain: DomainDefinition) {
     domain.types.map(t => (t.id, t)).toMap
   }
 
-  def index: Map[TypeId, TypeDef] = {
-    all.map(t => (t.id, t)).toMap
+  def index: Fetcher[DomainId, TypeId, TypeDef] = {
+    new Fetcher(domain.id, all.map(t => (t.id, t)).toMap)
   }
 
   def toDtoName(id: TypeId): String = {

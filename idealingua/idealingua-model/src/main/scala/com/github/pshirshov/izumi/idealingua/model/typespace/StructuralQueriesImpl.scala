@@ -263,7 +263,7 @@ private class FieldExtractor(types: TypeCollection, resolver: TypeResolver, user
   }
 
   protected def compositeFields(nextDepth: Int, composite: Interfaces): List[ExtendedField] = {
-    composite.flatMap(i => extractFields(types.index(i), nextDepth))
+    composite.flatMap(i => extractFields(resolver.apply(i), nextDepth))
   }
 
   protected def toExtendedFields(nextDepth: Int, fields: Tuple, id: TypeId): List[ExtendedField] = {
