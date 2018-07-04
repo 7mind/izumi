@@ -2,17 +2,17 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypePath}
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, DomainId, TypePath}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, NUnitExtension}
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.csharp.types.CSharpField
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, NUnitExtension}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpType}
 
 object CSharpTranslator {
@@ -80,7 +80,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
          |${ext.postModelEmit(ctx, i)}
        """.stripMargin
 
-      CompositeProduct(dto, im.renderImports(List("System", "System.Collections", "System.Collections.Generic") ++ ext.imports(ctx, i).toList))
+    CompositeProduct(dto, im.renderImports(List("System", "System.Collections", "System.Collections.Generic") ++ ext.imports(ctx, i).toList))
   }
 
   protected def renderAlias(i: Alias)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
@@ -158,38 +158,38 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 
   protected def renderEnumeration(i: Enumeration)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
-      val name = i.id.name
-      val decl =
-        s"""// $name Enumeration
-           |public enum $name {
-           |${i.members.map(m => s"$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(4)}
-           |}
-           |
+    val name = i.id.name
+    val decl =
+      s"""// $name Enumeration
+         |public enum $name {
+         |${i.members.map(m => s"$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(4)}
+         |}
+         |
            |public static class ${name}Helpers {
-           |    public static $name From(string value) {
-           |        return ($name)Enum.Parse(typeof($name), value);
-           |    }
-           |
+         |    public static $name From(string value) {
+         |        return ($name)Enum.Parse(typeof($name), value);
+         |    }
+         |
            |    public static bool IsValid(string value) {
-           |        return Enum.IsDefined(typeof($name), value);
-           |    }
-           |
+         |        return Enum.IsDefined(typeof($name), value);
+         |    }
+         |
            |    // The elements in the array are still changeable, please use with care.
-           |    private static readonly $name[] all = new $name[] {
-           |${i.members.map(m => s"$name.$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(8)}
-           |    };
-           |
+         |    private static readonly $name[] all = new $name[] {
+         |${i.members.map(m => s"$name.$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(8)}
+         |    };
+         |
            |    public static $name[] GetAll() {
-           |        return ${name}Helpers.all;
-           |    }
-           |
+         |        return ${name}Helpers.all;
+         |    }
+         |
            |    // Extensions
-           |
+         |
            |    public static string ToString(this $name e) {
-           |        return Enum.GetName(typeof($name), e);
-           |    }
-           |}
-           |
+         |        return Enum.GetName(typeof($name), e);
+         |    }
+         |}
+         |
            |${ext.postModelEmit(ctx, i)}
          """.stripMargin
 
@@ -202,48 +202,48 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
   protected def renderIdentifier(i: Identifier)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
 
-      val fields = ts.structure.structure(i).all.map(f => CSharpField(f.field, i.id.name))
-      val fieldsSorted = fields.sortBy(_.name)
-      val csClass = CSharpClass(i.id, i.id.name, fields)
-      val prefixLength = i.id.name.length + 1
+    val fields = ts.structure.structure(i).all.map(f => CSharpField(f.field, i.id.name))
+    val fieldsSorted = fields.sortBy(_.name)
+    val csClass = CSharpClass(i.id, i.id.name, fields)
+    val prefixLength = i.id.name.length + 1
 
-      val decl =
-        s"""${im.renderUsings()}
-           |${ext.preModelEmit(ctx, i)}
-           |${csClass.renderHeader()} {
-           |    private static char[] idSplitter = new char[]{':'};
-           |${csClass.render(withWrapper = false, withSlices = false, withRTTI = true).shift(4)}
-           |    public override string ToString() {
-           |        var suffix = ${fieldsSorted.map(f => f.tp.renderToString(f.renderMemberName(), escape = true)).mkString(" + \":\" + ")};
-           |        return "${i.id.name}#" + suffix;
-           |    }
-           |
+    val decl =
+      s"""${im.renderUsings()}
+         |${ext.preModelEmit(ctx, i)}
+         |${csClass.renderHeader()} {
+         |    private static char[] idSplitter = new char[]{':'};
+         |${csClass.render(withWrapper = false, withSlices = false, withRTTI = true).shift(4)}
+         |    public override string ToString() {
+         |        var suffix = ${fieldsSorted.map(f => f.tp.renderToString(f.renderMemberName(), escape = true)).mkString(" + \":\" + ")};
+         |        return "${i.id.name}#" + suffix;
+         |    }
+         |
            |    public static ${i.id.name} From(string value) {
-           |        if (value == null) {
-           |            throw new ArgumentNullException("value");
-           |        }
-           |
+         |        if (value == null) {
+         |            throw new ArgumentNullException("value");
+         |        }
+         |
            |        if (!value.StartsWith("${i.id.name}#")) {
-           |            throw new ArgumentException(string.Format("Expected identifier for type ${i.id.name}, got {0}", value));
-           |        }
-           |
+         |            throw new ArgumentException(string.Format("Expected identifier for type ${i.id.name}, got {0}", value));
+         |        }
+         |
            |        var parts = value.Substring($prefixLength, value.Length - $prefixLength).Split(idSplitter, StringSplitOptions.None);
-           |        if (parts.Length != ${fields.length}) {
-           |            throw new ArgumentException(string.Format("Expected identifier for type ${i.id.name} with ${fields.length} parts, got {0} in string {1}", parts.Length, value));
-           |        }
-           |
+         |        if (parts.Length != ${fields.length}) {
+         |            throw new ArgumentException(string.Format("Expected identifier for type ${i.id.name} with ${fields.length} parts, got {0} in string {1}", parts.Length, value));
+         |        }
+         |
            |        var res = new ${i.id.name}();
-           |${fieldsSorted.zipWithIndex.map { case (f, index) => s"res.${f.renderMemberName()} = ${f.tp.renderFromString(s"parts[$index]", unescape = true)};"}.mkString("\n").shift(8)}
-           |        return res;
-           |    }
-           |}
-           |
+         |${fieldsSorted.zipWithIndex.map { case (f, index) => s"res.${f.renderMemberName()} = ${f.tp.renderFromString(s"parts[$index]", unescape = true)};" }.mkString("\n").shift(8)}
+         |        return res;
+         |    }
+         |}
+         |
            |${ext.postModelEmit(ctx, i)}
          """.stripMargin
 
     IdentifierProduct(
       decl,
-      im.renderImports(List("System", "System.Collections", "System.Collections.Generic") ++  ext.imports(ctx, i))
+      im.renderImports(List("System", "System.Collections", "System.Collections.Generic") ++ ext.imports(ctx, i))
     )
   }
 
@@ -254,7 +254,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
     val parentIfaces = ts.inheritance.parentsInherited(i.id).filter(_ != i.id)
     val validFields = structure.all.filterNot(f => parentIfaces.contains(f.defn.definedBy))
     val ifaceFields = validFields.map(f =>
-      (if (f.defn.variance.nonEmpty) true else false, CSharpField(/*if (f.defn.variance.nonEmpty) f.defn.variance.last else */f.field, eid.name, Seq.empty)))
+      (if (f.defn.variance.nonEmpty) true else false, CSharpField(/*if (f.defn.variance.nonEmpty) f.defn.variance.last else */ f.field, eid.name, Seq.empty)))
 
     val struct = CSharpClass(eid, i.id.name + eid.name, structure, List(i.id))
     val ifaceImplements = if (i.struct.superclasses.interfaces.isEmpty) ": IRTTI" else ": " +
@@ -312,7 +312,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct | _: Algebraic =>
         s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});" }
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
            |        new ClientTransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
@@ -320,7 +320,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
       case so: Singular =>
         s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});" }
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
            |        new ClientTransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
@@ -362,7 +362,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
     case m: DefMethod.RPCMethod =>
       s"""case "${m.name}": {
          |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var obj = marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}>(data);"}
-         |    return marshaller.Marshal<${renderServiceMethodOutputModel(i, m)}>(\n        server.${m.name.capitalize}(ctx${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${f.name.capitalize}").mkString(", ")})\n    );
+         |    return marshaller.Marshal<${renderServiceMethodOutputModel(i, m)}>(\n        server.${m.name.capitalize}(ctx${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${f.name.capitalize}").mkString(", ")})\n    );
          |}
        """.stripMargin
   }
@@ -428,7 +428,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   protected def renderServiceMethodOutModel(i: Service, name: String, out: Service.DefMethod.Output)(implicit imports: CSharpImports, ts: Typespace): String = out match {
     case st: Struct => renderServiceMethodInModel(i, name, st.struct)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
-    case si: Singular => s"// ${ si.typeId}"
+    case si: Singular => s"// ${si.typeId}"
   }
 
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
@@ -441,7 +441,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
   protected def renderServiceMethodModels(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
     case m: DefMethod.RPCMethod =>
-      s"""${if(m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, s"In${m.name.capitalize}", m.signature.input)}
+      s"""${if (m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, s"In${m.name.capitalize}", m.signature.input)}
          |${renderServiceMethodOutModel(i, s"Out${m.name.capitalize}", m.signature.output)}
        """.stripMargin
 
@@ -463,30 +463,36 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
   }
 
   protected def renderService(i: Service)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
-      val svc =
-        s"""${renderServiceUsings(i)}
-           |
+    val svc =
+      s"""${renderServiceUsings(i)}
+         |
            |public static class ${i.id.name} {
-           |${renderServiceModels(i).shift(4)}
-           |}
-           |
+         |${renderServiceModels(i).shift(4)}
+         |}
+         |
            |// ============== Service Client ==============
-           |${renderServiceClient(i)}
-           |
+         |${renderServiceClient(i)}
+         |
            |// ============== Service Dispatcher ==============
-           |${renderServiceDispatcher(i)}
-           |
+         |${renderServiceDispatcher(i)}
+         |
            |// ============== Service Server Dummy ==============
-           |${renderServiceServerDummy(i)}
+         |${renderServiceServerDummy(i)}
          """.stripMargin
 
-    val extraImports = i.methods.flatMap(me=> me match {
-      case m: DefMethod.RPCMethod => m.signature.output match {
-        case st: Struct => Seq.empty
-        case al: Algebraic => ext.imports(ctx, Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), "FakeName"), al.alternatives))
-        case si: Singular => Seq.empty
-        case _ => Seq.empty
-      }
+    val extraImports = i.methods.flatMap(me => me match {
+      case m: DefMethod.RPCMethod =>
+
+        val sigTypes = m.signature.output match {
+          case al: Algebraic => al.alternatives.map(_.typeId)
+          case si: Singular => Seq(si.typeId)
+          case st: Struct => st.struct.fields.map(_.typeId) ++ st.struct.concepts
+        }
+
+        (sigTypes.filterNot(_.isInstanceOf[Builtin]).map(typespace.apply)
+          ++ Seq(Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), "FakeName"), List.empty)) // TODO:fake entry to trigger imports (unsafe)
+          ).flatMap(defn => ext.imports(ctx, defn))
+
     })
 
     ServiceProduct(svc, im.renderImports(List("irt", "System", "System.Collections", "System.Collections.Generic") ++ extraImports)) //imports.renderImports(List("irt")))

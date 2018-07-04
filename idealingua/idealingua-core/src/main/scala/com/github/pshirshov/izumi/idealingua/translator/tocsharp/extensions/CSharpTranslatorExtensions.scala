@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
 
+import com.github.pshirshov.izumi.idealingua.model.common.Builtin
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -14,6 +15,7 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
     case d: DTO => extensions.map(ex => ex.preModelEmit(ctx, d)).filterNot(_.isEmpty).mkString("\n")
     case i: Interface => extensions.map(ex => ex.preModelEmit(ctx, i)).filterNot(_.isEmpty).mkString("\n")
     case a: Adt => extensions.map(ex => ex.preModelEmit(ctx, a)).filterNot(_.isEmpty).mkString("\n")
+    case a: Alias => preModelEmit(ctx, ts.apply(ts.dealias(a.id)))
     case _ => ""
   }
 
@@ -28,6 +30,7 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
     case d: DTO => extensions.map(ex => ex.postModelEmit(ctx, d)).filterNot(_.isEmpty).mkString("\n")
     case i: Interface => extensions.map(ex => ex.postModelEmit(ctx, i)).filterNot(_.isEmpty).mkString("\n")
     case a: Adt => extensions.map(ex => ex.postModelEmit(ctx, a)).filterNot(_.isEmpty).mkString("\n")
+    case a: Alias => postModelEmit(ctx, ts.apply(ts.dealias(a.id)))
     case _ => ""
   }
 
@@ -36,13 +39,20 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
     extensions.map(ex => ex.postModelEmit(ctx, name, struct)).filterNot(_.isEmpty).mkString("\n")
   }
 
-  def imports(ctx: CSTContext, id: TypeDef)(implicit im: CSharpImports, ts: Typespace): Seq[String] = id match {
-    case i: Identifier => extensions.flatMap(ex => ex.imports(ctx, i))
-    case e: Enumeration => extensions.flatMap(ex => ex.imports(ctx, e))
-    case d: DTO => extensions.flatMap(ex => ex.imports(ctx, d))
-    case i: Interface => extensions.flatMap(ex => ex.imports(ctx, i))
-    case a: Adt => extensions.flatMap(ex => ex.imports(ctx, a))
-    case _ => List.empty
+  def imports(ctx: CSTContext, id: TypeDef)(implicit im: CSharpImports, ts: Typespace): Seq[String] = {
+//    println(("?", id))
+    id match {
+      case i: Identifier => extensions.flatMap(ex => ex.imports(ctx, i))
+      case e: Enumeration => extensions.flatMap(ex => ex.imports(ctx, e))
+      case d: DTO => extensions.flatMap(ex => ex.imports(ctx, d))
+      case i: Interface => extensions.flatMap(ex => ex.imports(ctx, i))
+      case a: Adt => extensions.flatMap(ex => ex.imports(ctx, a))
+      case a: Alias => ts.dealias(a.id) match {
+        case _: Builtin => List.empty
+        case v => imports(ctx, ts.apply(v))
+      }
+      case _ => List.empty
+    }
   }
 
   def postEmitModules(ctx: CSTContext, id: TypeDef)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = id match {

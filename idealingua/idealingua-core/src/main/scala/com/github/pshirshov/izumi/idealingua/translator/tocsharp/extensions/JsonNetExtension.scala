@@ -87,17 +87,17 @@ object JsonNetExtension extends CSharpTranslatorExtension {
     discard(ctx)
     // ${if (struct.fields.isEmpty) "" else "var json = JObject.Load(reader);"}
 
-    s"""public class ${name}_JsonNetConverter: JsonNetConverter<${name}> {
-       |    public override void WriteJson(JsonWriter writer, ${name} v, JsonSerializer serializer) {
+    s"""public class ${name}_JsonNetConverter: JsonNetConverter<$name> {
+       |    public override void WriteJson(JsonWriter writer, $name v, JsonSerializer serializer) {
        |        writer.WriteStartObject();
        |${struct.fields.map(f => writeProperty(f)).mkString("\n").shift(8)}
        |        writer.WriteEndObject();
        |    }
        |
-       |    public override ${name} ReadJson(JsonReader reader, System.Type objectType, ${name} existingValue, bool hasExistingValue, JsonSerializer serializer) {
+       |    public override $name ReadJson(JsonReader reader, System.Type objectType, $name existingValue, bool hasExistingValue, JsonSerializer serializer) {
        |        ${if (struct.fields.isEmpty) "reader.Skip();" else "var json = JObject.Load(reader);"}
        |${struct.fields.map(f => prepareReadProperty(f)).filter(_.isDefined).map(_.get).mkString("\n").shift(8)}
-       |        return new ${name}(
+       |        return new $name(
        |${struct.fields.map(f => readProperty(f)).mkString(", \n").shift(12)}
        |        );
        |    }
@@ -112,21 +112,20 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   private def writePropertyValue(src: String, t: CSharpType, key: Option[String] = None)(implicit im: CSharpImports, ts: Typespace): String = {
     t.id match {
-      case g: Generic.TOption => {
+      case g: Generic.TOption =>
         val optionType = CSharpType(g.valueType)
         s"""if (${if (optionType.isNullable) src + " != null" else src + ".HasValue"}) {
            |${writePropertyValue(if (optionType.isNullable) src else src + ".Value", optionType, key).shift(4)}
            |}
          """.stripMargin
-      }
       case al: AliasId => writePropertyValue(src, CSharpType(ts.dealias(al)), key)
-      case _ => {
+      case _ =>
         (if (key.isDefined) s"""writer.WritePropertyName("${key.get}");\n""" else "") + (
           t.id match {
             case g: Generic => g match {
               case m: Generic.TMap =>
                 s"""writer.WriteStartObject();
-                   |foreach(var mkv in ${src}) {
+                   |foreach(var mkv in $src) {
                    |    writer.WritePropertyName(mkv.Key.ToString());
                    |${writePropertyValue("mkv.Value", CSharpType(m.valueType)).shift(4)}
                    |}
@@ -134,44 +133,43 @@ object JsonNetExtension extends CSharpTranslatorExtension {
                  """.stripMargin
               case l: Generic.TList =>
                 s"""writer.WriteStartArray();
-                   |foreach (var lv in ${src}) {
+                   |foreach (var lv in $src) {
                    |${writePropertyValue("lv", CSharpType(l.valueType)).shift(4)}
                    |}
                    |writer.WriteEndArray();
                  """.stripMargin
               case s: Generic.TSet =>
                 s"""writer.WriteStartArray();
-                   |foreach (var lv in ${src}) {
+                   |foreach (var lv in $src) {
                    |${writePropertyValue("lv", CSharpType(s.valueType)).shift(4)}
                    |}
                    |writer.WriteEndArray();
                  """.stripMargin
             }
             case p: Primitive => p match {
-              case Primitive.TBool => s"writer.WriteValue(${src});"
-              case Primitive.TString => s"writer.WriteValue(${src});"
-              case Primitive.TInt8 => s"writer.WriteValue(${src});"
-              case Primitive.TInt16 => s"writer.WriteValue(${src});"
-              case Primitive.TInt32 => s"writer.WriteValue(${src});"
-              case Primitive.TInt64 => s"writer.WriteValue(${src});"
-              case Primitive.TFloat => s"writer.WriteValue(${src});"
-              case Primitive.TDouble => s"writer.WriteValue(${src});"
-              case Primitive.TUUID => s"writer.WriteValue(${src}.ToString());"
-              case Primitive.TTime => s"""writer.WriteValue(string.Format("{0:00}:{1:00}:{2:00}", (int)${src}.TotalHours, ${src}.Minutes, ${src}.Seconds));"""
-              case Primitive.TDate => s"""writer.WriteValue(${src}.ToString("yyyy-MM-dd"));"""
-              case Primitive.TTs => s"""writer.WriteValue(${src}.ToString(JsonNetTimeFormats.TslDefault));"""
-              case Primitive.TTsTz => s"""writer.WriteValue(${src}.ToString(JsonNetTimeFormats.TszDefault));"""
+              case Primitive.TBool => s"writer.WriteValue($src);"
+              case Primitive.TString => s"writer.WriteValue($src);"
+              case Primitive.TInt8 => s"writer.WriteValue($src);"
+              case Primitive.TInt16 => s"writer.WriteValue($src);"
+              case Primitive.TInt32 => s"writer.WriteValue($src);"
+              case Primitive.TInt64 => s"writer.WriteValue($src);"
+              case Primitive.TFloat => s"writer.WriteValue($src);"
+              case Primitive.TDouble => s"writer.WriteValue($src);"
+              case Primitive.TUUID => s"writer.WriteValue($src.ToString());"
+              case Primitive.TTime => s"""writer.WriteValue(string.Format("{0:00}:{1:00}:{2:00}", (int)$src.TotalHours, $src.Minutes, $src.Seconds));"""
+              case Primitive.TDate => s"""writer.WriteValue($src.ToString("yyyy-MM-dd"));"""
+              case Primitive.TTs => s"""writer.WriteValue($src.ToString(JsonNetTimeFormats.TslDefault));"""
+              case Primitive.TTsTz => s"""writer.WriteValue($src.ToString(JsonNetTimeFormats.TszDefault));"""
             }
 
             case _ => t.id match {
-              case _: EnumId | _: IdentifierId => s"""writer.WriteValue(${src}.ToString());"""
+              case _: EnumId | _: IdentifierId => s"""writer.WriteValue($src.ToString());"""
               case _: InterfaceId => renderSerialize(t.id, src)
-              case _: AdtId | _: DTOId => s"""serializer.Serialize(writer, ${src});"""
+              case _: AdtId | _: DTOId => s"""serializer.Serialize(writer, $src);"""
               case _ => throw new IDLException(s"Impossible writePropertyValue type: ${t.id}")
             }
           }
-        )
-      }
+          )
     }
   }
 
@@ -223,47 +221,44 @@ object JsonNetExtension extends CSharpTranslatorExtension {
       None
     } else {
       i.id match {
-        case gm: Generic.TMap => {
+        case gm: Generic.TMap =>
           val mk = CSharpType(gm.keyType)
           val mt = CSharpType(gm.valueType)
           Some(
             s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
-               |foreach (var ${dst}_kv in ((JObject)${src}).Properties()) {
+               |foreach (var ${dst}_kv in ((JObject)$src).Properties()) {
                |    ${mt.renderType()} ${dst}_dv;
                |${(if (propertyNeedsPrepare(mt.id)) prepareReadPropertyValue(dst + "_kv.Value", dst + "_dv", mt, createDst = false).get else s"${dst}_dv = ${readPropertyValue(dst + "_kv.Value", mt)};").shift(4)}
                |    $dst.Add(${mk.renderFromString(dst + "_kv.Name", unescape = false)}, ${dst}_dv);
                |}
              """.stripMargin
           )
-        }
 
-        case gl: Generic.TList => {
+        case gl: Generic.TList =>
           val lt = CSharpType(gl.valueType)
           Some(
             s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
-               |foreach (var ${dst}_sv in (JArray)${src}) {
+               |foreach (var ${dst}_sv in (JArray)$src) {
                |    ${lt.renderType()} ${dst}_d;
                |${(if (propertyNeedsPrepare(gl.valueType)) prepareReadPropertyValue(dst + "_sv", dst + "_d", lt, createDst = false).get else s"${dst}_d = ${readPropertyValue(dst + "_sv", lt)};").shift(4)}
                |    $dst.Add(${dst}_d);
                |}
              """.stripMargin
           )
-        }
 
-        case gs: Generic.TSet => {
+        case gs: Generic.TSet =>
           val st = CSharpType(gs.valueType)
           Some(
             s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
-               |foreach (var ${dst}_lv in (JArray)${src}) {
+               |foreach (var ${dst}_lv in (JArray)$src) {
                |    ${st.renderType()} ${dst}_d;
                |${(if (propertyNeedsPrepare(gs.valueType)) prepareReadPropertyValue(dst + "_lv", dst + "_d", st, createDst = false).get else s"${dst}_d = ${readPropertyValue(dst + "_lv", st)};").shift(4)}
                |    $dst.Add(${dst}_d);
                |}
              """.stripMargin
           )
-        }
 
-        case o: Generic.TOption => {
+        case o: Generic.TOption =>
           val ot = CSharpType(o.valueType)
           Some(
             s"""${i.renderType()} $dst = null;
@@ -271,18 +266,15 @@ object JsonNetExtension extends CSharpTranslatorExtension {
                |${(if (propertyNeedsPrepare(o.valueType)) prepareReadPropertyValue(src, dst, ot, createDst = false).get else s"$dst = ${readPropertyValue(src, ot)};").shift(4)}
                |}
              """.stripMargin)
-        }
 
-        case al: AliasId => {
+        case al: AliasId =>
           prepareReadPropertyValue(src, dst, CSharpType(ts.dealias(al)), createDst = createDst)
-        }
 
-        case _: DTOId => {
+        case _: DTOId =>
           Some(
             s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
                |serializer.Populate($src.CreateReader(), $dst);""".stripMargin
           )
-        }
       }
     }
   }
@@ -348,7 +340,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "System.Linq",  "Newtonsoft.Json.Linq", "irt")
+    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "irt")
   }
 
   override def preModelEmit(ctx: CSTContext, i: Adt)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -374,16 +366,17 @@ object JsonNetExtension extends CSharpTranslatorExtension {
   override def postModelEmit(ctx: CSTContext, i: Adt)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
 
-
     s"""public class ${i.id.name}_JsonNetConverter: JsonNetConverter<${i.id.name}> {
        |    public override void WriteJson(JsonWriter writer, ${i.id.name} al, JsonSerializer serializer) {
        |        writer.WriteStartObject();
-       |${i.alternatives.map(m =>
-         s"""if (al is ${i.id.name}.${m.name}) {
-            |    writer.WritePropertyName("${m.name}");
-            |    var v = (al as ${i.id.name}.${m.name}).Value;
-            |${renderSerialize(m.typeId, "v").shift(4)}
-            |} else""".stripMargin).mkString("\n").shift(8)}
+       |${
+      i.alternatives.map(m =>
+        s"""if (al is ${i.id.name}.${m.name}) {
+           |    writer.WritePropertyName("${m.name}");
+           |    var v = (al as ${i.id.name}.${m.name}).Value;
+           |${renderSerialize(m.typeId, "v").shift(4)}
+           |} else""".stripMargin).mkString("\n").shift(8)
+    }
        |        {
        |            throw new System.Exception("Unknown ${i.id.name} type: " + al);
        |        }
@@ -394,12 +387,14 @@ object JsonNetExtension extends CSharpTranslatorExtension {
        |        var json = JObject.Load(reader);
        |        var kv = json.Properties().First();
        |        switch (kv.Name) {
-       |${i.alternatives.map(m =>
-         s"""case "${m.name}": {
-            |    var v = serializer.Deserialize<${CSharpType(m.typeId).renderType()}>(kv.Value.CreateReader());
-            |    return new ${i.id.name}.${m.name}(v);
-            |}
-           """.stripMargin).mkString("\n").shift(12)}
+       |${
+      i.alternatives.map(m =>
+        s"""case "${m.name}": {
+           |    var v = serializer.Deserialize<${CSharpType(m.typeId).renderType()}>(kv.Value.CreateReader());
+           |    return new ${i.id.name}.${m.name}(v);
+           |}
+           """.stripMargin).mkString("\n").shift(12)
+    }
        |            default:
        |                throw new System.Exception("Unknown ${i.id.name} type: " + kv.Name);
        |        }
@@ -410,6 +405,6 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "System.Linq",  "Newtonsoft.Json.Linq", "irt")
+    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "irt")
   }
 }
