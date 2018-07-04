@@ -61,6 +61,10 @@ object IzFiles {
       .find(p => p.toFile.exists())
   }
 
+  def haveExecutable(name: String): Boolean = {
+    which(name).nonEmpty
+  }
+
   def which(name: String): Option[Path] = {
     val candidates = IzOs.osType match {
       case OsType.Windows =>
