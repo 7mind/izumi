@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeResolver {
   lazy val types: TypeCollection = new TypeCollection(domain)
   protected[typespace] lazy val referenced: Map[DomainId, Typespace] = domain.referenced.mapValues(d => new TypespaceImpl(d))
-  private lazy val index: Fetcher[DomainId, TypeId, TypeDef] = types.index
+  private lazy val index: CMap[TypeId, TypeDef] = types.index
 
 
   override lazy val tools: TypespaceTools = new TypespaceToolsImpl(types)

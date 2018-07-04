@@ -1,13 +1,19 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
-class Fetcher[C, K, V](context: C, val underlying: Map[K, V]) {
+import scala.collection.generic.CanBuildFrom
+
+class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
+  def collect[B, That](pf: PartialFunction[(K, V), B])(implicit bf: CanBuildFrom[Map[K, V], B, That]): That = underlying.collect(pf)
+
+  def contains(key: K): Boolean = underlying.contains(key)
+
   def fetch(k: K): V = {
     underlying.get(k) match {
       case Some(v) => v
@@ -101,8 +107,8 @@ class TypeCollection(domain: DomainDefinition) {
     domain.types.map(t => (t.id, t)).toMap
   }
 
-  def index: Fetcher[DomainId, TypeId, TypeDef] = {
-    new Fetcher(domain.id, all.map(t => (t.id, t)).toMap)
+  def index: CMap[TypeId, TypeDef] = {
+    new CMap(domain.id, all.map(t => (t.id, t)).toMap)
   }
 
   def toDtoName(id: TypeId): String = {

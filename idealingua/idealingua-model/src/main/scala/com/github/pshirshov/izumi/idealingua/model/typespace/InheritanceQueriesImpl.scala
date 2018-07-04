@@ -11,7 +11,7 @@ protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeC
   }
 
   def implementingDtos(id: InterfaceId): List[DTOId] = {
-    types.index.underlying.collect {
+    types.index.collect {
       case (tid, d: DTO) if parentsInherited(tid).contains(id) =>
         d.id
     }.toList
@@ -44,7 +44,7 @@ protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeC
   }
 
   protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId] = {
-    types.index.underlying.collect {
+    types.index.collect {
       case (tid, d: DTO) if allParents(tid).contains(id) =>
         d.id
     }.toList
