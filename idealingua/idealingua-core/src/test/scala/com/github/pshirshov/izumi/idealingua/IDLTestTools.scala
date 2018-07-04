@@ -112,8 +112,9 @@ object IDLTestTools {
 
     IzFiles.recreateDirs(refsDir)
 
-    IzResources.copyFromClasspath(s"refs/${lang.toString}", refsDir)
-    IzResources.copyFromClasspath(s"refs/${lang.toString}", out.phase3)
+    val refsSrc = s"refs/${lang.toString.toLowerCase()}"
+    IzResources.copyFromClasspath(refsSrc, refsDir)
+    IzResources.copyFromClasspath(refsSrc, out.phase3)
 
 
     val outname = "test-output.dll"
