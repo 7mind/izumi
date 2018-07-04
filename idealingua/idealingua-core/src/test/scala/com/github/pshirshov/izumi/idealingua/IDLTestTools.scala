@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.idealingua
 
 import java.io.File
 import java.lang.management.ManagementFactory
+import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
 import java.nio.file._
-import sys.process._
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
@@ -19,12 +19,17 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension, TypespaceCompiler}
 
+import scala.sys.process._
+
 @ExposedTestScope
 final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
   def absoluteTargetDir: Path = targetDir.toAbsolutePath
+
   def phase3: Path = absoluteTargetDir.getParent.resolve("phase3-compiler-output")
+
   def phase3Relative: Path = absoluteTargetDir.relativize(phase3)
-  def relativeOutputs: Seq[String] =  allFiles.map(p => absoluteTargetDir.relativize(p.toAbsolutePath).toString)
+
+  def relativeOutputs: Seq[String] = allFiles.map(p => absoluteTargetDir.relativize(p.toAbsolutePath).toString)
 }
 
 
@@ -48,12 +53,28 @@ object IDLTestTools {
 
   def compilesScala(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, IDLLanguage.Scala, extensions)
+    val classLoader = Thread
+      .currentThread
+      .getContextClassLoader
+      .getParent
+
+
+    val classpath = classLoader match {
+      case u: URLClassLoader =>
+        u
+          .getURLs
+          .map(_.getFile)
+          .mkString(System.getProperty("path.separator"))
+      case _ =>
+        System.getProperty("java.class.path")
+    }
+
     val cmd = Seq(
       "scalac"
       , "-deprecation"
       , "-opt-warnings:_"
       , "-d", out.phase3Relative.toString
-      , "-classpath", System.getProperty("java.class.path")
+      , "-classpath", classpath
     ) ++ out.relativeOutputs
 
     val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
