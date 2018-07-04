@@ -49,6 +49,7 @@ export interface IIntrospectorType {
 
 export interface IIntrospectorObjectField {
     name: string;
+    accessName: string;
     type: IIntrospectorType;
 }
 

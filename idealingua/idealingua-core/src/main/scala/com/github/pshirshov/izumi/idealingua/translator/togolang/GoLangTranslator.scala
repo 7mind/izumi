@@ -147,9 +147,9 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
         case _: DTOId =>
           s"""type ${i.id.name}Serialized = ${goType.renderType(forAlias = true)}Serialized
            """.stripMargin
-        case i: InterfaceId =>
-          s"""type ${i.name + ts.implId(i).name} = ${goType.renderType(forAlias = true)}Struct
-             |type ${i.name + ts.implId(i).name}Serialized = ${GoLangType(ts.implId(i), imports, ts).renderType(forAlias = true)}Serialized
+        case ii: InterfaceId =>
+          s"""type ${i.id.name + ts.implId(ii).name} = ${goType.renderType(forAlias = true)}Struct
+             |type ${i.id.name + ts.implId(ii).name}Serialized = ${goType.renderType(forAlias = true)}${ts.implId(ii).name}Serialized
            """.stripMargin
         case _: EnumId =>
           s"""func New${i.id.name}(e string) ${i.id.name} {
@@ -723,7 +723,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       case m: DefMethod.RPCMethod => {
         val context = if (withContext) s"context interface{}${if (m.signature.input.fields.isEmpty) "" else ", "}" else ""
         if (spread) {
-          val fields = m.signature.input.fields.map(f => f.name + " " + GoLangType(f.typeId, imports, ts).renderType()).mkString(", ")
+          val fields = m.signature.input.fields.map(f => GoLangField(f.name, GoLangType(f.typeId, imports, ts), "").renderMemberName(capitalize = false) + " " + GoLangType(f.typeId, imports, ts).renderType()).mkString(", ")
           s"${m.name.capitalize}($context$fields) ${renderServiceMethodOutputSignature(i, m, imports)}"
         } else {
           s"${m.name.capitalize}(${context}input: ${inName(i, m.name, public = true)}) ${renderServiceMethodOutputSignature(i, m, imports)}"
@@ -746,7 +746,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct | _: Algebraic =>
         s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")})" }
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
            |    outData := &${outName(i, m.name, public = true)}{}
            |    err := c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
            |    if err != nil {
@@ -759,7 +759,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       case so: Singular =>
         val resType = GoLangType(so.typeId, imports, ts)
         s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")})" }
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
            |    ${if (resType.isPrimitive(so.typeId)) s"var outData ${resType.renderType(forAlias = true)}" else s"outData := &${resType.renderType(forAlias = true)}{}"}
            |    err := c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, ${if (resType.isPrimitive(so.typeId)) "&" else ""}outData)
            |    if err != nil {
@@ -810,7 +810,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
     case m: DefMethod.RPCMethod =>
       s"""case "${m.name}": {
          |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"dataIn, ok := data.(*${inName(i, m.name, public = true)})\n    if !ok {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + "\")\n    }"}
-         |    return v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"dataIn.${f.name.capitalize}()").mkString(", ")})
+         |    return v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"dataIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
          |}
          |
        """.stripMargin

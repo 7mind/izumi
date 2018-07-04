@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{DTO, Interface}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.types.TypeScriptTypeConverter
 
 object IntrospectionExtension extends TypeScriptTranslatorExtension {
   private def unwindType(id: TypeId)(implicit ts: Typespace): String = id match {
@@ -40,7 +41,15 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     case _ => throw new Exception("Unwind type is not implemented for type " + id)
   }
 
-  private def unwindField(name: String, id: TypeId)(implicit ts: Typespace): String = {
+  private def unwindField(name: String, id: TypeId)(implicit ts: Typespace, conv: TypeScriptTypeConverter): String = {
+    s"""{
+       |    name: '$name',
+       |    accessName: '${conv.safeName(name)}',
+       |    type: ${unwindType(id)}
+       |}""".stripMargin
+  }
+
+  private def unwindAdtMember(name: String, id: TypeId)(implicit ts: Typespace): String = {
     s"""{
        |    name: '$name',
        |    type: ${unwindType(id)}
@@ -71,6 +80,8 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
 
   override def handleIdentifier(ctx: TSTContext, identifier: TypeDef.Identifier, product: IdentifierProduct): IdentifierProduct = {
     implicit val ts: Typespace = ctx.typespace
+    implicit val conv: TypeScriptTypeConverter = ctx.conv
+
     val short = identifier.id.name
     val extension =
       s"""
@@ -101,6 +112,8 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
 
   override def handleDTO(ctx: TSTContext, dto: DTO, product: CompositeProduct): CompositeProduct = {
     implicit val ts: Typespace = ctx.typespace
+    implicit val conv: TypeScriptTypeConverter = ctx.conv
+
     val short = dto.id.name
     val fields = ts.structure.structure(dto.id).all.groupBy(_.field.name).map(_._2.head.field)
 
@@ -119,7 +132,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |        full: $short.FullClassName,
          |        short: $short.ClassName,
          |        package: $short.PackageName,
-         |        type: IntrospectorTypes.Id,
+         |        type: IntrospectorTypes.Data,
          |        ctor: () => new $short(),
          |        fields: [
          |${fields.map(f => unwindField(f.name, f.typeId)).mkString(",\n").shift(12)}
@@ -133,6 +146,8 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
 
   override def handleInterface(ctx: TSTContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     implicit val ts: Typespace = ctx.typespace
+    implicit val conv: TypeScriptTypeConverter = ctx.conv
+
     val short = interface.id.name
     val pkg = interface.id.path.toPackage.mkString(".")
     val full = pkg + "." + short
@@ -156,7 +171,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |        full: '$full',
          |        short: '$short',
          |        package: '$pkg',
-         |        type: IntrospectorTypes.Id,
+         |        type: IntrospectorTypes.Mixin,
          |        ctor: () => new $eid(),
          |        fields: [
          |${fields.map(f => unwindField(f.name, f.typeId)).mkString(",\n").shift(12)}
@@ -191,7 +206,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |        package: '$pkg',
          |        type: IntrospectorTypes.Adt,
          |        options: [
-         |${adt.alternatives.map(f => unwindField(f.name, f.typeId)).mkString(",\n").shift(12)}
+         |${adt.alternatives.map(f => unwindAdtMember(f.name, f.typeId)).mkString(",\n").shift(12)}
          |        ]
          |    } as IIntrospectorAdtObject
          |);

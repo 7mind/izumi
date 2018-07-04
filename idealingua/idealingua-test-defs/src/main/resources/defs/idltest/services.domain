@@ -23,6 +23,10 @@ enum Environment {
     Prod
 }
 
+data Package {
+    name: str
+}
+
 service TestService {
   def parameterless(): str
   def simpleMethod(a: str): str
@@ -31,6 +35,8 @@ service TestService {
   def simple(+Request): (+Request)
   def simpleEnum(v: TestServiceEnum): str
   def simpleEnum2(e: Environment): str
+
+  def simpleGoReserved(package: Package): bool
 
   // simple instance
   def greetSingularOut(firstName: str, secondName: str) => str
