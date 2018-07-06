@@ -25,6 +25,14 @@ trait PluginLoader {
   def load(): Seq[PluginBase]
 }
 
+object PluginLoaderNullImpl extends PluginLoader {
+  override def load(): Seq[PluginBase] = Seq.empty
+}
+
+class PluginLoaderPredefImpl(plugins: Seq[PluginBase]) extends PluginLoader {
+  override def load(): Seq[PluginBase] = plugins
+}
+
 class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
   type PluginType = Class[_ <: PluginBase]
 
