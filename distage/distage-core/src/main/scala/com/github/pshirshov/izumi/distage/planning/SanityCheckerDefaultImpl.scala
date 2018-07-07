@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, DuplicateKeysException, ForwardRefException, MissingRefException}
+import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
 import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, FinalPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
@@ -20,7 +20,7 @@ class SanityCheckerDefaultImpl
         kv._2.foreach {
           dep =>
             if (!plan.topology.dependees(dep).contains(kv._1)) {
-              throw new DIException(s"Sanity check failed: deptables assymetric !", null)
+              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
             }
         }
     }
@@ -29,7 +29,7 @@ class SanityCheckerDefaultImpl
         kv._2.foreach {
           dep =>
             if (!plan.topology.dependencies(dep).contains(kv._1)) {
-              throw new DIException(s"Sanity check failed: deptables assymetric !", null)
+              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
             }
         }
     }

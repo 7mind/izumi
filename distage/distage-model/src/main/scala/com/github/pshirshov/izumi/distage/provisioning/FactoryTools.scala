@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnexpectedFactoryMethodResultException}
+import com.github.pshirshov.izumi.distage.model.exceptions.UnexpectedProvisionResultException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.OpResult
 import com.github.pshirshov.izumi.distage.model.provisioning.OpResult.{NewImport, NewInstance}
@@ -16,13 +16,13 @@ object FactoryTools {
       case List(i: NewImport) =>
         i.value.asInstanceOf[AnyRef]
       case List(_) =>
-        throw new UnexpectedFactoryMethodResultException(
+        throw new UnexpectedProvisionResultException(
           s"Factory returned a result class other than NewInstance or NewImport in $results", results)
       case _ :: _ =>
-        throw new UnexpectedFactoryMethodResultException(
+        throw new UnexpectedProvisionResultException(
           s"Factory returned more than one result in $results", results)
       case Nil =>
-        throw new UnexpectedFactoryMethodResultException(
+        throw new UnexpectedProvisionResultException(
           s"Factory empty result list: $results", results)
     }
   }

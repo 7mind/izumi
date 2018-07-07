@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnsupportedDefinitionException, UnsupportedWiringException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{UnsupportedDefinitionException, UnsupportedWiringException}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.DIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 

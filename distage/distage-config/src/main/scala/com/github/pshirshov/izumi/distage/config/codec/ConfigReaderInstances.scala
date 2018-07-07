@@ -8,7 +8,7 @@ import java.time.{Duration => JavaDuration, _}
 import java.util.UUID
 import java.util.regex.Pattern
 
-import com.github.pshirshov.izumi.distage.config.model.ConfigReadException
+import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigReadException
 import com.typesafe.config.{Config, ConfigList, ConfigObject, ConfigValue}
 
 import scala.math.{BigDecimal, BigInt}

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
@@ -24,11 +24,11 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
           case OpResult.NewInstance(_, instance) =>
             adapter.init(instance.asInstanceOf[AnyRef])
           case r =>
-            throw new DIException(s"Unexpected operation result for $key: $r", null)
+            throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r", Seq(r))
         }
 
       case _ =>
-        throw new DIException(s"Cannot get adapter $key for $initProxy", null)
+        throw new MissingProxyAdapterException(s"Cannot get adapter $key for $initProxy", key, initProxy)
     }
 
     Seq()
@@ -47,7 +47,7 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
         RuntimeDIUniverse.SafeType.get[FakeSet[_]]
         //op.target.symbol
       case op =>
-        throw new DIException(s"Operation unsupported by proxy mechanism: $op", null)
+        throw new UnsupportedOpException(s"Operation unsupported by proxy mechanism: $op", op)
     }
 
     val constructors = tpe.tpe.decls.filter(_.isConstructor)

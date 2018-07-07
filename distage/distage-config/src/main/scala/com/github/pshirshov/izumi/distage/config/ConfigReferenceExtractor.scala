@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.distage.config
 
 import com.github.pshirshov.izumi.distage.config.annotations._
-import com.github.pshirshov.izumi.distage.config.model.ConfigTranslationException
+import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._

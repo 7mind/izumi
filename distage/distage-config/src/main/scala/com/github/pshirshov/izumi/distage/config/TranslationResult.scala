@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.config.ConfigProvider.ConfigPath
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypeFull

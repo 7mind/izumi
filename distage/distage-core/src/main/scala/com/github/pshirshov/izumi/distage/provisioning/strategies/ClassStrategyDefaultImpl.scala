@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, InvalidPlanException, NoopProvisionerImplCalled}
+import com.github.pshirshov.izumi.distage.model.exceptions.{InvalidPlanException, NoopProvisionerImplCalled}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}

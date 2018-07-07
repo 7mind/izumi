@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.InstanceStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
@@ -16,7 +16,7 @@ class InstanceStrategyDefaultImpl extends InstanceStrategy {
         Seq(OpResult.NewInstance(op.target, value))
 
       case None =>
-        throw new DIException(s"Cannot find ${op.wiring.key} in context", null)
+        throw new MissingInstanceException(s"Cannot find ${op.wiring.key} in context", op.wiring.key)
     }
   }
 }
