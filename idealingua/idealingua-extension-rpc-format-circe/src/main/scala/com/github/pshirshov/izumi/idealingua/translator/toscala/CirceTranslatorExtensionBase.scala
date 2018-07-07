@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
-import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTCirceWrappedServiceDefinition, IRTMuxingCodecProvider, IRTOpinionatedMarshalers}
+import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTCirceWrappedServiceDefinition, IRTMuxingCodecProvider, IRTOpinionatedMarshalers, IRTTimeInstances}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CogenServiceProduct, CompositeProduct, IdentifierProudct, InterfaceProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct
@@ -20,6 +20,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
   protected def adtDeriverImports: List[Import] = classDeriverImports
 
   private val circeRuntimePkg = runtime.Pkg.of[IRTOpinionatedMarshalers]
+  private val timeRuntimePkg = runtime.Pkg.of[IRTTimeInstances]
 
   override def handleIdentifier(ctx: STContext, id: Identifier, product: IdentifierProudct): IdentifierProudct = {
     import ctx.conv._
@@ -219,9 +220,10 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
   protected def withDerived(stype: ScalaType, deriverImports: List[Import]): CirceTrait = {
     val name = stype.fullJavaType.name
     val tpe = stype.typeName
+    // _root_.io.circe.java8.time.TimeInstances
     CirceTrait(
       s"${name}Circe",
-      q"""trait ${Type.Name(s"${name}Circe")} extends _root_.io.circe.java8.time.TimeInstances {
+      q"""trait ${Type.Name(s"${name}Circe")} extends _root_.com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances {
             ..$deriverImports
             import _root_.io.circe.{Encoder, Decoder}
             implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = deriveEncoder[$tpe]
