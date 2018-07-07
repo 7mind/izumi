@@ -47,14 +47,14 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
     val enc = implementors.map {
       c =>
-        p"""case v: ${t.within(c.name).typeAbsolute} => Map(${Lit.String(c.name)} -> v.value).asJson"""
+        p"""case v: ${t.within(c.name).typeFull} => Map(${Lit.String(c.name)} -> v.value).asJson"""
 
     }
 
 
     val dec = implementors.map {
       c =>
-        p"""case ${Lit.String(c.name)} => value.as[${toScala(c.typeId).typeAbsolute}].map(${t.within(c.name).termAbsolute}.apply)"""
+        p"""case ${Lit.String(c.name)} => value.as[${toScala(c.typeId).typeAbsolute}].map(${t.within(c.name).termFull}.apply)"""
     }
 
     val missingDefinitionCase = p"""case _ =>
@@ -80,31 +80,18 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
                       .toRight(DecodingFailure("No type name found in JSON, expected JSON of form { \"type_name\": { ...fields } }", c.history))
 
                  for {
-                   fname <- maybeContent
+                   fname <- maybeContent.map(c)
                    value = c.downField(fname)
                    result <- fname match { ..case $decCases }
-                 } yield result
+                 } yield {
+                   result
+                 }
                }
              )
           }
       """)
     val init = toScala(id).sibling(boilerplate.name).init()
     product.copy(companionBase = product.companionBase.prependBase(init), more = product.more :+ boilerplate.defn)
-
-//    import ctx.conv._
-//
-//    val elements = product.elements.map {
-//      e =>
-//        val id = DTOId(adt.id, e.name)
-//        val boilerplate = withDerivedClass(ctx, id)
-//        val init = toScala(id).sibling(boilerplate.name).init()
-//        e.copy(companion = e.companion.prependBase(init), evenMore = e.evenMore :+ boilerplate.defn)
-//    }
-//
-//    val boilerplate = withDerivedAdt(ctx, adt.id)
-//    val init = toScala(adt.id).sibling(boilerplate.name).init()
-//
-//    product.copy(companionBase = product.companionBase.prependBase(init), more = product.more :+ boilerplate.defn, elements = elements)
   }
 
   override def handleEnum(ctx: STContext, enum: Enumeration, product: CogenProduct.EnumProduct): CogenProduct.EnumProduct = {
