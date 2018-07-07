@@ -42,12 +42,20 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
         op.wiring.instanceType
       case op: WiringOp.InstantiateFactory =>
         op.wiring.factoryType
+      case op: WiringOp.CallProvider =>
+        op.wiring.instanceType
+      case op: WiringOp.CallFactoryProvider =>
+        op.wiring.provider.ret
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
         RuntimeDIUniverse.SafeType.get[FakeSet[_]]
         //op.target.symbol
-      case op =>
-        throw new UnsupportedOpException(s"Operation unsupported by proxy mechanism: $op", op)
+      case op: WiringOp.ReferenceInstance =>
+        throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
+      case op: WiringOp.ReferenceKey =>
+        throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
+      case op: ProxyOp.MakeProxy =>
+        throw new UnsupportedOpException(s"Tried to execute nonsensical operation - can't make a proxy for proxy!: $op", op)
     }
 
     val constructors = tpe.tpe.decls.filter(_.isConstructor)
