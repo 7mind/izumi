@@ -37,20 +37,74 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
   }
 
   override def handleAdt(ctx: STContext, adt: Adt, product: CogenProduct.AdtProduct): CogenProduct.AdtProduct = {
-    import ctx.conv._
+    val id: TypeId = adt.id
+    val implementors = adt.alternatives //.map(m => m.typeId) //ctx.typespace.inheritance.implementingDtos(id)
 
-    val elements = product.elements.map {
-      e =>
-        val id = DTOId(adt.id, e.name)
-        val boilerplate = withDerivedClass(ctx, id)
-        val init = toScala(id).sibling(boilerplate.name).init()
-        e.copy(companion = e.companion.prependBase(init), evenMore = e.evenMore :+ boilerplate.defn)
+    import ctx.conv._
+    val t = toScala(id)
+    val tpe = t.typeFull
+
+
+    val enc = implementors.map {
+      c =>
+        p"""case v: ${t.within(c.name).typeAbsolute} => Map(${Lit.String(c.name)} -> v.value).asJson"""
+
     }
 
-    val boilerplate = withDerivedAdt(ctx, adt.id)
-    val init = toScala(adt.id).sibling(boilerplate.name).init()
 
-    product.copy(companionBase = product.companionBase.prependBase(init), more = product.more :+ boilerplate.defn, elements = elements)
+    val dec = implementors.map {
+      c =>
+        p"""case ${Lit.String(c.name)} => value.as[${toScala(c.typeId).typeAbsolute}].map(${t.within(c.name).termAbsolute}.apply)"""
+    }
+
+    val missingDefinitionCase = p"""case _ =>
+           val cname = ${Lit.String(str(id))}
+           val alts = List(..${implementors.map(c => Lit.String(c.name))}).mkString(",")
+           Left(DecodingFailure(s"Can't decode type $$fname as $$cname, expected one of [$$alts]", value.history))
+      """
+
+    val decCases = dec :+ missingDefinitionCase
+
+    val boilerplate = CirceTrait(
+      s"${id.name}Circe",
+      q"""trait ${Type.Name(s"${id.name}Circe")} {
+             import _root_.io.circe.syntax._
+             import _root_.io.circe.{Encoder, Decoder, DecodingFailure}
+
+             implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = Encoder.instance {
+                 ..case $enc
+             }
+
+             implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = Decoder.instance(c => {
+                 val maybeContent = c.keys.flatMap(_.headOption)
+                      .toRight(DecodingFailure("No type name found in JSON, expected JSON of form { \"type_name\": { ...fields } }", c.history))
+
+                 for {
+                   fname <- maybeContent
+                   value = c.downField(fname)
+                   result <- fname match { ..case $decCases }
+                 } yield result
+               }
+             )
+          }
+      """)
+    val init = toScala(id).sibling(boilerplate.name).init()
+    product.copy(companionBase = product.companionBase.prependBase(init), more = product.more :+ boilerplate.defn)
+
+//    import ctx.conv._
+//
+//    val elements = product.elements.map {
+//      e =>
+//        val id = DTOId(adt.id, e.name)
+//        val boilerplate = withDerivedClass(ctx, id)
+//        val init = toScala(id).sibling(boilerplate.name).init()
+//        e.copy(companion = e.companion.prependBase(init), evenMore = e.evenMore :+ boilerplate.defn)
+//    }
+//
+//    val boilerplate = withDerivedAdt(ctx, adt.id)
+//    val init = toScala(adt.id).sibling(boilerplate.name).init()
+//
+//    product.copy(companionBase = product.companionBase.prependBase(init), more = product.more :+ boilerplate.defn, elements = elements)
   }
 
   override def handleEnum(ctx: STContext, enum: Enumeration, product: CogenProduct.EnumProduct): CogenProduct.EnumProduct = {
