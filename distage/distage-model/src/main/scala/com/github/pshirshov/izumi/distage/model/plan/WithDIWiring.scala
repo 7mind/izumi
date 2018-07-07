@@ -85,8 +85,7 @@ trait WithDIWiring {
     }
 
     object FactoryFunction {
-      // FIXME: wireWith should be Wiring.UnaryWiring.Function - generate providers for concrete classes in distage-static, instead of using reflection
-      case class WithContext(factoryMethod: SymbolInfo, wireWith: Wiring.UnaryWiring, methodArguments: Seq[DIKey]) {
+      case class WithContext(factoryMethod: SymbolInfo, wireWith: Wiring.UnaryWiring.Function, methodArguments: Seq[DIKey]) {
         def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
       }
     }
@@ -97,10 +96,10 @@ trait WithDIWiring {
           case w: UnaryWiring.Constructor => w.replaceKeys(f) // duplication only because of 'the outer reference in this type test cannot be checked at runtime warning'
           case w: UnaryWiring.AbstractSymbol => w.replaceKeys(f)
           case w: UnaryWiring.Function => w.replaceKeys(f)
-          case w: UnaryWiring.Instance => w.replaceKeys(f)
-          case w: UnaryWiring.Reference => w.replaceKeys(f)
           case w: FactoryMethod => w.replaceKeys(f)
           case w: FactoryFunction => w.replaceKeys(f)
+          case w: UnaryWiring.Instance => w
+          case w: UnaryWiring.Reference => w
         }
     }
 

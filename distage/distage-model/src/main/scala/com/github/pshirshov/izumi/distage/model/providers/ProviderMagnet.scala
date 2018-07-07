@@ -13,13 +13,14 @@ import scala.language.experimental.macros
 *
 * The following syntaxes are supported by extractor macro:
 *
-* Inline fun:
+* Inline lambda:
 *
 *   Bindings.provider[Unit] {
 *     i: Int @Id("special") => ()
 *   }
 *
 * Method reference:
+*
 *   def constructor(@Id("special") i: Int): Unit = ()
 *
 *   Bindings.provider[Unit](constructor _)
@@ -30,7 +31,7 @@ import scala.language.experimental.macros
 *
 *   Bindings.provider[Unit](constructor)
 *
-* The following IS NOT SUPPORTED, annotations are lost when converting method to a fun value:
+* The following IS NOT SUPPORTED, because annotations are lost when converting a method to a function value:
 *
 *   def constructorMethod(@Id("special") i: Int): Unit = ()
 *
@@ -38,7 +39,7 @@ import scala.language.experimental.macros
 *
 *   Bindings.provider[Unit](constructor) // Will summon regular Int, not a "special" Int from DI context
 *
-* Annotations will also be lost when passing case class's .apply method.
+* Annotations on constructor will also be lost when passing a case class's .apply method, use `new` instead.
 *
 * DO:
 *
@@ -53,7 +54,7 @@ case class ProviderMagnet[+R](get: Provider)
 
 object ProviderMagnet {
   implicit def apply[R](fun: () => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: _ => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
+  implicit def apply[R](fun: (_) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]

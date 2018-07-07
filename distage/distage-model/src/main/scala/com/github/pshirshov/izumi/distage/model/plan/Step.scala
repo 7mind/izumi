@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.InstantiationOp
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-final case class Step(wiring: RuntimeDIUniverse.Wiring, op: InstantiationOp)
+final case class Step(wiring: RuntimeDIUniverse.Wiring, op: WiringOp)
 
 //sealed trait Provisioning[G, B] {
 //  @inline def map[G1](f: G => G1): Provisioning[G1, B]

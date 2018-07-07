@@ -22,6 +22,8 @@ object Binding {
 
   final case class SetElementBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[String] = Set.empty) extends ImplBinding with SetBinding
 
+  final case class MultiSetElementBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[String] = Set.empty) extends ImplBinding with SetBinding
+
   // Do we need this? - we do, we may wish to define an empty set. Without elements
   final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[String] = Set.empty) extends SetBinding
 
@@ -31,6 +33,8 @@ object Binding {
         case b: SingletonBinding[_] =>
           b.copy(key = newTarget)
         case b: SetElementBinding[_] =>
+          b.copy(key = newTarget)
+        case b: MultiSetElementBinding[_] =>
           b.copy(key = newTarget)
         case b: EmptySetBinding[_] =>
           b.copy(key = newTarget)
@@ -59,6 +63,8 @@ object Binding {
           b.copy(implementation = impl)
         case b: SetElementBinding[_] =>
           b.copy(implementation = impl)
+        case b: MultiSetElementBinding[_] =>
+          b.copy(implementation = impl)
       }
   }
 
@@ -68,6 +74,8 @@ object Binding {
         case b: SingletonBinding[_] =>
           b.copy(tags = tags)
         case b: SetElementBinding[_] =>
+          b.copy(tags = tags)
+        case b: MultiSetElementBinding[_] =>
           b.copy(tags = tags)
         case b: EmptySetBinding[_] =>
           b.copy(tags = tags)

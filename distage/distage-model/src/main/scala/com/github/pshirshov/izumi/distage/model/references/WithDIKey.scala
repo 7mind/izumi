@@ -36,6 +36,7 @@ trait WithDIKey {
     }
 
     // todo: this disambiguating .index is kinda shitty
+    // todo: the purpose of .index is to allow multiple elements with the same type
     case class SetElementKey(set: DIKey, index: Int, tpe: TypeFull) extends DIKey {
       override def toString: String = s"$set##${tpe.toString}.$index"
 
@@ -43,7 +44,7 @@ trait WithDIKey {
     }
 
     implicit class WithTpe(key: DIKey) {
-      def withTpe(tpe: TypeFull) = {
+      def withTpe(tpe: TypeFull): DIKey = {
         key match {
           case k: TypeKey => k.copy(tpe = tpe)
           case k: IdKey[_] => k.copy(tpe = tpe)(k.idContract)

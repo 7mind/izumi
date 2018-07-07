@@ -29,4 +29,10 @@ object Bindings {
 
   def setElementProvider[T: Tag](f: ProviderMagnet[T]): SetElementBinding[DIKey.TypeKey] =
     SetElementBinding(DIKey.get[Set[T]], ImplDef.ProviderImpl(f.get.ret, f.get))
+
+  def setElements[T: Tag, I <: T: Tag](instances: Set[I]): MultiSetElementBinding[DIKey.TypeKey] =
+    MultiSetElementBinding(DIKey.get[Set[T]], ImplDef.InstanceImpl(SafeType.get[Set[I]], instances))
+
+  def setElementsProvider[T: Tag](f: ProviderMagnet[Set[T]]): MultiSetElementBinding[DIKey.TypeKey] =
+    MultiSetElementBinding(DIKey.get[Set[T]], ImplDef.ProviderImpl(f.get.ret, f.get))
 }

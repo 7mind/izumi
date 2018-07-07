@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.Planner
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, MultiSetElementBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
@@ -76,6 +76,16 @@ class PlannerDefaultImpl
           , next.provisions
         )
 
+      case m: MultiSetElementBinding[_] =>
+        val target = m.key
+
+        // todo: if new set elements are not known before provider is run, then set elements aren't known statically after plan
+        // do we need it or not?
+        NextOps(
+          ???
+          ,???
+        )
+
       case s: EmptySetBinding[_] =>
         val newSet = CreateSet(s.key, s.key.tpe, Set.empty)
 
@@ -130,14 +140,8 @@ class PlannerDefaultImpl
 
   private def setElementKeySymbol(impl: ImplDef): RuntimeDIUniverse.TypeFull = {
     impl match {
-      case i: ImplDef.TypeImpl =>
+      case i: ImplDef.WithImplType =>
         i.implType
-      case i: ImplDef.InstanceImpl =>
-        i.implType
-      case p: ImplDef.ProviderImpl =>
-        p.implType
-      case r: ImplDef.ReferenceImpl =>
-        r.implType
     }
   }
 }
