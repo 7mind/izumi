@@ -92,7 +92,8 @@ object ModuleBase {
           } else if (newMappings.isEmpty) {
             existingMappings
           } else {
-            newMappings
+            // merge tags wrt strange Binding equals
+            modulewiseMerge(newMappings, existingMappings intersect newMappings)
           }
       }
 
