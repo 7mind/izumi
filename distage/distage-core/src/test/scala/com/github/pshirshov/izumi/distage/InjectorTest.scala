@@ -667,6 +667,26 @@ class InjectorTest extends WordSpec {
       assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
     }
 
+    "Tags in different overriden modules are merged" in {
+      import Case1._
+
+      val def1 = new ModuleDef {
+        make[TestDependency0].tagged("a").tagged("b")
+
+        tag("1")
+      }
+
+      val def2 = new ModuleDef {
+        tag("2")
+
+        make[TestDependency0].tagged("x").tagged("y")
+      }
+
+      val definition = def1 overridenBy def2
+
+      assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
+    }
+
     "set elements are the same as global bindings" in {
       import Case19._
 
