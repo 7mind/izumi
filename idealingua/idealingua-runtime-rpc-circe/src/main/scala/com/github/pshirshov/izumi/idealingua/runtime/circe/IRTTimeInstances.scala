@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.circe
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.time._
 
+import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 
 trait IRTTimeInstances {
@@ -59,8 +60,9 @@ trait IRTTimeInstances {
       }
     }
 
+  // TODO: this is a temporary solution!
   final def encodeZonedDateTime(formatter: DateTimeFormatter): Encoder[ZonedDateTime] =
-    Encoder.instance(time => Json.fromString(time.format(formatter)))
+    Encoder.instance(time => Json.fromString(time.withZoneSameInstant(IzTime.TZ_UTC).format(formatter)))
 
   implicit final val decodeZonedDateTimeDefault: Decoder[ZonedDateTime] = decodeZonedDateTime(DateTimeFormatter.ISO_ZONED_DATE_TIME)
   implicit final val encodeZonedDateTimeDefault: Encoder[ZonedDateTime] = encodeZonedDateTime(ISO_ZONED_DATE_TIME_3NANO)
