@@ -40,25 +40,25 @@ type Logger interface {
 	Logf(level LogLevel, format string, params ...interface{})
 }
 
-type ConsoleLogger struct {
+type consoleLogger struct {
 	level LogLevel
 }
 
-func NewConsoleLogger(level LogLevel) *ConsoleLogger {
-	res := &ConsoleLogger{}
+func NewConsoleLogger(level LogLevel) Logger {
+	res := &consoleLogger{}
 	res.SetLevel(level)
 	return res
 }
 
-func (l *ConsoleLogger) SetLevel(level LogLevel) {
+func (l *consoleLogger) SetLevel(level LogLevel) {
 	l.level = level
 }
 
-func (l *ConsoleLogger) GetLevel() LogLevel {
+func (l *consoleLogger) GetLevel() LogLevel {
 	return l.level
 }
 
-func (l *ConsoleLogger) Logf(level LogLevel, format string, params ...interface{}) {
+func (l *consoleLogger) Logf(level LogLevel, format string, params ...interface{}) {
 	if l.level > level {
 		return
 	}
@@ -73,13 +73,13 @@ func (l *ConsoleLogger) Logf(level LogLevel, format string, params ...interface{
 	}
 }
 
-type DummyLogger struct {
+type dummyLogger struct {
 }
 
-func NewDummyLogger() *DummyLogger {
-	res := &DummyLogger{}
+func NewDummyLogger() Logger {
+	res := &dummyLogger{}
 	return res
 }
 
-func (l *DummyLogger) Logf(level LogLevel, format string, params ...interface{}) {
+func (l *dummyLogger) Logf(level LogLevel, format string, params ...interface{}) {
 }

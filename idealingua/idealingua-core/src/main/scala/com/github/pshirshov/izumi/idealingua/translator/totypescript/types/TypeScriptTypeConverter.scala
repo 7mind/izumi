@@ -32,6 +32,8 @@ class TypeScriptTypeConverter() {
   def deserializeName(name: String, target: TypeId): String = target match {
     case Primitive.TTime => name + "AsString"
     case Primitive.TDate => name + "AsString"
+    case Primitive.TTs => name + "AsString"
+    case Primitive.TTsTz => name + "AsString"
     case o: Generic.TOption => deserializeName(name, o.valueType)
     case _ => name
   }
@@ -49,8 +51,8 @@ class TypeScriptTypeConverter() {
       case Primitive.TUUID => variable
       case Primitive.TTime => variable
       case Primitive.TDate => variable
-      case Primitive.TTs => "new Date(" + variable + ")"
-      case Primitive.TTsTz => "new Date(" + variable + ")"
+      case Primitive.TTs => variable
+      case Primitive.TTsTz => variable
       case g: Generic => deserializeGenericType(variable, g, ts, asAny)
       case _ => deserializeCustomType(variable, target, ts, asAny)
     }
@@ -163,8 +165,8 @@ class TypeScriptTypeConverter() {
     case Primitive.TUUID => s"$name"
     case Primitive.TTime => s"${name}AsString"
     case Primitive.TDate => s"${name}AsString"
-    case Primitive.TTs => s"$name.toISOString()"
-    case Primitive.TTsTz => s"$name.toISOString()"
+    case Primitive.TTs => s"${name}AsString"
+    case Primitive.TTsTz => s"${name}AsString"
   }
 
   def serializeGeneric(name: String, id: TypeId, ts: Typespace): String = id match {
@@ -204,8 +206,8 @@ class TypeScriptTypeConverter() {
     case Primitive.TUUID => toGuidField(name, optional)
     case Primitive.TTime => toTimeField(name, optional)
     case Primitive.TDate => toDateField(name, optional)
-    case Primitive.TTs => toDateField(name, optional)
-    case Primitive.TTsTz => toDateField(name, optional)
+    case Primitive.TTs => toDateTimeField(name, local = true, optional)
+    case Primitive.TTsTz => toDateTimeField(name, local = false, optional)
     case _ =>
       s"""public get ${safeName(name)}(): ${toNativeType(id, ts)} {
          |    return this._$name;
@@ -403,6 +405,36 @@ class TypeScriptTypeConverter() {
     base.stripMargin
   }
 
+  def toDateTimeField(name: String, local: Boolean, optional: Boolean = false): String = {
+    s"""public get ${safeName(name)}(): Date {
+       |    return this._$name;
+       |}
+       |
+       |public set ${safeName(name)}(value: Date) {
+       |    if (typeof value === 'undefined' || value === null) {
+       |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
+       |    }
+       |
+       |    if (!(value instanceof Date)) {
+       |        throw new Error('Field ${safeName(name)} expects type Date, got ' + value);
+       |    }
+       |    this._$name = value;
+       |}
+       |
+       |public get ${safeName(name)}AsString(): string {
+       |    return moment(this._$name).format('YYYY-MM-DDTHH:mm:ss.SSS${if(local) "" else "Z"}');
+       |}
+       |
+       |public set ${safeName(name)}AsString(value: string) {
+       |    if (typeof value !== 'string') {
+       |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
+       |    }
+       |    this._$name = moment(value, 'YYYY-MM-DDTHH:mm:ss.SSS${if(local) "" else "Z"}').toDate();
+       |}
+     """.stripMargin
+  }
+
+
   def toDateField(name: String, optional: Boolean = false): String = {
     s"""public get ${safeName(name)}(): Date {
        |    return this._$name;
@@ -420,14 +452,14 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return this._$name.getDate() + ':' + this._$name.getMonth() + ':' + this._$name.getFullYear();
+       |    return moment(_$name).format('YYYY-MM-DD');
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
        |    if (typeof value !== 'string') {
        |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
        |    }
-       |    this._$name = new Date(value);
+       |    this._$name = moment(value, 'YYYY-MM-DD').toDate();
        |}
      """.stripMargin
   }
@@ -450,7 +482,7 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return this._$name.getHours() + ':' + this._$name.getMinutes() + ':' + this._$name.getSeconds() + '.' + this._$name.getMilliseconds();
+       |    return moment(_$name).format('HH:mm:ss.SSS');
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
@@ -458,26 +490,7 @@ class TypeScriptTypeConverter() {
        |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
        |    }
        |
-       |    const parts = value.split(':');
-       |    if (parts.length !== 3) {
-       |        throw new Error('Field ${safeName(name)} expects time to be in the format HH:MM:SS.ms, got ' + value);
-       |    }
-       |
-       |    const time = new Date();
-       |    time.setHours(parseInt(parts[0]), parseInt(parts[1]));
-       |    if (parts[2].indexOf('.') >= 0) {
-       |        const parts2 = parts[2].split('.');
-       |        if (parts2.length !== 2) {
-       |            throw new Error('Field ${safeName(name)} expects time to be in the format HH:MM:SS.ms, got ' + value);
-       |        }
-       |
-       |        time.setSeconds(parseInt(parts2[0]));
-       |        time.setMilliseconds(parseInt(parts2[1].substr(0, 3)));
-       |    } else {
-       |        time.setSeconds(parseInt(parts[2]));
-       |    }
-       |
-       |    this._$name = time;
+       |    this._$name = moment(value, 'HH:mm:ss.SSS').toDate();
        |}
      """.stripMargin
   }
