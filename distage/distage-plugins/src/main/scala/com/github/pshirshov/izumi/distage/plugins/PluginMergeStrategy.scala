@@ -92,7 +92,6 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
           config.disabledImplementations.contains(name.split('.').last)
     }
 
-
     val hasDisabledTags = binding.tags.intersect(config.disabledTags).nonEmpty
 
     val hasDisabledName = maybeImplName.isDefined
