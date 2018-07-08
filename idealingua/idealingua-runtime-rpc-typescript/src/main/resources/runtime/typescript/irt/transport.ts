@@ -1,4 +1,7 @@
 
+import { Logger, DummyLogger, LogLevel } from './logger';
+import { IJSONMarshaller } from './marshaller';
+
 export interface IRTServiceClientInData {
     serialize(): any;
 }
@@ -9,17 +12,23 @@ export interface IRTClientTransport {
     send(service: string, method: string, data: IRTServiceClientInData): Promise<IRTServiceClientOutData>
     subscribe(packageClass: string, callback: (data: any) => void): void
     unsubscribe(packageClass: string, callback: (data: any) => void): void
-    log(content: string | Error): void
 }
 
 export class IRTHTTPClientTransport implements IRTClientTransport {
     public endpoint: string;
     private authorization: string;
     private timeout: number;
+    private logger: Logger;
+    private marshaller: IJSONMarshaller;
 
-    constructor(endpoint: string = undefined) {
+    constructor(endpoint: string, marshaller: IJSONMarshaller, logger: Logger = undefined) {
         this.setEndpoint(endpoint);
         this.timeout = 60 * 1000;
+        this.logger = logger;
+        if (!this.logger) {
+            this.logger = new DummyLogger();
+        }
+        this.marshaller = marshaller;
     }
 
     private get isReady(): boolean {
@@ -48,13 +57,15 @@ export class IRTHTTPClientTransport implements IRTClientTransport {
 
         if (payload) {
             req.open('POST', url, true);
-            req.setRequestHeader("Content-type", "application/json");
+            this.logger.logf(LogLevel.Debug, 'Header: Content-type: application/json');
+            req.setRequestHeader('Content-type', 'application/json');
         } else {
             req.open('GET', url, true);
         }
 
         if (this.authorization) {
             req.setRequestHeader('Authorization', 'Bearer ' + this.authorization);
+            this.logger.logf(LogLevel.Debug, 'Header: Authorization: Bearer ' + this.authorization);
         }
 
         req.timeout = this.timeout;
@@ -92,15 +103,29 @@ export class IRTHTTPClientTransport implements IRTClientTransport {
             });
         }
 
+        this.logger.logf(LogLevel.Debug, '====================================================');
+        this.logger.logf(LogLevel.Debug, 'Requesting ' + service + ' service, method ' + method);
+
         return new Promise((resolve, reject) => {
             const url = `${this.endpoint}/${service}/${method}`;
             const payload = data.serialize();
             const payloadHasNoData = Object.keys(payload).length === 0 && payload.constructor === Object;
-            this.doRequest(url, payloadHasNoData ? null : JSON.stringify(payload) ,
+            const json = payloadHasNoData ? null : this.marshaller.Marshal<IRTServiceClientInData>(payload);
+            this.logger.logf(LogLevel.Debug, 'Endpoint: ' + url);
+            this.logger.logf(LogLevel.Debug, 'Method: ' + (payloadHasNoData ? 'GET' : 'POST'));
+
+            if (json !== null) {
+                this.logger.logf(LogLevel.Trace, 'Request Body:\n' + json);
+            }
+
+            this.doRequest(url, json,
                 (successContent) => {
-                    resolve(JSON.parse(successContent));
+                    this.logger.logf(LogLevel.Trace, 'Response body:\n' + successContent);
+                    const content = this.marshaller.Unmarshal<any>(successContent);
+                    resolve(content);
                 },
                 (failureContent) => {
+                    this.logger.logf(LogLevel.Error, 'Failure:\n' + failureContent);
                     reject(failureContent);
                 });
         });
@@ -112,9 +137,5 @@ export class IRTHTTPClientTransport implements IRTClientTransport {
 
     unsubscribe(packageClass: string, callback: (data: any) => void): void {
 
-    }
-
-    log(content: string | Error): void {
-        console.log(content)
     }
 }

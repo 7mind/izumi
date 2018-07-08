@@ -34,8 +34,10 @@ final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty)
     }
 
     imports.filterNot(_.id.isInstanceOf[AliasId]).groupBy(_.pkg)
-      .map(i => "import {" + (if (i._2.length > 1) "\n" else " ") + i._2.map(i2 => (if (i._2.length > 1) "    " else "") + renderTypeImports(i2.id, ts))
-      .mkString(if (i._2.length > 1) ",\n" else "") + (if (i._2.length > 1) "\n" else " ") + s"} from '${i._1}';").mkString("\n")
+      .map(i => if (i._1.startsWith("import")) i._1 else
+              "import {" + (if (i._2.length > 1) "\n" else " ") + i._2.map(i2 => (if (i._2.length > 1) "    " else "") + renderTypeImports(i2.id, ts))
+            .mkString(if (i._2.length > 1) ",\n" else "") + (if (i._2.length > 1) "\n" else " ") + s"} from '${i._1}';")
+      .mkString("\n")
   }
 
   def findImport(id: TypeId): Option[TypeScriptImport] = {
@@ -61,7 +63,13 @@ object TypeScriptImports {
         case _: Generic.TList => return Seq.empty
         case _: Generic.TSet => return Seq.empty
       }
-      case _: Primitive => return Seq.empty
+      case p: Primitive => p match {
+        case Primitive.TTs => return Seq("import * as moment from 'moment';")
+        case Primitive.TTsTz => return Seq("import * as moment from 'moment';")
+        case Primitive.TTime => return Seq("import * as moment from 'moment';")
+        case Primitive.TDate => return Seq("import * as moment from 'moment';")
+        case _ => return Seq.empty
+      }
       case _ =>
     }
 

@@ -437,12 +437,10 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |                            throw new Error('Unknown type id ' + id + ' for ${m.name} output.');
            |                    }
            |                } catch(err) {
-           |                    this._transport.log(err);
            |                    reject(err);
            |                }
            |             })
            |            .catch(err => {
-           |                this._transport.log(err);
            |                reject(err);
            |            });
            |    });
@@ -461,12 +459,10 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |                    resolve(output);
            |                }
            |                catch(err) {
-           |                    this._transport.log(err);
            |                    reject(err);
            |                }
            |            })
            |            .catch(err => {
-           |                this._transport.log(err);
            |                reject(err);
            |            });
            |        });
@@ -497,12 +493,10 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
        |                        resolve(output);
        |                    }
        |                    catch (err) {
-       |                        this._transport.log(err);
        |                        reject(err);
        |                    }
        |                })
        |                .catch( err => {
-       |                    this._transport.log(err);
        |                    reject(err);
        |                });
        |            });

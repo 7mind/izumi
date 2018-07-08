@@ -452,7 +452,7 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return moment(_$name).format('YYYY-MM-DD');
+       |    return moment(this._$name).format('YYYY-MM-DD');
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
@@ -482,7 +482,7 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return moment(_$name).format('HH:mm:ss.SSS');
+       |    return moment(this._$name).format('HH:mm:ss.SSS');
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
