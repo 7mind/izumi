@@ -1,21 +1,15 @@
 package com.github.pshirshov.izumi.fundamentals.platform.resources
 
+import java.io.{BufferedReader, InputStream, InputStreamReader}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.io.{BufferedReader, InputStream, InputStreamReader}
 import java.util.stream.Collectors
 
 import scala.collection.mutable
+import scala.language.implicitConversions
 
-
-object IzResources {
-
-  class PathReference(val path: Path, val fileSystem: FileSystem) extends AutoCloseable {
-    override def close(): Unit = {
-      if (this.fileSystem != null) this.fileSystem.close()
-    }
-  }
-
+class IzResources(clazz: Class[_]) {
+  import IzResources._
   def getPath(resPath: String): Option[PathReference] = {
     if (Paths.get(resPath).toFile.exists()) {
       return Some(new PathReference(Paths.get(resPath), null))
@@ -36,12 +30,6 @@ object IzResources {
         val fs: FileSystem = FileSystems.newFileSystem(u.toURI, env.asJava)
         Some(new PathReference(fs.provider().getPath(u.toURI), fs))
     }
-  }
-
-  case class RecursiveCopyOutput(files: Seq[Path])
-
-  object RecursiveCopyOutput {
-    def empty: RecursiveCopyOutput = RecursiveCopyOutput(Seq.empty)
   }
 
   def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
@@ -84,7 +72,7 @@ object IzResources {
 
 
   def read(fileName: String): Option[InputStream] = {
-    Option(getClass.getClassLoader.getResourceAsStream(fileName))
+    Option(clazz.getClassLoader.getResourceAsStream(fileName))
   }
 
   def readAsString(fileName: String): Option[String] = {
@@ -94,4 +82,23 @@ object IzResources {
         reader.lines.collect(Collectors.joining(System.lineSeparator))
     }
   }
+
+}
+
+object IzResources extends IzResources(IzumiManifest.getClass) {
+
+  class PathReference(val path: Path, val fileSystem: FileSystem) extends AutoCloseable {
+    override def close(): Unit = {
+      if (this.fileSystem != null) this.fileSystem.close()
+    }
+  }
+
+  case class RecursiveCopyOutput(files: Seq[Path])
+
+  object RecursiveCopyOutput {
+    def empty: RecursiveCopyOutput = RecursiveCopyOutput(Seq.empty)
+  }
+
+  implicit def toResources(clazz: Class[_]): IzResources = new IzResources(clazz)
+
 }
