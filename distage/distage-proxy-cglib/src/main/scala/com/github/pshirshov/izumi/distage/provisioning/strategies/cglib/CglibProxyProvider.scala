@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
+import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import net.sf.cglib.proxy.{Callback, Enhancer}
 
 import scala.util.{Failure, Success, Try}
@@ -57,7 +57,8 @@ object CglibProxyProvider extends ProxyProvider {
         proxyInstance
 
       case Failure(f) =>
-        throw new DIException(s"Failed to instantiate class $runtimeClass, params=$params with CGLib. Operation: $op", f)
+        throw new CgLibInstantiationOpException(
+          s"Failed to instantiate class $runtimeClass, params=$params with CGLib. Operation: $op", runtimeClass, params, op, f)
     }
   }
 

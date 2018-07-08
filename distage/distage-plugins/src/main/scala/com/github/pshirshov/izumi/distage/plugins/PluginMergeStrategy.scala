@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.plugins
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, SimpleModuleDef}
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ModuleMergeException}
 import com.github.pshirshov.izumi.distage.model.reflection
 
 
@@ -78,7 +78,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       alternatives
     } else {
       if (alternatives.size != 1) {
-        throw new DIException(s"Expected one alternative for $key got:\n${alternatives.mkString(" - ", "\n - ", "")}", null)
+        throw new ModuleMergeException(s"Expected one alternative for $key got:\n${alternatives.mkString(" - ", "\n - ", "")}", Set(key))
       }
 
       Set(alternatives.head)
@@ -91,7 +91,6 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
         config.disabledImplementations.contains(name) ||
           config.disabledImplementations.contains(name.split('.').last)
     }
-
 
     val hasDisabledTags = binding.tags.intersect(config.disabledTags).nonEmpty
 

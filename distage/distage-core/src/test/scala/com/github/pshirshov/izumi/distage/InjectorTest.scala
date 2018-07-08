@@ -81,7 +81,6 @@ class InjectorTest extends WordSpec {
       assert(context.get[Set[JustTrait]]("named.set").size == 2)
     }
 
-
     "support named bindings" in {
       import Case1_1._
       val definition: ModuleBase = new ModuleDef {
@@ -97,6 +96,7 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+
       assert(context.get[TestClass]("named.test.class").correctWired())
     }
 
@@ -111,6 +111,24 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+
+      assert(context.get[Circular1] != null)
+      assert(context.get[Circular2] != null)
+      assert(context.get[Circular2].arg != null)
+    }
+
+    "support circular dependencies in providers" in {
+      import Case2._
+
+      val definition: ModuleBase = new ModuleDef {
+        make[Circular2].from { c: Circular1 => new Circular2(c) }
+        make[Circular1].from { c: Circular2 => new Circular1 { override val arg: Circular2 = c } }
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
       assert(context.get[Circular2].arg != null)
@@ -132,10 +150,12 @@ class InjectorTest extends WordSpec {
       val context = injector.produce(plan)
       val c3 = context.get[Circular3]
       val traitArg = c3.arg
+
       assert(traitArg != null && traitArg.isInstanceOf[Circular4])
       assert(c3.method == 2L)
       assert(traitArg.testVal == 1)
       assert(context.enumerate.nonEmpty)
+      assert(context.get[Circular4].factoryFun(context.get[Circular4], context.get[Circular5]) != null)
     }
 
     "support more complex circular dependencies" in {
@@ -152,6 +172,7 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+
       assert(context.get[CustomApp] != null)
     }
 
@@ -574,27 +595,96 @@ class InjectorTest extends WordSpec {
       assert(context.get[Service3].set.size == 3)
     }
 
+    "Support TODO bindings" in {
+      import Case1._
+
+      val injector = mkInjector()
+
+      val def1 = new ModuleDef {
+        todo[TestDependency0]
+      }
+      val def2 = new ModuleDef {
+        make[TestDependency0].todo
+      }
+      val def3 = new ModuleDef {
+        make[TestDependency0].named("fug").todo
+      }
+
+      val plan1 = injector.plan(def1)
+      val plan2 = injector.plan(def2)
+      val plan3 = injector.plan(def3)
+
+      assert(Try(injector.produce(plan1)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
+      assert(Try(injector.produce(plan2)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
+      assert(Try(injector.produce(plan3)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
+    }
+
     "ModuleBuilder supports tags" in {
       import Case18._
 
       val definition = new ModuleDef {
         many[SetTrait].named("n1").tagged("A", "B")
           .add[SetImpl1].tagged("A")
-          .add[SetImpl1].tagged("B")
+//          .add[SetImpl1].tagged("B") // illegal now - considered same bindings
+          .add[SetImpl2].tagged("B")
           .add[SetImpl3].tagged("A").tagged("B")
 
         make[Service1].tagged("CA").tagged("CB").from[Service1]
 
-        make[Service1].tagged("CC")
+//        make[Service1].tagged("CC") // illegal now - considered same bindings
+        make[Service2].tagged("CC")
 
         many[SetTrait].tagged("A", "B")
       }
 
+      assert(definition.bindings.size == 7)
       assert(definition.bindings.count(_.tags == Set("A", "B")) == 3)
       assert(definition.bindings.count(_.tags == Set("CA", "CB")) == 1)
       assert(definition.bindings.count(_.tags == Set("CC")) == 1)
       assert(definition.bindings.count(_.tags == Set("A")) == 1)
       assert(definition.bindings.count(_.tags == Set("B")) == 1)
+    }
+
+    "Tags in different modules are merged" in {
+      import Case1._
+
+      val def1 = new ModuleDef {
+        make[TestDependency0].tagged("a").tagged("b")
+        // make[TestDependency0].tagged("b")
+        // FIXME take note: This will be ignored, no tag "b" will be appended. However, before double definitions were illegal anyway...
+
+        tag("1")
+      }
+
+      val def2 = new ModuleDef {
+        tag("2")
+
+        make[TestDependency0].tagged("x").tagged("y")
+      }
+
+      val definition = def1 ++ def2
+
+      assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
+    }
+
+    "Tags in different overriden modules are merged" in {
+      import Case1._
+
+      val def1 = new ModuleDef {
+        make[TestDependency0].tagged("a").tagged("b")
+
+        tag("1")
+      }
+
+      val def2 = new ModuleDef {
+        tag("2")
+
+        make[TestDependency0].tagged("x").tagged("y")
+      }
+
+      val definition = def1 overridenBy def2
+
+      assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
     }
 
     "set elements are the same as global bindings" in {
@@ -751,14 +841,14 @@ class InjectorTest extends WordSpec {
     "Handle multiple parameter lists" in {
       import Case21._
 
-      val injector = mkInjector()
-
       val definition = new ModuleDef {
         make[TestDependency2]
         make[TestDependency1]
         make[TestDependency3]
         make[TestClass]
       }
+
+      val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
@@ -771,8 +861,6 @@ class InjectorTest extends WordSpec {
     "Implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
       import Case21._
 
-      val injector = mkInjector()
-
       val definition = new ModuleDef {
         implicit val testDependency3: TestDependency3 = new TestDependency3
 
@@ -781,6 +869,8 @@ class InjectorTest extends WordSpec {
         make[TestDependency3]
         make[TestClass]
       }
+
+      val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 

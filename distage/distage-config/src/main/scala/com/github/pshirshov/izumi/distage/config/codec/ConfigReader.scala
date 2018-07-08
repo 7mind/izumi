@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.config.codec
 
-import com.github.pshirshov.izumi.distage.config.model.ConfigReadException
+import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigReadException
 import com.typesafe.config.ConfigValueType._
 import com.typesafe.config._
 

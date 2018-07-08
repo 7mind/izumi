@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.config
 
 import com.github.pshirshov.izumi.distage.config.annotations._
+import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -38,10 +38,10 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
                 return k.named(ConfPathId(binding.key, association, path))
 
               case o =>
-                throw new DIException(s"Cannot rewire @ConfPath parameter $association: unexpected binding $o", null)
+                throw new ConfigTranslationException(s"Cannot rewire @ConfPath parameter $association: unexpected binding $o", Seq())
             }
           case None =>
-            throw new DIException(s"Cannot rewire @ConfPath parameter $association: undefined path", null)
+            throw new ConfigTranslationException(s"Cannot rewire @ConfPath parameter $association: undefined path", Seq())
 
         }
 
@@ -57,10 +57,10 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
                 return k.named(ConfId(binding.key, association, name))
 
               case o =>
-                throw new DIException(s"Cannot rewire @Conf parameter $association: unexpected binding $o", null)
+                throw new ConfigTranslationException(s"Cannot rewire @Conf parameter $association: unexpected binding $o", Seq())
             }
           case None =>
-            throw new DIException(s"Cannot rewire @Conf parameter $association: undefined name", null)
+            throw new ConfigTranslationException(s"Cannot rewire @Conf parameter $association: undefined name", Seq())
 
         }
 
@@ -74,7 +74,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
             return k.named(AutoConfId(binding.key, association))
 
           case o =>
-            throw new DIException(s"Cannot rewire @AutoConf parameter $association: unexpected binding $o", null)
+            throw new ConfigTranslationException(s"Cannot rewire @AutoConf parameter $association: unexpected binding $o", Seq())
         }
 
       case _ =>

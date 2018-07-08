@@ -57,22 +57,24 @@ class ProvisionerDefaultImpl
   private def interpretResult(active: ProvisionActive, result: OpResult): Unit = {
     result match {
       case OpResult.NewImport(target, value) =>
-        if (active.imports.contains(target)) {
-          throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
+        value match {
+          case _ if active.imports.contains(target) => 
+            throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
+          case opResult: OpResult =>
+            throw new TriedToAddSetIntoSetException(s"Pathological case. Tried to add set into itself: $target -> $value", target, opResult)
+          case _ =>
+            active.imports += (target -> value)
         }
-        if (value.isInstanceOf[OpResult]) {
-          throw new DIException(s"Pathological case. Tried to add set into itself: $target -> $value", null)
-        }
-        active.imports += (target -> value)
 
       case OpResult.NewInstance(target, value) =>
-        if (active.instances.contains(target)) {
-          throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
+        value match {
+          case _ if active.instances.contains(target) =>
+            throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
+          case opResult: OpResult =>
+            throw new TriedToAddSetIntoSetException(s"Pathological case. Tried to add set into itself: $target -> $value", target, opResult)
+          case _ => 
+            active.instances += (target -> value)
         }
-        if (value.isInstanceOf[OpResult]) {
-          throw new DIException(s"Pathological case. Tried to add set into itself: $target -> $value", null)
-        }
-        active.instances += (target -> value)
 
       case OpResult.UpdatedSet(target, instance) =>
         active.instances += (target -> instance)

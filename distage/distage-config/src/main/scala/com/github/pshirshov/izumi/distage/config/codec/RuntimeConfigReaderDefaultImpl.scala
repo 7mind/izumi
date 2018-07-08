@@ -7,7 +7,7 @@ import java.time._
 import java.util.UUID
 import java.util.regex.Pattern
 
-import com.github.pshirshov.izumi.distage.config.model.ConfigReadException
+import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigReadException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
 import com.typesafe.config._

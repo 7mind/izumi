@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.fundamentals.collections.IzCollections
+import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
+import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
 trait ModuleBase {
   def bindings: Set[Binding]
@@ -30,44 +30,59 @@ object ModuleBase {
   }
 
   implicit final class ModuleDefCombine(private val moduleDef: ModuleBase) extends AnyVal {
-    def :+(binding: Binding): ModuleBase = {
-      SimpleModuleDef(moduleDef.bindings + binding)
+    def ++(that: ModuleBase): ModuleBase = {
+      // FIXME: a hack to support tag merging
+
+      // FIXME: this makes sense because Bindings equals/hashcode ignores `tags` field
+      val sameThis = moduleDef.bindings intersect that.bindings
+      val sameThat = that.bindings intersect moduleDef.bindings
+
+      val newIntersection = sameThis.zip(sameThat).map { case (a, b) => b.withTags(a.tags ++ b.tags) }
+
+      SimpleModuleDef(moduleDef.bindings.diff(sameThis) ++ that.bindings.diff(sameThat) ++ newIntersection)
     }
 
-    def ++(that: ModuleBase): ModuleBase = {
-      SimpleModuleDef(moduleDef.bindings ++ that.bindings)
+    def :+(binding: Binding): ModuleBase = {
+      moduleDef ++ SimpleModuleDef(Set(binding))
+    }
+
+    def +:(binding: Binding): ModuleBase = {
+      SimpleModuleDef(Set(binding)) ++ moduleDef
     }
 
     def overridenBy(that: ModuleBase): ModuleBase = {
       // we replace existing items in-place and appending new at the end
       // set bindings should not be touched
 
-      val existingSetElements = moduleDef.bindings.collect({case b: SetElementBinding[_] => b})
-      val newSetElements = that.bindings.collect({case b: SetElementBinding[_] => b})
-      val mergedSetElements = existingSetElements ++ newSetElements
+      // FIXME: a hack to support tag merging
+      def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] =
+        (SimpleModuleDef(a) ++ SimpleModuleDef(b)).bindings
 
-      val existingSets = moduleDef.bindings.collect({case b: EmptySetBinding[_] => b})
-      val newSets = that.bindings.collect({case b: EmptySetBinding[_] => b})
-      val mergedSets = existingSets ++ newSets
+      val existingSetElements = moduleDef.bindings.collect({case b: SetElementBinding[_] => b: Binding})
+      val newSetElements = that.bindings.collect({case b: SetElementBinding[_] => b: Binding})
+      val mergedSetElements = modulewiseMerge(existingSetElements, newSetElements)
+
+      val existingSets = moduleDef.bindings.collect({case b: EmptySetBinding[_] => b: Binding})
+      val newSets = that.bindings.collect({case b: EmptySetBinding[_] => b: Binding})
+      val mergedSets = modulewiseMerge(existingSets, newSets)
 
       val mergedSetOperations = mergedSets ++ mergedSetElements
 
       val setOps = mergedSetOperations.map(_.key)
 
-      val existingSingletons = moduleDef.bindings.collect({case b: SingletonBinding[_] => b})
-      val newSingletons = that.bindings.collect({case b: SingletonBinding[_] => b})
+      val existingSingletons = moduleDef.bindings.collect({case b: SingletonBinding[_] => b: Binding})
+      val newSingletons = that.bindings.collect({case b: SingletonBinding[_] => b: Binding})
 
-      import IzCollections._
       val existingIndex = existingSingletons.map(b => b.key -> b).toMultimap
       val newIndex = newSingletons.map(b => b.key -> b).toMultimap
       val mergedKeys = existingIndex.keySet ++ newIndex.keySet
 
       val badKeys = setOps.intersect(mergedKeys)
       if (badKeys.nonEmpty) {
-        throw new DIException(s"Cannot override bindings, unsolvable conflicts: $badKeys", null)
+        throw new ModuleMergeException(s"Cannot override bindings, unsolvable conflicts: $badKeys", badKeys)
       }
 
-      val mergedSingletons =  mergedKeys.flatMap {
+      val mergedSingletons = mergedKeys.flatMap {
         k =>
           val existingMappings = existingIndex.getOrElse(k, Set.empty)
           val newMappings = newIndex.getOrElse(k, Set.empty)
@@ -77,13 +92,12 @@ object ModuleBase {
           } else if (newMappings.isEmpty) {
             existingMappings
           } else {
-            newMappings
+            // merge tags wrt strange Binding equals
+            modulewiseMerge(newMappings, existingMappings intersect newMappings)
           }
       }
 
-
-
-      SimpleModuleDef(mergedSingletons ++ mergedSetOperations)
+      SimpleModuleDef(modulewiseMerge(mergedSingletons, mergedSetOperations))
     }
   }
 

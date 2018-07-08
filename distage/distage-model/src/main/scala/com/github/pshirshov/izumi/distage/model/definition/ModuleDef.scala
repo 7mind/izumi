@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.distage.model.definition.ModuleDef.{BindDSL, I
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil.EnclosingPosition
 
 import scala.collection.mutable
 
@@ -39,6 +40,11 @@ trait ModuleDef extends ModuleBase {
     new SetDSL(mutableState, IdentSet(binding.key, Set()), startingSet)
   }
 
+  final protected def todo[T: Tag](implicit pos: EnclosingPosition): Unit = discard {
+    val binding = Bindings.todo(DIKey.get[T])(pos)
+    mutableState.add(binding)
+  }
+
   final protected def tag(tags: String*): Unit = discard {
     mutableTags ++= tags
   }
@@ -62,13 +68,18 @@ object ModuleDef {
   ) extends BindDSLMutBase[T] {
 
     def named(name: String): BindNamedDSL[T] =
-      replace(binding.copy(key = binding.key.named(name))) {
+      replace(binding.copy(key = binding.key.named(name), tags = binding.tags)) {
         new BindNamedDSL[T](mutableState, _, _)
       }
 
     def tagged(tags: String*): BindDSL[T] =
       replace(binding.copy(tags = binding.tags ++ tags)) {
         new BindDSL[T](mutableState, _, _)
+      }
+
+    def todo(implicit pos: EnclosingPosition): Unit =
+      replace(Bindings.todo(binding.key)(pos)) {
+        (_, _) => ()
       }
 
   }
@@ -85,6 +96,10 @@ object ModuleDef {
         new BindNamedDSL[T](mutableState, _, _)
       }
 
+    def todo(implicit pos: EnclosingPosition): Unit =
+      replace(Bindings.todo(binding.key)(pos)) {
+        (_, _) => ()
+      }
   }
 
   sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {
@@ -187,8 +202,8 @@ object ModuleDef {
     }
 
     protected def replaceIdent[D <: IdentSet[DIKey], S](newIdent: D)(nextState: (D, Set[Binding]) => S): S = {
-      val newBindings = (currentBindings + EmptySetBinding(newIdent.key, newIdent.tags)).map {
-        _.withTarget(newIdent.key) // tags only apply to EmptySets
+      val newBindings = ((currentBindings - EmptySetBinding(identifier.key, identifier.tags)) + EmptySetBinding(newIdent.key, newIdent.tags)).map {
+        _.withTarget(newIdent.key) // tags only apply to EmptySet itself
       }
 
       mutableState --= currentBindings

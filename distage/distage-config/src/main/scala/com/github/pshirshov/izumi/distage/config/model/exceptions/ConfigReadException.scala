@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.config.model
+package com.github.pshirshov.izumi.distage.config.model.exceptions
 
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 

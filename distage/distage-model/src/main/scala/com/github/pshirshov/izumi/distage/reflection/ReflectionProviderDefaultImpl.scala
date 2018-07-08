@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnsupportedWiringException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{UnsupportedDefinitionException, UnsupportedWiringException}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.DIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 
@@ -34,7 +34,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             val excessiveSymbols = alreadyInSignature.toSet -- methodTypeWireable.associations.map(_.wireWith).toSet
 
             if (excessiveSymbols.nonEmpty) {
-              throw new DIException(s"Factory method signature contains symbols which are not required for target product: $excessiveSymbols", null)
+              throw new UnsupportedDefinitionException(s"Factory method signature contains symbols which are not required for target product: $excessiveSymbols", null)
             }
 
             Wiring.FactoryMethod.WithContext(factoryMethodSymb, methodTypeWireable, alreadyInSignature)

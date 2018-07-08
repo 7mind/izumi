@@ -95,7 +95,6 @@ trait WithDICallable {
 
   }
 
-  class UnsafeCallArgsMismatched(message: String, val expected: Seq[TypeFull], val actual: Seq[TypeFull], val actualValues: Seq[Any])
-    extends DIException(message, null)
+  class UnsafeCallArgsMismatched(message: String, val expected: Seq[TypeFull], val actual: Seq[TypeFull], val actualValues: Seq[Any]) extends DIException(message, null)
 
 }
