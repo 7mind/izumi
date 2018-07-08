@@ -21,3 +21,4 @@ class IzFutureTest extends WordSpec {
 
   
 }
+

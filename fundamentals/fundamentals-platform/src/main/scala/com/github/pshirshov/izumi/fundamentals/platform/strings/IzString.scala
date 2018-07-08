@@ -53,6 +53,18 @@ class IzString(s: String) {
 
 }
 
+class IzTraversableOnce[A](s: TraversableOnce[A]) {
+  def niceList(shift: String = " "): String = {
+    if (s.nonEmpty) {
+      val prefix = s"\n$shift- "
+      s.mkString(prefix, prefix, "")
+    } else {
+      "ø"
+    }
+  }
+}
+
 object IzString {
   implicit def toRich(s: String): IzString = new IzString(s)
+  implicit def toRich[A](s: TraversableOnce[A]): IzTraversableOnce[A] = new IzTraversableOnce(s)
 }
