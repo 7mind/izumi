@@ -574,6 +574,30 @@ class InjectorTest extends WordSpec {
       assert(context.get[Service3].set.size == 3)
     }
 
+    "Support TODO bindings" in {
+      import Case1._
+
+      val injector = mkInjector()
+
+      val def1 = new ModuleDef {
+        todo[TestDependency0]
+      }
+      val def2 = new ModuleDef {
+        make[TestDependency0].todo
+      }
+      val def3 = new ModuleDef {
+        make[TestDependency0].named("fug").todo
+      }
+
+      val plan1 = injector.plan(def1)
+      val plan2 = injector.plan(def2)
+      val plan3 = injector.plan(def3)
+
+      assert(Try(injector.produce(plan1)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
+      assert(Try(injector.produce(plan2)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
+      assert(Try(injector.produce(plan3)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
+    }
+
     "ModuleBuilder supports tags" in {
       import Case18._
 

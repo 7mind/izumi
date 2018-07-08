@@ -241,7 +241,7 @@ lazy val distageStatic = inDiStage.as.module
 lazy val logstageApiBase = inLogStage.as.module
 
 lazy val logstageApiBaseMacro = inLogStage.as.module
-  .depends(logstageApiBase)
+  .depends(logstageApiBase, fundamentalsReflection)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect
