@@ -80,7 +80,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
                       .toRight(DecodingFailure("No type name found in JSON, expected JSON of form { \"type_name\": { ...fields } }", c.history))
 
                  for {
-                   fname <- maybeContent.map(c)
+                   fname <- maybeContent
                    value = c.downField(fname)
                    result <- fname match { ..case $decCases }
                  } yield {

@@ -164,6 +164,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
              |func IsValid${i.id.name}(e string) bool {
              |    return ${imports.withImport(i.target)}IsValid${i.target.name}(e)
              |}
+             |
+             |func GetAll${i.id.name}() []${i.id.name} {
+             |    return ${imports.withImport(i.target)}GetAll${i.target.name}()
+             |}
            """.stripMargin
         case _ => s""
       }
@@ -814,16 +818,21 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   protected def renderServiceDispatcherHandler(i: Service, method: Service.DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""case "${m.name}": {
-         |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"dataIn, ok := data.(*${inName(i, m.name, public = true)})\n    if !ok {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + "\")\n    }"}
-         |    return v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"dataIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
+         |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(i, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
+         |    modelOut, err := v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
+         |    if err != nil {
+         |        return []byte{}, err
+         |    }
+         |
+         |    dataOut, err := v.marshaller.Marshal(modelOut)
+         |    if err != nil {
+         |        return []byte{}, fmt.Errorf("Marshalling model failed: %s", err.Error())
+         |    }
+         |
+         |    return dataOut, nil
          |}
          |
        """.stripMargin
-  }
-
-  protected def renderServiceDispatcherPreHandler(i: Service, method: Service.DefMethod): String = method match {
-    case m: DefMethod.RPCMethod =>
-      s"""case "${m.name}": ${if (m.signature.input.fields.isEmpty) "return nil, nil" else s"return &${inName(i, m.name, public = true)}{}, nil"}""".stripMargin
   }
 
   protected def renderServiceDispatcher(i: Service, imports: GoLangImports): String = {
@@ -835,6 +844,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |
        |type $name struct {
        |    service ${i.id.name}Server
+       |    marshaller irt.Marshaller
        |}
        |
        |func (v *$name) SetServer(s ${i.id.name}Server) error {
@@ -843,6 +853,15 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |    }
        |
        |    v.service = s
+       |    return nil
+       |}
+       |
+       |func (v *$name) SetMarshaller(marshaller irt.Marshaller) error {
+       |    if marshaller == nil {
+       |        return fmt.Errorf("method SetMarshaller requires a valid marshaller, got nil")
+       |    }
+       |
+       |    v.marshaller = marshaller
        |    return nil
        |}
        |
@@ -856,15 +875,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |    }
        |}
        |
-       |func (v *$name) PreDispatchModel(context interface{}, method string) (interface{}, error) {
-       |    switch method {
-       |${i.methods.map(m => renderServiceDispatcherPreHandler(i, m)).mkString("\n").shift(8)}
-       |        default:
-       |            return nil, fmt.Errorf("$name dispatch doesn't support method %s", method)
-       |    }
-       |}
-       |
-       |func (v *$name) Dispatch(context interface{}, method string, data interface{}) (interface{}, error) {
+       |func (v *$name) Dispatch(context interface{}, method string, data []byte) ([]byte, error) {
        |    switch method {
        |${i.methods.map(m => renderServiceDispatcherHandler(i, m)).mkString("\n").shift(8)}
        |        default:
@@ -872,9 +883,10 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        |    }
        |}
        |
-       |func New${name}(service ${i.id.name}Server) *$name{
+       |func New${name}(service ${i.id.name}Server, marshaller irt.Marshaller) *$name{
        |    res := &$name{}
        |    res.SetServer(service)
+       |    res.SetMarshaller(marshaller)
        |    return res
        |}
      """.stripMargin

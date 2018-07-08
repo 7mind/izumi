@@ -77,18 +77,14 @@ namespace irt {
     }
 
     public static class JsonNetTimeFormats {
-        public static readonly string TslDefault = "yyyy-MM-ddTHH:mm:ss.ffffffzzz";
+        public static readonly string TslDefault = "yyyy-MM-ddTHH:mm:ss.fff";
         public static readonly string[] Tsl = new string[] {
-                    "yyyy-MM-ddTHH:mm:ss.ffffffzzz",
-                    "yyyy-MM-ddTHH:mm:ss.fffzzz",
-                    "yyyy-MM-ddTHH:mm:sszzz"
+                    "yyyy-MM-ddTHH:mm:ss.fff"
                 };
 
-        public static readonly string TszDefault = "yyyy-MM-ddTHH:mm:ss.ffffffZ";
+        public static readonly string TszDefault = "yyyy-MM-ddTHH:mm:ss.fffzzz";
         public static readonly string[] Tsz = new string[] {
-                    "yyyy-MM-ddTHH:mm:ss.ffffffZ",
-                    "yyyy-MM-ddTHH:mm:ss.fffZ",
-                    "yyyy-MM-ddTHH:mm:ssZ"
+                    "yyyy-MM-ddTHH:mm:ss.fffzzz"
                 };
     }
 
@@ -100,19 +96,19 @@ namespace irt {
 
     class JsonNetTimeConverter : IsoDateTimeConverter {
         public JsonNetTimeConverter() {
-            base.DateTimeFormat = "HH:mm:ss";
+            base.DateTimeFormat = "HH:mm:ss.fff";
         }
     }
 
     class JsonNetDateTimeLocalConverter : IsoDateTimeConverter {
         public JsonNetDateTimeLocalConverter() {
-            base.DateTimeFormat = "yyyy-MM-ddTHH:mm:ss.FFFFFFzzz";
+            base.DateTimeFormat = "yyyy-MM-ddTHH:mm:ss.fff";
         }
     }
 
-    class JsonNetDateTimeUTCConverter : IsoDateTimeConverter {
-        public JsonNetDateTimeUTCConverter() {
-            base.DateTimeFormat = "yyyy-MM-ddTHH:mm:ss.FFFFFFZ";
+    class JsonNetDateTimeZonedConverter : IsoDateTimeConverter {
+        public JsonNetDateTimeZonedConverter() {
+            base.DateTimeFormat = "yyyy-MM-ddTHH:mm:ss.fffzzz";
         }
     }
 }
