@@ -134,11 +134,11 @@ abstract class OpinionatedDiApp {
   protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {
     val conflicts = bootstrapAutoDef.definition.bindings.map(_.key).intersect(appDef.definition.bindings.map(_.key))
     if (conflicts.nonEmpty) {
-      throw new DIException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...", null)
+      throw new DiAppBootstrapException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...")
     }
 
     if (appDef.definition.bindings.isEmpty) {
-      throw new DIException(s"Empty app context. Most likely you have no plugins defined or your app plugin config is wrong, terminating...", null)
+      throw new DiAppBootstrapException(s"Empty app context. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
     }
   }
 
@@ -146,3 +146,5 @@ abstract class OpinionatedDiApp {
 
   def handler: AppFailureHandler = TerminatingHandler
 }
+
+class DiAppBootstrapException(message: String) extends DIException(message, null)

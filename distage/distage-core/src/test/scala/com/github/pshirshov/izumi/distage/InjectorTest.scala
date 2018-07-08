@@ -81,7 +81,6 @@ class InjectorTest extends WordSpec {
       assert(context.get[Set[JustTrait]]("named.set").size == 2)
     }
 
-
     "support named bindings" in {
       import Case1_1._
       val definition: ModuleBase = new ModuleDef {
@@ -97,6 +96,7 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+
       assert(context.get[TestClass]("named.test.class").correctWired())
     }
 
@@ -111,6 +111,24 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+
+      assert(context.get[Circular1] != null)
+      assert(context.get[Circular2] != null)
+      assert(context.get[Circular2].arg != null)
+    }
+
+    "support circular dependencies in providers" in {
+      import Case2._
+
+      val definition: ModuleBase = new ModuleDef {
+        make[Circular2].from { c: Circular1 => new Circular2(c) }
+        make[Circular1].from { c: Circular2 => new Circular1 { override val arg: Circular2 = c } }
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
       assert(context.get[Circular2].arg != null)
@@ -132,10 +150,12 @@ class InjectorTest extends WordSpec {
       val context = injector.produce(plan)
       val c3 = context.get[Circular3]
       val traitArg = c3.arg
+
       assert(traitArg != null && traitArg.isInstanceOf[Circular4])
       assert(c3.method == 2L)
       assert(traitArg.testVal == 1)
       assert(context.enumerate.nonEmpty)
+      assert(context.get[Circular4].factoryFun(context.get[Circular4], context.get[Circular5]) != null)
     }
 
     "support more complex circular dependencies" in {
@@ -152,6 +172,7 @@ class InjectorTest extends WordSpec {
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
+
       assert(context.get[CustomApp] != null)
     }
 

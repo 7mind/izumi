@@ -24,7 +24,85 @@ class StaticInjectorTest extends WordSpec {
       , overrides = overrides.overrideLeft
     )
 
+  def mkInjectorWithProxy(): Injector = Injectors.bootstrap()
+
   "DI planner" should {
+
+    "support circular dependencies (with cglib on JVM)" in {
+      import Case2._
+
+      val definition: ModuleBase = new StaticModuleDef {
+        stat[Circular2]
+        stat[Circular1]
+      }
+
+      val injector = mkInjectorWithProxy()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[Circular1] != null)
+      assert(context.get[Circular2] != null)
+      assert(context.get[Circular2].arg != null)
+    }
+
+    "support circular dependencies in providers (with cglib on JVM)" in {
+      import Case2._
+
+      val definition: ModuleBase = new StaticModuleDef {
+        make[Circular2].from { c: Circular1 => new Circular2(c) }
+        make[Circular1].from { c: Circular2 => new Circular1 { override val arg: Circular2 = c } }
+      }
+
+      val injector = mkInjectorWithProxy()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[Circular1] != null)
+      assert(context.get[Circular2] != null)
+      assert(context.get[Circular2].arg != null)
+    }
+
+    "support complex circular dependencies (with cglib on JVM)" in {
+      import Case3._
+
+      val definition: ModuleBase = new StaticModuleDef {
+        stat[Circular3]
+        stat[Circular1]
+        stat[Circular2]
+        stat[Circular5]
+        stat[Circular4]
+      }
+
+      val injector = mkInjectorWithProxy()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+      val c3 = context.get[Circular3]
+      val traitArg = c3.arg
+
+      assert(traitArg != null && traitArg.isInstanceOf[Circular4])
+      assert(c3.method == 2L)
+      assert(traitArg.testVal == 1)
+      assert(context.enumerate.nonEmpty)
+      assert(context.get[Circular4].factoryFun(context.get[Circular4], context.get[Circular5]) != null)
+    }
+
+    "support more complex circular dependencies (err no proxy generated - no circular dependency?)" in {
+      import Case15._
+
+      val definition: ModuleBase = new StaticModuleDef {
+        make[CustomDep1].from(CustomDep1.empty)
+        make[CustomTrait].from(customTraitInstance)
+        stat[CustomClass]
+        stat[CustomDep2]
+        stat[CustomApp]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[CustomApp] != null)
+    }
 
     "handle macro factory injections" in {
       import Case5._

@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.ConcreteConstructor
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil, SingletonUniverse}
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
 
 import scala.reflect.macros.blackbox
 
@@ -16,7 +16,6 @@ object ConcreteConstructorMacro {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
-    import macroUniverse.Wiring._
     import macroUniverse._
 
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
