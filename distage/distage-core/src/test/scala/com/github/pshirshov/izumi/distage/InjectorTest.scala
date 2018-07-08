@@ -625,21 +625,66 @@ class InjectorTest extends WordSpec {
       val definition = new ModuleDef {
         many[SetTrait].named("n1").tagged("A", "B")
           .add[SetImpl1].tagged("A")
-          .add[SetImpl1].tagged("B")
+//          .add[SetImpl1].tagged("B") // illegal now - considered same bindings
+          .add[SetImpl2].tagged("B")
           .add[SetImpl3].tagged("A").tagged("B")
 
         make[Service1].tagged("CA").tagged("CB").from[Service1]
 
-        make[Service1].tagged("CC")
+//        make[Service1].tagged("CC") // illegal now - considered same bindings
+        make[Service2].tagged("CC")
 
         many[SetTrait].tagged("A", "B")
       }
 
+      assert(definition.bindings.size == 7)
       assert(definition.bindings.count(_.tags == Set("A", "B")) == 3)
       assert(definition.bindings.count(_.tags == Set("CA", "CB")) == 1)
       assert(definition.bindings.count(_.tags == Set("CC")) == 1)
       assert(definition.bindings.count(_.tags == Set("A")) == 1)
       assert(definition.bindings.count(_.tags == Set("B")) == 1)
+    }
+
+    "Tags in different modules are merged" in {
+      import Case1._
+
+      val def1 = new ModuleDef {
+        make[TestDependency0].tagged("a").tagged("b")
+        // make[TestDependency0].tagged("b")
+        // FIXME take note: This will be ignored, no tag "b" will be appended. However, before double definitions were illegal anyway...
+
+        tag("1")
+      }
+
+      val def2 = new ModuleDef {
+        tag("2")
+
+        make[TestDependency0].tagged("x").tagged("y")
+      }
+
+      val definition = def1 ++ def2
+
+      assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
+    }
+
+    "Tags in different overriden modules are merged" in {
+      import Case1._
+
+      val def1 = new ModuleDef {
+        make[TestDependency0].tagged("a").tagged("b")
+
+        tag("1")
+      }
+
+      val def2 = new ModuleDef {
+        tag("2")
+
+        make[TestDependency0].tagged("x").tagged("y")
+      }
+
+      val definition = def1 overridenBy def2
+
+      assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
     }
 
     "set elements are the same as global bindings" in {
@@ -796,14 +841,14 @@ class InjectorTest extends WordSpec {
     "Handle multiple parameter lists" in {
       import Case21._
 
-      val injector = mkInjector()
-
       val definition = new ModuleDef {
         make[TestDependency2]
         make[TestDependency1]
         make[TestDependency3]
         make[TestClass]
       }
+
+      val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
@@ -816,8 +861,6 @@ class InjectorTest extends WordSpec {
     "Implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
       import Case21._
 
-      val injector = mkInjector()
-
       val definition = new ModuleDef {
         implicit val testDependency3: TestDependency3 = new TestDependency3
 
@@ -826,6 +869,8 @@ class InjectorTest extends WordSpec {
         make[TestDependency3]
         make[TestClass]
       }
+
+      val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 

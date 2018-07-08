@@ -68,7 +68,7 @@ object ModuleDef {
   ) extends BindDSLMutBase[T] {
 
     def named(name: String): BindNamedDSL[T] =
-      replace(binding.copy(key = binding.key.named(name))) {
+      replace(binding.copy(key = binding.key.named(name), tags = binding.tags)) {
         new BindNamedDSL[T](mutableState, _, _)
       }
 
@@ -202,8 +202,8 @@ object ModuleDef {
     }
 
     protected def replaceIdent[D <: IdentSet[DIKey], S](newIdent: D)(nextState: (D, Set[Binding]) => S): S = {
-      val newBindings = (currentBindings + EmptySetBinding(newIdent.key, newIdent.tags)).map {
-        _.withTarget(newIdent.key) // tags only apply to EmptySets
+      val newBindings = ((currentBindings - EmptySetBinding(identifier.key, identifier.tags)) + EmptySetBinding(newIdent.key, newIdent.tags)).map {
+        _.withTarget(newIdent.key) // tags only apply to EmptySet itself
       }
 
       mutableState --= currentBindings
