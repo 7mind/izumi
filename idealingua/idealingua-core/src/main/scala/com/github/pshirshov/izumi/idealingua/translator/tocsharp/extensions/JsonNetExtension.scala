@@ -156,7 +156,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
               case Primitive.TFloat => s"writer.WriteValue($src);"
               case Primitive.TDouble => s"writer.WriteValue($src);"
               case Primitive.TUUID => s"writer.WriteValue($src.ToString());"
-              case Primitive.TTime => s"""writer.WriteValue(string.Format("{0:00}:{1:00}:{2:00}", (int)$src.TotalHours, $src.Minutes, $src.Seconds));"""
+              case Primitive.TTime => s"""writer.WriteValue(string.Format("{0:00}:{1:00}:{2:00}.{3:000}", (int)$src.TotalHours, $src.Minutes, $src.Seconds, $src.Milliseconds));"""
               case Primitive.TDate => s"""writer.WriteValue($src.ToString("yyyy-MM-dd"));"""
               case Primitive.TTs => s"""writer.WriteValue($src.ToString(JsonNetTimeFormats.TslDefault));"""
               case Primitive.TTsTz => s"""writer.WriteValue($src.ToString(JsonNetTimeFormats.TszDefault));"""
@@ -294,7 +294,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         case Primitive.TTime => s"TimeSpan.Parse($src.Value<string>())"
         case Primitive.TDate => s"DateTime.Parse($src.Value<string>())"
         case Primitive.TTs => s"DateTime.ParseExact($src.Value<string>(), JsonNetTimeFormats.Tsl, CultureInfo.InvariantCulture, DateTimeStyles.None)"
-        case Primitive.TTsTz => s"DateTime.ParseExact($src.Value<string>(), JsonNetTimeFormats.Tsz, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime()"
+        case Primitive.TTsTz => s"DateTime.ParseExact($src.Value<string>(), JsonNetTimeFormats.Tsz, CultureInfo.InvariantCulture, DateTimeStyles.None)"
       }
       case _ => t.id match {
         case _: EnumId => s"${t.renderType()}Helpers.From($src.Value<string>())"

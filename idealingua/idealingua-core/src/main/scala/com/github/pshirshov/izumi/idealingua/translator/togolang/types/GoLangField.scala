@@ -173,14 +173,14 @@ final case class GoLangField(
     case Primitive.TUUID => toGuidField()
     case Primitive.TTime => toTimeField()
     case Primitive.TDate => toDateField()
-    case Primitive.TTs => toTimeStampField(false)
-    case Primitive.TTsTz => toTimeStampField(true)
+    case Primitive.TTs => toTimeStampField(local = true)
+    case Primitive.TTsTz => toTimeStampField(local = false)
     case g: Generic => g match {
       case go: Generic.TOption => go.valueType match {
         case Primitive.TTime => toTimeField(optional = true)
         case Primitive.TDate => toDateField(optional = true)
-        case Primitive.TTs => toTimeStampField(utc = false, optional = true)
-        case Primitive.TTsTz => toTimeStampField(utc = true, optional = true)
+        case Primitive.TTs => toTimeStampField(local = true, optional = true)
+        case Primitive.TTsTz => toTimeStampField(local = false, optional = true)
         case _ => toGenericField()
       }
       case _ => toGenericField()
@@ -320,10 +320,9 @@ final case class GoLangField(
      """.stripMargin
   }
 
-  def toTimeStampField(utc: Boolean, optional: Boolean = false): String = {
+  def toTimeStampField(local: Boolean, optional: Boolean = false): String = {
     s"""func (v *$structName) ${renderMemberName(true)}() ${if (optional) "*" else ""}time.Time {
-       |    ${if (utc) s"res := v.${renderMemberName(false)}.UTC();\n    return ${if (optional) "&" else ""}res" else ""}
-       |    ${if (!utc) s"return v.${renderMemberName(false)}" else ""}
+       |    return v.${renderMemberName(false)}
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}(value ${if (optional) "*" else ""}time.Time) {
@@ -332,23 +331,20 @@ final case class GoLangField(
        |
        |func (v *$structName) ${renderMemberName(true)}AsString() ${if (optional) "*" else ""}string {
        |    ${if (optional) s"if v.${renderMemberName(false)} == nil {\n        return nil\n    }" else ""}
-       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z" else "-07:00"}"
-       |    res := v.${renderMemberName(false)}${if (utc) ".UTC()" else ""}.Format(layout)
+       |    res := v.${renderMemberName(false)}.Format("${if (local) "2006-01-02T15:04:05.000" else "2006-01-02T15:04:05.000-07:00"}")
        |    return ${if (optional) "&" else ""}res
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
-       |    layout := "2006-01-02T15:04:05.000000${if (utc) "Z" else "-07:00"}"
-       |    t, err := time.Parse(layout, value)
+       |    t, err := time.Parse("2006-01-02T15:04:05.000${if (local) "" else "-07:00"}", value)
        |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DDTHH:MM:SS.MICROS${if (utc) "Z" else "+00:00"} format. Got %s", value)
+       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY:MM:DDTHH:MM:SS.MIC${if (local) "" else "+00:00"} format. Got %s", value)
        |    }
        |
        |    v.${renderMemberName(false)} = ${if (optional) "&" else ""}t
        |    return nil
        |}
      """.stripMargin
-    //+01:00[Europe/Dublin]
   }
 
   def renderAssign(struct: String, variable: String, serialized: Boolean, optional: Boolean): String = {
