@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.distage.model.definition.ModuleDef.{BindDSL, I
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil.EnclosingPosition
 
 import scala.collection.mutable
 
@@ -39,6 +40,11 @@ trait ModuleDef extends ModuleBase {
     new SetDSL(mutableState, IdentSet(binding.key, Set()), startingSet)
   }
 
+  final protected def todo[T: Tag](implicit pos: EnclosingPosition): Unit = discard {
+    val binding = Bindings.todo(DIKey.get[T])(pos)
+    mutableState.add(binding)
+  }
+
   final protected def tag(tags: String*): Unit = discard {
     mutableTags ++= tags
   }
@@ -71,6 +77,11 @@ object ModuleDef {
         new BindDSL[T](mutableState, _, _)
       }
 
+    def todo(implicit pos: EnclosingPosition): Unit =
+      replace(Bindings.todo(binding.key)(pos)) {
+        (_, _) => ()
+      }
+
   }
 
   final class BindNamedDSL[T]
@@ -85,6 +96,10 @@ object ModuleDef {
         new BindNamedDSL[T](mutableState, _, _)
       }
 
+    def todo(implicit pos: EnclosingPosition): Unit =
+      replace(Bindings.todo(binding.key)(pos)) {
+        (_, _) => ()
+      }
   }
 
   sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {

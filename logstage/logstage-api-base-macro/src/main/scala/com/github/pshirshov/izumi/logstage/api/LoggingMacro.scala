@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
+import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
 import com.github.pshirshov.izumi.logstage.api.Log.{LoggerId, Message, StaticExtendedContext, ThreadData}
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 
@@ -16,12 +17,12 @@ trait LoggingMacro {
 
   def contextCustom: Log.CustomContext
 
-  def trace(message: String): Unit = macro scTraceMacro
-  def debug(message: String): Unit = macro scDebugMacro
-  def info(message: String): Unit = macro scInfoMacro
-  def warn(message: String): Unit = macro scWarnMacro
-  def error(message: String): Unit = macro scErrorMacro
-  def crit(message: String): Unit = macro scCritMacro
+  final def trace(message: String): Unit = macro scTraceMacro
+  final def debug(message: String): Unit = macro scDebugMacro
+  final def info(message: String): Unit = macro scInfoMacro
+  final def warn(message: String): Unit = macro scWarnMacro
+  final def error(message: String): Unit = macro scErrorMacro
+  final def crit(message: String): Unit = macro scCritMacro
 }
 
 object LoggingMacro {
@@ -96,10 +97,7 @@ object LoggingMacro {
 
     val receiver = reify(c.prefix.splice.asInstanceOf[LoggingMacro].receiver)
 
-    val line = c.Expr[Int](c.universe.Literal(Constant(c.enclosingPosition.line)))
-    val file = c.Expr[String](c.universe.Literal(Constant(c.enclosingPosition.source.file.name)))
-
-    val applicationPointId = c.Expr[String](c.universe.Literal(Constant(c.internal.enclosingOwner.fullName)))
+    val (line, file, applicationPointId) = MacroUtil.EnclosingPosition.getEnclosingPositionExprs(c)
 
     val loggerId = reify {
       LoggerId(applicationPointId.splice)
