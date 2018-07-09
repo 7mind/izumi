@@ -24,6 +24,8 @@ object Binding {
       case _ =>
         false
     }
+
+    override def hashCode(): Int = (0, key, implementation).hashCode()
   }
 
   sealed trait SetBinding extends Binding
@@ -35,6 +37,8 @@ object Binding {
       case _ =>
         false
     }
+
+    override def hashCode(): Int = (1, key, implementation).hashCode()
   }
 
   final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[String] = Set.empty) extends SetBinding {
@@ -44,6 +48,8 @@ object Binding {
       case _ =>
         false
     }
+
+    override def hashCode(): Int = (2, key).hashCode()
   }
 
   implicit final class WithTarget(private val binding: Binding) extends AnyVal {
