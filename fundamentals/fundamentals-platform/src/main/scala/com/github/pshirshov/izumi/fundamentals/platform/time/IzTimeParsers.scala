@@ -16,5 +16,6 @@ class IzTimeParsers(s: String) {
   def toDate: TemporalAccessor = ISO_DATE.parse(s)
 
   def toTsZ: ZonedDateTime = ZonedDateTime.parse(s, ISO_DATE_TIME_3NANO)
+
 }
 
