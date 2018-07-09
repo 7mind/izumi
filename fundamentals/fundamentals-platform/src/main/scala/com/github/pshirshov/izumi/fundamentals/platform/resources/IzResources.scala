@@ -1,15 +1,58 @@
 package com.github.pshirshov.izumi.fundamentals.platform.resources
 
-import java.io.{BufferedReader, InputStream, InputStreamReader}
+import java.io.{FileSystem => _, _}
+import java.net.URL
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.jar.JarFile
 import java.util.stream.Collectors
+import java.util.zip.ZipEntry
 
 import scala.collection.mutable
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
+
+sealed trait ResourceLocation
 
 class IzResources(clazz: Class[_]) {
+
   import IzResources._
+
+
+  def jarResource[C: ClassTag](name: String): ResourceLocation = {
+    classLocationUrl[C]()
+      .flatMap {
+        url =>
+          val location = Paths.get(url.toURI)
+          val locFile = location.toFile
+          val resolved = location.resolve(name)
+          val resolvedFile = resolved.toFile
+
+          if (locFile.exists() && locFile.isFile) { // read from jar
+            val jar = new JarFile(locFile)
+
+            Option(jar.getEntry(name)) match {
+              case Some(entry) =>
+                Some(ResourceLocation.Jar(locFile, jar, entry))
+              case None =>
+                jar.close()
+                None
+            }
+          } else if (resolvedFile.exists()) {
+            Some(ResourceLocation.Filesystem(resolvedFile))
+          } else {
+            None
+          }
+      }
+      .getOrElse(ResourceLocation.NotFound)
+  }
+
+  def classLocationUrl[C: ClassTag](): Option[URL] = {
+    import scala.reflect._
+    val clazz = classTag[C].runtimeClass
+    Option(clazz.getProtectionDomain.getCodeSource.getLocation)
+  }
+
   def getPath(resPath: String): Option[PathReference] = {
     if (Paths.get(resPath).toFile.exists()) {
       return Some(new PathReference(Paths.get(resPath), null))
@@ -85,7 +128,7 @@ class IzResources(clazz: Class[_]) {
 
 }
 
-object IzResources extends IzResources(IzumiManifest.getClass) {
+object IzResources extends IzResources(IzManifest.getClass) {
 
   class PathReference(val path: Path, val fileSystem: FileSystem) extends AutoCloseable {
     override def close(): Unit = {
@@ -101,4 +144,13 @@ object IzResources extends IzResources(IzumiManifest.getClass) {
 
   implicit def toResources(clazz: Class[_]): IzResources = new IzResources(clazz)
 
+  object ResourceLocation {
+
+    final case class Filesystem(file: File) extends ResourceLocation
+
+    final case class Jar(jarPath: File, jar: JarFile, entry: ZipEntry) extends ResourceLocation
+
+    case object NotFound extends ResourceLocation
+
+  }
 }
