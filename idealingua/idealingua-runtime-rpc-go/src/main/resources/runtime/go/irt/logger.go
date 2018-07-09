@@ -65,7 +65,8 @@ func (l *consoleLogger) Logf(level LogLevel, format string, params ...interface{
 
 	now := time.Now()
 	if level == LogError {
-		fmt.Println("******************** ERROR ********************\n")
+		fmt.Println("******************** ERROR ********************")
+		fmt.Println("")
 		fmt.Printf("[%s] %s: %s\n", now.Format(timestampLayout), levelToString(level), fmt.Sprintf(format, params...))
 		fmt.Println("\n***********************************************")
 	} else {

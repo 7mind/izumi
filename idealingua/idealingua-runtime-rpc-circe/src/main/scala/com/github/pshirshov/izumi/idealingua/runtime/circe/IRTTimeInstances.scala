@@ -62,7 +62,7 @@ trait IRTTimeInstances {
 
   // TODO: this is a temporary solution!
   final def encodeZonedDateTime(formatter: DateTimeFormatter): Encoder[ZonedDateTime] =
-    Encoder.instance(time => Json.fromString(time.withZoneSameInstant(IzTime.TZ_UTC).format(formatter)))
+    Encoder.instance(time => Json.fromString(time.withZoneSameInstant(IzTime.TZ_UTC).toOffsetDateTime.format(formatter)))
 
   implicit final val decodeZonedDateTimeDefault: Decoder[ZonedDateTime] = decodeZonedDateTime(DateTimeFormatter.ISO_ZONED_DATE_TIME)
   implicit final val encodeZonedDateTimeDefault: Encoder[ZonedDateTime] = encodeZonedDateTime(ISO_ZONED_DATE_TIME_3NANO)
