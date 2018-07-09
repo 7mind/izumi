@@ -11,5 +11,5 @@ object IzumiManifest {
   val BuildJdk = "X-Build-JDK"
   val Version = "X-Version"
   val BuildTimestamp = "X-Build-Timestamp"
-  val TsFormat: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+  val TsFormat: DateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
 }
