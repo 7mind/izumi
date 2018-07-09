@@ -11,7 +11,8 @@ import scala.language.implicitConversions
 trait IzTime {
   final val TZ_UTC: ZoneId = ZoneId.of("UTC")
 
-  final val EPOCH = OffsetDateTime.ofInstant(Instant.ofEpochSecond(0), TZ_UTC)
+  final val EPOCH_OFFSET = OffsetDateTime.ofInstant(Instant.ofEpochSecond(0), TZ_UTC)
+  final val EPOCH = ZonedDateTime.ofInstant(Instant.ofEpochSecond(0), TZ_UTC)
 
   // extended operators
   implicit def toRich(timestamp: ZonedDateTime): IzZonedDateTime = new IzZonedDateTime(timestamp)

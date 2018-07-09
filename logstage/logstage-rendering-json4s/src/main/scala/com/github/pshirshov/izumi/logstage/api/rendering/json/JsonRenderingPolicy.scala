@@ -34,7 +34,7 @@ class JsonRenderingPolicy() extends RenderingPolicy {
         ("timestamp" -> entry.context.dynamic.tsMillis) ~
         ("datetime" -> {
           import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
-          entry.context.dynamic.tsMillis.asEpochMillis.isoFormatUtc
+          entry.context.dynamic.tsMillis.asEpochMillisUtc.isoFormatUtc
         })
       ) ~
       ("@template" -> formatted.template) ~
