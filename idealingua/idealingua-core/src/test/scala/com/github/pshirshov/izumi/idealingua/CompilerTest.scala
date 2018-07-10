@@ -14,7 +14,7 @@ class CompilerTest extends WordSpec {
       assert(compilesScala(getClass.getSimpleName, loadDefs()))
     }
     "be able to compile into typescript" in {
-      assume(false, "TS SUPPORT BROKEN")
+      assume(false, "TS SUPPORT BROKEN, needs NPM moment module import to compile.")
       assume(IzFiles.haveExecutables("tsc"), "tsc not available")
       assert(compilesTypeScript(getClass.getSimpleName, loadDefs()))
     }
