@@ -29,6 +29,10 @@ sealed trait TypeId {
 
   def uniqueDomainName: String = path.within.mkString("") ++ name.capitalize
 
+  def wireId: String = {
+    s"${path.toPackage.mkString(".")}.$name"
+  }
+
   override def toString: TypeName = s"${getClass.getSimpleName}:$path#$name"
 }
 
