@@ -1,11 +1,9 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.{AbstractStringSink, TrivialLogger}
-
-import scala.reflect.ClassTag
-import scala.reflect.macros.blackbox
+import com.github.pshirshov.izumi.fundamentals.platform.console.AbstractStringSink
 
 import scala.language.experimental.macros
+import scala.reflect.macros.blackbox
 
 object MacroUtil {
 
@@ -13,9 +11,6 @@ object MacroUtil {
     override def flush(value: => String): Unit =
       c.info(c.enclosingPosition, value, force = true)
   }
-
-  def mkLogger[T: ClassTag](c: blackbox.Context): TrivialLogger =
-    TrivialLogger.make[T]("izumi.distage.debug.macro", sink = new MacroSink(c))
 
   final case class EnclosingPosition(line: Int, file: String, applicationPointId: String)
 
