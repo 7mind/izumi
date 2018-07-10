@@ -36,7 +36,7 @@ final case class CSharpClass (
       val rtti =
         s"""public static readonly string RTTI_PACKAGE = "$pkg";
            |public static readonly string RTTI_CLASSNAME = "${id.name}";
-           |public static readonly string RTTI_FULLCLASSNAME = "$pkg.${id.name}";
+           |public static readonly string RTTI_FULLCLASSNAME = "${id.wireId}";
            |public string GetPackageName() { return $name.RTTI_PACKAGE; }
            |public string GetClassName() { return $name.RTTI_CLASSNAME; }
            |public string GetFullClassName() { return $name.RTTI_FULLCLASSNAME; }
