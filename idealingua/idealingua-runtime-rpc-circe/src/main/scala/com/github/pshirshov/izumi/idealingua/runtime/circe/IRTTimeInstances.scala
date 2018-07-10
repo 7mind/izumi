@@ -53,7 +53,14 @@ trait IRTTimeInstances {
   final def decodeZonedDateTime(formatter: DateTimeFormatter): Decoder[ZonedDateTime] =
     Decoder.instance { c =>
       c.as[String] match {
-        case Right(s) => try Right(ZonedDateTime.parse(s, formatter)) catch {
+        case Right(s) => try {
+          val parsed = ZonedDateTime.parse(s, formatter)
+          if (parsed.getZone.getId == "Z") {
+            Right(parsed.withZoneSameLocal(IzTime.TZ_UTC))
+          } else {
+            Right(parsed)
+          }
+        } catch {
           case _: DateTimeParseException => Left(DecodingFailure("ZonedDateTime", c.history))
         }
         case l @ Left(_) => l.asInstanceOf[Decoder.Result[ZonedDateTime]]
