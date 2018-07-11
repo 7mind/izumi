@@ -71,18 +71,32 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   }
 
   protected def renderRuntimeNames(i: TypeId): String = {
-      renderRuntimeNames(i.path.toPackage.mkString("."), i.name)
+      renderRuntimeNames(i, i.name)
   }
 
-  protected def renderRuntimeNames(pkg: String, name: String, holderName: String = null): String = {
+  protected def renderRuntimeNames(i: TypeId, holderName: String = null): String = {
+    val pkg = i.path.toPackage.mkString(".")
     s"""// Runtime identification methods
        |public static readonly PackageName = '$pkg';
-       |public static readonly ClassName = '$name';
-       |public static readonly FullClassName = '${pkg + "." + name}';
+       |public static readonly ClassName = '${i.name}';
+       |public static readonly FullClassName = '${i.wireId}';
        |
-       |public getPackageName(): string { return ${if(holderName == null) name else holderName}.PackageName; }
-       |public getClassName(): string { return ${if(holderName == null) name else holderName}.ClassName; }
-       |public getFullClassName(): string { return ${if(holderName == null) name else holderName}.FullClassName; }
+       |public getPackageName(): string { return ${if(holderName == null) i.name else holderName}.PackageName; }
+       |public getClassName(): string { return ${if(holderName == null) i.name else holderName}.ClassName; }
+       |public getFullClassName(): string { return ${if(holderName == null) i.name else holderName}.FullClassName; }
+       """.stripMargin
+  }
+
+  protected def renderRuntimeNames(s: ServiceId, holderName: String): String = {
+    val pkg = s.domain.toPackage.mkString(".")
+    s"""// Runtime identification methods
+       |public static readonly PackageName = '$pkg';
+       |public static readonly ClassName = '${s.name}';
+       |public static readonly FullClassName = '${pkg}.${s.name}';
+       |
+       |public getPackageName(): string { return ${if(holderName == null) s.name else holderName}.PackageName; }
+       |public getClassName(): string { return ${if(holderName == null) s.name else holderName}.ClassName; }
+       |public getFullClassName(): string { return ${if(holderName == null) s.name else holderName}.FullClassName; }
        """.stripMargin
   }
 
@@ -347,7 +361,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     val uniqueInterfaces = ts.inheritance.parentsInherited(i.id).groupBy(_.name).map(_._2.head)
     val companion =
       s"""export class ${eid} implements ${i.id.name} {
-         |${renderRuntimeNames(implId.path.toPackage.mkString("."), implId.name, eid).shift(4)}
+         |${renderRuntimeNames(implId, eid).shift(4)}
          |${fields.all.map(f => conv.toFieldMember(f.field, ts)).mkString("\n").shift(4)}
          |
          |${fields.all.map(f => conv.toFieldMethods(f.field, ts)).mkString("\n").shift(4)}
@@ -477,7 +491,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
        |}
        |
        |export class ${i.id.name}Client implements I${i.id.name}Client {
-       |${renderRuntimeNames(i.id.domain.toPackage.mkString("."), i.id.name, s"${i.id.name}Client").shift(4)}
+       |${renderRuntimeNames(i.id, s"${i.id.name}Client").shift(4)}
        |    protected _transport: IRTClientTransport;
        |
        |    constructor(transport: IRTClientTransport) {

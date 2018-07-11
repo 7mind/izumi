@@ -58,7 +58,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     }
 
     val missingDefinitionCase = p"""case _ =>
-           val cname = ${Lit.String(str(id))}
+           val cname = ${Lit.String(id.wireId)}
            val alts = List(..${implementors.map(c => Lit.String(c.name))}).mkString(",")
            Left(DecodingFailure(s"Can't decode type $$fname as $$cname, expected one of [$$alts]", value.history))
       """
@@ -109,19 +109,19 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
     val enc = implementors.map {
       c =>
-        p"""case v: ${toScala(c).typeFull} => Map(${Lit.String(str(c))} -> v).asJson"""
+        p"""case v: ${toScala(c).typeFull} => Map(${Lit.String(c.wireId)} -> v).asJson"""
 
     }
 
 
     val dec = implementors.map {
       c =>
-        p"""case ${Lit.String(str(c))} => value.as[${toScala(c).typeFull}]"""
+        p"""case ${Lit.String(c.wireId)} => value.as[${toScala(c).typeFull}]"""
     }
 
     val missingDefinitionCase = p"""case _ =>
-           val cname = ${Lit.String(str(interface.id))}
-           val alts = List(..${implementors.map(c => Lit.String(str(c)))}).mkString(",")
+           val cname = ${Lit.String(interface.id.wireId)}
+           val alts = List(..${implementors.map(c => Lit.String(c.wireId))}).mkString(",")
            Left(DecodingFailure(s"Can't decode type $$fname as $$cname, expected one of [$$alts]", value.history))
       """
 
@@ -226,9 +226,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     )
   }
 
-  protected def str(c: TypeId): String = {
-    s"${c.path.toPackage.mkString(".")}#${c.name}"
-  }
+
 
   protected def withParseable(ctx: STContext, id: TypeId): CirceTrait = {
     val t = ctx.conv.toScala(id)

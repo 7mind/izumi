@@ -66,7 +66,7 @@ final case class GoLangStruct(
     s"""const (
        |    rtti${name}PackageName = "$pkg"
        |    rtti${name}ClassName = "${typeId.name}"
-       |    rtti${name}FullClassName = "$pkg.${typeId.name}"
+       |    rtti${name}FullClassName = "${typeId.wireId}"
        |)
      """.stripMargin
 

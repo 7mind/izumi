@@ -337,7 +337,7 @@ final case class GoLangField(
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
        |    t, err := time.Parse("2006-01-02T15:04:05.000${if (local) "" else "-07:00"}", value)
-       |    ${if (!local) "if err != nil {\n    t, err = time.Parse(\"2006-01-02T15:04:05.000\", value)\n    }" else ""}
+       |    ${if (!local) "if err != nil {\n    t, err = time.Parse(\"2006-01-02T15:04:05.000Z\", value)\n    }" else ""}
        |    if err != nil {
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY-MM-DDTHH:MM:SS.MIC${if (local) "" else "+00:00"} format. Got %s", value)
        |    }
