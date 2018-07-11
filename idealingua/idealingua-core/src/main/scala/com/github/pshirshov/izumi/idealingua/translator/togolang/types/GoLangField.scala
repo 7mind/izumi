@@ -236,31 +236,15 @@ final case class GoLangField(
        |
        |func (v *$structName) ${renderMemberName(true)}AsString() ${if (optional) "*" else ""}string {
        |    ${if (optional) s"if v.${renderMemberName(false)} == nil {\n        return nil\n    }" else ""}
-       |    year, month, day := v.${renderMemberName(false)}.Date()
-       |    res := fmt.Sprintf("%04d-%02d-%02d", year, month, day)
+       |    res := irt.WriteDate(${if (optional) "*" else ""}v.${renderMemberName(false)})
        |    return ${if (optional) "&" else ""}res
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
-       |    parts := strings.Split(value, "-")
-       |    if len(parts) != 3 {
+       |    res, err := irt.ReadDate(value)
+       |    if err != nil {
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY-MM-DD format. Got %s", value)
        |    }
-       |
-       |    day, err := strconv.Atoi(parts[2])
-       |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY-MM-DD format, day is invalid. Got %s", value)
-       |    }
-       |    month, err := strconv.Atoi(parts[1])
-       |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY-MM-DD format, month is invalid. Got %s", value)
-       |    }
-       |    year, err := strconv.Atoi(parts[0])
-       |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY-MM-DD format, year is invalid. Got %s", value)
-       |    }
-       |
-       |    res := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
        |    v.${renderMemberName(false)} = ${if (optional) "&" else ""}res
        |    return nil
        |}
@@ -278,42 +262,16 @@ final case class GoLangField(
        |
        |func (v *$structName) ${renderMemberName(true)}AsString() ${if (optional) "*" else ""}string {
        |    ${if (optional) s"if v.${renderMemberName(false)} == nil {\n        return nil\n    }" else ""}
-       |    hour := v.${renderMemberName(false)}.Hour()
-       |    minute := v.${renderMemberName(false)}.Minute()
-       |    second := v.${renderMemberName(false)}.Second()
-       |    millis := v.${renderMemberName(false)}.Nanosecond() / int((int64(time.Millisecond) / int64(time.Nanosecond)))
-       |    res := fmt.Sprintf("%02d:%02d:%02d.%03d", hour, minute, second, millis)
+       |    res := irt.WriteTime(${if (optional) "*" else ""}v.${renderMemberName(false)})
        |    return ${if (optional) "&" else ""}res;
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
-       |    parts := strings.Split(value, ":")
-       |    if len(parts) != 3 {
+       |    res, err := irt.ReadTime(value)
+       |    if err != nil {
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the HH:MM:SS.MS format. Got %s", value)
        |    }
-       |    lastParts := strings.Split(parts[2], ".")
-       |    if len(lastParts) != 2 {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the HH:MM:SS.MS format, ms is missing. Got %s", value)
-       |    }
        |
-       |    hour, err := strconv.Atoi(parts[0])
-       |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the HH:MM:SS.MS format, hours are invalid. Got %s", value)
-       |    }
-       |    minute, err := strconv.Atoi(parts[1])
-       |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the HH:MM:SS.MS format, minutes are invalid. Got %s", value)
-       |    }
-       |    second, err := strconv.Atoi(lastParts[0])
-       |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the HH:MM:SS.MS format, seconds are invalid. Got %s", value)
-       |    }
-       |    millis, err := strconv.Atoi(lastParts[1])
-       |    if err != nil {
-       |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the HH:MM:SS.MS format, millis are invalid. Got %s", value)
-       |    }
-       |
-       |    res := time.Date(2000, time.January, 1, hour, minute, second, millis * int(time.Millisecond), time.UTC)
        |    v.${renderMemberName(false)} = ${if (optional) "&" else ""}res
        |    return nil
        |}
@@ -331,17 +289,16 @@ final case class GoLangField(
        |
        |func (v *$structName) ${renderMemberName(true)}AsString() ${if (optional) "*" else ""}string {
        |    ${if (optional) s"if v.${renderMemberName(false)} == nil {\n        return nil\n    }" else ""}
-       |    res := v.${renderMemberName(false)}.Format("${if (local) "2006-01-02T15:04:05.000" else "2006-01-02T15:04:05.000-07:00"}")
+       |    res := irt.Write${if(local)"Local" else "Zone"}DateTime(${if (optional) "*" else ""}v.${renderMemberName(false)})
        |    return ${if (optional) "&" else ""}res
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
-       |    t, err := time.Parse("2006-01-02T15:04:05.000${if (local) "" else "-07:00"}", value)
-       |    ${if (!local) "if err != nil {\n    t, err = time.Parse(\"2006-01-02T15:04:05.000Z\", value)\n    }" else ""}
+       |    t, err := irt.Read${if(local)"Local" else "Zone"}DateTime(value)
        |    if err != nil {
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY-MM-DDTHH:MM:SS.MIC${if (local) "" else "+00:00"} format. Got %s", value)
        |    }
-       |
+
        |    v.${renderMemberName(false)} = ${if (optional) "&" else ""}t
        |    return nil
        |}
