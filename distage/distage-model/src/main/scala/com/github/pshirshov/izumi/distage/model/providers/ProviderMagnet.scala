@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 import scala.language.experimental.macros
 
 /**
-* A function that receives its arguments from DI context, including named instances via [[Id]] annotation.
+* A function that receives its arguments from DI context, including named instances via [[com.github.pshirshov.izumi.distage.model.definition.Id]] annotation.
 *
 * Prefer passing an inline lambda such as { x => y } or a method reference such as (method _)
 *
@@ -20,17 +20,18 @@ import scala.language.experimental.macros
 *   }
 *
 * Method reference:
+*
 *   def constructor(@Id("special") i: Int): Unit = ()
 *
 *   Bindings.provider[Unit](constructor _)
 *
-* fun value with annotated signature:
+* Function value with annotated signature:
 *
 *   val constructor: Int @Id("special") => Unit = _ => ()
 *
 *   Bindings.provider[Unit](constructor)
 *
-* The following IS NOT SUPPORTED, because annotations are lost when converting a method to a function value:
+* The following IS NOT SUPPORTED, because annotations are lost when converting a method into a function value:
 *
 *   def constructorMethod(@Id("special") i: Int): Unit = ()
 *
@@ -38,7 +39,7 @@ import scala.language.experimental.macros
 *
 *   Bindings.provider[Unit](constructor) // Will summon regular Int, not a "special" Int from DI context
 *
-* Annotations on constructor will also be lost when passing a case class's .apply method, use `new` instead.
+* Annotations on constructor will also be lost when passing a case classes .apply method, use `new` instead.
 *
 * DO:
 *

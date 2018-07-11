@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.plugins
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, SimpleModuleDef}
-import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ModuleMergeException}
+import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.distage.model.reflection
 
 

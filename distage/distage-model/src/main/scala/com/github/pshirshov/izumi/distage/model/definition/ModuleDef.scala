@@ -56,9 +56,7 @@ trait ModuleDef extends ModuleBase {
 
 object ModuleDef {
 
-  // DSL state machine...
-
-  // .bind{.as, .provider}{.named}
+  // DSL state machine
 
   final class BindDSL[T]
   (
@@ -230,6 +228,55 @@ object ModuleDef {
     final def from[I <: T : Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
+    /**
+    * See [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet]]
+    *
+    * A function that receives its arguments from DI context, including named instances via [[Id]] annotation.
+    *
+    * Prefer passing an inline lambda such as { x => y } or a method reference such as (method _)
+    *
+    * The following syntaxes are supported by extractor macro:
+    *
+    * Inline lambda:
+    *
+    *   make[Unit].from {
+    *     i: Int @Id("special") => ()
+    *   }
+    *
+    * Method reference:
+    *
+    *   def constructor(@Id("special") i: Int): Unit = ()
+    *
+    *   make[Unit].from(constructor _)
+    *
+    * Function value with annotated signature:
+    *
+    *   val constructor: Int @Id("special") => Unit = _ => ()
+    *
+    *   make[Unit].from(constructor)
+    *
+    * The following **IS NOT SUPPORTED**, because annotations are lost when converting a method into a function value:
+    *
+    *   def constructorMethod(@Id("special") i: Int): Unit = ()
+    *
+    *   val constructor = constructorMethod _
+    *
+    *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI context
+    *
+    * Annotations on constructor will also be lost when passing a case classes .apply method, use `new` instead.
+    *
+    * DO:
+    *
+    *   make[Abc].from(new Abc(_, _, _))
+    *
+    * DON'T:
+    *
+    *   make[Abc].from(Abc.apply _)
+    *
+    * @see [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet]]
+    *      [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
+    *
+    * */
     final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
