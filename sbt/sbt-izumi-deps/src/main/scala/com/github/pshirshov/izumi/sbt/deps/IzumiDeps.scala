@@ -9,11 +9,11 @@ object IzumiDeps {
   object V {
     // foundation
     val scala_212 = "2.12.6"
-    val scala_213 = "2.13.0-M3"
+    val scala_213 = "2.13.0-M4"
 
     val scala_java8_compat = "0.9.0"
     val kind_projector = "0.9.7"
-    val scalatest = "3.0.5"
+    val scalatest = "3.0.6-SNAP1"
 
     val cats = "1.1.0"
     val cats_effect = "0.10.1"
@@ -41,9 +41,9 @@ object IzumiDeps {
   }
 
   object R {
-    val scala_compiler = "org.scala-lang" % "scala-compiler" % V.scala_212
-    val scala_library = "org.scala-lang" % "scala-library" % V.scala_212
-    val scala_reflect = "org.scala-lang" % "scala-reflect" % V.scala_212
+    val scala_compiler = "org.scala-lang" % "scala-compiler"
+    val scala_library = "org.scala-lang" % "scala-library"
+    val scala_reflect = "org.scala-lang" % "scala-reflect"
 
     //val scala_asm = "org.scala-lang.modules" % "scala-asm" % "6.0.0-scala-1"
     //val scala_arm = "com.jsuereth" %% "scala-arm" % "2.0"
@@ -115,9 +115,7 @@ object IzumiDeps {
   }
 
   object T {
-
     val scalatest = R.scalatest % "test"
-    val scala_compiler = R.scala_compiler % "test"
     val slf4j_simple = R.slf4j_simple % "test"
 
     val essentials = Seq(scalatest)

@@ -110,7 +110,7 @@ class IzResources(clazz: Class[_]) {
       }
     )
 
-    RecursiveCopyOutput(targets)
+    RecursiveCopyOutput(targets.toSeq) // 2.13 compat
   }
 
 
