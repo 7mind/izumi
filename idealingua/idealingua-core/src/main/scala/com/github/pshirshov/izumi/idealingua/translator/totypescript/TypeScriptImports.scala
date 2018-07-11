@@ -56,6 +56,9 @@ object TypeScriptImports {
     TypeScriptImports(fromService(ts, i, fromPkg, extra))
 
   protected def withImport(t: TypeId, fromPackage: Package): Seq[String] = {
+    var pathToRoot = ""
+    (1 to fromPackage.size).foreach(_ => pathToRoot += "../")
+
     t match {
       case g: Generic => g match {
         case _: Generic.TOption => return Seq.empty
@@ -64,10 +67,10 @@ object TypeScriptImports {
         case _: Generic.TSet => return Seq.empty
       }
       case p: Primitive => p match {
-        case Primitive.TTs => return Seq("import * as moment from 'moment';")
-        case Primitive.TTsTz => return Seq("import * as moment from 'moment';")
-        case Primitive.TTime => return Seq("import * as moment from 'moment';")
-        case Primitive.TDate => return Seq("import * as moment from 'moment';")
+        case Primitive.TTs => return Seq(s"import { Formatter } from '${pathToRoot}irt';")
+        case Primitive.TTsTz => return Seq(s"import { Formatter } from '${pathToRoot}irt';")
+        case Primitive.TTime => return Seq(s"import { Formatter } from '${pathToRoot}irt';")
+        case Primitive.TDate => return Seq(s"import { Formatter } from '${pathToRoot}irt';")
         case _ => return Seq.empty
       }
       case _ =>
