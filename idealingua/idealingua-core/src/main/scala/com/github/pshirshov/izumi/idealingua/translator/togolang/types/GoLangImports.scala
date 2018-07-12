@@ -11,10 +11,10 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDe
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
-final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
+final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty, prefix: Option[String] = None) {
   def renderImports(extra: Seq[String] = List.empty): String = {
     // Exclude extra ones which are already included into the import
-    val combined = imports.map(i => i.renderImport()) ++ extra.filterNot(e => imports.exists(p => p.pkg.mkString(".") == e)).map(e => "\"" + e + "\"")
+    val combined = imports.map(i => i.renderImport(prefix)) ++ extra.filterNot(e => imports.exists(p => p.pkg.mkString(".") == e)).map(e => "\"" + e + "\"")
 
     if (combined.isEmpty) {
       return ""
@@ -27,7 +27,7 @@ final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
   }
 
   def findImport(id: TypeId): Option[GoLangImportRecord] = {
-    return imports.find(i => i.id == id)
+    imports.find(i => i.id == id)
   }
 
   def withImport(id: TypeId): String = {
@@ -41,19 +41,19 @@ final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
 }
 
 object GoLangImports {
-  def apply(types: List[TypeId], fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord], forTest: Boolean): GoLangImports = {
+  def apply(types: List[TypeId], fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord], forTest: Boolean, prefix: Option[String]): GoLangImports = {
     Quirks.discard(ts)
-    new GoLangImports(fromTypes(types, fromPkg, extra, forTest))
+    new GoLangImports(fromTypes(types, fromPkg, extra, forTest), prefix)
   }
 
-  def apply(imports: List[GoLangImportRecord]): GoLangImports =
-    new GoLangImports(imports)
+  def apply(imports: List[GoLangImportRecord], prefix: Option[String]): GoLangImports =
+    new GoLangImports(imports, prefix)
 
-  def apply(definition: TypeDef, fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord] = List.empty): GoLangImports =
-    GoLangImports(fromDefinition(definition, fromPkg, extra, ts))
+  def apply(definition: TypeDef, fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord] = List.empty, prefix: Option[String] = None): GoLangImports =
+    GoLangImports(fromDefinition(definition, fromPkg, extra, ts), prefix)
 
-  def apply(i: Service, fromPkg: Package, extra: List[GoLangImportRecord]): GoLangImports =
-    GoLangImports(fromService(i, fromPkg, extra))
+  def apply(i: Service, fromPkg: Package, extra: List[GoLangImportRecord], prefix: Option[String]): GoLangImports =
+    GoLangImports(fromService(i, fromPkg, extra), prefix)
 
   protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[Seq[String]] = {
     t match {

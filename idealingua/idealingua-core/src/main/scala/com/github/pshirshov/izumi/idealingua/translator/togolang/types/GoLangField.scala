@@ -11,7 +11,7 @@ final case class GoLangField(
                       name: String,
                       tp: GoLangType,
                       structName: String,
-                      im: GoLangImports = GoLangImports(List.empty),
+                      im: GoLangImports = GoLangImports(List.empty, None),
                       ts: Typespace = null
                       ) {
   def renderMemberName(capitalize: Boolean): String = {
@@ -457,7 +457,7 @@ object GoLangField {
              name: String,
              tp: GoLangType,
              structName: String,
-             im: GoLangImports = GoLangImports(List.empty),
+             im: GoLangImports = GoLangImports(List.empty, None),
              ts: Typespace = null
            ): GoLangField = new GoLangField(name, tp, structName, im, ts)
 }
