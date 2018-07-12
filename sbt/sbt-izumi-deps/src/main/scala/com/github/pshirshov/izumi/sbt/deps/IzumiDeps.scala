@@ -11,6 +11,8 @@ object IzumiDeps {
     val scala_212 = "2.12.6"
     val scala_213 = "2.13.0-M4"
 
+    val collection_compat = "0.1.1"
+
     val scala_java8_compat = "0.9.0"
     val kind_projector = "0.9.7"
     val scalatest = "3.0.6-SNAP1"
@@ -45,11 +47,13 @@ object IzumiDeps {
     val scala_library = "org.scala-lang" % "scala-library"
     val scala_reflect = "org.scala-lang" % "scala-reflect"
 
+    val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
+
     //val scala_asm = "org.scala-lang.modules" % "scala-asm" % "6.0.0-scala-1"
     //val scala_arm = "com.jsuereth" %% "scala-arm" % "2.0"
 
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % V.scala_java8_compat
-    val essentials = Seq(scala_java8_compat)
+    val essentials = Seq(scala_java8_compat, collection_compat)
 
 
     val kind_projector = "org.spire-math" % "kind-projector" % V.kind_projector cross CrossVersion.binary
