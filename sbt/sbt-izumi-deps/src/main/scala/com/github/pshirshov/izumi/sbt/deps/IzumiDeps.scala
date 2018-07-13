@@ -13,33 +13,30 @@ object IzumiDeps {
 
     val collection_compat = "0.1.1"
 
-    val scala_java8_compat = "0.9.0"
-    val kind_projector = "0.9.7"
-    val scalatest = "3.0.6-SNAP1"
+    val scala_java8_compat = "0.9.0" // 2.13+
+    val kind_projector = "0.9.7" // 2.13+
+    val scalatest = "3.0.6-SNAP1" // 2.13+
 
-    val cats = "1.1.0"
+    val shapeless = "2.3.3" // 2.13+
+    val cats = "1.1.0" // https://github.com/typelevel/cats/issues/2267
     val cats_effect = "0.10.1"
-    val circe = "0.9.3"
+    val circe = "0.9.3" // https://github.com/circe/circe/issues/770
     val circe_derivation = "0.9.0-M5"
-    val shapeless = "2.3.3"
-    val http4s = "0.18.13"
+    val http4s = "0.18.13" // https://github.com/http4s/http4s/issues/1797
 
-    val scalameta = "3.7.4"
-    val fast_classpath_scanner = "3.1.6"
-    val fastparse = "1.0.0"
+    val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
+    val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
 
-    val slf4j = "1.7.25"
-    val typesafe_config = "1.3.3"
+    val fast_classpath_scanner = "3.1.9" // java
+    val slf4j = "1.7.25" // java
+    val typesafe_config = "1.3.3" // java
 
     // good to drop
-    val cglib_nodep = "3.2.6"
-    val json4s = "3.5.4"
-    val scopt = "3.7.0"
+    val json4s = "3.5.4"  // 2.13+
+    val scopt = "3.7.0" // 2.13+
 
-    // unused
-    val better_files = "3.4.0"
-    val kamon_core = "1.0.0"
-    val kamon_jmx = "0.6.7"
+    // good to drop
+    val cglib_nodep = "3.2.7" // java
   }
 
   object R {
@@ -55,19 +52,11 @@ object IzumiDeps {
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % V.scala_java8_compat
     val essentials = Seq(scala_java8_compat, collection_compat)
 
-
     val kind_projector = "org.spire-math" % "kind-projector" % V.kind_projector cross CrossVersion.binary
-
-    val better_files = "com.github.pathikrit" %% "better-files" % V.better_files
 
     val fast_classpath_scanner = "io.github.lukehutch" % "fast-classpath-scanner" % V.fast_classpath_scanner
 
     val typesafe_config = "com.typesafe" % "config" % V.typesafe_config
-
-    val kamon = Seq(
-      "io.kamon" %% "kamon-core" % V.kamon_core
-      , "io.kamon" %% "kamon-jmx" % V.kamon_jmx
-    )
 
     val cats_kernel = "org.typelevel" %% "cats-kernel" % V.cats
     val cats_all: Seq[ModuleID] = Seq(
