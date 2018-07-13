@@ -50,7 +50,7 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
       V.scala_212,
-//      V.scala_213,
+      V.scala_213,
     )
     , sonatypeProfileName := "com.github.pshirshov"
     , addCompilerPlugin(R.kind_projector)
