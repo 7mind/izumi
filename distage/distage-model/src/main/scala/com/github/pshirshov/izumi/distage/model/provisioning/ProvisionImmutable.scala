@@ -11,8 +11,8 @@ final case class ProvisionImmutable
 ) extends Provision {
   override def narrow(allRequiredKeys: Set[RuntimeDIUniverse.DIKey]): Provision = {
     ProvisionImmutable(
-      instances.filterKeys(allRequiredKeys.contains)
-      , imports.filterKeys(allRequiredKeys.contains)
+      instances.filterKeys(allRequiredKeys.contains).toMap // 2.13 compat
+      , imports.filterKeys(allRequiredKeys.contains).toMap // 2.13 compat
     )
   }
 

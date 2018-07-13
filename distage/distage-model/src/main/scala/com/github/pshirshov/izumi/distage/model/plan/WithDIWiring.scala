@@ -150,7 +150,7 @@ trait WithDIWiring {
       def replaceKeys(f: Association => DIKey): FactoryFunction =
         factoryMethod.copy(
           providerArguments = factoryMethod.providerArguments.map(a => a.withWireWith(f(a)))
-          , factoryIndex = factoryMethod.factoryIndex.mapValues(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
+          , factoryIndex = factoryMethod.factoryIndex.mapValues(m => m.copy(wireWith = m.wireWith.replaceKeys(f))).toMap // 2.13 compat
         )
     }
 

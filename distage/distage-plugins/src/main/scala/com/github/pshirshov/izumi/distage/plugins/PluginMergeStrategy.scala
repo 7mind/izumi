@@ -36,7 +36,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       .filterNot(isDisabled)
       .map(d => d.key -> d)
       .toMultimap
-      .flatMap(resolve)
+      .flatMap(resolve _)
 
     JustLoadedPlugins(SimpleModuleDef(resolved.toSet))
   }

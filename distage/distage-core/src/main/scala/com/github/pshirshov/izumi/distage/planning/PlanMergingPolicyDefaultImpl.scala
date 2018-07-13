@@ -83,12 +83,16 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
         case (missing, refs) =>
           missing -> ImportDependency(missing, refs.toSet)
       }
+      .toMap
 
-    val sortedKeys = Graphs.toposort.cycleBreaking(completedPlan.topology.depMap ++ imports.mapValues(v => Set.empty[DIKey]), Seq.empty)
+    val sortedKeys = Graphs.toposort.cycleBreaking(
+      completedPlan.topology.depMap ++ imports.mapValues(v => Set.empty[DIKey]).toMap // 2.13 compat
+      , Seq.empty
+    )
 
 
     val sortedOps = sortedKeys.flatMap(k => completedPlan.operations.get(k).toSeq)
-    val out = ResolvedSetsPlan(imports.toMap, sortedOps, completedPlan.issues)
+    val out = ResolvedSetsPlan(imports.toMap, sortedOps, completedPlan.issues.toSeq) // 2.13 compat
     out
   }
 }

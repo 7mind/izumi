@@ -58,5 +58,6 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
     plugins
       .map(_.getClassRef.asSubclass(base))
       .map(_.getDeclaredConstructor().newInstance())
+      .toSeq // 2.13 compat
   }
 }
