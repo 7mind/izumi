@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.Log.LogContext
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogUnit
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy, StringRenderingPolicy}
-import org.json4s.JsonAST.JObject
+import org.json4s.JsonAST.{JField, JObject}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
 
@@ -53,7 +53,7 @@ class JsonRenderingPolicy() extends RenderingPolicy {
 
   private def makeJson(p: Map[String, Set[String]]): JObject = {
     val (unary, multiple) = p.partition(_._2.size == 1)
-    (unary.mapValues(_.head): JObject) ~ multiple
+    (unary.map(kv => JField(kv._1, kv._2.head)) : JObject) ~ multiple
   }
 
   protected def mkMap(values: LogContext): Map[String, Set[String]] = {
