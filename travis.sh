@@ -44,7 +44,7 @@ function coverage {
 
 function scripted {
   bopen
-  csbt clean '"scripted sbt-izumi-plugins/*"' || exit 1
+  csbt clean publishLocal '"scripted sbt-izumi-plugins/*"' || exit 1
   bclose
 }
 
