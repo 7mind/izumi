@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan, ReplanningContext}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
@@ -18,7 +18,21 @@ trait PlanningHook {
     next
   }
 
-  def hookResolved(plan: FinalPlan): FinalPlan = plan
+  def hookResolved(context: ReplanningContext, plan: FinalPlan): FinalPlan = {
+    Quirks.discard(context)
+    plan
+  }
 
-  def hookFinal(plan: FinalPlan): FinalPlan = plan
+  def hookFinal(context: ReplanningContext, plan: FinalPlan): FinalPlan = {
+    Quirks.discard(context)
+    plan
+  }
+
+  protected def firstOnly[P](context: ReplanningContext, plan: P)(f: P => P): P = {
+    if (context.count == 0) {
+      f(plan)
+    } else {
+      plan
+    }
+  }
 }

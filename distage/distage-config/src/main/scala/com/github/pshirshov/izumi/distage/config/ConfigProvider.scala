@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReader
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl, ReplanningContext}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
@@ -17,32 +17,33 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
   import ConfigProvider._
 
-  override def hookFinal(plan: FinalPlan): FinalPlan = {
-    val updatedSteps = plan.steps
-      .map {
-        case ConfigImport(ci) =>
-          try {
-            val requirement = toRequirement(ci)
-            translate(ci.imp, requirement)
-          } catch {
-            case NonFatal(t) =>
-              TranslationResult.Failure(ci.imp, t)
-          }
+  override def hookFinal(context: ReplanningContext, plan: FinalPlan): FinalPlan = firstOnly(context, plan) {
+    plan =>
+      val updatedSteps = plan.steps
+        .map {
+          case ConfigImport(ci) =>
+            try {
+              val requirement = toRequirement(ci)
+              translate(ci.imp, requirement)
+            } catch {
+              case NonFatal(t) =>
+                TranslationResult.Failure(ci.imp, t)
+            }
 
-        case s =>
-          TranslationResult.Success(s)
+          case s =>
+            TranslationResult.Success(s)
+        }
+
+      val errors = updatedSteps.collect({ case t: TranslationFailure => t })
+
+      if (errors.nonEmpty) {
+        // TODO: instead of throwing exception we may just print a warning and leave import in place. It would fail on provisioning anyway
+        throw new ConfigTranslationException(s"Cannot resolve config due to errors:\n - ${errors.mkString("\n - ")}", errors)
       }
 
-    val errors = updatedSteps.collect({ case t: TranslationFailure => t })
-
-    if (errors.nonEmpty) {
-      // TODO: instead of throwing exception we may just print a warning and leave import in place. It would fail on provisioning anyway
-      throw new ConfigTranslationException(s"Cannot resolve config due to errors:\n - ${errors.mkString("\n - ")}", errors)
-    }
-
-    val ops = updatedSteps.collect({ case TranslationResult.Success(op) => op })
-    val newPlan = FinalPlanImmutableImpl(plan.definition, ops)
-    newPlan
+      val ops = updatedSteps.collect({ case TranslationResult.Success(op) => op })
+      val newPlan = FinalPlanImmutableImpl(plan.definition, ops)
+      newPlan
   }
 
   private def translate(op: ExecutableOp, step: RequiredConfigEntry): TranslationResult = {

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan, ReplanningContext}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -27,17 +27,17 @@ class PlanningHookAggregate(hooks: Set[PlanningHook]) extends PlanningHook {
     }
   }
 
-  override def hookResolved(plan: FinalPlan): FinalPlan = {
+  override def hookResolved(context: ReplanningContext, plan: FinalPlan): FinalPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>
-        hook.hookResolved(acc)
+        hook.hookResolved(context, acc)
     }
   }
 
-  override def hookFinal(plan: FinalPlan): FinalPlan = {
+  override def hookFinal(context: ReplanningContext, plan: FinalPlan): FinalPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>
-        hook.hookFinal(acc)
+        hook.hookFinal(context, acc)
     }
   }
 }

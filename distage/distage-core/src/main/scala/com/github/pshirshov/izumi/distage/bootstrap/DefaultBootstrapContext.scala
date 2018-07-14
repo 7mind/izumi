@@ -55,6 +55,7 @@ object DefaultBootstrapContext {
 
     new PlannerDefaultImpl(
       new PlanResolverDefaultImpl
+      , analyzer
       , new ForwardingRefResolverDefaultImpl(analyzer)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
