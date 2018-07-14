@@ -5,7 +5,6 @@ import com.github.pshirshov.izumi.distage.model.exceptions.SanityCheckFailedExce
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
-import com.github.pshirshov.izumi.distage.model.reflection
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.collections.Graphs
 
@@ -20,11 +19,10 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
 
         val issues = findIssues(currentPlan, op)
         if (issues.isEmpty) {
-          val opDeps = transitiveDeps(currentPlan, op)
           val old = currentPlan.operations.get(target)
           val merged = merge(old, op)
           currentPlan.operations.put(target, merged)
-          currentPlan.topology.register(target, opDeps)
+          analyzer.topoExtend(currentPlan.topology, op)
         } else {
           currentPlan.issues ++= issues
         }
@@ -42,14 +40,6 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
       case other =>
         throw new SanityCheckFailedException(s"Unexpected pair: $other")
     }
-  }
-
-  private def transitiveDeps(plan: DodgyPlan, op: InstantiationOp): Set[reflection.universe.RuntimeDIUniverse.DIKey] = {
-    val opDeps = analyzer.requirements(op).flatMap {
-      req =>
-        plan.topology.dependencies.getOrElse(req, mutable.Set.empty[DIKey]) + req
-    }
-    opDeps
   }
 
   private def findIssues(currentPlan: DodgyPlan, op: InstantiationOp) = {
