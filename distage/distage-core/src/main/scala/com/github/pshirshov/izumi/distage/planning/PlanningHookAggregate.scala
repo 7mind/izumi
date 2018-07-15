@@ -41,6 +41,13 @@ class PlanningHookAggregate(hooks: Set[PlanningHook]) extends PlanningHook {
     }
   }
 
+  override def phase15PostOrdering(plan: FinalPlan): FinalPlan = {
+    hooks.foldLeft(plan) {
+      case (acc, hook) =>
+        hook.phase15PostOrdering(acc)
+    }
+  }
+
   override def phase20PreForwarding(plan: FinalPlan): FinalPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>

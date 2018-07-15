@@ -45,9 +45,13 @@ class PlannerDefaultImpl
       .map(hook.phase10PostOrdering)
       .eff(planningObserver.onPhase10PostOrdering)
 
+      .map(hook.phase15PostOrdering)
+      .eff(planningObserver.onPhase10PostOrdering)
+
       .map(hook.phase20PreForwarding)
       .eff(planningObserver.onPhase20PreForwarding)
 
+      .map(planMergingPolicy.reorderOperations)
       .map(forwardingRefResolver.resolve)
       .map(hook.phase30AfterForwarding)
       .eff(planningObserver.onPhase30AfterForwarding)

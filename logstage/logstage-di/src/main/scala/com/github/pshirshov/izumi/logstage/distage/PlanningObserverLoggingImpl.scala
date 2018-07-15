@@ -17,6 +17,10 @@ class PlanningObserverLoggingImpl(log: IzLogger) extends PlanningObserver {
     log.debug(s"[onPhase10PostOrdering]:\n$plan")
   }
 
+  override def onPhase15PostOrdering(plan: FinalPlan): Unit = {
+    log.debug(s"[onPhase15PostOrdering]:\n$plan")
+  }
+
   override def onPhase20PreForwarding(plan: FinalPlan): Unit = {
     log.debug(s"[onPhase20PreForwarding]:\n$plan")
   }

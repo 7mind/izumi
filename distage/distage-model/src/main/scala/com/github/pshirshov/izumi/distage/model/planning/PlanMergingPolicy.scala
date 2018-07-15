@@ -5,5 +5,8 @@ import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan, Next
 
 trait PlanMergingPolicy {
   def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan
+
   def reorderOperations(completedPlan: DodgyPlan): FinalPlan
+
+  def reorderOperations(completedPlan: FinalPlan): FinalPlan
 }

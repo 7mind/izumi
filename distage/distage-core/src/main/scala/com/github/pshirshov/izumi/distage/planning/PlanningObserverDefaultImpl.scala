@@ -10,6 +10,8 @@ class PlanningObserverDefaultImpl extends PlanningObserver {
 
   override def onPhase10PostOrdering(plan: FinalPlan): Unit = {}
 
+  override def onPhase15PostOrdering(plan: FinalPlan): Unit = {}
+
   override def onPhase30AfterForwarding(finalPlan: FinalPlan): Unit = {}
 
   override def onPhase20PreForwarding(finalPlan: FinalPlan): Unit = {}

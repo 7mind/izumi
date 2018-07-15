@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.exceptions.{SanityCheckFailedException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.collections.Graphs
 
@@ -67,11 +68,23 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     if (completedPlan.issues.nonEmpty) {
       throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy):\n${completedPlan.issues.mkString("\n")}", completedPlan.issues)
     }
+
+    sortPlan(completedPlan.topology, completedPlan.definition, completedPlan.operations.toMap)
+  }
+
+  override def reorderOperations(completedPlan: FinalPlan): FinalPlan = {
+    val definition = completedPlan.definition
+    val index = completedPlan.steps.collect({case op: InstantiationOp => op.target -> op}).toMap
+
+    val topology = analyzer.topoBuild(completedPlan.steps)
     // TODO: further unification with PlanAnalyzer
-    val imports = completedPlan
-      .topology
+    sortPlan(topology, completedPlan.definition, index)
+  }
+
+  def sortPlan(topology: PlanTopology, definition: ModuleBase, index: Map[RuntimeDIUniverse.DIKey, InstantiationOp]): FinalPlan = {
+    val imports = topology
       .dependees
-      .filterKeys(k => !completedPlan.operations.contains(k))
+      .filterKeys(k => !index.contains(k))
       .map {
         case (missing, refs) =>
           missing -> ImportDependency(missing, refs.toSet)
@@ -79,15 +92,12 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
       .toMap
 
     val sortedKeys = Graphs.toposort.cycleBreaking(
-      completedPlan.topology.depMap ++ imports.mapValues(v => Set.empty[DIKey]).toMap // 2.13 compat
+      topology.depMap ++ imports.mapValues(v => Set.empty[DIKey]).toMap // 2.13 compat
       , Seq.empty
     )
 
-
-
-
-    val sortedOps = sortedKeys.flatMap(k => completedPlan.operations.get(k).toSeq)
-    FinalPlanImmutableImpl(completedPlan.definition, imports.values.toSeq ++ sortedOps)
+    val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
+    FinalPlanImmutableImpl(definition, imports.values.toSeq ++ sortedOps)
   }
 }
 

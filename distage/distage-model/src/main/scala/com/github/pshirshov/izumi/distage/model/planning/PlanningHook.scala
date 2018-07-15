@@ -22,6 +22,8 @@ trait PlanningHook {
 
   def phase10PostOrdering(plan: FinalPlan): FinalPlan = plan
 
+  def phase15PostOrdering(plan: FinalPlan): FinalPlan = plan
+
   def phase20PreForwarding(plan: FinalPlan): FinalPlan = plan
 
   def phase30AfterForwarding(plan: FinalPlan): FinalPlan = plan

@@ -18,6 +18,10 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
 
   }
 
+  override def onPhase15PostOrdering(plan: FinalPlan): Unit = {
+
+  }
+
   override def onPhase20PreForwarding(finalPlan: FinalPlan): Unit = {
     logPlan(finalPlan, "Resolved Plan")
   }

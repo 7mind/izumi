@@ -7,6 +7,7 @@ trait PlanningObserver {
 
   def onPhase00PlanCompleted(plan: DodgyPlan): Unit
   def onPhase10PostOrdering(plan: FinalPlan): Unit
+  def onPhase15PostOrdering(plan: FinalPlan): Unit
   def onPhase20PreForwarding(plan: FinalPlan): Unit
   def onPhase30AfterForwarding(finalPlan: FinalPlan): Unit
 }
