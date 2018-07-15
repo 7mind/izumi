@@ -232,7 +232,7 @@ object LogUnit {
 
           case Failure(f) =>
             import IzThrowable._
-            val message = s"[${argValue.getClass.getCanonicalName}#toString failed]\n${f.stackTrace} "
+            val message = s"[${argValue.getClass.getName}#toString failed]\n${f.stackTrace} "
             wrapped(withColors, Console.RED, message)
         }
     }
