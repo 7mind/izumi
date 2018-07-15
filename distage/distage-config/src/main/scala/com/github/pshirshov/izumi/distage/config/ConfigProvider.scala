@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl, ReplanningContext}
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.planning.{PlanningHook, ExtendedFinalPlan}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.util.Try
@@ -17,7 +17,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
   import ConfigProvider._
 
-  override def hookFinal(context: ReplanningContext, plan: FinalPlan): FinalPlan = firstOnly(context, plan) {
+  override def hookFinal(context: ReplanningContext, plan: FinalPlan): ExtendedFinalPlan = firstOnly(context, plan) {
     plan =>
       val updatedSteps = plan.steps
         .map {
@@ -43,7 +43,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
       val ops = updatedSteps.collect({ case TranslationResult.Success(op) => op })
       val newPlan = FinalPlanImmutableImpl(plan.definition, ops)
-      newPlan
+      ExtendedFinalPlan(newPlan, replanningRequested = false)
   }
 
   private def translate(op: ExecutableOp, step: RequiredConfigEntry): TranslationResult = {

@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.Planner
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.exceptions.ReplanningLimitReached
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
@@ -19,6 +18,7 @@ import scala.collection.mutable.ArrayBuffer
 class PlannerDefaultImpl
 (
   protected val planResolver: PlanResolver
+  , protected val replanningCriterion: ReplanningCriterion
   , protected val planAnalyzer: PlanAnalyzer
   , protected val forwardingRefResolver: ForwardingRefResolver
   , protected val reflectionProvider: ReflectionProvider.Runtime
@@ -42,22 +42,13 @@ class PlannerDefaultImpl
           .get
     }
 
-    Value(finish(ReplanningContext(0, context, plan, None)))
+    Value(finish(ReplanningContext(0, context, plan)))
       .eff(sanityChecker.assertFinalPlanSane)
       .get
   }
 
 
   def finish(context: ReplanningContext): FinalPlan = {
-    if (context.count > 5) {
-      throw new ReplanningLimitReached(
-        s"""Replanning limit reached, giving up.
-           |Note:
-           |(1) replanning is a last-chance feature, use it carefully
-           |(2) replanning always happens when a hook returns a plan which differs from previous one
-         """.stripMargin, context)
-    }
-
     val candidatePlan = Value(context.source)
       .map(planMergingPolicy.resolve)
       .map(forwardingRefResolver.resolve)
@@ -70,17 +61,18 @@ class PlannerDefaultImpl
       .eff(planningObserver.onResolvingFinished(context, _))
 
     val finalPlan = afterResolveHook
+      .map(_.plan)
       .map(hook.hookFinal(context, _))
       .eff(planningObserver.onFinalPlan(context, _))
       .get
 
-    if (finalPlan.steps != candidatePlan.get.steps) {
+    if (replanningCriterion.shouldReplan(context, afterResolveHook, finalPlan)) {
       val opMap = new DodgyPlan.OpMap()
-      opMap ++= finalPlan.steps.collect({ case i: InstantiationOp => (i.target, i) })
-      val newSource = DodgyPlan(opMap, planAnalyzer.topoBuild(finalPlan.steps), ArrayBuffer.empty)
-      finish(context.copy(count = context.count + 1, source = newSource, previous = Some(finalPlan)))
+      opMap ++= finalPlan.plan.steps.collect({ case i: InstantiationOp => (i.target, i) })
+      val newSource = DodgyPlan(opMap, planAnalyzer.topoBuild(finalPlan.plan.steps), ArrayBuffer.empty)
+      finish(context.copy(count = context.count + 1, source = newSource))
     } else {
-      finalPlan
+      finalPlan.plan
     }
   }
 

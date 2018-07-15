@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan, ReplanningContext, ResolvedCyclesPlan}
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ReplanningContext, ResolvedCyclesPlan}
+import com.github.pshirshov.izumi.distage.model.planning.{PlanningObserver, ExtendedFinalPlan}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 class PlanningObserverDefaultImpl extends PlanningObserver {
@@ -13,12 +13,12 @@ class PlanningObserverDefaultImpl extends PlanningObserver {
     Quirks.discard(context, plan)
   }
 
-  override def onResolvingFinished(context: ReplanningContext, plan: FinalPlan): Unit = {
+  override def onResolvingFinished(context: ReplanningContext, plan: ExtendedFinalPlan): Unit = {
     Quirks.discard(context, plan)
   }
 
-  override def onFinalPlan(context: ReplanningContext, finalPlan: FinalPlan): Unit = {
-    Quirks.discard(context, finalPlan)
+  override def onFinalPlan(context: ReplanningContext, plan: ExtendedFinalPlan): Unit = {
+    Quirks.discard(context, plan)
   }
 }
 
