@@ -19,13 +19,16 @@ class ExampleService(logger: IzLogger) {
     val arg = "this is an argument"
 
     loggerWithContext.trace(s"This would be automatically extended")
-    logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}:random")
+    logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt() -> "random value"}")
     loggerWithSubcontext.info("Just a string")
-    logger.warn("Just an integer: " + 1)
-    val arg1 = 5
-    logger.crit(s"This is an expression: ${2 + 2 == 4} and this is an other one: ${5 * arg1 == 25}")
+    logger.crit(s"This is an expression: ${Random.nextInt() -> "xxx"}")
     val t = new RuntimeException("Oy vey!")
     logger.crit(s"A failure happened: $t")
+
+    // cornercases
+    val arg1 = 5
+    logger.warn("[Cornercase logger usage] non-interpolated expression: " + 1)
+    logger.crit(s"[Cornercase logger usage] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}")
   }
 
   def work(): Unit = {

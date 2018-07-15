@@ -61,24 +61,30 @@ object LoggingMacro {
 
     val messageTree = message.tree match {
       // qq causes a weird warning here
-      //case q"StringContext($stringContext).s(..$args)" =>
-      case c.universe.Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
+      //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
+      case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
         val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
         reifyContext(c)(stringContext, namedArgs)
 
-      case c.universe.Literal(c.universe.Constant(s)) =>
+      case Literal(c.universe.Constant(s)) =>
         val emptyArgs = reify(List("@type" -> "const"))
         val sc = q"StringContext(${s.toString})"
         reifyContext(c)(sc, emptyArgs)
 
       case other =>
         c.warning(c.enclosingPosition,
-          s"""Complex expression as an input for a logger: ${other.toString()}. Variables won't be bound in context. This may not be what you want, use string interpolation instead: s"message with an $${argument}" """)
+          s"""Complex expression as an input for a logger: ${other.toString()}.
+             |
+             |Izumi logger expect you to apply string interpolations:
+             |1) Simple variable logger.log(s"My message: $$argument")
+             |2) Named expression logger.log(s"My message: $${Some.expression -> "argname"}")
+             |""".stripMargin)
         val emptyArgs = q"""List("@type" -> "expr", "@expr" -> ${other.toString()})"""
         val sc = q"StringContext($other)"
         reifyContext(c)(sc, c.Expr(emptyArgs))
     }
 
+    assert(1 != 2)
     logMacro(c)(messageTree, logLevel)
   }
 

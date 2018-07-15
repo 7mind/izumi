@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.fundamentals.reflection
 
 import com.github.pshirshov.izumi.fundamentals.platform.console.AbstractStringTrivialSink
 
-import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 
