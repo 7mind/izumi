@@ -29,6 +29,7 @@ before_install:
   - echo "Go `go version`"
   - echo "TS `tsc -version`"
   - echo "Java `java -version`"
+  - echo "addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M4")" > ~/.sbt/1.0/plugins/build.sbt
 
 before_script:
   - bash travis.sh versionate
