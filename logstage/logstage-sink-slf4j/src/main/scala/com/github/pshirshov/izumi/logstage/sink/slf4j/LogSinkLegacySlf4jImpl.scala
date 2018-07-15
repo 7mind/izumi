@@ -52,7 +52,7 @@ class LogSinkLegacySlf4jImpl
   private def log(logger: (Marker, String, Throwable) => Unit, message: Log.Entry): Unit = {
     val throwable = message.firstThrowable
     val asString = policy.render(message)
-    val markers = markerFactory.getMarker(s"${message.context.static.file}:${message.context.static.line}")
+    val markers = markerFactory.getMarker(s"${message.context.static.position.file}:${message.context.static.position.line}")
     logger(markers, asString, throwable.orNull)
   }
 

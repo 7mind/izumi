@@ -24,8 +24,8 @@ class JsonRenderingPolicy() extends RenderingPolicy {
     val messageInfo = ("@event" ->
       ("class" -> new RichInt(formatted.template.hashCode).toHexString) ~
         ("logger" -> entry.context.static.id.id) ~
-        ("line" -> entry.context.static.line) ~
-        ("file" -> entry.context.static.file) ~
+        ("line" -> entry.context.static.position.line) ~
+        ("file" -> entry.context.static.position.file) ~
         ("thread" ->
           ("id" -> entry.context.dynamic.threadData.threadId) ~
             ("name" -> entry.context.dynamic.threadData.threadName)

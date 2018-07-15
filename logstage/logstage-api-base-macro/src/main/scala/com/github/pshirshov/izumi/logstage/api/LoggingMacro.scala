@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
+import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 import com.github.pshirshov.izumi.logstage.api.Log.{LoggerId, Message, StaticExtendedContext, ThreadData}
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 
@@ -97,18 +97,17 @@ object LoggingMacro {
 
     val receiver = reify(c.prefix.splice.asInstanceOf[LoggingMacro].receiver)
 
-    val (line, file, applicationPointId) = MacroUtil.EnclosingPosition.getEnclosingPositionExprs(c)
+    val pos = CodePositionMaterializer.getEnclosingPosition(c)
 
     val loggerId = reify {
-      LoggerId(applicationPointId.splice)
+      LoggerId(pos.splice.value.applicationPointId)
     }
 
     val entry = reify {
       val self = c.prefix.splice.asInstanceOf[LoggingMacro]
       val thread = Thread.currentThread()
       val dynamicContext = Log.DynamicContext(logLevel.splice, ThreadData(thread.getName, thread.getId), System.currentTimeMillis())
-
-      val extendedStaticContext = StaticExtendedContext(loggerId.splice, file.splice, line.splice)
+      val extendedStaticContext = StaticExtendedContext(loggerId.splice, pos.splice.value.position)
       Log.Entry(message.splice, Log.Context(extendedStaticContext, dynamicContext, self.contextCustom))
     }
 

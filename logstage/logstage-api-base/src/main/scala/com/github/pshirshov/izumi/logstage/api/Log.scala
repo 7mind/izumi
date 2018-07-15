@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api
 
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
+
 object Log {
 
   sealed trait Level extends Ordered[Level] {
@@ -55,7 +57,7 @@ object Log {
 
   final case class LoggerId(id: String) extends AnyVal
 
-  final case class StaticExtendedContext(id: LoggerId, file: String, line: Int)
+  final case class StaticExtendedContext(id: LoggerId, position: SourceFilePosition)
 
   final case class ThreadData(threadName: String, threadId: Long)
 

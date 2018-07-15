@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.reflection.macros
 
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil.MacroSink
+import com.github.pshirshov.izumi.fundamentals.reflection.MacroTrivialSink
 
 import scala.reflect.ClassTag
 import scala.reflect.macros.blackbox
@@ -13,5 +13,5 @@ import scala.reflect.macros.blackbox
 */
 object TrivialMacroLogger {
   def apply[T: ClassTag](c: blackbox.Context): TrivialLogger =
-    TrivialLogger.make[T]("izumi.distage.debug.macro", sink = new MacroSink(c))
+    TrivialLogger.make[T]("izumi.distage.debug.macro", sink = new MacroTrivialSink(c))
 }

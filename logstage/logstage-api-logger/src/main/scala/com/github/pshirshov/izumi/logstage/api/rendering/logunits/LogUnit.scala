@@ -114,8 +114,7 @@ object LogUnit {
     )
 
     override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
-      withMargin(s"(${entry.context.static.file}:${entry.context.static.line})", margin)
-
+      withMargin( entry.context.static.position.toString, margin)
     }
 
     override def undefined(entry: Log.Entry): Boolean = false

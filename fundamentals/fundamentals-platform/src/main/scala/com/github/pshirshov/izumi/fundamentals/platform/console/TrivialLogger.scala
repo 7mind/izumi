@@ -10,7 +10,7 @@ trait TrivialLogger {
   def log(s: String, e: Throwable): Unit
 }
 
-class TrivialLoggerImpl(sink: AbstractStringSink) extends TrivialLogger {
+class TrivialLoggerImpl(sink: AbstractStringTrivialSink) extends TrivialLogger {
   override def log(s: => String): Unit = sink.flush(s)
 
   override def log(s: String, e: Throwable): Unit = {
@@ -30,13 +30,13 @@ class TrivialLoggerNullImpl() extends TrivialLogger {
 }
 
 object TrivialLogger {
-  def make[T: ClassTag](id: String, sink: AbstractStringSink = SystemErrStringSink, forceLog: Boolean = false): TrivialLogger = {
+  def make[T: ClassTag](id: String, sink: AbstractStringTrivialSink = SystemErrStringTrivialSink, forceLog: Boolean = false): TrivialLogger = {
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
     val sink0 = if (System.getProperty(id).asBoolean().getOrElse(false) || forceLog) {
       sink
     } else {
-      NullStringSink
+      NullStringTrivialSink
     }
 
     new TrivialLoggerImpl(sink0)
