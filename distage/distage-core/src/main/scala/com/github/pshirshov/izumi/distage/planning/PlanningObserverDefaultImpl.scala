@@ -8,12 +8,12 @@ class PlanningObserverDefaultImpl extends PlanningObserver {
 
   override def onPhase00PlanCompleted(plan: DodgyPlan): Unit = {}
 
-  override def onPhase10PostOrdering(plan: FinalPlan): Unit = {}
+  override def onPhase10PostFinalization(plan: FinalPlan): Unit = {}
 
-  override def onPhase15PostOrdering(plan: FinalPlan): Unit = {}
+  override def onPhase20Customization(plan: FinalPlan): Unit = {}
 
-  override def onPhase30AfterForwarding(finalPlan: FinalPlan): Unit = {}
+  override def onPhase90AfterForwarding(finalPlan: FinalPlan): Unit = {}
 
-  override def onPhase20PreForwarding(finalPlan: FinalPlan): Unit = {}
+  override def onPhase50PreForwarding(finalPlan: FinalPlan): Unit = {}
 }
 

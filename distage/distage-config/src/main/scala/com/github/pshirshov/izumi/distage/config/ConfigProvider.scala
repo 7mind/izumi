@@ -17,7 +17,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
   import ConfigProvider._
 
-  override def phase20PreForwarding(plan: FinalPlan): FinalPlan = {
+  override def phase20Customization(plan: FinalPlan): FinalPlan = {
     val updatedSteps = plan.steps
       .map {
         case ConfigImport(ci) =>

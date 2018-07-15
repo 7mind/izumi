@@ -63,12 +63,12 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
   }
 
 
-
-  override def reorderOperations(completedPlan: DodgyPlan): FinalPlan = {
+  override def finalizePlan(completedPlan: DodgyPlan): FinalPlan = {
     if (completedPlan.issues.nonEmpty) {
       throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy):\n${completedPlan.issues.mkString("\n")}", completedPlan.issues)
     }
 
+    // TODO: it may be not neccessary to sort at this stage
     sortPlan(completedPlan.topology, completedPlan.definition, completedPlan.operations.toMap)
   }
 
