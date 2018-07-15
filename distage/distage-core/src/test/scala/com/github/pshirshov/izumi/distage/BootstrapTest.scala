@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
-import com.github.pshirshov.izumi.distage.model.planning.PlanResolver
+import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.planning.PlanResolverDefaultImpl
+import com.github.pshirshov.izumi.distage.planning.PlanAnalyzerDefaultImpl
 import org.scalatest.WordSpec
 
 class BootstrapTest extends WordSpec {
@@ -16,23 +16,23 @@ class BootstrapTest extends WordSpec {
         def publicLookup[T: Tag](key: DIKey): Option[TypedRef[T]] = super.lookup(key)
       }
 
-      val maybeResolver = context.find[PlanResolver]
-      val noResolver = context.find[PlanResolver]("another.one")
+      val maybeResolver = context.find[PlanAnalyzer]
+      val noResolver = context.find[PlanAnalyzer]("another.one")
 
-      assert(maybeResolver.exists(_.isInstanceOf[PlanResolverDefaultImpl]))
+      assert(maybeResolver.exists(_.isInstanceOf[PlanAnalyzerDefaultImpl]))
       assert(noResolver.isEmpty)
-      assert(context.get[PlanResolver].isInstanceOf[PlanResolverDefaultImpl])
+      assert(context.get[PlanAnalyzer].isInstanceOf[PlanAnalyzerDefaultImpl])
 
       intercept[MissingInstanceException] {
-        context.get[PlanResolver]("another.one")
+        context.get[PlanAnalyzer]("another.one")
       }
 
-      val resolverRef = context.publicLookup[PlanResolver](DIKey.get[PlanResolver])
-      val resolverSuperRef = context.publicLookup[Any](DIKey.get[PlanResolver])
-      val badResolver = context.publicLookup[Long](DIKey.get[PlanResolver])
+      val resolverRef = context.publicLookup[PlanAnalyzer](DIKey.get[PlanAnalyzer])
+      val resolverSuperRef = context.publicLookup[Any](DIKey.get[PlanAnalyzer])
+      val badResolver = context.publicLookup[Long](DIKey.get[PlanAnalyzer])
 
-      assert(resolverRef.exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
-      assert(resolverSuperRef.exists(_.value.isInstanceOf[PlanResolverDefaultImpl]))
+      assert(resolverRef.exists(_.value.isInstanceOf[PlanAnalyzerDefaultImpl]))
+      assert(resolverSuperRef.exists(_.value.isInstanceOf[PlanAnalyzerDefaultImpl]))
       assert(badResolver.isEmpty)
     }
   }

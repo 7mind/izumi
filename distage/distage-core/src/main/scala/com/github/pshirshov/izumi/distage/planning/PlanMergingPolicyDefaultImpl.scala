@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.SanityCheckFailedException
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
+import com.github.pshirshov.izumi.distage.model.exceptions.{SanityCheckFailedException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
-import com.github.pshirshov.izumi.distage.model.reflection
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.collections.Graphs
 
@@ -20,11 +20,10 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
 
         val issues = findIssues(currentPlan, op)
         if (issues.isEmpty) {
-          val opDeps = transitiveDeps(currentPlan, op)
           val old = currentPlan.operations.get(target)
           val merged = merge(old, op)
           currentPlan.operations.put(target, merged)
-          currentPlan.topology.register(target, opDeps)
+          analyzer.topoExtend(currentPlan.topology, op)
         } else {
           currentPlan.issues ++= issues
         }
@@ -42,14 +41,6 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
       case other =>
         throw new SanityCheckFailedException(s"Unexpected pair: $other")
     }
-  }
-
-  private def transitiveDeps(plan: DodgyPlan, op: InstantiationOp): Set[reflection.universe.RuntimeDIUniverse.DIKey] = {
-    val opDeps = analyzer.requirements(op).flatMap {
-      req =>
-        plan.topology.dependencies.getOrElse(req, mutable.Set.empty[DIKey]) + req
-    }
-    opDeps
   }
 
   private def findIssues(currentPlan: DodgyPlan, op: InstantiationOp) = {
@@ -72,24 +63,41 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
   }
 
 
+  override def finalizePlan(completedPlan: DodgyPlan): FinalPlan = {
+    if (completedPlan.issues.nonEmpty) {
+      throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy):\n${completedPlan.issues.mkString("\n")}", completedPlan.issues)
+    }
 
-  override def resolve(completedPlan: DodgyPlan): ResolvedSetsPlan = {
+    // TODO: it may be not neccessary to sort at this stage
+    sortPlan(completedPlan.topology, completedPlan.definition, completedPlan.operations.toMap)
+  }
+
+  override def reorderOperations(completedPlan: FinalPlan): FinalPlan = {
+    val definition = completedPlan.definition
+    val index = completedPlan.steps.collect({case op: InstantiationOp => op.target -> op}).toMap
+
+    val topology = analyzer.topoBuild(completedPlan.steps)
     // TODO: further unification with PlanAnalyzer
-    val imports = completedPlan
-      .topology
+    sortPlan(topology, completedPlan.definition, index)
+  }
+
+  def sortPlan(topology: PlanTopology, definition: ModuleBase, index: Map[RuntimeDIUniverse.DIKey, InstantiationOp]): FinalPlan = {
+    val imports = topology
       .dependees
-      .filterKeys(k => !completedPlan.operations.contains(k))
+      .filterKeys(k => !index.contains(k))
       .map {
         case (missing, refs) =>
           missing -> ImportDependency(missing, refs.toSet)
       }
+      .toMap
 
-    val sortedKeys = Graphs.toposort.cycleBreaking(completedPlan.topology.depMap ++ imports.mapValues(v => Set.empty[DIKey]), Seq.empty)
+    val sortedKeys = Graphs.toposort.cycleBreaking(
+      topology.depMap ++ imports.mapValues(v => Set.empty[DIKey]).toMap // 2.13 compat
+      , Seq.empty
+    )
 
-
-    val sortedOps = sortedKeys.flatMap(k => completedPlan.operations.get(k).toSeq)
-    val out = ResolvedSetsPlan(imports.toMap, sortedOps, completedPlan.issues)
-    out
+    val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
+    FinalPlanImmutableImpl(definition, imports.values.toSeq ++ sortedOps)
   }
 }
 

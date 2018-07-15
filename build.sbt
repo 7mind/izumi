@@ -7,7 +7,7 @@ import ReleaseTransformations._
 
 
 enablePlugins(IzumiGitEnvironmentPlugin)
-disablePlugins(AssemblyPlugin)
+disablePlugins(AssemblyPlugin, ScriptedPlugin)
 
 name := "izumi-r2"
 organization in ThisBuild := "com.github.pshirshov.izumi.r2"
@@ -49,7 +49,8 @@ publishTargets in ThisBuild := PublishTarget.typical("sonatype-nexus", sonatypeT
 val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
-      V.scala_212
+      V.scala_212,
+      V.scala_213,
     )
     , sonatypeProfileName := "com.github.pshirshov"
     , addCompilerPlugin(R.kind_projector)
@@ -109,9 +110,15 @@ val ShadingSettings = new SettingsGroup {
 }
 
 val WithoutBadPlugins = new SettingsGroup {
+  override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin, ScriptedPlugin)
+
+}
+
+val WithoutBadPluginsSbt = new SettingsGroup {
   override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin)
 
 }
+
 
 val SbtScriptedSettings = new SettingsGroup {
   override val plugins: Set[Plugins] = Set(ScriptedPlugin)
@@ -146,7 +153,7 @@ lazy val inShade = In("shade")
   .settingsSeq(base)
 
 lazy val inSbt = In("sbt")
-  .settings(GlobalSettings, WithoutBadPlugins)
+  .settings(GlobalSettings, WithoutBadPluginsSbt)
   .settings(SbtSettings, SbtScriptedSettings)
 
 lazy val inDiStage = In("distage")
@@ -182,7 +189,7 @@ lazy val fundamentalsReflection = inFundamentals.as.module
   .dependsOn(fundamentalsPlatform)
   .settings(
     libraryDependencies ++= Seq(
-      R.scala_reflect
+      R.scala_reflect % scalaVersion.value
     )
   )
 
@@ -193,7 +200,7 @@ lazy val distageProxyCglib = inDiStage.as.module
   .depends(distageModel)
   .settings(
     libraryDependencies ++= Seq(
-      R.scala_reflect
+      R.scala_reflect % scalaVersion.value
       , R.cglib_nodep
     )
   )
@@ -219,7 +226,7 @@ lazy val distageCore = inDiStage.as.module
   .depends(fundamentalsFunctional, distageModel, distageProxyCglib)
   .settings(
     libraryDependencies ++= Seq(
-      R.scala_reflect
+      R.scala_reflect % scalaVersion.value
     )
   )
 
@@ -244,7 +251,7 @@ lazy val logstageApiBaseMacro = inLogStage.as.module
   .depends(logstageApiBase, fundamentalsReflection)
   .settings(
     libraryDependencies ++= Seq(
-      R.scala_reflect
+      R.scala_reflect % scalaVersion.value
     )
   )
 
@@ -308,7 +315,7 @@ lazy val idealinguaRuntimeRpc = inIdealingua.as.module
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpc, idealinguaRuntimeRpcCirce)
 
 lazy val idealinguaCore = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.scala_reflect, R.scalameta) ++ Seq(T.scala_compiler))
+  .settings(libraryDependencies ++= Seq(R.scala_reflect % scalaVersion.value, R.scalameta) ++ Seq(R.scala_compiler % scalaVersion.value % "test"))
   .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded, idealinguaRuntimeRpcTypescript, idealinguaRuntimeRpcGo, idealinguaRuntimeRpcCSharp)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(ShadingSettings)
@@ -342,6 +349,7 @@ lazy val idealinguaRuntimeRpcGo = inIdealingua.as.module
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
   .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce, idealinguaRuntimeRpcTypescript, idealinguaRuntimeRpcGo, idealinguaRuntimeRpcCSharp)
   .settings(AppSettings)
+  .enablePlugins(ScriptedPlugin)
   .settings(
     libraryDependencies ++= Seq(R.scopt)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CliIdlCompiler")

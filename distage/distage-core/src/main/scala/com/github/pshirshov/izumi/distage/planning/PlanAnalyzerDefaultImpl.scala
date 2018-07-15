@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, PlanTopology}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.PlanTopology.empty
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
 import com.github.pshirshov.izumi.distage.model.references.RefTable
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -10,6 +11,19 @@ import scala.collection.mutable
 
 
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
+  def topoBuild(ops: Seq[ExecutableOp]): PlanTopology = {
+    val out = empty
+    ops
+      .collect({ case i: InstantiationOp => i })
+      .foreach(topoExtend(out, _))
+    out
+  }
+
+  def topoExtend(topology: PlanTopology, op: InstantiationOp): Unit = {
+    val req = requirements(op)
+    val transitiveReq = topology.dependencies.getOrElse(op.target, mutable.Set.empty[DIKey]) ++ req
+    topology.register(op.target, transitiveReq.toSet)
+  }
 
   def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable = {
     computeFwdRefTable(

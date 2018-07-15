@@ -15,8 +15,7 @@ import com.github.pshirshov.izumi.functional.Value
 
 class PlannerDefaultImpl
 (
-  protected val planResolver: PlanResolver
-  , protected val forwardingRefResolver: ForwardingRefResolver
+  protected val forwardingRefResolver: ForwardingRefResolver
   , protected val reflectionProvider: ReflectionProvider.Runtime
   , protected val sanityChecker: SanityChecker
   , protected val planningObserver: PlanningObserver
@@ -27,7 +26,7 @@ class PlannerDefaultImpl
   private val hook = new PlanningHookAggregate(planningHooks)
 
   override def plan(context: ModuleBase): FinalPlan = {
-    val plan = hook.hookDefinition(context).bindings.foldLeft(DodgyPlan.empty) {
+    val plan = hook.hookDefinition(context).bindings.foldLeft(DodgyPlan.empty(context)) {
       case (currentPlan, binding) =>
         Value(computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)
@@ -39,16 +38,25 @@ class PlannerDefaultImpl
     }
 
     val finalPlan = Value(plan)
-      .map(planMergingPolicy.resolve)
+      .map(hook.phase00PostCompletion)
+      .eff(planningObserver.onPhase00PlanCompleted)
+
+      .map(planMergingPolicy.finalizePlan)
+      .map(hook.phase10PostFinalization)
+      .eff(planningObserver.onPhase10PostFinalization)
+
+      .map(hook.phase20Customization)
+      .eff(planningObserver.onPhase20Customization)
+
+      .map(hook.phase50PreForwarding)
+      .eff(planningObserver.onPhase50PreForwarding)
+
+      .map(planMergingPolicy.reorderOperations)
       .map(forwardingRefResolver.resolve)
-      .eff(planningObserver.onReferencesResolved)
-      .map(planResolver.resolve(_, context))
-      .map(hook.hookResolved)
-      .eff(planningObserver.onResolvingFinished)
+      .map(hook.phase90AfterForwarding)
+      .eff(planningObserver.onPhase90AfterForwarding)
+
       .eff(sanityChecker.assertFinalPlanSane)
-      .map(hook.hookFinal)
-      .eff(sanityChecker.assertFinalPlanSane)
-      .eff(planningObserver.onFinalPlan)
       .get
 
     finalPlan

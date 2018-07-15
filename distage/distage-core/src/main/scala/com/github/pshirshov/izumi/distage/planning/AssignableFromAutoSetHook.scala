@@ -5,11 +5,12 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 class AssignableFromAutoSetHook[T: Tag] extends AutoSetHook {
-  override def elementOf(b: Binding): Option[universe.RuntimeDIUniverse.DIKey] = {
-    val keyClass = mirror.runtimeClass(b.key.tpe.tpe)
-    val tClass = mirror.runtimeClass(Tag[T].tag.tpe)
+  protected val setClass: Class[_] = mirror.runtimeClass(Tag[T].tag.tpe)
 
-    if (keyClass.isAssignableFrom(tClass)) {
+  override def elementOf(b: Binding): Option[universe.RuntimeDIUniverse.DIKey] = {
+    val bindingClass = mirror.runtimeClass(b.key.tpe.tpe)
+
+    if (setClass.isAssignableFrom(bindingClass)) {
       Some(DIKey.get[Set[T]])
     } else {
       None

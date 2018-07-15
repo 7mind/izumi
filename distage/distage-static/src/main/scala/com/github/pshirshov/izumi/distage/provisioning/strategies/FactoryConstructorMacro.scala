@@ -2,11 +2,11 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
-import com.github.pshirshov.izumi.distage.model.reflection.macros.DIUniverseLiftables
+import com.github.pshirshov.izumi.distage.model.reflection.macros.{DIUniverseLiftables, TrivialMacroLogger}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.{AnyConstructor, FactoryConstructor, FactoryTools}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
+import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 import scala.reflect.macros.blackbox
 
@@ -20,7 +20,7 @@ object FactoryConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = MacroUtil.mkLogger[this.type](c)
+    val logger = TrivialMacroLogger[this.type](c)
 
     // A hack to support generic methods inside factories. No viable type info is available for generic parameters of these methods
     // so we have to resort to WeakTypeTags and thread this ugly fucking `if` everywhere ;_;

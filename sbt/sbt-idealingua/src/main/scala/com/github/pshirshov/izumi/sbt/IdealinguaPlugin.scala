@@ -1,7 +1,10 @@
 package com.github.pshirshov.izumi.sbt
 
 import java.nio.file.Path
+import java.security.MessageDigest
 
+import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.CompilerOptions
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
@@ -17,10 +20,11 @@ import sbt.Keys.{sourceGenerators, watchSources, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger
 import sbt.plugins._
+import scalacache.MD5
 
 object IdealinguaPlugin extends AutoPlugin {
 
-  final case class Scope(source: Path, target: Path)
+  final case class Scope(source: Path, buildTarget: Path, target: Path)
 
   sealed trait Mode
 
@@ -75,7 +79,8 @@ object IdealinguaPlugin extends AutoPlugin {
 
       val izumiSrcDir = src.resolve("main/izumi")
 
-      val scope = Scope(izumiSrcDir, srcManaged)
+
+      val scope = Scope(izumiSrcDir, target.value.toPath, srcManaged)
 
       val (scalaTargets, nonScalaTargets) = compilationTargets.value.partition(i => i.options.language == IDLLanguage.Scala)
 
@@ -84,11 +89,22 @@ object IdealinguaPlugin extends AutoPlugin {
 
       nonScalaTargets.foreach {
         t =>
-          val nonScalaScope = Scope(izumiSrcDir, (resManaged.toFile / s"${t.options.language}").toPath)
+          val nonScalaScope = Scope(izumiSrcDir, target.value.toPath, (resManaged.toFile / s"${t.options.language}").toPath)
           compileSources(nonScalaScope, Seq(t), depClasspath)
       }
 
-      val files = scala_result.flatMap(_.invokation).flatMap(_._2.paths)
+      val files = scala_result.flatMap {
+        case (_, Some(result)) =>
+          result.invokation.flatMap(_._2.paths)
+        case ((_, s), _) if s.target.toFile.exists() =>
+          val existing = IzFiles.walk(scope.target.toFile).filterNot(_.toFile.isDirectory)
+          logger.info(s"Compiler didn't return a result, target ${s.target} exists. Reusing ${existing.size} files there...")
+          existing
+        case ((_, s), _) if !s.target.toFile.exists() =>
+          logger.info(s"Compiler didn't return a result, target ${s.target} does not exist. What the fuck? Okay, let's return nothing :/")
+          Seq.empty
+      }
+
       files.map(_.toFile)
     }.taskValue
 
@@ -100,7 +116,6 @@ object IdealinguaPlugin extends AutoPlugin {
         f =>
           val relative = idlbase.toPath.relativize(f.toPath)
           val targetPath = ((resourceManaged in Compile).value / "idealingua").toPath.resolve(relative).toFile
-
           f -> targetPath
       }
       IO.copy(mapped, CopyOptions().withOverwrite(true))
@@ -122,17 +137,32 @@ object IdealinguaPlugin extends AutoPlugin {
 
       val artifacts = artifactTargets(ctargets, pname)
 
-      val artifactFiles = artifacts.map {
+      val artifactFiles = artifacts.flatMap {
         case (a, t) =>
           val targetDir = target.value / "idealingua" / s"${a.name}-${a.classifier.get}-$versionValue-$scalaVersionValue"
 
-          val scope = Scope(src.resolve("main/izumi"), targetDir.toPath)
+          val scope = Scope(src.resolve("main/izumi"), target.value.toPath, targetDir.toPath)
+
+          val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip.source"
 
           val result = doCompile(scope, t, (dependencyClasspath in Compile).value)
-          val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip"
-          IO.move(result.sources.toFile, zipFile)
-          //IO.zip(result.map(r => (r, scope.target.relativize(r.toPath).toString)), zipFile)
-          a -> zipFile
+
+          result match {
+            case Some(r) =>
+              logger.info(s"Have new compilation result, copying ${r.sources.toFile} info ${zipFile} for artifact $a")
+              IO.copyDirectory(r.sources.toFile, zipFile)
+              Seq(a -> zipFile)
+
+            case None =>
+              if (zipFile.exists()) {
+                logger.info(s"Compiler didn't return a result, target $zipFile exists, reusing...")
+                Seq(a -> zipFile)
+              } else {
+                logger.info(s"Compiler didn't return a result, target $zipFile does not exist. What the fuck? Okay, let's return nothing :/")
+                Seq.empty
+              }
+          }
+
       }.toMap
 
       packagedArtifacts.value ++ artifactFiles
@@ -147,33 +177,52 @@ object IdealinguaPlugin extends AutoPlugin {
     }
   }
 
-  private def compileSources(scope: Scope, ctargets: Seq[Invokation], classpath: Classpath): Seq[IDLCompiler.Result] = {
+  private def compileSources(scope: Scope, ctargets: Seq[Invokation], classpath: Classpath) = {
     ctargets.filter(i => i.mode == Mode.Sources).map {
       invokation =>
-        doCompile(scope, invokation, classpath)
+        (invokation, scope) -> doCompile(scope, invokation, classpath)
     }
   }
 
-  private def doCompile(scope: Scope, invokation: Invokation, classpath: Classpath): IDLCompiler.Result = {
-
+  private def doCompile(scope: Scope, invokation: Invokation, classpath: Classpath): Option[IDLCompiler.Result] = {
     val cp = classpath.map(_.data)
     val target = scope.target
     logger.debug(s"""Loading models from $scope...""")
 
-    val toCompile = new LocalModelLoader(scope.source, cp).load()
-    if (toCompile.nonEmpty) {
-      logger.info(s"""Going to compile the following models: ${toCompile.map(_.domain.id).mkString(",")}""")
+    val digest = MD5.messageDigest.clone().asInstanceOf[MessageDigest]
+    digest.reset()
+    val hash = digest.digest(scope.toString.getBytes).map("%02X".format(_)).mkString
+
+    val tsCache = scope.buildTarget.resolve(s"izumi-$hash.timestamp")
+
+    val srcLastModified = IzFiles.getLastModified(scope.source.toFile)
+    val targetLastModified = IzFiles.getLastModified(tsCache.toFile)
+
+    val isNew = srcLastModified.flatMap(src => targetLastModified.map(tgt => (src, tgt)))
+
+    if (isNew.exists({ case (src, tgt) => src.isAfter(tgt) }) || isNew.isEmpty) {
+      // TODO: maybe it's unsafe to destroy the whole directory?..
+      val toCompile = new LocalModelLoader(scope.source, cp).load()
+      if (toCompile.nonEmpty) {
+        logger.info(s"""Going to compile the following models: ${toCompile.map(_.domain.id).mkString(",")}""")
+      } else {
+        logger.info(s"""Nothing to compile at ${scope.source}""")
+      }
+
+      val result = new IDLCompiler(toCompile)
+        .compile(target, invokation.options)
+
+      result.invokation.foreach {
+        case (id, s) =>
+          logger.debug(s"Model $id produced ${s.paths.size} source files...")
+      }
+
+      IO.write(tsCache.toFile, IzTime.isoNow)
+      Some(result)
+    } else {
+      logger.info(s"""Output timestamp is okay, not going to recompile ${scope.source} : ts=$tsCache""")
+      None
     }
-
-    val result = new IDLCompiler(toCompile)
-      .compile(target, invokation.options)
-
-    result.invokation.foreach {
-      case (id, s) =>
-        logger.debug(s"Model $id produced ${s.paths.size} source files...")
-    }
-
-    result
   }
 
   object autoImport {

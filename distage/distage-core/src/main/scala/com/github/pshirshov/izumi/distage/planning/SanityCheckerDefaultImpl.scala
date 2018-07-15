@@ -68,7 +68,7 @@ class SanityCheckerDefaultImpl
 
     val proxyKeys = proxies.map(_.target)
 
-    assertNoDuplicateKeys(uniqOps ++ nonUniqueOps.toSeq)
+    assertNoDuplicateKeys(uniqOps.toSeq ++ nonUniqueOps.toSeq) // 2.13 compat
     assertNoDuplicateKeys(proxyKeys)
 
     val missingProxies = proxyKeys.toSet -- uniqOps.toSet

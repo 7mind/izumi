@@ -15,7 +15,7 @@ $ exists lib/yyy
 > addVersionSuffix test
 
 # dump compiler options
-> ++show scalacOptions
+> +show scalacOptions
 
 # build
 > +clean

@@ -1,15 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.types
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Alias, Enumeration, Interface}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.csharp.types.CSharpField
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{SimpleStructure, Structure}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.SimpleStructure
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.Struct
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
 
 final case class CSharpClass (
                               id: TypeId,

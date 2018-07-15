@@ -49,7 +49,7 @@ class IzThrowable(t: Throwable, acceptedPackages: Set[String]) {
       ret.append(currentThrowable)
       currentThrowable = currentThrowable.getCause
     }
-    ret
+    ret.toSeq // 2.13 compat
   }
 
   def stackTop: Option[StackTraceElement] = {

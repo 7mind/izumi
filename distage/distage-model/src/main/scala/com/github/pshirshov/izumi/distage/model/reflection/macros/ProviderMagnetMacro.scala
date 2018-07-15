@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.model.reflection.macros
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
+import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 import scala.reflect.macros.blackbox
 
@@ -11,13 +11,18 @@ class ProviderMagnetMacroGenerateUnsafeWeakSafeTypes(override val c: blackbox.Co
   override protected def generateUnsafeWeakSafeTypes: Boolean = true
 }
 
+/**
+* To see macro debug output during compilation, set `-Dizumi.distage.debug.macro=true` java property! i.e.
+*
+*   sbt -Dizumi.distage.debug.macro=true compile
+*/
 class ProviderMagnetMacro(val c: blackbox.Context) {
 
   protected def generateUnsafeWeakSafeTypes: Boolean = false
 
   final val macroUniverse = StaticDIUniverse(c)
 
-  private final val logger = MacroUtil.mkLogger[ProviderMagnetMacro](c)
+  private final val logger = TrivialMacroLogger[this.type](c)
   private final val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
   private final val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
   private final val tools =
@@ -33,14 +38,10 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
   case class ExtractedInfo(associations: List[Association.Parameter], isValReference: Boolean)
 
   def impl[R: c.WeakTypeTag](fun: c.Expr[_]): c.Expr[ProviderMagnet[R]] = {
-    val logger = MacroUtil.mkLogger[this.type](c)
-
     val argTree = fun.tree
     val ret = SafeType(weakTypeOf[R])
 
     val ExtractedInfo(associations, isValReference) = analyze(argTree, ret)
-
-    // val funcExprTypes = funcExpr.actualType.finalResultType.typeArgs.init
 
     val casts = associations.map(_.tpe.tpe).zipWithIndex.map {
       case (t, i) =>
