@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.SanityCheckFailedException
+import com.github.pshirshov.izumi.distage.model.exceptions.{SanityCheckFailedException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
@@ -63,7 +63,10 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
 
 
 
-  override def resolve(completedPlan: DodgyPlan): ResolvedSetsPlan = {
+  override def reorderOperations(completedPlan: DodgyPlan): FinalPlan = {
+    if (completedPlan.issues.nonEmpty) {
+      throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy):\n${completedPlan.issues.mkString("\n")}", completedPlan.issues)
+    }
     // TODO: further unification with PlanAnalyzer
     val imports = completedPlan
       .topology
@@ -81,9 +84,10 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     )
 
 
+
+
     val sortedOps = sortedKeys.flatMap(k => completedPlan.operations.get(k).toSeq)
-    val out = ResolvedSetsPlan(imports.toMap, sortedOps, completedPlan.issues.toSeq) // 2.13 compat
-    out
+    FinalPlanImmutableImpl(completedPlan.definition, imports.values.toSeq ++ sortedOps)
   }
 }
 

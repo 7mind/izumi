@@ -18,7 +18,12 @@ trait PlanningHook {
     next
   }
 
-  def hookResolved(plan: FinalPlan): FinalPlan = plan
+  def phase00PostCompletion(plan: DodgyPlan): DodgyPlan = plan
 
-  def hookFinal(plan: FinalPlan): FinalPlan = plan
+  def phase10PostOrdering(plan: FinalPlan): FinalPlan = plan
+
+  def phase20PreForwarding(plan: FinalPlan): FinalPlan = plan
+
+  def phase30AfterForwarding(plan: FinalPlan): FinalPlan = plan
+
 }

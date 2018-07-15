@@ -54,8 +54,7 @@ object DefaultBootstrapContext {
     val analyzer = new PlanAnalyzerDefaultImpl
 
     new PlannerDefaultImpl(
-      new PlanResolverDefaultImpl
-      , new ForwardingRefResolverDefaultImpl(analyzer)
+      new ForwardingRefResolverDefaultImpl(analyzer)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
       , bootstrapObserver
@@ -97,7 +96,6 @@ object DefaultBootstrapContext {
 //    make[PlanningObserver].from[BootstrapPlanningObserver]
 //    make[LoggerHook].from[LoggerHookDebugImpl]
 //    make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringSink))
-    make[PlanResolver].from[PlanResolverDefaultImpl]
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
     make[TheFactoryOfAllTheFactories].from[TheFactoryOfAllTheFactoriesDefaultImpl]
