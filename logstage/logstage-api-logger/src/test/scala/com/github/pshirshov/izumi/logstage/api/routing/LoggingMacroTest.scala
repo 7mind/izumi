@@ -16,19 +16,27 @@ class ExampleService(logger: IzLogger) {
     val loggerWithContext = logger("userId" -> "xxx")
     val loggerWithSubcontext = loggerWithContext("custom" -> "value")
 
-    val arg = "this is an argument"
+    val justAnArg = "this is an argument"
 
     loggerWithContext.trace(s"This would be automatically extended")
-    logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt() -> "random value"}")
+    logger.debug(s"Service started. argument: $justAnArg, Random value: ${Random.self.nextInt() -> "random value"}")
     loggerWithSubcontext.info("Just a string")
     logger.crit(s"This is an expression: ${Random.nextInt() -> "xxx"}")
-    val t = new RuntimeException("Oy vey!")
-    logger.crit(s"A failure happened: $t")
+    val exception = new RuntimeException("Oy vey!")
+    exception.setStackTrace(exception.getStackTrace.slice(0, 3))
+    logger.crit(s"A failure happened: $exception")
 
     // cornercases
     val arg1 = 5
-    logger.warn("[Cornercase logger usage] non-interpolated expression: " + 1)
-    logger.crit(s"[Cornercase logger usage] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}")
+    val nullarg = null
+    logger.warn("[Cornercase] non-interpolated expression: " + 1)
+    logger.crit(s"[Cornercase] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}")
+    logger.crit(s"[Cornercase] null value: $nullarg")
+
+    val badObj = new Object {
+      override def toString: String = throw exception
+    }
+    logger.crit(s"[Cornercase] exception: ${badObj -> "bad"}")
   }
 
   def work(): Unit = {

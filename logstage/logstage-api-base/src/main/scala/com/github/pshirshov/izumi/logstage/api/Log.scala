@@ -38,10 +38,12 @@ object Log {
 
   }
 
-  type LogContextEntry = (String, Any)
-  type LogContext = Seq[LogContextEntry]
+  case class LogArg(name: String, value: Any)
 
-  //type LogContext = Map[String, Any]
+  type LogContext = Seq[LogArg]
+
+  //type LogContextEntry = (String, Any)
+  //type LogContext = Map[String, Any]¬
 
 
   final case class CustomContext(values: LogContext) {
@@ -67,7 +69,7 @@ object Log {
 
   final case class Entry(message: Message, context: Context) {
     def firstThrowable: Option[Throwable] = {
-      message.args.map(_._2).collectFirst { case t: Throwable => t }
+      message.args.map(_.value).collectFirst { case t: Throwable => t }
     }
   }
 
@@ -75,7 +77,7 @@ object Log {
 
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
-    def argsMap: Map[String, Set[Any]] = args.toMultimap
+    def argsMap: Map[String, Set[Any]] = args.map(kv => (kv.name, kv.value)).toMultimap
   }
 
 }

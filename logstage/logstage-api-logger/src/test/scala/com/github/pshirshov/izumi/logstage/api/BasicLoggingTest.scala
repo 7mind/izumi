@@ -17,11 +17,11 @@ class BasicLoggingTest extends WordSpec {
       import ExtratingStringInterpolator._
 
       val message = m"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2+2}, ${2+2}"
-      assert(message.args == List(("arg1",1), ("arg2","argument 2"), ("arg2","argument 2"), ("UNNAMED:4",4), ("UNNAMED:4",4)))
+      assert(message.args == List(LogArg("arg1",1), LogArg("arg2","argument 2"), LogArg("arg2","argument 2"), LogArg("UNNAMED:4",4), LogArg("UNNAMED:4",4)))
       assert(message.template.parts == List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", ""))
 
       val message1 = m"expression: ${Random.self.nextInt()}"
-      assert(message1.args.head._1 == "EXPRESSION:scala.util.Random.self.nextInt()")
+      assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt()")
       assert(message1.template.parts == List("expression: ", ""))
     }
   }
@@ -29,7 +29,7 @@ class BasicLoggingTest extends WordSpec {
   "String rendering policy" should {
     "not fail on unbalanced messages" in {
       val p = new StringRenderingPolicy(RenderingOptions(withColors = false))
-      val rendered = render(p, Message(StringContext("begin ", " end"), Seq("[a1]" -> 1, "[a2]" -> 2)))
+      val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg("[a1]", 1), LogArg("[a2]", 2))))
       assert(rendered.endsWith("begin [a1]=1 end; [a2]=2"))
     }
   }

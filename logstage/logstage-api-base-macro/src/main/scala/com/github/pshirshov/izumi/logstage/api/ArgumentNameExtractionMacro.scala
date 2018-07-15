@@ -1,11 +1,13 @@
 package com.github.pshirshov.izumi.logstage.api
 
 
+import com.github.pshirshov.izumi.logstage.api.Log.LogArg
+
 import scala.reflect.macros.blackbox
 
 
 object ArgumentNameExtractionMacro {
-  protected[api] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[(String, Any)]] = {
+  protected[api] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
     import c.universe._
 
     object ArrowArg {
@@ -68,29 +70,29 @@ object ArgumentNameExtractionMacro {
         }
     }
 
-    c.Expr[List[(String, Any)]] {
+    c.Expr[List[LogArg]] {
       q"List(..$expressions)"
     }
   }
 
-  private def reifiedPrefixed(c: blackbox.Context)(param: c.Expr[Any], prefix: String): c.universe.Expr[(String, Any)] = {
+  private def reifiedPrefixed(c: blackbox.Context)(param: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
     reifiedPrefixedValue(c)(param, param, prefix)
   }
 
-  private def reifiedPrefixedValue(c: blackbox.Context)(param: c.Expr[Any], value: c.Expr[Any], prefix: String): c.universe.Expr[(String, Any)] = {
+  private def reifiedPrefixedValue(c: blackbox.Context)(param: c.Expr[Any], value: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
     import c.universe._
     val prefixRepr = c.Expr[String](Literal(Constant(prefix)))
     reify {
-      (s"${prefixRepr.splice}:${param.splice}", value.splice)
+      LogArg(s"${prefixRepr.splice}:${param.splice}", value.splice)
     }
   }
 
 
-  private def reifiedExtracted(c: blackbox.Context)(param: c.Expr[Any], s: String): c.universe.Expr[(String, Any)] = {
+  private def reifiedExtracted(c: blackbox.Context)(param: c.Expr[Any], s: String): c.universe.Expr[LogArg] = {
     import c.universe._
     val paramRepTree = c.Expr[String](Literal(Constant(s)))
     reify {
-      (paramRepTree.splice, param.splice)
+      LogArg(paramRepTree.splice, param.splice)
     }
   }
 

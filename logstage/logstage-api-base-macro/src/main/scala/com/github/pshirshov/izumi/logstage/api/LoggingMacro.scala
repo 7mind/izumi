@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.logstage.api.Log.{LoggerId, Message, StaticExtendedContext, ThreadData}
+import com.github.pshirshov.izumi.logstage.api.Log._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 
 import scala.language.experimental.macros
@@ -67,7 +67,7 @@ object LoggingMacro {
         reifyContext(c)(stringContext, namedArgs)
 
       case Literal(c.universe.Constant(s)) =>
-        val emptyArgs = reify(List("@type" -> "const"))
+        val emptyArgs = reify(List(LogArg("@type", "const")))
         val sc = q"StringContext(${s.toString})"
         reifyContext(c)(sc, emptyArgs)
 
@@ -79,16 +79,19 @@ object LoggingMacro {
              |1) Simple variable logger.log(s"My message: $$argument")
              |2) Named expression logger.log(s"My message: $${Some.expression -> "argname"}")
              |""".stripMargin)
-        val emptyArgs = q"""List("@type" -> "expr", "@expr" -> ${other.toString()})"""
+        val emptyArgs = reify {
+          val repr = c.Expr[String](Literal(Constant(other.toString()))).splice
+          List(LogArg("@type", "expr"), LogArg("@expr", repr))
+        }
         val sc = q"StringContext($other)"
-        reifyContext(c)(sc, c.Expr(emptyArgs))
+        reifyContext(c)(sc, emptyArgs)
     }
 
     assert(1 != 2)
     logMacro(c)(messageTree, logLevel)
   }
 
-  private def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[(String, Any)]]) = {
+  private def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]) = {
     import c.universe._
     reify {
       Message(

@@ -10,7 +10,7 @@ import org.json4s.native.JsonMethods
 
 import scala.runtime.RichInt
 
-class JsonRenderingPolicy() extends RenderingPolicy {
+class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy {
   // TODO: shitty inheritance
   protected final val stringPolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false))
 
@@ -41,27 +41,45 @@ class JsonRenderingPolicy() extends RenderingPolicy {
       ("@message" -> formatted.message)
 
     val parts: Seq[JObject] = if (context.values.nonEmpty) {
-      Seq(messageInfo, "@context" -> context, params)
+      Seq(params, messageInfo, "@context" -> context)
     } else {
-      Seq(messageInfo, params)
+      Seq(params, messageInfo)
     }
 
     val json = parts.reduce(_ ~ _)
 
-    JsonMethods.compact(JsonMethods.render(json))
+    val rendered = JsonMethods.render(json)
+    if (prettyPrint) {
+      JsonMethods.pretty(rendered)
+    } else {
+      JsonMethods.compact(rendered)
+    }
   }
 
   private def makeJson(p: Map[String, Set[String]]): JObject = {
     val (unary, multiple) = p.partition(_._2.size == 1)
-    (unary.map(kv => JField(kv._1, kv._2.head)) : JObject) ~ multiple
+    val paramsMap = unary.map(kv => JField(normalizeName(kv._1), kv._2.head))
+    (paramsMap: JObject) ~ multiple
   }
 
   protected def mkMap(values: LogContext): Map[String, Set[String]] = {
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-    val customContext = values.toMultimap.map {
-      case (k, v) =>
-        k -> v.map(_.toString)
-    }
+    val customContext = values
+      .map(kv => (kv.name, kv.value))
+      .toMultimap
+      .map {
+        case (k, v) =>
+          k -> v.map(_.toString)
+      }
     customContext
+  }
+
+  protected def normalizeName(s: String): String = {
+    if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
+      s
+    } else {
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      s.replace(' ', '_').camelToUnderscores
+    }
   }
 }
