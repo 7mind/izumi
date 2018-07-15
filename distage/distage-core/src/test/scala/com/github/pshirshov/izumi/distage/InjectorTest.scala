@@ -43,10 +43,11 @@ class InjectorTest extends WordSpec {
       }
 
       val fixedPlan = plan.flatMap {
-        case ImportDependency(key, _) if key == RuntimeDIUniverse.DIKey.get[NotInContext] =>
+        case ImportDependency(key, _, origin) if key == RuntimeDIUniverse.DIKey.get[NotInContext] =>
           Seq(WiringOp.ReferenceInstance(
             key
             , UnaryWiring.Instance(RuntimeDIUniverse.SafeType.get[NotInContext], new NotInContext {})
+            , origin
           )
           )
 

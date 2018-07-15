@@ -56,7 +56,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
     val section = loaded.head
     try {
       val product = reader.readConfig(section._2, step.targetType)
-      TranslationResult.Success(ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product)))
+      TranslationResult.Success(ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product), op.origin))
     } catch {
       case NonFatal(t) =>
         TranslationResult.ExtractionFailure(op, step.targetType, section._1, section._2, t)

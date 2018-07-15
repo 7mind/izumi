@@ -87,7 +87,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
       .filterKeys(k => !index.contains(k))
       .map {
         case (missing, refs) =>
-          missing -> ImportDependency(missing, refs.toSet)
+          missing -> ImportDependency(missing, refs.toSet, None)
       }
       .toMap
 

@@ -28,7 +28,7 @@ class ForwardingRefResolverDefaultImpl
       }
       .flatMap {
         case step if dependenciesOf.contains(step.target) =>
-          val op = ProxyOp.MakeProxy(step, dependenciesOf(step.target))
+          val op = ProxyOp.MakeProxy(step, dependenciesOf(step.target), step.origin)
           proxies += (step.target -> op)
           Seq(op)
 
@@ -38,7 +38,7 @@ class ForwardingRefResolverDefaultImpl
 
     val proxyOps = proxies.foldLeft(Seq.empty[ProxyOp.InitProxy]) {
       case (acc, (proxyKey, proxyDep)) =>
-        acc :+ ProxyOp.InitProxy(proxyKey, proxyDep.forwardRefs, proxies(proxyKey))
+        acc :+ ProxyOp.InitProxy(proxyKey, proxyDep.forwardRefs, proxies(proxyKey), proxyDep.origin)
     }
 
 

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
+import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.exceptions.UnexpectedProvisionResultException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.OpResult
@@ -27,27 +28,27 @@ object FactoryTools {
     }
   }
 
-  def mkExecutableOp(key: RuntimeDIUniverse.DIKey, wiring: RuntimeDIUniverse.Wiring.UnaryWiring): WiringOp =
+  def mkExecutableOp(key: RuntimeDIUniverse.DIKey, wiring: RuntimeDIUniverse.Wiring.UnaryWiring, binding: Option[Binding]): WiringOp =
     wiring match {
       case w: UnaryWiring.Constructor =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
-        WiringOp.InstantiateClass(target, w)
+        WiringOp.InstantiateClass(target, w, binding)
 
       case w: UnaryWiring.AbstractSymbol =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
-        WiringOp.InstantiateTrait(target, w)
+        WiringOp.InstantiateTrait(target, w, binding)
 
       case w: UnaryWiring.Function =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
-        WiringOp.CallProvider(target, w)
+        WiringOp.CallProvider(target, w, binding)
 
       case w: UnaryWiring.Instance =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
-        WiringOp.ReferenceInstance(target, w)
+        WiringOp.ReferenceInstance(target, w, binding)
 
       case w: UnaryWiring.Reference =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
-        WiringOp.ReferenceKey(target, w)
+        WiringOp.ReferenceKey(target, w, binding)
     }
 
 }
