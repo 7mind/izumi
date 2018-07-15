@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.logstage.api.rendering.json
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.Log.LogContext
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogUnit
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, RenderingOptions, RenderingPolicy, StringRenderingPolicy}
+import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, RenderingPolicy}
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
@@ -11,14 +11,11 @@ import org.json4s.native.JsonMethods
 import scala.runtime.RichInt
 
 class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy {
-  // TODO: shitty inheritance
-  protected final val stringPolicy = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false))
-
   override def render(entry: Log.Entry): String = {
     val formatted = LogUnit.formatMessage(entry, withColors = false)
 
-    val params = makeJsonX(formatted.parameters)
-    val context = makeJson(mkMap(entry.context.customContext.values))
+    val params = parametersToJson(formatted.parameters)
+    val context = contextToJson(mkMap(entry.context.customContext.values))
 
 
     val messageInfo = ("@event" ->
@@ -56,7 +53,7 @@ class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy 
     }
   }
 
-  private def makeJsonX(p: Map[String, Seq[RenderedParameter]]): JObject = {
+  protected def parametersToJson(p: Map[String, Seq[RenderedParameter]]): JObject = {
     val (unary, multiple) = p.partition(_._2.size == 1)
     val paramsMap = unary.map {
       kv =>
@@ -69,7 +66,16 @@ class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy 
     (paramsMap: JObject) ~ (multiparamsMap: JObject)
   }
 
-  def repr(parameter: RenderedParameter): JValue = {
+  protected def contextToJson(p: Map[String, Set[String]]): JObject = {
+    val (unary, multiple) = p.partition(_._2.size == 1)
+    val paramsMap = unary.map {
+      kv =>
+        JField(normalizeName(kv._1), kv._2.head)
+    }
+    (paramsMap: JObject) ~ multiple
+  }
+
+  protected def repr(parameter: RenderedParameter): JValue = {
     parameter match {
       case RenderedParameter(a: Double, _) =>
         JDouble(a)
@@ -85,22 +91,19 @@ class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy 
         JLong(a)
       case RenderedParameter(null, _) =>
         JNull
+      case RenderedParameter(a: Iterable[_], _) =>
+        val params = a.map(v => repr(LogUnit.formatArg(v, withColors = false))).toList
+        JArray(params)
       case RenderedParameter(a: Throwable, _) =>
         import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
         Map(
           "type" -> a.getClass.getName
           , "message" -> a.getMessage
           , "stacktrace" -> a.stackTrace
-        ) : JObject
+        ): JObject
       case RenderedParameter(_, repr) =>
         JString(repr)
     }
-  }
-
-  private def makeJson(p: Map[String, Set[String]]): JObject = {
-    val (unary, multiple) = p.partition(_._2.size == 1)
-    val paramsMap = unary.map(kv => JField(normalizeName(kv._1), kv._2.head))
-    (paramsMap: JObject) ~ multiple
   }
 
   protected def mkMap(values: LogContext): Map[String, Set[String]] = {

@@ -177,6 +177,10 @@ object LogUnit {
     }
   }
 
+  def formatArg(arg: Any, withColors: Boolean): RenderedParameter = {
+    RenderedParameter(arg, argToString(arg, withColors))
+  }
+
   def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
     val templateBuilder = new StringBuilder()
     val messageBuilder = new StringBuilder()
@@ -196,8 +200,8 @@ object LogUnit {
       case (part, LogArg(argName, argValue)) =>
         val (argNameToUse, partToUse) = (argName, part)
 
-        val uncoloredRepr = argToString(argValue, withColors = false)
-        parameters.getOrElseUpdate(argNameToUse, mutable.ArrayBuffer.empty[RenderedParameter]) += RenderedParameter(argValue, uncoloredRepr)
+        val uncoloredRepr = formatArg(argValue, withColors = false)
+        parameters.getOrElseUpdate(argNameToUse, mutable.ArrayBuffer.empty[RenderedParameter]) += uncoloredRepr
 
         templateBuilder.append("${")
         templateBuilder.append(argNameToUse)
@@ -207,7 +211,7 @@ object LogUnit {
         val maybeColoredRepr = if (withColors) {
           argToStringColored(argValue)
         } else {
-          uncoloredRepr
+          uncoloredRepr.repr
         }
 
         messageBuilder.append(formatKv(withColors)(LogArg(argNameToUse, maybeColoredRepr)))
