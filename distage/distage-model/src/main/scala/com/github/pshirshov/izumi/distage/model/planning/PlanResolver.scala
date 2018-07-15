@@ -6,3 +6,5 @@ import com.github.pshirshov.izumi.distage.model.plan.{FinalPlan, ResolvedCyclesP
 trait PlanResolver {
   def resolve(steps: ResolvedCyclesPlan, definition: ModuleBase): FinalPlan
 }
+
+

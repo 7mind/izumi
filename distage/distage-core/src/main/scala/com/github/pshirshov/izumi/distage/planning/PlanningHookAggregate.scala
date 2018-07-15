@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan, ReplanningContext}
+import com.github.pshirshov.izumi.distage.model.planning.{PlanningHook, ExtendedFinalPlan}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+
 
 class PlanningHookAggregate(hooks: Set[PlanningHook]) extends PlanningHook {
   override def hookWiring(binding: Binding.ImplBinding, wiring: RuntimeDIUniverse.Wiring): RuntimeDIUniverse.Wiring = {
@@ -27,17 +28,19 @@ class PlanningHookAggregate(hooks: Set[PlanningHook]) extends PlanningHook {
     }
   }
 
-  override def hookResolved(plan: FinalPlan): FinalPlan = {
-    hooks.foldLeft(plan) {
+  override def hookResolved(context: ReplanningContext, plan: FinalPlan): ExtendedFinalPlan = {
+    hooks.foldLeft(ExtendedFinalPlan(plan, replanningRequested = false)) {
       case (acc, hook) =>
-        hook.hookResolved(acc)
+        val out = hook.hookResolved(context, acc.plan)
+        out.copy(replanningRequested = acc.replanningRequested || out.replanningRequested)
     }
   }
 
-  override def hookFinal(plan: FinalPlan): FinalPlan = {
-    hooks.foldLeft(plan) {
+  override def hookFinal(context: ReplanningContext, plan: FinalPlan): ExtendedFinalPlan = {
+    hooks.foldLeft(ExtendedFinalPlan(plan, replanningRequested = false)) {
       case (acc, hook) =>
-        hook.hookFinal(acc)
+        val out = hook.hookFinal(context, acc.plan)
+        out.copy(replanningRequested = acc.replanningRequested || out.replanningRequested)
     }
   }
 }

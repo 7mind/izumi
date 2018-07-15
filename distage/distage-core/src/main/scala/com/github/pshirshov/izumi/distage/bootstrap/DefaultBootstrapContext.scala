@@ -55,6 +55,8 @@ object DefaultBootstrapContext {
 
     new PlannerDefaultImpl(
       new PlanResolverDefaultImpl
+      , new ReplanningCriterionDefaultImpl
+      , analyzer
       , new ForwardingRefResolverDefaultImpl(analyzer)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
@@ -111,6 +113,7 @@ object DefaultBootstrapContext {
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
     make[Provisioner].from[ProvisionerDefaultImpl]
+    make[ReplanningCriterion].from[ReplanningCriterionDefaultImpl]
     make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptorDefaultImpl]
     many[PlanningHook]
       .add[PlanningHookDefaultImpl]

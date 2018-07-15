@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.Planner
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
@@ -12,10 +12,14 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.functional.Value
 
+import scala.collection.mutable.ArrayBuffer
+
 
 class PlannerDefaultImpl
 (
   protected val planResolver: PlanResolver
+  , protected val replanningCriterion: ReplanningCriterion
+  , protected val planAnalyzer: PlanAnalyzer
   , protected val forwardingRefResolver: ForwardingRefResolver
   , protected val reflectionProvider: ReflectionProvider.Runtime
   , protected val sanityChecker: SanityChecker
@@ -38,20 +42,38 @@ class PlannerDefaultImpl
           .get
     }
 
-    val finalPlan = Value(plan)
+    Value(finish(ReplanningContext(0, context, plan)))
+      .eff(sanityChecker.assertFinalPlanSane)
+      .get
+  }
+
+
+  def finish(context: ReplanningContext): FinalPlan = {
+    val candidatePlan = Value(context.source)
       .map(planMergingPolicy.resolve)
       .map(forwardingRefResolver.resolve)
-      .eff(planningObserver.onReferencesResolved)
-      .map(planResolver.resolve(_, context))
-      .map(hook.hookResolved)
-      .eff(planningObserver.onResolvingFinished)
-      .eff(sanityChecker.assertFinalPlanSane)
-      .map(hook.hookFinal)
-      .eff(sanityChecker.assertFinalPlanSane)
-      .eff(planningObserver.onFinalPlan)
+      .eff(planningObserver.onReferencesResolved(context, _))
+      .map(planResolver.resolve(_, context.module))
+
+
+    val afterResolveHook = candidatePlan
+      .map(hook.hookResolved(context, _))
+      .eff(planningObserver.onResolvingFinished(context, _))
+
+    val finalPlan = afterResolveHook
+      .map(_.plan)
+      .map(hook.hookFinal(context, _))
+      .eff(planningObserver.onFinalPlan(context, _))
       .get
 
-    finalPlan
+    if (replanningCriterion.shouldReplan(context, afterResolveHook, finalPlan)) {
+      val opMap = new DodgyPlan.OpMap()
+      opMap ++= finalPlan.plan.steps.collect({ case i: InstantiationOp => (i.target, i) })
+      val newSource = DodgyPlan(opMap, planAnalyzer.topoBuild(finalPlan.plan.steps), ArrayBuffer.empty)
+      finish(context.copy(count = context.count + 1, source = newSource))
+    } else {
+      finalPlan.plan
+    }
   }
 
   private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
