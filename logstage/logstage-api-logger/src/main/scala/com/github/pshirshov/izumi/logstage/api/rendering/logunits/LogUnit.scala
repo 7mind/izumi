@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.Log.LogArg
-import com.github.pshirshov.izumi.logstage.api.rendering.{ConsoleColors, RenderedMessage}
+import com.github.pshirshov.izumi.logstage.api.rendering.{ConsoleColors, RenderedMessage, RenderedParameter}
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -190,20 +190,27 @@ object LogUnit {
 
     val argToStringColored: Any => String = argValue => argToString(argValue, withColors)
 
-    val parameters = new mutable.HashMap[String, mutable.Set[String]] with mutable.MultiMap[String, String]
+    val parameters = new mutable.HashMap[String, mutable.ArrayBuffer[RenderedParameter]]
 
     balanced.foreach {
       case (part, LogArg(argName, argValue)) =>
         val (argNameToUse, partToUse) = (argName, part)
 
-        parameters.addBinding(argNameToUse, argToString(argValue, withColors = false))
+        val uncoloredRepr = argToString(argValue, withColors = false)
+        parameters.getOrElseUpdate(argNameToUse, mutable.ArrayBuffer.empty[RenderedParameter]) += RenderedParameter(argValue, uncoloredRepr)
 
         templateBuilder.append("${")
         templateBuilder.append(argNameToUse)
         templateBuilder.append('}')
         templateBuilder.append(StringContext.treatEscapes(partToUse))
 
-        messageBuilder.append(formatKv(withColors)(LogArg(argNameToUse, argToStringColored(argValue))))
+        val maybeColoredRepr = if (withColors) {
+          argToStringColored(argValue)
+        } else {
+          uncoloredRepr
+        }
+
+        messageBuilder.append(formatKv(withColors)(LogArg(argNameToUse, maybeColoredRepr)))
         messageBuilder.append(StringContext.treatEscapes(partToUse))
     }
 
@@ -214,7 +221,7 @@ object LogUnit {
         messageBuilder.append(formatKv(withColors)(LogArg(argName, argToStringColored(argValue))))
     }
 
-    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.mapValues(_.toSet).toMap)
+    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.mapValues(_.toSeq).toMap)
   }
 
   private def argToString(argValue: Any, withColors: Boolean): String = {

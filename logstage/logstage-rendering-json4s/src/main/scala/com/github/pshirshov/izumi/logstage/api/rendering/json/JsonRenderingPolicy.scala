@@ -3,8 +3,8 @@ package com.github.pshirshov.izumi.logstage.api.rendering.json
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.Log.LogContext
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogUnit
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy, StringRenderingPolicy}
-import org.json4s.JsonAST.{JField, JObject}
+import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, RenderingOptions, RenderingPolicy, StringRenderingPolicy}
+import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
 
@@ -17,7 +17,7 @@ class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy 
   override def render(entry: Log.Entry): String = {
     val formatted = LogUnit.formatMessage(entry, withColors = false)
 
-    val params = makeJson(formatted.parameters)
+    val params = makeJsonX(formatted.parameters)
     val context = makeJson(mkMap(entry.context.customContext.values))
 
 
@@ -53,6 +53,47 @@ class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy 
       JsonMethods.pretty(rendered)
     } else {
       JsonMethods.compact(rendered)
+    }
+  }
+
+  private def makeJsonX(p: Map[String, Seq[RenderedParameter]]): JObject = {
+    val (unary, multiple) = p.partition(_._2.size == 1)
+    val paramsMap = unary.map {
+      kv =>
+        JField(normalizeName(kv._1), repr(kv._2.head))
+    }
+    val multiparamsMap = multiple.map {
+      kv =>
+        JField(normalizeName(kv._1), kv._2.map(repr))
+    }
+    (paramsMap: JObject) ~ (multiparamsMap: JObject)
+  }
+
+  def repr(parameter: RenderedParameter): JValue = {
+    parameter match {
+      case RenderedParameter(a: Double, _) =>
+        JDouble(a)
+      case RenderedParameter(a: BigDecimal, _) =>
+        JDecimal(a)
+      case RenderedParameter(a: Int, _) =>
+        JInt(a)
+      case RenderedParameter(a: BigInt, _) =>
+        JInt(a)
+      case RenderedParameter(a: Boolean, _) =>
+        JBool(a)
+      case RenderedParameter(a: Long, _) =>
+        JLong(a)
+      case RenderedParameter(null, _) =>
+        JNull
+      case RenderedParameter(a: Throwable, _) =>
+        import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+        Map(
+          "type" -> a.getClass.getName
+          , "message" -> a.getMessage
+          , "stacktrace" -> a.stackTrace
+        ) : JObject
+      case RenderedParameter(_, repr) =>
+        JString(repr)
     }
   }
 
