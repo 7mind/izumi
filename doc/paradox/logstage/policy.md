@@ -3,6 +3,9 @@
 Rendering policy defines how incoming log event will be transformed into a string. Rendering layout defines in a @ref[logstage](config.md) config section. 
 Rendering policy has string interpolator-like format. Each component (named as _Log Unit_) defines like ${log_unit_label} in string.
 
+Default template: `${level}:${ts} ${thread}${location} ${custom-ctx} ${msg}`
+
+
 ## Log units specification
 
 Unit     | Aliases                | Explanation                                  | Syntax  |
