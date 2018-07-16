@@ -107,9 +107,8 @@ Basic setup
 
 @@@ index
 
-* [Available sink backends](sinks.md)
 * [Rendering policy](policy.md)
 * [Configuration](config.md)
-* [Logging contexts](contexts.md)
+* [Logging contexts](custom_ctx.md)
 
 @@@
