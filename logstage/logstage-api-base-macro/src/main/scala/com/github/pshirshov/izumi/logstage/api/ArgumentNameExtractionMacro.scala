@@ -63,8 +63,8 @@ object ArgumentNameExtractionMacro {
               s"""Expression as a logger argument: $v
                   |
                   |Izumi logger expect you to provide plain variables or names expressions as arguments:
-                  |1) Simple variable logger.log(s"My message: $$argument")
-                  |2) Named expression logger.log(s"My message: $${Some.expression -> "argname"}")
+                  |1) Simple variable: logger.log(s"My message: $$argument")
+                  |2) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
                """.stripMargin)
             reifiedPrefixedValue(c)(c.Expr[String](Literal(Constant(v.toString()))), param, "EXPRESSION")
         }

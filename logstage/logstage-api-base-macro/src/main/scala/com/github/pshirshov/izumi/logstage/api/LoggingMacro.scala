@@ -76,8 +76,8 @@ object LoggingMacro {
           s"""Complex expression as an input for a logger: ${other.toString()}.
              |
              |Izumi logger expect you to apply string interpolations:
-             |1) Simple variable logger.log(s"My message: $$argument")
-             |2) Named expression logger.log(s"My message: $${Some.expression -> "argname"}")
+             |1) Simple variable: logger.log(s"My message: $$argument")
+             |2) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
              |""".stripMargin)
         val emptyArgs = reify {
           val repr = c.Expr[String](Literal(Constant(other.toString()))).splice
@@ -87,7 +87,6 @@ object LoggingMacro {
         reifyContext(c)(sc, emptyArgs)
     }
 
-    assert(1 != 2)
     logMacro(c)(messageTree, logLevel)
   }
 

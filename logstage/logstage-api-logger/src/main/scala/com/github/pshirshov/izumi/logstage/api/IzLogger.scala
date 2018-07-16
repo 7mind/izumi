@@ -18,7 +18,7 @@ class IzLogger
   }
 
   implicit def withMapAsCustomContext(map: Map[String, Any]): IzLogger = {
-    withCustomContext(CustomContext(map.map(LogArg.tupled).toList))
+    withCustomContext(CustomContext(map.map(kv => LogArg(kv._1, kv._2)).toList))
   }
 
   def apply[V](conv: Map[String, V]): IzLogger = conv

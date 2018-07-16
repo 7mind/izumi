@@ -38,13 +38,13 @@ object Log {
 
   }
 
-  case class LogArg(name: String, value: Any)
+  case class LogArg(name: String, value: Any, hidden: Boolean)
+
+  object LogArg {
+    def apply(name: String, value: Any): LogArg = new LogArg(name, value, false)
+  }
 
   type LogContext = Seq[LogArg]
-
-  //type LogContextEntry = (String, Any)
-  //type LogContext = Map[String, Any]¬
-
 
   final case class CustomContext(values: LogContext) {
     def +(that: CustomContext): CustomContext = {
