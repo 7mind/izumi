@@ -248,7 +248,7 @@ object LogUnit {
       case _ =>
         Try(argValue.toString) match {
           case Success(s) =>
-            s
+            wrapped(withColors, Console.CYAN, s)
 
           case Failure(f) =>
             import IzThrowable._
