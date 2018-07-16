@@ -10,7 +10,7 @@ object ArgumentNameExtractionMacro {
   protected[api] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
     import c.universe._
 
-    def arrowMatch(arg: c.universe.Tree): Option[(c.Expr[Any], List[c.universe.Tree])] = {
+    def arrowMatch(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
       arg match {
         case Apply
           (
@@ -23,19 +23,19 @@ object ArgumentNameExtractionMacro {
                 TypeApply(Select(Select(Ident(TermName("scala")), _), TermName("ArrowAssoc")), List(TypeTree())),
                 expr :: Nil
                 ),
-              TermName("$minus$greater")
+                _ /*TermName("$minus$greater")*/
               )
             , List(TypeTree())
             )
-          , exprRight
+          , List(Literal(Constant(name: String)))
           ) =>
-          Some((c.Expr(expr), exprRight))
+          Some((c.Expr(expr), name))
         case _ =>
           None
       }
     }
 
-    def hiddenArrowMatch(arg: c.universe.Tree): Option[(c.Expr[Any], List[c.universe.Tree])] = {
+    def hiddenArrowMatch(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
       arg match {
         case
           Apply(
@@ -44,7 +44,7 @@ object ArgumentNameExtractionMacro {
               TypeApply(Select(Select(Ident(scala), _), TermName("ArrowAssoc")), List(TypeTree()))
               , expr :: Nil
             )
-            , TermName("$minus$greater")), List(TypeTree()
+            , _ /*TermName("$minus$greater")*/), List(TypeTree()
           ))
 
             , List(Literal(Constant(null)))
@@ -57,29 +57,11 @@ object ArgumentNameExtractionMacro {
 
 
     object ArrowArg {
-
-      import c.universe._
-
-      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
-        arrowMatch(arg).flatMap {
-          case (expr, List(Literal(Constant(name: String)))) =>
-            Some((expr, name))
-          case _ =>
-            None
-        }
-      }
+      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = arrowMatch(arg)
     }
 
     object HiddenArrowArg {
-
-      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
-        hiddenArrowMatch(arg).flatMap {
-          case (expr, List(Literal(Constant(name: String)))) =>
-            Some((expr, name))
-          case _ =>
-            None
-        }
-      }
+      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = hiddenArrowMatch(arg)
     }
 
     val expressions = args.map {
