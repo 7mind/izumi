@@ -19,8 +19,8 @@ object Binding {
   // tag equals breaks DSL a little bit (see comment in "Tags in different modules are merged" in InjectorTest)
   final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[String] = Set.empty) extends ImplBinding {
     override def equals(obj: scala.Any): Boolean = obj match {
-      case SingletonBinding(k, i, _) =>
-        key == k && implementation == i
+      case that: SingletonBinding[_] =>
+        key == that.key && implementation == that.implementation
       case _ =>
         false
     }
@@ -32,8 +32,8 @@ object Binding {
 
   final case class SetElementBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[String] = Set.empty) extends ImplBinding with SetBinding {
     override def equals(obj: scala.Any): Boolean = obj match {
-      case SetElementBinding(k, i, _) =>
-        key == k && implementation == i
+      case that: SetElementBinding[_] =>
+        key == that.key && implementation == that.implementation
       case _ =>
         false
     }
@@ -43,8 +43,8 @@ object Binding {
 
   final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[String] = Set.empty) extends SetBinding {
     override def equals(obj: scala.Any): Boolean = obj match {
-      case EmptySetBinding(k, _) =>
-        key == k
+      case that: EmptySetBinding[_] =>
+        key == that.key
       case _ =>
         false
     }

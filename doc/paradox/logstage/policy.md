@@ -1,6 +1,6 @@
 # Rendering policy
 
-Rendering policy defines how incoming log event will be transformed into a string. Rendering layout defines in a [logstage](config.md) config section. 
+Rendering policy defines how incoming log event will be transformed into a string. Rendering layout defines in a @ref[logstage](config.md) config section. 
 Rendering policy has string interpolator-like format. Each component (named as _Log Unit_) defines like ${log_unit_label} in string.
 
 ## Log units specification
@@ -12,7 +12,7 @@ Unit     | Aliases                | Explanation                                 
 `level`     | `lvl`                  | Logging level |  `${lvl}` |
 `location`  | `loc`                  | Log message location (hyperlink to filename it's line number) | `${location}` | 
 `message`   | `msg`                  | Application-supplied message associated with the logging event | `${message}` |
-`custom-ctx`| `context`, `ctx`       | User's context (more info [here](custom_ctx.md))| `${custom-ctx}` |
+`custom-ctx`| `context`, `ctx`       | User's context (more info @ref[here](custom_ctx.md))| `${custom-ctx}` |
 `exception` | `ex`                   | Outputs the stack trace of the exception associated with the logging event, if any. By default the full stack trace will be output. | `${ex}` |
 
 ### Parameters

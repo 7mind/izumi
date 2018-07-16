@@ -16,5 +16,5 @@ trait Provision {
 
   final def get(key: RuntimeDIUniverse.DIKey): Option[Any] = instances.get(key).orElse(imports.get(key))
 
-  final def enumerate: Stream[IdentifiedRef] = instances.map(IdentifiedRef.tupled).toStream
+  final def enumerate: Seq[IdentifiedRef] = instances.map(IdentifiedRef.tupled).toSeq
 }

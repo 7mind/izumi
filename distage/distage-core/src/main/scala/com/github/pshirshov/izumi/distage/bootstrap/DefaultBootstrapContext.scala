@@ -29,7 +29,7 @@ class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLoc
     bootstrapProducer.provision(plan, this)
   }
 
-  def enumerate: Stream[IdentifiedRef] = {
+  def instances: Seq[IdentifiedRef] = {
     bootstrappedContext.enumerate
   }
 
