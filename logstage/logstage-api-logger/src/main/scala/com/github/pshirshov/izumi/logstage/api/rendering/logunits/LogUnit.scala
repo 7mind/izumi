@@ -169,14 +169,6 @@ object LogUnit {
   }.toMap
 
 
-  private def formatKv(withColor: Boolean)(kv: LogArg): String = {
-    if (withColor) {
-      s"${Console.GREEN}${kv.name}${Console.RESET}=${Console.CYAN}${kv.value}${Console.RESET}"
-    } else {
-      s"${kv.name}=${kv.value}"
-    }
-  }
-
   def formatArg(arg: Any, withColors: Boolean): RenderedParameter = {
     RenderedParameter(arg, argToString(arg, withColors))
   }
@@ -191,8 +183,6 @@ object LogUnit {
 
     val balanced = entry.message.template.parts.tail.zip(entry.message.args)
     val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
-
-    val argToStringColored: Any => String = argValue => argToString(argValue, withColors)
 
     val parameters = new mutable.HashMap[String, mutable.ArrayBuffer[RenderedParameter]]
 
@@ -209,7 +199,7 @@ object LogUnit {
         templateBuilder.append(StringContext.treatEscapes(partToUse))
 
         val maybeColoredRepr = if (withColors) {
-          argToStringColored(argValue)
+          argToString(argValue, withColors)
         } else {
           uncoloredRepr.repr
         }
@@ -226,7 +216,7 @@ object LogUnit {
       case LogArg(argName, argValue, hidden) =>
         templateBuilder.append("; ?")
         messageBuilder.append("; ")
-        val repr = argToStringColored(argValue)
+        val repr = argToString(argValue, withColors)
         if (!hidden) {
           messageBuilder.append(formatKv(withColors)(LogArg(argName, repr)))
         } else {
@@ -235,6 +225,12 @@ object LogUnit {
     }
 
     RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.mapValues(_.toSeq).toMap)
+  }
+
+  private def formatKv(withColor: Boolean)(kv: LogArg): String = {
+    val key = wrapped(withColor, Console.GREEN, kv.name)
+    val value = argToString(kv.value, withColor)
+    s"$key=$value"
   }
 
   private def argToString(argValue: Any, withColors: Boolean): String = {
@@ -248,7 +244,7 @@ object LogUnit {
       case _ =>
         Try(argValue.toString) match {
           case Success(s) =>
-            s
+            wrapped(withColors, Console.CYAN, s)
 
           case Failure(f) =>
             import IzThrowable._
