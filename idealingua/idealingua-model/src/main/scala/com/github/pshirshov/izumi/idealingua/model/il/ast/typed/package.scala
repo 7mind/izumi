@@ -7,5 +7,5 @@ package object typed {
   type Interfaces = List[InterfaceId]
   type Structures = List[StructureId]
   type Tuple = List[Field]
-  type PrimitiveTuple = List[PrimitiveField]
+  type IdTuple = List[IdField]
 }

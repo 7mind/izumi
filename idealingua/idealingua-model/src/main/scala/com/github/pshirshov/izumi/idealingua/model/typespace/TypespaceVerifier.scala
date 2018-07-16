@@ -54,7 +54,7 @@ object MissingDependency {
     override def toString: TypeName = s"[field $definedIn::${tpe.name} :$missing]"
   }
 
-  final case class DepPrimitiveField(definedIn: TypeId, missing: TypeId, tpe: typed.PrimitiveField) extends MissingDependency {
+  final case class DepPrimitiveField(definedIn: TypeId, missing: TypeId, tpe: typed.IdField) extends MissingDependency {
     override def toString: TypeName = s"[field $definedIn::${tpe.name} :$missing]"
   }
 

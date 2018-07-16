@@ -1,15 +1,26 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{IdentifierId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, IdentifierId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common.{PrimitiveId, TypeId}
 
 final case class Field(typeId: TypeId, name: String) {
   override def toString: String = s"$name:$typeId"
 }
 
-final case class PrimitiveField(typeId: PrimitiveId, name: String)
+sealed trait IdField {
+  def name: String
+  def typeId: TypeId
+}
 
-final case class IdField(typeId: IdentifierId, name: String)
+object IdField {
+  final case class PrimitiveField(typeId: PrimitiveId, name: String) extends IdField
+
+  final case class SubId(typeId: IdentifierId, name: String)  extends IdField
+
+  final case class Enum(typeId: EnumId, name: String)  extends IdField
+}
+
+
 
 final case class SimpleStructure(concepts: Structures, fields: Tuple)
 

@@ -40,13 +40,19 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId)
 
       case d: RawTypeDef.Identifier =>
-        val (primitive, nonPrimitive) = d.fields.partition(f => isIdPrimitive(f.typeId))
+        val typedFields = d.fields.map {
+          case f if isIdPrimitive(f.typeId) =>
+            IdField.PrimitiveField(toIdPrimitive(f.typeId), f.name)
+          case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[IdentifierId]) =>
+            IdField.SubId(fixSimpleId(makeDefinite(f.typeId)): TypeId.IdentifierId, f.name)
+          case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[EnumId]) =>
+            IdField.Enum(fixSimpleId(makeDefinite(f.typeId)): TypeId.EnumId, f.name)
+          case f =>
+            throw new IDLException(s"Unsupporeted ID field $f in $domainId. You may use primitive fields, enums or other IDs only")
 
-        typed.TypeDef.Identifier(
-          id = fixSimpleId(d.id): TypeId.IdentifierId,
-          fields = fixPrimitiveFields(primitive),
-          idFields = nonPrimitive.map(f => IdField(fixSimpleId(makeDefinite(f.typeId)): TypeId.IdentifierId, f.name)),
-        )
+        }
+
+        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = typedFields)
 
       case d: RawTypeDef.Interface =>
         typed.TypeDef.Interface(id = fixSimpleId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct))
@@ -112,11 +118,6 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
   protected def fixFields(fields: raw.RawTuple): typed.Tuple = {
     fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId)))
   }
-
-  protected def fixPrimitiveFields(fields: raw.RawTuple): typed.PrimitiveTuple = {
-    fields.map(f => typed.PrimitiveField(name = f.name, typeId = toIdPrimitive(f.typeId)))
-  }
-
 
   protected def fixMethod(method: raw.Service.DefMethod): typed.Service.DefMethod = {
     method match {
