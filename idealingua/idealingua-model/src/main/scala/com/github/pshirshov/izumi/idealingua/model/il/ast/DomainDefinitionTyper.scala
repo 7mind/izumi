@@ -107,7 +107,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
   }
 
   protected def fixPrimitiveFields(fields: raw.RawTuple): typed.PrimitiveTuple = {
-    fields.map(f => typed.PrimitiveField(name = f.name, typeId = toPrimitive(f.typeId)))
+    fields.map(f => typed.PrimitiveField(name = f.name, typeId = toIdPrimitive(f.typeId)))
   }
 
 
@@ -141,7 +141,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
   protected def makeDefinite(id: AbstractIndefiniteId): TypeId = {
     id match {
-      case p if isPrimitive(p) =>
+      case p if isIdPrimitive(p) =>
         Primitive.mapping(p.name)
 
       case g: IndefiniteGeneric =>
@@ -171,13 +171,14 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     DomainId(v.init, v.last)
   }
 
-  protected def toPrimitive(typeId: AbstractIndefiniteId): Primitive = {
+  protected def toIdPrimitive(typeId: AbstractIndefiniteId): Primitive = {
     typeId match {
-      case p if isPrimitive(p) =>
-        Primitive.mapping(p.name)
+      case p if isIdPrimitive(p) =>
+        Primitive.mappingId(p.name)
 
       case o =>
-        throw new IDLException(s"Unexpected non-primitive id in $domainId: $o")
+        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        throw new IDLException(s"The $domainId: $o; Allowed types for identifier fields: ${Primitive.mappingId.values.map(_.name).niceList()}")
     }
   }
 
@@ -335,8 +336,8 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     }
   }
 
-  protected def isPrimitive(abstractTypeId: AbstractIndefiniteId): Boolean = {
-    abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
+  protected def isIdPrimitive(abstractTypeId: AbstractIndefiniteId): Boolean = {
+    abstractTypeId.pkg.isEmpty && Primitive.mappingId.contains(abstractTypeId.name)
   }
 
 

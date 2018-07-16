@@ -1,13 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
+import com.github.pshirshov.izumi.idealingua.model.common.{PrimitiveId, TypeId}
 
 final case class Field(typeId: TypeId, name: String) {
   override def toString: String = s"$name:$typeId"
 }
 
-final case class PrimitiveField(typeId: Primitive, name: String)
+final case class PrimitiveField(typeId: PrimitiveId, name: String)
 
 final case class SimpleStructure(concepts: Structures, fields: Tuple)
 
