@@ -17,7 +17,7 @@ object TypeDef {
 
   final case class Adt(id: AdtId, alternatives: List[AdtMember]) extends TypeDef
 
-  final case class Identifier(id: IdentifierId, fields: PrimitiveTuple) extends TypeDef
+  final case class Identifier(id: IdentifierId, fields: PrimitiveTuple, idFields: List[IdField]) extends TypeDef
 
   sealed trait WithStructure extends TypeDef {
     def id: StructureId

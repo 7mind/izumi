@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionParsed, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.IdField
 
 import scala.reflect._
 
@@ -39,7 +40,13 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId)
 
       case d: RawTypeDef.Identifier =>
-        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = fixPrimitiveFields(d.fields))
+        val (primitive, nonPrimitive) = d.fields.partition(f => isIdPrimitive(f.typeId))
+
+        typed.TypeDef.Identifier(
+          id = fixSimpleId(d.id): TypeId.IdentifierId,
+          fields = fixPrimitiveFields(primitive),
+          idFields = nonPrimitive.map(f => IdField(fixSimpleId(makeDefinite(f.typeId)): TypeId.IdentifierId, f.name)),
+        )
 
       case d: RawTypeDef.Interface =>
         typed.TypeDef.Interface(id = fixSimpleId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct))
@@ -141,7 +148,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
   protected def makeDefinite(id: AbstractIndefiniteId): TypeId = {
     id match {
-      case p if isIdPrimitive(p) =>
+      case p if isPrimitive(p) =>
         Primitive.mapping(p.name)
 
       case g: IndefiniteGeneric =>
@@ -340,5 +347,8 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     abstractTypeId.pkg.isEmpty && Primitive.mappingId.contains(abstractTypeId.name)
   }
 
+  protected def isPrimitive(abstractTypeId: AbstractIndefiniteId): Boolean = {
+    abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
+  }
 
 }

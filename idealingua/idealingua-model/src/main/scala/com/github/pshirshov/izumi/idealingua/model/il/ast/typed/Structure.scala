@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{IdentifierId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common.{PrimitiveId, TypeId}
 
 final case class Field(typeId: TypeId, name: String) {
@@ -8,6 +8,8 @@ final case class Field(typeId: TypeId, name: String) {
 }
 
 final case class PrimitiveField(typeId: PrimitiveId, name: String)
+
+final case class IdField(typeId: IdentifierId, name: String)
 
 final case class SimpleStructure(concepts: Structures, fields: Tuple)
 
