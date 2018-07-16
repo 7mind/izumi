@@ -10,30 +10,72 @@ object ArgumentNameExtractionMacro {
   protected[api] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
     import c.universe._
 
+    def arrowMatch(arg: c.universe.Tree): Option[(c.Expr[Any], List[c.universe.Tree])] = {
+      arg match {
+        case Apply
+          (
+          TypeApply
+            (
+            Select
+              (
+              Apply
+                (
+                TypeApply(Select(Select(Ident(TermName("scala")), _), TermName("ArrowAssoc")), List(TypeTree())),
+                expr :: Nil
+                ),
+              TermName("$minus$greater")
+              )
+            , List(TypeTree())
+            )
+          , exprRight
+          ) =>
+          Some((c.Expr(expr), exprRight))
+        case _ =>
+          None
+      }
+    }
+
+    def hiddenArrowMatch(arg: c.universe.Tree): Option[(c.Expr[Any], List[c.universe.Tree])] = {
+      arg match {
+        case
+          Apply(
+          TypeApply(Select(
+            Apply(
+              TypeApply(Select(Select(Ident(scala), _), TermName("ArrowAssoc")), List(TypeTree()))
+              , expr :: Nil
+            )
+            , TermName("$minus$greater")), List(TypeTree()
+          ))
+
+            , List(Literal(Constant(null)))
+          ) =>
+          arrowMatch(expr)
+        case _ =>
+          None
+      }
+    }
+
+
     object ArrowArg {
 
       import c.universe._
 
       def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
-        arg match {
-          case Apply
-            (
-            TypeApply
-              (
-              Select
-                (
-                Apply
-                  (
-                  TypeApply(Select(Select(Ident(TermName("scala")), _), TermName("ArrowAssoc")), List(TypeTree())),
-                  expr :: Nil
-                  ),
-                TermName("$minus$greater")
-                )
-              , List(TypeTree())
-              )
-            , List(Literal(Constant(name: String)))
-            ) =>
-            Some((c.Expr(expr), name))
+        arrowMatch(arg).flatMap {
+          case (expr, List(Literal(Constant(name: String)))) =>
+            Some((expr, name))
+          case _ =>
+            None
+        }
+      }
+    }
+
+    object HiddenArrowArg {
+
+      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
+        hiddenArrowMatch(arg).flatMap {
+          case (expr, List(Literal(Constant(name: String)))) =>
+            Some((expr, name))
           case _ =>
             None
         }
@@ -49,6 +91,9 @@ object ArgumentNameExtractionMacro {
           case ArrowArg(expr, name) =>
             reifiedExtracted(c)(expr, name)
 
+          case HiddenArrowArg(expr, name) =>
+            reifiedExtractedHidden(c)(expr, name)
+
           case c.universe.Select(_, TermName(s)) =>
             reifiedExtracted(c)(param, s)
 
@@ -61,10 +106,12 @@ object ArgumentNameExtractionMacro {
           case v =>
             c.warning(c.enclosingPosition,
               s"""Expression as a logger argument: $v
-                  |
-                  |Izumi logger expect you to provide plain variables or names expressions as arguments:
-                  |1) Simple variable: logger.log(s"My message: $$argument")
-                  |2) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
+                 |
+                 |Izumi logger expect you to provide plain variables or names expressions as arguments:
+                 |1) Simple variable: logger.log(s"My message: $$argument")
+                 |2) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
+                 |
+                 |Tree: ${c.universe.show(v)}
                """.stripMargin)
             reifiedPrefixedValue(c)(c.Expr[String](Literal(Constant(v.toString()))), param, "EXPRESSION")
         }
@@ -87,6 +134,14 @@ object ArgumentNameExtractionMacro {
     }
   }
 
+
+  private def reifiedExtractedHidden(c: blackbox.Context)(param: c.Expr[Any], s: String): c.universe.Expr[LogArg] = {
+    import c.universe._
+    val paramRepTree = c.Expr[String](Literal(Constant(s)))
+    reify {
+      LogArg(paramRepTree.splice, param.splice, hidden = true)
+    }
+  }
 
   private def reifiedExtracted(c: blackbox.Context)(param: c.Expr[Any], s: String): c.universe.Expr[LogArg] = {
     import c.universe._
