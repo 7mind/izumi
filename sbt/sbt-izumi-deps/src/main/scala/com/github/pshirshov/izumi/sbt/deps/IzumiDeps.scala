@@ -2,8 +2,6 @@ package com.github.pshirshov.izumi.sbt.deps
 
 import sbt._
 
-
-
 object IzumiDeps {
 
   object V {
@@ -83,7 +81,6 @@ object IzumiDeps {
       , "io.circe" %% "circe-generic"
       , "io.circe" %% "circe-generic-extras"
       , "io.circe" %% "circe-parser"
-      , "io.circe" %% "circe-java8"
     ).map(_ % V.circe) ++ Seq(
       "io.circe" %% "circe-derivation" % V.circe_derivation)
 

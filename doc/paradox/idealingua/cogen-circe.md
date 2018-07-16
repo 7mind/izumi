@@ -210,7 +210,7 @@ Right(Right(AnotherPayload(hi)))
 
 Identifiers codec just invokes `.toString` and `.parse` to serialize/deserialize Identifiers.
 
-Please check [identifier codegen example](cogen.md#id-identifier) for additional details.
+Please check @ref[identifier codegen example](cogen.md#id-identifier) for additional details.
 
 Full example:
 

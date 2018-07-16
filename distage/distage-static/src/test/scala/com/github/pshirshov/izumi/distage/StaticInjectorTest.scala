@@ -82,11 +82,11 @@ class StaticInjectorTest extends WordSpec {
       assert(traitArg != null && traitArg.isInstanceOf[Circular4])
       assert(c3.method == 2L)
       assert(traitArg.testVal == 1)
-      assert(context.enumerate.nonEmpty)
+      assert(context.instances.nonEmpty)
       assert(context.get[Circular4].factoryFun(context.get[Circular4], context.get[Circular5]) != null)
     }
 
-    "support more complex circular dependencies (err no proxy generated - no circular dependency?)" in {
+    "support non-circular dependencies (regression test)" in {
       import Case15._
 
       val definition: ModuleBase = new StaticModuleDef {

@@ -74,7 +74,7 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
               null
 
             case p =>
-              context.fetchKey(p.wireWith).orNull.asInstanceOf[AnyRef]
+              context.fetchKey(p.wireWith).orNull
           }
 
           RuntimeDIUniverse.mirror.runtimeClass(param.wireWith.tpe.tpe) -> value
@@ -85,8 +85,8 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
 
     val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
 
-
     val proxyInstance = proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
+
     Seq(
       OpResult.NewInstance(makeProxy.target, proxyInstance.proxy)
       , OpResult.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)

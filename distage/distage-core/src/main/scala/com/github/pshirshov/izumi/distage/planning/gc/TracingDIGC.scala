@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.planning.gc
 import com.github.pshirshov.izumi.distage.model.definition.SimpleModuleDef
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, WiringOp}
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan, FinalPlanImmutableImpl}
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{DIGarbageCollector, GCRootPredicate}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -19,7 +19,7 @@ object TracingDIGC extends DIGarbageCollector {
     val refinedPlan = SimpleModuleDef(original.filter(b => toLeave.contains(b.key)))
     //println(s"${original.size - refinedPlan.bindings.size} component(s) collected by gc")
     val steps = plan.steps.filter(s => toLeave.contains(s.target))
-    FinalPlanImmutableImpl(refinedPlan, steps)
+    FinalPlan(refinedPlan, steps)
   }
 
   @tailrec

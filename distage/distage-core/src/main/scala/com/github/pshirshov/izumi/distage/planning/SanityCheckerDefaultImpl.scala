@@ -38,12 +38,12 @@ class SanityCheckerDefaultImpl
   override def assertFinalPlanSane(plan: FinalPlan): Unit = {
     assertNoDuplicateOps(plan.steps)
 
-    val reftable = planAnalyzer.computeFwdRefTable(plan.steps.toStream)
+    val reftable = planAnalyzer.computeFwdRefTable(plan.steps)
     if (reftable.dependsOn.nonEmpty) {
       throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependsOn}!", reftable)
     }
 
-    val fullRefTable = planAnalyzer.computeFullRefTable(plan.steps.toStream)
+    val fullRefTable = planAnalyzer.computeFullRefTable(plan.steps)
 
     val allAvailableRefs = fullRefTable.dependenciesOf.keySet
     val fullDependenciesSet = fullRefTable.dependenciesOf.flatMap(_._2).toSet
