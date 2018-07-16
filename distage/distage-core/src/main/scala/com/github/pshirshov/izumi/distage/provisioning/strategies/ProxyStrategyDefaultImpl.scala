@@ -74,7 +74,7 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
               null
 
             case p =>
-              context.fetchKey(p.wireWith).orNull
+              context.fetchKey(p.wireWith).orNull.asInstanceOf[AnyRef]
           }
 
           RuntimeDIUniverse.mirror.runtimeClass(param.wireWith.tpe.tpe) -> value

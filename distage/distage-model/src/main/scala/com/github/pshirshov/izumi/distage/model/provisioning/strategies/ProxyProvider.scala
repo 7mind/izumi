@@ -18,9 +18,9 @@ sealed trait ProxyParams
 
 object ProxyParams {
 
-  case object Empty extends ProxyParams
+  final case object Empty extends ProxyParams
 
-  final case class Params(types: Array[Class[_]], values: Array[Any]) extends ProxyParams
+  final case class Params(types: Array[Class[_]], values: Array[AnyRef]) extends ProxyParams
 
 }
 
