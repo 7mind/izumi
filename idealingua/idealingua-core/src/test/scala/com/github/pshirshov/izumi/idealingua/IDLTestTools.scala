@@ -211,6 +211,11 @@ object IDLTestTools {
   }
 
   private def run(workDir: Path, cmd: Seq[String], env: Map[String, String], cname: String): Int = {
+    val cmdlog = workDir.getParent.resolve(s"$cname.sh")
+    val commands = Seq(s"cd ${workDir.toAbsolutePath}") ++ env.map(kv => s"export ${kv._1}=${kv._2}") ++ Seq(cmd.mkString(" "))
+    val cmdSh = commands.mkString("\n")
+    Files.write(cmdlog, cmdSh.getBytes)
+
     val log = workDir.getParent.resolve(s"$cname.log").toFile
     val logger = ProcessLogger(log)
     val exitCode = try {
@@ -223,8 +228,7 @@ object IDLTestTools {
 
     if (exitCode != 0) {
       System.err.println(s"Process failed for $cname: $exitCode")
-      val commands = Seq(s"cd ${workDir.toAbsolutePath}") ++ env.map(kv => s"export ${kv._1}=${kv._2}") ++ Seq(cmd.mkString(" "))
-      println(commands.mkString("\n"))
+      println(cmdSh)
       System.err.println(IzFiles.readString(log))
     }
     exitCode
