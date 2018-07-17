@@ -1,0 +1,11 @@
+domain idltest.aliases
+
+mixin M {
+  _: str
+}
+
+alias A = M
+
+data D {
+  & A
+}

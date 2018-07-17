@@ -41,7 +41,7 @@ object ArgumentNameExtractionMacro {
           Apply(
           TypeApply(Select(
             Apply(
-              TypeApply(Select(Select(Ident(scala), _), TermName("ArrowAssoc")), List(TypeTree()))
+              TypeApply(Select(Select(Ident("scala"), _), TermName("ArrowAssoc")), List(TypeTree()))
               , expr :: Nil
             )
             , _ /*TermName("$minus$greater")*/), List(TypeTree()
