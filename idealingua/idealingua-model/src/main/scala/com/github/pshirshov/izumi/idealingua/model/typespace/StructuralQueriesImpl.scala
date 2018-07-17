@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, FieldConflicts, PlainStruct, Struct}
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.collection.mutable
 
@@ -173,6 +174,8 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       .map(t => structure(resolver.get(t)))
       .map {
         istruct =>
+          val targetId = istruct.id
+
           val localFields = istruct.localOrAmbigious
             .map(_.field)
             .toSet
@@ -185,7 +188,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
           val mixinInstanceFieldsCandidates = istruct
             .unambigiousInherited
             .map(_.defn.definedBy)
-            .collect({ case i: InterfaceId => i })
+            .collect({ case i: StructureId => i })
             .flatMap(mi => structure(resolver.get(mi)).all)
             .filter(f => all.contains(f.field)) // to drop removed fields
             .filterNot(f => parentInstanceFields.contains(f.field))
@@ -196,17 +199,16 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
           val allFieldCandidates = mixinInstanceFields.map(_.field) ++ filteredParentFields.toList ++ localFields.toList
 
-          assert(allFieldCandidates.groupBy(_.name).forall(_._2.size == 1),
-            s"""IDL Compiler bug: contradictive converters for $id:
-               |Filtered parents:
-               |${filteredParentFields.mkString("\n  ")}
-               |
-               |Mixins:
-               |${mixinInstanceFields.mkString("\n  ")}
-               |
-               |Local:
-               |${localFields.mkString("\n  ")}
-               |""".stripMargin)
+          assert(
+            allFieldCandidates.groupBy(_.name).forall(_._2.size == 1),
+            s"""IDL Compiler bug: contradictive converter for $id -> $targetId:
+               |All fields: ${all.niceList()}
+               |Parent fields: ${parentInstanceFields.niceList()}
+               |Filtered PFs: ${filteredParentFields.niceList()}
+               |Mixins CFs: ${mixinInstanceFields.niceList()}
+               |Local Fields: ${localFields.niceList()}
+               |""".stripMargin
+          )
 
           val instanceFields = filteredParentFields.toList
           val childMixinFields = mixinInstanceFields
@@ -215,7 +217,18 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
           val outerFields = localFields.toList.map(f => SigParam(f.name, SigParamSource(f.typeId, f.name), None)) ++
             childMixinFields.map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
 
-          val targetId = istruct.id
+
+
+          assert(
+            all.map(_.name) == (innerFields.map(_.targetFieldName) ++ outerFields.map(_.targetFieldName)).toSet,
+            s"""IDL Compiler bug: failed to build converter for $id -> $targetId:
+               |All fields: ${all.niceList()}
+               |Parent fields: ${parentInstanceFields.niceList()}
+               |Filtered PFs: ${filteredParentFields.niceList()}
+               |Mixins CFs: ${mixinInstanceFields.niceList()}
+               |Local Fields: ${localFields.niceList()}
+               |""".stripMargin
+          )
 
           tools.mkConverter(innerFields, outerFields, targetId)
       }
