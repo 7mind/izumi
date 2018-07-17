@@ -40,10 +40,6 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
     val sortedFields = conflicts.all.sortBy(f => (f.defn.distance, f.defn.definedBy.toString, - f.defn.definedWithIndex)).reverse
     val output = new Struct(defn.id, parts, conflicts.good, conflicts.soft, sortedFields)
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-    println(defn.id)
-    println(sortedFields.niceList())
-    println()
     assert(output.all.groupBy(_.field.name).forall(_._2.size == 1), s"IDL Compiler Bug: contradictive structure for ${defn.id}: ${output.all.mkString("\n  ")}")
     output
   }
