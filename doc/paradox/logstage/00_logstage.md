@@ -16,7 +16,7 @@ Key features:
 4. Console and File sinks included, File sink supports log rotation,
 5. Human-readable and JSON formatting included,
 6. Method-level logging granularity. You may configure `com.mycompany.Service.start` and `com.mycompany.Service.doSomething` independently,
-7. Slf4J adapters: you may stream all the logging made with Slf4J with into LogStage router (as well you may route LogStage messages into slf4j but in a typical case you won't need it).
+7. Slf4J adapters: you may stream all the logging made with Slf4J into LogStage router (as well you may route LogStage messages into slf4j but in a typical case you won't need it).
 
 
 The essence

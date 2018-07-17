@@ -32,7 +32,8 @@ class ScalaTypeConverter(domain: DomainId) {
     def toScala: ScalaStruct = {
       val good = fields.unambigious.map(toScalaField)
       val soft = fields.ambigious.map(toScalaField)
-      new ScalaStruct(fields, good, soft)
+      val all = fields.all.map(toScalaField)
+      new ScalaStruct(fields, good, soft, all)
     }
   }
 

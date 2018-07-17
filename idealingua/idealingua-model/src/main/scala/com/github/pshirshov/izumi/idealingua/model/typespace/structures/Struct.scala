@@ -11,10 +11,8 @@ class Struct
   , val superclasses: Super
   , val unambigious: List[ExtendedField]
   , val ambigious: List[ExtendedField]
+  , val all: List[ExtendedField] // keeping separatedly to preserve order
 ) extends ConstAbstractStruct[ExtendedField] {
-
-  override def all: List[ExtendedField] = unambigious ++ ambigious
-
   override protected def isLocal(f: ExtendedField): Boolean = {
     f.defn.definedBy == id
   }

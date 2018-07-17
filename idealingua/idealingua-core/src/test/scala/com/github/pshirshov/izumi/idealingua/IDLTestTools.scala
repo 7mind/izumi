@@ -2,12 +2,12 @@ package com.github.pshirshov.izumi.idealingua
 
 import java.io.File
 import java.lang.management.ManagementFactory
-import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
@@ -59,15 +59,7 @@ object IDLTestTools {
       .getParent
 
 
-    val classpath = classLoader match {
-      case u: URLClassLoader =>
-        u
-          .getURLs
-          .map(_.getFile)
-          .mkString(System.getProperty("path.separator"))
-      case _ =>
-        System.getProperty("java.class.path")
-    }
+    val classpath: String = IzJvm.safeClasspath(classLoader)
 
     val cmd = Seq(
       "scalac"
@@ -79,7 +71,6 @@ object IDLTestTools {
 
     val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
     exitCode == 0
-
   }
 
   def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {

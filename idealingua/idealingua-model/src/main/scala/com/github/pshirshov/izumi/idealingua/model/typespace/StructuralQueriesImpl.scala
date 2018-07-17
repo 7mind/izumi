@@ -15,7 +15,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   }
 
   def structure(defn: Identifier): PlainStruct = {
-    val extractor = new FieldExtractor(types, resolver, defn.id)
+    val extractor = new FieldExtractor(resolver, defn.id)
     PlainStruct(extractor.extractFields(defn))
   }
 
@@ -24,7 +24,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   }
 
   def structure(defn: WithStructure): Struct = {
-    val extractor = new FieldExtractor(types, resolver, defn.id)
+    val extractor = new FieldExtractor(resolver, defn.id)
 
     val parts = resolver.get(defn.id) match {
       case i: Interface =>
@@ -38,7 +38,12 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
     val conflicts = findConflicts(all)
 
-    val output = new Struct(defn.id, parts, conflicts.good, conflicts.soft)
+    val sortedFields = conflicts.all.sortBy(f => (f.defn.distance, f.defn.definedBy.toString, - f.defn.definedWithIndex)).reverse
+    val output = new Struct(defn.id, parts, conflicts.good, conflicts.soft, sortedFields)
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    println(defn.id)
+    println(sortedFields.niceList())
+    println()
     assert(output.all.groupBy(_.field.name).forall(_._2.size == 1), s"IDL Compiler Bug: contradictive structure for ${defn.id}: ${output.all.mkString("\n  ")}")
     output
   }
@@ -56,7 +61,6 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
         goodFields.put(k, v.head)
       case (k, NonContradictive(v)) =>
         softConflicts.put(k, v)
-
       case (k, v) =>
         hardConflicts.put(k, v)
     }
@@ -227,81 +231,4 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   }
 }
 
-private class FieldExtractor(types: TypeCollection, resolver: TypeResolver, user: TypeId) {
-  def extractFields(defn: TypeDef): List[ExtendedField] = {
-    extractFields(defn, 0)
-  }
 
-  protected def extractFields(defn: TypeDef, depth: Int): List[ExtendedField] = {
-    val nextDepth = depth + 1
-    val fields = defn match {
-      case t: Interface =>
-        val struct = t.struct
-        val superFields = compositeFields(nextDepth, struct.superclasses.interfaces)
-        //.map(_.copy(definedBy = t.id)) // for interfaces super field is ok to consider as defined by this interface
-        filterFields(nextDepth, t.id, superFields, struct)
-
-      case t: DTO =>
-        val struct = t.struct
-        val superFields = compositeFields(nextDepth, struct.superclasses.interfaces)
-        filterFields(nextDepth, t.id, superFields, struct)
-
-      case t: Adt =>
-        t.alternatives.map(_.typeId).map(resolver.apply).flatMap(extractFields(_, nextDepth))
-
-      case t: Identifier =>
-        toExtendedPrimitiveFields(nextDepth, t.fields, t.id)
-
-      case _: Enumeration =>
-        List()
-
-      case _: Alias =>
-        List()
-    }
-
-    fields.distinct
-  }
-
-  protected def compositeFields(nextDepth: Int, composite: Interfaces): List[ExtendedField] = {
-    composite.flatMap(i => extractFields(resolver.apply(i), nextDepth))
-  }
-
-  protected def toExtendedFields(nextDepth: Int, fields: Tuple, id: TypeId): List[ExtendedField] = {
-    fields.map(f => ExtendedField(f, FieldDef(id, user, nextDepth - 1)))
-  }
-
-  protected def toExtendedPrimitiveFields(nextDepth: Int, fields: PrimitiveTuple, id: TypeId): List[ExtendedField] = {
-    fields.map(f => ExtendedField(Field(f.typeId, f.name), FieldDef(id, user, nextDepth - 1)))
-  }
-
-  private def filterFields(nextDepth: Int, id: StructureId, superFields: List[ExtendedField], struct: Structure): List[ExtendedField] = {
-    val embeddedFields = struct.superclasses.concepts.map(resolver.apply).flatMap(extractFields(_, nextDepth))
-    val thisFields = toExtendedFields(nextDepth, struct.fields, id)
-
-    val removable = embeddedFields ++ thisFields
-
-    val removedFields = extractRemoved(resolver.apply(id)).toSet
-
-    val badRemovals = superFields.map(_.field).toSet.intersect(removedFields)
-    if (badRemovals.nonEmpty) {
-      throw new IDLException(s"Cannot remove inherited fields from $id: $badRemovals")
-    }
-
-    superFields ++ removable.filterNot(f => removedFields.contains(f.field))
-  }
-
-  protected def extractRemoved(defn: TypeDef): List[Field] = {
-    val fields = defn match {
-      case t: Interface =>
-        t.struct.removedFields ++ t.struct.superclasses.removedConcepts.map(resolver.apply).flatMap(extractRemoved)
-
-      case t: DTO =>
-        t.struct.removedFields ++ t.struct.superclasses.removedConcepts.map(resolver.apply).flatMap(extractRemoved)
-
-      case _ =>
-        List()
-    }
-
-    fields.distinct
-  }
-}

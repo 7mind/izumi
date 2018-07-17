@@ -57,7 +57,11 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
   }
 
   protected def toSuper(struct: raw.RawStructure): typed.Super = {
-    typed.Super(interfaces = fixSimpleIds(struct.interfaces), concepts = fixMixinIds(struct.concepts), removedConcepts = fixMixinIds(struct.removedConcepts))
+    typed.Super(
+      interfaces = fixSimpleIds(struct.interfaces)
+      , concepts = fixMixinIds(struct.concepts)
+      , removedConcepts = fixMixinIds(struct.removedConcepts)
+    )
   }
 
   protected def fixService(defn: raw.Service): typed.Service = {

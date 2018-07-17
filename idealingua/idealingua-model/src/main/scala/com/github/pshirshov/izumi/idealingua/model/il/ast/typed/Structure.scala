@@ -27,7 +27,7 @@ object Super {
 final case class Structure(fields: Tuple, removedFields: Tuple, superclasses: Super)
 
 object Structure {
-  def empty: Structure = Structure(List.empty, List.empty, Super.empty)
+  //def empty: Structure = Structure(List.empty, List.empty, Super.empty)
 
   def interfaces(ids: List[InterfaceId]): Structure= Structure(List.empty, List.empty, Super(ids, List.empty, List.empty))
 
