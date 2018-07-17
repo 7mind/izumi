@@ -276,7 +276,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         t
     }).asInstanceOf[T]
 
-    mapping.get(toIndefinite(out)) match {
+    mapping.get(toIndefinite(out)) match { // here we drop expected type and re-type through index. Solving https://github.com/pshirshov/izumi-r2/issues/238
       case Some(v: T)  =>
         v
 
@@ -293,6 +293,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
             throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: index contraction: $v expected to be an alias but it is $o")
         }
         replacement
+
       case o =>
         throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: expected to find $idType or an alias but got $o")
     }
