@@ -239,5 +239,3 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
     structure(defn).all.map(_.field).sortBy(_.name)
   }
 }
-
-

@@ -105,7 +105,7 @@ class ILRenderer(domain: DomainDefinition) {
       .mkString("\n")
   }
 
-  def renderPrimitiveAggregate(aggregate: PrimitiveTuple): String = {
+  def renderPrimitiveAggregate(aggregate: IdTuple): String = {
     aggregate
       .map(render)
       .mkString("\n")
@@ -125,7 +125,7 @@ class ILRenderer(domain: DomainDefinition) {
     s"${field.name}: ${render(field.typeId)}"
   }
 
-  def render(field: PrimitiveField): String = {
+  def render(field: IdField): String = {
     s"${field.name}: ${render(field.typeId)}"
   }
 

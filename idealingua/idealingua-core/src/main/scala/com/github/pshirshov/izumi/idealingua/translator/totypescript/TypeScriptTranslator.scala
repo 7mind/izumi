@@ -275,7 +275,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |    getFullClassName(): string;
            |    serialize(): string;
            |
-           |${fields.all.map(f => s"${conv.toNativeTypeName(conv.safeName(f.field.name), f.field.typeId)}: ${conv.toNativeType(f.field.typeId, ts, forSerialized = true)};").mkString("\n").shift(4)}
+           |${fields.all.map(f => s"${conv.toNativeTypeName(conv.safeName(f.field.name), f.field.typeId)}: ${conv.toNativeType(f.field.typeId, ts)};").mkString("\n").shift(4)}
            |}
          """.stripMargin
 
@@ -302,7 +302,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |    }
            |
            |    public toString(): string {
-           |        const suffix = ${sortedFields.map(sf => "encodeURIComponent(this." + sf.field.name + ".toString())").mkString(" + ':' + ")};
+           |        const suffix = ${sortedFields.map(sf => "encodeURIComponent(" + conv.emitTypeAsString(s"this.${sf.field.name}", sf.field.typeId) + ")").mkString(" + ':' + ")};
            |        return '$typeName#' + suffix;
            |    }
            |

@@ -250,8 +250,8 @@ final case class CSharpType (
           case Primitive.TInt32 => s"int.Parse($src)"
           case Primitive.TInt64 => s"long.Parse($src)"
           case Primitive.TUUID => s"new Guid($source)"
-          case e: EnumId => s"${e.name}Helpers.From(${src})"
-          case i: IdentifierId => s"${i.name}.From(${src})"
+          case e: EnumId => s"${e.name}Helpers.From($source)"
+          case i: IdentifierId => s"${i.name}.From($source)"
           case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
       }
     }

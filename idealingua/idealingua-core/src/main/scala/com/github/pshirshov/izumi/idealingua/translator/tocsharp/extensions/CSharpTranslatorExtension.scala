@@ -1,12 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
 
-import com.github.pshirshov.izumi.idealingua.translator.TranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct.{EnumProduct, IdentifierProduct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.TranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpClass
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
 
 trait CSharpTranslatorExtension extends TranslatorExtension {
     import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._

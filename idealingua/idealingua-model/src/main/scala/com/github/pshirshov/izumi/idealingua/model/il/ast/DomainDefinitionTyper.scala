@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionParsed, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.IdField
 
 import scala.reflect._
 
@@ -39,7 +40,19 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId)
 
       case d: RawTypeDef.Identifier =>
-        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = fixPrimitiveFields(d.fields))
+        val typedFields = d.fields.map {
+          case f if isIdPrimitive(f.typeId) =>
+            IdField.PrimitiveField(toIdPrimitive(f.typeId), f.name)
+          case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[IdentifierId]) =>
+            IdField.SubId(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[IdentifierId]), f.name)
+          case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[EnumId]) =>
+            IdField.Enum(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[TypeId.EnumId]), f.name)
+          case f =>
+            throw new IDLException(s"Unsupporeted ID field $f in $domainId. You may use primitive fields, enums or other IDs only")
+
+        }
+
+        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = typedFields)
 
       case d: RawTypeDef.Interface =>
         typed.TypeDef.Interface(id = fixSimpleId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct))
@@ -106,11 +119,6 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId)))
   }
 
-  protected def fixPrimitiveFields(fields: raw.RawTuple): typed.PrimitiveTuple = {
-    fields.map(f => typed.PrimitiveField(name = f.name, typeId = toPrimitive(f.typeId)))
-  }
-
-
   protected def fixMethod(method: raw.Service.DefMethod): typed.Service.DefMethod = {
     method match {
       case m: raw.Service.DefMethod.RPCMethod =>
@@ -171,13 +179,14 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     DomainId(v.init, v.last)
   }
 
-  protected def toPrimitive(typeId: AbstractIndefiniteId): Primitive = {
+  protected def toIdPrimitive(typeId: AbstractIndefiniteId): PrimitiveId = {
     typeId match {
-      case p if isPrimitive(p) =>
-        Primitive.mapping(p.name)
+      case p if isIdPrimitive(p) =>
+        Primitive.mappingId(p.name)
 
       case o =>
-        throw new IDLException(s"Unexpected non-primitive id in $domainId: $o")
+        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        throw new IDLException(s"The $domainId: $o; Allowed types for identifier fields: ${Primitive.mappingId.values.map(_.name).niceList()}")
     }
   }
 
@@ -335,9 +344,12 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     }
   }
 
+  protected def isIdPrimitive(abstractTypeId: AbstractIndefiniteId): Boolean = {
+    abstractTypeId.pkg.isEmpty && Primitive.mappingId.contains(abstractTypeId.name)
+  }
+
   protected def isPrimitive(abstractTypeId: AbstractIndefiniteId): Boolean = {
     abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
   }
-
 
 }
