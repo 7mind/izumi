@@ -29,22 +29,22 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   import ctx._
 
   def translate(): Seq[Module] = {
-//      implicit val manifest: Option[TypeScriptManifest] = Some(new TypeScriptManifest(
-//          name = "Test",
-//          tags = "",
-//          description = "",
-//          notes = "",
-//          publisher = new Publisher("Publisher Name", "publisher_id"),
-//          version = "0.0.1",
-//          license = "http://license.url",
-//          website = "http://project.website",
-//          copyright = "Copyright (C) Some Inc.",
-//          dependencies = List(ManifestDependency("moment", "^2.20.1")),
-//          scope = "@TestScope",
-//          moduleSchema =  TypeScriptModuleSchema.PER_DOMAIN
-//        ))
+      implicit val manifest: Option[TypeScriptManifest] = Some(new TypeScriptManifest(
+          name = "Test",
+          tags = "",
+          description = "",
+          notes = "",
+          publisher = new Publisher("Publisher Name", "publisher_id"),
+          version = "0.0.1",
+          license = "http://license.url",
+          website = "http://project.website",
+          copyright = "Copyright (C) Some Inc.",
+          dependencies = List(ManifestDependency("moment", "^2.20.1")),
+          scope = "@TestScope",
+          moduleSchema =  TypeScriptModuleSchema.PER_DOMAIN
+        ))
 
-    implicit val manifest: Option[TypeScriptManifest] = None
+//    implicit val manifest: Option[TypeScriptManifest] = None
 
     val indexModule = buildIndexModule()
 

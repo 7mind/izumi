@@ -34,7 +34,7 @@ final case class CSharpImports(imports: List[CSharpImport] = List.empty)(implici
       return ""
     }
 
-    imports.map(i => if (i.usingName != "") s"using ${i.usingName} = ${i.id.path.toPackage.mkString(".")}.${i.id.name};" else "").mkString("\n")
+    imports.map(i => if (i.usingName != "") s"using ${i.usingName} = ${i.id.path.toPackage.map(p => p.capitalize).mkString(".")}.${i.id.name};" else "").mkString("\n")
   }
 
   def findImport(id: TypeId): Option[CSharpImport] = {
@@ -43,7 +43,7 @@ final case class CSharpImports(imports: List[CSharpImport] = List.empty)(implici
 
   def withImport(id: TypeId): String = {
     if (isAmbiguousName(id.name)) {
-      id.path.toPackage.mkString(".") + "." + id.name
+      id.path.toPackage.map(p => p.capitalize).mkString(".") + "." + id.name
     } else {
       val rec = findImport(id)
       if (rec.isDefined && rec.get.usingName != "") {
@@ -68,8 +68,8 @@ object CSharpImports {
   protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[String] = {
     t match {
       case Primitive.TTime => return Seq("System")
-      case Primitive.TTs => return Seq("System", "irt", "System.Globalization")
-      case Primitive.TTsTz => return Seq("System", "irt", "System.Globalization")
+      case Primitive.TTs => return Seq("System", "IRT", "System.Globalization")
+      case Primitive.TTsTz => return Seq("System", "IRT", "System.Globalization")
       case Primitive.TDate => return Seq("System")
       case Primitive.TUUID => return Seq("System")
       case g: Generic => g match {
@@ -93,7 +93,7 @@ object CSharpImports {
       return Seq.empty
     }
 
-    Seq(t.path.toPackage.mkString("."))
+    Seq(t.path.toPackage.map(p => p.capitalize).mkString("."))
   }
 
   protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[CSharpImport] = List.empty): List[CSharpImport] = {

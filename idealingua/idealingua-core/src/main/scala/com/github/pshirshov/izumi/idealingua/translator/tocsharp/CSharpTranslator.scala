@@ -165,27 +165,27 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
          |${i.members.map(m => s"$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(4)}
          |}
          |
-           |public static class ${name}Helpers {
+         |public static class ${name}Helpers {
          |    public static $name From(string value) {
          |        return ($name)Enum.Parse(typeof($name), value);
          |    }
          |
-           |    public static bool IsValid(string value) {
+         |    public static bool IsValid(string value) {
          |        return Enum.IsDefined(typeof($name), value);
          |    }
          |
-           |    // The elements in the array are still changeable, please use with care.
+         |    // The elements in the array are still changeable, please use with care.
          |    private static readonly $name[] all = new $name[] {
          |${i.members.map(m => s"$name.$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(8)}
          |    };
          |
-           |    public static $name[] GetAll() {
+         |    public static $name[] GetAll() {
          |        return ${name}Helpers.all;
          |    }
          |
-           |    // Extensions
+         |    // Extensions
          |
-           |    public static string ToString(this $name e) {
+         |    public static string ToString(this $name e) {
          |        return Enum.GetName(typeof($name), e);
          |    }
          |}
@@ -218,21 +218,21 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
          |        return "${i.id.name}#" + suffix;
          |    }
          |
-           |    public static ${i.id.name} From(string value) {
+         |    public static ${i.id.name} From(string value) {
          |        if (value == null) {
          |            throw new ArgumentNullException("value");
          |        }
          |
-           |        if (!value.StartsWith("${i.id.name}#")) {
+         |        if (!value.StartsWith("${i.id.name}#")) {
          |            throw new ArgumentException(string.Format("Expected identifier for type ${i.id.name}, got {0}", value));
          |        }
          |
-           |        var parts = value.Substring($prefixLength, value.Length - $prefixLength).Split(idSplitter, StringSplitOptions.None);
+         |        var parts = value.Substring($prefixLength, value.Length - $prefixLength).Split(idSplitter, StringSplitOptions.None);
          |        if (parts.Length != ${fields.length}) {
          |            throw new ArgumentException(string.Format("Expected identifier for type ${i.id.name} with ${fields.length} parts, got {0} in string {1}", parts.Length, value));
          |        }
          |
-           |        var res = new ${i.id.name}();
+         |        var res = new ${i.id.name}();
          |${fieldsSorted.zipWithIndex.map { case (f, index) => s"res.${f.renderMemberName()} = ${f.tp.renderFromString(s"parts[$index]", unescape = true)};" }.mkString("\n").shift(8)}
          |        return res;
          |    }
@@ -278,7 +278,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
          |${ext.postModelEmit(ctx, dto)}
        """.stripMargin
 
-    InterfaceProduct(iface, companion, im.renderImports(List("irt", "System", "System.Collections", "System.Collections.Generic") ++ ext.imports(ctx, i).toList))
+    InterfaceProduct(iface, companion, im.renderImports(List("IRT", "System", "System.Collections", "System.Collections.Generic") ++ ext.imports(ctx, i).toList))
   }
 
   protected def renderServiceMethodSignature(i: Service, method: Service.DefMethod, forClient: Boolean)
@@ -466,17 +466,17 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
     val svc =
       s"""${renderServiceUsings(i)}
          |
-           |public static class ${i.id.name} {
+         |public static class ${i.id.name} {
          |${renderServiceModels(i).shift(4)}
          |}
          |
-           |// ============== Service Client ==============
+         |// ============== Service Client ==============
          |${renderServiceClient(i)}
          |
-           |// ============== Service Dispatcher ==============
+         |// ============== Service Dispatcher ==============
          |${renderServiceDispatcher(i)}
          |
-           |// ============== Service Server Dummy ==============
+         |// ============== Service Server Dummy ==============
          |${renderServiceServerDummy(i)}
          """.stripMargin
 
@@ -495,7 +495,7 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
     })
 
-    ServiceProduct(svc, im.renderImports(List("irt", "System", "System.Collections", "System.Collections.Generic") ++ extraImports)) //imports.renderImports(List("irt")))
+    ServiceProduct(svc, im.renderImports(List("IRT", "System", "System.Collections", "System.Collections.Generic") ++ extraImports)) //imports.renderImports(List("irt")))
   }
 }
 

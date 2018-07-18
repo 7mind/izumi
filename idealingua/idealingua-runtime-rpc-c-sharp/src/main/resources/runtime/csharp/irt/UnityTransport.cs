@@ -8,7 +8,7 @@ using UnityEngine.Networking;
 using UnityEditor;
 #endif
 
-namespace irt.unity {
+namespace IRT.Unity {
     public class UnityTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
         private const string CACHE_CONTROL_HEADER_KEY = "Cache-Control";
         private const string CACHE_CONTROL_HEADER_VALUES = "private, max-age=0, no-cache, no-store";

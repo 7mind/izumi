@@ -1,12 +1,11 @@
 
-using irt;
 using System;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Collections.Specialized;
 
-namespace irt {
+namespace IRT {
     public class SyncHttpTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
         private IJsonMarshaller Marshaller;
 
