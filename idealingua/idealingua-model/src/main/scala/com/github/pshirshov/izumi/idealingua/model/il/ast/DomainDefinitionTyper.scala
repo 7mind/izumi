@@ -156,7 +156,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         }
 
       case v if !contains(v) =>
-        val referencedDomain = DomainId(v.pkg.init, v.pkg.last)
+        val referencedDomain = domainId(v.pkg)
         defn.referenced.get(referencedDomain) match {
           case Some(d) =>
             new DomainDefinitionTyper(d).makeDefinite(v)
@@ -165,6 +165,10 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         }
 
     }
+  }
+
+  protected def domainId(v: Package) = {
+    DomainId(v.init, v.last)
   }
 
   protected def toPrimitive(typeId: AbstractIndefiniteId): Primitive = {
@@ -276,28 +280,31 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         t
     }).asInstanceOf[T]
 
-    mapping.get(toIndefinite(out)) match { // here we drop expected type and re-type through index. Solving https://github.com/pshirshov/izumi-r2/issues/238
-      case Some(v: T)  =>
-        v
+    if (out.path.toPackage == domainId.toPackage) {
+      mapping.get(toIndefinite(out)) match { // here we drop expected type and re-type through index. Solving https://github.com/pshirshov/izumi-r2/issues/238
+        case Some(v: T) =>
+          v
 
-      case Some(v: AliasId) =>
-        val replacement = index(toIndefinite(v)) match {
-          case a: RawTypeDef.Alias =>
-            makeDefinite(a.target) match {
-              case t: T =>
-                fixSimpleId(t)
-              case o =>
-                throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: index contraction: $v expected to be $idType but it is $o")
-            }
-          case o =>
-            throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: index contraction: $v expected to be an alias but it is $o")
-        }
-        replacement
+        case Some(v: AliasId) =>
+          val replacement = index(toIndefinite(v)) match {
+            case a: RawTypeDef.Alias =>
+              makeDefinite(a.target) match {
+                case t: T =>
+                  fixSimpleId(t)
+                case o =>
+                  throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: index contraction: $v expected to be $idType but it is $o")
+              }
+            case o =>
+              throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: index contraction: $v expected to be an alias but it is $o")
+          }
+          replacement
 
-      case o =>
-        throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: expected to find $idType or an alias but got $o")
+        case o =>
+          throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: expected to find $idType or an alias but got $o")
+      }
+    } else {
+      new DomainDefinitionTyper(defn.referenced(domainId(out.path.toPackage))).fixSimpleId(out)
     }
-
   }
 
   protected def toIndefinite(typeId: TypeId): IndefiniteId = {
