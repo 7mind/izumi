@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.model
 
-import com.github.pshirshov.izumi.idealingua.il.parser.IL
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL
 
 final case class ParsedModel private(definitions: Seq[IL.Val], includes: Seq[String])
 

@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 import java.io.File
 import java.nio.file.{Path, Paths}
 
-import com.github.pshirshov.izumi.idealingua.il.parser.IL.{ILDef, ILService}
 import com.github.pshirshov.izumi.idealingua.il.loader.model.LoadedModel
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
@@ -20,11 +19,6 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
     val domainResolver: (DomainId) => Option[ParsedDomain] = toDomainResolver(domains.get)
     val modelResolver: (Path) => Option[ParsedModel] = toModelResolver(models.get)
 
-
-    val allIncludes = domain.model.includes
-      .map(loadModel(modelResolver, _))
-      .fold(LoadedModel(domain.model.definitions))(_ ++ _)
-
     val imports = domain
       .imports
       .map {
@@ -39,9 +33,11 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
       }
       .toMap
 
-    val types = allIncludes.definitions.collect({ case d: ILDef => d.v })
-    val services = allIncludes.definitions.collect({ case d: ILService => d.v })
-    raw.DomainDefinitionParsed(domain.did.id, types, services, imports)
+    val allIncludes = domain.model.includes
+      .map(loadModel(modelResolver, _))
+      .fold(LoadedModel(domain.model.definitions))(_ ++ _)
+
+    raw.DomainDefinitionParsed(domain.did.id, allIncludes.definitions, imports)
   }
 
   private def loadModel(modelResolver: Path => Option[ParsedModel], toInclude: String): LoadedModel = {

@@ -4,30 +4,56 @@ import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionParsed, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILDef, ILNewtype, ILService}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionInterpreted, DomainDefinitionParsed, IdentifiedRawTypeDef, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.IdField
 
 import scala.reflect._
 
+class IDLTyper(defn: DomainDefinitionParsed) {
+  def perform(): typed.DomainDefinition = {
+    new IDLPostTyper(new IDLPretyper(defn).perform()).perform()
+  }
+}
 
-class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
+
+class IDLPretyper(defn: DomainDefinitionParsed) {
+  def perform(): DomainDefinitionInterpreted = {
+    val types = defn.types.collect {
+      case d: ILDef => d.v
+      case d: ILNewtype => d.v
+    }
+    val services = defn.types.collect({ case d: ILService => d.v })
+    DomainDefinitionInterpreted(defn.id, types, services, defn.referenced.mapValues(r => new IDLPretyper(r).perform()))
+  }
+}
+
+class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   final val domainId: DomainId = defn.id
 
   protected val mapping: Map[IndefiniteId, TypeId] = {
-    defn.types.map(_.id)
-      .map {
-        kv =>
-          toIndefinite(kv) -> transformSimpleId[TypeId, TypeId](kv)
+    defn.types
+      .collect {
+        case d: IdentifiedRawTypeDef =>
+          toIndefinite(d.id) -> transformSimpleId[TypeId, TypeId](d.id)
       }
       .toMap
   }
 
-  protected val index: Map[IndefiniteId, RawTypeDef] = defn.types.map(t => (toIndefinite(t.id), t)).toMap
+  protected val index: Map[IndefiniteId, RawTypeDef] = {
+    defn.types.map {
+      case d: IdentifiedRawTypeDef =>
+        (toIndefinite(d.id), d)
+      case d: NewType =>
+        (toIndefinite(d.id.toTypeId), d)
+    }.toMap
+  }
 
-  def convert(): typed.DomainDefinition = {
+  def perform(): typed.DomainDefinition = {
     val mappedTypes = defn.types.map(fixType)
     val mappedServices = defn.services.map(fixService)
-    val ref = defn.referenced.map(d => d._1 -> new DomainDefinitionTyper(d._2).convert())
+    val ref = defn.referenced.map(d => d._1 -> new IDLPostTyper(d._2).perform())
     typed.DomainDefinition(id = domainId, types = mappedTypes, services = mappedServices, referenced = ref)
   }
 
@@ -49,7 +75,6 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
             IdField.Enum(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[TypeId.EnumId]), f.name)
           case f =>
             throw new IDLException(s"Unsupporeted ID field $f in $domainId. You may use primitive fields, enums or other IDs only")
-
         }
 
         typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = typedFields)
@@ -62,6 +87,26 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
 
       case d: RawTypeDef.Adt =>
         typed.TypeDef.Adt(id = fixSimpleId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember))
+
+      case RawTypeDef.NewType(id, src, None) =>
+        typed.TypeDef.Alias(id = transformSimpleId(id.toAliasId): TypeId.AliasId, target = fixId(src): TypeId)
+
+      case RawTypeDef.NewType(id, src, Some(m)) =>
+        val source = index(toIndefinite(src))
+        source match {
+          case s: RawTypeDef.DTO =>
+            val extended = s.copy(struct = s.struct.extend(m))
+            val fixed = fixType(extended.copy(struct = extended.struct.copy(concepts = IndefiniteMixin(src.pkg, src.name) +: extended.struct.concepts)))
+              .asInstanceOf[typed.TypeDef.DTO]
+            fixed.copy(id = fixed.id.copy(name = id.name))
+          case s: RawTypeDef.Interface =>
+            val extended = s.copy(struct = s.struct.extend(m))
+            val fixed = fixType(extended.copy(struct = extended.struct.copy(concepts = IndefiniteMixin(src.pkg, src.name) +: extended.struct.concepts)))
+              .asInstanceOf[typed.TypeDef.Interface]
+            fixed.copy(id = fixed.id.copy(name = id.name))
+          case o =>
+            throw new IDLException(s"TODO: newtype isn't supported yet for $o")
+        }
     }
   }
 
@@ -111,6 +156,10 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
       case Some(v: InterfaceId) =>
         v
       case o =>
+        println(mapping)
+        println(toIndefinite(m))
+        println(m.pkg)
+        println(mapping.get(toIndefinite(m)))
         throw new IDLException(s"[$domainId] Expected mixin at key $m, found $o")
     }
   }
@@ -167,7 +216,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         val referencedDomain = domainId(v.pkg)
         defn.referenced.get(referencedDomain) match {
           case Some(d) =>
-            new DomainDefinitionTyper(d).makeDefinite(v)
+            new IDLPostTyper(d).makeDefinite(v)
           case None =>
             throw new IDLException(s"[$domainId] Domain $referencedDomain is missing from context: ${defn.referenced.keySet.mkString("\n  ")}")
         }
@@ -175,7 +224,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     }
   }
 
-  protected def domainId(v: Package) = {
+  protected def domainId(v: Package): DomainId = {
     DomainId(v.init, v.last)
   }
 
@@ -312,7 +361,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
           throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: expected to find $idType or an alias but got $o")
       }
     } else {
-      new DomainDefinitionTyper(defn.referenced(domainId(out.path.toPackage))).fixSimpleId(out)
+      new IDLPostTyper(defn.referenced(domainId(out.path.toPackage))).fixSimpleId(out)
     }
   }
 
