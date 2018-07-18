@@ -2,68 +2,59 @@ package com.github.pshirshov.izumi.sbt.deps
 
 import sbt._
 
-
-
 object IzumiDeps {
 
   object V {
     // foundation
     val scala_212 = "2.12.6"
-    val scala_213 = "2.13.0-M3"
+    val scala_213 = "2.13.0-M4"
 
-    val scala_java8_compat = "0.9.0"
-    val kind_projector = "0.9.7"
-    val scalatest = "3.0.5"
+    val collection_compat = "0.1.1"
 
-    val cats = "1.1.0"
+    val scala_java8_compat = "0.9.0" // 2.13+
+    val kind_projector = "0.9.7" // 2.13+
+    val scalatest = "3.0.6-SNAP1" // 2.13+
+
+    val shapeless = "2.3.3" // 2.13+
+    val cats = "1.1.0" // https://github.com/typelevel/cats/issues/2267
     val cats_effect = "0.10.1"
-    val circe = "0.9.3"
+    val circe = "0.9.3" // https://github.com/circe/circe/issues/770
     val circe_derivation = "0.9.0-M5"
-    val shapeless = "2.3.3"
-    val http4s = "0.18.13"
+    val http4s = "0.18.13" // https://github.com/http4s/http4s/issues/1797
 
-    val scalameta = "3.7.4"
-    val fast_classpath_scanner = "3.1.6"
-    val fastparse = "1.0.0"
+    val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
+    val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
 
-    val slf4j = "1.7.25"
-    val typesafe_config = "1.3.3"
+    val fast_classpath_scanner = "3.1.9" // java
+    val slf4j = "1.7.25" // java
+    val typesafe_config = "1.3.3" // java
 
     // good to drop
-    val cglib_nodep = "3.2.6"
-    val json4s = "3.5.4"
-    val scopt = "3.7.0"
+    val json4s = "3.5.4"  // 2.13+
+    val scopt = "3.7.0" // 2.13+
 
-    // unused
-    val better_files = "3.4.0"
-    val kamon_core = "1.0.0"
-    val kamon_jmx = "0.6.7"
+    // good to drop
+    val cglib_nodep = "3.2.7" // java
   }
 
   object R {
-    val scala_compiler = "org.scala-lang" % "scala-compiler" % V.scala_212
-    val scala_library = "org.scala-lang" % "scala-library" % V.scala_212
-    val scala_reflect = "org.scala-lang" % "scala-reflect" % V.scala_212
+    val scala_compiler = "org.scala-lang" % "scala-compiler"
+    val scala_library = "org.scala-lang" % "scala-library"
+    val scala_reflect = "org.scala-lang" % "scala-reflect"
+
+    val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
     //val scala_asm = "org.scala-lang.modules" % "scala-asm" % "6.0.0-scala-1"
     //val scala_arm = "com.jsuereth" %% "scala-arm" % "2.0"
 
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % V.scala_java8_compat
-    val essentials = Seq(scala_java8_compat)
-
+    val essentials = Seq(scala_java8_compat, collection_compat)
 
     val kind_projector = "org.spire-math" % "kind-projector" % V.kind_projector cross CrossVersion.binary
-
-    val better_files = "com.github.pathikrit" %% "better-files" % V.better_files
 
     val fast_classpath_scanner = "io.github.lukehutch" % "fast-classpath-scanner" % V.fast_classpath_scanner
 
     val typesafe_config = "com.typesafe" % "config" % V.typesafe_config
-
-    val kamon = Seq(
-      "io.kamon" %% "kamon-core" % V.kamon_core
-      , "io.kamon" %% "kamon-jmx" % V.kamon_jmx
-    )
 
     val cats_kernel = "org.typelevel" %% "cats-kernel" % V.cats
     val cats_all: Seq[ModuleID] = Seq(
@@ -90,7 +81,6 @@ object IzumiDeps {
       , "io.circe" %% "circe-generic"
       , "io.circe" %% "circe-generic-extras"
       , "io.circe" %% "circe-parser"
-      , "io.circe" %% "circe-java8"
     ).map(_ % V.circe) ++ Seq(
       "io.circe" %% "circe-derivation" % V.circe_derivation)
 
@@ -115,9 +105,7 @@ object IzumiDeps {
   }
 
   object T {
-
     val scalatest = R.scalatest % "test"
-    val scala_compiler = R.scala_compiler % "test"
     val slf4j_simple = R.slf4j_simple % "test"
 
     val essentials = Seq(scalatest)

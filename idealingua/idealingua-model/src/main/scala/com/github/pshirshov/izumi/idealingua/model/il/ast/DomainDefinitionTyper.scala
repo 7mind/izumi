@@ -5,6 +5,9 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionParsed, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.IdField
+
+import scala.reflect._
 
 
 class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
@@ -14,10 +17,12 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     defn.types.map(_.id)
       .map {
         kv =>
-          toIndefinite(kv) -> fixSimpleId[TypeId, TypeId](kv)
+          toIndefinite(kv) -> transformSimpleId[TypeId, TypeId](kv)
       }
       .toMap
   }
+
+  protected val index: Map[IndefiniteId, RawTypeDef] = defn.types.map(t => (toIndefinite(t.id), t)).toMap
 
   def convert(): typed.DomainDefinition = {
     val mappedTypes = defn.types.map(fixType)
@@ -35,13 +40,25 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId)
 
       case d: RawTypeDef.Identifier =>
-        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = fixPrimitiveFields(d.fields))
+        val typedFields = d.fields.map {
+          case f if isIdPrimitive(f.typeId) =>
+            IdField.PrimitiveField(toIdPrimitive(f.typeId), f.name)
+          case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[IdentifierId]) =>
+            IdField.SubId(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[IdentifierId]), f.name)
+          case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[EnumId]) =>
+            IdField.Enum(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[TypeId.EnumId]), f.name)
+          case f =>
+            throw new IDLException(s"Unsupporeted ID field $f in $domainId. You may use primitive fields, enums or other IDs only")
+
+        }
+
+        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = typedFields)
 
       case d: RawTypeDef.Interface =>
         typed.TypeDef.Interface(id = fixSimpleId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct))
 
       case d: RawTypeDef.DTO =>
-        typed.TypeDef.DTO(id = fixSimpleId(d.id): TypeId.DTOId, struct = toStruct(d.struct))
+        typed.TypeDef.DTO(id = fixSimpleId(d.id), struct = toStruct(d.struct))
 
       case d: RawTypeDef.Adt =>
         typed.TypeDef.Adt(id = fixSimpleId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember))
@@ -57,7 +74,11 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
   }
 
   protected def toSuper(struct: raw.RawStructure): typed.Super = {
-    typed.Super(interfaces = fixSimpleIds(struct.interfaces), concepts = fixMixinIds(struct.concepts), removedConcepts = fixMixinIds(struct.removedConcepts))
+    typed.Super(
+      interfaces = fixSimpleIds(struct.interfaces)
+      , concepts = fixMixinIds(struct.concepts)
+      , removedConcepts = fixMixinIds(struct.removedConcepts)
+    )
   }
 
   protected def fixService(defn: raw.Service): typed.Service = {
@@ -75,32 +96,28 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     }).asInstanceOf[R]
   }
 
-  protected def fixSimpleIds[T <: TypeId, R <: TypeId](d: List[T]): List[R] = {
-    d.map(fixSimpleId[T, R])
+  protected def fixSimpleIds[T <: TypeId : ClassTag](d: List[T]): List[T] = {
+    d.map(fixSimpleId[T])
   }
 
   protected def fixMixinIds(d: List[IndefiniteMixin]): List[StructureId] = {
-    d.map {
-      id =>
-        mapping.get(toIndefinite(id)) match {
-          case Some(v: DTOId) =>
-            v
-          case Some(v: InterfaceId) =>
-            v
-          case o =>
-            throw new IDLException(s"Expected mixin at key $id, found $o in $domainId")
-        }
+    d.map(makeDefiniteMixin)
+  }
+
+  protected def makeDefiniteMixin(m: IndefiniteMixin): StructureId = {
+    mapping.get(toIndefinite(m)) match {
+      case Some(v: DTOId) =>
+        v
+      case Some(v: InterfaceId) =>
+        v
+      case o =>
+        throw new IDLException(s"[$domainId] Expected mixin at key $m, found $o")
     }
   }
 
   protected def fixFields(fields: raw.RawTuple): typed.Tuple = {
     fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId)))
   }
-
-  protected def fixPrimitiveFields(fields: raw.RawTuple): typed.PrimitiveTuple = {
-    fields.map(f => typed.PrimitiveField(name = f.name, typeId = toPrimitive(f.typeId)))
-  }
-
 
   protected def fixMethod(method: raw.Service.DefMethod): typed.Service.DefMethod = {
     method match {
@@ -143,28 +160,33 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
           case Some(t) =>
             t
           case None =>
-            throw new IDLException(s"Type $id is missing from domain $domainId")
+            throw new IDLException(s"[$domainId] Type $id is missing from domain")
         }
 
       case v if !contains(v) =>
-        val referencedDomain = DomainId(v.pkg.init, v.pkg.last)
+        val referencedDomain = domainId(v.pkg)
         defn.referenced.get(referencedDomain) match {
           case Some(d) =>
             new DomainDefinitionTyper(d).makeDefinite(v)
           case None =>
-            throw new IDLException(s"Domain $referencedDomain is missing from context of $domainId: ${defn.referenced.keySet.mkString("\n  ")}")
+            throw new IDLException(s"[$domainId] Domain $referencedDomain is missing from context: ${defn.referenced.keySet.mkString("\n  ")}")
         }
 
     }
   }
 
-  protected def toPrimitive(typeId: AbstractIndefiniteId): Primitive = {
+  protected def domainId(v: Package) = {
+    DomainId(v.init, v.last)
+  }
+
+  protected def toIdPrimitive(typeId: AbstractIndefiniteId): PrimitiveId = {
     typeId match {
-      case p if isPrimitive(p) =>
-        Primitive.mapping(p.name)
+      case p if isIdPrimitive(p) =>
+        Primitive.mappingId(p.name)
 
       case o =>
-        throw new IDLException(s"Unexpected non-primitive id in $domainId: $o")
+        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        throw new IDLException(s"The $domainId: $o; Allowed types for identifier fields: ${Primitive.mappingId.values.map(_.name).niceList()}")
     }
   }
 
@@ -177,7 +199,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
       case o: EnumId =>
         o
       case o =>
-        throw new IDLException(s"Unexpected non-scalar id at scalar place: $domainId: $o")
+        throw new IDLException(s"[$domainId] Unexpected non-scalar id at scalar place: $o")
     }
   }
 
@@ -198,7 +220,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
         Generic.TMap(toScalar(definite), makeDefinite(generic.args.last))
 
       case o =>
-        throw new IDLException(s"Unexpected generic in $domainId: $o")
+        throw new IDLException(s"[$domainId] Unexpected generic: $o")
     }
   }
 
@@ -216,7 +238,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     t.copy(domain = domainId)
   }
 
-  protected def fixSimpleId[T <: TypeId, R <: TypeId](t: T): R = {
+  protected def transformSimpleId[T <: TypeId, R <: TypeId](t: T): R = {
     (t match {
       case t: DTOId =>
         t.copy(path = fixPkg(t.path))
@@ -239,6 +261,59 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
       case t: Builtin =>
         t
     }).asInstanceOf[R]
+  }
+
+  protected def fixSimpleId[T <: TypeId : ClassTag](t: T): T = {
+    val idType = classTag[T]
+
+    val out = (t match {
+      case t: DTOId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: InterfaceId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: AdtId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: AliasId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: EnumId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: IdentifierId =>
+        t.copy(path = fixPkg(t.path))
+
+      case t: Builtin =>
+        t
+    }).asInstanceOf[T]
+
+    if (out.path.toPackage == domainId.toPackage) {
+      mapping.get(toIndefinite(out)) match { // here we drop expected type and re-type through index. Solving https://github.com/pshirshov/izumi-r2/issues/238
+        case Some(v: T) =>
+          v
+
+        case Some(v: AliasId) =>
+          val replacement = index(toIndefinite(v)) match {
+            case a: RawTypeDef.Alias =>
+              makeDefinite(a.target) match {
+                case t: T =>
+                  fixSimpleId(t)
+                case o =>
+                  throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: index contraction: $v expected to be $idType but it is $o")
+              }
+            case o =>
+              throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: index contraction: $v expected to be an alias but it is $o")
+          }
+          replacement
+
+        case o =>
+          throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: expected to find $idType or an alias but got $o")
+      }
+    } else {
+      new DomainDefinitionTyper(defn.referenced(domainId(out.path.toPackage))).fixSimpleId(out)
+    }
   }
 
   protected def toIndefinite(typeId: TypeId): IndefiniteId = {
@@ -269,9 +344,12 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     }
   }
 
+  protected def isIdPrimitive(abstractTypeId: AbstractIndefiniteId): Boolean = {
+    abstractTypeId.pkg.isEmpty && Primitive.mappingId.contains(abstractTypeId.name)
+  }
+
   protected def isPrimitive(abstractTypeId: AbstractIndefiniteId): Boolean = {
     abstractTypeId.pkg.isEmpty && Primitive.mapping.contains(abstractTypeId.name)
   }
-
 
 }

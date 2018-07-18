@@ -6,7 +6,7 @@ libraryDependencies ++= Seq(
 sbtPlugin := true
 
 // https://github.com/coursier/coursier#sbt-plugin
-val coursier = "1.1.0-M4"
+val coursier = "1.1.0-M5"
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % coursier)
 addSbtPlugin("io.get-coursier" % "sbt-shading" % coursier)
 

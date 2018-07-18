@@ -51,9 +51,21 @@ class IzString(s: String) {
     }
   }
 
+  def camelToUnderscores: String = {
+    "[A-Z\\d]".r.replaceAllIn(s, {m =>
+      "_" + m.group(0).toLowerCase()
+    })
+  }
+
+  def underscoreToCamel: String = {
+    "_([a-z\\d])".r.replaceAllIn(s, { m =>
+      m.group(1).toUpperCase()
+    })
+  }
+
 }
 
-class IzTraversableOnce[A](s: TraversableOnce[A]) {
+class IzIterable[A](s: Iterable[A]) {
   def niceList(shift: String = " "): String = {
     if (s.nonEmpty) {
       val prefix = s"\n$shift- "
@@ -66,5 +78,5 @@ class IzTraversableOnce[A](s: TraversableOnce[A]) {
 
 object IzString {
   implicit def toRich(s: String): IzString = new IzString(s)
-  implicit def toRich[A](s: TraversableOnce[A]): IzTraversableOnce[A] = new IzTraversableOnce(s)
+  implicit def toRich[A](s: Iterable[A]): IzIterable[A] = new IzIterable(s)
 }

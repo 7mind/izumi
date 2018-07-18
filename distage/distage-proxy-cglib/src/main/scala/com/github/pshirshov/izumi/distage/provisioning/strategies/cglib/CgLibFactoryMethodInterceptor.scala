@@ -30,7 +30,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
       val justExecutor = mkExecutor(objects, wiringWithContext)
 
       val results = justExecutor.execute(
-        FactoryTools.mkExecutableOp(op.target, wiringWithContext.wireWith)
+        FactoryTools.mkExecutableOp(op.target, wiringWithContext.wireWith, op.origin)
       )
 
       FactoryTools.interpret(results)

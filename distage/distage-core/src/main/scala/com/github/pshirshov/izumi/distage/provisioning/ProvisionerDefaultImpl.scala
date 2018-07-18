@@ -9,7 +9,6 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 
 import scala.util.{Failure, Success, Try}
 
-
 // TODO: add introspection capabilities
 class ProvisionerDefaultImpl
 (
@@ -44,7 +43,6 @@ class ProvisionerDefaultImpl
                 }
             }
 
-
           case Failure(f) =>
             failureHandler.onStepFailure(context, f)
         }
@@ -58,7 +56,7 @@ class ProvisionerDefaultImpl
     result match {
       case OpResult.NewImport(target, value) =>
         value match {
-          case _ if active.imports.contains(target) => 
+          case _ if active.imports.contains(target) =>
             throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
           case opResult: OpResult =>
             throw new TriedToAddSetIntoSetException(s"Pathological case. Tried to add set into itself: $target -> $value", target, opResult)
@@ -72,7 +70,7 @@ class ProvisionerDefaultImpl
             throw new DuplicateInstancesException(s"Cannot continue, key is already in context", target)
           case opResult: OpResult =>
             throw new TriedToAddSetIntoSetException(s"Pathological case. Tried to add set into itself: $target -> $value", target, opResult)
-          case _ => 
+          case _ =>
             active.instances += (target -> value)
         }
 

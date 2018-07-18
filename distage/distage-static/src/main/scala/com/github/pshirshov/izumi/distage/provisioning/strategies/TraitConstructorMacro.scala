@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
+import com.github.pshirshov.izumi.distage.model.reflection.macros.TrivialMacroLogger
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.TraitConstructor
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, MacroUtil}
+import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 import scala.reflect.macros.blackbox
 
@@ -23,7 +24,7 @@ object TraitConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = MacroUtil.mkLogger[this.type](c)
+    val logger = TrivialMacroLogger[this.type](c)
 
     val targetType = weakTypeOf[T]
 

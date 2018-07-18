@@ -15,8 +15,7 @@ import com.github.pshirshov.izumi.functional.Value
 
 class PlannerDefaultImpl
 (
-  protected val planResolver: PlanResolver
-  , protected val forwardingRefResolver: ForwardingRefResolver
+  protected val forwardingRefResolver: ForwardingRefResolver
   , protected val reflectionProvider: ReflectionProvider.Runtime
   , protected val sanityChecker: SanityChecker
   , protected val planningObserver: PlanningObserver
@@ -27,7 +26,7 @@ class PlannerDefaultImpl
   private val hook = new PlanningHookAggregate(planningHooks)
 
   override def plan(context: ModuleBase): FinalPlan = {
-    val plan = hook.hookDefinition(context).bindings.foldLeft(DodgyPlan.empty) {
+    val plan = hook.hookDefinition(context).bindings.foldLeft(DodgyPlan.empty(context)) {
       case (currentPlan, binding) =>
         Value(computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)
@@ -39,16 +38,25 @@ class PlannerDefaultImpl
     }
 
     val finalPlan = Value(plan)
-      .map(planMergingPolicy.resolve)
+      .map(hook.phase00PostCompletion)
+      .eff(planningObserver.onPhase00PlanCompleted)
+
+      .map(planMergingPolicy.finalizePlan)
+      .map(hook.phase10PostFinalization)
+      .eff(planningObserver.onPhase10PostFinalization)
+
+      .map(hook.phase20Customization)
+      .eff(planningObserver.onPhase20Customization)
+
+      .map(hook.phase50PreForwarding)
+      .eff(planningObserver.onPhase50PreForwarding)
+
+      .map(planMergingPolicy.reorderOperations)
       .map(forwardingRefResolver.resolve)
-      .eff(planningObserver.onReferencesResolved)
-      .map(planResolver.resolve(_, context))
-      .map(hook.hookResolved)
-      .eff(planningObserver.onResolvingFinished)
+      .map(hook.phase90AfterForwarding)
+      .eff(planningObserver.onPhase90AfterForwarding)
+
       .eff(sanityChecker.assertFinalPlanSane)
-      .map(hook.hookFinal)
-      .eff(sanityChecker.assertFinalPlanSane)
-      .eff(planningObserver.onFinalPlan)
       .get
 
     finalPlan
@@ -68,7 +76,7 @@ class PlannerDefaultImpl
         val target = s.key
         val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, currentPlan.operations.size, setElementKeySymbol(s.implementation))
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
-        val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.tpe, Set.empty))
+        val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.tpe, Set.empty, Some(binding)))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
         NextOps(
@@ -77,7 +85,7 @@ class PlannerDefaultImpl
         )
 
       case s: EmptySetBinding[_] =>
-        val newSet = CreateSet(s.key, s.key.tpe, Set.empty)
+        val newSet = CreateSet(s.key, s.key.tpe, Set.empty, Some(binding))
 
         NextOps(
           Map(s.key -> newSet)
@@ -92,25 +100,25 @@ class PlannerDefaultImpl
 
     wiring match {
       case w: Constructor =>
-        Step(wiring, WiringOp.InstantiateClass(target, w))
+        Step(wiring, WiringOp.InstantiateClass(target, w, Some(binding)))
 
       case w: AbstractSymbol =>
-        Step(wiring, WiringOp.InstantiateTrait(target, w))
+        Step(wiring, WiringOp.InstantiateTrait(target, w, Some(binding)))
 
       case w: FactoryMethod =>
-        Step(wiring, WiringOp.InstantiateFactory(target, w))
+        Step(wiring, WiringOp.InstantiateFactory(target, w, Some(binding)))
 
       case w: FactoryFunction =>
-        Step(wiring, WiringOp.CallFactoryProvider(target, w))
+        Step(wiring, WiringOp.CallFactoryProvider(target, w, Some(binding)))
 
       case w: Function =>
-        Step(wiring, WiringOp.CallProvider(target, w))
+        Step(wiring, WiringOp.CallProvider(target, w, Some(binding)))
 
       case w: Instance =>
-        Step(wiring, WiringOp.ReferenceInstance(target, w))
+        Step(wiring, WiringOp.ReferenceInstance(target, w, Some(binding)))
 
       case w: Reference =>
-        Step(wiring, WiringOp.ReferenceKey(target, w))
+        Step(wiring, WiringOp.ReferenceKey(target, w, Some(binding)))
     }
   }
 

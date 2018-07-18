@@ -1,0 +1,5 @@
+domain idltest.aliases2
+
+mixin M2 {
+  f2: str
+}

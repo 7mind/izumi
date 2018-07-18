@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.logstage.adapter.slf4j
 
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.logstage.api.Log._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import org.slf4j.{Logger, Marker}
@@ -30,17 +31,17 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
     val ctx = caller match {
       case Some(frame) =>
-        StaticExtendedContext(id, frame.getFileName, frame.getLineNumber)
+        StaticExtendedContext(id, SourceFilePosition(frame.getFileName, frame.getLineNumber))
 
       case None =>
-        StaticExtendedContext(id, "?", 0)
+        StaticExtendedContext(id, SourceFilePosition.unknown)
     }
 
     val customContext = marker match {
       case Some(m) =>
         import scala.collection.JavaConverters._
         val markers = m.iterator().asScala.toSeq.map(_.getName)
-        CustomContext(Seq("markers" -> markers))
+        CustomContext(Seq(LogArg("markers", markers)))
 
       case None =>
         CustomContext(Seq.empty)
@@ -48,7 +49,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
     val messageArgs = args.zipWithIndex.map{
       kv =>
-        (s"_${kv._2}", kv._1)
+        LogArg(s"_${kv._2}", kv._1)
     }
 
     val template = message.split("\\{\\}", -1)

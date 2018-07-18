@@ -7,11 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
-import scala.collection.generic.CanBuildFrom
-
 class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
-  def collect[B, That](pf: PartialFunction[(K, V), B])(implicit bf: CanBuildFrom[Map[K, V], B, That]): That = underlying.collect(pf)
-
   def contains(key: K): Boolean = underlying.contains(key)
 
   def fetch(k: K): V = {
@@ -23,7 +19,7 @@ class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
 }
 
 class TypeCollection(domain: DomainDefinition) {
-  val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head)
+  val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
 
   val serviceEphemerals: Seq[TypeDef] = (for {
     service <- services.values

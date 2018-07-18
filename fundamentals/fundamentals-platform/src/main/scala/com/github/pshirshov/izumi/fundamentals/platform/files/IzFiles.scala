@@ -3,11 +3,37 @@ package com.github.pshirshov.izumi.fundamentals.platform.files
 import java.io.{File, IOException}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+import java.time.LocalDateTime
+import java.util.stream.Collectors
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.os.{IzOs, OsType}
+import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 
 object IzFiles {
+  def getLastModified(directory: File): Option[LocalDateTime] = {
+    import IzTime._
+
+    if (!directory.exists()) {
+      return None
+    }
+
+    if (directory.isDirectory) {
+      val dmt = directory.lastModified().asEpochMillisLocal
+
+      val fmt = walk(directory).map(_.toFile.lastModified().asEpochMillisLocal)
+
+      Some((dmt +: fmt).max)
+    } else {
+      Some(directory.lastModified().asEpochMillisLocal)
+    }
+  }
+
+  def walk(directory: File): Seq[Path] = {
+    import scala.collection.JavaConverters._
+    Files.walk(directory.toPath).collect(Collectors.toList()).asScala.toSeq
+  }
+
   def recreateDirs(paths: Path*): Unit = {
     paths.foreach(recreateDir)
   }

@@ -44,7 +44,7 @@ function coverage {
 
 function scripted {
   bopen
-  csbt clean '"scripted sbt-izumi-plugins/*"' || exit 1
+  csbt clean publishLocal '"scripted sbt-izumi-plugins/*"' || exit 1
   bclose
 }
 
@@ -65,7 +65,7 @@ function publish {
   fi
 
   echo "PUBLISH..."
-  csbt +clean +publishSigned || exit 1
+  csbt clean publishSigned || exit 1
 
   if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
     csbt sonatypeRelease || exit 1

@@ -19,7 +19,7 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
       !GraphicsEnvironment.isHeadless
   }
 
-  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse(StringRenderingPolicy.defaultRendering))
+  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse(StringRenderingPolicy.defaultMessageLayout))
 
   override def render(entry: Log.Entry): String = {
     val sb = new StringBuffer(performRendering(entry, withColors))
@@ -173,7 +173,7 @@ case class WithConstants[T <: LogUnit](unit: Option[WithMargin[T]] = None) {
 
 object StringRenderingPolicy {
 
-  val defaultRendering = "${level} ${ts} ${thread} ${location} ${custom-ctx} ${msg}"
+  val defaultMessageLayout: String = s"$${level} $${ts} $${thread} $${location} $${custom-ctx} $${msg}"
 
   sealed trait LogMessageItem {
     def perform(e: Log.Entry, withColor: Boolean): String

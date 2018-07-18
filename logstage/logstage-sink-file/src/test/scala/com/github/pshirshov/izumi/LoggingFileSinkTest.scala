@@ -57,7 +57,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
       withFileLogger(withoutRotation(policy, 2, svc)) {
         (sink, logger) =>
-          List.fill(3)("msg").foreach(i => logger.info(i))
+          List.fill(3)("msg").foreach(i => logger.info(s"dummy message: $i"))
           val curState = sink.sinkState.get()
           assert(curState.currentFileId == 1)
           assert(curState.currentFileSize == 1)
@@ -132,7 +132,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
         (sink, logger) =>
           (1 to fileSize * filesLimit).foreach {
-            i => logger.info(i.toString)
+            i => logger.info(s"dummy message: $i")
           }
           val curState1 = sink.sinkState.get()
           assert(curState1.forRotate.isEmpty)
@@ -145,7 +145,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
           (1 to fileSize).foreach {
             i =>
-              logger.info(i.toString)
+              logger.info(s"dummy message: $i")
           }
           val curState3 = sink.sinkState.get()
           assert(curState3.forRotate.size == filesLimit - 2)

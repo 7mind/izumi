@@ -6,12 +6,12 @@ import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.ConflictingOperation
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
@@ -43,11 +43,13 @@ class InjectorTest extends WordSpec {
       }
 
       val fixedPlan = plan.flatMap {
-        case ImportDependency(key, _) if key == RuntimeDIUniverse.DIKey.get[NotInContext] =>
-          Seq(WiringOp.ReferenceInstance(
-            key
-            , UnaryWiring.Instance(RuntimeDIUniverse.SafeType.get[NotInContext], new NotInContext {})
-          )
+        case ImportDependency(key, _, origin) if key == RuntimeDIUniverse.DIKey.get[NotInContext] =>
+          Seq(
+            WiringOp.ReferenceInstance(
+              key
+              , RuntimeDIUniverse.Wiring.UnaryWiring.Instance(RuntimeDIUniverse.SafeType.get[NotInContext], new NotInContext {})
+              , origin
+            )
           )
 
         case op =>
@@ -154,11 +156,11 @@ class InjectorTest extends WordSpec {
       assert(traitArg != null && traitArg.isInstanceOf[Circular4])
       assert(c3.method == 2L)
       assert(traitArg.testVal == 1)
-      assert(context.enumerate.nonEmpty)
+      assert(context.instances.nonEmpty)
       assert(context.get[Circular4].factoryFun(context.get[Circular4], context.get[Circular5]) != null)
     }
 
-    "support more complex circular dependencies" in {
+    "support non-circular dependencies (regression test)" in {
       import Case15._
 
       val definition: ModuleBase = new ModuleDef {
@@ -174,6 +176,71 @@ class InjectorTest extends WordSpec {
       val context = injector.produce(plan)
 
       assert(context.get[CustomApp] != null)
+    }
+
+    "Progression test: Does not yet support self-referencing circulars" in {
+      val fail = Try {
+        import Case22._
+
+        val definition = new ModuleDef {
+          make[SelfReference]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+        val context = injector.produce(plan)
+
+        val instance = context.get[SelfReference]
+
+        assert(instance eq instance.self)
+      }
+
+      assert(fail.isFailure)
+    }
+
+    "Progression test: Does not yet support by-name self-referencing circulars" in {
+      val fail = Try {
+        import Case22._
+
+        val definition = new ModuleDef {
+          make[ByNameSelfReference]
+        }
+
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+        val context = injector.produce(plan)
+
+        val instance = context.get[ByNameSelfReference]
+
+        assert(instance eq instance.self)
+      }
+
+      assert(fail.isFailure)
+    }
+
+    "Locator.instances returns instances in the order they were created in" in {
+      import Case3._
+
+      val definition: ModuleBase = new ModuleDef {
+        make[Circular3]
+        make[Circular1]
+        make[Circular2]
+        make[Circular5]
+        make[Circular4]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val planTypes: Seq[RuntimeDIUniverse.SafeType] = plan.steps.collect { case i: InstantiationOp => i }.map(_.target.tpe)
+      val instanceTypes: Seq[RuntimeDIUniverse.SafeType] = context.instances.map(_.key.tpe)
+        .filter(_ != RuntimeDIUniverse.SafeType.get[ProxyDispatcher]) // remove artifacts of proxy generation
+
+      assert(instanceTypes == planTypes)
+
+      info("whitebox test: ensure that plan ops are in a non-lazy collection")
+      assert(plan.steps.getClass == classOf[Vector[_]])
     }
 
     "support generics" in {
@@ -242,7 +309,6 @@ class InjectorTest extends WordSpec {
       }
       assert(exc.getCause.isInstanceOf[TraitInitializationFailedException])
       assert(exc.getCause.getCause.isInstanceOf[RuntimeException])
-
     }
 
     "support trait fields" in {
@@ -270,7 +336,6 @@ class InjectorTest extends WordSpec {
       intercept[UnsupportedWiringException] {
         injector.plan(definition)
       }
-      //assert(exc.badSteps.lengthCompare(1) == 0 && exc.badSteps.exists(_.isInstanceOf[UnbindableBinding]))
     }
 
     "fail on unsolvable conflicts" in {
@@ -477,10 +542,10 @@ class InjectorTest extends WordSpec {
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
-      val instantiated = context.find[Dependency1]
-      val instantiated1 = context.find[Dependency1 @Id("special")]
-      assert(instantiated1.isDefined)
-      assert(instantiated.isDefined)
+      val instantiated = context.get[Dependency1]
+      val instantiated1 = context.get[Dependency1 @Id("special")]
+
+      assert(instantiated eq instantiated1)
     }
 
     "support named bindings in method reference providers" in {
@@ -506,7 +571,7 @@ class InjectorTest extends WordSpec {
 
       val definition = new ModuleDef {
         make[TestDependency].named("classdeftypeann1")
-        make[TestClass].from { t: TestDependency@Id("classdeftypeann1") => new TestClass(t) }
+        make[TestClass].from { t: TestDependency @Id("classdeftypeann1") => new TestClass(t) }
       }
 
       val injector = mkInjector()
@@ -836,8 +901,6 @@ class InjectorTest extends WordSpec {
       assert(fail)
     }
 
-
-
     "Handle multiple parameter lists" in {
       import Case21._
 
@@ -858,10 +921,10 @@ class InjectorTest extends WordSpec {
       assert(context.get[TestClass].d != null)
     }
 
-    "Implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
+    "Progression test: Implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
       import Case21._
 
-      val definition = new ModuleDef {
+      val definition: ModuleBase = new ModuleDef {
         implicit val testDependency3: TestDependency3 = new TestDependency3
 
         make[TestDependency1]

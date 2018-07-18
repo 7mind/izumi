@@ -14,7 +14,7 @@ import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
-import com.github.pshirshov.izumi.fundamentals.platform.console.{SystemOutStringSink, TrivialLogger, TrivialLoggerImpl}
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
 class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLocator {
@@ -29,7 +29,7 @@ class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLoc
     bootstrapProducer.provision(plan, this)
   }
 
-  def enumerate: Stream[IdentifiedRef] = {
+  def instances: Seq[IdentifiedRef] = {
     bootstrappedContext.enumerate
   }
 
@@ -54,8 +54,7 @@ object DefaultBootstrapContext {
     val analyzer = new PlanAnalyzerDefaultImpl
 
     new PlannerDefaultImpl(
-      new PlanResolverDefaultImpl
-      , new ForwardingRefResolverDefaultImpl(analyzer)
+      new ForwardingRefResolverDefaultImpl(analyzer)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
       , bootstrapObserver
@@ -97,7 +96,6 @@ object DefaultBootstrapContext {
 //    make[PlanningObserver].from[BootstrapPlanningObserver]
 //    make[LoggerHook].from[LoggerHookDebugImpl]
 //    make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringSink))
-    make[PlanResolver].from[PlanResolverDefaultImpl]
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
     make[TheFactoryOfAllTheFactories].from[TheFactoryOfAllTheFactoriesDefaultImpl]

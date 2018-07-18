@@ -185,6 +185,8 @@ final case class GoLangType (
     case Primitive.TInt32 => s"strconv.FormatInt(int64($name), 10)"
     case Primitive.TInt64 => s"strconv.FormatInt($name, 10)"
     case Primitive.TUUID => name
+    case _: EnumId => s"$name.String()"
+    case _: IdentifierId => s"$name.String()"
     case _ => throw new IDLException(s"Should never render non int or string types to strings. Used for type ${id.name}")
   }
 
@@ -197,6 +199,8 @@ final case class GoLangType (
         case Primitive.TInt32 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := int32(${dest}64)"
         case Primitive.TInt64 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest, err := strconv.ParseInt(${dest}Str, 10, 64)\nif err != nil {\n    return err\n}"
         case Primitive.TUUID => s"$dest, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}"
+        case en: EnumId => s"""${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\nif !IsValid${en.name}(${dest}Str) {\n    return fmt.Errorf("Unknown value %s for enum type ${en.name}", ${dest}Str)\n}\n$dest := New${en.name}(${dest}Str)"""
+        case id: IdentifierId => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest := &${id.name}{}\nif err := $dest.LoadSerialized(${dest}Str); err != nil {\n    return err\n}"
         case _ => throw new IDLException(s"Should never parse non int or string types. Used for type ${id.name}")
       }
     } else {

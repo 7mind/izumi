@@ -5,6 +5,8 @@ sealed trait AbstractIndefiniteId {
   def pkg: Package
 
   def name: TypeName
+
+  override def toString: TypeName = s"{${getClass.getSimpleName}}${pkg.mkString(".")}#$name"
 }
 
 
@@ -96,33 +98,37 @@ object Builtin {
   final val prelude: Package = Seq.empty
 }
 
-trait Primitive extends Builtin with ScalarId {
+sealed trait Primitive extends Builtin with ScalarId {
+
+}
+
+sealed trait PrimitiveId extends Primitive {
 
 }
 
 object Primitive {
 
-  case object TBool extends Primitive {
+  case object TBool extends PrimitiveId {
     override def aliases: List[TypeName] = List("bit", "bool", "boolean")
   }
 
-  case object TString extends Primitive {
+  case object TString extends PrimitiveId {
     override def aliases: List[TypeName] = List("str", "string")
   }
 
-  case object TInt8 extends Primitive {
+  case object TInt8 extends PrimitiveId {
     override def aliases: List[TypeName] = List("i08", "byte", "int8")
   }
 
-  case object TInt16 extends Primitive {
+  case object TInt16 extends PrimitiveId {
     override def aliases: List[TypeName] = List("i16", "short", "int16")
   }
 
-  case object TInt32 extends Primitive {
+  case object TInt32 extends PrimitiveId {
     override def aliases: List[TypeName] = List("i32", "int", "int32")
   }
 
-  case object TInt64 extends Primitive {
+  case object TInt64 extends PrimitiveId {
     override def aliases: List[TypeName] = List("i64", "long", "int64")
   }
 
@@ -134,14 +140,13 @@ object Primitive {
     override def aliases: List[TypeName] = List("f64", "dbl", "double")
   }
 
-  case object TUUID extends Primitive {
+  case object TUUID extends PrimitiveId {
     override def aliases: List[TypeName] = List("uid", "uuid")
   }
 
   case object TTs extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("tsl", "datetimel", "dtl")
   }
-
 
   case object TTsTz extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("tsz", "datetimez", "dtz")
@@ -155,6 +160,18 @@ object Primitive {
     override def aliases: List[TypeName] = List("date")
   }
 
+  final val mappingId = Set(
+    TBool
+    , TString
+    , TInt8
+    , TInt16
+    , TInt32
+    , TInt64
+    , TUUID
+    ,
+  )
+    .flatMap(tpe => tpe.aliases.map(a => a -> tpe))
+    .toMap
 
   final val mapping = Set(
     TBool

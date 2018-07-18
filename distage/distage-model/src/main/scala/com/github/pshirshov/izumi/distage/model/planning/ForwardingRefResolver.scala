@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{ResolvedCyclesPlan, ResolvedSetsPlan}
+import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
 
 trait ForwardingRefResolver {
-  def resolve(plan: ResolvedSetsPlan): ResolvedCyclesPlan
+  def resolve(operations: FinalPlan): FinalPlan
 }

@@ -8,8 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, T
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.csharp.types.CSharpField
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpType}
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpField, CSharpType}
 
 object JsonNetExtension extends CSharpTranslatorExtension {
   override def preModelEmit(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): String = {

@@ -1,15 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.types
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Enumeration
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Enumeration, _}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Structure, Super}
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
 
 final case class CSharpType (
                               id: TypeId)(implicit im: CSharpImports, ts: Typespace) {
@@ -252,8 +250,8 @@ final case class CSharpType (
           case Primitive.TInt32 => s"int.Parse($src)"
           case Primitive.TInt64 => s"long.Parse($src)"
           case Primitive.TUUID => s"new Guid($source)"
-          case e: EnumId => s"${e.name}Helpers.From(${src})"
-          case i: IdentifierId => s"${i.name}.From(${src})"
+          case e: EnumId => s"${e.name}Helpers.From($source)"
+          case i: IdentifierId => s"${i.name}.From($source)"
           case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
       }
     }

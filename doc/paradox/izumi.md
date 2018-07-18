@@ -11,7 +11,7 @@ Sorry, this page is not ready yet
 Dependencies
 ------------
 
-To use [Izumi SBT Toolkit](sbt/00_sbt.md) add the follwing into `project/build.sbt`:
+To use @ref[Izumi SBT Toolkit](sbt/00_sbt.md) add the follwing into `project/build.sbt`:
 
 @@@vars
 ```scala
@@ -19,10 +19,10 @@ val izumi_version = "$izumi.version$"
 // sbt toolkit
 addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi" % izumi_version)
 
-// This is a Izumi's BOM (Bill of Materials), see below
+// This is Izumi's BOM (Bill of Materials), see below
 addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi-deps" % izumi_version)
 
-// idealingua compiler
+// idealingua compiler (optional)
 addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-idealingua" % izumi_version)
 ```
 @@@
@@ -32,6 +32,8 @@ Put list of modules here
 @@@
 
 You may find ScalaDoc API docs @scaladoc[here](izumi.index)
+
+@@toc { depth=2 }
 
 @@@ index
 
@@ -43,3 +45,4 @@ You may find ScalaDoc API docs @scaladoc[here](izumi.index)
 * [SBT Plugins](sbt/00_sbt.md)
 
 @@@
+

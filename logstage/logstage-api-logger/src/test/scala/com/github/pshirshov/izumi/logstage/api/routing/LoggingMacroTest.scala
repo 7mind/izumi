@@ -16,16 +16,28 @@ class ExampleService(logger: IzLogger) {
     val loggerWithContext = logger("userId" -> "xxx")
     val loggerWithSubcontext = loggerWithContext("custom" -> "value")
 
-    val arg = "this is an argument"
-
+    val justAnArg = "this is an argument"
+    val justAList = List[Any](10, "green", "bottles")
     loggerWithContext.trace(s"This would be automatically extended")
-    logger.debug(s"Service started. argument: $arg, Random value: ${Random.self.nextInt()}:random")
+    logger.debug(s"Service started. argument: $justAnArg, another arg: $justAList, Random value: ${Random.self.nextInt() -> "random value"}")
     loggerWithSubcontext.info("Just a string")
-    logger.warn("Just an integer: " + 1)
+    logger.crit(s"This is an expression: ${Random.nextInt() -> "xxx"}")
+    logger.crit(s"This is an expression with invisible argument name: ${Random.nextInt() -> "xxx" -> null}")
+    val exception = new RuntimeException("Oy vey!")
+    exception.setStackTrace(exception.getStackTrace.slice(0, 3))
+    logger.crit(s"A failure happened: $exception")
+
+    // cornercases
     val arg1 = 5
-    logger.crit(s"This is an expression: ${2 + 2 == 4} and this is an other one: ${5 * arg1 == 25}")
-    val t = new RuntimeException("Oy vey!")
-    logger.crit(s"A failure happened: $t")
+    val nullarg = null
+    logger.warn("[Cornercase] non-interpolated expression: " + 1)
+    logger.crit(s"[Cornercase] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}")
+    logger.crit(s"[Cornercase] null value: $nullarg")
+
+    val badObj = new Object {
+      override def toString: String = throw exception
+    }
+    logger.crit(s"[Cornercase] exception: ${badObj -> "bad"}")
   }
 
   def work(): Unit = {

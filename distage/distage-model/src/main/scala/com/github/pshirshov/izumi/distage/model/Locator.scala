@@ -5,7 +5,8 @@ import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait Locator {
-  def enumerate: Stream[IdentifiedRef]
+  /** Instances in order of creation **/
+  def instances: Seq[IdentifiedRef]
 
   def plan: FinalPlan
 
@@ -26,19 +27,14 @@ trait Locator {
   protected[distage] def lookup[T: Tag](key: DIKey): Option[TypedRef[T]]
 }
 
-trait LocatorExtension {
-  def extend(locator: Locator): Locator
-}
-
 object Locator {
 
   implicit final class LocatorExt(private val locator: Locator) extends AnyVal {
-    def extend(extensions: LocatorExtension*): Locator = {
+    def extend(extensions: LocatorExtension*): Locator =
       extensions.foldLeft(locator) {
-        case (acc, e) =>
-          e.extend(acc)
+        case (acc, ext) =>
+          ext.extend(acc)
       }
-    }
   }
 
 }

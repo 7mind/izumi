@@ -32,7 +32,7 @@ trait IzManifest {
   }
 
   def manifest[C: ClassTag](name: String): Option[java.util.jar.Manifest] = {
-    IzResources.jarResource[C](ManifestName) match {
+    IzResources.jarResource[C](name) match {
       case ResourceLocation.Filesystem(file) =>
         val is = new FileInputStream(file)
         try {

@@ -24,8 +24,28 @@ class TypeScriptTypeConverter() {
       case Primitive.TDate => "Date.parse(" + value + ")"
       case Primitive.TTs => "Date.parse(" + value + ")"
       case Primitive.TTsTz => "Date.parse(" + value + ")"
+      case id: IdentifierId => s"new ${id.name}($value)"
+      case en: EnumId => s"$en[$value]"
       // TODO We do nothing for other types, should probably figure something out ...
-      case _ => value
+      case _ => throw new Exception("Unsupported area in parseTypeFromString")
+    }
+  }
+
+  def emitTypeAsString(value: String, target: TypeId): String = {
+    target match {
+      case Primitive.TBool => "(" + value + " ? 'true' : 'false')'"
+      case Primitive.TString => value
+      case Primitive.TInt8 => s"$value.toString()"
+      case Primitive.TInt16 => s"$value.toString()"
+      case Primitive.TInt32 => s"$value.toString()"
+      case Primitive.TInt64 => s"$value.toString()"
+      case Primitive.TFloat => s"$value.toString()"
+      case Primitive.TDouble => s"$value.toString()"
+      case Primitive.TUUID => value
+      case id: IdentifierId => s"$value.toString()"
+      case en: EnumId => s"$en[$value]"
+      // TODO We do nothing for other types, should probably figure something out ...
+      case _ => throw new Exception("Unsupported area in emitTypeAsString")
     }
   }
 

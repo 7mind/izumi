@@ -2,11 +2,14 @@ package com.github.pshirshov.izumi.logstage.api.rendering.logunits
 
 import java.time.{Instant, ZoneId}
 
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.rendering.{ConsoleColors, RenderedMessage}
+import com.github.pshirshov.izumi.logstage.api.Log.LogArg
+import com.github.pshirshov.izumi.logstage.api.rendering.{ConsoleColors, RenderedMessage, RenderedParameter}
 
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 case class Margin(elipsed: Boolean, size: Int)
 
@@ -16,14 +19,14 @@ sealed trait LogUnit {
 
   def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String
 
-  def undefined(entry: Log.Entry) : Boolean
+  def undefined(entry: Log.Entry): Boolean
 }
 
 object LogUnit {
 
   def withMargin(string: String, margin: Option[Margin]): String = {
     margin match {
-      case Some(Margin(true, pad))  => string.ellipsedLeftPad(pad)
+      case Some(Margin(true, pad)) => string.ellipsedLeftPad(pad)
       case Some(Margin(_, pad)) => string.leftPad(pad)
       case None => string
     }
@@ -49,7 +52,7 @@ object LogUnit {
         builder.append("]")
       }
 
-      withMargin(builder.toString(),margin)
+      withMargin(builder.toString(), margin)
 
     }
 
@@ -114,8 +117,7 @@ object LogUnit {
     )
 
     override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
-      withMargin(s"(${entry.context.static.file}:${entry.context.static.line})", margin)
-
+      withMargin(entry.context.static.position.toString, margin)
     }
 
     override def undefined(entry: Log.Entry): Boolean = false
@@ -167,12 +169,8 @@ object LogUnit {
   }.toMap
 
 
-  private def formatKv(withColor: Boolean)(kv: (String, Any)): String = {
-    if (withColor) {
-      s"${Console.GREEN}${kv._1}${Console.RESET}=${Console.CYAN}${kv._2}${Console.RESET}"
-    } else {
-      s"${kv._1}=${kv._2}"
-    }
+  def formatArg(arg: Any, withColors: Boolean): RenderedParameter = {
+    RenderedParameter(arg, argToString(arg, withColors))
   }
 
   def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
@@ -186,66 +184,81 @@ object LogUnit {
     val balanced = entry.message.template.parts.tail.zip(entry.message.args)
     val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
 
-    val argToStringColored: Any => String = argValue => argToString(argValue, withColors)
-
-    val parameters = new mutable.HashMap[String, mutable.Set[String]] with mutable.MultiMap[String, String]
+    val parameters = new mutable.HashMap[String, mutable.ArrayBuffer[RenderedParameter]]
 
     balanced.foreach {
-      case (part, (argName, argValue)) =>
+      case (part, LogArg(argName, argValue, hidden)) =>
+        val (argNameToUse, partToUse) = (argName, part)
 
-        val (argNameToUse, partToUse) = if (part.startsWith(":") && part.length > 1) {
-          val spaceIdx = part.indexOf(' ')
+        val uncoloredRepr = formatArg(argValue, withColors = false)
+        parameters.getOrElseUpdate(argNameToUse, mutable.ArrayBuffer.empty[RenderedParameter]) += uncoloredRepr
 
-          val idx = if (spaceIdx > 0) {
-            spaceIdx
-          } else {
-            part.length
-          }
-
-          (part.substring(1, idx), part.substring(idx))
-        } else {
-          (argName, part)
-        }
-
-        parameters.addBinding(argNameToUse, argToString(argValue, withColors = false))
-
-        templateBuilder.append('{')
+        templateBuilder.append("${")
         templateBuilder.append(argNameToUse)
         templateBuilder.append('}')
         templateBuilder.append(StringContext.treatEscapes(partToUse))
 
-        messageBuilder.append(formatKv(withColors)((argNameToUse, argToStringColored(argValue))))
+        val maybeColoredRepr = if (withColors) {
+          argToString(argValue, withColors)
+        } else {
+          uncoloredRepr.repr
+        }
+
+        if (!hidden) {
+          messageBuilder.append(formatKv(withColors)(LogArg(argNameToUse, maybeColoredRepr)))
+        } else {
+          messageBuilder.append(maybeColoredRepr)
+        }
         messageBuilder.append(StringContext.treatEscapes(partToUse))
     }
 
     unbalanced.foreach {
-      case (argName, argValue) =>
+      case LogArg(argName, argValue, hidden) =>
         templateBuilder.append("; ?")
         messageBuilder.append("; ")
-        messageBuilder.append(formatKv(withColors)((argName, argToStringColored(argValue))))
+        val repr = argToString(argValue, withColors)
+        if (!hidden) {
+          messageBuilder.append(formatKv(withColors)(LogArg(argName, repr)))
+        } else {
+          messageBuilder.append(repr)
+        }
     }
 
-    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.mapValues(_.toSet).toMap)
+    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.mapValues(_.toSeq).toMap)
+  }
+
+  private def formatKv(withColor: Boolean)(kv: LogArg): String = {
+    val key = wrapped(withColor, Console.GREEN, kv.name)
+    val value = argToString(kv.value, withColor)
+    s"$key=$value"
   }
 
   private def argToString(argValue: Any, withColors: Boolean): String = {
     argValue match {
       case null =>
-        if (withColors) {
-          s"${Console.RED}null${Console.RESET}"
-        } else {
-          "null"
-        }
+        wrapped(withColors, Console.YELLOW, "null")
 
       case e: Throwable =>
-        if (withColors) {
-          s"${Console.YELLOW}${e.toString}${Console.RESET}"
-        } else {
-          e.toString
-        }
+        wrapped(withColors, Console.YELLOW, e.toString)
 
       case _ =>
-        argValue.toString
+        Try(argValue.toString) match {
+          case Success(s) =>
+            wrapped(withColors, Console.CYAN, s)
+
+          case Failure(f) =>
+            import IzThrowable._
+            val message = s"[${argValue.getClass.getName}#toString failed]\n${f.stackTrace} "
+            wrapped(withColors, Console.RED, message)
+        }
+    }
+  }
+
+  private def wrapped(withColors: Boolean, color: String, message: String) = {
+    if (withColors) {
+      s"$color$message${Console.RESET}"
+    } else {
+      message
     }
   }
 }
