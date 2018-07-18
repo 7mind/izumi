@@ -126,6 +126,8 @@ class ScalaTypeConverter(domain: DomainId) {
       JavaType.get[UUID]
     case Primitive.TTsTz =>
       JavaType.get[ZonedDateTime]
+    case Primitive.TTsU =>
+      JavaType.get[ZonedDateTime]
     case Primitive.TTs =>
       JavaType.get[LocalDateTime]
     case Primitive.TTime =>

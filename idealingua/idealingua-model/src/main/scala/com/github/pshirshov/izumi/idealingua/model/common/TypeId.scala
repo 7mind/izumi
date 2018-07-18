@@ -161,18 +161,37 @@ object Primitive {
     override def aliases: List[TypeName] = List("uid", "uuid")
   }
 
+  /**
+    * Date and Time, no timezone data
+    */
   case object TTs extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("tsl", "datetimel", "dtl")
   }
 
+  /**
+    * Date, Time and Timezone
+    */
   case object TTsTz extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("tsz", "datetimez", "dtz")
   }
 
+  /**
+    * Date, Time and Timezone, but Timezone is always set to UTC
+    */
+  case object TTsU extends Primitive with TimeTypeId {
+    override def aliases: List[TypeName] = List("tsu", "datetimeu", "dtu")
+  }
+
+  /**
+    * Just time, without timezone data
+    */
   case object TTime extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("time")
   }
 
+  /**
+    * Just date, without timezone data
+    */
   case object TDate extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("date")
   }
@@ -215,6 +234,7 @@ object Primitive {
     , TTime
     , TDate
     , TTsTz
+    , TTsU
     , TTs
     ,
   )
