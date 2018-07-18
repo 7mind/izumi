@@ -8,13 +8,12 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
+import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.togolang.products.RenderableCogenProduct
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.{ManifestDependency, Publisher}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangManifest
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.CogenProduct._
+import com.github.pshirshov.izumi.idealingua.translator.togolang.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.togolang.types._
 
 object GoLangTranslator {
@@ -522,6 +521,11 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
       case Primitive.TInt16 => true
       case Primitive.TInt32 => true
       case Primitive.TInt64 => true
+
+      case Primitive.TUInt8 => true
+      case Primitive.TUInt16 => true
+      case Primitive.TUInt32 => true
+      case Primitive.TUInt64 => true
       case _ => false
     })
 

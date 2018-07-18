@@ -13,10 +13,17 @@ class TypeScriptTypeConverter() {
     target match {
       case Primitive.TBool => "(" + value + " === 'true)'"
       case Primitive.TString => value
+
       case Primitive.TInt8 => "parseInt(" + value + ", 10)"
       case Primitive.TInt16 => "parseInt(" + value + ", 10)"
       case Primitive.TInt32 => "parseInt(" + value + ", 10)"
       case Primitive.TInt64 => "parseInt(" + value + ", 10)"
+
+      case Primitive.TUInt8 => "parseInt(" + value + ", 10)"
+      case Primitive.TUInt16 => "parseInt(" + value + ", 10)"
+      case Primitive.TUInt32 => "parseInt(" + value + ", 10)"
+      case Primitive.TUInt64 => "parseInt(" + value + ", 10)"
+
       case Primitive.TFloat => "parseFloat(" + value + ")"
       case Primitive.TDouble => "parseFloat(" + value + ")"
       case Primitive.TUUID => value
@@ -35,10 +42,18 @@ class TypeScriptTypeConverter() {
     target match {
       case Primitive.TBool => "(" + value + " ? 'true' : 'false')'"
       case Primitive.TString => value
+
       case Primitive.TInt8 => s"$value.toString()"
       case Primitive.TInt16 => s"$value.toString()"
       case Primitive.TInt32 => s"$value.toString()"
       case Primitive.TInt64 => s"$value.toString()"
+
+      case Primitive.TUInt8 => s"$value.toString()"
+      case Primitive.TUInt16 => s"$value.toString()"
+      case Primitive.TUInt32 => s"$value.toString()"
+      case Primitive.TUInt64 => s"$value.toString()"
+
+
       case Primitive.TFloat => s"$value.toString()"
       case Primitive.TDouble => s"$value.toString()"
       case Primitive.TUUID => value

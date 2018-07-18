@@ -132,6 +132,23 @@ object Primitive {
     override def aliases: List[TypeName] = List("i64", "long", "int64")
   }
 
+  case object TUInt8 extends PrimitiveId {
+    override def aliases: List[TypeName] = List("u08", "ubyte", "uint8")
+  }
+
+  case object TUInt16 extends PrimitiveId {
+    override def aliases: List[TypeName] = List("u16", "ushort", "uint16")
+  }
+
+  case object TUInt32 extends PrimitiveId {
+    override def aliases: List[TypeName] = List("u32", "uint", "uint32")
+  }
+
+  case object TUInt64 extends PrimitiveId {
+    override def aliases: List[TypeName] = List("u64", "ulong", "uint64")
+  }
+
+
   case object TFloat extends Primitive {
     override def aliases: List[TypeName] = List("f32", "flt", "float")
   }
@@ -163,10 +180,18 @@ object Primitive {
   final val mappingId = Set(
     TBool
     , TString
+
     , TInt8
     , TInt16
     , TInt32
     , TInt64
+
+    , TUInt8
+    , TUInt16
+    , TUInt32
+    , TUInt64
+
+
     , TUUID
     ,
   )
@@ -180,6 +205,10 @@ object Primitive {
     , TInt16
     , TInt32
     , TInt64
+    , TUInt8
+    , TUInt16
+    , TUInt32
+    , TUInt64
     , TDouble
     , TFloat
     , TUUID

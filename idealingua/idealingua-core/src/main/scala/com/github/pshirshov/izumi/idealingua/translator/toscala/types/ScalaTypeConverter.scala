@@ -108,14 +108,16 @@ class ScalaTypeConverter(domain: DomainId) {
       model.JavaType(Seq.empty, "Boolean")
     case Primitive.TString =>
       model.JavaType(Seq.empty, "String")
-    case Primitive.TInt8 =>
+
+    case Primitive.TInt8 | Primitive.TUInt8 =>
       model.JavaType(Seq.empty, "Byte")
-    case Primitive.TInt16 =>
+    case Primitive.TInt16 | Primitive.TUInt16 =>
       model.JavaType(Seq.empty, "Short")
-    case Primitive.TInt32 =>
+    case Primitive.TInt32 | Primitive.TUInt32 =>
       model.JavaType(Seq.empty, "Int")
-    case Primitive.TInt64 =>
+    case Primitive.TInt64 | Primitive.TUInt64 =>
       model.JavaType(Seq.empty, "Long")
+
     case Primitive.TFloat =>
       model.JavaType(Seq.empty, "Float")
     case Primitive.TDouble =>

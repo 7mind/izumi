@@ -88,10 +88,17 @@ final case class GoLangType (
   protected def renderPrimitiveType(primitive: Primitive, serialized: Boolean = false): String = primitive match {
     case Primitive.TBool => "bool"
     case Primitive.TString => "string"
+
     case Primitive.TInt8 => "int8"
     case Primitive.TInt16 => "int16"
     case Primitive.TInt32 => "int32"
     case Primitive.TInt64 => "int64"
+
+    case Primitive.TUInt8 => "uint8"
+    case Primitive.TUInt16 => "uint16"
+    case Primitive.TUInt32 => "uint32"
+    case Primitive.TUInt64 => "uint64"
+
     case Primitive.TFloat => "float32"
     case Primitive.TDouble => "float64"
     case Primitive.TUUID => "string"
