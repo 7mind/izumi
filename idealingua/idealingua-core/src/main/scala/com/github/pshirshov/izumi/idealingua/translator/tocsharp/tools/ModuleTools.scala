@@ -49,11 +49,11 @@ class ModuleTools() {
   }
 
   def toModuleId(id: TypeId): ModuleId = {
-    ModuleId(id.path.toPackage, s"${id.name}.cs")
+    ModuleId(id.path.toPackage.map(p => p.capitalize), s"${id.name.capitalize}.cs")
   }
 
   def toModuleId(id: ServiceId): ModuleId = {
-    ModuleId(id.domain.toPackage, s"${id.name}.cs")
+    ModuleId(id.domain.toPackage.map(p => p.capitalize), s"${id.name.capitalize}.cs")
   }
 
   def toTestSource(id: DomainId, moduleId: ModuleId, header: String, code: String): Seq[Module] = {
