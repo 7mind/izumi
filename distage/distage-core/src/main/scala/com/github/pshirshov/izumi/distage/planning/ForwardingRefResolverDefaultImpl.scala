@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.plan.{FinalPlan, _}
+import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
 import com.github.pshirshov.izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -28,7 +28,7 @@ class ForwardingRefResolverDefaultImpl
       }
       .flatMap {
         case step if dependenciesOf.contains(step.target) =>
-          val op = ProxyOp.MakeProxy(step, dependenciesOf(step.target))
+          val op = ProxyOp.MakeProxy(step, dependenciesOf(step.target), step.origin)
           proxies += (step.target -> op)
           Seq(op)
 
@@ -38,11 +38,11 @@ class ForwardingRefResolverDefaultImpl
 
     val proxyOps = proxies.foldLeft(Seq.empty[ProxyOp.InitProxy]) {
       case (acc, (proxyKey, proxyDep)) =>
-        acc :+ ProxyOp.InitProxy(proxyKey, proxyDep.forwardRefs, proxies(proxyKey))
+        acc :+ ProxyOp.InitProxy(proxyKey, proxyDep.forwardRefs, proxies(proxyKey), proxyDep.origin)
     }
 
 
     val imports = plan.steps.collect({ case i: ImportDependency => i })
-    FinalPlanImmutableImpl(plan.definition, imports ++ resolvedSteps ++ proxyOps)
+    FinalPlan(plan.definition, imports ++ resolvedSteps ++ proxyOps)
   }
 }

@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
-import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
+import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest
 import com.github.pshirshov.izumi.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
 import org.scalatest.{Assertion, GivenWhenThen, WordSpec}
 
@@ -47,7 +47,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
   "File sink" should {
 
-    val policy = LoggingMacroTest.simplePolicy()
+    val policy = LoggingAsyncSinkTest.simplePolicy()
 
     val dummyFolder = "logstage"
 
@@ -57,7 +57,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
       withFileLogger(withoutRotation(policy, 2, svc)) {
         (sink, logger) =>
-          List.fill(3)("msg").foreach(i => logger.info(i))
+          List.fill(3)("msg").foreach(i => logger.info(s"dummy message: $i"))
           val curState = sink.sinkState.get()
           assert(curState.currentFileId == 1)
           assert(curState.currentFileSize == 1)
@@ -132,7 +132,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
         (sink, logger) =>
           (1 to fileSize * filesLimit).foreach {
-            i => logger.info(i.toString)
+            i => logger.info(s"dummy message: $i")
           }
           val curState1 = sink.sinkState.get()
           assert(curState1.forRotate.isEmpty)
@@ -145,7 +145,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
           (1 to fileSize).foreach {
             i =>
-              logger.info(i.toString)
+              logger.info(s"dummy message: $i")
           }
           val curState3 = sink.sinkState.get()
           assert(curState3.forRotate.size == filesLimit - 2)
@@ -240,7 +240,7 @@ object LoggingFileSinkTest {
 
   def withFileLogger[F <: LogFile](f: => FileSink[F])(f2: (FileSink[F], IzLogger) => Assertion): Unit = {
     val fileSink = f
-    val logger = LoggingMacroTest.configureLogger(Seq(fileSink))
+    val logger = LoggingAsyncSinkTest.configureLogger(Seq(fileSink))
     try {
       Quirks.discard(f2(fileSink, logger))
     } finally {

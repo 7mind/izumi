@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.fundamentals.reflection.MacroUtil
-import com.github.pshirshov.izumi.logstage.api.Log.{LoggerId, Message, StaticExtendedContext, ThreadData}
+import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import com.github.pshirshov.izumi.logstage.api.Log._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 
 import scala.language.experimental.macros
@@ -61,28 +61,38 @@ object LoggingMacro {
 
     val messageTree = message.tree match {
       // qq causes a weird warning here
-      //case q"StringContext($stringContext).s(..$args)" =>
-      case c.universe.Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
+      //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
+      case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
         val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
         reifyContext(c)(stringContext, namedArgs)
 
-      case c.universe.Literal(c.universe.Constant(s)) =>
-        val emptyArgs = reify(List("@type" -> "const"))
+      case Literal(c.universe.Constant(s)) =>
+        val emptyArgs = reify(List(LogArg("@type", "const")))
         val sc = q"StringContext(${s.toString})"
         reifyContext(c)(sc, emptyArgs)
 
       case other =>
         c.warning(c.enclosingPosition,
-          s"""Complex expression as an input for a logger: ${other.toString()}. Variables won't be bound in context. This may not be what you want, use string interpolation instead: s"message with an $${argument}" """)
-        val emptyArgs = q"""List("@type" -> "expr", "@expr" -> ${other.toString()})"""
+          s"""Complex expression as an input for a logger: ${other.toString()}.
+             |
+             |Izumi logger expect you to apply string interpolations:
+             |1) Simple variable: logger.log(s"My message: $$argument")
+             |2) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
+             |""".stripMargin)
+
+        val emptyArgs = reify {
+          val repr = c.Expr[String](Literal(Constant(c.universe.showCode(other)))).splice
+          List(LogArg("@type", "expr"), LogArg("@expr", repr))
+        }
         val sc = q"StringContext($other)"
-        reifyContext(c)(sc, c.Expr(emptyArgs))
+        reifyContext(c)(sc, emptyArgs)
     }
 
+    assert(3!=4)
     logMacro(c)(messageTree, logLevel)
   }
 
-  private def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[(String, Any)]]) = {
+  private def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]) = {
     import c.universe._
     reify {
       Message(
@@ -97,18 +107,17 @@ object LoggingMacro {
 
     val receiver = reify(c.prefix.splice.asInstanceOf[LoggingMacro].receiver)
 
-    val (line, file, applicationPointId) = MacroUtil.EnclosingPosition.getEnclosingPositionExprs(c)
+    val pos = CodePositionMaterializer.getEnclosingPosition(c)
 
     val loggerId = reify {
-      LoggerId(applicationPointId.splice)
+      LoggerId(pos.splice.value.applicationPointId)
     }
 
     val entry = reify {
       val self = c.prefix.splice.asInstanceOf[LoggingMacro]
       val thread = Thread.currentThread()
       val dynamicContext = Log.DynamicContext(logLevel.splice, ThreadData(thread.getName, thread.getId), System.currentTimeMillis())
-
-      val extendedStaticContext = StaticExtendedContext(loggerId.splice, file.splice, line.splice)
+      val extendedStaticContext = StaticExtendedContext(loggerId.splice, pos.splice.value.position)
       Log.Entry(message.splice, Log.Context(extendedStaticContext, dynamicContext, self.contextCustom))
     }
 

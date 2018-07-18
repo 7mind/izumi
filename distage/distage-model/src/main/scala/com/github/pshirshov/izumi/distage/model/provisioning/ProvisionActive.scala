@@ -6,11 +6,11 @@ import scala.collection.mutable
 
 final case class ProvisionActive
 (
-  instances: mutable.HashMap[RuntimeDIUniverse.DIKey, Any] = mutable.HashMap[RuntimeDIUniverse.DIKey, Any]()
-  , imports: mutable.HashMap[RuntimeDIUniverse.DIKey, Any] = mutable.HashMap[RuntimeDIUniverse.DIKey, Any]()
+  instances: mutable.LinkedHashMap[RuntimeDIUniverse.DIKey, Any] = mutable.LinkedHashMap[RuntimeDIUniverse.DIKey, Any]()
+  , imports: mutable.LinkedHashMap[RuntimeDIUniverse.DIKey, Any] = mutable.LinkedHashMap[RuntimeDIUniverse.DIKey, Any]()
 ) extends Provision {
   def toImmutable: ProvisionImmutable = {
-    ProvisionImmutable(instances.toMap, imports.toMap)
+    ProvisionImmutable(instances, imports)
   }
 
   override def narrow(allRequiredKeys: Set[RuntimeDIUniverse.DIKey]): Provision = {

@@ -73,7 +73,6 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
   }
 
   override def reorderOperations(completedPlan: FinalPlan): FinalPlan = {
-    val definition = completedPlan.definition
     val index = completedPlan.steps.collect({case op: InstantiationOp => op.target -> op}).toMap
 
     val topology = analyzer.topoBuild(completedPlan.steps)
@@ -87,7 +86,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
       .filterKeys(k => !index.contains(k))
       .map {
         case (missing, refs) =>
-          missing -> ImportDependency(missing, refs.toSet)
+          missing -> ImportDependency(missing, refs.toSet, None)
       }
       .toMap
 
@@ -97,7 +96,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     )
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
-    FinalPlanImmutableImpl(definition, imports.values.toSeq ++ sortedOps)
+    FinalPlan(definition, imports.values.toVector ++ sortedOps)
   }
 }
 

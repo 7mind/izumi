@@ -6,7 +6,7 @@ using System.Threading;
 using System.Linq;
 using System.Text;
 
-namespace irt {
+namespace IRT {
     public class SimpleHttpServerContext {
         public SimpleHttpServerContext(HttpListenerRequest req) {
         }

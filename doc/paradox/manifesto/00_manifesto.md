@@ -1,7 +1,7 @@
 ---
 out: index.html
 ---
-Our approach to productivity 
+Productivity and challenges
 ============================
 
 @@@ warning { title='TODO' }

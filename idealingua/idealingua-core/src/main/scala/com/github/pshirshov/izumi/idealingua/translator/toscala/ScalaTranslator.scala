@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
+import com.github.pshirshov.izumi.idealingua.model.common.PrimitiveId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, EnumId, IdentifierId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -112,7 +113,6 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
     val qqComposite = q"""final case class ${struct.t.typeName}(..${struct.decls}) extends ..$superClasses {}"""
 
     val qqTools = q""" implicit class ${tools.typeName}(_value: ${struct.t.typeFull}) { }"""
-
 
 
     val qqCompositeCompanion =
@@ -229,7 +229,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
             override def all: Seq[${t.typeFull}] = Seq(..${members.map(_._1)})
 
-            override def parse(value: String) = value match {
+            override def parse(value: String): ${t.typeName} = value match {
               ..case $parseMembers
             }
            }"""
@@ -252,20 +252,35 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val sortedFields = fields.all.sortBy(_.field.field.name)
 
-    val parsers = sortedFields.zipWithIndex
+    val parsers = sortedFields
+      .zipWithIndex
+      .map({case (field, idx) => (field, idx, field.field.field.typeId)})
       .map {
-        case (field, idx) =>
+        case (field, idx, t: EnumId) =>
+          q"${field.name} = ${conv.toScala(t).termName}.parse(parts(${Lit.Int(idx)}))"
+        case (field, idx, t: IdentifierId)  =>
+          q"${field.name} = ${conv.toScala(t).termName}.parse(parts(${Lit.Int(idx)}))"
+        case (field, idx, _: PrimitiveId) =>
           q"${field.name} = parsePart[${field.fieldType}](parts(${Lit.Int(idx)}), classOf[${field.fieldType}])"
+        case o =>
+          throw new IDLException(s"Impossible case/id field: $o")
       }
 
     val parts = sortedFields.map(fi => q"this.${fi.name}")
 
     val superClasses = List(rt.generated.init(), rt.tIDLIdentifier.init())
 
+    val errorInterp = Term.Interpolate(Term.Name("s"), List(Lit.String("Serialized form of "), Lit.String(s" should start with $typeName#")), List(Term.Name("name")))
+
+
     val qqCompanion =
       q"""object ${t.termName} {
             def parse(s: String): ${t.typeName} = {
               import ${rt.tIDLIdentifier.termBase}._
+              if (!s.startsWith(${Lit.String(typeName.toString + "#")})) {
+                val name = ${Lit.String(i.id.toString)}
+                throw new IllegalArgumentException($errorInterp)
+              }
               val withoutPrefix = s.substring(s.indexOf("#") + 1)
               val parts = withoutPrefix.split(":").map(part => unescape(part))
               ${t.termName}(..$parsers)
@@ -303,7 +318,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
       case adt: AdtId =>
         renderAdt(typespace.apply(adt).asInstanceOf[Adt], List(sp.serviceOutputBase.init()))
       case o =>
-        throw new IDLException(s"Impossible case: $o")
+        throw new IDLException(s"Impossible case/service output: $o")
     }).flatMap(_.render)
 
     val inputMappers = decls.map(_.inputMatcher)

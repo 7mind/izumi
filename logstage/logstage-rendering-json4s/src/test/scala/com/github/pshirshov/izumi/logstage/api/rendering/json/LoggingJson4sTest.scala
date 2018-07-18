@@ -18,9 +18,9 @@ class LoggingJson4sTest extends WordSpec {
 
 
 object LoggingJson4sTest {
-  import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest._
+  import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest._
 
-  val jsonPolicy = new JsonRenderingPolicy()
+  val jsonPolicy = new JsonRenderingPolicy(prettyPrint = true)
   val consoleSinkJson = new ConsoleSink(jsonPolicy)
 
   def setupJsonLogger(): IzLogger = {

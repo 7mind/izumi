@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace irt {
+namespace IRT {
     public class DispatcherException: Exception {
         public DispatcherException() {
         }

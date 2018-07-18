@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.common.{StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTCirceWrappedServiceDefinition, IRTMuxingCodecProvider, IRTOpinionatedMarshalers, IRTTimeInstances}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
@@ -16,7 +16,6 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
   protected def classDeriverImports: List[Import]
 
-  protected def adtDeriverImports: List[Import] = classDeriverImports
 
   private val circeRuntimePkg = runtime.Pkg.of[IRTOpinionatedMarshalers]
   private val timeRuntimePkg = runtime.Pkg.of[IRTTimeInstances]
@@ -199,29 +198,16 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
         def responseDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTResBody]]] =  List({..case $responseDecoders})
       }"""
 
-    // doesn't work because of circe derivation issue: https://github.com/circe/circe/issues/868
-    //import ctx.conv._
-    //    val derInput = withDerived(sCtx.service.serviceInputBase)
-//    val derOutput = withDerived(sCtx.service.serviceOutputBase)
-//    val initInput = sCtx.service.svcBaseTpe.within(derInput.name).init()
-//    val initOutput = sCtx.service.svcBaseTpe.within(derOutput.name).init()
-
+    // Circe have an issue, once it fixed we may simplify our logic: https://github.com/circe/circe/issues/868
 
     val extensions: List[Stat] = List(q"override def codecProvider: ${cp.typeFull} = CodecProvider", codecProvider)
-    //val extendedIO = List(derInput.defn, derOutput.defn)
 
     // TODO: lenses?
     product.copy(
       wrapped = product.wrapped.copy(
         companion = product.wrapped.companion.appendDefinitions(extensions).appendBase(base.init())
       )
-
       , imports = product.imports :+ runtime.Import.of(circeRuntimePkg)
-//      , defs = product.defs.copy(
-//        in = product.defs.in.copy(companion = product.defs.in.companion.appendBase(initInput))
-//        , out = product.defs.out.copy(companion = product.defs.out.companion.appendBase(initOutput))
-//        , defs = product.defs.defs.prependDefnitions(extendedIO)
-//      )
     )
   }
 
@@ -230,7 +216,6 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
   protected def withParseable(ctx: STContext, id: TypeId): CirceTrait = {
     val t = ctx.conv.toScala(id)
     val tpe = t.typeFull
-
 
     CirceTrait(
       s"${id.name}Circe",
@@ -244,30 +229,47 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
       """)
   }
 
-  protected def withDerivedClass(ctx: STContext, id: TypeId): CirceTrait =
-    withDerived(ctx, id, classDeriverImports)
-
-  protected def withDerivedAdt(ctx: STContext, id: TypeId): CirceTrait =
-    withDerived(ctx, id, adtDeriverImports)
-
-  protected def withDerived(ctx: STContext, id: TypeId, deriverImports: List[Import]): CirceTrait = {
-    val tpe = ctx.conv.toScala(id)
-    withDerived(tpe, deriverImports)
-  }
-
-  protected def withDerived(stype: ScalaType, deriverImports: List[Import]): CirceTrait = {
+  protected def withDerivedClass(ctx: STContext, id: StructureId): CirceTrait = {
+    val stype = ctx.conv.toScala(id)
+    val struct = ctx.typespace.structure.structure(id)
     val name = stype.fullJavaType.name
     val tpe = stype.typeName
-    // _root_.io.circe.java8.time.TimeInstances
-    CirceTrait(
-      s"${name}Circe",
-      q"""trait ${Type.Name(s"${name}Circe")} extends _root_.com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances {
-            ..$deriverImports
+
+    if (struct.all.size != 1) {
+      CirceTrait(
+        s"${name}Circe",
+        q"""trait ${Type.Name(s"${name}Circe")} extends _root_.com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances {
+            ..$classDeriverImports
             import _root_.io.circe.{Encoder, Decoder}
             implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = deriveEncoder[$tpe]
             implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = deriveDecoder[$tpe]
           }
       """)
+    } else {
+      val singleField = struct.all.head.field
+      val ftpe = ctx.conv.toScala(singleField.typeId)
+
+      CirceTrait(
+        s"${name}Circe",
+        q"""trait ${Type.Name(s"${name}Circe")} extends _root_.com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances {
+            ..$classDeriverImports
+            import _root_.io.circe._
+            import _root_.io.circe.syntax._
+
+            implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = Encoder.instance {
+              v =>
+                v.${Term.Name(singleField.name)}.asJson
+            }
+
+            implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = Decoder.instance {
+              v => v.as[${ftpe.typeFull}].map(d => ${stype.termName}(d))
+            }
+          }
+      """)
+
+    }
   }
+
+
 
 }

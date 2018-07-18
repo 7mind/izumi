@@ -24,8 +24,28 @@ class TypeScriptTypeConverter() {
       case Primitive.TDate => "Date.parse(" + value + ")"
       case Primitive.TTs => "Date.parse(" + value + ")"
       case Primitive.TTsTz => "Date.parse(" + value + ")"
+      case id: IdentifierId => s"new ${id.name}($value)"
+      case en: EnumId => s"$en[$value]"
       // TODO We do nothing for other types, should probably figure something out ...
-      case _ => value
+      case _ => throw new Exception("Unsupported area in parseTypeFromString")
+    }
+  }
+
+  def emitTypeAsString(value: String, target: TypeId): String = {
+    target match {
+      case Primitive.TBool => "(" + value + " ? 'true' : 'false')'"
+      case Primitive.TString => value
+      case Primitive.TInt8 => s"$value.toString()"
+      case Primitive.TInt16 => s"$value.toString()"
+      case Primitive.TInt32 => s"$value.toString()"
+      case Primitive.TInt64 => s"$value.toString()"
+      case Primitive.TFloat => s"$value.toString()"
+      case Primitive.TDouble => s"$value.toString()"
+      case Primitive.TUUID => value
+      case id: IdentifierId => s"$value.toString()"
+      case en: EnumId => s"$en[$value]"
+      // TODO We do nothing for other types, should probably figure something out ...
+      case _ => throw new Exception("Unsupported area in emitTypeAsString")
     }
   }
 
@@ -422,14 +442,14 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return moment(this._$name).format('YYYY-MM-DDTHH:mm:ss.SSS${if(local) "" else "Z"}');
+       |    return Formatter.write${if(local) "Local" else "Zone"}DateTime(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
        |    if (typeof value !== 'string') {
        |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
        |    }
-       |    this._$name = moment(value, 'YYYY-MM-DDTHH:mm:ss.SSS${if(local) "" else "Z"}').toDate();
+       |    this._$name = Formatter.read${if(local) "Local" else "Zoned"}DateTime(value);
        |}
      """.stripMargin
   }
@@ -452,14 +472,14 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return moment(this._$name).format('YYYY-MM-DD');
+       |    return Formatter.writeDate(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
        |    if (typeof value !== 'string') {
        |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
        |    }
-       |    this._$name = moment(value, 'YYYY-MM-DD').toDate();
+       |    this._$name = Formatter.readDate(value);
        |}
      """.stripMargin
   }
@@ -482,7 +502,7 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return moment(this._$name).format('HH:mm:ss.SSS');
+       |    return Formatter.writeTime(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
@@ -490,7 +510,7 @@ class TypeScriptTypeConverter() {
        |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
        |    }
        |
-       |    this._$name = moment(value, 'HH:mm:ss.SSS').toDate();
+       |    this._$name = Formatter.readTime(value);
        |}
      """.stripMargin
   }

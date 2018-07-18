@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, FieldConflicts, PlainStruct, Struct}
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.collection.mutable
 
@@ -15,7 +16,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   }
 
   def structure(defn: Identifier): PlainStruct = {
-    val extractor = new FieldExtractor(types, resolver, defn.id)
+    val extractor = new FieldExtractor(resolver, defn.id)
     PlainStruct(extractor.extractFields(defn))
   }
 
@@ -24,7 +25,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   }
 
   def structure(defn: WithStructure): Struct = {
-    val extractor = new FieldExtractor(types, resolver, defn.id)
+    val extractor = new FieldExtractor(resolver, defn.id)
 
     val parts = resolver.get(defn.id) match {
       case i: Interface =>
@@ -38,7 +39,8 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
     val conflicts = findConflicts(all)
 
-    val output = new Struct(defn.id, parts, conflicts.good, conflicts.soft)
+    val sortedFields = conflicts.all.sortBy(f => (f.defn.distance, f.defn.definedBy.toString, - f.defn.definedWithIndex)).reverse
+    val output = new Struct(defn.id, parts, conflicts.good, conflicts.soft, sortedFields)
     assert(output.all.groupBy(_.field.name).forall(_._2.size == 1), s"IDL Compiler Bug: contradictive structure for ${defn.id}: ${output.all.mkString("\n  ")}")
     output
   }
@@ -56,7 +58,6 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
         goodFields.put(k, v.head)
       case (k, NonContradictive(v)) =>
         softConflicts.put(k, v)
-
       case (k, v) =>
         hardConflicts.put(k, v)
     }
@@ -173,6 +174,8 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       .map(t => structure(resolver.get(t)))
       .map {
         istruct =>
+          val targetId = istruct.id
+
           val localFields = istruct.localOrAmbigious
             .map(_.field)
             .toSet
@@ -185,7 +188,7 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
           val mixinInstanceFieldsCandidates = istruct
             .unambigiousInherited
             .map(_.defn.definedBy)
-            .collect({ case i: InterfaceId => i })
+            .collect({ case i: StructureId => i })
             .flatMap(mi => structure(resolver.get(mi)).all)
             .filter(f => all.contains(f.field)) // to drop removed fields
             .filterNot(f => parentInstanceFields.contains(f.field))
@@ -196,17 +199,16 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
           val allFieldCandidates = mixinInstanceFields.map(_.field) ++ filteredParentFields.toList ++ localFields.toList
 
-          assert(allFieldCandidates.groupBy(_.name).forall(_._2.size == 1),
-            s"""IDL Compiler bug: contradictive converters for $id:
-               |Filtered parents:
-               |${filteredParentFields.mkString("\n  ")}
-               |
-               |Mixins:
-               |${mixinInstanceFields.mkString("\n  ")}
-               |
-               |Local:
-               |${localFields.mkString("\n  ")}
-               |""".stripMargin)
+          assert(
+            allFieldCandidates.groupBy(_.name).forall(_._2.size == 1),
+            s"""IDL Compiler bug: contradictive converter for $id -> $targetId:
+               |All fields: ${all.niceList()}
+               |Parent fields: ${parentInstanceFields.niceList()}
+               |Filtered PFs: ${filteredParentFields.niceList()}
+               |Mixins CFs: ${mixinInstanceFields.niceList()}
+               |Local Fields: ${localFields.niceList()}
+               |""".stripMargin
+          )
 
           val instanceFields = filteredParentFields.toList
           val childMixinFields = mixinInstanceFields
@@ -215,7 +217,18 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
           val outerFields = localFields.toList.map(f => SigParam(f.name, SigParamSource(f.typeId, f.name), None)) ++
             childMixinFields.map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
 
-          val targetId = istruct.id
+
+
+          assert(
+            all.map(_.name) == (innerFields.map(_.targetFieldName) ++ outerFields.map(_.targetFieldName)).toSet,
+            s"""IDL Compiler bug: failed to build converter for $id -> $targetId:
+               |All fields: ${all.niceList()}
+               |Parent fields: ${parentInstanceFields.niceList()}
+               |Filtered PFs: ${filteredParentFields.niceList()}
+               |Mixins CFs: ${mixinInstanceFields.niceList()}
+               |Local Fields: ${localFields.niceList()}
+               |""".stripMargin
+          )
 
           tools.mkConverter(innerFields, outerFields, targetId)
       }
@@ -224,84 +237,5 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
 
   protected def signature(defn: WithStructure): List[Field] = {
     structure(defn).all.map(_.field).sortBy(_.name)
-  }
-}
-
-private class FieldExtractor(types: TypeCollection, resolver: TypeResolver, user: TypeId) {
-  def extractFields(defn: TypeDef): List[ExtendedField] = {
-    extractFields(defn, 0)
-  }
-
-  protected def extractFields(defn: TypeDef, depth: Int): List[ExtendedField] = {
-    val nextDepth = depth + 1
-    val fields = defn match {
-      case t: Interface =>
-        val struct = t.struct
-        val superFields = compositeFields(nextDepth, struct.superclasses.interfaces)
-        //.map(_.copy(definedBy = t.id)) // for interfaces super field is ok to consider as defined by this interface
-        filterFields(nextDepth, t.id, superFields, struct)
-
-      case t: DTO =>
-        val struct = t.struct
-        val superFields = compositeFields(nextDepth, struct.superclasses.interfaces)
-        filterFields(nextDepth, t.id, superFields, struct)
-
-      case t: Adt =>
-        t.alternatives.map(_.typeId).map(resolver.apply).flatMap(extractFields(_, nextDepth))
-
-      case t: Identifier =>
-        toExtendedPrimitiveFields(nextDepth, t.fields, t.id)
-
-      case _: Enumeration =>
-        List()
-
-      case _: Alias =>
-        List()
-    }
-
-    fields.distinct
-  }
-
-  protected def compositeFields(nextDepth: Int, composite: Interfaces): List[ExtendedField] = {
-    composite.flatMap(i => extractFields(resolver.apply(i), nextDepth))
-  }
-
-  protected def toExtendedFields(nextDepth: Int, fields: Tuple, id: TypeId): List[ExtendedField] = {
-    fields.map(f => ExtendedField(f, FieldDef(id, user, nextDepth - 1)))
-  }
-
-  protected def toExtendedPrimitiveFields(nextDepth: Int, fields: PrimitiveTuple, id: TypeId): List[ExtendedField] = {
-    fields.map(f => ExtendedField(Field(f.typeId, f.name), FieldDef(id, user, nextDepth - 1)))
-  }
-
-  private def filterFields(nextDepth: Int, id: StructureId, superFields: List[ExtendedField], struct: Structure): List[ExtendedField] = {
-    val embeddedFields = struct.superclasses.concepts.map(resolver.apply).flatMap(extractFields(_, nextDepth))
-    val thisFields = toExtendedFields(nextDepth, struct.fields, id)
-
-    val removable = embeddedFields ++ thisFields
-
-    val removedFields = extractRemoved(resolver.apply(id)).toSet
-
-    val badRemovals = superFields.map(_.field).toSet.intersect(removedFields)
-    if (badRemovals.nonEmpty) {
-      throw new IDLException(s"Cannot remove inherited fields from $id: $badRemovals")
-    }
-
-    superFields ++ removable.filterNot(f => removedFields.contains(f.field))
-  }
-
-  protected def extractRemoved(defn: TypeDef): List[Field] = {
-    val fields = defn match {
-      case t: Interface =>
-        t.struct.removedFields ++ t.struct.superclasses.removedConcepts.map(resolver.apply).flatMap(extractRemoved)
-
-      case t: DTO =>
-        t.struct.removedFields ++ t.struct.superclasses.removedConcepts.map(resolver.apply).flatMap(extractRemoved)
-
-      case _ =>
-        List()
-    }
-
-    fields.distinct
   }
 }

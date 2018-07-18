@@ -554,4 +554,12 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     class TestClass(val a: TestDependency1)(val b: TestDependency3, implicit val c: TestDependency2)(implicit val d: TestDependency3)
   }
+
+  object Case22 {
+    class SelfReference(val self: SelfReference)
+
+    class ByNameSelfReference(_self: => ByNameSelfReference) {
+      final lazy val self = _self
+    }
+  }
 }

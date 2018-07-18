@@ -17,7 +17,7 @@ class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends Factory
           case Some(dep) =>
             TypedRef(dep, key.wireWith.tpe)
           case _ if key.wireWith == DIKey.get[FactoryExecutor] =>
-            TypedRef(mkExecutor(context, executor, op.wiring.factoryIndex, op.target))
+            TypedRef(mkExecutor(context, executor, op.wiring.factoryIndex, op))
           case _ =>
             throw new InvalidPlanException(s"The impossible happened! Tried to instantiate class," +
                 s" but the dependency has not been initialized: Class: $op.target, dependency: $key")
@@ -28,7 +28,7 @@ class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends Factory
     Seq(OpResult.NewInstance(op.target, instance))
   }
 
-  private def mkExecutor(context: ProvisioningKeyProvider, executor: OperationExecutor, factoryIndex: Map[Int, Wiring.FactoryFunction.WithContext], target: DIKey): FactoryExecutor =
+  private def mkExecutor(context: ProvisioningKeyProvider, executor: OperationExecutor, factoryIndex: Map[Int, Wiring.FactoryFunction.WithContext], op: WiringOp.CallFactoryProvider): FactoryExecutor =
     (idx, args) => {
       loggerHook.log(s"FactoryExecutor: Start! Looking up method index $idx in $factoryIndex")
 
@@ -49,7 +49,7 @@ class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends Factory
 
       loggerHook.log(s"FactoryExecutor: Here are args keys $args and dep keys $productDeps")
 
-      val res: Seq[OpResult] = executor.execute(extendedContext, FactoryTools.mkExecutableOp(target, step.wireWith))
+      val res: Seq[OpResult] = executor.execute(extendedContext, FactoryTools.mkExecutableOp(op.target, step.wireWith, op.origin))
       loggerHook.log(s"FactoryExecutor: Successfully produced instances [${res.mkString(",")}]")
 
       res

@@ -76,7 +76,7 @@ class PlannerDefaultImpl
         val target = s.key
         val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, currentPlan.operations.size, setElementKeySymbol(s.implementation))
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
-        val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.tpe, Set.empty))
+        val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.tpe, Set.empty, Some(binding)))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
         NextOps(
@@ -85,7 +85,7 @@ class PlannerDefaultImpl
         )
 
       case s: EmptySetBinding[_] =>
-        val newSet = CreateSet(s.key, s.key.tpe, Set.empty)
+        val newSet = CreateSet(s.key, s.key.tpe, Set.empty, Some(binding))
 
         NextOps(
           Map(s.key -> newSet)
@@ -100,25 +100,25 @@ class PlannerDefaultImpl
 
     wiring match {
       case w: Constructor =>
-        Step(wiring, WiringOp.InstantiateClass(target, w))
+        Step(wiring, WiringOp.InstantiateClass(target, w, Some(binding)))
 
       case w: AbstractSymbol =>
-        Step(wiring, WiringOp.InstantiateTrait(target, w))
+        Step(wiring, WiringOp.InstantiateTrait(target, w, Some(binding)))
 
       case w: FactoryMethod =>
-        Step(wiring, WiringOp.InstantiateFactory(target, w))
+        Step(wiring, WiringOp.InstantiateFactory(target, w, Some(binding)))
 
       case w: FactoryFunction =>
-        Step(wiring, WiringOp.CallFactoryProvider(target, w))
+        Step(wiring, WiringOp.CallFactoryProvider(target, w, Some(binding)))
 
       case w: Function =>
-        Step(wiring, WiringOp.CallProvider(target, w))
+        Step(wiring, WiringOp.CallProvider(target, w, Some(binding)))
 
       case w: Instance =>
-        Step(wiring, WiringOp.ReferenceInstance(target, w))
+        Step(wiring, WiringOp.ReferenceInstance(target, w, Some(binding)))
 
       case w: Reference =>
-        Step(wiring, WiringOp.ReferenceKey(target, w))
+        Step(wiring, WiringOp.ReferenceKey(target, w, Some(binding)))
     }
   }
 

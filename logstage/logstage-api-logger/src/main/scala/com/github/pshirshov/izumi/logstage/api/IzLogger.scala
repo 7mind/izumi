@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
+import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, LogArg}
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 
 import scala.language.implicitConversions
@@ -18,7 +18,7 @@ class IzLogger
   }
 
   implicit def withMapAsCustomContext(map: Map[String, Any]): IzLogger = {
-    withCustomContext(CustomContext(map.toList))
+    withCustomContext(CustomContext(map.map(kv => LogArg(kv._1, kv._2)).toList))
   }
 
   def apply[V](conv: Map[String, V]): IzLogger = conv

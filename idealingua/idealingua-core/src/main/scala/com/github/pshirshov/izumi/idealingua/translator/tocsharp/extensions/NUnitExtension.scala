@@ -51,7 +51,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
          """.stripMargin
 
     val header =
-      s"""using irt;
+      s"""using IRT;
          |using NUnit.Framework;
        """.stripMargin
 
@@ -88,7 +88,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
        """.stripMargin
 
     val header =
-      s"""using irt;
+      s"""using IRT;
          |using NUnit.Framework;
        """.stripMargin
 
@@ -126,7 +126,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
        """.stripMargin
 
     val header =
-      s"""using irt;
+      s"""using IRT;
          |using System;
          |using System.Globalization;
          |using System.Collections;
@@ -174,7 +174,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
        """.stripMargin
 
     val header =
-      s"""using irt;
+      s"""using IRT;
          |using System;
          |using System.Globalization;
          |using System.Collections;

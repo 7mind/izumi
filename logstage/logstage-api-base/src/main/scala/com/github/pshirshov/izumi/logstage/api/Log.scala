@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api
 
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
+
 object Log {
 
   sealed trait Level extends Ordered[Level] {
@@ -36,11 +38,13 @@ object Log {
 
   }
 
-  type LogContextEntry = (String, Any)
-  type LogContext = Seq[LogContextEntry]
+  case class LogArg(name: String, value: Any, hidden: Boolean)
 
-  //type LogContext = Map[String, Any]
+  object LogArg {
+    def apply(name: String, value: Any): LogArg = new LogArg(name, value, false)
+  }
 
+  type LogContext = Seq[LogArg]
 
   final case class CustomContext(values: LogContext) {
     def +(that: CustomContext): CustomContext = {
@@ -55,7 +59,7 @@ object Log {
 
   final case class LoggerId(id: String) extends AnyVal
 
-  final case class StaticExtendedContext(id: LoggerId, file: String, line: Int)
+  final case class StaticExtendedContext(id: LoggerId, position: SourceFilePosition)
 
   final case class ThreadData(threadName: String, threadId: Long)
 
@@ -65,7 +69,7 @@ object Log {
 
   final case class Entry(message: Message, context: Context) {
     def firstThrowable: Option[Throwable] = {
-      message.args.map(_._2).collectFirst { case t: Throwable => t }
+      message.args.map(_.value).collectFirst { case t: Throwable => t }
     }
   }
 
@@ -73,7 +77,7 @@ object Log {
 
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
-    def argsMap: Map[String, Set[Any]] = args.toMultimap
+    def argsMap: Map[String, Set[Any]] = args.map(kv => (kv.name, kv.value)).toMultimap
   }
 
 }

@@ -9,7 +9,6 @@ import scala.meta._
 
 object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
-
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     val constructors = ctx.typespace.structure.conversions(interface.id).map {
       t =>

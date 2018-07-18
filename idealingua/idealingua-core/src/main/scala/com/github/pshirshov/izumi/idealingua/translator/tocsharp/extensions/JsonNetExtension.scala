@@ -32,7 +32,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "irt")
+    List("Newtonsoft.Json", "IRT")
   }
 
   override def preModelEmit(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -56,7 +56,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "irt")
+    List("Newtonsoft.Json", "IRT")
   }
 
   override def preModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -106,7 +106,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "Newtonsoft.Json.Linq", "irt")
+    List("Newtonsoft.Json", "Newtonsoft.Json.Linq", "IRT")
   }
 
   private def writePropertyValue(src: String, t: CSharpType, key: Option[String] = None)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -339,7 +339,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "irt")
+    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT")
   }
 
   override def preModelEmit(ctx: CSTContext, i: Adt)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -404,6 +404,6 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "irt")
+    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT")
   }
 }

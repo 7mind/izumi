@@ -10,7 +10,7 @@ final case class GoLangStruct(
                           typeId: TypeId,
                           implements: List[InterfaceId] = List.empty,
                           fields: List[GoLangField] = List.empty,
-                          imports: GoLangImports = GoLangImports(List.empty),
+                          imports: GoLangImports = GoLangImports(List.empty, None),
                           ts: Typespace = null,
                           ignoreSlices: List[InterfaceId] = List.empty
                        ) {
@@ -50,8 +50,8 @@ final case class GoLangStruct(
 
   def renderSlices(): String = {
     val refined = implements.filterNot(ignoreSlices.contains)
-    s"""${refined.map(intf => renderSlice(s"To${intf.name + ts.implId(intf).name}Serialized", s"${intf.name + ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
-       |${refined.map(intf => renderLoadSlice(s"Load${intf.name + ts.implId(intf).name}Serialized", s"${intf.name + ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
+    s"""${refined.map(intf => renderSlice(s"To${intf.name + ts.implId(intf).name}Serialized", s"${imports.withImport(intf) + intf.name + ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
+       |${refined.map(intf => renderLoadSlice(s"Load${intf.name + ts.implId(intf).name}Serialized", s"${imports.withImport(intf) + intf.name + ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
      """.stripMargin
   }
 
@@ -166,7 +166,7 @@ object GoLangStruct {
              typeId: TypeId,
              implements: List[InterfaceId] = List.empty,
              fields: List[GoLangField] = List.empty,
-             imports: GoLangImports = GoLangImports(List.empty),
+             imports: GoLangImports = GoLangImports(List.empty, None),
              ts: Typespace = null,
              ignoreSlices: List[InterfaceId] = List.empty
            ): GoLangStruct = new GoLangStruct(name, typeId, implements, fields, imports, ts, ignoreSlices)

@@ -5,6 +5,6 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 class LoggerHookLoggingImpl(log: IzLogger) extends LoggerHook {
   override def log(message: => String): Unit = {
-    log.debug(s"DIStage messge: $message")
+    log.debug(s"DIStage message: $message")
   }
 }

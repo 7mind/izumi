@@ -51,6 +51,18 @@ class IzString(s: String) {
     }
   }
 
+  def camelToUnderscores: String = {
+    "[A-Z\\d]".r.replaceAllIn(s, {m =>
+      "_" + m.group(0).toLowerCase()
+    })
+  }
+
+  def underscoreToCamel: String = {
+    "_([a-z\\d])".r.replaceAllIn(s, { m =>
+      m.group(1).toUpperCase()
+    })
+  }
+
 }
 
 class IzIterable[A](s: Iterable[A]) {
