@@ -61,13 +61,6 @@ object IDLTestTools {
 
     val classpath: String = IzJvm.safeClasspath(classLoader)
 
-    val classpathParts: Seq[String] = Seq(
-      classLoaderCp,
-      Seq(System.getProperty("java.class.path"))
-    ).flatten
-
-    val classpath = classpathParts.mkString(System.getProperty("path.separator"))
-
     val cmd = Seq(
       "scalac"
       , "-deprecation"

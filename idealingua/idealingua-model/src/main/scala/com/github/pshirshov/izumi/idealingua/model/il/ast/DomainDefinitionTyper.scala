@@ -44,9 +44,9 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
           case f if isIdPrimitive(f.typeId) =>
             IdField.PrimitiveField(toIdPrimitive(f.typeId), f.name)
           case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[IdentifierId]) =>
-            IdField.SubId(fixSimpleId(makeDefinite(f.typeId)): TypeId.IdentifierId, f.name)
+            IdField.SubId(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[IdentifierId]), f.name)
           case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[EnumId]) =>
-            IdField.Enum(fixSimpleId(makeDefinite(f.typeId)): TypeId.EnumId, f.name)
+            IdField.Enum(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[TypeId.EnumId]), f.name)
           case f =>
             throw new IDLException(s"Unsupporeted ID field $f in $domainId. You may use primitive fields, enums or other IDs only")
 
@@ -179,7 +179,7 @@ class DomainDefinitionTyper(defn: DomainDefinitionParsed) {
     DomainId(v.init, v.last)
   }
 
-  protected def toIdPrimitive(typeId: AbstractIndefiniteId): Primitive = {
+  protected def toIdPrimitive(typeId: AbstractIndefiniteId): PrimitiveId = {
     typeId match {
       case p if isIdPrimitive(p) =>
         Primitive.mappingId(p.name)
