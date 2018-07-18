@@ -12,6 +12,8 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.model.publishing.{ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangManifest
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.togolang.types._
 
@@ -26,6 +28,22 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   import ctx._
 
   def translate(): Seq[Module] = {
+//    implicit val goLangManifest = Some(new GoLangManifest(
+//      name = "Test",
+//      tags = "",
+//      description = "",
+//      notes = "",
+//      publisher = new Publisher("Publisher Name", "publisher_id"),
+//      version = "0.0.1",
+//      license = "http://license.url",
+//      website = "http://project.website",
+//      copyright = "Copyright (C) Some Inc.",
+//      dependencies = List.empty,
+//      repository = "github.com/SomeInc/project"
+//    ))
+
+    implicit val goLangManifest: Option[GoLangManifest] = None
+
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)
@@ -35,12 +53,12 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
   }
 
 
-  protected def translateService(definition: Service): Seq[Module] = {
+  protected def translateService(definition: Service)(implicit manifest: Option[GoLangManifest]): Seq[Module] = {
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id),
       ctx.modules.toTestModuleId(definition.id), renderService(definition))
   }
 
-  protected def translateDef(definition: TypeDef): Seq[Module] = {
+  protected def translateDef(definition: TypeDef)(implicit manifest: Option[GoLangManifest]): Seq[Module] = {
     val defns = definition match {
       case i: Alias =>
         renderAlias(i)
@@ -85,8 +103,8 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
      """.stripMargin
   }
 
-  protected def renderDto(i: DTO): RenderableCogenProduct = {
-    val imports = GoLangImports(i, i.id.path.toPackage, ts)
+  protected def renderDto(i: DTO)(implicit manifest: Option[GoLangManifest]): RenderableCogenProduct = {
+    val imports = GoLangImports(i, i.id.path.toPackage, ts, manifest = manifest)
 
     val fields = typespace.structure.structure(i).all.map(f => if (f.defn.variance.nonEmpty) f.defn.variance.last else f.field )
     val distinctFields = fields.groupBy(_.name).map(_._2.head)
@@ -108,7 +126,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        """.stripMargin
 
     val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil")
-      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty, forTest = true)
+      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty, forTest = true, manifest = manifest)
 
     val tests =
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
@@ -139,8 +157,8 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
 
   }
 
-  protected def renderAlias(i: Alias): RenderableCogenProduct = {
-      val imports = GoLangImports(i, i.id.path.toPackage, ts)
+  protected def renderAlias(i: Alias)(implicit manifest: Option[GoLangManifest]): RenderableCogenProduct = {
+      val imports = GoLangImports(i, i.id.path.toPackage, ts, manifest = manifest)
       val goType = GoLangType(i.target, imports, ts)
       var extra: Seq[String] = Seq.empty
 
@@ -340,8 +358,8 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
      """.stripMargin
   }
 
-  protected def renderAdt(i: Adt): RenderableCogenProduct = {
-    val imports = GoLangImports(i, i.id.path.toPackage, ts)
+  protected def renderAdt(i: Adt)(implicit manifest: Option[GoLangManifest]): RenderableCogenProduct = {
+    val imports = GoLangImports(i, i.id.path.toPackage, ts, manifest = manifest)
     val name = i.id.name
 
     val tests =
@@ -356,7 +374,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
     AdtProduct(renderAdtImpl(name, i.alternatives, imports), imports.renderImports(Seq("fmt", "encoding/json")), tests)
   }
 
-  protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
+  protected def renderEnumeration(i: Enumeration)(implicit manifest: Option[GoLangManifest]): RenderableCogenProduct = {
     val name = i.id.name
     val decl =
     s"""// $name Enumeration
@@ -479,13 +497,13 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
 
     EnumProduct(
       decl,
-      GoLangImports(List.empty).renderImports(Seq("encoding/json", "bytes")),
+      GoLangImports(List.empty, manifest).renderImports(Seq("encoding/json", "bytes")),
       tests
     )
   }
 
-  protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
-    val imports = GoLangImports(i, i.id.path.toPackage, ts)
+  protected def renderIdentifier(i: Identifier)(implicit manifest: Option[GoLangManifest]): RenderableCogenProduct = {
+    val imports = GoLangImports(i, i.id.path.toPackage, ts, manifest = manifest)
 
     val fields = typespace.structure.structure(i)
     val sortedFields = fields.all.sortBy(_.field.name)
@@ -600,8 +618,8 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
     )
   }
 
-  protected def renderInterface(i: Interface): RenderableCogenProduct = {
-    val imports = GoLangImports(i, i.id.path.toPackage, ts)
+  protected def renderInterface(i: Interface)(implicit manifest: Option[GoLangManifest]): RenderableCogenProduct = {
+    val imports = GoLangImports(i, i.id.path.toPackage, ts, manifest = manifest)
 
     val fields = typespace.structure.structure(i).all.map(f => if (f.defn.variance.nonEmpty) f.defn.variance.last else f.field )
     val distinctFields = fields.groupBy(_.name).map(_._2.head)
@@ -676,7 +694,7 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
        """.stripMargin
 
     val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil")
-      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty, forTest = true)
+      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty, forTest = true, manifest = manifest)
 
     val tests =
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
@@ -943,8 +961,8 @@ class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]
     i.methods.map(me => renderServiceMethodModels(i, me, imports)).mkString("\n")
   }
 
-  protected def renderService(i: Service): RenderableCogenProduct = {
-      val imports = GoLangImports(i, i.id.domain.toPackage, List.empty)
+  protected def renderService(i: Service)(implicit manifest: Option[GoLangManifest]): RenderableCogenProduct = {
+      val imports = GoLangImports(i, i.id.domain.toPackage, List.empty, manifest)
 
       val svc =
         s"""// ============== Service models ==============

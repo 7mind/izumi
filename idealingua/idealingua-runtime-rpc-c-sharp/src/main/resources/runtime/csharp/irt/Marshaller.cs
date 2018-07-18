@@ -1,5 +1,5 @@
 
-namespace irt {
+namespace IRT {
     public interface IMarshaller<T> {
         T Marshal<I>(I data);
         O Unmarshal<O>(T data);

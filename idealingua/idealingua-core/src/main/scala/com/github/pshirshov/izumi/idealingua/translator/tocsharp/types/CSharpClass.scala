@@ -67,7 +67,14 @@ final case class CSharpClass (
            |static $name() {
            |    var type = typeof(${withCTORs.get});
            |    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()) {
-           |        foreach (var tp in assembly.GetTypes()) {
+           |        System.Type[] types = null;
+           |        try {
+           |            types = assembly.GetTypes();
+           |        } catch (Exception) {
+           |            // ReflectionTypeLoadException potentially caught here
+           |            continue;
+           |        }
+           |        foreach (var tp in types) {
            |            if (type.IsAssignableFrom(tp) && !tp.IsInterface) {
            |                var rttiID = tp.GetField("RTTI_FULLCLASSNAME");
            |                if (rttiID != null) {

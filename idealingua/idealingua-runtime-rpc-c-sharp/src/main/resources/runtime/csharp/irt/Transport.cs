@@ -1,7 +1,7 @@
 
 using System;
 
-namespace irt {
+namespace IRT {
     public interface IClientTransportContext {
     }
 

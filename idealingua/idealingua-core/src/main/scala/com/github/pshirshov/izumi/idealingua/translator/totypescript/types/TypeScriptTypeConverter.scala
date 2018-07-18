@@ -442,14 +442,14 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return moment(this._$name).format('YYYY-MM-DDTHH:mm:ss.SSS${if(local) "" else "Z"}');
+       |    return Formatter.write${if(local) "Local" else "Zone"}DateTime(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
        |    if (typeof value !== 'string') {
        |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
        |    }
-       |    this._$name = moment(value, 'YYYY-MM-DDTHH:mm:ss.SSS${if(local) "" else "Z"}').toDate();
+       |    this._$name = Formatter.read${if(local) "Local" else "Zoned"}DateTime(value);
        |}
      """.stripMargin
   }
@@ -472,14 +472,14 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return moment(this._$name).format('YYYY-MM-DD');
+       |    return Formatter.writeDate(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
        |    if (typeof value !== 'string') {
        |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
        |    }
-       |    this._$name = moment(value, 'YYYY-MM-DD').toDate();
+       |    this._$name = Formatter.readDate(value);
        |}
      """.stripMargin
   }
@@ -502,7 +502,7 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return moment(this._$name).format('HH:mm:ss.SSS');
+       |    return Formatter.writeTime(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
@@ -510,7 +510,7 @@ class TypeScriptTypeConverter() {
        |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
        |    }
        |
-       |    this._$name = moment(value, 'HH:mm:ss.SSS').toDate();
+       |    this._$name = Formatter.readTime(value);
        |}
      """.stripMargin
   }

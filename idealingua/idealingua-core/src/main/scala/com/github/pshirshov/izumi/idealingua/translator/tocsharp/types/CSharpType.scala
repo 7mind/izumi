@@ -173,7 +173,7 @@ final case class CSharpType (
       case _ => id match {
         case e: EnumId => {
           val enu = ts(e).asInstanceOf[Enumeration]
-          s"${e.path.toPackage.mkString(".") + "." + e.name}.${enu.members(rnd.nextInt(enu.members.length))}"
+          s"${e.path.toPackage.map(p => p.capitalize).mkString(".") + "." + e.name}.${enu.members(rnd.nextInt(enu.members.length))}"
         }
         case i: InterfaceId => if (depth <= 0) "null" else randomInterface(i, depth)
         case i: IdentifierId => randomIdentifier(i, depth)
@@ -187,7 +187,7 @@ final case class CSharpType (
 
   private def randomIdentifier(i: IdentifierId, depth: Int): String = {
     val inst = ts(i).asInstanceOf[Identifier]
-    s"""new ${i.path.toPackage.mkString(".") + "." + i.name}(
+    s"""new ${i.path.toPackage.map(p => p.capitalize).mkString(".") + "." + i.name}(
        |${inst.fields.map(f => CSharpType(f.typeId).getRandomValue(depth - 1)).mkString(",\n").shift(4)}
        |)
      """.stripMargin
@@ -195,7 +195,7 @@ final case class CSharpType (
 
   private def randomAdt(i: AdtId, depth: Int): String = {
     val adt = ts(i).asInstanceOf[Adt]
-    s"""new ${i.path.toPackage.mkString(".") + "." + i.name}.${adt.alternatives.head.name}(
+    s"""new ${i.path.toPackage.map(p => p.capitalize).mkString(".") + "." + i.name}.${adt.alternatives.head.name}(
        |${CSharpType(adt.alternatives.head.typeId).getRandomValue(depth - 1).shift(4)}
        |)
      """.stripMargin
@@ -214,8 +214,8 @@ final case class CSharpType (
       val structure = ts.structure.structure(i)
       val struct = CSharpClass(i.id, i.id.name, structure, List.empty)
       val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
-      val dtoName = if (implIface.isDefined) implIface.get.path.toPackage.mkString(".") + "." + implIface.get.name + i.id.name else
-        i.id.path.toPackage.mkString(".") + "." + i.id.name
+      val dtoName = if (implIface.isDefined) implIface.get.path.toPackage.map(p => p.capitalize).mkString(".") + "." + implIface.get.name + i.id.name else
+        i.id.path.toPackage.map(p => p.capitalize).mkString(".") + "." + i.id.name
       s"""new ${dtoName}(
          |${struct.fields.map(f => f.tp.getRandomValue(depth - 1)).mkString(",\n").shift(4)}
          |)
@@ -292,7 +292,7 @@ final case class CSharpType (
   }
 
   protected def renderUserType(id: TypeId, forAlias: Boolean = false, forMap: Boolean = false, withPackage: Boolean = false): String = {
-      val fullName = id.path.toPackage.mkString(".") + "." + id.name
+      val fullName = id.path.toPackage.map(p => p.capitalize).mkString(".") + "." + id.name
       id match {
         case _: EnumId => if (withPackage) fullName else s"${im.withImport(id)}"
         case _: InterfaceId => if (withPackage) fullName else s"${im.withImport(id)}"

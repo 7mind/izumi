@@ -1,5 +1,5 @@
 
-import * as moment from 'moment';
+import { Formatter } from './formatter';
 
 export enum LogLevel {
     Trace,
@@ -37,7 +37,7 @@ export class ConsoleLogger implements Logger {
             return;
         }
 
-        let prefix = moment().format('YYYY-MM-DDTHH:mm:ss.SSSzzz') + ' [' + LogLevel[level] + ']: '
+        let prefix = Formatter.writeZoneDateTime(new Date()) + ' [' + LogLevel[level] + ']: '
 
         switch (level) {
             case LogLevel.Trace:

@@ -1,12 +1,11 @@
 
-using irt;
 using System;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Collections.Specialized;
 
-namespace irt {
+namespace IRT {
     public class AsyncHttpTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
         private class RequestState<O> {
             public HttpWebRequest Request;

@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace irt {
+namespace IRT {
     public class JsonNetMarshaller: IJsonMarshaller {
         private JsonSerializerSettings settings;
 
@@ -79,12 +79,30 @@ namespace irt {
     public static class JsonNetTimeFormats {
         public static readonly string TslDefault = "yyyy-MM-ddTHH:mm:ss.fff";
         public static readonly string[] Tsl = new string[] {
-                    "yyyy-MM-ddTHH:mm:ss.fff"
+                    "yyyy-MM-ddTHH:mm:ss",
+                    "yyyy-MM-ddTHH:mm:ss.f",
+                    "yyyy-MM-ddTHH:mm:ss.ff",
+                    "yyyy-MM-ddTHH:mm:ss.fff",
+                    "yyyy-MM-ddTHH:mm:ss.ffff",
+                    "yyyy-MM-ddTHH:mm:ss.fffff",
+                    "yyyy-MM-ddTHH:mm:ss.ffffff",
+                    "yyyy-MM-ddTHH:mm:ss.fffffff",
+                    "yyyy-MM-ddTHH:mm:ss.ffffffff",
+                    "yyyy-MM-ddTHH:mm:ss.fffffffff"
                 };
 
         public static readonly string TszDefault = "yyyy-MM-ddTHH:mm:ss.fffzzz";
         public static readonly string[] Tsz = new string[] {
-                    "yyyy-MM-ddTHH:mm:ss.fffzzz"
+                    "yyyy-MM-ddTHH:mm:sszzz",
+                    "yyyy-MM-ddTHH:mm:ss.fzzz",
+                    "yyyy-MM-ddTHH:mm:ss.ffzzz",
+                    "yyyy-MM-ddTHH:mm:ss.fffzzz",
+                    "yyyy-MM-ddTHH:mm:ss.ffffzzz",
+                    "yyyy-MM-ddTHH:mm:ss.fffffzzz",
+                    "yyyy-MM-ddTHH:mm:ss.ffffffzzz",
+                    "yyyy-MM-ddTHH:mm:ss.fffffffzzz",
+                    "yyyy-MM-ddTHH:mm:ss.ffffffffzzz",
+                    "yyyy-MM-ddTHH:mm:ss.fffffffffzzz"
                 };
     }
 

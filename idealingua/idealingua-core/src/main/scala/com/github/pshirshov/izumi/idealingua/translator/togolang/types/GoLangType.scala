@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Enumerat
 
 final case class GoLangType (
                         id: TypeId,
-                        im: GoLangImports = GoLangImports(List.empty),
+                        im: GoLangImports = GoLangImports(List.empty, None),
                         ts: Typespace = null
                       ) {
 
@@ -278,7 +278,7 @@ final case class GoLangType (
 object GoLangType {
   def apply(
              id: TypeId,
-             im: GoLangImports = GoLangImports(List.empty),
+             im: GoLangImports = GoLangImports(List.empty, None),
              ts: Typespace = null
            ): GoLangType = new GoLangType(id, im, ts)
 }

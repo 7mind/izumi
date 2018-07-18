@@ -8,6 +8,9 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
+import com.github.pshirshov.izumi.idealingua.model.publishing.{ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptModuleSchema.TypeScriptModuleSchema
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangManifest, TypeScriptManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension, TypeScriptTranslatorExtension}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
@@ -26,12 +29,50 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   import ctx._
 
   def translate(): Seq[Module] = {
+      implicit val manifest: Option[TypeScriptManifest] = Some(new TypeScriptManifest(
+          name = "Test",
+          tags = "",
+          description = "",
+          notes = "",
+          publisher = new Publisher("Publisher Name", "publisher_id"),
+          version = "0.0.1",
+          license = "http://license.url",
+          website = "http://project.website",
+          copyright = "Copyright (C) Some Inc.",
+          dependencies = List(ManifestDependency("moment", "^2.20.1")),
+          scope = "@TestScope",
+          moduleSchema =  TypeScriptModuleSchema.PER_DOMAIN
+        ))
+
+//    implicit val manifest: Option[TypeScriptManifest] = None
+
+    val indexModule = buildIndexModule()
+
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)
-    ).flatten ++ List(buildIndexModule())
+    ).flatten ++
+      (
+        if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
+          List(
+            indexModule,
+            buildPackageModule()
+          )
+        else
+          List(indexModule)
+      )
 
     modules
+  }
+
+  def buildPackageModule()(implicit manifest: Option[TypeScriptManifest]): Module = {
+    val imports = typespace.domain.types.map(i => TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)) ++
+      typespace.domain.services.map(i => TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty, manifest))
+
+    val peerDeps: List[ManifestDependency] = imports.flatMap(i => i.imports.filter(_.pkg.startsWith(manifest.get.scope)).map(im => ManifestDependency(im.pkg, manifest.get.version))).toList.distinct
+
+    val content = TypeScriptManifest.generatePackage(manifest.get, "index", ts.domain.id.toPackage.mkString("-"), peerDeps)
+    Module(ModuleId(ts.domain.id.toPackage, "package.json"), content)
   }
 
   def buildIndexModule(): Module = {
@@ -45,11 +86,11 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     Module(ModuleId(ts.domain.id.toPackage, "index.ts"), content)
   }
 
-  protected def translateService(definition: Service): Seq[Module] = {
+  protected def translateService(definition: Service)(implicit manifest: Option[TypeScriptManifest]): Seq[Module] = {
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderService(definition))
   }
 
-  protected def translateDef(definition: TypeDef): Seq[Module] = {
+  protected def translateDef(definition: TypeDef)(implicit manifest: Option[TypeScriptManifest]): Seq[Module] = {
     val defns = definition match {
       case i: Alias =>
         renderAlias(i)
@@ -132,8 +173,8 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       s""
   }
 
-  protected def renderDto(i: DTO): RenderableCogenProduct = {
-    val imports = TypeScriptImports(ts, i, i.id.path.toPackage)
+  protected def renderDto(i: DTO)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val fields = typespace.structure.structure(i).all
     val distinctFields = fields.groupBy(_.field.name).map(_._2.head.field)
 
@@ -212,8 +253,8 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       )
   }
 
-  protected def renderAdt(i: Adt): RenderableCogenProduct = {
-    val imports = TypeScriptImports(ts, i, i.id.path.toPackage)
+  protected def renderAdt(i: Adt)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val base =
       s"""export type ${i.id.name} = ${i.alternatives.map(alt => alt.typeId.name).mkString(" | ")};
          |
@@ -261,8 +302,8 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     ext.extend(i, EnumProduct(content, s"// ${i.id.name} Enumeration"), _.handleEnum)
   }
 
-  protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
-      val imports = TypeScriptImports(ts, i, i.id.path.toPackage)
+  protected def renderIdentifier(i: Identifier)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+      val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
       val fields = typespace.structure.structure(i)
       val sortedFields = fields.all.sortBy(_.field.name)
       val typeName = i.id.name
@@ -321,8 +362,8 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     it.map { m => s"$m${if (it.hasNext) "," else ""}" }.mkString("\n")
   }
 
-  protected def renderInterface(i: Interface): RenderableCogenProduct = {
-    val imports = TypeScriptImports(ts, i, i.id.path.toPackage)
+  protected def renderInterface(i: Interface)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val extendsInterfaces =
       if (i.struct.superclasses.interfaces.nonEmpty) {
         "extends " + i.struct.superclasses.interfaces.map(iface => iface.name).mkString(", ") + " "
@@ -572,8 +613,8 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
      """.stripMargin
   }
 
-  protected def renderService(i: Service): RenderableCogenProduct = {
-      val imports = TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty)
+  protected def renderService(i: Service)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+      val imports = TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty, manifest)
       val typeName = i.id.name
 
       val svc =

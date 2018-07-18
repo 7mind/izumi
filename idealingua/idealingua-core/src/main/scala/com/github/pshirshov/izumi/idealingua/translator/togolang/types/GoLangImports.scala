@@ -9,12 +9,14 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
-final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
+final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty, manifest: Option[GoLangManifest] = None) {
   def renderImports(extra: Seq[String] = List.empty): String = {
     // Exclude extra ones which are already included into the import
-    val combined = imports.map(i => i.renderImport()) ++ extra.filterNot(e => imports.exists(p => p.pkg.mkString(".") == e)).map(e => "\"" + e + "\"")
+    val prefix = if (manifest.isDefined) GoLangManifest.importPrefix(manifest.get) else None
+    val combined = imports.map(i => i.renderImport(prefix)) ++ extra.filterNot(e => imports.exists(p => p.pkg.mkString(".") == e)).map(e => "\"" + e + "\"")
 
     if (combined.isEmpty) {
       return ""
@@ -27,7 +29,7 @@ final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
   }
 
   def findImport(id: TypeId): Option[GoLangImportRecord] = {
-    return imports.find(i => i.id == id)
+    imports.find(i => i.id == id)
   }
 
   def withImport(id: TypeId): String = {
@@ -41,26 +43,26 @@ final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty) {
 }
 
 object GoLangImports {
-  def apply(types: List[TypeId], fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord], forTest: Boolean): GoLangImports = {
+  def apply(types: List[TypeId], fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord], forTest: Boolean, manifest: Option[GoLangManifest]): GoLangImports = {
     Quirks.discard(ts)
-    new GoLangImports(fromTypes(types, fromPkg, extra, forTest))
+    new GoLangImports(fromTypes(types, fromPkg, extra, forTest), manifest)
   }
 
-  def apply(imports: List[GoLangImportRecord]): GoLangImports =
-    new GoLangImports(imports)
+  def apply(imports: List[GoLangImportRecord], manifest: Option[GoLangManifest]): GoLangImports =
+    new GoLangImports(imports, manifest)
 
-  def apply(definition: TypeDef, fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord] = List.empty): GoLangImports =
-    GoLangImports(fromDefinition(definition, fromPkg, extra, ts))
+  def apply(definition: TypeDef, fromPkg: Package, ts: Typespace, extra: List[GoLangImportRecord] = List.empty, manifest: Option[GoLangManifest] = None): GoLangImports =
+    GoLangImports(fromDefinition(definition, fromPkg, extra, ts), manifest)
 
-  def apply(i: Service, fromPkg: Package, extra: List[GoLangImportRecord]): GoLangImports =
-    GoLangImports(fromService(i, fromPkg, extra))
+  def apply(i: Service, fromPkg: Package, extra: List[GoLangImportRecord], manifest: Option[GoLangManifest]): GoLangImports =
+    GoLangImports(fromService(i, fromPkg, extra), manifest)
 
   protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[Seq[String]] = {
     t match {
-      case Primitive.TTime => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("strings"), Seq("strconv"))
-      case Primitive.TTs => return Seq(Seq("time"))
-      case Primitive.TTsTz => return Seq(Seq("time"))
-      case Primitive.TDate => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("strings"), Seq("strconv"))
+      case Primitive.TTime => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("irt"))
+      case Primitive.TTs => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("irt"))
+      case Primitive.TTsTz => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("irt"))
+      case Primitive.TDate => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("irt"))
       case Primitive.TUUID => return if (forTest) Seq.empty else Seq(Seq("regexp"))
       case g: Generic => g match {
         case _: Generic.TOption => return Seq.empty

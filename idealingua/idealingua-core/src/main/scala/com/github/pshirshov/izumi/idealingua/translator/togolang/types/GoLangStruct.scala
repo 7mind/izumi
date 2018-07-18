@@ -10,7 +10,7 @@ final case class GoLangStruct(
                           typeId: TypeId,
                           implements: List[InterfaceId] = List.empty,
                           fields: List[GoLangField] = List.empty,
-                          imports: GoLangImports = GoLangImports(List.empty),
+                          imports: GoLangImports = GoLangImports(List.empty, None),
                           ts: Typespace = null,
                           ignoreSlices: List[InterfaceId] = List.empty
                        ) {
@@ -166,7 +166,7 @@ object GoLangStruct {
              typeId: TypeId,
              implements: List[InterfaceId] = List.empty,
              fields: List[GoLangField] = List.empty,
-             imports: GoLangImports = GoLangImports(List.empty),
+             imports: GoLangImports = GoLangImports(List.empty, None),
              ts: Typespace = null,
              ignoreSlices: List[InterfaceId] = List.empty
            ): GoLangStruct = new GoLangStruct(name, typeId, implements, fields, imports, ts, ignoreSlices)
