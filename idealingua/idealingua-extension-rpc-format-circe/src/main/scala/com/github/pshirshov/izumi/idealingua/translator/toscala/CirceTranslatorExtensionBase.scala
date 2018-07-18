@@ -252,7 +252,6 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
       CirceTrait(
         s"${name}Circe",
         q"""trait ${Type.Name(s"${name}Circe")} extends _root_.com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances {
-            ..$classDeriverImports
             import _root_.io.circe._
             import _root_.io.circe.syntax._
 
