@@ -4,6 +4,12 @@ import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
+/** Holds the object graph created by executing a `plan`
+  *
+  * @see [[Injector]]
+  * @see [[Planner]]
+  * @see [[Producer]]
+  **/
 trait Locator {
   /** Instances in order of creation **/
   def instances: Seq[IdentifiedRef]

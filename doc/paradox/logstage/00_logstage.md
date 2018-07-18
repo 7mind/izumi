@@ -4,7 +4,7 @@ out: index.html
 LogStage
 ========
 
-LogStage is a free structural logging framework.
+LogStage is a zero-cost structural logging framework.
 
 Key features:
 
@@ -19,7 +19,7 @@ Key features:
 7. Slf4J adapters: you may stream all the logging made with Slf4J into LogStage router (as well you may route LogStage messages into slf4j but in a typical case you won't need it).
 
 
-The essence
+Overview
 -----------
 
 The following snippet:
@@ -40,11 +40,11 @@ class ExampleService(logger: IzLogger) {
 }
 ```
 
-Looks like so with String formatting policy applied:
+Will look like this in string form:
 
 ![logstage-sample-output-string](media/00-logstage-sample-output-string.png)
 
-And like so as JSON:
+And like this in JSON:
 
 ![logstage-sample-output-string](media/00-logstage-sample-output-json.png)
 

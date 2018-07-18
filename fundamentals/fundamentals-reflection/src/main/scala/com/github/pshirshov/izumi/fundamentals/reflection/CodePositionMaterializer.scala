@@ -5,10 +5,14 @@ import com.github.pshirshov.izumi.fundamentals.platform.jvm.{CodePosition, Sourc
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-final case class CodePositionMaterializer(value: CodePosition)
+final case class CodePositionMaterializer(get: CodePosition)
 
 object CodePositionMaterializer {
-  implicit def get: CodePositionMaterializer = macro getEnclosingPosition
+  implicit def materialize: CodePositionMaterializer = macro getEnclosingPosition
+
+  def apply()(implicit ev: CodePositionMaterializer): CodePositionMaterializer = ev
+
+  def currentPosition(implicit ev: CodePositionMaterializer): CodePosition = ev.get
 
   def getEnclosingPosition(c: blackbox.Context): c.Expr[CodePositionMaterializer] = {
     import c.universe._

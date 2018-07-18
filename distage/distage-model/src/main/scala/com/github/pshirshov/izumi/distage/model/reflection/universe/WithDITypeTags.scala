@@ -170,7 +170,7 @@ trait WithDITypeTags {
     def tag: TypeTag[_]
 
     /**
-    * Create a [[scala.reflect.api.TypyeTags#TypeTag]] for `K[T]` by applying `K[_]` to `T`
+    * Create a [[scala.reflect.api.TypeTags#TypeTag]] for `K[T]` by applying `K[_]` to `T`
     *
     * Use:
     *     TagK[List].apply[Int]

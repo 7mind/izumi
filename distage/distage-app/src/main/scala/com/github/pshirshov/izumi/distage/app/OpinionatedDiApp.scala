@@ -17,7 +17,7 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 // TODO: split into di-plugins and di-app
 
 
-trait BootstrapContext[CommandlineConfig <: AnyRef] {
+trait BootstrapContext[CommandlineConfig] {
   def cliConfig: CommandlineConfig
 
   def bootstrapConfig: PluginConfig
@@ -27,7 +27,7 @@ trait BootstrapContext[CommandlineConfig <: AnyRef] {
   def appConfig: AppConfig
 }
 
-case class BootstrapContextDefaultImpl[CommandlineConfig <: AnyRef]
+case class BootstrapContextDefaultImpl[CommandlineConfig]
 (
   cliConfig: CommandlineConfig
   , bootstrapConfig: PluginConfig
@@ -35,7 +35,7 @@ case class BootstrapContextDefaultImpl[CommandlineConfig <: AnyRef]
   , appConfig: AppConfig
 ) extends BootstrapContext[CommandlineConfig]
 
-trait ApplicationBootstrapStrategy[CommandlineConfig <: AnyRef] {
+trait ApplicationBootstrapStrategy[CommandlineConfig] {
 
   type Context = BootstrapContext[CommandlineConfig]
 
@@ -55,7 +55,7 @@ trait ApplicationBootstrapStrategy[CommandlineConfig <: AnyRef] {
 }
 
 
-abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig <: AnyRef]
+abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig]
 (
   override val context: BootstrapContext[CommandlineConfig]
 ) extends ApplicationBootstrapStrategy[CommandlineConfig] {
@@ -79,9 +79,8 @@ abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig <: AnyRef]
   def mkLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.pluginConfig)
 }
 
-
 abstract class OpinionatedDiApp {
-  type CommandlineConfig <: AnyRef
+  type CommandlineConfig
 
   type Strategy = ApplicationBootstrapStrategy[CommandlineConfig]
   type BootstrapContext = Strategy#Context

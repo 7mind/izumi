@@ -110,14 +110,14 @@ object LoggingMacro {
     val pos = CodePositionMaterializer.getEnclosingPosition(c)
 
     val loggerId = reify {
-      LoggerId(pos.splice.value.applicationPointId)
+      LoggerId(pos.splice.get.applicationPointId)
     }
 
     val entry = reify {
       val self = c.prefix.splice.asInstanceOf[LoggingMacro]
       val thread = Thread.currentThread()
       val dynamicContext = Log.DynamicContext(logLevel.splice, ThreadData(thread.getName, thread.getId), System.currentTimeMillis())
-      val extendedStaticContext = StaticExtendedContext(loggerId.splice, pos.splice.value.position)
+      val extendedStaticContext = StaticExtendedContext(loggerId.splice, pos.splice.get.position)
       Log.Entry(message.splice, Log.Context(extendedStaticContext, dynamicContext, self.contextCustom))
     }
 

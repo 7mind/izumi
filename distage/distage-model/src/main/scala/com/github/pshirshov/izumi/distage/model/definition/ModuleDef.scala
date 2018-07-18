@@ -1,225 +1,291 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef.{BindDSL, IdentSet, SetDSL}
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDef._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable
 
+/**
+  * DSL for defining module Bindings.
+  *
+  * Example:
+  *
+  *    ```scala
+  *    class Program[F: TagK: Monad] extends ModuleDef {
+  *      make[TaglessProgram[F]]
+  *    }
+  *
+  *    object TryInterpreters extends ModuleDef {
+  *      make[Validation.Handler[Try]].from(tryValidationHandler)
+  *      make[Interaction.Handler[Try]].from(tryInteractionHandler)
+  *    }
+  *
+  *    // Combine modules into a full program
+  *    val TryProgram = new Program[Try] ++ TryInterpreters
+  *    ```
+  *
+  * Singleton bindings:
+  *   - `make[X]` = create X using its constructor
+  *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
+  *   - `make[X].from(myX)` = bind X to instance `myX`
+  *   - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
+  *
+  * Multibindings:
+  *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
+  *                                 Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
+  *   - `many[X].named("special").add[X1]` = create a named set of X, all the elements of it are added to this named set.
+  *   - `many[X].ref[XImpl]` = add a reference to an already **existing** binding of XImpl to a set of X's
+  *   - `many[X].ref[X]("special")` = add a reference to an **existing** named binding of X to a set of X's
+  *
+  * Tags:
+  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[RoleId]]
+  *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
+  *   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
+  *
+  * @see [[com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK TagK]]
+  * @see [[Id]]
+  */
 trait ModuleDef extends ModuleBase {
-  final private[this] val mutableState: mutable.Set[Binding] = initialState
+
+  final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = initialState
   final private[this] val mutableTags: mutable.Set[String] = initialTags
 
-  protected def freeze(mutState: mutable.Set[Binding]): Set[Binding] = {
+  protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
+  protected def initialTags: mutable.Set[String] = mutable.HashSet.empty
+
+  // FIXME
+  def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] =
+    // Using lawless equals/hashcode
+    bs.groupBy(identity).values.map {
+      _.reduce(_ addTags _.tags)
+    }.toSet
+
+  final private def freeze(frozenState: Iterable[Binding]): Set[Binding] = {
     val frozenTags = mutableTags.toSet
-    mutState.map(b => b.withTags(b.tags ++ frozenTags)).toSet
+
+    tagwiseMerge(frozenState)
+      .map(b => b.withTags(b.tags ++ frozenTags))
   }
 
-  protected def initialState: mutable.Set[Binding] = mutable.HashSet.empty[Binding]
+  override lazy val bindings: Set[Binding] = freeze(mutableState.flatMap {
+    case SingletonRef(b) => Seq(b)
+    case SetRef(_, all) => all.map(_.ref)
+  })
 
-  protected def initialTags: mutable.Set[String] = mutable.HashSet.empty[String]
-
-  final override def bindings: Set[Binding] = freeze(mutableState)
-
-  final protected def make[T: Tag]: BindDSL[T] = {
+  final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val binding = Bindings.binding[T]
-    val uniq = mutableState.add(binding)
+    val ref = SingletonRef(binding)
 
-    new BindDSL(mutableState, binding, uniq)
+    mutableState += ref
+
+    new BindDSL(ref, binding)
   }
 
-  final protected def many[T: Tag]: SetDSL[T] = {
+  /**
+    * Define a multibinding of `T`
+    *
+    * Multibindings
+    *
+    *
+    * Note: The method Multibinder.newSetBinder(binder, type) can be confusing. This operation creates a new binder,
+    * but doesn't override any existing bindings. A binder created this way contributes to the existing Set of
+    * implementations for that type. It would create a new set only if one is not already bound.
+    */
+  final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
     val binding = Bindings.emptySet[T]
-    val uniq = mutableState.add(binding)
+    val setRef = {
+      val ref = SingletonRef(binding)
+      SetRef(ref, mutable.ArrayBuffer(ref))
+    }
 
-    val startingSet: Set[Binding] = if (uniq) Set(binding) else Set.empty
+    mutableState += setRef
 
-    new SetDSL(mutableState, IdentSet(binding.key, Set()), startingSet)
+    new SetDSL(setRef, IdentSet(binding.key, Set.empty, pos.get))
   }
 
+  /**
+    * Create a dummy binding that throws an exception with an error message when it's created.
+    *
+    * Useful for prototyping.
+    */
   final protected def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
     val binding = Bindings.todo(DIKey.get[T])(pos)
-    mutableState.add(binding)
+
+    mutableState += SingletonRef(binding)
   }
 
+  /** Add `tags` to each binding defined in this module **/
   final protected def tag(tags: String*): Unit = discard {
     mutableTags ++= tags
   }
 
-  final protected def append(that: ModuleBase): Unit = discard {
-    mutableState ++= that.bindings
-  }
 }
 
-object ModuleDef {
+
+object ModuleDef extends GeneralizedBindings {
+
+  sealed trait BindingRef
+  final case class SingletonRef(var ref: Binding) extends BindingRef
+  final case class SetRef(emptySetBinding: SingletonRef, all: mutable.ArrayBuffer[SingletonRef]) extends BindingRef
 
   // DSL state machine
 
   final class BindDSL[T]
   (
-    protected val mutableState: mutable.Set[Binding]
+    protected val mutableState: SingletonRef
     , protected val binding: SingletonBinding[DIKey.TypeKey]
-    , protected val ownBinding: Boolean
   ) extends BindDSLMutBase[T] {
 
     def named(name: String): BindNamedDSL[T] =
       replace(binding.copy(key = binding.key.named(name), tags = binding.tags)) {
-        new BindNamedDSL[T](mutableState, _, _)
+        new BindNamedDSL[T](mutableState, _)
       }
 
     def tagged(tags: String*): BindDSL[T] =
       replace(binding.copy(tags = binding.tags ++ tags)) {
-        new BindDSL[T](mutableState, _, _)
+        new BindDSL[T](mutableState, _)
       }
 
     def todo(implicit pos: CodePositionMaterializer): Unit =
-      replace(Bindings.todo(binding.key)(pos)) {
-        (_, _) => ()
-      }
+      replace(Bindings.todo(binding.key)(pos))(_ => ())
 
   }
 
   final class BindNamedDSL[T]
   (
-    protected val mutableState: mutable.Set[Binding]
+    protected val mutableState: SingletonRef
     , protected val binding: Binding.SingletonBinding[DIKey]
-    , protected val ownBinding: Boolean
   ) extends BindDSLMutBase[T] {
 
     def tagged(tags: String*): BindNamedDSL[T] =
       replace(binding.copy(tags = binding.tags ++ tags)) {
-        new BindNamedDSL[T](mutableState, _, _)
+        new BindNamedDSL[T](mutableState, _)
       }
 
     def todo(implicit pos: CodePositionMaterializer): Unit =
-      replace(Bindings.todo(binding.key)(pos)) {
-        (_, _) => ()
-      }
+      replace(Bindings.todo(binding.key)(pos))(_ => ())
   }
 
   sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {
-    protected def mutableState: mutable.Set[Binding]
-
+    protected def mutableState: SingletonRef
     protected val binding: SingletonBinding[DIKey]
-    protected val ownBinding: Boolean
 
-    protected def replace[B <: Binding, S](newBinding: B)(newState: (B, Boolean) => S): S = {
-      if (ownBinding) {
-        mutableState -= binding
-      }
+//    trait Replace[A] {
+//      def apply[B, R](f: A => B)(cont: Replace[B] => R): R
+//    }
+//    object Replace {
+//      def apply[A](elem: A): Replace[A] = new Replace[A] {
+//        override def apply[B, R](f: A => B)(cont: Replace[B] => R): R =
+//          cont(Replace(f(elem)))
+//      }
+//    }
+//
+//    val v: Replace[binding.type] = Replace(binding: binding.type)
 
-      val uniq = mutableState.add(newBinding)
-
-      newState(newBinding, uniq)
+    protected def replace[B <: Binding, S](newBinding: B)(newState: B => S): S = {
+      mutableState.ref = newBinding
+      newState(newBinding)
     }
 
     override protected def bind(impl: ImplDef): Unit =
-      replace(binding.withImpl(impl)) {
-        (_, _) => ()
-      }
+      replace(binding.withImpl(impl))(_ => ())
   }
 
-  // .set{.element, .elementProvider}{.named}
-
-  final case class IdentSet[+D <: DIKey](key: D, tags: Set[String]) {
+  final case class IdentSet[+D <: DIKey](key: D, tags: Set[String], pos: CodePosition) {
     def sameIdent(binding: Binding): Boolean =
       key == binding.key && tags == binding.tags
   }
 
   final class SetDSL[T]
   (
-    protected val mutableState: mutable.Set[Binding]
+    protected val mutableState: SetRef
     , protected val identifier: IdentSet[DIKey.TypeKey]
-    , protected val currentBindings: Set[Binding]
   ) extends SetDSLMutBase[T] {
 
     def named(name: String): SetNamedDSL[T] =
       replaceIdent(identifier.copy(key = identifier.key.named(name))) {
-        new SetNamedDSL(mutableState, _, _)
+        new SetNamedDSL(mutableState, _)
       }
 
+    /** tags only apply to EmptySet itself **/
     def tagged(tags: String*): SetDSL[T] =
       replaceIdent(identifier.copy(tags = identifier.tags ++ tags)) {
-        new SetDSL[T](mutableState, _, _)
+        new SetDSL[T](mutableState, _)
       }
 
   }
 
   final class SetNamedDSL[T]
   (
-    protected val mutableState: mutable.Set[Binding]
+    protected val mutableState: SetRef
     , protected val identifier: IdentSet[DIKey]
-    , protected val currentBindings: Set[Binding]
   ) extends SetDSLMutBase[T] {
 
     def tagged(tags: String*): SetNamedDSL[T] =
       replaceIdent(identifier.copy(tags = identifier.tags ++ tags)) {
-        new SetNamedDSL[T](mutableState, _, _)
+        new SetNamedDSL[T](mutableState, _)
       }
 
   }
 
   final class SetElementDSL[T]
   (
-    protected val mutableState: mutable.Set[Binding]
+    protected val mutableState: SetRef
+    , protected val mutableCursor: SingletonRef
     , protected val identifier: IdentSet[DIKey]
-    , protected val currentBindings: Set[Binding]
-    , protected val bindingCursor: Binding
   ) extends SetElementDSLMutBase[T] {
 
     def tagged(tags: String*): SetElementDSL[T] =
-      replaceCursor(bindingCursor.withTags(tags = bindingCursor.tags ++ tags))
+      replaceCursor(mutableCursor.ref.withTags(tags = mutableCursor.ref.tags ++ tags))
 
   }
 
   sealed trait SetElementDSLMutBase[T] extends SetDSLMutBase[T] {
-    protected def bindingCursor: Binding
+    protected val mutableCursor: SingletonRef
 
     protected def replaceCursor(newBindingCursor: Binding): SetElementDSL[T] = {
-      mutableState -= bindingCursor
-      val newCurrentBindings = currentBindings - bindingCursor
+      mutableCursor.ref = newBindingCursor
 
-      append(newBindingCursor)
-
-      new SetElementDSL[T](mutableState, identifier, newCurrentBindings + newBindingCursor, newBindingCursor)
+      new SetElementDSL[T](mutableState, mutableCursor, identifier)
     }
   }
 
   sealed trait SetDSLMutBase[T] extends SetDSLBase[T, SetElementDSL[T]] {
-    protected def mutableState: mutable.Set[Binding]
+    protected def mutableState: SetRef
 
     protected def identifier: IdentSet[DIKey]
 
-    protected def currentBindings: Set[Binding]
+    protected def replaceIdent[D <: IdentSet[DIKey], S](newIdent: D)(nextState: D => S): S = {
+      mutableState.emptySetBinding.ref = EmptySetBinding(newIdent.key, newIdent.tags, newIdent.pos)
+      mutableState.all.foreach(r => r.ref = r.ref.withTarget(newIdent.key))
 
-    protected def append(binding: Binding): Unit = discard {
-      mutableState += binding
-    }
-
-    protected def replaceIdent[D <: IdentSet[DIKey], S](newIdent: D)(nextState: (D, Set[Binding]) => S): S = {
-      val newBindings = ((currentBindings - EmptySetBinding(identifier.key, identifier.tags)) + EmptySetBinding(newIdent.key, newIdent.tags)).map {
-        _.withTarget(newIdent.key) // tags only apply to EmptySet itself
-      }
-
-      mutableState --= currentBindings
-      mutableState ++= newBindings
-
-      nextState(newIdent, newBindings)
+      nextState(newIdent)
     }
 
     override protected def appendElement(newElement: ImplDef): SetElementDSL[T] = {
       val newBinding: Binding = SetElementBinding(identifier.key, newElement)
+      val mutableCursor = SingletonRef(newBinding)
 
-      append(newBinding)
+      mutableState.all += mutableCursor
 
-      new SetElementDSL[T](mutableState, identifier, currentBindings + newBinding, newBinding)
+      new SetElementDSL[T](mutableState, mutableCursor, identifier)
     }
   }
 
-  // base
+
+}
+trait GeneralizedBindings {
+
+
+
+
+
+
 
   trait BindDSLBase[T, AfterBind] {
     final def from[I <: T : Tag]: AfterBind =
@@ -306,8 +372,7 @@ object ModuleDef {
       appendElement(ImplDef.ProviderImpl(f.get.ret, f.get))
 
     protected def appendElement(newImpl: ImplDef): AfterAdd
-
-    protected def identifier: IdentSet[DIKey]
   }
+
 
 }

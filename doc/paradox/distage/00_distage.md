@@ -15,7 +15,7 @@ runtime dependency injection frameworks such as Guice.
 This tutorial will teach you how to build applications quickly and efficiently using DiStage!</br>
 DiStage is *staged*, meaning that it's split into several distinct *stages*, like a multi-pass compiler. DiStage lets you add custom functionality between stages should you require it, yet it keeps a simple surface API.
 
-We'll start off with basic examples and by the end of this tutorial you'll make a fully-fledged Pet Store application, complete with tests and configuration.
+We'll start off with basic examples and by the end of this tutorial you'll make a fully-fledged Pet Store application, complete with tests and configuration!
 
 ### Defining simple modules
 
@@ -62,10 +62,10 @@ DiStage will first instantiate the arguments, then call the constructor. All the
  
 Modules can be combined using `++` operator. In DiStage, you'll combine all the modules in your application into one 
 one large module representing your application. Don't worry, you won't have to do that manually, if you don't want to: DiStage comes with a mechanism 
-to discover all the (specially marked) Modules on the classpath at boot-up time. See [Plugins](#plugins-and-configurations) for details.
+to discover all the (specially marked) Modules on the classpath at boot-up time. See [Plugins](#plugins) for details.
 
 However, If you choose to combine your modules manually, DiStage can offer compile-time checks to ensure that all the
-dependencies have been wired and that your app will run. See [Static Configurations](#testing-and-using-static-configurations) for details.
+dependencies have been wired and that your app will run. See [Static Configurations](#static-configurations) for details.
 Whether you prefer the flexibility of runtime DI or the stability of compile-time DI, DiStage lets you mix and match different modes within one application.
 
 Next line:
@@ -84,7 +84,7 @@ Injector is the entity responsible for wiring our app together. We create an `in
 We create an instantation `plan` from the module definition. Remember that DiStage is *staged*, instead of instantiating our 
 definitions right away, DiStage first builds a pure representation of all the operations it will do and returns it back to us.
 This allows us to easily implement additional functionality on top of DiStage without modifying the library. In fact, DiStage's built-in 
-functionality such as [Plugins](#plugins-and-configurations) and [Configurations](#plugins-and-configurations) is not hard-wired, but is 
+functionality such as [Plugins](#plugins) and [Configurations](#config-files) is not hard-wired, but is 
 built on this framework of manipulating the `plan`. Plan rewriting also enables the [Import Injection Pattern](#import-injection-pattern) 
 that will be especially interesting for the Scalazzi adepts seeking to free their programs of side effects.
 
@@ -98,15 +98,30 @@ After we execute the plan we're left a `Locator` that holds all of our app's cla
 
 This concludes the first chapter. Next, we'll learn how to use multiple and named bindings:
 
+
+// TODO blakdfg
+distage is non-invasive and unopinionated, it tries to get out of the way of programmer as much as possible. As a consequence it does not use annotations
+
 ### Multiple Bindings (Multibindings, Set Bindings)
 
-...
+Multibindings
+    *
+    *
+    * Note: The method Multibinder.newSetBinder(binder, type) can be confusing. This operation creates a new binder,
+    * but doesn't override any existing bindings. A binder created this way contributes to the existing Set of
+    * implementations for that type. It would create a new set only if one is not already bound.
+
+Also see [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multibindings).
 
 ### Tagless Final Style with DiStage
 
 ...
 
-### Plugins and Configurations
+### Config files
+
+...
+
+### Auto-Factories & Auto-Traits
 
 ...
 
@@ -123,6 +138,49 @@ This concludes the first chapter. Next, we'll learn how to use multiple and name
 ### Ensuring service boundaries using API modules
 
 ...
+
+### Plugins
+
+Sometimes, when rapidly prototyping, the additional friction of adding new modules into the system can disrupt developer's flow.
+Distage plugin system can automatically pickup all modules defined in the program and by doing that reduce friction of adding new modules.
+
+To define a plugin, first add distage-plugins library:
+
+@@@vars
+```scala
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins " % "$izumi.version$"
+```
+@@@
+
+Create a module extending the `PluginDef` trait instead of `ModuleDef`:
+
+```scala
+trait PetStorePlugin extends PluginDef {
+  make[PetRepository]
+  make[PetStoreService]
+  make[PetStoreController]
+}
+```
+
+At your app entry point add a plugin loader:
+
+```scala
+val pluginLoader = new PluginLoaderDefaultImpl(
+  PluginConfig(debug = false, packagesEnabled = Seq("com.example"), packagesDisabled = Seq.empty))
+)
+
+val appModules = pluginLoader.load()
+val app = appModules.merge
+```
+
+Launch as normal with the loaded modules:
+
+```scala
+val injector = Injectors.bootstrap()
+injector.run(app)
+```
+
+Plugins also allow a program to dynamically extend itself by adding new Plugin classes into the classpath which will be picked up at runtime.
 
 ### Roles, not microservices 
 
@@ -161,8 +219,6 @@ This concludes the first chapter. Next, we'll learn how to use multiple and name
 #### Automatic Resolution with generated Proxies
 
 #### Manual Resolution with by-name parameters
-
-### Auto-Traits
 
 ### Auto-Sets: Collecting Bindings By Predicate
 

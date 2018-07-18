@@ -43,7 +43,7 @@ object ModuleBase {
       val sameThis = moduleDef.bindings intersect that.bindings
       val sameThat = that.bindings intersect moduleDef.bindings
 
-      val newIntersection = sameThis.zip(sameThat).map { case (a, b) => b.withTags(a.tags ++ b.tags) }
+      val newIntersection = sameThis.zip(sameThat).map { case (a, b) => b.addTags(a.tags) }
 
       SimpleModuleDef(moduleDef.bindings.diff(sameThis) ++ that.bindings.diff(sameThat) ++ newIntersection)
     }
