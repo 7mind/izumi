@@ -5,6 +5,8 @@ sealed trait AbstractIndefiniteId {
   def pkg: Package
 
   def name: TypeName
+
+  override def toString: TypeName = s"{${getClass.getSimpleName}}${pkg.mkString(".")}#$name"
 }
 
 
