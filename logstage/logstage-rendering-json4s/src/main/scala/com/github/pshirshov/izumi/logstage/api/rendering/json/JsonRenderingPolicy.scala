@@ -53,15 +53,16 @@ class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy 
     }
   }
 
-  protected def parametersToJson(p: Map[String, Seq[RenderedParameter]]): JObject = {
-    val (unary, multiple) = p.partition(_._2.size == 1)
+  protected def parametersToJson(params: Seq[RenderedParameter]): JObject = {
+    val paramGroups = params.groupBy(_.name)
+    val (unary, multiple) = paramGroups.partition(_._2.size == 1)
     val paramsMap = unary.map {
       kv =>
-        JField(normalizeName(kv._1), repr(kv._2.head))
+        JField(kv._1, repr(kv._2.head))
     }
     val multiparamsMap = multiple.map {
       kv =>
-        JField(normalizeName(kv._1), kv._2.map(repr))
+        JField(kv._1, kv._2.map(repr))
     }
     (paramsMap: JObject) ~ (multiparamsMap: JObject)
   }
@@ -70,38 +71,38 @@ class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy 
     val (unary, multiple) = p.partition(_._2.size == 1)
     val paramsMap = unary.map {
       kv =>
-        JField(normalizeName(kv._1), kv._2.head)
+        JField(LogUnit.normalizeName(kv._1), kv._2.head)
     }
     (paramsMap: JObject) ~ multiple
   }
 
   protected def repr(parameter: RenderedParameter): JValue = {
     parameter match {
-      case RenderedParameter(a: Double, _) =>
+      case RenderedParameter(a: Double, _, _, _) =>
         JDouble(a)
-      case RenderedParameter(a: BigDecimal, _) =>
+      case RenderedParameter(a: BigDecimal, _, _, _) =>
         JDecimal(a)
-      case RenderedParameter(a: Int, _) =>
+      case RenderedParameter(a: Int, _, _, _) =>
         JInt(a)
-      case RenderedParameter(a: BigInt, _) =>
+      case RenderedParameter(a: BigInt, _, _, _) =>
         JInt(a)
-      case RenderedParameter(a: Boolean, _) =>
+      case RenderedParameter(a: Boolean, _, _, _) =>
         JBool(a)
-      case RenderedParameter(a: Long, _) =>
+      case RenderedParameter(a: Long, _, _, _) =>
         JLong(a)
-      case RenderedParameter(null, _) =>
+      case RenderedParameter(null, _, _, _) =>
         JNull
-      case RenderedParameter(a: Iterable[_], _) =>
-        val params = a.map(v => repr(LogUnit.formatArg(v, withColors = false))).toList
+      case RenderedParameter(a: Iterable[_], _, visibleName, _) =>
+        val params = a.map(v => repr(LogUnit.formatArg(visibleName, v, withColors = false))).toList
         JArray(params)
-      case RenderedParameter(a: Throwable, _) =>
+      case RenderedParameter(a: Throwable, _, _, _) =>
         import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
         Map(
           "type" -> a.getClass.getName
           , "message" -> a.getMessage
           , "stacktrace" -> a.stackTrace
         ): JObject
-      case RenderedParameter(_, repr) =>
+      case RenderedParameter(_, repr, _, _) =>
         JString(repr)
     }
   }
@@ -118,12 +119,5 @@ class JsonRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy 
     customContext
   }
 
-  protected def normalizeName(s: String): String = {
-    if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
-      s
-    } else {
-      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-      s.replace(' ', '_').camelToUnderscores
-    }
-  }
+
 }

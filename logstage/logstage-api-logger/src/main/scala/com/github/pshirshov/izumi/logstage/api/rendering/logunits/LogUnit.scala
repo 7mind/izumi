@@ -168,9 +168,17 @@ object LogUnit {
       unit.aliases.map(_ -> unit)
   }.toMap
 
+  def normalizeName(s: String): String = {
+    if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
+      s
+    } else {
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      s.replace(' ', '_').camelToUnderscores
+    }
+  }
 
-  def formatArg(arg: Any, withColors: Boolean): RenderedParameter = {
-    RenderedParameter(arg, argToString(arg, withColors))
+  def formatArg(argname: String, arg: Any, withColors: Boolean): RenderedParameter = {
+    RenderedParameter(arg, argToString(arg, withColors), argname, normalizeName(argname))
   }
 
   def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
@@ -184,19 +192,19 @@ object LogUnit {
     val balanced = entry.message.template.parts.tail.zip(entry.message.args)
     val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
 
-    val parameters = new mutable.HashMap[String, mutable.ArrayBuffer[RenderedParameter]]
+    //val parameters = new mutable.HashMap[String, mutable.ArrayBuffer[RenderedParameter]]
+    val parameters = mutable.ArrayBuffer[RenderedParameter]()
 
     balanced.foreach {
       case (part, LogArg(argName, argValue, hidden)) =>
-        val (argNameToUse, partToUse) = (argName, part)
+        val uncoloredRepr = formatArg(argName, argValue, withColors = false)
 
-        val uncoloredRepr = formatArg(argValue, withColors = false)
-        parameters.getOrElseUpdate(argNameToUse, mutable.ArrayBuffer.empty[RenderedParameter]) += uncoloredRepr
+        parameters += uncoloredRepr
 
         templateBuilder.append("${")
-        templateBuilder.append(argNameToUse)
+        templateBuilder.append(uncoloredRepr.name)
         templateBuilder.append('}')
-        templateBuilder.append(StringContext.treatEscapes(partToUse))
+        templateBuilder.append(StringContext.treatEscapes(part))
 
         val maybeColoredRepr = if (withColors) {
           argToString(argValue, withColors)
@@ -205,11 +213,11 @@ object LogUnit {
         }
 
         if (!hidden) {
-          messageBuilder.append(formatKv(withColors)(LogArg(argNameToUse, maybeColoredRepr)))
+          messageBuilder.append(formatKv(withColors)(LogArg(uncoloredRepr.visibleName, maybeColoredRepr)))
         } else {
           messageBuilder.append(maybeColoredRepr)
         }
-        messageBuilder.append(StringContext.treatEscapes(partToUse))
+        messageBuilder.append(StringContext.treatEscapes(part))
     }
 
     unbalanced.foreach {
@@ -224,7 +232,7 @@ object LogUnit {
         }
     }
 
-    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters.mapValues(_.toSeq).toMap)
+    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters)
   }
 
   private def formatKv(withColor: Boolean)(kv: LogArg): String = {

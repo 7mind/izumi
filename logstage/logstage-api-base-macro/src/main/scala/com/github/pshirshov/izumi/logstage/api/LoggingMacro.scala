@@ -79,14 +79,16 @@ object LoggingMacro {
              |1) Simple variable: logger.log(s"My message: $$argument")
              |2) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
              |""".stripMargin)
+
         val emptyArgs = reify {
-          val repr = c.Expr[String](Literal(Constant(other.toString()))).splice
+          val repr = c.Expr[String](Literal(Constant(c.universe.showCode(other)))).splice
           List(LogArg("@type", "expr"), LogArg("@expr", repr))
         }
         val sc = q"StringContext($other)"
         reifyContext(c)(sc, emptyArgs)
     }
 
+    assert(3!=4)
     logMacro(c)(messageTree, logLevel)
   }
 

@@ -95,7 +95,7 @@ object ArgumentNameExtractionMacro {
                  |
                  |Tree: ${c.universe.show(v)}
                """.stripMargin)
-            reifiedPrefixedValue(c)(c.Expr[String](Literal(Constant(v.toString()))), param, "EXPRESSION")
+            reifiedPrefixedValue(c)(c.Expr[String](Literal(Constant(c.universe.showCode(v)))), param, "EXPRESSION")
         }
     }
 

@@ -16,7 +16,7 @@ class LoggingSlf4jSinkTest extends WordSpec {
 }
 
 object LoggingSlf4jSinkTest {
-  import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest._
+  import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest._
   val sinkLegacySlf4jImpl = new LogSinkLegacySlf4jImpl(simplePolicy())
 
 
