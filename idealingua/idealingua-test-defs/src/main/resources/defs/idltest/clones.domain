@@ -1,0 +1,12 @@
+domain idltest.clones
+
+mixin M {
+  _: str
+}
+
+clone M into M1
+
+clone M into M2 {
+  _: i32
+}
+

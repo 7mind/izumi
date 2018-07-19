@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.routing.ExampleService
 import org.scalatest.WordSpec
-import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest._
+import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest._
 
 import scala.util.{Failure, Success, Try}
 

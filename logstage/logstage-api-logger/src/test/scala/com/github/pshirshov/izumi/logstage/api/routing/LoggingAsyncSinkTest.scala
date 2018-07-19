@@ -48,9 +48,9 @@ class ExampleService(logger: IzLogger) {
   }
 }
 
-class LoggingMacroTest extends WordSpec {
+class LoggingAsyncSinkTest extends WordSpec {
 
-  import LoggingMacroTest._
+  import LoggingAsyncSinkTest._
 
   "Log macro" should {
     "support async sinks" in {
@@ -70,7 +70,7 @@ class LoggingMacroTest extends WordSpec {
 }
 
 @ExposedTestScope
-object LoggingMacroTest {
+object LoggingAsyncSinkTest {
 
   def coloringPolicy(renderingLayout : Option[String] = None) = new StringRenderingPolicy(RenderingOptions(), renderingLayout)
   def simplePolicy(renderingLayout : Option[String] = None) = new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false), renderingLayout)

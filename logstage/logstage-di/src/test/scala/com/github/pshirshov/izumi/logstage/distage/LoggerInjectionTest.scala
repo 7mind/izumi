@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.logstage.distage
 
 import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
-import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
+import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import org.scalatest.WordSpec
 
@@ -24,7 +24,7 @@ class LoggerInjectionTest extends WordSpec {
   "Logging module for distage" should {
     "inject loggers" in {
       val testSink = new TestSink()
-      val router = LoggingMacroTest.mkRouter(testSink)
+      val router = LoggingAsyncSinkTest.mkRouter(testSink)
 
       val definition = new ModuleDef {
         make[ExampleService]

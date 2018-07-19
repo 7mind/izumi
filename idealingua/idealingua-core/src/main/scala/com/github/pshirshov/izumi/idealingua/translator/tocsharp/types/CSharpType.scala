@@ -278,10 +278,19 @@ final case class CSharpType (
   protected def renderPrimitiveType(primitive: Primitive): String = primitive match {
     case Primitive.TBool => "bool"
     case Primitive.TString => "string"
+
     case Primitive.TInt8 => "sbyte"
+    case Primitive.TUInt8 => "byte"
+
     case Primitive.TInt16 => "short"
+    case Primitive.TUInt16 => "ushort"
+
     case Primitive.TInt32 => "int"
+    case Primitive.TUInt32 => "uint"
+
     case Primitive.TInt64 => "long"
+    case Primitive.TInt64 => "ulong"
+
     case Primitive.TFloat => "float"
     case Primitive.TDouble => "double"
     case Primitive.TUUID => "Guid"

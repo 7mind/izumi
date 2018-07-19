@@ -12,7 +12,7 @@ import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.TestSink
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.api.routing.LoggingMacroTest
+import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest
 import com.github.pshirshov.test.testapp._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
@@ -55,7 +55,7 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
       }
 
       override def router(): LogRouter = {
-        LoggingMacroTest.mkRouter(testSink)
+        LoggingAsyncSinkTest.mkRouter(testSink)
       }
     }
   }

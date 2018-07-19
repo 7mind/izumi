@@ -132,6 +132,23 @@ object Primitive {
     override def aliases: List[TypeName] = List("i64", "long", "int64")
   }
 
+  case object TUInt8 extends PrimitiveId {
+    override def aliases: List[TypeName] = List("u08", "ubyte", "uint8")
+  }
+
+  case object TUInt16 extends PrimitiveId {
+    override def aliases: List[TypeName] = List("u16", "ushort", "uint16")
+  }
+
+  case object TUInt32 extends PrimitiveId {
+    override def aliases: List[TypeName] = List("u32", "uint", "uint32")
+  }
+
+  case object TUInt64 extends PrimitiveId {
+    override def aliases: List[TypeName] = List("u64", "ulong", "uint64")
+  }
+
+
   case object TFloat extends Primitive {
     override def aliases: List[TypeName] = List("f32", "flt", "float")
   }
@@ -144,18 +161,37 @@ object Primitive {
     override def aliases: List[TypeName] = List("uid", "uuid")
   }
 
+  /**
+    * Date and Time, no timezone data
+    */
   case object TTs extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("tsl", "datetimel", "dtl")
   }
 
+  /**
+    * Date, Time and Timezone
+    */
   case object TTsTz extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("tsz", "datetimez", "dtz")
   }
 
+  /**
+    * Date, Time and Timezone, but Timezone is always set to UTC
+    */
+  case object TTsU extends Primitive with TimeTypeId {
+    override def aliases: List[TypeName] = List("tsu", "datetimeu", "dtu")
+  }
+
+  /**
+    * Just time, without timezone data
+    */
   case object TTime extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("time")
   }
 
+  /**
+    * Just date, without timezone data
+    */
   case object TDate extends Primitive with TimeTypeId {
     override def aliases: List[TypeName] = List("date")
   }
@@ -163,10 +199,18 @@ object Primitive {
   final val mappingId = Set(
     TBool
     , TString
+
     , TInt8
     , TInt16
     , TInt32
     , TInt64
+
+    , TUInt8
+    , TUInt16
+    , TUInt32
+    , TUInt64
+
+
     , TUUID
     ,
   )
@@ -180,12 +224,17 @@ object Primitive {
     , TInt16
     , TInt32
     , TInt64
+    , TUInt8
+    , TUInt16
+    , TUInt32
+    , TUInt64
     , TDouble
     , TFloat
     , TUUID
     , TTime
     , TDate
     , TTsTz
+    , TTsU
     , TTs
     ,
   )

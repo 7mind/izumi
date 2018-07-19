@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.il.parser.ILParser
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.DomainDefinitionTyper
+import com.github.pshirshov.izumi.idealingua.model.il.ast.IDLTyper
 import com.github.pshirshov.izumi.idealingua.model.typespace.{FailedTypespace, Typespace, TypespaceImpl, TypespaceVerifier}
 import fastparse.all
 import fastparse.core.Parsed
@@ -33,7 +33,7 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
         new LocalDomainProcessor(root, classpath, domain, domains, models).postprocess()
     }.map {
       d =>
-        val domain = new DomainDefinitionTyper(d).convert()
+        val domain = new IDLTyper(d).perform()
         new TypespaceImpl(domain)
     }.toSeq
 
@@ -42,7 +42,8 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
       .filter(_.issues.nonEmpty)
 
     if (issues.nonEmpty) {
-      throw new IDLException(s"Verification failed:\n${issues.mkString("\n\n")}")
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      throw new IDLException(s"Verification failed:\n${issues.niceList()}")
     }
 
     typespaces
