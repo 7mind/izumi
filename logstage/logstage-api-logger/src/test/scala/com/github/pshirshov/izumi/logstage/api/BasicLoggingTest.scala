@@ -20,8 +20,8 @@ class BasicLoggingTest extends WordSpec {
       assert(message.args == List(LogArg("arg1",1), LogArg("arg2","argument 2"), LogArg("arg2","argument 2"), LogArg("UNNAMED:4",4), LogArg("UNNAMED:4",4)))
       assert(message.template.parts == List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", ""))
 
-      val message1 = m"expression: ${Random.self.nextInt()}"
-      assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt()")
+      val message1 = m"expression: ${Random.self.nextInt()+1}"
+      assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")
       assert(message1.template.parts == List("expression: ", ""))
     }
   }
