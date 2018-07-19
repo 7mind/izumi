@@ -50,7 +50,12 @@ function scripted {
 
 function site {
   bopen
-  csbt ghpagesPushSite || exit 1
+  if [[ "$TRAVIS_BRANCH" == "develop" ]] ; then
+    echo "Publishing site from $TRAVIS_BRANCH branch"
+    csbt ghpagesPushSite || exit 1
+  else
+    echo "Not publishing site, because $TRAVIS_BRANCH is not 'develop'"
+  fi
   bclose
 }
 
