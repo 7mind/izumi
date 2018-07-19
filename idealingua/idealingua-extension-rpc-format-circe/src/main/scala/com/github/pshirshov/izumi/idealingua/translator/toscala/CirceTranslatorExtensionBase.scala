@@ -235,17 +235,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     val name = stype.fullJavaType.name
     val tpe = stype.typeName
 
-    if (struct.all.size != 1) {
-      CirceTrait(
-        s"${name}Circe",
-        q"""trait ${Type.Name(s"${name}Circe")} extends _root_.com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances {
-            ..$classDeriverImports
-            import _root_.io.circe.{Encoder, Decoder}
-            implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = deriveEncoder[$tpe]
-            implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = deriveDecoder[$tpe]
-          }
-      """)
-    } else {
+    if (struct.all.size == 1 && struct.all.head.field.name == "value") { // TODO: XXX: dirty workaround!
       val singleField = struct.all.head.field
       val ftpe = ctx.conv.toScala(singleField.typeId)
 
@@ -265,7 +255,16 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
             }
           }
       """)
-
+    } else {
+      CirceTrait(
+        s"${name}Circe",
+        q"""trait ${Type.Name(s"${name}Circe")} extends _root_.com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances {
+            ..$classDeriverImports
+            import _root_.io.circe.{Encoder, Decoder}
+            implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = deriveEncoder[$tpe]
+            implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = deriveDecoder[$tpe]
+          }
+      """)
     }
   }
 
