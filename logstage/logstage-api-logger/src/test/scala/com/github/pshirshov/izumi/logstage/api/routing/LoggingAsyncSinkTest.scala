@@ -10,6 +10,7 @@ import org.scalatest.WordSpec
 
 import scala.util.Random
 
+
 @ExposedTestScope
 class ExampleService(logger: IzLogger) {
   def start(): Unit = {
@@ -26,6 +27,11 @@ class ExampleService(logger: IzLogger) {
     val exception = new RuntimeException("Oy vey!")
     exception.setStackTrace(exception.getStackTrace.slice(0, 3))
     logger.crit(s"A failure happened: $exception")
+    logger.crit(s"Failure cause: ${exception.getCause}")
+
+    case class Example(v: Int, f: Throwable)
+    val x = Example(1, exception)
+    logger.crit(s"Argument name extracton: ${x.v}, ${x.f.getCause}, ${Example(2, exception).v}")
 
     // cornercases
     val arg1 = 5
