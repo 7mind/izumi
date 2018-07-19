@@ -465,7 +465,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
                  case IRTMuxResponse(t: ${sp.serviceOutputBase.typeFull}, _) =>
                    t
                  case o =>
-                   val id: String = ${Lit.String(s"${sp.typeName}.SafeToUnsafeBridge.name)")}
+                   val id: String = ${Lit.String(s"${sp.typeName}.SafeToUnsafeBridge.dispatch")}
                    throw new IRTTypeMismatchException(s"Unexpected output in $$id: $$o", o, None)
                }
              }
