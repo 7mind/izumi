@@ -62,19 +62,22 @@ object ArgumentNameExtractionMacro {
     val expressions = args.map {
       param =>
         param.tree match {
-          case c.universe.Ident(TermName(s)) =>
+          case c.universe.Ident(TermName(s)) => // ${x}
             reifiedExtracted(c)(param, s)
 
-          case ArrowArg(expr, name) =>
+          case ArrowArg(expr, name) => // ${x -> "name"}
             reifiedExtracted(c)(expr, name)
 
-          case HiddenArrowArg(expr, name) =>
+          case HiddenArrowArg(expr, name) => // ${x -> "name" -> null }
             reifiedExtractedHidden(c)(expr, name)
 
-          case c.universe.Select(_, TermName(s)) =>
+          case c.universe.Select(_, TermName(s)) => // ${x.value}
             reifiedExtracted(c)(param, s)
 
-          case c.universe.Literal(c.universe.Constant(v)) =>
+          case Apply(c.universe.Select(_, TermName(s)), List()) => // ${x.getSomething}
+            reifiedExtracted(c)(param, s)
+
+          case c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
             c.warning(c.enclosingPosition,
               s"""Constant expression as a logger argument: $v, this makes no sense.""".stripMargin)
 
@@ -88,7 +91,7 @@ object ArgumentNameExtractionMacro {
                  |1) Simple variable: logger.log(s"My message: $$argument")
                  |2) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
                  |
-                 |Tree: ${c.universe.show(v)}
+                 |Tree: ${c.universe.showRaw(v)}
                """.stripMargin)
             reifiedPrefixedValue(c)(c.Expr[String](Literal(Constant(c.universe.showCode(v)))), param, "EXPRESSION")
         }
