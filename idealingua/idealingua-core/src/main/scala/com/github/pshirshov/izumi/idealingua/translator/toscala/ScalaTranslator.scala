@@ -15,6 +15,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
 
 import scala.meta._
 
+
 object ScalaTranslator {
   final val defaultExtensions = Seq(
     ConvertersExtension
@@ -89,10 +90,27 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
   }
 
   protected def renderDto(i: DTO): RenderableCogenProduct = {
-    defns(ctx.tools.mkStructure(i.id), withMirror = true)
+    defns(ctx.tools.mkStructure(i.id), ClassSource.CsDTO(i))
   }
 
-  protected def defns(struct: CompositeStructure, withMirror: Boolean, bases: List[Init] = List.empty): RenderableCogenProduct = {
+  protected def defns(struct: CompositeStructure, source: ClassSource): RenderableCogenProduct = {
+    val withMirror = source match {
+      case _: ClassSource.CsInterface =>
+        false
+      case _ =>
+        true
+    }
+
+    val bases: List[Init] = source match {
+      case cs: ClassSource.CsMethodInput =>
+        List(cs.sc.serviceInputBase.init())
+
+      case cs: ClassSource.CsMethodOutput =>
+        List(cs.sc.serviceOutputBase.init())
+
+      case _ =>
+        List.empty
+    }
 
     val (mirrorInterface: List[Defn.Trait], moreBases: Interfaces) = if (withMirror) {
       val eid = typespace.defnId(struct.fields.id)
@@ -122,7 +140,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
           ..${struct.constructors}
          }"""
 
-    ext.extend(struct.fields, CogenProduct(qqComposite, qqCompositeCompanion, qqTools, List.empty), _.handleComposite)
+    ext.extend(StructContext(source, struct.fields), CogenProduct(qqComposite, qqCompositeCompanion, qqTools, List.empty), _.handleComposite)
   }
 
   protected def renderInterface(i: Interface): RenderableCogenProduct = {
@@ -133,7 +151,7 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val eid = typespace.implId(i.id)
     val implStructure = ctx.tools.mkStructure(eid)
-    val impl = defns(implStructure, withMirror = false).render
+    val impl = defns(implStructure, ClassSource.CsInterface(i)).render
     val qqInterfaceCompanion =
       q"""object ${t.termName} {
              def apply(..${implStructure.decls}) = ${conv.toScala(eid).termName}(..${implStructure.names})
@@ -254,11 +272,11 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
     val parsers = sortedFields
       .zipWithIndex
-      .map({case (field, idx) => (field, idx, field.field.field.typeId)})
+      .map({ case (field, idx) => (field, idx, field.field.field.typeId) })
       .map {
         case (field, idx, t: EnumId) =>
           q"${field.name} = ${conv.toScala(t).termName}.parse(parts(${Lit.Int(idx)}))"
-        case (field, idx, t: IdentifierId)  =>
+        case (field, idx, t: IdentifierId) =>
           q"${field.name} = ${conv.toScala(t).termName}.parse(parts(${Lit.Int(idx)}))"
         case (field, idx, _: PrimitiveId) =>
           q"${field.name} = parsePart[${field.fieldType}](parts(${Lit.Int(idx)}), classOf[${field.fieldType}])"
@@ -302,24 +320,31 @@ class ScalaTranslator(ts: Typespace, extensions: Seq[ScalaTranslatorExtension]) 
 
   protected def renderService(svc: Service): RenderableCogenProduct = {
     val sp = ServiceContext(ctx, svc)
-    val decls = svc.methods.collect({ case c: RPCMethod => c })
+
+    val decls = svc.methods
+      .collect({ case c: RPCMethod => c })
       .map(ServiceMethodProduct(ctx, sp, _))
 
-    val inputs = decls.map(_.inputIdWrapped).map({
-      dto =>
-        val struct = ctx.tools.mkStructure(dto)
-        defns(struct, withMirror = true, List(sp.serviceInputBase.init()))
-    }).flatMap(_.render)
+    val inputs = decls
+      .map {
+        dto =>
+          val struct = ctx.tools.mkStructure(dto.inputIdWrapped)
+          defns(struct, ClassSource.CsMethodInput(sp, dto))
+      }
+      .flatMap(_.render)
 
-    val outputs = decls.map(_.outputIdWrapped).map({
-      case dto: DTOId =>
-        val struct = ctx.tools.mkStructure(dto)
-        defns(struct, withMirror = true, List(sp.serviceOutputBase.init()))
-      case adt: AdtId =>
-        renderAdt(typespace.apply(adt).asInstanceOf[Adt], List(sp.serviceOutputBase.init()))
-      case o =>
-        throw new IDLException(s"Impossible case/service output: $o")
-    }).flatMap(_.render)
+    val outputs = decls
+      .map(d => (d.outputIdWrapped, d))
+      .map {
+        case (dto: DTOId, d) =>
+          val struct = ctx.tools.mkStructure(dto)
+          defns(struct, ClassSource.CsMethodOutput(sp, d))
+        case (adt: AdtId, _) =>
+          renderAdt(typespace.apply(adt).asInstanceOf[Adt], List(sp.serviceOutputBase.init()))
+        case o =>
+          throw new IDLException(s"Impossible case/service output: $o")
+      }
+      .flatMap(_.render)
 
     val inputMappers = decls.map(_.inputMatcher)
     val outputMappers = decls.map(_.outputMatcher)

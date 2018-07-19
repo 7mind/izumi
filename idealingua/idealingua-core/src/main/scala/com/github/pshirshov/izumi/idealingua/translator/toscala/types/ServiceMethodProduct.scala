@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId, TypeName, TypePath}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
+import com.github.pshirshov.izumi.idealingua.translator.toscala.{ClassSource, STContext}
 
 import scala.meta._
 
@@ -31,6 +31,7 @@ final case class ServiceContext(ctx: STContext, svc: Service) {
 }
 
 final case class FullServiceContext(service: ServiceContext, methods: List[ServiceMethodProduct])
+final case class StructContext(source: ClassSource, struct: ScalaStruct)
 
 final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCMethod) {
 
