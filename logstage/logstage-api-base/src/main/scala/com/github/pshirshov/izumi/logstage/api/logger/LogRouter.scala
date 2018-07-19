@@ -34,6 +34,8 @@ object LogRouter {
 
     override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = true
 
-    override protected def doLog(entry: Log.Entry): Unit = fallback.log(entry.toString)
+    override protected def doLog(entry: Log.Entry): Unit = {
+      fallback.log(entry.message.template.raw(entry.message.args.map(_.value) :_*) + s"\n{{ ${entry.toString} }}\n")
+    }
   }
 }

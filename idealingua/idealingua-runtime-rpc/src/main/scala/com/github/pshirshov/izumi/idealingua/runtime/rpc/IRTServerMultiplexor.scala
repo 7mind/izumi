@@ -3,11 +3,17 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 import scala.language.higherKinds
 
 // addressing
-final case class IRTServiceId(value: String) extends AnyVal
+final case class IRTServiceId(value: String) extends AnyVal {
+  override def toString: String = s"{service:$value}"
+}
 
-final case class IRTMethodId(value: String) extends AnyVal
+final case class IRTMethodId(value: String) extends AnyVal {
+  override def toString: String = s"{method:$value}"
+}
 
-final case class IRTMethod(service: IRTServiceId, methodId: IRTMethodId)
+final case class IRTMethod(service: IRTServiceId, methodId: IRTMethodId) {
+  override def toString: String = s"${service.value}.${methodId.value}"
+}
 
 
 // dtos
