@@ -166,7 +166,7 @@ final case class CSharpType (
         case Primitive.TDouble => (2147483648L + rnd.nextFloat()).toString
         case Primitive.TUUID => s"""new System.Guid("${java.util.UUID.randomUUID.toString}")"""
         case Primitive.TTime => s"""System.TimeSpan.Parse(string.Format("{0:D2}:{1:D2}:{2:D2}.{3:D3}", ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}, ${100 + rnd.nextInt(100)}))"""
-        case Primitive.TDate => s"""System.DateTime.Parse(string.Format("{0:D4}-{1:D2}-{2:D2}", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${rnd.nextInt(28)}))"""
+        case Primitive.TDate => s"""System.DateTime.Parse(string.Format("{0:D4}-{1:D2}-{2:D2}", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}))"""
         case Primitive.TTs => s"""System.DateTime.ParseExact(string.Format("{0:D4}-{1:D2}-{2:D2}T{3:D2}:{4:D2}:{5:D2}.{6:D3}", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}, ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}, ${100 + rnd.nextInt(100)}), JsonNetTimeFormats.Tsl, CultureInfo.InvariantCulture, DateTimeStyles.None)"""
         case Primitive.TTsTz => s"""System.DateTime.ParseExact(string.Format("{0:D4}-{1:D2}-{2:D2}T{3:D2}:{4:D2}:{5:D2}.{6:D3}+10:00", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}, ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}, ${100 + rnd.nextInt(100)}), JsonNetTimeFormats.Tsz, CultureInfo.InvariantCulture, DateTimeStyles.None)"""
       }

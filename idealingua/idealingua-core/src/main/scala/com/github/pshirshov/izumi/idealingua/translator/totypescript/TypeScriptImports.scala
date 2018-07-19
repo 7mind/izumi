@@ -7,14 +7,14 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
 import scala.util.control.Breaks._
 
 final case class TypeScriptImport(id: TypeId, pkg: String)
 
-final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptManifest] = None) {
+final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest] = None) {
   private def renderTypeImports(id: TypeId, ts: Typespace): String = id match {
     case adt: AdtId => s"${adt.name}, ${adt.name}Helpers"
     case i: InterfaceId => s"${i.name}, ${i.name + ts.implId(i).name}, ${i.name + ts.implId(i).name}Serialized"
@@ -48,18 +48,20 @@ final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty,
 }
 
 object TypeScriptImports {
-  def apply(imports: List[TypeScriptImport], manifest: Option[TypeScriptManifest]): TypeScriptImports =
+  def apply(imports: List[TypeScriptImport], manifest: Option[TypeScriptBuildManifest]): TypeScriptImports =
     new TypeScriptImports(imports, manifest)
 
-  def apply(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptManifest] = None): TypeScriptImports =
+  def apply(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest] = None): TypeScriptImports =
     TypeScriptImports(fromDefinition(ts, definition, fromPkg, extra, manifest), manifest)
 
-  def apply(ts: Typespace, i: Service, fromPkg: Package, extra: List[TypeScriptImport], manifest: Option[TypeScriptManifest]): TypeScriptImports =
+  def apply(ts: Typespace, i: Service, fromPkg: Package, extra: List[TypeScriptImport], manifest: Option[TypeScriptBuildManifest]): TypeScriptImports =
     TypeScriptImports(fromService(ts, i, fromPkg, extra, manifest), manifest)
 
-  protected def withImport(t: TypeId, fromPackage: Package, manifest: Option[TypeScriptManifest]): Seq[String] = {
+  protected def withImport(t: TypeId, fromPackage: Package, manifest: Option[TypeScriptBuildManifest]): Seq[String] = {
     var pathToRoot = ""
     (1 to fromPackage.size).foreach(_ => pathToRoot += "../")
+
+    val scopeRoot = if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) manifest.get.scope + "/" else pathToRoot
 
     t match {
       case g: Generic => g match {
@@ -69,10 +71,10 @@ object TypeScriptImports {
         case _: Generic.TSet => return Seq.empty
       }
       case p: Primitive => p match {
-        case Primitive.TTs => return Seq(s"import { Formatter } from '${pathToRoot}irt';")
-        case Primitive.TTsTz => return Seq(s"import { Formatter } from '${pathToRoot}irt';")
-        case Primitive.TTime => return Seq(s"import { Formatter } from '${pathToRoot}irt';")
-        case Primitive.TDate => return Seq(s"import { Formatter } from '${pathToRoot}irt';")
+        case Primitive.TTs => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
+        case Primitive.TTsTz => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
+        case Primitive.TTime => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
+        case Primitive.TDate => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
         case _ => return Seq.empty
       }
       case _ =>
@@ -126,7 +128,7 @@ object TypeScriptImports {
     Seq(importFile)
   }
 
-  protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptManifest]): List[TypeScriptImport] = {
+  protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
     val imports = types.distinct
     if (fromPkg.isEmpty) {
       return List.empty
@@ -171,12 +173,12 @@ object TypeScriptImports {
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
   }
 
-  protected def fromDefinition(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptManifest]): List[TypeScriptImport] = {
+  protected def fromDefinition(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
     val types = collectTypes(ts, definition)
     fromTypes(types, fromPkg, extra, manifest)
   }
 
-  protected def fromService(ts: Typespace, svc: Service, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptManifest]): List[TypeScriptImport] = {
+  protected def fromService(ts: Typespace, svc: Service, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
     val types = svc.methods.flatMap {
       case m: RPCMethod => m.signature.input.fields.flatMap(f => collectTypes(ts, f.typeId)) ++ (m.signature.output match {
         case st: Struct => st.struct.fields.flatMap(ff => collectTypes(ts, ff.typeId))

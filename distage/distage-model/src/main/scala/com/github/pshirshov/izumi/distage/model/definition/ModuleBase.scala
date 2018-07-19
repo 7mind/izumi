@@ -29,6 +29,12 @@ object ModuleBase {
     }
   }
 
+  implicit final class ModuleDefOps(private val moduleDef: ModuleBase) extends AnyVal {
+    def map(f: Binding => Binding): ModuleBase = {
+      SimpleModuleDef(moduleDef.bindings.map(f))
+    }
+  }
+
   implicit final class ModuleDefCombine(private val moduleDef: ModuleBase) extends AnyVal {
     def ++(that: ModuleBase): ModuleBase = {
       // FIXME: a hack to support tag merging

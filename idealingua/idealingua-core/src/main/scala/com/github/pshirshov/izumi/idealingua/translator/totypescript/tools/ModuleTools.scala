@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptBuildManifest
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
 
 class ModuleTools() {

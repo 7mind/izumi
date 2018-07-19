@@ -6,7 +6,7 @@ object ManifestDependency {
   def ManifestDependency(module: String, version: String) = new ManifestDependency(module, version)
 }
 
-trait Manifest {
+trait BuildManifest {
   def name: String
   def tags: String
   def description: String

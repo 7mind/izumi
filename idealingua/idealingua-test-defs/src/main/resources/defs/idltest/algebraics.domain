@@ -11,3 +11,19 @@ adt Alternative {
 
 adt ShortSyntax = Success as TestSuccess | Failure
 
+id AdtTestID {
+    id: str
+}
+
+data ComplexAdt {
+    id: AdtTestID
+}
+
+data ComplexAdt2 {
+    id: AdtTestID
+}
+
+adt AdtTester {
+    ComplexAdt
+    ComplexAdt2
+}

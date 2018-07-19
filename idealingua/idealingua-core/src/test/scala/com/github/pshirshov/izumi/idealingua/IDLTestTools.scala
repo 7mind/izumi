@@ -12,6 +12,8 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
+import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -73,19 +75,68 @@ object IDLTestTools {
     exitCode == 0
   }
 
-  def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, IDLLanguage.Typescript, extensions)
+  def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
+    val manifest = new TypeScriptBuildManifest(
+        name = "TestBuild",
+        tags = "",
+        description = "Test Description",
+        notes = "",
+        publisher = Publisher("Test Publisher Name", "test_publisher_id"),
+        version = "0.0.0",
+        license = "MIT",
+        website = "http://project.website",
+        copyright = "Copyright (C) Test Inc.",
+        dependencies = List(ManifestDependency("moment", "^2.20.1")),
+        scope = "@TestScope",
+        moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED
+      )
+
+    val out = compiles(id, domains, IDLLanguage.Typescript, extensions)(if(scoped) Some(manifest) else None)
+
+    if (scoped) {
+      val transformer =
+      s"""SCOPE=${manifest.scope}
+         |
+         |echo "Packages found:"
+         |find . -name package.json -print0 | xargs -0 -n1 dirname | tr -d . | tr / - | sed 's/-//' | sort --unique
+         |
+         |rm -rf $$SCOPE
+         |mkdir -p $$SCOPE
+         |echo
+         |echo "Transforming packages into modules structure:"
+         |for F in $$(find . -name package.json); do
+         |    SRC=$$(dirname $$F)
+         |    DST=$$(echo $$SRC| tr -d . | tr / - | sed 's/-//')
+         |    DST="$${SCOPE}/$${DST}"
+         |    echo "Coping from $$SRC into $$DST"
+         |    cp -r $$SRC $$DST
+         |    rm -rf $$SRC
+         |done
+       """.stripMargin
+
+      val transformPath = out.targetDir.resolve("transform.sh")
+      Files.write(transformPath, transformer.getBytes)
+      val transformCmd = Seq("sh", "transform.sh")
+      if (run(out.absoluteTargetDir, transformCmd, Map.empty, "sh") != 0) {
+        return false
+      }
+    }
+
+    val outputTspackagePath = out.targetDir.resolve("package.json")
+    Files.write(outputTspackagePath, TypeScriptBuildManifest.generatePackage(manifest, "index", "TestPackage", List.empty).getBytes)
+    val npmCmd = Seq("npm", "install")
+    if (run(out.absoluteTargetDir, npmCmd, Map.empty, "npm") != 0) {
+      return false
+    }
 
     val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
     val tsconfigBytes = IzResources.readAsString("tsconfig-compiler-test.json")
       .get
       .replace("../phase3-compiler-output", out.phase3.toString)
-
     Files.write(outputTsconfigPath, tsconfigBytes.getBytes)
+    val tscCmd = Seq("tsc", "-p", outputTsconfigPath.toFile.getName)
 
-    val cmd = Seq("tsc", "-p", outputTsconfigPath.toFile.getName)
-
-    val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "tsc")
+    val exitCode = run(out.absoluteTargetDir, tscCmd, Map.empty, "tsc")
     exitCode == 0
   }
 
@@ -133,7 +184,7 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension]): CompilerOutput = {
+  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension])(implicit manifest: Option[BuildManifest] = None): CompilerOutput = {
     val targetDir = Paths.get("target")
     val tmpdir = targetDir.resolve("idl-output")
 
