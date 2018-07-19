@@ -68,6 +68,7 @@ class ILParser {
     final val enum = kw("enum")
     final val adt = kw("adt", "choice")
     final val alias = kw("alias", "type", "using")
+    final val newtype = kw("clone", "newtype", "copy")
     final val id = kw("id")
     final val mixin = kw("mixin", "interface")
     final val data = kw("data", "dto", "struct")
@@ -218,6 +219,12 @@ class ILParser {
     final val aliasBlock = structure.starting(kw.alias, "=" ~/ inline ~ ids.identifier)
       .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
 
+    final val cloneBlock = structure.starting(kw.newtype, "into" ~/ inline ~ ids.shortIdentifier ~ inline ~ structure.enclosed(defs.struct).?)
+      .map {
+        case (src, (target, struct)) =>
+          ILNewtype(NewType(target, src.toTypeId, struct.map(_.structure)))
+      }
+
     final val adtBlock = structure.starting(kw.adt,
       structure.enclosed(defs.adt(sepAdt))
         | (any ~ "=" ~/ sepAdt ~ defs.adt(sepAdt))
@@ -236,6 +243,7 @@ class ILParser {
     final val anyBlock: Parser[Val] = enumBlock |
       adtBlock |
       aliasBlock |
+      cloneBlock |
       idBlock |
       mixinBlock |
       dtoBlock |
