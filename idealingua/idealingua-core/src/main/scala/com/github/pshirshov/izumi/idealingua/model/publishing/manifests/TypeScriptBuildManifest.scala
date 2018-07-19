@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.publishing.manifests
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.{Manifest, ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptModuleSchema.TypeScriptModuleSchema
 
 object TypeScriptModuleSchema extends Enumeration {
@@ -8,7 +8,7 @@ object TypeScriptModuleSchema extends Enumeration {
   val PER_DOMAIN, UNITED = Value
 }
 
-case class TypeScriptManifest (
+case class TypeScriptBuildManifest(
                             name: String,
                             tags: String,
                             description: String,
@@ -21,12 +21,12 @@ case class TypeScriptManifest (
                             dependencies: List[ManifestDependency],
                             scope: String,
                             moduleSchema: TypeScriptModuleSchema,
-                          ) extends Manifest
+                          ) extends BuildManifest
 
-object TypeScriptManifest {
-  def generatePackage(manifest: TypeScriptManifest, main: String, name: String, peerDependencies: List[ManifestDependency] = List.empty): String = {
+object TypeScriptBuildManifest {
+  def generatePackage(manifest: TypeScriptBuildManifest, main: String, name: String, peerDependencies: List[ManifestDependency] = List.empty): String = {
     s"""{
-       |  "name": "${manifest.scope}/$name",
+       |  "name": "${if (manifest.scope.isEmpty) name else manifest.scope + "/" + name}",
        |  "version": "${manifest.version}",
        |  "description": "${manifest.description}",
        |  "main": "$main.js",

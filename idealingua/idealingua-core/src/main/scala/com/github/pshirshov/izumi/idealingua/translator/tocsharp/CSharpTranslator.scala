@@ -8,6 +8,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, TypeScriptBuildManifest}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, NUnitExtension}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
@@ -26,7 +28,16 @@ class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]
 
   import ctx._
 
-  def translate(): Seq[Module] = {
+  def translate()(implicit manifest: Option[BuildManifest]): Seq[Module] = {
+
+    if (manifest.isDefined && !manifest.get.isInstanceOf[CSharpBuildManifest]) {
+      throw new Exception("TypeScriptTranslator needs CSharpBuildManifest, got " + manifest.get.getClass.getName)
+    }
+    implicit val csManifest: Option[CSharpBuildManifest] = if (manifest.isDefined)
+      Some(manifest.get.asInstanceOf[CSharpBuildManifest])
+    else
+      None
+
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)

@@ -58,7 +58,7 @@ final case class GoLangType (
     case _: AdtId => false
     case _: InterfaceId => false
     case _: EnumId => false
-    case al: AliasId => isPrimitive(ts(al).asInstanceOf[Alias].target)
+    case al: AliasId => isPrimitive(ts.dealias(al))
     case g: Generic => g match {
       case go: Generic.TOption => isPrimitive(go.valueType)
       case gl: Generic.TList => isPrimitive(gl.valueType)

@@ -1,25 +1,25 @@
 package com.github.pshirshov.izumi.idealingua.model.publishing.manifests
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.{Manifest, ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 
 
-case class CSharpManifest ( name: String,
-                            tags: String,
-                            description: String,
-                            notes: String,
-                            publisher: Publisher,
-                            version: String,
-                            license: String,
-                            website: String,
-                            copyright: String,
-                            dependencies: List[ManifestDependency],
-                            id: String,
-                            iconUrl: String,
-                            requireLicenseAcceptance: Boolean
-                          ) extends Manifest
+case class CSharpBuildManifest(name: String,
+                               tags: String,
+                               description: String,
+                               notes: String,
+                               publisher: Publisher,
+                               version: String,
+                               license: String,
+                               website: String,
+                               copyright: String,
+                               dependencies: List[ManifestDependency],
+                               id: String,
+                               iconUrl: String,
+                               requireLicenseAcceptance: Boolean
+                          ) extends BuildManifest
 
-object CSharpManifest {
-  def generateNuspec(manifest: CSharpManifest, filesFolder: List[String] = List("csharp\\**")): String = {
+object CSharpBuildManifest {
+  def generateNuspec(manifest: CSharpBuildManifest, filesFolder: List[String] = List("csharp\\**")): String = {
     s"""<?xml version="1.0"?>
        |<package >
        |    <metadata>

@@ -4,9 +4,10 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TSTContext
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct.EnumProduct
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptBuildManifest
 
 object EnumHelpersExtension extends TypeScriptTranslatorExtension {
-  override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct): EnumProduct = {
+  override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct)(implicit manifest: Option[TypeScriptBuildManifest]): EnumProduct = {
     val it = enum.members.iterator
     val values = it.map { m =>
       s"${enum.id.name}.$m" + (if (it.hasNext) "," else "")
