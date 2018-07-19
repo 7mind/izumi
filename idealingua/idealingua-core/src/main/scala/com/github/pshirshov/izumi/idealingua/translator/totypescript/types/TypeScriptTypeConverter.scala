@@ -97,12 +97,12 @@ class TypeScriptTypeConverter() {
     case gm: Generic.TMap => s"Object.keys($variable).reduce((previous, current) => {previous[current] = ${deserializeType(s"$variable[current]", gm.valueType, ts, asAny)}; return previous; }, {})"
     case gl: Generic.TList => gl.valueType match {
       case _: Primitive => s"$variable.slice()"
-      case _ => s"$variable.map(e => { return ${deserializeType("e", gl.valueType, ts, asAny)}; })"
+      case _ => s"$variable.map(${if(asAny)"(e: any)" else "e"} => { return ${deserializeType("e", gl.valueType, ts, asAny)}; })"
     }
     case go: Generic.TOption => s"typeof $variable !== 'undefined' ? ${deserializeType(variable, go.valueType, ts, asAny)} : undefined"
     case gs: Generic.TSet => gs.valueType match {
       case _: Primitive => s"$variable.slice()"
-      case _ => s"$variable.map(e => { return ${deserializeType("e", gs.valueType, ts, asAny)}; })"
+      case _ => s"$variable.map(${if(asAny)"(e: any)" else "e"} => { return ${deserializeType("e", gs.valueType, ts, asAny)}; })"
     }
   }
 
