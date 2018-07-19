@@ -98,10 +98,16 @@ object NUnitExtension extends CSharpTranslatorExtension {
   override def postEmitModules(ctx: CSTContext, i: Adt)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
     val name = i.id.name
     val adt = i.alternatives.head
+    val testValue =
+      if (adt.typeId.isInstanceOf[InterfaceId])
+        s"new ${CSharpType(adt.typeId).renderType()}Struct()"
+    else
+      s"${CSharpType(adt.typeId).renderType()}TestHelper.Create()"
+
     val code =
       s"""public static class ${name}TestHelper {
          |    public static $name Create() {
-         |        return new $name.${adt.name}(new ${CSharpType(adt.typeId).renderType() + (if (adt.typeId.isInstanceOf[InterfaceId]) "Struct" else "")}());
+         |        return new $name.${adt.name}($testValue);
          |    }
          |}
          |
