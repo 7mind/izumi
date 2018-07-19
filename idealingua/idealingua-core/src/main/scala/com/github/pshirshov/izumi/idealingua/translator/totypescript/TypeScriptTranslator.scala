@@ -503,7 +503,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |        this._transport.send(${service}Client.ClassName, '${m.name}', __data)
            |            .then((data: any) => {
            |                try {
-           |                    const output = ${conv.deserializeType("data", si.typeId, typespace)};
+           |                    const output = ${conv.deserializeType("data", si.typeId, typespace, asAny = true)};
            |                    resolve(output);
            |                }
            |                catch(err) {
