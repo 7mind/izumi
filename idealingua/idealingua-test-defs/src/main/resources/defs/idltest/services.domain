@@ -35,6 +35,8 @@ service TestService {
   def simple(+Request): (+Request)
   def simpleEnum(v: TestServiceEnum): str
   def simpleEnum2(e: Environment): str
+  def returnsList(e: Environment): list[Package]
+  def returnsMap(e: Environment): map[str,Package]
 
   def simpleGoReserved(package: Package): bool
 

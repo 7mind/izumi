@@ -8,9 +8,9 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.{ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptModuleSchema.TypeScriptModuleSchema
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangManifest, TypeScriptManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension, TypeScriptTranslatorExtension}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
@@ -28,32 +28,25 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
   import ctx._
 
-  def translate(): Seq[Module] = {
-      implicit val manifest: Option[TypeScriptManifest] = Some(new TypeScriptManifest(
-          name = "Test",
-          tags = "",
-          description = "",
-          notes = "",
-          publisher = new Publisher("Publisher Name", "publisher_id"),
-          version = "0.0.1",
-          license = "http://license.url",
-          website = "http://project.website",
-          copyright = "Copyright (C) Some Inc.",
-          dependencies = List(ManifestDependency("moment", "^2.20.1")),
-          scope = "@TestScope",
-          moduleSchema =  TypeScriptModuleSchema.PER_DOMAIN
-        ))
+  def translate()(implicit manifest: Option[BuildManifest]): Seq[Module] = {
 
-//    implicit val manifest: Option[TypeScriptManifest] = None
+    if (manifest.isDefined && !manifest.get.isInstanceOf[TypeScriptBuildManifest]) {
+      throw new Exception("TypeScriptTranslator needs TypeScriptBuildManifest, got " + manifest.get.getClass.getName)
+    }
+    implicit val tsManifest: Option[TypeScriptBuildManifest] = if (manifest.isDefined)
+      Some(manifest.get.asInstanceOf[TypeScriptBuildManifest])
+    else
+      None
 
     val indexModule = buildIndexModule()
+
 
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)
     ).flatten ++
       (
-        if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
+        if (tsManifest.isDefined && tsManifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
           List(
             indexModule,
             buildPackageModule()
@@ -65,13 +58,13 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     modules
   }
 
-  def buildPackageModule()(implicit manifest: Option[TypeScriptManifest]): Module = {
+  def buildPackageModule()(implicit manifest: Option[TypeScriptBuildManifest]): Module = {
     val imports = typespace.domain.types.map(i => TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)) ++
       typespace.domain.services.map(i => TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty, manifest))
 
     val peerDeps: List[ManifestDependency] = imports.flatMap(i => i.imports.filter(_.pkg.startsWith(manifest.get.scope)).map(im => ManifestDependency(im.pkg, manifest.get.version))).toList.distinct
 
-    val content = TypeScriptManifest.generatePackage(manifest.get, "index", ts.domain.id.toPackage.mkString("-"), peerDeps)
+    val content = TypeScriptBuildManifest.generatePackage(manifest.get, "index", ts.domain.id.toPackage.mkString("-"), peerDeps)
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content)
   }
 
@@ -86,11 +79,11 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     Module(ModuleId(ts.domain.id.toPackage, "index.ts"), content)
   }
 
-  protected def translateService(definition: Service)(implicit manifest: Option[TypeScriptManifest]): Seq[Module] = {
+  protected def translateService(definition: Service)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderService(definition))
   }
 
-  protected def translateDef(definition: TypeDef)(implicit manifest: Option[TypeScriptManifest]): Seq[Module] = {
+  protected def translateDef(definition: TypeDef)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
     val defns = definition match {
       case i: Alias =>
         renderAlias(i)
@@ -173,7 +166,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       s""
   }
 
-  protected def renderDto(i: DTO)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+  protected def renderDto(i: DTO)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val fields = typespace.structure.structure(i).all
     val distinctFields = fields.groupBy(_.field.name).map(_._2.head.field)
@@ -253,7 +246,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       )
   }
 
-  protected def renderAdt(i: Adt)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+  protected def renderAdt(i: Adt)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val base =
       s"""export type ${i.id.name} = ${i.alternatives.map(alt => alt.typeId.name).mkString(" | ")};
@@ -287,7 +280,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
       ), _.handleAdt)
   }
 
-  protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
+  protected def renderEnumeration(i: Enumeration)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
     val it = i.members.iterator
     val members = it.map { m =>
       s"$m = '$m'" + (if (it.hasNext) "," else "")
@@ -302,7 +295,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     ext.extend(i, EnumProduct(content, s"// ${i.id.name} Enumeration"), _.handleEnum)
   }
 
-  protected def renderIdentifier(i: Identifier)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+  protected def renderIdentifier(i: Identifier)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
       val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
       val fields = typespace.structure.structure(i)
       val sortedFields = fields.all.sortBy(_.field.name)
@@ -362,7 +355,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     it.map { m => s"$m${if (it.hasNext) "," else ""}" }.mkString("\n")
   }
 
-  protected def renderInterface(i: Interface)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+  protected def renderInterface(i: Interface)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val extendsInterfaces =
       if (i.struct.superclasses.interfaces.nonEmpty) {
@@ -482,7 +475,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
            |    return new Promise((resolve, reject) => {
            |        this._transport.send(${service}Client.ClassName, '${m.name}', __data)
-           |            .then(data => {
+           |            .then((data: any) => {
            |                try {
            |                    const id = Object.keys(data)[0];
            |                    const content = data[id];
@@ -495,7 +488,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |                    reject(err);
            |                }
            |             })
-           |            .catch(err => {
+           |            .catch((err: any) => {
            |                reject(err);
            |            });
            |    });
@@ -508,7 +501,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
            |    return new Promise((resolve, reject) => {
            |        this._transport.send(${service}Client.ClassName, '${m.name}', __data)
-           |            .then(data => {
+           |            .then((data: any) => {
            |                try {
            |                    const output = ${conv.deserializeType("data", si.typeId, typespace)};
            |                    resolve(output);
@@ -517,7 +510,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
            |                    reject(err);
            |                }
            |            })
-           |            .catch(err => {
+           |            .catch((err: any) => {
            |                reject(err);
            |            });
            |        });
@@ -542,7 +535,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
        |    private send<I extends IRTServiceClientInData, O extends IRTServiceClientOutData>(method: string, data: I, inputType: {new(): I}, outputType: {new(data: any): O} ): Promise<O> {
        |        return new Promise((resolve, reject) => {
        |            this._transport.send(${i.id.name}Client.ClassName, method, data)
-       |                .then(data => {
+       |                .then((data: any) => {
        |                    try {
        |                        const output = new outputType(data);
        |                        resolve(output);
@@ -551,7 +544,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
        |                        reject(err);
        |                    }
        |                })
-       |                .catch( err => {
+       |                .catch((err: any) => {
        |                    reject(err);
        |                });
        |            });
@@ -562,13 +555,13 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
   }
 
   protected def renderServiceMethodOutModel(name: String, implements: String, out: Service.DefMethod.Output): String = out match {
-    case st: Struct => renderServiceMethodInModel(name, implements, st.struct)
+    case st: Struct => renderServiceMethodInModel(name, implements, st.struct, export = true)
 //    case al: Algebraic => renderAdt(al)
     case _ => s""
   }
 
-  protected def renderServiceMethodInModel(name: String, implements: String, structure: SimpleStructure): String = {
-    s"""class $name implements $implements {
+  protected def renderServiceMethodInModel(name: String, implements: String, structure: SimpleStructure, export: Boolean): String = {
+    s"""${if(export) "export " else ""}class $name implements $implements {
        |${structure.fields.map(f => conv.toFieldMember(f, ts)).mkString("\n").shift(4)}
        |${structure.fields.map(f => conv.toFieldMethods(f, ts)).mkString("\n").shift(4)}
        |    constructor(data: ${name}Serialized = undefined) {
@@ -586,7 +579,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
        |    }
        |}
        |
-       |interface ${name}Serialized {
+       |${if(export) "export " else ""}interface ${name}Serialized {
        |${structure.fields.map(f => s"${conv.toNativeTypeName(f.name, f.typeId)}: ${conv.toNativeType(f.typeId, ts, forSerialized = true)};").mkString("\n").shift(4)}
        |}
      """.stripMargin
@@ -594,7 +587,7 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
 
   protected def renderServiceMethodModels(method: Service.DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
-      s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "IRTServiceClientInData", m.signature.input)}
+      s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "IRTServiceClientInData", m.signature.input, export = false)}
          |${renderServiceMethodOutModel(s"Out${m.name.capitalize}", "IRTServiceClientOutData", m.signature.output)}
        """.stripMargin
 
@@ -604,16 +597,20 @@ class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorEx
     i.methods.map(me => renderServiceMethodModels(me)).mkString("\n")
   }
 
-  protected def importFromIRT(names: List[String], pkg: Package): String = {
+  protected def importFromIRT(names: List[String], pkg: Package)(implicit manifest: Option[TypeScriptBuildManifest]): String = {
     var importOffset = ""
     (1 to pkg.length).foreach(_ => importOffset += "../")
+    if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+      importOffset = manifest.get.scope + "/"
+    }
+
     s"""import {
        |${names.map(n => s"    $n").mkString(",\n")}
        |} from '${importOffset}irt'
      """.stripMargin
   }
 
-  protected def renderService(i: Service)(implicit manifest: Option[TypeScriptManifest]): RenderableCogenProduct = {
+  protected def renderService(i: Service)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
       val imports = TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty, manifest)
       val typeName = i.id.name
 

@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, IDLResult}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.FinalTranslatorCSharpImpl
@@ -12,7 +13,7 @@ import com.github.pshirshov.izumi.idealingua.translator.totypescript.FinalTransl
 
 
 class TypespaceCompiler(typespace: Typespace) {
-  def compile(target: Path, options: CompilerOptions): IDLResult = {
+  def compile(target: Path, options: CompilerOptions)(implicit manifest: Option[BuildManifest]): IDLResult = {
     val translator = toTranslator(options)
     val modules = translator.translate(typespace, options.extensions)
 

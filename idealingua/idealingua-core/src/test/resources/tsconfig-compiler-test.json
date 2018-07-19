@@ -10,6 +10,7 @@
     "rootDirs": [
       "."
     ],
+    "declaration": true,
     "baseUrl": ".",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
@@ -17,7 +18,9 @@
     "noImplicitAny": true,
     "strictNullChecks": false,
     "suppressImplicitAnyIndexErrors": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "removeComments": true,
+    "preserveConstEnums": true
   },
   "compileOnSave": false
 }

@@ -5,11 +5,12 @@ import java.nio.file.Path
 import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, IDLFailure, IDLResult, IDLSuccess}
 
 class IDLCompiler(toCompile: Seq[Typespace]) {
-  def compile(relTarget: Path, options: CompilerOptions): IDLCompiler.Result = {
+  def compile(relTarget: Path, options: CompilerOptions)(implicit manifest: Option[BuildManifest] = None): IDLCompiler.Result = {
     val target = relTarget.toAbsolutePath
     IzFiles.recreateDir(target)
 
@@ -51,7 +52,7 @@ class IDLCompiler(toCompile: Seq[Typespace]) {
     IDLCompiler.Result(success.toMap, stubs, ztarget)
   }
 
-  protected def invokeCompiler(target: Path, options: CompilerOptions, typespace: Typespace): IDLResult = {
+  protected def invokeCompiler(target: Path, options: CompilerOptions, typespace: Typespace)(implicit manifest: Option[BuildManifest]): IDLResult = {
     val compiler = new TypespaceCompiler(typespace)
     compiler.compile(target, options)
   }
