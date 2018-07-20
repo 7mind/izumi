@@ -8,9 +8,9 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, TypeScriptBuildManifest}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.CSharpBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.AbstractCompilerOptions
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, NUnitExtension}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
@@ -23,18 +23,15 @@ object CSharpTranslator {
   )
 }
 
-class CSharpTranslator(ts: Typespace, extensions: Seq[CSharpTranslatorExtension]) {
-  protected val ctx: CSTContext = new CSTContext(ts, extensions)
+class CSharpTranslator(ts: Typespace, options: AbstractCompilerOptions[CSharpTranslatorExtension, CSharpBuildManifest]) {
+  protected val ctx: CSTContext = new CSTContext(ts, options.extensions)
 
   import ctx._
 
-  def translate()(implicit manifest: Option[BuildManifest]): Seq[Module] = {
-
-    if (manifest.isDefined && !manifest.get.isInstanceOf[CSharpBuildManifest]) {
-      throw new Exception("TypeScriptTranslator needs CSharpBuildManifest, got " + manifest.get.getClass.getName)
-    }
+  def translate(): Seq[Module] = {
+    val manifest = options.manifest
     implicit val csManifest: Option[CSharpBuildManifest] = if (manifest.isDefined)
-      Some(manifest.get.asInstanceOf[CSharpBuildManifest])
+      Some(manifest.get)
     else
       None
 

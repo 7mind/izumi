@@ -76,7 +76,7 @@ object CliIdlCompiler {
     val options = languages.map {
       case (name, ext) =>
         val lang = IDLLanguage.parse(name)
-        TypespaceCompiler.CompilerOptions(lang, getExt(lang, ext))
+        TypespaceCompiler.UntypedCompilerOptions(lang, getExt(lang, ext))
     }
 
     val path = conf.source.toAbsolutePath

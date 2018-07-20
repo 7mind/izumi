@@ -9,9 +9,9 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.AbstractCompilerOptions
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.RenderableCogenProduct
@@ -22,18 +22,15 @@ object GoLangTranslator {
   )
 }
 
-class GoLangTranslator(ts: Typespace, extensions: Seq[GoLangTranslatorExtension]) {
-  protected val ctx: GLTContext = new GLTContext(ts, extensions)
+class GoLangTranslator(ts: Typespace, options: AbstractCompilerOptions[GoLangTranslatorExtension, GoLangBuildManifest]) {
+  protected val ctx: GLTContext = new GLTContext(ts, options.extensions)
 
   import ctx._
 
-  def translate()(implicit manifest: Option[BuildManifest]): Seq[Module] = {
-
-    if (manifest.isDefined && !manifest.get.isInstanceOf[GoLangBuildManifest]) {
-      throw new Exception("TypeScriptTranslator needs GoLangBuildManifest, got " + manifest.get.getClass.getName)
-    }
+  def translate(): Seq[Module] = {
+    val manifest = options.manifest
     implicit val glManifest: Option[GoLangBuildManifest] = if (manifest.isDefined)
-      Some(manifest.get.asInstanceOf[GoLangBuildManifest])
+      Some(manifest.get)
     else
       None
 

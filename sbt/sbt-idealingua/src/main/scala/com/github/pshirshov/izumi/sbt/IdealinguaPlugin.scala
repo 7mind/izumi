@@ -6,7 +6,7 @@ import java.security.MessageDigest
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.CompilerOptions
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.UntypedCompilerOptions
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -36,7 +36,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
   }
 
-  final case class Invokation(options: CompilerOptions, mode: Mode)
+  final case class Invokation(options: UntypedCompilerOptions, mode: Mode)
 
   object Keys {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
@@ -63,11 +63,11 @@ object IdealinguaPlugin extends AutoPlugin {
     , idlDefaultExtensionsCSharp := CSharpTranslator.defaultExtensions
 
     , compilationTargets := Seq(
-      Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Sources)
-      , Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Artifact)
-      , Invokation(CompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.Artifact)
-      , Invokation(CompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.Artifact)
-      , Invokation(CompilerOptions(IDLLanguage.CSharp, idlDefaultExtensionsCSharp.value), Mode.Artifact)
+      Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Sources)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Artifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.Artifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.Artifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, idlDefaultExtensionsCSharp.value), Mode.Artifact)
     )
 
     , watchSources += Watched.WatchSource(baseDirectory.value / "src/main/izumi")
