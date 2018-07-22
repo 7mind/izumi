@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 
 import scala.util.{Failure, Success, Try}
 
+
 // TODO: add introspection capabilities
 class ProvisionerDefaultImpl
 (
@@ -24,32 +25,72 @@ class ProvisionerDefaultImpl
   , failureHandler: ProvisioningFailureInterceptor
 ) extends Provisioner with OperationExecutor {
   override def provision(plan: FinalPlan, parentContext: Locator): ProvisionImmutable = {
-    val provisions = plan.steps.foldLeft(ProvisionActive()) {
+    val provisioingContext = ProvisionActive()
+    val (imports, theRest) = plan.steps.partition(_.isInstanceOf[ImportDependency])
+
+    processImports(parentContext, provisioingContext, imports)
+
+    val provisions = theRest.foldLeft(provisioingContext) {
       case (active, step) =>
+        val failureContext = ProvisioningFailureContext(parentContext, active, step)
 
-        val context = ProvisioningFailureContext(parentContext, active, step)
+        val maybeResult = Try(execute(LocatorContext(active.toImmutable, parentContext), step))
+          .recoverWith(failureHandler.onExecutionFailed(failureContext))
 
-        Try(execute(LocatorContext(active.toImmutable, parentContext), step))
-          .recoverWith(failureHandler.onExecutionFailed(context)) match {
+        maybeResult match {
           case Success(results) =>
-            results.foldLeft(active) {
-              case (acc, result) =>
-                Try(interpretResult(active, result))
-                  .recoverWith(failureHandler.onBadResult(context)) match {
-                  case Success(_) =>
-                    acc
-                  case Failure(f) =>
-                    failureHandler.onStepOperationFailure(context, result, f)
-                }
-            }
+            interpret(failureContext, active, results)
 
           case Failure(f) =>
-            failureHandler.onStepFailure(context, f)
+            failureHandler.onStepFailure(failureContext, f)
         }
-
     }
 
     ProvisionImmutable(provisions.instances, provisions.imports)
+  }
+
+  private def processImports(parentContext: Locator, provisioingContext: ProvisionActive, imports: Seq[ExecutableOp]): Unit = {
+    val importContext = LocatorContext(provisioingContext.toImmutable, parentContext)
+    val (good, bad) = imports.map(i => OperationWithResult(i, Try(execute(importContext, i))))
+      .partition(_.result.isSuccess)
+
+    val importResults = good
+      .collect {
+        case OperationWithResult(op, Success(r)) =>
+          op -> r.map { result => Try(interpretResult(provisioingContext, result)) }
+      }
+
+    val (_, badImportResults) = importResults.partition(_._2.exists(_.isFailure))
+
+
+    if (bad.nonEmpty || badImportResults.nonEmpty) {
+      val failures = bad.collect {
+        case OperationWithResult(op, f@Failure(_)) =>
+          OperationWithResult(op, f)
+      }
+      val exceptions = badImportResults.collect {
+        case (op, f) =>
+          f.collect {
+            case Failure(e) =>
+              OperationFailed(op, e)
+
+          }
+      }
+      failureHandler.onImportsFailed(ProvisioningMassFailureContext(parentContext, provisioingContext), failures, exceptions.flatten)
+    }
+  }
+
+  private def interpret(failureContext: ProvisioningFailureContext, active: ProvisionActive, results: Seq[OpResult]) = {
+    results.foldLeft(active) {
+      case (acc, result) =>
+        Try(interpretResult(active, result))
+          .recoverWith(failureHandler.onBadResult(failureContext)) match {
+          case Success(_) =>
+            acc
+          case Failure(f) =>
+            failureHandler.onStepOperationFailure(failureContext, result, f)
+        }
+    }
   }
 
   private def interpretResult(active: ProvisionActive, result: OpResult): Unit = {
