@@ -7,7 +7,6 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBind
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, WiringOp}
-import com.github.pshirshov.izumi.distage.model.plan.PlanningFailure.ConflictingOperation
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
@@ -352,7 +351,7 @@ class InjectorTest extends WordSpec {
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
-      assert(exc.badSteps.lengthCompare(1) == 0 && exc.badSteps.exists(_.isInstanceOf[ConflictingOperation]))
+      assert(exc.conflicts.size == 1 && exc.conflicts.contains(RuntimeDIUniverse.DIKey.get[Dependency]))
     }
 
     "handle factory injections" in {

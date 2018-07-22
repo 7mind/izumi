@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.{SanityCheckFailedException, UntranslatablePlanException}
+import com.github.pshirshov.izumi.distage.model.exceptions.UntranslatablePlanException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
@@ -9,68 +9,43 @@ import com.github.pshirshov.izumi.fundamentals.collections.Graphs
 
 import scala.collection.mutable
 
+sealed trait ConflictResolution
+
+object ConflictResolution {
+
+  final case class Successful(op: ExecutableOp) extends ConflictResolution
+
+  final case class Failed(ops: Set[InstantiationOp]) extends ConflictResolution
+
+}
+
 class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPolicy {
 
   override def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
     (currentOp.provisions ++ currentOp.sets.values).foreach {
       op =>
         val target = op.target
-
-        val issues = findIssues(currentPlan, op)
-        if (issues.isEmpty) {
-          val old = currentPlan.operations.get(target)
-          val merged = merge(old, op)
-          currentPlan.operations.put(target, merged)
-          currentPlan.topology.register(op.target, analyzer.requirements(op))
-        } else {
-          currentPlan.issues ++= issues
-        }
+        currentPlan.operations.addBinding(target, op)
     }
 
     currentPlan
   }
 
-  private def merge(old: Option[InstantiationOp], op: InstantiationOp): InstantiationOp = {
-    (old, op) match {
-      case (Some(oldset: CreateSet), newset: CreateSet) =>
-        newset.copy(members = oldset.members ++ newset.members)
-      case (None, newop) =>
-        newop
-      case other =>
-        throw new SanityCheckFailedException(s"Unexpected pair: $other")
-    }
-  }
-
-  private def findIssues(currentPlan: DodgyPlan, op: InstantiationOp) = {
-    val target = op.target
-
-    val issues = mutable.ArrayBuffer.empty[PlanningFailure]
-
-    currentPlan.operations.get(target) match {
-      case Some(existing) =>
-        (existing, op) match {
-          case (_: CreateSet, _: CreateSet) =>
-
-          case (e, o) =>
-            issues += PlanningFailure.ConflictingOperation(target, e, o)
-        }
-      case None =>
-    }
-
-    issues
-  }
-
-
   override def finalizePlan(completedPlan: DodgyPlan): SemiPlan = {
-    if (completedPlan.issues.nonEmpty) {
-      throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy):\n${completedPlan.issues.mkString("\n")}", completedPlan.issues)
-    }
+    val resolved = completedPlan.operations.mapValues(resolve).toMap
+    val allOperations = resolved.values.collect({ case ConflictResolution.Successful(op) => op }).toSeq
+    val issues = resolved.collect({ case (k, ConflictResolution.Failed(ops)) => (k, ops) }).toMap
 
-    // TODO: here we may check the plan for conflicts
+    if (issues.nonEmpty) {
+      // TODO: issues == slots, we may apply slot logic here
+      throw new UntranslatablePlanException(s"Unresolved operation conflicts:\n${issues.mkString("\n")}", issues)
+    }
 
     // it's not neccessary to sort the plan at this stage, it's gonna happen after GC
-    val index = completedPlan.operations.toMap
-    val imports = completedPlan.topology.immutable
+    val index = allOperations.map(op => op.target -> op).toMap
+    val topology = analyzer.topology(allOperations)
+
+    val imports = topology
       .dependees
       .filterKeys(k => !index.contains(k))
       .map {
@@ -78,7 +53,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
           missing -> ImportDependency(missing, refs.toSet, None)
       }
       .toMap
-    SemiPlan(completedPlan.definition, (imports.values ++ completedPlan.operations.values).toVector)
+    SemiPlan(completedPlan.definition, (imports.values ++ allOperations).toVector)
   }
 
   override def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
@@ -91,6 +66,22 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
     OrderedPlan(completedPlan.definition, sortedOps.toVector, topology)
+  }
+
+  protected def resolve(operations: mutable.Set[InstantiationOp]): ConflictResolution = {
+    operations match {
+      case s if s.nonEmpty && s.forall(_.isInstanceOf[CreateSet]) =>
+        val ops = s.collect({ case c: CreateSet => c })
+        ConflictResolution.Successful(ops.tail.foldLeft(ops.head) {
+          case (acc, op) =>
+            acc.copy(members = acc.members ++ op.members)
+
+        })
+      case s if s.size == 1 =>
+        ConflictResolution.Successful(s.head)
+      case other =>
+        ConflictResolution.Failed(other.toSet)
+    }
   }
 }
 
