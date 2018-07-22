@@ -15,8 +15,13 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslato
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
+import org.scalacheck._
+import org.scalacheck.rng.Seed
 import scopt.OptionParser
+
+import scala.reflect._
+import scala.util.{Failure, Success, Try}
 
 case class LanguageOpts(id: String, withRuntime: Boolean, manifest: Option[File], extensions: List[String])
 
@@ -70,7 +75,9 @@ object IDLCArgs {
 
 }
 
-object CliIdlCompiler {
+object CliIdlCompiler extends ScalacheckShapeless with Codecs {
+  implicit val sgen: Arbitrary[String] = Arbitrary(Gen.alphaLowerStr)
+
   private def extensions: Map[IDLLanguage, Seq[TranslatorExtension]] = Map(
     IDLLanguage.Scala -> (ScalaTranslator.defaultExtensions ++ Seq(CirceDerivationTranslatorExtension))
     , IDLLanguage.Typescript -> TypeScriptTranslator.defaultExtensions
@@ -97,7 +104,7 @@ object CliIdlCompiler {
       lopt =>
         val lang = IDLLanguage.parse(lopt.id)
         val exts = getExt(lang, lopt.extensions)
-        import Decoders._
+
         val manifest = lang match {
           case IDLLanguage.Scala =>
             lopt.manifest.map(readManifest[ScalaBuildManifest])
@@ -148,13 +155,27 @@ object CliIdlCompiler {
     }
   }
 
-  def readManifest[T](path: File)(implicit dec: Decoder[T]): T = {
-    import io.circe.parser._
-    parse(IzFiles.readString(path)).flatMap(_.as[T]) match {
-      case Right(r) =>
+  def readManifest[T : Arbitrary : ClassTag : Decoder : Encoder](path: File): T = {
+    import _root_.io.circe.parser._
+    import _root_.io.circe.syntax._
+    Try(parse(IzFiles.readString(path)).flatMap(_.as[T])) match {
+      case Success(Right(r)) =>
         r
-      case Left(f) =>
-        throw new IllegalArgumentException(s"Failed to load manifest from $path: $f")
+      case o =>
+        val errRepr = o match {
+          case Success(Left(l)) =>
+            l.toString
+          case Failure(f) =>
+            f.toString
+          case e =>
+            e.toString
+        }
+        println(s"Failed to read manifest from $path: $errRepr")
+        println(s"Example manifest file for ${classTag[T].runtimeClass}:")
+        println(implicitly[Arbitrary[T]].arbitrary.pureApply(Gen.Parameters.default, Seed.random()).asJson)
+        System.out.flush()
+        System.exit(1)
+        throw new IllegalArgumentException(s"Failed to load manifest from $path: $errRepr")
     }
   }
 
@@ -165,16 +186,16 @@ object CliIdlCompiler {
   }
 }
 
-object Decoders {
+trait Codecs {
 
-  import io.circe._
-  import io.circe.generic.semiauto._
+  import _root_.io.circe._
+  import _root_.io.circe.generic.semiauto._
 
   implicit def decMdep: Decoder[ManifestDependency] = deriveDecoder
 
   implicit def decPublisher: Decoder[Publisher] = deriveDecoder
 
-  implicit def dsTsModuleSchema: Decoder[TypeScriptModuleSchema] = deriveDecoder
+  implicit def decTsModuleSchema: Decoder[TypeScriptModuleSchema] = deriveDecoder
 
   implicit def decScala: Decoder[ScalaBuildManifest] = deriveDecoder
 
@@ -183,4 +204,20 @@ object Decoders {
   implicit def decGo: Decoder[GoLangBuildManifest] = deriveDecoder
 
   implicit def decCs: Decoder[CSharpBuildManifest] = deriveDecoder
+
+
+  implicit def encMdep: Encoder[ManifestDependency] = deriveEncoder
+
+  implicit def encPublisher: Encoder[Publisher] = deriveEncoder
+
+  implicit def encTsModuleSchema: Encoder[TypeScriptModuleSchema] = deriveEncoder
+
+  implicit def encScala: Encoder[ScalaBuildManifest] = deriveEncoder
+
+  implicit def encTs: Encoder[TypeScriptBuildManifest] = deriveEncoder
+
+  implicit def encGo: Encoder[GoLangBuildManifest] = deriveEncoder
+
+  implicit def encCs: Encoder[CSharpBuildManifest] = deriveEncoder
 }
+
