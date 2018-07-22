@@ -2,45 +2,29 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp}
-import com.github.pshirshov.izumi.distage.model.plan.PlanTopology.empty
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, PlanTopology, XPlanTopology}
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, PlanTopology, PlanTopologyImmutable}
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
-import com.github.pshirshov.izumi.distage.model.references.RefTable
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
 
 
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
-  def topoBuild(ops: Seq[ExecutableOp]): PlanTopology = {
-    val out = empty
-    ops
-      .foreach(topoExtend(out, _))
-    out.immutable
-  }
-
-  def topoExtend(topology: XPlanTopology, op: ExecutableOp): Unit = {
-    topology.register(op.target, requirements(op))
-  }
-
-  def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable = {
-    computeFwdRefTable(
-      plan
-      , (acc) => (key) => acc.contains(key)
-      , _._2.nonEmpty
-    )
-  }
-
-  def computeFullRefTable(plan: Iterable[ExecutableOp]): RefTable = {
-    computeFwdRefTable(
-      plan
+  def topology(ops: Seq[ExecutableOp]): PlanTopology = {
+    computeTopology(
+      ops
       , (acc) => (key) => false
       , _ => true
     )
   }
 
-  type RefFilter = Accumulator => DIKey => Boolean
-  type PostFilter = ((DIKey, mutable.Set[DIKey])) => Boolean
+  def topologyFwdRefs(plan: Iterable[ExecutableOp]): PlanTopology = {
+    computeTopology(
+      plan
+      , (acc) => (key) => acc.contains(key)
+      , _._2.nonEmpty
+    )
+  }
 
   def requirements(op: ExecutableOp): Set[DIKey] = {
     op match {
@@ -67,8 +51,11 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
     }
   }
 
-  private def computeFwdRefTable(plan: Iterable[ExecutableOp], refFilter: RefFilter, postFilter: PostFilter): RefTable = {
+  private type RefFilter = Accumulator => DIKey => Boolean
 
+  private type PostFilter = ((DIKey, mutable.Set[DIKey])) => Boolean
+
+  private def computeTopology(plan: Iterable[ExecutableOp], refFilter: RefFilter, postFilter: PostFilter): PlanTopology = {
     val dependencies = plan.toList.foldLeft(new Accumulator) {
       case (acc, op: InstantiationOp) =>
         acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= requirements(op).filterNot(refFilter(acc))
@@ -82,12 +69,13 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
       .mapValues(_.toSet).toMap
 
     val dependants = reverseReftable(dependencies)
-    RefTable(dependencies, dependants)
+    PlanTopologyImmutable(dependants, dependencies)
   }
 
   private def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {
     val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[DIKey, DIKey]) {
       case (acc, (reference, referencee)) =>
+        acc.getOrElseUpdate(reference, mutable.Set.empty[DIKey])
         referencee.foreach(acc.addBinding(_, reference))
         acc
     }

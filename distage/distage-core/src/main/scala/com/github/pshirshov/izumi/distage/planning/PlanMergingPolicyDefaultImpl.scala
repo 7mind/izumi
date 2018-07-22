@@ -5,7 +5,6 @@ import com.github.pshirshov.izumi.distage.model.exceptions.{SanityCheckFailedExc
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.collections.Graphs
 
 import scala.collection.mutable
@@ -22,7 +21,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
           val old = currentPlan.operations.get(target)
           val merged = merge(old, op)
           currentPlan.operations.put(target, merged)
-          analyzer.topoExtend(currentPlan.topology, op)
+          currentPlan.topology.register(op.target, analyzer.requirements(op))
         } else {
           currentPlan.issues ++= issues
         }
@@ -70,26 +69,8 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     // TODO: here we may check the plan for conflicts
 
     // it's not neccessary to sort the plan at this stage, it's gonna happen after GC
-    val imports = findImports(completedPlan.topology.immutable, completedPlan.operations.toMap)
-    SemiPlan(completedPlan.definition, (imports.values ++ completedPlan.operations.values).toVector)
-  }
-
-  override def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
-    // TODO: further unification with PlanAnalyzer
-    val index = completedPlan.index
-    val topology = analyzer.topoBuild(completedPlan.steps)
-    val sortedKeys = Graphs.toposort.cycleBreaking(
-      topology.dependencies
-      , Seq.empty
-    )
-
-    val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
-    OrderedPlan(completedPlan.definition, sortedOps.toVector, topology)
-  }
-
-
-  private def findImports(topology: PlanTopology, index: Map[RuntimeDIUniverse.DIKey, InstantiationOp]) = {
-    val imports = topology
+    val index = completedPlan.operations.toMap
+    val imports = completedPlan.topology.immutable
       .dependees
       .filterKeys(k => !index.contains(k))
       .map {
@@ -97,7 +78,19 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
           missing -> ImportDependency(missing, refs.toSet, None)
       }
       .toMap
-    imports
+    SemiPlan(completedPlan.definition, (imports.values ++ completedPlan.operations.values).toVector)
+  }
+
+  override def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
+    val index = completedPlan.index
+    val topology = analyzer.topology(completedPlan.steps)
+    val sortedKeys = Graphs.toposort.cycleBreaking(
+      topology.dependencies
+      , Seq.empty
+    )
+
+    val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
+    OrderedPlan(completedPlan.definition, sortedOps.toVector, topology)
   }
 }
 

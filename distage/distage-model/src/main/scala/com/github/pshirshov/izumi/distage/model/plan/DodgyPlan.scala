@@ -9,7 +9,7 @@ import scala.collection.mutable
 
 
 final case class DodgyPlan(operations: OpMap
-                           , topology: XPlanTopology
+                           , topology: MutablePlanTopology
                            , issues: mutable.ArrayBuffer[PlanningFailure]
                            , definition: ModuleBase
                           )
@@ -20,7 +20,7 @@ object DodgyPlan {
 
   def empty(definition: ModuleBase): DodgyPlan = DodgyPlan(
     new OpMap
-    , PlanTopology.empty
+    , MutablePlanTopology.empty
     , mutable.ArrayBuffer.empty[PlanningFailure]
      , definition
   )

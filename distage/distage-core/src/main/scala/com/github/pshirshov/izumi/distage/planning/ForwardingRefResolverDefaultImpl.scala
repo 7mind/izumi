@@ -14,9 +14,7 @@ class ForwardingRefResolverDefaultImpl
   protected val planAnalyzer: PlanAnalyzer
 ) extends ForwardingRefResolver {
   override def resolve(plan: OrderedPlan): OrderedPlan = {
-    val reftable = planAnalyzer.computeFwdRefTable(plan.steps)
-
-    import reftable._
+    val reftable = planAnalyzer.topologyFwdRefs(plan.steps)
 
     val proxies = mutable.HashMap[RuntimeDIUniverse.DIKey, ProxyOp.MakeProxy]()
 
@@ -27,8 +25,8 @@ class ForwardingRefResolverDefaultImpl
         case i: InstantiationOp => i
       }
       .flatMap {
-        case step if dependenciesOf.contains(step.target) =>
-          val op = ProxyOp.MakeProxy(step, dependenciesOf(step.target), step.origin)
+        case step if reftable.dependencies.contains(step.target) =>
+          val op = ProxyOp.MakeProxy(step, reftable.dependencies(step.target), step.origin)
           proxies += (step.target -> op)
           Seq(op)
 

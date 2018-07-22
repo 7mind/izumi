@@ -38,18 +38,18 @@ class SanityCheckerDefaultImpl
   override def assertFinalPlanSane(plan: OrderedPlan): Unit = {
     assertNoDuplicateOps(plan.steps)
 
-    val reftable = planAnalyzer.computeFwdRefTable(plan.steps)
-    if (reftable.dependsOn.nonEmpty) {
-      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependsOn}!", reftable)
+    val reftable = planAnalyzer.topologyFwdRefs(plan.steps)
+    if (reftable.dependees.nonEmpty) {
+      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees}!", reftable)
     }
 
-    val fullRefTable = planAnalyzer.computeFullRefTable(plan.steps)
+    val fullRefTable = planAnalyzer.topology(plan.steps)
 
-    val allAvailableRefs = fullRefTable.dependenciesOf.keySet
-    val fullDependenciesSet = fullRefTable.dependenciesOf.flatMap(_._2).toSet
+    val allAvailableRefs = fullRefTable.dependencies.keySet
+    val fullDependenciesSet = fullRefTable.dependencies.flatMap(_._2).toSet
     val missingRefs = fullDependenciesSet -- allAvailableRefs
     if (missingRefs.nonEmpty) {
-      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependsOn}!", missingRefs, Some(fullRefTable))
+      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependencies}!", missingRefs, Some(fullRefTable))
     }
 
   }
