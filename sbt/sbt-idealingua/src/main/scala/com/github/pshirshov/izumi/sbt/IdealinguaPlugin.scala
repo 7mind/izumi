@@ -52,6 +52,9 @@ object IdealinguaPlugin extends AutoPlugin {
 
   override def requires = JvmPlugin
 
+  implicit class ArtifactExt(a: Artifact) {
+    def format: String = s"${a.name}${a.classifier.map(s => s"_$s").getOrElse("")}.${a.extension}"
+  }
 
   override lazy val projectSettings = Seq(
     idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions ++ Seq(
@@ -102,16 +105,16 @@ object IdealinguaPlugin extends AutoPlugin {
 
           result match {
             case Some(r) =>
-              logger.info(s"Have new compilation result, copying ${r.sources.toFile} info ${zipFile} for artifact $a")
+              logger.info(s"Have new compilation result for artifact ${a.format}, copying ${r.sources.toFile} into $zipFile")
               IO.copyDirectory(r.sources.toFile, zipFile)
               Seq(a -> zipFile)
 
             case None =>
               if (zipFile.exists()) {
-                logger.info(s"Compiler didn't return a result, target $zipFile exists, reusing...")
+                logger.info(s"Compiler didn't return a result for artifact ${a.format}, target $zipFile exists, reusing...")
                 Seq(a -> zipFile)
               } else {
-                logger.info(s"Compiler didn't return a result, target $zipFile does not exist. What the fuck? Okay, let's return nothing :/")
+                logger.info(s"Compiler didn't return a result for artifact ${a.format}, target $zipFile does not exist. What the fuck? Okay, let's return nothing :/")
                 Seq.empty
               }
           }
@@ -124,7 +127,7 @@ object IdealinguaPlugin extends AutoPlugin {
     , sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath
       val srcManaged = (sourceManaged in Compile).value.toPath
-      val resManaged = (resourceManaged in Compile).value.toPath
+      //val resManaged = (resourceManaged in Compile).value.toPath
 
       val izumiSrcDir = src.resolve("main/izumi")
 
