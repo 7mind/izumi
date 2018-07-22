@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.logstage.api.Log.LogArg
 
+import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 
 
@@ -64,6 +65,7 @@ object ArgumentNameExtractionMacro {
         extract(arg, Seq.empty)
       }
 
+      @tailrec
       private def extract(arg: c.universe.Tree, acc: Seq[String]): Option[Seq[String]] = {
         arg match {
           case c.universe.Select(e, TermName(s)) => // ${x.value}
@@ -75,7 +77,7 @@ object ArgumentNameExtractionMacro {
           case c.universe.Ident(TermName(s)) =>
             Some(s +: acc)
 
-          case x =>
+          case _ =>
             None
         }
       }

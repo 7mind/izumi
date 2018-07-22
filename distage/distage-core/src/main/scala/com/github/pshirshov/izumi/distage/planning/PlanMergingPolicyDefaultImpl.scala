@@ -68,8 +68,11 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
       throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy):\n${completedPlan.issues.mkString("\n")}", completedPlan.issues)
     }
 
-    // TODO: it may be not neccessary to sort at this stage
-    sortPlan(completedPlan.topology, completedPlan.definition, completedPlan.operations.toMap)
+    // TODO: here we may check the plan for conflicts
+
+    // it's not neccessary to sort the plan at this stage, it's gonna happen after GC
+    val imports = findImports(completedPlan.topology, completedPlan.operations.toMap)
+    FinalPlan(completedPlan.definition, imports.values.toList ++ completedPlan.operations.values.toList)
   }
 
   override def reorderOperations(completedPlan: FinalPlan): FinalPlan = {
@@ -81,14 +84,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
   }
 
   def sortPlan(topology: PlanTopology, definition: ModuleBase, index: Map[RuntimeDIUniverse.DIKey, InstantiationOp]): FinalPlan = {
-    val imports = topology
-      .dependees
-      .filterKeys(k => !index.contains(k))
-      .map {
-        case (missing, refs) =>
-          missing -> ImportDependency(missing, refs.toSet, None)
-      }
-      .toMap
+    val imports = findImports(topology, index)
 
     val sortedKeys = Graphs.toposort.cycleBreaking(
       topology.depMap ++ imports.mapValues(v => Set.empty[DIKey]).toMap // 2.13 compat
@@ -97,6 +93,18 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
     FinalPlan(definition, imports.values.toVector ++ sortedOps)
+  }
+
+  private def findImports(topology: PlanTopology, index: Map[RuntimeDIUniverse.DIKey, InstantiationOp]) = {
+    val imports = topology
+      .dependees
+      .filterKeys(k => !index.contains(k))
+      .map {
+        case (missing, refs) =>
+          missing -> ImportDependency(missing, refs.toSet, None)
+      }
+      .toMap
+    imports
   }
 }
 
