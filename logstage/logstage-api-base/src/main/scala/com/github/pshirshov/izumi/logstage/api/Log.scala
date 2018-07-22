@@ -38,10 +38,8 @@ object Log {
 
   }
 
-  case class LogArg(name: String, value: Any, hidden: Boolean)
-
-  object LogArg {
-    def apply(name: String, value: Any): LogArg = new LogArg(name, value, false)
+  case class LogArg(path: Seq[String], value: Any, hidden: Boolean) {
+    def name: String = path.last
   }
 
   type LogContext = Seq[LogArg]

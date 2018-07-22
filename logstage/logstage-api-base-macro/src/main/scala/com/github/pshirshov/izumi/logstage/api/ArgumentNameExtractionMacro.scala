@@ -23,14 +23,14 @@ object ArgumentNameExtractionMacro {
       def unapply(arg: c.universe.Tree): Option[(c.universe.Tree, c.universe.Tree)] = {
         arg match {
           case Apply(TypeApply(
-                Select(
-                  Apply(Arrow(_), leftExpr :: Nil),
-                  _ /*TermName("$minus$greater")*/
-                )
-                , List(TypeTree())
-              )
-              , List(rightExpr)
-              ) => Some((leftExpr, rightExpr))
+          Select(
+          Apply(Arrow(_), leftExpr :: Nil),
+          _ /*TermName("$minus$greater")*/
+          )
+          , List(TypeTree())
+          )
+          , List(rightExpr)
+          ) => Some((leftExpr, rightExpr))
           case _ => None
         }
       }
@@ -59,23 +59,39 @@ object ArgumentNameExtractionMacro {
       }
     }
 
+    object NameSeq {
+      def unapply(arg: c.universe.Tree): Option[Seq[String]] = {
+        extract(arg, Seq.empty)
+      }
+
+      private def extract(arg: c.universe.Tree, acc: Seq[String]): Option[Seq[String]] = {
+        arg match {
+          case c.universe.Select(e, TermName(s)) => // ${x.value}
+            extract(e, s +: acc)
+
+          case Apply(c.universe.Select(e, TermName(s)), List()) => // ${x.getSomething}
+            extract(e, s +: acc)
+
+          case c.universe.Ident(TermName(s)) =>
+            Some(s +: acc)
+
+          case x =>
+            None
+        }
+      }
+    }
+
     val expressions = args.map {
       param =>
         param.tree match {
-          case c.universe.Ident(TermName(s)) => // ${x}
-            reifiedExtracted(c)(param, s)
+          case NameSeq(seq) =>
+            reifiedExtracted(c)(param, seq)
 
           case ArrowArg(expr, name) => // ${x -> "name"}
-            reifiedExtracted(c)(expr, name)
+            reifiedExtracted(c)(expr, Seq(name))
 
           case HiddenArrowArg(expr, name) => // ${x -> "name" -> null }
             reifiedExtractedHidden(c)(expr, name)
-
-          case c.universe.Select(_, TermName(s)) => // ${x.value}
-            reifiedExtracted(c)(param, s)
-
-          case Apply(c.universe.Select(_, TermName(s)), List()) => // ${x.getSomething}
-            reifiedExtracted(c)(param, s)
 
           case c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
             c.warning(c.enclosingPosition,
@@ -110,7 +126,7 @@ object ArgumentNameExtractionMacro {
     import c.universe._
     val prefixRepr = c.Expr[String](Literal(Constant(prefix)))
     reify {
-      LogArg(s"${prefixRepr.splice}:${param.splice}", value.splice)
+      LogArg(Seq(s"${prefixRepr.splice}:${param.splice}"), value.splice, hidden = false)
     }
   }
 
@@ -119,15 +135,15 @@ object ArgumentNameExtractionMacro {
     import c.universe._
     val paramRepTree = c.Expr[String](Literal(Constant(s)))
     reify {
-      LogArg(paramRepTree.splice, param.splice, hidden = true)
+      LogArg(Seq(paramRepTree.splice), param.splice, hidden = true)
     }
   }
 
-  private def reifiedExtracted(c: blackbox.Context)(param: c.Expr[Any], s: String): c.universe.Expr[LogArg] = {
+  private def reifiedExtracted(c: blackbox.Context)(param: c.Expr[Any], s: Seq[String]): c.universe.Expr[LogArg] = {
     import c.universe._
-    val paramRepTree = c.Expr[String](Literal(Constant(s)))
+    val list = c.Expr[Seq[String]](q"List(..$s)")
     reify {
-      LogArg(paramRepTree.splice, param.splice)
+      LogArg(list.splice, param.splice, hidden = false)
     }
   }
 

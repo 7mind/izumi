@@ -43,9 +43,8 @@ class LoggingConsoleSinkTest extends WordSpec {
         new ExampleService(setupConsoleLogger(coloringPolicy(Some(policy)))).start()
       } match {
         case Success(_) =>
-          fail("Logger must be unavailable when duplicates are")
+          fail("Logging must fail on improperly formatted message template")
         case Failure(_) =>
-          assert(true)
       }
     }
   }
