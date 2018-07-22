@@ -30,13 +30,13 @@ object IdealinguaPlugin extends AutoPlugin {
 
   object Mode {
 
-    case object Sources extends Mode
+    case object CompiledArtifact extends Mode
 
-    case object Artifact extends Mode
+    case object SourceArtifact extends Mode
 
   }
 
-  final case class Invokation(options: UntypedCompilerOptions, mode: Mode)
+  final case class Invokation(options: UntypedCompilerOptions, mode: Mode, subclassifier: Option[String] = None)
 
   object Keys {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
@@ -63,14 +63,63 @@ object IdealinguaPlugin extends AutoPlugin {
     , idlDefaultExtensionsCSharp := CSharpTranslator.defaultExtensions
 
     , compilationTargets := Seq(
-      Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Sources)
-      , Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Artifact)
-      , Invokation(UntypedCompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.Artifact)
-      , Invokation(UntypedCompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.Artifact)
-      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, idlDefaultExtensionsCSharp.value), Mode.Artifact)
+      Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.CompiledArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.SourceArtifact)
+
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.SourceArtifact)
+
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.SourceArtifact)
+
+      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, idlDefaultExtensionsCSharp.value), Mode.SourceArtifact)
     )
 
     , watchSources += Watched.WatchSource(baseDirectory.value / "src/main/izumi")
+
+    , artifacts ++= {
+      val ctargets = compilationTargets.value
+      val pname = name.value
+      artifactTargets(ctargets, pname).map(_._1)
+    }
+
+    , packagedArtifacts := {
+      val ctargets = compilationTargets.value
+      val pname = name.value
+      val src = sourceDirectory.value.toPath
+      val versionValue = version.value
+      val scalaVersionValue = scalaVersion.value
+
+      val artifacts = artifactTargets(ctargets, pname)
+
+      val artifactFiles = artifacts.flatMap {
+        case (a, t) =>
+          val targetDir = target.value / "idealingua" / s"${a.name}-${a.classifier.get}-$versionValue-$scalaVersionValue"
+
+          val scope = Scope(src.resolve("main/izumi"), target.value.toPath, targetDir.toPath)
+
+          val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip.source"
+
+          val result = generateCode(scope, t, (dependencyClasspath in Compile).value)
+
+          result match {
+            case Some(r) =>
+              logger.info(s"Have new compilation result, copying ${r.sources.toFile} info ${zipFile} for artifact $a")
+              IO.copyDirectory(r.sources.toFile, zipFile)
+              Seq(a -> zipFile)
+
+            case None =>
+              if (zipFile.exists()) {
+                logger.info(s"Compiler didn't return a result, target $zipFile exists, reusing...")
+                Seq(a -> zipFile)
+              } else {
+                logger.info(s"Compiler didn't return a result, target $zipFile does not exist. What the fuck? Okay, let's return nothing :/")
+                Seq.empty
+              }
+          }
+
+      }.toMap
+
+      packagedArtifacts.value ++ artifactFiles
+    }
 
     , sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath
@@ -82,16 +131,22 @@ object IdealinguaPlugin extends AutoPlugin {
 
       val scope = Scope(izumiSrcDir, target.value.toPath, srcManaged)
 
-      val (scalaTargets, nonScalaTargets) = compilationTargets.value.partition(i => i.options.language == IDLLanguage.Scala)
+      val (scalacInputTargets, nonScalacInputTargets) = compilationTargets
+        .value
+        .filter(_.mode == Mode.CompiledArtifact)
+        .partition(i => i.options.language == IDLLanguage.Scala)
+
+      if (nonScalacInputTargets.nonEmpty) {
+        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        logger.warn(s"We don't know how to compile native artifacts for ${nonScalacInputTargets.niceList()}")
+      }
 
       val depClasspath = (dependencyClasspath in Compile).value
-      val scala_result = compileSources(scope, scalaTargets, depClasspath)
-
-      nonScalaTargets.foreach {
-        t =>
-          val nonScalaScope = Scope(izumiSrcDir, target.value.toPath, (resManaged.toFile / s"${t.options.language}").toPath)
-          compileSources(nonScalaScope, Seq(t), depClasspath)
-      }
+      val scala_result = scalacInputTargets
+        .map {
+          invokation =>
+            (invokation, scope) -> generateCode(scope, invokation, depClasspath)
+        }
 
       val files = scala_result.flatMap {
         case (_, Some(result)) =>
@@ -121,70 +176,25 @@ object IdealinguaPlugin extends AutoPlugin {
       IO.copy(mapped, CopyOptions().withOverwrite(true))
       mapped.map(_._2)
     }.taskValue
-
-    , artifacts ++= {
-      val ctargets = compilationTargets.value
-      val pname = name.value
-      artifactTargets(ctargets, pname).map(_._1)
-    }
-
-    , packagedArtifacts := {
-      val ctargets = compilationTargets.value
-      val pname = name.value
-      val src = sourceDirectory.value.toPath
-      val versionValue = version.value
-      val scalaVersionValue = scalaVersion.value
-
-      val artifacts = artifactTargets(ctargets, pname)
-
-      val artifactFiles = artifacts.flatMap {
-        case (a, t) =>
-          val targetDir = target.value / "idealingua" / s"${a.name}-${a.classifier.get}-$versionValue-$scalaVersionValue"
-
-          val scope = Scope(src.resolve("main/izumi"), target.value.toPath, targetDir.toPath)
-
-          val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip.source"
-
-          val result = doCompile(scope, t, (dependencyClasspath in Compile).value)
-
-          result match {
-            case Some(r) =>
-              logger.info(s"Have new compilation result, copying ${r.sources.toFile} info ${zipFile} for artifact $a")
-              IO.copyDirectory(r.sources.toFile, zipFile)
-              Seq(a -> zipFile)
-
-            case None =>
-              if (zipFile.exists()) {
-                logger.info(s"Compiler didn't return a result, target $zipFile exists, reusing...")
-                Seq(a -> zipFile)
-              } else {
-                logger.info(s"Compiler didn't return a result, target $zipFile does not exist. What the fuck? Okay, let's return nothing :/")
-                Seq.empty
-              }
-          }
-
-      }.toMap
-
-      packagedArtifacts.value ++ artifactFiles
-    }
   )
 
-
   private def artifactTargets(ctargets: Seq[Invokation], pname: String): Seq[(Artifact, Invokation)] = {
-    ctargets.filter(i => i.mode == Mode.Artifact).map {
-      target =>
-        Artifact(pname, "src", "zip", target.options.language.toString) -> target
-    }
+    ctargets
+      .filter(i => i.mode == Mode.SourceArtifact)
+      .map {
+        target =>
+          val classifier = target.subclassifier match {
+            case Some(sc) =>
+              s"${target.options.language.toString}_$sc"
+            case None =>
+              target.options.language.toString
+          }
+
+          Artifact(pname, "src", "zip", classifier) -> target
+      }
   }
 
-  private def compileSources(scope: Scope, ctargets: Seq[Invokation], classpath: Classpath) = {
-    ctargets.filter(i => i.mode == Mode.Sources).map {
-      invokation =>
-        (invokation, scope) -> doCompile(scope, invokation, classpath)
-    }
-  }
-
-  private def doCompile(scope: Scope, invokation: Invokation, classpath: Classpath): Option[IDLCompiler.Result] = {
+  private def generateCode(scope: Scope, invokation: Invokation, classpath: Classpath): Option[IDLCompiler.Result] = {
     val cp = classpath.map(_.data)
     val target = scope.target
     logger.debug(s"""Loading models from $scope...""")
