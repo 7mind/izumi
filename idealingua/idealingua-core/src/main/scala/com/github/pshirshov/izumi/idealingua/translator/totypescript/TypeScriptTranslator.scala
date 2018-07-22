@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.publishing.ManifestDependency
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.AbstractCompilerOptions
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{AbstractCompilerOptions, TypescriptTranslatorOptions}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension, TypeScriptTranslatorExtension}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
@@ -23,7 +23,7 @@ object TypeScriptTranslator {
   )
 }
 
-class TypeScriptTranslator(ts: Typespace, options: AbstractCompilerOptions[TypeScriptTranslatorExtension, TypeScriptBuildManifest]) {
+class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) {
   protected val ctx: TSTContext = new TSTContext(ts, options.extensions)
 
   import ctx._

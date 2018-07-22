@@ -5,12 +5,17 @@ import java.nio.file.{Files, Path}
 
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, GoLangBuildManifest, ScalaBuildManifest, TypeScriptBuildManifest}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{AbstractCompilerOptions, CompilerOptions, UntypedCompilerOptions, IDLResult}
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, IDLResult, UntypedCompilerOptions}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
+import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 
 import scala.reflect._
 
@@ -29,7 +34,7 @@ class TypespaceCompiler(typespace: Typespace) {
     TypespaceCompiler.IDLSuccess(target, files)
   }
 
-  protected def convert[E <: TranslatorExtension : ClassTag, M <: BuildManifest : ClassTag](options: UntypedCompilerOptions): AbstractCompilerOptions[E, M] = {
+  protected def convert[E <: TranslatorExtension : ClassTag, M <: BuildManifest : ClassTag](options: UntypedCompilerOptions): CompilerOptions[E, M] = {
     val extensions = options.extensions.collect {
       case e: E => e
     }
@@ -80,6 +85,11 @@ object TypespaceCompiler {
                                     , manifest: Option[BuildManifest] = None
                                   ) extends AbstractCompilerOptions[TranslatorExtension, BuildManifest]
 
+
+  type TypescriptTranslatorOptions = CompilerOptions[TypeScriptTranslatorExtension, TypeScriptBuildManifest]
+  type GoTranslatorOptions = CompilerOptions[GoLangTranslatorExtension, GoLangBuildManifest]
+  type CSharpTranslatorOptions = CompilerOptions[CSharpTranslatorExtension, CSharpBuildManifest]
+  type ScalaTranslatorOptions = CompilerOptions[ScalaTranslatorExtension, ScalaBuildManifest]
 
   trait IDLResult
 

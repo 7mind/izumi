@@ -10,8 +10,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.CSharpBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.AbstractCompilerOptions
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, JsonNetExtension, NUnitExtension}
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.CSharpTranslatorOptions
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{JsonNetExtension, NUnitExtension}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpField, CSharpType}
@@ -23,7 +23,7 @@ object CSharpTranslator {
   )
 }
 
-class CSharpTranslator(ts: Typespace, options: AbstractCompilerOptions[CSharpTranslatorExtension, CSharpBuildManifest]) {
+class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) {
   protected val ctx: CSTContext = new CSTContext(ts, options.extensions)
 
   import ctx._
