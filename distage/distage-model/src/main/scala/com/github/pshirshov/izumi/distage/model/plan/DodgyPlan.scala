@@ -17,7 +17,7 @@ object DodgyPlan {
   type OpMap = mutable.HashMap[DIKey, mutable.Set[InstantiationOp]] with mutable.MultiMap[DIKey, InstantiationOp]
 
   def empty(definition: ModuleBase): DodgyPlan = DodgyPlan(
-    new mutable.HashMap[DIKey, mutable.Set[InstantiationOp]] with mutable.MultiMap[DIKey, InstantiationOp]()
+    new mutable.HashMap[DIKey, mutable.Set[InstantiationOp]] with mutable.MultiMap[DIKey, InstantiationOp]
     , definition
   )
 }
