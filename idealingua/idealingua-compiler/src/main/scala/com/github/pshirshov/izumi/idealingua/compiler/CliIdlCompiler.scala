@@ -3,16 +3,19 @@ package com.github.pshirshov.izumi.idealingua.compiler
 import java.io.File
 import java.nio.file._
 
+import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, GoLangBuildManifest, ScalaBuildManifest, TypeScriptBuildManifest}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
+import com.github.pshirshov.izumi.idealingua.model.publishing.{ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler._
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
+import io.circe.Decoder
 import scopt.OptionParser
 
 case class LanguageOpts(id: String, withRuntime: Boolean, manifest: Option[File], extensions: List[String])
@@ -76,7 +79,6 @@ object CliIdlCompiler {
   )
 
 
-
   def main(args: Array[String]): Unit = {
     val default = IDLCArgs(
       Paths.get("source")
@@ -95,6 +97,7 @@ object CliIdlCompiler {
       lopt =>
         val lang = IDLLanguage.parse(lopt.id)
         val exts = getExt(lang, lopt.extensions)
+        import Decoders._
         val manifest = lang match {
           case IDLLanguage.Scala =>
             lopt.manifest.map(readManifest[ScalaBuildManifest])
@@ -145,8 +148,14 @@ object CliIdlCompiler {
     }
   }
 
-  def readManifest[T](path: File): T = {
-    ???
+  def readManifest[T](path: File)(implicit dec: Decoder[T]): T = {
+    import io.circe.parser._
+    parse(IzFiles.readString(path)).flatMap(_.as[T]) match {
+      case Right(r) =>
+        r
+      case Left(f) =>
+        throw new IllegalArgumentException(s"Failed to load manifest from $path: $f")
+    }
   }
 
   private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {
@@ -154,4 +163,24 @@ object CliIdlCompiler {
     val negative = filter.filter(_.startsWith("-")).map(_.substring(1)).map(ExtensionId).toSet
     all.filterNot(e => negative.contains(e.id))
   }
+}
+
+object Decoders {
+
+  import io.circe._
+  import io.circe.generic.semiauto._
+
+  implicit def decMdep: Decoder[ManifestDependency] = deriveDecoder
+
+  implicit def decPublisher: Decoder[Publisher] = deriveDecoder
+
+  implicit def dsTsModuleSchema: Decoder[TypeScriptModuleSchema] = deriveDecoder
+
+  implicit def decScala: Decoder[ScalaBuildManifest] = deriveDecoder
+
+  implicit def decTs: Decoder[TypeScriptBuildManifest] = deriveDecoder
+
+  implicit def decGo: Decoder[GoLangBuildManifest] = deriveDecoder
+
+  implicit def decCs: Decoder[CSharpBuildManifest] = deriveDecoder
 }
