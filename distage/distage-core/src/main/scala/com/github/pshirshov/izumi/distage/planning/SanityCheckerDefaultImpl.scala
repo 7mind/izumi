@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -15,27 +15,27 @@ class SanityCheckerDefaultImpl
   extends SanityChecker {
 
   override def assertStepSane(plan: DodgyPlan): Unit = {
-    plan.topology.dependencies.foreach {
-      kv =>
-        kv._2.foreach {
-          dep =>
-            if (!plan.topology.dependees(dep).contains(kv._1)) {
-              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
-            }
-        }
-    }
-    plan.topology.dependees.foreach {
-      kv =>
-        kv._2.foreach {
-          dep =>
-            if (!plan.topology.dependencies(dep).contains(kv._1)) {
-              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
-            }
-        }
-    }
+//    plan.topology.dependencies.foreach {
+//      kv =>
+//        kv._2.foreach {
+//          dep =>
+//            if (!plan.topology.dependees(dep).contains(kv._1)) {
+//              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
+//            }
+//        }
+//    }
+//    plan.topology.dependees.foreach {
+//      kv =>
+//        kv._2.foreach {
+//          dep =>
+//            if (!plan.topology.dependencies(dep).contains(kv._1)) {
+//              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
+//            }
+//        }
+//    }
   }
 
-  override def assertFinalPlanSane(plan: FinalPlan): Unit = {
+  override def assertFinalPlanSane(plan: OrderedPlan): Unit = {
     assertNoDuplicateOps(plan.steps)
 
     val reftable = planAnalyzer.computeFwdRefTable(plan.steps)

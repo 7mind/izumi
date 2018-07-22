@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.distage.model.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, FinalPlan, NextOps}
+import com.github.pshirshov.izumi.distage.model.plan._
 
 trait SanityChecker {
 
-  def assertFinalPlanSane(plan: FinalPlan): Unit
+  def assertFinalPlanSane(plan: OrderedPlan): Unit
 
   def assertStepSane(plan: DodgyPlan): Unit
 

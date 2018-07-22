@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.bootstrap
 
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
@@ -14,23 +14,23 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
 
   }
 
-  override def onPhase10PostFinalization(plan: FinalPlan): Unit = {
+  override def onPhase10PostFinalization(plan: SemiPlan): Unit = {
 
   }
 
-  override def onPhase20Customization(plan: FinalPlan): Unit = {
+  override def onPhase20Customization(plan: SemiPlan): Unit = {
 
   }
 
-  override def onPhase50PreForwarding(finalPlan: FinalPlan): Unit = {
+  override def onPhase50PreForwarding(finalPlan: SemiPlan): Unit = {
     logPlan(finalPlan, "Resolved Plan")
   }
 
-  override def onPhase90AfterForwarding(finalPlan: FinalPlan): Unit = {
-    logPlan(finalPlan, "Final Plan")
+  override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = {
+    doLog("Final Plan", finalPlan.toString)
   }
 
-  private def logPlan(finalPlan: FinalPlan, title: String): Unit = {
+  private def logPlan(finalPlan: SemiPlan, title: String): Unit = {
     doLog(title, finalPlan.toString)
   }
 

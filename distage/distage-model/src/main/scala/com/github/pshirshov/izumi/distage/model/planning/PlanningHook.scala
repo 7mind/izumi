@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
@@ -20,12 +20,12 @@ trait PlanningHook {
 
   def phase00PostCompletion(plan: DodgyPlan): DodgyPlan = plan
 
-  def phase10PostFinalization(plan: FinalPlan): FinalPlan = plan
+  def phase10PostFinalization(plan: SemiPlan): SemiPlan = plan
 
-  def phase20Customization(plan: FinalPlan): FinalPlan = plan
+  def phase20Customization(plan: SemiPlan): SemiPlan = plan
 
-  def phase50PreForwarding(plan: FinalPlan): FinalPlan = plan
+  def phase50PreForwarding(plan: SemiPlan): SemiPlan = plan
 
-  def phase90AfterForwarding(plan: FinalPlan): FinalPlan = plan
+  def phase90AfterForwarding(plan: OrderedPlan): OrderedPlan = plan
 
 }

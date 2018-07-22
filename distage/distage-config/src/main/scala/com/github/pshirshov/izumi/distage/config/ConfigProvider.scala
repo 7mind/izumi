@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReader
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
@@ -17,7 +17,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
   import ConfigProvider._
 
-  override def phase20Customization(plan: FinalPlan): FinalPlan = {
+  override def phase20Customization(plan: SemiPlan): SemiPlan = {
     val updatedSteps = plan.steps
       .map {
         case ConfigImport(ci) =>
@@ -41,7 +41,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
     }
 
     val ops = updatedSteps.collect({ case TranslationResult.Success(op) => op })
-    val newPlan = FinalPlan(plan.definition, ops)
+    val newPlan = SemiPlan(plan.definition, ops)
     newPlan
   }
 

@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, PlanTopology}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.PlanTopology.empty
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, PlanTopology, XPlanTopology}
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
 import com.github.pshirshov.izumi.distage.model.references.RefTable
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -14,15 +15,12 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   def topoBuild(ops: Seq[ExecutableOp]): PlanTopology = {
     val out = empty
     ops
-      .collect({ case i: InstantiationOp => i })
       .foreach(topoExtend(out, _))
-    out
+    out.immutable
   }
 
-  def topoExtend(topology: PlanTopology, op: InstantiationOp): Unit = {
-    val req = requirements(op)
-    val transitiveReq = topology.dependencies.getOrElse(op.target, mutable.Set.empty[DIKey]) ++ req
-    topology.register(op.target, transitiveReq.toSet)
+  def topoExtend(topology: XPlanTopology, op: ExecutableOp): Unit = {
+    topology.register(op.target, requirements(op))
   }
 
   def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable = {
@@ -44,7 +42,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   type RefFilter = Accumulator => DIKey => Boolean
   type PostFilter = ((DIKey, mutable.Set[DIKey])) => Boolean
 
-  def requirements(op: InstantiationOp): Set[DIKey] = {
+  def requirements(op: ExecutableOp): Set[DIKey] = {
     op match {
       case w: WiringOp =>
         w.wiring match {
@@ -58,8 +56,14 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
       case c: CreateSet =>
         c.members
 
-      case _ =>
+      case _: MakeProxy =>
         Set.empty
+
+      case _: ImportDependency =>
+        Set.empty
+
+      case i: InitProxy =>
+        Set(i.proxy.target) ++ requirements(i.proxy.op)
     }
   }
 

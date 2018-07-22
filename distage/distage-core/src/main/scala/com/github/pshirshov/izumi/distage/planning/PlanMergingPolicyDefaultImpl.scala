@@ -1,12 +1,11 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
+import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.exceptions.{SanityCheckFailedException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.collections.Graphs
 
 import scala.collection.mutable
@@ -63,7 +62,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
   }
 
 
-  override def finalizePlan(completedPlan: DodgyPlan): FinalPlan = {
+  override def finalizePlan(completedPlan: DodgyPlan): SemiPlan = {
     if (completedPlan.issues.nonEmpty) {
       throw new UntranslatablePlanException(s"Cannot translate untranslatable (with default policy):\n${completedPlan.issues.mkString("\n")}", completedPlan.issues)
     }
@@ -71,29 +70,23 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     // TODO: here we may check the plan for conflicts
 
     // it's not neccessary to sort the plan at this stage, it's gonna happen after GC
-    val imports = findImports(completedPlan.topology, completedPlan.operations.toMap)
-    FinalPlan(completedPlan.definition, imports.values.toList ++ completedPlan.operations.values.toList)
+    val imports = findImports(completedPlan.topology.immutable, completedPlan.operations.toMap)
+    SemiPlan(completedPlan.definition, (imports.values ++ completedPlan.operations.values).toVector)
   }
 
-  override def reorderOperations(completedPlan: FinalPlan): FinalPlan = {
-    val index = completedPlan.steps.collect({case op: InstantiationOp => op.target -> op}).toMap
-
-    val topology = analyzer.topoBuild(completedPlan.steps)
+  override def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
     // TODO: further unification with PlanAnalyzer
-    sortPlan(topology, completedPlan.definition, index)
-  }
-
-  def sortPlan(topology: PlanTopology, definition: ModuleBase, index: Map[RuntimeDIUniverse.DIKey, InstantiationOp]): FinalPlan = {
-    val imports = findImports(topology, index)
-
+    val index = completedPlan.index
+    val topology = analyzer.topoBuild(completedPlan.steps)
     val sortedKeys = Graphs.toposort.cycleBreaking(
-      topology.depMap ++ imports.mapValues(v => Set.empty[DIKey]).toMap // 2.13 compat
+      topology.dependencies
       , Seq.empty
     )
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
-    FinalPlan(definition, imports.values.toVector ++ sortedOps)
+    OrderedPlan(completedPlan.definition, sortedOps.toVector, topology)
   }
+
 
   private def findImports(topology: PlanTopology, index: Map[RuntimeDIUniverse.DIKey, InstantiationOp]) = {
     val imports = topology

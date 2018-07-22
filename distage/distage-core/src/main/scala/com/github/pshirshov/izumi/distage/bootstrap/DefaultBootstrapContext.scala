@@ -23,7 +23,7 @@ class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLoc
 
   val parent: Option[AbstractLocator] = None
 
-  val plan: FinalPlan = bootstrapPlanner.plan(contextDefinition)
+  val plan: OrderedPlan = bootstrapPlanner.plan(contextDefinition)
 
   protected val bootstrappedContext: ProvisionImmutable = {
     bootstrapProducer.provision(plan, this)

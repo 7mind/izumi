@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
+import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -13,7 +13,7 @@ class ForwardingRefResolverDefaultImpl
 (
   protected val planAnalyzer: PlanAnalyzer
 ) extends ForwardingRefResolver {
-  override def resolve(plan: FinalPlan): FinalPlan = {
+  override def resolve(plan: OrderedPlan): OrderedPlan = {
     val reftable = planAnalyzer.computeFwdRefTable(plan.steps)
 
     import reftable._
@@ -43,6 +43,6 @@ class ForwardingRefResolverDefaultImpl
 
 
     val imports = plan.steps.collect({ case i: ImportDependency => i })
-    FinalPlan(plan.definition, imports ++ resolvedSteps ++ proxyOps)
+    OrderedPlan(plan.definition, imports ++ resolvedSteps ++ proxyOps, plan.topology)
   }
 }

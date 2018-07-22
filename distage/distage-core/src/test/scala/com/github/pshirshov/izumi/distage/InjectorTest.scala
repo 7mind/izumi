@@ -38,9 +38,11 @@ class InjectorTest extends WordSpec {
       val plan = injector.plan(definition)
       assert(plan.steps.exists(_.isInstanceOf[ImportDependency]))
 
-      intercept[ProvisioningException] {
+      val exc = intercept[ProvisioningException] {
         injector.produce(plan)
       }
+
+      assert(exc.getMessage.startsWith("Operations failed (1)"))
 
       val fixedPlan = plan.flatMap {
         case ImportDependency(key, _, origin) if key == RuntimeDIUniverse.DIKey.get[NotInContext] =>

@@ -9,7 +9,7 @@ import scala.collection.mutable
 
 
 final case class DodgyPlan(operations: OpMap
-                           , topology: PlanTopology
+                           , topology: XPlanTopology
                            , issues: mutable.ArrayBuffer[PlanningFailure]
                            , definition: ModuleBase
                           )

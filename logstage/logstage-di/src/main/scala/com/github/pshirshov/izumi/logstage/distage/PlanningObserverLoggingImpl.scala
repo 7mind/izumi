@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.distage
 
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
@@ -13,19 +13,19 @@ class PlanningObserverLoggingImpl(log: IzLogger) extends PlanningObserver {
     log.debug(s"[onPhase00PlanCompleted]:\n$plan")
   }
 
-  override def onPhase10PostFinalization(plan: FinalPlan): Unit = {
+  override def onPhase10PostFinalization(plan: SemiPlan): Unit = {
     log.debug(s"[onPhase10PostOrdering]:\n$plan")
   }
 
-  override def onPhase20Customization(plan: FinalPlan): Unit = {
+  override def onPhase20Customization(plan: SemiPlan): Unit = {
     log.debug(s"[onPhase15PostOrdering]:\n$plan")
   }
 
-  override def onPhase50PreForwarding(plan: FinalPlan): Unit = {
+  override def onPhase50PreForwarding(plan: SemiPlan): Unit = {
     log.debug(s"[onPhase20PreForwarding]:\n$plan")
   }
 
-  override def onPhase90AfterForwarding(plan: FinalPlan): Unit = {
+  override def onPhase90AfterForwarding(plan: OrderedPlan): Unit = {
     log.debug(s"[onPhase30AfterForwarding]:\n$plan")
   }
 
