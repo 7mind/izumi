@@ -60,7 +60,7 @@ class ProvisionerDefaultImpl
           op -> r.map { result => Try(interpretResult(provisioingContext, result)) }
       }
 
-    val (_, badImportResults) = importResults.partition(_._2.exists(_.isFailure))
+    val (badImportResults, _) = importResults.partition(_._2.exists(_.isFailure))
 
 
     if (bad.nonEmpty || badImportResults.nonEmpty) {
@@ -68,7 +68,7 @@ class ProvisionerDefaultImpl
         case OperationWithResult(op, f@Failure(_)) =>
           OperationWithResult(op, f)
       }
-      val exceptions = badImportResults.collect {
+      val exceptions = badImportResults.map {
         case (op, f) =>
           f.collect {
             case Failure(e) =>
@@ -76,6 +76,7 @@ class ProvisionerDefaultImpl
 
           }
       }
+
       failureHandler.onImportsFailed(ProvisioningMassFailureContext(parentContext, provisioingContext), failures, exceptions.flatten)
     }
   }
