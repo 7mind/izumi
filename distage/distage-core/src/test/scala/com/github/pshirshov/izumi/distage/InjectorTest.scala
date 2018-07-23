@@ -123,7 +123,10 @@ class InjectorTest extends WordSpec {
 
       val definition: ModuleBase = new ModuleDef {
         make[Circular2].from { c: Circular1 => new Circular2(c) }
-        make[Circular1].from { c: Circular2 => new Circular1 { override val arg: Circular2 = c } }
+        make[Circular1].from { c: Circular2 => new Circular1 {
+          override val arg: Circular2 = c
+        }
+        }
       }
 
       val injector = mkInjector()
@@ -162,24 +165,20 @@ class InjectorTest extends WordSpec {
       assert(context.get[Circular4].factoryFun(context.get[Circular4], context.get[Circular5]) != null)
     }
 
-    "Progression test: Does not yet support self-referencing circulars" in {
-      val fail = Try {
-        import Case22._
+    "Supports self-referencing circulars" in {
+      import Case22._
 
-        val definition = new ModuleDef {
-          make[SelfReference]
-        }
-
-        val injector = mkInjector()
-        val plan = injector.plan(definition)
-        val context = injector.produce(plan)
-
-        val instance = context.get[SelfReference]
-
-        assert(instance eq instance.self)
+      val definition = new ModuleDef {
+        make[SelfReference]
       }
 
-      assert(fail.isFailure)
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instance = context.get[SelfReference]
+
+      assert(instance eq instance.self)
     }
 
     "Progression test: Does not yet support by-name self-referencing circulars" in {
@@ -518,7 +517,7 @@ class InjectorTest extends WordSpec {
       import Case8._
 
       val definition = new ModuleDef {
-        make[Dependency1 @Id("special")]
+        make[Dependency1@Id("special")]
         make[Trait1]
       }
 
@@ -527,7 +526,7 @@ class InjectorTest extends WordSpec {
       val context = injector.produce(plan)
 
       val instantiated = context.get[Dependency1]
-      val instantiated1 = context.get[Dependency1 @Id("special")]
+      val instantiated1 = context.get[Dependency1@Id("special")]
 
       assert(instantiated eq instantiated1)
     }
@@ -555,7 +554,7 @@ class InjectorTest extends WordSpec {
 
       val definition = new ModuleDef {
         make[TestDependency].named("classdeftypeann1")
-        make[TestClass].from { t: TestDependency @Id("classdeftypeann1") => new TestClass(t) }
+        make[TestClass].from { t: TestDependency@Id("classdeftypeann1") => new TestClass(t) }
       }
 
       val injector = mkInjector()
@@ -674,13 +673,13 @@ class InjectorTest extends WordSpec {
       val definition = new ModuleDef {
         many[SetTrait].named("n1").tagged("A", "B")
           .add[SetImpl1].tagged("A")
-//          .add[SetImpl1].tagged("B") // illegal now - considered same bindings
+          //          .add[SetImpl1].tagged("B") // illegal now - considered same bindings
           .add[SetImpl2].tagged("B")
           .add[SetImpl3].tagged("A").tagged("B")
 
         make[Service1].tagged("CA").tagged("CB").from[Service1]
 
-//        make[Service1].tagged("CC") // illegal now - considered same bindings
+        //        make[Service1].tagged("CC") // illegal now - considered same bindings
         make[Service2].tagged("CC")
 
         many[SetTrait].tagged("A", "B")
@@ -803,7 +802,7 @@ class InjectorTest extends WordSpec {
     "support tagless final style module definitions" in {
       import Case20._
 
-      case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
+      case class Definition[F[_] : TagK : Pointed](getResult: Int) extends ModuleDef {
         // FIXME: hmmm, what to do with this
         make[Pointed[F]].from(Pointed[F])
 
@@ -811,12 +810,12 @@ class InjectorTest extends WordSpec {
         make[TestServiceClass[F]]
         make[TestServiceTrait[F]]
         make[Int].named("TestService").from(getResult)
-        make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
+        make[F[String]].from { res: Int@Id("TestService") => Pointed[F].point(s"Hello $res!") }
         make[Either[String, Boolean]].from(Right(true))
 
-//        FIXME: Nothing doesn't resolve properly yet when F is unknown...
-//        make[F[Nothing]]
-//        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
+        //        FIXME: Nothing doesn't resolve properly yet when F is unknown...
+        //        make[F[Nothing]]
+        //        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
         make[F[Any]].from(Pointed[F].point(1: Any))
         make[Either[String, F[Int]]].from { fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]]) }
         make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
@@ -857,31 +856,31 @@ class InjectorTest extends WordSpec {
     "FIXME: Support [A, F[_]] type shape" in {
       import Case20._
 
-      abstract class Parent[C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
+      abstract class Parent[C: Tag, R[_] : TagK : Pointed] extends ModuleDef {
         make[TestProvider[C, R]]
       }
 
-      assert(new Parent[Int, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider[Int, List]])
+      assert(new Parent[Int, List] {}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider[Int, List]])
     }
 
     "FIXME: Support [A, A, F[_]] type shape" in {
       import Case20._
 
-      abstract class Parent[A: Tag, C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
+      abstract class Parent[A: Tag, C: Tag, R[_] : TagK : Pointed] extends ModuleDef {
         make[TestProvider0[A, C, R]]
       }
 
-      assert(new Parent[Int, Boolean, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider0[Int, Boolean, List]])
+      assert(new Parent[Int, Boolean, List] {}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider0[Int, Boolean, List]])
     }
 
     "progression test: No proper support for [A, F[_], G[_]] type shape - false positives generated by scala's type lambda generation during implicit search - leaking unresolved WeakTypeTags" in {
       import Case20._
 
-      abstract class Parent[A: Tag, F[_]: TagK, R[_]: TagK: Pointed] extends ModuleDef {
+      abstract class Parent[A: Tag, F[_] : TagK, R[_] : TagK : Pointed] extends ModuleDef {
         make[TestProvider1[A, F, R]]
       }
 
-      val fail = Try(assert(new Parent[Int, List, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider1[Int, List, List]])).isFailure
+      val fail = Try(assert(new Parent[Int, List, List] {}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider1[Int, List, List]])).isFailure
       assert(fail)
     }
 

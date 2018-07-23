@@ -58,7 +58,8 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   private def computeTopology(plan: Iterable[ExecutableOp], refFilter: RefFilter, postFilter: PostFilter): PlanTopology = {
     val dependencies = plan.toList.foldLeft(new Accumulator) {
       case (acc, op: InstantiationOp) =>
-        acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= requirements(op).filterNot(refFilter(acc))
+        val filtered = requirements(op).filterNot(refFilter(acc)) // it's important NOT to update acc before we computed deps
+        acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= filtered
         acc
 
       case (acc, op) =>
