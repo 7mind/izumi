@@ -39,14 +39,14 @@ class SanityCheckerDefaultImpl
     assertNoDuplicateOps(plan.steps)
 
     val reftable = planAnalyzer.topologyFwdRefs(plan.steps)
-    if (reftable.dependees.nonEmpty) {
+    if (reftable.dependees.graph.nonEmpty) {
       throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees}!", reftable)
     }
 
     val fullRefTable = planAnalyzer.topology(plan.steps)
 
-    val allAvailableRefs = fullRefTable.dependencies.keySet
-    val fullDependenciesSet = fullRefTable.dependencies.flatMap(_._2).toSet
+    val allAvailableRefs = fullRefTable.dependencies.graph.keySet
+    val fullDependenciesSet = fullRefTable.dependencies.graph.flatMap(_._2).toSet
     val missingRefs = fullDependenciesSet -- allAvailableRefs
     if (missingRefs.nonEmpty) {
       throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependencies}!", missingRefs, Some(fullRefTable))

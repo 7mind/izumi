@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp}
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, PlanTopology, PlanTopologyImmutable}
+import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
@@ -69,7 +69,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
       .mapValues(_.toSet).toMap
 
     val dependants = reverseReftable(dependencies)
-    PlanTopologyImmutable(dependants, dependencies)
+    PlanTopologyImmutable(DependencyGraph(dependants, DependencyKind.Required), DependencyGraph(dependencies, DependencyKind.Depends))
   }
 
   private def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {

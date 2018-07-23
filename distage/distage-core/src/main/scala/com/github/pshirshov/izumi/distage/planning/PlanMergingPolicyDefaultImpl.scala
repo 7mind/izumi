@@ -47,6 +47,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
 
     val imports = topology
       .dependees
+      .graph
       .filterKeys(k => !index.contains(k))
       .map {
         case (missing, refs) =>
@@ -60,7 +61,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     val index = completedPlan.index
     val topology = analyzer.topology(completedPlan.steps)
     val sortedKeys = Graphs.toposort.cycleBreaking(
-      topology.dependencies
+      topology.dependencies.graph
       , Seq.empty
     )
 

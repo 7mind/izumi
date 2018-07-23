@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.Fixtures.Case16.TestProviderModule
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
@@ -150,6 +149,9 @@ class InjectorTest extends WordSpec {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
+      assert(plan.topology.dependencies.tree(RuntimeDIUniverse.DIKey.get[Circular1], Some(3)).children.size == 1)
+      assert(plan.topology.dependees.tree(RuntimeDIUniverse.DIKey.get[Circular1], Some(3)).children.size == 2)
+
       val context = injector.produce(plan)
       val c3 = context.get[Circular3]
       val traitArg = c3.arg
@@ -943,7 +945,7 @@ class InjectorTest extends WordSpec {
 
   }
 
-  class InnerPathDepTest extends TestProviderModule {
+  class InnerPathDepTest extends Case16.TestProviderModule {
     private val definition = new ModuleDef {
       make[TestClass]
       make[TestDependency]
@@ -959,6 +961,6 @@ class InjectorTest extends WordSpec {
     }
   }
 
-  object TopLevelPathDepTest extends TestProviderModule
+  object TopLevelPathDepTest extends Case16.TestProviderModule
 
 }

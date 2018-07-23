@@ -26,7 +26,7 @@ class ForwardingRefResolverDefaultImpl
       }
       .flatMap {
         case step if reftable.dependencies.contains(step.target) =>
-          val op = ProxyOp.MakeProxy(step, reftable.dependencies(step.target), step.origin)
+          val op = ProxyOp.MakeProxy(step, reftable.dependencies.direct(step.target), step.origin)
           proxies += (step.target -> op)
           Seq(op)
 
