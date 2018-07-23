@@ -83,7 +83,9 @@ object TypespaceCompiler {
                                     , extensions: Seq[TranslatorExtension]
                                     , withRuntime: Boolean = true
                                     , manifest: Option[BuildManifest] = None
-                                  ) extends AbstractCompilerOptions[TranslatorExtension, BuildManifest]
+                                  ) extends AbstractCompilerOptions[TranslatorExtension, BuildManifest] {
+    override def toString: String = s"$language ${Option(withRuntime).filter(_ == true).map(_ => "+rt").getOrElse("-rt")} ${manifest.map(_ => "+mf").getOrElse("-mf")} ${extensions.mkString("(", ", ", ")")}"
+  }
 
 
   type TypescriptTranslatorOptions = CompilerOptions[TypeScriptTranslatorExtension, TypeScriptBuildManifest]
