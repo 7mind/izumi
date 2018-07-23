@@ -145,11 +145,11 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
             .compile(itarget, option)
         }
 
-        val allPaths = out.invokation.flatMap(_._2.paths)
+        val allPaths = out.compilationProducts.flatMap(_._2.paths)
 
-        println(s"${allPaths.size} source files from ${out.invokation.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
+        println(s"${allPaths.size} source files from ${out.compilationProducts.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
         println(s"Stubs  : ${out.stubs.files.size} $langId files copied")
-        println(s"Archive: ${out.sources}")
+        println(s"Archive: ${out.zippedOutput}")
         println("")
 
     }

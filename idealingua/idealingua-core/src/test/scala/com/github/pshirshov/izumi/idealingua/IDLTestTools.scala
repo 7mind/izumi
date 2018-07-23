@@ -214,7 +214,7 @@ object IDLTestTools {
 
     val allFiles: Seq[Path] = new IDLCompiler(domains)
       .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withRuntime, options.manifest))
-      .invokation.flatMap {
+      .compilationProducts.flatMap {
       case (did, s) =>
         val mapped = s.paths.map {
           f =>

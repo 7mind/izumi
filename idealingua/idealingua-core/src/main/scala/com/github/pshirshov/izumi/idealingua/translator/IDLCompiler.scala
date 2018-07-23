@@ -60,9 +60,9 @@ class IDLCompiler(toCompile: Seq[Typespace]) {
 object IDLCompiler {
 
   case class Result(
-                     invokation: Map[DomainId, IDLSuccess]
+                     compilationProducts: Map[DomainId, IDLSuccess]
                      , stubs: IzResources.RecursiveCopyOutput
-                     , sources: Path
+                     , zippedOutput: Path
                    )
 
 
