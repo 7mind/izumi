@@ -12,7 +12,9 @@ object CodePositionMaterializer {
 
   def apply()(implicit ev: CodePositionMaterializer): CodePositionMaterializer = ev
 
-  def currentPosition(implicit ev: CodePositionMaterializer): CodePosition = ev.get
+  def codePosition(implicit ev: CodePositionMaterializer): CodePosition = ev.get
+
+  def sourcePosition(implicit ev: CodePositionMaterializer): SourceFilePosition = ev.get.position
 
   def getEnclosingPosition(c: blackbox.Context): c.Expr[CodePositionMaterializer] = {
     import c.universe._

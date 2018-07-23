@@ -395,7 +395,8 @@ Plugins also allow a program to dynamically extend itself by adding new Plugin c
 
 ### Debugging, Introspection, Diagnostics and Hooks
 
-You can print a `plan` to get detailed info on what will happen during instantiation:
+You can print a `plan` to get detailed info on what will happen during instantiation. The printout includes file:line info 
+so your IDE can show you where the binding was defined! 
 
 ```scala
 System.err.println(plan: OrderedPlan)

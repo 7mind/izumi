@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBind
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
@@ -135,7 +135,7 @@ trait ModuleDef extends ModuleBase {
 
     mutableState += setRef
 
-    new SetDSL(setRef, IdentSet(binding.key, Set.empty, pos.get))
+    new SetDSL(setRef, IdentSet(binding.key, binding.tags, binding.origin))
   }
 
   /**
@@ -226,7 +226,7 @@ object ModuleDef extends GeneralizedBindings {
       replace(binding.withImpl(impl))(_ => ())
   }
 
-  final case class IdentSet[+D <: DIKey](key: D, tags: Set[String], pos: CodePosition) {
+  final case class IdentSet[+D <: DIKey](key: D, tags: Set[String], pos: SourceFilePosition) {
     def sameIdent(binding: Binding): Boolean =
       key == binding.key && tags == binding.tags
   }

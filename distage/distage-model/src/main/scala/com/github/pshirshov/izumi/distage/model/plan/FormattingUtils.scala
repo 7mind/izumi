@@ -1,17 +1,22 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import com.github.pshirshov.izumi.distage.model.definition.Binding
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 
 object FormattingUtils {
 
-  def doFormat(target: DIKey, deps: Wiring): String = {
+  def doFormat(target: DIKey, deps: Wiring, origin: Option[Binding]): String = {
     val op = doFormat(deps)
-    s"$target := $op"
+    val pos = formatBindingPosition(origin)
+    s"$target $pos := $op"
+  }
+
+  def formatBindingPosition(origin: Option[Binding]): String = {
+    origin.map(_.origin.toString) getOrElse "(<unknown>)"
   }
 
   private def doFormat(deps: Wiring): String = {
