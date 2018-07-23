@@ -56,6 +56,32 @@ object IdealinguaPlugin extends AutoPlugin {
     def format: String = s"${a.name}${a.classifier.map(s => s"_$s").getOrElse("")}.${a.extension}"
   }
 
+  implicit class FileExt(a: File) {
+    def format: String = {
+      val tpe = a match {
+        case f if f.isDirectory =>
+          "dir"
+        case f if f.isFile =>
+          "file"
+        case _ =>
+          "smth"
+      }
+
+      val existence = if (a.exists()) {
+        "+"
+      } else {
+        "-"
+      }
+
+      s"$existence$tpe@${a.getCanonicalPath}"
+    }
+  }
+  implicit class PathExt(a: Path) {
+    def format: String = {
+      a.toFile.format
+    }
+  }
+
   override lazy val projectSettings = Seq(
     idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions ++ Seq(
       CirceDerivationTranslatorExtension
@@ -105,16 +131,16 @@ object IdealinguaPlugin extends AutoPlugin {
 
           result match {
             case Some(r) =>
-              logger.info(s"Have new compilation result for artifact ${a.format}, copying ${r.sources.toFile} into $zipFile")
+              logger.info(s"Have new compilation result for artifact ${a.format}, copying ${r.sources.format} into ${zipFile.format}")
               IO.copyDirectory(r.sources.toFile, zipFile)
               Seq(a -> zipFile)
 
             case None =>
               if (zipFile.exists()) {
-                logger.info(s"Compiler didn't return a result for artifact ${a.format}, target $zipFile exists, reusing...")
+                logger.info(s"Compiler didn't return a result for artifact ${a.format}, target ${zipFile.format} exists, reusing...")
                 Seq(a -> zipFile)
               } else {
-                logger.info(s"Compiler didn't return a result for artifact ${a.format}, target $zipFile does not exist. What the fuck? Okay, let's return nothing :/")
+                logger.info(s"Compiler didn't return a result for artifact ${a.format}, target ${zipFile.format} does not exist. What the fuck? Okay, let's return nothing :/")
                 Seq.empty
               }
           }
@@ -156,10 +182,10 @@ object IdealinguaPlugin extends AutoPlugin {
           result.invokation.flatMap(_._2.paths)
         case ((_, s), _) if s.target.toFile.exists() =>
           val existing = IzFiles.walk(scope.target.toFile).filterNot(_.toFile.isDirectory)
-          logger.info(s"Compiler didn't return a result, target ${s.target} exists. Reusing ${existing.size} files there...")
+          logger.info(s"Compiler didn't return a result, target ${s.target.format} exists. Reusing ${existing.size} files there...")
           existing
         case ((_, s), _) if !s.target.toFile.exists() =>
-          logger.info(s"Compiler didn't return a result, target ${s.target} does not exist. What the fuck? Okay, let's return nothing :/")
+          logger.info(s"Compiler didn't return a result, target ${s.target.format} does not exist. What the fuck? Okay, let's return nothing :/")
           Seq.empty
       }
 
@@ -233,7 +259,7 @@ object IdealinguaPlugin extends AutoPlugin {
       IO.write(tsCache.toFile, IzTime.isoNow)
       Some(result)
     } else {
-      logger.info(s"""Output timestamp is okay, not going to recompile ${scope.source} : ts=$tsCache""")
+      logger.info(s"""Output timestamp is okay, not going to recompile ${scope.source.format} : ts=$tsCache""")
       None
     }
   }
