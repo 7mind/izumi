@@ -22,8 +22,7 @@ We'll start off with basic examples and by the end of this tutorial you'll make 
 This is what Hello World looks like in DiStage:
 
 ```scala
-import com.github.pshirshov.izumi.distage.Injectors
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import distage._
 
 class Hello {
   def helloWorld() = println("Hello World!")
@@ -34,7 +33,7 @@ object HelloModule extends ModuleDef {
 }
 
 object Main extends App {
-  val injector = Injectors.bootstrap()
+  val injector = Injector()
   
   val plan = injector.plan(HelloModule)
   
@@ -68,16 +67,11 @@ However, If you choose to combine your modules manually, DiStage can offer compi
 dependencies have been wired and that your app will run. See [Static Configurations](#static-configurations) for details.
 Whether you prefer the flexibility of runtime DI or the stability of compile-time DI, DiStage lets you mix and match different modes within one application.
 
-Next line:
+Next:
 
 ```scala
 object Main extends App {
-  val injector = Injectors.bootstrap()
-```
-
-Injector is the entity responsible for wiring our app together. We create an `injector` using default configuration.
-
-```scala
+  val injector = Injector()
   val plan = injector.plan(HelloModule)
 ```
 
@@ -114,8 +108,98 @@ Multibindings
 Also see [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multibindings).
 
 ### Tagless Final Style with DiStage
+Disclaimer: I'm a maintainer of [distage](https://izumi.7mind.io/distage/index.html)
 
-...
+In your article, you talk a lot about a choice between Pure FP vs. OOP dependency injection, but one possibility that
+wasn't expounded on is – **why not both**? In [distage](https://izumi.7mind.io/distage/index.html), we have first-class
+support for tagless final style. Let's see how [freestyle tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
+looks in distage:
+
+    class Program[F: TagK: Monad] extends ModuleDef {
+      make[TaglessProgram[F]]
+    }
+
+    object TryInterpreters extends ModuleDef {
+      make[Validation.Handler[Try]].from(tryValidationHandler)
+      make[Interaction.Handler[Try]].from(tryInteractionHandler)
+    }
+
+    // Combine modules into a full program
+    val TryProgram = new Program[Try] ++ TryInterpreters
+
+where
+
+    class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
+      def program = for {
+          userInput <- interaction.ask("Give me something with at least 3 chars and a number on it")
+          valid     <- (validation.minSize(userInput, 3), validation.hasNumber(userInput)).mapN(_ && _)
+          _         <- if (valid) interaction.tell("awesomesauce!") else interaction.tell(s"$userInput is not valid")
+      } yield ()
+    }
+
+    val validationHandler = new Validation.Handler[Try] {
+      override def minSize(s: String, n: Int): Try[Boolean] = Try(s.size >= n)
+      override def hasNumber(s: String): Try[Boolean] = Try(s.exists(c => "0123456789".contains(c)))
+    }
+
+    val interactionHandler = new Interaction.Handler[Try] {
+      override def tell(s: String): Try[Unit] = Try(println(s))
+      override def ask(s: String): Try[String] = Try("This could have been user input 1")
+    }
+
+Notice how the program module stays completely polymorphic and abstracted from its eventual interpeter or what monad it
+will run in? Want a program in different Monad? No problem:
+
+    val IOProgram = new Program[IO] ++ IOInterpreters
+
+Want a program in the **same** Monad, but with different interpreters? No problem at all:
+
+    val DifferentTryProgram = new Program[Try] ++ DifferentTryInterpreters
+
+Distage makes tagless final style easier and safer by making your implicit instances explicit and configurable as
+first-class values. It even enforces typeclass coherence by disallowing multiple instances, so one wrong `import` can't
+ruin your day. Distage is still [in active development](https://github.com/pshirshov/izumi-r2/) and somewhat lacks
+documentation, but as of now we've been using it for months in production and it allowed to port our legacy code from
+Akka/Guice stack to pure FP http4s/cats without losing neither ease of configuration and variability of a runtime DI
+framework, nor parametricity and equational reasoning of pure FP tagless final style.
+
+> The code below shows an example of reading configurations from a YAML file
+
+We also have first-class support for configs, so your first example with manual config reading is not necessary. Just
+put your config into typesafe-config and in distage you can request it in any module:
+
+    final case class Config(different: Boolean)
+
+    class ConfiguredTaglessProgram[F](
+      @ConfPath("program.config") config: Config,
+      primaryProgram: TaglessProgram[F] @Id("primary"),
+      differentProgram: TaglessProgram[F] @Id("different")) {
+
+        val program = if (config.different) differentProgram else primaryProgram
+    }
+
+    class ConfiguredTryProgram[F: TagK: Monad] extends ModuleDef {
+      make[ConfiguredProgram[F]]
+      make[TaglessProgram[F]].named("primary")
+      make[TaglessProgram[F]].named("different")
+    }
+
+Where your config file looks like this:
+
+    program {
+        config {
+            different = true
+        }
+    }
+
+> If you prefer compile-time check, consider using MacWire
+
+Unfortunately, MacWire is fully static and cannot change dependencies at runtime. It would seem like the only choice is
+between unsafe, but flexible, runtime dependency injection vs. safe, but rigid, compile-time schemes. That's not true,
+however. **[Why not have both?](https://github.com/pshirshov/izumi-r2/issues/51)** By giving appropriate types to our
+modules we can allow runtime variation, while at the same time guaranteeing correct instantiation. The proposed typing
+scheme is currently a work in progress in distage, but already implementing a basic check is as easy as running the
+exact same wiring code in compile-time macro instead of at runtime.
 
 ### Config files
 
@@ -146,11 +230,17 @@ Distage plugin system can automatically pickup all modules defined in the progra
 
 To define a plugin, first add distage-plugins library:
 
+```scala
+libraryDependencies += Izumi.R.distage_plugins
+```
+or
 @@@vars
 ```scala
-libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins " % "$izumi.version$"
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$izumi.version$"
 ```
 @@@
+
+If you're not using `sbt-izumi` plugin.
 
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
@@ -232,17 +322,36 @@ Plugins also allow a program to dynamically extend itself by adding new Plugin c
 
 ### Debugging, Introspection, Diagnostics and Hooks
 
-To see macro debug output during compilation, set `-Dizumi.distage.debug.macro=true` java property:
+You can print a `plan` to get detailed info on what will happen during instantiation:
+
+```scala
+System.err.println(plan: OrderedPlan)
+```
+
+![print-test-plan](media/print-test-plan.png)
+
+You can also query a plan to see the dependencies and reverse dependencies of a class and their instantiation:
+
+```scala
+// Print dependencies
+System.err.println(plan.topology.dependees.tree(DIKey.get[Circular1]))
+// Print reverse dependencies
+System.err.println(plan.topology.dependees.tree(DIKey.get[Circular1]))
+```
+
+![print-dependencies](media/print-dependencies.png)
+
+The printer highlights circular dependencies.
+
+Distage also uses some macros, macros are currently used to create `TagK`s and [provider bindings](#provider-(function)-bindings).
+If you think they've gone awry, you can turn macro debug output during compilation by setting `-Dizumi.distage.debug.macro=true` java property:
 
 ```bash
 sbt -Dizumi.distage.debug.macro=true compile
 ```
 
-Macros are currently used to create `TagK`s and [provider bindings](#provider-(function)-bindings).
 
-They also power `distage-static` module, an alternative backend that doesn't use JVM runtime reflection. 
-
-TODO ...
+Macros power `distage-static` module, an alternative backend that doesn't use JVM runtime reflection.
 
 ### Extensions and Plan Rewriting – writing our first DiStage extension
 
@@ -261,6 +370,35 @@ TODO ...
 ...
 
 ### Cats
+
+To import cats integration add distage-cats library:
+
+```scala
+libraryDependencies += Izumi.R.distage_cats
+```
+or
+@@@vars
+```scala
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-cats" % "$izumi.version$"
+```
+@@@
+
+Usage:
+
+```scala
+import cats.implicits._
+import cats.effect._
+import distage._
+import distage.cats._
+
+object Main extends IOApp {
+  def run(args: List[String]) = {
+    val myModules = module1 |+| module2 // Monoid instance is available for ModuleDef
+    
+    Injector().runIO[IO](myModules)
+  }
+}
+```
 
 ### Scalaz
 

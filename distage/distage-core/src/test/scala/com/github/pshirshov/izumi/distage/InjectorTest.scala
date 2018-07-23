@@ -1,14 +1,13 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.model.Injector
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition._
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
+import distage._
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
@@ -16,7 +15,7 @@ import scala.util.Try
 
 class InjectorTest extends WordSpec {
 
-  def mkInjector(): Injector = Injectors.bootstrap()
+  def mkInjector(): Injector = Injector()
 
   "DI planner" should {
 
@@ -42,11 +41,11 @@ class InjectorTest extends WordSpec {
       assert(exc.getMessage.startsWith("Operations failed (1)"))
 
       val fixedPlan = plan.flatMap {
-        case ImportDependency(key, _, origin) if key == RuntimeDIUniverse.DIKey.get[NotInContext] =>
+        case ImportDependency(key, _, origin) if key == DIKey.get[NotInContext] =>
           Seq(
             WiringOp.ReferenceInstance(
               key
-              , RuntimeDIUniverse.Wiring.UnaryWiring.Instance(RuntimeDIUniverse.SafeType.get[NotInContext], new NotInContext {})
+              , Wiring.UnaryWiring.Instance(SafeType.get[NotInContext], new NotInContext {})
               , origin
             )
           )
@@ -151,8 +150,8 @@ class InjectorTest extends WordSpec {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      assert(plan.topology.dependencies.tree(RuntimeDIUniverse.DIKey.get[Circular1], Some(3)).children.size == 1)
-      assert(plan.topology.dependees.tree(RuntimeDIUniverse.DIKey.get[Circular1], Some(3)).children.size == 2)
+      assert(plan.topology.dependencies.tree(DIKey.get[Circular1], Some(3)).children.size == 1)
+      assert(plan.topology.dependees.tree(DIKey.get[Circular1], Some(3)).children.size == 2)
 
       val context = injector.produce(plan)
       val c3 = context.get[Circular3]
@@ -216,9 +215,9 @@ class InjectorTest extends WordSpec {
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
-      val planTypes: Seq[RuntimeDIUniverse.SafeType] = plan.steps.collect { case i: InstantiationOp => i }.map(_.target.tpe)
-      val instanceTypes: Seq[RuntimeDIUniverse.SafeType] = context.instances.map(_.key.tpe)
-        .filter(_ != RuntimeDIUniverse.SafeType.get[ProxyDispatcher]) // remove artifacts of proxy generation
+      val planTypes: Seq[SafeType] = plan.steps.collect { case i: InstantiationOp => i }.map(_.target.tpe)
+      val instanceTypes: Seq[SafeType] = context.instances.map(_.key.tpe)
+        .filter(_ != SafeType.get[ProxyDispatcher]) // remove artifacts of proxy generation
 
       assert(instanceTypes == planTypes)
 
@@ -311,7 +310,7 @@ class InjectorTest extends WordSpec {
 
       val definition: ModuleBase = new ModuleBase {
         override def bindings: Set[Binding] = Set(
-          SingletonBinding(RuntimeDIUniverse.DIKey.get[Dependency], ImplDef.TypeImpl(RuntimeDIUniverse.SafeType.get[Long]))
+          SingletonBinding(DIKey.get[Dependency], ImplDef.TypeImpl(SafeType.get[Long]))
         )
       }
 
@@ -333,7 +332,7 @@ class InjectorTest extends WordSpec {
       val exc = intercept[UntranslatablePlanException] {
         injector.plan(definition)
       }
-      assert(exc.conflicts.size == 1 && exc.conflicts.contains(RuntimeDIUniverse.DIKey.get[Dependency]))
+      assert(exc.conflicts.size == 1 && exc.conflicts.contains(DIKey.get[Dependency]))
     }
 
     "handle factory injections" in {
@@ -860,7 +859,7 @@ class InjectorTest extends WordSpec {
         make[TestProvider[C, R]]
       }
 
-      assert(new Parent[Int, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider[Int, List]])
+      assert(new Parent[Int, List]{}.bindings.head.key.tpe == SafeType.get[TestProvider[Int, List]])
     }
 
     "FIXME: Support [A, A, F[_]] type shape" in {
@@ -870,7 +869,7 @@ class InjectorTest extends WordSpec {
         make[TestProvider0[A, C, R]]
       }
 
-      assert(new Parent[Int, Boolean, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider0[Int, Boolean, List]])
+      assert(new Parent[Int, Boolean, List]{}.bindings.head.key.tpe == SafeType.get[TestProvider0[Int, Boolean, List]])
     }
 
     "progression test: No proper support for [A, F[_], G[_]] type shape - false positives generated by scala's type lambda generation during implicit search - leaking unresolved WeakTypeTags" in {
@@ -880,7 +879,7 @@ class InjectorTest extends WordSpec {
         make[TestProvider1[A, F, R]]
       }
 
-      val fail = Try(assert(new Parent[Int, List, List]{}.bindings.head.key.tpe == RuntimeDIUniverse.SafeType.get[TestProvider1[Int, List, List]])).isFailure
+      val fail = Try(assert(new Parent[Int, List, List]{}.bindings.head.key.tpe == SafeType.get[TestProvider1[Int, List, List]])).isFailure
       assert(fail)
     }
 

@@ -8,9 +8,8 @@ class TypeLevelDSLTest extends WordSpec {
     "allow to define contexts" in {
 
       assertCompiles("""
-        import com.github.pshirshov.izumi.distage.Fixtures._
+        import com.github.pshirshov.izumi.distage.Fixtures.Case1._
         import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL
-        import Case1._
 
         TypeLevelDSL.Bindings()
           .bind[TestClass]

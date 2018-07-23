@@ -2,9 +2,10 @@ package com.github.pshirshov.izumi.distage
 
 import cats.kernel.instances.set.catsKernelStdPartialOrderForSet
 import cats.kernel.{BoundedSemilattice, Hash, PartialOrder}
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, SimpleModuleDef}
+import distage.{ModuleBase, SimpleModuleDef}
 
-object DIStageInstances {
+trait DIStageInstances {
+
   implicit val catsKernelStdPartialOrderForModuleBase: PartialOrder[ModuleBase] =
     PartialOrder.by(_.bindings)
 
@@ -18,4 +19,5 @@ object DIStageInstances {
     def empty: ModuleBase = SimpleModuleDef(Set.empty)
     def combine(x: ModuleBase, y: ModuleBase): ModuleBase = x ++ y
   }
+
 }

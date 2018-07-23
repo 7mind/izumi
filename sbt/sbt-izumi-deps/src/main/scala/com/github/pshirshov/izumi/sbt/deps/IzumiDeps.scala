@@ -46,7 +46,7 @@ object IzumiDeps {
     val scala_reflect = "org.scala-lang" % "scala-reflect"
 
     val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck
-    val scalacheck_shapeless = "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.6"
+    val scalacheck_shapeless = "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % V.scalacheck_shapeless
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 

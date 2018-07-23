@@ -89,7 +89,7 @@ trait ModuleDef extends ModuleBase {
   /**
     * Define a multibinding of `T`
     *
-    * Multibindings
+    * Multibindings can be bound in multiple different modules. All the elements of the same multibinding in different modules will be joined into one [[Set]].
     *
     *
     * Note: The method Multibinder.newSetBinder(binder, type) can be confusing. This operation creates a new binder,

@@ -26,5 +26,9 @@ package object distage {
 
   type Planner = com.github.pshirshov.izumi.distage.model.Planner
   type Locator = com.github.pshirshov.izumi.distage.model.Locator
+  type Producer = com.github.pshirshov.izumi.distage.model.Producer
+
+  type SimpleModuleDef = com.github.pshirshov.izumi.distage.model.definition.SimpleModuleDef
+  val SimpleModuleDef: com.github.pshirshov.izumi.distage.model.definition.SimpleModuleDef.type = com.github.pshirshov.izumi.distage.model.definition.SimpleModuleDef
 
 }

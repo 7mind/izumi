@@ -233,8 +233,7 @@ lazy val distageCore = inDiStage.as.module
 lazy val distageCats = inDiStage.as.module
   .depends(distageModel, distageCore.testOnlyRef)
   .settings(
-    libraryDependencies += R.cats_kernel
-    , libraryDependencies ++= T.cats_all
+    libraryDependencies ++= R.cats_all
   )
 
 lazy val distageStatic = inDiStage.as.module

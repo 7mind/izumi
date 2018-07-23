@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.Fixtures.Case1.NotInContext
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.model.definition.{Bindings, ModuleBase, ModuleDef, SimpleModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Bindings, SimpleModuleDef}
+import distage._
 import org.scalatest.WordSpec
 
 class DSLTest extends WordSpec {

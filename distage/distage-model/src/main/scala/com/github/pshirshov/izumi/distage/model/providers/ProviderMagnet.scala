@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.providers
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Provider
+import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Provider, DIKey}
 import com.github.pshirshov.izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
+import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.language.implicitConversions
 import scala.language.experimental.macros
@@ -77,5 +79,16 @@ object ProviderMagnet {
   implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
 
+  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): ProviderMagnet[_] =
+    new ProviderMagnet[Any](
+      Provider.ProviderImpl(
+        associations = Seq.empty
+        , ret = key.tpe
+        , fun = _ => throw new TODOBindingException(
+          s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos)
+      )
+    )
+
   def generateUnsafeWeakSafeTypes[R](fun: Any): ProviderMagnet[R] = macro ProviderMagnetMacroGenerateUnsafeWeakSafeTypes.impl[R]
+
 }

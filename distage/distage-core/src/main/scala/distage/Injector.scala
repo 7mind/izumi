@@ -3,7 +3,6 @@ package distage
 import com.github.pshirshov.izumi.distage.InjectorDefaultImpl
 import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, DefaultBootstrapContext}
 import com.github.pshirshov.izumi.distage.model.LocatorExtension
-import com.github.pshirshov.izumi.distage.model.definition.SimpleModuleDef
 
 object Injector {
   def apply(): Injector = {

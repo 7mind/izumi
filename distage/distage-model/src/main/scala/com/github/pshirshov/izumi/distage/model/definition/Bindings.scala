@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag}
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 object Bindings {
@@ -33,18 +32,8 @@ object Bindings {
     SetElementBinding(DIKey.get[Set[T]], ImplDef.ProviderImpl(f.get.ret, f.get))
 
   def todo[K <: DIKey](key: K)(implicit pos: CodePositionMaterializer): SingletonBinding[K] = {
-    val provider = todoProvider(key)(pos).get
+    val provider = ProviderMagnet.todoProvider(key)(pos).get
     SingletonBinding(key, ImplDef.ProviderImpl(provider.ret, provider))
   }
-
-  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): ProviderMagnet[_] =
-    new ProviderMagnet[Any](
-      Provider.ProviderImpl(
-         Seq.empty
-         , key.tpe
-         , _ => throw new TODOBindingException(
-           s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos)
-       )
-    )
 
 }

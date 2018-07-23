@@ -92,12 +92,12 @@ object DefaultBootstrapContext {
     make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
     make[DependencyKeyProvider.Runtime].from[DependencyKeyProviderDefaultImpl.Runtime]
 
-//    make[PlanningObserver].from[PlanningObserverDefaultImpl]
-//    make[LoggerHook].from[LoggerHookDefaultImpl]
+    make[PlanningObserver].from[PlanningObserverDefaultImpl]
+    make[LoggerHook].from[LoggerHookDefaultImpl]
 
-    make[PlanningObserver].from[BootstrapPlanningObserver]
-    make[LoggerHook].from[LoggerHookDebugImpl]
-    make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringTrivialSink))
+//    make[PlanningObserver].from[BootstrapPlanningObserver]
+//    make[LoggerHook].from[LoggerHookDebugImpl]
+//    make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringTrivialSink))
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
