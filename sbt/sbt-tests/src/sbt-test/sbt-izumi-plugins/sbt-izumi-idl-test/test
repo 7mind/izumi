@@ -1,4 +1,4 @@
 # build
-> ;+clean;+test;+package
+> ;+clean;+test;+package;+packagedArtifacts
 $ exists lib/shared-lib/target/scala-2.12/src_managed/main/test/domain01/domain01.scala
 $ exists lib/just-lib/target/scala-2.12/src_managed/main/test/domain02/domain02.scala

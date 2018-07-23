@@ -6,7 +6,7 @@ libraryDependencies ++= Seq(
 sbtPlugin := true
 
 // https://github.com/coursier/coursier#sbt-plugin
-val coursier = "1.1.0-M5"
+val coursier = "1.1.0-M6"
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % coursier)
 addSbtPlugin("io.get-coursier" % "sbt-shading" % coursier)
 
@@ -32,7 +32,7 @@ addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.0")
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.8")
 
 // https://github.com/jrudolph/sbt-dependency-graph
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.1")
 
 // https://github.com/rtimush/sbt-updates
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")

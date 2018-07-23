@@ -16,11 +16,19 @@ class BasicLoggingTest extends WordSpec {
 
       import ExtratingStringInterpolator._
 
-      val message = m"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2+2}, ${2+2}"
-      assert(message.args == List(LogArg("arg1",1), LogArg("arg2","argument 2"), LogArg("arg2","argument 2"), LogArg("UNNAMED:4",4), LogArg("UNNAMED:4",4)))
+      val message = m"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}"
+      assert(message.args ==
+        List(
+          LogArg(Seq("arg1"), 1, hidden = false),
+          LogArg(Seq("arg2"), "argument 2", hidden = false),
+          LogArg(Seq("arg2"), "argument 2", hidden = false),
+          LogArg(Seq("UNNAMED:4"), 4, hidden = false),
+          LogArg(Seq("UNNAMED:4"), 4, hidden = false)
+        )
+      )
       assert(message.template.parts == List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", ""))
 
-      val message1 = m"expression: ${Random.self.nextInt()+1}"
+      val message1 = m"expression: ${Random.self.nextInt() + 1}"
       assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")
       assert(message1.template.parts == List("expression: ", ""))
     }
@@ -29,7 +37,7 @@ class BasicLoggingTest extends WordSpec {
   "String rendering policy" should {
     "not fail on unbalanced messages" in {
       val p = new StringRenderingPolicy(RenderingOptions(withColors = false))
-      val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg("[a1]", 1), LogArg("[a2]", 2))))
+      val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg(Seq("[a1]"), 1, hidden = false), LogArg(Seq("[a2]"), 2, hidden = false))))
       assert(rendered.endsWith("begin [a1]=1 end; [a2]=2"))
     }
   }
@@ -38,5 +46,3 @@ class BasicLoggingTest extends WordSpec {
     p.render(Entry(m, Context(StaticExtendedContext(LoggerId("test"), SourceFilePosition("test.scala", 0)), DynamicContext(Level.Warn, ThreadData("test", 0), 0), CustomContext(Seq.empty))))
   }
 }
-
-

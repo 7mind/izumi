@@ -1,50 +1,32 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, PlanTopology}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, WiringOp}
-import com.github.pshirshov.izumi.distage.model.plan.PlanTopology.empty
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
-import com.github.pshirshov.izumi.distage.model.references.RefTable
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
 
 
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
-  def topoBuild(ops: Seq[ExecutableOp]): PlanTopology = {
-    val out = empty
-    ops
-      .collect({ case i: InstantiationOp => i })
-      .foreach(topoExtend(out, _))
-    out
+  def topology(ops: Seq[ExecutableOp]): PlanTopology = {
+    computeTopology(
+      ops
+      , (acc) => (key) => false
+      , _ => true
+    )
   }
 
-  def topoExtend(topology: PlanTopology, op: InstantiationOp): Unit = {
-    val req = requirements(op)
-    val transitiveReq = topology.dependencies.getOrElse(op.target, mutable.Set.empty[DIKey]) ++ req
-    topology.register(op.target, transitiveReq.toSet)
-  }
-
-  def computeFwdRefTable(plan: Iterable[ExecutableOp]): RefTable = {
-    computeFwdRefTable(
+  def topologyFwdRefs(plan: Iterable[ExecutableOp]): PlanTopology = {
+    computeTopology(
       plan
       , (acc) => (key) => acc.contains(key)
       , _._2.nonEmpty
     )
   }
 
-  def computeFullRefTable(plan: Iterable[ExecutableOp]): RefTable = {
-    computeFwdRefTable(
-      plan
-      , (acc) => (key) => false
-      , _ => true
-    )
-  }
-
-  type RefFilter = Accumulator => DIKey => Boolean
-  type PostFilter = ((DIKey, mutable.Set[DIKey])) => Boolean
-
-  def requirements(op: InstantiationOp): Set[DIKey] = {
+  def requirements(op: ExecutableOp): Set[DIKey] = {
     op match {
       case w: WiringOp =>
         w.wiring match {
@@ -58,16 +40,26 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
       case c: CreateSet =>
         c.members
 
-      case _ =>
+      case _: MakeProxy =>
         Set.empty
+
+      case _: ImportDependency =>
+        Set.empty
+
+      case i: InitProxy =>
+        Set(i.proxy.target) ++ requirements(i.proxy.op)
     }
   }
 
-  private def computeFwdRefTable(plan: Iterable[ExecutableOp], refFilter: RefFilter, postFilter: PostFilter): RefTable = {
+  private type RefFilter = Accumulator => DIKey => Boolean
 
+  private type PostFilter = ((DIKey, mutable.Set[DIKey])) => Boolean
+
+  private def computeTopology(plan: Iterable[ExecutableOp], refFilter: RefFilter, postFilter: PostFilter): PlanTopology = {
     val dependencies = plan.toList.foldLeft(new Accumulator) {
       case (acc, op: InstantiationOp) =>
-        acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= requirements(op).filterNot(refFilter(acc))
+        val filtered = requirements(op).filterNot(refFilter(acc)) // it's important NOT to update acc before we computed deps
+        acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= filtered
         acc
 
       case (acc, op) =>
@@ -78,12 +70,13 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
       .mapValues(_.toSet).toMap
 
     val dependants = reverseReftable(dependencies)
-    RefTable(dependencies, dependants)
+    PlanTopologyImmutable(DependencyGraph(dependants, DependencyKind.Required), DependencyGraph(dependencies, DependencyKind.Depends))
   }
 
   private def reverseReftable(dependencies: Map[DIKey, Set[DIKey]]): Map[DIKey, Set[DIKey]] = {
     val dependants = dependencies.foldLeft(new Accumulator with mutable.MultiMap[DIKey, DIKey]) {
       case (acc, (reference, referencee)) =>
+        acc.getOrElseUpdate(reference, mutable.Set.empty[DIKey])
         referencee.foreach(acc.addBinding(_, reference))
         acc
     }

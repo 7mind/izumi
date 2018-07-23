@@ -6,7 +6,7 @@ import java.security.MessageDigest
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.CompilerOptions
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.UntypedCompilerOptions
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -30,13 +30,13 @@ object IdealinguaPlugin extends AutoPlugin {
 
   object Mode {
 
-    case object Sources extends Mode
+    case object CompiledArtifact extends Mode
 
-    case object Artifact extends Mode
+    case object SourceArtifact extends Mode
 
   }
 
-  final case class Invokation(options: CompilerOptions, mode: Mode)
+  final case class Invokation(options: UntypedCompilerOptions, mode: Mode, subclassifier: Option[String] = None)
 
   object Keys {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
@@ -52,6 +52,37 @@ object IdealinguaPlugin extends AutoPlugin {
 
   override def requires = JvmPlugin
 
+  implicit class ArtifactExt(a: Artifact) {
+    def format: String = s"${a.name}${a.classifier.map(s => s"_$s").getOrElse("")}.${a.extension}"
+  }
+
+  implicit class FileExt(a: File) {
+    def format: String = {
+      val tpe = a match {
+        case f if f.isDirectory =>
+          "d"
+        case f if f.isFile =>
+          s"f:${f.length()}b"
+        case f if !f.exists() =>
+          ""
+        case f =>
+          "?"
+      }
+
+      val existence = if (a.exists()) {
+        "+"
+      } else {
+        "-"
+      }
+
+      s"[$existence$tpe]@${a.getCanonicalPath}"
+    }
+  }
+  implicit class PathExt(a: Path) {
+    def format: String = {
+      a.toFile.format
+    }
+  }
 
   override lazy val projectSettings = Seq(
     idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions ++ Seq(
@@ -63,64 +94,17 @@ object IdealinguaPlugin extends AutoPlugin {
     , idlDefaultExtensionsCSharp := CSharpTranslator.defaultExtensions
 
     , compilationTargets := Seq(
-      Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Sources)
-      , Invokation(CompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.Artifact)
-      , Invokation(CompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.Artifact)
-      , Invokation(CompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.Artifact)
-      , Invokation(CompilerOptions(IDLLanguage.CSharp, idlDefaultExtensionsCSharp.value), Mode.Artifact)
+      Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.CompiledArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.SourceArtifact)
+
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.SourceArtifact)
+
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.SourceArtifact)
+
+      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, idlDefaultExtensionsCSharp.value), Mode.SourceArtifact)
     )
 
     , watchSources += Watched.WatchSource(baseDirectory.value / "src/main/izumi")
-
-    , sourceGenerators in Compile += Def.task {
-      val src = sourceDirectory.value.toPath
-      val srcManaged = (sourceManaged in Compile).value.toPath
-      val resManaged = (resourceManaged in Compile).value.toPath
-
-      val izumiSrcDir = src.resolve("main/izumi")
-
-
-      val scope = Scope(izumiSrcDir, target.value.toPath, srcManaged)
-
-      val (scalaTargets, nonScalaTargets) = compilationTargets.value.partition(i => i.options.language == IDLLanguage.Scala)
-
-      val depClasspath = (dependencyClasspath in Compile).value
-      val scala_result = compileSources(scope, scalaTargets, depClasspath)
-
-      nonScalaTargets.foreach {
-        t =>
-          val nonScalaScope = Scope(izumiSrcDir, target.value.toPath, (resManaged.toFile / s"${t.options.language}").toPath)
-          compileSources(nonScalaScope, Seq(t), depClasspath)
-      }
-
-      val files = scala_result.flatMap {
-        case (_, Some(result)) =>
-          result.invokation.flatMap(_._2.paths)
-        case ((_, s), _) if s.target.toFile.exists() =>
-          val existing = IzFiles.walk(scope.target.toFile).filterNot(_.toFile.isDirectory)
-          logger.info(s"Compiler didn't return a result, target ${s.target} exists. Reusing ${existing.size} files there...")
-          existing
-        case ((_, s), _) if !s.target.toFile.exists() =>
-          logger.info(s"Compiler didn't return a result, target ${s.target} does not exist. What the fuck? Okay, let's return nothing :/")
-          Seq.empty
-      }
-
-      files.map(_.toFile)
-    }.taskValue
-
-    , resourceGenerators in Compile += Def.task {
-      val idlbase = sourceDirectory.value / "main" / "izumi"
-      logger.debug(s"""Generating resources: $idlbase ...""")
-      val allModels = (idlbase ** "*.domain").get ++ (idlbase ** "*.model").get
-      val mapped = allModels.map {
-        f =>
-          val relative = idlbase.toPath.relativize(f.toPath)
-          val targetPath = ((resourceManaged in Compile).value / "idealingua").toPath.resolve(relative).toFile
-          f -> targetPath
-      }
-      IO.copy(mapped, CopyOptions().withOverwrite(true))
-      mapped.map(_._2)
-    }.taskValue
 
     , artifacts ++= {
       val ctargets = compilationTargets.value
@@ -145,20 +129,21 @@ object IdealinguaPlugin extends AutoPlugin {
 
           val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip.source"
 
-          val result = doCompile(scope, t, (dependencyClasspath in Compile).value)
+          val result = generateCode(scope, t, (dependencyClasspath in Compile).value)
 
           result match {
             case Some(r) =>
-              logger.info(s"Have new compilation result, copying ${r.sources.toFile} info ${zipFile} for artifact $a")
-              IO.copyDirectory(r.sources.toFile, zipFile)
+              logger.info(s"${a.format}: Have new compilation result for artifact, copying ${r.zippedOutput.format} into ${zipFile.format}")
+              IO.copyDirectory(r.zippedOutput.toFile, zipFile)
+              logger.info(s"${a.format}: populated target ${zipFile.format}")
               Seq(a -> zipFile)
 
             case None =>
               if (zipFile.exists()) {
-                logger.info(s"Compiler didn't return a result, target $zipFile exists, reusing...")
+                logger.info(s"${a.format}: Compiler didn't return a result for artifact, reusing existing target ${zipFile.format}")
                 Seq(a -> zipFile)
               } else {
-                logger.info(s"Compiler didn't return a result, target $zipFile does not exist. What the fuck? Okay, let's return nothing :/")
+                logger.info(s"${a.format}: Compiler didn't return a result for artifact, target is missing, What the fuck? Okay, let's return nothing :/ Missing target: ${zipFile.format}")
                 Seq.empty
               }
           }
@@ -167,24 +152,81 @@ object IdealinguaPlugin extends AutoPlugin {
 
       packagedArtifacts.value ++ artifactFiles
     }
+
+    , sourceGenerators in Compile += Def.task {
+      val src = sourceDirectory.value.toPath
+      val srcManaged = (sourceManaged in Compile).value.toPath
+      //val resManaged = (resourceManaged in Compile).value.toPath
+
+      val izumiSrcDir = src.resolve("main/izumi")
+
+
+      val scope = Scope(izumiSrcDir, target.value.toPath, srcManaged)
+
+      val (scalacInputTargets, nonScalacInputTargets) = compilationTargets
+        .value
+        .filter(_.mode == Mode.CompiledArtifact)
+        .partition(i => i.options.language == IDLLanguage.Scala)
+
+      if (nonScalacInputTargets.nonEmpty) {
+        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        logger.warn(s"We don't know how to compile native artifacts for ${nonScalacInputTargets.niceList()}")
+      }
+
+      val depClasspath = (dependencyClasspath in Compile).value
+      val scala_result = scalacInputTargets
+        .map {
+          invokation =>
+            (invokation, scope) -> generateCode(scope, invokation, depClasspath)
+        }
+
+      val files = scala_result.flatMap {
+        case (_, Some(result)) =>
+          result.compilationProducts.flatMap(_._2.paths)
+        case ((_, s), _) if s.target.toFile.exists() =>
+          val existing = IzFiles.walk(scope.target.toFile).filterNot(_.toFile.isDirectory)
+          logger.info(s"Compiler didn't return a result, target ${s.target.format} exists. Reusing ${existing.size} files there...")
+          existing
+        case ((_, s), _) if !s.target.toFile.exists() =>
+          logger.info(s"Compiler didn't return a result, target ${s.target.format} does not exist. What the fuck? Okay, let's return nothing :/")
+          Seq.empty
+      }
+
+      files.map(_.toFile)
+    }.taskValue
+
+    , resourceGenerators in Compile += Def.task {
+      val idlbase = sourceDirectory.value / "main" / "izumi"
+      logger.debug(s"""Generating resources: $idlbase ...""")
+      val allModels = (idlbase ** "*.domain").get ++ (idlbase ** "*.model").get
+      val mapped = allModels.map {
+        f =>
+          val relative = idlbase.toPath.relativize(f.toPath)
+          val targetPath = ((resourceManaged in Compile).value / "idealingua").toPath.resolve(relative).toFile
+          f -> targetPath
+      }
+      IO.copy(mapped, CopyOptions().withOverwrite(true))
+      mapped.map(_._2)
+    }.taskValue
   )
 
-
   private def artifactTargets(ctargets: Seq[Invokation], pname: String): Seq[(Artifact, Invokation)] = {
-    ctargets.filter(i => i.mode == Mode.Artifact).map {
-      target =>
-        Artifact(pname, "src", "zip", target.options.language.toString) -> target
-    }
+    ctargets
+      .filter(i => i.mode == Mode.SourceArtifact)
+      .map {
+        target =>
+          val classifier = target.subclassifier match {
+            case Some(sc) =>
+              s"${target.options.language.toString}_$sc"
+            case None =>
+              target.options.language.toString
+          }
+
+          Artifact(pname, "src", "zip", classifier) -> target
+      }
   }
 
-  private def compileSources(scope: Scope, ctargets: Seq[Invokation], classpath: Classpath) = {
-    ctargets.filter(i => i.mode == Mode.Sources).map {
-      invokation =>
-        (invokation, scope) -> doCompile(scope, invokation, classpath)
-    }
-  }
-
-  private def doCompile(scope: Scope, invokation: Invokation, classpath: Classpath): Option[IDLCompiler.Result] = {
+  private def generateCode(scope: Scope, invokation: Invokation, classpath: Classpath): Option[IDLCompiler.Result] = {
     val cp = classpath.map(_.data)
     val target = scope.target
     logger.debug(s"""Loading models from $scope...""")
@@ -212,7 +254,7 @@ object IdealinguaPlugin extends AutoPlugin {
       val result = new IDLCompiler(toCompile)
         .compile(target, invokation.options)
 
-      result.invokation.foreach {
+      result.compilationProducts.foreach {
         case (id, s) =>
           logger.debug(s"Model $id produced ${s.paths.size} source files...")
       }
@@ -220,7 +262,7 @@ object IdealinguaPlugin extends AutoPlugin {
       IO.write(tsCache.toFile, IzTime.isoNow)
       Some(result)
     } else {
-      logger.info(s"""Output timestamp is okay, not going to recompile ${scope.source} : ts=$tsCache""")
+      logger.info(s"""Output timestamp is okay, not going to recompile ${scope.source.format} : ts=$tsCache""")
       None
     }
   }

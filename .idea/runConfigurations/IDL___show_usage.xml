@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="IDL / show usage" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.github.pshirshov.izumi.idealingua.compiler.CliIdlCompiler" />
+    <module name="idealingua-compiler" />
+    <option name="PROGRAM_PARAMETERS" value="--help" />
+    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="com.github.pshirshov.izumi.idealingua.compiler.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method />
+  </configuration>
+</component>

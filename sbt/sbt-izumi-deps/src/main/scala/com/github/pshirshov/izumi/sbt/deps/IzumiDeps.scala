@@ -29,6 +29,9 @@ object IzumiDeps {
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 
+    val scalacheck = "1.14.0"
+    val scalacheck_shapeless = "1.1.6"
+
     // good to drop
     val json4s = "3.5.4"  // 2.13+
     val scopt = "3.7.0" // 2.13+
@@ -41,6 +44,9 @@ object IzumiDeps {
     val scala_compiler = "org.scala-lang" % "scala-compiler"
     val scala_library = "org.scala-lang" % "scala-library"
     val scala_reflect = "org.scala-lang" % "scala-reflect"
+
+    val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck
+    val scalacheck_shapeless = "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.6"
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 

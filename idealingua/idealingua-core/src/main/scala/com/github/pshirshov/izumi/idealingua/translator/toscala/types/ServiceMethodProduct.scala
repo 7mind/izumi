@@ -93,7 +93,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                case o: ${outputTypeWrapped.typeFull} =>
                  $output
                case o =>
-                 val id: String = ${Lit.String(s"${sp.typeName}.$name)")}
+                 val id: String = ${Lit.String(s"${sp.typeName}.$name")}
                  throw new IRTTypeMismatchException(s"Unexpected input in $$id: $$o", o)
              }
        }

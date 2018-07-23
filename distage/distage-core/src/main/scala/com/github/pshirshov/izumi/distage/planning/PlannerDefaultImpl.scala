@@ -25,7 +25,7 @@ class PlannerDefaultImpl
   extends Planner {
   private val hook = new PlanningHookAggregate(planningHooks)
 
-  override def plan(context: ModuleBase): FinalPlan = {
+  override def plan(context: ModuleBase): OrderedPlan = {
     val plan = hook.hookDefinition(context).bindings.foldLeft(DodgyPlan.empty(context)) {
       case (currentPlan, binding) =>
         Value(computeProvisioning(currentPlan, binding))

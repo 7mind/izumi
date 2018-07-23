@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model
 
-import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
+import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 
 trait TheFactoryOfAllTheFactories {
-  def produce(plan: FinalPlan, parentContext: Locator): Locator
+  def produce(plan: OrderedPlan, parentContext: Locator): Locator
 }

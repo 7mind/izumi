@@ -3,11 +3,14 @@ package com.github.pshirshov.izumi.distage.provisioning
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
+import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
+
 
 // TODO: add introspection capabilities
 class ProvisionerDefaultImpl
@@ -23,33 +26,46 @@ class ProvisionerDefaultImpl
   , instanceStrategy: InstanceStrategy
   , failureHandler: ProvisioningFailureInterceptor
 ) extends Provisioner with OperationExecutor {
-  override def provision(plan: FinalPlan, parentContext: Locator): ProvisionImmutable = {
-    val provisions = plan.steps.foldLeft(ProvisionActive()) {
-      case (active, step) =>
+  override def provision(plan: OrderedPlan, parentContext: Locator): ProvisionImmutable = {
+    val excluded = mutable.Set[DIKey]()
 
-        val context = ProvisioningFailureContext(parentContext, active, step)
+    val provisioingContext = ProvisionActive()
+    val failures = new mutable.HashMap[DIKey, mutable.Set[Throwable]] with mutable.MultiMap[DIKey, Throwable]
 
-        Try(execute(LocatorContext(active.toImmutable, parentContext), step))
-          .recoverWith(failureHandler.onExecutionFailed(context)) match {
-          case Success(results) =>
-            results.foldLeft(active) {
-              case (acc, result) =>
-                Try(interpretResult(active, result))
-                  .recoverWith(failureHandler.onBadResult(context)) match {
+    plan.steps.foreach {
+      case step if excluded.contains(step.target) =>
+      case step =>
+        val failureContext = ProvisioningFailureContext(parentContext, provisioingContext, step)
+
+        val maybeResult = Try(execute(LocatorContext(provisioingContext.toImmutable, parentContext), step))
+          .recoverWith(failureHandler.onExecutionFailed(failureContext))
+
+        maybeResult match {
+          case Success(s) =>
+            s.foreach {
+              r =>
+                val maybeSuccess = Try(interpretResult(provisioingContext, r))
+                  .recoverWith(failureHandler.onBadResult(failureContext))
+
+                maybeSuccess match {
                   case Success(_) =>
-                    acc
                   case Failure(f) =>
-                    failureHandler.onStepOperationFailure(context, result, f)
+                    excluded ++= plan.topology.transitiveDependees(step.target)
+                    failures.addBinding(step.target, f)
                 }
             }
 
           case Failure(f) =>
-            failureHandler.onStepFailure(context, f)
+            excluded ++= plan.topology.transitiveDependees(step.target)
+            failures.addBinding(step.target, f)
         }
-
     }
 
-    ProvisionImmutable(provisions.instances, provisions.imports)
+    if (failures.nonEmpty) {
+      failureHandler.onProvisioningFailed(provisioingContext.toImmutable, plan, parentContext, failures.mapValues(_.toSet).toMap)
+    } else {
+      ProvisionImmutable(provisioingContext.instances, provisioingContext.imports)
+    }
   }
 
   private def interpretResult(active: ProvisionActive, result: OpResult): Unit = {

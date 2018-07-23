@@ -196,8 +196,8 @@ object LogUnit {
     val parameters = mutable.ArrayBuffer[RenderedParameter]()
 
     balanced.foreach {
-      case (part, LogArg(argName, argValue, hidden)) =>
-        val uncoloredRepr = formatArg(argName, argValue, withColors = false)
+      case (part, arg@LogArg(_, argValue, hidden)) =>
+        val uncoloredRepr = formatArg(arg.name, argValue, withColors = false)
 
         parameters += uncoloredRepr
 
@@ -213,7 +213,7 @@ object LogUnit {
         }
 
         if (!hidden) {
-          messageBuilder.append(formatKv(withColors)(LogArg(uncoloredRepr.visibleName, maybeColoredRepr)))
+          messageBuilder.append(formatKv(withColors)(LogArg(Seq(uncoloredRepr.visibleName), maybeColoredRepr, hidden = false)))
         } else {
           messageBuilder.append(maybeColoredRepr)
         }
@@ -221,12 +221,12 @@ object LogUnit {
     }
 
     unbalanced.foreach {
-      case LogArg(argName, argValue, hidden) =>
+      case arg@LogArg(_, argValue, hidden) =>
         templateBuilder.append("; ?")
         messageBuilder.append("; ")
         val repr = argToString(argValue, withColors)
         if (!hidden) {
-          messageBuilder.append(formatKv(withColors)(LogArg(argName, repr)))
+          messageBuilder.append(formatKv(withColors)(arg.copy(value = repr)))
         } else {
           messageBuilder.append(repr)
         }

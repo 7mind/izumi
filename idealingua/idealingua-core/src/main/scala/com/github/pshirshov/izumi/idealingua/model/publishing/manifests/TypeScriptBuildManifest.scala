@@ -1,11 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.model.publishing.manifests
 
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptModuleSchema.TypeScriptModuleSchema
 
-object TypeScriptModuleSchema extends Enumeration {
-  type TypeScriptModuleSchema = Value
-  val PER_DOMAIN, UNITED = Value
+
+sealed trait TypeScriptModuleSchema
+
+object TypeScriptModuleSchema {
+  final case object PER_DOMAIN extends TypeScriptModuleSchema
+  final case object UNITED extends TypeScriptModuleSchema
 }
 
 case class TypeScriptBuildManifest(

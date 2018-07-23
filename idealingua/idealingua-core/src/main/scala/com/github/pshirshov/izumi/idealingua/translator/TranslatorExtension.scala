@@ -6,4 +6,6 @@ final case class ExtensionId(id: String) extends AnyVal {
 
 trait TranslatorExtension {
   def id: ExtensionId = ExtensionId(getClass.getSimpleName.split('$').head)
+
+  override def toString: String = id.id
 }

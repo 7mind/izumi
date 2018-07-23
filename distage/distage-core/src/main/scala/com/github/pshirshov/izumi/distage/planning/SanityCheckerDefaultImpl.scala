@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -15,41 +15,41 @@ class SanityCheckerDefaultImpl
   extends SanityChecker {
 
   override def assertStepSane(plan: DodgyPlan): Unit = {
-    plan.topology.dependencies.foreach {
-      kv =>
-        kv._2.foreach {
-          dep =>
-            if (!plan.topology.dependees(dep).contains(kv._1)) {
-              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
-            }
-        }
-    }
-    plan.topology.dependees.foreach {
-      kv =>
-        kv._2.foreach {
-          dep =>
-            if (!plan.topology.dependencies(dep).contains(kv._1)) {
-              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
-            }
-        }
-    }
+//    plan.topology.dependencies.foreach {
+//      kv =>
+//        kv._2.foreach {
+//          dep =>
+//            if (!plan.topology.dependees(dep).contains(kv._1)) {
+//              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
+//            }
+//        }
+//    }
+//    plan.topology.dependees.foreach {
+//      kv =>
+//        kv._2.foreach {
+//          dep =>
+//            if (!plan.topology.dependencies(dep).contains(kv._1)) {
+//              throw new SanityCheckFailedException(s"Sanity check failed: deptables are asymmetric!")
+//            }
+//        }
+//    }
   }
 
-  override def assertFinalPlanSane(plan: FinalPlan): Unit = {
+  override def assertFinalPlanSane(plan: OrderedPlan): Unit = {
     assertNoDuplicateOps(plan.steps)
 
-    val reftable = planAnalyzer.computeFwdRefTable(plan.steps)
-    if (reftable.dependsOn.nonEmpty) {
-      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependsOn}!", reftable)
+    val reftable = planAnalyzer.topologyFwdRefs(plan.steps)
+    if (reftable.dependees.graph.nonEmpty) {
+      throw new ForwardRefException(s"Cannot finish the plan, there are forward references: ${reftable.dependees}!", reftable)
     }
 
-    val fullRefTable = planAnalyzer.computeFullRefTable(plan.steps)
+    val fullRefTable = planAnalyzer.topology(plan.steps)
 
-    val allAvailableRefs = fullRefTable.dependenciesOf.keySet
-    val fullDependenciesSet = fullRefTable.dependenciesOf.flatMap(_._2).toSet
+    val allAvailableRefs = fullRefTable.dependencies.graph.keySet
+    val fullDependenciesSet = fullRefTable.dependencies.graph.flatMap(_._2).toSet
     val missingRefs = fullDependenciesSet -- allAvailableRefs
     if (missingRefs.nonEmpty) {
-      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependsOn}!", missingRefs, Some(fullRefTable))
+      throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependencies}!", missingRefs, Some(fullRefTable))
     }
 
   }

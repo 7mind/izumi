@@ -8,11 +8,11 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptModuleSchema.TypeScriptModuleSchema
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.ManifestDependency
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension, TypeScriptTranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.TypescriptTranslatorOptions
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
 
@@ -23,18 +23,16 @@ object TypeScriptTranslator {
   )
 }
 
-class TypeScriptTranslator(ts: Typespace, extensions: Seq[TypeScriptTranslatorExtension]) {
-  protected val ctx: TSTContext = new TSTContext(ts, extensions)
+class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) {
+  protected val ctx: TSTContext = new TSTContext(ts, options.extensions)
 
   import ctx._
 
-  def translate()(implicit manifest: Option[BuildManifest]): Seq[Module] = {
+  def translate(): Seq[Module] = {
+    val manifest = options.manifest
 
-    if (manifest.isDefined && !manifest.get.isInstanceOf[TypeScriptBuildManifest]) {
-      throw new Exception("TypeScriptTranslator needs TypeScriptBuildManifest, got " + manifest.get.getClass.getName)
-    }
     implicit val tsManifest: Option[TypeScriptBuildManifest] = if (manifest.isDefined)
-      Some(manifest.get.asInstanceOf[TypeScriptBuildManifest])
+      Some(manifest.get)
     else
       None
 

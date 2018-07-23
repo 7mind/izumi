@@ -12,14 +12,19 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
-import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, UntypedCompilerOptions}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
+import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension, TypespaceCompiler}
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension}
 
 import scala.sys.process._
 
@@ -53,8 +58,8 @@ object IDLTestTools {
     loaded
   }
 
-  def compilesScala(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, IDLLanguage.Scala, extensions)
+  def compilesScala(id: String, domains: Seq[Typespace], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions))
     val classLoader = Thread
       .currentThread
       .getContextClassLoader
@@ -75,7 +80,7 @@ object IDLTestTools {
     exitCode == 0
   }
 
-  def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
+  def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
     val manifest = new TypeScriptBuildManifest(
         name = "TestBuild",
         tags = "",
@@ -91,7 +96,7 @@ object IDLTestTools {
         moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED
       )
 
-    val out = compiles(id, domains, IDLLanguage.Typescript, extensions)(if(scoped) Some(manifest) else None)
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, true, if(scoped) Some(manifest) else None))
 
     if (scoped) {
       val transformer =
@@ -140,9 +145,9 @@ object IDLTestTools {
     exitCode == 0
   }
 
-  def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
+  def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
     val lang = IDLLanguage.CSharp
-    val out = compiles(id, domains, lang, extensions)
+    val out = compiles(id, domains, CompilerOptions(lang, extensions))
     val refsDir = out.absoluteTargetDir.resolve("refs")
 
     IzFiles.recreateDirs(refsDir)
@@ -164,8 +169,8 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[TranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, IDLLanguage.Go, extensions)
+  def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions))
     val outDir = out.absoluteTargetDir
 
     val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
@@ -184,7 +189,7 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  private def compiles(id: String, domains: Seq[Typespace], language: IDLLanguage, extensions: Seq[TranslatorExtension])(implicit manifest: Option[BuildManifest] = None): CompilerOutput = {
+  private def compiles[E <: TranslatorExtension, M <: BuildManifest](id: String, domains: Seq[Typespace], options: CompilerOptions[E, M]): CompilerOutput = {
     val targetDir = Paths.get("target")
     val tmpdir = targetDir.resolve("idl-output")
 
@@ -205,11 +210,11 @@ object IDLTestTools {
     IzFiles.recreateDirs(runDir, domainsDir, layoutDir, compilerDir)
     IzFiles.refreshSymlink(targetDir.resolve(stablePrefix), runDir)
 
-    val options = TypespaceCompiler.CompilerOptions(language, extensions)
+    //val options = TypespaceCompiler.UntypedCompilerOptions(language, extensions)
 
     val allFiles: Seq[Path] = new IDLCompiler(domains)
-      .compile(compilerDir, options)
-      .invokation.flatMap {
+      .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withRuntime, options.manifest))
+      .compilationProducts.flatMap {
       case (did, s) =>
         val mapped = s.paths.map {
           f =>

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model
 
-import com.github.pshirshov.izumi.distage.model.plan.FinalPlan
+import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 
 trait Producer {
-  def produce(diPlan: FinalPlan): Locator
+  def produce(diPlan: OrderedPlan): Locator
 }

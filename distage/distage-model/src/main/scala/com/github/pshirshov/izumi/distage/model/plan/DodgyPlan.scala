@@ -9,20 +9,16 @@ import scala.collection.mutable
 
 
 final case class DodgyPlan(operations: OpMap
-                           , topology: PlanTopology
-                           , issues: mutable.ArrayBuffer[PlanningFailure]
                            , definition: ModuleBase
                           )
 
 object DodgyPlan {
 
-  type OpMap = mutable.HashMap[DIKey, InstantiationOp]
+  type OpMap = mutable.HashMap[DIKey, mutable.Set[InstantiationOp]] with mutable.MultiMap[DIKey, InstantiationOp]
 
   def empty(definition: ModuleBase): DodgyPlan = DodgyPlan(
-    new OpMap
-    , PlanTopology.empty
-    , mutable.ArrayBuffer.empty[PlanningFailure]
-     , definition
+    new mutable.HashMap[DIKey, mutable.Set[InstantiationOp]] with mutable.MultiMap[DIKey, InstantiationOp]
+    , definition
   )
 }
 

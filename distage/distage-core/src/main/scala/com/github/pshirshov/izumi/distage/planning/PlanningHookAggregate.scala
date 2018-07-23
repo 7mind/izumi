@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, FinalPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -34,28 +34,28 @@ class PlanningHookAggregate(hooks: Set[PlanningHook]) extends PlanningHook {
     }
   }
 
-  override def phase10PostFinalization(plan: FinalPlan): FinalPlan = {
+  override def phase10PostFinalization(plan: SemiPlan): SemiPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>
         hook.phase10PostFinalization(acc)
     }
   }
 
-  override def phase20Customization(plan: FinalPlan): FinalPlan = {
+  override def phase20Customization(plan: SemiPlan): SemiPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>
         hook.phase20Customization(acc)
     }
   }
 
-  override def phase50PreForwarding(plan: FinalPlan): FinalPlan = {
+  override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>
         hook.phase50PreForwarding(acc)
     }
   }
 
-  override def phase90AfterForwarding(plan: FinalPlan): FinalPlan = {
+  override def phase90AfterForwarding(plan: OrderedPlan): OrderedPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>
         hook.phase90AfterForwarding(acc)

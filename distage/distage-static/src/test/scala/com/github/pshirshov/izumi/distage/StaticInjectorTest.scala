@@ -86,24 +86,6 @@ class StaticInjectorTest extends WordSpec {
       assert(context.get[Circular4].factoryFun(context.get[Circular4], context.get[Circular5]) != null)
     }
 
-    "support non-circular dependencies (regression test)" in {
-      import Case15._
-
-      val definition: ModuleBase = new StaticModuleDef {
-        make[CustomDep1].from(CustomDep1.empty)
-        make[CustomTrait].from(customTraitInstance)
-        stat[CustomClass]
-        stat[CustomDep2]
-        stat[CustomApp]
-      }
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
-
-      assert(context.get[CustomApp] != null)
-    }
-
     "handle macro factory injections" in {
       import Case5._
 

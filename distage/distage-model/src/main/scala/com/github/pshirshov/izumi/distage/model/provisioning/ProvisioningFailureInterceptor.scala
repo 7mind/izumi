@@ -1,10 +1,15 @@
 package com.github.pshirshov.izumi.distage.model.provisioning
 
-import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.exceptions.ProvisioningException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.reflection.universe
+import com.github.pshirshov.izumi.distage.model.{Locator, reflection}
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.util.Try
+
+
+case class OperationFailed(op: ExecutableOp, result: Throwable)
 
 case class ProvisioningFailureContext(
                                        parentContext: Locator
@@ -12,24 +17,42 @@ case class ProvisioningFailureContext(
                                        , step: ExecutableOp
                                      )
 
-trait ProvisioningFailureInterceptor {
-  def onStepOperationFailure(context: ProvisioningFailureContext, result: OpResult, f: Throwable): ProvisionActive
+case class ProvisioningMassFailureContext(
+                                           parentContext: Locator
+                                           , active: ProvisionActive
+                                         )
 
-  def onStepFailure(context: ProvisioningFailureContext, f: Throwable): ProvisionActive
+trait ProvisioningFailureInterceptor {
+  def onProvisioningFailed(toImmutable: ProvisionImmutable, plan: OrderedPlan, parentContext: Locator, failures: Map[universe.RuntimeDIUniverse.DIKey, Set[Throwable]]): ProvisionImmutable
 
   def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]]
 
   def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[OpResult]]]
-
 }
 
 class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInterceptor {
-  override def onStepFailure(context: ProvisioningFailureContext, f: Throwable): ProvisionActive = {
-    throw new ProvisioningException(s"Step execution failed for ${context.step}", f)
-  }
 
-  override def onStepOperationFailure(context: ProvisioningFailureContext, result: OpResult, f: Throwable): ProvisionActive = {
-    throw new ProvisioningException(s"Provisioning unexpectedly failed on result handling for result $result of step ${context.step}", f)
+
+  override def onProvisioningFailed(toImmutable: ProvisionImmutable, plan: OrderedPlan, parentContext: Locator, failures: Map[reflection.universe.RuntimeDIUniverse.DIKey, Set[Throwable]]): ProvisionImmutable = {
+    val allFailures = failures.flatMap {
+      case (key, fs) =>
+        fs.map {
+          f =>
+            OperationFailed(plan.index(key), f)
+        }
+    }
+
+    val repr = allFailures.map {
+      case OperationFailed(op, f) =>
+        op.origin match {
+          case Some(origin) =>
+            s"$origin / ${op.target}: ${f.getMessage}"
+          case None =>
+            s"${op.target}: ${f.getMessage}"
+        }
+    }
+
+    throw new ProvisioningException(s"Operations failed (${repr.size}): ${repr.niceList()}", allFailures.head.result)
   }
 
   override def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]] = PartialFunction.empty

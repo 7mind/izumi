@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan._
 
 
 trait Planner {
-  def plan(context: ModuleBase): FinalPlan
+  def plan(context: ModuleBase): OrderedPlan
 }
 
 
