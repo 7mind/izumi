@@ -190,12 +190,13 @@ trait Codecs {
 
   import _root_.io.circe._
   import _root_.io.circe.generic.semiauto._
+  import _root_.io.circe.generic.extras.semiauto
 
   implicit def decMdep: Decoder[ManifestDependency] = deriveDecoder
 
   implicit def decPublisher: Decoder[Publisher] = deriveDecoder
 
-  implicit def decTsModuleSchema: Decoder[TypeScriptModuleSchema] = deriveDecoder
+  implicit def decTsModuleSchema: Decoder[TypeScriptModuleSchema] = semiauto.deriveEnumerationDecoder
 
   implicit def decScala: Decoder[ScalaBuildManifest] = deriveDecoder
 
@@ -210,7 +211,7 @@ trait Codecs {
 
   implicit def encPublisher: Encoder[Publisher] = deriveEncoder
 
-  implicit def encTsModuleSchema: Encoder[TypeScriptModuleSchema] = deriveEncoder
+  implicit def encTsModuleSchema: Encoder[TypeScriptModuleSchema] = semiauto.deriveEnumerationEncoder
 
   implicit def encScala: Encoder[ScalaBuildManifest] = deriveEncoder
 

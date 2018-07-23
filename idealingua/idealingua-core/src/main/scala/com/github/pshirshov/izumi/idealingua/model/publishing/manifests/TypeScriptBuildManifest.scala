@@ -6,8 +6,8 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, Ma
 sealed trait TypeScriptModuleSchema
 
 object TypeScriptModuleSchema {
-  case object PER_DOMAIN extends TypeScriptModuleSchema
-  case object UNITED extends TypeScriptModuleSchema
+  final case object PER_DOMAIN extends TypeScriptModuleSchema
+  final case object UNITED extends TypeScriptModuleSchema
 }
 
 case class TypeScriptBuildManifest(
