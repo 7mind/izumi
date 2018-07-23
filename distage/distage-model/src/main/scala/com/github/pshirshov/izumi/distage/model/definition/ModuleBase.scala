@@ -40,12 +40,10 @@ object ModuleBase {
       // FIXME: a hack to support tag merging
 
       // FIXME: this makes sense because Bindings equals/hashcode ignores `tags` field
-      val sameThis = moduleDef.bindings intersect that.bindings
-      val sameThat = that.bindings intersect moduleDef.bindings
+      val theseBindings = moduleDef.bindings.toSeq
+      val thoseBindings = that.bindings.toSeq
 
-      val newIntersection = sameThis.zip(sameThat).map { case (a, b) => b.addTags(a.tags) }
-
-      SimpleModuleDef(moduleDef.bindings.diff(sameThis) ++ that.bindings.diff(sameThat) ++ newIntersection)
+      SimpleModuleDef(tagwiseMerge(theseBindings ++ thoseBindings))
     }
 
     def :+(binding: Binding): ModuleBase = {
@@ -106,5 +104,11 @@ object ModuleBase {
       SimpleModuleDef(modulewiseMerge(mergedSingletons, mergedSetOperations))
     }
   }
+
+  private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] =
+    // Using lawless equals/hashcode
+    bs.groupBy(identity).values.map {
+      _.reduce(_ addTags _.tags)
+    }.toSet
 
 }

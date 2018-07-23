@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -8,12 +9,12 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 object FormattingUtils {
 
-  def doFormat(target: RuntimeDIUniverse.DIKey, deps: RuntimeDIUniverse.Wiring): String = {
+  def doFormat(target: DIKey, deps: Wiring): String = {
     val op = doFormat(deps)
     s"$target := $op"
   }
 
-  private def doFormat(deps: RuntimeDIUniverse.Wiring): String = {
+  private def doFormat(deps: Wiring): String = {
     deps match {
       case Constructor(instanceType, associations) =>
         doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'))

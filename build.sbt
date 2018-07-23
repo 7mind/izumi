@@ -414,6 +414,7 @@ lazy val `izumi-r2` = inRoot.as
     }
     , paradoxProperties ++= Map(
       "scaladoc.izumi.base_url" -> s"/api/com/github/pshirshov/",
+      "scaladoc.base_url" -> s"/api/",
       "izumi.version" -> version.value,
     )
   )

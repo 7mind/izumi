@@ -6,6 +6,8 @@ import com.github.pshirshov.izumi.distage.model.plan._
 
 trait Planner {
   def plan(context: ModuleBase): OrderedPlan
+
+  def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan
 }
 
 

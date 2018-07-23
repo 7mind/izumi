@@ -10,12 +10,7 @@ Combining type safety, ease composition and separation of declaration from execu
 DiStage brings together a fusion that retains safety and clarity of pure FP without sacrificing full runtime flexibility and configurability of traditional 
 runtime dependency injection frameworks such as Guice.
 
-## Tutorial: DiStage By Example
-
-This tutorial will teach you how to build applications quickly and efficiently using DiStage!</br>
 DiStage is *staged*, meaning that it's split into several distinct *stages*, like a multi-pass compiler. DiStage lets you add custom functionality between stages should you require it, yet it keeps a simple surface API.
-
-We'll start off with basic examples and by the end of this tutorial you'll make a fully-fledged Pet Store application, complete with tests and configuration!
 
 ### Defining simple modules
 
@@ -96,18 +91,84 @@ This concludes the first chapter. Next, we'll learn how to use multiple and name
 // TODO blakdfg
 distage is non-invasive and unopinionated, it tries to get out of the way of programmer as much as possible. As a consequence it does not use annotations
 
-### Multiple Bindings (Multibindings, Set Bindings)
+### MultiBindings / Set Bindings
 
-Multibindings
-    *
-    *
-    * Note: The method Multibinder.newSetBinder(binder, type) can be confusing. This operation creates a new binder,
-    * but doesn't override any existing bindings. A binder created this way contributes to the existing Set of
-    * implementations for that type. It would create a new set only if one is not already bound.
+Multibindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
 
-Also see [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multibindings).
+To define a multibinding use `.many` and `.add` methods in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef)
+DSL:
+
+```scala
+import cats.effect._, org.http4s._, org.http4s.dsl.io._, scala.concurrent.ExecutionContext.Implicits.global
+import distage._
+
+object HomeRouteModule extends ModuleDef {
+  many[HttpRoutes[IO]].add {
+    HttpRoutes.of[IO] { case GET -> Root / "home" => Ok(s"Home page!") }
+  }
+}
+```
+
+Multibindings defined in different modules will be merged together into a single Set.
+You can summon a multibinding by type `Set[_]`:
+
+```scala
+import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.implicits._
+
+object BlogRouteModule extends ModuleDef {
+  many[HttpRoutes[IO]].add {
+    HttpRoutes.of[IO] { case GET -> Root / "blog" / post => Ok("Blog post ``$post''!") }
+  }
+}
+
+class HttpServer(routes: Set[HttpRoutes[IO]]) {
+  def serve = BlazeBuilder[IO]
+    .bindHttp(8080, "localhost")
+    .mountService(routes.fold[HttpRoutes[IO]], "/")
+    .start
+
+  val count = routes.size
+}
+
+val context = Injector().run(HomeRouteModule ++ BlogRouteModule)
+val server = context.get[HttpServer]
+
+server.count // 2
+```
+
+For further detail see [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multibindings).
+
+### Provider Bindings
+
+To bind to a function instead of constructor use `.from` method in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef) DSL:
+
+```scala
+case class HostPort(host: String, port: Int)
+
+class HttpServer(hostPort: HostPort)
+
+trait HttpServerModule extends ModuleDef {
+  make[HttpServer].from {
+    hostPort: HostPort => new HttpServer(hostPort.host, hostPort + 1000)
+  }
+}
+```
+
+To inject named instances or config values, add annotations to lambda arguments' types:
+
+```scala
+trait HostPortModule extends ModuleDef {
+  make[HostPort].from {
+    (configHost: String @ConfPath("http.host"), configPort: Int @ConfPath("http.port")) =>
+      HostPort(configHost, configPort)
+  }
+}
+```
+
+For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet)
 
 ### Tagless Final Style with DiStage
+
 Disclaimer: I'm a maintainer of [distage](https://izumi.7mind.io/distage/index.html)
 
 In your article, you talk a lot about a choice between Pure FP vs. OOP dependency injection, but one possibility that
@@ -115,46 +176,54 @@ wasn't expounded on is – **why not both**? In [distage](https://izumi.7mind.io
 support for tagless final style. Let's see how [freestyle tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
 looks in distage:
 
-    class Program[F: TagK: Monad] extends ModuleDef {
-      make[TaglessProgram[F]]
-    }
+```scala
+class Program[F: TagK: Monad] extends ModuleDef {
+  make[TaglessProgram[F]]
+}
 
-    object TryInterpreters extends ModuleDef {
-      make[Validation.Handler[Try]].from(tryValidationHandler)
-      make[Interaction.Handler[Try]].from(tryInteractionHandler)
-    }
+object TryInterpreters extends ModuleDef {
+  make[Validation.Handler[Try]].from(tryValidationHandler)
+  make[Interaction.Handler[Try]].from(tryInteractionHandler)
+}
 
-    // Combine modules into a full program
-    val TryProgram = new Program[Try] ++ TryInterpreters
+// Combine modules into a full program
+val TryProgram = new Program[Try] ++ TryInterpreters
+```
 
 where
 
-    class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
-      def program = for {
-          userInput <- interaction.ask("Give me something with at least 3 chars and a number on it")
-          valid     <- (validation.minSize(userInput, 3), validation.hasNumber(userInput)).mapN(_ && _)
-          _         <- if (valid) interaction.tell("awesomesauce!") else interaction.tell(s"$userInput is not valid")
-      } yield ()
-    }
+```scala
+class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
+  def program = for {
+      userInput <- interaction.ask("Give me something with at least 3 chars and a number on it")
+      valid     <- (validation.minSize(userInput, 3), validation.hasNumber(userInput)).mapN(_ && _)
+      _         <- if (valid) interaction.tell("awesomesauce!") else interaction.tell(s"$userInput is not valid")
+  } yield ()
+}
 
-    val validationHandler = new Validation.Handler[Try] {
-      override def minSize(s: String, n: Int): Try[Boolean] = Try(s.size >= n)
-      override def hasNumber(s: String): Try[Boolean] = Try(s.exists(c => "0123456789".contains(c)))
-    }
+val validationHandler = new Validation.Handler[Try] {
+  override def minSize(s: String, n: Int): Try[Boolean] = Try(s.size >= n)
+  override def hasNumber(s: String): Try[Boolean] = Try(s.exists(c => "0123456789".contains(c)))
+}
 
-    val interactionHandler = new Interaction.Handler[Try] {
-      override def tell(s: String): Try[Unit] = Try(println(s))
-      override def ask(s: String): Try[String] = Try("This could have been user input 1")
-    }
+val interactionHandler = new Interaction.Handler[Try] {
+  override def tell(s: String): Try[Unit] = Try(println(s))
+  override def ask(s: String): Try[String] = Try("This could have been user input 1")
+}
+```
 
 Notice how the program module stays completely polymorphic and abstracted from its eventual interpeter or what monad it
 will run in? Want a program in different Monad? No problem:
 
-    val IOProgram = new Program[IO] ++ IOInterpreters
+```scala
+val IOProgram = new Program[IO] ++ IOInterpreters
+```
 
 Want a program in the **same** Monad, but with different interpreters? No problem at all:
 
-    val DifferentTryProgram = new Program[Try] ++ DifferentTryInterpreters
+```scala
+val DifferentTryProgram = new Program[Try] ++ DifferentTryInterpreters
+```
 
 Distage makes tagless final style easier and safer by making your implicit instances explicit and configurable as
 first-class values. It even enforces typeclass coherence by disallowing multiple instances, so one wrong `import` can't
@@ -168,29 +237,33 @@ framework, nor parametricity and equational reasoning of pure FP tagless final s
 We also have first-class support for configs, so your first example with manual config reading is not necessary. Just
 put your config into typesafe-config and in distage you can request it in any module:
 
-    final case class Config(different: Boolean)
+```scala
+final case class Config(different: Boolean)
 
-    class ConfiguredTaglessProgram[F](
-      @ConfPath("program.config") config: Config,
-      primaryProgram: TaglessProgram[F] @Id("primary"),
-      differentProgram: TaglessProgram[F] @Id("different")) {
+class ConfiguredTaglessProgram[F](
+  @ConfPath("program.config") config: Config,
+  @Id("primary") primaryProgram: TaglessProgram[F],
+  @Id("different") differentProgram: TaglessProgram[F]) {
 
-        val program = if (config.different) differentProgram else primaryProgram
-    }
+    val program = if (config.different) differentProgram else primaryProgram
+}
 
-    class ConfiguredTryProgram[F: TagK: Monad] extends ModuleDef {
-      make[ConfiguredProgram[F]]
-      make[TaglessProgram[F]].named("primary")
-      make[TaglessProgram[F]].named("different")
-    }
+class ConfiguredTryProgram[F: TagK: Monad] extends ModuleDef {
+  make[ConfiguredProgram[F]]
+  make[TaglessProgram[F]].named("primary")
+  make[TaglessProgram[F]].named("different")
+}
+```
 
 Where your config file looks like this:
 
-    program {
-        config {
-            different = true
-        }
+```hocon
+program {
+    config {
+        different = true
     }
+}
+```
 
 > If you prefer compile-time check, consider using MacWire
 

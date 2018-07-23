@@ -58,24 +58,18 @@ trait ModuleDef extends ModuleBase {
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
   protected def initialTags: mutable.Set[String] = mutable.HashSet.empty
 
-  // FIXME
-  def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] =
-    // Using lawless equals/hashcode
-    bs.groupBy(identity).values.map {
-      _.reduce(_ addTags _.tags)
-    }.toSet
-
-  final private def freeze(frozenState: Iterable[Binding]): Set[Binding] = {
+  final private def freeze: Set[Binding] = {
+    val frozenState = mutableState.flatMap {
+      case SingletonRef(b) => Seq(b)
+      case SetRef(_, all) => all.map(_.ref)
+    }
     val frozenTags = mutableTags.toSet
 
-    tagwiseMerge(frozenState)
-      .map(b => b.withTags(b.tags ++ frozenTags))
+    ModuleBase.tagwiseMerge(frozenState)
+      .map(_.addTags(frozenTags))
   }
 
-  override lazy val bindings: Set[Binding] = freeze(mutableState.flatMap {
-    case SingletonRef(b) => Seq(b)
-    case SetRef(_, all) => all.map(_.ref)
-  })
+  override def bindings: Set[Binding] = freeze
 
   final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val binding = Bindings.binding[T]
@@ -87,14 +81,50 @@ trait ModuleDef extends ModuleBase {
   }
 
   /**
-    * Define a multibinding of `T`
+    * Multibindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
     *
-    * Multibindings can be bound in multiple different modules. All the elements of the same multibinding in different modules will be joined into one [[Set]].
+    * To define a multibinding use `.many` and `.add` methods in ModuleDef
+    * DSL:
     *
+    *     ```scala
+    *     import cats.effect._, org.http4s._, org.http4s.dsl.io._, scala.concurrent.ExecutionContext.Implicits.global
+    *     import distage._
     *
-    * Note: The method Multibinder.newSetBinder(binder, type) can be confusing. This operation creates a new binder,
-    * but doesn't override any existing bindings. A binder created this way contributes to the existing Set of
-    * implementations for that type. It would create a new set only if one is not already bound.
+    *     object HomeRouteModule extends ModuleDef {
+    *     many[HttpRoutes[IO]].add {
+    *         HttpRoutes.of[IO] { case GET -> Root / "home" => Ok(s"Home page!") }
+    *     }
+    *     }
+    *     ```
+    *
+    * Multibindings defined in different modules will be merged together into a single Set.
+    * You can summon a multibinding by type `Set[_]`:
+    *
+    *     ```scala
+    *     import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.implicits._
+    *
+    *     object BlogRouteModule extends ModuleDef {
+    *     many[HttpRoutes[IO]].add {
+    *         HttpRoutes.of[IO] { case GET -> Root / "blog" / post => Ok("Blog post ``$post''!") }
+    *     }
+    *     }
+    *
+    *     class HttpServer(routes: Set[HttpRoutes[IO]]) {
+    *     def serve = BlazeBuilder[IO]
+    *     .bindHttp(8080, "localhost")
+    *     .mountService(routes.fold[HttpRoutes[IO]], "/")
+    *     .start
+    *
+    *     val count = routes.size
+    *     }
+    *
+    *     val context = Injector().run(HomeRouteModule ++ BlogRouteModule)
+    *     val server = context.get[HttpServer]
+    *
+    *     server.count // 2
+    *     ```
+    *
+    * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
     */
   final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
     val binding = Bindings.emptySet[T]
@@ -241,7 +271,7 @@ object ModuleDef extends GeneralizedBindings {
   ) extends SetElementDSLMutBase[T] {
 
     def tagged(tags: String*): SetElementDSL[T] =
-      replaceCursor(mutableCursor.ref.withTags(tags = mutableCursor.ref.tags ++ tags))
+      replaceCursor(mutableCursor.ref.addTags(Set(tags: _*)))
 
   }
 
