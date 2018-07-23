@@ -29,7 +29,7 @@ final case class DepNode(key: DIKey, graph: DependencyGraph, level: Int, limit: 
     } else {
       children.diff(exclusions).map {
         child =>
-          DepNode(child, graph, level + 1, limit, exclusions ++ children)
+          DepNode(child, graph, level + 1, limit, exclusions + key)
       } ++ children.intersect(exclusions).map {
         child =>
           CircularReference(child, level + 1)

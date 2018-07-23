@@ -8,8 +8,7 @@ import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
@@ -161,24 +160,6 @@ class InjectorTest extends WordSpec {
       assert(traitArg.testVal == 1)
       assert(context.instances.nonEmpty)
       assert(context.get[Circular4].factoryFun(context.get[Circular4], context.get[Circular5]) != null)
-    }
-
-    "support non-circular dependencies (regression test)" in {
-      import Case15._
-
-      val definition: ModuleBase = new ModuleDef {
-        make[CustomDep1].from(CustomDep1.empty)
-        make[CustomTrait].from(customTraitInstance)
-        make[CustomClass]
-        make[CustomDep2]
-        make[CustomApp]
-      }
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
-
-      assert(context.get[CustomApp] != null)
     }
 
     "Progression test: Does not yet support self-referencing circulars" in {
