@@ -409,7 +409,7 @@ You can also query a plan to see the dependencies and reverse dependencies of a 
 
 ```scala
 // Print dependencies
-System.err.println(plan.topology.dependees.tree(DIKey.get[Circular1]))
+System.err.println(plan.topology.dependencies.tree(DIKey.get[Circular1]))
 // Print reverse dependencies
 System.err.println(plan.topology.dependees.tree(DIKey.get[Circular1]))
 ```
