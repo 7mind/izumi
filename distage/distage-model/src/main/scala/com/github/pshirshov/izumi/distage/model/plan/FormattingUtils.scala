@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
-
 object FormattingUtils {
 
   def doFormat(target: DIKey, deps: Wiring, origin: Option[Binding]): String = {

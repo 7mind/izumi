@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, Provisio
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
-
 class TraitStrategyDefaultImpl(proxyProvider: ProxyProvider) extends TraitStrategy {
   def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
     val traitDeps = context.narrow(op.wiring.associations.map(_.wireWith).toSet)

@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.mutable
 
-
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   def topology(ops: Seq[ExecutableOp]): PlanTopology = {
     computeTopology(

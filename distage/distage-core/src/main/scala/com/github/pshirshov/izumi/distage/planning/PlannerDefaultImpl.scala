@@ -12,7 +12,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.functional.Value
 
-
 class PlannerDefaultImpl
 (
   protected val forwardingRefResolver: ForwardingRefResolver
@@ -48,13 +47,13 @@ class PlannerDefaultImpl
       .map(hook.phase20Customization)
       .eff(planningObserver.onPhase20Customization)
 
-      .map(orderPlan)
+      .map(order)
       .get
 
     finalPlan
   }
 
-  private def orderPlan(semiPlan: SemiPlan): OrderedPlan =
+  def order(semiPlan: SemiPlan): OrderedPlan =
     Value(semiPlan)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
@@ -70,7 +69,7 @@ class PlannerDefaultImpl
   // TODO: plan Monoid instance
   // TODO: add tests
   override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan =
-    orderPlan(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector))
+    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector))
 
   private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
     binding match {
