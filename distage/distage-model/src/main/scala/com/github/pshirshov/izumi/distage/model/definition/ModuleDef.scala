@@ -157,7 +157,7 @@ trait ModuleDef extends ModuleBase {
 }
 
 
-object ModuleDef extends GeneralizedBindings {
+object ModuleDef {
 
   sealed trait BindingRef
   final case class SingletonRef(var ref: Binding) extends BindingRef
@@ -306,16 +306,6 @@ object ModuleDef extends GeneralizedBindings {
       new SetElementDSL[T](mutableState, mutableCursor, identifier)
     }
   }
-
-
-}
-trait GeneralizedBindings {
-
-
-
-
-
-
 
   trait BindDSLBase[T, AfterBind] {
     final def from[I <: T : Tag]: AfterBind =
