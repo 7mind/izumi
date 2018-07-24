@@ -69,7 +69,7 @@ class Bye {
 val helloBye = HelloModule ++ ByeModule
 ```
 
-Combining modules with ++ is the main way to assemble your app together! But, if you don't want to list all your modules
+Combining modules with `++` is the main way to assemble your app together! But, if you don't want to list all your modules
 in one place, you can use [Plugins](#plugins) to automatically discover all the (marked) modules in your app.
 
 If you choose to combine your modules manually, distage offers compile-time checks ensuring that your app will start.
