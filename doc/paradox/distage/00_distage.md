@@ -1,26 +1,24 @@
 ---
 out: index.html
 ---
-DiStage Staged Dependency Injection
+distage Staged Dependency Injection
 ============
 
-DiStage is a modern dependency injection framework for Scala. Like Scala itself, DiStage seeks to combine the best practices of FP with the best practices of OOP.
+distage is a modern dependency injection framework for Scala.
 
-Combining type safety, ease composition and separation of declaration from execution from FP, and late binding, modularity and scalability from OOP,
-DiStage brings together a fusion that retains safety and clarity of pure FP without sacrificing full runtime flexibility and configurability of traditional 
-runtime dependency injection frameworks such as Guice.
-
-DiStage is *staged*, meaning that it's split into several distinct *stages*, like a multi-pass compiler. DiStage lets you add custom functionality between stages should you require it, yet it keeps a simple surface API.
+Combining type safety, ease composition and separation of declaration from execution from FP, and late binding,
+modularity and scalability from OOP, distage brings together a fusion that retains safety and clarity of pure FP without
+sacrificing full runtime flexibility and configurability of traditional runtime dependency injection frameworks such as Guice.
 
 ### Defining simple modules
 
-This is what Hello World looks like in DiStage:
+This is what Hello World looks like in distage:
 
 ```scala
 import distage._
 
 class Hello {
-  def helloWorld() = println("Hello World!")
+  def hello(name: String) = println(s"Hello $name!")
 }
 
 object HelloModule extends ModuleDef {
@@ -29,40 +27,53 @@ object HelloModule extends ModuleDef {
 
 object Main extends App {
   val injector = Injector()
-  
-  val plan = injector.plan(HelloModule)
-  
-  val classes = injector.produce(plan)
 
-  classes.get[Hello].helloWorld()
+  val plan = injector.plan(HelloModule)
+
+  val classes: Locator = injector.produce(plan)
+
+  println("What's your name?")
+  val name = readLine()
+  
+  classes.get[Hello].hello(name)
 }
 ```
 
-Let's review the new concepts line by line:
+Let's take a closer look:
 
 ```scala
-object HelloModules extends ModuleDef {
+object HelloModule extends ModuleDef {
   make[Hello]
 }
 ```
 
 We define a *Module* for our application. A module specifies *what* classes to instantiate and *how* to instantiate them.
 
-In this case we are using the default instantiation strategy - just calling the constructor, so we don't have to specify anything.
+In this case we are using the default instantiation strategy - just calling the constructor.
 
-The default way to instantiate a class is to call its constructor. If the constructor accepts arguments, 
-DiStage will first instantiate the arguments, then call the constructor. All the classes in DiStage are instantiated exactly once,
- even if multiple classes depend on them, in other words they are `Singletons`.
+If a constructor accepts arguments, distage will first instantiate the arguments, then call the constructor. 
+All the classes in distage are instantiated exactly once, even if multiple different classes depend on them, in other words
+they are `Singletons`.
  
-Modules can be combined using `++` operator. In DiStage, you'll combine all the modules in your application into one 
-one large module representing your application. Don't worry, you won't have to do that manually, if you don't want to: DiStage comes with a mechanism 
-to discover all the (specially marked) Modules on the classpath at boot-up time. See [Plugins](#plugins) for details.
+Modules can be combined using `++` operator, for example we can join our `HelloModule` with a `ByeModule`:
 
-However, If you choose to combine your modules manually, DiStage can offer compile-time checks to ensure that all the
-dependencies have been wired and that your app will run. See [Static Configurations](#static-configurations) for details.
-Whether you prefer the flexibility of runtime DI or the stability of compile-time DI, DiStage lets you mix and match different modes within one application.
+```scala
+object ByeModule extends ModuleDef {
+  make[Bye]
+}
 
-Next:
+class Bye {
+  def bye(name: String) = println(s"Bye $name!")
+}
+
+val helloBye = HelloModule ++ ByeModule
+```
+
+Combining modules with ++ is the main way to assemble your app together! But, if you don't want to list all your modules
+in one place in your app, you can use [Plugins](#plugins) to automatically combine all the (marked) modules in your app.
+
+If you choose to combine your modules manually, distage offers compile-time checks ensuring that your app will start.
+See [Static Configurations](#static-configurations) for details.
 
 ```scala
 object Main extends App {
@@ -70,26 +81,22 @@ object Main extends App {
   val plan = injector.plan(HelloModule)
 ```
 
-We create an instantation `plan` from the module definition. Remember that DiStage is *staged*, instead of instantiating our 
-definitions right away, DiStage first builds a pure representation of all the operations it will do and returns it back to us.
-This allows us to easily implement additional functionality on top of DiStage without modifying the library. In fact, DiStage's built-in 
-functionality such as [Plugins](#plugins) and [Configurations](#config-files) is not hard-wired, but is 
-built on this framework of manipulating the `plan`. Plan rewriting also enables the [Import Injection Pattern](#import-injection-pattern) 
-that will be especially interesting for the Scalazzi adepts seeking to free their programs of side effects.
+We create an instantation `plan` from the module definition. distage is *staged*, so instead of instantiating our 
+definitions right away, distage first builds a pure representation of all the operations it will do and returns it back to us.
+
+This allows us to easily implement additional functionality on top of distage without modifying the library.
+In fact, distage's built-in functionality such as [Plugins](#plugins) and [Configurations](#config-files) is not hard-wired,
+but is built on this framework of manipulating the `plan`. Plan rewriting also enables the [Import Injection Pattern](#import-injection-pattern)
+that helps limit side effects during initialization. 
 
 ```scala
-  val classes = injector.produce(plan)
+  val classes: Locator = injector.produce(plan)
 
   classes.get[Hello].helloWorld()
 ```
 
-After we execute the plan we're left a `Locator` that holds all of our app's classes. We can retrieve the class by type using `.get`
-
-This concludes the first chapter. Next, we'll learn how to use multiple and named bindings:
-
-
-// TODO blakdfg
-distage is non-invasive and unopinionated, it tries to get out of the way of programmer as much as possible. As a consequence it does not use annotations
+After we execute the plan we're left a `Locator` that holds all of our app's classes.
+We can retrieve the instances by type using the `.get` method
 
 ### MultiBindings / Set Bindings
 
@@ -167,7 +174,7 @@ trait HostPortModule extends ModuleDef {
 
 For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet)
 
-### Tagless Final Style with DiStage
+### Tagless Final Style with distage
 
 Disclaimer: I'm a maintainer of [distage](https://izumi.7mind.io/distage/index.html)
 
@@ -427,7 +434,7 @@ sbt -Dizumi.distage.debug.macro=true compile
 
 Macros power `distage-static` module, an alternative backend that doesn't use JVM runtime reflection.
 
-### Extensions and Plan Rewriting – writing our first DiStage extension
+### Extensions and Plan Rewriting – writing our first distage extension
 
 ...
 
