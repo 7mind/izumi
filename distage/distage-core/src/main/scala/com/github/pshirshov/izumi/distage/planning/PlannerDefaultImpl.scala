@@ -53,6 +53,7 @@ class PlannerDefaultImpl
 
     finalPlan
   }
+
   private def orderPlan(semiPlan: SemiPlan): OrderedPlan =
     Value(semiPlan)
       .map(hook.phase50PreForwarding)
@@ -67,6 +68,7 @@ class PlannerDefaultImpl
       .get
 
   // TODO: plan Monoid instance
+  // TODO: add tests
   override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan =
     orderPlan(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector))
 
