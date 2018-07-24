@@ -24,7 +24,7 @@ import scalacache.MD5
 
 object IdealinguaPlugin extends AutoPlugin {
 
-  final case class Scope(source: Path, buildTarget: Path, target: Path)
+  final case class Scope(project: ProjectRef, source: Path, buildTarget: Path, target: Path)
 
   sealed trait Mode
 
@@ -65,7 +65,7 @@ object IdealinguaPlugin extends AutoPlugin {
           s"f:${f.length()}b"
         case f if !f.exists() =>
           ""
-        case f =>
+        case _ =>
           "?"
       }
 
@@ -125,7 +125,7 @@ object IdealinguaPlugin extends AutoPlugin {
         case (a, t) =>
           val targetDir = target.value / "idealingua" / s"${a.name}-${a.classifier.get}-$versionValue-$scalaVersionValue"
 
-          val scope = Scope(src.resolve("main/izumi"), target.value.toPath, targetDir.toPath)
+          val scope = Scope(thisProjectRef.value, src.resolve("main/izumi"), target.value.toPath, targetDir.toPath)
 
           val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip.source"
 
@@ -161,7 +161,7 @@ object IdealinguaPlugin extends AutoPlugin {
       val izumiSrcDir = src.resolve("main/izumi")
 
 
-      val scope = Scope(izumiSrcDir, target.value.toPath, srcManaged)
+      val scope = Scope(thisProjectRef.value, izumiSrcDir, target.value.toPath, srcManaged)
 
       val (scalacInputTargets, nonScalacInputTargets) = compilationTargets
         .value
@@ -170,7 +170,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
       if (nonScalacInputTargets.nonEmpty) {
         import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-        logger.warn(s"We don't know how to compile native artifacts for ${nonScalacInputTargets.niceList()}")
+        logger.warn(s"${name.value}: We don't know how to compile native artifacts for ${nonScalacInputTargets.niceList()}")
       }
 
       val depClasspath = (dependencyClasspath in Compile).value
@@ -185,10 +185,10 @@ object IdealinguaPlugin extends AutoPlugin {
           result.compilationProducts.flatMap(_._2.paths)
         case ((_, s), _) if s.target.toFile.exists() =>
           val existing = IzFiles.walk(scope.target.toFile).filterNot(_.toFile.isDirectory)
-          logger.info(s"Compiler didn't return a result, target ${s.target.format} exists. Reusing ${existing.size} files there...")
+          logger.info(s"${name.value}: Compiler didn't return a result, target ${s.target.format} exists. Reusing ${existing.size} files there...")
           existing
         case ((_, s), _) if !s.target.toFile.exists() =>
-          logger.info(s"Compiler didn't return a result, target ${s.target.format} does not exist. What the fuck? Okay, let's return nothing :/")
+          logger.info(s"${name.value}: Compiler didn't return a result, target ${s.target.format} does not exist. What the fuck? Okay, let's return nothing :/")
           Seq.empty
       }
 
@@ -197,7 +197,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
     , resourceGenerators in Compile += Def.task {
       val idlbase = sourceDirectory.value / "main" / "izumi"
-      logger.debug(s"""Generating resources: $idlbase ...""")
+      logger.debug(s"""${name.value}: Generating resources in ${idlbase.format} ...""")
       val allModels = (idlbase ** "*.domain").get ++ (idlbase ** "*.model").get
       val mapped = allModels.map {
         f =>
@@ -229,7 +229,8 @@ object IdealinguaPlugin extends AutoPlugin {
   private def generateCode(scope: Scope, invokation: Invokation, classpath: Classpath): Option[IDLCompiler.Result] = {
     val cp = classpath.map(_.data)
     val target = scope.target
-    logger.debug(s"""Loading models from $scope...""")
+    val projectId = scope.project.project
+    logger.debug(s"""$projectId: Loading models from $scope...""")
 
     val digest = MD5.messageDigest.clone().asInstanceOf[MessageDigest]
     digest.reset()
@@ -246,9 +247,9 @@ object IdealinguaPlugin extends AutoPlugin {
       // TODO: maybe it's unsafe to destroy the whole directory?..
       val toCompile = new LocalModelLoader(scope.source, cp).load()
       if (toCompile.nonEmpty) {
-        logger.info(s"""Going to compile the following models: ${toCompile.map(_.domain.id).mkString(",")}""")
+        logger.info(s"""$projectId: Going to compile the following models: ${toCompile.map(_.domain.id).mkString(",")} into ${invokation.options.language}""")
       } else {
-        logger.info(s"""Nothing to compile at ${scope.source}""")
+        logger.info(s"""$projectId: Nothing to compile at ${scope.source}""")
       }
 
       val result = new IDLCompiler(toCompile)
@@ -256,13 +257,13 @@ object IdealinguaPlugin extends AutoPlugin {
 
       result.compilationProducts.foreach {
         case (id, s) =>
-          logger.debug(s"Model $id produced ${s.paths.size} source files...")
+          logger.debug(s"$projectId: Model $id produced ${s.paths.size} source files...")
       }
 
       IO.write(tsCache.toFile, IzTime.isoNow)
       Some(result)
     } else {
-      logger.info(s"""Output timestamp is okay, not going to recompile ${scope.source.format} : ts=$tsCache""")
+      logger.info(s"""$projectId: Output timestamp is okay, not going to recompile ${scope.source.format} : ts=$tsCache""")
       None
     }
   }

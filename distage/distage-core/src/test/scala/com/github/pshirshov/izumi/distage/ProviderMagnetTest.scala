@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.distage
 
-import distage._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u.TypeTag
+import distage._
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
