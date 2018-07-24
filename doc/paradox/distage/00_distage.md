@@ -176,11 +176,7 @@ For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshir
 
 ### Tagless Final Style with distage
 
-Disclaimer: I'm a maintainer of [distage](https://izumi.7mind.io/distage/index.html)
-
-In your article, you talk a lot about a choice between Pure FP vs. OOP dependency injection, but one possibility that
-wasn't expounded on is – **why not both**? In [distage](https://izumi.7mind.io/distage/index.html), we have first-class
-support for tagless final style. Let's see how [freestyle tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
+distage has first-class support for tagless final style. Let's see how [freestyle tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
 looks in distage:
 
 ```scala
@@ -232,17 +228,30 @@ Want a program in the **same** Monad, but with different interpreters? No proble
 val DifferentTryProgram = new Program[Try] ++ DifferentTryInterpreters
 ```
 
-Distage makes tagless final style easier and safer by making your implicit instances explicit and configurable as
+distage makes tagless final style easier and safer by making your implicit instances explicit and configurable as
 first-class values. It even enforces typeclass coherence by disallowing multiple instances, so one wrong `import` can't
-ruin your day. Distage is still [in active development](https://github.com/pshirshov/izumi-r2/) and somewhat lacks
-documentation, but as of now we've been using it for months in production and it allowed to port our legacy code from
-Akka/Guice stack to pure FP http4s/cats without losing neither ease of configuration and variability of a runtime DI
-framework, nor parametricity and equational reasoning of pure FP tagless final style.
+ruin your day. distage doesn't make you choose between OO and FP, it lets you use both without losing neither ease of
+configuration and variability of a runtime DI framework, nor parametricity and equational reasoning of pure FP style.
 
-> The code below shows an example of reading configurations from a YAML file
+### Config files
 
-We also have first-class support for configs, so your first example with manual config reading is not necessary. Just
-put your config into typesafe-config and in distage you can request it in any module:
+We provide first-class integration with `typesafe-config`, rendering a lot of parsing boilerplate unnecessary.
+
+First, add `distage-config` library:
+
+```scala
+libraryDependencies += Izumi.R.distage_config
+```
+or
+@@@vars
+```scala
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-config" % "$izumi.version$"
+```
+@@@
+
+If you're not using `sbt-izumi` plugin.
+
+Then just put your config into typesafe-config and in distage you can summon it from any class:
 
 ```scala
 final case class Config(different: Boolean)
@@ -280,10 +289,6 @@ however. **[Why not have both?](https://github.com/pshirshov/izumi-r2/issues/51)
 modules we can allow runtime variation, while at the same time guaranteeing correct instantiation. The proposed typing
 scheme is currently a work in progress in distage, but already implementing a basic check is as easy as running the
 exact same wiring code in compile-time macro instead of at runtime.
-
-### Config files
-
-...
 
 ### Auto-Factories & Auto-Traits
 
@@ -463,6 +468,8 @@ or
 libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-cats" % "$izumi.version$"
 ```
 @@@
+
+If you're not using `sbt-izumi` plugin.
 
 Usage:
 
