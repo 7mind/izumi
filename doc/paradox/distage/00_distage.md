@@ -483,7 +483,10 @@ object Main extends IOApp {
   def run(args: List[String]) = {
     val myModules = module1 |+| module2 // Monoid instance is available for ModuleDef
     
-    Injector().runIO[IO](myModules)
+    for { 
+      classes <- Injector().runIO[IO](myModules)
+      _ <- classes.get[AppEntrypoint].run
+    } yield ()
   }
 }
 ```
