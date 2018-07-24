@@ -10,7 +10,7 @@ Combining type safety, ease composition and separation of declaration from execu
 modularity and scalability from OOP, distage brings together a fusion that retains safety and clarity of pure FP without
 sacrificing full runtime flexibility and configurability of traditional runtime dependency injection frameworks such as Guice.
 
-### Defining simple modules
+### Hello World
 
 This is what Hello World looks like in distage:
 
@@ -98,7 +98,7 @@ that helps limit side effects during initialization.
 After we execute the plan we're left a `Locator` that holds all of our app's classes.
 We can retrieve the instances by type using the `.get` method
 
-### MultiBindings / Set Bindings
+### Multibindings / Set Bindings
 
 Multibindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
 
@@ -233,7 +233,7 @@ first-class values. It even enforces typeclass coherence by disallowing multiple
 ruin your day. distage doesn't make you choose between OO and FP, it lets you use both without losing neither ease of
 configuration and variability of a runtime DI framework, nor parametricity and equational reasoning of pure FP style.
 
-## Config files
+### Config files
 
 We provide first-class integration with `typesafe-config`, rendering a lot of parsing boilerplate unnecessary.
 
@@ -282,20 +282,11 @@ program {
 }
 ```
 
-> If you prefer compile-time check, consider using MacWire
-
-Unfortunately, MacWire is fully static and cannot change dependencies at runtime. It would seem like the only choice is
-between unsafe, but flexible, runtime dependency injection vs. safe, but rigid, compile-time schemes. That's not true,
-however. **[Why not have both?](https://github.com/pshirshov/izumi-r2/issues/51)** By giving appropriate types to our
-modules we can allow runtime variation, while at the same time guaranteeing correct instantiation. The proposed typing
-scheme is currently a work in progress in distage, but already implementing a basic check is as easy as running the
-exact same wiring code in compile-time macro instead of at runtime.
-
 ### Auto-Factories & Auto-Traits
 
 ...
 
-## Patterns
+### Patterns
 
 ### Import Injection Pattern
 
@@ -320,6 +311,7 @@ To define a plugin, first add distage-plugins library:
 libraryDependencies += Izumi.R.distage_plugins
 ```
 or
+
 @@@vars
 ```scala
 libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$izumi.version$"
@@ -362,7 +354,7 @@ Plugins also allow a program to dynamically extend itself by adding new Plugin c
 
 ...
 
-## Test Kit
+### Test Kit
 
 ### Fixtures and utilities
 
@@ -376,7 +368,7 @@ Plugins also allow a program to dynamically extend itself by adding new Plugin c
 
 ...
 
-## Detailed Feature Overview
+### Detailed Feature Overview
 
 ### Implicits Injection
 
@@ -402,10 +394,6 @@ Plugins also allow a program to dynamically extend itself by adding new Plugin c
 
 #### Weak Sets
 
-### Provider (Function) Bindings
-
-...
-
 ### Debugging, Introspection, Diagnostics and Hooks
 
 You can print a `plan` to get detailed info on what will happen during instantiation. The printout includes file:line info 
@@ -430,7 +418,7 @@ System.err.println(plan.topology.dependees.tree(DIKey.get[Circular1]))
 
 The printer highlights circular dependencies.
 
-Distage also uses some macros, macros are currently used to create `TagK`s and [provider bindings](#provider-(function)-bindings).
+Distage also uses some macros, macros are currently used to create `TagK`s and [provider bindings](#provider-bindings).
 If you think they've gone awry, you can turn macro debug output during compilation by setting `-Dizumi.distage.debug.macro=true` java property:
 
 ```bash
@@ -440,19 +428,19 @@ sbt -Dizumi.distage.debug.macro=true compile
 
 Macros power `distage-static` module, an alternative backend that doesn't use JVM runtime reflection.
 
-### Extensions and Plan Rewriting – writing our first distage extension
+### Extensions and Plan Rewriting – writing a distage extension
 
 ...
 
-## Migrating from Guice
+### Migrating from Guice
 
 ...
 
-## Migrating from MacWire
+### Migrating from MacWire
 
 ...
 
-## Integrations
+### Integrations
 
 ...
 
@@ -464,6 +452,7 @@ To import cats integration add distage-cats library:
 libraryDependencies += Izumi.R.distage_cats
 ```
 or
+
 @@@vars
 ```scala
 libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-cats" % "$izumi.version$"
