@@ -74,6 +74,9 @@ object ArgumentNameExtractionMacro {
           case Apply(c.universe.Select(e, TermName(s)), List()) => // ${x.getSomething}
             extract(e, s +: acc)
 
+          case c.universe.This(TypeName(s)) =>
+            Some(s +: acc)
+
           case c.universe.Ident(TermName(s)) =>
             Some(s +: acc)
 
