@@ -70,7 +70,7 @@ val helloBye = HelloModule ++ ByeModule
 ```
 
 Combining modules with ++ is the main way to assemble your app together! But, if you don't want to list all your modules
-in one place in your app, you can use [Plugins](#plugins) to automatically combine all the (marked) modules in your app.
+in one place, you can use [Plugins](#plugins) to automatically discover all the (marked) modules in your app.
 
 If you choose to combine your modules manually, distage offers compile-time checks ensuring that your app will start.
 See [Static Configurations](#static-configurations) for details.
@@ -176,8 +176,8 @@ For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshir
 
 ### Tagless Final Style with distage
 
-distage has first-class support for tagless final style. Let's see how [freestyle tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
-looks in distage:
+distage has first-class support for tagless final style. Let's see what [freestyle tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
+looks like in distage:
 
 ```scala
 class Program[F: TagK: Monad] extends ModuleDef {
@@ -215,14 +215,14 @@ val interactionHandler = new Interaction.Handler[Try] {
 }
 ```
 
-Notice how the program module stays completely polymorphic and abstracted from its eventual interpeter or what monad it
+Notice how the program module stays completely polymorphic and abstracted from its eventual interpeter or the monad it
 will run in? Want a program in different Monad? No problem:
 
 ```scala
 val IOProgram = new Program[IO] ++ IOInterpreters
 ```
 
-Want a program in the **same** Monad, but with different interpreters? No problem at all:
+Want a program in the **same** Monad, but with different interpreters? No problem either:
 
 ```scala
 val DifferentTryProgram = new Program[Try] ++ DifferentTryInterpreters
@@ -233,7 +233,7 @@ first-class values. It even enforces typeclass coherence by disallowing multiple
 ruin your day. distage doesn't make you choose between OO and FP, it lets you use both without losing neither ease of
 configuration and variability of a runtime DI framework, nor parametricity and equational reasoning of pure FP style.
 
-### Config files
+## Config files
 
 We provide first-class integration with `typesafe-config`, rendering a lot of parsing boilerplate unnecessary.
 
@@ -243,6 +243,7 @@ First, add `distage-config` library:
 libraryDependencies += Izumi.R.distage_config
 ```
 or
+
 @@@vars
 ```scala
 libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-config" % "$izumi.version$"

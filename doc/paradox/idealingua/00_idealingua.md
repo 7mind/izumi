@@ -65,7 +65,7 @@ service UserService {
 
 ## Pet Store Example
 
-See [izumi-petstore](https://github.com/kaishh/izumi-petstore) project for complete example in Scala, TypeScript and other languages.
+See [izumi-petstore](https://github.com/kaishh/izumi-petstore) for examples in Scala, TypeScript, Go, C# and other languages.
 
 # Installation
 
