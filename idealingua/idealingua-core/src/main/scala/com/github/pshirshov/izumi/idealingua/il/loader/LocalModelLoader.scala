@@ -38,7 +38,7 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
     }.toSeq
 
     val issues = typespaces
-      .map(ts => FailedTypespace(ts.domain.id, new TypespaceVerifier(ts).verify()))
+      .map(ts => FailedTypespace(ts.domain.id, new TypespaceVerifier(ts).verify().toList))
       .filter(_.issues.nonEmpty)
 
     if (issues.nonEmpty) {
