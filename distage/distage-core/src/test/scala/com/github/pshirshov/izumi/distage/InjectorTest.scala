@@ -666,18 +666,18 @@ class InjectorTest extends WordSpec {
       assert(Try(injector.produce(plan3)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
     }
 
-    "ModuleBuilder supports tags" in {
+    "ModuleBuilder supports tags; same bindings with different tags are merged" in {
       import Case18._
 
       val definition = new ModuleDef {
         many[SetTrait].named("n1").tagged("A", "B")
           .add[SetImpl1].tagged("A")
           .add[SetImpl2].tagged("B")
-          .add[SetImpl3].tagged("A")
-          .add[SetImpl3].tagged("B")
+          .add[SetImpl3].tagged("A") // merge
+          .add[SetImpl3].tagged("B") // merge
 
-        make[Service1].tagged("CA").from[Service1]
-        make[Service1].tagged("CB").from[Service1]
+        make[Service1].tagged("CA").from[Service1] // merge
+        make[Service1].tagged("CB").from[Service1] // merge
 
         make[Service2].tagged("CC")
 
@@ -696,9 +696,8 @@ class InjectorTest extends WordSpec {
       import Case1._
 
       val def1 = new ModuleDef {
-        make[TestDependency0].tagged("a").tagged("b")
-        // make[TestDependency0].tagged("b")
-        // FIXME take note: This will be ignored, no tag "b" will be appended. However, before double definitions were illegal anyway...
+        make[TestDependency0].tagged("a")
+        make[TestDependency0].tagged("b")
 
         tag("1")
       }
