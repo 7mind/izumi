@@ -480,7 +480,7 @@ import distage._
 import distage.cats._
 
 object Main extends IOApp {
-  def run(args: List[String]) = {
+  def run(args: List[String]): IO[Unit] = {
     val myModules = module1 |+| module2 // Monoid instance is available for ModuleDef
     
     for { 
