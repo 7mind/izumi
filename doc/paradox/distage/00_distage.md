@@ -69,7 +69,7 @@ class Bye {
 val helloBye = HelloModule ++ ByeModule
 ```
 
-Combining modules with ++ is the main way to assemble your app together! But, if you don't want to list all your modules
+Combining modules with `++` is the main way to assemble your app together! But, if you don't want to list all your modules
 in one place, you can use [Plugins](#plugins) to automatically discover all the (marked) modules in your app.
 
 If you choose to combine your modules manually, distage offers compile-time checks ensuring that your app will start.
@@ -409,7 +409,7 @@ You can also query a plan to see the dependencies and reverse dependencies of a 
 
 ```scala
 // Print dependencies
-System.err.println(plan.topology.dependees.tree(DIKey.get[Circular1]))
+System.err.println(plan.topology.dependencies.tree(DIKey.get[Circular1]))
 // Print reverse dependencies
 System.err.println(plan.topology.dependees.tree(DIKey.get[Circular1]))
 ```

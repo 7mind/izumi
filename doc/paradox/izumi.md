@@ -8,6 +8,8 @@ Izumi Toolkit
 Sorry, this page is not ready yet
 @@@
 
+[Github](https://github.com/pshirshov/izumi-r2)
+
 Dependencies
 ------------
 
@@ -87,6 +89,8 @@ libraryDependencies ++= Seq(
 @@@
 
 You may find ScalaDoc API docs @scaladoc[here](izumi.index)
+
+You may find Izumi on github [here](https://github.com/pshirshov/izumi-r2)
 
 @@toc { depth=2 }
 
