@@ -101,7 +101,7 @@ class TypespaceVerifier(ts: Typespace) {
     } else {
       Seq.empty
     }
-    
+
     basic ++ cycles ++ missing
   }
 

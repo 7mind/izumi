@@ -77,7 +77,9 @@ object LoggingMacro {
              |
              |Izumi logger expect you to apply string interpolations:
              |1) Simple variable: logger.log(s"My message: $$argument")
-             |2) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
+             |2) Chain: logger.log(s"My message: $${call.method} $${access.value}")
+             |3) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
+             |4) Hidden arg expression: logger.log(s"My message: $${Some.expression -> "argname" -> null}")
              |""".stripMargin)
 
         val emptyArgs = reify {
