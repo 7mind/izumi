@@ -1,19 +1,25 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import com.github.pshirshov.izumi.distage.model.definition.Binding
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 
 object FormattingUtils {
 
-  def doFormat(target: RuntimeDIUniverse.DIKey, deps: RuntimeDIUniverse.Wiring): String = {
+  def doFormat(target: DIKey, deps: Wiring, origin: Option[Binding]): String = {
     val op = doFormat(deps)
-    s"$target := $op"
+    val pos = formatBindingPosition(origin)
+    s"$target $pos := $op"
   }
 
-  private def doFormat(deps: RuntimeDIUniverse.Wiring): String = {
+  def formatBindingPosition(origin: Option[Binding]): String = {
+    origin.map(_.origin.toString) getOrElse "(<unknown>)"
+  }
+
+  private def doFormat(deps: Wiring): String = {
     deps match {
       case Constructor(instanceType, associations) =>
         doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'))

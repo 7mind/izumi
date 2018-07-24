@@ -14,7 +14,7 @@ import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
+import com.github.pshirshov.izumi.fundamentals.platform.console.{SystemOutStringTrivialSink, TrivialLogger, TrivialLoggerImpl}
 
 
 class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLocator {
@@ -91,11 +91,14 @@ object DefaultBootstrapContext {
     make[ReflectionProvider.Runtime].from[ReflectionProviderDefaultImpl.Runtime]
     make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
     make[DependencyKeyProvider.Runtime].from[DependencyKeyProviderDefaultImpl.Runtime]
+
     make[PlanningObserver].from[PlanningObserverDefaultImpl]
     make[LoggerHook].from[LoggerHookDefaultImpl]
+
 //    make[PlanningObserver].from[BootstrapPlanningObserver]
 //    make[LoggerHook].from[LoggerHookDebugImpl]
-//    make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringSink))
+//    make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringTrivialSink))
+
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
     make[TheFactoryOfAllTheFactories].from[TheFactoryOfAllTheFactoriesDefaultImpl]

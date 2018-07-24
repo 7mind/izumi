@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.logstage.distage
 
 import com.github.pshirshov.izumi.distage.Injectors
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
+import distage.{Injector, ModuleDef}
 import org.scalatest.WordSpec
 
 class ExampleService(log: IzLogger) {
@@ -33,7 +33,7 @@ class LoggerInjectionTest extends WordSpec {
 
       val loggerModule = new LogstageModule(router)
 
-      val injector = Injectors.bootstrap(loggerModule)
+      val injector = Injector(loggerModule)
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
       assert(context.get[ExampleApp].test == 265)

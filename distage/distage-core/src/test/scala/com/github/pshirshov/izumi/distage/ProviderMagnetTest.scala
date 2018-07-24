@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.model.definition.Id
+import distage._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u.TypeTag
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
@@ -175,7 +176,7 @@ class ProviderMagnetTest extends WordSpec {
     }
 
     "handle generic parameters with TypeTag" in {
-      def fn[T: u.TypeTag]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
+      def fn[T: TypeTag]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
 
       assert(fn[Int].diKeys contains DIKey.get[Int].named("gentypeann"))
       assert(fn[String].diKeys contains DIKey.get[String].named("gentypeann"))

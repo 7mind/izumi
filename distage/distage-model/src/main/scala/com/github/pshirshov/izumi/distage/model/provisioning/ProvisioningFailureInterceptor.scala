@@ -1,13 +1,12 @@
 package com.github.pshirshov.izumi.distage.model.provisioning
 
 import com.github.pshirshov.izumi.distage.model.exceptions.ProvisioningException
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FormattingUtils, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.{Locator, reflection}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.util.Try
-
 
 case class OperationFailed(op: ExecutableOp, result: Throwable)
 
@@ -44,12 +43,8 @@ class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInter
 
     val repr = allFailures.map {
       case OperationFailed(op, f) =>
-        op.origin match {
-          case Some(origin) =>
-            s"$origin / ${op.target}: ${f.getMessage}"
-          case None =>
-            s"${op.target}: ${f.getMessage}"
-        }
+        val pos = FormattingUtils.formatBindingPosition(op.origin)
+        s"${op.target} $pos: ${f.getMessage}"
     }
 
     throw new ProvisioningException(s"Operations failed (${repr.size}): ${repr.niceList()}", allFailures.head.result)

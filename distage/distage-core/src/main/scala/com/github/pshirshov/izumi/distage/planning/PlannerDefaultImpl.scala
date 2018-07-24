@@ -48,6 +48,14 @@ class PlannerDefaultImpl
       .map(hook.phase20Customization)
       .eff(planningObserver.onPhase20Customization)
 
+      .map(orderPlan)
+      .get
+
+    finalPlan
+  }
+
+  private def orderPlan(semiPlan: SemiPlan): OrderedPlan =
+    Value(semiPlan)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
 
@@ -59,8 +67,10 @@ class PlannerDefaultImpl
       .eff(sanityChecker.assertFinalPlanSane)
       .get
 
-    finalPlan
-  }
+  // TODO: plan Monoid instance
+  // TODO: add tests
+  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan =
+    orderPlan(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector))
 
   private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
     binding match {

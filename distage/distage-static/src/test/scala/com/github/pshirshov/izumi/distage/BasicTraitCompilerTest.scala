@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
 import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
 import org.scalatest.WordSpec
 

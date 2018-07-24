@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 sealed trait AbstractPlan {
+  def definition: ModuleBase
   def steps: Seq[ExecutableOp]
 
   lazy val index: Map[RuntimeDIUniverse.DIKey, ExecutableOp] = {

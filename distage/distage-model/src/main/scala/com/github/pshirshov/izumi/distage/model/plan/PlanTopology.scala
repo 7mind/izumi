@@ -17,7 +17,7 @@ case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) 
     out.toSet
   }
 
-  def tree(root: DIKey, depth: Option[Int]): DepNode = {
+  def tree(root: DIKey, depth: Option[Int] = None): DepNode = {
     DepNode(root, this, 0, depth, Set.empty)
   }
 
