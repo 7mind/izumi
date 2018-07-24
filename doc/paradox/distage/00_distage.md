@@ -237,7 +237,7 @@ configuration and variability of a runtime DI framework, nor parametricity and e
 
 We provide first-class integration with `typesafe-config`, rendering a lot of parsing boilerplate unnecessary.
 
-First, add `distage-config` library:
+To use it, add `distage-config` library:
 
 ```scala
 libraryDependencies += Izumi.R.distage_config
@@ -250,9 +250,31 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-config" % "$i
 ```
 @@@
 
-If you're not using `sbt-izumi` plugin.
+If you're not using [sbt-izumi-deps](sbt/00_sbt.md#bills-of-materials) plugin.
 
-Then just put your config into typesafe-config and in distage you can summon it from any class:
+Write a config in HOCON format:
+
+```hocon
+# resources/application.conf
+program {
+    config {
+        different = true
+    }
+}
+```
+
+Add `ConfigModule` to your injector:
+
+```scala
+import distage.config._
+import com.typesafe.config.ConfigFactory
+
+val config = ConfigFactory.load()
+
+val injector = Injector(new ConfigModule(AppConfig(config)))
+```
+
+Now you can automatically parse config entries into case classes and can summon them from any class:
 
 ```scala
 final case class Config(different: Boolean)
@@ -269,16 +291,6 @@ class ConfiguredTryProgram[F: TagK: Monad] extends ModuleDef {
   make[ConfiguredProgram[F]]
   make[TaglessProgram[F]].named("primary")
   make[TaglessProgram[F]].named("different")
-}
-```
-
-Where your config file looks like this:
-
-```hocon
-program {
-    config {
-        different = true
-    }
 }
 ```
 
@@ -318,7 +330,7 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$
 ```
 @@@
 
-If you're not using `sbt-izumi` plugin.
+If you're not using [sbt-izumi-deps](sbt/00_sbt.md#bills-of-materials) plugin.
 
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
@@ -344,7 +356,7 @@ val app = appModules.merge
 Launch as normal with the loaded modules:
 
 ```scala
-val injector = Injectors.bootstrap()
+val injector = Injector()
 injector.run(app)
 ```
 
@@ -459,7 +471,7 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-cats" % "$izu
 ```
 @@@
 
-If you're not using `sbt-izumi` plugin.
+If you're not using [sbt-izumi-deps](sbt/00_sbt.md#bills-of-materials) plugin.
 
 Usage:
 

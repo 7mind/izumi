@@ -221,6 +221,25 @@ Build Descriptors
 
 ### Bills of Materials
 
+You can import Izumi libraries and transitive dependencies without specifying their version or artifact names. To do that
+dd `sbt-izumi-deps` SBT plugin:
+
+@@@vars
+```scala
+val izumi_version = "$izumi.version$"
+addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi-deps" % izumi_version)
+```
+@@@
+
+You can use it like this:
+
+```scala
+libraryDependencies += Izumi.R.distage_core // Import an izumi library
+libraryDependencies += Izumi.D.cats_effect // Import an izumi dependency
+```
+
+R is for Runtime, D is for Dependencies, T is for Test artifacts
+
 ### Build Manifest entries
 
 ### Git Manifest entries
