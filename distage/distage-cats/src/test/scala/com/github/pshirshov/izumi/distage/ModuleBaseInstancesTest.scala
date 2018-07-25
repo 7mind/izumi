@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.definition._
 import distage.cats._
 import org.scalatest.WordSpec
 
-class DIStageInstancesTest extends WordSpec {
+class ModuleBaseInstancesTest extends WordSpec {
   "cats instances for ContextDefinition" should {
     "allow monoidal operations between different types of binding dsls" in {
       import Case1._

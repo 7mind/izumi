@@ -4,11 +4,8 @@ out: index.html
 distage Staged Dependency Injection
 ============
 
-distage is a modern dependency injection framework for Scala.
-
-Combining type safety, ease composition and separation of declaration from execution from FP, and late binding,
-modularity and scalability from OOP, distage brings together a fusion that retains safety and clarity of pure FP without
-sacrificing full runtime flexibility and configurability of traditional runtime dependency injection frameworks such as Guice.
+distage is a flexible module system for Scala that combines safety and clarity of pure FP with late binding, flexibility
+and malleability of runtime dependency injection frameworks such as Guice.
 
 ### Hello World
 
@@ -55,7 +52,7 @@ If a constructor accepts arguments, distage will first instantiate the arguments
 All the classes in distage are instantiated exactly once, even if multiple different classes depend on them, in other words
 they are `Singletons`.
  
-Modules can be combined using `++` operator, for example we can join our `HelloModule` with a `ByeModule`:
+Modules can be combined using `++` and `overridenBy` operators. For example we can join our `HelloModule` with a `ByeModule`:
 
 ```scala
 object ByeModule extends ModuleDef {
@@ -69,15 +66,30 @@ class Bye {
 val helloBye = HelloModule ++ ByeModule
 ```
 
+And override:
+
+```scala
+val uppercaseHello = new Hello { 
+  override def hello(name: String) = s"HELLO ${name.toUpperCase}"
+}
+
+object UppercaseHelloModule extends ModuleDef {
+  make[Hello].from(uppercaseHello)  
+}
+
+val uppercaseHelloBye = helloBye overridenBy uppercaseHello 
+```
+
 Combining modules with `++` is the main way to assemble your app together! But, if you don't want to list all your modules
 in one place, you can use [Plugins](#plugins) to automatically discover all the (marked) modules in your app.
 
-If you choose to combine your modules manually, distage offers compile-time checks ensuring that your app will start.
+If you choose to combine modules explicitly, distage offers compile-time checks ensuring that your app will start.
 See [Static Configurations](#static-configurations) for details.
 
 ```scala
 object Main extends App {
   val injector = Injector()
+  
   val plan = injector.plan(HelloModule)
 ```
 
@@ -85,9 +97,8 @@ We create an instantation `plan` from the module definition. distage is *staged*
 definitions right away, distage first builds a pure representation of all the operations it will do and returns it back to us.
 
 This allows us to easily implement additional functionality on top of distage without modifying the library.
-In fact, distage's built-in functionality such as [Plugins](#plugins) and [Configurations](#config-files) is not hard-wired,
-but is built on this framework of manipulating the `plan`. Plan rewriting also enables the [Import Injection Pattern](#import-injection-pattern)
-that helps limit side effects during initialization. 
+Features such as [Plugins](#plugins) and [Configurations](#config-files) are separate libraries, built on 
+[transforming modules and plans](#import-materialization)
 
 ```scala
   val classes: Locator = injector.produce(plan)
@@ -137,7 +148,7 @@ class HttpServer(routes: Set[HttpRoutes[IO]]) {
   val count = routes.size
 }
 
-val context = Injector().run(HomeRouteModule ++ BlogRouteModule)
+val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
 val server = context.get[HttpServer]
 
 server.count // 2
@@ -300,7 +311,7 @@ class ConfiguredTryProgram[F: TagK: Monad] extends ModuleDef {
 
 ### Patterns
 
-### Import Injection Pattern
+### Import Materialization
 
 ...
 
@@ -357,12 +368,12 @@ Launch as normal with the loaded modules:
 
 ```scala
 val injector = Injector()
-injector.run(app)
+injector.produce(app)
 ```
 
 Plugins also allow a program to dynamically extend itself by adding new Plugin classes into the classpath which will be picked up at runtime.
 
-### Roles, not microservices 
+### Roles, instead of microservices 
 
 ...
 
@@ -480,13 +491,18 @@ import cats.implicits._
 import cats.effect._
 import distage._
 import distage.cats._
+import com.example.{DBConnection, AppEntrypoint}
 
 object Main extends IOApp {
   def run(args: List[String]): IO[Unit] = {
-    val myModules = module1 |+| module2 // Monoid instance is available for ModuleDef
+    val myModules = module1 |+| module2 // Monoid instance for ModuleDef is available now
     
-    for { 
-      classes <- Injector().runIO[IO](myModules)
+    for {
+      plan <- myModules.resolveImportsF[IO] { // resolveImportsF is now available
+        case i if i.target == DIKey.get[DBConnection] =>
+           DBConnection.create[IO]
+      } 
+      classes <- Injector().produceIO[IO](plan) // produceIO is now available
       _ <- classes.get[AppEntrypoint].run
     } yield ()
   }

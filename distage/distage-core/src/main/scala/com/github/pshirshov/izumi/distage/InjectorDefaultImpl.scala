@@ -9,8 +9,8 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     parentContext.get[Planner].plan(context)
   }
 
-  override def order(semiPlan: SemiPlan): OrderedPlan = {
-    parentContext.get[Planner].order(semiPlan)
+  override def finish(semiPlan: SemiPlan): OrderedPlan = {
+    parentContext.get[Planner].finish(semiPlan)
   }
 
   override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {

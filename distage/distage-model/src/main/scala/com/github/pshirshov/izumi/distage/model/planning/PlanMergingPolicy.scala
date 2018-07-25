@@ -8,5 +8,7 @@ trait PlanMergingPolicy {
 
   def finalizePlan(completedPlan: DodgyPlan): SemiPlan
 
+  def addImports(plan: SemiPlan): SemiPlan
+
   def reorderOperations(completedPlan: SemiPlan): OrderedPlan
 }
