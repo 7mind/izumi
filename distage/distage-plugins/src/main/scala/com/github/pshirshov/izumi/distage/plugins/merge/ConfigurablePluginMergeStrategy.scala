@@ -1,31 +1,14 @@
-package com.github.pshirshov.izumi.distage.plugins
+package com.github.pshirshov.izumi.distage.plugins.merge
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, SimpleModuleDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.distage.model.reflection
-
-
-trait PluginMergeStrategy[T <: LoadedPlugins] {
-  def merge[D <: PluginBase](defs: Seq[D]): T
-}
-
-object SimplePluginMergeStrategy extends PluginMergeStrategy[LoadedPlugins] {
-  override def merge[D <: PluginBase](defs: Seq[D]): LoadedPlugins = {
-    val merged = defs.merge
-    JustLoadedPlugins(merged)
-  }
-}
-
-case class BindingPreference(name: Option[String], tag: Option[String])
-
-case class PluginMergeConfig
-(
-  disabledImplementations: Set[String]
-  , disabledKeys: Set[String]
-  , disabledTags: Set[String]
-  , preferences: Map[String, BindingPreference]
-)
+import com.github.pshirshov.izumi.distage.plugins.LoadedPlugins.JustPlugins
+import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
+import com.github.pshirshov.izumi.distage.plugins.{LoadedPlugins, PluginBase}
+import com.github.pshirshov.izumi.fundamentals.collections.TagExpr
+import distage.{DIKey, SafeType}
 
 class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginMergeStrategy[LoadedPlugins] {
   override def merge[D <: PluginBase](defs: Seq[D]): LoadedPlugins = {
@@ -38,12 +21,12 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       .toMultimap
       .flatMap(resolve)
 
-    JustLoadedPlugins(SimpleModuleDef(resolved.toSet))
+    JustPlugins(SimpleModuleDef(resolved.toSet))
   }
 
   protected def resolve(kv: (reflection.universe.RuntimeDIUniverse.DIKey, Set[Binding])): Set[Binding] = {
     val (key, alternatives) = kv
-    val name = key.tpe.tpe.typeSymbol.asClass.fullName
+    val name = keyClassName(key)
     val prefs = config.preferences.get(name)
       .orElse(config.preferences.get(name.split('.').last))
 
@@ -56,7 +39,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
           case Some(n) =>
             alternatives.filter {
               alt =>
-                implName(alt).forall(_.endsWith(n))
+                implClassName(alt).forall(_.endsWith(n))
             }
 
           case None =>
@@ -86,26 +69,17 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
   }
 
   protected def isDisabled(binding: Binding): Boolean = {
-    val maybeImplName = implName(binding).filter {
-      name =>
-        config.disabledImplementations.contains(name) ||
-          config.disabledImplementations.contains(name.split('.').last)
-    }
-
-    val hasDisabledTags = binding.tags.intersect(config.disabledTags).nonEmpty
-
-    val hasDisabledName = maybeImplName.isDefined
-    val hasDisabledImplName = {
-      val keyName = binding.key.tpe.tpe.typeSymbol.asClass.fullName
-
-      config.disabledImplementations.contains(keyName) ||
-        config.disabledImplementations.contains(keyName.split('.').last)
-    }
-
-    hasDisabledName || hasDisabledTags || hasDisabledImplName
+      config.disabledTags.evaluate(binding.tags) ||
+      isDisabledName(keyClassName(binding.key), config.disabledKeyClassnames) ||
+      implClassName(binding).exists(isDisabledName(_, config.disabledImplClassnames))
   }
 
-  private def implName(binding: Binding): Option[String] = {
+  private def isDisabledName(t: String, disabledNames: Set[String]) = {
+    disabledNames.contains(t) ||
+      disabledNames.contains(t.split('.').last)
+  }
+
+  private def implClassName(binding: Binding): Option[String] = {
     (binding match {
       case b: ImplBinding =>
         Option(b.implementation)
@@ -113,9 +87,32 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
         None
     }).flatMap {
       case i: ImplDef.WithImplType =>
-        Option(i.implType.tpe.typeSymbol.asClass.fullName)
+        Option(typeName(i.implType))
       case _ =>
         None
     }
   }
+
+  private def keyClassName(key: DIKey): String = {
+    typeName(key.tpe)
+  }
+
+
+  private def typeName(k: SafeType): String = {
+    k.tpe.typeSymbol.asClass.fullName
+  }
+}
+
+object ConfigurablePluginMergeStrategy {
+
+  case class BindingPreference(name: Option[String], tag: Option[String])
+
+  case class PluginMergeConfig
+  (
+    disabledTags: TagExpr.Strings.Expr
+    , disabledKeyClassnames: Set[String] = Set.empty
+    , disabledImplClassnames: Set[String] = Set.empty
+    , preferences: Map[String, BindingPreference] = Map.empty
+  )
+
 }

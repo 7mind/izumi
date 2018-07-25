@@ -6,6 +6,9 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.plugins._
+import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
+import com.github.pshirshov.izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
+import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext

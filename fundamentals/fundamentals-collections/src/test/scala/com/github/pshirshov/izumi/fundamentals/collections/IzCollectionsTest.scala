@@ -7,7 +7,6 @@ import org.scalatest.WordSpec
 import scala.collection.mutable
 
 class IzCollectionsTest extends WordSpec {
-
   "Collection utils" should {
     "allow to convert mappings to multimaps" in {
       assert(List("a" -> 1, "a" -> 2).toMultimap == Map("a" -> Set(1, 2)))
@@ -18,6 +17,6 @@ class IzCollectionsTest extends WordSpec {
       assert(1.to(20).distinctBy(_ % 5) == 1.to(5))
     }
   }
-
-  
 }
+
+
