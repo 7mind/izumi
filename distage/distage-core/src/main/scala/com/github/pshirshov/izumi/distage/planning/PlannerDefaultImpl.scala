@@ -39,10 +39,7 @@ class PlannerDefaultImpl
     Value(plan)
       .map(hook.phase00PostCompletion)
       .eff(planningObserver.onPhase00PlanCompleted)
-
       .map(planMergingPolicy.finalizePlan)
-      .map(hook.phase10PostFinalization)
-      .eff(planningObserver.onPhase10PostFinalization)
       .map(finish)
       .get
   }
@@ -50,9 +47,10 @@ class PlannerDefaultImpl
   def finish(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(planMergingPolicy.addImports)
+      .map(hook.phase10PostFinalization)
+      .eff(planningObserver.onPhase10PostFinalization)
       .map(hook.phase20Customization)
       .eff(planningObserver.onPhase20Customization)
-
       .map(order)
       .get
   }
