@@ -4,7 +4,7 @@ import cats.implicits._
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.definition.Bindings.binding
 import com.github.pshirshov.izumi.distage.model.definition._
-import distage.cats._
+import distage.interop.cats._
 import org.scalatest.WordSpec
 
 class ModuleBaseInstancesTest extends WordSpec {

@@ -1,32 +1,19 @@
-package distage
+package distage.interop
 
 import _root_.cats.effect.Sync
 import _root_.cats.Applicative
 import _root_.cats.instances.vector._
 import _root_.cats.syntax.functor._
 import _root_.cats.syntax.traverse._
-import com.github.pshirshov.izumi.distage.ModuleBaseInstances
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
+import distage._
 
 import scala.language.higherKinds
 
-/** Be careful to import distage *after* you import cats due to name clash,
-  *
-  * DON'T:
-  *
-  *   import distage._
-  *   import cats._ // Oh-oh, wrong `cats` imported
-  *
-  * INSTEAD DO:
-  *
-  *   import cats._
-  *   import distage._
-  *
-  * */
-package object cats extends ModuleBaseInstances {
+package object cats extends DistageInteropCats {
 
   implicit final class ProducerIOExts(private val producer: Producer) extends AnyVal {
     def produceIO[F[_]: Sync](plan: OrderedPlan): F[Locator] =

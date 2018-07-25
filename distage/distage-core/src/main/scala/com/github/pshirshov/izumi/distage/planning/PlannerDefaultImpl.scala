@@ -58,8 +58,9 @@ class PlannerDefaultImpl
   }
 
   // TODO: add tests
-  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan =
+  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
     order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector))
+  }
 
   private def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)

@@ -5,7 +5,7 @@ import cats.effect._
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import distage._
-import distage.cats._
+import distage.interop.cats._
 import org.scalatest.{GivenWhenThen, WordSpec}
 
 class CatsExtensionsTest extends WordSpec with GivenWhenThen {

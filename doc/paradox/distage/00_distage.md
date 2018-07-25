@@ -346,6 +346,9 @@ If you're not using [sbt-izumi-deps](sbt/00_sbt.md#bills-of-materials) plugin.
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
 ```scala
+import distage._
+import distage.plugins._
+
 trait PetStorePlugin extends PluginDef {
   make[PetRepository]
   make[PetStoreService]
@@ -490,7 +493,7 @@ Usage:
 import cats.implicits._
 import cats.effect._
 import distage._
-import distage.cats._
+import distage.interop.cats._
 import com.example.{DBConnection, AppEntrypoint}
 
 object Main extends IOApp {
