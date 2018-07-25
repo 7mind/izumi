@@ -13,7 +13,7 @@ sealed trait ConflictResolution
 
 object ConflictResolution {
 
-  final case class Successful(op: ExecutableOp) extends ConflictResolution
+  final case class Successful(op: Set[ExecutableOp]) extends ConflictResolution
 
   final case class Failed(ops: Set[InstantiationOp]) extends ConflictResolution
 
@@ -33,7 +33,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
 
   override def finalizePlan(completedPlan: DodgyPlan): SemiPlan = {
     val resolved = completedPlan.operations.mapValues(resolve).toMap
-    val allOperations = resolved.values.collect({ case ConflictResolution.Successful(op) => op }).toSeq
+    val allOperations = resolved.values.collect({ case ConflictResolution.Successful(op) => op }).flatten.toSeq
     val issues = resolved.collect({ case (k, ConflictResolution.Failed(ops)) => (k, ops) }).toMap
 
     if (issues.nonEmpty) {
@@ -73,13 +73,14 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     operations match {
       case s if s.nonEmpty && s.forall(_.isInstanceOf[CreateSet]) =>
         val ops = s.collect({ case c: CreateSet => c })
-        ConflictResolution.Successful(ops.tail.foldLeft(ops.head) {
+        val merged = ops.tail.foldLeft(ops.head) {
           case (acc, op) =>
             acc.copy(members = acc.members ++ op.members)
 
-        })
+        }
+        ConflictResolution.Successful(Set(merged))
       case s if s.size == 1 =>
-        ConflictResolution.Successful(s.head)
+        ConflictResolution.Successful(Set(s.head))
       case other =>
         ConflictResolution.Failed(other.toSet)
     }
