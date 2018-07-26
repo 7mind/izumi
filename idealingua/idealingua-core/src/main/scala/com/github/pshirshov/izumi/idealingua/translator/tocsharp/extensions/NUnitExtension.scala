@@ -187,7 +187,6 @@ object NUnitExtension extends CSharpTranslatorExtension {
          |using System.Collections.Generic;
          |using NUnit.Framework;
        """.stripMargin
-
     ctx.modules.toTestSource(i.id.path.domain, ctx.modules.toTestModuleId(i.id, if(implIface.isDefined) Some(implIface.get.name) else None), header, code)
   }
 }
