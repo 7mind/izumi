@@ -52,7 +52,7 @@ export class Formatter {
         return utc ? res.utc().toDate() : res.toDate();
     }
 
-    public static readZonedDateTime(value: string): Date {
+    public static readZoneDateTime(value: string): Date {
         return Formatter.readDateTime(value);
     }
 
@@ -69,7 +69,7 @@ export class Formatter {
     }
 
     public static readUTCDateTime(value: string): Date {
-        return Formatter.readDateTime(value);
+        return Formatter.readDateTime(value, true);
     }
 
     public static writeUTCDateTime(value: Date): string {

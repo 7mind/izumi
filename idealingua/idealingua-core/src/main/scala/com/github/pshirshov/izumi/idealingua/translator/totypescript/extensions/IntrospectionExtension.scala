@@ -19,6 +19,10 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     case Primitive.TInt16 => s"{intro: IntrospectorTypes.I16}"
     case Primitive.TInt32 => s"{intro: IntrospectorTypes.I32}"
     case Primitive.TInt64 => s"{intro: IntrospectorTypes.I64}"
+    case Primitive.TUInt8 => s"{intro: IntrospectorTypes.U08}"
+    case Primitive.TUInt16 => s"{intro: IntrospectorTypes.U16}"
+    case Primitive.TUInt32 => s"{intro: IntrospectorTypes.U32}"
+    case Primitive.TUInt64 => s"{intro: IntrospectorTypes.U64}"
     case Primitive.TFloat => s"{intro: IntrospectorTypes.F32}"
     case Primitive.TDouble => s"{intro: IntrospectorTypes.F64}"
     case Primitive.TUUID => s"{intro: IntrospectorTypes.Uid}"
@@ -26,6 +30,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     case Primitive.TDate => s"{intro: IntrospectorTypes.Date}"
     case Primitive.TTs => s"{intro: IntrospectorTypes.Tsl}"
     case Primitive.TTsTz => s"{intro: IntrospectorTypes.Tsz}"
+    case Primitive.TTsU => s"{intro: IntrospectorTypes.Tsu}"
     case g: Generic => g match {
       case gm: Generic.TMap => s"{intro: IntrospectorTypes.Map, key: ${unwindType(gm.keyType)}, value: ${unwindType(gm.valueType)}} as IIntrospectorMapType"
       case gl: Generic.TList => s"{intro: IntrospectorTypes.List, value: ${unwindType(gl.valueType)}} as IIntrospectorGenericType"

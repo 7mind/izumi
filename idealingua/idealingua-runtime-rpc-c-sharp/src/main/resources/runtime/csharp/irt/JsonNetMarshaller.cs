@@ -114,6 +114,9 @@ namespace IRT {
                    "yyyy-MM-ddTHH:mm:ss.ffffffffzzz",
                    "yyyy-MM-ddTHH:mm:ss.fffffffffzzz"
                 };
+
+        public static readonly string TsuDefault = "yyyy-MM-ddTHH:mm:ss.fffZ";
+        public static readonly string[] Tsu = JsonNetTimeFormats.Tsz;
     }
 
     class JsonNetDateConverter : IsoDateTimeConverter {

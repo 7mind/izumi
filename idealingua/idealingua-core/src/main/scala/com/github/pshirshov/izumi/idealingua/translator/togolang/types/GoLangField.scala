@@ -148,11 +148,12 @@ final case class GoLangField(
     tp.id match {
       case Primitive.TTsTz => renderMemberName(true) + "AsString()"
       case Primitive.TTs => renderMemberName(true) + "AsString()"
+      case Primitive.TTsU => renderMemberName(true) + "AsString()"
       case Primitive.TDate => renderMemberName(true) + "AsString()"
       case Primitive.TTime => renderMemberName(true) + "AsString()"
       case g: Generic => g match {
         case go: Generic.TOption => go.valueType match {
-          case Primitive.TTsTz | Primitive.TTs | Primitive.TDate | Primitive.TTime => renderMemberName(true) + "AsString()"
+          case Primitive.TTsTz | Primitive.TTs | Primitive.TTsU | Primitive.TDate | Primitive.TTime => renderMemberName(true) + "AsString()"
           case _ => renderMemberName(false)
         }
         case _ => renderMemberName(false)
@@ -177,12 +178,14 @@ final case class GoLangField(
     case Primitive.TDate => toDateField()
     case Primitive.TTs => toTimeStampField(local = true)
     case Primitive.TTsTz => toTimeStampField(local = false)
+    case Primitive.TTsU => toTimeStampField(local = false, utc = true)
     case g: Generic => g match {
       case go: Generic.TOption => go.valueType match {
         case Primitive.TTime => toTimeField(optional = true)
         case Primitive.TDate => toDateField(optional = true)
         case Primitive.TTs => toTimeStampField(local = true, optional = true)
         case Primitive.TTsTz => toTimeStampField(local = false, optional = true)
+        case Primitive.TTsU => toTimeStampField(local = false, optional = true, utc = true)
         case _ => toGenericField()
       }
       case _ => toGenericField()
@@ -280,7 +283,7 @@ final case class GoLangField(
      """.stripMargin
   }
 
-  def toTimeStampField(local: Boolean, optional: Boolean = false): String = {
+  def toTimeStampField(local: Boolean, optional: Boolean = false, utc: Boolean = false): String = {
     s"""func (v *$structName) ${renderMemberName(true)}() ${if (optional) "*" else ""}time.Time {
        |    return v.${renderMemberName(false)}
        |}
@@ -291,12 +294,12 @@ final case class GoLangField(
        |
        |func (v *$structName) ${renderMemberName(true)}AsString() ${if (optional) "*" else ""}string {
        |    ${if (optional) s"if v.${renderMemberName(false)} == nil {\n        return nil\n    }" else ""}
-       |    res := irt.Write${if(local)"Local" else "Zone"}DateTime(${if (optional) "*" else ""}v.${renderMemberName(false)})
+       |    res := irt.Write${if(local)"Local" else if(utc) "UTC" else "Zone"}DateTime(${if (optional) "*" else ""}v.${renderMemberName(false)})
        |    return ${if (optional) "&" else ""}res
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
-       |    t, err := irt.Read${if(local)"Local" else "Zone"}DateTime(value)
+       |    t, err := irt.Read${if(local)"Local" else if(utc) "UTC" else "Zone"}DateTime(value)
        |    if err != nil {
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY-MM-DDTHH:MM:SS.MIC${if (local) "" else "+00:00"} format. Got %s", value)
        |    }
@@ -432,7 +435,7 @@ final case class GoLangField(
                  """.stripMargin
             }
           }
-        case Primitive.TTsTz | Primitive.TTs | Primitive.TTime | Primitive.TDate =>
+        case Primitive.TTsTz | Primitive.TTs | Primitive.TTsU | Primitive.TTime | Primitive.TDate =>
           s"""if err := $struct.Set${renderMemberName(true)}FromString(${if (optional) "*" else ""}$variable); err != nil {
              |    return err
              |}
@@ -442,7 +445,7 @@ final case class GoLangField(
       }
     } else {
       val res = id match {
-//        case Primitive.TTsTz | Primitive.TTs | Primitive.TTime | Primitive.TDate =>
+//        case Primitive.TTsTz | Primitive.TTs | Primitive.TTsU | Primitive.TTime | Primitive.TDate =>
 //          s"$struct.Set${renderMemberName(true)}FromString($variable)"
         case _ => s"$struct.Set${renderMemberName(true)}($variable)"
       }
