@@ -5,7 +5,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypeFull
 import com.typesafe.config.Config
 
-
 sealed trait TranslationResult
 
 object TranslationResult {

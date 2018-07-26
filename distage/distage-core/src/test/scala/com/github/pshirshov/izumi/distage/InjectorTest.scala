@@ -4,9 +4,8 @@ import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
 import distage._
 import org.scalatest.WordSpec
 
@@ -40,18 +39,8 @@ class InjectorTest extends WordSpec {
 
       assert(exc.getMessage.startsWith("Operations failed (1)"))
 
-      val fixedPlan = plan.flatMap {
-        case ImportDependency(key, _, origin) if key == DIKey.get[NotInContext] =>
-          Seq(
-            WiringOp.ReferenceInstance(
-              key
-              , Wiring.UnaryWiring.Instance(SafeType.get[NotInContext], new NotInContext {})
-              , origin
-            )
-          )
-
-        case op =>
-          Seq(op)
+      val fixedPlan = plan.resolveImports {
+        case i if i.target == DIKey.get[NotInContext] => new NotInContext {}
       }
       injector.produce(fixedPlan)
     }

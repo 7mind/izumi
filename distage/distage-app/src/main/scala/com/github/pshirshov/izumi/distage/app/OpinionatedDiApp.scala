@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.app
 
-import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
@@ -13,6 +12,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import distage.Injector
 
 // TODO: startables
 // TODO: config mapping/injection
@@ -125,7 +125,7 @@ abstract class OpinionatedDiApp {
     logger.trace(s"Have bootstrap definition\n$bsdef")
     logger.trace(s"Have app definition\n$appDef")
 
-    val injector = Injectors.bootstrap(bsdef)
+    val injector = Injector(bsdef)
     val plan = injector.plan(appDef)
     logger.trace(s"Planning completed\n$plan")
     val context = injector.produce(plan)

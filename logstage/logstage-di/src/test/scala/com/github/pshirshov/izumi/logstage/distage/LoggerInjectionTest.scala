@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.logstage.distage
 
-import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import distage.{Injector, ModuleDef}

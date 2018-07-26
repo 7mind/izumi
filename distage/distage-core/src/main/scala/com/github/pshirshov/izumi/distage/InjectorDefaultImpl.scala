@@ -1,12 +1,16 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
-import com.github.pshirshov.izumi.distage.model.plan.{AbstractPlan, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{AbstractPlan, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.{Injector, Locator, Planner, TheFactoryOfAllTheFactories}
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
   override def plan(context: ModuleBase): OrderedPlan = {
     parentContext.get[Planner].plan(context)
+  }
+
+  override def finish(semiPlan: SemiPlan): OrderedPlan = {
+    parentContext.get[Planner].finish(semiPlan)
   }
 
   override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {

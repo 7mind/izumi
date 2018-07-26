@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.util.Formattable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString
 
-
 // TODO: typeclass?..
 sealed trait ExecutableOp extends Formattable {
   def target: DIKey

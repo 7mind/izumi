@@ -42,19 +42,21 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     }
 
     // it's not neccessary to sort the plan at this stage, it's gonna happen after GC
-    val index = allOperations.map(op => op.target -> op).toMap
-    val topology = analyzer.topology(allOperations)
+    SemiPlan(completedPlan.definition, allOperations.toVector)
+  }
 
+  def addImports(plan: SemiPlan): SemiPlan = {
+    val topology = analyzer.topology(plan.steps)
     val imports = topology
       .dependees
       .graph
-      .filterKeys(k => !index.contains(k))
+      .filterKeys(k => !plan.index.contains(k))
       .map {
         case (missing, refs) =>
           missing -> ImportDependency(missing, refs.toSet, None)
       }
       .toMap
-    SemiPlan(completedPlan.definition, (imports.values ++ allOperations).toVector)
+    SemiPlan(plan.definition, (imports.values ++ plan.steps).toVector)
   }
 
   override def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {

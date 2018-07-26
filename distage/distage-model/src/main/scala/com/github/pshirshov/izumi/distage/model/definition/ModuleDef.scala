@@ -118,7 +118,7 @@ trait ModuleDef extends ModuleBase {
     *     val count = routes.size
     *     }
     *
-    *     val context = Injector().run(HomeRouteModule ++ BlogRouteModule)
+    *     val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
     *     val server = context.get[HttpServer]
     *
     *     server.count // 2
