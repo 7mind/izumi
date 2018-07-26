@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, Order
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
-
 class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver {
   override def onSuccessfulStep(next: DodgyPlan): Unit = {
     doLog("Next Plan", next.toString)

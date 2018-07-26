@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.distage
 
-import cats.kernel.instances.set.catsKernelStdPartialOrderForSet
+import cats.kernel.instances.set._
 import cats.kernel.{BoundedSemilattice, Hash, PartialOrder}
 import distage.{ModuleBase, SimpleModuleDef}
 
-trait DIStageInstances {
+trait ModuleBaseInstances {
 
   implicit val catsKernelStdPartialOrderForModuleBase: PartialOrder[ModuleBase] =
     PartialOrder.by(_.bindings)

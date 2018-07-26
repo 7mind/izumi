@@ -12,7 +12,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.functional.Value
 
-
 class PlannerDefaultImpl
 (
   protected val forwardingRefResolver: ForwardingRefResolver
@@ -37,24 +36,31 @@ class PlannerDefaultImpl
           .get
     }
 
-    val finalPlan = Value(plan)
+    Value(plan)
       .map(hook.phase00PostCompletion)
       .eff(planningObserver.onPhase00PlanCompleted)
-
       .map(planMergingPolicy.finalizePlan)
-      .map(hook.phase10PostFinalization)
-      .eff(planningObserver.onPhase10PostFinalization)
-
-      .map(hook.phase20Customization)
-      .eff(planningObserver.onPhase20Customization)
-
-      .map(orderPlan)
+      .map(finish)
       .get
-
-    finalPlan
   }
 
-  private def orderPlan(semiPlan: SemiPlan): OrderedPlan =
+  def finish(semiPlan: SemiPlan): OrderedPlan = {
+    Value(semiPlan)
+      .map(planMergingPolicy.addImports)
+      .map(hook.phase10PostFinalization)
+      .eff(planningObserver.onPhase10PostFinalization)
+      .map(hook.phase20Customization)
+      .eff(planningObserver.onPhase20Customization)
+      .map(order)
+      .get
+  }
+
+  // TODO: add tests
+  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
+    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector))
+  }
+
+  private def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
@@ -66,11 +72,7 @@ class PlannerDefaultImpl
 
       .eff(sanityChecker.assertFinalPlanSane)
       .get
-
-  // TODO: plan Monoid instance
-  // TODO: add tests
-  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan =
-    orderPlan(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector))
+  }
 
   private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
     binding match {

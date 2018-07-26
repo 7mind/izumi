@@ -10,7 +10,6 @@ import net.sf.cglib.proxy.{Callback, Enhancer}
 
 import scala.util.{Failure, Success, Try}
 
-
 object CglibProxyProvider extends ProxyProvider {
   override def makeCycleProxy(cycleContext: CycleContext, proxyContext: ProxyContext): DeferredInit = {
     val nullDispatcher = new CglibNullMethodInterceptor(cycleContext.deferredKey)

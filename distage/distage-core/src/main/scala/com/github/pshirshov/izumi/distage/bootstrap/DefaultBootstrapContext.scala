@@ -16,7 +16,6 @@ import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
-
 class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLocator {
 
   import DefaultBootstrapContext._
