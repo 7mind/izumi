@@ -14,6 +14,7 @@ import scala.reflect.ClassTag
 
 sealed trait ResourceLocation
 
+// TODO: all this class is a piece of shit
 class IzResources(clazz: Class[_]) {
 
   import IzResources._
@@ -88,16 +89,13 @@ class IzResources(clazz: Class[_]) {
       new SimpleFileVisitor[Path]() {
         private var currentTarget: Path = _
 
-        override def preVisitDirectory(
-                                        dir: Path,
-                                        attrs: BasicFileAttributes): FileVisitResult = {
+        override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
           currentTarget = targetDir.resolve(jarPath.relativize(dir).toString)
           Files.createDirectories(currentTarget)
           FileVisitResult.CONTINUE
         }
 
-        override def visitFile(file: Path,
-                               attrs: BasicFileAttributes): FileVisitResult = {
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
           val target = targetDir.resolve(jarPath.relativize(file).toString)
           targets += target
           Files.copy(
@@ -111,6 +109,28 @@ class IzResources(clazz: Class[_]) {
     )
 
     RecursiveCopyOutput(targets.toSeq) // 2.13 compat
+  }
+
+
+  def enumerateClasspath(sourcePath: String): Iterable[FileContent] = {
+    val pathReference = getPath(sourcePath)
+    if (pathReference.isEmpty) {
+      return Iterable.empty
+    }
+
+    val jarPath: Path = pathReference.get.path
+    import scala.collection.JavaConverters._
+    Files
+      .walk(jarPath)
+      .iterator()
+      .asScala
+      .filter(_.toFile.isFile)
+      .map {
+        file =>
+          val relativePath = jarPath.relativize(file)
+          val content = Files.readAllBytes(file.toAbsolutePath)
+          FileContent(relativePath, content)
+      }.toIterable
   }
 
 
@@ -129,6 +149,8 @@ class IzResources(clazz: Class[_]) {
 }
 
 object IzResources extends IzResources(IzManifest.getClass) {
+
+  case class FileContent(path: Path, content: Array[Byte])
 
   class PathReference(val path: Path, val fileSystem: FileSystem) extends AutoCloseable {
     override def close(): Unit = {
@@ -153,4 +175,5 @@ object IzResources extends IzResources(IzManifest.getClass) {
     case object NotFound extends ResourceLocation
 
   }
+
 }
