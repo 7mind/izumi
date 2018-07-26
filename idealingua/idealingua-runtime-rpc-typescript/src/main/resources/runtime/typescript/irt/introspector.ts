@@ -59,6 +59,7 @@ export interface IIntrospectorObjectAdtMember {
 }
 
 export interface IIntrospectorMixinObject extends IIntrospectorObjectWithFields {
+    implementations: () => string[];
 }
 
 export interface IIntrospectorDataObject extends IIntrospectorObjectWithFields {

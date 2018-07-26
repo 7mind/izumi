@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Field, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{DTO, Interface}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
@@ -118,6 +118,21 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     IdentifierProduct(product.identitier, product.identifierInterface + extension, product.header)
   }
 
+  private def renderDTOIntrospector(name: String, fields: Iterable[Field])(implicit ts: Typespace, conv: TypeScriptTypeConverter): String = {
+    s"""Introspector.register($name.FullClassName, {
+       |        full: $name.FullClassName,
+       |        short: $name.ClassName,
+       |        package: $name.PackageName,
+       |        type: IntrospectorTypes.Data,
+       |        ctor: () => new $name(),
+       |        fields: [
+       |${fields.map(f => unwindField(f.name, f.typeId)).mkString(",\n").shift(12)}
+       |        ]
+       |    } as IIntrospectorDataObject
+       |);
+     """.stripMargin
+  }
+
   override def handleDTO(ctx: TSTContext, dto: DTO, product: CompositeProduct)(implicit manifest: Option[TypeScriptBuildManifest]): CompositeProduct = {
     implicit val ts: Typespace = ctx.typespace
     implicit val conv: TypeScriptTypeConverter = ctx.conv
@@ -136,17 +151,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |    IIntrospectorMapType,
          |    IIntrospectorDataObject
          |} from '${irtImportPath(dto.id)}';
-         |Introspector.register($short.FullClassName, {
-         |        full: $short.FullClassName,
-         |        short: $short.ClassName,
-         |        package: $short.PackageName,
-         |        type: IntrospectorTypes.Data,
-         |        ctor: () => new $short(),
-         |        fields: [
-         |${fields.map(f => unwindField(f.name, f.typeId)).mkString(",\n").shift(12)}
-         |        ]
-         |    } as IIntrospectorDataObject
-         |);
+         |${renderDTOIntrospector(short, fields)}
        """.stripMargin
 
     CompositeProduct(product.more + extension, product.header, product.preamble)
@@ -173,7 +178,8 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |    IIntrospectorUserType,
          |    IIntrospectorGenericType,
          |    IIntrospectorMapType,
-         |    IIntrospectorMixinObject
+         |    IIntrospectorMixinObject,
+         |    IIntrospectorDataObject
          |} from '${irtImportPath(interface.id)}';
          |Introspector.register('$full', {
          |        full: '$full',
@@ -183,9 +189,11 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |        ctor: () => new $eid(),
          |        fields: [
          |${fields.map(f => unwindField(f.name, f.typeId)).mkString(",\n").shift(12)}
-         |        ]
+         |        ],
+         |        implementations: $eid.getRegisteredTypes
          |    } as IIntrospectorMixinObject
          |);
+         |${renderDTOIntrospector(eid, fields)}
        """.stripMargin
 
     InterfaceProduct(product.iface, product.companion + extension, product.header, product.preamble)

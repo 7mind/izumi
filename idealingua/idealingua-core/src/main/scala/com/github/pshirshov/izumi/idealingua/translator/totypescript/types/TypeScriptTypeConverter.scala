@@ -179,7 +179,11 @@ class TypeScriptTypeConverter() {
   }
 
   def serializeField(field: Field, ts: Typespace): String = {
-    s"'${field.name}': ${serializeValue("this." + safeName(field.name), field.typeId, ts)}"
+    s"${field.name}: ${serializeValue("this." + safeName(field.name), field.typeId, ts)}"
+  }
+
+  def deserializeField(slice: String, field: Field, ts: Typespace): String = {
+    s"${deserializeName("this." + safeName(field.name), field.typeId)} = ${deserializeType(s"slice.${field.name}", field.typeId, ts)};"
   }
 
   def serializeValue(name: String, id: TypeId, ts: Typespace): String = id match {

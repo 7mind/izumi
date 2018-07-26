@@ -746,6 +746,12 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) {
     }
   }
 
+  protected def isServiceMethodOutputNullable(i: Service, method: DefMethod.RPCMethod): Boolean = method.signature.output match {
+    case _: Struct => true
+    case _: Algebraic => true
+    case _: Singular => false // Should better detect here, there might be a singular object returned, which is nullable GoLangType(si.typeId, imports, ts).isPrimitive(si.typeId)
+  }
+
   protected def renderServiceMethodOutputModel(i: Service, method: DefMethod.RPCMethod, imports: GoLangImports): String = method.signature.output match {
     case _: Struct => s"*${outName(i, method.name, public = true)}"
     case _: Algebraic => s"*${outName(i, method.name, public = true)}"
@@ -829,6 +835,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) {
          |        return []byte{}, err
          |    }
          |
+         |    ${if (isServiceMethodOutputNullable(i, m)) s"""if modelOut == nil {\n        return []byte{}, fmt.Errorf("Method ${m.name} returned neither error nor result. Implementation might be broken.")\n    }""" else ""}
          |    dataOut, err := v.marshaller.Marshal(modelOut)
          |    if err != nil {
          |        return []byte{}, fmt.Errorf("Marshalling model failed: %s", err.Error())

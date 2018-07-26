@@ -72,6 +72,7 @@ final case class GoLangField(
     }
   }
 
+
   private def renderPolymorphSerializedVar(id: TypeId, dest: String, src: String): String = {
     id match {
       case _: AliasId => renderPolymorphSerializedVar(ts.dealias(id), dest, src)
@@ -119,6 +120,7 @@ final case class GoLangField(
         case gm: Generic.TMap => {
           val vt = GoLangType(gm.valueType, im, ts)
           val tempVal = s"_$dest"
+
 
           if (GoLangType(null, im, ts).isPrimitive(vt.id))
             s"$dest := $src"
