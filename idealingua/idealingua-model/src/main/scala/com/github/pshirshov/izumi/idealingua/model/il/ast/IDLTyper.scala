@@ -156,10 +156,6 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
       case Some(v: InterfaceId) =>
         v
       case o =>
-        println(mapping)
-        println(toIndefinite(m))
-        println(m.pkg)
-        println(mapping.get(toIndefinite(m)))
         throw new IDLException(s"[$domainId] Expected mixin at key $m, found $o")
     }
   }
