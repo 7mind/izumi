@@ -8,6 +8,8 @@ import java.util.jar.JarFile
 import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 
+import com.sun.nio.zipfs.ZipPath
+
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -124,11 +126,14 @@ class IzResources(clazz: Class[_]) {
       .walk(jarPath)
       .iterator()
       .asScala
-      .filter(_.toFile.isFile)
+      .filter {
+        case _: ZipPath => true
+        case p => p.toFile.isFile
+      }
       .map {
         file =>
           val relativePath = jarPath.relativize(file)
-          val content = Files.readAllBytes(file.toAbsolutePath)
+          val content = Files.readAllBytes(file)
           FileContent(relativePath, content)
       }.toIterable
   }
