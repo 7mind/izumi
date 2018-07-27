@@ -7,5 +7,4 @@ class NullLookupInterceptor extends LookupInterceptor {
   def interceptLookup[T: Tag](key: DIKey, context: Locator): Option[TypedRef[T]] = None
 }
 
-object NullLookupInterceptor extends NullLookupInterceptor {
-}
+object NullLookupInterceptor extends NullLookupInterceptor
