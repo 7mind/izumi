@@ -140,18 +140,24 @@ object BlogRouteModule extends ModuleDef {
 }
 
 class HttpServer(routes: Set[HttpRoutes[IO]]) {
+  val router = routes.foldK
+
   def serve = BlazeBuilder[IO]
     .bindHttp(8080, "localhost")
-    .mountService(routes.fold[HttpRoutes[IO]], "/")
+    .mountService(router, "/")
     .start
-
-  val count = routes.size
 }
 
 val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
 val server = context.get[HttpServer]
 
-server.count // 2
+val testRouter = server.router.orNotFound
+
+testRouter.run(Request[IO](uri = uri("/home"))).flatMap(_.as[String]).unsafeRunSync
+// Home page!
+
+testRouter.run(Request[IO](uri = uri("/blog/1"))).flatMap(_.as[String]).unsafeRunSync
+// Blog post ``1''!
 ```
 
 For further detail see [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multibindings).
