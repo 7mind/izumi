@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
 import java.io.File
-import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
+import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.idealingua.il.parser.ILParser
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
@@ -61,7 +61,7 @@ class LocalModelLoader(root: Path, classpath: Seq[File]) extends ModelLoader {
       .filter {
         f => Files.isRegularFile(f) && (f.getFileName.toString.endsWith(modelExt) || f.getFileName.toString.endsWith(domainExt))
       }
-      .map(f => root.relativize(f) -> readFile(f))
+      .map(f => root.relativize(f) -> IzFiles.readString(f))
       .toMap
   }
 }
@@ -71,9 +71,6 @@ object LocalModelLoader {
   val domainExt = ".domain"
   val modelExt = ".model"
 
-  def readFile(f: Path): String = {
-    new String(Files.readAllBytes(f), StandardCharsets.UTF_8)
-  }
 
 
   def collectSuccess[T, ID](files: Map[Path, String], ext: TypeName, p: all.Parser[T])(mapper: (Path, T) => ID): Map[ID, T] = {

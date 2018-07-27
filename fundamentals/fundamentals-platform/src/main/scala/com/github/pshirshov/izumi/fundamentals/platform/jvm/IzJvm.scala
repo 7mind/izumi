@@ -18,7 +18,7 @@ trait IzJvm {
 
   protected def getStartTime: Long = ManagementFactory.getRuntimeMXBean.getStartTime
 
-  def safeClasspath(classLoader: ClassLoader): String = {
+  def safeClasspathSeq(classLoader: ClassLoader): Seq[String] = {
     val classLoaderCp = classLoader match {
       case u: URLClassLoader =>
         u
@@ -29,13 +29,15 @@ trait IzJvm {
         Seq.empty
     }
 
-    val classpathParts: Seq[String] = Seq(
+    Seq(
       classLoaderCp,
       Seq(System.getProperty("java.class.path"))
     ).flatten
+  }
 
-    val classpath = classpathParts.mkString(System.getProperty("path.separator"))
-    classpath
+  def safeClasspath(classLoader: ClassLoader): String = {
+    safeClasspathSeq(classLoader)
+      .mkString(System.getProperty("path.separator"))
   }
 
 }
