@@ -48,7 +48,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
         if (tsManifest.isDefined && tsManifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
           List(
             indexModule,
-            buildPackageModule()
+            buildPackageModule(),
+            buildIRTPackageModule()
           )
         else
           List(indexModule)
@@ -69,6 +70,27 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val content = TypeScriptBuildManifest.generatePackage(manifest.get, "index", ts.domain.id.toPackage.mkString("-"), peerDeps)
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content)
+  }
+
+  def buildIRTPackageModule()(implicit manifest: Option[TypeScriptBuildManifest]): Module = {
+    if (manifest.isEmpty) throw new Exception("Generating IRT package requires a manifest.")
+
+    val content = TypeScriptBuildManifest.generatePackage(TypeScriptBuildManifest(
+        "irt",
+        manifest.get.tags,
+      manifest.get.description,
+      manifest.get.notes,
+      manifest.get.publisher,
+      manifest.get.version,
+      manifest.get.license,
+      manifest.get.website,
+      manifest.get.copyright,
+      List(ManifestDependency("moment", "^2.20.1")),
+      manifest.get.scope,
+      manifest.get.moduleSchema
+    ), "index", "irt")
+
+    Module(ModuleId(Seq("irt"), "package.json"), content)
   }
 
   def buildIndexModule(): Module = {
