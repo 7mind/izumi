@@ -5,6 +5,8 @@ import java.net.URI
 import java.nio.file.{FileSystems, Path, Paths}
 import java.util.Collections
 
+import scala.util.Try
+
 object IzZip {
 
   final case class ZE(name: String, file: Path)
@@ -44,7 +46,14 @@ object IzZip {
           val jarUri = URI.create(s"jar:${uri.toString}")
           val toFind = Paths.get("/").resolve(incPath)
 
-          FileSystems.newFileSystem(jarUri, Collections.emptyMap[String, Any]())
+          val maybeFs = Try(FileSystems.getFileSystem(jarUri))
+            .recover {
+              case _ =>
+                FileSystems.newFileSystem(jarUri, Collections.emptyMap[String, Any]())
+            }
+
+          maybeFs
+            .get
             .getRootDirectories
             .asScala
             .flatMap {

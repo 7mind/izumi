@@ -4,6 +4,7 @@ import java.lang.management.ManagementFactory
 import java.net.URLClassLoader
 import java.time.ZonedDateTime
 
+import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 
 trait IzJvm {
@@ -18,9 +19,10 @@ trait IzJvm {
 
   protected def getStartTime: Long = ManagementFactory.getRuntimeMXBean.getStartTime
 
-  def safeClasspathSeq(classLoader: ClassLoader): Seq[String] = {
-    val classLoaderCp = classLoader match {
-      case u: URLClassLoader =>
+  @tailrec
+  private def extractCp(classLoader: Option[ClassLoader], cp: Seq[String]): Seq[String] = {
+    val clCp = classLoader match {
+      case Some(u: URLClassLoader) =>
         u
           .getURLs
           .map(_.getFile)
@@ -29,10 +31,30 @@ trait IzJvm {
         Seq.empty
     }
 
+    val all = cp ++ clCp
+    val parent = classLoader.flatMap(c => Option(c.getParent))
+    parent match {
+      case Some(cl) =>
+        extractCp(Option(cl), all)
+      case None =>
+        all
+    }
+  }
+
+  def safeClasspathSeq(classLoader: ClassLoader): Seq[String] = {
+    val classLoaderCp = extractCp(Option(classLoader), Seq.empty)
+
     Seq(
       classLoaderCp,
-      Seq(System.getProperty("java.class.path"))
+      System.getProperty("java.class.path").split(':').toSeq
     ).flatten
+  }
+
+  def baseClassloader: ClassLoader = {
+    Thread
+      .currentThread
+      .getContextClassLoader
+      .getParent
   }
 
   def safeClasspath(classLoader: ClassLoader): String = {

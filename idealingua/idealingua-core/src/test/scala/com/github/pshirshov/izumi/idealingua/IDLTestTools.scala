@@ -60,13 +60,7 @@ object IDLTestTools {
 
   def compilesScala(id: String, domains: Seq[Typespace], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions))
-    val classLoader = Thread
-      .currentThread
-      .getContextClassLoader
-      .getParent
-
-
-    val classpath: String = IzJvm.safeClasspath(classLoader)
+    val classpath: String = IzJvm.safeClasspath(IzJvm.baseClassloader)
 
     val cmd = Seq(
       "scalac"
