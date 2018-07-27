@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTClientMarshallers
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTServerMultiplexor, _}
 import com.github.pshirshov.izumi.r2.idealingua.test.generated._
 import com.github.pshirshov.izumi.r2.idealingua.test.impls._
-import org.http4s._
+import org.http4s.{HttpService, _}
 import org.http4s.client.blaze.Http1Client
 import org.http4s.dsl._
 import org.http4s.dsl.io._
