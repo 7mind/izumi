@@ -17,15 +17,15 @@ object IzumiDeps {
 
     val shapeless = "2.3.3" // 2.13+
     val cats = "1.1.0" // https://github.com/typelevel/cats/issues/2267
-    val cats_effect = "0.10.1"
+    val cats_effect = "1.0.0-RC2"
     val circe = "0.9.3" // https://github.com/circe/circe/issues/770
     val circe_derivation = "0.9.0-M5"
-    val http4s = "0.18.13" // https://github.com/http4s/http4s/issues/1797
+    val http4s = "0.19.0-M1" // https://github.com/http4s/http4s/issues/1797
 
     val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
 
-    val fast_classpath_scanner = "3.1.9" // java
+    val fast_classpath_scanner = "3.1.13" // java
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 
@@ -33,7 +33,7 @@ object IzumiDeps {
     val scalacheck_shapeless = "1.1.6"
 
     // good to drop
-    val json4s = "3.5.4"  // 2.13+
+    val json4s = "3.6.0"  // 2.13+
     val scopt = "3.7.0" // 2.13+
 
     // good to drop

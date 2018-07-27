@@ -127,8 +127,6 @@ class IzResources(clazz: Class[_]) {
     Files.walkFileTree(
       jarPath,
       new SimpleFileVisitor[Path]() {
-        private var currentTarget: Path = _
-
         override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
           FileVisitResult.CONTINUE
         }
