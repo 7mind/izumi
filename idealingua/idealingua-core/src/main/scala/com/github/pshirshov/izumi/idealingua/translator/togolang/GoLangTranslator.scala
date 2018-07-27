@@ -8,7 +8,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.GoTranslatorOptions
@@ -32,7 +33,11 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       , typespace.domain.services.flatMap(translateService)
     ).flatten
 
-    addRuntime(options, modules)
+    val extendedModules = addRuntime(options, modules)
+    if (options.manifest.isDefined && options.manifest.get.useRepositoryFolders)
+      extendedModules.map(m => Module(ModuleId(options.manifest.get.repository.split("/") ++ m.id.path, m.id.name), m.content))
+    else
+      extendedModules
   }
 
 
@@ -957,9 +962,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   }
 
   protected def renderService(i: Service): RenderableCogenProduct = {
-      val imports = GoLangImports(i, i.id.domain.toPackage, List.empty, options.manifest)
+    val imports = GoLangImports(i, i.id.domain.toPackage, List.empty, options.manifest)
+    val prefix = if (options.manifest.isDefined) GoLangBuildManifest.importPrefix(options.manifest.get).get else ""
 
-      val svc =
+    val svc =
         s"""// ============== Service models ==============
            |${renderServiceModels(i, imports)}
            |
@@ -973,7 +979,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
            |${renderServiceServerDummy(i, imports)}
          """.stripMargin
 
-      ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "irt")))
+      ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", prefix + "irt")))
   }
 }
 

@@ -12,7 +12,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, UntypedCompilerOptions}
@@ -169,8 +169,23 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions))
+  def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, scoped: Boolean): Boolean = {
+    val manifest = new GoLangBuildManifest(
+      name = "TestBuild",
+      tags = "",
+      description = "Test Description",
+      notes = "",
+      publisher = Publisher("Test Publisher Name", "test_publisher_id"),
+      version = "0.0.0",
+      license = "MIT",
+      website = "http://project.website",
+      copyright = "Copyright (C) Test Inc.",
+      dependencies = List(ManifestDependency("moment", "^2.20.1")),
+      repository = "github.com/TestCompany/TestRepo",
+      useRepositoryFolders = true
+    )
+
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, true, if(scoped) Some(manifest) else None))
     val outDir = out.absoluteTargetDir
 
     val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
@@ -216,19 +231,20 @@ object IDLTestTools {
       .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withRuntime, options.manifest))
       .compilationProducts.flatMap {
       case (did, s) =>
-        val mapped = s.paths.map {
-          f =>
-            val domainDir = layoutDir.resolve(did.toPackage.mkString("."))
-            (f, domainDir.resolve(f.toFile.getName))
-        }
-
-        mapped.foreach {
-          case (src, tgt) =>
-            tgt.getParent.toFile.mkdirs()
-            Files.copy(src, tgt)
-        }
-
-        assert(s.paths.toSet.size == s.paths.size)
+//        val mapped = s.paths.map {
+//          f =>
+//            val domainDir = layoutDir.resolve(did.toPackage.mkString("."))
+//            (f, domainDir.resolve(f.toFile.getName))
+//        }
+//
+//        mapped.foreach {
+//          case (src, tgt) =>
+//            tgt.getParent.toFile.mkdirs()
+////            println(s"Copying from ${src} to ${tgt}")
+//            Files.copy(src, tgt)
+//        }
+//
+//        assert(s.paths.toSet.size == s.paths.size)
 
         s.paths
     }.toSeq

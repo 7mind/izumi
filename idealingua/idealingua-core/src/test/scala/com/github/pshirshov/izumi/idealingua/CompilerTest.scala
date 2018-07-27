@@ -14,7 +14,7 @@ class CompilerTest extends WordSpec {
       assert(compilesScala(getClass.getSimpleName, loadDefs()))
     }
     "be able to compile into typescript" in {
-      assume(false, "ts runtime support broken")
+//      assume(false, "ts runtime support broken")
       assume(IzFiles.haveExecutables("tsc"), "tsc not available")
       assume(IzFiles.haveExecutables("npm"), "tsc not available")
       assert(compilesTypeScript(getClass.getSimpleName, loadDefs(), scoped = false))
@@ -22,7 +22,8 @@ class CompilerTest extends WordSpec {
     }
     "be able to compile into golang" in {
       assume(IzFiles.haveExecutables("go"), "go not available")
-      assert(compilesGolang(getClass.getSimpleName, loadDefs()))
+      assert(compilesGolang(getClass.getSimpleName, loadDefs(), scoped = false))
+      assert(compilesGolang(getClass.getSimpleName, loadDefs(), scoped = true))
     }
     "be able to compile into csharp" in {
       assume(IzFiles.haveExecutables("csc", "nunit-console"), "csc not available")
