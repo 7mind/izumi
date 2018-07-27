@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.GoTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.RenderableCogenProduct
@@ -20,7 +21,7 @@ object GoLangTranslator {
   )
 }
 
-class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) {
+class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Translator {
   protected val ctx: GLTContext = new GLTContext(ts, options.extensions)
 
   import ctx._
@@ -31,7 +32,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) {
       , typespace.domain.services.flatMap(translateService)
     ).flatten
 
-    modules
+    addRuntime(options, modules)
   }
 
 

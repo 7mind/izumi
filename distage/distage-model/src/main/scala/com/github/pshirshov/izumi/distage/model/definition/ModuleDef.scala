@@ -58,7 +58,7 @@ trait ModuleDef extends ModuleBase {
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
   protected def initialTags: mutable.Set[String] = mutable.HashSet.empty
 
-  final private def freeze: Set[Binding] = {
+  final private[this] def freeze: Set[Binding] = {
     val frozenState = mutableState.flatMap {
       case SingletonRef(b) => Seq(b)
       case SetRef(_, all) => all.map(_.ref)
