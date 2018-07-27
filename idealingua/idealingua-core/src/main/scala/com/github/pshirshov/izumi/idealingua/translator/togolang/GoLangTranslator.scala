@@ -8,7 +8,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.GoTranslatorOptions
@@ -32,7 +33,11 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       , typespace.domain.services.flatMap(translateService)
     ).flatten
 
-    addRuntime(options, modules)
+    val extendedModules = addRuntime(options, modules)
+    if (options.manifest.isDefined && options.manifest.get.useRepositoryFolders)
+      extendedModules.map(m => Module(ModuleId(options.manifest.get.repository.split("/") ++ m.id.path, m.id.name), m.content))
+    else
+      extendedModules
   }
 
 
@@ -747,6 +752,12 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     }
   }
 
+  protected def isServiceMethodOutputNullable(i: Service, method: DefMethod.RPCMethod): Boolean = method.signature.output match {
+    case _: Struct => true
+    case _: Algebraic => true
+    case _: Singular => false // Should better detect here, there might be a singular object returned, which is nullable GoLangType(si.typeId, imports, ts).isPrimitive(si.typeId)
+  }
+
   protected def renderServiceMethodOutputModel(i: Service, method: DefMethod.RPCMethod, imports: GoLangImports): String = method.signature.output match {
     case _: Struct => s"*${outName(i, method.name, public = true)}"
     case _: Algebraic => s"*${outName(i, method.name, public = true)}"
@@ -830,6 +841,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |        return []byte{}, err
          |    }
          |
+         |    ${if (isServiceMethodOutputNullable(i, m)) s"""if modelOut == nil {\n        return []byte{}, fmt.Errorf("Method ${m.name} returned neither error nor result. Implementation might be broken.")\n    }""" else ""}
          |    dataOut, err := v.marshaller.Marshal(modelOut)
          |    if err != nil {
          |        return []byte{}, fmt.Errorf("Marshalling model failed: %s", err.Error())
@@ -950,9 +962,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   }
 
   protected def renderService(i: Service): RenderableCogenProduct = {
-      val imports = GoLangImports(i, i.id.domain.toPackage, List.empty, options.manifest)
+    val imports = GoLangImports(i, i.id.domain.toPackage, List.empty, options.manifest)
+    val prefix = if (options.manifest.isDefined) GoLangBuildManifest.importPrefix(options.manifest.get).get else ""
 
-      val svc =
+    val svc =
         s"""// ============== Service models ==============
            |${renderServiceModels(i, imports)}
            |
@@ -966,7 +979,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
            |${renderServiceServerDummy(i, imports)}
          """.stripMargin
 
-      ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "irt")))
+      ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", prefix + "irt")))
   }
 }
 

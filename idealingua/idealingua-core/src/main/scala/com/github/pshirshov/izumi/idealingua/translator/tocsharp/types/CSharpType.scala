@@ -32,6 +32,10 @@ final case class CSharpType (
       case Primitive.TInt16 => false
       case Primitive.TInt32 => false
       case Primitive.TInt64 => false
+      case Primitive.TUInt8 => false
+      case Primitive.TUInt16 => false
+      case Primitive.TUInt32 => false
+      case Primitive.TUInt64 => false
       case Primitive.TFloat => false
       case Primitive.TDouble => false
       case Primitive.TUUID => true
@@ -39,6 +43,7 @@ final case class CSharpType (
       case Primitive.TDate => false
       case Primitive.TTs => false
       case Primitive.TTsTz => false
+      case Primitive.TTsU => false
     }
     case _ => id match {
       case _: EnumId => false
@@ -64,6 +69,10 @@ final case class CSharpType (
       case Primitive.TInt16 => true
       case Primitive.TInt32 => true
       case Primitive.TInt64 => true
+      case Primitive.TUInt8 => true
+      case Primitive.TUInt16 => true
+      case Primitive.TUInt32 => true
+      case Primitive.TUInt64 => true
       case Primitive.TFloat => true
       case Primitive.TDouble => true
       case Primitive.TUUID => true
@@ -71,6 +80,7 @@ final case class CSharpType (
       case Primitive.TDate => true
       case Primitive.TTs => true
       case Primitive.TTsTz => true
+      case Primitive.TTsU => true
     }
     case _ => id match {
       case _: EnumId => true
@@ -96,6 +106,10 @@ final case class CSharpType (
       case Primitive.TInt16 => "0"
       case Primitive.TInt32 => "0"
       case Primitive.TInt64 => "0"
+      case Primitive.TUInt8 => "0"
+      case Primitive.TUInt16 => "0"
+      case Primitive.TUInt32 => "0"
+      case Primitive.TUInt64 => "0"
       case Primitive.TFloat => "0.0f"
       case Primitive.TDouble => "0.0"
       case Primitive.TUUID => "null"
@@ -103,6 +117,7 @@ final case class CSharpType (
       case Primitive.TDate => "0"
       case Primitive.TTs => "0"
       case Primitive.TTsTz => "0"
+      case Primitive.TTsU => "0"
     }
     case _ => id match {
       case e: EnumId => s"${e.name}.${ts(e).asInstanceOf[Enumeration].members.head}"
@@ -128,6 +143,10 @@ final case class CSharpType (
       case Primitive.TInt16 => None
       case Primitive.TInt32 => None
       case Primitive.TInt64 => None
+      case Primitive.TUInt8 => None
+      case Primitive.TUInt16 => None
+      case Primitive.TUInt32 => None
+      case Primitive.TUInt64 => None
       case Primitive.TFloat => None
       case Primitive.TDouble => None
       case Primitive.TUUID => None
@@ -135,6 +154,7 @@ final case class CSharpType (
       case Primitive.TDate => None
       case Primitive.TTs => None
       case Primitive.TTsTz => None
+      case Primitive.TTsU => None
     }
     case _ => id match {
       case e: EnumId => None
@@ -162,6 +182,10 @@ final case class CSharpType (
         case Primitive.TInt16 => (256 + rnd.nextInt(32767 - 255)).toString
         case Primitive.TInt32 => (32768 + rnd.nextInt(2147483647 - 32767)).toString
         case Primitive.TInt64 => (2147483648L + rnd.nextInt(2147483647)).toString
+        case Primitive.TUInt8 => rnd.nextInt(127).toString
+        case Primitive.TUInt16 => (256 + rnd.nextInt(32767 - 255)).toString
+        case Primitive.TUInt32 => (32768 + rnd.nextInt(2147483647 - 32767)).toString
+        case Primitive.TUInt64 => (2147483648L + rnd.nextInt(2147483647)).toString
         case Primitive.TFloat => rnd.nextFloat().toString + "f"
         case Primitive.TDouble => (2147483648L + rnd.nextFloat()).toString
         case Primitive.TUUID => s"""new System.Guid("${java.util.UUID.randomUUID.toString}")"""
@@ -169,6 +193,7 @@ final case class CSharpType (
         case Primitive.TDate => s"""System.DateTime.Parse(string.Format("{0:D4}-{1:D2}-{2:D2}", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}))"""
         case Primitive.TTs => s"""System.DateTime.ParseExact(string.Format("{0:D4}-{1:D2}-{2:D2}T{3:D2}:{4:D2}:{5:D2}.{6:D3}", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}, ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}, ${100 + rnd.nextInt(100)}), JsonNetTimeFormats.Tsl, CultureInfo.InvariantCulture, DateTimeStyles.None)"""
         case Primitive.TTsTz => s"""System.DateTime.ParseExact(string.Format("{0:D4}-{1:D2}-{2:D2}T{3:D2}:{4:D2}:{5:D2}.{6:D3}+10:00", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}, ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}, ${100 + rnd.nextInt(100)}), JsonNetTimeFormats.Tsz, CultureInfo.InvariantCulture, DateTimeStyles.None)"""
+        case Primitive.TTsU => s"""System.DateTime.ParseExact(string.Format("{0:D4}-{1:D2}-{2:D2}T{3:D2}:{4:D2}:{5:D2}.{6:D3}Z", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}, ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}, ${100 + rnd.nextInt(100)}), JsonNetTimeFormats.Tsu, CultureInfo.InvariantCulture, DateTimeStyles.None)"""
       }
       case _ => id match {
         case e: EnumId => {
@@ -229,6 +254,10 @@ final case class CSharpType (
         case Primitive.TInt16 => return s"$name.ToString()"
         case Primitive.TInt32 => return s"$name.ToString()"
         case Primitive.TInt64 => return s"$name.ToString()"
+        case Primitive.TUInt8 => return s"$name.ToString()"
+        case Primitive.TUInt16 => return s"$name.ToString()"
+        case Primitive.TUInt32 => return s"$name.ToString()"
+        case Primitive.TUInt64 => return s"$name.ToString()"
         case Primitive.TUUID => s"$name.ToString()"
         case _: EnumId => s"$name.ToString()"
         case _: IdentifierId => s"$name.ToString()"
@@ -249,6 +278,10 @@ final case class CSharpType (
           case Primitive.TInt16 => s"short.Parse($src)"
           case Primitive.TInt32 => s"int.Parse($src)"
           case Primitive.TInt64 => s"long.Parse($src)"
+          case Primitive.TUInt8 => s"byte.Parse($src)"
+          case Primitive.TUInt16 => s"ushort.Parse($src)"
+          case Primitive.TUInt32 => s"uint.Parse($src)"
+          case Primitive.TUInt64 => s"ulong.Parse($src)"
           case Primitive.TUUID => s"new Guid($source)"
           case e: EnumId => s"${e.name}Helpers.From($source)"
           case i: IdentifierId => s"${i.name}.From($source)"
@@ -289,7 +322,7 @@ final case class CSharpType (
     case Primitive.TUInt32 => "uint"
 
     case Primitive.TInt64 => "long"
-    case Primitive.TInt64 => "ulong"
+    case Primitive.TUInt64 => "ulong"
 
     case Primitive.TFloat => "float"
     case Primitive.TDouble => "double"
@@ -298,6 +331,7 @@ final case class CSharpType (
     case Primitive.TDate => "DateTime" // Could be Date
     case Primitive.TTs => "DateTime"
     case Primitive.TTsTz => "DateTime"
+    case Primitive.TTsU => "DateTime"
   }
 
   protected def renderUserType(id: TypeId, forAlias: Boolean = false, forMap: Boolean = false, withPackage: Boolean = false): String = {

@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.model.publishing.manifests
 
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 
-
 sealed trait TypeScriptModuleSchema
 
 object TypeScriptModuleSchema {

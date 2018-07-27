@@ -22,11 +22,16 @@ export enum IntrospectorTypes {
     I16,
     I32,
     I64,
+    U08,
+    U16,
+    U32,
+    U64,
     F32,
     F64,
     Uid,
     Tsz,
     Tsl,
+    Tsu,
     Time,
     Date
 }
@@ -59,6 +64,7 @@ export interface IIntrospectorObjectAdtMember {
 }
 
 export interface IIntrospectorMixinObject extends IIntrospectorObjectWithFields {
+    implementations: () => string[];
 }
 
 export interface IIntrospectorDataObject extends IIntrospectorObjectWithFields {

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Field, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{DTO, Interface}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
@@ -19,6 +19,10 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     case Primitive.TInt16 => s"{intro: IntrospectorTypes.I16}"
     case Primitive.TInt32 => s"{intro: IntrospectorTypes.I32}"
     case Primitive.TInt64 => s"{intro: IntrospectorTypes.I64}"
+    case Primitive.TUInt8 => s"{intro: IntrospectorTypes.U08}"
+    case Primitive.TUInt16 => s"{intro: IntrospectorTypes.U16}"
+    case Primitive.TUInt32 => s"{intro: IntrospectorTypes.U32}"
+    case Primitive.TUInt64 => s"{intro: IntrospectorTypes.U64}"
     case Primitive.TFloat => s"{intro: IntrospectorTypes.F32}"
     case Primitive.TDouble => s"{intro: IntrospectorTypes.F64}"
     case Primitive.TUUID => s"{intro: IntrospectorTypes.Uid}"
@@ -26,6 +30,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     case Primitive.TDate => s"{intro: IntrospectorTypes.Date}"
     case Primitive.TTs => s"{intro: IntrospectorTypes.Tsl}"
     case Primitive.TTsTz => s"{intro: IntrospectorTypes.Tsz}"
+    case Primitive.TTsU => s"{intro: IntrospectorTypes.Tsu}"
     case g: Generic => g match {
       case gm: Generic.TMap => s"{intro: IntrospectorTypes.Map, key: ${unwindType(gm.keyType)}, value: ${unwindType(gm.valueType)}} as IIntrospectorMapType"
       case gl: Generic.TList => s"{intro: IntrospectorTypes.List, value: ${unwindType(gl.valueType)}} as IIntrospectorGenericType"
@@ -118,6 +123,21 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     IdentifierProduct(product.identitier, product.identifierInterface + extension, product.header)
   }
 
+  private def renderDTOIntrospector(name: String, fields: Iterable[Field])(implicit ts: Typespace, conv: TypeScriptTypeConverter): String = {
+    s"""Introspector.register($name.FullClassName, {
+       |        full: $name.FullClassName,
+       |        short: $name.ClassName,
+       |        package: $name.PackageName,
+       |        type: IntrospectorTypes.Data,
+       |        ctor: () => new $name(),
+       |        fields: [
+       |${fields.map(f => unwindField(f.name, f.typeId)).mkString(",\n").shift(12)}
+       |        ]
+       |    } as IIntrospectorDataObject
+       |);
+     """.stripMargin
+  }
+
   override def handleDTO(ctx: TSTContext, dto: DTO, product: CompositeProduct)(implicit manifest: Option[TypeScriptBuildManifest]): CompositeProduct = {
     implicit val ts: Typespace = ctx.typespace
     implicit val conv: TypeScriptTypeConverter = ctx.conv
@@ -136,17 +156,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |    IIntrospectorMapType,
          |    IIntrospectorDataObject
          |} from '${irtImportPath(dto.id)}';
-         |Introspector.register($short.FullClassName, {
-         |        full: $short.FullClassName,
-         |        short: $short.ClassName,
-         |        package: $short.PackageName,
-         |        type: IntrospectorTypes.Data,
-         |        ctor: () => new $short(),
-         |        fields: [
-         |${fields.map(f => unwindField(f.name, f.typeId)).mkString(",\n").shift(12)}
-         |        ]
-         |    } as IIntrospectorDataObject
-         |);
+         |${renderDTOIntrospector(short, fields)}
        """.stripMargin
 
     CompositeProduct(product.more + extension, product.header, product.preamble)
@@ -173,7 +183,8 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |    IIntrospectorUserType,
          |    IIntrospectorGenericType,
          |    IIntrospectorMapType,
-         |    IIntrospectorMixinObject
+         |    IIntrospectorMixinObject,
+         |    IIntrospectorDataObject
          |} from '${irtImportPath(interface.id)}';
          |Introspector.register('$full', {
          |        full: '$full',
@@ -183,9 +194,11 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |        ctor: () => new $eid(),
          |        fields: [
          |${fields.map(f => unwindField(f.name, f.typeId)).mkString(",\n").shift(12)}
-         |        ]
+         |        ],
+         |        implementations: $eid.getRegisteredTypes
          |    } as IIntrospectorMixinObject
          |);
+         |${renderDTOIntrospector(eid, fields)}
        """.stripMargin
 
     InterfaceProduct(product.iface, product.companion + extension, product.header, product.preamble)

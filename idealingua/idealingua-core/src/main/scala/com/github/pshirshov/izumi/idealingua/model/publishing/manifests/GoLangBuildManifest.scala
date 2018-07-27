@@ -13,7 +13,8 @@ case class GoLangBuildManifest(name: String,
                                website: String,
                                copyright: String,
                                dependencies: List[ManifestDependency],
-                               repository: String
+                               repository: String,
+                               useRepositoryFolders: Boolean = false,
                           ) extends BuildManifest
 
 object GoLangBuildManifest {

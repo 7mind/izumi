@@ -116,6 +116,7 @@ final case class GoLangType (
     case Primitive.TDate => if (serialized) "string" else "time.Time"
     case Primitive.TTs => if (serialized) "string" else "time.Time"
     case Primitive.TTsTz => if (serialized) "string" else "time.Time"
+    case Primitive.TTsU => if (serialized) "string" else "time.Time"
   }
 
   protected def renderUserType(id: TypeId, serialized: Boolean = false, forAlias: Boolean = false, forMap: Boolean = false): String = {
@@ -201,6 +202,10 @@ final case class GoLangType (
     case Primitive.TInt16 => s"strconv.FormatInt(int64($name), 10)"
     case Primitive.TInt32 => s"strconv.FormatInt(int64($name), 10)"
     case Primitive.TInt64 => s"strconv.FormatInt($name, 10)"
+    case Primitive.TUInt8 => s"strconv.FormatUInt(uint64($name), 10)"
+    case Primitive.TUInt16 => s"strconv.FormatUInt(uint64($name), 10)"
+    case Primitive.TUInt32 => s"strconv.FormatUInt(int64($name), 10)"
+    case Primitive.TUInt64 => s"strconv.FormatUInt($name, 10)"
     case Primitive.TUUID => name
     case _: EnumId => s"$name.String()"
     case _: IdentifierId => s"$name.String()"
@@ -215,6 +220,10 @@ final case class GoLangType (
         case Primitive.TInt16 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 16)\nif err != nil {\n    return err\n}\n$dest := int16(${dest}64)"
         case Primitive.TInt32 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := int32(${dest}64)"
         case Primitive.TInt64 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest, err := strconv.ParseInt(${dest}Str, 10, 64)\nif err != nil {\n    return err\n}"
+        case Primitive.TUInt8 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 8)\nif err != nil {\n    return err\n}\n$dest := uint8(${dest}64)"
+        case Primitive.TUInt16 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 16)\nif err != nil {\n    return err\n}\n$dest := uint16(${dest}64)"
+        case Primitive.TUInt32 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := uint32(${dest}64)"
+        case Primitive.TUInt64 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest, err := strconv.ParseUInt(${dest}Str, 10, 64)\nif err != nil {\n    return err\n}"
         case Primitive.TUUID => s"$dest, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}"
         case en: EnumId => s"""${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\nif !IsValid${en.name}(${dest}Str) {\n    return fmt.Errorf("Unknown value %s for enum type ${en.name}", ${dest}Str)\n}\n$dest := New${en.name}(${dest}Str)"""
         case id: IdentifierId => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest := &${id.name}{}\nif err := $dest.LoadSerialized(${dest}Str); err != nil {\n    return err\n}"
@@ -232,13 +241,18 @@ final case class GoLangType (
     case Primitive.TInt16 => "0"
     case Primitive.TInt32 => "0"
     case Primitive.TInt64 => "0"
+    case Primitive.TUInt8 => "0"
+    case Primitive.TUInt16 => "0"
+    case Primitive.TUInt32 => "0"
+    case Primitive.TUInt64 => "0"
     case Primitive.TFloat => "0"
     case Primitive.TDouble => "0"
     case Primitive.TUUID => "\"00000000-0000-0000-0000-000000000000\""
     case Primitive.TTime => "\"00:00:00.000000\""
     case Primitive.TDate => "\"0000-00-00\""
     case Primitive.TTs => "\"0000-00-00T00:00:00.00000\""
-    case Primitive.TTsTz => "\"0000-00-00T00:00:00.00000[UTC]\""
+    case Primitive.TTsTz => "\"0000-00-00T00:00:00.00000+10:00[Australia/Sydney]\""
+    case Primitive.TTsU => "\"0000-00-00T00:00:00.00000Z[UTC]\""
     case g: Generic => g match {
       case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType(forMap = true)}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
       case gl: Generic.TList => s"[]${GoLangType(gl.valueType, im, ts).renderType()}{}"
@@ -259,13 +273,18 @@ final case class GoLangType (
     case Primitive.TInt16 => "16"
     case Primitive.TInt32 => "32"
     case Primitive.TInt64 => "64"
+    case Primitive.TUInt8 => "28"
+    case Primitive.TUInt16 => "216"
+    case Primitive.TUInt32 => "232"
+    case Primitive.TUInt64 => "264"
     case Primitive.TFloat => "32.32"
     case Primitive.TDouble => "64.64"
     case Primitive.TUUID => "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\""
     case Primitive.TTime => "time.Now()" // "\"15:10:10.10001\""
     case Primitive.TDate => "time.Now()" // "\"2010-12-01\""
     case Primitive.TTs => "time.Now()" // "\"2010-12-01T15:10:10.10001\""
-    case Primitive.TTsTz => "time.Now()" // "\"2010-12-01T15:10:10.10001[UTC]\""
+    case Primitive.TTsTz => "time.Now()" // "\"2010-12-01T15:10:10.10001+10:00[Australia/Sydney]\""
+    case Primitive.TTsU => "time.Now()" // "\"2010-12-01T15:10:10.10001Z[UTC]\""
     case g: Generic => g match {
       case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType(forMap = true)}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
       case gl: Generic.TList => s"[]${GoLangType(gl.valueType, im, ts).renderType()}{}"
@@ -283,7 +302,7 @@ final case class GoLangType (
   }
 
   def testValuePackage(): List[String] = id match {
-    case Primitive.TTime | Primitive.TDate | Primitive.TTsTz | Primitive.TTs => List("time")
+    case Primitive.TTime | Primitive.TDate | Primitive.TTsTz | Primitive.TTs | Primitive.TTsU => List("time")
       // TODO For testing we might want to import from other packages...
 //    case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValuePackage()
 //    case _: IdentifierId | _: DTOId | _: EnumId => s"NewTest${id.name}()"

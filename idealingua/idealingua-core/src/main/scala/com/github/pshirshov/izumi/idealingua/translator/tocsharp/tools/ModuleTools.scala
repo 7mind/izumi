@@ -70,10 +70,10 @@ class ModuleTools() {
   }
 
   def toTestModuleId(id: TypeId, prefix: Option[String] = None): ModuleId = {
-    ModuleId(id.path.toPackage, s"${if (prefix.isDefined) prefix.get + id.name else id.name}_test.cs")
+    ModuleId(id.path.toPackage.map(p => p.capitalize), s"${if (prefix.isDefined) prefix.get + id.name else id.name}_test.cs")
   }
 
   def toTestModuleId(id: ServiceId): ModuleId = {
-    ModuleId(id.domain.toPackage, s"${id.name}_test.cs")
+    ModuleId(id.domain.toPackage.map(p => p.capitalize), s"${id.name}_test.cs")
   }
 }

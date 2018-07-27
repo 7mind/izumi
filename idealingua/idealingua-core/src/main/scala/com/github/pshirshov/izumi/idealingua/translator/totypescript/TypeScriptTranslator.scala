@@ -48,13 +48,18 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
         if (tsManifest.isDefined && tsManifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
           List(
             indexModule,
-            buildPackageModule()
+            buildPackageModule(),
+            buildIRTPackageModule()
           )
         else
           List(indexModule)
       )
 
-    addRuntime(options, modules)
+    val extendedModules = addRuntime(options, modules)
+    if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
+      extendedModules.map(m => Module(ModuleId(Seq(manifest.get.scope, m.id.path.mkString("-")), m.id.name), m.content))
+    else
+      extendedModules
   }
 
   def buildPackageModule()(implicit manifest: Option[TypeScriptBuildManifest]): Module = {
@@ -65,6 +70,27 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val content = TypeScriptBuildManifest.generatePackage(manifest.get, "index", ts.domain.id.toPackage.mkString("-"), peerDeps)
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content)
+  }
+
+  def buildIRTPackageModule()(implicit manifest: Option[TypeScriptBuildManifest]): Module = {
+    if (manifest.isEmpty) throw new Exception("Generating IRT package requires a manifest.")
+
+    val content = TypeScriptBuildManifest.generatePackage(TypeScriptBuildManifest(
+        "irt",
+        manifest.get.tags,
+      manifest.get.description,
+      manifest.get.notes,
+      manifest.get.publisher,
+      manifest.get.version,
+      manifest.get.license,
+      manifest.get.website,
+      manifest.get.copyright,
+      List(ManifestDependency("moment", "^2.20.1")),
+      manifest.get.scope,
+      manifest.get.moduleSchema
+    ), "index", "irt")
+
+    Module(ModuleId(Seq("irt"), "package.json"), content)
   }
 
   def buildIndexModule(): Module = {
@@ -147,6 +173,18 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
+  protected def renderDtoInterfaceLoader(iid: InterfaceId): String = {
+    val fields = typespace.structure.structure(iid)
+    s"""public load${iid.name}Serialized(slice: ${iid.name}${typespace.implId(iid).name}Serialized) {
+       |${renderDeserializeObject("slice", fields.all.map(_.field)).shift(4)}
+       |}
+       |
+       |public load${iid.name}(slice: ${iid.name}${typespace.implId(iid).name}) {
+       |    this.load${iid.name}Serialized(slice.serialize());
+       |}
+     """.stripMargin
+  }
+
   protected def renderDefaultValue(id: TypeId): Option[String] = id match {
     case g: Generic => g match {
       case _: Generic.TOption => None
@@ -201,6 +239,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |    }
          |
          |${i.struct.superclasses.interfaces.map(si => renderDtoInterfaceSerializer(si)).mkString("\n").shift(4)}
+         |${i.struct.superclasses.interfaces.map(si => renderDtoInterfaceLoader(si)).mkString("\n").shift(4)}
          |    public serialize(): ${i.id.name}Serialized {
          |        return {
          |${renderSerializedObject(distinctFields.toList).shift(12)}
@@ -354,6 +393,10 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     it.map { m => s"$m${if (it.hasNext) "," else ""}" }.mkString("\n")
   }
 
+  protected def renderDeserializeObject(slice: String, fields: List[Field]): String = {
+    fields.map(f => conv.deserializeField(slice, f, typespace)).mkString("\n")
+  }
+
   protected def renderInterface(i: Interface)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val extendsInterfaces =
@@ -418,7 +461,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |    // in order to provide extended functionality on existing models, preserving the original class name.
          |
          |    private static _knownPolymorphic: {[key: string]: {new (data?: ${eid} | ${eid}Serialized): ${i.id.name}}} = {
-         |        [${eid}.FullClassName]: ${eid}
+         |        // This basic registration will happen below [${eid}.FullClassName]: ${eid}
          |    };
          |
          |    public static register(className: string, ctor: {new (data?: ${eid} | ${eid}Serialized): ${i.id.name}}): void {
@@ -433,6 +476,10 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |        }
          |
          |        return new ctor(data[polymorphicId]);
+         |    }
+         |
+         |    public static getRegisteredTypes(): string[] {
+         |        return Object.keys(${eid}._knownPolymorphic);
          |    }
          |}
          |

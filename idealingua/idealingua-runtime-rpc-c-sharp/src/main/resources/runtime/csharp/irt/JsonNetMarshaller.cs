@@ -93,17 +93,30 @@ namespace IRT {
 
         public static readonly string TszDefault = "yyyy-MM-ddTHH:mm:ss.fffzzz";
         public static readonly string[] Tsz = new string[] {
-                    "yyyy-MM-ddTHH:mm:sszzz",
-                    "yyyy-MM-ddTHH:mm:ss.fzzz",
-                    "yyyy-MM-ddTHH:mm:ss.ffzzz",
-                    "yyyy-MM-ddTHH:mm:ss.fffzzz",
-                    "yyyy-MM-ddTHH:mm:ss.ffffzzz",
-                    "yyyy-MM-ddTHH:mm:ss.fffffzzz",
-                    "yyyy-MM-ddTHH:mm:ss.ffffffzzz",
-                    "yyyy-MM-ddTHH:mm:ss.fffffffzzz",
-                    "yyyy-MM-ddTHH:mm:ss.ffffffffzzz",
-                    "yyyy-MM-ddTHH:mm:ss.fffffffffzzz"
+                   "yyyy-MM-ddTHH:mm:ssZ",
+                   "yyyy-MM-ddTHH:mm:ss.fZ",
+                   "yyyy-MM-ddTHH:mm:ss.ffZ",
+                   "yyyy-MM-ddTHH:mm:ss.fffZ",
+                   "yyyy-MM-ddTHH:mm:ss.ffffZ",
+                   "yyyy-MM-ddTHH:mm:ss.fffffZ",
+                   "yyyy-MM-ddTHH:mm:ss.ffffffZ",
+                   "yyyy-MM-ddTHH:mm:ss.fffffffZ",
+                   "yyyy-MM-ddTHH:mm:ss.ffffffffZ",
+                   "yyyy-MM-ddTHH:mm:ss.fffffffffZ",
+                   "yyyy-MM-ddTHH:mm:sszzz",
+                   "yyyy-MM-ddTHH:mm:ss.fzzz",
+                   "yyyy-MM-ddTHH:mm:ss.ffzzz",
+                   "yyyy-MM-ddTHH:mm:ss.fffzzz",
+                   "yyyy-MM-ddTHH:mm:ss.ffffzzz",
+                   "yyyy-MM-ddTHH:mm:ss.fffffzzz",
+                   "yyyy-MM-ddTHH:mm:ss.ffffffzzz",
+                   "yyyy-MM-ddTHH:mm:ss.fffffffzzz",
+                   "yyyy-MM-ddTHH:mm:ss.ffffffffzzz",
+                   "yyyy-MM-ddTHH:mm:ss.fffffffffzzz"
                 };
+
+        public static readonly string TsuDefault = "yyyy-MM-ddTHH:mm:ss.fffZ";
+        public static readonly string[] Tsu = JsonNetTimeFormats.Tsz;
     }
 
     class JsonNetDateConverter : IsoDateTimeConverter {
