@@ -17,7 +17,8 @@ class IDLCompiler(toCompile: Seq[Typespace]) {
     IzFiles.recreateDir(target)
 
     val withRt = if (options.withRuntime) {
-      val rtFiles = IzResources.enumerateClasspath(s"runtime/${options.language.toString}").map {
+      val iterator = IzResources.enumerateClasspath(s"runtime/${options.language.toString}")
+      val rtFiles = iterator.files.map {
         f =>
           import scala.collection.JavaConverters._
           val parts = f.path.iterator().asScala.toList.map(_.toString)

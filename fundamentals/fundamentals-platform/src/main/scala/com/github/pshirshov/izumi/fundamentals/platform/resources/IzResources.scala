@@ -8,8 +8,6 @@ import java.util.jar.JarFile
 import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 
-import com.sun.nio.zipfs.ZipPath
-
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -113,29 +111,37 @@ class IzResources(clazz: Class[_]) {
     RecursiveCopyOutput(targets.toSeq) // 2.13 compat
   }
 
+  case class ContentIterator(files: Iterable[FileContent]){
+  }
 
-  def enumerateClasspath(sourcePath: String): Iterable[FileContent] = {
+  def enumerateClasspath(sourcePath: String): ContentIterator = {
     val pathReference = getPath(sourcePath)
     if (pathReference.isEmpty) {
-      return Iterable.empty
+      return ContentIterator(Iterable.empty)
     }
 
     val jarPath: Path = pathReference.get.path
-    import scala.collection.JavaConverters._
-    Files
-      .walk(jarPath)
-      .iterator()
-      .asScala
-      .filter {
-        case _: ZipPath => true
-        case p => p.toFile.isFile
-      }
-      .map {
-        file =>
+
+    val targets = mutable.ArrayBuffer.empty[FileContent]
+
+    Files.walkFileTree(
+      jarPath,
+      new SimpleFileVisitor[Path]() {
+        private var currentTarget: Path = _
+
+        override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          FileVisitResult.CONTINUE
+        }
+
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
           val relativePath = jarPath.relativize(file)
-          val content = Files.readAllBytes(file)
-          FileContent(relativePath, content)
-      }.toIterable
+          targets += FileContent(relativePath, Files.readAllBytes(file))
+          FileVisitResult.CONTINUE
+        }
+      }
+    )
+
+    ContentIterator(targets.toSeq)
   }
 
 
