@@ -70,6 +70,7 @@ class Http4sTransportTest extends WordSpec {
     "support direct calls" in {
       import Http4sTestContext._
 
+      import scala.concurrent.ExecutionContext.Implicits.global
       val builder = BlazeBuilder[IO]
         .bindHttp(port, host)
         .mountService(ioService, "/")

@@ -3,8 +3,9 @@ package com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.planning.PlanAnalyzerDefaultImpl
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
+import distage.{DIKey, Tag}
 import org.scalatest.WordSpec
 
 class BootstrapTest extends WordSpec {

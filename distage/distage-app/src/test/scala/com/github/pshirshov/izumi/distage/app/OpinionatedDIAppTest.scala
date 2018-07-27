@@ -9,6 +9,10 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
+import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
+import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.{BindingPreference, PluginMergeConfig}
+import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
+import com.github.pshirshov.izumi.fundamentals.collections.TagExpr
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.TestSink
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
@@ -50,7 +54,13 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
         Seq(
           new ConfigModule(bsContext.appConfig)
           , new CustomizationModule
-          , new TracingGcModule(Set(RuntimeDIUniverse.DIKey.get[TestApp]))
+          , new TracingGcModule(Set(
+            RuntimeDIUniverse.DIKey.get[TestApp],
+            RuntimeDIUniverse.DIKey.get[DisabledByKey],
+            RuntimeDIUniverse.DIKey.get[DisabledByImpl],
+            RuntimeDIUniverse.DIKey.get[DisabledByTag],
+            RuntimeDIUniverse.DIKey.get[WithGoodTag],
+          ))
         )
       }
 
@@ -65,9 +75,13 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
   }
 
   private val pluginMergeConfig = PluginMergeConfig(
-    disabledImplementations = Set(classOf[DisabledImpl].getName, classOf[DisabledBinding].getName)
-    , disabledTags = Set("badtag")
-    , disabledKeys = Set(classOf[DisabledTrait].getName)
+    disabledTags = TagExpr.Strings.any("badtag")
+    , disabledKeyClassnames = Set(
+      classOf[DisabledByKey].getName
+    )
+    , disabledImplClassnames = Set(
+      classOf[DisabledImplForByImplTrait].getName
+    )
     , preferences = Map(classOf[Conflict].getSimpleName -> BindingPreference(Some("B"), None))
   )
 
@@ -91,16 +105,22 @@ class OpinionatedDIAppTest extends WordSpec {
     "support dynamic app loading" in {
 
 
-
       val app = new TestAppLauncher({
         case (context, bsContext) =>
           assert(context.find[TestApp].nonEmpty)
           assert(context.find[BadApp].isEmpty)
-          assert(context.find[DisabledTrait].isEmpty)
-          assert(context.find[DisabledBinding].isEmpty)
+          assert(context.find[DisabledByGc].isEmpty)
+
+          assert(context.find[WithGoodTag].nonEmpty)
+
+          assert(context.find[DisabledByTag].isEmpty)
+          assert(context.find[DisabledByImpl].isEmpty)
+          assert(context.find[DisabledByKey].isEmpty)
+
           assert(context.find[Conflict].exists(_.isInstanceOf[ConflictB]))
 
           assert(context.get[AppConfig] == bsContext.appConfig)
+
           assert(context.get[TestApp].config.value == "test")
           assert(context.get[TestApp].setTest.size == 1)
 

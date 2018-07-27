@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.model.reflection.universe
 trait WithDISafeType {
   this: DIUniverseBase with WithDITypeTags =>
 
+  @deprecated("Use distage.SafeType", "23 July 2018")
   type TypeFull = SafeType
 
   // TODO: hotspots, hashcode on keys is inefficient

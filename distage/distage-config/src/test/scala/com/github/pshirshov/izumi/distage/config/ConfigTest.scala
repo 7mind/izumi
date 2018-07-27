@@ -1,10 +1,9 @@
 package com.github.pshirshov.izumi.distage.config
 
 import com.github.pshirshov.configapp._
-import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.typesafe.config._
+import distage.{Injector, ModuleDef}
 import org.scalatest.WordSpec
 
 import scala.collection.immutable.ListSet
@@ -14,7 +13,7 @@ class ConfigTest extends WordSpec {
   "Config resolver" should {
     "resolve config references" in {
       val config = AppConfig(ConfigFactory.load())
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = Injector(new ConfigModule(config))
       val plan = injector.plan(TestConfigApp.definition)
 
       val context = injector.produce(plan)
@@ -35,7 +34,7 @@ class ConfigTest extends WordSpec {
 
     "resolve config references in set elements" in {
       val config = AppConfig(ConfigFactory.load())
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = Injector(new ConfigModule(config))
       val plan = injector.plan(TestConfigApp.setDefinition)
 
       val context = injector.produce(plan)
@@ -45,7 +44,7 @@ class ConfigTest extends WordSpec {
 
     "resolve config maps" in {
       val config = AppConfig(ConfigFactory.load("map-test.conf"))
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = Injector(new ConfigModule(config))
       val plan = injector.plan(TestConfigReaders.mapDefinition)
 
       val context = injector.produce(plan)
@@ -57,7 +56,7 @@ class ConfigTest extends WordSpec {
 
     "resolve config lists" in {
       val config = AppConfig(ConfigFactory.load("list-test.conf"))
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = Injector(new ConfigModule(config))
       val plan = injector.plan(TestConfigReaders.listDefinition)
 
       val context = injector.produce(plan)
@@ -75,7 +74,7 @@ class ConfigTest extends WordSpec {
 
     "resolve config options" in {
       val config = AppConfig(ConfigFactory.load("opt-test.conf"))
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = Injector(new ConfigModule(config))
       val plan = injector.plan(TestConfigReaders.optDefinition)
 
       val context = injector.produce(plan)
@@ -87,7 +86,7 @@ class ConfigTest extends WordSpec {
       import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = Injector(new ConfigModule(config))
 
       val definition = new ModuleDef {
         make[TestDependency]
@@ -105,7 +104,7 @@ class ConfigTest extends WordSpec {
       import ConfigFixtures._
 
       val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
-      val injector = Injectors.bootstrap(new ConfigModule(config))
+      val injector = Injector(new ConfigModule(config))
 
       val definition = new ModuleDef {
         make[TestDependency]

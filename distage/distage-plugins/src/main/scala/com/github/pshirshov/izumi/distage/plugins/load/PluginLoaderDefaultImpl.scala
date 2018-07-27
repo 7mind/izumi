@@ -1,42 +1,14 @@
-package com.github.pshirshov.izumi.distage.plugins
+package com.github.pshirshov.izumi.distage.plugins.load
 
+import com.github.pshirshov.izumi.distage.plugins.PluginBase
+import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.{ConfigApplicator, PluginConfig}
 import com.github.pshirshov.izumi.functional.Value
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
+import scala.collection.JavaConverters._
 
-
-final case class PluginConfig
-(
-  debug: Boolean
-  , packagesEnabled: Seq[String]
-  , packagesDisabled: Seq[String]
-)
-
-private class ConfigApplicator(config: PluginConfig) {
-  def debug(s: FastClasspathScanner): FastClasspathScanner = {
-    if (config.debug) {
-      s.verbose()
-    } else {
-      s
-    }
-  }
-}
-
-trait PluginLoader {
-  def load(): Seq[PluginBase]
-}
-
-object PluginLoaderNullImpl extends PluginLoader {
-  override def load(): Seq[PluginBase] = Seq.empty
-}
-
-class PluginLoaderPredefImpl(plugins: Seq[PluginBase]) extends PluginLoader {
-  override def load(): Seq[PluginBase] = plugins
-}
 
 class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
   type PluginType = Class[_ <: PluginBase]
-
-  import scala.collection.JavaConverters._
 
   def load(): Seq[PluginBase] = {
     val base = classOf[PluginBase]
@@ -59,5 +31,24 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
       .map(_.getClassRef.asSubclass(base))
       .map(_.getDeclaredConstructor().newInstance())
       .toSeq // 2.13 compat
+  }
+}
+
+object PluginLoaderDefaultImpl {
+  final case class PluginConfig
+  (
+    debug: Boolean
+    , packagesEnabled: Seq[String]
+    , packagesDisabled: Seq[String]
+  )
+
+  private class ConfigApplicator(config: PluginConfig) {
+    def debug(s: FastClasspathScanner): FastClasspathScanner = {
+      if (config.debug) {
+        s.verbose()
+      } else {
+        s
+      }
+    }
   }
 }

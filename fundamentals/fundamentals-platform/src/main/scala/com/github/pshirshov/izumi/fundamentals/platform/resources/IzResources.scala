@@ -14,6 +14,7 @@ import scala.reflect.ClassTag
 
 sealed trait ResourceLocation
 
+// TODO: all this class is a piece of shit
 class IzResources(clazz: Class[_]) {
 
   import IzResources._
@@ -88,16 +89,13 @@ class IzResources(clazz: Class[_]) {
       new SimpleFileVisitor[Path]() {
         private var currentTarget: Path = _
 
-        override def preVisitDirectory(
-                                        dir: Path,
-                                        attrs: BasicFileAttributes): FileVisitResult = {
+        override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
           currentTarget = targetDir.resolve(jarPath.relativize(dir).toString)
           Files.createDirectories(currentTarget)
           FileVisitResult.CONTINUE
         }
 
-        override def visitFile(file: Path,
-                               attrs: BasicFileAttributes): FileVisitResult = {
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
           val target = targetDir.resolve(jarPath.relativize(file).toString)
           targets += target
           Files.copy(
@@ -111,6 +109,37 @@ class IzResources(clazz: Class[_]) {
     )
 
     RecursiveCopyOutput(targets.toSeq) // 2.13 compat
+  }
+
+  case class ContentIterator(files: Iterable[FileContent]){
+  }
+
+  def enumerateClasspath(sourcePath: String): ContentIterator = {
+    val pathReference = getPath(sourcePath)
+    if (pathReference.isEmpty) {
+      return ContentIterator(Iterable.empty)
+    }
+
+    val jarPath: Path = pathReference.get.path
+
+    val targets = mutable.ArrayBuffer.empty[FileContent]
+
+    Files.walkFileTree(
+      jarPath,
+      new SimpleFileVisitor[Path]() {
+        override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          FileVisitResult.CONTINUE
+        }
+
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          val relativePath = jarPath.relativize(file)
+          targets += FileContent(relativePath, Files.readAllBytes(file))
+          FileVisitResult.CONTINUE
+        }
+      }
+    )
+
+    ContentIterator(targets.toSeq)
   }
 
 
@@ -129,6 +158,8 @@ class IzResources(clazz: Class[_]) {
 }
 
 object IzResources extends IzResources(IzManifest.getClass) {
+
+  case class FileContent(path: Path, content: Array[Byte])
 
   class PathReference(val path: Path, val fileSystem: FileSystem) extends AutoCloseable {
     override def close(): Unit = {
@@ -153,4 +184,5 @@ object IzResources extends IzResources(IzManifest.getClass) {
     case object NotFound extends ResourceLocation
 
   }
+
 }

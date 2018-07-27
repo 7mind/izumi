@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.mutable
 
-
 case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) {
   /**
     * This method is relatively expensive
@@ -17,7 +16,7 @@ case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) 
     out.toSet
   }
 
-  def tree(root: DIKey, depth: Option[Int]): DepNode = {
+  def tree(root: DIKey, depth: Option[Int] = None): DepNode = {
     DepNode(root, this, 0, depth, Set.empty)
   }
 

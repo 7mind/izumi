@@ -1,15 +1,18 @@
 package com.github.pshirshov.izumi.distage.app
 
-import com.github.pshirshov.izumi.distage.Injectors
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.plugins._
+import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
+import com.github.pshirshov.izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
+import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import distage.Injector
 
 // TODO: startables
 // TODO: config mapping/injection
@@ -17,7 +20,7 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 // TODO: split into di-plugins and di-app
 
 
-trait BootstrapContext[CommandlineConfig <: AnyRef] {
+trait BootstrapContext[CommandlineConfig] {
   def cliConfig: CommandlineConfig
 
   def bootstrapConfig: PluginConfig
@@ -27,7 +30,7 @@ trait BootstrapContext[CommandlineConfig <: AnyRef] {
   def appConfig: AppConfig
 }
 
-case class BootstrapContextDefaultImpl[CommandlineConfig <: AnyRef]
+case class BootstrapContextDefaultImpl[CommandlineConfig]
 (
   cliConfig: CommandlineConfig
   , bootstrapConfig: PluginConfig
@@ -35,7 +38,7 @@ case class BootstrapContextDefaultImpl[CommandlineConfig <: AnyRef]
   , appConfig: AppConfig
 ) extends BootstrapContext[CommandlineConfig]
 
-trait ApplicationBootstrapStrategy[CommandlineConfig <: AnyRef] {
+trait ApplicationBootstrapStrategy[CommandlineConfig] {
 
   type Context = BootstrapContext[CommandlineConfig]
 
@@ -55,7 +58,7 @@ trait ApplicationBootstrapStrategy[CommandlineConfig <: AnyRef] {
 }
 
 
-abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig <: AnyRef]
+abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig]
 (
   override val context: BootstrapContext[CommandlineConfig]
 ) extends ApplicationBootstrapStrategy[CommandlineConfig] {
@@ -79,9 +82,8 @@ abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig <: AnyRef]
   def mkLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.pluginConfig)
 }
 
-
 abstract class OpinionatedDiApp {
-  type CommandlineConfig <: AnyRef
+  type CommandlineConfig
 
   type Strategy = ApplicationBootstrapStrategy[CommandlineConfig]
   type BootstrapContext = Strategy#Context
@@ -123,7 +125,7 @@ abstract class OpinionatedDiApp {
     logger.trace(s"Have bootstrap definition\n$bsdef")
     logger.trace(s"Have app definition\n$appDef")
 
-    val injector = Injectors.bootstrap(bsdef)
+    val injector = Injector(bsdef)
     val plan = injector.plan(appDef)
     logger.trace(s"Planning completed\n$plan")
     val context = injector.produce(plan)

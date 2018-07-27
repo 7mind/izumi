@@ -1,8 +1,6 @@
 
 package com.github.pshirshov.izumi.fundamentals.platform
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
-import com.github.pshirshov.izumi.fundamentals.platform.os.{IzOs, OsType}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import org.scalatest.WordSpec
 
@@ -27,29 +25,6 @@ class IzStringTest extends WordSpec {
       assert("x".ellipsedLeftPad(5) == "    x")
       assert("xxxxxx".ellipsedLeftPad(5) == "...xx")
       assert("xx".ellipsedLeftPad(1) == "x")
-    }
-  }
-
-
-}
-
-
-class IzFilesTest extends WordSpec {
-
-  "File tools" should {
-    "resolve path entries on nix-like systems" in {
-      assert(IzFiles.which("bash").nonEmpty)
-    }
-  }
-
-
-}
-
-class IzOsTest extends WordSpec {
-
-  "OS tools" should {
-    "detect OS version" in {
-      assert(IzOs.osType != OsType.Unknown)
     }
   }
 

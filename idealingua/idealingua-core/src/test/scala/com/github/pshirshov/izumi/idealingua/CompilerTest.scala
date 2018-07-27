@@ -21,7 +21,8 @@ class CompilerTest extends WordSpec {
     }
     "be able to compile into golang" in {
       assume(IzFiles.haveExecutables("go"), "go not available")
-      assert(compilesGolang(getClass.getSimpleName, loadDefs()))
+      assert(compilesGolang(getClass.getSimpleName, loadDefs(), scoped = false))
+      assert(compilesGolang(getClass.getSimpleName, loadDefs(), scoped = true))
     }
     "be able to compile into csharp" in {
       assume(IzFiles.haveExecutables("csc", "nunit-console"), "csc not available")

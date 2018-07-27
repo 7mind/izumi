@@ -221,6 +221,47 @@ Build Descriptors
 
 ### Bills of Materials
 
+Izumi brings [Bill of Materials](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html) concept to SBT.
+
+#### Izumi BOM 
+
+You can import Izumi libraries and transitive dependencies without specifying their version or even _artifact names_. To do that
+add `sbt-izumi-deps` SBT plugin:
+
+@@@vars
+```scala
+val izumi_version = "$izumi.version$"
+addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi-deps" % izumi_version)
+```
+@@@
+
+You can use it like this:
+
+```scala
+libraryDependencies += Izumi.R.distage_core // Import an izumi library
+libraryDependencies += Izumi.D.cats_effect // Import an izumi dependency
+```
+
+R is for Runtime, D is for Dependencies, T is for Test artifacts
+
+#### Create a BOM for your projects 
+
+`sbt-izumi-deps` also allows you to a BOM for your own projects. Just add just one line into your project settings:
+
+```scala
+lazy val myProject = (project in file("my-project-bom"))
+  .settings(withBuildInfo("com.mycompany.myproject", "MyProjectBOM"))
+```
+
+In case you use Izumi DSL it would be something like:
+
+```scala
+lazy val inRoot = In(".")
+lazy val myProjectBom = inRoot.as.module
+  .settings(withBuildInfo("com.mycompany.myproject", "MyProjectBOM"))
+
+```
+
 ### Build Manifest entries
 
 ### Git Manifest entries

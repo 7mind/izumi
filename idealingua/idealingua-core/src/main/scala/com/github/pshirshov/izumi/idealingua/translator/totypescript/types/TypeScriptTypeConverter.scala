@@ -31,6 +31,7 @@ class TypeScriptTypeConverter() {
       case Primitive.TDate => "Date.parse(" + value + ")"
       case Primitive.TTs => "Date.parse(" + value + ")"
       case Primitive.TTsTz => "Date.parse(" + value + ")"
+      case Primitive.TTsU => "Date.parse(" + value + ")"
       case id: IdentifierId => s"new ${id.name}($value)"
       case en: EnumId => s"$en[$value]"
       // TODO We do nothing for other types, should probably figure something out ...
@@ -69,6 +70,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TDate => name + "AsString"
     case Primitive.TTs => name + "AsString"
     case Primitive.TTsTz => name + "AsString"
+    case Primitive.TTsU => name + "AsString"
     case o: Generic.TOption => deserializeName(name, o.valueType)
     case _ => name
   }
@@ -81,6 +83,10 @@ class TypeScriptTypeConverter() {
       case Primitive.TInt16 => variable
       case Primitive.TInt32 => variable
       case Primitive.TInt64 => variable
+      case Primitive.TUInt8 => variable
+      case Primitive.TUInt16 => variable
+      case Primitive.TUInt32 => variable
+      case Primitive.TUInt64 => variable
       case Primitive.TFloat => variable
       case Primitive.TDouble => variable
       case Primitive.TUUID => variable
@@ -88,6 +94,7 @@ class TypeScriptTypeConverter() {
       case Primitive.TDate => variable
       case Primitive.TTs => variable
       case Primitive.TTsTz => variable
+      case Primitive.TTsU => variable
       case g: Generic => deserializeGenericType(variable, g, ts, asAny)
       case _ => deserializeCustomType(variable, target, ts, asAny)
     }
@@ -160,6 +167,10 @@ class TypeScriptTypeConverter() {
     case Primitive.TInt16 => "number"
     case Primitive.TInt32 => "number"
     case Primitive.TInt64 => "number"
+    case Primitive.TUInt8 => "number"
+    case Primitive.TUInt16 => "number"
+    case Primitive.TUInt32 => "number"
+    case Primitive.TUInt64 => "number"
     case Primitive.TFloat => "number"
     case Primitive.TDouble => "number"
     case Primitive.TUUID => "string"
@@ -167,6 +178,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TDate => if (forSerialized) "string" else "Date"
     case Primitive.TTs => if (forSerialized) "string" else "Date"
     case Primitive.TTsTz => if (forSerialized) "string" else "Date"
+    case Primitive.TTsU => if (forSerialized) "string" else "Date"
   }
 
   private def toGenericType(typeId: Generic, ts: Typespace, forSerialized: Boolean, forMap: Boolean): String = {
@@ -179,7 +191,11 @@ class TypeScriptTypeConverter() {
   }
 
   def serializeField(field: Field, ts: Typespace): String = {
-    s"'${field.name}': ${serializeValue("this." + safeName(field.name), field.typeId, ts)}"
+    s"${field.name}: ${serializeValue("this." + safeName(field.name), field.typeId, ts)}"
+  }
+
+  def deserializeField(slice: String, field: Field, ts: Typespace): String = {
+    s"${deserializeName("this." + safeName(field.name), field.typeId)} = ${deserializeType(s"slice.${field.name}", field.typeId, ts)};"
   }
 
   def serializeValue(name: String, id: TypeId, ts: Typespace): String = id match {
@@ -195,6 +211,10 @@ class TypeScriptTypeConverter() {
     case Primitive.TInt16 => s"$name"
     case Primitive.TInt32 => s"$name"
     case Primitive.TInt64 => s"$name"
+    case Primitive.TUInt8 => s"$name"
+    case Primitive.TUInt16 => s"$name"
+    case Primitive.TUInt32 => s"$name"
+    case Primitive.TUInt64 => s"$name"
     case Primitive.TFloat => s"$name"
     case Primitive.TDouble => s"$name"
     case Primitive.TUUID => s"$name"
@@ -202,6 +222,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TDate => s"${name}AsString"
     case Primitive.TTs => s"${name}AsString"
     case Primitive.TTsTz => s"${name}AsString"
+    case Primitive.TTsU => s"${name}AsString"
   }
 
   def serializeGeneric(name: String, id: TypeId, ts: Typespace): String = id match {
@@ -236,6 +257,10 @@ class TypeScriptTypeConverter() {
     case Primitive.TInt16 => toIntField(name, -32768, 32767, optional)
     case Primitive.TInt32 => toIntField(name, -2147483648, 2147483647, optional)
     case Primitive.TInt64 => toIntField(name, Int.MinValue, Int.MaxValue, optional)
+    case Primitive.TUInt8 => toIntField(name, 0, 255, optional)
+    case Primitive.TUInt16 => toIntField(name, 0, 65535, optional)
+    case Primitive.TUInt32 => toIntField(name, 0, BigInt("4294967295"), optional)
+    case Primitive.TUInt64 => toIntField(name, 0, BigInt("18446744073709551615"), optional)
     case Primitive.TFloat => toDoubleField(name, 32, optional)
     case Primitive.TDouble => toDoubleField(name, 64, optional)
     case Primitive.TUUID => toGuidField(name, optional)
@@ -243,6 +268,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TDate => toDateField(name, optional)
     case Primitive.TTs => toDateTimeField(name, local = true, optional)
     case Primitive.TTsTz => toDateTimeField(name, local = false, optional)
+    case Primitive.TTsU => toDateTimeField(name, local = false, optional, utc = true)
     case _ =>
       s"""public get ${safeName(name)}(): ${toNativeType(id, ts)} {
          |    return this._$name;
@@ -273,6 +299,10 @@ class TypeScriptTypeConverter() {
     case Primitive.TInt16 => toPrivateMember(name, "number")
     case Primitive.TInt32 => toPrivateMember(name, "number")
     case Primitive.TInt64 => toPrivateMember(name, "number")
+    case Primitive.TUInt8 => toPrivateMember(name, "number")
+    case Primitive.TUInt16 => toPrivateMember(name, "number")
+    case Primitive.TUInt32 => toPrivateMember(name, "number")
+    case Primitive.TUInt64 => toPrivateMember(name, "number")
     case Primitive.TFloat => toPrivateMember(name, "number")
     case Primitive.TDouble => toPrivateMember(name, "number")
     case Primitive.TUUID => toPrivateMember(name, "string")
@@ -280,6 +310,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TDate => toPrivateMember(name, "Date")
     case Primitive.TTs => toPrivateMember(name, "Date")
     case Primitive.TTsTz => toPrivateMember(name, "Date")
+    case Primitive.TTsU => toPrivateMember(name, "Date")
     case _ => toPrivateMember(name, toNativeType(id, ts))
   }
 
@@ -298,7 +329,7 @@ class TypeScriptTypeConverter() {
     s"private _$name: $memberType;"
   }
 
-  def toIntField(name: String, min: Int = Int.MinValue, max: Int = Int.MaxValue, optional: Boolean = false): String = {
+  def toIntField(name: String, min: BigInt = Int.MinValue, max: BigInt = Int.MaxValue, optional: Boolean = false): String = {
     var base =
       s"""public get ${safeName(name)}(): number {
          |    return this._$name;
@@ -440,7 +471,7 @@ class TypeScriptTypeConverter() {
     base.stripMargin
   }
 
-  def toDateTimeField(name: String, local: Boolean, optional: Boolean = false): String = {
+  def toDateTimeField(name: String, local: Boolean, optional: Boolean = false, utc: Boolean = false): String = {
     s"""public get ${safeName(name)}(): Date {
        |    return this._$name;
        |}
@@ -457,14 +488,14 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
-       |    return Formatter.write${if(local) "Local" else "Zone"}DateTime(this._$name);
+       |    return Formatter.write${if(local) "Local" else if (utc) "UTC" else "Zone"}DateTime(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
        |    if (typeof value !== 'string') {
        |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
        |    }
-       |    this._$name = Formatter.read${if(local) "Local" else "Zoned"}DateTime(value);
+       |    this._$name = Formatter.read${if(local) "Local" else if (utc) "UTC" else "Zone"}DateTime(value);
        |}
      """.stripMargin
   }

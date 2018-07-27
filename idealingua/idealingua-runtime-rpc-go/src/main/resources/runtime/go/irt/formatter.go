@@ -17,6 +17,16 @@ var DATETIME_FORMATS = []string{
 	"2006-01-02T15:04:05.0000000Z07:00",
 	"2006-01-02T15:04:05.00000000Z07:00",
 	"2006-01-02T15:04:05.000000000Z07:00",
+	"2006-01-02T15:04:05Z",
+	"2006-01-02T15:04:05.0Z",
+	"2006-01-02T15:04:05.00Z",
+	"2006-01-02T15:04:05.000Z",
+	"2006-01-02T15:04:05.0000Z",
+	"2006-01-02T15:04:05.00000Z",
+	"2006-01-02T15:04:05.000000Z",
+	"2006-01-02T15:04:05.0000000Z",
+	"2006-01-02T15:04:05.00000000Z",
+	"2006-01-02T15:04:05.000000000Z",
 	"2006-01-02T15:04:05",
 	"2006-01-02T15:04:05.0",
 	"2006-01-02T15:04:05.00",
@@ -45,7 +55,7 @@ func WriteDate(value time.Time) string {
 	return value.Format("2006-01-02")
 }
 
-func ReadDateTime(value string) (time.Time, error) {
+func ReadDateTime(value string, utc bool) (time.Time, error) {
 	regionIndex := strings.Index(value, "[")
 	var region *time.Location
 	var err error
@@ -76,11 +86,19 @@ func ReadDateTime(value string) (time.Time, error) {
 		}
 	}
 
-	return t, err
+	if err != nil {
+		return t, err
+	}
+
+	if utc {
+		return t.UTC(), nil
+	}
+
+	return t, nil
 }
 
 func ReadLocalDateTime(value string) (time.Time, error) {
-	return ReadDateTime(value)
+	return ReadDateTime(value, false)
 }
 
 func WriteLocalDateTime(value time.Time) string {
@@ -88,7 +106,7 @@ func WriteLocalDateTime(value time.Time) string {
 }
 
 func ReadZoneDateTime(value string) (time.Time, error) {
-	return ReadDateTime(value)
+	return ReadDateTime(value, false)
 }
 
 func WriteZoneDateTime(value time.Time) string {
@@ -96,7 +114,7 @@ func WriteZoneDateTime(value time.Time) string {
 }
 
 func ReadUTCDateTime(value string) (time.Time, error) {
-	return ReadDateTime(value)
+	return ReadDateTime(value, true)
 }
 
 func WriteUTCDateTime(value time.Time) string {

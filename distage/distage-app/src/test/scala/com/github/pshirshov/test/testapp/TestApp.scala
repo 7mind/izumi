@@ -15,9 +15,18 @@ class TestApp(
 
 class BadApp {}
 
-class DisabledBinding {}
-trait DisabledTrait {}
-class DisabledImpl extends DisabledTrait {}
+
+class DisabledByGc {}
+
+
+trait DisabledByTag {}
+trait WithGoodTag {}
+
+trait DisabledByKey {}
+class DisabledImplForByKeyTrait extends DisabledByKey {}
+
+trait DisabledByImpl {}
+class DisabledImplForByImplTrait extends DisabledByImpl {}
 
 trait Conflict {}
 class ConflictA extends Conflict {}
@@ -25,9 +34,15 @@ class ConflictB extends Conflict {}
 
 class TestPlugin extends PluginDef {
   make[TestApp]
-  make[DisabledBinding]
-  make[DisabledTrait].from[DisabledImpl]
-  make[DisabledTrait].from[DisabledImpl]
+
+  make[DisabledByGc]
+
+  make[DisabledByTag].tagged("badtag")
+  make[WithGoodTag].tagged("goodtag")
+
+  make[DisabledByKey].from[DisabledImplForByKeyTrait]
+  make[DisabledByImpl].from[DisabledImplForByImplTrait]
+
   make[Conflict].from[ConflictA]
   make[Conflict].from[ConflictB]
 }

@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.CSharpBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.CSharpTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{JsonNetExtension, NUnitExtension}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
@@ -23,7 +24,7 @@ object CSharpTranslator {
   )
 }
 
-class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) {
+class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends Translator {
   protected val ctx: CSTContext = new CSTContext(ts, options.extensions)
 
   import ctx._
@@ -40,7 +41,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) {
       , typespace.domain.services.flatMap(translateService)
     ).flatten
 
-    modules
+    addRuntime(options, modules)
   }
 
 

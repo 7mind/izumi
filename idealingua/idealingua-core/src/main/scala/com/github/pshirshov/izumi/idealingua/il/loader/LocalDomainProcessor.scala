@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 import java.io.File
 import java.nio.file.{Path, Paths}
 
+import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
 import com.github.pshirshov.izumi.idealingua.il.loader.model.LoadedModel
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
@@ -60,10 +61,10 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
   private def toModelResolver(primary: Path => Option[ParsedModel])(incPath: Path): Option[ParsedModel] = {
     primary(incPath)
       .orElse {
-        val fallback = resolveFromCP(incPath, Some("idealingua"), modelExt)
-          .orElse(resolveFromCP(incPath, None, modelExt))
-          .orElse(resolveFromJars(incPath))
+        val fallback = resolveFromCP(incPath, Some("idealingua"))
+          .orElse(resolveFromCP(incPath, None))
           .orElse(resolveFromJavaCP(incPath))
+          .orElse(resolveFromJars(incPath))
 
         fallback.map {
           src =>
@@ -77,8 +78,8 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
 
     primary(incPath)
       .orElse {
-        val fallback = resolveFromCP(asPath, Some("idealingua"), domainExt)
-          .orElse(resolveFromCP(asPath, None, domainExt))
+        val fallback = resolveFromCP(asPath, Some("idealingua"))
+          .orElse(resolveFromCP(asPath, None))
           .orElse(resolveFromJars(asPath))
           .orElse(resolveFromJavaCP(asPath))
 
@@ -90,14 +91,7 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
       }
   }
 
-  private def resolveFromJars(incPath: Path): Option[String] = {
-    classpath
-      .filter(_.isFile)
-      .find(f => false) // TODO: support jars!
-      .map(path => readFile(path.toPath))
-  }
-
-  private def resolveFromCP(incPath: Path, prefix: Option[String], ext: String): Option[String] = {
+  private def resolveFromCP(incPath: Path, prefix: Option[String]): Option[String] = {
     val allCandidates = (Seq(root, root.resolve(toPath(domain.did.id)).getParent).map(_.toFile) ++ classpath)
       .filter(_.isDirectory)
       .flatMap {
@@ -117,7 +111,7 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
 
     val result = allCandidates
       .find(f => f.exists() && !f.isDirectory)
-      .map(path => readFile(path.toPath))
+      .map(path => IzFiles.readString(path.toPath))
     result
   }
 
@@ -125,7 +119,11 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
     Option(getClass.getResource(Paths.get("/idealingua/").resolve(incPath).toString))
       .map {
         fallback =>
-          readFile(new File(fallback.toURI).toPath)
+          IzFiles.readString(new File(fallback.toURI).toPath)
       }
+  }
+
+  private def resolveFromJars(incPath: Path): Option[String] = {
+    IzZip.findInZips(incPath, classpath)
   }
 }

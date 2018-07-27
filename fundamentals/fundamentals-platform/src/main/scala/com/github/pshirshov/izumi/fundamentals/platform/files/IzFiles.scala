@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.platform.files
 
 import java.io.{File, IOException}
+import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.LocalDateTime
@@ -40,7 +41,7 @@ object IzFiles {
 
   def readString(path: Path): String = {
     import java.nio.file.Files
-    new String(Files.readAllBytes(path))
+    new String(Files.readAllBytes(path), StandardCharsets.UTF_8)
   }
 
   def readString(file: File): String = {

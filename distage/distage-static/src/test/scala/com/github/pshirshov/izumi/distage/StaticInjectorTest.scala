@@ -1,16 +1,13 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.Fixtures.Case16.TestProviderModule
 import com.github.pshirshov.izumi.distage.Fixtures._
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
-import com.github.pshirshov.izumi.distage.model.Injector
-import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
-import com.github.pshirshov.izumi.distage.model.definition._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import com.typesafe.config.ConfigFactory
+import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
+import distage._
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
@@ -18,13 +15,9 @@ import scala.util.Try
 
 class StaticInjectorTest extends WordSpec {
 
-  def mkInjector(overrides: ModuleBase*): Injector =
-    Injectors.bootstrap(
-      base = DefaultBootstrapContext.noReflectionBootstrap
-      , overrides = overrides.overrideLeft
-    )
+  def mkInjector(overrides: ModuleBase*): Injector = Injector.noReflection(overrides: _*)
 
-  def mkInjectorWithProxy(): Injector = Injectors.bootstrap()
+  def mkInjectorWithProxy(): Injector = Injector()
 
   "DI planner" should {
 
@@ -411,7 +404,7 @@ class StaticInjectorTest extends WordSpec {
 
       val definition = new StaticModuleDef {
         make[Int].named("depInt").from(5)
-        make[ConcreteProduct].from((conf: TestConf@AutoConf, i: Int@Id("depInt")) => ConcreteProduct(conf, i * 10))
+        make[ConcreteProduct].from((conf: TestConf @AutoConf, i: Int @Id("depInt")) => ConcreteProduct(conf, i * 10))
       }
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
@@ -552,7 +545,7 @@ class StaticInjectorTest extends WordSpec {
     }
   }
 
-  class InnerPathDepTest extends TestProviderModule {
+  class InnerPathDepTest extends Case16.TestProviderModule {
     private val definition = new StaticModuleDef {
       stat[TestClass]
       stat[TestDependency]
@@ -568,6 +561,6 @@ class StaticInjectorTest extends WordSpec {
     }
   }
 
-  object TopLevelPathDepTest extends TestProviderModule
+  object TopLevelPathDepTest extends Case16.TestProviderModule
 
 }

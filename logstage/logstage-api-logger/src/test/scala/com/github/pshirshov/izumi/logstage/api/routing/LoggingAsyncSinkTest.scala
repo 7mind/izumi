@@ -13,6 +13,7 @@ import scala.util.Random
 
 @ExposedTestScope
 class ExampleService(logger: IzLogger) {
+  val field: String = "a value"
   def start(): Unit = {
     val loggerWithContext = logger("userId" -> "xxx")
     val loggerWithSubcontext = loggerWithContext("custom" -> "value")
@@ -32,6 +33,8 @@ class ExampleService(logger: IzLogger) {
     case class Example(v: Int, f: Throwable)
     val x = Example(1, exception)
     logger.crit(s"Argument name extracton: ${x.v}, ${x.f.getCause}, ${Example(2, exception).v}")
+
+    logger.info(s"this.field value: $field")
 
     // cornercases
     val arg1 = 5

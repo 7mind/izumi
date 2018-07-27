@@ -2,15 +2,18 @@ package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, DomainId, TypeId, TypeName}
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLCyclicInheritanceException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, SimpleStructure, TypeDef}
 
-import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 final case class FailedTypespace(id: DomainId, issues: List[Issue]) {
+
   import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+
   override def toString: TypeName = s"Typespace $id has failed verification:\n${issues.mkString("\n").shift(2)}"
 }
 
@@ -36,6 +39,10 @@ object Issue {
 
   final case class ReservedTypenamePrefix(t: TypeId) extends Issue {
     override def toString: TypeName = s"Typenames can't start with reserved runtime prefixes ${TypespaceVerifier.badNames.mkString(",")}: $t"
+  }
+
+  final case class CyclicInheritance(t: TypeId) extends Issue {
+    override def toString: TypeName = s"Type is involved into cyclic inheritance: $t"
   }
 
   final case class MissingDependencies(deps: List[MissingDependency]) extends Issue {
@@ -80,8 +87,26 @@ object MissingDependency {
 
 
 class TypespaceVerifier(ts: Typespace) {
-  def verify(): List[Issue] = {
-    val issues = mutable.ArrayBuffer[Issue]()
+  def verify(): Seq[Issue] = {
+    val basic = Seq(
+      checkDuplicateMembers,
+      checkPrimitiveAdtMembers,
+      checkNamingConventions
+    ).flatten
+
+    val cycles = checkCyclicInheritance
+
+    val missing = if (cycles.isEmpty) {
+      checkMissingReferences
+    } else {
+      Seq.empty
+    }
+
+    basic ++ cycles ++ missing
+  }
+
+
+  private def checkMissingReferences: Seq[Issue] = {
     val typeDependencies = ts.domain.types.flatMap(extractDependencies)
 
     val serviceDependencies = for {
@@ -114,27 +139,47 @@ class TypespaceVerifier(ts: Typespace) {
       .filterNot(d => ts.referenced.get(d.missing.path.domain).exists(t => t.types.index.contains(d.missing)))
 
     if (missingTypes.nonEmpty) {
-      issues += Issue.MissingDependencies(missingTypes.toList)
+      Seq(Issue.MissingDependencies(missingTypes.toList))
+    } else {
+      Seq.empty
     }
+  }
 
-    ts.domain.types.foreach {
-      case t: TypeDef.Enumeration =>
-        val duplicates = t.members.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
-        if (duplicates.nonEmpty) {
-          issues += Issue.DuplicateEnumElements(t.id, duplicates.keys.toList)
+  private def checkCyclicInheritance: Seq[Issue] = {
+    ts.domain.types.flatMap {
+      t =>
+        Try(ts.inheritance.allParents(t.id)) match {
+          case Success(_) =>
+            Seq.empty
+          case Failure(_: IDLCyclicInheritanceException) =>
+            Seq(Issue.CyclicInheritance(t.id))
+          case Failure(f) =>
+            throw f
+        }
+    }
+  }
+
+  private def checkNamingConventions: Seq[Issue] = {
+    ts.domain.types.flatMap {
+      t =>
+        val noncapitalized = if (t.id.name.head.isLower) {
+          Seq(Issue.NoncapitalizedTypename(t.id))
+        } else {
+          Seq.empty
         }
 
-      case t: TypeDef.Adt =>
-        val duplicates = t.alternatives.groupBy(v => v.name).filter(_._2.lengthCompare(1) > 0)
-        if (duplicates.nonEmpty) {
-          issues += Issue.DuplicateAdtElements(t.id, duplicates.keys.toList)
+        val reserved = if (TypespaceVerifier.badNames.exists(t.id.name.startsWith)) {
+          Seq(Issue.ReservedTypenamePrefix(t.id))
+        } else {
+          Seq.empty
         }
-
-      case _ =>
+        noncapitalized ++ reserved
     }
+  }
 
-    ts.domain.types.foreach {
-      case t: TypeDef.Adt =>
+  private def checkPrimitiveAdtMembers: Seq[Issue] = {
+    ts.domain.types.flatMap {
+      case t: Adt =>
         val builtins = t.alternatives.collect {
           case m@AdtMember(_: Builtin, _) =>
             m
@@ -142,26 +187,37 @@ class TypespaceVerifier(ts: Typespace) {
             m
         }
         if (builtins.nonEmpty) {
-          issues += Issue.PrimitiveAdtMember(t.id, builtins)
+          Seq(Issue.PrimitiveAdtMember(t.id, builtins))
+        } else {
+          Seq.empty
         }
       case _ =>
+        Seq.empty
     }
-
-    ts.domain.types.foreach {
-      t =>
-        if (t.id.name.head.isLower) {
-          issues += Issue.NoncapitalizedTypename(t.id)
-        }
-
-        if (TypespaceVerifier.badNames.exists(t.id.name.startsWith)) {
-          issues += Issue.ReservedTypenamePrefix(t.id)
-        }
-    }
-
-    issues.toList
   }
 
+  private def checkDuplicateMembers: Seq[Issue] = {
+    ts.domain.types.flatMap {
+      case t: Enumeration =>
+        val duplicates = t.members.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
+        if (duplicates.nonEmpty) {
+          Seq(Issue.DuplicateEnumElements(t.id, duplicates.keys.toList))
+        } else {
+          Seq.empty
+        }
 
+      case t: Adt =>
+        val duplicates = t.alternatives.groupBy(v => v.name).filter(_._2.lengthCompare(1) > 0)
+        if (duplicates.nonEmpty) {
+          Seq(Issue.DuplicateAdtElements(t.id, duplicates.keys.toList))
+        } else {
+          Seq.empty
+        }
+
+      case _ =>
+        Seq.empty
+    }
+  }
 
   private def extractDeps(ss: SimpleStructure) = {
     ss.fields.map(f => f.typeId) ++ ss.concepts

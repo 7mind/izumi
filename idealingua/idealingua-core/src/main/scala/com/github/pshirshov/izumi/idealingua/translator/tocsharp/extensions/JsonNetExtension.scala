@@ -152,6 +152,10 @@ object JsonNetExtension extends CSharpTranslatorExtension {
               case Primitive.TInt16 => s"writer.WriteValue($src);"
               case Primitive.TInt32 => s"writer.WriteValue($src);"
               case Primitive.TInt64 => s"writer.WriteValue($src);"
+              case Primitive.TUInt8 => s"writer.WriteValue($src);"
+              case Primitive.TUInt16 => s"writer.WriteValue($src);"
+              case Primitive.TUInt32 => s"writer.WriteValue($src);"
+              case Primitive.TUInt64 => s"writer.WriteValue($src);"
               case Primitive.TFloat => s"writer.WriteValue($src);"
               case Primitive.TDouble => s"writer.WriteValue($src);"
               case Primitive.TUUID => s"writer.WriteValue($src.ToString());"
@@ -159,6 +163,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
               case Primitive.TDate => s"""writer.WriteValue($src.ToString("yyyy-MM-dd"));"""
               case Primitive.TTs => s"""writer.WriteValue($src.ToString(JsonNetTimeFormats.TslDefault));"""
               case Primitive.TTsTz => s"""writer.WriteValue($src.ToString(JsonNetTimeFormats.TszDefault));"""
+              case Primitive.TTsU => s"""writer.WriteValue($src.ToUniversalTime().ToString(JsonNetTimeFormats.TsuDefault));"""
             }
 
             case _ => t.id match {
@@ -190,6 +195,10 @@ object JsonNetExtension extends CSharpTranslatorExtension {
       case Primitive.TInt16 => false
       case Primitive.TInt32 => false
       case Primitive.TInt64 => false
+      case Primitive.TUInt8 => false
+      case Primitive.TUInt16 => false
+      case Primitive.TUInt32 => false
+      case Primitive.TUInt64 => false
       case Primitive.TFloat => false
       case Primitive.TDouble => false
       case Primitive.TUUID => false
@@ -197,6 +206,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
       case Primitive.TDate => false
       case Primitive.TTs => false
       case Primitive.TTsTz => false
+      case Primitive.TTsU => false
     }
     case c => c match {
       case _: EnumId | _: IdentifierId => false
@@ -287,6 +297,10 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         case Primitive.TInt16 => s"$src.Value<short>()"
         case Primitive.TInt32 => s"$src.Value<int>()"
         case Primitive.TInt64 => s"$src.Value<long>()"
+        case Primitive.TUInt8 => s"$src.Value<byte>()"
+        case Primitive.TUInt16 => s"$src.Value<ushort>()"
+        case Primitive.TUInt32 => s"$src.Value<uint>()"
+        case Primitive.TUInt64 => s"$src.Value<ulong>()"
         case Primitive.TFloat => s"$src.Value<float>()"
         case Primitive.TDouble => s"$src.Value<double>()"
         case Primitive.TUUID => s"new System.Guid($src.Value<string>())"
@@ -294,6 +308,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         case Primitive.TDate => s"DateTime.Parse($src.Value<string>())"
         case Primitive.TTs => s"DateTime.ParseExact($src.Value<string>(), JsonNetTimeFormats.Tsl, CultureInfo.InvariantCulture, DateTimeStyles.None)"
         case Primitive.TTsTz => s"DateTime.ParseExact($src.Value<string>(), JsonNetTimeFormats.Tsz, CultureInfo.InvariantCulture, DateTimeStyles.None)"
+        case Primitive.TTsU => s"DateTime.ParseExact($src.Value<string>(), JsonNetTimeFormats.Tsu, CultureInfo.InvariantCulture, DateTimeStyles.None)"
       }
       case _ => t.id match {
         case _: EnumId => s"${t.renderType()}Helpers.From($src.Value<string>())"

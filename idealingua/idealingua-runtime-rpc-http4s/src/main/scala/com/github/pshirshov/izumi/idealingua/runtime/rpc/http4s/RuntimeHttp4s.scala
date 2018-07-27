@@ -19,7 +19,7 @@ class RuntimeHttp4s[R[_] : IRTServiceResult : Monad](logger: IzLogger = IzLogger
   private val TM: IRTServiceResult[R] = implicitly[IRTServiceResult[R]]
 
 
-  protected def loggingMiddle(service: HttpService[R], logger: IzLogger): HttpService[R] = cats.data.Kleisli {
+  protected def loggingMiddle(service: HttpRoutes[R], logger: IzLogger): HttpRoutes[R] = cats.data.Kleisli {
     req: Request[R] =>
       logger.trace(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}")
 
@@ -45,7 +45,7 @@ class RuntimeHttp4s[R[_] : IRTServiceResult : Monad](logger: IzLogger = IzLogger
     , contextProvider: AuthMiddleware[R, Ctx]
     , marshallers: IRTServerMarshallers
     , dsl: Http4sDsl[R]
-  )(implicit ed: StreamDecoder): HttpService[R] = {
+  )(implicit ed: StreamDecoder): HttpRoutes[R] = {
 
     def requestDecoder(context: Ctx, method: IRTMethod): EntityDecoder[R, muxer.Input] =
       EntityDecoder.decodeBy(MediaRange.`*/*`) {
@@ -70,14 +70,12 @@ class RuntimeHttp4s[R[_] : IRTServiceResult : Monad](logger: IzLogger = IzLogger
 
 
     def respEncoder(): EntityEncoder[R, muxer.Output] =
-      EntityEncoder.encodeBy(headers.`Content-Type`(MediaType.`application/json`)) {
+      EntityEncoder.encodeBy(headers.`Content-Type`(MediaType.application.json)) {
         v =>
           logger.trace(s"Going to encode response $v")
-          TM.wrap {
-            val s = Stream.emits(marshallers.encodeResponse(v.body).getBytes).covary[R]
-            logger.trace(s"Encoded request $v => $s")
-            Entity.apply(s)
-          }
+          val s = Stream.emits(marshallers.encodeResponse(v.body).getBytes).covary[R]
+          logger.trace(s"Encoded request $v => $s")
+          Entity.apply(s)
       }
 
 
@@ -102,7 +100,7 @@ class RuntimeHttp4s[R[_] : IRTServiceResult : Monad](logger: IzLogger = IzLogger
         }
     }
 
-    val aservice: HttpService[R] = contextProvider(svc)
+    val aservice: HttpRoutes[R] = contextProvider(svc)
     loggingMiddle(aservice, logger)
   }
 

@@ -12,7 +12,8 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.common.DomainId
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, UntypedCompilerOptions}
@@ -24,7 +25,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension, TypespaceCompiler}
 
 import scala.sys.process._
 
@@ -60,13 +61,7 @@ object IDLTestTools {
 
   def compilesScala(id: String, domains: Seq[Typespace], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions))
-    val classLoader = Thread
-      .currentThread
-      .getContextClassLoader
-      .getParent
-
-
-    val classpath: String = IzJvm.safeClasspath(classLoader)
+    val classpath: String = IzJvm.safeClasspath(IzJvm.baseClassloader)
 
     val cmd = Seq(
       "scalac"
@@ -82,50 +77,50 @@ object IDLTestTools {
 
   def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
     val manifest = new TypeScriptBuildManifest(
-        name = "TestBuild",
-        tags = "",
-        description = "Test Description",
-        notes = "",
-        publisher = Publisher("Test Publisher Name", "test_publisher_id"),
-        version = "0.0.0",
-        license = "MIT",
-        website = "http://project.website",
-        copyright = "Copyright (C) Test Inc.",
-        dependencies = List(ManifestDependency("moment", "^2.20.1")),
-        scope = "@TestScope",
-        moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED
-      )
+      name = "TestBuild",
+      tags = "",
+      description = "Test Description",
+      notes = "",
+      publisher = Publisher("Test Publisher Name", "test_publisher_id"),
+      version = "0.0.0",
+      license = "MIT",
+      website = "http://project.website",
+      copyright = "Copyright (C) Test Inc.",
+      dependencies = List(ManifestDependency("moment", "^2.20.1")),
+      scope = "@TestScope",
+      moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED
+    )
 
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, true, if(scoped) Some(manifest) else None))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, true, if (scoped) Some(manifest) else None))
 
-    if (scoped) {
-      val transformer =
-      s"""SCOPE=${manifest.scope}
-         |
-         |echo "Packages found:"
-         |find . -name package.json -print0 | xargs -0 -n1 dirname | tr -d . | tr / - | sed 's/-//' | sort --unique
-         |
-         |rm -rf $$SCOPE
-         |mkdir -p $$SCOPE
-         |echo
-         |echo "Transforming packages into modules structure:"
-         |for F in $$(find . -name package.json); do
-         |    SRC=$$(dirname $$F)
-         |    DST=$$(echo $$SRC| tr -d . | tr / - | sed 's/-//')
-         |    DST="$${SCOPE}/$${DST}"
-         |    echo "Coping from $$SRC into $$DST"
-         |    cp -r $$SRC $$DST
-         |    rm -rf $$SRC
-         |done
-       """.stripMargin
-
-      val transformPath = out.targetDir.resolve("transform.sh")
-      Files.write(transformPath, transformer.getBytes)
-      val transformCmd = Seq("sh", "transform.sh")
-      if (run(out.absoluteTargetDir, transformCmd, Map.empty, "sh") != 0) {
-        return false
-      }
-    }
+    //    if (scoped) {
+    //      val transformer =
+    //      s"""SCOPE=${manifest.scope}
+    //         |
+    //         |echo "Packages found:"
+    //         |find . -name package.json -print0 | xargs -0 -n1 dirname | tr -d . | tr / - | sed 's/-//' | sort --unique
+    //         |
+    //         |rm -rf $$SCOPE
+    //         |mkdir -p $$SCOPE
+    //         |echo
+    //         |echo "Transforming packages into modules structure:"
+    //         |for F in $$(find . -name package.json); do
+    //         |    SRC=$$(dirname $$F)
+    //         |    DST=$$(echo $$SRC| tr -d . | tr / - | sed 's/-//')
+    //         |    DST="$${SCOPE}/$${DST}"
+    //         |    echo "Coping from $$SRC into $$DST"
+    //         |    cp -r $$SRC $$DST
+    //         |    rm -rf $$SRC
+    //         |done
+    //       """.stripMargin
+    //
+    //      val transformPath = out.targetDir.resolve("transform.sh")
+    //      Files.write(transformPath, transformer.getBytes)
+    //      val transformCmd = Seq("sh", "transform.sh")
+    //      if (run(out.absoluteTargetDir, transformCmd, Map.empty, "sh") != 0) {
+    //        return false
+    //      }
+    //    }
 
     val outputTspackagePath = out.targetDir.resolve("package.json")
     Files.write(outputTspackagePath, TypeScriptBuildManifest.generatePackage(manifest, "index", "TestPackage", List.empty).getBytes)
@@ -169,8 +164,23 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions))
+  def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, scoped: Boolean): Boolean = {
+    val manifest = new GoLangBuildManifest(
+      name = "TestBuild",
+      tags = "",
+      description = "Test Description",
+      notes = "",
+      publisher = Publisher("Test Publisher Name", "test_publisher_id"),
+      version = "0.0.0",
+      license = "MIT",
+      website = "http://project.website",
+      copyright = "Copyright (C) Test Inc.",
+      dependencies = List(ManifestDependency("moment", "^2.20.1")),
+      repository = "github.com/TestCompany/TestRepo",
+      useRepositoryFolders = true
+    )
+
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, true, if (scoped) Some(manifest) else None))
     val outDir = out.absoluteTargetDir
 
     val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
@@ -196,7 +206,7 @@ object IDLTestTools {
     Quirks.discard(tmpdir.toFile.mkdirs())
 
     // TODO: clashes still may happen in case of parallel runs with the same ID
-    val stablePrefix = s"$id-${language.toString}"
+    val stablePrefix = s"$id-${options.language.toString}"
     val vmPrefix = s"$stablePrefix-u${ManagementFactory.getRuntimeMXBean.getStartTime}"
     val dirPrefix = s"$vmPrefix-ts${System.currentTimeMillis()}"
 
@@ -212,16 +222,44 @@ object IDLTestTools {
 
     //val options = TypespaceCompiler.UntypedCompilerOptions(language, extensions)
 
-    val allFiles: Seq[Path] = new IDLCompiler(domains)
+    val products = new IDLCompiler(domains)
       .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withRuntime, options.manifest))
-      .compilationProducts.flatMap {
+      .compilationProducts
+
+    val allPaths = products.flatMap(_._2.paths).toSeq
+
+    rerenderDomains(domainsDir, domains)
+    saveDebugLayout(layoutDir, products)
+
+    val out = CompilerOutput(compilerDir, allPaths)
+    out.phase3.toFile.mkdirs()
+    out
+  }
+
+
+  private def rerenderDomains(domainsDir: Path, domains: Seq[Typespace]): Unit = {
+    domains.foreach {
+      d =>
+        val rendered = new ILRenderer(d.domain).render()
+        Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
+    }
+  }
+
+  private def saveDebugLayout(layoutDir: Path, products: Map[DomainId, TypespaceCompiler.IDLSuccess]): Unit = {
+    products.foreach {
       case (did, s) =>
         val mapped = s.paths.map {
           f =>
             val domainDir = layoutDir.resolve(did.toPackage.mkString("."))
-            (f, domainDir.resolve(f.toFile.getName))
-        }
+            val marker = did.toPackage.mkString("/")
+            val target = if (f.toString.contains(marker)) {
+              domainDir.resolve(f.toFile.getName)
+            } else {
 
+              domainDir.resolve(s.target.relativize(f))
+            }
+            (f, target)
+        }
         mapped.foreach {
           case (src, tgt) =>
             tgt.getParent.toFile.mkdirs()
@@ -229,21 +267,8 @@ object IDLTestTools {
         }
 
         assert(s.paths.toSet.size == s.paths.size)
-
-        s.paths
-    }.toSeq
-
-    domains.foreach {
-      d =>
-        val rendered = new ILRenderer(d.domain).render()
-        Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
     }
-
-    val out = CompilerOutput(compilerDir, allFiles)
-    out.phase3.toFile.mkdirs()
-    out
   }
-
 
   private def dropOldRunsData(tmpdir: Path, stablePrefix: String, vmPrefix: String): Unit = {
     tmpdir

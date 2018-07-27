@@ -52,14 +52,22 @@ mixin AllTypes {
   uuid    : uid
   ts      : tsz
   tslocal : tsl
+  tsuni   : tsu
   time    : time
   date    : date
+
+  uint8   : u08
+  uint16  : u16
+  uint32  : u32
+  uint64  : u64
 
   list    : list[AllTypes]
   another : lst[AllTypes]
   map     : map[str, AllTypes]
+  enumMap : map[GoAliasEnumTest, str]
   option  : opt[AllTypes]
   set     : set[AllTypes]
+
 
   optionDate: opt[tsl]
   optionTime: opt[time]

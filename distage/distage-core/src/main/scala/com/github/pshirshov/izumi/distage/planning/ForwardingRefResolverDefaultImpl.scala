@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.mutable
 
-
 class ForwardingRefResolverDefaultImpl
 (
   protected val planAnalyzer: PlanAnalyzer
