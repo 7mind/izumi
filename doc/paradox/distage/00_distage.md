@@ -4,7 +4,7 @@ out: index.html
 distage Staged Dependency Injection
 ============
 
-distage is a flexible module system for Scala that combines safety and clarity of pure FP with late binding, flexibility
+distage is a pragmatic module system for Scala that combines safety and clarity of pure FP with late binding, flexibility
 and malleability of runtime dependency injection frameworks such as Guice.
 
 ### Hello World
@@ -140,18 +140,24 @@ object BlogRouteModule extends ModuleDef {
 }
 
 class HttpServer(routes: Set[HttpRoutes[IO]]) {
+  val router = routes.foldK
+
   def serve = BlazeBuilder[IO]
     .bindHttp(8080, "localhost")
-    .mountService(routes.fold[HttpRoutes[IO]], "/")
+    .mountService(router, "/")
     .start
-
-  val count = routes.size
 }
 
 val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
 val server = context.get[HttpServer]
 
-server.count // 2
+val testRouter = server.router.orNotFound
+
+testRouter.run(Request[IO](uri = uri("/home"))).flatMap(_.as[String]).unsafeRunSync
+// Home page!
+
+testRouter.run(Request[IO](uri = uri("/blog/1"))).flatMap(_.as[String]).unsafeRunSync
+// Blog post ``1''!
 ```
 
 For further detail see [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multibindings).
@@ -325,8 +331,11 @@ class ConfiguredTryProgram[F: TagK: Monad] extends ModuleDef {
 
 ### Plugins
 
-Sometimes, when rapidly prototyping, the additional friction of adding new modules into the system can disrupt developer's flow.
-Distage plugin system can automatically pickup all modules defined in the program and by doing that reduce friction of adding new modules.
+When rapidly prototyping, the friction of adding new modules can become a burden.
+distage plugin extension can alleviate that by automatically picking up all the `Plugin` modules defined in the program.
+
+Note that auto plugins are incompatible with distage [static checks](#static-configurations). Our preferred workflow is 
+to start with plugins, then switch to static configurations after a service has been stabilized.
 
 To define a plugin, first add distage-plugins library:
 
@@ -346,6 +355,8 @@ If you're not using [sbt-izumi-deps](sbt/00_sbt.md#bills-of-materials) plugin.
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
 ```scala
+package com.example.petstore
+
 import distage._
 import distage.plugins._
 
@@ -356,27 +367,30 @@ trait PetStorePlugin extends PluginDef {
 }
 ```
 
-At your app entry point add a plugin loader:
+At your app entry point use a plugin loader to discover all `PluginDefs`:
 
 ```scala
 val pluginLoader = new PluginLoaderDefaultImpl(
-  PluginConfig(debug = false, packagesEnabled = Seq("com.example"), packagesDisabled = Seq.empty))
+  PluginConfig(
+    debug = true
+    , packagesEnabled = Seq("com.example") // packages to scan
+    , packagesDisabled = Seq.empty         // packages to ignore
+  )
 )
 
-val appModules = pluginLoader.load()
-val app = appModules.merge
+val appModules: Seq[PluginBase] = pluginLoader.load()
+val app: ModuleBase = appModules.merge
 ```
 
 Launch as normal with the loaded modules:
 
 ```scala
-val injector = Injector()
-injector.produce(app)
+Injector().produce(app).get[PetStoreController].run
 ```
 
-Plugins also allow a program to dynamically extend itself by adding new Plugin classes into the classpath which will be picked up at runtime.
+Plugins also allow a program to dynamically extend itself by adding new Plugin classes on the classpath at launch time with `java -cp`
 
-### Roles, instead of microservices 
+### Roles 
 
 ...
 
