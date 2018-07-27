@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.publishing.ManifestDependency
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.TypescriptTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
@@ -23,7 +24,7 @@ object TypeScriptTranslator {
   )
 }
 
-class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) {
+class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) extends Translator{
   protected val ctx: TSTContext = new TSTContext(ts, options.extensions)
 
   import ctx._
@@ -53,7 +54,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
           List(indexModule)
       )
 
-    modules
+    addRuntime(options, modules)
   }
 
   def buildPackageModule()(implicit manifest: Option[TypeScriptBuildManifest]): Module = {
