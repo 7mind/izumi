@@ -4,5 +4,5 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.typesafe.config.Config
 
 trait RuntimeConfigReader {
-  def readConfig(config: Config, tpe: TypeFull): Any
+  def readConfig(config: Config, tpe: SafeType): Any
 }

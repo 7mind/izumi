@@ -10,7 +10,7 @@ class StaticDSLTest extends WordSpec {
   "Static DSL" should {
 
     "allow to define static contexts" in {
-      import Case1._
+      import BasicCase1._
       val definition: ModuleBase = new ModuleDef {
         make[TestClass].stat[TestClass]
         make[TestDependency0].stat[TestImpl0]

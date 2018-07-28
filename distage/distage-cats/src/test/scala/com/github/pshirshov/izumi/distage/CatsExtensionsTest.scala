@@ -12,8 +12,8 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
 
   "cats-effect extensions" should {
     "work" in {
-      import Case1._
-      import Case22._
+      import BasicCase1._
+      import CircularCase3._
 
       val definition1 = new ModuleDef {
         make[SelfReference]

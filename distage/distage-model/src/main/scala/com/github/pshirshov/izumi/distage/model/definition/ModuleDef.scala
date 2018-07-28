@@ -91,9 +91,9 @@ trait ModuleDef extends ModuleBase {
     *     import distage._
     *
     *     object HomeRouteModule extends ModuleDef {
-    *     many[HttpRoutes[IO]].add {
+    *       many[HttpRoutes[IO]].add {
     *         HttpRoutes.of[IO] { case GET -> Root / "home" => Ok(s"Home page!") }
-    *     }
+    *       }
     *     }
     *     ```
     *
@@ -104,24 +104,30 @@ trait ModuleDef extends ModuleBase {
     *     import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.implicits._
     *
     *     object BlogRouteModule extends ModuleDef {
-    *     many[HttpRoutes[IO]].add {
+    *       many[HttpRoutes[IO]].add {
     *         HttpRoutes.of[IO] { case GET -> Root / "blog" / post => Ok("Blog post ``$post''!") }
-    *     }
+    *       }
     *     }
     *
     *     class HttpServer(routes: Set[HttpRoutes[IO]]) {
-    *     def serve = BlazeBuilder[IO]
-    *     .bindHttp(8080, "localhost")
-    *     .mountService(routes.fold[HttpRoutes[IO]], "/")
-    *     .start
+    *       val router = routes.foldK
     *
-    *     val count = routes.size
+    *       def serve = BlazeBuilder[IO]
+    *         .bindHttp(8080, "localhost")
+    *         .mountService(router, "/")
+    *         .start
     *     }
     *
     *     val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
     *     val server = context.get[HttpServer]
     *
-    *     server.count // 2
+    *     val testRouter = server.router.orNotFound
+    *
+    *     testRouter.run(Request[IO](uri = uri("/home"))).flatMap(_.as[String]).unsafeRunSync
+    *     // Home page!
+    *
+    *     testRouter.run(Request[IO](uri = uri("/blog/1"))).flatMap(_.as[String]).unsafeRunSync
+    *     // Blog post ``1''!
     *     ```
     *
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings

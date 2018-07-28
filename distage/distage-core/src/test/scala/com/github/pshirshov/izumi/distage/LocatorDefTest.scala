@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.Fixtures.Case1.TestCaseClass
+import com.github.pshirshov.izumi.distage.Fixtures.BasicCase1.TestCaseClass
 import com.github.pshirshov.izumi.distage.Fixtures._
 import com.github.pshirshov.izumi.distage.model.definition.LocatorDef
 import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
@@ -10,7 +10,7 @@ class LocatorDefTest extends WordSpec {
 
   "LocatorDef" should {
     "support singleton instances" in {
-      import Case1._
+      import BasicCase1._
 
       val testDependency0 = new TestImpl0
       val testDependency1: TestDependency1 = new TestDependency1 {
@@ -43,7 +43,7 @@ class LocatorDefTest extends WordSpec {
     }
 
     "support empty sets" in {
-      import Case1._
+      import BasicCase1._
 
       val ctx = new LocatorDef {
         many[TestDependency0]
@@ -58,7 +58,7 @@ class LocatorDefTest extends WordSpec {
     }
 
     "support sets" in {
-      import Case1._
+      import BasicCase1._
 
       val ctx = new LocatorDef {
         many[TestInstanceBinding].named("r")

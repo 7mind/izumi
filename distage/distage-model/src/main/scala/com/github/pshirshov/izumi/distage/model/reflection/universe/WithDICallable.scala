@@ -15,8 +15,8 @@ trait WithDICallable {
     with WithDIWiring =>
 
   trait Callable {
-    def argTypes: Seq[TypeFull]
-    def ret: TypeFull
+    def argTypes: Seq[SafeType]
+    def ret: SafeType
 
     protected def call(args: Any*): Any
 
@@ -57,7 +57,7 @@ trait WithDICallable {
     def diKeys: Seq[DIKey] = associations.map(_.wireWith)
     def fun: Seq[Any] => Any
 
-    override val argTypes: Seq[TypeFull] = associations.map(_.wireWith.tpe)
+    override val argTypes: Seq[SafeType] = associations.map(_.wireWith.tpe)
 
     override protected def call(args: Any*): Any =
       fun.apply(args: Seq[Any])
@@ -68,7 +68,7 @@ trait WithDICallable {
 
   object Provider {
 
-    case class ProviderImpl[+R](associations: Seq[Association.Parameter], ret: TypeFull, fun: Seq[Any] => Any) extends Provider {
+    case class ProviderImpl[+R](associations: Seq[Association.Parameter], ret: SafeType, fun: Seq[Any] => Any) extends Provider {
       override protected def call(args: Any*): R =
         super.call(args: _*).asInstanceOf[R]
 
@@ -88,13 +88,13 @@ trait WithDICallable {
     object FactoryProvider {
       case class FactoryProviderImpl(provider: Provider, factoryIndex: Map[Int, Wiring.FactoryFunction.WithContext]) extends FactoryProvider {
         override def associations: Seq[Association.Parameter] = provider.associations
-        override def ret: TypeFull = provider.ret
+        override def ret: SafeType = provider.ret
         override def fun: Seq[Any] => Any = provider.fun
       }
     }
 
   }
 
-  class UnsafeCallArgsMismatched(message: String, val expected: Seq[TypeFull], val actual: Seq[TypeFull], val actualValues: Seq[Any]) extends DIException(message, null)
+  class UnsafeCallArgsMismatched(message: String, val expected: Seq[SafeType], val actual: Seq[SafeType], val actualValues: Seq[Any]) extends DIException(message, null)
 
 }

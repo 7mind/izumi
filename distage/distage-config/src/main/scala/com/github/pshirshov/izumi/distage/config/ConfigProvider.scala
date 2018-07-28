@@ -63,7 +63,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
     }
   }
 
-  implicit class TypeExt(t: TypeFull) {
+  implicit class TypeExt(t: SafeType) {
     def name: String = t.tpe.typeSymbol.asClass.fullName
   }
 
@@ -167,7 +167,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
 object ConfigProvider {
 
-  private case class RequiredConfigEntry(paths: Seq[ConfigPath], targetType: TypeFull, target: DIKey) {
+  private case class RequiredConfigEntry(paths: Seq[ConfigPath], targetType: SafeType, target: DIKey) {
     override def toString: String = {
       val allPaths = paths.map(_.toPath).mkString("\n  ")
 

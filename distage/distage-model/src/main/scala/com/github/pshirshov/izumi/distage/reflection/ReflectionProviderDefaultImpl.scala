@@ -11,7 +11,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   protected def keyProvider: DependencyKeyProvider.Aux[u.type]
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
-  def symbolToWiring(symbl: TypeFull): Wiring = {
+  def symbolToWiring(symbl: SafeType): Wiring = {
     symbl match {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
@@ -63,16 +63,16 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override final def constructorParameters(symbl: TypeFull): List[Association.Parameter] =
+  override final def constructorParameters(symbl: SafeType): List[Association.Parameter] =
     constructorParameterLists(symbl).flatten
 
-  override def constructorParameterLists(symbl: TypeFull): List[List[Association.Parameter]] = {
+  override def constructorParameterLists(symbl: SafeType): List[List[Association.Parameter]] = {
     val argLists: List[List[u.Symb]] = symbolIntrospector.selectConstructor(symbl).arguments
 
     argLists.map(_.map(keyProvider.associationFromParameter(_, symbl)))
   }
 
-  private def unarySymbolDeps(symbl: TypeFull): UnaryWiring.ProductWiring = symbl match {
+  private def unarySymbolDeps(symbl: SafeType): UnaryWiring.ProductWiring = symbl match {
     case ConcreteSymbol(symb) =>
       UnaryWiring.Constructor(symb, constructorParameters(symb))
 
@@ -86,7 +86,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       throw new UnsupportedWiringException(s"Wiring unsupported: $symbl", symbl)
   }
 
-  private def traitMethods(symb: TypeFull): Seq[Association.AbstractMethod] = {
+  private def traitMethods(symb: SafeType): Seq[Association.AbstractMethod] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
     val declaredAbstractMethods = symb.tpe.members
       .sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
@@ -101,15 +101,15 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   protected object ConcreteSymbol {
-    def unapply(arg: TypeFull): Option[TypeFull] = Some(arg).filter(symbolIntrospector.isConcrete)
+    def unapply(arg: SafeType): Option[SafeType] = Some(arg).filter(symbolIntrospector.isConcrete)
   }
 
   protected object AbstractSymbol {
-    def unapply(arg: TypeFull): Option[TypeFull] = Some(arg).filter(symbolIntrospector.isWireableAbstract)
+    def unapply(arg: SafeType): Option[SafeType] = Some(arg).filter(symbolIntrospector.isWireableAbstract)
   }
 
   protected object FactorySymbol {
-    def unapply(arg: TypeFull): Option[(TypeFull, Seq[Symb], Seq[MethodSymb])] =
+    def unapply(arg: SafeType): Option[(SafeType, Seq[Symb], Seq[MethodSymb])] =
       Some(arg)
         .filter(symbolIntrospector.isFactory)
         .map(f => (

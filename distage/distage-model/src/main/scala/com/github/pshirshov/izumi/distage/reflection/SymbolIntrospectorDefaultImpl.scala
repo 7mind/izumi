@@ -6,13 +6,13 @@ import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
-  override def selectConstructor(symb: u.TypeFull): SelectedConstructor = {
+  override def selectConstructor(symb: u.SafeType): SelectedConstructor = {
     val selectedConstructor = selectConstructorMethod(symb)
     val paramLists = selectedConstructor.typeSignatureIn(symb.tpe).paramLists
     SelectedConstructor(selectedConstructor, paramLists)
   }
 
-  override def selectConstructorMethod(tpe: u.TypeFull): u.MethodSymb = {
+  override def selectConstructorMethod(tpe: u.SafeType): u.MethodSymb = {
     tpe.tpe.decl(u.u.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
   }
 
@@ -20,15 +20,15 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     symb.paramLists.takeWhile(_.headOption.forall(!_.isImplicit))
   }
 
-  override def isConcrete(symb: u.TypeFull): Boolean = {
+  override def isConcrete(symb: u.SafeType): Boolean = {
     symb.tpe.typeSymbol.isClass && !symb.tpe.typeSymbol.isAbstract
   }
 
-  override def isWireableAbstract(symb: u.TypeFull): Boolean = {
+  override def isWireableAbstract(symb: u.SafeType): Boolean = {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && symb.tpe.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
   }
 
-  override def isFactory(symb: u.TypeFull): Boolean = {
+  override def isFactory(symb: u.SafeType): Boolean = {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && {
       val abstracts = symb.tpe.members.filter(_.isAbstract)
       abstracts.exists(isFactoryMethod(symb, _)) &&
@@ -36,23 +36,23 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     }
   }
 
-  override def isWireableMethod(tpe: u.TypeFull, decl: u.Symb): Boolean = {
+  override def isWireableMethod(tpe: u.SafeType, decl: u.Symb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       decl.asMethod.paramLists.isEmpty && u.SafeType(decl.asMethod.returnType) != tpe
     }
   }
 
-  override def isFactoryMethod(tpe: u.TypeFull, decl: u.Symb): Boolean = {
+  override def isFactoryMethod(tpe: u.SafeType, decl: u.Symb): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       val paramLists = decl.asMethod.paramLists
       paramLists.nonEmpty && paramLists.forall(list => !list.contains(decl.asMethod.returnType) && !list.contains(tpe))
     }
   }
 
-  override def findSymbolAnnotation(annType: u.TypeFull, symb: u.SymbolInfo): Option[u.u.Annotation] =
+  override def findSymbolAnnotation(annType: u.SafeType, symb: u.SymbolInfo): Option[u.u.Annotation] =
     symb.findAnnotation(annType)
 
-  override def findTypeAnnotation(annType: u.TypeFull, tpe: u.TypeFull): Option[u.u.Annotation] = {
+  override def findTypeAnnotation(annType: u.SafeType, tpe: u.SafeType): Option[u.u.Annotation] = {
     val univ: u.u.type = u.u // intellij
     AnnotationTools.findTypeAnnotation(univ)(annType.tpe, tpe.tpe)
   }

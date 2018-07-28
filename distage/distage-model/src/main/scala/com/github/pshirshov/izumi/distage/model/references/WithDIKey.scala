@@ -8,7 +8,7 @@ trait WithDIKey {
     with WithDITypeTags =>
 
   sealed trait DIKey {
-    def tpe: TypeFull
+    def tpe: SafeType
   }
 
   object DIKey {
@@ -17,33 +17,33 @@ trait WithDIKey {
 
     sealed trait BasicKey extends DIKey
 
-    case class TypeKey(tpe: TypeFull) extends BasicKey {
+    case class TypeKey(tpe: SafeType) extends BasicKey {
       override def toString: String = tpe.toString
 
       def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id)
     }
 
-    case class IdKey[I: IdContract](tpe: TypeFull, id: I) extends BasicKey {
+    case class IdKey[I: IdContract](tpe: SafeType, id: I) extends BasicKey {
       val idContract: IdContract[I] = implicitly[IdContract[I]]
 
       override def toString: String = s"${tpe.toString}#$id"
     }
 
-    case class ProxyElementKey(proxied: DIKey, tpe: TypeFull) extends DIKey {
+    case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {
       override def toString: String = s"Proxy[${proxied.toString}]"
 
       override def hashCode(): Int = toString.hashCode()
     }
 
     // todo: this disambiguating .index is kinda shitty
-    case class SetElementKey(set: DIKey, index: Int, tpe: TypeFull) extends DIKey {
+    case class SetElementKey(set: DIKey, index: Int, tpe: SafeType) extends DIKey {
       override def toString: String = s"$set##${tpe.toString}.$index"
 
       override def hashCode(): Int = toString.hashCode()
     }
 
     implicit class WithTpe(key: DIKey) {
-      def withTpe(tpe: TypeFull) = {
+      def withTpe(tpe: SafeType) = {
         key match {
           case k: TypeKey => k.copy(tpe = tpe)
           case k: IdKey[_] => k.copy(tpe = tpe)(k.idContract)

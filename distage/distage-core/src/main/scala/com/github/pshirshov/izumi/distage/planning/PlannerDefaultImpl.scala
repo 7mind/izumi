@@ -148,7 +148,7 @@ class PlannerDefaultImpl
     }
   }
 
-  private def setElementKeySymbol(impl: ImplDef): RuntimeDIUniverse.TypeFull = {
+  private def setElementKeySymbol(impl: ImplDef): RuntimeDIUniverse.SafeType = {
     impl match {
       case i: ImplDef.TypeImpl =>
         i.implType

@@ -9,7 +9,7 @@ import scala.util.Random
 @ExposedTestScope
 object Fixtures {
 
-  object Case1 {
+  object BasicCase1 {
 
     trait TestDependency0 {
       def boom(): Int = 1
@@ -60,7 +60,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case1_1 {
+  object BasicCase2 {
 
     trait TestDependency0 {
       def boom(): Int
@@ -93,7 +93,17 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case2 {
+  object BasicCase3 {
+
+    trait Dependency
+
+    class Impl1 extends Dependency
+
+    class Impl2 extends Dependency
+
+  }
+
+  object CircularCase1 {
 
     trait Circular1 {
       def arg: Circular2
@@ -102,7 +112,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     class Circular2(val arg: Circular1)
   }
 
-  object Case3 {
+  object CircularCase2 {
 
     trait Circular1 {
       def arg: Circular2
@@ -161,18 +171,15 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case4 {
+  object CircularCase3 {
+    class SelfReference(val self: SelfReference)
 
-    trait Dependency
-
-    class Impl1 extends Dependency
-
-    class Impl2 extends Dependency
-
+    class ByNameSelfReference(_self: => ByNameSelfReference) {
+      final lazy val self = _self
+    }
   }
 
-
-  object Case5 {
+  object FactoryCase1 {
 
     trait Dependency {
       def isSpecial: Boolean = false
@@ -247,19 +254,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case6 {
-
-    trait Dependency1
-
-    trait Dependency1Sub extends Dependency1
-
-    class TestClass(val b: Dependency1)
-
-    class TestClass2(val a: TestClass)
-
-  }
-
-  object Case7 {
+  object TraitCase1 {
 
     class Dependency1
 
@@ -269,7 +264,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case8 {
+  object TraitCase2 {
 
     class Dependency1 {
       override def toString: String = "Hello World"
@@ -297,7 +292,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case9 {
+  object TraitCase3 {
 
     trait ATraitWithAField {
       def method: Int = 1
@@ -307,7 +302,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case10 {
+  object TraitCase4 {
 
     trait Dep {
       def isA: Boolean
@@ -337,7 +332,19 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case11 {
+  object TraitCase5 {
+
+    final case class Dep()
+
+    trait TestTrait {
+      protected val dep: Dep
+      def rd: String = {
+        dep.toString
+      }
+    }
+  }
+
+  object TypesCase1 {
 
     trait Dep
 
@@ -357,7 +364,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case12 {
+  object TypesCase2 {
 
     class Dep()
 
@@ -369,31 +376,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case13 {
-
-    class MyDummyImplicit extends DummyImplicit {
-      def imADummy: Boolean = true
-    }
-
-    class Dep
-
-    final case class TestClass(dep: Dep)(implicit val dummyImplicit: DummyImplicit)
-
-  }
-
-  object Case14 {
-
-    final case class Dep()
-
-    trait TestTrait {
-      protected val dep: Dep
-      def rd: String = {
-        dep.toString
-      }
-    }
-  }
-
-  object Case16 {
+  object ProviderCase1 {
     def deftypeannfn(y: String @Id("deftypeann"), z: Int @Id("deftypeann2")): String = Function.const(y)(z)
 
     def defargannfn(@Id("defargann") y: String, @Id("defargann2") z: Int): String = Function.const(y)(z)
@@ -426,7 +409,19 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case17 {
+  object ProviderCase2 {
+
+    trait Dependency1
+
+    trait Dependency1Sub extends Dependency1
+
+    class TestClass(val b: Dependency1)
+
+    class TestClass2(val a: TestClass)
+
+  }
+
+  object ProviderCase3 {
 
     class TestDependency
 
@@ -438,7 +433,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case18 {
+  object SetCase1 {
 
     trait SetTrait
     class SetImpl1 extends SetTrait
@@ -455,12 +450,12 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
-  object Case19 {
+  object SetCase2 {
     trait Service
     class Service1 extends Service
   }
 
-  object Case20 {
+  object HigherKindsCase1 {
     type id[A] = A
 
     trait Pointed[F[_]] {
@@ -527,7 +522,19 @@ Forest fire, climbin' higher, real life, it can wait""")
     }
   }
 
-  object Case21 {
+  object ImplicitCase1 {
+
+    class MyDummyImplicit extends DummyImplicit {
+      def imADummy: Boolean = true
+    }
+
+    class Dep
+
+    final case class TestClass(dep: Dep)(implicit val dummyImplicit: DummyImplicit)
+
+  }
+
+  object ImplicitCase2 {
     class TestDependency1
     class TestDependency2
     class TestDependency3
@@ -535,11 +542,4 @@ Forest fire, climbin' higher, real life, it can wait""")
     class TestClass(val a: TestDependency1)(val b: TestDependency3, implicit val c: TestDependency2)(implicit val d: TestDependency3)
   }
 
-  object Case22 {
-    class SelfReference(val self: SelfReference)
-
-    class ByNameSelfReference(_self: => ByNameSelfReference) {
-      final lazy val self = _self
-    }
-  }
 }

@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection._
 
 object TraitTools {
 
-  def traitIndex(tpe: RuntimeDIUniverse.TypeFull, methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): TraitIndex = {
+  def traitIndex(tpe: RuntimeDIUniverse.SafeType, methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): TraitIndex = {
     val vals = tpe.tpe.decls.collect {
       case m: RuntimeDIUniverse.u.TermSymbolApi if m.isVal || m.isVar =>
         m
@@ -37,7 +37,7 @@ object TraitTools {
     }.toMap
   }
 
-  def initTrait(instanceType: RuntimeDIUniverse.TypeFull, runtimeClass: Class[_], instance: AnyRef): Unit = {
+  def initTrait(instanceType: RuntimeDIUniverse.SafeType, runtimeClass: Class[_], instance: AnyRef): Unit = {
     instanceType.tpe.decls.find(_.name.decodedName.toString == "$init$") match {
       case Some(_) => // here we have an instance of scala MethodSymbol though we can't reflect it, so let's use java
         try {

@@ -44,16 +44,16 @@ object TypeLevelDSL {
     }
 
     trait InstanceImpl[T, I <: T with Singleton] extends ImplDef {
-      def repr(implicit ev: Tag[I], w: Witness.Aux[I]): valuedef.ImplDef.InstanceImpl =
-        valuedef.ImplDef.InstanceImpl(RuntimeDIUniverse.SafeType.get[I], w.value)
+      def repr(implicit ev: Tag[T], w: Witness.Aux[I]): valuedef.ImplDef.InstanceImpl =
+        valuedef.ImplDef.InstanceImpl(RuntimeDIUniverse.SafeType.get[T], w.value)
     }
     object InstanceImpl {
       def apply[T <: AnyRef](impl: T with Singleton): InstanceImpl[T, impl.type] = new InstanceImpl[T, impl.type] {}
     }
 
     trait ProviderImpl[T, I <: ProviderMagnet[T] with Singleton] extends ImplDef {
-      def repr(implicit ev: Tag[I], w: Witness.Aux[I]): valuedef.ImplDef.ProviderImpl =
-        valuedef.ImplDef.ProviderImpl(RuntimeDIUniverse.SafeType.get[I], w.value.get)
+      def repr(implicit ev: Tag[T], w: Witness.Aux[I]): valuedef.ImplDef.ProviderImpl =
+        valuedef.ImplDef.ProviderImpl(RuntimeDIUniverse.SafeType.get[T], w.value.get)
     }
 
   }

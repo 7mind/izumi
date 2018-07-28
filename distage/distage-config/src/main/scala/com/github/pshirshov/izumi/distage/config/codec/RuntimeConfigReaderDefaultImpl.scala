@@ -28,11 +28,11 @@ class RuntimeConfigReaderDefaultImpl
 
   import RuntimeConfigReaderDefaultImpl._
 
-  override def readConfig(config: Config, tpe: TypeFull): Any = {
+  override def readConfig(config: Config, tpe: SafeType): Any = {
     deriveCaseClassReader(tpe)(config.root()).get
   }
 
-  def anyReader(tpe: TypeFull): ConfigReader[_] = {
+  def anyReader(tpe: SafeType): ConfigReader[_] = {
     val safeType = SafeType(tpe.tpe.dealias.erasure)
 
     primitiveReaders.get(safeType) match {
@@ -53,7 +53,7 @@ class RuntimeConfigReaderDefaultImpl
     }
   }
 
-  def deriveCaseClassReader(targetType: TypeFull): ConfigReader[_] =
+  def deriveCaseClassReader(targetType: SafeType): ConfigReader[_] =
     cv => Try {
       if(!symbolIntrospector.isConcrete(targetType)) {
         throw new ConfigReadException(
@@ -144,7 +144,7 @@ class RuntimeConfigReaderDefaultImpl
 object RuntimeConfigReaderDefaultImpl {
   import ConfigReaderInstances._
 
-  val primitiveReaders: Map[TypeFull, ConfigReader[_]] = Map(
+  val primitiveReaders: Map[SafeType, ConfigReader[_]] = Map(
       SafeType.get[String] -> stringConfigReader
     , SafeType.get[Char] -> charConfigReader
     , SafeType.get[Boolean] -> booleanConfigReader
