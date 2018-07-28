@@ -14,28 +14,37 @@ object ConvertersExtension extends ScalaTranslatorExtension {
 
   override def handleComposite(ctx: STContext, interface: StructContext, product: CompositeProduct): CompositeProduct = {
     val converters = mkConverters(ctx, interface.struct)
-    product.copy(tools = product.tools.appendDefinitions(converters))
+    product.copy(companionBase = product.companionBase.appendDefinitions(converters))
 
   }
 
   override def handleInterface(ctx: STContext, interface: TypeDef.Interface, product: InterfaceProduct): InterfaceProduct = {
     import ctx.conv._
     val converters = mkConverters(ctx, ctx.typespace.structure.structure(interface).toScala)
-    product.copy(tools = product.tools.appendDefinitions(converters))
+    product.copy(companionBase = product.companionBase.appendDefinitions(converters))
   }
 
 
-  private def mkConverters(ctx: STContext, struct: ScalaStruct): List[Defn.Def] = {
+  private def mkConverters(ctx: STContext, struct: ScalaStruct): List[Stat] = {
     ctx.typespace.structure.sameSignature(struct.id).map {
       same =>
         val code = struct.all.map {
           f =>
             q""" ${f.name} = _value.${f.name}  """
         }
-        q"""def ${Term.Name("cast" + same.id.uniqueDomainName)}(): ${ctx.conv.toScala(same.id).typeFull} = {
-              ${ctx.conv.toScala(same.id).termFull}(..$code)
-            }
-          """
+
+        val thisType = ctx.conv.toScala(struct.id)
+        val targetType = ctx.conv.toScala(same.id)
+
+        val name = Term.Name(s"${thisType.termName.value}_cast_into_${same.id.uniqueDomainName}")
+
+        q"""
+             implicit object $name extends ${ctx.rt.Cast.parameterize(List(thisType.typeFull, targetType.typeFull)).init()} {
+               override def convert(_value: ${thisType.typeFull}): ${targetType.typeFull} = {
+                  ${targetType.termFull}(..$code)
+               }
+             }
+           """
     }
   }
 }
