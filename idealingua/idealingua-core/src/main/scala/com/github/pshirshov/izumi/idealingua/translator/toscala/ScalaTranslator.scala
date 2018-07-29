@@ -20,9 +20,9 @@ import scala.meta._
 
 object ScalaTranslator {
   final val defaultExtensions = Seq(
-    ConvertersExtension
-    , IfaceConstructorsExtension
-    , IfaceNarrowersExtension
+    CastSimilarExtension
+    , CastDownExpandExtension
+    , CastUpExtension
     , AnyvalExtension
   )
 }

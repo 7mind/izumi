@@ -46,7 +46,7 @@ trait StructuralQueries {
 
   def constructors(struct: Struct): List[ConverterDef]
 
-  def structuralParents(id: Interface): List[Struct]
+  def structuralParents(id: Struct): List[Struct]
 
   def structure(id: StructureId): Struct
 

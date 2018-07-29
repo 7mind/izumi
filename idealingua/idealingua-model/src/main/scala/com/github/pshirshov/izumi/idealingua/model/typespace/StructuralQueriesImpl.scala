@@ -101,11 +101,9 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
   }
 
 
-  override def structuralParents(interface: Interface): List[Struct] = {
-    val thisStructure = structure(interface)
-
-    // we don't add explicit parents here because their converters are available
-    val allStructuralParents = List(interface.id) ++ interface.struct.superclasses.concepts
+  override def structuralParents(interface: Struct): List[Struct] = {
+    val thisStructure = structure(interface.id)
+    val allStructuralParents = List(interface.id) ++ inheritance.allParents(interface.id)
 
     allStructuralParents
       .distinct

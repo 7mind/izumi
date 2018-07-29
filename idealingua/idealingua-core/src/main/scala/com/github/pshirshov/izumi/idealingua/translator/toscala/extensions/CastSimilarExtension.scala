@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaStru
 
 import scala.meta._
 
-object ConvertersExtension extends ScalaTranslatorExtension {
+object CastSimilarExtension extends ScalaTranslatorExtension {
 
   import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
