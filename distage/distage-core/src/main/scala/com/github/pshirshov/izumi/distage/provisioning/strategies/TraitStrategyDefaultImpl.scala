@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 class TraitStrategyDefaultImpl(proxyProvider: ProxyProvider) extends TraitStrategy {
   def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
-    val traitDeps = context.narrow(op.wiring.associations.map(_.wireWith).toSet)
+    val traitDeps = context.narrow(op.wiring.requiredKeys)
 
     val wiredMethodIndex = TraitTools.traitIndex(op.wiring.instanceType, op.wiring.associations)
 

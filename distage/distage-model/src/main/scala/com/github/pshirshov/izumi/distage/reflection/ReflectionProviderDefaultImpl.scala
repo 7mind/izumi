@@ -31,7 +31,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
             val methodTypeWireable = unarySymbolDeps(resultType)
 
-            val excessiveSymbols = alreadyInSignature.toSet -- methodTypeWireable.associations.map(_.wireWith).toSet
+            val excessiveSymbols = alreadyInSignature.toSet -- methodTypeWireable.requiredKeys
 
             if (excessiveSymbols.nonEmpty) {
               throw new UnsupportedDefinitionException(s"Factory method signature contains symbols which are not required for target product: $excessiveSymbols", null)

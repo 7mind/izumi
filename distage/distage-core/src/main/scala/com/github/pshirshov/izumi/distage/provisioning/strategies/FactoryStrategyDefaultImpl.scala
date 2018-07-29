@@ -12,9 +12,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider) extends FactoryStrategy {
   def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
     // at this point we definitely have all the dependencies instantiated
-
-    val allRequiredKeys = op.wiring.associations.map(_.wireWith).toSet
-    val narrowedContext = context.narrow(allRequiredKeys)
+    val narrowedContext = context.narrow(op.wiring.requiredKeys)
 
     val factoryMethodIndex = makeFactoryIndex(op)
     val traitIndex = TraitTools.traitIndex(op.wiring.factoryType, op.wiring.fieldDependencies)
