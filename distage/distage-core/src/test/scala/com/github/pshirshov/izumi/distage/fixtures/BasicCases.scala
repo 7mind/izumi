@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.fixtures
 
+import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 
@@ -54,6 +55,8 @@ Forest fire, climbin' higher, real life, it can wait""")
     class Impl2 extends JustTrait
 
     class Impl3 extends JustTrait
+
+    case class LocatorDependent(ref: Locator.LocatorRef)
 
   }
 
