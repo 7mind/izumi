@@ -32,6 +32,10 @@ class RuntimeConfigReaderDefaultImpl
     deriveCaseClassReader(tpe)(config.root()).get
   }
 
+  override def readValue(config: ConfigValue, tpe: SafeType): Any = {
+    anyReader(tpe)(config).get
+  }
+
   def anyReader(tpe: SafeType): ConfigReader[_] = {
     val safeType = SafeType(tpe.tpe.dealias.erasure)
 

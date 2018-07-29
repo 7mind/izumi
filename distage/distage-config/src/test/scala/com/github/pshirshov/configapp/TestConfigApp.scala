@@ -31,6 +31,7 @@ class DataPuller2(
 class DataPuller3(
                    @Conf("cassandra") val target: HostPort
                    , @ConfPath("datasource.google") val source: HostPort
+                   , @ConfPath("scalars.s") val s: String
                  ) extends TestAppService {
   Quirks.discard(source, target)
 }

@@ -5,7 +5,10 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 
-class ConfigModule(config: AppConfig) extends ModuleDef {
+case class ConfigInjectorConfig(enableScalars: Boolean = true)
+
+class ConfigModule(config: AppConfig, configInjectorConfig: ConfigInjectorConfig = ConfigInjectorConfig()) extends ModuleDef {
+  make[ConfigInjectorConfig].from(configInjectorConfig)
   make[AppConfig].from(config)
   make[RuntimeConfigReader].from[RuntimeConfigReaderDefaultImpl]
   many[PlanningHook]
