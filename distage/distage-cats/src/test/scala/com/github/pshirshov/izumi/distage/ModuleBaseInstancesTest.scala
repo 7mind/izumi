@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage
 
 import cats.implicits._
-import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.model.definition.Bindings.binding
 import com.github.pshirshov.izumi.distage.model.definition._
 import distage.interop.cats._
