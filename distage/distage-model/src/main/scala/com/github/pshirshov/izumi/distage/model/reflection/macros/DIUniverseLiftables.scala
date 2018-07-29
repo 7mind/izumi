@@ -10,12 +10,12 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] =
     { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
 
-  // Kind of a hack to support generic methods in macro factories, see `WeakTag`, `GenericAssistedFactory` and associated tests
   implicit def liftableSafeType: Liftable[SafeType]
 
   protected final val liftableDefaultSafeType: Liftable[SafeType] =
     value => q"{ $RuntimeDIUniverse.SafeType.get[${Liftable.liftType(value.tpe)}] }"
 
+  /** A hack to support generic methods in macro factories, see `WeakTag`, `GenericAssistedFactory` and associated tests **/
   protected final val liftableUnsafeWeakSafeType: Liftable[SafeType] =
     value => q"{ $RuntimeDIUniverse.SafeType.unsafeGetWeak[${Liftable.liftType(value.tpe)}] }"
 
@@ -74,8 +74,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   // SymbolInfo
 
-  // FIXME: Symbols may contain uninstantiated poly types, and are usually included for debugging anyway
-  // so weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
+  // FIXME: Symbols may contain uninstantiated poly types, and are usually only included for debugging anyway, that's why
+  // weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info => q"""
     { $RuntimeDIUniverse.SymbolInfo.Static(${info.name}, ${liftableUnsafeWeakSafeType(info.finalResultType)}, ${info.annotations}, ${liftableUnsafeWeakSafeType(info.definingClass)}) }

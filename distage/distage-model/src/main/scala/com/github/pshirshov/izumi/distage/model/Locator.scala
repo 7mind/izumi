@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.model
 import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
@@ -13,8 +14,18 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
   * @see [[Producer]]
   **/
 trait Locator {
-  /** Instances in order of creation **/
+  /** Instances in order of creation
+    *
+    * @return *Only* instances contained in this Locator, *NOT* instances in [[parent]] Locators
+    */
   def instances: Seq[IdentifiedRef]
+
+  /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment
+    *
+    * @see [[com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext]]
+    */
+  final def allInstances: Seq[IdentifiedRef] =
+    parent.map(_.allInstances).getOrElse(Seq.empty) ++ instances
 
   def plan: OrderedPlan
 
@@ -60,6 +71,23 @@ object Locator {
         case (acc, ext) =>
           ext.extend(acc)
       }
+  }
+
+  implicit final class LocatorRun(private val locator: Locator) extends AnyVal {
+    /**
+      * Run function `f` filling all the arguments from locator contents.
+      *
+      * Works similarly to provider bindings.
+      *
+      * @see [[ProviderMagnet]]
+      */
+    def run[T](f: ProviderMagnet[T]): T = {
+      val fn = f.get
+      fn.fun(fn.diKeys.map {
+        key =>
+          locator.lookupInstanceOrThrow[Any](key)
+      }).asInstanceOf[T]
+    }
   }
 
 }

@@ -90,14 +90,14 @@ abstract class OpinionatedDiApp {
 
   def main(args: Array[String]): Unit = {
     try {
-      doMain(context(args))
+      doMain(commandlineSetup(args))
     } catch {
       case t: Throwable =>
         handler.onError(t)
     }
   }
 
-  protected def context(args: Array[String]): Strategy
+  protected def commandlineSetup(args: Array[String]): Strategy
 
   protected def doMain(strategy: Strategy): Unit = {
     val loggerRouter = strategy.router()

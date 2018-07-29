@@ -311,6 +311,77 @@ class ConfiguredTryProgram[F: TagK: Monad] extends ModuleDef {
 }
 ```
 
+### Effectful instantiation
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
+example of explicitly splitting effectful and pure instantiations:
+
+```scala
+import distage._
+import distage.config._
+import com.typesafe.config._
+
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.global
+
+case class DbConf()
+case class MsgQueueConf()
+case class RegistryConf()
+
+class DBService[F[_]]
+class MsgQueueService[F[_]]
+class RegistryService[F[_]]
+
+class DomainService[F[_]]
+( dbService: DBService[F]
+, msgQueueService: MsgQueueService[F]
+, registryService: RegistryService[F]
+) {
+  def run: F[Unit] = ???
+}
+
+class ExternalInitializers[F[_]: TagK] extends ModuleDef {
+  make[F[DBService[F]]].from { dbConf: DbConf @ConfPath("network-service.db") => ??? }
+  make[F[MsgQueueService[F]]].from { msgQueueConf: MsgQueueConf @ConfPath("network-service.msg-queue") => ??? }
+  make[F[RegistryService[F]]].from { registryConf: RegistryConf @ConfPath("network-service.registry") => ??? }
+}
+
+val injector = Injector(new ConfigModule(AppConfig(ConfigFactory.load())))
+val initializers = injector.produce(new ExternalInitializers[Future])
+
+class DomainServices[F[_]: TagK] extends ModuleDef {
+  make[DomainService[F]]
+}
+
+val main: Future[Unit] = initializers.run {
+  ( dbF: Future[DBService[Future]]
+  , msgF: Future[MsgQueueService[Future]]
+  , regF: Future[RegistryService[Future]]
+  ) => for {
+    db <- dbF
+    msg <- msgF
+    reg <- regF
+
+    externalServicesModule = new ModuleDef {
+      make[DBService[Future]].from(db)
+      make[MsgQueueService[Future]].from(msg)
+      make[RegistryService[Future]].from(reg)
+    }
+
+    allServices = injector.produce(externalServicesModule ++ new DomainServices[Future])
+
+    _ <- allServices.get[DomainService[Future]].run
+  } yield ()
+}
+
+Await.result(main, Duration.Inf)
+}
+```
+
 ### Auto-Factories & Auto-Traits
 
 ...

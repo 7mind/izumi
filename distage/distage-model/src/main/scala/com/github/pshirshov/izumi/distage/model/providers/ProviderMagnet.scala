@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.model.providers
 
+import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Provider, DIKey}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider}
 import com.github.pshirshov.izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
@@ -17,40 +18,49 @@ import scala.language.experimental.macros
 *
 * Inline lambda:
 *
-*   Bindings.provider[Unit] {
+* {{{
+*   make[Unit].from {
 *     i: Int @Id("special") => ()
 *   }
+* }}}
 *
 * Method reference:
-*
+* {{{
 *   def constructor(@Id("special") i: Int): Unit = ()
 *
-*   Bindings.provider[Unit](constructor _)
+*   make[Unit].from(constructor _)
+* }}}
 *
 * Function value with annotated signature:
-*
+* {{{
 *   val constructor: Int @Id("special") => Unit = _ => ()
 *
-*   Bindings.provider[Unit](constructor)
+*   make[Unit].from(constructor)
+* }}}
 *
-* The following IS NOT SUPPORTED, because annotations are lost when converting a method into a function value:
+* The following **IS NOT SUPPORTED**, because annotations are lost when converting a method into a function value:
 *
+*   {{{
 *   def constructorMethod(@Id("special") i: Int): Unit = ()
 *
 *   val constructor = constructorMethod _
 *
-*   Bindings.provider[Unit](constructor) // Will summon regular Int, not a "special" Int from DI context
+*   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI context
+*   }}}
 *
 * Annotations on constructor will also be lost when passing a case classes .apply method, use `new` instead.
 *
 * DO:
-*
-*   Bindings.provider(new Abc(_, _, _))
+*   {{{
+*   make[Abc].from(new Abc(_, _, _))
+*   }}}
 *
 * DON'T:
+*   {{{
+*   make[Abc].from(Abc.apply _)
+*   }}}
 *
-*   Bindings.provider(Abc.apply _)
-*
+* @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
 * */
 case class ProviderMagnet[+R](get: Provider)
 

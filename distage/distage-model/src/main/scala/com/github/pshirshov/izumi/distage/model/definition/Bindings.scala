@@ -16,6 +16,9 @@ object Bindings {
   def binding[T: Tag, I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(SafeType.get[I], instance))
 
+  def instance[T: Tag](instance: T)(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
+    SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(SafeType.get[T], instance))
+
   def provider[T: Tag](f: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(f.get.ret, f.get))
 

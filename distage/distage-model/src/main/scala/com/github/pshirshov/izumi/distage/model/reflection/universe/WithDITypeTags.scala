@@ -18,11 +18,12 @@ trait WithDITypeTags {
   * This is especially helpful when coding in a [[https://www.beyondthelines.net/programming/introduction-to-tagless-final/ `tagless final` style]]
   *
   * Example:
-  *
-  *     class MyModule[F[_]: Monad: TagK] {
-  *       make[MyService[F]]
-  *       make[F[Unit]].named("empty").from(Monad[F].pure())
-  *     }
+  * {{{
+  * class MyModule[F[_]: Monad: TagK] {
+  *   make[MyService[F]]
+  *   make[F[Unit]].named("empty").from(Monad[F].pure())
+  * }
+  * }}}
   *
   * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]`
   */
@@ -45,10 +46,10 @@ trait WithDITypeTags {
     * (most shapes in `cats` and `stdlib` are supported, but you may need this if you use `scalaz`)
     *
     * Example:
-    *
-    *     implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: WeakTypeTag[T[A0, K, A1]): Tag[T[A0, K, A1]] =
-    *       Tag.appliedTag(t, List(Tag[A0].tag, TagK[K].tag, Tag[A1].tag))
-    *
+    * {{{
+    * implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: WeakTypeTag[T[A0, K, A1]): Tag[T[A0, K, A1]] =
+    *   Tag.appliedTag(t, List(Tag[A0].tag, TagK[K].tag, Tag[A1].tag))
+    * }}}
     **/
     def appliedTag[R](tag: WeakTypeTag[_], args: List[TypeTag[_]]): Tag[R] = {
       val appliedTypeCreator = new TypeCreator {
@@ -156,9 +157,10 @@ trait WithDITypeTags {
   * `TagK` is a [[scala.reflect.api.TypeTags#TypeTag]] for higher-kinded types.
   *
   * Example:
-  *     def containersEqual[F[_]: TagK, K[_]: TagK](containerF: F[_], containerK: K[_]): Boolean {
-  *
-  *     }
+  * {{{
+  * def containerTypesEqual[F[_]: TagK, K[_]: TagK](containerF: F[_], containerK: K[_]): Boolean =
+  *   TagK[F].tag =:= TagK[K].tag
+  * }}}
   */
   trait TagK[K[_]] {
 
@@ -172,10 +174,10 @@ trait WithDITypeTags {
     /**
     * Create a [[scala.reflect.api.TypeTags#TypeTag]] for `K[T]` by applying `K[_]` to `T`
     *
-    * Use:
+    * Example:
+    * {{{
     *     TagK[List].apply[Int]
-    *
-    *     > typeTag[List[Int]]
+    * }}}
     */
     final def apply[T](implicit tag: Tag[T]): Tag[K[T]] =
       Tag.appliedTag(this.tag, List(tag.tag))
@@ -187,8 +189,10 @@ trait WithDITypeTags {
     /**
     * Construct a type tag for a higher-kinded type `K`
     *
-    * Use:
+    * Example:
+    * {{{
     *     TagK[Option]
+    * }}}
     **/
     def apply[K[_] : TagK]: TagK[K] = implicitly[TagK[K]]
   }

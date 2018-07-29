@@ -7,11 +7,13 @@ import scala.reflect.macros.blackbox
 
 /**
  * Provides circe codecs for case classes (won't work with sealed traits):
- *
+ * {{{
  *   final case class Abc(a: String, b: String, c: String)
  *
  *   object Abc extends WithCirce[Abc]
+ * }}}
  *
+ * For sealed traits use [[IRTWithCirceGeneric]]. It's not as efficient wrt compile time, but will cache during a single compilation run.
  */
 abstract class IRTWithCirce[A: DerivationDerivedEncoder: DerivationDerivedDecoder] {
   implicit val enc: Encoder[A] = implicitly[DerivationDerivedEncoder[A]].value

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.injector
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, Id, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import distage.{DIKey, ModuleBase, ModuleDef, SafeType}
@@ -41,7 +41,7 @@ class BasicTest extends WordSpec with MkInjector {
   }
 
   "support multiple bindings" in {
-    import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1._
+    import BasicCase1._
     val definition: ModuleBase = new ModuleDef {
       many[JustTrait].named("named.empty.set")
 
@@ -172,5 +172,28 @@ class BasicTest extends WordSpec with MkInjector {
     assert(context.get[Service3].set.size == 3)
   }
 
+  "support providerImport and instanceImport" in {
+    import BasicCase1._
+
+    val definition = new ModuleDef {
+      make[TestCaseClass2]
+    }
+
+    val injector = mkInjector()
+
+    val plan1 = injector.plan(definition)
+    val plan2 = injector.finish(plan1.providerImport {
+      verse: String @Id("verse") =>
+        TestInstanceBinding(verse)
+    })
+    val plan3 = plan2.resolveImport[String](id = "verse") {
+      """ God only knows what I might do, god only knows what I might do, I don't fuck with god, I'm my own through
+        | Take two of these feel like Goku""".stripMargin
+    }
+
+    val context = injector.produce(plan3)
+
+    assert(context.get[TestCaseClass2].a.z == context.get[String]("verse"))
+  }
 
 }
