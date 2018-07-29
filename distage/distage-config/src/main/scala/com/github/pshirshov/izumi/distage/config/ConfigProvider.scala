@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependen
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.typesafe.config.{ConfigException, ConfigObject}
 
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -46,11 +47,31 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   }
 
   private def translate(op: ExecutableOp, step: RequiredConfigEntry): TranslationResult = {
-    val results = step.paths.map(p => Try((p.toPath, config.config.getConfig(p.toPath))))
-    val loaded = results.collect({ case scala.util.Success(value) => value })
+    val results = step.paths.map {
+      p =>
+        val path = p.toPath
+
+        val result = Try {
+          if (!config.config.hasPath(path)) {
+            throw new ConfigException.Missing(path)
+          }
+
+          config.config.getValue(path) match {
+            case v: ConfigObject =>
+              v.toConfig
+            case o =>
+              throw new ConfigException.WrongType(o.origin(), path, "Object", o.valueType().toString)
+          }
+        }
+
+        (p, result)
+    }
+
+    val loaded = results.collect({ case (path, scala.util.Success(value)) => (path, value) })
 
     if (loaded.isEmpty) {
-      return TranslationResult.MissingConfigValue(op, step.paths)
+      val failures = results.collect({ case (path, scala.util.Failure(f)) => (path, f) })
+      return TranslationResult.MissingConfigValue(op, failures)
     }
 
     val section = loaded.head
@@ -59,7 +80,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
       TranslationResult.Success(ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product), op.origin))
     } catch {
       case NonFatal(t) =>
-        TranslationResult.ExtractionFailure(op, step.targetType, section._1, section._2, t)
+        TranslationResult.ExtractionFailure(op, step.targetType, section._1.toPath, section._2, t)
     }
   }
 

@@ -11,24 +11,42 @@ object TranslationResult {
 
   sealed trait TranslationFailure extends TranslationResult {
     def op: ExecutableOp
+
     def target: RuntimeDIUniverse.DIKey = op.target
+
+    protected def origin: String = {
+      op.origin match {
+        case Some(v) =>
+          s"${v.origin.toString} ($target)"
+        case None =>
+          target.toString
+      }
+    }
   }
 
   final case class Success(op: ExecutableOp) extends TranslationResult
 
-  final case class MissingConfigValue(op: ExecutableOp, paths: Seq[ConfigPath]) extends TranslationFailure {
+  final case class MissingConfigValue(op: ExecutableOp, paths: Seq[(ConfigPath, Throwable)]) extends TranslationFailure {
     override def toString: String = {
-      val tried = paths.mkString("{", "|", "}")
-      s"$target: missing config value, tried paths: $tried"
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      val tried = paths.map {
+        case (path, f) =>
+          s"${path.toPath}: ${f.getMessage}"
+      }.niceList()
+
+      val details = s"""origin: $origin
+         |tried: $tried""".stripMargin.shift(4)
+
+      s"Missing config value:\n$details"
     }
   }
 
   final case class ExtractionFailure(op: ExecutableOp, tpe: SafeType, path: String, config: Config, f: Throwable) extends TranslationFailure {
-    override def toString: String = s"$target: cannot read $tpe out of $path ==> $config: ${f.getMessage}"
+    override def toString: String = s"$origin: cannot read $tpe out of $path ==> $config: ${f.getMessage}"
   }
 
   final case class Failure(op: ExecutableOp, f: Throwable) extends TranslationFailure {
-    override def toString: String = s"$target: unexpected exception: ${f.getMessage}"
+    override def toString: String = s"$origin: unexpected exception: ${f.getMessage}"
   }
 
 }

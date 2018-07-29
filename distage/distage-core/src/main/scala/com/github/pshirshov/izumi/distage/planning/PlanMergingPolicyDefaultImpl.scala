@@ -53,7 +53,8 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
       .filterKeys(k => !plan.index.contains(k))
       .map {
         case (missing, refs) =>
-          missing -> ImportDependency(missing, refs.toSet, None)
+          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).flatMap(_.origin)
+          missing -> ImportDependency(missing, refs.toSet, maybeFirstOrigin)
       }
       .toMap
     SemiPlan(plan.definition, (imports.values ++ plan.steps).toVector)
