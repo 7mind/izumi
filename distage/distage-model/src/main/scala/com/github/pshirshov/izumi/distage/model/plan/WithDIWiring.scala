@@ -15,6 +15,7 @@ trait WithDIWiring {
 
   sealed trait Wiring {
     def associations: Seq[Association]
+    def requiredKeys: Set[DIKey] = associations.map(_.wireWith).toSet
   }
 
   object Wiring {
@@ -43,6 +44,8 @@ trait WithDIWiring {
 
       case class Reference(instanceType: SafeType, key: DIKey) extends UnaryWiring {
         override def associations: Seq[Association] = Seq.empty
+
+        override def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
       }
     }
 

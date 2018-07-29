@@ -60,6 +60,7 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
             RuntimeDIUniverse.DIKey.get[DisabledByImpl],
             RuntimeDIUniverse.DIKey.get[DisabledByTag],
             RuntimeDIUniverse.DIKey.get[WithGoodTag],
+            RuntimeDIUniverse.DIKey.get[Set[SetEl]],
           ))
         )
       }
