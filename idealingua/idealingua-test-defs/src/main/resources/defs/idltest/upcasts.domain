@@ -1,4 +1,4 @@
-domain idltest.xxx
+domain idltest.upcasts
 
 mixin Identifiable {
   id: uid
