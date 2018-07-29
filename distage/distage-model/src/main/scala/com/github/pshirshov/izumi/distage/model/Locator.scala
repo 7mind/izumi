@@ -36,6 +36,19 @@ trait Locator {
 }
 
 object Locator {
+
+  /**
+    * This class allows you to inject locator reference into
+    * any instance in your context.
+    *
+    * Reference is being initialized after all the provisioning process finishes,
+    * so you cannot dereference it a constructor.
+    *
+    * Locator reference injection is definitely an anti-pattern signalign
+    * about serious design problems.
+    *
+    * Though sometimes it may be convenient.
+    */
   class LocatorRef() {
     protected[distage] val ref: AtomicReference[Locator] = new AtomicReference[Locator]()
     def get: Locator = ref.get()
