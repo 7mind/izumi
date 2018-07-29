@@ -44,7 +44,6 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
       .toMultimap
       .mapValues(_.flatten.toSeq)
 
-
     val packageObjects = aliases.map {
       case (id, content) =>
         val pkgName = id.name.split('.').head
@@ -132,7 +131,9 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
 
     val qqComposite = q"""final case class ${struct.t.typeName}(..${struct.decls}) extends ..$superClasses {}"""
 
-    val qqTools = q""" implicit class ${tools.typeName}(_value: ${struct.t.typeFull}) { }"""
+    val toolBases = List(rt.Conversions.parameterize(List(struct.t.typeFull)).init())
+
+    val qqTools = q""" implicit class ${tools.typeName}(override protected val _value: ${struct.t.typeFull}) extends ..$toolBases { }"""
 
 
     val qqCompositeCompanion =
@@ -160,8 +161,11 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
              ..$impl
          }"""
 
+
+    val toolBases = List(rt.Conversions.parameterize(List(t.typeFull)).init())
+
     val tools = t.within(s"${i.id.name}Extensions")
-    val qqTools = q"""implicit class ${tools.typeName}(_value: ${t.typeFull}) { }"""
+    val qqTools = q"""implicit class ${tools.typeName}(override protected val _value: ${t.typeFull}) extends ..$toolBases { }"""
 
     ext.extend(i, CogenProduct(qqInterface, qqInterfaceCompanion, qqTools, List.empty), _.handleInterface)
   }

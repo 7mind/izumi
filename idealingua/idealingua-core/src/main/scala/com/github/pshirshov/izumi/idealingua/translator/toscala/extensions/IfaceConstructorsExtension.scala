@@ -15,18 +15,35 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
 
         val constructorCode = ctx.tools.makeConstructor(t)
         val constructorSignature = ctx.tools.makeParams(t)
+
         val impl = t.typeToConstruct
 
-        q"""def ${Term.Name("to" + impl.uniqueDomainName)}(..${constructorSignature.params}): ${ctx.conv.toScala(impl).typeFull} = {
-             ..${constructorSignature.assertion}
-            ${ctx.conv.toScala(impl).termFull}(..$constructorCode)
-            }
-          """
+        val thisType = ctx.conv.toScala(interface.id)
+        val targetType = ctx.conv.toScala(impl)
+        val targetImplType = ctx.conv.toScala(impl)
+
+        val name = Term.Name(s"${thisType.termName.value}_extend_into_${impl.uniqueDomainName}")
+
+        q"""
+             implicit object $name extends ${ctx.rt.Extend.parameterize(List(thisType.typeFull, targetType.typeFull)).init()} {
+               class Call(private val _value: ${thisType.typeFull}) extends AnyVal {
+                  def using(..${constructorSignature.params}): ${targetType.typeFull} = {
+                    assert(_value != null)
+                    ..${constructorSignature.assertion}
+                    ${targetImplType.termFull}(..$constructorCode)
+                  }
+               }
+
+               override type INSTANTIATOR = Call
+
+               override def next(_value: ${thisType.typeFull}): Call = new Call(_value)
+             }
+           """
     }
 
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
-    product.copy(tools = product.tools.appendDefinitions(constructors))
+    product.copy(companionBase = product.companionBase.appendDefinitions(constructors))
   }
 
 

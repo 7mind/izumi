@@ -15,7 +15,7 @@ object IfaceNarrowersExtension extends ScalaTranslatorExtension {
       .structuralParents(interface)
       .map {
         struct =>
-          val dtoId = struct.id match {
+          val parentImplId = struct.id match {
             case i: InterfaceId =>
               ctx.typespace.implId(i)
             case o =>
@@ -27,17 +27,25 @@ object IfaceNarrowersExtension extends ScalaTranslatorExtension {
               q""" ${Term.Name(f.field.name)} = _value.${Term.Name(f.field.name)}  """
           }
 
-          val tt = ctx.conv.toScala(dtoId)
+          val thisType = ctx.conv.toScala(interface.id)
           val parentType = ctx.conv.toScala(struct.id)
-          q"""def ${Term.Name("as" + struct.id.name)}(): ${parentType.typeFull} = {
-             ${tt.termFull}(..$constructorCode)
-            }
-          """
+          val parentImplType = ctx.conv.toScala(parentImplId)
+
+          val name = Term.Name(s"${parentType.termName.value}_to_${parentType.termName.value}")
+
+          q"""
+             implicit object $name extends ${ctx.rt.Cast.parameterize(List(thisType.typeFull, parentType.typeFull)).init()} {
+               override def convert(_value: ${thisType.typeFull}): ${parentType.typeFull} = {
+                 assert(_value != null)
+                 ${parentImplType.termFull}(..$constructorCode)
+               }
+             }
+           """
       }
 
     import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
-    product.copy(tools = product.tools.appendDefinitions(narrowers))
+    product.copy(companionBase = product.companionBase.appendDefinitions(narrowers))
   }
 
 }

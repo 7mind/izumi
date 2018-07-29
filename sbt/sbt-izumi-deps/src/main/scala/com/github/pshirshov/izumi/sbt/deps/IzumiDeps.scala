@@ -18,7 +18,7 @@ object IzumiDeps {
     val shapeless = "2.3.3" // 2.13+
     val cats = "1.1.0" // https://github.com/typelevel/cats/issues/2267
     val cats_effect = "1.0.0-RC2"
-    val circe = "0.9.3" // https://github.com/circe/circe/issues/770
+    val circe = "0.10.0-M1" // https://github.com/circe/circe/issues/770
     val circe_derivation = "0.9.0-M5"
     val http4s = "0.19.0-M1" // https://github.com/http4s/http4s/issues/1797
 
