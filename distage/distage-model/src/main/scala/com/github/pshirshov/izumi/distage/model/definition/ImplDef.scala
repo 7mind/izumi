@@ -6,14 +6,14 @@ sealed trait ImplDef
 
 object ImplDef {
   sealed trait WithImplType extends ImplDef {
-    def implType: RuntimeDIUniverse.TypeFull
+    def implType: RuntimeDIUniverse.SafeType
   }
 
-  final case class ReferenceImpl(implType: RuntimeDIUniverse.TypeFull, key: RuntimeDIUniverse.DIKey) extends WithImplType
+  final case class ReferenceImpl(implType: RuntimeDIUniverse.SafeType, key: RuntimeDIUniverse.DIKey) extends WithImplType
 
-  final case class TypeImpl(implType: RuntimeDIUniverse.TypeFull) extends WithImplType
+  final case class TypeImpl(implType: RuntimeDIUniverse.SafeType) extends WithImplType
 
-  final case class InstanceImpl(implType: RuntimeDIUniverse.TypeFull, instance: Any) extends WithImplType
+  final case class InstanceImpl(implType: RuntimeDIUniverse.SafeType, instance: Any) extends WithImplType
 
-  final case class ProviderImpl(implType: RuntimeDIUniverse.TypeFull, function: RuntimeDIUniverse.Provider) extends WithImplType
+  final case class ProviderImpl(implType: RuntimeDIUniverse.SafeType, function: RuntimeDIUniverse.Provider) extends WithImplType
 }

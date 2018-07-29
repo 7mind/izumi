@@ -20,11 +20,11 @@ trait WithDIAssociation {
   }
 
   object Association {
-    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: TypeFull, wireWith: DIKey) extends Association {
+    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey) extends Association {
       override def format: String = s"""par $name: $tpe = lookup($wireWith)"""
     }
 
-    case class AbstractMethod(context: DependencyContext.MethodContext, name: String, tpe: TypeFull, wireWith: DIKey) extends Association {
+    case class AbstractMethod(context: DependencyContext.MethodContext, name: String, tpe: SafeType, wireWith: DIKey) extends Association {
       override def format: String = s"""def $name: $tpe = lookup($wireWith)"""
     }
 

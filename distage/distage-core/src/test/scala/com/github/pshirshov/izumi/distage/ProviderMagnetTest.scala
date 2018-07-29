@@ -8,7 +8,7 @@ import org.scalatest.WordSpec
 import scala.language.higherKinds
 
 class ProviderMagnetTest extends WordSpec {
-  import com.github.pshirshov.izumi.distage.Fixtures.Case16._
+  import com.github.pshirshov.izumi.distage.Fixtures.ProviderCase1._
 
   def priv(@Id("locargann") x: Int): Unit = {val _ = x}
 
@@ -85,7 +85,7 @@ class ProviderMagnetTest extends WordSpec {
     "ProviderMagnet can work with vals" in {
       def triggerConversion[R](x: ProviderMagnet[R]): Int = {val _ = x; return 5}
 
-      assertCompiles("triggerConversion(testVal3)")
+      assert(triggerConversion(testVal3) == 5)
     }
 
     "handle opaque references with type annotations" in {

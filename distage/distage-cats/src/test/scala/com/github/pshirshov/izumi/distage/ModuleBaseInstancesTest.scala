@@ -10,7 +10,7 @@ import org.scalatest.WordSpec
 class ModuleBaseInstancesTest extends WordSpec {
   "cats instances for ContextDefinition" should {
     "allow monoidal operations between different types of binding dsls" in {
-      import Case1._
+      import BasicCase1._
 
       val mod1: ModuleBase = new ModuleDef {
         make[TestClass]

@@ -7,7 +7,7 @@ trait WithDITypedRef {
     with WithDISafeType
     with WithDITypeTags =>
 
-  case class TypedRef[+T](value: T, symbol: TypeFull)
+  case class TypedRef[+T](value: T, symbol: SafeType)
 
   object TypedRef {
     def apply[T: Tag](value: T): TypedRef[T] =

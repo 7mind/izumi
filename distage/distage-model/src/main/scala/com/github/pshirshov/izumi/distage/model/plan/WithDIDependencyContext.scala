@@ -9,24 +9,24 @@ trait WithDIDependencyContext {
     with WithDISymbolInfo =>
 
   sealed trait DependencyContext {
-    def definingClass: TypeFull
+    def definingClass: SafeType
     def symbol: SymbolInfo
   }
 
   object DependencyContext {
 
-    case class MethodContext(definingClass: TypeFull, methodSymbol: SymbolInfo.Runtime) extends DependencyContext {
+    case class MethodContext(definingClass: SafeType, methodSymbol: SymbolInfo.Runtime) extends DependencyContext {
       override def symbol: SymbolInfo = methodSymbol
     }
 
     sealed trait ParameterContext extends DependencyContext
 
-    case class ConstructorParameterContext(definingClass: TypeFull, parameterSymbol: SymbolInfo) extends ParameterContext {
+    case class ConstructorParameterContext(definingClass: SafeType, parameterSymbol: SymbolInfo) extends ParameterContext {
       override def symbol: SymbolInfo = parameterSymbol
     }
 
-    case class MethodParameterContext(factoryClass: TypeFull, factoryMethod: SymbolInfo) extends ParameterContext {
-      override def definingClass: TypeFull = factoryClass
+    case class MethodParameterContext(factoryClass: SafeType, factoryMethod: SymbolInfo) extends ParameterContext {
+      override def definingClass: SafeType = factoryClass
 
       override def symbol: SymbolInfo = factoryMethod
     }
