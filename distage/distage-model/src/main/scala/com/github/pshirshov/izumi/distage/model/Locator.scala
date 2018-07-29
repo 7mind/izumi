@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.model
 
+import java.util.concurrent.atomic.AtomicReference
+
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -34,6 +36,10 @@ trait Locator {
 }
 
 object Locator {
+  class LocatorRef() {
+    protected[distage] val ref: AtomicReference[Locator] = new AtomicReference[Locator]()
+    def get: Locator = ref.get()
+  }
 
   implicit final class LocatorExt(private val locator: Locator) extends AnyVal {
     def extend(extensions: LocatorExtension*): Locator =

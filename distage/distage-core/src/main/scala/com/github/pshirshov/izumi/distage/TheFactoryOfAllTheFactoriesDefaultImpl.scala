@@ -9,7 +9,8 @@ class TheFactoryOfAllTheFactoriesDefaultImpl(
                                             ) extends TheFactoryOfAllTheFactories {
   override def produce(finalPlan: OrderedPlan, parentContext: Locator): Locator = {
     val dependencyMap = provisioner.provision(finalPlan, parentContext)
-
-    new LocatorDefaultImpl(finalPlan, Option(parentContext), dependencyMap)
+    val locator = new LocatorDefaultImpl(finalPlan, Option(parentContext), dependencyMap)
+    locator.get[Locator.LocatorRef].ref.set(locator)
+    locator
   }
 }

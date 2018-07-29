@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.Fixtures.{BasicCase1, SetCase1, BasicCase2, BasicCase3}
+import com.github.pshirshov.izumi.distage.Fixtures.{BasicCase1, BasicCase2, BasicCase3, SetCase1}
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
@@ -19,6 +19,7 @@ class BasicTest extends WordSpec with MkInjector {
       make[TestDependency0].from[TestImpl0]
       make[TestDependency1]
       make[TestCaseClass]
+      make[LocatorDependent]
       make[TestInstanceBinding].from(TestInstanceBinding())
     }
 
@@ -35,7 +36,8 @@ class BasicTest extends WordSpec with MkInjector {
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}
     }
-    injector.produce(fixedPlan)
+    val locator = injector.produce(fixedPlan)
+    assert(locator.get[LocatorDependent].ref.get == locator)
   }
 
   "support multiple bindings" in {
