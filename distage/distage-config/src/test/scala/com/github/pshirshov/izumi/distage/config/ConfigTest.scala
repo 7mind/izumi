@@ -10,10 +10,22 @@ import scala.collection.immutable.ListSet
 import scala.collection.mutable
 
 class ConfigTest extends WordSpec {
+  def mkModule(): ConfigModule = {
+    mkModule(ConfigFactory.load())
+  }
+
+  def mkModule(path: String): ConfigModule = {
+    mkModule(ConfigFactory.load(path))
+  }
+
+  def mkModule(config: Config): ConfigModule = {
+    val appConfig = AppConfig(config)
+    new ConfigModule(appConfig, ConfigInjectorConfig(enableScalars = true))
+  }
+
   "Config resolver" should {
     "resolve config references" in {
-      val config = AppConfig(ConfigFactory.load())
-      val injector = Injector(new ConfigModule(config))
+      val injector = Injector(mkModule())
       val plan = injector.plan(TestConfigApp.definition)
 
       val context = injector.produce(plan)
@@ -33,8 +45,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config references in set elements" in {
-      val config = AppConfig(ConfigFactory.load())
-      val injector = Injector(new ConfigModule(config))
+      val injector = Injector(mkModule())
       val plan = injector.plan(TestConfigApp.setDefinition)
 
       val context = injector.produce(plan)
@@ -55,8 +66,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config lists" in {
-      val config = AppConfig(ConfigFactory.load("list-test.conf"))
-      val injector = Injector(new ConfigModule(config))
+      val injector = Injector(mkModule("list-test.conf"))
       val plan = injector.plan(TestConfigReaders.listDefinition)
 
       val context = injector.produce(plan)
@@ -73,8 +83,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config options" in {
-      val config = AppConfig(ConfigFactory.load("opt-test.conf"))
-      val injector = Injector(new ConfigModule(config))
+      val injector = Injector(mkModule("opt-test.conf"))
       val plan = injector.plan(TestConfigReaders.optDefinition)
 
       val context = injector.produce(plan)
@@ -85,8 +94,7 @@ class ConfigTest extends WordSpec {
     "Inject config works for trait methods" in {
       import ConfigFixtures._
 
-      val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
-      val injector = Injector(new ConfigModule(config))
+      val injector = Injector(mkModule("fixtures-test.conf"))
 
       val definition = new ModuleDef {
         make[TestDependency]
@@ -103,8 +111,7 @@ class ConfigTest extends WordSpec {
     "Inject config works for concrete and abstract factory products and factory methods" in {
       import ConfigFixtures._
 
-      val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
-      val injector = Injector(new ConfigModule(config))
+      val injector = Injector(mkModule("fixtures-test.conf"))
 
       val definition = new ModuleDef {
         make[TestDependency]

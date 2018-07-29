@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 
-case class ConfigInjectorConfig(enableScalars: Boolean = true)
+case class ConfigInjectorConfig(enableScalars: Boolean = false)
 
 class ConfigModule(config: AppConfig, configInjectorConfig: ConfigInjectorConfig = ConfigInjectorConfig()) extends ModuleDef {
   make[ConfigInjectorConfig].from(configInjectorConfig)
