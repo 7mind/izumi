@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
-import com.github.pshirshov.izumi.distage.Fixtures.FactoryCase1
+import com.github.pshirshov.izumi.distage.fixtures.FactoryCases.FactoryCase1
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import distage.ModuleBase
 import org.scalatest.WordSpec

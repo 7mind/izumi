@@ -10,14 +10,11 @@ class TypeLevelDSLTest extends WordSpec {
 
   "Type-level DSL" should {
     "allow to define contexts" in {
+      import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1._
 
-      assertCompiles("""
-        import com.github.pshirshov.izumi.distage.Fixtures.BasicCase1._
-
-        TypeLevelDSL.Bindings()
-          .bind[TestClass]
-          .bind[TestDependency0, TestImpl0]
-      """)
+      TypeLevelDSL.Bindings()
+        .bind[TestClass]
+        .bind[TestDependency0, TestImpl0]
     }
 
     "can reflect back from types" in {

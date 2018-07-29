@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.fixtures.ProviderCases.ProviderCase1
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u.TypeTag
 import distage._
@@ -8,7 +9,7 @@ import org.scalatest.WordSpec
 import scala.language.higherKinds
 
 class ProviderMagnetTest extends WordSpec {
-  import com.github.pshirshov.izumi.distage.Fixtures.ProviderCase1._
+  import ProviderCase1._
 
   def priv(@Id("locargann") x: Int): Unit = {val _ = x}
 

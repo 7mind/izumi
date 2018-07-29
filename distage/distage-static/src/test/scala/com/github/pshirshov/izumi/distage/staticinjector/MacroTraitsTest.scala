@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
-import com.github.pshirshov.izumi.distage.Fixtures.{TraitCase4, TraitCase5, TraitCase1, TraitCase2}
+import com.github.pshirshov.izumi.distage.fixtures.TraitCases.{TraitCase1, TraitCase2, TraitCase4, TraitCase5}
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._

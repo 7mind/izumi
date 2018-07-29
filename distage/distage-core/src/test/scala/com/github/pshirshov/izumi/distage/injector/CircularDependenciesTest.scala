@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.fixtures.CircularCases._
 import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher

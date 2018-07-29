@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
 import distage.{ModuleBase, ModuleDef}
 import org.scalatest.WordSpec

@@ -1,10 +1,9 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.Fixtures.{TypesCase1, ProviderCase1, TraitCase2}
+import com.github.pshirshov.izumi.distage.fixtures.TraitCases._
+import com.github.pshirshov.izumi.distage.fixtures.TypesCases._
 import distage.{Id, ModuleBase, ModuleDef}
 import org.scalatest.WordSpec
-
-import scala.util.Try
 
 class AdvancedTypesTest extends WordSpec with MkInjector {
 
@@ -76,66 +75,4 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     assert(instantiated eq instantiated1)
   }
 
-  "progression test: cglib can't handle class local path-dependent injections (macros can)" in {
-    val fail = Try {
-      val definition = new ModuleDef {
-        make[TopLevelPathDepTest.TestClass]
-        make[TopLevelPathDepTest.TestDependency]
-      }
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produce(plan)
-
-      assert(context.get[TopLevelPathDepTest.TestClass].a != null)
-    }.isFailure
-    assert(fail)
-  }
-
-  "progression test: cglib can't handle inner path-dependent injections (macros can)" in {
-    val fail = Try {
-      new InnerPathDepTest().testCase
-    }.isFailure
-    assert(fail)
-  }
-
-  "progression test: cglib can't handle function local path-dependent injections" in {
-    val fail = Try {
-      import ProviderCase1._
-
-      val testProviderModule = new TestProviderModule
-
-      val definition = new ModuleDef {
-        make[testProviderModule.TestClass]
-        make[testProviderModule.TestDependency]
-      }
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produce(plan)
-
-      assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
-    }.isFailure
-    assert(fail)
-  }
-
-  class InnerPathDepTest extends ProviderCase1.TestProviderModule {
-    private val definition = new ModuleDef {
-      make[TestClass]
-      make[TestDependency]
-    }
-
-    def testCase = {
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produce(plan)
-
-      assert(context.get[TestClass].a != null)
-    }
-  }
-
-  object TopLevelPathDepTest extends ProviderCase1.TestProviderModule
 }
