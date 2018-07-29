@@ -41,6 +41,7 @@ object ConvertersExtension extends ScalaTranslatorExtension {
         q"""
              implicit object $name extends ${ctx.rt.Cast.parameterize(List(thisType.typeFull, targetType.typeFull)).init()} {
                override def convert(_value: ${thisType.typeFull}): ${targetType.typeFull} = {
+                  assert(_value != null)
                   ${targetType.termFull}(..$code)
                }
              }

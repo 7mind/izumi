@@ -28,6 +28,7 @@ object IfaceConstructorsExtension extends ScalaTranslatorExtension {
              implicit object $name extends ${ctx.rt.Extend.parameterize(List(thisType.typeFull, targetType.typeFull)).init()} {
                class Call(private val _value: ${thisType.typeFull}) extends AnyVal {
                   def using(..${constructorSignature.params}): ${targetType.typeFull} = {
+                    assert(_value != null)
                     ..${constructorSignature.assertion}
                     ${targetImplType.termFull}(..$constructorCode)
                   }

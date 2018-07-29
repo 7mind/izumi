@@ -36,6 +36,7 @@ object IfaceNarrowersExtension extends ScalaTranslatorExtension {
           q"""
              implicit object $name extends ${ctx.rt.Cast.parameterize(List(thisType.typeFull, parentType.typeFull)).init()} {
                override def convert(_value: ${thisType.typeFull}): ${parentType.typeFull} = {
+                 assert(_value != null)
                  ${parentImplType.termFull}(..$constructorCode)
                }
              }
