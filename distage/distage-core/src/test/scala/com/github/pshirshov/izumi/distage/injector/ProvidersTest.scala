@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.Fixtures.{ProviderCase3, ProviderCase2}
+import com.github.pshirshov.izumi.distage.fixtures.ProviderCases.{ProviderCase3, ProviderCase2}
 import distage.{Id, ModuleDef}
 import org.scalatest.WordSpec
 

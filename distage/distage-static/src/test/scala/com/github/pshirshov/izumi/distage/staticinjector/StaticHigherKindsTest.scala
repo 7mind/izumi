@@ -1,54 +1,14 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
-import com.github.pshirshov.izumi.distage.Fixtures.{ProviderCase1, HigherKindsCase1}
+import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase1
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import distage.{Id, TagK}
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
-import scala.util.Try
 
-class StaticAdvancedTypesTest extends WordSpec with MkInjector {
-
-  "macros can handle class local path-dependent injections" in {
-    val definition = new StaticModuleDef {
-      stat[TopLevelPathDepTest.TestClass]
-      stat[TopLevelPathDepTest.TestDependency]
-    }
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-
-    val context = injector.produce(plan)
-
-    assert(context.get[TopLevelPathDepTest.TestClass].a != null)
-  }
-
-  "macros can handle inner path-dependent injections" in {
-    new InnerPathDepTest().testCase
-  }
-
-  "progression test: macros can't handle function local path-dependent injections" in {
-    val fail = Try {
-      import ProviderCase1._
-
-      val testProviderModule = new TestProviderModule
-
-      val definition = new StaticModuleDef {
-        stat[testProviderModule.TestClass]
-        stat[testProviderModule.TestDependency]
-      }
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produce(plan)
-
-      assert(context.get[testProviderModule.TestClass].a != null)
-    }.isFailure
-    assert(fail)
-  }
+class StaticHigherKindsTest extends WordSpec with MkInjector {
 
   "macros support tagless final style module definitions" in {
     import HigherKindsCase1._
@@ -104,22 +64,5 @@ class StaticAdvancedTypesTest extends WordSpec with MkInjector {
     assert(idContext.get[id[String]] == "Hello 5!")
   }
 
-  class InnerPathDepTest extends ProviderCase1.TestProviderModule {
-    private val definition = new StaticModuleDef {
-      stat[TestClass]
-      stat[TestDependency]
-    }
-
-    def testCase = {
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produce(plan)
-
-      assert(context.get[TestClass].a != null)
-    }
-  }
-
-  object TopLevelPathDepTest extends ProviderCase1.TestProviderModule
 
 }

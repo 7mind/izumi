@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.Fixtures.{TraitCase4, TraitCase5, TraitCase3}
+import com.github.pshirshov.izumi.distage.fixtures.TraitCases._
 import distage.{ModuleBase, ModuleDef}
 import org.scalatest.WordSpec
 

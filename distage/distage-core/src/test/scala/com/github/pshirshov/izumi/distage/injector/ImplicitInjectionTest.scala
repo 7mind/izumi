@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.Fixtures.{ImplicitCase1, ImplicitCase2}
+import com.github.pshirshov.izumi.distage.fixtures.ImplicitCases.{ImplicitCase1, ImplicitCase2}
 import distage.{ModuleBase, ModuleDef}
 import org.scalatest.WordSpec
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard

@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.Fixtures.BasicCase1.TestCaseClass
-import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1
 import com.github.pshirshov.izumi.distage.model.definition.LocatorDef
 import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
 import org.scalatest.WordSpec
@@ -36,6 +35,8 @@ class LocatorDefTest extends WordSpec {
     }
 
     "die on undefined instance" in {
+      import BasicCase1._
+
       val ctx = new LocatorDef {
         make[TestCaseClass]
       }

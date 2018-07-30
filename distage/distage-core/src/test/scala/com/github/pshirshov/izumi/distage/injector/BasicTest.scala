@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.Fixtures.{BasicCase1, BasicCase2, BasicCase3, SetCase1}
+import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
+import com.github.pshirshov.izumi.distage.fixtures.SetCases._
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
@@ -9,7 +10,6 @@ import distage.{DIKey, ModuleBase, ModuleDef, SafeType}
 import org.scalatest.WordSpec
 
 class BasicTest extends WordSpec with MkInjector {
-
 
   "maintain correct operation order" in {
     import BasicCase1._
@@ -41,7 +41,7 @@ class BasicTest extends WordSpec with MkInjector {
   }
 
   "support multiple bindings" in {
-    import BasicCase1._
+    import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1._
     val definition: ModuleBase = new ModuleDef {
       many[JustTrait].named("named.empty.set")
 
