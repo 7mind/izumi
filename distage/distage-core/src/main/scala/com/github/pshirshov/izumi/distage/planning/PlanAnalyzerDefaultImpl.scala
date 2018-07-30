@@ -28,13 +28,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   def requirements(op: ExecutableOp): Set[DIKey] = {
     op match {
       case w: WiringOp =>
-        w.wiring match {
-          case r: Wiring.UnaryWiring.Reference =>
-            Set(r.key)
-
-          case o =>
-            o.associations.map(_.wireWith).toSet
-        }
+        w.wiring.requiredKeys
 
       case c: CreateSet =>
         c.members

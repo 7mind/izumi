@@ -28,7 +28,7 @@ object TracingDIGC extends DIGarbageCollector {
 
     val newDeps = depsToTrace.map(ops.apply).flatMap {
       case w: WiringOp =>
-        w.wiring.associations.map(_.wireWith)
+        w.wiring.requiredKeys
       case c: CreateSet =>
         c.members
       case p: InitProxy =>

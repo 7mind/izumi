@@ -32,8 +32,14 @@ trait Conflict {}
 class ConflictA extends Conflict {}
 class ConflictB extends Conflict {}
 
+trait SetEl
+class SetEl1 extends SetEl
+
 class TestPlugin extends PluginDef {
   make[TestApp]
+
+  make[SetEl1]
+  many[SetEl].ref[SetEl1]
 
   make[DisabledByGc]
 

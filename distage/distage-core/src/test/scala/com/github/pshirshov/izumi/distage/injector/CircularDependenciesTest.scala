@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.CircularCases._
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher
@@ -146,9 +147,9 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val context = injector.produce(plan)
 
     val planTypes: Seq[SafeType] = plan.steps.collect { case i: InstantiationOp => i }.map(_.target.tpe)
+    val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
     val instanceTypes: Seq[SafeType] = context.instances.map(_.key.tpe)
-      .filter(_ != SafeType.get[ProxyDispatcher]) // remove artifacts of proxy generation
-      .filter(_ != SafeType.get[Locator.LocatorRef]) // remove Locator reference
+      .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
 
     assert(instanceTypes == planTypes)
 
