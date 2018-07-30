@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package com.github.pshirshov.izumi.idealingua.il.parser.model
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._

@@ -28,7 +28,7 @@ object TracingDIGC extends DIGarbageCollector {
                 (k, op.wiring)
             }
             .filter {
-              case (k, r: Wiring.UnaryWiring.Reference) =>
+              case (_, r: Wiring.UnaryWiring.Reference) =>
                 !r.weak || toLeave.contains(r.key)
               case _ => true
             }

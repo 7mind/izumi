@@ -2,10 +2,16 @@ package izumi.test.domain02
 
 import izumi.test.domain01
 
+import izumi.test.domain01.{
+    RTestEnum
+    TestValIdentifier as TVI
+}
+
 include "model01.model"
 include "model02.model"
 
-alias RTestEnum = izumi.test.domain01#RTestEnum
+alias RTestEnumIndirect = izumi.test.domain01#RTestEnum
+alias RTestEnumDirect = RTestEnum
 
 mixin TestInterface1 {
   if1Field_overriden: i32
@@ -14,6 +20,7 @@ mixin TestInterface1 {
   sameEverywhereField: i64
 
   fromOtherDomain: izumi.test.domain01#TestValIdentifier
+  fromOtherDomainDirect: TVI
 }
 
 mixin TestInterface2 {

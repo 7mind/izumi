@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.DomainDefinitionParsed
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILImport
 
 protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], domain: ParsedDomain, domains: Map[DomainId, ParsedDomain], models: Map[Path, ParsedModel]) {
 
@@ -26,7 +27,7 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
         p =>
           domainResolver(p.id) match {
             case Some(d) =>
-              d.did.id -> new LocalDomainProcessor(root, classpath, d, domains, models).postprocess()
+              d.did -> new LocalDomainProcessor(root, classpath, d, domains, models).postprocess()
 
             case None =>
               throw new IDLException(s"Can't find reference $p in classpath nor filesystem while operating within $root")
@@ -34,11 +35,16 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
       }
       .toMap
 
+    val importOps = domain.imports.flatMap {
+      i =>
+        i.identifiers.map(ILImport(i.id, _))
+    }
+
     val allIncludes = domain.model.includes
       .map(loadModel(modelResolver, _))
       .fold(LoadedModel(domain.model.definitions))(_ ++ _)
 
-    raw.DomainDefinitionParsed(domain.did.id, allIncludes.definitions, imports)
+    raw.DomainDefinitionParsed(domain.did, allIncludes.definitions ++ importOps, imports)
   }
 
   private def loadModel(modelResolver: Path => Option[ParsedModel], toInclude: String): LoadedModel = {
@@ -92,7 +98,7 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
   }
 
   private def resolveFromCP(incPath: Path, prefix: Option[String]): Option[String] = {
-    val allCandidates = (Seq(root, root.resolve(toPath(domain.did.id)).getParent).map(_.toFile) ++ classpath)
+    val allCandidates = (Seq(root, root.resolve(toPath(domain.did)).getParent).map(_.toFile) ++ classpath)
       .filter(_.isDirectory)
       .flatMap {
         directory =>

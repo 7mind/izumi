@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, ParsedDomain, ParsedModel}
+import com.github.pshirshov.izumi.idealingua.il.parser.model._
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.Service._
@@ -148,10 +148,16 @@ class ILParser {
         RawAdtMember(tpe.toTypeId, alias)
     }
 
+    final val importMember = P(ids.symbol ~ (inline ~ "as" ~/ inline ~ ids.symbol).?).map {
+      case (tpe, alias) =>
+        ImportedId(tpe, alias)
+    }
+
     final def adt(sep: Parser[Unit]): Parser[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
       .map(_.toList).map(AlgebraicType)
 
     final def enum(sep: Parser[Unit]): Parser[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
+    final def imports(sep: Parser[Unit]): Parser[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
   }
 
   object structure {
@@ -253,9 +259,18 @@ class ILParser {
 
   object domains {
     final val domainId = P(ids.pkgIdentifier)
-      .map(v => ILDomainId(DomainId(v.init, v.last)))
+      .map(v => DomainId(v.init, v.last))
     final val domainBlock = P(kw.domain ~/ domainId)
-    final val importBlock = kw(kw.`import`, domainId)
+
+    final val importBlock = kw(kw.`import`, domainId ~ ("." ~ inline ~ structure.enclosed(defs.imports(sep.sepStruct))).?).map {
+      case (id, names) =>
+        names match {
+          case Some(nn) =>
+            Import(id, nn.toSet)
+          case None =>
+            Import(id, Set.empty)
+        }
+    }
   }
 
   final val modelDef = P(any ~ blocks.anyBlock.rep(sep = any) ~ any ~ End).map {

@@ -2,12 +2,13 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast
 
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, _}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILDef, ILNewtype, ILService}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILDef, ILImport, ILNewtype, ILService}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionInterpreted, DomainDefinitionParsed, IdentifiedRawTypeDef, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.IdField
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.reflect._
 
@@ -25,12 +26,36 @@ class IDLPretyper(defn: DomainDefinitionParsed) {
       case d: ILNewtype => d.v
     }
     val services = defn.types.collect({ case d: ILService => d.v })
-    DomainDefinitionInterpreted(defn.id, types, services, defn.referenced.mapValues(r => new IDLPretyper(r).perform()))
+    val imports = defn.types.collect({ case d: ILImport => d })
+
+    val allImportNames = imports.map(_.id.importedName)
+    val allTypeNames = defn.types.collect {
+      case d: ILDef => d.v.id.name
+      case d: ILNewtype => d.v.id.name
+    }
+
+    val clashes = allImportNames.intersect(allTypeNames)
+    if (clashes.nonEmpty) {
+      throw new IDLException(s"[${defn.id}] Import names clashing with domain names: ${clashes.niceList()}")
+    }
+
+    DomainDefinitionInterpreted(defn.id, types, services, imports, defn.referenced.mapValues(r => new IDLPretyper(r).perform()))
   }
 }
 
 class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   final val domainId: DomainId = defn.id
+
+  protected def refs: Map[DomainId, IDLPostTyper] = defn.referenced.map(d => d._1 -> new IDLPostTyper(d._2))
+
+  protected val imported: Map[IndefiniteId, TypeId] = defn.imports
+    .map {
+      i =>
+        val importedId = common.IndefiniteId(domainId.toPackage, i.id.importedName)
+        val originalId = common.IndefiniteId(i.domain.toPackage, i.id.name)
+        toIndefinite(importedId) -> refs(i.domain).makeDefinite(originalId)
+    }
+    .toMap
 
   protected val mapping: Map[IndefiniteId, TypeId] = {
     defn.types
@@ -38,7 +63,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
         case d: IdentifiedRawTypeDef =>
           toIndefinite(d.id) -> transformSimpleId[TypeId, TypeId](d.id)
       }
-      .toMap
+      .toMap ++ imported
   }
 
   protected val index: Map[IndefiniteId, RawTypeDef] = {
@@ -53,8 +78,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   def perform(): typed.DomainDefinition = {
     val mappedTypes = defn.types.map(fixType)
     val mappedServices = defn.services.map(fixService)
-    val ref = defn.referenced.map(d => d._1 -> new IDLPostTyper(d._2).perform())
-    typed.DomainDefinition(id = domainId, types = mappedTypes, services = mappedServices, referenced = ref)
+    typed.DomainDefinition(id = domainId, types = mappedTypes, services = mappedServices, referenced = refs.mapValues(_.perform()))
   }
 
   protected def fixType(defn: RawTypeDef): typed.TypeDef = {
@@ -201,18 +225,19 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
         toGeneric(g)
 
       case v if contains(v) =>
-        mapping.get(toIndefinite(v)) match {
+        val idefinite = toIndefinite(v)
+        mapping.get(idefinite) match {
           case Some(t) =>
             t
           case None =>
-            throw new IDLException(s"[$domainId] Type $id is missing from domain")
+            throw new IDLException(s"[$domainId] Type $idefinite is missing from domain, tried $idefinite")
         }
 
       case v if !contains(v) =>
         val referencedDomain = domainId(v.pkg)
-        defn.referenced.get(referencedDomain) match {
-          case Some(d) =>
-            new IDLPostTyper(d).makeDefinite(v)
+        refs.get(referencedDomain) match {
+          case Some(typer) =>
+            typer.makeDefinite(v)
           case None =>
             throw new IDLException(s"[$domainId] Domain $referencedDomain is missing from context: ${defn.referenced.keySet.mkString("\n  ")}")
         }
@@ -357,7 +382,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
           throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: expected to find $idType or an alias but got $o")
       }
     } else {
-      new IDLPostTyper(defn.referenced(domainId(out.path.toPackage))).fixSimpleId(out)
+      refs(domainId(out.path.toPackage)).fixSimpleId(out)
     }
   }
 
