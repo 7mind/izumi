@@ -9,7 +9,7 @@ object ImplDef {
     def implType: RuntimeDIUniverse.SafeType
   }
 
-  final case class ReferenceImpl(implType: RuntimeDIUniverse.SafeType, key: RuntimeDIUniverse.DIKey) extends WithImplType
+  final case class ReferenceImpl(implType: RuntimeDIUniverse.SafeType, key: RuntimeDIUniverse.DIKey, weak: Boolean) extends WithImplType
 
   final case class TypeImpl(implType: RuntimeDIUniverse.SafeType) extends WithImplType
 

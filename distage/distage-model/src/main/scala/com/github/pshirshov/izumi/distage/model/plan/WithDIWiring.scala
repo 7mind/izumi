@@ -42,7 +42,7 @@ trait WithDIWiring {
         override def associations: Seq[Association] = Seq.empty
       }
 
-      case class Reference(instanceType: SafeType, key: DIKey) extends UnaryWiring {
+      case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends UnaryWiring {
         override def associations: Seq[Association] = Seq.empty
 
         override def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)

@@ -373,20 +373,26 @@ object ModuleDef {
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
     final def using[I <: T : Tag]: AfterBind =
-      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I]))
+      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
     final def using[I <: T : Tag](name: String): AfterBind =
-      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name)))
+      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
 
     protected def bind(impl: ImplDef): AfterBind
   }
 
   trait SetDSLBase[T, AfterAdd] {
     final def ref[I <: T : Tag]: AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I]))
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
     final def ref[I <: T : Tag](name: String): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name)))
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
+
+    final def weak[I <: T : Tag]: AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true))
+
+    final def weak[I <: T : Tag](name: String): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true))
 
     final def add[I <: T : Tag]: AfterAdd =
       appendElement(ImplDef.TypeImpl(SafeType.get[I]))

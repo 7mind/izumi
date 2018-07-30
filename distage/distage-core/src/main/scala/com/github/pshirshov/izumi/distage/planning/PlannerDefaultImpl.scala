@@ -144,7 +144,7 @@ class PlannerDefaultImpl
       case i: ImplDef.InstanceImpl =>
         UnaryWiring.Instance(i.implType, i.instance)
       case r: ImplDef.ReferenceImpl =>
-        UnaryWiring.Reference(r.implType, r.key)
+        UnaryWiring.Reference(r.implType, r.key, r.weak)
     }
   }
 
