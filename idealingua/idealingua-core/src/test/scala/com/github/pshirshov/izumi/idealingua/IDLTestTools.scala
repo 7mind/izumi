@@ -93,35 +93,6 @@ object IDLTestTools {
 
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, true, if (scoped) Some(manifest) else None))
 
-    //    if (scoped) {
-    //      val transformer =
-    //      s"""SCOPE=${manifest.scope}
-    //         |
-    //         |echo "Packages found:"
-    //         |find . -name package.json -print0 | xargs -0 -n1 dirname | tr -d . | tr / - | sed 's/-//' | sort --unique
-    //         |
-    //         |rm -rf $$SCOPE
-    //         |mkdir -p $$SCOPE
-    //         |echo
-    //         |echo "Transforming packages into modules structure:"
-    //         |for F in $$(find . -name package.json); do
-    //         |    SRC=$$(dirname $$F)
-    //         |    DST=$$(echo $$SRC| tr -d . | tr / - | sed 's/-//')
-    //         |    DST="$${SCOPE}/$${DST}"
-    //         |    echo "Coping from $$SRC into $$DST"
-    //         |    cp -r $$SRC $$DST
-    //         |    rm -rf $$SRC
-    //         |done
-    //       """.stripMargin
-    //
-    //      val transformPath = out.targetDir.resolve("transform.sh")
-    //      Files.write(transformPath, transformer.getBytes)
-    //      val transformCmd = Seq("sh", "transform.sh")
-    //      if (run(out.absoluteTargetDir, transformCmd, Map.empty, "sh") != 0) {
-    //        return false
-    //      }
-    //    }
-
     val outputTspackagePath = out.targetDir.resolve("package.json")
     Files.write(outputTspackagePath, TypeScriptBuildManifest.generatePackage(manifest, "index", "TestPackage", List.empty).getBytes)
     val npmCmd = Seq("npm", "install")

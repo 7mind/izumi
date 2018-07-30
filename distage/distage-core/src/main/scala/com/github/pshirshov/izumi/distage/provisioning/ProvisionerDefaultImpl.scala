@@ -11,6 +11,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
+
+
 // TODO: add introspection capabilities
 class ProvisionerDefaultImpl
 (
@@ -29,6 +31,8 @@ class ProvisionerDefaultImpl
     val excluded = mutable.Set[DIKey]()
 
     val provisioingContext = ProvisionActive()
+    provisioingContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
+
     val failures = new mutable.HashMap[DIKey, mutable.Set[Throwable]] with mutable.MultiMap[DIKey, Throwable]
 
     plan.steps.foreach {

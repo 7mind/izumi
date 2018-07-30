@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.CSharpBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.CSharpTranslatorOptions
@@ -30,12 +29,6 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   import ctx._
 
   def translate(): Seq[Module] = {
-    val manifest = options.manifest
-    implicit val csManifest: Option[CSharpBuildManifest] = if (manifest.isDefined)
-      Some(manifest.get)
-    else
-      None
-
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)

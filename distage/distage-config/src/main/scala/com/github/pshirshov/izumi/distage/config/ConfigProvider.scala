@@ -9,11 +9,12 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependen
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.typesafe.config.{ConfigException, ConfigObject}
 
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends PlanningHook {
+class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorConfig: ConfigInjectorConfig) extends PlanningHook {
 
   import ConfigProvider._
 
@@ -46,24 +47,43 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
   }
 
   private def translate(op: ExecutableOp, step: RequiredConfigEntry): TranslationResult = {
-    val results = step.paths.map(p => Try((p.toPath, config.config.getConfig(p.toPath))))
-    val loaded = results.collect({ case scala.util.Success(value) => value })
-
-    if (loaded.isEmpty) {
-      return TranslationResult.MissingConfigValue(op, step.paths)
+    val results = step.paths.map {
+      p =>
+        (p, Try(config.config.getValue(p.toPath)))
     }
 
-    val section = loaded.head
-    try {
-      val product = reader.readConfig(section._2, step.targetType)
-      TranslationResult.Success(ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product), op.origin))
-    } catch {
-      case NonFatal(t) =>
-        TranslationResult.ExtractionFailure(op, step.targetType, section._1, section._2, t)
+    val loaded = results.collect({ case (path, scala.util.Success(value)) => (path, value) })
+
+    if (loaded.isEmpty) {
+
+    }
+
+    loaded.headOption match {
+      case Some((loadedPath, loadedValue)) =>
+        try {
+          val product = loadedValue match {
+            case obj: ConfigObject =>
+              reader.readConfig(obj.toConfig, step.targetType)
+            case o if injectorConfig.enableScalars =>
+              reader.readValue(o, step.targetType)
+            case o =>
+              throw new ConfigException.WrongType(o.origin(), loadedPath.toPath, "Object", o.valueType().toString)
+          }
+
+
+          TranslationResult.Success(ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product), op.origin))
+        } catch {
+          case NonFatal(t) =>
+            TranslationResult.ExtractionFailure(op, step.targetType, loadedPath.toPath, loadedValue, t)
+        }
+
+      case None =>
+        val failures = results.collect({ case (path, scala.util.Failure(f)) => (path, f) })
+        TranslationResult.MissingConfigValue(op, failures)
     }
   }
 
-  implicit class TypeExt(t: TypeFull) {
+  implicit class TypeExt(t: SafeType) {
     def name: String = t.tpe.typeSymbol.asClass.fullName
   }
 
@@ -167,7 +187,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader) extends Pla
 
 object ConfigProvider {
 
-  private case class RequiredConfigEntry(paths: Seq[ConfigPath], targetType: TypeFull, target: DIKey) {
+  private case class RequiredConfigEntry(paths: Seq[ConfigPath], targetType: SafeType, target: DIKey) {
     override def toString: String = {
       val allPaths = paths.map(_.toPath).mkString("\n  ")
 

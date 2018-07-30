@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMetho
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.GoTranslatorOptions

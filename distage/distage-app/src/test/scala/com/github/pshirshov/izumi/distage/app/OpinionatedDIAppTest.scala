@@ -60,6 +60,8 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
             RuntimeDIUniverse.DIKey.get[DisabledByImpl],
             RuntimeDIUniverse.DIKey.get[DisabledByTag],
             RuntimeDIUniverse.DIKey.get[WithGoodTag],
+            RuntimeDIUniverse.DIKey.get[Set[SetEl]],
+            RuntimeDIUniverse.DIKey.get[WeakSetDep],
           ))
         )
       }
@@ -123,6 +125,10 @@ class OpinionatedDIAppTest extends WordSpec {
 
           assert(context.get[TestApp].config.value == "test")
           assert(context.get[TestApp].setTest.size == 1)
+
+          val dep = context.get[WeakSetDep]
+          assert(dep.s1.size == 1)
+          assert(dep.s1.contains(dep.g1))
 
           ()
       })

@@ -32,10 +32,29 @@ trait Conflict {}
 class ConflictA extends Conflict {}
 class ConflictB extends Conflict {}
 
+trait SetEl
+class SetEl1 extends SetEl
+
+trait WeakSetTest
+class WeakSetGood extends WeakSetTest
+class WeakSetBad extends WeakSetTest
+
+case class WeakSetDep(s1: Set[WeakSetTest], g1: WeakSetGood)
+
 class TestPlugin extends PluginDef {
   make[TestApp]
 
+  make[SetEl1]
+  many[SetEl].ref[SetEl1]
+
   make[DisabledByGc]
+
+  make[WeakSetDep]
+  make[WeakSetGood]
+  make[WeakSetBad]
+  many[WeakSetTest]
+      .weak[WeakSetGood]
+      .weak[WeakSetBad]
 
   make[DisabledByTag].tagged("badtag")
   make[WithGoodTag].tagged("goodtag")

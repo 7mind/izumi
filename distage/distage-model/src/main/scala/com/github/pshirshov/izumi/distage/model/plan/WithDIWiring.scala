@@ -15,12 +15,13 @@ trait WithDIWiring {
 
   sealed trait Wiring {
     def associations: Seq[Association]
+    def requiredKeys: Set[DIKey] = associations.map(_.wireWith).toSet
   }
 
   object Wiring {
 
     sealed trait UnaryWiring extends Wiring {
-      def instanceType: TypeFull
+      def instanceType: SafeType
 
       def associations: Seq[Association]
     }
@@ -29,24 +30,26 @@ trait WithDIWiring {
 
       sealed trait ProductWiring extends UnaryWiring
 
-      case class Constructor(instanceType: TypeFull, associations: Seq[Association.Parameter]) extends ProductWiring
+      case class Constructor(instanceType: SafeType, associations: Seq[Association.Parameter]) extends ProductWiring
 
-      case class AbstractSymbol(instanceType: TypeFull, associations: Seq[Association.AbstractMethod]) extends ProductWiring
+      case class AbstractSymbol(instanceType: SafeType, associations: Seq[Association.AbstractMethod]) extends ProductWiring
 
       case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends UnaryWiring {
-        override def instanceType: TypeFull = provider.ret
+        override def instanceType: SafeType = provider.ret
       }
 
-      case class Instance(instanceType: TypeFull, instance: Any) extends UnaryWiring {
+      case class Instance(instanceType: SafeType, instance: Any) extends UnaryWiring {
         override def associations: Seq[Association] = Seq.empty
       }
 
-      case class Reference(instanceType: TypeFull, key: DIKey) extends UnaryWiring {
+      case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends UnaryWiring {
         override def associations: Seq[Association] = Seq.empty
+
+        override def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
       }
     }
 
-    case class FactoryMethod(factoryType: TypeFull, factoryMethods: Seq[FactoryMethod.WithContext], fieldDependencies: Seq[Association.AbstractMethod]) extends Wiring {
+    case class FactoryMethod(factoryType: SafeType, factoryMethods: Seq[FactoryMethod.WithContext], fieldDependencies: Seq[Association.AbstractMethod]) extends Wiring {
       /**
         * this method returns product dependencies which aren't present in any signature of factory methods.
         * Though it's a kind of a heuristic that can be spoiled at the time of plan initialization

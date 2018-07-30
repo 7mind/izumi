@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, TypeDef}
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, IDLWithInfo}
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTServiceResult, IRTWithResult, IRTWithResultType}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 
 
 object IDLRuntimeTypes {
@@ -13,6 +13,7 @@ object IDLRuntimeTypes {
   val services: Pkg = Pkg.of[IRTServiceResult[_1Arg]]
 
   private type _1Arg[R] = R
+  private type _0Arg = Nothing
 
   final val generated = model.conv.toScala[IDLGeneratedType]
 
@@ -26,6 +27,9 @@ object IDLRuntimeTypes {
 
   final val WithResult = services.conv.toScala[IRTWithResult[_1Arg]]
   final val WithResultType = services.conv.toScala[IRTWithResultType[_1Arg]]
+  final val Conversions = model.conv.toScala[IRTConversions[_0Arg]]
+  final val Cast = model.conv.toScala[IRTCast[_0Arg, _0Arg]]
+  final val Extend = model.conv.toScala[IRTExtend[_0Arg, _0Arg]]
 
   // introspection
   final val typeId = model.conv.toScala[TypeId]

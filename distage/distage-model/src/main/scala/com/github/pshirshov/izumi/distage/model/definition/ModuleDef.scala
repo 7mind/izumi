@@ -91,9 +91,9 @@ trait ModuleDef extends ModuleBase {
     *     import distage._
     *
     *     object HomeRouteModule extends ModuleDef {
-    *     many[HttpRoutes[IO]].add {
+    *       many[HttpRoutes[IO]].add {
     *         HttpRoutes.of[IO] { case GET -> Root / "home" => Ok(s"Home page!") }
-    *     }
+    *       }
     *     }
     *     ```
     *
@@ -104,24 +104,30 @@ trait ModuleDef extends ModuleBase {
     *     import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.implicits._
     *
     *     object BlogRouteModule extends ModuleDef {
-    *     many[HttpRoutes[IO]].add {
+    *       many[HttpRoutes[IO]].add {
     *         HttpRoutes.of[IO] { case GET -> Root / "blog" / post => Ok("Blog post ``$post''!") }
-    *     }
+    *       }
     *     }
     *
     *     class HttpServer(routes: Set[HttpRoutes[IO]]) {
-    *     def serve = BlazeBuilder[IO]
-    *     .bindHttp(8080, "localhost")
-    *     .mountService(routes.fold[HttpRoutes[IO]], "/")
-    *     .start
+    *       val router = routes.foldK
     *
-    *     val count = routes.size
+    *       def serve = BlazeBuilder[IO]
+    *         .bindHttp(8080, "localhost")
+    *         .mountService(router, "/")
+    *         .start
     *     }
     *
     *     val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
     *     val server = context.get[HttpServer]
     *
-    *     server.count // 2
+    *     val testRouter = server.router.orNotFound
+    *
+    *     testRouter.run(Request[IO](uri = uri("/home"))).flatMap(_.as[String]).unsafeRunSync
+    *     // Home page!
+    *
+    *     testRouter.run(Request[IO](uri = uri("/blog/1"))).flatMap(_.as[String]).unsafeRunSync
+    *     // Blog post ``1''!
     *     ```
     *
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
@@ -367,20 +373,26 @@ object ModuleDef {
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
     final def using[I <: T : Tag]: AfterBind =
-      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I]))
+      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
     final def using[I <: T : Tag](name: String): AfterBind =
-      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name)))
+      bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
 
     protected def bind(impl: ImplDef): AfterBind
   }
 
   trait SetDSLBase[T, AfterAdd] {
     final def ref[I <: T : Tag]: AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I]))
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
     final def ref[I <: T : Tag](name: String): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name)))
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
+
+    final def weak[I <: T : Tag]: AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true))
+
+    final def weak[I <: T : Tag](name: String): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true))
 
     final def add[I <: T : Tag]: AfterAdd =
       appendElement(ImplDef.TypeImpl(SafeType.get[I]))

@@ -9,13 +9,13 @@ trait DependencyKeyProvider {
 
   def associationFromParameter(parameterSymbol: u.SymbolInfo): u.Association.Parameter
 
-  final def associationFromParameter(symb: u.Symb, definingClass: u.TypeFull): u.Association.Parameter = {
+  final def associationFromParameter(symb: u.Symb, definingClass: u.SafeType): u.Association.Parameter = {
     associationFromParameter(u.SymbolInfo(symb, definingClass))
   }
 
   def keyFromMethod(context: u.DependencyContext.MethodContext, methodSymbol: u.SymbolInfo): u.DIKey
 
-  def resultOfFactoryMethod(context: u.DependencyContext.MethodParameterContext): u.TypeFull
+  def resultOfFactoryMethod(context: u.DependencyContext.MethodParameterContext): u.SafeType
 }
 
 object DependencyKeyProvider {

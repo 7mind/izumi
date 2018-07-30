@@ -27,7 +27,7 @@ object ExecutableOp {
   }
 
 
-  final case class CreateSet(target: DIKey, tpe: TypeFull, members: Set[DIKey], origin: Option[Binding]) extends InstantiationOp {
+  final case class CreateSet(target: DIKey, tpe: SafeType, members: Set[DIKey], origin: Option[Binding]) extends InstantiationOp {
     override def format: String = {
       val repr = FormattingUtils.doFormat(tpe.toString, members.map(_.toString).toSeq, "newset", ('[', ']'), ('{', '}')) // f"""$target := newset[$tpe]"""
       val pos = FormattingUtils.formatBindingPosition(origin)

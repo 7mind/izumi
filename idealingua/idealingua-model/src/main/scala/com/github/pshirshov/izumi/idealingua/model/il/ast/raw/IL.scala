@@ -5,9 +5,17 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
 
 object IL {
 
+
+  final case class ImportedId(name: String, as: Option[String]) {
+    def importedName: String = as.getOrElse(name)
+  }
+
+  final case class Import(id: DomainId, identifiers: Set[ImportedId])
+
+
   sealed trait Val
 
-  final case class ILDomainId(id: DomainId) extends Val
+  final case class ILImport(domain: DomainId, id: ImportedId) extends Val
 
   final case class ILInclude(i: String) extends Val
 

@@ -86,7 +86,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     result
   }
 
-  def analyze(tree: c.Tree, ret: TypeFull): ExtractedInfo = tree match {
+  def analyze(tree: c.Tree, ret: SafeType): ExtractedInfo = tree match {
     case Block(List(), inner) =>
       analyze(inner, ret)
     case Function(args, body) =>
@@ -105,10 +105,10 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
       )
   }
 
-  private def association(ret: TypeFull)(p: Symb): Association.Parameter =
+  private def association(ret: SafeType)(p: Symb): Association.Parameter =
     keyProvider.associationFromParameter(SymbolInfo(p, ret))
 
-  def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ret: TypeFull): ExtractedInfo = {
+  def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ret: SafeType): ExtractedInfo = {
     val lambdaKeys: List[Association.Parameter] =
       lambdaArgs.map(association(ret))
 
@@ -147,7 +147,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     ExtractedInfo(keys, isValReference = false)
   }
 
-  def analyzeValRef(valRef: Symbol, ret: TypeFull): ExtractedInfo = {
+  def analyzeValRef(valRef: Symbol, ret: SafeType): ExtractedInfo = {
     val sig = valRef.typeSignature.finalResultType
 
     val associations = sig.typeArgs.init.map(SafeType(_)).map {

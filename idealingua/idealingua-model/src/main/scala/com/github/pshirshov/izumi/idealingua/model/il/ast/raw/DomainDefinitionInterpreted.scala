@@ -14,5 +14,6 @@ final case class DomainDefinitionInterpreted(
                                               id: DomainId
                                               , types: Seq[RawTypeDef]
                                               , services: Seq[raw.Service]
+                                              , imports: Seq[IL.ILImport]
                                               , referenced: Map[DomainId, DomainDefinitionInterpreted]
                                             )

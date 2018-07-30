@@ -36,10 +36,10 @@ class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends Factory
 
       loggerHook.log(s"FactoryExecutor: Executing method $step with ${args.toList} in context $context")
 
-      val productDeps = step.wireWith.associations.map(_.wireWith)
+      val productDeps = step.wireWith.requiredKeys
       loggerHook.log(s"FactoryExecutor: Product dependencies are $productDeps")
 
-      val narrowedContext = context.narrow(productDeps.toSet)
+      val narrowedContext = context.narrow(productDeps)
       loggerHook.log(s"FactoryExecutor: context narrowed to $narrowedContext, requested dependencies were $productDeps")
 
       val argsWithKeys = step.methodArguments.zip(args).toMap

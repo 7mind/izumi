@@ -8,7 +8,7 @@ object Quirks {
     }
   }
 
-  implicit class Discarder[T](t: T) extends AnyRef {
+  implicit final class Discarder[T](private val t: T) extends AnyVal {
     def discard(): Unit = Quirks.discard(t)
   }
 }

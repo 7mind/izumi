@@ -3,9 +3,6 @@ package com.github.pshirshov.izumi.distage.model.reflection.universe
 trait WithDISafeType {
   this: DIUniverseBase with WithDITypeTags =>
 
-  @deprecated("Use distage.SafeType", "23 July 2018")
-  type TypeFull = SafeType
-
   // TODO: hotspots, hashcode on keys is inefficient
   case class SafeType(tpe: TypeNative) {
     private val dealiased: u.Type = {
@@ -46,9 +43,9 @@ trait WithDISafeType {
   }
 
   object SafeType {
-    def get[T: Tag]: TypeFull = SafeType(Tag[T].tag.tpe)
+    def get[T: Tag]: SafeType = SafeType(Tag[T].tag.tpe)
 
-    def unsafeGetWeak[T: WeakTag]: TypeFull = SafeType(WeakTag[T].tag.tpe)
+    def unsafeGetWeak[T: WeakTag]: SafeType = SafeType(WeakTag[T].tag.tpe)
   }
 
 }

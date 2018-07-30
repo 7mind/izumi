@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage
 
-import com.github.pshirshov.izumi.distage.Fixtures._
+import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
+import com.github.pshirshov.izumi.distage.fixtures.SetCases._
 import com.github.pshirshov.izumi.distage.model.definition.{Bindings, SimpleModuleDef}
 import distage._
 import org.scalatest.WordSpec
@@ -9,7 +10,7 @@ class DSLTest extends WordSpec {
 
   "Basic DSL" should {
     "allow to define contexts" in {
-      import Case1._
+      import BasicCase1._
       val definition: ModuleBase = new ModuleDef {
         make[TestClass]
         make[TestDependency0].from[TestImpl0]
@@ -37,7 +38,7 @@ class DSLTest extends WordSpec {
 
   "Module DSL" should {
     "allow to define contexts" in {
-      import Case1._
+      import BasicCase1._
 
       object Module extends ModuleDef {
         make[TestClass]
@@ -51,7 +52,7 @@ class DSLTest extends WordSpec {
     }
 
     "correctly handle sets" in {
-      import Case18._
+      import SetCase1._
 
       val definition = new ModuleDef {
         make[Service2]
@@ -112,7 +113,7 @@ class DSLTest extends WordSpec {
     }
 
     "allow monoidal operations between different types of binding dsls" in {
-      import Case1._
+      import BasicCase1._
 
       val mod1: ModuleBase = new ModuleDef {
         make[TestClass]
@@ -155,7 +156,7 @@ class DSLTest extends WordSpec {
     }
 
     "support allTags in module def" in {
-      import Case1._
+      import BasicCase1._
 
       val definition: ModuleBase = new ModuleDef {
         tag("tag1")

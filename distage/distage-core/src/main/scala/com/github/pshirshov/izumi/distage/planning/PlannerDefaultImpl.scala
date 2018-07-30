@@ -144,11 +144,11 @@ class PlannerDefaultImpl
       case i: ImplDef.InstanceImpl =>
         UnaryWiring.Instance(i.implType, i.instance)
       case r: ImplDef.ReferenceImpl =>
-        UnaryWiring.Reference(r.implType, r.key)
+        UnaryWiring.Reference(r.implType, r.key, r.weak)
     }
   }
 
-  private def setElementKeySymbol(impl: ImplDef): RuntimeDIUniverse.TypeFull = {
+  private def setElementKeySymbol(impl: ImplDef): RuntimeDIUniverse.SafeType = {
     impl match {
       case i: ImplDef.TypeImpl =>
         i.implType
