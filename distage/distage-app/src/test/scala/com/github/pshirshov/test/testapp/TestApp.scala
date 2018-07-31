@@ -38,6 +38,7 @@ class SetEl1 extends SetEl
 trait WeakSetTest
 class WeakSetGood extends WeakSetTest
 class WeakSetBad extends WeakSetTest
+class WeakSetStrong extends WeakSetTest
 
 case class WeakSetDep(s1: Set[WeakSetTest], g1: WeakSetGood)
 
@@ -52,9 +53,11 @@ class TestPlugin extends PluginDef {
   make[WeakSetDep]
   make[WeakSetGood]
   make[WeakSetBad]
+  make[WeakSetStrong]
   many[WeakSetTest]
       .weak[WeakSetGood]
       .weak[WeakSetBad]
+      .ref[WeakSetStrong]
 
   make[DisabledByTag].tagged("badtag")
   make[WithGoodTag].tagged("goodtag")

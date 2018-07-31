@@ -21,20 +21,28 @@ object TracingDIGC extends DIGarbageCollector {
     val steps = plan.steps
       .map {
         case c: CreateSet =>
-          val strongAndReferenced = c.members
+
+          val weakMembers = c.members
             .map(m => (m, plan.index(m)))
             .collect {
               case (k, op: ExecutableOp.WiringOp) =>
                 (k, op.wiring)
             }
-            .filter {
-              case (_, r: Wiring.UnaryWiring.Reference) =>
-                !r.weak || toLeave.contains(r.key)
-              case _ => true
+            .collect {
+              case (k, r: Wiring.UnaryWiring.Reference) if r.weak =>
+                (k, r)
             }
 
-          toLeave ++= strongAndReferenced.map(_._1)
-          c.copy(members = c.members.intersect(toLeave))
+
+          val (referencedWeaks, unreferencedWeaks) = weakMembers.partition(kv => toLeave.contains(kv._2.key))
+
+          toLeave ++= referencedWeaks.map(_._1)
+
+          val referencedMembers = c.members
+            .diff(unreferencedWeaks.map(_._1))
+            .intersect(toLeave)
+
+          c.copy(members = referencedMembers)
         case o => o
       }
       .filter(s => toLeave.contains(s.target))

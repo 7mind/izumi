@@ -127,8 +127,10 @@ class OpinionatedDIAppTest extends WordSpec {
           assert(context.get[TestApp].setTest.size == 1)
 
           val dep = context.get[WeakSetDep]
-          assert(dep.s1.size == 1)
+          assert(dep.s1.size == 2)
           assert(dep.s1.contains(dep.g1))
+          assert(dep.s1.exists(_.isInstanceOf[WeakSetStrong]))
+          assert(!dep.s1.exists(_.isInstanceOf[WeakSetBad]))
 
           ()
       })
