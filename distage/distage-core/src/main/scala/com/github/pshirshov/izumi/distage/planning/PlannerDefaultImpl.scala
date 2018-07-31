@@ -64,12 +64,10 @@ class PlannerDefaultImpl
     Value(semiPlan)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
-
       .map(planMergingPolicy.reorderOperations)
       .map(forwardingRefResolver.resolve)
       .map(hook.phase90AfterForwarding)
       .eff(planningObserver.onPhase90AfterForwarding)
-
       .eff(sanityChecker.assertFinalPlanSane)
       .get
   }
