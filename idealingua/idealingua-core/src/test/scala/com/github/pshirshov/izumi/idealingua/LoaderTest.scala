@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader.{parseDomains, parseModels}
-import com.github.pshirshov.izumi.idealingua.il.parser.ILParser
+import com.github.pshirshov.izumi.idealingua.il.parser.IDLParser
 import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
 import fastparse.core.Parsed
 import org.scalatest.WordSpec
@@ -26,7 +26,7 @@ class LoaderTest extends WordSpec {
           assert(d.domain.types.nonEmpty, domainId)
 
           val rendered = new ILRenderer(d.domain).render()
-          val restored = new ILParser().fullDomainDef.parse(rendered)
+          val restored = IDLParser.parseDomain(rendered)
 
           restored match {
             case Parsed.Success(r, _) =>

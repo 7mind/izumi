@@ -1,48 +1,51 @@
-package com.github.pshirshov.izumi.idealingua
+package com.github.pshirshov.izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il.parser.ILParser
+import com.github.pshirshov.izumi.idealingua.il.parser.structure._
 import fastparse.all._
 import fastparse.core.Parsed
 import org.scalatest.WordSpec
 
 
-class ILParserTest extends WordSpec {
-  private val parser = new ILParser()
+class IDLParserTest extends WordSpec {
 
   "IL parser" should {
     "parse imports" in {
-      assertParses(parser.domains.importBlock, "import a.b.c")
-      assertParses(parser.domains.importBlock, "import     a.b.c")
-      assertParses(parser.domains.importBlock, "import a")
+      assertParses(DefDomain.importBlock, "import a.b.c")
+      assertParses(DefDomain.importBlock, "import     a.b.c")
+      assertParses(DefDomain.importBlock, "import a")
+    }
+
+    "parse domain declaration" in {
+      assertParses(DefDomain.domainBlock, "domain x.y.z")
     }
 
     "parse aliases" in {
-      assertParses(parser.blocks.aliasBlock, "alias x = y")
+      assertParses(DefMember.aliasBlock, "alias x = y")
     }
 
     "parse enums" in {
-      assertParses(parser.blocks.enumBlock, "enum MyEnum {X Y Zz}")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum { X Y Z }")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum {  X  Y  Z  }")
-      assertParses(parser.blocks.enumBlock,
+      assertParses(DefMember.enumBlock, "enum MyEnum {X Y Zz}")
+      assertParses(DefMember.enumBlock, "enum MyEnum { X Y Z }")
+      assertParses(DefMember.enumBlock, "enum MyEnum {  X  Y  Z  }")
+      assertParses(DefMember.enumBlock,
         """enum MyEnum {
           |X
           | Y
           |Z
           |}""".stripMargin)
-      assertParses(parser.blocks.enumBlock, "enum MyEnum {X,Y,Z}")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum {X|Y|Z}")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum { X|Y|Z }")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum {X | Y | Z}")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum { X | Y | Z }")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum { X , Y , Z }")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum = X | Y | Z")
-      assertParses(parser.blocks.enumBlock, "enum MyEnum = X | /**/ Y | Z")
-      assertParses(parser.blocks.enumBlock,
+      assertParses(DefMember.enumBlock, "enum MyEnum {X,Y,Z}")
+      assertParses(DefMember.enumBlock, "enum MyEnum {X|Y|Z}")
+      assertParses(DefMember.enumBlock, "enum MyEnum { X|Y|Z }")
+      assertParses(DefMember.enumBlock, "enum MyEnum {X | Y | Z}")
+      assertParses(DefMember.enumBlock, "enum MyEnum { X | Y | Z }")
+      assertParses(DefMember.enumBlock, "enum MyEnum { X , Y , Z }")
+      assertParses(DefMember.enumBlock, "enum MyEnum = X | Y | Z")
+      assertParses(DefMember.enumBlock, "enum MyEnum = X | /**/ Y | Z")
+      assertParses(DefMember.enumBlock,
         """enum MyEnum = X
           ||Y
           || Z""".stripMargin)
-      assertParses(parser.blocks.enumBlock,
+      assertParses(DefMember.enumBlock,
         """enum MyEnum =
           || X
           | | Y
@@ -50,14 +53,14 @@ class ILParserTest extends WordSpec {
     }
 
     "parse empty blocks" in {
-      assertParses(parser.blocks.mixinBlock, "mixin Mixin {}")
-      assertParses(parser.blocks.idBlock, "id Id {}")
-      assertParses(parser.blocks.serviceBlock, "service Service {}")
-      assertParses(parser.blocks.dtoBlock, "data Data {}")
+      assertParses(DefMember.mixinBlock, "mixin Mixin {}")
+      assertParses(DefMember.idBlock, "id Id {}")
+      assertParses(DefMember.serviceBlock, "service Service {}")
+      assertParses(DefMember.dtoBlock, "data Data {}")
     }
 
     "parse dto blocks" in {
-      assertParses(parser.blocks.dtoBlock,
+      assertParses(DefMember.dtoBlock,
         """data Data {
           |& Add
           |&&& Add
@@ -72,61 +75,60 @@ class ILParserTest extends WordSpec {
     }
 
     "parse complex comments" in {
-      assertParses(parser.sep.any,
+      assertParses(sep.any,
         """// test
           |/*test*/
           | /* test/**/*/
         """.stripMargin)
-      assertParses(parser.comments.ShortComment, "// test\n")
-      assertParses(parser.comments.ShortComment, "//\n")
-      assertParses(parser.sep.any, "//\n")
-      assertParses(parser.sep.any, "// test\n")
+      assertParses(comments.ShortComment, "// test\n")
+      assertParses(comments.ShortComment, "//\n")
+      assertParses(sep.any, "//\n")
+      assertParses(sep.any, "// test\n")
 
     }
 
     "parse service defintions" in {
-      assertParses(parser.services.inlineStruct, "(a: A, b: B, + C)")
-      assertParses(parser.services.inlineStruct, "(a: str)")
-      assertParses(parser.services.inlineStruct, "(+ A)")
-      assertParses(parser.services.adtOut, "( A \n | \n B )")
-      assertParses(parser.services.adtOut, "(A|B)")
-      assertParses(parser.services.adtOut, "(A | B)")
-      assertParses(parser.services.inlineStruct, "(\n  firstName: str \n , \n secondName: str\n)")
+      assertParses(DefService.inlineStruct, "(a: A, b: B, + C)")
+      assertParses(DefService.inlineStruct, "(a: str)")
+      assertParses(DefService.inlineStruct, "(+ A)")
+      assertParses(DefService.adtOut, "( A \n | \n B )")
+      assertParses(DefService.adtOut, "(A|B)")
+      assertParses(DefService.adtOut, "(A | B)")
+      assertParses(DefService.inlineStruct, "(\n  firstName: str \n , \n secondName: str\n)")
     }
 
     "parse identifiers" in {
-      assertParses(parser.domains.domainBlock, "domain x.y.z")
-      assertParses(parser.domains.domainId, "x.y.z")
-      assertParses(parser.ids.identifier, "x.y#z")
+      assertParses(ids.domainId, "x.y.z")
+      assertParses(ids.identifier, "x.y#z")
     }
 
     "parse fields" in {
-      assertParses(parser.defs.field, "a: str")
-      assertParses(parser.defs.field, "a: domain#Type")
-      assertParses(parser.defs.field, "a: map[str, str]")
-      assertParses(parser.defs.field, "a: map[str, set[domain#Type]]")
+      assertParses(DefStructure.field, "a: str")
+      assertParses(DefStructure.field, "a: domain#Type")
+      assertParses(DefStructure.field, "a: map[str, str]")
+      assertParses(DefStructure.field, "a: map[str, set[domain#Type]]")
     }
 
     "parse adt members" in {
-      assertParses(parser.defs.adtMember, "X")
-      assertParses(parser.defs.adtMember, "X as T")
+      assertParses(DefStructure.adtMember, "X")
+      assertParses(DefStructure.adtMember, "X as T")
 
-      assertParses(parser.defs.adtMember, "a.b.c#X")
-      assertParses(parser.defs.adtMember, "a.b.c#X as T")
+      assertParses(DefStructure.adtMember, "a.b.c#X")
+      assertParses(DefStructure.adtMember, "a.b.c#X as T")
     }
 
     "parse adt blocks" in {
-      assertParses(parser.blocks.adtBlock, "adt MyAdt { X as XXX | Y }")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt { X | Y | a.b.c#D as B }")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt = X | Y | Z")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt { X }")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt {a.b.c#D}")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt { a.b.c#D }")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt { a.b.c#D Z Z }")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt { a.b.c#D  Z  Z }")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt { X Y a.b.c#D Z }")
-      assertParses(parser.blocks.adtBlock, "adt MyAdt { X Y a.b.c#D }")
-      assertParses(parser.blocks.adtBlock,
+      assertParses(DefMember.adtBlock, "adt MyAdt { X as XXX | Y }")
+      assertParses(DefMember.adtBlock, "adt MyAdt { X | Y | a.b.c#D as B }")
+      assertParses(DefMember.adtBlock, "adt MyAdt = X | Y | Z")
+      assertParses(DefMember.adtBlock, "adt MyAdt { X }")
+      assertParses(DefMember.adtBlock, "adt MyAdt {a.b.c#D}")
+      assertParses(DefMember.adtBlock, "adt MyAdt { a.b.c#D }")
+      assertParses(DefMember.adtBlock, "adt MyAdt { a.b.c#D Z Z }")
+      assertParses(DefMember.adtBlock, "adt MyAdt { a.b.c#D  Z  Z }")
+      assertParses(DefMember.adtBlock, "adt MyAdt { X Y a.b.c#D Z }")
+      assertParses(DefMember.adtBlock, "adt MyAdt { X Y a.b.c#D }")
+      assertParses(DefMember.adtBlock,
         """adt MyAdt {
           | X
           |Y
@@ -135,12 +137,12 @@ class ILParserTest extends WordSpec {
     }
 
     "parse service definition" in {
-      assertParses(parser.services.method, "def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )")
-      assertParseableCompletely(parser.services.methods,
+      assertParses(DefService.method, "def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )")
+      assertParseableCompletely(DefService.methods,
         """def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
           |def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )""".stripMargin)
 
-      assertParseableCompletely(parser.blocks.serviceBlock,
+      assertParseableCompletely(DefMember.serviceBlock,
         """service FileService {
           |  def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
           |}""".stripMargin)
@@ -263,7 +265,7 @@ class ILParserTest extends WordSpec {
 
 
   private def assertDomainParses(str: String): Unit = {
-    val parsed = assertParseable(parser.fullDomainDef, str)
+    val parsed = assertParseable(IDLParser.fullDomainDef, str)
     assert(parsed.model.definitions.nonEmpty)
     ()
   }
