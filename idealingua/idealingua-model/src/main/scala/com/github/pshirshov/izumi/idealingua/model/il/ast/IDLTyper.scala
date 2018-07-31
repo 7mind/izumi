@@ -112,10 +112,10 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
       case d: RawTypeDef.Adt =>
         typed.TypeDef.Adt(id = fixSimpleId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember))
 
-      case RawTypeDef.NewType(id, src, None) =>
+      case RawTypeDef.NewType(id, src, None, c) =>
         typed.TypeDef.Alias(id = transformSimpleId(id.toAliasId): TypeId.AliasId, target = fixId(src): TypeId)
 
-      case RawTypeDef.NewType(id, src, Some(m)) =>
+      case RawTypeDef.NewType(id, src, Some(m), c) =>
         val source = index(toIndefinite(src))
         source match {
           case s: RawTypeDef.DTO =>

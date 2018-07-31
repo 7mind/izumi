@@ -19,5 +19,17 @@ trait Aggregates
     starting(keyword, enclosed(defparser))
   }
 
+  def cstarting[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(Option[String], ParsedId, T)] = {
+    (MaybeDoc ~ starting(keyword, defparser)).map {
+      case (c, (i, t)) => (c, i, t)
+    }
+  }
+
+  def cblock[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(Option[String], ParsedId, T)] = {
+    (MaybeDoc ~ block(keyword, defparser)).map {
+      case (c, (i, t)) => (c, i, t)
+    }
+  }
+
 }
 

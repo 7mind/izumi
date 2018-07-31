@@ -11,38 +11,53 @@ trait DefMember extends Aggregates {
   final val inclusion = kw(kw.include, sym.String)
     .map(v => ILInclude(v))
 
-  final val mixinBlock = aggregates.block(kw.mixin, DefStructure.struct)
-    .map(v => ILDef(v._2.toInterface(v._1.toInterfaceId)))
-
-  final val dtoBlock = aggregates.block(kw.data, DefStructure.struct)
-    .map(v => ILDef(v._2.toDto(v._1.toDataId)))
-
-  final val idBlock = aggregates.block(kw.id, DefStructure.aggregate)
-    .map(v => ILDef(Identifier(v._1.toIdId, v._2.toList)))
-
-  final val aliasBlock = aggregates.starting(kw.alias, "=" ~/ inline ~ ids.identifier)
-    .map(v => ILDef(Alias(v._1.toAliasId, v._2.toTypeId)))
-
-  final val cloneBlock = aggregates.starting(kw.newtype, "into" ~/ inline ~ ids.idShort ~ inline ~ aggregates.enclosed(DefStructure.struct).?)
+  final val mixinBlock = aggregates.cblock(kw.mixin, DefStructure.struct)
     .map {
-      case (src, (target, struct)) =>
-        ILNewtype(NewType(target, src.toTypeId, struct.map(_.structure)))
+      case (c, i, v)  => ILDef(v.toInterface(i.toInterfaceId, c))
     }
 
-  final val adtBlock = aggregates.starting(kw.adt,
+  final val dtoBlock = aggregates.cblock(kw.data, DefStructure.struct)
+    .map {
+      case (c, i, v)  => ILDef(v.toDto(i.toDataId, c))
+    }
+
+  final val idBlock = aggregates.cblock(kw.id, DefStructure.aggregate)
+    .map {
+      case (c, i, v)  => ILDef(Identifier(i.toIdId, v.toList, c))
+    }
+
+  final val aliasBlock = aggregates.cstarting(kw.alias, "=" ~/ inline ~ ids.identifier)
+    .map {
+      case (c, i, v)  => ILDef(Alias(i.toAliasId, v.toTypeId, c))
+    }
+
+  final val cloneBlock = aggregates.cstarting(kw.newtype, "into" ~/ inline ~ ids.idShort ~ inline ~ aggregates.enclosed(DefStructure.struct).?)
+    .map {
+      case (c, src, (target, struct))  =>
+        ILNewtype(NewType(target, src.toTypeId, struct.map(_.structure), c))
+    }
+
+  final val adtBlock = aggregates.cstarting(kw.adt,
     aggregates.enclosed(DefStructure.adt(sepAdt))
       | (any ~ "=" ~/ sepAdt ~ DefStructure.adt(sepAdt))
   )
-    .map(v => ILDef(Adt(v._1.toAdtId, v._2.alternatives)))
+    .map {
+      case (c, i, v) =>
+        ILDef(Adt(i.toAdtId, v.alternatives, c))
+    }
 
-  final val enumBlock = aggregates.starting(kw.enum
+  final val enumBlock = aggregates.cstarting(kw.enum
     , aggregates.enclosed(DefStructure.enum(sepEnum)) |
       (any ~ "=" ~/ sepEnum ~ DefStructure.enum(sepEnum))
   )
-    .map(v => ILDef(Enumeration(v._1.toEnumId, v._2.toList)))
+    .map {
+      case (c, i, v) => ILDef(Enumeration(i.toEnumId, v.toList, c))
+    }
 
-  final val serviceBlock = aggregates.block(kw.service, DefService.methods)
-    .map(v => ILService(Service(v._1.toServiceId, v._2.toList)))
+  final val serviceBlock = aggregates.cblock(kw.service, DefService.methods)
+    .map {
+      case (c, i, v) => ILService(Service(i.toServiceId, v.toList, c))
+    }
 
   final val anyMember: Parser[Val] = enumBlock |
     adtBlock |

@@ -3,11 +3,13 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 
-final case class Service(id: ServiceId, methods: List[Service.DefMethod])
+final case class Service(id: ServiceId, methods: List[Service.DefMethod], comment: Option[String])
 
 object Service {
 
-  trait DefMethod
+  trait DefMethod {
+    def doc: Option[String]
+  }
 
   object DefMethod {
 
@@ -21,7 +23,7 @@ object Service {
 
     final case class Signature(input: RawSimpleStructure, output: Output)
 
-    final case class RPCMethod(name: String, signature: Signature) extends DefMethod
+    final case class RPCMethod(name: String, signature: Signature, doc: Option[String]) extends DefMethod
   }
 
 }

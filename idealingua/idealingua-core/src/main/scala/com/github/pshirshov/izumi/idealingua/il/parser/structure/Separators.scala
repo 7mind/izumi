@@ -4,7 +4,7 @@ import fastparse.all._
 
 trait Separators extends Comments {
   private val ws = P(" " | "\t")(sourcecode.Name("WS"))
-  private val wss = P(ws.rep)
+  final val wss = P(ws.rep)
 
   private val WsComment = wss ~ MultilineComment ~ wss
   private val SepLineBase = P(NLC | (WsComment ~ NLC | (wss ~ ShortComment)))

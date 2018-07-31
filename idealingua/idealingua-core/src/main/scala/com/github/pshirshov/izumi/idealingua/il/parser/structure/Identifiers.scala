@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import com.github.pshirshov.izumi.idealingua.il.parser.structure.sep.inline
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, DomainId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ParsedId
 import fastparse.CharPredicates.{isDigit, isLetter}

@@ -14,20 +14,21 @@ trait DefService {
   final val adtOut = aggregates.enclosed(DefStructure.adt(sepAdt))
 
   final val defMethod = P(
-    kw.defm ~ inline ~
+      MaybeDoc ~
+      kw.defm ~ inline ~
       ids.symbol ~ any ~
       inlineStruct ~ any ~
       sigSep ~ any ~
       (adtOut | inlineStruct | ids.idGeneric)
   ).map {
-    case (id, in, out: RawSimpleStructure) =>
-      DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Struct(out)))
+    case (c, id, in, out: RawSimpleStructure) =>
+      DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Struct(out)), c)
 
-    case (id, in, out: AlgebraicType) =>
-      DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Algebraic(out.alternatives)))
+    case (c, id, in, out: AlgebraicType) =>
+      DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Algebraic(out.alternatives)), c)
 
-    case (id, in, out: AbstractIndefiniteId) =>
-      DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Singular(out)))
+    case (c, id, in, out: AbstractIndefiniteId) =>
+      DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Singular(out)), c)
 
     case f =>
       throw new IllegalStateException(s"Impossible case: $f")

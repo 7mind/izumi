@@ -3,16 +3,22 @@ domain izumi.test.domain01
 include "model01.model"
 include "model02.model"
 
+/** docstring
+  */
 id TestValIdentifier {
   userId: str
 }
 
+/** docstring
+  */
 id TestIdentifier {
   userId: str
   context: str
   userType: i08
 }
 
+/** docstring
+  */
 mixin TestInterface {
   userId: UserId
   accountBalance: i32
@@ -21,25 +27,38 @@ mixin TestInterface {
   nicknames: list[str]
 }
 
+/** docstring
+  */
 data TestObject {
   & TestInterface
 }
 
+
+/** docstring
+  */
 data GoTimeImportOptional {
     o: opt[tsl]
 }
 
+/** docstring
+  */
 mixin GoAliasTest {
     a: str
 }
 
+/** docstring
+  */
 enum GoAliasEnumTest {
     Val1
     Val2
 }
 
+/** docstring
+  */
 alias GoAlias2 = GoAliasTest
 
+/** docstring
+  */
 mixin AllTypes {
   boolean : bool
   string  : str
@@ -73,28 +92,39 @@ mixin AllTypes {
   optionTime: opt[time]
 }
 
+/** docstring
+  */
 adt AnAdt {
   AllTypes
   TestObject
 }
 
+/** docstring
+  */
 data AllTypesObject {
   & AllTypes
 }
 
+/** docstring
+  */
 mixin AnyValTest {
   boolean: bool
 }
 
-
+/** docstring
+  */
 mixin PrivateMixinParent {
   parent: str
 }
 
+/** docstring
+  */
 mixin PrivateMixinPrivateParent {
   parent_embedded: str
 }
 
+/** docstring
+  */
 mixin PrivateMixin {
   & PrivateMixinParent
   + PrivateMixinPrivateParent
@@ -102,24 +132,33 @@ mixin PrivateMixin {
   embedded: bool
 }
 
+/** docstring
+  */
 mixin ExtendedMixin {
   + PrivateMixin
   own: i08
 }
 
+/** docstring
+  */
 data PrivateTestObject {
   & ExtendedMixin
 }
 
+/** docstring
+  */
 data AnotherTestObject {
   + ExtendedMixin
 }
 
-
+/** docstring
+  */
 enum RTestEnum {
   A
 }
 
+/** docstring
+  */
 mixin RTestMixin {
   a: RTestEnum
 }
