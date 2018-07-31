@@ -12,10 +12,27 @@ class BasicParserTest
       assertParses(comments.DocComment,
         """/** docstring
           | */""".stripMargin)
+
       assertParses(comments.DocComment,
         """/** docstring
           |  * docstring
           |  */""".stripMargin)
+
+      assertParses(comments.DocComment,
+        """/** docstring
+          |* docstring
+          |*/""".stripMargin)
+
+      assertParses(comments.DocComment,
+        """/**
+          |* docstring
+          |*/""".stripMargin)
+
+      assertParses(comments.DocComment,
+        """/**
+          |* docstring
+          |*
+          |*/""".stripMargin)
 
       assertParsesInto(comments.DocComment,
         """/** docstring

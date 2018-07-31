@@ -36,7 +36,7 @@ class LoaderTest extends WordSpec {
               assert(restoredTypespace.domain.services.toSet == d.domain.services.toSet)
 
             case f =>
-              fail(s"Failed to reparse $domainId: $f")
+              fail(s"Failed to reparse $domainId: $f\nDOMAIN:\n$rendered")
           }
 
       }
