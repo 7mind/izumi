@@ -5,12 +5,12 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 
 final case class ParsedStruct(structure: RawStructure) {
-  def toInterface(id: InterfaceId): RawTypeDef.Interface = {
-    Interface(id, structure)
+  def toInterface(id: InterfaceId, comment: Option[String]): RawTypeDef.Interface = {
+    Interface(id, structure, comment)
   }
 
-  def toDto(id: DTOId): RawTypeDef.DTO = {
-    DTO(id, structure)
+  def toDto(id: DTOId, comment: Option[String]): RawTypeDef.DTO = {
+    DTO(id, structure, comment)
   }
 }
 

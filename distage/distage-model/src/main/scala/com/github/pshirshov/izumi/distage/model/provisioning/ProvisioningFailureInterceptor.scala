@@ -47,7 +47,12 @@ class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInter
         s"${op.target} $pos: ${f.getMessage}"
     }
 
-    throw new ProvisioningException(s"Operations failed (${repr.size}): ${repr.niceList()}", allFailures.head.result)
+    val ccFailed = repr.size
+    val ccDone = toImmutable.instances.size
+    val ccTotal = plan.steps.size
+    val ccSkipped = ccTotal - ccDone - ccFailed
+
+    throw new ProvisioningException(s"Operations failed ($ccFailed failed, $ccDone done, $ccSkipped skipped, $ccTotal total): ${repr.niceList()}", allFailures.head.result)
   }
 
   override def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]] = PartialFunction.empty

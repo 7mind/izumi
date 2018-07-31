@@ -32,7 +32,7 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def render(tpe: TypeDef): String = {
-    tpe match {
+    val struct = tpe match {
       case d: Adt =>
         s"""adt ${render(d.id)} {
            |${d.alternatives.map(render).mkString("\n").shift(2)}
@@ -70,6 +70,18 @@ class ILRenderer(domain: DomainDefinition) {
            |}
          """.stripMargin
     }
+    withComment(tpe.doc, struct)
+  }
+
+  def withComment(doc: Option[String], struct: String): String = {
+    doc match {
+      case Some(d) =>
+        s"""/*${d.split('\n').map(v => s"  *$v").mkString("\n").trim}
+           |  */
+           |$struct""".stripMargin
+      case None =>
+        struct
+    }
   }
 
   def renderStruct(struct: Structure): String = {
@@ -85,10 +97,11 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def render(service: Service): String = {
-    s"""service ${render(service.id)} {
+    val out = s"""service ${render(service.id)} {
        |${service.methods.map(render).mkString("\n").shift(2)}
        |}
      """.stripMargin
+    withComment(service.doc, out)
   }
 
   def renderComposite(aggregate: Structures, prefix: String): String = {
@@ -132,7 +145,8 @@ class ILRenderer(domain: DomainDefinition) {
   def render(tpe: DefMethod): String = {
     tpe match {
       case m: RPCMethod =>
-        s"def ${m.name}(${render(m.signature.input)}): ${render(m.signature.output)}"
+        val out = s"def ${m.name}(${render(m.signature.input)}): ${render(m.signature.output)}"
+        withComment(m.doc, out)
     }
   }
 

@@ -33,7 +33,7 @@ class TypeCollection(domain: DomainDefinition) {
           val in = m.signature.input
           val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
           val inId = DTOId(service.id, s"${baseName}Input")
-          DTO(inId, inputStructure)
+          DTO(inId, inputStructure, None)
         }
 
 
@@ -41,16 +41,16 @@ class TypeCollection(domain: DomainDefinition) {
           case o: Output.Singular =>
             val outStructure = Structure.apply(List(Field(o.typeId, "value")), List.empty, Super.empty)
             val outId = DTOId(service.id, s"${baseName}Output")
-            DTO(outId, outStructure)
+            DTO(outId, outStructure, None)
 
           case o: Output.Struct =>
             val outStructure = Structure.apply(o.struct.fields, List.empty, Super(List.empty, o.struct.concepts, List.empty))
             val outId = DTOId(service.id, s"${baseName}Output")
-            DTO(outId, outStructure)
+            DTO(outId, outStructure, None)
 
           case o: Output.Algebraic =>
             val outId = AdtId(service.id, s"${baseName}Output")
-            Adt(outId, o.alternatives)
+            Adt(outId, o.alternatives, None)
         }
 
         Seq(inputDto, outDto)
@@ -62,7 +62,7 @@ class TypeCollection(domain: DomainDefinition) {
       .collect {
         case i: Interface =>
           val iid = DTOId(i.id, toDtoName(i.id))
-          i.id -> DTO(iid, Structure.interfaces(List(i.id)))
+          i.id -> DTO(iid, Structure.interfaces(List(i.id)), None)
       }.toMap
   }
 
@@ -77,7 +77,7 @@ class TypeCollection(domain: DomainDefinition) {
       .collect {
         case i: DTO =>
           val iid = InterfaceId(i.id, toInterfaceName(i.id))
-          i.id -> Interface(iid, i.struct)
+          i.id -> Interface(iid, i.struct, None)
       }.toMap
 
   }

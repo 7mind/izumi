@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.{Files, Path, Paths}
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
-import com.github.pshirshov.izumi.idealingua.il.parser.ILParser
+import com.github.pshirshov.izumi.idealingua.il.parser.IDLParser
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -71,12 +71,23 @@ object LocalModelLoader {
   val domainExt = ".domain"
   val modelExt = ".model"
 
+  def parseModels(files: Map[Path, String]): Map[Path, ParsedModel] = {
+    collectSuccess(files, modelExt, IDLParser.parseModel) { (path, parsed) =>
+      path
+    }
+  }
+
+  def parseDomains(files: Map[Path, String]): Map[DomainId, ParsedDomain] = {
+    collectSuccess(files, domainExt, IDLParser.parseDomain) { (path, parsed) =>
+      parsed.did
+    }
+  }
 
 
-  def collectSuccess[T, ID](files: Map[Path, String], ext: TypeName, p: all.Parser[T])(mapper: (Path, T) => ID): Map[ID, T] = {
+  def collectSuccess[T, ID](files: Map[Path, String], ext: TypeName, parser: String => all.Parsed[T])(mapper: (Path, T) => ID): Map[ID, T] = {
     val parsedValues = files.filter(_._1.getFileName.toString.endsWith(ext))
       .mapValues(s => {
-        p.parse(s)
+        parser(s)
       })
       .groupBy(_._2.getClass)
 
@@ -108,15 +119,5 @@ object LocalModelLoader {
     failures.map(kv => s" -> ${kv._1}: ${kv._2}").mkString("\n")
   }
 
-  def parseModels(files: Map[Path, String]): Map[Path, ParsedModel] = {
-    collectSuccess(files, modelExt, new ILParser().modelDef) { (path, parsed) =>
-      path
-    }
-  }
 
-  def parseDomains(files: Map[Path, String]): Map[DomainId, ParsedDomain] = {
-    collectSuccess(files, domainExt, new ILParser().fullDomainDef) { (path, parsed) =>
-      parsed.did
-    }
-  }
 }

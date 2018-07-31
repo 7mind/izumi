@@ -64,12 +64,10 @@ class PlannerDefaultImpl
     Value(semiPlan)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
-
       .map(planMergingPolicy.reorderOperations)
       .map(forwardingRefResolver.resolve)
       .map(hook.phase90AfterForwarding)
       .eff(planningObserver.onPhase90AfterForwarding)
-
       .eff(sanityChecker.assertFinalPlanSane)
       .get
   }
@@ -87,7 +85,7 @@ class PlannerDefaultImpl
       case s: SetElementBinding[_] =>
         val target = s.key
         val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, currentPlan.operations.size, setElementKeySymbol(s.implementation))
-        val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation))
+        val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation, s.tags, s.origin))
         val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.tpe, Set.empty, Some(binding)))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
