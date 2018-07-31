@@ -19,7 +19,6 @@ trait IDLParser {
 
   protected[parser] final val fullDomainDef = P(any ~ DefDomain.decl ~ modelDef).map {
     case (did, imports, defs) =>
-      println(defs)
       ParsedDomain(did, imports, defs)
   }
 

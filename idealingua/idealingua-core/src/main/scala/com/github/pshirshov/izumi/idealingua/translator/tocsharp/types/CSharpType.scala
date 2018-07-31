@@ -231,7 +231,7 @@ final case class CSharpType (
     val structure = ts.structure.structure(inst)
     val eid = ts.tools.implId(inst.id)
     val validFields = structure.all.filterNot(f => inst.struct.superclasses.interfaces.contains(f.defn.definedBy))
-    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(inst.id), List.empty, List.empty)))
+    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(inst.id), List.empty, List.empty)), None)
     randomDto(dto, depth)
   }
 

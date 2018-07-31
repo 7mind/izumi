@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 
-final case class Service(id: ServiceId, methods: List[Service.DefMethod], comment: Option[String])
+final case class Service(id: ServiceId, methods: List[Service.DefMethod], doc: Option[String])
 
 object Service {
 

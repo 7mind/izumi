@@ -84,10 +84,10 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   protected def fixType(defn: RawTypeDef): typed.TypeDef = {
     defn match {
       case d: RawTypeDef.Enumeration =>
-        typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.members)
+        typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.members, doc = d.doc)
 
       case d: RawTypeDef.Alias =>
-        typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId)
+        typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId, doc = d.doc)
 
       case d: RawTypeDef.Identifier =>
         val typedFields = d.fields.map {
@@ -101,19 +101,19 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
             throw new IDLException(s"Unsupporeted ID field $f in $domainId. You may use primitive fields, enums or other IDs only")
         }
 
-        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = typedFields)
+        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = typedFields, doc = d.doc)
 
       case d: RawTypeDef.Interface =>
-        typed.TypeDef.Interface(id = fixSimpleId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct))
+        typed.TypeDef.Interface(id = fixSimpleId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct), doc = d.doc)
 
       case d: RawTypeDef.DTO =>
-        typed.TypeDef.DTO(id = fixSimpleId(d.id), struct = toStruct(d.struct))
+        typed.TypeDef.DTO(id = fixSimpleId(d.id), struct = toStruct(d.struct), doc = d.doc)
 
       case d: RawTypeDef.Adt =>
-        typed.TypeDef.Adt(id = fixSimpleId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember))
+        typed.TypeDef.Adt(id = fixSimpleId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember), doc = d.doc)
 
       case RawTypeDef.NewType(id, src, None, c) =>
-        typed.TypeDef.Alias(id = transformSimpleId(id.toAliasId): TypeId.AliasId, target = fixId(src): TypeId)
+        typed.TypeDef.Alias(id = transformSimpleId(id.toAliasId): TypeId.AliasId, target = fixId(src): TypeId, doc = c)
 
       case RawTypeDef.NewType(id, src, Some(m), c) =>
         val source = index(toIndefinite(src))
@@ -122,12 +122,12 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
             val extended = s.copy(struct = s.struct.extend(m))
             val fixed = fixType(extended.copy(struct = extended.struct.copy(concepts = IndefiniteMixin(src.pkg, src.name) +: extended.struct.concepts)))
               .asInstanceOf[typed.TypeDef.DTO]
-            fixed.copy(id = fixed.id.copy(name = id.name))
+            fixed.copy(id = fixed.id.copy(name = id.name), doc = c)
           case s: RawTypeDef.Interface =>
             val extended = s.copy(struct = s.struct.extend(m))
             val fixed = fixType(extended.copy(struct = extended.struct.copy(concepts = IndefiniteMixin(src.pkg, src.name) +: extended.struct.concepts)))
               .asInstanceOf[typed.TypeDef.Interface]
-            fixed.copy(id = fixed.id.copy(name = id.name))
+            fixed.copy(id = fixed.id.copy(name = id.name), doc = c)
           case o =>
             throw new IDLException(s"TODO: newtype isn't supported yet for $o")
         }
@@ -151,7 +151,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def fixService(defn: raw.Service): typed.Service = {
-    typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod))
+    typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod), doc = defn.doc)
   }
 
 
@@ -191,7 +191,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   protected def fixMethod(method: raw.Service.DefMethod): typed.Service.DefMethod = {
     method match {
       case m: raw.Service.DefMethod.RPCMethod =>
-        typed.Service.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name)
+        typed.Service.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name, doc = m.doc)
     }
   }
 

@@ -140,7 +140,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   }
 
   protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true)(implicit im: CSharpImports, ts: Typespace): String = {
-    val adt = Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), adtName), members)
+    val adt = Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), adtName), members, None)
     s"""${im.renderUsings()}
        |${if (renderUsings) members.map(m => renderAdtUsings(m)).mkString("\n") else ""}
        |
@@ -260,7 +260,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     val struct = CSharpClass(eid, i.id.name + eid.name, structure, List(i.id))
     val ifaceImplements = if (i.struct.superclasses.interfaces.isEmpty) ": IRTTI" else ": " +
       i.struct.superclasses.interfaces.map(ifc => ifc.name).mkString(", ") + ", IRTTI"
-    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(i.id), List.empty, List.empty)))
+    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(i.id), List.empty, List.empty)), None)
 
     val iface =
       s"""${im.renderUsings()}
@@ -491,7 +491,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
         }
 
         (sigTypes.filterNot(_.isInstanceOf[Builtin]).map(typespace.apply)
-          ++ Seq(Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), "FakeName"), List.empty)) // TODO:fake entry to trigger imports (unsafe)
+          ++ Seq(Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), "FakeName"), List.empty, None)) // TODO:fake entry to trigger imports (unsafe)
           ).flatMap(defn => ext.imports(ctx, defn))
 
     })
