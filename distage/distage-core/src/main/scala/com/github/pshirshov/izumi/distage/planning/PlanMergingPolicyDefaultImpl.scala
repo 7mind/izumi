@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.exceptions.UntranslatablePlanExc
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
-import com.github.pshirshov.izumi.fundamentals.collections.Graphs
+import com.github.pshirshov.izumi.fundamentals.graphs._
 
 import scala.collection.mutable
 
@@ -63,7 +63,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
   override def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
     val index = completedPlan.index
     val topology = analyzer.topology(completedPlan.steps)
-    val sortedKeys = Graphs.toposort.cycleBreaking(
+    val sortedKeys = toposort.cycleBreaking(
       topology.dependencies.graph
       , Seq.empty
     )

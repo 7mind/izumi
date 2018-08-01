@@ -6,55 +6,18 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, Im
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{DIGarbageCollector, GCRootPredicate}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.fundamentals.graphs.AbstractGCTracer
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-object TracingDIGC extends DIGarbageCollector {
-  override def gc(plan: SemiPlan, isRoot: GCRootPredicate): SemiPlan = {
-    val toLeave = mutable.HashSet[DIKey]()
-    toLeave ++= plan.steps.map(_.target).filter(isRoot.isRoot)
-    allDeps(plan.steps.map(v => v.target -> v).toMap, toLeave.toSet, toLeave)
-    val oldDefn = plan.definition.bindings
-    val updatedDefn = SimpleModuleDef(oldDefn.filter(b => toLeave.contains(b.key)))
-
-    val steps = plan.steps
-      .map {
-        case c: CreateSet =>
-
-          val weakMembers = c.members
-            .map(m => (m, plan.index(m)))
-            .collect {
-              case (k, op: ExecutableOp.WiringOp) =>
-                (k, op.wiring)
-            }
-            .collect {
-              case (k, r: Wiring.UnaryWiring.Reference) if r.weak =>
-                (k, r)
-            }
 
 
-          val (referencedWeaks, unreferencedWeaks) = weakMembers.partition(kv => toLeave.contains(kv._2.key))
 
-          toLeave ++= referencedWeaks.map(_._1)
-
-          val referencedMembers = c.members
-            .diff(unreferencedWeaks.map(_._1))
-            .intersect(toLeave)
-
-          c.copy(members = referencedMembers)
-        case o => o
-      }
-      .filter(s => toLeave.contains(s.target))
-
-    SemiPlan(updatedDefn, steps)
-  }
-
-  @tailrec
-  private def allDeps(index: Map[DIKey, ExecutableOp], toTrace: Set[DIKey], reachable: mutable.HashSet[DIKey]): Unit = {
-    // TODO: inefficient
-
-    val newDeps = toTrace.map(index.apply).flatMap {
+class TracingDIGC(plan: SemiPlan, isRoot: GCRootPredicate) extends AbstractGCTracer[DIKey, ExecutableOp] {
+  @inline
+  override protected def extract(index: Map[DIKey, ExecutableOp], node: ExecutableOp): Set[DIKey] = {
+    node match {
       case w: WiringOp =>
         w.wiring.requiredKeys
       case c: CreateSet =>
@@ -75,16 +38,60 @@ object TracingDIGC extends DIGarbageCollector {
       case p: InitProxy =>
         p.dependencies
       case _: MakeProxy =>
-        Seq.empty
+        Set.empty
       case _: ImportDependency =>
-        Seq.empty
+        Set.empty
       case _ =>
-        Seq.empty
+        Set.empty
+    }
+  }
+
+  @inline
+  override protected def prefilter(traced: Set[DIKey], elements: Vector[ExecutableOp]): PreFltered = {
+    val newTraced = new mutable.HashSet[DIKey]()
+    newTraced ++= traced
+
+    val prefiltered = elements.map {
+      case c: CreateSet =>
+
+        val weakMembers = c.members
+          .map(m => (m, plan.index(m)))
+          .collect {
+            case (k, op: ExecutableOp.WiringOp) =>
+              (k, op.wiring)
+          }
+          .collect {
+            case (k, r: Wiring.UnaryWiring.Reference) if r.weak =>
+              (k, r)
+          }
+
+
+        val (referencedWeaks, unreferencedWeaks) = weakMembers.partition(kv => newTraced.contains(kv._2.key))
+
+        newTraced ++= referencedWeaks.map(_._1)
+
+        val referencedMembers = c.members
+          .diff(unreferencedWeaks.map(_._1))
+          .intersect(newTraced)
+
+        c.copy(members = referencedMembers)
+      case o => o
     }
 
-    if (newDeps.nonEmpty) {
-      reachable ++= newDeps
-      allDeps(index, newDeps, reachable)
-    }
+    PreFltered(prefiltered, newTraced.toSet)
+  }
+
+  override protected def isRoot(node: DIKey): Boolean = isRoot.isRoot(node)
+
+  override protected def id(node: ExecutableOp): DIKey = node.target
+}
+
+object TracingDIGC extends DIGarbageCollector {
+  override def gc(plan: SemiPlan, isRoot: GCRootPredicate): SemiPlan = {
+    val collected = new TracingDIGC(plan, isRoot).gc(plan.steps)
+
+    val oldDefn = plan.definition.bindings
+    val updatedDefn = SimpleModuleDef(oldDefn.filter(b => collected.reachable.contains(b.key)))
+    SemiPlan(updatedDefn, collected.filtered)
   }
 }

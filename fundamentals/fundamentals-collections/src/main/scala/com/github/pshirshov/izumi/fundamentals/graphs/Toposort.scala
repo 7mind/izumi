@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.collections
+package com.github.pshirshov.izumi.fundamentals.graphs
 
 import scala.annotation.tailrec
 
@@ -26,13 +26,4 @@ trait Toposort {
     }
   }
 
-}
-
-trait Graphs {
-  def toposort: Toposort
-}
-
-object Graphs extends Graphs {
-  private object Toposort extends Toposort
-  override def toposort: Toposort = Toposort
 }

@@ -1,5 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.collections
-
+package com.github.pshirshov.izumi.fundamentals.tags
 
 object TagExpr {
 
@@ -56,5 +55,3 @@ object TagExpr {
   }
 
 }
-
-

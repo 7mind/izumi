@@ -422,7 +422,8 @@ lazy val `izumi-r2` = inRoot.as
         def accept(f: File): Boolean  = {
           f.getCanonicalPath.startsWith(v) && f.getCanonicalPath.charAt(v.length).isDigit || // release
             (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
-            (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath
+            (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
+            f.toPath.startsWith((ghpagesRepository.value / "media").toPath)
         }
       }
   )
