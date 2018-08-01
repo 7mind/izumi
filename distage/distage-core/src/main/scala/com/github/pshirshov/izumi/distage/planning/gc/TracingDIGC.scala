@@ -8,10 +8,7 @@ import com.github.pshirshov.izumi.distage.model.planning.{DIGarbageCollector, GC
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.graphs.AbstractGCTracer
 
-import scala.annotation.tailrec
 import scala.collection.mutable
-
-
 
 
 class TracingDIGC(plan: SemiPlan, isRoot: GCRootPredicate) extends AbstractGCTracer[DIKey, ExecutableOp] {
