@@ -4,7 +4,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleAppComponent, RoleAppService, TGTask}
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleAppComponent, RoleAppService, RoleAppTask}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.util.Try
@@ -17,7 +17,7 @@ class RoleStarter(services: Set[RoleAppService], components: Set[RoleAppComponen
 
   def start(context: Locator): Unit = {
     if (contextRef.compareAndSet(null, context)) {
-      val tasksCount = services.count(_.isInstanceOf[TGTask])
+      val tasksCount = services.count(_.isInstanceOf[RoleAppTask])
       logger.info(s"${(services.size - tasksCount) -> "services"}; ${tasksCount -> "tasks"}; ${components.size -> "components"} are going to start...")
 
       components.foreach {

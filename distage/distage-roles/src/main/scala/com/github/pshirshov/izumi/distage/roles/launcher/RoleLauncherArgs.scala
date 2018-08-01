@@ -21,8 +21,8 @@ object RoleLauncherArgs {
                             , targetDir: String = "config"
                             , includeCommon: Boolean = true)
 
-  val parser: OptionParser[RoleLauncherArgs] = new scopt.OptionParser[RoleLauncherArgs]("tg-launcher") {
-    head("tg-launcher", "TODO: manifest version")
+  val parser: OptionParser[RoleLauncherArgs] = new scopt.OptionParser[RoleLauncherArgs]("role-launcher") {
+    head("role-launcher", "TODO: manifest version")
     help("help")
 
     opt[Unit]("logs-json").abbr("lj")

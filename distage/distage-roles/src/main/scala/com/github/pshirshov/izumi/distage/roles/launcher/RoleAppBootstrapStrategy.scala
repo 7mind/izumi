@@ -37,11 +37,11 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
   }
 
   private val roleSet = {
-    if (params.writeReference.isDefined) {
-      params.roles.map(_.name).toSet + ConfigWriter.id
-    } else {
+//    if (params.writeReference.isDefined) {
+//      params.roles.map(_.name).toSet // FIXME TODO ??? + ConfigWriter.id
+//    } else {
       params.roles.map(_.name).toSet
-    }
+//    }
   }
 
   private val logger = new IzLogger(router(), CustomContext.empty)
@@ -50,12 +50,12 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
 
   def init(): RoleAppBootstrapStrategy = {
     showDepData(logger, "Application is about to start", this.getClass)
-    showDepData(logger, "... using tg-unified-sdk", classOf[RoleApp])
+    showDepData(logger, "... using role-unified-sdk", classOf[RoleApp]) // FIXME TODO
     showDepData(logger, "... using izumi-r2", classOf[OpinionatedDiApp])
     this
   }
 
-  protected val roleInfo = new AtomicReference[RoleInfo]()
+  protected val roleInfo = new AtomicReference[RolesInfo]()
 
   override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
     Quirks.discard(bs)
@@ -78,7 +78,7 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
           .add(closeablesHook)
           .add(componentsHook)
 
-        make[RoleInfo].from(roles)
+        make[RolesInfo].from(roles)
       }
       , new TracingGcModule(roles.requiredComponents)
     )
@@ -87,7 +87,7 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
   override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
     val bindings = app.flatMap(_.bindings)
     logger.info(s"Available ${app.size -> "app plugins"} and ${bs.size -> "bootstrap plugins"} and ${bindings.size -> "app bindings"}...")
-    val roles = roleProvider.getInfo(bindings)
+    val roles: RolesInfo = roleProvider.getInfo(bindings)
     roleInfo.set(roles) // TODO: mutable logic isn't so pretty. We need to maintain an immutable context somehow
     printRoleInfo(roles)
 
@@ -102,7 +102,7 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
     ))
   }
 
-  private def printRoleInfo(roles: RoleInfo): Unit = {
+  private def printRoleInfo(roles: RolesInfo): Unit = {
     val availableRoleInfo = roles.availableRoleBindings.map {
       r =>
         s"${r.anno.headOption.getOrElse("N/A")}, ${r.tpe}, source=${r.source.getOrElse("N/A")}"

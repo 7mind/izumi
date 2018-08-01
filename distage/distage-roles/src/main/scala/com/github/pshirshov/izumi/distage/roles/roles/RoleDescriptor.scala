@@ -1,5 +1,5 @@
 package com.github.pshirshov.izumi.distage.roles.roles
 
-trait RoleAppService extends RoleAppComponent
-
-
+trait RoleDescriptor {
+  def id: String
+}

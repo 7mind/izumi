@@ -9,8 +9,17 @@ import com.typesafe.config.ConfigFactory
 
 import scala.collection.JavaConverters._
 
-class RoleApp extends OpinionatedDiApp {
+abstract class RoleApp extends OpinionatedDiApp {
   override type CommandlineConfig = RoleLauncherArgs
+
+  def pluginConfig: PluginConfig
+
+  def bootstrapConfig: PluginConfig =
+    PluginConfig(
+        debug = false
+        , Seq.empty // there are no bootstrap plugins in Izumi, no need to scan
+        , Seq.empty
+      )
 
   override protected def commandlineSetup(args: Array[String]): Strategy = {
     RoleLauncherArgs.parser.parse(args, RoleLauncherArgs()) match {
@@ -50,22 +59,6 @@ class RoleApp extends OpinionatedDiApp {
   override protected def start(context: Locator, bootstrapContext: app.BootstrapContext[RoleLauncherArgs]): Unit = {
     context.get[RoleStarter].start(context)
   }
-
-  private val pluginConfig = PluginConfig(
-    debug = false
-    // FIXME TODO
-    , Seq("com.github.pshirshov.distage.roles")
-    , Seq.empty
-  )
-
-  private val bootstrapConfig = PluginConfig(
-    debug = false
-    , Seq.empty // there are no bs plugins in Izumi, no need to scan
-    , Seq.empty
-  )
-
-
-
 
 }
 

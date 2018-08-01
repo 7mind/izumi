@@ -12,12 +12,8 @@ import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 import scala.reflect.ClassTag
 
-trait RoleProvider {
-  def getInfo(bindings: Iterable[Binding]): RoleInfo
-}
-
 class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
-  def getInfo(bindings: Iterable[Binding]): RoleInfo = {
+  def getInfo(bindings: Iterable[Binding]): RolesInfo = {
     val availableBindings = getRoles(bindings)
 
     val roles = availableRoleNames(availableBindings)
@@ -26,7 +22,7 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
       .filter(b => isEnabledRole(b.tpe))
 
 
-    RoleInfo(
+    RolesInfo(
       Set(
         RuntimeDIUniverse.DIKey.get[RoleStarter]) ++ enabledRoles.map(_.binding.key)
       , enabledRoles
@@ -104,7 +100,6 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
           str
       }
     }
-
 
     val anno = SymbolInfo(tpe.tpe.typeSymbol, tpe).findAnnotation(SafeType.get[RoleId]).flatMap(findArgument).toSet
     anno
