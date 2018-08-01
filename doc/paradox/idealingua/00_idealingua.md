@@ -6,9 +6,9 @@ IdeaLingua RPC & Domain Modeling Language
 
 IdeaLingua is an RPC framework & Domain Modeling Language, it's purpose is to:
 
-* Publish APIs & data definitions in a common format and use them idiomatically in each target language.
-* Enable remote calls to each service via public API definitions.
-* Abstract irrelevant details such as network protocol. Idealingua is protocol-independent and can be used within or without network.
+* Publish APIs & data definitions in a common format and create idiomatic API clients and servers in any language.
+* Enable remote calls to service via their public API definitions.
+* Abstract irrelevant details such as network protocol and serialization format.
 * Deliver our souls from REST and its brittle boilerplate.
 
 If that sounds like just what you need, check out our examples:
