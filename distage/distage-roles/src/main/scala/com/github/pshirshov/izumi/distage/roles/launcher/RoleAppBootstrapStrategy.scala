@@ -86,7 +86,7 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
 
   override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
     val bindings = app.flatMap(_.bindings)
-    logger.info(s"Available ${app.size -> "app plugins"} and ${bs.size -> "bootstrap plugins"}, ${bindings.size -> "app bindings"}available ...")
+    logger.info(s"Available ${app.size -> "app plugins"} and ${bs.size -> "bootstrap plugins"} and ${bindings.size -> "app bindings"}...")
     val roles = roleProvider.getInfo(bindings)
     roleInfo.set(roles) // TODO: mutable logic isn't so pretty. We need to maintain an immutable context somehow
     printRoleInfo(roles)
@@ -144,7 +144,7 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
     makeLogRouter(params)
   }
 
-  // there are no bs plugins in Izumi, no need to scan
+  // there are no bootstrap plugins in Izumi, no need to scan
   override def mkBootstrapLoader(): PluginLoader = () => Seq.empty
 
   private def showDepData(logger: IzLogger, msg: String, clazz: Class[_]): Unit = {

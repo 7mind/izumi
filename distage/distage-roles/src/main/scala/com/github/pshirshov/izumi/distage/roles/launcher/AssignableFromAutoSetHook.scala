@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, DIKey, Wiring, mirror, u}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Tag, Wiring, mirror, u}
 
 class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
   protected val setElemetTag: u.TypeTag[T] = Tag[T].tag

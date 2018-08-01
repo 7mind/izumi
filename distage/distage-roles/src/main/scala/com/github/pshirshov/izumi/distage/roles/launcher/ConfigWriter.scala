@@ -3,9 +3,8 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.ConfigurableComponent
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleLauncherArgs.WriteReference
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleDescriptor, RoleId, TGTask, RoleAppService}
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleAppService, RoleDescriptor, RoleId, TGTask}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.{ArtifactVersion, IzManifest}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -34,7 +33,7 @@ class ConfigWriter(logger: IzLogger, roleInfo: RoleInfo, config: WriteReference)
     if (!configPath.exists())
       configPath.mkdir()
 
-    val maybeVersion = IzManifest.manifest[RoleApp].map(IzManifest.read).map(_.version)
+    val maybeVersion = IzManifest.manifest[RoleApp]().map(IzManifest.read).map(_.version)
     logger.info(s"Going to process ${roleInfo.availableRoleBindings.size -> "roles"}")
 
     val commonComponent = ConfigurableComponent("common", maybeVersion)
