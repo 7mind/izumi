@@ -405,18 +405,26 @@ lazy val `izumi-r2` = inRoot.as
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
     sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
-    , siteSubdirName in ScalaUnidoc := "api"
+    , siteSubdirName in ScalaUnidoc := s"v${version.value}/api"
+    , siteSubdirName in Paradox := s"v${version.value}/doc"
     , previewFixedPort := Some(9999)
     , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
     , git.remoteRepo := scmInfo.value.get.connection
-    , excludeFilter in ghpagesCleanSite := new FileFilter {
-      def accept(f: File) = (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath
-    }
     , paradoxProperties ++= Map(
-      "scaladoc.izumi.base_url" -> s"/api/com/github/pshirshov/",
-      "scaladoc.base_url" -> s"/api/",
+      "scaladoc.izumi.base_url" -> s"/v${version.value}/api/com/github/pshirshov/",
+      "scaladoc.base_url" -> s"/v${version.value}/api/",
       "izumi.version" -> version.value,
     )
+    , excludeFilter in ghpagesCleanSite :=
+      new FileFilter {
+        val v = ghpagesRepository.value.getCanonicalPath + "/v"
+
+        def accept(f: File): Boolean  = {
+          f.getCanonicalPath.startsWith(v) && f.getCanonicalPath.charAt(v.length).isDigit || // release
+            (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
+            (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath
+        }
+      }
   )
   .settings(addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))

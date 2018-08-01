@@ -30,7 +30,7 @@ before_install:
   - echo "TS `tsc -version`"
   - echo "Java `java -version`"
   - mkdir -p ~/.sbt/1.0/plugins/
-  - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M4")' > ~/.sbt/1.0/plugins/build.sbt
+  - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M6")' > ~/.sbt/1.0/plugins/build.sbt
 
 before_script:
   - bash travis.sh versionate

@@ -50,8 +50,8 @@ function scripted {
 
 function site {
   bopen
-  if [[ "$TRAVIS_BRANCH" == "develop" ]] ; then
-    echo "Publishing site from $TRAVIS_BRANCH branch"
+  if [[ "$TRAVIS_BRANCH" == "develop" || "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
+    echo "Publishing site from branch=$TRAVIS_BRANCH; tag=$TRAVIS_TAG"
     csbt ghpagesPushSite || exit 1
   else
     echo "Not publishing site, because $TRAVIS_BRANCH is not 'develop'"
