@@ -1,6 +1,10 @@
 ![Blazing fast](https://img.shields.io/badge/🔥-Blazing%20Fast-red.svg)
-
 ![For Humans](https://img.shields.io/badge/😿-For Humans-blue.svg)
+![:3](https://img.shields.io/badge/🏢-Enterprise Grade-999998.svg)
+![:3](https://img.shields.io/badge/👌-Production Ready-00ddca.svg)
+![:3](https://img.shields.io/badge/💎-Modern-44aadd.svg)
+![:3](https://img.shields.io/badge/🦋-Extremely Lightweight-7799cc.svg)
+![:3](https://img.shields.io/badge/🦄-Just Works-cc00cc.svg)
 [![Build Status](https://travis-ci.org/pshirshov/izumi-r2.svg?branch=develop)](https://travis-ci.org/pshirshov/izumi-r2)
 [![codecov](https://codecov.io/gh/pshirshov/izumi-r2/branch/develop/graph/badge.svg)](https://codecov.io/gh/pshirshov/izumi-r2)
 [![CodeFactor](https://www.codefactor.io/repository/github/pshirshov/izumi-r2/badge)](https://www.codefactor.io/repository/github/pshirshov/izumi-r2)
