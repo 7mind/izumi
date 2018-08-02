@@ -12,8 +12,6 @@
 ![:3](https://img.shields.io/badge/👌-Production%20Ready-00ddcc.svg)
 ![:3](https://img.shields.io/badge/💎-Modern-44aadd.svg)
 ![:3](https://img.shields.io/badge/🦋-Extremely%20Lightweight-7799cc.svg)
-![:3](https://img.shields.io/badge/🔐-Totally%20Secure-yellow.svg)
-![:3](https://img.shields.io/badge/🐛-Bug%20Free-green.svg)
 ![:3](https://img.shields.io/badge/🦄-Just%20Works-cc00cc.svg)
 
 
