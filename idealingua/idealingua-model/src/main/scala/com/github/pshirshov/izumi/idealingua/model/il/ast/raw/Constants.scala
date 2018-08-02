@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ConstId
 
+
 trait RawVal[+T] {
   def value: T
 }

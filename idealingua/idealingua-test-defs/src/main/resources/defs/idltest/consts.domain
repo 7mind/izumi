@@ -31,6 +31,7 @@ const {
         name = "test"
         value = 265
       }
+      [1, 2, 3]
   ]
 
   typedlist: lst[TestPair] = [

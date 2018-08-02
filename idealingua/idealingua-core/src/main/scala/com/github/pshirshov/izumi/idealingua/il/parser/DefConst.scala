@@ -40,8 +40,10 @@ trait DefConst extends Identifiers {
       Agg.ObjAgg(RawVal.CMap(v.map(rc => rc.id.name -> rc.const).toMap))
   }
 
-  final def listdef(inList: Parser[Agg]): Parser[Agg.ListAgg] = {
-    structure.aggregates.enclosedB(inList.rep(sep = sep.sepStruct))
+  final def listdef: Parser[Agg.ListAgg] = {
+    val t = P(literal | objdef | listdef).rep(sep = sep.sepStruct)
+
+    structure.aggregates.enclosedB(t)
       .map {
         v =>
           val elements = v.map {
@@ -57,7 +59,7 @@ trait DefConst extends Identifiers {
       }
   }
 
-  final def value: Parser[Agg] = literal | objdef | listdef(literal | objdef)
+  final def value: Parser[Agg] = literal | objdef | listdef
 
   final def const: Parser[RawConst] = (MaybeDoc ~ idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~/ inline ~ value).map {
     case (doc, name, None, value: Agg.ObjAgg) =>
