@@ -1,4 +1,5 @@
 ![Blazing fast](https://img.shields.io/badge/🔥-Blazing%20Fast-red.svg)
+
 ![For Humans](https://img.shields.io/badge/😿-For Humans-blue.svg)
 [![Build Status](https://travis-ci.org/pshirshov/izumi-r2.svg?branch=develop)](https://travis-ci.org/pshirshov/izumi-r2)
 [![codecov](https://codecov.io/gh/pshirshov/izumi-r2/branch/develop/graph/badge.svg)](https://codecov.io/gh/pshirshov/izumi-r2)
