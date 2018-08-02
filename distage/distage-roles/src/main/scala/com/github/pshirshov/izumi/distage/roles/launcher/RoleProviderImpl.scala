@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, mirror}
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleAppService, RoleId}
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleService, RoleId}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
@@ -59,7 +59,7 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
   private def isAvailableRoleType(tpe: SafeType): Boolean = {
     import RuntimeDIUniverse._
     val runtimeClass = mirror.runtimeClass(tpe.tpe)
-    classOf[RoleAppService].isAssignableFrom(runtimeClass)
+    classOf[RoleService].isAssignableFrom(runtimeClass)
 
   }
 

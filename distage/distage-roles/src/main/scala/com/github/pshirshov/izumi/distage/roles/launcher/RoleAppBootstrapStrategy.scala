@@ -12,7 +12,7 @@ import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleAppComponent, RoleAppService}
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
@@ -58,9 +58,9 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
     val roles = roleInfo.get()
 
-    val servicesHook = new AssignableFromAutoSetHook[RoleAppService]()
+    val servicesHook = new AssignableFromAutoSetHook[RoleService]()
     val closeablesHook = new AssignableFromAutoSetHook[AutoCloseable]()
-    val componentsHook = new AssignableFromAutoSetHook[RoleAppComponent]()
+    val componentsHook = new AssignableFromAutoSetHook[RoleComponent]()
 
     Seq(
       new ConfigModule(bsContext.appConfig)
@@ -108,8 +108,8 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
   override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
     Quirks.discard(bs, app)
     val baseMod = new ModuleDef {
-      many[RoleAppService]
-      many[RoleAppComponent]
+      many[RoleService]
+      many[RoleComponent]
       many[AutoCloseable]
 
       make[CustomContext].from(CustomContext.empty)

@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.distage.roles.launcher.test
 
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleAppService, RoleAppTask, RoleDescriptor, RoleId}
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleService, RoleTask, RoleDescriptor, RoleId}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 @RoleId(TestService.id)
-class TestService(logger: IzLogger) extends RoleAppService with RoleAppTask {
+class TestService(logger: IzLogger) extends RoleService with RoleTask {
   override def start(): Unit = {
     logger.info("Test service started!")
   }

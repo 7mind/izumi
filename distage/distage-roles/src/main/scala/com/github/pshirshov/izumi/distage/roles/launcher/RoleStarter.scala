@@ -4,20 +4,20 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleAppComponent, RoleAppService, RoleAppTask}
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RoleTask}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.util.Try
 
 // TODO: we need to rewrite this once we have WeakRefs
-class RoleStarter(services: Set[RoleAppService], components: Set[RoleAppComponent], closeables: Set[AutoCloseable], logger: IzLogger) {
+class RoleStarter(services: Set[RoleService], components: Set[RoleComponent], closeables: Set[AutoCloseable], logger: IzLogger) {
   private val latch = new CountDownLatch(1)
 
   private val contextRef = new AtomicReference[Locator]()
 
   def start(context: Locator): Unit = {
     if (contextRef.compareAndSet(null, context)) {
-      val tasksCount = services.count(_.isInstanceOf[RoleAppTask])
+      val tasksCount = services.count(_.isInstanceOf[RoleTask])
       logger.info(s"${(services.size - tasksCount) -> "services"}; ${tasksCount -> "tasks"}; ${components.size -> "components"} are going to start...")
 
       components.foreach {
@@ -64,7 +64,7 @@ class RoleStarter(services: Set[RoleAppService], components: Set[RoleAppComponen
           .partition(_._2.isSuccess)
         logger.info(s"Service shutdown: ${stopped.size -> "stopped"} ; ${failed.size -> "failed to stop"}")
 
-        val toClose = closeables.filterNot(_.isInstanceOf[RoleAppComponent])
+        val toClose = closeables.filterNot(_.isInstanceOf[RoleComponent])
         logger.info(s"Going to close ${toClose.size -> "count" -> null} ${toClose.map(_.getClass).niceList() -> "closeables"}")
 
         val (closed, failedToClose) = toClose

@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.roles.impl.{ScoptLauncherArgs, ScoptRoleApp}
 import com.github.pshirshov.izumi.distage.roles.launcher.test.TestService
-import com.github.pshirshov.izumi.distage.roles.roles.RoleAppService
+import com.github.pshirshov.izumi.distage.roles.roles.RoleService
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 import org.scalatest.WordSpec
 
@@ -23,7 +23,7 @@ class RoleAppTest extends WordSpec {
         )
 
         override protected def start(context: Locator, bootstrapContext: app.BootstrapContext[ScoptLauncherArgs]): Unit = {
-          val services = context.instances.map(_.value).collect({case t: RoleAppService => t}).toSet
+          val services = context.instances.map(_.value).collect({case t: RoleService => t}).toSet
           assert(services.size == 1)
           assert(services.exists(_.isInstanceOf[TestService]))
           super.start(context, bootstrapContext)
