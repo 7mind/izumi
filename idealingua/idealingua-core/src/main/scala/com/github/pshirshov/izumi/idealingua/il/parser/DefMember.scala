@@ -23,6 +23,7 @@ trait DefMember extends Aggregates {
     DefService.serviceBlock |
     DefEmitter.emitterBlock |
     DefStreams.streamsBlock |
+    DefConst.constBlock |
     inclusion
 
 }

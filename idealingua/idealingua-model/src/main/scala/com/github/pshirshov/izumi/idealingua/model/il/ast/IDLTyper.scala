@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, _}
@@ -8,7 +9,6 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionInterpreted, DomainDefinitionParsed, IdentifiedRawTypeDef, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.IdField
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.reflect._
 
@@ -36,6 +36,10 @@ class IDLPretyper(defn: DomainDefinitionParsed) {
       case d: ILDef => d.v.id.name
       case d: ILNewtype => d.v.id.name
     }
+
+//    if (consts.nonEmpty) {
+//      TrivialLogger.make[IDLPretyper]("pretyper", forceLog = true).log(s"Constants aren't supported yet. Tree: ${consts.niceList()}")
+//    }
 
     val clashes = allImportNames.intersect(allTypeNames)
     if (clashes.nonEmpty) {

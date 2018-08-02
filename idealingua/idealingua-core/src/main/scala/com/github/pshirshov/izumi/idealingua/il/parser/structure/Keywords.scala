@@ -24,6 +24,7 @@ trait Keywords extends Separators {
   final val service = kw("service", "server")
   final val emitter = kw("emitter", "sender")
   final val streams = kw("streams", "tunnel", "pump")
+  final val consts = kw("const", "values")
 
   final val defm = kw("def", "fn", "fun", "func")
   final val defe = kw("event", "ev", "msg")

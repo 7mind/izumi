@@ -11,6 +11,11 @@ trait Aggregates
     P(("{" ~ any ~ defparser ~ any ~ "}") | "(" ~ any ~ defparser ~ any ~ ")")
   }
 
+  def enclosedB[T](defparser: Parser[T]): Parser[T] = {
+    P("[" ~ any ~ defparser ~ any ~ "]")
+  }
+
+
   def starting[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(ParsedId, T)] = {
     kw(keyword, idShort ~ inline ~ defparser)
   }

@@ -35,6 +35,8 @@ final case class ParsedId(pkg: Seq[String], name: String) {
 
   def toStreamsId: StreamsId = StreamsId(typePath.domain, name)
 
+  def toConstId: ConstId = ConstId(typePath.domain, name)
+
   def toTypeId: AbstractIndefiniteId = {
     IndefiniteId(pkg, name)
   }
