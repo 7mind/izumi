@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategyBaseImpl, OpinionatedDiApp}
+import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategyBaseImpl, BootstrapContext, OpinionatedDiApp}
 import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
@@ -11,12 +11,12 @@ import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
-import com.github.pshirshov.izumi.distage.roles.launcher.RoleLauncherArgs.WriteReference
-import com.github.pshirshov.izumi.distage.roles.roles.{PluginTags, RoleAppComponent, RoleAppService}
+import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleAppComponent, RoleAppService}
 import com.github.pshirshov.izumi.fundamentals.collections.TagExpr
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
@@ -27,30 +27,24 @@ import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
 
 import scala.reflect.ClassTag
 
-class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#BootstrapContext)
+class RoleAppBootstrapStrategy[CommandlineConfig](
+                                private val disabledTags: TagExpr.Strings.Expr
+                              , private val roleSet: Set[String]
+                              , private val jsonLogging: Boolean
+                              , private val rootLogLevel: Log.Level
+                              , private val using: Seq[Using]
+                              , private val addOverrides: ModuleBase
+                              , bsContext: BootstrapContext[CommandlineConfig]
+                              )
   extends ApplicationBootstrapStrategyBaseImpl(bsContext) {
-
-  private val disabledTags = if (params.dummyStorage.contains(true)) {
-    TagExpr.Strings.all(PluginTags.Production, PluginTags.Storage)
-  } else {
-    TagExpr.Strings.any(PluginTags.Test, PluginTags.Dummy)
-  }
-
-  private val roleSet = {
-//    if (params.writeReference.isDefined) {
-//      params.roles.map(_.name).toSet // FIXME TODO ??? + ConfigWriter.id
-//    } else {
-      params.roles.map(_.name).toSet
-//    }
-  }
 
   private val logger = new IzLogger(router(), CustomContext.empty)
 
   private val roleProvider: RoleProvider = new RoleProviderImpl(roleSet)
 
-  def init(): RoleAppBootstrapStrategy = {
+  def init(): RoleAppBootstrapStrategy[CommandlineConfig] = {
     showDepData(logger, "Application is about to start", this.getClass)
-    showDepData(logger, "... using role-unified-sdk", classOf[RoleApp]) // FIXME TODO
+    using.foreach { u => showDepData(logger, s"... using ${u.libraryName}", u.clazz) }
     showDepData(logger, "... using izumi-r2", classOf[OpinionatedDiApp])
     this
   }
@@ -113,20 +107,20 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
 
   override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
     Quirks.discard(bs, app)
-    Seq(new ModuleDef {
+    val baseMod = new ModuleDef {
       many[RoleAppService]
       many[RoleAppComponent]
       many[AutoCloseable]
 
-      make[WriteReference].from(params.writeReference.getOrElse(WriteReference()))
       make[CustomContext].from(CustomContext.empty)
       make[IzLogger]
       make[RoleStarter]
-    })
+    }
+    Seq(baseMod overridenBy addOverrides)
   }
 
-  private def makeLogRouter(params: RoleLauncherArgs): LogRouter = {
-    val renderingPolicy = if (params.jsonLogging.contains(true)) {
+  private def makeLogRouter: LogRouter = {
+    val renderingPolicy = if (jsonLogging) {
       new JsonRenderingPolicy()
     } else {
       new StringRenderingPolicy(RenderingOptions(withExceptions = true, withColors = true))
@@ -136,12 +130,12 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
 
     // TODO: here we may read log configuration from config file
     new ConfigurableLogRouter(
-      new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(params.rootLogLevel, sinks))
+      new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(rootLogLevel, sinks))
     )
   }
 
   override def router(): LogRouter = {
-    makeLogRouter(params)
+    makeLogRouter
   }
 
   // there are no bootstrap plugins in Izumi, no need to scan
@@ -153,4 +147,8 @@ class RoleAppBootstrapStrategy(params: RoleLauncherArgs, bsContext: RoleApp#Boot
 
     logger.info(s"$msg : $details")
   }
+}
+
+object RoleAppBootstrapStrategy {
+  final case class Using(libraryName: String, clazz: Class[_])
 }

@@ -225,7 +225,7 @@ lazy val distageApp = inDiStage.as.module
 lazy val distageRoles = inDiStage.as.module
   .depends(distageApp, logstageRenderingJson4s, logstageSinkConsole, logstageAdapterSlf4j)
   .settings(
-    libraryDependencies += R.scopt
+    libraryDependencies += R.scopt % "test"
   )
 
 lazy val distageCore = inDiStage.as.module
