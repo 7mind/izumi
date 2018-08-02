@@ -4,7 +4,8 @@ import com.github.pshirshov.izumi.distage.app
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.roles.launcher.test.{ScoptLauncherArgs, ScoptRoleApp, TestService}
+import com.github.pshirshov.izumi.distage.roles.impl.{ScoptLauncherArgs, ScoptRoleApp}
+import com.github.pshirshov.izumi.distage.roles.launcher.test.TestService
 import com.github.pshirshov.izumi.distage.roles.roles.RoleAppService
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 import org.scalatest.WordSpec

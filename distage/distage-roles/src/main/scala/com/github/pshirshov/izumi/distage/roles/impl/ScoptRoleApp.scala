@@ -1,10 +1,9 @@
-package com.github.pshirshov.izumi.distage.roles.launcher.test
+package com.github.pshirshov.izumi.distage.roles.impl
 
 import com.github.pshirshov.izumi.distage.app.BootstrapContextDefaultImpl
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleApp, RoleAppBootstrapStrategy}
 import com.typesafe.config.ConfigFactory
-
 import scala.collection.JavaConverters._
 
 trait ScoptRoleApp {
@@ -44,7 +43,7 @@ trait ScoptRoleApp {
     )
 
     val args = ScoptRoleAppBootstrapArgs(params)
-    import args.{disabledTags, roleSet, jsonLogging, rootLogLevel, using, addOverrides}
+    import args._
 
     new RoleAppBootstrapStrategy[CommandlineConfig](
       disabledTags, roleSet, jsonLogging, rootLogLevel, using, addOverrides

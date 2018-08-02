@@ -1,9 +1,10 @@
-package com.github.pshirshov.izumi.distage.roles.launcher.test
+package com.github.pshirshov.izumi.distage.roles.impl
 
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
+import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleApp
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
-import com.github.pshirshov.izumi.distage.roles.launcher.test.ScoptLauncherArgs.WriteReference
+import com.github.pshirshov.izumi.distage.roles.roles.BackendPluginTags
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import com.github.pshirshov.izumi.logstage.api.Log
 
@@ -22,13 +23,13 @@ object ScoptRoleAppBootstrapArgs {
     ScoptRoleAppBootstrapArgs(
       disabledTags =
         if (params.dummyStorage.contains(true)) {
-          TagExpr.Strings.all("production", "storage")
+          TagExpr.Strings.all(BackendPluginTags.Production, BackendPluginTags.Storage)
         } else {
-          TagExpr.Strings.any("test", "dummy")
+          TagExpr.Strings.any(BackendPluginTags.Test, BackendPluginTags.Dummy)
         }
       , roleSet =
           if (params.writeReference.isDefined) {
-            params.roles.map(_.name).toSet // + "configwriter"
+            params.roles.map(_.name).toSet + "configwriter" // FIXME coupling
           } else {
             params.roles.map(_.name).toSet
           }

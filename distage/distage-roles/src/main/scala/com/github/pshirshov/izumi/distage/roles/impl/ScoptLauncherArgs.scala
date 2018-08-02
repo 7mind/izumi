@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.roles.launcher.test
+package com.github.pshirshov.izumi.distage.roles.impl
 
 import java.io.File
 
+import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleArgs
-import com.github.pshirshov.izumi.distage.roles.launcher.test.ScoptLauncherArgs.WriteReference
 import com.github.pshirshov.izumi.logstage.api.Log
-import scopt.OptionParser
+import scopt.{OptionParser, Read}
 
 case class ScoptLauncherArgs(
                            configFile: Option[File] = None
@@ -22,7 +22,7 @@ object ScoptLauncherArgs {
                             , targetDir: String = "config"
                             , includeCommon: Boolean = true)
 
-  val parser: OptionParser[ScoptLauncherArgs] = new scopt.OptionParser[ScoptLauncherArgs]("tg-launcher") {
+  lazy val parser: OptionParser[ScoptLauncherArgs] = new OptionParser[ScoptLauncherArgs]("tg-launcher") {
      head("tg-launcher", "TODO: manifest version")
      help("help")
 
@@ -40,6 +40,7 @@ object ScoptLauncherArgs {
 
      opt[Log.Level]("root-log-level").abbr("rll")
        .text("Root logging level")
+       .valueName("log level")
        .action { (v, c) =>
          c.copy(rootLogLevel = v)
        }
@@ -87,7 +88,7 @@ object ScoptLauncherArgs {
        )
    }
 
-   implicit val logLevelRead: scopt.Read[Log.Level] = scopt.Read.reads[Log.Level] {
+   implicit lazy val logLevelRead: Read[Log.Level] = Read.reads[Log.Level] {
      v =>
        v.charAt(0).toLower match {
          case 't' => Log.Level.Trace
