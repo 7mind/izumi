@@ -16,6 +16,8 @@ class RoleAppTest extends WordSpec {
     "properly discover services to start" in {
       new RoleApp with ScoptRoleApp {
 
+        override final val using = Seq.empty
+
         override val pluginConfig: PluginLoaderDefaultImpl.PluginConfig = PluginConfig(
             debug = false
           , packagesEnabled = Seq(s"$thisPkg.test")
