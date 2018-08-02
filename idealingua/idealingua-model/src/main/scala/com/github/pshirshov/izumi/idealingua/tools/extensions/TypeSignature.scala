@@ -2,7 +2,7 @@
 //
 //import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 //import com.github.pshirshov.izumi.idealingua.model.common._
-//import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
+//import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod._
 //import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 //import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 //import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef

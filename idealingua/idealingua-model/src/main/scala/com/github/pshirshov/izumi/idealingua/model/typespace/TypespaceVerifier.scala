@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, DomainId, TypeId, TypeName}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLCyclicInheritanceException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, SimpleStructure, TypeDef}
 
@@ -124,6 +124,8 @@ class TypespaceVerifier(ts: Typespace) {
               extractDeps(t.struct)
             case t: Output.Algebraic =>
               t.alternatives.map(_.typeId)
+            case _: Output.Void =>
+              Seq.empty
           }
 
           (inDeps ++ outDeps).map(t => MissingDependency.DepServiceParameter(service.id, m.name, t))

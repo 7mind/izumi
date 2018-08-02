@@ -3,8 +3,8 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -489,7 +489,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     ext.extend(i, InterfaceProduct(iface, companion, imports.render(ts), s"// ${i.id.name} Interface"), _.handleInterface)
   }
 
-  protected def renderServiceMethodSignature(method: Service.DefMethod, spread: Boolean = false): String = method match {
+  protected def renderServiceMethodSignature(method: DefMethod, spread: Boolean = false): String = method match {
     case m: DefMethod.RPCMethod =>
       if (spread) {
         val fields = m.signature.input.fields.map(f => conv.safeName(f.name) + s": ${conv.toNativeType(f.typeId, ts)}").mkString(", ")
@@ -505,7 +505,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     case si: Singular => conv.toNativeType(si.typeId, ts)
   }
 
-  protected def renderServiceClientMethod(service: String, method: Service.DefMethod): String = method match {
+  protected def renderServiceClientMethod(service: String, method: DefMethod): String = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct =>
         s"""public ${renderServiceMethodSignature(method, spread = true)} {
@@ -600,7 +600,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def renderServiceMethodOutModel(name: String, implements: String, out: Service.DefMethod.Output): String = out match {
+  protected def renderServiceMethodOutModel(name: String, implements: String, out: DefMethod.Output): String = out match {
     case st: Struct => renderServiceMethodInModel(name, implements, st.struct, export = true)
 //    case al: Algebraic => renderAdt(al)
     case _ => s""
@@ -631,7 +631,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def renderServiceMethodModels(method: Service.DefMethod): String = method match {
+  protected def renderServiceMethodModels(method: DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "IRTServiceClientInData", m.signature.input, export = false)}
          |${renderServiceMethodOutModel(s"Out${m.name.capitalize}", "IRTServiceClientOutData", m.signature.output)}

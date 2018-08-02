@@ -78,8 +78,14 @@ object TypeId {
 
   final case class EnumId(path: TypePath, name: TypeName) extends ScalarId
 
-  // TODO: remove superclass?
+
   final case class ServiceId(domain: DomainId, name: TypeName)
+
+  final case class EmitterId(domain: DomainId, name: TypeName)
+
+  final case class StreamsId(domain: DomainId, name: TypeName)
+
+  final case class ConstId(domain: DomainId, name: TypeName)
 
 }
 

@@ -3,8 +3,8 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, DomainId, TypePath}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
@@ -282,7 +282,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     InterfaceProduct(iface, companion, im.renderImports(List("IRT", "System", "System.Collections", "System.Collections.Generic") ++ ext.imports(ctx, i).toList))
   }
 
-  protected def renderServiceMethodSignature(i: Service, method: Service.DefMethod, forClient: Boolean)
+  protected def renderServiceMethodSignature(i: Service, method: DefMethod, forClient: Boolean)
                                             (implicit imports: CSharpImports, ts: Typespace): String = {
     val callbacks = s""
     method match {
@@ -309,7 +309,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     s"${renderServiceMethodOutputModel(i, method)}"
   }
 
-  protected def renderServiceClientMethod(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
+  protected def renderServiceClientMethod(i: Service, method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct | _: Algebraic =>
         s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
@@ -359,7 +359,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
      """.stripMargin
   }
 
-  protected def renderServiceDispatcherHandler(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
+  protected def renderServiceDispatcherHandler(i: Service, method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""case "${m.name}": {
          |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var obj = marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}>(data);"}
@@ -404,7 +404,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
      """.stripMargin
   }
 
-  protected def renderServiceServerDummyMethod(i: Service, member: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
+  protected def renderServiceServerDummyMethod(i: Service, member: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
     val retValue = member match {
       case m: DefMethod.RPCMethod => m.signature.output match {
         case _: Struct | _: Algebraic => "null"
@@ -426,7 +426,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
      """.stripMargin
   }
 
-  protected def renderServiceMethodOutModel(i: Service, name: String, out: Service.DefMethod.Output)(implicit imports: CSharpImports, ts: Typespace): String = out match {
+  protected def renderServiceMethodOutModel(i: Service, name: String, out: DefMethod.Output)(implicit imports: CSharpImports, ts: Typespace): String = out match {
     case st: Struct => renderServiceMethodInModel(i, name, st.struct)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
     case si: Singular => s"// ${si.typeId}"
@@ -440,7 +440,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |${ext.postModelEmit(ctx, csClass.id.name, csClass)}""".stripMargin
   }
 
-  protected def renderServiceMethodModels(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
+  protected def renderServiceMethodModels(i: Service, method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""${if (m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, s"In${m.name.capitalize}", m.signature.input)}
          |${renderServiceMethodOutModel(i, s"Out${m.name.capitalize}", m.signature.output)}
@@ -448,7 +448,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
   }
 
-  protected def renderServiceMethodAdtUsings(i: Service, method: Service.DefMethod)(implicit imports: CSharpImports, ts: Typespace): List[String] = method match {
+  protected def renderServiceMethodAdtUsings(i: Service, method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): List[String] = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
       case al: Algebraic => al.alternatives.map(adtm => renderAdtUsings(adtm))
       case _ => List.empty

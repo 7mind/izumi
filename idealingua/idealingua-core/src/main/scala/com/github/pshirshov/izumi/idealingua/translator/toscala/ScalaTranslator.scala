@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 import com.github.pshirshov.izumi.idealingua.model.common.PrimitiveId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, EnumId, IdentifierId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Interfaces, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module

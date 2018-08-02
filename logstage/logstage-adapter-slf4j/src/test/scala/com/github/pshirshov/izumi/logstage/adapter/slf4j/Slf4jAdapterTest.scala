@@ -16,7 +16,6 @@ class Slf4jAdapterTest extends WordSpec {
 
       StaticLogRouter.instance.setup(LoggingAsyncSinkTest.mkRouter(
         sink
-        //, LoggingMacroTest.consoleSinkText
       ))
 
       logger.trace(s"Debug message")

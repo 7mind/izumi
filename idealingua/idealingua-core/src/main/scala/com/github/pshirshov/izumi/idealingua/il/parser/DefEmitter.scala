@@ -3,16 +3,16 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 import com.github.pshirshov.izumi.idealingua.il.parser.model.AlgebraicType
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
 import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILService
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawMethod, RawSimpleStructure, Service}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILEmitter
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import fastparse.all._
 
 
-trait DefService {
+trait DefEmitter {
 
   import sep._
 
-  final val method = DefSignature.signature(kw.defm).map {
+  final val method = DefSignature.signature(kw.defe).map {
     case (c, id, in, Some(out: RawSimpleStructure)) =>
       RawMethod.RPCMethod(id, RawMethod.Signature(in, RawMethod.Output.Struct(out)), c)
 
@@ -32,12 +32,16 @@ trait DefService {
   // other method kinds should be added here
   final val methods: Parser[Seq[RawMethod]] = P(method.rep(sep = any))
 
-  final val serviceBlock = aggregates.cblock(kw.service, DefService.methods)
+  final val emitterBlock = aggregates.cblock(kw.emitter, methods)
     .map {
-      case (c, i, v) => ILService(Service(i.toServiceId, v.toList, c))
+      case (c, i, v) => ILEmitter(Emitter(i.toEmitterId, v.toList, c))
     }
 
 }
 
-object DefService extends DefService {
+object DefEmitter extends DefEmitter {
 }
+
+
+
+

@@ -21,19 +21,22 @@ class LoaderTest extends WordSpec {
       val models = parseModels(files)
 
       defs.foreach {
-        d =>
-          val domainId = d.domain.id
-          assert(d.domain.types.nonEmpty, domainId)
+        original =>
+          val domainId = original.domain.id
+          assert(original.domain.nonEmpty, s"$domainId parsed into empty definition")
 
-          val rendered = new ILRenderer(d.domain).render()
+          val rendered = new ILRenderer(original.domain).render()
           val restored = IDLParser.parseDomain(rendered)
 
           restored match {
             case Parsed.Success(r, _) =>
               val typespaces = loader.resolve(domains.updated(domainId, r), models)
               val restoredTypespace = typespaces.find(_.domain.id == domainId).get
-              assert(restoredTypespace.domain.types.toSet == d.domain.types.toSet)
-              assert(restoredTypespace.domain.services.toSet == d.domain.services.toSet)
+
+              assert(restoredTypespace.domain.types.toSet == original.domain.types.toSet, domainId)
+              assert(restoredTypespace.domain.services.toSet == original.domain.services.toSet, domainId)
+              assert(restoredTypespace.domain.emitters.toSet == original.domain.emitters.toSet, domainId)
+              assert(restoredTypespace.domain.streams.toSet == original.domain.streams.toSet, domainId)
 
             case f =>
               fail(s"Failed to reparse $domainId: $f\nDOMAIN:\n$rendered")

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.typespace
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
@@ -45,6 +45,11 @@ class TypeCollection(domain: DomainDefinition) {
 
           case o: Output.Struct =>
             val outStructure = Structure.apply(o.struct.fields, List.empty, Super(List.empty, o.struct.concepts, List.empty))
+            val outId = DTOId(service.id, s"${baseName}Output")
+            DTO(outId, outStructure, None)
+
+          case _: Output.Void =>
+            val outStructure = Structure.apply(List.empty, List.empty, Super(List.empty, List.empty, List.empty))
             val outId = DTOId(service.id, s"${baseName}Output")
             DTO(outId, outStructure, None)
 

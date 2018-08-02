@@ -4,7 +4,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId, TypeName, TypePath}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.{Output, RPCMethod}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.{ClassSource, STContext}
 
 import scala.meta._
@@ -26,11 +26,13 @@ final case class ServiceContext(ctx: STContext, svc: Service) {
   val svcWrappedTpe: ScalaType = ctx.conv.toScala(wrappedId)
 
   import ctx.conv._
+
   val serviceInputBase: ScalaType = svcBaseTpe.within(s"In${typeName.capitalize}")
   val serviceOutputBase: ScalaType = svcBaseTpe.within(s"Out${typeName.capitalize}")
 }
 
 final case class FullServiceContext(service: ServiceContext, methods: List[ServiceMethodProduct])
+
 final case class StructContext(source: ClassSource, struct: ScalaStruct)
 
 final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCMethod) {
@@ -38,8 +40,9 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
   import ctx.conv._
 
   def methodArity: Int = fields.size
+
   def nameTerm = Term.Name(name)
-  
+
   def defnServer: Stat = {
     q"def $nameTerm(ctx: C, ..$signature): Result[${outputType.typeFull}]"
   }
@@ -102,14 +105,16 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
 
   def methodId: Term.Apply = q"IRTMethodId(${Lit.String(method.name)})"
+
   def fullMethodId = q"IRTMethod(`serviceId`, $methodId)"
+
   def fullMethodIdName = Term.Name(s"Met${method.name.capitalize}")
 
-  def inputMatcher: Case =  {
+  def inputMatcher: Case = {
     p" case _: ${inputTypeWrapped.typeFull} => $fullMethodIdName"
   }
 
-  def outputMatcher: Case =  {
+  def outputMatcher: Case = {
     p" case _: ${outputTypeWrapped.typeFull} => $fullMethodIdName"
   }
 
@@ -138,7 +143,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
       case o: Output.Singular =>
         o.typeId
 
-      case _: Output.Struct =>
+      case _: Output.Struct | _: Output.Void =>
         DTOId(sp.basePath, s"${name.capitalize}Output")
 
       case _: Output.Algebraic =>

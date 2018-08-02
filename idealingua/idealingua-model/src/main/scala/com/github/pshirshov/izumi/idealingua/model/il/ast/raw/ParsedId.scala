@@ -12,6 +12,7 @@ final case class ParsedId(pkg: Seq[String], name: String) {
 
     }
   }
+
   def toEnumId: EnumId = EnumId(typePath, name)
 
   def toAliasId: AliasId = AliasId(typePath, name)
@@ -29,6 +30,10 @@ final case class ParsedId(pkg: Seq[String], name: String) {
   def toAdtId: AdtId = AdtId(typePath, name)
 
   def toServiceId: ServiceId = ServiceId(typePath.domain, name)
+
+  def toEmitterId: EmitterId = EmitterId(typePath.domain, name)
+
+  def toStreamsId: StreamsId = StreamsId(typePath.domain, name)
 
   def toTypeId: AbstractIndefiniteId = {
     IndefiniteId(pkg, name)
