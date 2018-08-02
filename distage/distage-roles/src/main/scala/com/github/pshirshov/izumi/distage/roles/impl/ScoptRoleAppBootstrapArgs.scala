@@ -1,26 +1,17 @@
 package com.github.pshirshov.izumi.distage.roles.impl
 
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleApp
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.distage.roles.roles.BackendPluginTags
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
-import com.github.pshirshov.izumi.logstage.api.Log
 
-final case class ScoptRoleAppBootstrapArgs(
-                                            disabledTags: TagExpr.Strings.Expr
-                                          , roleSet: Set[String]
-                                          , jsonLogging: Boolean
-                                          , rootLogLevel: Log.Level
-                                          , using: Seq[Using]
-                                          , addOverrides: ModuleBase
-                                          )
-
+// FIXME
 object ScoptRoleAppBootstrapArgs {
 
-  def apply(params: ScoptLauncherArgs): ScoptRoleAppBootstrapArgs =
-    ScoptRoleAppBootstrapArgs(
+  def apply(params: ScoptLauncherArgs): RoleAppBootstrapStrategyArgs =
+    RoleAppBootstrapStrategyArgs(
       disabledTags =
         if (params.dummyStorage.contains(true)) {
           TagExpr.Strings.all(BackendPluginTags.Production, BackendPluginTags.Storage)

@@ -2,14 +2,20 @@ package com.github.pshirshov.izumi.distage.roles.impl
 
 import com.github.pshirshov.izumi.distage.app.BootstrapContextDefaultImpl
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleApp, RoleAppBootstrapStrategy}
 import com.typesafe.config.ConfigFactory
+
 import scala.collection.JavaConverters._
 
+// FIXME
 trait ScoptRoleApp {
   this: RoleApp =>
 
   override type CommandlineConfig = ScoptLauncherArgs
+  override type StrategyArgs = RoleAppBootstrapStrategyArgs
+
+  protected def using: Seq[Using]
 
   override protected def parseArgs(args: Array[String]): ScoptRoleApp#CommandlineConfig =
     ScoptLauncherArgs.parser.parse(args, ScoptLauncherArgs())
@@ -37,18 +43,18 @@ trait ScoptRoleApp {
     AppConfig(mainConfig)
   }
 
-  override protected def setupContext(params: CommandlineConfig, appConfig: AppConfig): Strategy = {
+  override protected def paramsToStrategyArgs(params: CommandlineConfig): StrategyArgs = {
+    val args = ScoptRoleAppBootstrapArgs(params)
+    args.copy(using = args.using ++ using)
+  }
+
+  override protected def setupContext(params: CommandlineConfig, args: StrategyArgs, appConfig: AppConfig): Strategy = {
     val bsContext: BootstrapContext = BootstrapContextDefaultImpl(
       params, bootstrapConfig, pluginConfig, appConfig
     )
 
-    val args = ScoptRoleAppBootstrapArgs(params)
-    import args._
-
-    new RoleAppBootstrapStrategy[CommandlineConfig](
-      disabledTags, roleSet, jsonLogging, rootLogLevel, using, addOverrides
-      , bsContext
-    ).init()
+    new RoleAppBootstrapStrategy[CommandlineConfig](args, bsContext)
+      .init()
   }
 
 }

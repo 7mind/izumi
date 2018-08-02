@@ -7,7 +7,8 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 
 abstract class RoleApp extends OpinionatedDiApp {
-//  override type CommandlineConfig = RoleLauncherArgs
+
+  type StrategyArgs
 
   def bootstrapConfig: PluginConfig =
     PluginConfig(
@@ -18,8 +19,9 @@ abstract class RoleApp extends OpinionatedDiApp {
 
   override protected def commandlineSetup(args: Array[String]): Strategy = {
     val params = parseArgs(args)
+    val strategyArgs = paramsToStrategyArgs(params)
     val appConfig = buildConfig(params)
-    setupContext(params, appConfig)
+    setupContext(params, strategyArgs, appConfig)
   }
 
   def pluginConfig: PluginConfig
@@ -28,7 +30,9 @@ abstract class RoleApp extends OpinionatedDiApp {
 
   protected def buildConfig(params: CommandlineConfig): AppConfig
 
-  protected def setupContext(params: CommandlineConfig, appConfig: AppConfig): Strategy
+  protected def paramsToStrategyArgs(params: CommandlineConfig): StrategyArgs
+
+  protected def setupContext(params: CommandlineConfig, args: StrategyArgs, appConfig: AppConfig): Strategy
 
   override protected def start(context: Locator, bootstrapContext: app.BootstrapContext[CommandlineConfig]): Unit = {
     context.get[RoleStarter].start(context)
