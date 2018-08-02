@@ -1,10 +1,3 @@
-![Blazing fast](https://img.shields.io/badge/🔥-Blazing%20Fast-red.svg)
-![For Humans](https://img.shields.io/badge/😿-For Humans-blue.svg)
-![:3](https://img.shields.io/badge/🏢-Enterprise Grade-999998.svg)
-![:3](https://img.shields.io/badge/👌-Production Ready-00ddca.svg)
-![:3](https://img.shields.io/badge/💎-Modern-44aadd.svg)
-![:3](https://img.shields.io/badge/🦋-Extremely Lightweight-7799cc.svg)
-![:3](https://img.shields.io/badge/🦄-Just Works-cc00cc.svg)
 [![Build Status](https://travis-ci.org/pshirshov/izumi-r2.svg?branch=develop)](https://travis-ci.org/pshirshov/izumi-r2)
 [![codecov](https://codecov.io/gh/pshirshov/izumi-r2/branch/develop/graph/badge.svg)](https://codecov.io/gh/pshirshov/izumi-r2)
 [![CodeFactor](https://www.codefactor.io/repository/github/pshirshov/izumi-r2/badge)](https://www.codefactor.io/repository/github/pshirshov/izumi-r2)
@@ -13,6 +6,16 @@
 [![Sonatype releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/com.github.pshirshov.izumi.r2/izumi-r2_2.12.svg)](https://oss.sonatype.org/content/repositories/releases/com/github/pshirshov/izumi/r2/)
 [![Sonatype snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/com.github.pshirshov.izumi.r2/izumi-r2_2.12.svg)](https://oss.sonatype.org/content/repositories/snapshots/com/github/pshirshov/izumi/r2/)
 [![License](https://img.shields.io/github/license/pshirshov/izumi-r2.svg)](https://github.com/pshirshov/izumi-r2/blob/develop/LICENSE) [![Join the chat at https://gitter.im/izumi-r2/Lobby](https://badges.gitter.im/izumi-r2/Lobby.svg)](https://gitter.im/izumi-r2/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+![:3](https://img.shields.io/badge/🔥-Blazing%20Fast-red.svg)
+![:3](https://img.shields.io/badge/😿-For%20Humans-blue.svg)
+![:3](https://img.shields.io/badge/🏢-Enterprise%20Grade-999999.svg)
+![:3](https://img.shields.io/badge/👌-Production%20Ready-00ddcc.svg)
+![:3](https://img.shields.io/badge/💎-Modern-44aadd.svg)
+![:3](https://img.shields.io/badge/🦋-Extremely%20Lightweight-7799cc.svg)
+![:3](https://img.shields.io/badge/🔐-Totally%20Secure-yellow.svg)
+![:3](https://img.shields.io/badge/🐛-Bug%20Free-green.svg)
+![:3](https://img.shields.io/badge/🦄-Just%20Works-cc00cc.svg)
+
 
 What is it?
 ===========
