@@ -8,6 +8,16 @@ class BasicParserTest
   extends WordSpec with ParserTestTools {
 
   "IL parser" should {
+    "parse annos" in {
+      assertParses(DefConst.defAnno,
+        """@TestAnno[]""".stripMargin)
+
+      assertParses(DefConst.defAnno,
+        """@TestAnno[a=1]""".stripMargin)
+
+      assertParses(DefConst.defAnno,
+        """@TestAnno[a=1, b="xxx"]""".stripMargin)
+    }
     "parse docstrings" in {
       assertParses(comments.DocComment,
         """/** docstring

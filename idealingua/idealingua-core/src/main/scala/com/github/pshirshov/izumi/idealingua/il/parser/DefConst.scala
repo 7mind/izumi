@@ -2,14 +2,16 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Identifiers, kw, sep}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILConst
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{Constants, RawConst, RawVal}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{Constants, RawAnno, RawConst, RawVal}
 import fastparse.all._
+import fastparse.core
 
 trait DefConst extends Identifiers {
   final val literal = {
     import Literals.Literals._
-    P(
+    NoCut(P(
       ("-".? ~ Float).!.map(_.toDouble).map(RawVal.CFloat) |
         ("-".? ~ Int).!.map { v =>
           if (v.toUpperCase.endsWith("L")) {
@@ -20,7 +22,7 @@ trait DefConst extends Identifiers {
         } |
         Bool.!.map(_.toBoolean).map(RawVal.CBool) |
         Str.!.map(RawVal.CString)
-    ).map(Agg.Just)
+    )).map(Agg.Just)
   }
 
   sealed trait Agg
@@ -61,7 +63,7 @@ trait DefConst extends Identifiers {
 
   final def value: Parser[Agg] = literal | objdef | listdef
 
-  final def const: Parser[RawConst] = (MaybeDoc ~ idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~/ inline ~ value).map {
+  final def const: Parser[RawConst] = (MaybeDoc ~ idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value).map {
     case (doc, name, None, value: Agg.ObjAgg) =>
       RawConst(name.toConstId, value.consts, doc)
 
@@ -90,6 +92,14 @@ trait DefConst extends Identifiers {
     .map {
       v => ILConst(Constants(v.toList))
     }
+
+  final val simpleConsts = (idShort ~ inline ~ "=" ~ inline ~ value).rep(min = 0, sep = sepStruct)
+  final val defAnno = P("@" ~ idShort ~ "[" ~ inline ~ simpleConsts ~ inline ~"]")
+  //    .map {
+  //    case (id, v) => raw.RawAnno(id.name, v)
+  //  }
+
+  final val defAnnos: Parser[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_ => Seq(RawAnno("test", Seq.empty)))
 }
 
 object DefConst extends DefConst {

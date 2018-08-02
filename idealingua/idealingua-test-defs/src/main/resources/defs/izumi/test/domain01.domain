@@ -29,6 +29,8 @@ mixin TestInterface {
 
 /** docstring
   */
+@TestAnno[]
+@AnotherAnno[a=1, b="str"]
 data TestObject {
   & TestInterface
 }

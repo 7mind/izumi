@@ -31,6 +31,4 @@ object RawTypeDef {
 }
 
 
-
-
-
+case class RawAnno(name: String, values: Seq[RawConst])
