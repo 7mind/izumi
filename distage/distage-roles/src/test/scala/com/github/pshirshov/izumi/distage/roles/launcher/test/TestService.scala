@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 @RoleId(TestService.id)
 class TestService(logger: IzLogger) extends RoleAppService with RoleAppTask {
   override def start(): Unit = {
-    logger.info(s"Test service started!")
+    logger.info("Test service started!")
   }
 }
 

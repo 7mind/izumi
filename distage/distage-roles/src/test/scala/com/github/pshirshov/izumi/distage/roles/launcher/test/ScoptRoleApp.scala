@@ -16,7 +16,7 @@ trait ScoptRoleApp {
     ScoptLauncherArgs.parser.parse(args, ScoptLauncherArgs())
       .getOrElse {
         ScoptLauncherArgs.parser.showUsageAsError()
-        throw new IllegalArgumentException(s"Unexpected commandline parameters")
+        throw new IllegalArgumentException("Unexpected commandline parameters")
       }
 
   override protected def buildConfig(params: ScoptRoleApp#CommandlineConfig): AppConfig = {
