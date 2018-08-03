@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, Id, ImplDef}
-import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import distage.{DIKey, ModuleBase, ModuleDef, SafeType}
 import org.scalatest.WordSpec
@@ -38,6 +38,23 @@ class BasicTest extends WordSpec with MkInjector {
     }
     val locator = injector.produce(fixedPlan)
     assert(locator.get[LocatorDependent].ref.get == locator)
+  }
+
+
+  "fails on wrong @Id annotation" in {
+    import BadAnnotationsCase._
+    val definition: ModuleBase = new ModuleDef {
+      make[TestDependency0]
+      make[TestClass]
+    }
+
+    val injector = mkInjector()
+
+    val exc = intercept[BadAnnotationException] {
+      injector.plan(definition)
+    }
+
+    assert(exc.getMessage == "Wrong annotation value, only constants are supporeted. Got: @com.github.pshirshov.izumi.distage.model.definition.Id(com.github.pshirshov.izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
   }
 
   "support multiple bindings" in {

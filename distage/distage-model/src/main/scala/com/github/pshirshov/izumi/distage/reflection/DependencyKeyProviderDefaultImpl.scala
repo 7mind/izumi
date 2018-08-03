@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.reflection
 
 import com.github.pshirshov.izumi.distage.model.definition.{Id, With}
+import com.github.pshirshov.izumi.distage.model.exceptions.BadAnnotationException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.DIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, SymbolIntrospector}
 
@@ -36,6 +37,8 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
     symbolIntrospector.findSymbolAnnotation(typeOfIdAnnotation, parameterSymbol) match {
       case Some(Id(name)) =>
         typeKey.named(name)
+      case Some(v) =>
+        throw new BadAnnotationException(typeOfIdAnnotation.toString, v)
       case _ =>
         typeKey
     }

@@ -103,4 +103,14 @@ Forest fire, climbin' higher, real life, it can wait""")
 
   }
 
+  object BadAnnotationsCase {
+    def value = "xxx"
+    trait TestDependency0
+
+    class TestClass
+    (
+      @Id(value) val fieldArgDependency: TestDependency0
+    )
+  }
+
 }
