@@ -30,7 +30,7 @@ mixin TestInterface {
 /** docstring
   */
 @TestAnno()
-@AnotherAnno(a=1, b="str", c=[1,2,3])
+@AnotherAnno(a=1, b="str", c=[1,2,3], d={x=true, y=1})
 data TestObject {
   & TestInterface
 }

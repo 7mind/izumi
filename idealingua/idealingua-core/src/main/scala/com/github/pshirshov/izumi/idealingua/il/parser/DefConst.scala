@@ -86,7 +86,7 @@ trait DefConst extends Identifiers {
   }
 
   // other method kinds should be added here
-  final val consts: Parser[Seq[RawConst]] = P(const.rep(sep = any))
+  final val consts: Parser[Seq[RawConst]] = P(const.rep(sep = sepStruct))
 
   final def enclosedConsts: Parser[Seq[RawConst]] = structure.aggregates.enclosed(consts)
 

@@ -22,6 +22,8 @@ const {
 
   list = [ 1 , 2 ]
 
+  anothermap = {k="x", v=1}
+
   complexlist = [
       {
         name = "test"
