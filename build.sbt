@@ -44,7 +44,7 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
 )
 
-publishTargets in ThisBuild := PublishTarget.typical("sonatype-nexus", sonatypeTarget.value.root)
+publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTarget.value.root)
 
 val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val settings: Seq[sbt.Setting[_]] = Seq(
