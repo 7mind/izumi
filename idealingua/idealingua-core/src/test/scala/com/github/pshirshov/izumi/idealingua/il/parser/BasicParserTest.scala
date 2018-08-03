@@ -10,13 +10,13 @@ class BasicParserTest
   "IL parser" should {
     "parse annos" in {
       assertParses(DefConst.defAnno,
-        """@TestAnno[]""".stripMargin)
+        """@TestAnno()""".stripMargin)
 
       assertParses(DefConst.defAnno,
-        """@TestAnno[a=1]""".stripMargin)
+        """@TestAnno(a=1)""".stripMargin)
 
       assertParses(DefConst.defAnno,
-        """@TestAnno[a=1, b="xxx"]""".stripMargin)
+        """@TestAnno(a=1, b="xxx",c=true,d=false,e=[1,2,"x"],f={a=1,b="str"})""".stripMargin)
     }
     "parse docstrings" in {
       assertParses(comments.DocComment,

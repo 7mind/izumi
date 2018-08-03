@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBind
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, Id, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import distage.{DIKey, ModuleBase, ModuleDef, SafeType}
+import distage._
 import org.scalatest.WordSpec
 
 class BasicTest extends WordSpec with MkInjector {
@@ -80,6 +80,27 @@ class BasicTest extends WordSpec with MkInjector {
     assert(context.get[Set[JustTrait]].size == 2)
     assert(context.get[Set[JustTrait]]("named.empty.set").isEmpty)
     assert(context.get[Set[JustTrait]]("named.set").size == 2)
+  }
+
+
+  "support nested multiple bindings" in {
+    // https://github.com/pshirshov/izumi-r2/issues/261
+    import BasicCase1._
+    val definition: ModuleBase = new ModuleDef {
+      many[JustTrait]
+        .add(new Impl1)
+    }
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    val sub = Injector.create(context)
+    val subplan = sub.plan(definition)
+    val subcontext = injector.produce(subplan)
+
+    assert(context.get[Set[JustTrait]].size == 1)
+    assert(subcontext.get[Set[JustTrait]].size == 1)
   }
 
   "support named bindings" in {
