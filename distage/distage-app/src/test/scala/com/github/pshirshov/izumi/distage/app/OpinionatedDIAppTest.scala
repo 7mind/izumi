@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
+import com.github.pshirshov.izumi.distage.planning.AssignableFromEarlyAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
@@ -25,7 +25,7 @@ case class EmptyCfg()
 
 class CustomizationModule extends ModuleDef {
   many[PlanningHook]
-    .add(new AssignableFromAutoSetHook[Conflict])
+    .add(new AssignableFromEarlyAutoSetHook[Conflict])
 }
 
 class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]#Context) => Unit) extends OpinionatedDiApp {
@@ -35,7 +35,7 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
 
   val testSink = new TestSink()
 
-  override protected def context(args: Array[String]): Strategy = {
+  override protected def commandlineSetup(args: Array[String]): Strategy = {
     val bsContext: BootstrapContext = BootstrapContextDefaultImpl(
       EmptyCfg()
       , bootstrapConfig

@@ -8,8 +8,9 @@ import scala.reflect.macros.blackbox
 
 /**
 * To see macro debug output during compilation, set `-Dizumi.distage.debug.macro=true` java property! i.e.
-*
-*   sbt -Dizumi.distage.debug.macro=true compile
+* {{{
+* sbt -Dizumi.distage.debug.macro=true compile
+* }}}
 */
 object TrivialMacroLogger {
   def apply[T: ClassTag](c: blackbox.Context): TrivialLogger =

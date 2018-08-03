@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding,
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase, SimpleModuleDef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-trait AutoSetHook extends PlanningHookDefaultImpl {
+trait EarlyAutoSetHook extends PlanningHookDefaultImpl {
   def elementOf(b: Binding): Option[RuntimeDIUniverse.DIKey]
 
   override def hookDefinition(defn: ModuleBase): ModuleBase = {

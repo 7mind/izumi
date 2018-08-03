@@ -222,6 +222,12 @@ lazy val distageConfig = inDiStage.as.module
 lazy val distageApp = inDiStage.as.module
   .depends(distageCore, distagePlugins, distageConfig, logstageDi)
 
+lazy val distageRoles = inDiStage.as.module
+  .depends(distageApp, logstageRenderingJson4s, logstageSinkConsole, logstageAdapterSlf4j)
+  .settings(
+    libraryDependencies += R.scopt
+  )
+
 lazy val distageCore = inDiStage.as.module
   .depends(fundamentalsFunctional, distageModel, distageProxyCglib)
   .settings(
@@ -381,7 +387,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
   , logstageRenderingJson4s
 )
 lazy val distage: Seq[ProjectReference] = Seq(
-  distageApp
+  distageRoles
   , distageCats
   , distageStatic
 )
