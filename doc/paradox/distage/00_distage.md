@@ -379,7 +379,6 @@ val main: Future[Unit] = initializers.run {
 }
 
 Await.result(main, Duration.Inf)
-}
 ```
 
 ### Auto-Factories & Auto-Traits
@@ -405,8 +404,8 @@ Await.result(main, Duration.Inf)
 When rapidly prototyping, the friction of adding new modules can become a burden.
 distage plugin extension can alleviate that by automatically picking up all the `Plugin` modules defined in the program.
 
-Note that auto plugins are incompatible with distage [static checks](#static-configurations). Our preferred workflow is 
-to start with plugins, then switch to static configurations after a service has been stabilized.
+Note that auto plugins are incompatible with distage [static checks](#static-configurations). Our recommended workflow is 
+to start with plugins, then switch to static configurations after the program has been stabilized.
 
 To define a plugin, first add distage-plugins library:
 
