@@ -1,8 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
-import com.github.pshirshov.izumi.idealingua.model.common.{StreamDirection, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 
-sealed trait DefMethod
+sealed trait DefMethod {
+  def meta: NodeMeta
+}
 
 object DefMethod {
 
@@ -21,11 +23,9 @@ object DefMethod {
 
   final case class Signature(input: SimpleStructure, output: Output)
 
-  final case class RPCMethod(name: String, signature: Signature, doc: Option[String]) extends DefMethod
+  final case class RPCMethod(name: String, signature: Signature, meta: NodeMeta) extends DefMethod
 }
 
-sealed trait TypedStream
 
-object TypedStream {
-  final case class Directed(name: String, direction: StreamDirection, signature: SimpleStructure, doc: Option[String]) extends TypedStream
-}
+
+

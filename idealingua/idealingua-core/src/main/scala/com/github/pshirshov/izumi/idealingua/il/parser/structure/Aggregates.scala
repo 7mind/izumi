@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import com.github.pshirshov.izumi.idealingua.il.parser.DefConst
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ParsedId
+import com.github.pshirshov.izumi.idealingua.il.parser.DefSignature
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{ParsedId, RawNodeMeta}
 import fastparse.all._
 
 trait Aggregates
@@ -27,15 +27,15 @@ trait Aggregates
     starting(keyword, enclosed(defparser))
   }
 
-  def cstarting[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(Option[String], ParsedId, T)] = {
-    (MaybeDoc ~ DefConst.defAnnos ~ starting(keyword, defparser)).map {
-      case (c, _, (i, t)) => (c, i, t)
+  def cstarting[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(RawNodeMeta, ParsedId, T)] = {
+    (DefSignature.meta ~ starting(keyword, defparser)).map {
+      case (m, (i, t)) => (m, i, t)
     }
   }
 
-  def cblock[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(Option[String], ParsedId, T)] = {
-    (MaybeDoc ~ DefConst.defAnnos ~ block(keyword, defparser)).map {
-      case (c, _, (i, t)) => (c, i, t)
+  def cblock[T](keyword: Parser[Unit], defparser: Parser[T]): Parser[(RawNodeMeta, ParsedId, T)] = {
+    (DefSignature.meta ~ block(keyword, defparser)).map {
+      case (m, (i, t)) => (m, i, t)
     }
   }
 

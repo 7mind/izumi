@@ -88,8 +88,8 @@ object Literals {
     }
     val Str = {
       P {
-          (TQ ~/ TripleChars ~ TripleTail) |
-          ("\"" ~/ SingleChars(false) ~ "\"")
+          (TQ ~/ TripleChars.! ~ TripleTail) |
+          ("\"" ~/ SingleChars(false).! ~ "\"")
       }
     }
 

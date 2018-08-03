@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Enumeration, _}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Structure, Super}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{NodeMeta, Structure, Super}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
 
@@ -157,7 +157,7 @@ final case class CSharpType (
       case Primitive.TTsU => None
     }
     case _ => id match {
-      case e: EnumId => None
+      case _: EnumId => None
       case _: InterfaceId => None
       case _: IdentifierId => None
       case _: AdtId | _: DTOId => None
@@ -231,7 +231,7 @@ final case class CSharpType (
     val structure = ts.structure.structure(inst)
     val eid = ts.tools.implId(inst.id)
     val validFields = structure.all.filterNot(f => inst.struct.superclasses.interfaces.contains(f.defn.definedBy))
-    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(inst.id), List.empty, List.empty)), None)
+    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(inst.id), List.empty, List.empty)), NodeMeta.empty)
     randomDto(dto, depth)
   }
 

@@ -4,16 +4,17 @@ import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ConstId
 
 
-trait RawVal[+T] {
+sealed trait RawVal[+T] {
   def value: T
 }
 
 object RawVal {
-  final case class CInt(value: Int) extends RawVal[Int]
-  final case class CLong(value: Long) extends RawVal[Long]
-  final case class CFloat(value: Double) extends RawVal[Double]
-  final case class CString(value: String) extends RawVal[String]
-  final case class CBool(value: Boolean) extends RawVal[Boolean]
+  sealed trait RawValScalar[+T] extends RawVal[T]
+  final case class CInt(value: Int) extends RawValScalar[Int]
+  final case class CLong(value: Long) extends RawValScalar[Long]
+  final case class CFloat(value: Double) extends RawValScalar[Double]
+  final case class CString(value: String) extends RawValScalar[String]
+  final case class CBool(value: Boolean) extends RawValScalar[Boolean]
 
   final case class CTyped(typeId: AbstractIndefiniteId, value: Any) extends RawVal[Any]
 

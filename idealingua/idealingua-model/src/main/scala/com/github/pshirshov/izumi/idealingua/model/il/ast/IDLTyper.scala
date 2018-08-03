@@ -7,8 +7,9 @@ import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId,
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDefinitionInterpreted, DomainDefinitionParsed, IdentifiedRawTypeDef, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.IdField
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, NodeMeta}
 
 import scala.reflect._
 
@@ -28,7 +29,7 @@ class IDLPretyper(defn: DomainDefinitionParsed) {
     val imports = defn.members.collect({ case d: ILImport => d })
     val services = defn.members.collect({ case d: ILService => d.v })
     val emitters = defn.members.collect({ case d: ILEmitter => d.v })
-    val streams = defn.members.collect({ case d: ILStreams=> d.v })
+    val streams = defn.members.collect({ case d: ILStreams => d.v })
     val consts = defn.members.collect({ case d: ILConst => d.v })
 
     val allImportNames = imports.map(_.id.importedName)
@@ -37,9 +38,9 @@ class IDLPretyper(defn: DomainDefinitionParsed) {
       case d: ILNewtype => d.v.id.name
     }
 
-//    if (consts.nonEmpty) {
-//      TrivialLogger.make[IDLPretyper]("pretyper", forceLog = true).log(s"Constants aren't supported yet. Tree: ${consts.niceList()}")
-//    }
+    //    if (consts.nonEmpty) {
+    //      TrivialLogger.make[IDLPretyper]("pretyper", forceLog = true).log(s"Constants aren't supported yet. Tree: ${consts.niceList()}")
+    //    }
 
     val clashes = allImportNames.intersect(allTypeNames)
     if (clashes.nonEmpty) {
@@ -110,10 +111,10 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   protected def fixType(defn: RawTypeDef): typed.TypeDef = {
     defn match {
       case d: RawTypeDef.Enumeration =>
-        typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.members, doc = d.doc)
+        typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.members, meta = fixMeta(d.meta))
 
       case d: RawTypeDef.Alias =>
-        typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId, doc = d.doc)
+        typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId, meta = fixMeta(d.meta))
 
       case d: RawTypeDef.Identifier =>
         val typedFields = d.fields.map {
@@ -127,19 +128,19 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
             throw new IDLException(s"Unsupporeted ID field $f in $domainId. You may use primitive fields, enums or other IDs only")
         }
 
-        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = typedFields, doc = d.doc)
+        typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = typedFields, meta = fixMeta(d.meta))
 
       case d: RawTypeDef.Interface =>
-        typed.TypeDef.Interface(id = fixSimpleId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct), doc = d.doc)
+        typed.TypeDef.Interface(id = fixSimpleId(d.id): TypeId.InterfaceId, struct = toStruct(d.struct), meta = fixMeta(d.meta))
 
       case d: RawTypeDef.DTO =>
-        typed.TypeDef.DTO(id = fixSimpleId(d.id), struct = toStruct(d.struct), doc = d.doc)
+        typed.TypeDef.DTO(id = fixSimpleId(d.id), struct = toStruct(d.struct), meta = fixMeta(d.meta))
 
       case d: RawTypeDef.Adt =>
-        typed.TypeDef.Adt(id = fixSimpleId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember), doc = d.doc)
+        typed.TypeDef.Adt(id = fixSimpleId(d.id): TypeId.AdtId, alternatives = d.alternatives.map(toMember), meta = fixMeta(d.meta))
 
       case RawTypeDef.NewType(id, src, None, c) =>
-        typed.TypeDef.Alias(id = transformSimpleId(id.toAliasId): TypeId.AliasId, target = fixId(src): TypeId, doc = c)
+        typed.TypeDef.Alias(id = transformSimpleId(id.toAliasId): TypeId.AliasId, target = fixId(src): TypeId, meta = fixMeta(c))
 
       case RawTypeDef.NewType(id, src, Some(m), c) =>
         val source = index(toIndefinite(src))
@@ -148,16 +149,37 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
             val extended = s.copy(struct = s.struct.extend(m))
             val fixed = fixType(extended.copy(struct = extended.struct.copy(concepts = IndefiniteMixin(src.pkg, src.name) +: extended.struct.concepts)))
               .asInstanceOf[typed.TypeDef.DTO]
-            fixed.copy(id = fixed.id.copy(name = id.name), doc = c)
+            fixed.copy(id = fixed.id.copy(name = id.name), meta = fixMeta(c))
           case s: RawTypeDef.Interface =>
             val extended = s.copy(struct = s.struct.extend(m))
             val fixed = fixType(extended.copy(struct = extended.struct.copy(concepts = IndefiniteMixin(src.pkg, src.name) +: extended.struct.concepts)))
               .asInstanceOf[typed.TypeDef.Interface]
-            fixed.copy(id = fixed.id.copy(name = id.name), doc = c)
+            fixed.copy(id = fixed.id.copy(name = id.name), meta = fixMeta(c))
           case o =>
             throw new IDLException(s"TODO: newtype isn't supported yet for $o")
         }
     }
+  }
+
+  protected def translateValue(v: RawVal[Any]): Any = {
+    v match {
+      case RawVal.CMap(value) =>
+        value.mapValues(translateValue)
+      case RawVal.CList(value) =>
+        value.map(translateValue)
+      case s: RawValScalar[_] =>
+        s.value
+      case o =>
+        throw new IDLException(s"Value isn't supported in annotations $o")
+    }
+  }
+
+  protected def fixAnno(v: RawAnno): Anno = {
+    Anno(v.name, v.values.value.mapValues(translateValue))
+  }
+
+  protected def fixMeta(meta: RawNodeMeta): NodeMeta = {
+    NodeMeta(meta.doc, meta.annos.map(fixAnno))
   }
 
   protected def toMember(member: raw.RawAdtMember): typed.AdtMember = {
@@ -177,15 +199,15 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def fixService(defn: raw.Service): typed.Service = {
-    typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod), doc = defn.doc)
+    typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod), doc = fixMeta(defn.meta))
   }
 
-  protected def fixEmitter(defn: raw.Emitter): typed.Emitter= {
-    typed.Emitter(id = fixEmitterId(defn.id), events = defn.events.map(fixMethod), doc = defn.doc)
+  protected def fixEmitter(defn: raw.Emitter): typed.Emitter = {
+    typed.Emitter(id = fixEmitterId(defn.id), events = defn.events.map(fixMethod), doc = fixMeta(defn.meta))
   }
 
   protected def fixStreams(defn: raw.Streams): typed.Streams = {
-    typed.Streams(id = fixStreamsId(defn.id), streams = defn.streams.map(fixStream), doc = defn.doc)
+    typed.Streams(id = fixStreamsId(defn.id), streams = defn.streams.map(fixStream), doc = fixMeta(defn.meta))
   }
 
   protected def fixId[T <: AbstractIndefiniteId, R <: TypeId](t: T): R = {
@@ -224,15 +246,15 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   protected def fixMethod(method: raw.RawMethod): typed.DefMethod = {
     method match {
       case m: raw.RawMethod.RPCMethod =>
-        typed.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name, doc = m.doc)
+        typed.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name, meta = fixMeta(m.meta))
     }
   }
 
 
   protected def fixStream(method: raw.RawStream): typed.TypedStream = {
     method match {
-      case m: raw.RawStream.Directed=>
-        typed.TypedStream.Directed(direction = m.direction, signature = fixStructure(m.signature), name = m.name, doc = m.doc)
+      case m: raw.RawStream.Directed =>
+        typed.TypedStream.Directed(direction = m.direction, signature = fixStructure(m.signature), name = m.name, meta = fixMeta(m.meta))
     }
   }
 

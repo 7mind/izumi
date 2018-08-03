@@ -74,18 +74,54 @@ class ILRenderer(domain: DomainDefinition) {
            |}
          """.stripMargin
     }
-    withComment(tpe.doc, struct)
+    withComment(tpe.meta, struct)
   }
 
-  def withComment(doc: Option[String], struct: String): String = {
-    doc match {
-      case Some(d) =>
-        s"""/*${d.split('\n').map(v => s"  *$v").mkString("\n").trim}
-           |  */
-           |$struct""".stripMargin
-      case None =>
-        struct
+  def renderValue(value: Any): String = {
+    value match {
+      case l: Seq[_] =>
+        l.map(renderValue).mkString("[", ",", "]")
+      case l: Map[_, _] =>
+        l.map {
+          case (name, v) =>
+            s"$name = ${renderValue(v)}"
+        }.mkString("{", ",", "}")
+      case s: String =>
+        if (s.contains("\"")) {
+          "\"\"\"" + s + "\"\"\""
+        } else {
+          "\"" + s + "\""
+        }
+      case o =>
+        o.toString
     }
+  }
+
+  def render(anno: Anno): String = {
+    val vals = anno.values.map {
+      case (name, v) =>
+        s"$name = ${renderValue(v)}"
+    }.mkString(",")
+
+    s"@${anno.name}($vals)"
+  }
+
+  def withComment(meta: NodeMeta, struct: String): String = {
+    val maybeDoc = meta.doc.map {
+      d =>
+        s"""/*${d.split('\n').map(v => s"  *$v").mkString("\n").trim}
+           |  */""".stripMargin
+    }
+
+    val maybeAnno = meta.annos.map(render)
+
+    Seq(
+      maybeDoc.toSeq
+      , maybeAnno
+      , Seq(struct)
+    )
+      .flatten
+      .mkString("\n")
   }
 
   def renderStruct(struct: Structure): String = {
@@ -101,25 +137,28 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def render(service: Service): String = {
-    val out = s"""service ${render(service.id)} {
-       |${service.methods.map(render("def", _)).mkString("\n").shift(2)}
-       |}
+    val out =
+      s"""service ${render(service.id)} {
+         |${service.methods.map(render("def", _)).mkString("\n").shift(2)}
+         |}
      """.stripMargin
     withComment(service.doc, out)
   }
 
   def render(emitter: Emitter): String = {
-    val out = s"""emitter ${render(emitter.id)} {
-                 |${emitter.events.map(render("event", _)).mkString("\n").shift(2)}
-                 |}
+    val out =
+      s"""emitter ${render(emitter.id)} {
+         |${emitter.events.map(render("event", _)).mkString("\n").shift(2)}
+         |}
      """.stripMargin
     withComment(emitter.doc, out)
   }
 
   def render(streams: Streams): String = {
-    val out = s"""streams ${render(streams.id)} {
-                 |${streams.streams.map(render).mkString("\n").shift(2)}
-                 |}
+    val out =
+      s"""streams ${render(streams.id)} {
+         |${streams.streams.map(render).mkString("\n").shift(2)}
+         |}
      """.stripMargin
     withComment(streams.doc, out)
   }
@@ -176,7 +215,7 @@ class ILRenderer(domain: DomainDefinition) {
     tpe match {
       case m: TypedStream.Directed =>
         val out = s"${render(m.direction)} ${m.name}(${render(m.signature)})"
-        withComment(m.doc, out)
+        withComment(m.meta, out)
     }
   }
 
@@ -185,7 +224,7 @@ class ILRenderer(domain: DomainDefinition) {
       case m: RPCMethod =>
         val resultRepr = render(m.signature.output).fold("")(s => s": $s")
         val out = s"$kw ${m.name}(${render(m.signature.input)})$resultRepr"
-        withComment(m.doc, out)
+        withComment(m.meta, out)
     }
   }
 

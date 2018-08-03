@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{ids, sep}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawSimpleStructure
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawNodeMeta, RawSimpleStructure}
 import fastparse.all._
 
 trait DefSignature {
@@ -10,17 +10,19 @@ trait DefSignature {
 
   final val sigSep = P("=>" | "->" | ":")
 
-  final def baseSignature(keyword: Parser[Unit]): Parser[(Option[String], String, RawSimpleStructure)] = P(
-    MaybeDoc ~
-      DefConst.defAnnos ~
+  final val meta = (MaybeDoc ~ DefConst.defAnnos)
+    .map {
+      case (d, a) => RawNodeMeta(d, a)
+    }
+
+  final def baseSignature(keyword: Parser[Unit]): Parser[(RawNodeMeta, String, RawSimpleStructure)] = P(
+    meta ~
       keyword ~ inline ~
       ids.symbol ~ any ~
       DefStructure.inlineStruct
-  ).map {
-    case (a, _, c, d) => (a, c, d)
-  }
+  )
 
-  final def signature(keyword: Parser[Unit]): Parser[(Option[String], String, RawSimpleStructure, Option[Object])] = P(
+  final def signature(keyword: Parser[Unit]): Parser[(RawNodeMeta, String, RawSimpleStructure, Option[Object])] = P(
     baseSignature(keyword) ~
       (any ~ sigSep ~ any ~ (DefStructure.adtOut | DefStructure.inlineStruct | ids.idGeneric)).?
   )

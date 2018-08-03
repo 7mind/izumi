@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
 
 sealed trait RawMethod {
-  def doc: Option[String]
+  def meta: RawNodeMeta
 }
 
 object RawMethod {
@@ -19,7 +19,7 @@ object RawMethod {
 
   final case class Signature(input: RawSimpleStructure, output: Output)
 
-  final case class RPCMethod(name: String, signature: Signature, doc: Option[String]) extends RawMethod
+  final case class RPCMethod(name: String, signature: Signature, meta: RawNodeMeta) extends RawMethod
 }
 
 

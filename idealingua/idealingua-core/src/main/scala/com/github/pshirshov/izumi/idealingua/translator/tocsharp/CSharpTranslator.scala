@@ -124,7 +124,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        """.stripMargin
 
     val memberType = CSharpType(member.typeId)
-    s"""public sealed class ${member.name}: ${adtName} {
+    s"""public sealed class ${member.name}: $adtName {
        |    public _${member.name} Value { get; private set; }
        |    public ${member.name}(_${member.name} value) {
        |        this.Value = value;
@@ -140,7 +140,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   }
 
   protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true)(implicit im: CSharpImports, ts: Typespace): String = {
-    val adt = Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), adtName), members, None)
+    val adt = Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), adtName), members, NodeMeta.empty)
     s"""${im.renderUsings()}
        |${if (renderUsings) members.map(m => renderAdtUsings(m)).mkString("\n") else ""}
        |
@@ -260,7 +260,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     val struct = CSharpClass(eid, i.id.name + eid.name, structure, List(i.id))
     val ifaceImplements = if (i.struct.superclasses.interfaces.isEmpty) ": IRTTI" else ": " +
       i.struct.superclasses.interfaces.map(ifc => ifc.name).mkString(", ") + ", IRTTI"
-    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(i.id), List.empty, List.empty)), None)
+    val dto = DTO(eid, Structure(validFields.map(f => f.field), List.empty, Super(List(i.id), List.empty, List.empty)), NodeMeta.empty)
 
     val iface =
       s"""${im.renderUsings()}
@@ -332,11 +332,11 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   protected def renderServiceClient(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
     val name = s"${i.id.name}Client"
 
-    s"""public interface I${name}<C> where C: class, IClientTransportContext {
+    s"""public interface I$name<C> where C: class, IClientTransportContext {
        |${i.methods.map(m => renderServiceMethodSignature(i, m, forClient = true) + ";").mkString("\n").shift(4)}
        |}
        |
-       |public class ${name}Generic<C>: I${name}<C> where C: class, IClientTransportContext {
+       |public class ${name}Generic<C>: I$name<C> where C: class, IClientTransportContext {
        |    public IClientTransport<C> Transport { get; private set; }
        |
        |    public ${name}Generic(IClientTransport<C> t) {
@@ -353,8 +353,8 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |${i.methods.map(me => renderServiceClientMethod(i, me)).mkString("\n").shift(4)}
        |}
        |
-       |public class ${name}: ${name}Generic<IClientTransportContext> {
-       |    public ${name}(IClientTransport<IClientTransportContext> t): base(t) {}
+       |public class $name: ${name}Generic<IClientTransportContext> {
+       |    public $name(IClientTransport<IClientTransportContext> t): base(t) {}
        |}
      """.stripMargin
   }
@@ -491,7 +491,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
         }
 
         (sigTypes.filterNot(_.isInstanceOf[Builtin]).map(typespace.apply)
-          ++ Seq(Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), "FakeName"), List.empty, None)) // TODO:fake entry to trigger imports (unsafe)
+          ++ Seq(Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), "FakeName"), List.empty, NodeMeta.empty)) // TODO:fake entry to trigger imports (unsafe)
           ).flatMap(defn => ext.imports(ctx, defn))
 
     })
