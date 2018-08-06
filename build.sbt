@@ -262,6 +262,11 @@ lazy val logstageDi = inLogStage.as.module
   ).map(_.testOnlyRef))
 
 
+
+lazy val logstageConfig = inLogStage.as.module
+  .depends(distageConfig, distageModel)
+
+
 lazy val logstageAdapterSlf4j = inLogStage.as.module
   .depends(logstageApiLogger)
   .settings(
