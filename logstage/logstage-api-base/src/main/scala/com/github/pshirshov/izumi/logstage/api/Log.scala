@@ -12,6 +12,18 @@ object Log {
 
   object Level {
 
+    def parse(lvl: String) : Level = {
+      lvl.toLowerCase match {
+        case s if s == info => Info
+        case s if s == warn => Warn
+        case s if s == trace => Trace
+        case s if s == crit => Crit
+        case s if s == trace => Trace
+        case s if s == debug => Debug
+        case unknown => throw new IllegalArgumentException(s"Unknown log level label: $unknown. Possible are: ${allLabels.mkString(", ")}")
+      }
+    }
+
     case object Trace extends Level {
       protected val asInt = 0
     }
@@ -35,6 +47,15 @@ object Log {
     case object Crit extends Level {
       protected val asInt = 50
     }
+
+    private[this] final val info = "info"
+    private[this] final val warn = "warn"
+    private[this] final val trace = "trace"
+    private[this] final val debug = "debug"
+    private[this] final val error = "error"
+    private[this] final val crit = "crit"
+
+    private[this] val allLabels : Set[String] = Set(info, warn, trace, debug, error, crit)
 
   }
 
