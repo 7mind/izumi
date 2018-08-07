@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.typesafe.config.{ConfigObject, ConfigValue, ConfigValueType}
 
 import scala.collection.JavaConverters._
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 class LoggerConfigCodec(sinkCodec: LogSinkCodec) extends ConfigReader[LoggerConfig] {
   override def apply(configValue: ConfigValue): Try[LoggerConfig] = {
@@ -21,6 +21,8 @@ class LoggerConfigCodec(sinkCodec: LogSinkCodec) extends ConfigReader[LoggerConf
         for {
           res <- Try(configValue.unwrapped().asInstanceOf[String]).map(Log.Level.parse)
         } yield (res, List(LogSinkCodec.configKeyDefaultIdentity))
+      case _ =>
+        Failure(new IllegalArgumentException("Illegal config format exception. It must be either Object or String"))
     }
     result.flatMap {
       case (level, ids) =>

@@ -28,8 +28,8 @@ class LogSinkCodec(policyReader: RenderingPolicyCodec, mappers: Set[LogSinkMappe
           val logSinkParams = id match {
             case sinkId if sinkId == configKeyDefaultIdentity =>
               parseAsDefault(config)
-            case other =>
-              parseAsNamed(config, other)
+            case _ =>
+              parseAsNamed(config)
           }
           instantiatePathAndCfg(id, logSinkParams)
         }))
@@ -40,11 +40,11 @@ class LogSinkCodec(policyReader: RenderingPolicyCodec, mappers: Set[LogSinkMappe
   }
 
   private def parseAsDefault(config: Config): LogSinkUnaplied = {
-    parse(config, configKeyDefaultIdentity, configKeyPathFallback, _.getOrElse(throw new IllegalArgumentException("missed params property for default rendering policy")))
+    parse(config, configKeyPathFallback, _.getOrElse(throw new IllegalArgumentException("missed params property for default rendering policy")))
   }
 
-  private def parseAsNamed(config: Config, id: String): LogSinkUnaplied = {
-    parse(config, id, configKeyPathFallback, {
+  private def parseAsNamed(config: Config): LogSinkUnaplied = {
+    parse(config, configKeyPathFallback, {
       paramsCfg =>
         val curParams = paramsCfg.getOrElse(ConfigFactory.empty())
         val defaultSink = instancesMappers(configKeyDefaultIdentity)
@@ -53,7 +53,7 @@ class LogSinkCodec(policyReader: RenderingPolicyCodec, mappers: Set[LogSinkMappe
     })
   }
 
-  private def parse(config: Config, id: String,
+  private def parse(config: Config,
                     fallBackOnPath: Try[String] => String,
                     fallBackOnParams: Try[Config] => Config): LogSinkUnaplied = {
     val path = fallBackOnPath(Try(config.getString(configKeyPath)))

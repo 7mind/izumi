@@ -28,8 +28,8 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
           val (path, cfg) = policyId match {
             case id if id == defaultPolicyId =>
               parseAsDefault(config)
-            case other =>
-              parseAsNamed(config, other)
+            case _ =>
+              parseAsNamed(config)
           }
           instantiatePathAndCfg(cfg, path, policyId).get
         }))
@@ -40,11 +40,11 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
   }
 
   private def parseAsDefault(config: Config): (String, Config) = {
-    parse(config, defaultPolicyId, renderingPolicyFallback, _.getOrElse(throw new IllegalArgumentException("missed params property for default rendering policy")))
+    parse(config, renderingPolicyFallback, _.getOrElse(throw new IllegalArgumentException("missed params property for default rendering policy")))
   }
 
-  private def parseAsNamed(config: Config, id: String): (String, Config) = {
-    parse(config, id, renderingPolicyFallback, {
+  private def parseAsNamed(config: Config): (String, Config) = {
+    parse(config, renderingPolicyFallback, {
       paramsCfg =>
         val curParams = paramsCfg.getOrElse(ConfigFactory.empty())
         val defaultPolicy = policyInstancesMappers(defaultPolicyId)
@@ -53,7 +53,7 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
     })
   }
 
-  private def parse(config: Config, id: String,
+  private def parse(config: Config,
                     fallBackOnPath: Try[String] => String,
                     fallBackOnParams: Try[Config] => Config): (String, Config) = {
     val path = fallBackOnPath(Try(config.getString(renderingPath)))
