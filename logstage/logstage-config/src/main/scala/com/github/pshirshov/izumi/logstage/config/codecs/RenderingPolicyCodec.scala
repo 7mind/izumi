@@ -6,12 +6,13 @@ import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.{NamedRenderingPolicy, RenderingPolicyMapper}
 import com.typesafe.config.{Config, ConfigFactory, ConfigValue}
 import RenderingPolicyCodec._
+import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy.PolicyConfig
 
 import scala.util.Try
 
-class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy]]) extends ConfigReader[RenderingPolicy] {
+class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy]], policyConfig: ConfigReader[PolicyConfig]) extends ConfigReader[RenderingPolicy] {
   private val policyInstancesMappers = scala.collection.mutable.HashMap.empty[String, NamedRenderingPolicy]
-  private val policyMappersMem = scala.collection.mutable.HashMap.empty[String, Config => _ <: RenderingPolicy]
+  private val policyMappersMem = scala.collection.mutable.HashMap.empty[String, PolicyConfig => _ <: RenderingPolicy]
 
   policyMappers.map { m => policyMappersMem.put(m.path.toString, m.instantiate) }
 
@@ -31,7 +32,7 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
             case other =>
               parseAsNamed(config, other)
           }
-          instantiatePathAndCfg(cfg, path, policyId)
+          instantiatePathAndCfg(cfg, path, policyId).get
         }))
       case None =>
         retrieveDefault
@@ -64,9 +65,12 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
   private val renderingPolicyFallback: Try[String] => String = _.getOrElse(throw new IllegalArgumentException("Rendering policy full name should be defined"))
 
 
-  private def instantiatePathAndCfg(config: Config, path: String, id: String): NamedRenderingPolicy = {
+  private def instantiatePathAndCfg(config: Config, path: String, id: String): Try[NamedRenderingPolicy] = {
     val mapper = policyMappersMem.getOrElse(path, throw new IllegalArgumentException("from config to instance mapper not found. Maybe you forgot to add?"))
-    policyInstancesMappers.getOrElseUpdate(id, NamedRenderingPolicy(mapper(config), config))
+    println(config.root())
+    policyConfig.apply(config.root()).map {
+      cfg => policyInstancesMappers.getOrElseUpdate(id, NamedRenderingPolicy(mapper(cfg), config))
+    }
   }
 
   private def retrieveDefault: Try[NamedRenderingPolicy] = {
@@ -83,7 +87,7 @@ object RenderingPolicyCodec {
   abstract class RenderingPolicyMapper[T <: RenderingPolicy : u.TypeTag] {
     def path: u.Type = u.typeOf[T]
 
-    def instantiate(config: Config): T
+    def instantiate(policyConfig: PolicyConfig): T
   }
 
   case class NamedRenderingPolicy(id: Symbol, policy: RenderingPolicy, config: Config)

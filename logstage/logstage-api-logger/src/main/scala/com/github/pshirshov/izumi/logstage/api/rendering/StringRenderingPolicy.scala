@@ -6,13 +6,12 @@ import java.util.regex.Pattern
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
+import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy.PolicyConfig
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy.{Constant, LogMessageItem, WithMargin}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.{LogUnit, Margin}
 import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.RenderingPolicyMapper
-import com.typesafe.config.Config
 
 import scala.collection.mutable.ListBuffer
-import scala.util.Try
 
 class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[String] = None) extends RenderingPolicy {
   protected val withColors: Boolean = {
@@ -216,11 +215,8 @@ object StringRenderingPolicy {
   }
 
   val configPolicyMapper: RenderingPolicyMapper[StringRenderingPolicy] = new RenderingPolicyMapper[StringRenderingPolicy] {
-    override def instantiate(config: Config): StringRenderingPolicy = {
-      val withColors = Try(config.getBoolean("withColors")).toOption.getOrElse(true)
-      val withExceptions = Try(config.getBoolean("withExceptions")).toOption.getOrElse(true)
-      val layout = Try(config.getString("layout")).toOption
-      new StringRenderingPolicy(options = RenderingOptions(withColors, withExceptions), renderingLayout = layout)
+    override def instantiate(policyConfig: PolicyConfig): StringRenderingPolicy = {
+      new StringRenderingPolicy(options = RenderingOptions(policyConfig.withColors, policyConfig.withExceptions), renderingLayout = policyConfig.renderingLayout)
     }
   }
 }

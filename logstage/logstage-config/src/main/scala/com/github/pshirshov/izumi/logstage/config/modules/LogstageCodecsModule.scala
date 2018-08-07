@@ -31,13 +31,14 @@ class LogstageCodecsModule(logstageConfigPath: String) extends ModuleDef {
       // - pass rendering policy as parameter to LogSink
 
       // TODO: smells like a shit but works...
-      val policyCodec = new RenderingPolicyCodec(policyMappers)
+      val policyCodec = new RenderingPolicyCodec(policyMappers, LogstagePrimitiveCodecs.policyConfigCodec)
       appConfig.config.getList(s"$logstageConfigPath.renderingPolicies").asScala.toList foreach policyCodec.apply
       val logSinkCodec = new LogSinkCodec(policyCodec, sinksMappers)
       appConfig.config.getList(s"$logstageConfigPath.sinks").asScala.toList foreach logSinkCodec.apply
 
       LogstageCodecs(Map(
         SafeType.get[Log.Level] -> LogstagePrimitiveCodecs.logLevelCodec,
+        SafeType.get[RenderingPolicy.PolicyConfig] -> LogstagePrimitiveCodecs.policyConfigCodec,
         SafeType.get[RenderingPolicy] -> policyCodec,
         SafeType.get[LogSink] -> logSinkCodec
       ))

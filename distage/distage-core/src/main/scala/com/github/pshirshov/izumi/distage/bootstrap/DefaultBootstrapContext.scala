@@ -69,7 +69,7 @@ object DefaultBootstrapContext {
     new ProvisionerDefaultImpl(
       new SetStrategyDefaultImpl
       , new ProxyStrategyFailingImpl
-      , new FactoryStrategyDefaultImpl(CglibProxyProvider)
+      , new FactoryStrategyFailingImpl
       , new TraitStrategyFailingImpl
       , new FactoryProviderStrategyDefaultImpl(loggerHook)
       , new ProviderStrategyDefaultImpl
