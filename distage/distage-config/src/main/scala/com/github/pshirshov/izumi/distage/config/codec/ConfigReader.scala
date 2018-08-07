@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.distage.config.codec
 
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigReadException
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.typesafe.config.ConfigValueType._
 import com.typesafe.config._
 
 import scala.reflect.ClassTag
 import scala.util.Try
-
 // copypasta from pureconfig.BasicReaders
 
 trait ConfigReader[+T] {
@@ -14,6 +14,11 @@ trait ConfigReader[+T] {
 }
 
 object ConfigReader {
+
+  def toKeyValue[T : ClassTag : Tag](configReader: ConfigReader[T]) : (SafeType, ConfigReader[T]) = {
+      SafeType.get[T] -> configReader
+  }
+
   def fromString[T: ClassTag](f: String => T): ConfigReader[T] = {
     case cv: ConfigValue if Set(STRING, BOOLEAN, NUMBER) contains cv.valueType  =>
       Try(f(String.valueOf(cv.unwrapped)))
