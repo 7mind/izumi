@@ -1,8 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api.rendering
 
 import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy.PolicyConfig
-
 
 
 trait RenderingPolicy {

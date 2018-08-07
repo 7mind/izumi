@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.config.codecs.LogSinkCodec.{LogSinkMapper, NamedLogSink, _}
-import com.typesafe.config.{Config, ConfigFactory, ConfigValue}
+import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 
 import scala.util.Try
 
@@ -20,7 +20,7 @@ class LogSinkCodec(policyReader: RenderingPolicyCodec, mappers: Set[LogSinkMappe
   }
 
   override def apply(configValue: ConfigValue): Try[LogSink] = {
-    val config = configValue.atKey("key").getConfig("key") // TODO: remove this bullshit
+    val config = configValue.asInstanceOf[ConfigObject].toConfig
     val logsinkIdMaybe = Try(config.getString(configKeyId)).toOption
     val result = logsinkIdMaybe match {
       case Some(id) =>
@@ -99,11 +99,11 @@ object LogSinkCodec {
     }
   }
 
-  private final val configKeyDefaultIdentity = "default"
-  private final val configKeyId = "id"
-  private final val configKeyPath = "path"
-  private final val configKeyPolicyId = "policy"
-  private final val configKeyConstructorParams = "params"
+  final val configKeyDefaultIdentity = "default"
+  final val configKeyId = "id"
+  final val configKeyPath = "path"
+  final val configKeyPolicyId = "policy"
+  final val configKeyConstructorParams = "params"
 
   case class LogSinkUnaplied(fullName: String, referenceConfig: Config, renderingPolicyId: String)
 }

@@ -3,10 +3,9 @@ package com.github.pshirshov.izumi.logstage.config.codecs
 import com.github.pshirshov.izumi.distage.config.codec.ConfigReader
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
-import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.{NamedRenderingPolicy, RenderingPolicyMapper}
-import com.typesafe.config.{Config, ConfigFactory, ConfigValue}
-import RenderingPolicyCodec._
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy.PolicyConfig
+import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.{NamedRenderingPolicy, RenderingPolicyMapper, _}
+import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 
 import scala.util.Try
 
@@ -21,7 +20,7 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
   }
 
   override def apply(configValue: ConfigValue): Try[RenderingPolicy] = {
-    val config = configValue.atKey("key").getConfig("key") // TODO: remove this bullshit
+    val config = configValue.asInstanceOf[ConfigObject].toConfig
     val policyIdMaybe = Try(config.getString(policyIdentity)).toOption
     val result = policyIdMaybe match {
       case Some(policyId) =>
