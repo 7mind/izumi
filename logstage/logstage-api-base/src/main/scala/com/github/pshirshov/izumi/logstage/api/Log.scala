@@ -6,46 +6,48 @@ object Log {
 
   sealed trait Level extends Ordered[Level] {
     protected def asInt: Int
-
+    protected def asString: String
     override def compare(that: Level): Int = this.asInt - that.asInt
   }
 
   object Level {
 
-    def parse(lvl: String) : Level = {
-      lvl.toLowerCase match {
-        case s if s == info => Info
-        case s if s == warn => Warn
-        case s if s == trace => Trace
-        case s if s == crit => Crit
-        case s if s == trace => Trace
-        case s if s == debug => Debug
-        case unknown => throw new IllegalArgumentException(s"Unknown log level label: $unknown. Possible are: ${allLabels.mkString(", ")}")
-      }
-    }
+    private final val labelMap =
+      Set(Info, Warn, Trace, Crit, Debug).map(l => l.toString.toLowerCase -> l).toMap
+
+    def parse(lvl:String): Level =
+      labelMap.getOrElse(lvl.toLowerCase, {
+        throw new IllegalArgumentException(s"Unknwown requested log level $lvl")
+      })
 
     case object Trace extends Level {
       protected val asInt = 0
+      protected val asString: String = "trace"
     }
 
     case object Debug extends Level {
       protected val asInt = 10
+      protected val asString: String = "debug"
     }
 
     case object Info extends Level {
       protected val asInt = 20
+      protected val asString: String = "info"
     }
 
     case object Warn extends Level {
       protected val asInt = 30
+      protected val asString: String = "warn"
     }
 
     case object Error extends Level {
       protected val asInt = 40
+      protected val asString: String = "error"
     }
 
     case object Crit extends Level {
       protected val asInt = 50
+      protected val asString: String = "crit"
     }
 
     private[this] final val info = "info"

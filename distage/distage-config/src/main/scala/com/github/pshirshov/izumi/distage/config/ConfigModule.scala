@@ -10,7 +10,7 @@ case class ConfigInjectorConfig(enableScalars: Boolean = false)
 class ConfigModule(config: AppConfig, configInjectorConfig: ConfigInjectorConfig = ConfigInjectorConfig()) extends ModuleDef {
   make[ConfigInjectorConfig].from(configInjectorConfig)
   make[AppConfig].from(config)
-  many[RuntimeConfigReaderCodecs].add[RuntimeConfigReaderCodecs.RuntimeConfigReaderDefaultImpl.type]
+  many[RuntimeConfigReaderCodecs].add(RuntimeConfigReaderCodecs.RuntimeConfigReaderDefaultImpl)
   make[RuntimeConfigReader].from[RuntimeConfigReaderDefaultImpl]
   many[PlanningHook]
     .add[ConfigReferenceExtractor]

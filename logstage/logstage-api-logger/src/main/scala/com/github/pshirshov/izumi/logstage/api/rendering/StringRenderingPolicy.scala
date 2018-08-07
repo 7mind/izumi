@@ -218,7 +218,7 @@ object StringRenderingPolicy {
   val configPolicyMapper: RenderingPolicyMapper[StringRenderingPolicy] = new RenderingPolicyMapper[StringRenderingPolicy] {
     override def instantiate(config: Config): StringRenderingPolicy = {
       val withColors = Try(config.getBoolean("withColors")).toOption.getOrElse(true)
-      val withExceptions = Try(config.getBoolean("withColors")).toOption.getOrElse(true)
+      val withExceptions = Try(config.getBoolean("withExceptions")).toOption.getOrElse(true)
       val layout = Try(config.getString("layout")).toOption
       new StringRenderingPolicy(options = RenderingOptions(withColors, withExceptions), renderingLayout = layout)
     }
