@@ -154,7 +154,7 @@ trait RuntimeConfigReaderCodecs {
 
 object RuntimeConfigReaderCodecs {
 
-  object RuntimeConfigReaderDefaultImpl extends RuntimeConfigReaderCodecs {
+  final val default: RuntimeConfigReaderCodecs = new RuntimeConfigReaderCodecs {
     import ConfigReaderInstances._
 
     val readerCodecs: Map[SafeType, ConfigReader[_]] = Map(

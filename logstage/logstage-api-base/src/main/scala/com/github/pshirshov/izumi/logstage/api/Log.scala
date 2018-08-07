@@ -12,8 +12,10 @@ object Log {
 
   object Level {
 
+    def all : Set[Level] = Set(Info, Warn, Trace, Crit, Debug, Error)
+
     private final val labelMap =
-      Set(Info, Warn, Trace, Crit, Debug).map(l => l.toString.toLowerCase -> l).toMap
+      all.map(l => l.toString.toLowerCase -> l).toMap
 
     def parse(lvl:String): Level =
       labelMap.getOrElse(lvl.toLowerCase, {
@@ -49,15 +51,6 @@ object Log {
       protected val asInt = 50
       protected val asString: String = "crit"
     }
-
-    private[this] final val info = "info"
-    private[this] final val warn = "warn"
-    private[this] final val trace = "trace"
-    private[this] final val debug = "debug"
-    private[this] final val error = "error"
-    private[this] final val crit = "crit"
-
-    private[this] val allLabels : Set[String] = Set(info, warn, trace, debug, error, crit)
 
   }
 

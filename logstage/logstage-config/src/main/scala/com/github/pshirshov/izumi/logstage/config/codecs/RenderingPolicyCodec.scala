@@ -10,13 +10,13 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 import scala.util.Try
 
 class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy]], policyConfig: ConfigReader[PolicyConfig]) extends ConfigReader[RenderingPolicy] {
-  private val policyInstancesMappers = scala.collection.mutable.HashMap.empty[String, NamedRenderingPolicy]
-  private val policyMappersMem = scala.collection.mutable.HashMap.empty[String, PolicyConfig => _ <: RenderingPolicy]
+  private val instancesMappers = scala.collection.mutable.HashMap.empty[String, NamedRenderingPolicy]
+  private val mappersMem = scala.collection.mutable.HashMap.empty[String, PolicyConfig => _ <: RenderingPolicy]
 
-  policyMappers.map { m => policyMappersMem.put(m.path.toString, m.instantiate) }
+  policyMappers.map { m => mappersMem.put(m.path.toString, m.instantiate) }
 
   def fetchRenderingPolicy(id: String): Option[RenderingPolicy] = {
-    policyInstancesMappers.get(id).map(_.policy)
+    instancesMappers.get(id).map(_.policy)
   }
 
   override def apply(configValue: ConfigValue): Try[RenderingPolicy] = {
@@ -24,7 +24,7 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
     val policyIdMaybe = Try(config.getString(policyIdentity)).toOption
     val result = policyIdMaybe match {
       case Some(policyId) =>
-        Try(policyInstancesMappers.getOrElseUpdate(policyId, {
+        Try(instancesMappers.getOrElseUpdate(policyId, {
           val (path, cfg) = policyId match {
             case id if id == defaultPolicyId =>
               parseAsDefault(config)
@@ -47,7 +47,7 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
     parse(config, renderingPolicyFallback, {
       paramsCfg =>
         val curParams = paramsCfg.getOrElse(ConfigFactory.empty())
-        val defaultPolicy = policyInstancesMappers(defaultPolicyId)
+        val defaultPolicy = instancesMappers(defaultPolicyId)
         val cfg = curParams.withFallback(defaultPolicy.config).resolve()
         cfg
     })
@@ -65,16 +65,15 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
 
 
   private def instantiatePathAndCfg(config: Config, path: String, id: String): Try[NamedRenderingPolicy] = {
-    val mapper = policyMappersMem.getOrElse(path, throw new IllegalArgumentException("from config to instance mapper not found. Maybe you forgot to add?"))
-    println(config.root())
+    val mapper = mappersMem.getOrElse(path, throw new IllegalArgumentException("from config to instance mapper not found. Maybe you forgot to add?"))
     policyConfig.apply(config.root()).map {
-      cfg => policyInstancesMappers.getOrElseUpdate(id, NamedRenderingPolicy(mapper(cfg), config))
+      cfg => instancesMappers.getOrElseUpdate(id, NamedRenderingPolicy(mapper(cfg), config))
     }
   }
 
   private def retrieveDefault: Try[NamedRenderingPolicy] = {
     Try {
-      policyInstancesMappers
+      instancesMappers
         .getOrElse(defaultPolicyId,
           throw new IllegalArgumentException("default rendering policy was not found"))
     }
@@ -83,7 +82,7 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
 
 object RenderingPolicyCodec {
 
-  abstract class RenderingPolicyMapper[T <: RenderingPolicy : u.TypeTag] {
+  abstract class RenderingPolicyMapper[+T <: RenderingPolicy : u.TypeTag] {
     def path: u.Type = u.typeOf[T]
 
     def instantiate(policyConfig: PolicyConfig): T

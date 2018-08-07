@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.logstage.config.modules
 
-import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReaderCodecs.RuntimeConfigReaderDefaultImpl
+import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReaderCodecs.default
 import com.github.pshirshov.izumi.distage.config.codec.{ConfigReader, RuntimeConfigReaderCodecs}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
+import com.github.pshirshov.izumi.logstage.api.config.LoggerPathConfig
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.config.codecs.LogSinkCodec.LogSinkMapper
@@ -39,14 +39,14 @@ class LogstageCodecsModule(logstageConfigPath: String) extends ModuleDef {
         SafeType.get[RenderingPolicy.PolicyConfig] -> LogstagePrimitiveCodecs.policyConfigCodec,
         SafeType.get[RenderingPolicy] -> policyCodec,
         SafeType.get[LogSink] -> logSinkCodec,
-        SafeType.get[LoggerConfig] -> new LoggerConfigCodec(logSinkCodec)
+        SafeType.get[LoggerPathConfig] -> new LoggerConfigCodec(logSinkCodec)
       ))
   }
   many[RuntimeConfigReaderCodecs].add {
-    codecs: LogstageCodecs =>
+    codecGroup: LogstageCodecs =>
       new RuntimeConfigReaderCodecs {
         override val readerCodecs: Map[SafeType, ConfigReader[_]] = {
-          RuntimeConfigReaderDefaultImpl.readerCodecs ++ codecs.codecs
+          codecGroup.codecs
         }
       }
   }

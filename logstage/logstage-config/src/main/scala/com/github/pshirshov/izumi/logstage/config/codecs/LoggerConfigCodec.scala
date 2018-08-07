@@ -2,14 +2,14 @@ package com.github.pshirshov.izumi.logstage.config.codecs
 
 import com.github.pshirshov.izumi.distage.config.codec.ConfigReader
 import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
+import com.github.pshirshov.izumi.logstage.api.config.LoggerPathConfig
 import com.typesafe.config.{ConfigObject, ConfigValue, ConfigValueType}
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
 
-class LoggerConfigCodec(sinkCodec: LogSinkCodec) extends ConfigReader[LoggerConfig] {
-  override def apply(configValue: ConfigValue): Try[LoggerConfig] = {
+class LoggerConfigCodec(sinkCodec: LogSinkCodec) extends ConfigReader[LoggerPathConfig] {
+  override def apply(configValue: ConfigValue): Try[LoggerPathConfig] = {
     val result = configValue.valueType() match {
       case ConfigValueType.OBJECT =>
         val cfg = configValue.asInstanceOf[ConfigObject].toConfig
@@ -31,7 +31,7 @@ class LoggerConfigCodec(sinkCodec: LogSinkCodec) extends ConfigReader[LoggerConf
           if (unknowns.nonEmpty) {
             throw new IllegalArgumentException(s"Undefined LogSink ids : ${unknowns.map(_._1).mkString(", ")}")
           } else
-            LoggerConfig(level, sinks collect {
+            LoggerPathConfig(level, sinks collect {
               case (_, Some(sink)) => sink
             })
         }

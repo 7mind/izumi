@@ -85,7 +85,7 @@ class LogSinkCodec(policyReader: RenderingPolicyCodec, mappers: Set[LogSinkMappe
 
 object LogSinkCodec {
 
-  abstract class LogSinkMapper[T <: LogSink : u.TypeTag] {
+  abstract class LogSinkMapper[+T <: LogSink : u.TypeTag] {
     def path: u.Type = u.typeOf[T]
     def instantiate(config: Config, renderingPolicy: RenderingPolicy): T
   }
