@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
 import org.scalatest.WordSpec
 
 class LoggingJson4sTest extends WordSpec {
+
   import LoggingJson4sTest._
 
   "Log macro" should {
@@ -16,15 +17,13 @@ class LoggingJson4sTest extends WordSpec {
 }
 
 
-
 object LoggingJson4sTest {
-  import com.github.pshirshov.izumi.logstage.sink.LoggingAsyncSinkTest._
 
   val jsonPolicy = new JsonRenderingPolicy(prettyPrint = true)
   val consoleSinkJson = new ConsoleSink(jsonPolicy)
 
   def setupJsonLogger(): IzLogger = {
-    configureLogger(Seq(consoleSinkJson))
+    IzLogger.make(consoleSinkJson)
   }
 
 

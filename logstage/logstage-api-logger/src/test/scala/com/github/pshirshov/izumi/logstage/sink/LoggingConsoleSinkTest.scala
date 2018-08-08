@@ -1,10 +1,8 @@
 package com.github.pshirshov.izumi.logstage.sink
 
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
 import org.scalatest.WordSpec
-import LoggingAsyncSinkTest._
 
 import scala.util.{Failure, Success, Try}
 
@@ -13,13 +11,13 @@ class LoggingConsoleSinkTest extends WordSpec {
 
   "Log macro" should {
     "support console backend" in {
-      new ExampleService(setupConsoleLogger()).start()
+      new ExampleService(setupConsoleLogger(None)).start()
     }
 
 
     "support console backend with custom rendering policy" in {
       val policy = s"$${level} $${ts}\t\t$${thread}\t$${location} $${custom-ctx} $${msg}"
-      new ExampleService(setupConsoleLogger(ConsoleSink.coloringPolicy(Some(policy)))).start()
+      new ExampleService(setupConsoleLogger(Some(policy))).start()
     }
 
 
@@ -27,7 +25,7 @@ class LoggingConsoleSinkTest extends WordSpec {
       val duplicate = "level"
       val policy = s"""$${$duplicate} $${$duplicate} $${ts}\t\t$${thread}\t$${location} $${custom-ctx} $${msg}"""
       Try {
-        new ExampleService(setupConsoleLogger(ConsoleSink.coloringPolicy(Some(policy)))).start()
+        new ExampleService(setupConsoleLogger(Some(policy))).start()
       } match {
         case Success(_) =>
           fail("Logger must be unavailable when duplicates are")
@@ -39,7 +37,7 @@ class LoggingConsoleSinkTest extends WordSpec {
     "fail with enclosed braces in custom rendering policy" in {
       val policy = s"""$${ts{\t\t$${thread}\t$${location} $${custom-ctx} $${msg}"""
       Try {
-        new ExampleService(setupConsoleLogger(ConsoleSink.coloringPolicy(Some(policy)))).start()
+        new ExampleService(setupConsoleLogger(Some(policy))).start()
       } match {
         case Success(_) =>
           fail("Logging must fail on improperly formatted message template")
@@ -51,8 +49,8 @@ class LoggingConsoleSinkTest extends WordSpec {
 
 object LoggingConsoleSinkTest {
 
-  def setupConsoleLogger(policy: StringRenderingPolicy = ConsoleSink.coloringPolicy()): IzLogger = {
-    IzLogger.configureLogger(new ConsoleSink(policy))
+  def setupConsoleLogger(template: Option[String]): IzLogger = {
+    IzLogger.make(new ConsoleSink(ConsoleSink.coloringPolicy(template)))
   }
 
 }
