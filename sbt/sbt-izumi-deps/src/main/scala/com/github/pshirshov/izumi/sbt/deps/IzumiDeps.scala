@@ -25,7 +25,7 @@ object IzumiDeps {
     val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
 
-    val fast_classpath_scanner = "3.1.13" // java
+    val fast_classpath_scanner = "3.1.15" // java
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 
