@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import java.util.concurrent.atomic.AtomicReference
+
 import cats._
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
@@ -19,6 +21,7 @@ import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
+import scala.language.reflectiveCalls
 
 
 class Http4sTransportTest extends WordSpec {
@@ -37,11 +40,7 @@ class Http4sTransportTest extends WordSpec {
       builder.unsafeRunAsync {
         case Right(server) =>
           try {
-            assert(greeterClient.greet("John", "Smith").unsafeRunSync() == "Hi, John Smith!")
-            assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
-            assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
-            //assert(greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync() == "")
-            ()
+            performTests()
           } finally {
             server.shutdownNow()
           }
@@ -53,18 +52,51 @@ class Http4sTransportTest extends WordSpec {
 
     }
   }
+
+  private def performTests(): Unit = {
+    clientDispatcher.setupCredentials("user", "pass")
+    assert(greeterClient.greet("John", "Smith").unsafeRunSync() == "Hi, John Smith!")
+    assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
+    assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
+
+    clientDispatcher.cancelCredentials()
+
+    val exc = intercept[IRTHttpFailureException] {
+      calculatorClient.sum(255, 1).unsafeRunSync()
+    }
+    assert(exc.status == Status.InternalServerError)
+
+    //assert(greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync() == "")
+    ()
+  }
 }
 
 object Http4sTransportTest {
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
+  final class AuthCheckDispatcher[Ctx, R[_]](proxied: IRTUnsafeDispatcher[Ctx, R]) extends IRTUnsafeDispatcher[Ctx, R] {
+    override def identifier: IRTServiceId = proxied.identifier
+
+    override def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], Ctx]): Option[Result[IRTMuxResponse[Product]]] = {
+      input.context match {
+        case DummyContext(_, Some(BasicCredentials(user, pass))) =>
+          if (user == "user" && pass == "pass") {
+            proxied.dispatchUnsafe(input)
+          } else {
+            None
+          }
+        case _ => None
+      }
+    }
+  }
+
   class DemoContext[R[_] : IRTResult : Monad, Ctx] {
     private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
     private val calculatorService = new AbstractCalculatorServer.Impl[R, Ctx]
     private val greeterDispatcher = GreeterServiceWrapped.serverUnsafe(greeterService)
     private val calculatorDispatcher = CalculatorServiceWrapped.serverUnsafe(calculatorService)
-    private val dispatchers = List(greeterDispatcher, calculatorDispatcher)
+    private val dispatchers = List(greeterDispatcher, calculatorDispatcher).map(d => new AuthCheckDispatcher(d))
 
     private final val codecs = List(GreeterServiceWrapped, CalculatorServiceWrapped)
     private final val marsh = IRTOpinionatedMarshalers(codecs)
@@ -98,11 +130,25 @@ object Http4sTransportTest {
 
     final val logger = IzLogger.SimpleConsoleLogger
     StaticLogRouter.instance.setup(logger.receiver)
-    final val rt = new RuntimeHttp4s[IO](logger, io, demo.sm)
+    final val rt = new Http4sRuntime[IO](logger, io, demo.sm)
     final val ioService = rt.httpService(demo.serverMuxer, AuthMiddleware(authUser))
 
     //
-    final val clientDispatcher = rt.httpClient(Http1Client[IO]().unsafeRunSync, demo.cm, baseUri)
+    final val clientDispatcher = new rt.HttpClient(Http1Client[IO]().unsafeRunSync, demo.cm, baseUri) {
+      val creds = new AtomicReference[Seq[Header]](Seq.empty)
+      def setupCredentials(login: String, password: String): Unit = {
+        creds.set(Seq(Authorization(BasicCredentials(login, password))))
+      }
+
+      def cancelCredentials(): Unit = {
+        creds.set(Seq.empty)
+      }
+
+      override protected def transformRequest(request: Request[IO]): Request[IO] = {
+        request.withHeaders(Headers(creds.get() :_*))
+      }
+    }
+
     final val greeterClient = GreeterServiceWrapped.clientUnsafe(clientDispatcher)
     final val calculatorClient = CalculatorServiceWrapped.clientUnsafe(clientDispatcher)
   }
