@@ -32,9 +32,9 @@ class IzLogger
 
 object IzLogger {
 
-  final val NullLogger = new IzLogger(LogRouter.nullRouter, CustomContext.empty)
-  final val DebugLogger = new IzLogger(LogRouter.debugRouter, CustomContext.empty)
-  final val SimpleConsoleLogger = make(ConsoleSink.ColoredConsoleSink)
+  final lazy val NullLogger = new IzLogger(LogRouter.nullRouter, CustomContext.empty)
+  final lazy val DebugLogger = new IzLogger(LogRouter.debugRouter, CustomContext.empty)
+  final lazy val SimpleConsoleLogger = make(ConsoleSink.ColoredConsoleSink)
 
   def make(sinks: LogSink*): IzLogger = {
     val router: ConfigurableLogRouter = makeRouter(sinks :_*)

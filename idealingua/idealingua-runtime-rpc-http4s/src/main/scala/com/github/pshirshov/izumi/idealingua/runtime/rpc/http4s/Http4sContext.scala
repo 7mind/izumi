@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import cats._
-import cats.effect.Sync
+import cats.effect.Effect
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s._
@@ -19,7 +18,5 @@ trait Http4sContext[R[_]] {
 
   protected def logger: IzLogger
 
-  protected implicit def R: Monad[R]
-
-  protected implicit def S: Sync[R]
+  protected implicit def E: Effect[R]
 }

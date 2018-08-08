@@ -7,7 +7,6 @@ import io.circe._
 import io.circe.generic.semiauto._
 
 import scala.language.higherKinds
-import scala.reflect.ClassTag
 
 sealed trait HowBroken
 

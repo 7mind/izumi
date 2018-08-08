@@ -13,15 +13,13 @@ import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.r2.idealingua.test.generated._
 import com.github.pshirshov.izumi.r2.idealingua.test.impls._
 import org.http4s._
-import org.http4s.client.blaze.Http1Client
 import org.http4s.dsl._
 import org.http4s.headers.Authorization
 import org.http4s.server._
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 
-import scala.language.higherKinds
-import scala.language.reflectiveCalls
+import scala.language.{higherKinds, reflectiveCalls}
 
 
 class Http4sTransportTest extends WordSpec {
@@ -34,7 +32,7 @@ class Http4sTransportTest extends WordSpec {
       import scala.concurrent.ExecutionContext.Implicits.global
       val builder = BlazeBuilder[IO]
         .bindHttp(port, host)
-        .mountService(ioService, "/")
+        .mountService(ioService.service, "/")
         .start
 
       builder.unsafeRunAsync {
@@ -59,14 +57,17 @@ class Http4sTransportTest extends WordSpec {
     assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
     assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
 
+    val missingHandler = intercept[IRTHttpFailureException] {
+      greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync()
+    }
+    assert(missingHandler.status == Status.NotFound)
+
     clientDispatcher.cancelCredentials()
 
-    val exc = intercept[IRTHttpFailureException] {
+    val unauthorized = intercept[IRTHttpFailureException] {
       calculatorClient.sum(255, 1).unsafeRunSync()
     }
-    assert(exc.status == Status.Forbidden)
-
-    //assert(greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync() == "")
+    assert(unauthorized.status == Status.Forbidden)
     ()
   }
 }
@@ -132,11 +133,11 @@ object Http4sTransportTest {
 
     final val logger = IzLogger.SimpleConsoleLogger
     StaticLogRouter.instance.setup(logger.receiver)
-    final val rt = new Http4sRuntime[IO](logger, io, demo.sm)
-    final val ioService = rt.httpService(demo.serverMuxer, AuthMiddleware(authUser))
+    final val rt = new Http4sRuntime(io, logger, demo.sm,  demo.cm)
+    final val ioService = new rt.HttpServer(demo.serverMuxer, AuthMiddleware(authUser))
 
     //
-    final val clientDispatcher = new rt.HttpClient(Http1Client[IO]().unsafeRunSync, demo.cm, baseUri) {
+    final val clientDispatcher = new rt.ClientDispatcher(baseUri) {
       val creds = new AtomicReference[Seq[Header]](Seq.empty)
       def setupCredentials(login: String, password: String): Unit = {
         creds.set(Seq(Authorization(BasicCredentials(login, password))))

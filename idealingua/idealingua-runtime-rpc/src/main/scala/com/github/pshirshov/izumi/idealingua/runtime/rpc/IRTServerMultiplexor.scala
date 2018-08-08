@@ -86,11 +86,11 @@ trait IRTGeneratedUnpackingDispatcher[Ctx, R[_], In, Out <: Product]
 
   protected def toMethodId(v: Out): IRTMethod
 
-  protected def toZeroargBody(v: IRTMethod): Option[In]
-
-
   protected def inputTag: ClassTag[In]
+
   protected def outputTag: ClassTag[Out]
+
+  protected def toZeroargBody(v: IRTMethod): Option[In]
 
   def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, Ctx]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
     val maybeResult = toZeroargBody(input.value)
