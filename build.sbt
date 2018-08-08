@@ -320,7 +320,7 @@ lazy val idealinguaRuntimeRpcCats = inIdealingua.as.module
   .settings(libraryDependencies ++= R.cats_all)
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats, logstageApiLogger)
+  .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats, logstageApiLogger, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(libraryDependencies ++= R.http4s_all)
 

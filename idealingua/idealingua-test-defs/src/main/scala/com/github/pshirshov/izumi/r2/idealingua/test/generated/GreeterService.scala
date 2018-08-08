@@ -3,20 +3,30 @@ package com.github.pshirshov.izumi.r2.idealingua.test.generated
 import com.github.pshirshov.izumi.idealingua.runtime.circe._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.r2.idealingua.test.generated.HowBroken.BrokenClientCode
 import io.circe.Decoder.Result
 import io.circe._
 import io.circe.generic.semiauto._
 
 import scala.language.higherKinds
 
+sealed trait HowBroken
+object HowBroken {
+  case object MissingServerHandler extends HowBroken
+  case object BrokenClientCode extends HowBroken
+}
+
 trait GreeterServiceClient[R[_]] extends IRTWithResultType[R] {
   def greet(name: String, surname: String): Result[String]
+
   def sayhi(): Result[String]
 
+  def broken(howBroken: HowBroken): Result[String]
 }
 
 trait GreeterService[R[_], C] extends IRTWithResultType[R] {
   def greet(ctx: C, name: String, surname: String): Result[String]
+
   def sayhi(ctx: C): Result[String]
 }
 
@@ -24,9 +34,6 @@ trait GreeterService[R[_], C] extends IRTWithResultType[R] {
 //  def greet(context: C, name: String, surname: String): Result[String]
 //  def sayhi(context: C): Result[String]
 //}
-
-
-
 
 
 trait GreeterServiceWrapped[R[_], C] extends IRTWithResultType[R] with IRTWithContext[C] {
@@ -45,12 +52,19 @@ object GreeterServiceWrapped
   sealed trait GreeterServiceInput extends AnyRef with Product
 
   final case class GreetInput(name: String, surname: String) extends GreeterServiceInput
+
   final case class SayHiInput() extends GreeterServiceInput
 
   sealed trait GreeterServiceOutput extends AnyRef with Product
 
   final case class GreetOutput(value: String) extends GreeterServiceOutput
+
   final case class SayHiOutput(value: String) extends GreeterServiceOutput
+
+  final case class BrokenNoServerHandler() extends GreeterServiceInput
+
+  final case class BrokenClient() extends GreeterServiceInput
+
 
 
   override type Input = GreeterServiceInput
@@ -83,6 +97,12 @@ object GreeterServiceWrapped
     implicit val decode: Decoder[SayHiInput] = deriveDecoder
   }
 
+  object BrokenNoServerHandler {
+    implicit val encode: Encoder[BrokenNoServerHandler] = deriveEncoder
+    implicit val decode: Decoder[BrokenNoServerHandler] = deriveDecoder
+  }
+
+
   object SayHiOutput {
     implicit val encode: Encoder[SayHiOutput] = deriveEncoder
     implicit val decode: Decoder[SayHiOutput] = deriveDecoder
@@ -98,7 +118,7 @@ object GreeterServiceWrapped
     implicit val decode: Decoder[GreetOutput] = deriveDecoder
   }
 
-  val serviceId =  IRTServiceId("GreeterService")
+  val serviceId = IRTServiceId("GreeterService")
 
   trait PackingDispatcher[R[_]]
     extends GreeterServiceClient[R]
@@ -128,6 +148,21 @@ object GreeterServiceWrapped
           throw new IRTTypeMismatchException(s"Unexpected input in GreeterServiceDispatcherPacking.greet: $o", o, None)
       }
     }
+
+    def broken(howBroken: HowBroken): Result[String] = {
+      val packed = howBroken match {
+        case HowBroken.MissingServerHandler => BrokenNoServerHandler()
+        case HowBroken.BrokenClientCode => BrokenClient()
+      }
+
+      val dispatched = dispatcher.dispatch(packed)
+      _ServiceResult.map(dispatched) {
+        case o: GreetOutput =>
+          o.value
+        case o =>
+          throw new IRTTypeMismatchException(s"Unexpected input in GreeterServiceDispatcherPacking.greet: $o", o, None)
+      }
+    }
   }
 
   class SafeToUnsafeBridge[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]) extends IRTDispatcher[GreeterServiceInput, GreeterServiceOutput, R] with IRTWithResult[R] {
@@ -136,12 +171,13 @@ object GreeterServiceWrapped
     import IRTServiceResult._
 
     override def dispatch(input: GreeterServiceInput): Result[GreeterServiceOutput] = {
-      dispatcher.dispatch(IRTMuxRequest(input : Product, toMethodId(input))).map {
-        case IRTMuxResponse(t: GreeterServiceOutput, _) =>
-          t
-        case o =>
-          throw new IRTTypeMismatchException(s"Unexpected output in GreeterServiceSafeToUnsafeBridge.dispatch: $o", o, None)
-      }
+      dispatcher.dispatch(IRTMuxRequest(input: Product, toMethodId(input)))
+        .map {
+          case IRTMuxResponse(t: GreeterServiceOutput, _) =>
+            t
+          case o =>
+            throw new IRTTypeMismatchException(s"Unexpected output in GreeterServiceSafeToUnsafeBridge.dispatch: $o", o, None)
+        }
     }
   }
 
@@ -208,20 +244,20 @@ object GreeterServiceWrapped
     }
   }
 
-  def toMethodId(v: GreeterServiceInput): IRTMethod  = {
+  def toMethodId(v: GreeterServiceInput): IRTMethod = {
     v match {
       case _: GreetInput => IRTMethod(serviceId, IRTMethodId("greet"))
       case _: SayHiInput => IRTMethod(serviceId, IRTMethodId("sayhi"))
+      case _: BrokenNoServerHandler => IRTMethod(serviceId, IRTMethodId("broken"))
     }
   }
 
-  def toMethodId(v: GreeterServiceOutput): IRTMethod  = {
+  def toMethodId(v: GreeterServiceOutput): IRTMethod = {
     v match {
       case _: GreetOutput => IRTMethod(serviceId, IRTMethodId("greet"))
       case _: SayHiOutput => IRTMethod(serviceId, IRTMethodId("sayhi"))
     }
   }
-
 
 
   object UnpackingDispatcher {
@@ -246,6 +282,8 @@ object GreeterServiceWrapped
           v.asJson
         case IRTReqBody(v: SayHiInput) =>
           v.asJson
+        case IRTReqBody(v: BrokenNoServerHandler) =>
+          v.asJson
       }
     )
 
@@ -268,7 +306,7 @@ object GreeterServiceWrapped
       }
     )
 
-    override def responseDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTResBody]]] =  List(
+    override def responseDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTResBody]]] = List(
       {
         case IRTCursorForMethod(m, packet) if m.service == serviceId && m.methodId == IRTMethodId("sayhi") =>
           packet.as[SayHiOutput].map(v => IRTResBody(v))
@@ -277,4 +315,5 @@ object GreeterServiceWrapped
       }
     )
   }
+
 }
