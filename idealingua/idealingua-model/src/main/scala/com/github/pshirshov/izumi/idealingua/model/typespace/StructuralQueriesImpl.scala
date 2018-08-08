@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, IdentifierId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, FieldConflicts, PlainStruct, Struct}
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.collection.mutable
 
@@ -160,7 +160,6 @@ protected[typespace] class StructuralQueriesImpl(types: TypeCollection, resolver
       case _ =>
         List.empty
     }
-
     cdef ++ mcdef
   }
 

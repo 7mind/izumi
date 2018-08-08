@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.CompositeS
 
 import scala.meta._
 
-case class Params(params: List[Term.Param], assertions: List[Term.ApplyInfix]) {
+case class Params(params: List[Term.Param], types: List[TypeId], assertions: List[Term.ApplyInfix]) {
   def assertion: List[Term] = {
     if (assertions.isEmpty) {
       List.empty
@@ -51,18 +51,15 @@ class ScalaTranslationTools(ctx: STContext) {
               o
           }
 
-          f.sourceType.isInstanceOf[Builtin]
           val scalaType = ctx.conv.toScala(source)
           val name = Term.Name(f.sourceName)
 
-
-
-          (f, (name, scalaType.typeFull))
+          (f, source, (name, scalaType.typeFull))
       }
 
     // this allows us to get rid of "unused" warnings and do a good thing
     val assertions = out.map {
-      case (field, (name, _)) =>
+      case (field, _, (name, _)) =>
         if (!ctx.typespace.dealias(field.sourceType).isInstanceOf[Builtin]) {
           List(q"$name != null")
         } else {
@@ -70,7 +67,7 @@ class ScalaTranslationTools(ctx: STContext) {
         }
     }
 
-    Params(out.map(_._2).toParams, assertions.flatten)
+    Params(out.map(_._3).toParams, out.map(_._2), assertions.flatten)
   }
 
   def makeConstructor(t: ConverterDef): List[Term.Assign] = {

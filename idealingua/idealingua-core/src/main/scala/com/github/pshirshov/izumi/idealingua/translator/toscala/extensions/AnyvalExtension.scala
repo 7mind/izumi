@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenPr
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProduct, IdentifierProudct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaStruct, StructContext}
 
+import scala.collection.mutable
 import scala.meta._
 
 object AnyvalExtension extends ScalaTranslatorExtension {
@@ -52,6 +53,10 @@ object AnyvalExtension extends ScalaTranslatorExtension {
   }
 
   private def canBeAnyValField(ctx: STContext, typeId: TypeId): Boolean = {
+    canBeAnyValField(ctx, typeId, mutable.HashSet.empty)
+  }
+
+  private def canBeAnyValField(ctx: STContext, typeId: TypeId, seen: mutable.HashSet[TypeId]): Boolean = {
     typeId match {
       case _: Builtin =>
         true
@@ -66,7 +71,7 @@ object AnyvalExtension extends ScalaTranslatorExtension {
       case a: AliasId =>
         ctx.typespace(a) match {
           case alias: TypeDef.Alias =>
-            canBeAnyValField(ctx, alias.target)
+            canBeAnyValField(ctx, alias.target, seen + alias.target)
 
           case v =>
             throw new IDLException(s"Impossible case: $v cannot be an alias")
@@ -74,7 +79,9 @@ object AnyvalExtension extends ScalaTranslatorExtension {
 
       case t: StructureId =>
         val struct = ctx.typespace.structure.structure(t)
-        struct.isComposite || (struct.isScalar && !struct.all.exists(v => canBeAnyValField(ctx, v.field.typeId)))
+        struct.isComposite || (struct.isScalar && !struct.all
+          .filterNot(v => seen.contains(v.field.typeId))
+          .exists(v => canBeAnyValField(ctx, v.field.typeId, seen + v.field.typeId)))
       case t: IdentifierId =>
         val struct = ctx.typespace.structure.structure(t)
         struct.all.size > 1
