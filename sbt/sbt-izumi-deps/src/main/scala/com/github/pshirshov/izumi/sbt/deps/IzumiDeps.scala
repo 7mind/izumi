@@ -25,7 +25,7 @@ object IzumiDeps {
     val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
 
-    val fast_classpath_scanner = "3.1.15" // java
+    val classgraph = "4.0.5" // java
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 
@@ -58,7 +58,7 @@ object IzumiDeps {
 
     val kind_projector = "org.spire-math" % "kind-projector" % V.kind_projector cross CrossVersion.binary
 
-    val fast_classpath_scanner = "io.github.lukehutch" % "fast-classpath-scanner" % V.fast_classpath_scanner
+    val fast_classpath_scanner = "io.github.classgraph" % "classgraph" % V.classgraph
 
     val typesafe_config = "com.typesafe" % "config" % V.typesafe_config
 

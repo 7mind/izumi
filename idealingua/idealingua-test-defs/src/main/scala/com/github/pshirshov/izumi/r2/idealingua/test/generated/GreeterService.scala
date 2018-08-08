@@ -74,21 +74,21 @@ object GreeterServiceWrapped
   override type ServiceClient[R[_]] = GreeterServiceClient[R]
 
 
-  override def client[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[GreeterServiceInput, GreeterServiceOutput, R]): GreeterServiceClient[R] = {
+  override def client[R[_] : IRTResult](dispatcher: IRTDispatcher[GreeterServiceInput, GreeterServiceOutput, R]): GreeterServiceClient[R] = {
     new GreeterServiceWrapped.PackingDispatcher.Impl[R](dispatcher)
   }
 
 
-  override def server[R[_] : IRTServiceResult, C](service: GreeterService[R, C]): IRTDispatcher[IRTInContext[GreeterServiceInput, C], GreeterServiceOutput, R] = {
+  override def server[R[_] : IRTResult, C](service: GreeterService[R, C]): IRTDispatcher[IRTInContext[GreeterServiceInput, C], GreeterServiceOutput, R] = {
     new GreeterServiceWrapped.UnpackingDispatcher.Impl[R, C](service)
   }
 
 
-  override def serverUnsafe[R[_] : IRTServiceResult, C](service: GreeterService[R, C]): IRTUnsafeDispatcher[C, R] = {
+  override def serverUnsafe[R[_] : IRTResult, C](service: GreeterService[R, C]): IRTUnsafeDispatcher[C, R] = {
     new GreeterServiceWrapped.UnpackingDispatcher.Impl[R, C](service)
   }
 
-  override def clientUnsafe[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]): GreeterServiceClient[R] = {
+  override def clientUnsafe[R[_] : IRTResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]): GreeterServiceClient[R] = {
     client(new SafeToUnsafeBridge[R](dispatcher))
   }
 
@@ -165,10 +165,10 @@ object GreeterServiceWrapped
     }
   }
 
-  class SafeToUnsafeBridge[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]) extends IRTDispatcher[GreeterServiceInput, GreeterServiceOutput, R] with IRTWithResult[R] {
-    override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+  class SafeToUnsafeBridge[R[_] : IRTResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]) extends IRTDispatcher[GreeterServiceInput, GreeterServiceOutput, R] with IRTWithResult[R] {
+    override protected def _ServiceResult: IRTResult[R] = implicitly
 
-    import IRTServiceResult._
+    import IRTResult._
 
     override def dispatch(input: GreeterServiceInput): Result[GreeterServiceOutput] = {
       dispatcher.dispatch(IRTMuxRequest(input: Product, toMethodId(input)))
@@ -183,8 +183,8 @@ object GreeterServiceWrapped
 
   object PackingDispatcher {
 
-    class Impl[R[_] : IRTServiceResult](val dispatcher: IRTDispatcher[GreeterServiceInput, GreeterServiceOutput, R]) extends PackingDispatcher[R] {
-      override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+    class Impl[R[_] : IRTResult](val dispatcher: IRTDispatcher[GreeterServiceInput, GreeterServiceOutput, R]) extends PackingDispatcher[R] {
+      override protected def _ServiceResult: IRTResult[R] = implicitly
     }
 
   }
@@ -262,8 +262,8 @@ object GreeterServiceWrapped
 
   object UnpackingDispatcher {
 
-    class Impl[R[_] : IRTServiceResult, C](val service: GreeterService[R, C]) extends UnpackingDispatcher[R, C] {
-      override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+    class Impl[R[_] : IRTResult, C](val service: GreeterService[R, C]) extends UnpackingDispatcher[R, C] {
+      override protected def _ServiceResult: IRTResult[R] = implicitly
     }
 
   }

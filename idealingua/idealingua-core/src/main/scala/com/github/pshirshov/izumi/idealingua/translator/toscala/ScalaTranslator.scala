@@ -401,8 +401,8 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
        """
     val qqPackingDispatcherCompanion =
       q"""  object PackingDispatcher {
-        class Impl[R[_] : IRTServiceResult](val dispatcher: IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]) extends PackingDispatcher[R] {
-          override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+        class Impl[R[_] : IRTResult](val dispatcher: IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]) extends PackingDispatcher[R] {
+          override protected def _ServiceResult: IRTResult[R] = implicitly
         }
       }"""
 
@@ -452,19 +452,19 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
 
     val qqUnpackingDispatcherCompanion =
       q"""  object UnpackingDispatcher {
-        class Impl[R[_] : IRTServiceResult, C](val service: ${sp.svcTpe.typeFull}[R, C]) extends UnpackingDispatcher[R, C] {
-          override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+        class Impl[R[_] : IRTResult, C](val service: ${sp.svcTpe.typeFull}[R, C]) extends UnpackingDispatcher[R, C] {
+          override protected def _ServiceResult: IRTResult[R] = implicitly
         }
       }"""
 
     val qqSafeToUnsafeBridge =
       q"""
-        class SafeToUnsafeBridge[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R])
+        class SafeToUnsafeBridge[R[_] : IRTResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R])
            extends IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]
            with ${rt.WithResult.parameterize("R").init()} {
-             override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+             override protected def _ServiceResult: IRTResult[R] = implicitly
 
-             import IRTServiceResult._
+             import IRTResult._
 
              override def dispatch(input: ${sp.serviceInputBase.typeFull}): Result[${sp.serviceOutputBase.typeFull}] = {
                dispatcher.dispatch(IRTMuxRequest(input : Product, toMethodId(input))).map {
@@ -492,21 +492,21 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
            override type ServiceServer[R[_], C] = ${sp.svcTpe.parameterize("R", "C").typeFull}
            override type ServiceClient[R[_]] = ${sp.svcClientTpe.parameterize("R").typeFull}
 
-  def client[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
+  def client[R[_] : IRTResult](dispatcher: IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
     new PackingDispatcher.Impl[R](dispatcher)
   }
 
 
-  def clientUnsafe[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
+  def clientUnsafe[R[_] : IRTResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
     client(new SafeToUnsafeBridge[R](dispatcher))
   }
 
-  def server[R[_] : IRTServiceResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): IRTDispatcher[IRTInContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R] = {
+  def server[R[_] : IRTResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): IRTDispatcher[IRTInContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R] = {
     new UnpackingDispatcher.Impl[R, C](service)
   }
 
 
-  def serverUnsafe[R[_] : IRTServiceResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): IRTUnsafeDispatcher[C, R] = {
+  def serverUnsafe[R[_] : IRTResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): IRTUnsafeDispatcher[C, R] = {
     new UnpackingDispatcher.Impl[R, C](service)
   }
 

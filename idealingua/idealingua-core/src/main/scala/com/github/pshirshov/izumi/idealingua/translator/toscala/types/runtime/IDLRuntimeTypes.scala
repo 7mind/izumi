@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 object IDLRuntimeTypes {
 
   val model: Pkg = Pkg.parentOf[TypeId]
-  val services: Pkg = Pkg.of[IRTServiceResult[_1Arg]]
+  val services: Pkg = Pkg.of[IRTResult[_1Arg]]
 
   private type _1Arg[R] = R
   private type _0Arg = Nothing

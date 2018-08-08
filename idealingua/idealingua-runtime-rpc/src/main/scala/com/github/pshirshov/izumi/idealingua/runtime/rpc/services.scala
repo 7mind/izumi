@@ -22,18 +22,18 @@ trait IRTWrappedServiceDefinition {
   type ServiceServer[_[_], _]
   type ServiceClient[_[_]]
 
-  def client[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[Input, Output, R]): ServiceClient[R]
+  def client[R[_] : IRTResult](dispatcher: IRTDispatcher[Input, Output, R]): ServiceClient[R]
 
 
-  def server[R[_] : IRTServiceResult, C](service: ServiceServer[R, C]): IRTDispatcher[IRTInContext[Input, C], Output, R]
+  def server[R[_] : IRTResult, C](service: ServiceServer[R, C]): IRTDispatcher[IRTInContext[Input, C], Output, R]
 
 }
 
 
 trait IRTWrappedUnsafeServiceDefinition {
   this: IRTWrappedServiceDefinition =>
-  def clientUnsafe[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]): ServiceClient[R]
+  def clientUnsafe[R[_] : IRTResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]): ServiceClient[R]
 
-  def serverUnsafe[R[_] : IRTServiceResult, C](service: ServiceServer[R, C]): IRTUnsafeDispatcher[C, R]
+  def serverUnsafe[R[_] : IRTResult, C](service: ServiceServer[R, C]): IRTUnsafeDispatcher[C, R]
 
 }

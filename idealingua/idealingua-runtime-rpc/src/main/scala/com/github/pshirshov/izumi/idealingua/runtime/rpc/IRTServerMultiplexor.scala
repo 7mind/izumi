@@ -37,10 +37,10 @@ trait IRTUnsafeDispatcher[Ctx, R[_]] extends IRTWithResultType[R] {
   def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], Ctx]): Option[Result[IRTMuxResponse[Product]]]
 }
 
-class IRTServerMultiplexor[R[_] : IRTServiceResult, Ctx](dispatchers: List[IRTUnsafeDispatcher[Ctx, R]])
+class IRTServerMultiplexor[R[_] : IRTResult, Ctx](dispatchers: List[IRTUnsafeDispatcher[Ctx, R]])
   extends IRTDispatcher[IRTInContext[IRTMuxRequest[Product], Ctx], IRTMuxResponse[Product], R]
     with IRTWithResult[R] {
-  override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+  override protected def _ServiceResult: IRTResult[R] = implicitly
 
   type Input = IRTInContext[IRTMuxRequest[Product], Ctx]
   type Output = IRTMuxResponse[Product]

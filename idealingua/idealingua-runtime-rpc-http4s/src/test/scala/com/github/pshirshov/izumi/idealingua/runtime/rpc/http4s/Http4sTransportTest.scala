@@ -13,6 +13,7 @@ import com.github.pshirshov.izumi.r2.idealingua.test.impls._
 import org.http4s._
 import org.http4s.client.blaze.Http1Client
 import org.http4s.dsl._
+import org.http4s.headers.Authorization
 import org.http4s.server._
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
@@ -56,9 +57,9 @@ class Http4sTransportTest extends WordSpec {
 
 object Http4sTransportTest {
 
-  final case class DummyContext(ip: String)
+  final case class DummyContext(ip: String, credentials: Option[Credentials])
 
-  class DemoContext[R[_] : IRTServiceResult : Monad, Ctx] {
+  class DemoContext[R[_] : IRTResult : Monad, Ctx] {
     private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
     private val calculatorService = new AbstractCalculatorServer.Impl[R, Ctx]
     private val greeterDispatcher = GreeterServiceWrapped.serverUnsafe(greeterService)
@@ -90,7 +91,7 @@ object Http4sTransportTest {
     final val authUser: Kleisli[OptionT[IO, ?], Request[IO], DummyContext] =
       Kleisli {
         request: Request[IO] =>
-          val context = DummyContext(request.remoteAddr.getOrElse("0.0.0.0"))
+          val context = DummyContext(request.remoteAddr.getOrElse("0.0.0.0"), request.headers.get(Authorization).map(_.credentials))
 
           OptionT.liftF(IO(context))
       }
@@ -101,7 +102,7 @@ object Http4sTransportTest {
     final val ioService = rt.httpService(demo.serverMuxer, AuthMiddleware(authUser))
 
     //
-    final val clientDispatcher = rt.httpClient(Http1Client[IO]().unsafeRunSync, demo.cm)(rt.requestBuilder(baseUri))
+    final val clientDispatcher = rt.httpClient(Http1Client[IO]().unsafeRunSync, demo.cm, baseUri)
     final val greeterClient = GreeterServiceWrapped.clientUnsafe(clientDispatcher)
     final val calculatorClient = CalculatorServiceWrapped.clientUnsafe(clientDispatcher)
   }

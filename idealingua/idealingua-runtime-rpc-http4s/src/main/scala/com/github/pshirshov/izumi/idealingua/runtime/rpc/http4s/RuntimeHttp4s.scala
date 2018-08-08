@@ -21,7 +21,7 @@ trait Http4sContext[R[_]] {
 
   protected def dsl: Http4sDsl[R]
 
-  protected def TM: IRTServiceResult[R]
+  protected def TM: IRTResult[R]
 
   protected def logger: IzLogger
 
@@ -31,15 +31,7 @@ trait Http4sContext[R[_]] {
 }
 
 trait WithRequestBuilder[R[_]] {
-  def requestBuilder(baseUri: Uri)(input: IRTMuxRequest[Product], body: EntityBody[R]): Request[R] = {
-    val uri = baseUri / input.method.service.value / input.method.methodId.value
 
-    if (input.body.value.productArity > 0) {
-      Request(org.http4s.Method.POST, uri, body = body)
-    } else {
-      Request(org.http4s.Method.GET, uri)
-    }
-  }
 }
 
 trait WithHttp4sLoggingMiddleware[R[_]] {
@@ -71,16 +63,25 @@ trait WithHttp4sLoggingMiddleware[R[_]] {
 trait WithHttp4sClient[R[_]] {
   this: Http4sContext[R] =>
 
+  protected def requestBuilder(baseUri: Uri)(input: IRTMuxRequest[Product], body: EntityBody[R]): Request[R] = {
+    val uri = baseUri / input.method.service.value / input.method.methodId.value
+
+    if (input.body.value.productArity > 0) {
+      Request(org.http4s.Method.POST, uri, body = body)
+    } else {
+      Request(org.http4s.Method.GET, uri)
+    }
+  }
+
   def httpClient
-  (client: Client[R], marshallers: IRTClientMarshallers)
-  (builder: (IRTMuxRequest[Product], EntityBody[R]) => Request[R])
+  (client: Client[R], marshallers: IRTClientMarshallers, baseUri: Uri)
   : IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R] = {
     new IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R] {
       override def dispatch(input: IRTMuxRequest[Product]): Result[IRTMuxResponse[Product]] = {
         val body = marshallers.encodeRequest(input.body)
         val outBytes: Array[Byte] = body.getBytes
         val entityBody: EntityBody[R] = Stream.emits(outBytes).covary[R]
-        val req: Request[R] = builder(input, entityBody)
+        val req: Request[R] = requestBuilder(baseUri)(input, entityBody)
 
         logger.trace(s"${input.method -> "method"}: Prepared request $body")
         client.fetch(req) {
@@ -198,7 +199,7 @@ trait WithHttp4sServer[R[_]] {
 
 }
 
-class RuntimeHttp4s[R[_] : IRTServiceResult : Monad : Sync]
+class RuntimeHttp4s[R[_] : IRTResult : Monad : Sync]
 (
   override protected val logger: IzLogger
   , override protected val dsl: Http4sDsl[R]
@@ -209,7 +210,7 @@ class RuntimeHttp4s[R[_] : IRTServiceResult : Monad : Sync]
     with WithRequestBuilder[R]
     with WithHttp4sClient[R]
     with WithHttp4sServer[R] {
-  override protected val TM: IRTServiceResult[R] = implicitly[IRTServiceResult[R]]
+  override protected val TM: IRTResult[R] = implicitly[IRTResult[R]]
 
   override protected val R: Monad[R] = implicitly[Monad[R]]
 
