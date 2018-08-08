@@ -32,17 +32,30 @@ class IzLogger
 
 object IzLogger {
 
-  final lazy val NullLogger = new IzLogger(LogRouter.nullRouter, CustomContext.empty)
-  final lazy val DebugLogger = new IzLogger(LogRouter.debugRouter, CustomContext.empty)
-  final lazy val SimpleConsoleLogger = make(ConsoleSink.ColoredConsoleSink)
+  val Level: Log.Level.type = Log.Level
 
-  def make(sinks: LogSink*): IzLogger = {
-    val router: ConfigurableLogRouter = makeRouter(sinks :_*)
+  /**
+    * Ingores all the log messages
+    */
+  final lazy val NullLogger = new IzLogger(LogRouter.nullRouter, CustomContext.empty)
+
+  /**
+    * Prints log messages as-is, suitable for logger debugging only
+    */
+  final lazy val DebugLogger = new IzLogger(LogRouter.debugRouter, CustomContext.empty)
+
+  /**
+    * Configures basic console logger with global level threshold
+    */
+  final def basic(threshold: Log.Level = IzLogger.Level.Trace): IzLogger = basic(threshold, ConsoleSink.ColoredConsoleSink)
+
+  def basic(threshold: Log.Level, sink: LogSink, sinks: LogSink*): IzLogger = {
+    val router: ConfigurableLogRouter = basicRouter(threshold, sink +: sinks :_*)
     new IzLogger(router, CustomContext.empty)
   }
 
-  def makeRouter(sinks: LogSink*): ConfigurableLogRouter = {
-    val configService = new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(Log.Level.Trace, sinks))
+  def basicRouter(threshold: Log.Level, sinks: LogSink*): ConfigurableLogRouter = {
+    val configService = new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(threshold, sinks))
     val router = new ConfigurableLogRouter(configService)
     router
   }

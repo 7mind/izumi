@@ -13,9 +13,7 @@ class Slf4jAdapterTest extends WordSpec {
     "pass logs to LogStage" in {
       val sink = new TestSink()
 
-      StaticLogRouter.instance.setup(IzLogger.makeRouter(
-        sink
-      ))
+      StaticLogRouter.instance.setup(IzLogger.basicRouter(IzLogger.Level.Trace, sink))
 
       logger.trace(s"Debug message")
       logger.trace(s"Debug message: {}")

@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.distage.plugins.PluginBase
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.{ConfigApplicator, PluginConfig}
 import com.github.pshirshov.izumi.functional.Value
 import io.github.classgraph.{ClassGraph, ClassInfo}
-import io.github.classgraph.ClassInfoList.ClassInfoFilter
 
 import scala.collection.JavaConverters._
 

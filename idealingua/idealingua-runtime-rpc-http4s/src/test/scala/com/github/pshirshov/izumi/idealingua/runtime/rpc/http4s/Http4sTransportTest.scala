@@ -8,8 +8,8 @@ import cats.effect._
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
 import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTClientMarshallers, IRTOpinionatedMarshalers, IRTServerMarshallers}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTServerMultiplexor, _}
-import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
+import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.r2.idealingua.test.generated._
 import com.github.pshirshov.izumi.r2.idealingua.test.impls._
 import org.http4s._
@@ -65,7 +65,7 @@ class Http4sTransportTest extends WordSpec {
     clientDispatcher.cancelCredentials()
 
     val unauthorized = intercept[IRTHttpFailureException] {
-      calculatorClient.sum(255, 1).unsafeRunSync()
+      calculatorClient.sum(403, 0).unsafeRunSync()
     }
     assert(unauthorized.status == Status.Forbidden)
     ()
@@ -131,7 +131,7 @@ object Http4sTransportTest {
           OptionT.liftF(IO(context))
       }
 
-    final val logger = IzLogger.SimpleConsoleLogger
+    final val logger = IzLogger.basic(Log.Level.Info)
     StaticLogRouter.instance.setup(logger.receiver)
     final val rt = new Http4sRuntime(io, logger, demo.sm,  demo.cm)
     final val ioService = new rt.HttpServer(demo.serverMuxer, AuthMiddleware(authUser))

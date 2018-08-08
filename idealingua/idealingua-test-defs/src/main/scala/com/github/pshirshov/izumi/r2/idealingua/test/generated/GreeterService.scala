@@ -213,6 +213,8 @@ object GreeterServiceWrapped
           _ServiceResult.map(greet(c, v))(v => v) // upcast
         case IRTInContext(v: SayHiInput, c) =>
           _ServiceResult.map(sayhi(c, v))(v => v) // upcast
+        case IRTInContext(v: BrokenClient, c) =>
+          throw new RuntimeException()
       }
     }
 

@@ -22,7 +22,7 @@ object LoggingJson4sTest {
   val consoleSinkJson = new ConsoleSink(jsonPolicy)
 
   def setupJsonLogger(): IzLogger = {
-    IzLogger.make(consoleSinkJson)
+    IzLogger.basic(IzLogger.Level.Trace, consoleSinkJson)
   }
 
 

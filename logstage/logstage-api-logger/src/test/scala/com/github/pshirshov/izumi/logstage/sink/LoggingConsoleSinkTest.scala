@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.sink
 
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.WordSpec
 
 import scala.util.{Failure, Success, Try}
@@ -49,7 +49,7 @@ class LoggingConsoleSinkTest extends WordSpec {
 object LoggingConsoleSinkTest {
 
   def setupConsoleLogger(template: Option[String]): IzLogger = {
-    IzLogger.make(new ConsoleSink(ConsoleSink.coloringPolicy(template)))
+    IzLogger.basic(IzLogger.Level.Trace, new ConsoleSink(ConsoleSink.coloringPolicy(template)))
   }
 
 }
