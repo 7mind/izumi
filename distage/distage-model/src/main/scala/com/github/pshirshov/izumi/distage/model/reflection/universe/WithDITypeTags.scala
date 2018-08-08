@@ -47,7 +47,7 @@ trait WithDITypeTags {
     *
     * Example:
     * {{{
-    * implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: WeakTypeTag[T[A0, K, A1]): Tag[T[A0, K, A1]] =
+    * implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing]): Tag[T[A0, K, A1]] =
     *   Tag.appliedTag(t, List(Tag[A0].tag, TagK[K].tag, Tag[A1].tag))
     * }}}
     **/
@@ -105,14 +105,14 @@ trait WithDITypeTags {
 
   trait TagInstances2 extends TagInstances3 {
 
-    implicit def tagFromTagTAAK[T[_, _, _[_]], A0: Tag, A1: Tag, K[_]: TagK](implicit t: WeakTypeTag[T[A0, A1, K]]): Tag[T[A0, A1, K]] =
+    implicit def tagFromTagTAAK[T[_, _, _[_]], A0: Tag, A1: Tag, K[_]: TagK](implicit t: TypeTag[T[Nothing, Nothing, Nothing]]): Tag[T[A0, A1, K]] =
       Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, TagK[K].tag))
 
   }
 
   trait TagInstances3 extends TagInstances4 {
 
-    implicit def tagFromTagTAK[T[_, _[_]], A: Tag, K[_]: TagK](implicit t: WeakTypeTag[T[A, K]]): Tag[T[A, K]] =
+    implicit def tagFromTagTAK[T[_, _[_]], A: Tag, K[_]: TagK](implicit t: TypeTag[T[Nothing, Nothing]]): Tag[T[A, K]] =
       Tag.appliedTag(t, List(Tag[A].tag, TagK[K].tag))
 
   }
@@ -122,35 +122,41 @@ trait WithDITypeTags {
     implicit def tagFromTagKA[K[_]: TagK, A: Tag]: Tag[K[A]] =
       TagK[K].apply[A]
 
-    implicit def tagFromTagKAA[K[_, _], A0: Tag, A1: Tag](implicit t: WeakTypeTag[K[A0, A1]]): Tag[K[A0, A1]] =
+    implicit def tagFromTagKAA[K[_, _], A0: Tag, A1: Tag](implicit t: TypeTag[K[Nothing, Nothing]]): Tag[K[A0, A1]] =
       Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag))
 
-    implicit def tagFromTagKAAA[K[_, _, _], A0: Tag, A1: Tag, A2: Tag](implicit t: WeakTypeTag[K[A0, A1, A2]]): Tag[K[A0, A1, A2]] =
+    implicit def tagFromTagKAAA[K[_, _, _], A0: Tag, A1: Tag, A2: Tag](implicit t: TypeTag[K[Nothing, Nothing, Nothing]]): Tag[K[A0, A1, A2]] =
       Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag))
 
-    implicit def tagFromTagKAAAA[K[_, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: WeakTypeTag[K[A0, A1, A2, A3]]): Tag[K[A0, A1, A2, A3]] =
+    implicit def tagFromTagKAAAA[K[_, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: TypeTag[K[Nothing, Nothing, Nothing, Nothing]]): Tag[K[A0, A1, A2, A3]] =
       Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag))
 
-    implicit def tagFromTagKAAAAA[K[_, _, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: WeakTypeTag[K[A0, A1, A2, A3, A4]]): Tag[K[A0, A1, A2, A3, A4]] =
+    implicit def tagFromTagKAAAAA[K[_, _, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: TypeTag[K[Nothing, Nothing, Nothing, Nothing, Nothing]]): Tag[K[A0, A1, A2, A3, A4]] =
       Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
 
-    implicit def tagFromTagTK[T[_[_]], K[_]: TagK](implicit t: WeakTypeTag[T[K]]): Tag[T[K]] =
+    implicit def tagFromTagTK[T[_[_]], K[_]: TagK](implicit t: TypeTag[T[Nothing]]): Tag[T[K]] =
       Tag.appliedTag(t, List(TagK[K].tag))
 
-    implicit def tagFromTagTKA[T[_[_], _], K[_]: TagK, A: Tag](implicit t: WeakTypeTag[T[K, A]]): Tag[T[K, A]] =
+    implicit def tagFromTagTKA[T[_[_], _], K[_]: TagK, A: Tag](implicit t: TypeTag[T[Nothing, Nothing]]): Tag[T[K, A]] =
       Tag.appliedTag(t, List(TagK[K].tag, Tag[A].tag))
 
-    implicit def tagFromTagTKAA[T[_[_], _, _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: WeakTypeTag[T[K, A0, A1]]): Tag[T[K, A0, A1]] =
+    implicit def tagFromTagTKAA[T[_[_], _, _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing]]): Tag[T[K, A0, A1]] =
       Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag))
 
-    implicit def tagFromTagTKAAA[T[_[_], _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag](implicit t: WeakTypeTag[T[K, A0, A1, A2]]): Tag[T[K, A0, A1, A2]] =
+    implicit def tagFromTagTKAAA[T[_[_], _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing, Nothing]]): Tag[T[K, A0, A1, A2]] =
       Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag))
 
-    implicit def tagFromTagTKAAAA[T[_[_], _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: WeakTypeTag[T[K, A0, A1, A2, A3]]): Tag[T[K, A0, A1, A2, A3]] =
+    implicit def tagFromTagTKAAAA[T[_[_], _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing, Nothing, Nothing]]): Tag[T[K, A0, A1, A2, A3]] =
       Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag))
 
-    implicit def tagFromTagTKAAAAA[T[_[_], _, _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: WeakTypeTag[T[K, A0, A1, A2, A3, A4]]): Tag[T[K, A0, A1, A2, A3, A4]] =
+    implicit def tagFromTagTKAAAAA[T[_[_], _, _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]]): Tag[T[K, A0, A1, A2, A3, A4]] =
       Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
+
+    implicit def tagFromTagTKKA[T[_[_], _[_], _], K1[_]: TagK, K2[_]: TagK, A: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing]]): Tag[T[K1, K2, A]] =
+      Tag.appliedTag(t, List(TagK[K1].tag, TagK[K2].tag, Tag[A].tag))
+
+    implicit def tagFromTagTAKK[T[_, _[_], _[_]], A: Tag, K1[_]: TagK, K2[_]: TagK](implicit t: TypeTag[T[Nothing, Nothing, Nothing]]): Tag[T[A, K1, K2]] =
+      Tag.appliedTag(t, List(Tag[A].tag, TagK[K1].tag, TagK[K2].tag))
   }
 
   /**
