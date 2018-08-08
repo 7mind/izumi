@@ -30,30 +30,48 @@ final case class IRTMuxRequest[T <: Product](v: T, method: IRTMethod) {
   def body: IRTReqBody = IRTReqBody(v)
 }
 
+sealed trait DispatchingFailure
+
+object DispatchingFailure {
+
+  case object NoHandler extends DispatchingFailure
+
+  case object Rejected extends DispatchingFailure
+
+  case class Thrown(t: Throwable) extends DispatchingFailure
+
+}
+
 
 trait IRTUnsafeDispatcher[Ctx, R[_]] extends IRTWithResultType[R] {
   def identifier: IRTServiceId
 
-  def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], Ctx]): Option[Result[IRTMuxResponse[Product]]]
+  type UnsafeInput = IRTInContext[IRTMuxRequest[Product], Ctx]
+  type MaybeOutput = Either[DispatchingFailure, Result[IRTMuxResponse[Product]]]
+
+  def dispatchUnsafe(input: UnsafeInput): MaybeOutput
 }
 
 class IRTServerMultiplexor[R[_] : IRTResult, Ctx](dispatchers: List[IRTUnsafeDispatcher[Ctx, R]])
-  extends IRTDispatcher[IRTInContext[IRTMuxRequest[Product], Ctx], IRTMuxResponse[Product], R]
+  extends IRTDispatcher[IRTInContext[IRTMuxRequest[Product], Ctx], Either[DispatchingFailure, IRTMuxResponse[Product]], R]
     with IRTWithResult[R] {
   override protected def _ServiceResult: IRTResult[R] = implicitly
 
   type Input = IRTInContext[IRTMuxRequest[Product], Ctx]
   type Output = IRTMuxResponse[Product]
 
-  override def dispatch(input: Input): Result[Output] = {
+  override def dispatch(input: Input): Result[Either[DispatchingFailure, Output]] = {
     dispatchers.foreach {
       d =>
         d.dispatchUnsafe(input) match {
-          case Some(v) =>
-            return _ServiceResult.map(v)(v => IRTMuxResponse(v.v, v.method))
-          case None =>
+          case Right(v) =>
+            return _ServiceResult.map(v)(v => Right(IRTMuxResponse(v.v, v.method)))
+          case Left(DispatchingFailure.NoHandler) =>
+          case Left(t) =>
+            return _ServiceResult.wrap(Left(t))
         }
     }
-    throw new IRTMultiplexingException(s"Cannot handle $input, services: $dispatchers", input, None)
+
+    _ServiceResult.wrap(Left(DispatchingFailure.NoHandler))
   }
 }

@@ -54,11 +54,20 @@ trait WithHttp4sServer[R[_]] {
 
   import xdsl._
 
-  protected def run[Ctx](muxer: IRTServerMultiplexor[R, Ctx], req: IRTInContext[IRTMuxRequest[Product], Ctx]): R[Response[R]] = {
-    implicit val enc: EntityEncoder[R, muxer.Output] = muxer.respEncoder(req.context, req.value.method)
-    TM.flatMap(muxer.dispatch(req)) {
-      resp =>
+  protected def run[Ctx](muxer: IRTServerMultiplexor[R, Ctx], request: IRTInContext[IRTMuxRequest[Product], Ctx]): R[Response[R]] = {
+    implicit val enc: EntityEncoder[R, muxer.Output] = muxer.respEncoder(request.context, request.value.method)
+    TM.flatMap(muxer.dispatch(request)) {
+      case Right(resp) =>
         dsl.Ok(resp)
+      case Left(DispatchingFailure.NoHandler) =>
+        logger.warn(s"No handler found for $request")
+        dsl.NotFound()
+      case Left(DispatchingFailure.Rejected) =>
+        logger.info(s"Unautorized $request")
+        dsl.Forbidden()
+      case Left(DispatchingFailure.Thrown(t)) =>
+        logger.warn(s"Failure while handling $request: $t")
+        dsl.InternalServerError()
     }
   }
 
@@ -83,9 +92,11 @@ trait WithHttp4sServer[R[_]] {
         case Success(value) =>
           value
         case Failure(_ : MatchError) =>
+          logger.warn(s"Unexpected: No handler found for ${arg -> "request"}")
           dsl.NotFound()
         case Failure(exception) =>
-          throw exception
+          logger.warn(s"Unexpected: Failure while handling ${arg -> "request"}: $exception")
+          dsl.InternalServerError().map(_.withEntity(s"Unexpected processing failure: ${exception.getMessage}"))
       }
   }
 

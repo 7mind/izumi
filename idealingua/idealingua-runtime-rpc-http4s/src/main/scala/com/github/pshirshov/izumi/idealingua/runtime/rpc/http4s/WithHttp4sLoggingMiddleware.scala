@@ -18,7 +18,7 @@ trait WithHttp4sLoggingMiddleware[R[_]] {
             logger.debug(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}")
             resp
           case resp =>
-            logger.info(s"${req.method.name -> "method"} ${req.pathInfo -> "uri"} => ${resp.status.code -> "code"} ${resp.status.code -> "reason"}")
+            logger.info(s"${req.method.name -> "method"} ${req.pathInfo -> "uri"} => ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
             resp
         }
       } catch {

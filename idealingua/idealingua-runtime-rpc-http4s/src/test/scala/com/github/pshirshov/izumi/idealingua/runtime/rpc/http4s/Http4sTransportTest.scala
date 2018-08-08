@@ -64,7 +64,7 @@ class Http4sTransportTest extends WordSpec {
     val exc = intercept[IRTHttpFailureException] {
       calculatorClient.sum(255, 1).unsafeRunSync()
     }
-    assert(exc.status == Status.InternalServerError)
+    assert(exc.status == Status.Forbidden)
 
     //assert(greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync() == "")
     ()
@@ -78,15 +78,17 @@ object Http4sTransportTest {
   final class AuthCheckDispatcher[Ctx, R[_]](proxied: IRTUnsafeDispatcher[Ctx, R]) extends IRTUnsafeDispatcher[Ctx, R] {
     override def identifier: IRTServiceId = proxied.identifier
 
-    override def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], Ctx]): Option[Result[IRTMuxResponse[Product]]] = {
+    override def dispatchUnsafe(input: UnsafeInput): MaybeOutput = {
       input.context match {
         case DummyContext(_, Some(BasicCredentials(user, pass))) =>
           if (user == "user" && pass == "pass") {
             proxied.dispatchUnsafe(input)
           } else {
-            None
+            Left(DispatchingFailure.NoHandler)
           }
-        case _ => None
+
+        case _ =>
+          Left(DispatchingFailure.Rejected)
       }
     }
   }

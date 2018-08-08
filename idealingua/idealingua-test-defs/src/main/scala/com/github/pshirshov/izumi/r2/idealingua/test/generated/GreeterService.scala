@@ -2,8 +2,6 @@ package com.github.pshirshov.izumi.r2.idealingua.test.generated
 
 import com.github.pshirshov.izumi.idealingua.runtime.circe._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import com.github.pshirshov.izumi.r2.idealingua.test.generated.HowBroken.BrokenClientCode
 import io.circe.Decoder.Result
 import io.circe._
 import io.circe.generic.semiauto._
@@ -228,19 +226,22 @@ object GreeterServiceWrapped
       }
     }
 
-    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): Option[Result[IRTMuxResponse[Product]]] = {
-      toZeroargBody(input.value).map(b => _ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
+      val maybeResult = toZeroargBody(input.value)
+      maybeResult match {
+        case Some(b) => Right(_ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+        case None => Left(DispatchingFailure.NoHandler)
+      }
     }
 
+    override def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], C]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
+        input.value.v match {
+          case v: GreeterServiceInput =>
+            Right(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
 
-    override def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], Context]): Option[Result[IRTMuxResponse[Product]]] = {
-      input.value.v match {
-        case v: GreeterServiceInput =>
-          Option(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
-
-        case _ =>
-          dispatchZeroargUnsafe(IRTInContext(input.value.method, input.context))
-      }
+          case _ =>
+            dispatchZeroargUnsafe(IRTInContext(input.value.method, input.context))
+        }
     }
   }
 

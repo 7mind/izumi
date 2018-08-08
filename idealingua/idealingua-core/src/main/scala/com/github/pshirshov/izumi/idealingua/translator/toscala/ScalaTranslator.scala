@@ -433,14 +433,18 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
       }
     }
 
-    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): Option[Result[IRTMuxResponse[Product]]] = {
-      toZeroargBody(input.value).map(b => _ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): MaybeOutput = {
+      val maybeResult = toZeroargBody(input.value)
+      maybeResult match {
+        case Some(b) => Right(_ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+        case None => Left(DispatchingFailure.NoHandler)
+      }
     }
 
-    def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], C]): Option[Result[IRTMuxResponse[Product]]] = {
+    def dispatchUnsafe(input: UnsafeInput): MaybeOutput = {
       input.value.v match {
         case v: ${sp.serviceInputBase.typeFull} =>
-          Option(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+          Right(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
 
         case _ =>
           dispatchZeroargUnsafe(IRTInContext(input.value.method, input.context))

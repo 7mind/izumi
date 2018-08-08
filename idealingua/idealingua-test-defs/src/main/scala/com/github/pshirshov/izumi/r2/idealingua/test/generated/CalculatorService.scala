@@ -145,14 +145,18 @@ object CalculatorServiceWrapped
       }
     }
 
-    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): Option[Result[IRTMuxResponse[Product]]] = {
-      toZeroargBody(input.value).map(b => _ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
+      val maybeResult = toZeroargBody(input.value)
+      maybeResult match {
+        case Some(b) => Right(_ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+        case None => Left(DispatchingFailure.NoHandler)
+      }
     }
 
-    override def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], C]): Option[Result[IRTMuxResponse[Product]]] = {
+    override def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], C]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
       input.value.v match {
         case v: CalculatorServiceInput =>
-          Option(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+          Right(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
 
         case _ =>
           dispatchZeroargUnsafe(IRTInContext(input.value.method, input.context))
