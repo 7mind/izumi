@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.logstage.adapter.slf4j
 
 import com.github.pshirshov.izumi.logstage.api.TestSink
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
-import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest
+import com.github.pshirshov.izumi.logstage.sink.LoggingAsyncSinkTest
 import org.scalatest.WordSpec
 import org.slf4j.LoggerFactory
 

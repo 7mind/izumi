@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api.rendering.json
 
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.routing.ExampleService
+import com.github.pshirshov.izumi.logstage.sink.ExampleService
 import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
 import org.scalatest.WordSpec
 
@@ -18,7 +18,7 @@ class LoggingJson4sTest extends WordSpec {
 
 
 object LoggingJson4sTest {
-  import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest._
+  import com.github.pshirshov.izumi.logstage.sink.LoggingAsyncSinkTest._
 
   val jsonPolicy = new JsonRenderingPolicy(prettyPrint = true)
   val consoleSinkJson = new ConsoleSink(jsonPolicy)

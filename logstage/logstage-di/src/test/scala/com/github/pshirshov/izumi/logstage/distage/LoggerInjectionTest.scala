@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.distage
 
-import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
+import com.github.pshirshov.izumi.logstage.sink.LoggingAsyncSinkTest
 import distage.{Injector, ModuleDef}
 import org.scalatest.WordSpec
 

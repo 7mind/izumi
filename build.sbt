@@ -223,7 +223,7 @@ lazy val distageApp = inDiStage.as.module
   .depends(distageCore, distagePlugins, distageConfig, logstageDi)
 
 lazy val distageRoles = inDiStage.as.module
-  .depends(distageApp, logstageRenderingJson4s, logstageSinkConsole, logstageAdapterSlf4j)
+  .depends(distageApp, logstageApiLogger, logstageRenderingJson4s, logstageAdapterSlf4j)
   .settings(
     libraryDependencies += R.scopt
   )
@@ -283,22 +283,7 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
 
 lazy val logstageRenderingJson4s = inLogStage.as.module
   .depends(logstageApiLogger)
-  .dependsSeq(Seq(
-    logstageSinkConsole
-  ).map(_.testOnlyRef))
   .settings(libraryDependencies ++= Seq(R.json4s_native))
-
-lazy val logstageSinkConsole = inLogStage.as.module
-  .depends(logstageApiBase)
-  .dependsSeq(Seq(
-    logstageApiLogger
-  ).map(_.testOnlyRef))
-
-lazy val logstageSinkFile = inLogStage.as.module
-  .depends(logstageApiBase)
-  .dependsSeq(Seq(
-    logstageApiLogger
-  ).map(_.testOnlyRef))
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApiBase)
@@ -380,8 +365,6 @@ lazy val sbtTests = inSbt.as
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageApiLogger
   , logstageDi
-  , logstageSinkConsole
-  , logstageSinkFile
   , logstageSinkSlf4j
   , logstageAdapterSlf4j
   , logstageRenderingJson4s

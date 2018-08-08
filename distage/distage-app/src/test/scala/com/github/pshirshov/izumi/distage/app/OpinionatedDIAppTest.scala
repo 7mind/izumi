@@ -16,7 +16,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import com.github.pshirshov.izumi.logstage.api.TestSink
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest
+import com.github.pshirshov.izumi.logstage.sink.LoggingAsyncSinkTest
 import com.github.pshirshov.test.testapp._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
