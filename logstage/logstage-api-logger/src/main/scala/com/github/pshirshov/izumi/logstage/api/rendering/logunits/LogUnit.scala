@@ -186,8 +186,8 @@ object LogUnit {
     val messageBuilder = new StringBuilder()
 
     val head = entry.message.template.parts.head
-    templateBuilder.append(StringContext.treatEscapes(head))
-    messageBuilder.append(StringContext.treatEscapes(head))
+    templateBuilder.append(handle(head))
+    messageBuilder.append(handle(head))
 
     val balanced = entry.message.template.parts.tail.zip(entry.message.args)
     val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
@@ -204,7 +204,7 @@ object LogUnit {
         templateBuilder.append("${")
         templateBuilder.append(uncoloredRepr.name)
         templateBuilder.append('}')
-        templateBuilder.append(StringContext.treatEscapes(part))
+        templateBuilder.append(handle(part))
 
         val maybeColoredRepr = if (withColors) {
           argToString(argValue, withColors)
@@ -217,7 +217,7 @@ object LogUnit {
         } else {
           messageBuilder.append(maybeColoredRepr)
         }
-        messageBuilder.append(StringContext.treatEscapes(part))
+        messageBuilder.append(handle(part))
     }
 
     unbalanced.foreach {
@@ -233,6 +233,10 @@ object LogUnit {
     }
 
     RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters)
+  }
+
+  private def handle(part: String) = {
+    StringContext.treatEscapes(part)
   }
 
   private def formatKv(withColor: Boolean)(kv: LogArg): String = {

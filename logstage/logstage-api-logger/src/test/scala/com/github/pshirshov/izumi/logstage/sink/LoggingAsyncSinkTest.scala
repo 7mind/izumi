@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.logstage.sink
 
-import com.github.pshirshov.izumi.logstage.api.routing._
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import org.scalatest.WordSpec
 
