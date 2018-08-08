@@ -7,11 +7,16 @@ import io.circe._
 import io.circe.generic.semiauto._
 
 import scala.language.higherKinds
+import scala.reflect.ClassTag
 
 sealed trait HowBroken
+
 object HowBroken {
+
   case object MissingServerHandler extends HowBroken
+
   case object BrokenClientCode extends HowBroken
+
 }
 
 trait GreeterServiceClient[R[_]] extends IRTWithResultType[R] {
@@ -62,7 +67,6 @@ object GreeterServiceWrapped
   final case class BrokenNoServerHandler() extends GreeterServiceInput
 
   final case class BrokenClient() extends GreeterServiceInput
-
 
 
   override type Input = GreeterServiceInput
@@ -189,7 +193,7 @@ object GreeterServiceWrapped
 
   trait UnpackingDispatcher[R[_], C]
     extends GreeterServiceWrapped[R, C]
-      with IRTGeneratedDispatcher[C, R, GreeterServiceInput, GreeterServiceOutput] {
+      with IRTGeneratedUnpackingDispatcher[C, R, GreeterServiceInput, GreeterServiceOutput] {
     def service: GreeterService[R, C]
 
     def greet(context: Context, input: GreetInput): Result[GreetOutput] = {
@@ -228,15 +232,11 @@ object GreeterServiceWrapped
       }
     }
 
-    override def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], C]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
-        input.value.v match {
-          case v: GreeterServiceInput =>
-            Right(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+    import scala.reflect._
 
-          case _ =>
-            dispatchZeroargUnsafe(IRTInContext(input.value.method, input.context))
-        }
-    }
+    override protected def inputTag: ClassTag[GreeterServiceInput] = classTag
+
+    override protected def outputTag: ClassTag[GreeterServiceOutput] = classTag
   }
 
   def toMethodId(v: GreeterServiceInput): IRTMethod = {

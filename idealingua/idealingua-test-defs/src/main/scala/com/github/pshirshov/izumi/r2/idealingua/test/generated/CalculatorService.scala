@@ -7,6 +7,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 
 import scala.language.higherKinds
+import scala.reflect.ClassTag
 
 trait CalculatorServiceClient[R[_]] extends IRTWithResultType[R] {
   def sum(a: Int, b: Int): Result[Int]
@@ -119,7 +120,7 @@ object CalculatorServiceWrapped
 
   trait UnpackingDispatcher[R[_], C]
     extends CalculatorServiceWrapped[R, C]
-      with IRTGeneratedDispatcher[C, R, CalculatorServiceInput, CalculatorServiceOutput]
+      with IRTGeneratedUnpackingDispatcher[C, R, CalculatorServiceInput, CalculatorServiceOutput]
       with IRTWithResult[R] {
     def service: CalculatorService[R, C]
 
@@ -142,20 +143,17 @@ object CalculatorServiceWrapped
 
     protected def toMethodId(v: CalculatorServiceOutput): IRTMethod = CalculatorServiceWrapped.toMethodId(v)
 
+
+    import scala.reflect._
+
+    override protected def inputTag: ClassTag[CalculatorServiceInput] = classTag
+
+    override protected def outputTag: ClassTag[CalculatorServiceOutput] = classTag
+
     protected def toZeroargBody(v: IRTMethod): Option[CalculatorServiceInput] = {
       v match {
         case _ =>
           None
-      }
-    }
-
-    override def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], C]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
-      input.value.v match {
-        case v: CalculatorServiceInput =>
-          Right(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
-
-        case _ =>
-          dispatchZeroargUnsafe(IRTInContext(input.value.method, input.context))
       }
     }
   }
@@ -179,7 +177,6 @@ object CalculatorServiceWrapped
       case _: SumOutput => IRTMethod(serviceId, IRTMethodId("sum"))
     }
   }
-
 
 
   override def codecProvider: IRTMuxingCodecProvider = CodecProvider
