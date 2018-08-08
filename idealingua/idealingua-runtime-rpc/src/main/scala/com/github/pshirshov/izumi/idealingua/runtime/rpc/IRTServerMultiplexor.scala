@@ -75,3 +75,24 @@ class IRTServerMultiplexor[R[_] : IRTResult, Ctx](dispatchers: List[IRTUnsafeDis
     _ServiceResult.wrap(Left(DispatchingFailure.NoHandler))
   }
 }
+
+trait IRTGeneratedDispatcher[Ctx, R[_], In, Out <: Product]
+  extends IRTUnsafeDispatcher[Ctx, R]
+    with IRTDispatcher[IRTInContext[In, Ctx], Out, R]
+    with IRTWithResult[R] {
+
+  protected def toMethodId(v: In): IRTMethod
+
+  protected def toMethodId(v: Out): IRTMethod
+
+  protected def toZeroargBody(v: IRTMethod): Option[In]
+
+
+  def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, Ctx]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
+    val maybeResult = toZeroargBody(input.value)
+    maybeResult match {
+      case Some(b) => Right(_ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+      case None => Left(DispatchingFailure.NoHandler)
+    }
+  }
+}

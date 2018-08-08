@@ -119,8 +119,7 @@ object CalculatorServiceWrapped
 
   trait UnpackingDispatcher[R[_], C]
     extends CalculatorServiceWrapped[R, C]
-      with IRTDispatcher[IRTInContext[CalculatorServiceInput, C], CalculatorServiceOutput, R]
-      with IRTUnsafeDispatcher[C, R]
+      with IRTGeneratedDispatcher[C, R, CalculatorServiceInput, CalculatorServiceOutput]
       with IRTWithResult[R] {
     def service: CalculatorService[R, C]
 
@@ -136,20 +135,17 @@ object CalculatorServiceWrapped
       }
     }
 
-    override def identifier: IRTServiceId = serviceId
+    def identifier: IRTServiceId = serviceId
 
-    private def toZeroargBody(v: IRTMethod): Option[CalculatorServiceInput] = {
+
+    protected def toMethodId(v: CalculatorServiceInput): IRTMethod = CalculatorServiceWrapped.toMethodId(v)
+
+    protected def toMethodId(v: CalculatorServiceOutput): IRTMethod = CalculatorServiceWrapped.toMethodId(v)
+
+    protected def toZeroargBody(v: IRTMethod): Option[CalculatorServiceInput] = {
       v match {
         case _ =>
           None
-      }
-    }
-
-    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
-      val maybeResult = toZeroargBody(input.value)
-      maybeResult match {
-        case Some(b) => Right(_ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
-        case None => Left(DispatchingFailure.NoHandler)
       }
     }
 

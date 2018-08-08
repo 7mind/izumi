@@ -410,9 +410,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
       q"""
   trait UnpackingDispatcher[R[_], C]
     extends ${sp.svcWrappedTpe.parameterize("R", "C").init()}
-      with IRTDispatcher[IRTInContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R]
-      with IRTUnsafeDispatcher[C, R]
-      with ${rt.WithResult.parameterize("R").init()}  {
+      with IRTGeneratedDispatcher[C, R, ${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}] {
     def service: ${sp.svcTpe.typeFull}[R, C]
 
     def dispatch(input: IRTInContext[${sp.serviceInputBase.typeFull}, C]): Result[${sp.serviceOutputBase.typeFull}] = {
@@ -423,21 +421,17 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
 
     def identifier: IRTServiceId = serviceId
 
+    protected def toMethodId(v: ${sp.serviceInputBase.typeFull}): IRTMethod = ${sp.svcWrappedTpe.termName}.toMethodId(v)
 
-    private def toZeroargBody(v: IRTMethod): Option[${sp.serviceInputBase.typeFull}] = {
+    protected def toMethodId(v: ${sp.serviceOutputBase.typeFull}): IRTMethod = ${sp.svcWrappedTpe.termName}.toMethodId(v)
+
+
+    protected def toZeroargBody(v: IRTMethod): Option[${sp.serviceInputBase.typeFull}] = {
       v match {
         ..case $zeroargCases
 
         case _ =>
           None
-      }
-    }
-
-    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): MaybeOutput = {
-      val maybeResult = toZeroargBody(input.value)
-      maybeResult match {
-        case Some(b) => Right(_ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
-        case None => Left(DispatchingFailure.NoHandler)
       }
     }
 

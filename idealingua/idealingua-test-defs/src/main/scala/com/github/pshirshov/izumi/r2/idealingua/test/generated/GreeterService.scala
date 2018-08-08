@@ -189,9 +189,7 @@ object GreeterServiceWrapped
 
   trait UnpackingDispatcher[R[_], C]
     extends GreeterServiceWrapped[R, C]
-      with IRTDispatcher[IRTInContext[GreeterServiceInput, C], GreeterServiceOutput, R]
-      with IRTUnsafeDispatcher[C, R]
-      with IRTWithResult[R] {
+      with IRTGeneratedDispatcher[C, R, GreeterServiceInput, GreeterServiceOutput] {
     def service: GreeterService[R, C]
 
     def greet(context: Context, input: GreetInput): Result[GreetOutput] = {
@@ -215,22 +213,18 @@ object GreeterServiceWrapped
       }
     }
 
-    override def identifier: IRTServiceId = serviceId
+    def identifier: IRTServiceId = serviceId
 
-    private def toZeroargBody(v: IRTMethod): Option[GreeterServiceInput] = {
+    protected def toMethodId(v: GreeterServiceInput): IRTMethod = GreeterServiceWrapped.toMethodId(v)
+
+    protected def toMethodId(v: GreeterServiceOutput): IRTMethod = GreeterServiceWrapped.toMethodId(v)
+
+    protected def toZeroargBody(v: IRTMethod): Option[GreeterServiceInput] = {
       v match {
         case IRTMethod(`serviceId`, IRTMethodId("sayhi")) =>
           Some(SayHiInput())
         case _ =>
           None
-      }
-    }
-
-    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
-      val maybeResult = toZeroargBody(input.value)
-      maybeResult match {
-        case Some(b) => Right(_ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
-        case None => Left(DispatchingFailure.NoHandler)
       }
     }
 
