@@ -6,6 +6,16 @@
 [![Sonatype releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/com.github.pshirshov.izumi.r2/izumi-r2_2.12.svg)](https://oss.sonatype.org/content/repositories/releases/com/github/pshirshov/izumi/r2/)
 [![Sonatype snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/com.github.pshirshov.izumi.r2/izumi-r2_2.12.svg)](https://oss.sonatype.org/content/repositories/snapshots/com/github/pshirshov/izumi/r2/)
 [![License](https://img.shields.io/github/license/pshirshov/izumi-r2.svg)](https://github.com/pshirshov/izumi-r2/blob/develop/LICENSE) [![Join the chat at https://gitter.im/izumi-r2/Lobby](https://badges.gitter.im/izumi-r2/Lobby.svg)](https://gitter.im/izumi-r2/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/lauris/awesome-scala)
+[![Latest version](https://index.scala-lang.org/pshirshov/izumi-r2/izumi-r2/latest.svg?color=orange)](https://index.scala-lang.org/pshirshov/izumi-r2/izumi-r2)
+![:3](https://img.shields.io/badge/🔥-Blazing%20Fast-red.svg)
+![:3](https://img.shields.io/badge/😿-For%20Humans-blue.svg)
+![:3](https://img.shields.io/badge/🏢-Enterprise%20Grade-999999.svg)
+![:3](https://img.shields.io/badge/👌-Production%20Ready-00ddcc.svg)
+![:3](https://img.shields.io/badge/💎-Modern-44aadd.svg)
+![:3](https://img.shields.io/badge/🦋-Extremely%20Lightweight-7799cc.svg)
+![:3](https://img.shields.io/badge/🦄-Just%20Works-cc00cc.svg)
+
 
 What is it?
 ===========

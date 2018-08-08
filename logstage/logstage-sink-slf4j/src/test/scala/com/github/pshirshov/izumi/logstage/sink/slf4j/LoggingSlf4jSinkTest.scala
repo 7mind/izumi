@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.sink.slf4j
 
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.routing.ExampleService
+import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, ExampleService}
 import org.scalatest.WordSpec
 
 class LoggingSlf4jSinkTest extends WordSpec {
@@ -16,11 +16,10 @@ class LoggingSlf4jSinkTest extends WordSpec {
 }
 
 object LoggingSlf4jSinkTest {
-  import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest._
-  val sinkLegacySlf4jImpl = new LogSinkLegacySlf4jImpl(simplePolicy())
+  val sinkLegacySlf4jImpl = new LogSinkLegacySlf4jImpl(ConsoleSink.simplePolicy())
 
 
   def setupSlf4jLogger(): IzLogger = {
-    configureLogger(Seq(sinkLegacySlf4jImpl))
+    IzLogger.basic(IzLogger.Level.Trace, sinkLegacySlf4jImpl)
   }
 }

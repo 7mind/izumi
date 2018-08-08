@@ -17,8 +17,8 @@ trait AbstractGreeterServer[R[_], C] extends GreeterService[R, C] with IRTWithRe
 
 object AbstractGreeterServer {
 
-  class Impl[R[_] : IRTServiceResult, C] extends AbstractGreeterServer[R, C] {
-    override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+  class Impl[R[_] : IRTResult, C] extends AbstractGreeterServer[R, C] {
+    override protected def _ServiceResult: IRTResult[R] = implicitly
   }
 
 }
@@ -32,8 +32,8 @@ trait AbstractCalculatorServer[R[_], C] extends CalculatorService[R, C] with IRT
 
 object AbstractCalculatorServer {
 
-  class Impl[R[_] : IRTServiceResult, C] extends AbstractCalculatorServer[R, C] {
-    override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+  class Impl[R[_] : IRTResult, C] extends AbstractCalculatorServer[R, C] {
+    override protected def _ServiceResult: IRTResult[R] = implicitly
   }
 
 }

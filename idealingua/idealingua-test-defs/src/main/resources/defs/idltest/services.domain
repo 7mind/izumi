@@ -40,6 +40,9 @@ service TestService {
 
   def simpleGoReserved(package: Package): bool
 
+  // temporarily commented till we fix transpilers. https://github.com/pshirshov/izumi-r2/issues/328
+  //def unitResult(package: Package)
+
   // simple instance
   def greetSingularOut(firstName: str, secondName: str) => str
 

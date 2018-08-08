@@ -49,10 +49,10 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
     val messageArgs = args.zipWithIndex.map{
       kv =>
-        LogArg(Seq(s"_${kv._2}"), kv._1, hidden = false)
+        LogArg(Seq(s"_${kv._2}"), kv._1, hidden = true)
     }
 
-    val template = message.split("\\{\\}", -1)
+    val template = message.split("\\{\\}", -1).map(_.replace("\\", "\\\\"))
 
     Entry(
       Message(StringContext(template :_*), messageArgs)

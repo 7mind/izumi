@@ -1,16 +1,20 @@
 package com.github.pshirshov.izumi.idealingua.runtime.cats
 
-import cats.Monad
+import cats.MonadError
 import cats.effect.IO
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTServiceResult
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult
 
 trait RuntimeCats {
-  implicit object IOResult extends IRTServiceResult[IO] {
-    override def map[A, B](r: IO[A])(f: A => B): IO[B] = implicitly[Monad[IO]].map(r)(f)
+  implicit object IOResult extends IRTResult[IO] {
+    private val M: MonadError[IO, Throwable] = implicitly[MonadError[IO, Throwable]]
 
-    override def flatMap[A, B](r: IO[A])(f: A => IO[B]): IO[B] = implicitly[Monad[IO]].flatMap(r)(f)
+    override def map[A, B](r: IO[A])(f: A => B): IO[B] = M.map(r)(f)
 
-    override def wrap[A](v: => A): IO[A] = implicitly[Monad[IO]].pure(v)
+    override def flatMap[A, B](r: IO[A])(f: A => IO[B]): IO[B] = M.flatMap(r)(f)
+
+    override def wrap[A](v: => A): IO[A] = M.pure(v)
+
+    override def raiseError[A](e: Throwable): IO[A] = M.raiseError(e)
   }
 
 }

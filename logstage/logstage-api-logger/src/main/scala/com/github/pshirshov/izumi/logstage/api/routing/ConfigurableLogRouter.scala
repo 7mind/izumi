@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.logstage.api.config.LogConfigService
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.sink.FallbackConsoleSink
 
 class ConfigurableLogRouter
 (

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
 import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTCirceWrappedServiceDefinition, IRTMuxingCodecProvider, IRTOpinionatedMarshalers, IRTTimeInstances}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
@@ -241,7 +241,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     val unwrap = sc.source match {
       case ClassSource.CsMethodOutput(_, smp) =>
         smp.method.signature.output match {
-          case _: Service.DefMethod.Output.Singular =>
+          case _: DefMethod.Output.Singular =>
             true
           case _ =>
             false

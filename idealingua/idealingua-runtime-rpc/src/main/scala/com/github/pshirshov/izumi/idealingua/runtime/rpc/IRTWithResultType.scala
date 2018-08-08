@@ -8,7 +8,7 @@ trait IRTWithResultType[R[_]] {
 }
 
 trait IRTWithResult[R[_]] extends IRTWithResultType[R] {
-  protected def _ServiceResult: IRTServiceResult[R]
+  protected def _ServiceResult: IRTResult[R]
 
   protected def _Result[T](value: => T): R[T] = _ServiceResult.wrap(value)
 }

@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.reflection
 import com.github.pshirshov.izumi.distage.plugins.LoadedPlugins.JustPlugins
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.{LoadedPlugins, PluginBase}
-import com.github.pshirshov.izumi.fundamentals.collections.TagExpr
+import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import distage.{DIKey, SafeType}
 
 class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginMergeStrategy[LoadedPlugins] {

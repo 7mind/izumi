@@ -44,7 +44,7 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
 )
 
-publishTargets in ThisBuild := PublishTarget.typical("sonatype-nexus", sonatypeTarget.value.root)
+publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTarget.value.root)
 
 val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val settings: Seq[sbt.Setting[_]] = Seq(
@@ -222,6 +222,12 @@ lazy val distageConfig = inDiStage.as.module
 lazy val distageApp = inDiStage.as.module
   .depends(distageCore, distagePlugins, distageConfig, logstageDi)
 
+lazy val distageRoles = inDiStage.as.module
+  .depends(distageApp, logstageApiLogger, logstageRenderingJson4s, logstageAdapterSlf4j)
+  .settings(
+    libraryDependencies += R.scopt
+  )
+
 lazy val distageCore = inDiStage.as.module
   .depends(fundamentalsFunctional, distageModel, distageProxyCglib)
   .settings(
@@ -277,22 +283,7 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
 
 lazy val logstageRenderingJson4s = inLogStage.as.module
   .depends(logstageApiLogger)
-  .dependsSeq(Seq(
-    logstageSinkConsole
-  ).map(_.testOnlyRef))
   .settings(libraryDependencies ++= Seq(R.json4s_native))
-
-lazy val logstageSinkConsole = inLogStage.as.module
-  .depends(logstageApiBase)
-  .dependsSeq(Seq(
-    logstageApiLogger
-  ).map(_.testOnlyRef))
-
-lazy val logstageSinkFile = inLogStage.as.module
-  .depends(logstageApiBase)
-  .dependsSeq(Seq(
-    logstageApiLogger
-  ).map(_.testOnlyRef))
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApiBase)
@@ -329,7 +320,7 @@ lazy val idealinguaRuntimeRpcCats = inIdealingua.as.module
   .settings(libraryDependencies ++= R.cats_all)
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats, logstageApiLogger)
+  .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats, logstageApiLogger, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(libraryDependencies ++= R.http4s_all)
 
@@ -374,14 +365,12 @@ lazy val sbtTests = inSbt.as
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageApiLogger
   , logstageDi
-  , logstageSinkConsole
-  , logstageSinkFile
   , logstageSinkSlf4j
   , logstageAdapterSlf4j
   , logstageRenderingJson4s
 )
 lazy val distage: Seq[ProjectReference] = Seq(
-  distageApp
+  distageRoles
   , distageCats
   , distageStatic
 )
@@ -405,18 +394,27 @@ lazy val `izumi-r2` = inRoot.as
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
     sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
-    , siteSubdirName in ScalaUnidoc := "api"
+    , siteSubdirName in ScalaUnidoc := s"v${version.value}/api"
+    , siteSubdirName in Paradox := s"v${version.value}/doc"
     , previewFixedPort := Some(9999)
     , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
     , git.remoteRepo := scmInfo.value.get.connection
-    , excludeFilter in ghpagesCleanSite := new FileFilter {
-      def accept(f: File) = (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath
-    }
     , paradoxProperties ++= Map(
-      "scaladoc.izumi.base_url" -> s"/api/com/github/pshirshov/",
-      "scaladoc.base_url" -> s"/api/",
+      "scaladoc.izumi.base_url" -> s"/v${version.value}/api/com/github/pshirshov/",
+      "scaladoc.base_url" -> s"/v${version.value}/api/",
       "izumi.version" -> version.value,
     )
+    , excludeFilter in ghpagesCleanSite :=
+      new FileFilter {
+        val v = ghpagesRepository.value.getCanonicalPath + "/v"
+
+        def accept(f: File): Boolean  = {
+          f.getCanonicalPath.startsWith(v) && f.getCanonicalPath.charAt(v.length).isDigit || // release
+            (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
+            (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
+            f.toPath.startsWith((ghpagesRepository.value / "media").toPath)
+        }
+      }
   )
   .settings(addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))

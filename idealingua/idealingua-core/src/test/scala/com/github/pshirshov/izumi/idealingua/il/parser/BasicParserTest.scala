@@ -8,6 +8,16 @@ class BasicParserTest
   extends WordSpec with ParserTestTools {
 
   "IL parser" should {
+    "parse annos" in {
+      assertParses(DefConst.defAnno,
+        """@TestAnno()""".stripMargin)
+
+      assertParses(DefConst.defAnno,
+        """@TestAnno(a=1)""".stripMargin)
+
+      assertParses(DefConst.defAnno,
+        """@TestAnno(a=1, b="xxx",c=true,d=false,e=[1,2,"x"],f={a=1,b="str"})""".stripMargin)
+    }
     "parse docstrings" in {
       assertParses(comments.DocComment,
         """/** docstring
@@ -54,32 +64,32 @@ class BasicParserTest
     }
 
     "parse aliases" in {
-      assertParses(DefMember.aliasBlock, "alias x = y")
+      assertParses(DefStructure.aliasBlock, "alias x = y")
     }
 
     "parse enums" in {
-      assertParses(DefMember.enumBlock, "enum MyEnum {X Y Zz}")
-      assertParses(DefMember.enumBlock, "enum MyEnum { X Y Z }")
-      assertParses(DefMember.enumBlock, "enum MyEnum {  X  Y  Z  }")
-      assertParses(DefMember.enumBlock,
+      assertParses(DefStructure.enumBlock, "enum MyEnum {X Y Zz}")
+      assertParses(DefStructure.enumBlock, "enum MyEnum { X Y Z }")
+      assertParses(DefStructure.enumBlock, "enum MyEnum {  X  Y  Z  }")
+      assertParses(DefStructure.enumBlock,
         """enum MyEnum {
           |X
           | Y
           |Z
           |}""".stripMargin)
-      assertParses(DefMember.enumBlock, "enum MyEnum {X,Y,Z}")
-      assertParses(DefMember.enumBlock, "enum MyEnum {X|Y|Z}")
-      assertParses(DefMember.enumBlock, "enum MyEnum { X|Y|Z }")
-      assertParses(DefMember.enumBlock, "enum MyEnum {X | Y | Z}")
-      assertParses(DefMember.enumBlock, "enum MyEnum { X | Y | Z }")
-      assertParses(DefMember.enumBlock, "enum MyEnum { X , Y , Z }")
-      assertParses(DefMember.enumBlock, "enum MyEnum = X | Y | Z")
-      assertParses(DefMember.enumBlock, "enum MyEnum = X | /**/ Y | Z")
-      assertParses(DefMember.enumBlock,
+      assertParses(DefStructure.enumBlock, "enum MyEnum {X,Y,Z}")
+      assertParses(DefStructure.enumBlock, "enum MyEnum {X|Y|Z}")
+      assertParses(DefStructure.enumBlock, "enum MyEnum { X|Y|Z }")
+      assertParses(DefStructure.enumBlock, "enum MyEnum {X | Y | Z}")
+      assertParses(DefStructure.enumBlock, "enum MyEnum { X | Y | Z }")
+      assertParses(DefStructure.enumBlock, "enum MyEnum { X , Y , Z }")
+      assertParses(DefStructure.enumBlock, "enum MyEnum = X | Y | Z")
+      assertParses(DefStructure.enumBlock, "enum MyEnum = X | /**/ Y | Z")
+      assertParses(DefStructure.enumBlock,
         """enum MyEnum = X
           ||Y
           || Z""".stripMargin)
-      assertParses(DefMember.enumBlock,
+      assertParses(DefStructure.enumBlock,
         """enum MyEnum =
           || X
           | | Y
@@ -87,14 +97,14 @@ class BasicParserTest
     }
 
     "parse empty blocks" in {
-      assertParses(DefMember.mixinBlock, "mixin Mixin {}")
-      assertParses(DefMember.idBlock, "id Id {}")
-      assertParses(DefMember.serviceBlock, "service Service {}")
-      assertParses(DefMember.dtoBlock, "data Data {}")
+      assertParses(DefStructure.mixinBlock, "mixin Mixin {}")
+      assertParses(DefStructure.idBlock, "id Id {}")
+      assertParses(DefService.serviceBlock, "service Service {}")
+      assertParses(DefStructure.dtoBlock, "data Data {}")
     }
 
     "parse dto blocks" in {
-      assertParses(DefMember.dtoBlock,
+      assertParses(DefStructure.dtoBlock,
         """data Data {
           |& Add
           |&&& Add
@@ -122,13 +132,13 @@ class BasicParserTest
     }
 
     "parse service defintions" in {
-      assertParses(DefService.inlineStruct, "(a: A, b: B, + C)")
-      assertParses(DefService.inlineStruct, "(a: str)")
-      assertParses(DefService.inlineStruct, "(+ A)")
-      assertParses(DefService.adtOut, "( A \n | \n B )")
-      assertParses(DefService.adtOut, "(A|B)")
-      assertParses(DefService.adtOut, "(A | B)")
-      assertParses(DefService.inlineStruct, "(\n  firstName: str \n , \n secondName: str\n)")
+      assertParses(DefStructure.inlineStruct, "(a: A, b: B, + C)")
+      assertParses(DefStructure.inlineStruct, "(a: str)")
+      assertParses(DefStructure.inlineStruct, "(+ A)")
+      assertParses(DefStructure.adtOut, "( A \n | \n B )")
+      assertParses(DefStructure.adtOut, "(A|B)")
+      assertParses(DefStructure.adtOut, "(A | B)")
+      assertParses(DefStructure.inlineStruct, "(\n  firstName: str \n , \n secondName: str\n)")
     }
 
     "parse identifiers" in {
@@ -152,17 +162,17 @@ class BasicParserTest
     }
 
     "parse adt blocks" in {
-      assertParses(DefMember.adtBlock, "adt MyAdt { X as XXX | Y }")
-      assertParses(DefMember.adtBlock, "adt MyAdt { X | Y | a.b.c#D as B }")
-      assertParses(DefMember.adtBlock, "adt MyAdt = X | Y | Z")
-      assertParses(DefMember.adtBlock, "adt MyAdt { X }")
-      assertParses(DefMember.adtBlock, "adt MyAdt {a.b.c#D}")
-      assertParses(DefMember.adtBlock, "adt MyAdt { a.b.c#D }")
-      assertParses(DefMember.adtBlock, "adt MyAdt { a.b.c#D Z Z }")
-      assertParses(DefMember.adtBlock, "adt MyAdt { a.b.c#D  Z  Z }")
-      assertParses(DefMember.adtBlock, "adt MyAdt { X Y a.b.c#D Z }")
-      assertParses(DefMember.adtBlock, "adt MyAdt { X Y a.b.c#D }")
-      assertParses(DefMember.adtBlock,
+      assertParses(DefStructure.adtBlock, "adt MyAdt { X as XXX | Y }")
+      assertParses(DefStructure.adtBlock, "adt MyAdt { X | Y | a.b.c#D as B }")
+      assertParses(DefStructure.adtBlock, "adt MyAdt = X | Y | Z")
+      assertParses(DefStructure.adtBlock, "adt MyAdt { X }")
+      assertParses(DefStructure.adtBlock, "adt MyAdt {a.b.c#D}")
+      assertParses(DefStructure.adtBlock, "adt MyAdt { a.b.c#D }")
+      assertParses(DefStructure.adtBlock, "adt MyAdt { a.b.c#D Z Z }")
+      assertParses(DefStructure.adtBlock, "adt MyAdt { a.b.c#D  Z  Z }")
+      assertParses(DefStructure.adtBlock, "adt MyAdt { X Y a.b.c#D Z }")
+      assertParses(DefStructure.adtBlock, "adt MyAdt { X Y a.b.c#D }")
+      assertParses(DefStructure.adtBlock,
         """adt MyAdt {
           | X
           |Y
@@ -176,7 +186,7 @@ class BasicParserTest
         """def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
           |def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )""".stripMargin)
 
-      assertParseableCompletely(DefMember.serviceBlock,
+      assertParseableCompletely(DefService.serviceBlock,
         """service FileService {
           |  def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
           |}""".stripMargin)

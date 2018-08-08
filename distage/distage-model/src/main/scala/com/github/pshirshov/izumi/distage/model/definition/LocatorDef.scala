@@ -37,7 +37,14 @@ trait LocatorDef extends AbstractLocator {
         ReferenceInstance(key, Instance(key.tpe, value), None)
     }.toVector
 
-    OrderedPlan(SimpleModuleDef.empty, ops, topology)
+    val moduleDef = SimpleModuleDef(
+      frozenInstances.map {
+        case IdentifiedRef(key, value) =>
+          Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value))
+      }.toSet
+    )
+
+    OrderedPlan(moduleDef, ops, topology)
   }
 
   override def parent: Option[Locator] = None

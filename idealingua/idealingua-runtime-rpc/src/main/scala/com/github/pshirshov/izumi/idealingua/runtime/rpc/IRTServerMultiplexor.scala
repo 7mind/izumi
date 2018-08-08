@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import scala.language.higherKinds
+import scala.reflect.ClassTag
 
 // addressing
 final case class IRTServiceId(value: String) extends AnyVal {
@@ -30,30 +31,83 @@ final case class IRTMuxRequest[T <: Product](v: T, method: IRTMethod) {
   def body: IRTReqBody = IRTReqBody(v)
 }
 
+sealed trait DispatchingFailure
+
+object DispatchingFailure {
+
+  case object NoHandler extends DispatchingFailure
+
+  case object Rejected extends DispatchingFailure
+
+  case class Thrown(t: Throwable) extends DispatchingFailure
+
+}
+
 
 trait IRTUnsafeDispatcher[Ctx, R[_]] extends IRTWithResultType[R] {
   def identifier: IRTServiceId
 
-  def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], Ctx]): Option[Result[IRTMuxResponse[Product]]]
+  type UnsafeInput = IRTInContext[IRTMuxRequest[Product], Ctx]
+  type MaybeOutput = Either[DispatchingFailure, Result[IRTMuxResponse[Product]]]
+
+  def dispatchUnsafe(input: UnsafeInput): MaybeOutput
 }
 
-class IRTServerMultiplexor[R[_] : IRTServiceResult, Ctx](dispatchers: List[IRTUnsafeDispatcher[Ctx, R]])
-  extends IRTDispatcher[IRTInContext[IRTMuxRequest[Product], Ctx], IRTMuxResponse[Product], R]
+class IRTServerMultiplexor[R[_] : IRTResult, Ctx](protected val dispatchers: List[IRTUnsafeDispatcher[Ctx, R]])
+  extends IRTDispatcher[IRTInContext[IRTMuxRequest[Product], Ctx], Either[DispatchingFailure, IRTMuxResponse[Product]], R]
     with IRTWithResult[R] {
-  override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+  override protected def _ServiceResult: IRTResult[R] = implicitly
 
   type Input = IRTInContext[IRTMuxRequest[Product], Ctx]
   type Output = IRTMuxResponse[Product]
 
-  override def dispatch(input: Input): Result[Output] = {
+  def dispatch(input: Input): Result[Either[DispatchingFailure, Output]] = {
     dispatchers.foreach {
       d =>
         d.dispatchUnsafe(input) match {
-          case Some(v) =>
-            return _ServiceResult.map(v)(v => IRTMuxResponse(v.v, v.method))
-          case None =>
+          case Right(v) =>
+            return _ServiceResult.map(v)(v => Right(IRTMuxResponse(v.v, v.method)))
+          case Left(DispatchingFailure.NoHandler) =>
+          case Left(t) =>
+            return _ServiceResult.wrap(Left(t))
         }
     }
-    throw new IRTMultiplexingException(s"Cannot handle $input, services: $dispatchers", input, None)
+
+    _ServiceResult.wrap(Left(DispatchingFailure.NoHandler))
+  }
+}
+
+trait IRTGeneratedUnpackingDispatcher[Ctx, R[_], In, Out <: Product]
+  extends IRTUnsafeDispatcher[Ctx, R]
+    with IRTDispatcher[IRTInContext[In, Ctx], Out, R]
+    with IRTWithResult[R] {
+
+  protected def toMethodId(v: In): IRTMethod
+
+  protected def toMethodId(v: Out): IRTMethod
+
+  protected def inputTag: ClassTag[In]
+
+  protected def outputTag: ClassTag[Out]
+
+  protected def toZeroargBody(v: IRTMethod): Option[In]
+
+  def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, Ctx]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
+    val maybeResult = toZeroargBody(input.value)
+    maybeResult match {
+      case Some(b) => Right(_ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+      case None => Left(DispatchingFailure.NoHandler)
+    }
+  }
+
+  def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], Ctx]): Either[DispatchingFailure, Result[IRTMuxResponse[Product]]] = {
+    implicit val inTag: ClassTag[In] = inputTag
+    input.value.v match {
+      case v: In =>
+        Right(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
+
+      case _ =>
+        dispatchZeroargUnsafe(IRTInContext(input.value.method, input.context))
+    }
   }
 }

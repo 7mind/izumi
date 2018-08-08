@@ -6,4 +6,3 @@ class IRTUnparseableDataException(message: String, cause: Option[Throwable] = No
 
 class IRTTypeMismatchException(message: String, val v: Any, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException
 
-class IRTMultiplexingException(message: String, val v: Any, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException

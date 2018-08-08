@@ -3,44 +3,39 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 import com.github.pshirshov.izumi.idealingua.il.parser.model.AlgebraicType
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
 import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawSimpleStructure
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.Service.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILService
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawMethod, RawSimpleStructure, Service}
 import fastparse.all._
 
+
 trait DefService {
+
   import sep._
-  final val sigSep = P("=>" | "->" | ":")
-  final val inlineStruct = aggregates.enclosed(DefStructure.simpleStruct)
-  final val adtOut = aggregates.enclosed(DefStructure.adt(sepAdt))
 
-  final val defMethod = P(
-      MaybeDoc ~
-      kw.defm ~ inline ~
-      ids.symbol ~ any ~
-      inlineStruct ~ any ~
-      sigSep ~ any ~
-      (adtOut | inlineStruct | ids.idGeneric)
-  ).map {
-    case (c, id, in, out: RawSimpleStructure) =>
-      DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Struct(out)), c)
+  final val method = DefSignature.signature(kw.defm).map {
+    case (c, id, in, Some(out: RawSimpleStructure)) =>
+      RawMethod.RPCMethod(id, RawMethod.Signature(in, RawMethod.Output.Struct(out)), c)
 
-    case (c, id, in, out: AlgebraicType) =>
-      DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Algebraic(out.alternatives)), c)
+    case (c, id, in, Some(out: AlgebraicType)) =>
+      RawMethod.RPCMethod(id, RawMethod.Signature(in, RawMethod.Output.Algebraic(out.alternatives)), c)
 
-    case (c, id, in, out: AbstractIndefiniteId) =>
-      DefMethod.RPCMethod(id, DefMethod.Signature(in, DefMethod.Output.Singular(out)), c)
+    case (c, id, in, Some(out: AbstractIndefiniteId)) =>
+      RawMethod.RPCMethod(id, RawMethod.Signature(in, RawMethod.Output.Singular(out)), c)
+
+    case (c, id, in, None) =>
+      RawMethod.RPCMethod(id, RawMethod.Signature(in, RawMethod.Output.Void()), c)
 
     case f =>
       throw new IllegalStateException(s"Impossible case: $f")
   }
 
-
-  final val sigParam = P(inline ~ ids.identifier ~ inline)
-  final val signature = P(sigParam.rep(sep = ","))
-
   // other method kinds should be added here
-  final val method: Parser[DefMethod] = P(defMethod)
-  final val methods: Parser[Seq[DefMethod]] = P(method.rep(sep = any))
+  final val methods: Parser[Seq[RawMethod]] = P(method.rep(sep = any))
+
+  final val serviceBlock = aggregates.cblock(kw.service, DefService.methods)
+    .map {
+      case (c, i, v) => ILService(Service(i.toServiceId, v.toList, c))
+    }
 
 }
 

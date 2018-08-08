@@ -13,8 +13,9 @@ class ProviderMagnetMacroGenerateUnsafeWeakSafeTypes(override val c: blackbox.Co
 
 /**
 * To see macro debug output during compilation, set `-Dizumi.distage.debug.macro=true` java property! i.e.
-*
-*   sbt -Dizumi.distage.debug.macro=true compile
+* {{{
+* sbt -Dizumi.distage.debug.macro=true compile
+* }}}
 */
 class ProviderMagnetMacro(val c: blackbox.Context) {
 

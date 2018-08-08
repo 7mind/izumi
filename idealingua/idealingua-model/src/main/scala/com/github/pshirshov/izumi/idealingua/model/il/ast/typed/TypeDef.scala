@@ -4,21 +4,30 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 
 
+case class Anno(name: String, values: Map[String, Any])
+
+
+case class NodeMeta(doc: Option[String], annos: Seq[Anno])
+
+object NodeMeta {
+  final val empty: NodeMeta = NodeMeta(None, Seq.empty)
+}
+
 sealed trait TypeDef {
   def id: TypeId
-  def doc: Option[String]
+  def meta: NodeMeta
 }
 
 
 object TypeDef {
 
-  final case class Alias(id: AliasId, target: TypeId, doc: Option[String]) extends TypeDef
+  final case class Alias(id: AliasId, target: TypeId, meta: NodeMeta) extends TypeDef
 
-  final case class Enumeration(id: EnumId, members: List[String], doc: Option[String]) extends TypeDef
+  final case class Enumeration(id: EnumId, members: List[String], meta: NodeMeta) extends TypeDef
 
-  final case class Adt(id: AdtId, alternatives: List[AdtMember], doc: Option[String]) extends TypeDef
+  final case class Adt(id: AdtId, alternatives: List[AdtMember], meta: NodeMeta) extends TypeDef
 
-  final case class Identifier(id: IdentifierId, fields: IdTuple, doc: Option[String]) extends TypeDef
+  final case class Identifier(id: IdentifierId, fields: IdTuple, meta: NodeMeta) extends TypeDef
 
   sealed trait WithStructure extends TypeDef {
     def id: StructureId
@@ -26,9 +35,9 @@ object TypeDef {
     def struct: Structure
   }
 
-  final case class Interface(id: InterfaceId, struct: Structure, doc: Option[String]) extends WithStructure
+  final case class Interface(id: InterfaceId, struct: Structure, meta: NodeMeta) extends WithStructure
 
-  final case class DTO(id: DTOId, struct: Structure, doc: Option[String]) extends WithStructure
+  final case class DTO(id: DTOId, struct: Structure, meta: NodeMeta) extends WithStructure
 
 }
 

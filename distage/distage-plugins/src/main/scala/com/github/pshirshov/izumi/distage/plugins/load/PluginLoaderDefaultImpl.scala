@@ -3,7 +3,8 @@ package com.github.pshirshov.izumi.distage.plugins.load
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.{ConfigApplicator, PluginConfig}
 import com.github.pshirshov.izumi.functional.Value
-import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
+import io.github.classgraph.{ClassGraph, ClassInfo}
+
 import scala.collection.JavaConverters._
 
 
@@ -15,26 +16,33 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
     val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled :+ base.getPackage.getName)
     val configApplicator = new ConfigApplicator(config)
 
-    val packages = config.packagesEnabled.filterNot(config.packagesDisabled.contains) ++
-      config.packagesDisabled.map(p => s"-$p")
+    val enabledPackages = config.packagesEnabled.filterNot(config.packagesDisabled.contains)
+    val disabledPackages = config.packagesDisabled
 
-    val scanResult = Value(new FastClasspathScanner(packages: _*))
-      .map(_.matchClassesImplementing(base, (_: PluginType) => ()))
+    val scanResult = Value(new ClassGraph())
+      .map(_.whitelistPackages(enabledPackages: _*))
+      .map(_.blacklistPackages(disabledPackages: _*))
+      .map(_.enableMethodInfo())
       .map(configApplicator.debug)
       .map(_.scan())
       .get
 
-    val pluginNames = scanResult.getNamesOfClassesImplementing(base).asScala
-    val plugins = pluginNames.map(name => scanResult.getClassNameToClassInfo.get(name))
+    val implementors = scanResult.getClassesImplementing(base.getCanonicalName)
+    val plugins = implementors.filter {
+      case classInfo: ClassInfo =>
+        classInfo.getConstructorInfo.asScala.exists(_.getParameterInfo.isEmpty)
+    }
 
-    plugins
-      .map(_.getClassRef.asSubclass(base))
+    val pluginClasses = plugins.loadClasses(base).asScala
+
+    pluginClasses
       .map(_.getDeclaredConstructor().newInstance())
       .toSeq // 2.13 compat
   }
 }
 
 object PluginLoaderDefaultImpl {
+
   final case class PluginConfig
   (
     debug: Boolean
@@ -43,7 +51,7 @@ object PluginLoaderDefaultImpl {
   )
 
   private class ConfigApplicator(config: PluginConfig) {
-    def debug(s: FastClasspathScanner): FastClasspathScanner = {
+    def debug(s: ClassGraph): ClassGraph = {
       if (config.debug) {
         s.verbose()
       } else {
@@ -51,4 +59,5 @@ object PluginLoaderDefaultImpl {
       }
     }
   }
+
 }

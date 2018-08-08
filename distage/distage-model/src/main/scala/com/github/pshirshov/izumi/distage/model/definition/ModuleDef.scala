@@ -14,20 +14,19 @@ import scala.collection.mutable
   * DSL for defining module Bindings.
   *
   * Example:
+  * {{{
+  * class Program[F: TagK: Monad] extends ModuleDef {
+  *   make[TaglessProgram[F]]
+  * }
   *
-  *    ```scala
-  *    class Program[F: TagK: Monad] extends ModuleDef {
-  *      make[TaglessProgram[F]]
-  *    }
+  * object TryInterpreters extends ModuleDef {
+  *   make[Validation.Handler[Try]].from(tryValidationHandler)
+  *   make[Interaction.Handler[Try]].from(tryInteractionHandler)
+  * }
   *
-  *    object TryInterpreters extends ModuleDef {
-  *      make[Validation.Handler[Try]].from(tryValidationHandler)
-  *      make[Interaction.Handler[Try]].from(tryInteractionHandler)
-  *    }
-  *
-  *    // Combine modules into a full program
-  *    val TryProgram = new Program[Try] ++ TryInterpreters
-  *    ```
+  * // Combine modules into a full program
+  * val TryProgram = new Program[Try] ++ TryInterpreters
+  * }}}
   *
   * Singleton bindings:
   *   - `make[X]` = create X using its constructor
@@ -86,49 +85,49 @@ trait ModuleDef extends ModuleBase {
     * To define a multibinding use `.many` and `.add` methods in ModuleDef
     * DSL:
     *
-    *     ```scala
-    *     import cats.effect._, org.http4s._, org.http4s.dsl.io._, scala.concurrent.ExecutionContext.Implicits.global
-    *     import distage._
+    * {{{
+    * import cats.effect._, org.http4s._, org.http4s.dsl.io._, scala.concurrent.ExecutionContext.Implicits.global
+    * import distage._
     *
-    *     object HomeRouteModule extends ModuleDef {
-    *       many[HttpRoutes[IO]].add {
-    *         HttpRoutes.of[IO] { case GET -> Root / "home" => Ok(s"Home page!") }
-    *       }
-    *     }
-    *     ```
+    * object HomeRouteModule extends ModuleDef {
+    *   many[HttpRoutes[IO]].add {
+    *     HttpRoutes.of[IO] { case GET -> Root / "home" => Ok(s"Home page!") }
+    *   }
+    * }
+    * }}}
     *
     * Multibindings defined in different modules will be merged together into a single Set.
     * You can summon a multibinding by type `Set[_]`:
     *
-    *     ```scala
-    *     import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.implicits._
+    * {{{
+    * import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.implicits._
     *
-    *     object BlogRouteModule extends ModuleDef {
-    *       many[HttpRoutes[IO]].add {
-    *         HttpRoutes.of[IO] { case GET -> Root / "blog" / post => Ok("Blog post ``$post''!") }
-    *       }
-    *     }
+    * object BlogRouteModule extends ModuleDef {
+    *   many[HttpRoutes[IO]].add {
+    *     HttpRoutes.of[IO] { case GET -> Root / "blog" / post => Ok("Blog post ``$post''!") }
+    *   }
+    * }
     *
-    *     class HttpServer(routes: Set[HttpRoutes[IO]]) {
-    *       val router = routes.foldK
+    * class HttpServer(routes: Set[HttpRoutes[IO]]) {
+    *   val router = routes.foldK
     *
-    *       def serve = BlazeBuilder[IO]
-    *         .bindHttp(8080, "localhost")
-    *         .mountService(router, "/")
-    *         .start
-    *     }
+    *   def serve = BlazeBuilder[IO]
+    *     .bindHttp(8080, "localhost")
+    *     .mountService(router, "/")
+    *     .start
+    * }
     *
-    *     val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
-    *     val server = context.get[HttpServer]
+    * val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
+    * val server = context.get[HttpServer]
     *
-    *     val testRouter = server.router.orNotFound
+    * val testRouter = server.router.orNotFound
     *
-    *     testRouter.run(Request[IO](uri = uri("/home"))).flatMap(_.as[String]).unsafeRunSync
-    *     // Home page!
+    * testRouter.run(Request[IO](uri = uri("/home"))).flatMap(_.as[String]).unsafeRunSync
+    * // Home page!
     *
-    *     testRouter.run(Request[IO](uri = uri("/blog/1"))).flatMap(_.as[String]).unsafeRunSync
-    *     // Blog post ``1''!
-    *     ```
+    * testRouter.run(Request[IO](uri = uri("/blog/1"))).flatMap(_.as[String]).unsafeRunSync
+    * // Blog post ``1''!
+    * }}}
     *
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
     */
@@ -331,39 +330,47 @@ object ModuleDef {
     *
     * Inline lambda:
     *
+    * {{{
     *   make[Unit].from {
     *     i: Int @Id("special") => ()
     *   }
+    * }}}
     *
     * Method reference:
-    *
+    * {{{
     *   def constructor(@Id("special") i: Int): Unit = ()
     *
     *   make[Unit].from(constructor _)
+    * }}}
     *
     * Function value with annotated signature:
-    *
+    * {{{
     *   val constructor: Int @Id("special") => Unit = _ => ()
     *
     *   make[Unit].from(constructor)
+    * }}}
     *
     * The following **IS NOT SUPPORTED**, because annotations are lost when converting a method into a function value:
     *
+    *   {{{
     *   def constructorMethod(@Id("special") i: Int): Unit = ()
     *
     *   val constructor = constructorMethod _
     *
     *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI context
+    *   }}}
     *
     * Annotations on constructor will also be lost when passing a case classes .apply method, use `new` instead.
     *
     * DO:
-    *
+    *   {{{
     *   make[Abc].from(new Abc(_, _, _))
+    *   }}}
     *
     * DON'T:
-    *
+    *   {{{
     *   make[Abc].from(Abc.apply _)
+    *   }}}
     *
     * @see [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet]]
     *      [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]

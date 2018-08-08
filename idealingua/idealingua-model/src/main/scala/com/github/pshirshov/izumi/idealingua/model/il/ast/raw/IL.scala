@@ -19,10 +19,16 @@ object IL {
 
   final case class ILInclude(i: String) extends Val
 
-  final case class ILService(v: Service) extends Val
-
   final case class ILDef(v: IdentifiedRawTypeDef) extends Val
 
   final case class ILNewtype(v: NewType) extends Val
+
+  final case class ILService(v: Service) extends Val
+
+  final case class ILStreams(v: Streams) extends Val
+
+  final case class ILEmitter(v: Emitter) extends Val
+
+  final case class ILConst(v: Constants) extends Val
 
 }

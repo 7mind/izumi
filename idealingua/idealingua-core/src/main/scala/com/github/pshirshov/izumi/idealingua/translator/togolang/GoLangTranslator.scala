@@ -4,8 +4,8 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod.Output.{Algebraic, Singular, Struct}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -738,7 +738,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       s"out${i.id.name.capitalize}${name.capitalize}"
   }
 
-  protected def renderServiceMethodSignature(i: Service, method: Service.DefMethod, imports: GoLangImports, spread: Boolean = false, withContext: Boolean = false): String = {
+  protected def renderServiceMethodSignature(i: Service, method: DefMethod, imports: GoLangImports, spread: Boolean = false, withContext: Boolean = false): String = {
     method match {
       case m: DefMethod.RPCMethod => {
         val context = if (withContext) s"context interface{}${if (m.signature.input.fields.isEmpty) "" else ", "}" else ""
@@ -768,7 +768,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     s"(${renderServiceMethodOutputModel(i, method, imports)}, error)"
   }
 
-  protected def renderServiceClientMethod(i: Service, method: Service.DefMethod, imports: GoLangImports): String = method match {
+  protected def renderServiceClientMethod(i: Service, method: DefMethod, imports: GoLangImports): String = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct | _: Algebraic =>
         s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
@@ -832,7 +832,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
      """.stripMargin
   }
 
-  protected def renderServiceDispatcherHandler(i: Service, method: Service.DefMethod): String = method match {
+  protected def renderServiceDispatcherHandler(i: Service, method: DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""case "${m.name}": {
          |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(i, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
@@ -910,7 +910,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
      """.stripMargin
   }
 
-  protected def renderServiceMethodDefaultResult(i: Service, method: Service.DefMethod, imports: GoLangImports): String = {
+  protected def renderServiceMethodDefaultResult(i: Service, method: DefMethod, imports: GoLangImports): String = {
     Quirks.discard(i)
     method match {
       case m: DefMethod.RPCMethod => m.signature.output match {
@@ -932,7 +932,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
      """.stripMargin
   }
 
-  protected def renderServiceMethodOutModel(i: Service, name: String, out: Service.DefMethod.Output, imports: GoLangImports): String = out match {
+  protected def renderServiceMethodOutModel(i: Service, name: String, out: DefMethod.Output, imports: GoLangImports): String = out match {
     case st: Struct => renderServiceMethodInModel(i, name, st.struct, imports)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
     case si: Singular => s"// ${ si.typeId}"
@@ -948,7 +948,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
      """.stripMargin
   }
 
-  protected def renderServiceMethodModels(i: Service, method: Service.DefMethod, imports: GoLangImports): String = method match {
+  protected def renderServiceMethodModels(i: Service, method: DefMethod, imports: GoLangImports): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""// Method ${m.name} models
          |${if(m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, inName(i, m.name, public = true), m.signature.input, imports)}

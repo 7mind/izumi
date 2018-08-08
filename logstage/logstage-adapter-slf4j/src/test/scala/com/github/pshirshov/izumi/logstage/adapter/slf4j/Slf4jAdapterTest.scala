@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.logstage.adapter.slf4j
 
-import com.github.pshirshov.izumi.logstage.api.TestSink
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
-import com.github.pshirshov.izumi.logstage.api.routing.LoggingAsyncSinkTest
+import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import org.scalatest.WordSpec
 import org.slf4j.LoggerFactory
 
@@ -14,10 +13,7 @@ class Slf4jAdapterTest extends WordSpec {
     "pass logs to LogStage" in {
       val sink = new TestSink()
 
-      StaticLogRouter.instance.setup(LoggingAsyncSinkTest.mkRouter(
-        sink
-        //, LoggingMacroTest.consoleSinkText
-      ))
+      StaticLogRouter.instance.setup(IzLogger.basicRouter(IzLogger.Level.Trace, sink))
 
       logger.trace(s"Debug message")
       logger.trace(s"Debug message: {}")

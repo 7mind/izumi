@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.collections
 
+import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import org.scalatest.WordSpec
 
 class TagExprTest extends WordSpec {

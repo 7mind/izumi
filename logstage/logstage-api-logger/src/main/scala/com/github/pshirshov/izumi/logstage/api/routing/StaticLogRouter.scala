@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingOptions
+import com.github.pshirshov.izumi.logstage.sink.FallbackConsoleSink
 
 class StaticLogRouter extends LogRouter {
   private val proxied = new AtomicReference[LogRouter]()

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 import com.github.pshirshov.izumi.idealingua.model.common.PrimitiveId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, EnumId, IdentifierId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Interfaces, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
@@ -401,8 +401,8 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
        """
     val qqPackingDispatcherCompanion =
       q"""  object PackingDispatcher {
-        class Impl[R[_] : IRTServiceResult](val dispatcher: IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]) extends PackingDispatcher[R] {
-          override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+        class Impl[R[_] : IRTResult](val dispatcher: IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]) extends PackingDispatcher[R] {
+          override protected def _ServiceResult: IRTResult[R] = implicitly
         }
       }"""
 
@@ -410,9 +410,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
       q"""
   trait UnpackingDispatcher[R[_], C]
     extends ${sp.svcWrappedTpe.parameterize("R", "C").init()}
-      with IRTDispatcher[IRTInContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R]
-      with IRTUnsafeDispatcher[C, R]
-      with ${rt.WithResult.parameterize("R").init()}  {
+      with IRTGeneratedUnpackingDispatcher[C, R, ${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}] {
     def service: ${sp.svcTpe.typeFull}[R, C]
 
     def dispatch(input: IRTInContext[${sp.serviceInputBase.typeFull}, C]): Result[${sp.serviceOutputBase.typeFull}] = {
@@ -423,8 +421,17 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
 
     def identifier: IRTServiceId = serviceId
 
+    protected def toMethodId(v: ${sp.serviceInputBase.typeFull}): IRTMethod = ${sp.svcWrappedTpe.termName}.toMethodId(v)
 
-    private def toZeroargBody(v: IRTMethod): Option[${sp.serviceInputBase.typeFull}] = {
+    protected def toMethodId(v: ${sp.serviceOutputBase.typeFull}): IRTMethod = ${sp.svcWrappedTpe.termName}.toMethodId(v)
+
+    import scala.reflect._
+
+    override protected def inputTag: ClassTag[${sp.serviceInputBase.typeFull}] = classTag
+
+    override protected def outputTag: ClassTag[${sp.serviceOutputBase.typeFull}] = classTag
+
+    protected def toZeroargBody(v: IRTMethod): Option[${sp.serviceInputBase.typeFull}] = {
       v match {
         ..case $zeroargCases
 
@@ -433,38 +440,24 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
       }
     }
 
-    private def dispatchZeroargUnsafe(input: IRTInContext[IRTMethod, C]): Option[Result[IRTMuxResponse[Product]]] = {
-      toZeroargBody(input.value).map(b => _ServiceResult.map(dispatch(IRTInContext(b, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
-    }
-
-    def dispatchUnsafe(input: IRTInContext[IRTMuxRequest[Product], C]): Option[Result[IRTMuxResponse[Product]]] = {
-      input.value.v match {
-        case v: ${sp.serviceInputBase.typeFull} =>
-          Option(_ServiceResult.map(dispatch(IRTInContext(v, input.context)))(v => IRTMuxResponse(v, toMethodId(v))))
-
-        case _ =>
-          dispatchZeroargUnsafe(IRTInContext(input.value.method, input.context))
-      }
-    }
-
-      ..$unpacking
+    ..$unpacking
   }"""
 
     val qqUnpackingDispatcherCompanion =
       q"""  object UnpackingDispatcher {
-        class Impl[R[_] : IRTServiceResult, C](val service: ${sp.svcTpe.typeFull}[R, C]) extends UnpackingDispatcher[R, C] {
-          override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+        class Impl[R[_] : IRTResult, C](val service: ${sp.svcTpe.typeFull}[R, C]) extends UnpackingDispatcher[R, C] {
+          override protected def _ServiceResult: IRTResult[R] = implicitly
         }
       }"""
 
     val qqSafeToUnsafeBridge =
       q"""
-        class SafeToUnsafeBridge[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R])
+        class SafeToUnsafeBridge[R[_] : IRTResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R])
            extends IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]
            with ${rt.WithResult.parameterize("R").init()} {
-             override protected def _ServiceResult: IRTServiceResult[R] = implicitly
+             override protected def _ServiceResult: IRTResult[R] = implicitly
 
-             import IRTServiceResult._
+             import IRTResult._
 
              override def dispatch(input: ${sp.serviceInputBase.typeFull}): Result[${sp.serviceOutputBase.typeFull}] = {
                dispatcher.dispatch(IRTMuxRequest(input : Product, toMethodId(input))).map {
@@ -492,21 +485,21 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
            override type ServiceServer[R[_], C] = ${sp.svcTpe.parameterize("R", "C").typeFull}
            override type ServiceClient[R[_]] = ${sp.svcClientTpe.parameterize("R").typeFull}
 
-  def client[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
+  def client[R[_] : IRTResult](dispatcher: IRTDispatcher[${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}, R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
     new PackingDispatcher.Impl[R](dispatcher)
   }
 
 
-  def clientUnsafe[R[_] : IRTServiceResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
+  def clientUnsafe[R[_] : IRTResult](dispatcher: IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R]): ${sp.svcClientTpe.parameterize("R").typeFull} = {
     client(new SafeToUnsafeBridge[R](dispatcher))
   }
 
-  def server[R[_] : IRTServiceResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): IRTDispatcher[IRTInContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R] = {
+  def server[R[_] : IRTResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): IRTDispatcher[IRTInContext[${sp.serviceInputBase.typeFull}, C], ${sp.serviceOutputBase.typeFull}, R] = {
     new UnpackingDispatcher.Impl[R, C](service)
   }
 
 
-  def serverUnsafe[R[_] : IRTServiceResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): IRTUnsafeDispatcher[C, R] = {
+  def serverUnsafe[R[_] : IRTResult, C](service: ${sp.svcTpe.parameterize("R", "C").typeFull}): IRTUnsafeDispatcher[C, R] = {
     new UnpackingDispatcher.Impl[R, C](service)
   }
 

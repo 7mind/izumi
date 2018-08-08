@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.sbt.plugins.optional
 import com.github.pshirshov.izumi.sbt.plugins.IzumiPropertiesPlugin
 import com.typesafe.sbt.pgp.PgpKeys._
 import laughedelic.sbt.PublishMore
-import sbt.Keys.{credentials, _}
+import sbt.Keys.{credentials, resolvers, _}
 import sbt.internal.util.ConsoleLogger
 import sbt.io.syntax
 import sbt.io.syntax.File
@@ -20,6 +20,8 @@ object IzumiPublishingPlugin extends AutoPlugin {
   object Keys {
     lazy val sonatypeTarget = settingKey[MavenRepository]("Sonatype repository based on isSnapshot value")
     lazy val publishTargets = settingKey[Seq[MavenTarget]]("Publishing target")
+    lazy val releaseResolvers = settingKey[Seq[MavenRepository]]("Release resolvers")
+    lazy val snapshotResolvers = settingKey[Seq[MavenRepository]]("Snapshot resolvers")
   }
 
   import Keys._
@@ -29,6 +31,8 @@ object IzumiPublishingPlugin extends AutoPlugin {
   override lazy val globalSettings = Seq(
     pomIncludeRepository := (_ => false)
     , publishTargets := Seq.empty
+    , releaseResolvers := Seq.empty
+    , snapshotResolvers := Seq.empty
   )
 
   import laughedelic.sbt.PublishMore.autoImport._
@@ -46,6 +50,16 @@ object IzumiPublishingPlugin extends AutoPlugin {
     }
     , credentials ++= publishTargets.value.map(_.credentials)
     , publishResolvers ++= publishTargets.value.map(_.repo)
+    , resolvers in Global ++= {
+      val releaseRepositories = releaseResolvers.value
+      val snapshotRepositories = snapshotResolvers.value
+
+      if (isSnapshot.value) {
+        snapshotRepositories ++ releaseRepositories
+      } else {
+        releaseRepositories
+      }
+    }
   )
 
   private def withOverwriteEnabled(config: PublishConfiguration) = {
@@ -61,10 +75,11 @@ object IzumiPublishingPlugin extends AutoPlugin {
 
 
   object autoImport {
-    object PublishTarget {
+
+    object Repositories {
       def typical(realmId: String, url: String): Seq[MavenTarget] = {
         filter(
-          env("PUBLISH"),
+          env("PUBLISH", url),
           file(realmId, url, syntax.file(s".secrets/credentials.$realmId.properties")),
           file(realmId, url, Path.userHome / s".sbt/credentials.$realmId.properties"),
         )
@@ -74,17 +89,16 @@ object IzumiPublishingPlugin extends AutoPlugin {
         targets.flatMap(_.toSeq)
       }
 
-      def env(prefix: String): Option[MavenTarget] = {
+      def env(prefix: String, url: String): Option[MavenTarget] = {
         val props = List(
           Option(System.getProperty(s"${prefix}_USER"))
           , Option(System.getProperty(s"${prefix}_PASSWORD"))
           , Option(System.getProperty(s"${prefix}_REALM_NAME"))
           , Option(System.getProperty(s"${prefix}_REALM"))
-          , Option(System.getProperty(s"${prefix}_URL"))
         )
 
         props match {
-          case Some(user) :: Some(password) :: Some(realmname) :: Some(realmId) :: Some(url) :: Nil =>
+          case Some(user) :: Some(password) :: Some(realmname) :: Some(realmId) :: Nil =>
             import sbt.librarymanagement.syntax._
             Some(MavenTarget(realmId, Credentials(realmname, realmId, user, password), realmId at url))
 
@@ -101,7 +115,27 @@ object IzumiPublishingPlugin extends AutoPlugin {
           None
         }
       }
+
+      def alternative(snapshot: Boolean, name: String, releases: String, snapshots: String): MavenRepository = {
+        val tpe = if (snapshot) {
+          "snapshots"
+        } else {
+          "releases"
+        }
+        s"$name-$tpe" at chooseUrl(snapshot, releases, snapshots)
+      }
+
+      def chooseUrl(snapshot: Boolean, releases: String, snapshots: String): String = {
+        val url = if (snapshot) {
+          snapshots
+        } else {
+          releases
+        }
+
+        sys.env.getOrElse("PUBLISH_URL", url)
+      }
     }
+
   }
 
 }

@@ -4,11 +4,9 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service.DefMethod._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, TypeDef, _}
 
 class ILRenderer(domain: DomainDefinition) {
   def render(): String = {
@@ -23,6 +21,12 @@ class ILRenderer(domain: DomainDefinition) {
 
     sb.append("\n\n")
     sb.append(domain.services.map(render).map(_.trim).mkString("\n\n"))
+
+    sb.append("\n\n")
+    sb.append(domain.emitters.map(render).map(_.trim).mkString("\n\n"))
+
+    sb.append("\n\n")
+    sb.append(domain.streams.map(render).map(_.trim).mkString("\n\n"))
 
     sb.toString
   }
@@ -70,18 +74,54 @@ class ILRenderer(domain: DomainDefinition) {
            |}
          """.stripMargin
     }
-    withComment(tpe.doc, struct)
+    withComment(tpe.meta, struct)
   }
 
-  def withComment(doc: Option[String], struct: String): String = {
-    doc match {
-      case Some(d) =>
-        s"""/*${d.split('\n').map(v => s"  *$v").mkString("\n").trim}
-           |  */
-           |$struct""".stripMargin
-      case None =>
-        struct
+  def renderValue(value: Any): String = {
+    value match {
+      case l: Seq[_] =>
+        l.map(renderValue).mkString("[", ",", "]")
+      case l: Map[_, _] =>
+        l.map {
+          case (name, v) =>
+            s"$name = ${renderValue(v)}"
+        }.mkString("{", ",", "}")
+      case s: String =>
+        if (s.contains("\"")) {
+          "\"\"\"" + s + "\"\"\""
+        } else {
+          "\"" + s + "\""
+        }
+      case o =>
+        o.toString
     }
+  }
+
+  def render(anno: Anno): String = {
+    val vals = anno.values.map {
+      case (name, v) =>
+        s"$name = ${renderValue(v)}"
+    }.mkString(",")
+
+    s"@${anno.name}($vals)"
+  }
+
+  def withComment(meta: NodeMeta, struct: String): String = {
+    val maybeDoc = meta.doc.map {
+      d =>
+        s"""/*${d.split('\n').map(v => s"  *$v").mkString("\n").trim}
+           |  */""".stripMargin
+    }
+
+    val maybeAnno = meta.annos.map(render)
+
+    Seq(
+      maybeDoc.toSeq
+      , maybeAnno
+      , Seq(struct)
+    )
+      .flatten
+      .mkString("\n")
   }
 
   def renderStruct(struct: Structure): String = {
@@ -97,12 +137,41 @@ class ILRenderer(domain: DomainDefinition) {
   }
 
   def render(service: Service): String = {
-    val out = s"""service ${render(service.id)} {
-       |${service.methods.map(render).mkString("\n").shift(2)}
-       |}
+    val out =
+      s"""service ${render(service.id)} {
+         |${service.methods.map(render("def", _)).mkString("\n").shift(2)}
+         |}
      """.stripMargin
     withComment(service.doc, out)
   }
+
+  def render(emitter: Emitter): String = {
+    val out =
+      s"""emitter ${render(emitter.id)} {
+         |${emitter.events.map(render("event", _)).mkString("\n").shift(2)}
+         |}
+     """.stripMargin
+    withComment(emitter.doc, out)
+  }
+
+  def render(streams: Streams): String = {
+    val out =
+      s"""streams ${render(streams.id)} {
+         |${streams.streams.map(render).mkString("\n").shift(2)}
+         |}
+     """.stripMargin
+    withComment(streams.doc, out)
+  }
+
+  def render(streamDirection: StreamDirection): String = {
+    streamDirection match {
+      case StreamDirection.ToServer =>
+        "toserver"
+      case StreamDirection.ToClient =>
+        "toclient"
+    }
+  }
+
 
   def renderComposite(aggregate: Structures, prefix: String): String = {
     aggregate
@@ -142,22 +211,33 @@ class ILRenderer(domain: DomainDefinition) {
     s"${field.name}: ${render(field.typeId)}"
   }
 
-  def render(tpe: DefMethod): String = {
+  def render(tpe: TypedStream): String = {
     tpe match {
-      case m: RPCMethod =>
-        val out = s"def ${m.name}(${render(m.signature.input)}): ${render(m.signature.output)}"
-        withComment(m.doc, out)
+      case m: TypedStream.Directed =>
+        val out = s"${render(m.direction)} ${m.name}(${render(m.signature)})"
+        withComment(m.meta, out)
     }
   }
 
-  def render(out: Service.DefMethod.Output): String = {
+  def render(kw: String, tpe: DefMethod): String = {
+    tpe match {
+      case m: RPCMethod =>
+        val resultRepr = render(m.signature.output).fold("")(s => s": $s")
+        val out = s"$kw ${m.name}(${render(m.signature.input)})$resultRepr"
+        withComment(m.meta, out)
+    }
+  }
+
+  def render(out: DefMethod.Output): Option[String] = {
     out match {
-      case o: Service.DefMethod.Output.Struct =>
-        s"(${render(o.struct)})"
-      case o: Service.DefMethod.Output.Algebraic =>
-        s"(${o.alternatives.map(render).mkString(" | ")})"
-      case o: Service.DefMethod.Output.Singular =>
-        render(o.typeId)
+      case o: DefMethod.Output.Struct =>
+        Some(s"(${render(o.struct)})")
+      case o: DefMethod.Output.Algebraic =>
+        Some(s"(${o.alternatives.map(render).mkString(" | ")})")
+      case o: DefMethod.Output.Singular =>
+        Some(render(o.typeId))
+      case _: DefMethod.Output.Void =>
+        None
     }
   }
 
@@ -195,6 +275,15 @@ class ILRenderer(domain: DomainDefinition) {
   def render(id: ServiceId): String = {
     id.name
   }
+
+  def render(id: EmitterId): String = {
+    id.name
+  }
+
+  def render(id: StreamsId): String = {
+    id.name
+  }
+
 
   def minimize(value: common.Package): common.Package = {
     val domainPkg = domain.id.toPackage
