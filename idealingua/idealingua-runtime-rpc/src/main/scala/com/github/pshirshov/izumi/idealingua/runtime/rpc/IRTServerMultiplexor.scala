@@ -53,7 +53,7 @@ trait IRTUnsafeDispatcher[Ctx, R[_]] extends IRTWithResultType[R] {
   def dispatchUnsafe(input: UnsafeInput): MaybeOutput
 }
 
-class IRTServerMultiplexor[R[_] : IRTResult, Ctx](dispatchers: List[IRTUnsafeDispatcher[Ctx, R]])
+class IRTServerMultiplexor[R[_] : IRTResult, Ctx](protected val dispatchers: List[IRTUnsafeDispatcher[Ctx, R]])
   extends IRTDispatcher[IRTInContext[IRTMuxRequest[Product], Ctx], Either[DispatchingFailure, IRTMuxResponse[Product]], R]
     with IRTWithResult[R] {
   override protected def _ServiceResult: IRTResult[R] = implicitly
@@ -61,7 +61,7 @@ class IRTServerMultiplexor[R[_] : IRTResult, Ctx](dispatchers: List[IRTUnsafeDis
   type Input = IRTInContext[IRTMuxRequest[Product], Ctx]
   type Output = IRTMuxResponse[Product]
 
-  override def dispatch(input: Input): Result[Either[DispatchingFailure, Output]] = {
+  def dispatch(input: Input): Result[Either[DispatchingFailure, Output]] = {
     dispatchers.foreach {
       d =>
         d.dispatchUnsafe(input) match {
