@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.logstage.sink
 
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
 import org.scalatest.WordSpec
 
 import scala.util.{Failure, Success, Try}

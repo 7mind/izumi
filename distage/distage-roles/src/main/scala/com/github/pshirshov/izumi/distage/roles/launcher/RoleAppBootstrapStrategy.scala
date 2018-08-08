@@ -23,7 +23,7 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.rendering.json.JsonRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
 import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
-import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
+import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 
 import scala.reflect.ClassTag
 

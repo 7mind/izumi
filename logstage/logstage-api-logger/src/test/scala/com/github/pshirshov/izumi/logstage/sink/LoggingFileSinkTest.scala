@@ -7,7 +7,6 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.sink.FileServiceUtils._
 import com.github.pshirshov.izumi.logstage.sink.LoggingFileSinkTest.{FileSinkBrokenImpl, randomInt, _}
-import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
 import com.github.pshirshov.izumi.logstage.sink.file.FileServiceImpl.RealFile
 import com.github.pshirshov.izumi.logstage.sink.file.FileSink.FileIdentity
 import com.github.pshirshov.izumi.logstage.sink.file.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}

@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, LogArg}
 import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
 import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
-import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
+import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
 

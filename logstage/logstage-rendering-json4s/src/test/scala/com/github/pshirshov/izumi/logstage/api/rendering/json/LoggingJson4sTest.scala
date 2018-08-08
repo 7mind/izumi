@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api.rendering.json
 
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.sink.ExampleService
-import com.github.pshirshov.izumi.logstage.sink.console.ConsoleSink
+import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, ExampleService}
 import org.scalatest.WordSpec
 
 class LoggingJson4sTest extends WordSpec {

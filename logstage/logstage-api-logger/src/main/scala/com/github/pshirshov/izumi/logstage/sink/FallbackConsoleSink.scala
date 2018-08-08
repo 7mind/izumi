@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.api.routing
+package com.github.pshirshov.izumi.logstage.sink
 
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.logstage.api.Log

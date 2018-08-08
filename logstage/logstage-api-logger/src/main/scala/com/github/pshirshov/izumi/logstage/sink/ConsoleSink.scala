@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.sink.console
+package com.github.pshirshov.izumi.logstage.sink
 
 import com.github.pshirshov.izumi.fundamentals.platform.console.SystemOutStringTrivialSink
 import com.github.pshirshov.izumi.logstage.api.Log

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.api.routing
+package com.github.pshirshov.izumi.logstage.sink
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
