@@ -32,12 +32,12 @@ trait WithHttp4sServer[R[_]] {
 
     protected def handler(muxer: IRTServerMultiplexor[R, Ctx]): PartialFunction[AuthedRequest[R, Ctx], R[Response[R]]] = {
       case GET -> Root / service / method as ctx =>
-        val methodId = IRTMethod(IRTServiceId(service), IRTMethodId(method))
+        val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         val decodedRequest = IRTInContext(IRTMuxRequest[Product](methodId, methodId), ctx)
         run(muxer, decodedRequest)
 
       case request@POST -> Root / service / method as ctx =>
-        val methodId = IRTMethod(IRTServiceId(service), IRTMethodId(method))
+        val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         implicit val dec: EntityDecoder[R, muxer.Input] = requestDecoder(ctx, methodId)
         request.req.decode[IRTInContext[IRTMuxRequest[Product], Ctx]] {
           decodedRequest =>
@@ -76,7 +76,7 @@ trait WithHttp4sServer[R[_]] {
         }
     }
 
-    protected def requestDecoder(context: Ctx, method: IRTMethod): EntityDecoder[R, muxer.Input] = {
+    protected def requestDecoder(context: Ctx, method: IRTMethodId): EntityDecoder[R, muxer.Input] = {
       EntityDecoder.decodeBy(MediaRange.`*/*`) {
         message =>
           val decoded: R[Either[DecodeFailure, IRTInContext[IRTMuxRequest[Product], Ctx]]] = message.as[String].map {
@@ -99,7 +99,7 @@ trait WithHttp4sServer[R[_]] {
     }
 
 
-    protected def respEncoder(context: Ctx, method: IRTMethod): EntityEncoder[R, muxer.Output] = {
+    protected def respEncoder(context: Ctx, method: IRTMethodId): EntityEncoder[R, muxer.Output] = {
 
       EntityEncoder.encodeBy(headers.`Content-Type`(MediaType.application.json)) {
         response =>

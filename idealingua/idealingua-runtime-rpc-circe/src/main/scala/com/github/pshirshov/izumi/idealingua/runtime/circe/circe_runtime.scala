@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.circe
 
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTIdentifiableServiceDefinition, IRTMethod, IRTReqBody, IRTResBody}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTIdentifiableServiceDefinition, IRTMethodId, IRTReqBody, IRTResBody}
 import io.circe._
 
 
@@ -12,11 +12,11 @@ trait IRTCirceWrappedServiceDefinition {
 trait IRTClientMarshallers {
   def encodeRequest(request: IRTReqBody): String
 
-  def decodeResponse(responseWire: String, m: IRTMethod): Either[Error, IRTResBody]
+  def decodeResponse(responseWire: String, m: IRTMethodId): Either[Error, IRTResBody]
 }
 
 trait IRTServerMarshallers {
-  def decodeRequest(requestWire: String, m: IRTMethod): Either[Error, IRTReqBody]
+  def decodeRequest(requestWire: String, m: IRTMethodId): Either[Error, IRTReqBody]
 
   def encodeResponse(response: IRTResBody): String
 }
@@ -26,14 +26,14 @@ class IRTOpinionatedMarshalers(provider: List[IRTMuxingCodecProvider]) extends I
   import _root_.io.circe.parser._
   import _root_.io.circe.syntax._
 
-  def decodeRequest(requestWire: String, m: IRTMethod): Either[Error, IRTReqBody] = {
-    implicit val x: IRTMethod = m
+  def decodeRequest(requestWire: String, m: IRTMethodId): Either[Error, IRTReqBody] = {
+    implicit val x: IRTMethodId = m
     val parsed = parse(requestWire).flatMap(_.as[IRTReqBody])
     parsed
   }
 
-  def decodeResponse(responseWire: String, m: IRTMethod): Either[Error, IRTResBody] = {
-    implicit val x: IRTMethod = m
+  def decodeResponse(responseWire: String, m: IRTMethodId): Either[Error, IRTResBody] = {
+    implicit val x: IRTMethodId = m
     val parsed = parse(responseWire).flatMap(_.as[IRTResBody])
     parsed
   }
@@ -59,11 +59,11 @@ class IRTOpinionatedMarshalers(provider: List[IRTMuxingCodecProvider]) extends I
     responseEncoders.foldLeft(PartialFunction.empty[IRTResBody, Json])(_ orElse _)(c)
   }
 
-  private implicit def decodePolymorphicRequest(implicit method: IRTMethod): Decoder[IRTReqBody] = Decoder.instance(c => {
+  private implicit def decodePolymorphicRequest(implicit method: IRTMethodId): Decoder[IRTReqBody] = Decoder.instance(c => {
     requestDecoders.foldLeft(PartialFunction.empty[IRTCursorForMethod, Decoder.Result[IRTReqBody]])(_ orElse _)(IRTCursorForMethod(method, c))
   })
 
-  private  implicit def decodePolymorphicResponse(implicit method: IRTMethod): Decoder[IRTResBody] = Decoder.instance(c => {
+  private  implicit def decodePolymorphicResponse(implicit method: IRTMethodId): Decoder[IRTResBody] = Decoder.instance(c => {
     responseDecoders.foldLeft(PartialFunction.empty[IRTCursorForMethod, Decoder.Result[IRTResBody]])(_ orElse _)(IRTCursorForMethod(method, c))
   })
 }
@@ -74,7 +74,7 @@ object IRTOpinionatedMarshalers {
 }
 
 
-final case class IRTCursorForMethod(methodId: IRTMethod, cursor: HCursor)
+final case class IRTCursorForMethod(methodId: IRTMethodId, cursor: HCursor)
 
 trait IRTMuxingCodecProvider {
   def requestEncoders: List[PartialFunction[IRTReqBody, Json]]

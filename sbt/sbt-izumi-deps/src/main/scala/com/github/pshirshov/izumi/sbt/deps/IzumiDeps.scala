@@ -32,6 +32,8 @@ object IzumiDeps {
     val scalacheck = "1.14.0"
     val scalacheck_shapeless = "1.1.6"
 
+    val zio = "0.1.0-SNAPSHOT"
+
     // good to drop
     val json4s = "3.6.0"  // 2.13+
     val scopt = "3.7.0" // 2.13+
@@ -49,6 +51,11 @@ object IzumiDeps {
     val scalacheck_shapeless = "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % V.scalacheck_shapeless
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
+
+    val zio: Seq[ModuleID] = Seq(
+      "org.scalaz" %% "scalaz-zio",
+      "org.scalaz" %% "scalaz-zio-interop",
+    ).map(_ % V.zio)
 
     //val scala_asm = "org.scala-lang.modules" % "scala-asm" % "6.0.0-scala-1"
     //val scala_arm = "com.jsuereth" %% "scala-arm" % "2.0"

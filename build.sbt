@@ -9,6 +9,9 @@ import ReleaseTransformations._
 enablePlugins(IzumiGitEnvironmentPlugin)
 disablePlugins(AssemblyPlugin, ScriptedPlugin)
 
+// zio
+resolvers in Global += Opts.resolver.sonatypeSnapshots
+
 name := "izumi-r2"
 organization in ThisBuild := "com.github.pshirshov.izumi.r2"
 defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
@@ -301,6 +304,7 @@ lazy val idealinguaModel = inIdealingua.as.module
   .settings()
 
 lazy val idealinguaRuntimeRpc = inIdealingua.as.module
+  .settings(libraryDependencies ++= R.zio)
 
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpc, idealinguaRuntimeRpcCirce)
 
