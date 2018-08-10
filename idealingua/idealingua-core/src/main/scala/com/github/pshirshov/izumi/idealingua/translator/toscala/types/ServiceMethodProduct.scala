@@ -25,10 +25,15 @@ final case class ServiceContext(ctx: STContext, svc: Service) {
   val svcClientTpe: ScalaType = ctx.conv.toScala(clientId)
   val svcWrappedTpe: ScalaType = ctx.conv.toScala(wrappedId)
 
+  val result = ctx.conv.toScala(IndefiniteId(Seq.empty, "Result"))
+
   import ctx.conv._
 
   val serviceInputBase: ScalaType = svcBaseTpe.within(s"In${typeName.capitalize}")
   val serviceOutputBase: ScalaType = svcBaseTpe.within(s"Out${typeName.capitalize}")
+
+  def dispatcherResult = result.parameterize(List(serviceOutputBase.typeFull)).typeFull
+
 }
 
 final case class FullServiceContext(service: ServiceContext, methods: List[ServiceMethodProduct])
@@ -43,16 +48,19 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
   def nameTerm = Term.Name(name)
 
+  protected def result = sp.result.parameterize(List(outputType.typeFull)).typeFull
+  protected def resultWrapped = sp.result.parameterize(List(outputTypeWrapped.typeFull)).typeFull
+
   def defnServer: Stat = {
-    q"def $nameTerm(ctx: C, ..$signature): Result[${outputType.typeFull}]"
+    q"def $nameTerm(ctx: C, ..$signature): $result"
   }
 
   def defnClient: Stat = {
-    q"def $nameTerm(..$signature): Result[${outputType.typeFull}]"
+    q"def $nameTerm(..$signature): $result"
   }
 
   def defnWrapped: Stat = {
-    q"def $nameTerm(ctx: C, ..$wrappedSignature): Result[${outputTypeWrapped.typeFull}]"
+    q"def $nameTerm(ctx: C, ..$wrappedSignature): $resultWrapped"
   }
 
   def bodyServer: Stat = {
@@ -66,7 +74,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
         q"result"
     }
 
-    q"""def $nameTerm(ctx: C, ..$wrappedSignature): Result[${outputTypeWrapped.typeFull}] = {
+    q"""def $nameTerm(ctx: C, ..$wrappedSignature): $resultWrapped = {
              assert(input != null)
              val result = service.$nameTerm(ctx, ..$sig)
              $output
@@ -89,7 +97,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
         q"o"
     }
 
-    q"""def $nameTerm(..$signature): Result[${outputType.typeFull}] = {
+    q"""def $nameTerm(..$signature): $result = {
              val packed = ${inputTypeWrapped.termFull}(..$sig)
              val dispatched = dispatcher.dispatch(packed)
              _ServiceResult.map(dispatched) {

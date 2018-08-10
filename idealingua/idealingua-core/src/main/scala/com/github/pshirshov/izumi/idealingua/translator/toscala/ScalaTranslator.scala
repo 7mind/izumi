@@ -413,10 +413,10 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
       with IRTGeneratedUnpackingDispatcher[C, R, ${sp.serviceInputBase.typeFull}, ${sp.serviceOutputBase.typeFull}] {
     def service: ${sp.svcTpe.typeFull}[R, C]
 
-    def dispatch(input: IRTInContext[${sp.serviceInputBase.typeFull}, C]): Result[${sp.serviceOutputBase.typeFull}] = {
+    def dispatch(input: IRTInContext[${sp.serviceInputBase.typeFull}, C]): ${sp.dispatcherResult} = {
       input match {
         ..case $dispatchers
-               }
+      }
     }
 
     def identifier: IRTServiceId = serviceId
@@ -459,7 +459,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
 
              import IRTResult._
 
-             override def dispatch(input: ${sp.serviceInputBase.typeFull}): Result[${sp.serviceOutputBase.typeFull}] = {
+             override def dispatch(input: ${sp.serviceInputBase.typeFull}): ${sp.dispatcherResult} = {
                dispatcher.dispatch(IRTMuxRequest(input : Product, toMethodId(input))).map {
                  case IRTMuxResponse(t: ${sp.serviceOutputBase.typeFull}, _) =>
                    t
