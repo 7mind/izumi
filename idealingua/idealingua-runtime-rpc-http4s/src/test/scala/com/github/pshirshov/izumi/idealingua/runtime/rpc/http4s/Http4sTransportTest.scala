@@ -17,7 +17,7 @@ import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
 
-import scala.language.{higherKinds, reflectiveCalls}
+import scala.language.reflectiveCalls
 
 
 class Http4sTransportTest extends WordSpec {
@@ -54,21 +54,27 @@ class Http4sTransportTest extends WordSpec {
 
     assert(ZIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
     assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
-//    assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
-//    assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
-//
-//    val missingHandler = intercept[IRTHttpFailureException] {
-//      greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync()
-//    }
-//    assert(missingHandler.status == Status.NotFound)
-//
-//    clientDispatcher.cancelCredentials()
-//
-//    val unauthorized = intercept[IRTHttpFailureException] {
-//      calculatorClient.sum(403, 0).unsafeRunSync()
-//    }
-//    assert(unauthorized.status == Status.Forbidden)
+    //    assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
+    //    assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
+    //
+    //    val missingHandler = intercept[IRTHttpFailureException] {
+    //      greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync()
+    //    }
+    //    assert(missingHandler.status == Status.NotFound)
+    //
+    clientDispatcher.cancelCredentials()
+    val forbidden = intercept[IRTUnexpectedHttpStatus] {
+      ZIOR.unsafeRun(greeterClient.alternative())
+    }
+    assert(forbidden.status == Status.Forbidden)
+
+    clientDispatcher.setupCredentials("user", "badpass")
+    val unauthorized = intercept[IRTUnexpectedHttpStatus] {
+      ZIOR.unsafeRun(greeterClient.alternative())
+    }
+    assert(unauthorized.status == Status.Unauthorized)
     ()
+
   }
 }
 
@@ -94,11 +100,11 @@ object Http4sTransportTest {
                 if (user == "user" && pass == "pass") {
                   method.invoke(ctx, input)
                 } else {
-                  zio.IO.terminate(IRTBadCredentialsException())
+                  zio.IO.terminate(IRTBadCredentialsException(Status.Unauthorized))
                 }
 
               case _ =>
-                zio.IO.terminate(IRTNoCredentialsException())
+                zio.IO.terminate(IRTNoCredentialsException(Status.Forbidden))
             }
           }
         }

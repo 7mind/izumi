@@ -3,12 +3,13 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTTransportException
 import org.http4s.Status
 
-case class IRTHttpFailureException(
+abstract class IRTHttpFailureException(
                                     message: String
-                                    , status: Status
+                                    , val status: Status
                                     , cause: Option[Throwable] = None
                                   ) extends RuntimeException(message, cause.orNull) with IRTTransportException
 
 
-case class IRTNoCredentialsException() extends RuntimeException("", null) with IRTTransportException
-case class IRTBadCredentialsException() extends RuntimeException("", null) with IRTTransportException
+case class IRTUnexpectedHttpStatus(override val status: Status) extends IRTHttpFailureException(s"Unexpected http status: $status", status)
+case class IRTNoCredentialsException(override val status: Status) extends IRTHttpFailureException("No valid credentials", status)
+case class IRTBadCredentialsException(override val status: Status) extends IRTHttpFailureException("No valid credentials", status)

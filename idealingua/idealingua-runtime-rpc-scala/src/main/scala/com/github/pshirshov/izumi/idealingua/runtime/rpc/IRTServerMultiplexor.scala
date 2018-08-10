@@ -1,9 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-import scalaz.zio.IO
-
-import scala.language.higherKinds
-import scala.reflect.ClassTag
 
 // addressing
 final case class IRTServiceId(value: String) extends AnyVal {

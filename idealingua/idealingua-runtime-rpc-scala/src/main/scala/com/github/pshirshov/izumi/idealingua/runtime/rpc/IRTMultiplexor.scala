@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-import io.circe.{Json, ParsingFailure}
+import io.circe.ParsingFailure
 import io.circe.parser._
 import scalaz.zio.IO
 

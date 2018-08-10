@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.r2.idealingua.test.generated._
 import scalaz.zio.IO
 
-import scala.language.higherKinds
 
 trait AbstractGreeterServer[C] extends GreeterServiceServer[C] with IRTResult with IRTZioResult {
   override def greet(ctx: C, name: String, surname: String): Just[String] = just {

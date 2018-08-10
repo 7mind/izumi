@@ -1,15 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import cats.effect.IO
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
+import fs2.Stream
 import org.http4s._
 import org.http4s.client._
 import org.http4s.client.blaze._
-import cats.implicits._
-import fs2.Stream
 import scalaz.zio.ExitResult
-
-import scala.language.higherKinds
 
 trait WithHttp4sClient {
   this: Http4sContext =>
@@ -69,7 +65,7 @@ trait WithHttp4sClient {
               }
           }
       } else {
-        CIO.raiseError(IRTHttpFailureException(s"Unexpected HTTP status: ${resp.status}", resp.status, None))
+        CIO.raiseError(IRTUnexpectedHttpStatus(resp.status))
       }
     }
 

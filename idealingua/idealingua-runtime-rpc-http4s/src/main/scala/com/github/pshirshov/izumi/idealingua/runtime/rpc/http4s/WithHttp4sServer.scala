@@ -4,9 +4,8 @@ import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
-import scalaz.zio.{ExitResult, IO, RTS}
+import scalaz.zio.ExitResult
 
-import scala.language.higherKinds
 
 trait WithHttp4sServer {
   this: Http4sContext with WithHttp4sLoggingMiddleware =>
@@ -46,13 +45,14 @@ trait WithHttp4sServer {
           ZIOR.unsafeRunSync(value) match {
             case ExitResult.Completed(v) =>
               dsl.Ok(v)
+
             case ExitResult.Failed(error, defects) =>
-              logger.warn(s"Failure while handling $request: $error")
-              dsl.InternalServerError()
+              handleError(request, List(error))
+
             case ExitResult.Terminated(causes) =>
-              logger.warn(s"Termination while handling $request: ${causes.head}")
-              dsl.InternalServerError()
+              handleError(request, causes)
           }
+
         case Right(None) =>
           logger.trace(s"No handler for $request")
           dsl.NotFound()
@@ -61,6 +61,16 @@ trait WithHttp4sServer {
           logger.trace(s"Parsing failure while handling $request: $e")
           dsl.BadRequest()
 
+      }
+    }
+
+    private def handleError(request: AuthedRequest[CIO, Ctx], causes: List[Throwable]): CIO[Response[CIO]] = {
+      causes.head match {
+        case e: IRTHttpFailureException =>
+          CIO.pure(Response(status = e.status))
+        case e =>
+          logger.warn(s"Termination while handling $request: ${causes.head}")
+          dsl.InternalServerError()
       }
     }
 
@@ -130,6 +140,7 @@ trait WithHttp4sServer {
     //      }
     //    }
   }
+
 
 
 }

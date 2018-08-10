@@ -6,7 +6,6 @@ import org.http4s._
 import org.http4s.dsl._
 import scalaz.zio.{IO, RTS}
 
-import scala.language.higherKinds
 
 object ZIOR extends RTS {
   override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = _ => IO.sync(())

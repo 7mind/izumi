@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import org.http4s._
 
-import scala.language.higherKinds
 
 trait WithHttp4sLoggingMiddleware {
   this: Http4sContext =>
