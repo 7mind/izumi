@@ -33,6 +33,8 @@ addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-idealingua" % izumi_version)
 You can use izumi's `BOM` definitions to import (it comes with the [`sbt-izumi-deps` plugin](sbt/00_sbt.md#bills-of-materials)). BOM will insert the correct version automatically:
 
 ```scala
+import com.github.pshirshov.izumi.sbt.deps.IzumiDeps.Izumi
+
 libraryDependencies ++= Seq(
   
   // distage

@@ -238,6 +238,8 @@ addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi-deps" % izumi_version)
 You can use it like this:
 
 ```scala
+import com.github.pshirshov.izumi.sbt.deps.IzumiDeps.Izumi
+
 libraryDependencies += Izumi.R.distage_core // Import an izumi library
 libraryDependencies += Izumi.D.cats_effect // Import an izumi dependency
 ```
