@@ -28,35 +28,38 @@ trait WithHttp4sServer {
     }
 
     protected def handler(): PartialFunction[AuthedRequest[CIO, Ctx], CIO[Response[CIO]]] = {
-      case GET -> Root / service / method as ctx =>
+      case request@GET -> Root / service / method as ctx =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
-        run("{}", ctx, methodId)
+        run(request, "{}", ctx, methodId)
 
       case request@POST -> Root / service / method as ctx =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         request.req.decode[String] {
           body =>
-            run(body, ctx, methodId)
+            run(request, body, ctx, methodId)
         }
     }
 
-    protected def run(body: String, context: Ctx, toInvoke: IRTMethodId): CIO[Response[CIO]] = {
-
-
+    protected def run(request: AuthedRequest[CIO, Ctx] , body: String, context: Ctx, toInvoke: IRTMethodId): CIO[Response[CIO]] = {
       muxer.doInvoke(body, context, toInvoke) match {
         case Right(Some(value)) =>
           ZIOR.unsafeRunSync(value) match {
             case ExitResult.Completed(v) =>
               dsl.Ok(v)
             case ExitResult.Failed(error, defects) =>
+              logger.warn(s"Failure while handling $request: $error")
               dsl.InternalServerError()
             case ExitResult.Terminated(causes) =>
+              logger.warn(s"Termination while handling $request: ${causes.head}")
               dsl.InternalServerError()
           }
         case Right(None) =>
+          logger.trace(s"No handler for $request")
           dsl.NotFound()
+
         case Left(e) =>
-          dsl.InternalServerError()
+          logger.trace(s"Parsing failure while handling $request: $e")
+          dsl.BadRequest()
 
       }
     }

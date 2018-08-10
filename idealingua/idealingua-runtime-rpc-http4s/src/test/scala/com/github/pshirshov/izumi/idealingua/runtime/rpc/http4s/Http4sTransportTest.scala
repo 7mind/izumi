@@ -2,23 +2,20 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import java.util.concurrent.atomic.AtomicReference
 
-import cats._
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
-import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceServerWrapped
+import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceServerWrapped}
 import com.github.pshirshov.izumi.r2.idealingua.test.impls._
 import org.http4s._
-import org.http4s.dsl._
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
-import _root_.io.circe.Json
 
 import scala.language.{higherKinds, reflectiveCalls}
 
@@ -54,7 +51,9 @@ class Http4sTransportTest extends WordSpec {
 
   private def performTests(): Unit = {
     clientDispatcher.setupCredentials("user", "pass")
-//    assert(greeterClient.greet("John", "Smith").unsafeRunSync() == "Hi, John Smith!")
+
+    assert(ZIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
+    assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
 //    assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
 //    assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
 //
@@ -137,7 +136,7 @@ object Http4sTransportTest {
           OptionT.liftF(IO(context))
       }
 
-    final val logger = IzLogger.basic(Log.Level.Info)
+    final val logger = IzLogger.basic(Log.Level.Trace)
     StaticLogRouter.instance.setup(logger.receiver)
     final val rt = new Http4sRuntime(logger)
     final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser))
@@ -160,7 +159,7 @@ object Http4sTransportTest {
       }
     }
 
-    //final val greeterClient = GreeterServiceWrapped.clientUnsafe(clientDispatcher)
+    final val greeterClient = new GreeterServiceClientWrapped(clientDispatcher)
   }
 
 }

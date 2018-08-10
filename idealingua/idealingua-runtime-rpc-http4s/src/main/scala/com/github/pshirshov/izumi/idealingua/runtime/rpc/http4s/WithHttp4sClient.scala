@@ -17,7 +17,7 @@ trait WithHttp4sClient {
   //  protected def clientMarshallers: IRTClientMarshallers
   //
   class ClientDispatcher(baseUri: Uri, codec: IRTCodec)
-    extends IRTZioResult {
+    extends Dispatcher with IRTZioResult {
 
     private val client: CIO[Client[CIO]] = Http1Client[CIO]()
 

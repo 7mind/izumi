@@ -8,6 +8,10 @@ import scalaz.zio.{IO, RTS}
 
 import scala.language.higherKinds
 
+object ZIOR extends RTS {
+  override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = _ => IO.sync(())
+}
+
 trait Http4sContext {
   type CIO[T] = cats.effect.IO[T]
   val CIO: effect.IO.type = cats.effect.IO
@@ -21,7 +25,5 @@ trait Http4sContext {
 
   protected def logger: IzLogger
 
-  object ZIOR extends RTS {
-    override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = _ => IO.sync(())
-  }
+
 }
