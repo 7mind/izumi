@@ -4,7 +4,9 @@ import io.circe.ParsingFailure
 import io.circe.parser._
 import scalaz.zio.IO
 
-class IRTCodec(codecs: Map[IRTMethodId, IRTMarshaller]) extends IRTZioResult {
+class IRTCodec(clients: Set[IRTWrappedClient]) extends IRTZioResult {
+  val codecs: Map[IRTMethodId, IRTMarshaller] = clients.flatMap(_.allCodecs).toMap
+
   def encode(input: IRTMuxRequest[Product]): IO[Throwable, String] = {
     codecs.get(input.method) match {
       case Some(marshaller) =>
@@ -34,51 +36,28 @@ class IRTCodec(codecs: Map[IRTMethodId, IRTMarshaller]) extends IRTZioResult {
   }
 }
 
-object IRTCodec {
-  def make(services: Map[IRTServiceId, IRTWrappedService[_]]): IRTCodec = {
-    new IRTCodec(services.values.flatMap(_.allCodecs).toMap)
-  }
-}
-
 class IRTMultiplexor[C](list: Set[IRTWrappedService[C]]) extends IRTZioResult {
   val services: Map[IRTServiceId, IRTWrappedService[C]] = list.map(s => s.serviceId -> s).toMap
 
 
   def doInvoke(body: String, context: C, toInvoke: IRTMethodId): Either[ParsingFailure, Option[IO[Throwable, String]]] = {
-    val invoked =
-      _root_.io.circe.parser.parse(body).map {
-        parsed =>
-
-          val handlers = for {
-            service <- services.get(toInvoke.service)
-            codec <- service.allCodecs.get(toInvoke)
-            method <- service.allMethods.get(toInvoke)
-          } yield {
-            (codec, method)
-          }
-
-          handlers.map {
-            case (codec, method) =>
-              codec.decodeRequest
-                .apply(IRTRawCall(toInvoke, parsed))
-                .flatMap {
-                  request =>
-                    IO.syncThrowable(request.value.asInstanceOf[method.Input])
-                }
-                .flatMap {
-                  request =>
-                    IO.syncThrowable(method.invoke(context, request))
-                }
-                .flatMap {
-                  v =>
-                    v
-                }
-                .flatMap {
-                  output =>
-                    IO.syncThrowable(codec.encodeResponse.apply(IRTResBody(output)).noSpaces)
-                }
-          }
+    for {
+      parsed <- _root_.io.circe.parser.parse(body)
+    } yield {
+      for {
+        service <- services.get(toInvoke.service)
+        method <- service.allMethods.get(toInvoke)
+      } yield {
+        for {
+          decoded <- method.marshaller.decodeRequest(IRTRawCall(toInvoke, parsed))
+          casted <- IO.syncThrowable(decoded.value.asInstanceOf[method.signature.Input])
+          result <- IO.syncThrowable(method.invoke(context, casted))
+          safeResult <- result
+          encoded <- IO.syncThrowable(method.marshaller.encodeResponse(IRTResBody(safeResult)).noSpaces)
+        } yield {
+          encoded
+        }
       }
-    invoked
+    }
   }
 }

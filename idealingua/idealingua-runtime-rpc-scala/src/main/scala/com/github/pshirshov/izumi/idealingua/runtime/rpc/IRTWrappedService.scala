@@ -4,6 +4,4 @@ trait IRTWrappedService[C] {
   def serviceId: IRTServiceId
 
   def allMethods: Map[IRTMethodId, IRTMethodWrapper[C]]
-
-  def allCodecs: Map[IRTMethodId, IRTMarshaller]
 }

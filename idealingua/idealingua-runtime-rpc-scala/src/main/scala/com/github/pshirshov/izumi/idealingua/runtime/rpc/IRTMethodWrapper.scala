@@ -3,14 +3,23 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 import io.circe.{DecodingFailure, Json}
 import scalaz.zio.IO
 
-trait IRTMethodWrapper[C] extends IRTZioResult {
+trait IRTMethodSignature extends IRTZioResult {
   type Input <: Product
   type Output <: Product
 
   def id: IRTMethodId
-
-  def invoke(ctx: C, input: Input): Just[Output]
 }
+
+
+
+abstract class IRTMethodWrapper[C]() extends IRTZioResult {
+  val signature: IRTMethodSignature
+  val marshaller: IRTMarshaller
+
+  def invoke(ctx: C, input: signature.Input): Just[signature.Output]
+}
+
+
 
 trait IRTMarshaller extends IRTZioResult {
   def encodeRequest: PartialFunction[IRTReqBody, Json]

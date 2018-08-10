@@ -89,16 +89,15 @@ object Http4sTransportTest {
     override def allMethods: Map[IRTMethodId, IRTMethodWrapper[Ctx]] = proxied.allMethods.mapValues {
       method =>
         new IRTMethodWrapper[Ctx] {
-          override type Input = method.Input
-          override type Output = method.Output
 
-          override def id: IRTMethodId = method.id
+          override val signature: IRTMethodSignature = method.signature
+          override val marshaller: IRTMarshaller = method.marshaller
 
-          override def invoke(ctx: Ctx, input: Input): zio.IO[Nothing, Output] = {
+          override def invoke(ctx: Ctx, input: signature.Input): zio.IO[Nothing, signature.Output] = {
             ctx match {
               case DummyContext(_, Some(BasicCredentials(user, pass))) =>
                 if (user == "user" && pass == "pass") {
-                  method.invoke(ctx, input)
+                  method.invoke(ctx, input.asInstanceOf[method.signature.Input]).map(_.asInstanceOf[signature.Output])
                 } else {
                   zio.IO.terminate(IRTBadCredentialsException(Status.Unauthorized))
                 }
@@ -109,15 +108,14 @@ object Http4sTransportTest {
           }
         }
     }
-
-    override def allCodecs: Map[IRTMethodId, IRTMarshaller] = proxied.allCodecs
   }
 
   class DemoContext[Ctx] {
     private val greeterService = new AbstractGreeterServer.Impl[Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
     private val dispatchers: Set[IRTWrappedService[Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
-
+    private val clients: Set[IRTWrappedClient] = Set(GreeterServiceClientWrapped)
+    val codec = new IRTCodec(clients)
     val multiplexor = new IRTMultiplexor[Ctx](dispatchers)
   }
 
@@ -148,8 +146,7 @@ object Http4sTransportTest {
     final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser))
 
     //
-    val codec: IRTCodec = IRTCodec.make(demo.multiplexor.services)
-    final val clientDispatcher = new rt.ClientDispatcher(baseUri, codec) {
+    final val clientDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) {
       val creds = new AtomicReference[Seq[Header]](Seq.empty)
 
       def setupCredentials(login: String, password: String): Unit = {
