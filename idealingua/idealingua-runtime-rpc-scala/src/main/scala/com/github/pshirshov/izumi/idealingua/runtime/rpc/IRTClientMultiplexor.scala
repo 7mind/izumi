@@ -3,7 +3,8 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 import io.circe.parser.parse
 import scalaz.zio.IO
 
-class IRTClientMultiplexor(clients: Set[IRTWrappedClient]) extends IRTZioResult {
+class IRTClientMultiplexor(clients: Set[IRTWrappedClient])
+  extends IRTZioResult {
   val codecs: Map[IRTMethodId, IRTMarshaller] = clients.flatMap(_.allCodecs).toMap
 
   def encode(input: IRTMuxRequest[Product]): IO[Throwable, String] = {

@@ -7,7 +7,10 @@ import io.circe.generic.semiauto._
 import io.circe.syntax._
 import scalaz.zio.{ExitResult, IO, RTS}
 
-trait GreeterServiceClient extends IRTResult {
+import scala.language.higherKinds
+
+trait GreeterServiceClient[R[_, _]]
+  extends IRTResult[R] {
   def greet(name: String, surname: String): Just[String]
 
   def sayhi(): Just[String]
@@ -17,7 +20,8 @@ trait GreeterServiceClient extends IRTResult {
   def alternative(): Or[Long, String]
 }
 
-trait GreeterServiceServer[C] extends IRTResult {
+trait GreeterServiceServer[R[_, _], C]
+  extends IRTResult[R] {
   def greet(ctx: C, name: String, surname: String): Just[String]
 
   def sayhi(ctx: C): Just[String]
@@ -29,7 +33,7 @@ trait GreeterServiceServer[C] extends IRTResult {
 
 
 class GreeterServiceClientWrapped(dispatcher: Dispatcher)
-  extends GreeterServiceClient
+  extends GreeterServiceClient[IO]
     with IRTZioResult {
 
   override def greet(name: String, surname: String): IO[Nothing, String] = {
@@ -189,7 +193,7 @@ object GreeterServerMarshallers {
 
 }
 
-class GreeterServiceServerWrapped[C](service: GreeterServiceServer[C] with IRTZioResult)
+class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with IRTZioResult)
   extends IRTWrappedService[C]
     with IRTZioResult {
 
@@ -234,7 +238,7 @@ class GreeterServiceServerWrapped[C](service: GreeterServiceServer[C] with IRTZi
 
 object Test {
   def main(args: Array[String]): Unit = {
-    val greeter = new GreeterServiceServerWrapped[Unit](new impls.AbstractGreeterServer.Impl[Unit]())
+    val greeter = new GreeterServiceServerWrapped[Unit](new impls.AbstractGreeterServer1.Impl[Unit]())
     val multiplexor = new IRTServerMultiplexor[Unit](Set(greeter))
 
     val req1 = new greeter.greet.signature.Input("John", "Doe")
