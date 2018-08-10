@@ -21,7 +21,7 @@ class IRTCodec(clients: Set[IRTWrappedClient]) extends IRTZioResult {
       case Some(marshaller) =>
         IO.syncThrowable(parse(input)).flatMap {
           case Right(parsed) =>
-            marshaller.decodeResponse(IRTRawCall(method, parsed)).map {
+            marshaller.decodeResponse(IRTJsonBody(method, parsed)).map {
               body =>
                 IRTMuxResponse(body, method)
             }
@@ -49,7 +49,7 @@ class IRTMultiplexor[C](list: Set[IRTWrappedService[C]]) extends IRTZioResult {
         method <- service.allMethods.get(toInvoke)
       } yield {
         for {
-          decoded <- method.marshaller.decodeRequest(IRTRawCall(toInvoke, parsed))
+          decoded <- method.marshaller.decodeRequest(IRTJsonBody(toInvoke, parsed))
           casted <- IO.syncThrowable(decoded.value.asInstanceOf[method.signature.Input])
           result <- IO.syncThrowable(method.invoke(context, casted))
           safeResult <- result

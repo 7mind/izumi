@@ -143,13 +143,13 @@ object GreeterServerMarshallers {
       case IRTResBody(value: Output) => value.asJson
     }
 
-    override def decodeRequest: PartialFunction[IRTRawCall, Just[IRTReqBody]] = {
-      case IRTRawCall(m, packet) if m == id =>
+    override def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
+      case IRTJsonBody(m, packet) if m == id =>
         decoded(packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse: PartialFunction[IRTRawCall, Just[IRTResBody]] = {
-      case IRTRawCall(m, packet) if m == id =>
+    override def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
+      case IRTJsonBody(m, packet) if m == id =>
         decoded(packet.as[Output].map(v => IRTResBody(v)))
     }
   }
@@ -173,13 +173,13 @@ object GreeterServerMarshallers {
         out.asJson
     }
 
-    override def decodeRequest: PartialFunction[IRTRawCall, Just[IRTReqBody]] = {
-      case IRTRawCall(m, packet) if m == id =>
+    override def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
+      case IRTJsonBody(m, packet) if m == id =>
         decoded(packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse: PartialFunction[IRTRawCall, Just[IRTResBody]] = {
-      case IRTRawCall(m, packet) if m == id =>
+    override def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
+      case IRTJsonBody(m, packet) if m == id =>
         decoded(packet.as[GreeterServiceMethods.alternative.AlternativeOutput].map {
           case v: GreeterServiceMethods.alternative.AlternativeOutput.Success => IRTResBody(Right(v))
           case v: GreeterServiceMethods.alternative.AlternativeOutput.Failure => IRTResBody(Left(v))
