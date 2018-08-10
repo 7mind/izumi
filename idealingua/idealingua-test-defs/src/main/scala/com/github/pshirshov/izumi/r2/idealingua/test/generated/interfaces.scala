@@ -27,47 +27,28 @@ trait GreeterServiceServer[C] extends IRTResult {
   def alternative(ctx: C): Or[Long, String]
 }
 
-final case class IRTRawCall(methodId: IRTMethodId, body: Json)
+//class GreeterServiceClientWrapped[C]()
+//  extends GreeterServiceClient
+//    with IRTZioResult{
+//
+//  override def greet(name: String, surname: String): GreeterServiceClientWrapped.this.type = ???
+//
+//  override def sayhi(): GreeterServiceClientWrapped.this.type = ???
+//
+//  override def nothing(): GreeterServiceClientWrapped.this.type = ???
+//
+//  override def alternative(): GreeterServiceClientWrapped.this.type = ???
+//}
 
+object GreeterServiceMethods {
 
-trait Method[C] extends IRTZioResult {
-  type Input
-  type Output
-
-  def id: IRTMethodId
-
-  def invoke(ctx: C, input: Input): Just[Output]
-
-  def encodeRequest: PartialFunction[IRTReqBody, Json]
-
-  def encodeResponse: PartialFunction[IRTResBody, Json]
-
-  def decodeRequest: PartialFunction[IRTRawCall, Just[IRTReqBody]]
-
-  def decodeResponse: PartialFunction[IRTRawCall, Just[IRTResBody]]
-
-  protected def decoded[V](result: Either[DecodingFailure, V]): Just[V] = {
-    result match {
-      case Left(f) =>
-        IO.terminate(f)
-      case Right(r) =>
-        IO.point(r)
-    }
-  }
 }
 
-trait WrappedService[C] {
-  def serviceId: IRTServiceId
-
-  def allMethods: Map[IRTMethodId, Method[C]]
-}
-
-
-class GreeterServiceWrapped[C](service: GreeterServiceServer[C] with IRTZioResult)
-  extends WrappedService[C]
+class GreeterServiceServerWrapped[C](service: GreeterServiceServer[C] with IRTZioResult)
+  extends IRTWrappedService[C]
     with IRTZioResult {
 
-  object greet extends Method[C] {
+  object greet extends IRTMethodWrapper[C] with IRTMarshaller {
     val id: IRTMethodId = IRTMethodId(serviceId, IRTMethodName("greet"))
 
     case class Input(name: String, surname: String)
@@ -108,7 +89,7 @@ class GreeterServiceWrapped[C](service: GreeterServiceServer[C] with IRTZioResul
     }
   }
 
-  object alternative extends Method[C] {
+  object alternative extends IRTMethodWrapper[C] with IRTMarshaller {
     val id: IRTMethodId = IRTMethodId(serviceId, IRTMethodName("alternative"))
 
     type Output = Either[AlternativeOutput.Failure, AlternativeOutput.Success]
@@ -161,14 +142,28 @@ class GreeterServiceWrapped[C](service: GreeterServiceServer[C] with IRTZioResul
 
   val serviceId: IRTServiceId = IRTServiceId("GreeterService")
 
-  def allMethods: Map[IRTMethodId, Method[C]] = Seq(greet, alternative).map(m => m.id -> m).toMap
+  val allMethods: Map[IRTMethodId, IRTMethodWrapper[C]] = {
+    Seq(
+      greet
+      , alternative
+    )
+      .map(m => m.id -> m).toMap
+  }
+
+  val allCodecs: Map[IRTMethodId, IRTMarshaller] = {
+    Seq(
+      greet
+      , alternative
+    )
+      .map(m => m.id -> m).toMap
+  }
 }
+
 
 object Test {
   def main(args: Array[String]): Unit = {
-    val greeter = new GreeterServiceWrapped[Unit](new impls.AbstractGreeterServer.Impl[Unit]())
-    val services: Map[IRTServiceId, WrappedService[Unit]] = Seq(greeter).map(s => s.serviceId -> s).toMap
-
+    val greeter = new GreeterServiceServerWrapped[Unit](new impls.AbstractGreeterServer.Impl[Unit]())
+    val multiplexor = new IRTMultiplexor[Unit](Set(greeter))
 
     val req1 = new greeter.greet.Input("John", "Doe")
     val json1 = req1.asJson.noSpaces
@@ -181,7 +176,7 @@ object Test {
     val toInvoke = greeter.greet.id
 
 
-    val invoked = doInvoke(services, json1, toInvoke)
+    val invoked = multiplexor.doInvoke(json1, (), toInvoke)
 
     object io extends RTS {
       override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = _ => IO.sync(())
@@ -204,31 +199,5 @@ object Test {
     }
   }
 
-  private def doInvoke(services: Map[IRTServiceId, WrappedService[Unit]], json1: String, toInvoke: IRTMethodId) = {
-    val invoked =
-      _root_.io.circe.parser.parse(json1).map {
-        parsed =>
-          services
-            .get(toInvoke.service)
-            .flatMap(_.allMethods.get(toInvoke))
-            .map {
-              method =>
-                method.decodeRequest
-                  .apply(IRTRawCall(toInvoke, parsed))
-                  .flatMap {
-                    request =>
-                      IO.syncThrowable(request.value.asInstanceOf[method.Input])
-                  }
-                  .flatMap {
-                    request =>
-                      IO.syncThrowable(method.invoke((), request))
-                  }
-                  .flatMap {
-                    v =>
-                      v
-                  }
-            }
-      }
-    invoked
-  }
+
 }

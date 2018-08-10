@@ -303,35 +303,28 @@ lazy val fastparseShaded = inShade.as.module
 lazy val idealinguaModel = inIdealingua.as.module
   .settings()
 
-lazy val idealinguaRuntimeRpc = inIdealingua.as.module
-  .settings(libraryDependencies ++= R.zio)
+lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
+  .settings(libraryDependencies ++= Seq(R.circe, R.zio, R.cats_all).flatten)
 
-lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpc, idealinguaRuntimeRpcCirce)
+lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScala)
 
 lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect % scalaVersion.value, R.scalameta) ++ Seq(R.scala_compiler % scalaVersion.value % "test"))
-  .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded, idealinguaRuntimeRpcTypescript, idealinguaRuntimeRpcGo, idealinguaRuntimeRpcCSharp)
+  .depends(
+    idealinguaModel
+    , fastparseShaded
+    , idealinguaRuntimeRpcScala
+    , idealinguaRuntimeRpcTypescript
+    , idealinguaRuntimeRpcGo
+    , idealinguaRuntimeRpcCSharp
+  )
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(ShadingSettings)
 
-
-lazy val idealinguaRuntimeRpcCirce = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpc)
-  .settings(libraryDependencies ++= R.circe)
-
-lazy val idealinguaRuntimeRpcCats = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpc)
-  .settings(libraryDependencies ++= R.cats_all)
-
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats, logstageApiLogger, logstageAdapterSlf4j)
+  .depends(idealinguaRuntimeRpcScala, logstageApiLogger, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(libraryDependencies ++= R.http4s_all)
-
-lazy val idealinguaExtensionRpcFormatCirce = inIdealingua.as.module
-  .depends(idealinguaCore, idealinguaRuntimeRpcCirce)
-  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
-
 
 lazy val idealinguaRuntimeRpcTypescript = inIdealingua.as.module
 
@@ -341,7 +334,7 @@ lazy val idealinguaRuntimeRpcGo = inIdealingua.as.module
 
 
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
-  .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce, idealinguaRuntimeRpcTypescript, idealinguaRuntimeRpcGo, idealinguaRuntimeRpcCSharp)
+  .depends(idealinguaCore)
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
@@ -360,7 +353,7 @@ lazy val sbtIzumiDeps = inSbt.as
 
 lazy val sbtIdealingua = inSbt.as
   .module
-  .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce)
+  .depends(idealinguaCore)
 
 lazy val sbtTests = inSbt.as
   .module
@@ -381,9 +374,6 @@ lazy val distage: Seq[ProjectReference] = Seq(
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
   , idealinguaRuntimeRpcHttp4s
-  , idealinguaRuntimeRpcCats
-  , idealinguaRuntimeRpcCirce
-  , idealinguaExtensionRpcFormatCirce
   , idealinguaCompiler
 )
 lazy val izsbt: Seq[ProjectReference] = Seq(

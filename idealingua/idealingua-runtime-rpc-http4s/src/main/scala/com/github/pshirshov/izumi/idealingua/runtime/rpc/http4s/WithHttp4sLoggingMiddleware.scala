@@ -4,12 +4,12 @@ import org.http4s._
 
 import scala.language.higherKinds
 
-trait WithHttp4sLoggingMiddleware[R[_]] {
-  this: Http4sContext[R] =>
+trait WithHttp4sLoggingMiddleware {
+  this: Http4sContext =>
 
 
-  protected def loggingMiddle(service: HttpRoutes[R]): HttpRoutes[R] = cats.data.Kleisli {
-    req: Request[R] =>
+  protected def loggingMiddle(service: HttpRoutes[CIO]): HttpRoutes[CIO] = cats.data.Kleisli {
+    req: Request[CIO] =>
       logger.trace(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}")
 
       try {
