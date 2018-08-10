@@ -62,13 +62,12 @@ object IzumiDeps {
 
     val typesafe_config = "com.typesafe" % "config" % V.typesafe_config
 
-    val cats_kernel = "org.typelevel" %% "cats-kernel" % V.cats
+    val cats_core = "org.typelevel" %% "cats-core" % V.cats
+    val cats_effect = "org.typelevel" %% "cats-effect" % V.cats_effect
     val cats_all: Seq[ModuleID] = Seq(
-      "org.typelevel" %% "cats-core"
-    ).map(_ % V.cats) ++ Seq(
-      "org.typelevel" %% "cats-effect"
-    ).map(_ % V.cats_effect)
-
+      cats_core
+      , cats_effect
+    )
 
     val scalameta = "org.scalameta" %% "scalameta" % V.scalameta
 
