@@ -2,8 +2,6 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import scalaz.zio.IO
 
-import scala.language.higherKinds
-
 
 trait IRTZioResult extends IRTResult {
   type Or[E, V] = IO[E, V]

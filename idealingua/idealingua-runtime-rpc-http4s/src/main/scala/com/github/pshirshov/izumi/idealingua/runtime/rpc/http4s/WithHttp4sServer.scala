@@ -13,7 +13,7 @@ trait WithHttp4sServer {
   //  protected def serverMarshallers: IRTServerMarshallers
 
   class HttpServer[Ctx](
-                         protected val muxer: IRTMultiplexor[Ctx]
+                         protected val muxer: IRTServerMultiplexor[Ctx]
                          , protected val contextProvider: AuthMiddleware[CIO, Ctx]
                        ) {
     protected val dsl: Http4sDsl[CIO] = WithHttp4sServer.this.dsl
