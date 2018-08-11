@@ -73,8 +73,8 @@ class GreeterServiceClientWrapped(dispatcher: Dispatcher)
 
 }
 
-object GreeterServiceClientWrapped extends IRTWrappedClient {
-  val allCodecs: Map[IRTMethodId, IRTMarshaller] = {
+object GreeterServiceClientWrapped extends IRTWrappedClient[IO] {
+  val allCodecs: Map[IRTMethodId, IRTMarshaller[IO]] = {
     Map(
       GreeterServiceMethods.greet.id -> GreeterServerMarshallers.greet
       , GreeterServiceMethods.alternative.id -> GreeterServerMarshallers.alternative
@@ -134,7 +134,7 @@ object GreeterServiceMethods {
 
 object GreeterServerMarshallers {
 
-  object greet extends IRTMarshaller {
+  object greet extends IRTMarshaller[IO] with IRTZioResult {
 
     import GreeterServiceMethods.greet._
 
@@ -158,7 +158,7 @@ object GreeterServerMarshallers {
     }
   }
 
-  object alternative extends IRTMarshaller {
+  object alternative extends IRTMarshaller[IO] with IRTZioResult {
 
     import GreeterServiceMethods.alternative._
 
@@ -194,10 +194,10 @@ object GreeterServerMarshallers {
 }
 
 class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with IRTZioResult)
-  extends IRTWrappedService[C]
+  extends IRTWrappedService[IO, C]
     with IRTZioResult {
 
-  object greet extends IRTMethodWrapper[C] {
+  object greet extends IRTMethodWrapper[IO, C] with IRTZioResult {
 
     import GreeterServiceMethods.greet._
 
@@ -210,7 +210,7 @@ class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with I
     }
   }
 
-  object alternative extends IRTMethodWrapper[C] {
+  object alternative extends IRTMethodWrapper[IO, C] with IRTZioResult {
 
     import GreeterServiceMethods.alternative._
 
@@ -226,7 +226,7 @@ class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with I
 
   override def serviceId: IRTServiceId = GreeterServiceMethods.serviceId
 
-  val allMethods: Map[IRTMethodId, IRTMethodWrapper[C]] = {
+  val allMethods: Map[IRTMethodId, IRTMethodWrapper[IO, C]] = {
     Seq(
       greet
       , alternative

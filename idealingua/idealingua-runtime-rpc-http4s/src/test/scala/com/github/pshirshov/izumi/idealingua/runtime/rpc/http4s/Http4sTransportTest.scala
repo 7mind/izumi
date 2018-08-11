@@ -83,15 +83,15 @@ object Http4sTransportTest {
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
 
-  final class AuthCheckDispatcher2[Ctx](proxied: IRTWrappedService[Ctx]) extends IRTWrappedService[Ctx] {
+  final class AuthCheckDispatcher2[Ctx](proxied: IRTWrappedService[zio.IO, Ctx]) extends IRTWrappedService[zio.IO, Ctx] {
     override def serviceId: IRTServiceId = proxied.serviceId
 
-    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[Ctx]] = proxied.allMethods.mapValues {
+    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[zio.IO, Ctx]] = proxied.allMethods.mapValues {
       method =>
-        new IRTMethodWrapper[Ctx] {
+        new IRTMethodWrapper[zio.IO, Ctx] with IRTZioResult {
 
           override val signature: IRTMethodSignature = method.signature
-          override val marshaller: IRTMarshaller = method.marshaller
+          override val marshaller: IRTMarshaller[zio.IO] = method.marshaller
 
           override def invoke(ctx: Ctx, input: signature.Input): zio.IO[Nothing, signature.Output] = {
             ctx match {
@@ -113,8 +113,8 @@ object Http4sTransportTest {
   class DemoContext[Ctx] {
     private val greeterService = new AbstractGreeterServer1.Impl[Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
-    private val dispatchers: Set[IRTWrappedService[Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
-    private val clients: Set[IRTWrappedClient] = Set(GreeterServiceClientWrapped)
+    private val dispatchers: Set[IRTWrappedService[zio.IO, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
+    private val clients: Set[IRTWrappedClient[zio.IO]] = Set(GreeterServiceClientWrapped)
     val codec = new IRTClientMultiplexor(clients)
     val multiplexor = new IRTServerMultiplexor[Ctx](dispatchers)
   }

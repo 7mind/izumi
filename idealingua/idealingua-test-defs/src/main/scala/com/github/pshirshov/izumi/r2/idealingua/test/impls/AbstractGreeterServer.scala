@@ -64,6 +64,8 @@ object AbstractGreeterServer2 {
 
   class Impl[C] extends AbstractGreeterServer2[EitherT[cats.effect.IO, ?, ?], C] {
 
+    override def stop[V](v: => Throwable): Just[V] = ME[Nothing].point(throw v)
+
     protected def ME[E]: MonadError[Or[E, ?], E] = implicitly
 
     def choice[E, V](v: => Either[E, V]): Or[E, V] = v match {

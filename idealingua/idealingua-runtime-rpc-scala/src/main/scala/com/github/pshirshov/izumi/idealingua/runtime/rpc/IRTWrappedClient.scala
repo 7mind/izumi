@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-trait IRTWrappedClient {
-  def allCodecs: Map[IRTMethodId, IRTMarshaller]
+import scala.language.higherKinds
 
+trait IRTWrappedClient[R[_, _]] {
+  def allCodecs: Map[IRTMethodId, IRTMarshaller[R]]
 }

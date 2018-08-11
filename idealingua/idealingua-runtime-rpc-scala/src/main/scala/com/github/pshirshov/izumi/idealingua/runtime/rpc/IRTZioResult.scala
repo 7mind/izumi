@@ -5,17 +5,19 @@ import scalaz.zio.IO
 
 import scala.language.higherKinds
 
-trait IRTZioableResult[R[_, _]] extends IRTResult[R] {
-  implicit def conv[E]: FunctionK[R[E, ?], IO[E, ?]]
+trait IRTResultTransZio[R[_, _]] extends IRTResult[R] {
+  def toZio[E]: FunctionK[R[E, ?], IO[E, ?]]
 }
 
 
-trait IRTZioResult extends IRTZioableResult[IO] {
-  def choice[L, R](v: => Either[L, R]): Or[L, R] = IO.fromEither(v)
+trait IRTZioResult extends IRTResultTransZio[IO] {
+  @inline def choice[L, R](v: => Either[L, R]): Or[L, R] = IO.fromEither(v)
 
-  def just[R](v: => R): Just[R] = IO.point(v)
+  @inline def just[R](v: => R): Just[R] = IO.point(v)
 
-  override implicit def conv[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id
+  @inline def stop[R](v: => Throwable): Just[R] = IO.terminate(v)
+
+  override def toZio[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id
 }
 
 

@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-trait IRTWrappedService[C] {
+import scala.language.higherKinds
+
+trait IRTWrappedService[R[_, _], C] {
   def serviceId: IRTServiceId
 
-  def allMethods: Map[IRTMethodId, IRTMethodWrapper[C]]
+  def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, C]]
 }
