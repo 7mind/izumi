@@ -239,7 +239,7 @@ class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with I
 object Test {
   def main(args: Array[String]): Unit = {
     val greeter = new GreeterServiceServerWrapped[Unit](new impls.AbstractGreeterServer1.Impl[Unit]())
-    val multiplexor = new IRTServerMultiplexor[Unit](Set(greeter))
+    val multiplexor = new IRTServerMultiplexor[IO, Unit](Set(greeter))
 
     val req1 = new greeter.greet.signature.Input("John", "Doe")
     val json1 = req1.asJson.noSpaces

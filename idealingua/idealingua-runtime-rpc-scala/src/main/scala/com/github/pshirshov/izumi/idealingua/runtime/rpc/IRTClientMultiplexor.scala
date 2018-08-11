@@ -3,9 +3,11 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 import io.circe.parser.parse
 import scalaz.zio.IO
 
-class IRTClientMultiplexor(clients: Set[IRTWrappedClient[IO]])
+import scala.language.higherKinds
+
+class IRTClientMultiplexor[R[_, _]](clients: Set[IRTWrappedClient[R]])
   extends IRTZioResult {
-  val codecs: Map[IRTMethodId, IRTMarshaller[IO]] = clients.flatMap(_.allCodecs).toMap
+  val codecs: Map[IRTMethodId, IRTMarshaller[R]] = clients.flatMap(_.allCodecs).toMap
 
   def encode(input: IRTMuxRequest[Product]): IO[Throwable, String] = {
     codecs.get(input.method) match {
@@ -21,7 +23,7 @@ class IRTClientMultiplexor(clients: Set[IRTWrappedClient[IO]])
       case Some(marshaller) =>
         IO.syncThrowable(parse(input)).flatMap {
           case Right(parsed) =>
-            marshaller.decodeResponse(IRTJsonBody(method, parsed))
+            marshaller.toZio(marshaller.decodeResponse(IRTJsonBody(method, parsed)))
               .map {
                 body =>
                   IRTMuxResponse(body, method)

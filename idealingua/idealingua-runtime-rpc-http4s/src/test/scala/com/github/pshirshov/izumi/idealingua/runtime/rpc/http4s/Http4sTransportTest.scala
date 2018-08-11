@@ -116,7 +116,7 @@ object Http4sTransportTest {
     private val dispatchers: Set[IRTWrappedService[zio.IO, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
     private val clients: Set[IRTWrappedClient[zio.IO]] = Set(GreeterServiceClientWrapped)
     val codec = new IRTClientMultiplexor(clients)
-    val multiplexor = new IRTServerMultiplexor[Ctx](dispatchers)
+    val multiplexor = new IRTServerMultiplexor[zio.IO, Ctx](dispatchers)
   }
 
   object Http4sTestContext {
@@ -142,7 +142,7 @@ object Http4sTransportTest {
 
     final val logger = IzLogger.basic(Log.Level.Trace)
     StaticLogRouter.instance.setup(logger.receiver)
-    final val rt = new Http4sRuntime(logger)
+    final val rt = new Http4sRuntime[zio.IO](logger)
     final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser))
 
     //

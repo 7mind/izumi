@@ -10,63 +10,65 @@ import scalaz.zio.ExitResult
 trait WithHttp4sClient {
   this: Http4sContext =>
 
-  //  protected def clientMarshallers: IRTClientMarshallers
-  //
-  class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor)
+  class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor[BIO])
     extends Dispatcher with IRTZioResult {
 
     private val client: CIO[Client[CIO]] = Http1Client[CIO]()
 
-    def dispatch(input: IRTMuxRequest[Product]): ZIO[Throwable, IRTMuxResponse[Product]] = {
+    def dispatch(request: IRTMuxRequest[Product]): ZIO[Throwable, IRTMuxResponse[Product]] = {
+      logger.trace(s"${request.method -> "method"}: Goint to perform $request")
+
       codec
-        .encode(input)
+        .encode(request)
         .flatMap {
           encoded =>
             val outBytes: Array[Byte] = encoded.getBytes
             val entityBody: EntityBody[CIO] = Stream.emits(outBytes).covary[CIO]
-            val req = buildRequest(baseUri, input, entityBody)
+            val req = buildRequest(baseUri, request, entityBody)
 
-            logger.trace(s"${input.method -> "method"}: Prepared request $encoded")
+            logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
 
-            try {
-              ZIO.point(client.flatMap(_.fetch(req)(handleResponse(input, _))).unsafeRunSync())
-            } catch {
-              case t: Throwable =>
-                ZIO.terminate(t)
+            ZIO.syncThrowable {
+              client
+                .flatMap(_.fetch(req)(handleResponse(request, _)))
+                .unsafeRunSync()
             }
         }
-
     }
 
     protected def handleResponse(input: IRTMuxRequest[Product], resp: Response[CIO]): CIO[IRTMuxResponse[Product]] = {
-      logger.trace(s"${input.method -> "method"}: Received response, going to materialize")
-      if (resp.status == Status.Ok) {
-        resp
-          .as[MaterializedStream]
-          .flatMap {
-            body =>
-              logger.trace(s"${input.method -> "method"}: Received response: $body")
-              val decoded = codec.decode(body, input.method).map {
-                product =>
-                  logger.trace(s"${input.method -> "method"}: decoded response: $product")
-                  product
-              }
+      logger.trace(s"${input.method -> "method"}: Received response, going to materialize, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
 
-              ZIOR.unsafeRunSync(decoded) match {
-                case ExitResult.Completed(v) =>
-                  CIO.pure(v)
-                case ExitResult.Failed(error, defects) =>
-                  CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $error", Option(error)))
-
-                case ExitResult.Terminated(causes) =>
-                  val f = causes.head
-                  logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
-                  CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $f", Option(f)))
-              }
-          }
-      } else {
-        CIO.raiseError(IRTUnexpectedHttpStatus(resp.status))
+      if (resp.status != Status.Ok) {
+        logger.info(s"${input.method -> "method"}: unexpected HTTP response, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
+        return CIO.raiseError(IRTUnexpectedHttpStatus(resp.status))
       }
+
+      resp
+        .as[MaterializedStream]
+        .flatMap {
+          body =>
+            logger.trace(s"${input.method -> "method"}: Received response: $body")
+            val decoded = codec.decode(body, input.method).map {
+              product =>
+                logger.trace(s"${input.method -> "method"}: decoded response: $product")
+                product
+            }
+
+            ZIOR.unsafeRunSync(decoded) match {
+              case ExitResult.Completed(v) =>
+                CIO.pure(v)
+
+              case ExitResult.Failed(error, _) =>
+                logger.info(s"${input.method -> "method"}: decoder failed on $body: $error")
+                CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $error", Option(error)))
+
+              case ExitResult.Terminated(causes) =>
+                val f = causes.head
+                logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
+                CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $f", Option(f)))
+            }
+        }
     }
 
     protected final def buildRequest(baseUri: Uri, input: IRTMuxRequest[Product], body: EntityBody[CIO]): Request[CIO] = {
