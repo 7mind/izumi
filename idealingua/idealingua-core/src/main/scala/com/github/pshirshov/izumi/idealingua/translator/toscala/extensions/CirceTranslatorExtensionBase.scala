@@ -290,3 +290,21 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
 
 }
+
+/**
+  * Doesn't support sealed traits hierarchies
+  */
+object CirceDerivationTranslatorExtension extends CirceTranslatorExtensionBase {
+  override protected val classDeriverImports: List[Import] = List(
+    q""" import _root_.io.circe.derivation.{deriveDecoder, deriveEncoder} """
+  )
+}
+
+/**
+  * Slower but works for sealed traits
+  */
+object CirceGenericTranslatorExtension extends CirceTranslatorExtensionBase {
+  override protected val classDeriverImports: List[Import] = List(
+    q""" import _root_.io.circe.generic.semiauto.{deriveDecoder, deriveEncoder} """
+  )
+}

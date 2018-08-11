@@ -1,8 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package com.github.pshirshov.izumi.idealingua.translator.toscala.tools
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, SigParam, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.ConverterDef
+import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.CompositeStructure
 
 import scala.meta._
