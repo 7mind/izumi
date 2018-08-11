@@ -1,25 +1,28 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
-import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTCirceWrappedServiceDefinition, IRTMuxingCodecProvider, IRTOpinionatedMarshalers, IRTTimeInstances}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTMarshaller
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CogenServiceProduct, CompositeProduct, IdentifierProudct, InterfaceProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime.IDLRuntimeTypes
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{FullServiceContext, StructContext, runtime}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.{ClassSource, STContext}
 
 import scala.meta._
 
 trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
+
+  import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
   protected case class CirceTrait(name: String, defn: Defn.Trait)
 
   protected def classDeriverImports: List[Import]
 
 
-  private val circeRuntimePkg = runtime.Pkg.of[IRTOpinionatedMarshalers]
+  private val circeRuntimePkg = runtime.Pkg.of[IRTTimeInstances]
 
   override def handleIdentifier(ctx: STContext, id: Identifier, product: IdentifierProudct): IdentifierProudct = {
     import ctx.conv._
@@ -157,9 +160,6 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
 
   override def handleService(ctx: STContext, sCtx: FullServiceContext, product: CogenServiceProduct): CogenServiceProduct = {
-    val cp = circeRuntimePkg.conv.toScala[IRTMuxingCodecProvider]
-    val base = circeRuntimePkg.conv.toScala[IRTCirceWrappedServiceDefinition]
-
     val requestEncoders = sCtx.methods.map {
       m =>
         p"case IRTReqBody(v: ${m.inputTypeWrapped.typeFull}) => v.asJson"
@@ -186,6 +186,9 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
             """
     }
 
+    val cp = circeRuntimePkg.conv.toScala[IRTMarshaller[IDLRuntimeTypes._2Arg]]
+    //val base = circeRuntimePkg.conv.toScala[IRTCirceWrappedServiceDefinition]
+
     val codecProvider =
       q""" object CodecProvider extends ${cp.init()} {
         import _root_.io.circe._
@@ -208,7 +211,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     // TODO: lenses?
     product.copy(
       wrapped = product.wrapped.copy(
-        companion = product.wrapped.companion.appendDefinitions(extensions).appendBase(base.init())
+        companion = product.wrapped.companion.appendDefinitions(extensions) //.appendBase(base.init())
       )
       , imports = product.imports :+ runtime.Import.of(circeRuntimePkg)
     )

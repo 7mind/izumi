@@ -6,7 +6,7 @@ import scalaz.zio.IO
 import scala.language.higherKinds
 
 class IRTClientMultiplexor[R[_, _]](clients: Set[IRTWrappedClient[R]])
-  extends IRTZioResult {
+  extends IRTResultZio {
   val codecs: Map[IRTMethodId, IRTMarshaller[R]] = clients.flatMap(_.allCodecs).toMap
 
   def encode(input: IRTMuxRequest[Product]): IO[Throwable, String] = {

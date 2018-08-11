@@ -88,7 +88,7 @@ object Http4sTransportTest {
 
     override def allMethods: Map[IRTMethodId, IRTMethodWrapper[zio.IO, Ctx]] = proxied.allMethods.mapValues {
       method =>
-        new IRTMethodWrapper[zio.IO, Ctx] with IRTZioResult {
+        new IRTMethodWrapper[zio.IO, Ctx] with IRTResultZio {
 
           override val signature: IRTMethodSignature = method.signature
           override val marshaller: IRTMarshaller[zio.IO] = method.marshaller

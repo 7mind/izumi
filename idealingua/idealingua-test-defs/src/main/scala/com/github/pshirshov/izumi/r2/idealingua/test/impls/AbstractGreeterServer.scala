@@ -10,7 +10,7 @@ import scala.language.higherKinds
 
 trait AbstractGreeterServer1[C]
   extends GreeterServiceServer[IO, C]
-    with IRTZioResult {
+    with IRTResultZio {
 
   override def greet(ctx: C, name: String, surname: String): Just[String] = just {
     s"Hi, $name $surname!"

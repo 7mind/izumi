@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.idealingua
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, CirceGenericTranslatorExtension, ScalaTranslator}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.{CirceDerivationTranslatorExtension, CirceGenericTranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import org.scalatest.WordSpec
 
 class CompilerWithCirceTest extends WordSpec {

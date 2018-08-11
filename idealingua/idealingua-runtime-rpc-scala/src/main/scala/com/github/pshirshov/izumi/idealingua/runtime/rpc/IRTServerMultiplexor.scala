@@ -6,7 +6,7 @@ import scalaz.zio.IO
 import scala.language.higherKinds
 
 class IRTServerMultiplexor[R[_, _], C](list: Set[IRTWrappedService[R, C]])
-  extends IRTZioResult {
+  extends IRTResultZio {
   val services: Map[IRTServiceId, IRTWrappedService[R, C]] = list.map(s => s.serviceId -> s).toMap
 
 

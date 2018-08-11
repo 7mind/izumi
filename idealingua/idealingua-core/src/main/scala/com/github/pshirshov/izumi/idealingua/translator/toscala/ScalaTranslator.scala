@@ -370,12 +370,12 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
     })
 
     val qqService =
-      q"""trait ${sp.svcTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
+      q"""trait ${sp.svcTpe.typeName}[R[_], C] extends ${rt.WithResultZio.parameterize("R").init()} {
             ..${decls.map(_.defnServer)}
           }"""
 
     val qqClient =
-      q"""trait ${sp.svcClientTpe.typeName}[R[_]] extends ${rt.WithResultType.parameterize("R").init()} {
+      q"""trait ${sp.svcClientTpe.typeName}[R[_]] extends ${rt.WithResultZio.parameterize("R").init()} {
             ..${decls.map(_.defnClient)}
           }"""
 
@@ -385,7 +385,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions) extends Tr
          }"""
 
     val qqWrapped =
-      q"""trait ${sp.svcWrappedTpe.typeName}[R[_], C] extends ${rt.WithResultType.parameterize("R").init()} {
+      q"""trait ${sp.svcWrappedTpe.typeName}[R[_], C] extends ${rt.WithResultZio.parameterize("R").init()} {
             ..${decls.map(_.defnWrapped)}
           }"""
 

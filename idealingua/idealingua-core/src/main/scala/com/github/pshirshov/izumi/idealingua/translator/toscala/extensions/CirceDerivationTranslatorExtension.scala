@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
 import scala.meta._
 

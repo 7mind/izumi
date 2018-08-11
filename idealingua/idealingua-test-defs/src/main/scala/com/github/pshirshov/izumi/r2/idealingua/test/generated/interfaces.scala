@@ -34,7 +34,7 @@ trait GreeterServiceServer[R[_, _], C]
 
 class GreeterServiceClientWrapped(dispatcher: Dispatcher)
   extends GreeterServiceClient[IO]
-    with IRTZioResult {
+    with IRTResultZio {
 
   override def greet(name: String, surname: String): IO[Nothing, String] = {
     dispatcher
@@ -134,7 +134,7 @@ object GreeterServiceMethods {
 
 object GreeterServerMarshallers {
 
-  object greet extends IRTMarshaller[IO] with IRTZioResult {
+  object greet extends IRTMarshaller[IO] with IRTResultZio {
 
     import GreeterServiceMethods.greet._
 
@@ -158,7 +158,7 @@ object GreeterServerMarshallers {
     }
   }
 
-  object alternative extends IRTMarshaller[IO] with IRTZioResult {
+  object alternative extends IRTMarshaller[IO] with IRTResultZio {
 
     import GreeterServiceMethods.alternative._
 
@@ -193,11 +193,11 @@ object GreeterServerMarshallers {
 
 }
 
-class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with IRTZioResult)
+class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with IRTResultZio)
   extends IRTWrappedService[IO, C]
-    with IRTZioResult {
+    with IRTResultZio {
 
-  object greet extends IRTMethodWrapper[IO, C] with IRTZioResult {
+  object greet extends IRTMethodWrapper[IO, C] with IRTResultZio {
 
     import GreeterServiceMethods.greet._
 
@@ -210,7 +210,7 @@ class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with I
     }
   }
 
-  object alternative extends IRTMethodWrapper[IO, C] with IRTZioResult {
+  object alternative extends IRTMethodWrapper[IO, C] with IRTResultZio {
 
     import GreeterServiceMethods.alternative._
 

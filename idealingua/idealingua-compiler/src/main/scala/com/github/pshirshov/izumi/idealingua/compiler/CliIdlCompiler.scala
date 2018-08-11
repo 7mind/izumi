@@ -13,7 +13,8 @@ import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler._
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.CirceDerivationTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import io.circe.{Decoder, Encoder}
 import org.scalacheck._

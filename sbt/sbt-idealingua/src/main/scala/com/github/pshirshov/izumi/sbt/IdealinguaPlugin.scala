@@ -11,8 +11,8 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslato
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.{CirceDerivationTranslatorExtension, ScalaTranslatorExtension}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
