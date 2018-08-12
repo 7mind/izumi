@@ -15,12 +15,12 @@ class Slf4jAdapterTest extends WordSpec {
 
       StaticLogRouter.instance.setup(IzLogger.basicRouter(IzLogger.Level.Trace, sink))
 
-      logger.trace(s"Debug message")
-      logger.trace(s"Debug message: {}")
-      logger.debug(s"Debug message: {}", 1)
-      logger.info(s"Debug message: {}, {}", 1, 2)
-      logger.warn(s"Debug message: {}", Integer.valueOf(1), Integer.valueOf(1), Integer.valueOf(1), Integer.valueOf(1))
-      logger.error(s"Debug message: {}", new RuntimeException())
+      logger.trace("Debug message")
+      logger.trace("Debug message: {}")
+      logger.debug("Debug message: {}", 1)
+      logger.info("Debug message: {}, {}", 1, 2)
+      logger.warn("Debug message: {}", Integer.valueOf(1), Integer.valueOf(1), Integer.valueOf(1), Integer.valueOf(1))
+      logger.error("Debug message: {}", new RuntimeException())
 
       assert(sink.fetch().size == 6)
     }
