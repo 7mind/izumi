@@ -36,7 +36,8 @@ class ServiceRenderer(ctx: STContext) {
     val qqClientWrapped =
       q"""class ${c.svcWrappedClientTpe.typeName}(_dispatcher: ${rt.IRTDispatcher.typeName})
                extends ${c.svcClientTpe.parameterize(List(c.BIO.t)).init()} with ${rt.WithResultZio.init()} {
-            ..${decls.map(_.defnClientWrapped)}
+               private final val _M = ${c.svcMethods.termFull}
+               ..${decls.map(_.defnClientWrapped)}
           }"""
 
     val qqClientWrappedCompanion =

@@ -46,7 +46,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
   def defnServerWrapped: Stat = {
 
-    def invoke: Defn.Def = method.signature.output match {
+    val invoke = method.signature.output match {
       case DefMethod.Output.Singular(_) =>
         q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               assert(ctx != null && input != null)
@@ -80,16 +80,47 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
   }
 
   def defnClientWrapped: Stat = {
-    q"def $nameTerm(..${Input.signature}): ${Output.outputType} = ???"
+    method.signature.output match {
+      case DefMethod.Output.Singular(_) =>
+        q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
+               _dispatcher
+                 .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
+                 .redeem({ err => ${sp.BIO.n}.terminate(err) }, { case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
+                   ${sp.BIO.n}.point(v.value)
+                 case v =>
+                   ${sp.BIO.n}.terminate(new RuntimeException())
+            })
+           }"""
+
+      case DefMethod.Output.Void() =>
+        q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
+               _dispatcher
+                 .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
+                 .redeem({ err => ${sp.BIO.n}.terminate(err) }, { case IRTMuxResponse(IRTResBody(_: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
+                   ${sp.BIO.n}.point(())
+                 case v =>
+                   ${sp.BIO.n}.terminate(new RuntimeException())
+            })
+           }"""
+
+      case DefMethod.Output.Algebraic(_) | DefMethod.Output.Struct(_) =>
+        q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
+               _dispatcher
+                 .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
+                 .redeem({ err => ${sp.BIO.n}.terminate(err) }, { case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
+                   ${sp.BIO.n}.point(v)
+                 case v =>
+                   ${sp.BIO.n}.terminate(new RuntimeException())
+            })
+           }"""
+    }
   }
 
   def defnServer: Stat = {
-    val result: Type.Name = Type.Name("Unit")
     q"def $nameTerm(ctx: ${sp.Ctx.t}, ..${Input.signature}): ${Output.outputType}"
   }
 
   def defnClient: Stat = {
-    val result: Type.Name = Type.Name("Unit")
     q"def $nameTerm(..${Input.signature}): ${Output.outputType}"
   }
 
@@ -106,6 +137,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
     def signature: List[Term.Param] = fields.toParams
 
     def sigCall: List[Term.Select] = fields.map(f => q"input.${f.name}")
+    def sigDirectCall: List[Term.Name] = fields.map(_.name)
 
 
     @deprecated("", "")

@@ -34,7 +34,6 @@ trait GreeterServiceClient[R[_, _]]
 class GreeterServiceClientWrapped(dispatcher: IRTDispatcher)
   extends GreeterServiceClient[IO]
     with IRTResultZio {
-
   override def greet(name: String, surname: String): IO[Nothing, String] = {
     dispatcher
       .dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id))

@@ -10,6 +10,7 @@ final case class ServiceContext(ctx: STContext, svc: Service) {
 
   object BIO {
     val t = t"IRTBIO"
+    val n = q"IRTBIO"
   }
 
   object F {
