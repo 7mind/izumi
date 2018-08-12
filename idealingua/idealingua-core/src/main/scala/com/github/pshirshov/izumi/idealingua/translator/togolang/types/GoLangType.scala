@@ -124,7 +124,7 @@ final case class GoLangType (
       id match {
         case _: InterfaceId => s"map[string]json.RawMessage"
         case _: AdtId => s"json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
-        case _: IdentifierId | _: EnumId => s"string"
+        case _: IdentifierId | _: EnumId => "string"
         case d: DTOId => s"*${im.withImport(d)}${d.name}Serialized"
         case al: AliasId => ts.dealias(al) match {
 //          case _: Primitive => id.name
@@ -261,8 +261,8 @@ final case class GoLangType (
     }
     case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).defaultValue()
     case e: EnumId => ts(e).asInstanceOf[Enumeration].members.head
-    case _: IdentifierId | _: DTOId => s"nil"
-    case _: InterfaceId => s"nil"
+    case _: IdentifierId | _: DTOId => "nil"
+    case _: InterfaceId => "nil"
     case _ => "nil"
   }
 

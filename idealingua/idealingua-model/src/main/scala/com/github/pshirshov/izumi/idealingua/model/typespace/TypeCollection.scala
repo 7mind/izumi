@@ -116,7 +116,7 @@ class TypeCollection(domain: DomainDefinition) {
     id match {
       case _: InterfaceId =>
         //s"${id.name}Struct"
-        s"Struct"
+        "Struct"
       case _ =>
         s"${id.name}"
 
@@ -128,7 +128,7 @@ class TypeCollection(domain: DomainDefinition) {
       case _: DTOId =>
         //s"${id.name}Defn"
 
-        s"Defn"
+        "Defn"
       case _ =>
         s"${id.name}"
 

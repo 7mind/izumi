@@ -148,7 +148,7 @@ class TypeScriptTypeConverter() {
         case al: AliasId => toNativeType(ts(al).asInstanceOf[Alias].target, ts, forSerialized)
         case _: DTOId => s"${id.name}Serialized"
         case _: EnumId => "string"
-        case _: IdentifierId => s"string"
+        case _: IdentifierId => "string"
         case _ => s"${id.name}"
       }
     } else {

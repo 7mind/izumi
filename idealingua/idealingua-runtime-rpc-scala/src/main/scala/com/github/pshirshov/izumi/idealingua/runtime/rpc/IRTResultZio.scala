@@ -9,7 +9,6 @@ trait IRTResultTransZio[R[_, _]] extends IRTResult[R] {
   def toZio[E]: FunctionK[R[E, ?], IO[E, ?]]
 }
 
-
 trait IRTResultZio extends IRTResultTransZio[IO] {
   @inline def choice[L, R](v: => Either[L, R]): Or[L, R] = IO.fromEither(v)
 

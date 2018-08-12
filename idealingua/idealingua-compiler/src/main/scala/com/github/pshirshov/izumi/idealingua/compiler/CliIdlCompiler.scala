@@ -97,7 +97,7 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
         c
       case _ =>
         IDLCArgs.parser.showUsage()
-        throw new IllegalArgumentException(s"Unexpected commandline")
+        throw new IllegalArgumentException("Unexpected commandline")
     }
 
     val toRun = conf.languages.map {

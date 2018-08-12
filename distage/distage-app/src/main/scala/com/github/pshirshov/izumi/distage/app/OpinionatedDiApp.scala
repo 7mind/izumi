@@ -129,7 +129,7 @@ abstract class OpinionatedDiApp {
     val plan = injector.plan(appDef)
     logger.trace(s"Planning completed\n$plan")
     val context = injector.produce(plan)
-    logger.trace(s"Context produced")
+    logger.trace("Context produced")
     start(context, strategy.context)
   }
 
