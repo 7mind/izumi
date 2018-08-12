@@ -29,6 +29,7 @@ data Package {
 
 service TestService {
   def parameterless(): str
+  def unitToUnit()
   def simpleMethod(a: str): str
   def simpleIntMethod(a: i32): i32
   def simpleMethodWithGenerics(a: list[str]): list[str]

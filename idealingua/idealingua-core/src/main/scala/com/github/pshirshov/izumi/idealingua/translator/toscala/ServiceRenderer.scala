@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMet
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.CogenServiceProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.RenderableCogenProduct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{runtime, _}
 import scalaz.zio.IO
 
 import scala.meta._
@@ -96,6 +96,7 @@ class ServiceRenderer(ctx: STContext) {
         runtime.Import.from(runtime.Pkg.language, "higherKinds")
         , runtime.Import[IO[Nothing, Nothing]](Some("IRTBIO"))
         , runtime.Import[Json](Some("IRTJson"))
+        , runtime.Pkg.of[_root_.io.circe.syntax.EncoderOps[Nothing]].`import`
         , rt.services.`import`
       )
     )

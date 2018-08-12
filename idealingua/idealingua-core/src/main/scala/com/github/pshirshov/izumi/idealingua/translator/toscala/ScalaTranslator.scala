@@ -19,6 +19,7 @@ object ScalaTranslator {
     CastSimilarExtension,
     CastDownExpandExtension,
     CastUpExtension,
+    CirceDerivationTranslatorExtension,
   )
 }
 

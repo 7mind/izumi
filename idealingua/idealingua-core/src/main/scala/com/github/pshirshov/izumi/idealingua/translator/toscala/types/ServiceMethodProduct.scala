@@ -2,9 +2,8 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
-import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId, TypeName, TypePath}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, Service}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Adt
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
@@ -36,25 +35,46 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
   }
 
   def defnCodec: Stat = {
+    val methods = List(Input.defnEncoder, Input.defnDecoder, Output.defnEncoder, Output.defnDecoder)
+
     q"""object $nameTerm extends IRTCirceMarshaller[${sp.BIO.t}] with ${ctx.rt.WithResultZio.init()} {
           import ${sp.svcMethods.termName}.$nameTerm._
-
-          def encodeRequest: PartialFunction[IRTReqBody, IRTJson] = ???
-          def encodeResponse: PartialFunction[IRTResBody, IRTJson] = ???
-          def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = ???
-          def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = ???
+          ..$methods
        }
      """
   }
 
   def defnServerWrapped: Stat = {
+
+    def invoke: Defn.Def = method.signature.output match {
+      case DefMethod.Output.Singular(_) =>
+        q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
+              assert(ctx != null && input != null)
+              _service.$nameTerm(ctx, ..${Input.sigCall})
+                .map(v => new Output(v))
+           }"""
+
+      case DefMethod.Output.Void() =>
+        q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
+              assert(ctx != null && input != null)
+              _service.$nameTerm(ctx, ..${Input.sigCall})
+                .map(_ => new Output())
+           }"""
+
+      case DefMethod.Output.Algebraic(_) | DefMethod.Output.Struct(_) =>
+        q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
+              assert(ctx != null && input != null)
+              _service.$nameTerm(ctx, ..${Input.sigCall})
+           }"""
+    }
+
     q"""object $nameTerm extends IRTMethodWrapper[${sp.BIO.t}, ${sp.Ctx.t}] with ${ctx.rt.WithResultZio.init()} {
           import ${sp.svcMethods.termName}.$nameTerm._
 
           val signature: ${sp.svcMethods.termName}.$nameTerm.type = ${sp.svcMethods.termName}.$nameTerm
           val marshaller: ${sp.svcCodecs.termName}.$nameTerm.type = ${sp.svcCodecs.termName}.$nameTerm
 
-          override def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = ???
+          $invoke
        }
      """
   }
@@ -85,6 +105,9 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
     def signature: List[Term.Param] = fields.toParams
 
+    def sigCall: List[Term.Select] = fields.map(f => q"input.${f.name}")
+
+
     @deprecated("", "")
     def typespaceType: ScalaType = ctx.conv.toScala(typespaceId)
 
@@ -96,7 +119,16 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
     private def fields: List[ScalaField] = inputStruct.fields.all
 
-    //def methodArity: Int = fields.size
+    def defnEncoder: Defn.Def =
+      q"""def encodeRequest: PartialFunction[IRTReqBody, IRTJson] = {
+            case IRTReqBody(value: Input) => value.asJson
+          }"""
+
+    def defnDecoder: Defn.Def =
+      q"""def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
+            case IRTJsonBody(m, packet) if m == id => this.decoded(packet.as[Input].map(v => IRTReqBody(v)))
+          }
+       """
   }
 
   protected object Output {
@@ -137,6 +169,25 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
         val typespaceId: AdtId = AdtId(sp.basePath, s"${name.capitalize}Output")
         ctx.adtRenderer.renderAdt(ctx.typespace.apply(typespaceId).asInstanceOf[Adt], List.empty).render
     }
+
+    def defnEncoder: Defn.Def = {
+      method.signature.output match {
+        case _ =>
+          q"""def encodeResponse: PartialFunction[IRTResBody, IRTJson] = {
+                case IRTResBody(value: Output) => value.asJson
+              }"""
+      }
+    }
+
+    def defnDecoder: Defn.Def =
+      method.signature.output match {
+        case _ =>
+          q"""def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
+                case IRTJsonBody(m, packet) if m == id =>
+                  decoded(packet.as[Output].map(v => IRTResBody(v)))
+          }"""
+      }
+
   }
 
 
