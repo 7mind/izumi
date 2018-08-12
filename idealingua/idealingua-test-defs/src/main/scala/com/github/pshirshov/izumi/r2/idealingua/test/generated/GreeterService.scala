@@ -51,13 +51,15 @@ class GreeterServiceClientWrapped(dispatcher: IRTDispatcher)
       .redeem({
         err => IO.terminate(err)
       }, {
-        case IRTMuxResponse(IRTResBody(v: GreeterServiceMethods.alternative.Output), method) if method == GreeterServiceMethods.alternative.id =>
+        case IRTMuxResponse(IRTResBody(v), method) if method == GreeterServiceMethods.alternative.id =>
           v match {
-            case Left(va) =>
+            case Left(va : GreeterServiceMethods.alternative.AlternativeOutput.Failure) =>
               IO.fail(va.value)
 
-            case Right(va) =>
+            case Right(va : GreeterServiceMethods.alternative.AlternativeOutput.Success) =>
               IO.point(va.value)
+            case _ =>
+              IO.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
           }
         case _ =>
           IO.terminate(new RuntimeException())
@@ -151,14 +153,15 @@ object Test {
           case ExitResult.Completed(v) =>
             println(("Success", v))
           case ExitResult.Failed(error, defects) =>
-            println(("Failure", error))
+            println(("Failure", error, defects))
           case ExitResult.Terminated(causes) =>
             println(("Termination", causes))
         }
       case Right(None) =>
-      // 404
+        println("Failure/404")
+
       case Left(e) =>
-      // 500 -> bad content
+        println(("Failure/500", e))
     }
   }
 
@@ -250,11 +253,11 @@ object GreeterServerMarshallers {
     }
 
     override def encodeResponse: PartialFunction[IRTResBody, Json] = {
-      case IRTResBody(value: Output) =>
+      case IRTResBody(value) =>
         val out: GreeterServiceMethods.alternative.AlternativeOutput = value match {
-          case Left(v) =>
+          case Left(v : GreeterServiceMethods.alternative.AlternativeOutput.Failure) =>
             v
-          case Right(r) =>
+          case Right(r : GreeterServiceMethods.alternative.AlternativeOutput.Success) =>
             r
         }
         out.asJson
