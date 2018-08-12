@@ -9,17 +9,6 @@ import scalaz.zio.{ExitResult, IO, RTS}
 
 import scala.language.higherKinds
 
-trait GreeterServiceClient[R[_, _]]
-  extends IRTResult[R] {
-  def greet(name: String, surname: String): Just[String]
-
-  def sayhi(): Just[String]
-
-  def nothing(): Just[Unit]
-
-  def alternative(): Or[Long, String]
-}
-
 trait GreeterServiceServer[R[_, _], C]
   extends IRTResult[R] {
   def greet(ctx: C, name: String, surname: String): Just[String]
@@ -31,8 +20,18 @@ trait GreeterServiceServer[R[_, _], C]
   def alternative(ctx: C): Or[Long, String]
 }
 
+trait GreeterServiceClient[R[_, _]]
+  extends IRTResult[R] {
+  def greet(name: String, surname: String): Just[String]
 
-class GreeterServiceClientWrapped(dispatcher: Dispatcher)
+  def sayhi(): Just[String]
+
+  def nothing(): Just[Unit]
+
+  def alternative(): Or[Long, String]
+}
+
+class GreeterServiceClientWrapped(dispatcher: IRTDispatcher)
   extends GreeterServiceClient[IO]
     with IRTResultZio {
 
@@ -74,123 +73,12 @@ class GreeterServiceClientWrapped(dispatcher: Dispatcher)
 }
 
 object GreeterServiceClientWrapped extends IRTWrappedClient[IO] {
-  val allCodecs: Map[IRTMethodId, IRTMarshaller[IO]] = {
+  val allCodecs: Map[IRTMethodId, IRTCirceMarshaller[IO]] = {
     Map(
       GreeterServiceMethods.greet.id -> GreeterServerMarshallers.greet
       , GreeterServiceMethods.alternative.id -> GreeterServerMarshallers.alternative
     )
   }
-}
-
-object GreeterServiceMethods {
-  val serviceId: IRTServiceId = IRTServiceId("GreeterService")
-
-  object greet extends IRTMethodSignature {
-    val id: IRTMethodId = IRTMethodId(serviceId, IRTMethodName("greet"))
-
-    case class Input(name: String, surname: String)
-
-    object Input {
-      implicit val encode: Encoder[Input] = deriveEncoder
-      implicit val decode: Decoder[Input] = deriveDecoder
-    }
-
-    case class Output(value: String)
-
-    object Output {
-      implicit val encode: Encoder[Output] = deriveEncoder
-      implicit val decode: Decoder[Output] = deriveDecoder
-    }
-
-  }
-
-  object alternative extends IRTMethodSignature {
-    val id: IRTMethodId = IRTMethodId(serviceId, IRTMethodName("alternative"))
-
-    type Output = Either[AlternativeOutput.Failure, AlternativeOutput.Success]
-
-    case class Input()
-
-    sealed trait AlternativeOutput
-
-    object AlternativeOutput {
-
-      final case class Failure(value: Long) extends AlternativeOutput
-
-      final case class Success(value: String) extends AlternativeOutput
-
-      implicit val encode: Encoder[AlternativeOutput] = deriveEncoder
-      implicit val decode: Decoder[AlternativeOutput] = deriveDecoder
-    }
-
-    object Input {
-      implicit val encode: Encoder[Input] = deriveEncoder
-      implicit val decode: Decoder[Input] = deriveDecoder
-    }
-
-  }
-
-}
-
-object GreeterServerMarshallers {
-
-  object greet extends IRTMarshaller[IO] with IRTResultZio {
-
-    import GreeterServiceMethods.greet._
-
-
-    override def encodeRequest: PartialFunction[IRTReqBody, Json] = {
-      case IRTReqBody(value: Input) => value.asJson
-    }
-
-    override def encodeResponse: PartialFunction[IRTResBody, Json] = {
-      case IRTResBody(value: Output) => value.asJson
-    }
-
-    override def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
-      case IRTJsonBody(m, packet) if m == id =>
-        decoded(packet.as[Input].map(v => IRTReqBody(v)))
-    }
-
-    override def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
-      case IRTJsonBody(m, packet) if m == id =>
-        decoded(packet.as[Output].map(v => IRTResBody(v)))
-    }
-  }
-
-  object alternative extends IRTMarshaller[IO] with IRTResultZio {
-
-    import GreeterServiceMethods.alternative._
-
-    override def encodeRequest: PartialFunction[IRTReqBody, Json] = {
-      case IRTReqBody(value: Input) => value.asJson
-    }
-
-    override def encodeResponse: PartialFunction[IRTResBody, Json] = {
-      case IRTResBody(value: Output) =>
-        val out: GreeterServiceMethods.alternative.AlternativeOutput = value match {
-          case Left(v) =>
-            v
-          case Right(r) =>
-            r
-        }
-        out.asJson
-    }
-
-    override def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
-      case IRTJsonBody(m, packet) if m == id =>
-        decoded(packet.as[Input].map(v => IRTReqBody(v)))
-    }
-
-    override def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
-      case IRTJsonBody(m, packet) if m == id =>
-        decoded(packet.as[GreeterServiceMethods.alternative.AlternativeOutput].map {
-          case v: GreeterServiceMethods.alternative.AlternativeOutput.Success => IRTResBody(Right(v))
-          case v: GreeterServiceMethods.alternative.AlternativeOutput.Failure => IRTResBody(Left(v))
-        })
-    }
-  }
-
 }
 
 class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with IRTResultZio)
@@ -275,5 +163,116 @@ object Test {
     }
   }
 
+
+}
+
+object GreeterServiceMethods {
+  val serviceId: IRTServiceId = IRTServiceId("GreeterService")
+
+  object greet extends IRTMethodSignature {
+    val id: IRTMethodId = IRTMethodId(serviceId, IRTMethodName("greet"))
+
+    case class Input(name: String, surname: String)
+
+    object Input {
+      implicit val encode: Encoder[Input] = deriveEncoder
+      implicit val decode: Decoder[Input] = deriveDecoder
+    }
+
+    case class Output(value: String)
+
+    object Output {
+      implicit val encode: Encoder[Output] = deriveEncoder
+      implicit val decode: Decoder[Output] = deriveDecoder
+    }
+
+  }
+
+  object alternative extends IRTMethodSignature {
+    val id: IRTMethodId = IRTMethodId(serviceId, IRTMethodName("alternative"))
+
+    type Output = Either[AlternativeOutput.Failure, AlternativeOutput.Success]
+
+    case class Input()
+
+    sealed trait AlternativeOutput
+
+    object AlternativeOutput {
+
+      final case class Failure(value: Long) extends AlternativeOutput
+
+      final case class Success(value: String) extends AlternativeOutput
+
+      implicit val encode: Encoder[AlternativeOutput] = deriveEncoder
+      implicit val decode: Decoder[AlternativeOutput] = deriveDecoder
+    }
+
+    object Input {
+      implicit val encode: Encoder[Input] = deriveEncoder
+      implicit val decode: Decoder[Input] = deriveDecoder
+    }
+
+  }
+
+}
+
+object GreeterServerMarshallers {
+
+  object greet extends IRTCirceMarshaller[IO] with IRTResultZio {
+
+    import GreeterServiceMethods.greet._
+
+
+    override def encodeRequest: PartialFunction[IRTReqBody, Json] = {
+      case IRTReqBody(value: Input) => value.asJson
+    }
+
+    override def encodeResponse: PartialFunction[IRTResBody, Json] = {
+      case IRTResBody(value: Output) => value.asJson
+    }
+
+    override def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
+      case IRTJsonBody(m, packet) if m == id =>
+        decoded(packet.as[Input].map(v => IRTReqBody(v)))
+    }
+
+    override def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
+      case IRTJsonBody(m, packet) if m == id =>
+        decoded(packet.as[Output].map(v => IRTResBody(v)))
+    }
+  }
+
+  object alternative extends IRTCirceMarshaller[IO] with IRTResultZio {
+
+    import GreeterServiceMethods.alternative._
+
+    override def encodeRequest: PartialFunction[IRTReqBody, Json] = {
+      case IRTReqBody(value: Input) => value.asJson
+    }
+
+    override def encodeResponse: PartialFunction[IRTResBody, Json] = {
+      case IRTResBody(value: Output) =>
+        val out: GreeterServiceMethods.alternative.AlternativeOutput = value match {
+          case Left(v) =>
+            v
+          case Right(r) =>
+            r
+        }
+        out.asJson
+    }
+
+    override def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
+      case IRTJsonBody(m, packet) if m == id =>
+        decoded(packet.as[Input].map(v => IRTReqBody(v)))
+    }
+
+    override def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
+      case IRTJsonBody(m, packet) if m == id =>
+        decoded(packet.as[GreeterServiceMethods.alternative.AlternativeOutput].map {
+          case v: GreeterServiceMethods.alternative.AlternativeOutput.Success => IRTResBody(Right(v))
+          case v: GreeterServiceMethods.alternative.AlternativeOutput.Failure => IRTResBody(Left(v))
+        })
+    }
+  }
 
 }

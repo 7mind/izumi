@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinitio
 import com.github.pshirshov.izumi.idealingua.runtime.{IRTCast, IRTConversions, IRTExtend}
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, IDLWithInfo}
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMethodName, IRTMethodSignature, IRTWrappedService, _}
 
 
 object IDLRuntimeTypes {
@@ -29,6 +29,13 @@ object IDLRuntimeTypes {
 
   final val WithResult = services.conv.toScala[IRTResult[_2Arg]]
   final val WithResultZio = services.conv.toScala[IRTResultZio]
+  final val IRTMethodSignature = services.conv.toScala[IRTMethodSignature]
+  final val IRTServiceId = services.conv.toScala[IRTServiceId]
+  final val IRTMethodId = services.conv.toScala[IRTMethodId]
+  final val IRTMethodName = services.conv.toScala[IRTMethodName]
+  final val IRTWrappedClient = services.conv.toScala[IRTWrappedClient[_2Arg]]
+  final val IRTWrappedService = services.conv.toScala[IRTWrappedService[_2Arg, _0Arg]]
+  final val IRTDispatcher = services.conv.toScala[IRTDispatcher]
   final val Conversions = model.conv.toScala[IRTConversions[_0Arg]]
   final val Cast = model.conv.toScala[IRTCast[_0Arg, _0Arg]]
   final val Extend = model.conv.toScala[IRTExtend[_0Arg, _0Arg]]

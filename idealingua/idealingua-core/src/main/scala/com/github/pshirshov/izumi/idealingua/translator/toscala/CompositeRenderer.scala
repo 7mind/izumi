@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Interfaces
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{CompositeStructure, StructContext}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ClassSource, CompositeStructure, StructContext}
 
 import scala.meta._
 
@@ -20,10 +20,12 @@ class CompositeRenderer(ctx: STContext) {
 
     val bases: List[Init] = source match {
       case cs: ClassSource.CsMethodInput =>
-        List(cs.sc.serviceInputBase.init())
+        List.empty
+//        List(cs.sc.serviceInputBase.init())
 
       case cs: ClassSource.CsMethodOutput =>
-        List(cs.sc.serviceOutputBase.init())
+        List.empty
+//        List(cs.sc.serviceOutputBase.init())
 
       case _ =>
         List.empty

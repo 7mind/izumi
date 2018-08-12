@@ -91,7 +91,7 @@ object Http4sTransportTest {
         new IRTMethodWrapper[zio.IO, Ctx] with IRTResultZio {
 
           override val signature: IRTMethodSignature = method.signature
-          override val marshaller: IRTMarshaller[zio.IO] = method.marshaller
+          override val marshaller: IRTCirceMarshaller[zio.IO] = method.marshaller
 
           override def invoke(ctx: Ctx, input: signature.Input): zio.IO[Nothing, signature.Output] = {
             ctx match {

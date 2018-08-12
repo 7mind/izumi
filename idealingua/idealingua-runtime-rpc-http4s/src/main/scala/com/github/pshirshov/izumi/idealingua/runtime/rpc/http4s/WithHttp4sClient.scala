@@ -11,7 +11,7 @@ trait WithHttp4sClient {
   this: Http4sContext =>
 
   class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor[BIO])
-    extends Dispatcher with IRTResultZio {
+    extends IRTDispatcher with IRTResultZio {
 
     private val client: CIO[Client[CIO]] = Http1Client[CIO]()
 

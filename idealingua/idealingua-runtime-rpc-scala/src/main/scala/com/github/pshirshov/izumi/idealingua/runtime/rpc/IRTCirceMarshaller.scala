@@ -4,7 +4,7 @@ import io.circe.{DecodingFailure, Json}
 
 import scala.language.higherKinds
 
-trait IRTMarshaller[R[_, _]] extends IRTResultTransZio[R] {
+trait IRTCirceMarshaller[R[_, _]] extends IRTResultTransZio[R] {
   def encodeRequest: PartialFunction[IRTReqBody, Json]
 
   def encodeResponse: PartialFunction[IRTResBody, Json]
