@@ -66,6 +66,16 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
               assert(ctx != null && input != null)
               _service.toZio(_service.$nameTerm(ctx, ..${Input.sigCall}))
            }"""
+
+      case DefMethod.Output.Alternative(_, _) =>
+        q"""
+           def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
+                 service.toZio(service.$nameTerm(ctx, ..${Input.sigCall}))
+                   .redeem(
+                      err => ${sp.BIO.n}.point(new ${Output.negativeBranchType.typeFull}(err))
+                      , succ => ${sp.BIO.n}.point(new ${Output.positiveBranchType.typeFull}(succ))
+                   )
+           }"""
     }
 
     q"""object $nameTerm extends IRTMethodWrapper[${sp.BIO.t}, ${sp.Ctx.t}] with ${ctx.rt.WithResultZio.init()} {
@@ -126,6 +136,29 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                       case v => $exception
                     })
            }"""
+
+      case DefMethod.Output.Alternative(_, _) =>
+        q"""def $nameTerm(..${Input.signature}): ${sp.BIO.t}[${Output.negativeType.typeFull}, ${Output.positiveType.typeFull}] = {
+               _dispatcher
+                 .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
+                 .redeem(
+                    { err => ${sp.BIO.n}.terminate(err) },
+                    {
+                       case IRTMuxResponse(IRTResBody(r), method) if method == _M.$nameTerm.id =>
+                         r match {
+                           case va : ${Output.negativeBranchType.typeFull} =>
+                             IO.fail(va.value)
+
+                           case va : ${Output.positiveBranchType.typeFull} =>
+                             IO.point(va.value)
+
+                           case v =>
+                             $exception
+                         }
+                       case v =>
+                         $exception
+                    })
+           }"""
     }
   }
 
@@ -150,10 +183,10 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
     def signature: List[Term.Param] = fields.toParams
 
     def sigCall: List[Term.Select] = fields.map(f => q"input.${f.name}")
+
     def sigDirectCall: List[Term.Name] = fields.map(_.name)
 
-
-    @deprecated("", "")
+    // TODO:TSASSYMMETRY this method is a workaround for assymetry between typespace representation and scala code we want to render
     def typespaceType: ScalaType = ctx.conv.toScala(typespaceId)
 
     private def typespaceId: DTOId = DTOId(sp.basePath, s"${name.capitalize}Input")
@@ -180,7 +213,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
     private def scalaType: ScalaType = sp.svcMethods.within(name).within("Output")
 
-    def wrappedOutputType: Type = t"Just[${scalaType.typeFull}]"
+    private def wrappedOutputType: Type = t"Just[${scalaType.typeFull}]"
 
     def outputType: Type = method.signature.output match {
       case DefMethod.Output.Void() =>
@@ -189,49 +222,71 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
         t"Just[${ctx.conv.toScala(t).typeFull}]"
       case DefMethod.Output.Struct(_) | DefMethod.Output.Algebraic(_) =>
         wrappedOutputType
+      case DefMethod.Output.Alternative(_, _) =>
+        t"Or[${negativeType.typeFull}, ${positiveType.typeFull}]"
     }
 
-    @deprecated("", "")
+    private def positiveId = s"${name.capitalize}Success"
+    private def negativeId = s"${name.capitalize}Failure"
+
+    def positiveType: ScalaType = sp.svcMethods.within(name).within(positiveId)
+
+    def negativeType: ScalaType = sp.svcMethods.within(name).within(negativeId)
+
+    def positiveBranchType: ScalaType = wrappedTypespaceType.within("MSuccess")
+
+    def negativeBranchType: ScalaType = wrappedTypespaceType.within("MFailure")
+
+    // TODO:TSASSYMMETRY this method is a workaround for assymetry between typespace representation and scala code we want to render
     def wrappedTypespaceType: ScalaType = {
       val id = method.signature.output match {
         case DefMethod.Output.Struct(_) | DefMethod.Output.Void() | DefMethod.Output.Singular(_) =>
           DTOId(sp.basePath, s"${name.capitalize}Output")
 
-        case DefMethod.Output.Algebraic(_) =>
+        case DefMethod.Output.Algebraic(_) | DefMethod.Output.Alternative(_, _) =>
           AdtId(sp.basePath, s"${name.capitalize}Output")
+
       }
       ctx.conv.toScala(id)
     }
 
-    def outputDefn: List[Defn] = method.signature.output match {
-      case DefMethod.Output.Struct(_) | DefMethod.Output.Void() | DefMethod.Output.Singular(_) =>
-        val typespaceId: DTOId = DTOId(sp.basePath, s"${name.capitalize}Output")
-        val struct = ctx.tools.mkStructure(typespaceId)
-        ctx.compositeRenderer.defns(struct, ClassSource.CsMethodInput(sp, ServiceMethodProduct.this)).render
-
-
-      case DefMethod.Output.Algebraic(_) =>
-        val typespaceId: AdtId = AdtId(sp.basePath, s"${name.capitalize}Output")
-        ctx.adtRenderer.renderAdt(ctx.typespace.apply(typespaceId).asInstanceOf[Adt], List.empty).render
+    def outputDefn: List[Defn] = {
+      renderOutput(s"${name.capitalize}Output", method.signature.output)
     }
 
     def defnEncoder: Defn.Def = {
-      method.signature.output match {
-        case _ =>
-          q"""def encodeResponse: PartialFunction[IRTResBody, IRTJson] = {
-                case IRTResBody(value: Output) => value.asJson
-              }"""
-      }
+      q"""def encodeResponse: PartialFunction[IRTResBody, IRTJson] = {
+            case IRTResBody(value: Output) => value.asJson
+          }"""
     }
 
-    def defnDecoder: Defn.Def =
-      method.signature.output match {
-        case _ =>
-          q"""def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
-                case IRTJsonBody(m, packet) if m == id =>
-                  decoded(packet.as[Output].map(v => IRTResBody(v)))
+    def defnDecoder: Defn.Def = {
+      q"""def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
+            case IRTJsonBody(m, packet) if m == id =>
+              decoded(packet.as[Output].map(v => IRTResBody(v)))
           }"""
-      }
+    }
 
+    private def renderOutput(typename: String, out: DefMethod.Output): List[Defn] = {
+      out match {
+        case DefMethod.Output.Struct(_) | DefMethod.Output.Void() | DefMethod.Output.Singular(_) =>
+          val typespaceId: DTOId = DTOId(sp.basePath, typename)
+          val struct = ctx.tools.mkStructure(typespaceId)
+          ctx.compositeRenderer.defns(struct, ClassSource.CsMethodInput(sp, ServiceMethodProduct.this)).render
+
+
+        case DefMethod.Output.Algebraic(_) =>
+          val typespaceId: AdtId = AdtId(sp.basePath, typename)
+          ctx.adtRenderer.renderAdt(ctx.typespace.apply(typespaceId).asInstanceOf[Adt], List.empty).render
+
+        case DefMethod.Output.Alternative(success, failure) =>
+          val typespaceId: AdtId = AdtId(sp.basePath, typename)
+          ctx.adtRenderer.renderAdt(ctx.typespace.apply(typespaceId).asInstanceOf[Adt], List.empty).render ++
+            renderOutput(positiveId, success) ++
+            renderOutput(negativeId, failure)
+      }
+    }
   }
+
+
 }

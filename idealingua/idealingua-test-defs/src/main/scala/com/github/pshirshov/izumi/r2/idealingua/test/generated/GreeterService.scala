@@ -53,10 +53,10 @@ class GreeterServiceClientWrapped(dispatcher: IRTDispatcher)
       }, {
         case IRTMuxResponse(IRTResBody(v), method) if method == GreeterServiceMethods.alternative.id =>
           v match {
-            case Left(va : GreeterServiceMethods.alternative.AlternativeOutput.Failure) =>
+            case va : GreeterServiceMethods.alternative.AlternativeOutput.Failure =>
               IO.fail(va.value)
 
-            case Right(va : GreeterServiceMethods.alternative.AlternativeOutput.Success) =>
+            case va : GreeterServiceMethods.alternative.AlternativeOutput.Success =>
               IO.point(va.value)
             case _ =>
               IO.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
@@ -107,7 +107,7 @@ class GreeterServiceServerWrapped[F[_, _], C](service: GreeterServiceServer[F, C
 
     override def invoke(ctx: C, input: Input): Just[Output] = {
       service.toZio(service.alternative(ctx))
-        .redeem(err => IO.point(Left(AlternativeOutput.Failure(err))), succ => IO.point(Right(AlternativeOutput.Success(succ))))
+        .redeem(err => IO.point(AlternativeOutput.Failure(err)), succ => IO.point(AlternativeOutput.Success(succ)))
     }
   }
 
@@ -192,11 +192,11 @@ object GreeterServiceMethods {
   object alternative extends IRTMethodSignature {
     val id: IRTMethodId = IRTMethodId(serviceId, IRTMethodName("alternative"))
 
-    type Output = Either[AlternativeOutput.Failure, AlternativeOutput.Success]
+    type Output = AlternativeOutput
 
     case class Input()
 
-    sealed trait AlternativeOutput
+    sealed trait AlternativeOutput extends Product
 
     object AlternativeOutput {
 
@@ -252,14 +252,7 @@ object GreeterServerMarshallers {
     }
 
     override def encodeResponse: PartialFunction[IRTResBody, Json] = {
-      case IRTResBody(value) =>
-        val out: GreeterServiceMethods.alternative.AlternativeOutput = value match {
-          case Left(v : GreeterServiceMethods.alternative.AlternativeOutput.Failure) =>
-            v
-          case Right(r : GreeterServiceMethods.alternative.AlternativeOutput.Success) =>
-            r
-        }
-        out.asJson
+      case IRTResBody(value: Output) => value.asJson
     }
 
     override def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
@@ -269,10 +262,7 @@ object GreeterServerMarshallers {
 
     override def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
-        decoded(packet.as[GreeterServiceMethods.alternative.AlternativeOutput].map {
-          case v: GreeterServiceMethods.alternative.AlternativeOutput.Success => IRTResBody(Right(v))
-          case v: GreeterServiceMethods.alternative.AlternativeOutput.Failure => IRTResBody(Left(v))
-        })
+        decoded(packet.as[Output].map(v => IRTResBody(v)))
     }
   }
 

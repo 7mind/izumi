@@ -121,16 +121,7 @@ class TypespaceVerifier(ts: Typespace) {
         case m: RPCMethod =>
           val inDeps = extractDeps(m.signature.input)
 
-          val outDeps = m.signature.output match {
-            case t: Output.Singular =>
-              Seq(t.typeId)
-            case t: Output.Struct =>
-              extractDeps(t.struct)
-            case t: Output.Algebraic =>
-              t.alternatives.map(_.typeId)
-            case _: Output.Void =>
-              Seq.empty
-          }
+          val outDeps = getOutDeps(m.signature.output)
 
           (inDeps ++ outDeps).map(t => MissingDependency.DepServiceParameter(service.id, m.name, t))
       }
@@ -148,6 +139,21 @@ class TypespaceVerifier(ts: Typespace) {
       Seq(Issue.MissingDependencies(missingTypes.toList))
     } else {
       Seq.empty
+    }
+  }
+
+  private def getOutDeps(out: Output): Seq[TypeId] = {
+    out match {
+      case t: Output.Singular =>
+        Seq(t.typeId)
+      case t: Output.Struct =>
+        extractDeps(t.struct)
+      case t: Output.Algebraic =>
+        t.alternatives.map(_.typeId)
+      case _: Output.Void =>
+        Seq.empty
+      case t: Output.Alternative =>
+        getOutDeps(t.failure) ++ getOutDeps(t.success)
     }
   }
 
@@ -185,7 +191,10 @@ class TypespaceVerifier(ts: Typespace) {
         } else {
           Seq.empty
         }
-        noncapitalized ++ reserved
+
+        singleChar ++
+          noncapitalized ++
+          reserved
     }
   }
 

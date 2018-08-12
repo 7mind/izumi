@@ -36,31 +36,41 @@ class TypeCollection(domain: DomainDefinition) {
           DTO(inId, inputStructure, NodeMeta.empty)
         }
 
+        val outDtos = outputEphemeral(service, s"${baseName}Output", m.signature.output)
 
-        val outDto = m.signature.output match {
-          case o: Output.Singular =>
-            val outStructure = Structure.apply(List(Field(o.typeId, "value")), List.empty, Super.empty)
-            val outId = DTOId(service.id, s"${baseName}Output")
-            DTO(outId, outStructure, NodeMeta.empty)
-
-          case o: Output.Struct =>
-            val outStructure = Structure.apply(o.struct.fields, List.empty, Super(List.empty, o.struct.concepts, List.empty))
-            val outId = DTOId(service.id, s"${baseName}Output")
-            DTO(outId, outStructure, NodeMeta.empty)
-
-          case _: Output.Void =>
-            val outStructure = Structure.apply(List.empty, List.empty, Super(List.empty, List.empty, List.empty))
-            val outId = DTOId(service.id, s"${baseName}Output")
-            DTO(outId, outStructure, NodeMeta.empty)
-
-          case o: Output.Algebraic =>
-            val outId = AdtId(service.id, s"${baseName}Output")
-            Adt(outId, o.alternatives, NodeMeta.empty)
-        }
-
-        Seq(inputDto, outDto)
+        inputDto +: outDtos
     }
   }).flatten.toSeq
+
+  private def outputEphemeral(service: Service, baseName: String, out: Output): Seq[TypeDef] = {
+    out match {
+      case o: Output.Singular =>
+        val outStructure = Structure.apply(List(Field(o.typeId, "value")), List.empty, Super.empty)
+        val outId = DTOId(service.id, baseName)
+        Seq(DTO(outId, outStructure, NodeMeta.empty))
+
+      case o: Output.Struct =>
+        val outStructure = Structure.apply(o.struct.fields, List.empty, Super(List.empty, o.struct.concepts, List.empty))
+        val outId = DTOId(service.id, baseName)
+        Seq(DTO(outId, outStructure, NodeMeta.empty))
+
+      case _: Output.Void =>
+        val outStructure = Structure.apply(List.empty, List.empty, Super(List.empty, List.empty, List.empty))
+        val outId = DTOId(service.id, baseName)
+        Seq(DTO(outId, outStructure, NodeMeta.empty))
+
+      case o: Output.Algebraic =>
+        val outId = AdtId(service.id, baseName)
+        Seq(Adt(outId, o.alternatives, NodeMeta.empty))
+
+      case o: Output.Alternative =>
+        val success = outputEphemeral(service, baseName + "Success", o.success)
+        val failure = outputEphemeral(service, baseName + "Failure", o.failure)
+        val altAdt = Output.Algebraic(List(AdtMember(success.head.id, Some("MSuccess")), AdtMember(failure.head.id, Some("MFailure"))))
+        val alt = outputEphemeral(service, baseName, altAdt)
+        success ++ failure ++ alt
+    }
+  }
 
   val interfaceEphemeralIndex: Map[InterfaceId, DTO] = {
     domain.types
