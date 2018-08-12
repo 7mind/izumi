@@ -39,7 +39,7 @@ final case class ServiceContext(ctx: STContext, svc: Service) {
   val svcWrappedServerTpe: ScalaType = typeId(s"${typeName}WrappedServer")
   val svcWrappedClientTpe: ScalaType = typeId(s"${typeName}WrappedClient")
 
-  val svcMethods: ScalaType = typeId(s"${typeName}Methods")
+  val svcMethods: ScalaType = svcBaseTpe //typeId(s"${typeName}Methods")
   val svcCodecs: ScalaType = typeId(s"${typeName}Codecs")
 
   //  val svcBaseTpe: ScalaType = ctx.conv.toScala(baseId)

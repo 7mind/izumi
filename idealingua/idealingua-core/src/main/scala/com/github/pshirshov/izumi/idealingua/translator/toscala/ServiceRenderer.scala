@@ -34,27 +34,34 @@ class ServiceRenderer(ctx: STContext) {
 
     val qqClientWrapped =
       q"""class ${c.svcWrappedClientTpe.typeName}(_dispatcher: ${rt.IRTDispatcher.typeName})
-               extends ${rt.WithResult.parameterize(List(c.F.t)).init()} with ${rt.WithResultZio.init()} {
+               extends ${c.svcClientTpe.parameterize(List(c.BIO.t)).init()} with ${rt.WithResultZio.init()} {
             ..${decls.map(_.defnClientWrapped)}
           }"""
 
     val qqClientWrappedCompanion =
       q"""
          object ${c.svcWrappedClientTpe.termName} extends ${rt.IRTWrappedClient.parameterize(List(c.BIO.t)).init()} {
-           ..${decls.map(_.defnClientWrapped)}
+           val allCodecs: Map[${rt.IRTMethodId.typeName}, IRTCirceMarshaller[${c.BIO.t}]] = {
+            ???
+           }
          }
        """
 
     val qqServerWrapped =
       q"""class ${c.svcWrappedServerTpe.typeName}[${c.Ctx.p}](_service: ${c.svcServerTpe.typeName}[${c.BIO.t}, ${c.Ctx.t}] with ${rt.WithResultZio.typeName})
                extends IRTWrappedService[${c.BIO.t}, ${c.Ctx.t}] with ${rt.WithResultZio.init()} {
+            final val serviceId: ${rt.IRTServiceId.typeName} = ${c.svcMethods.termName}.serviceId
+
+            val allMethods: Map[${rt.IRTMethodId.typeName}, IRTMethodWrapper[${c.BIO.t}, ${c.Ctx.t}]] = {
+                       ???
+            }
+
             ..${decls.map(_.defnServerWrapped)}
           }"""
 
     val qqServerWrappedCompanion =
       q"""
-         object ${c.svcWrappedServerTpe.termName} extends ${rt.IRTWrappedService.parameterize(List(c.BIO.t)).init()} {
-           ..${decls.map(_.defnServerWrapped)}
+         object ${c.svcWrappedServerTpe.termName} {
          }
        """
 
@@ -64,6 +71,7 @@ class ServiceRenderer(ctx: STContext) {
            final val serviceId: ${rt.IRTServiceId.typeName} = ${rt.IRTServiceId.termName}(${Lit.String(c.typeName)})
 
            ..${decls.map(_.defnMethod)}
+           ..${decls.flatMap(_.defStructs)}
          }
        """
 

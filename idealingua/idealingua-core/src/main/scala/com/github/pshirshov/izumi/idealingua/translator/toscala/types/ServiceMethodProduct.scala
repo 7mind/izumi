@@ -3,29 +3,28 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeId, TypeName, TypePath}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, Service}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Adt
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
 import scala.meta._
-
-
 
 
 final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCMethod) {
 
   import ctx.conv._
 
-  def defnServerWrapped: Stat = {
-    q"""object $nameTerm {
-       }
-     """
+  @deprecated("", "")
+  def defStructs: List[Stat] = {
+    Input.inputDefn ++ Output.outputDefn
   }
 
   def defnMethod: Stat = {
     q"""object $nameTerm extends ${ctx.rt.IRTMethodSignature.init()} {
          final val id: ${ctx.rt.IRTMethodId.typeName} = ${ctx.rt.IRTMethodId.termName}(serviceId, ${ctx.rt.IRTMethodName.termName}(${Lit.String(name)}))
-
+         type Input = ${Input.typespaceType.typeName}
+         type Output = ${Output.wrappedTypespaceType.typeName}
        }
      """
   }
@@ -36,42 +35,92 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
      """
   }
 
+  def defnServerWrapped: Stat = {
+    q"""object $nameTerm {
+       }
+     """
+  }
+
   def defnClientWrapped: Stat = {
-    val result: Type.Name = Type.Name("Unit")
-    q"def $nameTerm(..${Input.signature}): $result"
+    q"def $nameTerm(..${Input.signature}): ${Output.outputType} = ???"
   }
 
   def defnServer: Stat = {
     val result: Type.Name = Type.Name("Unit")
-    q"def $nameTerm(ctx: ${sp.Ctx.t}, ..${Input.signature}): $result"
+    q"def $nameTerm(ctx: ${sp.Ctx.t}, ..${Input.signature}): ${Output.outputType}"
   }
 
   def defnClient: Stat = {
     val result: Type.Name = Type.Name("Unit")
-    q"def $nameTerm(..${Input.signature}): $result"
+    q"def $nameTerm(..${Input.signature}): ${Output.outputType}"
   }
 
 
   protected def name: String = method.name
 
+  protected def nameTerm = Term.Name(name)
+
   protected object Input {
-    def inputIdWrapped: DTOId = DTOId(sp.basePath, s"${name.capitalize}Input")
+    def wrappedSignature: List[Term.Param] = List(param"input: ${scalaType.typeFull}")
 
-    def inputTypeWrapped: ScalaType = sp.svcBaseTpe.within(inputIdWrapped.name)
-
-    def wrappedSignature: List[Term.Param] = List(param"input: ${inputTypeWrapped.typeFull}")
-
-    def inputStruct: CompositeStructure = ctx.tools.mkStructure(inputIdWrapped)
-
-    def fields: List[ScalaField] = inputStruct.fields.all
+    def inputDefn: List[Defn] = ctx.compositeRenderer.defns(inputStruct, ClassSource.CsMethodInput(sp, ServiceMethodProduct.this)).render
 
     def signature: List[Term.Param] = fields.toParams
 
-    def methodArity: Int = fields.size
+    @deprecated("", "")
+    def typespaceType: ScalaType = ctx.conv.toScala(typespaceId)
+
+    private def typespaceId: DTOId = DTOId(sp.basePath, s"${name.capitalize}Input")
+
+    private def scalaType: ScalaType = sp.svcMethods.within(name).within("Input")
+
+    private def inputStruct: CompositeStructure = ctx.tools.mkStructure(typespaceId)
+
+    private def fields: List[ScalaField] = inputStruct.fields.all
+
+    //def methodArity: Int = fields.size
   }
 
+  protected object Output {
 
-  protected def nameTerm = Term.Name(name)
+    private def scalaType: ScalaType = sp.svcMethods.within(name).within("Output")
+
+    def wrappedOutputType: Type = t"Just[${scalaType.typeFull}]"
+
+    def outputType: Type = method.signature.output match {
+      case DefMethod.Output.Void() =>
+        t"Just[Unit]"
+      case DefMethod.Output.Singular(t) =>
+        t"Just[${ctx.conv.toScala(t).typeFull}]"
+      case DefMethod.Output.Struct(_) | DefMethod.Output.Algebraic(_) =>
+        wrappedOutputType
+    }
+
+    @deprecated("", "")
+    def wrappedTypespaceType: ScalaType = {
+      val id = method.signature.output match {
+        case DefMethod.Output.Struct(_) | DefMethod.Output.Void() | DefMethod.Output.Singular(_) =>
+          DTOId(sp.basePath, s"${name.capitalize}Output")
+
+        case DefMethod.Output.Algebraic(_) =>
+          AdtId(sp.basePath, s"${name.capitalize}Output")
+      }
+      ctx.conv.toScala(id)
+    }
+
+    def outputDefn: List[Defn] = method.signature.output match {
+      case DefMethod.Output.Struct(_) | DefMethod.Output.Void() | DefMethod.Output.Singular(_) =>
+        val typespaceId: DTOId = DTOId(sp.basePath, s"${name.capitalize}Output")
+        val struct = ctx.tools.mkStructure(typespaceId)
+        ctx.compositeRenderer.defns(struct, ClassSource.CsMethodInput(sp, ServiceMethodProduct.this)).render
+
+
+      case DefMethod.Output.Algebraic(_) =>
+        val typespaceId: AdtId = AdtId(sp.basePath, s"${name.capitalize}Output")
+        ctx.adtRenderer.renderAdt(ctx.typespace.apply(typespaceId).asInstanceOf[Adt], List.empty).render
+    }
+  }
+
 
   //  protected def outputType: ScalaType = {
   //    ctx.conv.toScala(outputId)

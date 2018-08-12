@@ -15,7 +15,7 @@ trait WithHttp4sClient {
 
     private val client: CIO[Client[CIO]] = Http1Client[CIO]()
 
-    def dispatch(request: IRTMuxRequest[Product]): ZIO[Throwable, IRTMuxResponse[Product]] = {
+    def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Goint to perform $request")
 
       codec
@@ -36,7 +36,7 @@ trait WithHttp4sClient {
         }
     }
 
-    protected def handleResponse(input: IRTMuxRequest[Product], resp: Response[CIO]): CIO[IRTMuxResponse[Product]] = {
+    protected def handleResponse(input: IRTMuxRequest, resp: Response[CIO]): CIO[IRTMuxResponse] = {
       logger.trace(s"${input.method -> "method"}: Received response, going to materialize, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
 
       if (resp.status != Status.Ok) {
@@ -71,7 +71,7 @@ trait WithHttp4sClient {
         }
     }
 
-    protected final def buildRequest(baseUri: Uri, input: IRTMuxRequest[Product], body: EntityBody[CIO]): Request[CIO] = {
+    protected final def buildRequest(baseUri: Uri, input: IRTMuxRequest, body: EntityBody[CIO]): Request[CIO] = {
       val uri = baseUri / input.method.service.value / input.method.methodId.value
 
       val base: Request[CIO] = if (input.body.value.productArity > 0) {

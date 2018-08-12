@@ -7,18 +7,18 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.ScalaTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products._
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ClassSource
 
 import scala.meta._
 
 
 object ScalaTranslator {
   final val defaultExtensions = Seq(
-    CastSimilarExtension
-    , CastDownExpandExtension
-    , CastUpExtension
-    , AnyvalExtension
+    AnyvalExtension,
+    CastSimilarExtension,
+    CastDownExpandExtension,
+    CastUpExtension,
   )
 }
 

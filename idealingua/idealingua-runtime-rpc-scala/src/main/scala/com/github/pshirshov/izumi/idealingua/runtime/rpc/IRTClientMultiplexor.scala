@@ -9,7 +9,7 @@ class IRTClientMultiplexor[R[_, _]](clients: Set[IRTWrappedClient[R]])
   extends IRTResultZio {
   val codecs: Map[IRTMethodId, IRTCirceMarshaller[R]] = clients.flatMap(_.allCodecs).toMap
 
-  def encode(input: IRTMuxRequest[Product]): IO[Throwable, String] = {
+  def encode(input: IRTMuxRequest): IO[Throwable, String] = {
     codecs.get(input.method) match {
       case Some(marshaller) =>
         IO.syncThrowable(marshaller.encodeRequest(input.body).noSpaces)
@@ -18,7 +18,7 @@ class IRTClientMultiplexor[R[_, _]](clients: Set[IRTWrappedClient[R]])
     }
   }
 
-  def decode(input: String, method: IRTMethodId): IO[Throwable, IRTMuxResponse[Product]] = {
+  def decode(input: String, method: IRTMethodId): IO[Throwable, IRTMuxResponse] = {
     codecs.get(method) match {
       case Some(marshaller) =>
         IO.syncThrowable(parse(input)).flatMap {

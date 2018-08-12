@@ -23,12 +23,8 @@ final case class IRTReqBody(value: Product) extends AnyRef
 
 final case class IRTResBody(value: Product) extends AnyRef
 
-final case class IRTMuxResponse[T <: Product](v: T, method: IRTMethodId) {
-  def body: IRTResBody = IRTResBody(v)
-}
+final case class IRTMuxResponse(body: IRTResBody, method: IRTMethodId)
 
-final case class IRTMuxRequest[T <: Product](v: T, method: IRTMethodId) {
-  def body: IRTReqBody = IRTReqBody(v)
-}
+final case class IRTMuxRequest(body: IRTReqBody, method: IRTMethodId)
 
 final case class IRTJsonBody(methodId: IRTMethodId, body: Json)

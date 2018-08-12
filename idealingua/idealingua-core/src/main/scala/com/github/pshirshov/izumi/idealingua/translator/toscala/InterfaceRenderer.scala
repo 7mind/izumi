@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Interfaces
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.TraitProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaStruct, ScalaType}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ClassSource, ScalaStruct, ScalaType}
 
 import scala.meta._
 

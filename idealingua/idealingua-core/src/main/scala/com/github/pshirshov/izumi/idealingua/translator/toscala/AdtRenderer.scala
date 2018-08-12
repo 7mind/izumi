@@ -32,7 +32,7 @@ class AdtRenderer(ctx: STContext) {
         AdtElementProduct(memberName, qqElement, qqCompanion, converters)
     }
 
-    val superClasses = List(rt.adtEl.init()) ++ bases
+    val superClasses = List(rt.adtEl.init()) ++ bases ++ List(conv.toScala[Product].init())
     val qqAdt = q""" sealed trait ${t.typeName} extends ..$superClasses {} """
     val qqAdtCompanion =
       q"""object ${t.termName} extends ${rt.adt.init()} {

@@ -37,18 +37,18 @@ class GreeterServiceClientWrapped(dispatcher: IRTDispatcher)
 
   override def greet(name: String, surname: String): IO[Nothing, String] = {
     dispatcher
-      .dispatch(IRTMuxRequest(GreeterServiceMethods.greet.Input(name, surname), GreeterServiceMethods.greet.id))
+      .dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id))
       .redeem({ err => IO.terminate(err) }, { case IRTMuxResponse(IRTResBody(v: GreeterServiceMethods.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
         IO.point(v.value)
       case v =>
-        IO.terminate(new RuntimeException(s"wtf: $v, ${v.v.getClass}"))
+        IO.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
       })
 
   }
 
 
   override def alternative(): IO[Long, String] = {
-    dispatcher.dispatch(IRTMuxRequest(GreeterServiceMethods.alternative.Input(), GreeterServiceMethods.alternative.id))
+    dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.alternative.Input()), GreeterServiceMethods.alternative.id))
       .redeem({
         err => IO.terminate(err)
       }, {
