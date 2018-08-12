@@ -80,26 +80,37 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
   }
 
   def defnClientWrapped: Stat = {
+    val exception =
+      q"""
+          val id = ${Lit.String(s"${sp.typeName}.${sp.svcWrappedClientTpe.termName.value}.$nameTerm")}
+          val expected = classOf[_M.$nameTerm.Input].toString
+          ${sp.BIO.n}.terminate(new IRTTypeMismatchException(s"Unexpected type in $$id: $$v, expected $$expected got $${v.getClass}", v, None))
+       """
+
     method.signature.output match {
       case DefMethod.Output.Singular(_) =>
         q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
                _dispatcher
                  .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
-                 .redeem({ err => ${sp.BIO.n}.terminate(err) }, { case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
-                   ${sp.BIO.n}.point(v.value)
-                 case v =>
-                   ${sp.BIO.n}.terminate(new RuntimeException())
-            })
+                 .redeem(
+                  { err => ${sp.BIO.n}.terminate(err) },
+                  {
+                    case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
+                      ${sp.BIO.n}.point(v.value)
+                    case v => $exception
+                  })
            }"""
 
       case DefMethod.Output.Void() =>
         q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
                _dispatcher
                  .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
-                 .redeem({ err => ${sp.BIO.n}.terminate(err) }, { case IRTMuxResponse(IRTResBody(_: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
-                   ${sp.BIO.n}.point(())
-                 case v =>
-                   ${sp.BIO.n}.terminate(new RuntimeException())
+                 .redeem(
+                   { err => ${sp.BIO.n}.terminate(err) },
+                   {
+                     case IRTMuxResponse(IRTResBody(_: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
+                       ${sp.BIO.n}.point(())
+                     case v => $exception
             })
            }"""
 
@@ -107,11 +118,13 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
         q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
                _dispatcher
                  .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
-                 .redeem({ err => ${sp.BIO.n}.terminate(err) }, { case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
-                   ${sp.BIO.n}.point(v)
-                 case v =>
-                   ${sp.BIO.n}.terminate(new RuntimeException())
-            })
+                 .redeem(
+                    { err => ${sp.BIO.n}.terminate(err) },
+                    {
+                      case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
+                        ${sp.BIO.n}.point(v)
+                      case v => $exception
+                    })
            }"""
     }
   }
