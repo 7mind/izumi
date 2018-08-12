@@ -75,7 +75,7 @@ final case class GoLangType (
       case gs: Generic.TSet => true // isPrimitive(gs.valueType)
       case gm: Generic.TMap => true // isPrimitive(gm.valueType)
     }
-    case _ => throw new IDLException("Unknown type is checked for primitiveness " + id.name)
+    case _ => throw new IDLException(s"Unknown type is checked for primitiveness ${id.name}")
   }
 
   def isPolymorph(id: TypeId): Boolean = id match {
@@ -122,8 +122,8 @@ final case class GoLangType (
   protected def renderUserType(id: TypeId, serialized: Boolean = false, forAlias: Boolean = false, forMap: Boolean = false): String = {
     if (serialized) {
       id match {
-        case _: InterfaceId => s"map[string]json.RawMessage"
-        case _: AdtId => s"json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
+        case _: InterfaceId => "map[string]json.RawMessage"
+        case _: AdtId => "json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
         case _: IdentifierId | _: EnumId => "string"
         case d: DTOId => s"*${im.withImport(d)}${d.name}Serialized"
         case al: AliasId => ts.dealias(al) match {
@@ -185,13 +185,13 @@ final case class GoLangType (
          """.stripMargin
 
       case g: Generic => g match {
-        case _: Generic.TMap => s"Not implemented renderUnmarshal.Generic.TMap"
-        case _: Generic.TList => s"Not implemented renderUnmarshal.Generic.TMap"
-        case _: Generic.TOption => s"Not implemented renderUnmarshal.Generic.TMap"
-        case _: Generic.TSet => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TMap => "{Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TList => "{Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TOption => "{Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TSet => "{Not implemented renderUnmarshal.Generic.TMap"
       }
 
-      case _ => throw new IDLException("Primitive types should not be unmarshalled manually " + id.name)
+      case _ => throw new IDLException(s"Primitive types should not be unmarshalled manually ${id.name}")
       // case _ => assignLeft + content + assignRight
     }
   }
