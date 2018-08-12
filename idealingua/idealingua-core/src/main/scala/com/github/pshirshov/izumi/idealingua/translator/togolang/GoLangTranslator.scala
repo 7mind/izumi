@@ -175,7 +175,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
              |    return ${imports.withImport(i.target)}GetAll${i.target.name}()
              |}
            """.stripMargin
-        case _ => s""
+        case _ => ""
       }
 
       AliasProduct(

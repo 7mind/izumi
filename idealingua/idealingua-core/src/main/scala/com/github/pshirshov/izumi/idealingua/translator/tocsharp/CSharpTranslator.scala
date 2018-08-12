@@ -284,7 +284,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
   protected def renderServiceMethodSignature(i: Service, method: DefMethod, forClient: Boolean)
                                             (implicit imports: CSharpImports, ts: Typespace): String = {
-    val callbacks = s""
+    val callbacks = ""
     method match {
       case m: DefMethod.RPCMethod => {
         val callback = s"${if (m.signature.input.fields.isEmpty) "" else ", "}Action<${renderServiceMethodOutputSignature(i, m)}> onSuccess, Action<Exception> onFailure, Action onAny = null, C ctx = null"

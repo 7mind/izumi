@@ -200,7 +200,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     if (defVal.isDefined)
       s"$to = ${defVal.get};"
     else
-      s""
+      ""
   }
 
   protected def renderDto(i: DTO)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
@@ -603,7 +603,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def renderServiceMethodOutModel(name: String, implements: String, out: DefMethod.Output): String = out match {
     case st: Struct => renderServiceMethodInModel(name, implements, st.struct, export = true)
 //    case al: Algebraic => renderAdt(al)
-    case _ => s""
+    case _ => ""
   }
 
   protected def renderServiceMethodInModel(name: String, implements: String, structure: SimpleStructure, export: Boolean): String = {
