@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types._
 import scalaz.zio.IO
 
 import scala.meta._
+import _root_.io.circe.Json
 
 class ServiceRenderer(ctx: STContext) {
 
@@ -42,7 +43,7 @@ class ServiceRenderer(ctx: STContext) {
       q"""
          object ${c.svcWrappedClientTpe.termName} extends ${rt.IRTWrappedClient.parameterize(List(c.BIO.t)).init()} {
            val allCodecs: Map[${rt.IRTMethodId.typeName}, IRTCirceMarshaller[${c.BIO.t}]] = {
-            ???
+             Map(..${decls.map(_.defnCodecRegistration)})
            }
          }
        """
@@ -53,7 +54,9 @@ class ServiceRenderer(ctx: STContext) {
             final val serviceId: ${rt.IRTServiceId.typeName} = ${c.svcMethods.termName}.serviceId
 
             val allMethods: Map[${rt.IRTMethodId.typeName}, IRTMethodWrapper[${c.BIO.t}, ${c.Ctx.t}]] = {
-                       ???
+              Seq(..${decls.map(_.defnMethodRegistration)})
+                .map(m => m.signature.id -> m)
+                .toMap
             }
 
             ..${decls.map(_.defnServerWrapped)}
@@ -77,7 +80,7 @@ class ServiceRenderer(ctx: STContext) {
 
     val qqServiceCodecs =
       q"""
-         private object ${c.svcCodecs.termName} {
+         object ${c.svcCodecs.termName} {
           ..${decls.map(_.defnCodec)}
          }
        """
@@ -92,6 +95,7 @@ class ServiceRenderer(ctx: STContext) {
       , List(
         runtime.Import.from(runtime.Pkg.language, "higherKinds")
         , runtime.Import[IO[Nothing, Nothing]](Some("IRTBIO"))
+        , runtime.Import[Json](Some("IRTJson"))
         , rt.services.`import`
       )
     )

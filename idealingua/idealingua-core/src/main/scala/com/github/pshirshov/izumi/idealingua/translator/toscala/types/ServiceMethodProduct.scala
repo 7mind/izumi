@@ -29,14 +29,32 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
      """
   }
 
+  def defnMethodRegistration: Term = nameTerm
+
+  def defnCodecRegistration: Term.ApplyInfix = {
+    q""" ${sp.svcMethods.termName}.$nameTerm.id -> ${sp.svcCodecs.termName}.$nameTerm """
+  }
+
   def defnCodec: Stat = {
-    q"""object $nameTerm {
+    q"""object $nameTerm extends IRTCirceMarshaller[${sp.BIO.t}] with ${ctx.rt.WithResultZio.init()} {
+          import ${sp.svcMethods.termName}.$nameTerm._
+
+          def encodeRequest: PartialFunction[IRTReqBody, IRTJson] = ???
+          def encodeResponse: PartialFunction[IRTResBody, IRTJson] = ???
+          def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = ???
+          def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = ???
        }
      """
   }
 
   def defnServerWrapped: Stat = {
-    q"""object $nameTerm {
+    q"""object $nameTerm extends IRTMethodWrapper[${sp.BIO.t}, ${sp.Ctx.t}] with ${ctx.rt.WithResultZio.init()} {
+          import ${sp.svcMethods.termName}.$nameTerm._
+
+          val signature: ${sp.svcMethods.termName}.$nameTerm.type = ${sp.svcMethods.termName}.$nameTerm
+          val marshaller: ${sp.svcCodecs.termName}.$nameTerm.type = ${sp.svcCodecs.termName}.$nameTerm
+
+          override def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = ???
        }
      """
   }
