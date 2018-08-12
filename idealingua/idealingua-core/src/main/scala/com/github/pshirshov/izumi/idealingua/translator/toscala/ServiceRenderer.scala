@@ -50,8 +50,10 @@ class ServiceRenderer(ctx: STContext) {
        """
 
     val qqServerWrapped =
-      q"""class ${c.svcWrappedServerTpe.typeName}[${c.Ctx.p}](_service: ${c.svcServerTpe.typeName}[${c.BIO.t}, ${c.Ctx.t}] with ${rt.WithResultZio.typeName})
-               extends IRTWrappedService[${c.BIO.t}, ${c.Ctx.t}] with ${rt.WithResultZio.init()} {
+      q"""class ${c.svcWrappedServerTpe.typeName}[${c.F.p}, ${c.Ctx.p}](
+              _service: ${c.svcServerTpe.typeName}[${c.F.t}, ${c.Ctx.t}] with ${rt.IRTResultTransZio.typeName}[${c.F.t}]
+            )
+               extends IRTWrappedService[${c.BIO.t}, ${c.Ctx.t}] {
             final val serviceId: ${rt.IRTServiceId.typeName} = ${c.svcMethods.termName}.serviceId
 
             val allMethods: Map[${rt.IRTMethodId.typeName}, IRTMethodWrapper[${c.BIO.t}, ${c.Ctx.t}]] = {

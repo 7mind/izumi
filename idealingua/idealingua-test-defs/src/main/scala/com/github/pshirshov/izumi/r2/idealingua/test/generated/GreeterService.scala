@@ -82,9 +82,8 @@ object GreeterServiceClientWrapped extends IRTWrappedClient[IO] {
   }
 }
 
-class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with IRTResultZio)
-  extends IRTWrappedService[IO, C]
-    with IRTResultZio {
+class GreeterServiceServerWrapped[F[_, _], C](service: GreeterServiceServer[F, C] with IRTResultTransZio[F])
+  extends IRTWrappedService[IO, C] {
 
   object greet extends IRTMethodWrapper[IO, C] with IRTResultZio {
 
@@ -94,7 +93,7 @@ class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with I
     override val marshaller: GreeterServerMarshallers.greet.type = GreeterServerMarshallers.greet
 
     override def invoke(ctx: C, input: Input): Just[Output] = {
-      service.greet(ctx, input.name, input.surname)
+      service.toZio(service.greet(ctx, input.name, input.surname))
         .map(v => Output(v))
     }
   }
@@ -107,7 +106,7 @@ class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with I
     override val marshaller: GreeterServerMarshallers.alternative.type = GreeterServerMarshallers.alternative
 
     override def invoke(ctx: C, input: Input): Just[Output] = {
-      service.alternative(ctx)
+      service.toZio(service.alternative(ctx))
         .redeem(err => IO.point(Left(AlternativeOutput.Failure(err))), succ => IO.point(Right(AlternativeOutput.Success(succ))))
     }
   }
@@ -127,7 +126,7 @@ class GreeterServiceServerWrapped[C](service: GreeterServiceServer[IO, C] with I
 
 object Test {
   def main(args: Array[String]): Unit = {
-    val greeter = new GreeterServiceServerWrapped[Unit](new impls.AbstractGreeterServer1.Impl[Unit]())
+    val greeter = new GreeterServiceServerWrapped[IO, Unit](new impls.AbstractGreeterServer1.Impl[Unit]())
     val multiplexor = new IRTServerMultiplexor[IO, Unit](Set(greeter))
 
     val req1 = new greeter.greet.signature.Input("John", "Doe")

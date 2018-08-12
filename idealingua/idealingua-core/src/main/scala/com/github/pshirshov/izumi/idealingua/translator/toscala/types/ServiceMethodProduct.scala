@@ -50,21 +50,21 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
       case DefMethod.Output.Singular(_) =>
         q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               assert(ctx != null && input != null)
-              _service.$nameTerm(ctx, ..${Input.sigCall})
+              _service.toZio(_service.$nameTerm(ctx, ..${Input.sigCall}))
                 .map(v => new Output(v))
            }"""
 
       case DefMethod.Output.Void() =>
         q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               assert(ctx != null && input != null)
-              _service.$nameTerm(ctx, ..${Input.sigCall})
+              _service.toZio(_service.$nameTerm(ctx, ..${Input.sigCall}))
                 .map(_ => new Output())
            }"""
 
       case DefMethod.Output.Algebraic(_) | DefMethod.Output.Struct(_) =>
         q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               assert(ctx != null && input != null)
-              _service.$nameTerm(ctx, ..${Input.sigCall})
+              _service.toZio(_service.$nameTerm(ctx, ..${Input.sigCall}))
            }"""
     }
 
