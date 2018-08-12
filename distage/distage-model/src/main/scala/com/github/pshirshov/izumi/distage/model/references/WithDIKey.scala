@@ -32,14 +32,14 @@ trait WithDIKey {
     case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {
       override def toString: String = s"Proxy[${proxied.toString}]"
 
-      override def hashCode(): Int = toString.hashCode()
+      override def hashCode: Int = toString.hashCode()
     }
 
     // todo: this disambiguating .index is kinda shitty
     case class SetElementKey(set: DIKey, index: Int, tpe: SafeType) extends DIKey {
       override def toString: String = s"$set##${tpe.toString}.$index"
 
-      override def hashCode(): Int = toString.hashCode()
+      override def hashCode: Int = toString.hashCode()
     }
 
     implicit class WithTpe(key: DIKey) {

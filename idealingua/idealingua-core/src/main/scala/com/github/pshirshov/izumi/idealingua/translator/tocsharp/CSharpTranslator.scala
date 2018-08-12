@@ -255,7 +255,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     val parentIfaces = ts.inheritance.parentsInherited(i.id).filter(_ != i.id)
     val validFields = structure.all.filterNot(f => parentIfaces.contains(f.defn.definedBy))
     val ifaceFields = validFields.map(f =>
-      (if (f.defn.variance.nonEmpty) true else false, CSharpField(/*if (f.defn.variance.nonEmpty) f.defn.variance.last else */ f.field, eid.name, Seq.empty)))
+      (f.defn.variance.nonEmpty, CSharpField(/*if (f.defn.variance.nonEmpty) f.defn.variance.last else */ f.field, eid.name, Seq.empty)))
 
     val struct = CSharpClass(eid, i.id.name + eid.name, structure, List(i.id))
     val ifaceImplements = if (i.struct.superclasses.interfaces.isEmpty) ": IRTTI" else ": " +

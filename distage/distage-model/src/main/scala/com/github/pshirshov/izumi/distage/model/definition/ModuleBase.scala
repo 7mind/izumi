@@ -12,7 +12,7 @@ trait ModuleBase {
     case _ => false
   }
 
-  override def hashCode(): Int = bindings.hashCode()
+  override def hashCode: Int = bindings.hashCode()
 
   override def toString: String = bindings.toString()
 }
