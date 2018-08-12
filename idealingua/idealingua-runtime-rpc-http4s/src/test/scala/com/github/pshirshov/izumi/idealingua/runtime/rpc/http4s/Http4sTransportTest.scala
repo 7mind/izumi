@@ -2,24 +2,22 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import java.util.concurrent.atomic.AtomicReference
 
-import cats._
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
-import com.github.pshirshov.izumi.idealingua.runtime.circe.{IRTClientMarshallers, IRTOpinionatedMarshalers, IRTServerMarshallers}
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTServerMultiplexor, _}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
-import com.github.pshirshov.izumi.r2.idealingua.test.generated._
+import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceServerWrapped}
 import com.github.pshirshov.izumi.r2.idealingua.test.impls._
 import org.http4s._
-import org.http4s.dsl._
 import org.http4s.headers.Authorization
-import org.http4s.server._
+import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
+import scalaz.zio
 
-import scala.language.{higherKinds, reflectiveCalls}
+import scala.language.reflectiveCalls
 
 
 class Http4sTransportTest extends WordSpec {
@@ -53,22 +51,30 @@ class Http4sTransportTest extends WordSpec {
 
   private def performTests(): Unit = {
     clientDispatcher.setupCredentials("user", "pass")
-    assert(greeterClient.greet("John", "Smith").unsafeRunSync() == "Hi, John Smith!")
-    assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
-    assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
 
-    val missingHandler = intercept[IRTHttpFailureException] {
-      greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync()
-    }
-    assert(missingHandler.status == Status.NotFound)
-
+    assert(ZIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
+    assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
+    //    assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
+    //    assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
+    //
+    //    val missingHandler = intercept[IRTHttpFailureException] {
+    //      greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync()
+    //    }
+    //    assert(missingHandler.status == Status.NotFound)
+    //
     clientDispatcher.cancelCredentials()
-
-    val unauthorized = intercept[IRTHttpFailureException] {
-      calculatorClient.sum(403, 0).unsafeRunSync()
+    val forbidden = intercept[IRTUnexpectedHttpStatus] {
+      ZIOR.unsafeRun(greeterClient.alternative())
     }
-    assert(unauthorized.status == Status.Forbidden)
+    assert(forbidden.status == Status.Forbidden)
+
+    clientDispatcher.setupCredentials("user", "badpass")
+    val unauthorized = intercept[IRTUnexpectedHttpStatus] {
+      ZIOR.unsafeRun(greeterClient.alternative())
+    }
+    assert(unauthorized.status == Status.Unauthorized)
     ()
+
   }
 }
 
@@ -76,42 +82,45 @@ object Http4sTransportTest {
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
-  final class AuthCheckDispatcher[Ctx, R[_]](proxied: IRTUnsafeDispatcher[Ctx, R]) extends IRTUnsafeDispatcher[Ctx, R] {
-    override def identifier: IRTServiceId = proxied.identifier
 
-    override def dispatchUnsafe(input: UnsafeInput): MaybeOutput = {
-      input.context match {
-        case DummyContext(_, Some(BasicCredentials(user, pass))) =>
-          if (user == "user" && pass == "pass") {
-            proxied.dispatchUnsafe(input)
-          } else {
-            Left(DispatchingFailure.NoHandler)
+  final class AuthCheckDispatcher2[Ctx](proxied: IRTWrappedService[zio.IO, Ctx]) extends IRTWrappedService[zio.IO, Ctx] {
+    override def serviceId: IRTServiceId = proxied.serviceId
+
+    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[zio.IO, Ctx]] = proxied.allMethods.mapValues {
+      method =>
+        new IRTMethodWrapper[zio.IO, Ctx] with IRTResultZio {
+
+          override val signature: IRTMethodSignature = method.signature
+          override val marshaller: IRTCirceMarshaller[zio.IO] = method.marshaller
+
+          override def invoke(ctx: Ctx, input: signature.Input): zio.IO[Nothing, signature.Output] = {
+            ctx match {
+              case DummyContext(_, Some(BasicCredentials(user, pass))) =>
+                if (user == "user" && pass == "pass") {
+                  method.invoke(ctx, input.asInstanceOf[method.signature.Input]).map(_.asInstanceOf[signature.Output])
+                } else {
+                  zio.IO.terminate(IRTBadCredentialsException(Status.Unauthorized))
+                }
+
+              case _ =>
+                zio.IO.terminate(IRTNoCredentialsException(Status.Forbidden))
+            }
           }
-
-        case _ =>
-          Left(DispatchingFailure.Rejected)
-      }
+        }
     }
   }
 
-  class DemoContext[R[_] : IRTResult : Monad, Ctx] {
-    private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
-    private val calculatorService = new AbstractCalculatorServer.Impl[R, Ctx]
-    private val greeterDispatcher = GreeterServiceWrapped.serverUnsafe(greeterService)
-    private val calculatorDispatcher = CalculatorServiceWrapped.serverUnsafe(calculatorService)
-    private val dispatchers = List(greeterDispatcher, calculatorDispatcher).map(d => new AuthCheckDispatcher(d))
-
-    private final val codecs = List(GreeterServiceWrapped, CalculatorServiceWrapped)
-    private final val marsh = IRTOpinionatedMarshalers(codecs)
-
-    final val serverMuxer = new IRTServerMultiplexor(dispatchers)
-    final val cm: IRTClientMarshallers = marsh
-    final val sm: IRTServerMarshallers = marsh
+  class DemoContext[Ctx] {
+    private val greeterService = new AbstractGreeterServer1.Impl[Ctx]
+    private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
+    private val dispatchers: Set[IRTWrappedService[zio.IO, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
+    private val clients: Set[IRTWrappedClient[zio.IO]] = Set(GreeterServiceClientWrapped)
+    val codec = new IRTClientMultiplexor(clients)
+    val multiplexor = new IRTServerMultiplexor[zio.IO, Ctx](dispatchers)
   }
 
   object Http4sTestContext {
 
-    import com.github.pshirshov.izumi.idealingua.runtime.cats.RuntimeCats._
 
     //
     final val addr = IzSockets.temporaryServerAddress()
@@ -120,7 +129,7 @@ object Http4sTransportTest {
     final val baseUri = Uri(Some(Uri.Scheme.http), Some(Uri.Authority(host = Uri.RegName(host), port = Some(port))))
 
     //
-    final val demo = new DemoContext[IO, DummyContext]()
+    final val demo = new DemoContext[DummyContext]()
 
     //
     final val authUser: Kleisli[OptionT[IO, ?], Request[IO], DummyContext] =
@@ -131,14 +140,15 @@ object Http4sTransportTest {
           OptionT.liftF(IO(context))
       }
 
-    final val logger = IzLogger.basic(Log.Level.Info)
+    final val logger = IzLogger.basic(Log.Level.Trace)
     StaticLogRouter.instance.setup(logger.receiver)
-    final val rt = new Http4sRuntime(io, logger, demo.sm,  demo.cm)
-    final val ioService = new rt.HttpServer(demo.serverMuxer, AuthMiddleware(authUser))
+    final val rt = new Http4sRuntime[zio.IO](logger)
+    final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser))
 
     //
-    final val clientDispatcher = new rt.ClientDispatcher(baseUri) {
+    final val clientDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) {
       val creds = new AtomicReference[Seq[Header]](Seq.empty)
+
       def setupCredentials(login: String, password: String): Unit = {
         creds.set(Seq(Authorization(BasicCredentials(login, password))))
       }
@@ -148,12 +158,11 @@ object Http4sTransportTest {
       }
 
       override protected def transformRequest(request: Request[IO]): Request[IO] = {
-        request.withHeaders(Headers(creds.get() :_*))
+        request.withHeaders(Headers(creds.get(): _*))
       }
     }
 
-    final val greeterClient = GreeterServiceWrapped.clientUnsafe(clientDispatcher)
-    final val calculatorClient = CalculatorServiceWrapped.clientUnsafe(clientDispatcher)
+    final val greeterClient = new GreeterServiceClientWrapped(clientDispatcher)
   }
 
 }

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.platform.jvm
 
 import java.lang.management.ManagementFactory
-import java.net.URLClassLoader
+import java.net.{URLClassLoader, URLDecoder}
 import java.time.ZonedDateTime
 
 import scala.annotation.tailrec
@@ -25,7 +25,7 @@ trait IzJvm {
       case Some(u: URLClassLoader) =>
         u
           .getURLs
-          .map(_.getFile)
+          .map(u => URLDecoder.decode(u.getFile, "UTF-8"))
           .toSeq
       case _ =>
         Seq.empty

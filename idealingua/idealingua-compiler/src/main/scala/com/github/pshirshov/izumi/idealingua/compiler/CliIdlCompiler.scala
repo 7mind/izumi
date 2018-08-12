@@ -13,7 +13,7 @@ import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler._
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import io.circe.{Decoder, Encoder}
 import org.scalacheck._
@@ -79,7 +79,7 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
   implicit val sgen: Arbitrary[String] = Arbitrary(Gen.alphaLowerStr)
 
   private def extensions: Map[IDLLanguage, Seq[TranslatorExtension]] = Map(
-    IDLLanguage.Scala -> (ScalaTranslator.defaultExtensions ++ Seq(CirceDerivationTranslatorExtension))
+    IDLLanguage.Scala -> ScalaTranslator.defaultExtensions
     , IDLLanguage.Typescript -> TypeScriptTranslator.defaultExtensions
     , IDLLanguage.Go -> GoLangTranslator.defaultExtensions
     , IDLLanguage.CSharp -> CSharpTranslator.defaultExtensions

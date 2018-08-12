@@ -12,7 +12,7 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSha
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{CirceDerivationTranslatorExtension, ScalaTranslator}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
@@ -85,10 +85,7 @@ object IdealinguaPlugin extends AutoPlugin {
   }
 
   override lazy val projectSettings = Seq(
-    idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions ++ Seq(
-      CirceDerivationTranslatorExtension
-    )
-
+    idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions
     , idlDefaultExtensionsTypescript := TypeScriptTranslator.defaultExtensions
     , idlDefaultExtensionsGolang := GoLangTranslator.defaultExtensions
     , idlDefaultExtensionsCSharp := CSharpTranslator.defaultExtensions

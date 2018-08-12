@@ -71,11 +71,18 @@ object CogenProduct {
 
   final case class CogenServiceProduct
   (
-    service: CogenServiceProduct.Pair[Defn.Trait]
-    , client: CogenServiceProduct.Pair[Defn.Trait]
-    , wrapped: CogenServiceProduct.Pair[Defn.Trait]
-    , defs: CogenServiceProduct.Defs
+    server: Defn.Trait
+    , client: Defn.Trait
+    , clientWrapped: CogenServiceProduct.Pair[Defn.Class]
+    , serverWrapped: CogenServiceProduct.Pair[Defn.Class]
+    , methods: Defn.Object
+    , marshallers: Defn.Object
     , imports: List[Import]
+
+    //    service: CogenServiceProduct.Pair[Defn.Trait]
+    //    , client: CogenServiceProduct.Pair[Defn.Trait]
+    //    , wrapped: CogenServiceProduct.Pair[Defn.Trait]
+    //    , defs: CogenServiceProduct.Defs
   ) extends RenderableCogenProduct {
 
     override def preamble: String =
@@ -83,20 +90,25 @@ object CogenProduct {
          |""".stripMargin
 
     def render: List[Defn] = {
-      List(service, client, wrapped).flatMap(_.render) :+ defs.render
+      List(server, client) ++
+        List(serverWrapped, clientWrapped).flatMap(_.render) ++
+        List(methods, marshallers)
     }
   }
 
   object CogenServiceProduct {
-    final case class Defs(defs: Defn.Object, in: Pair[Defn.Trait], out: Pair[Defn.Trait]) {
-      def render: Defn = {
-        import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
-        defs.prependDefnitions(in.render ++ out.render)
-      }
-    }
 
+    //    final case class Defs(defs: Defn.Object, in: Pair[Defn.Trait], out: Pair[Defn.Trait]) {
+    //      def render: Defn = {
+    //        import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+    //        defs.prependDefnitions(in.render ++ out.render)
+    //      }
+    //    }
+    //
     final case class Pair[T <: Defn](defn: T, companion: Defn.Object) {
       def render: List[Defn] = List(defn, companion)
     }
+
   }
+
 }

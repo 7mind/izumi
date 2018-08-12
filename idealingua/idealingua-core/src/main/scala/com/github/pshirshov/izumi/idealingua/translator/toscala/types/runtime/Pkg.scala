@@ -5,21 +5,11 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaTypeC
 
 import scala.reflect._
 
+
 final case class Pkg private(pkgParts: Seq[String]) {
   final val conv = new ScalaTypeConverter(DomainId(pkgParts.init, pkgParts.last))
 
-  def `import`: Import = Import.of(this)
-}
-
-final case class Import private(parts: Seq[String]) {
-  def render: String = s"import _root_.${parts.mkString(".")}"
-}
-
-object Import {
-  def of(pkg: Pkg): Import = from(pkg, "_")
-
-  def from(pkg: Pkg, symbol: String): Import = Import(pkg.pkgParts :+ symbol)
-
+  def `import`: Import = Import.AllPackage(this)
 }
 
 object Pkg {

@@ -28,6 +28,10 @@ data Package {
 }
 
 service TestService {
+  // temporarily commented till we fix transpilers. https://github.com/pshirshov/izumi-r2/issues/328
+  //def unitToUnit()
+  //def unitResult(package: Package)
+
   def parameterless(): str
   def simpleMethod(a: str): str
   def simpleIntMethod(a: i32): i32
@@ -40,8 +44,7 @@ service TestService {
 
   def simpleGoReserved(package: Package): bool
 
-  // temporarily commented till we fix transpilers. https://github.com/pshirshov/izumi-r2/issues/328
-  //def unitResult(package: Package)
+
 
   // simple instance
   def greetSingularOut(firstName: str, secondName: str) => str

@@ -37,6 +37,10 @@ object Issue {
     override def toString: TypeName = s"All typenames must start with a capital letter: $t"
   }
 
+  final case class ShortName(t: TypeId) extends Issue {
+    override def toString: TypeName = s"All typenames be at least 2 characters long: $t"
+  }
+
   final case class ReservedTypenamePrefix(t: TypeId) extends Issue {
     override def toString: TypeName = s"Typenames can't start with reserved runtime prefixes ${TypespaceVerifier.badNames.mkString(",")}: $t"
   }
@@ -164,6 +168,12 @@ class TypespaceVerifier(ts: Typespace) {
   private def checkNamingConventions: Seq[Issue] = {
     ts.domain.types.flatMap {
       t =>
+        val singleChar = if (t.id.name.size < 2) {
+          Seq(Issue.ShortName(t.id))
+        } else {
+          Seq.empty
+        }
+
         val noncapitalized = if (t.id.name.head.isLower) {
           Seq(Issue.NoncapitalizedTypename(t.id))
         } else {
