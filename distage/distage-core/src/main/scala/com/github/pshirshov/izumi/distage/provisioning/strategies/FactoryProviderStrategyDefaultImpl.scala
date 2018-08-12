@@ -19,7 +19,7 @@ class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends Factory
           case _ if key.wireWith == DIKey.get[FactoryExecutor] =>
             TypedRef(mkExecutor(context, executor, op.wiring.factoryIndex, op))
           case _ =>
-            throw new InvalidPlanException(s"The impossible happened! Tried to instantiate class," +
+            throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
                 s" but the dependency has not been initialized: Class: $op.target, dependency: $key")
         }
     }

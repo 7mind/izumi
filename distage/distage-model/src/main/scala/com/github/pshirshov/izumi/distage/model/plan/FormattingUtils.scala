@@ -66,7 +66,7 @@ object FormattingUtils {
     val sb = new StringBuilder()
     sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}\n")
     if (depRepr.nonEmpty) {
-      sb.append(depRepr.mkString(s"\n").shift(2))
+      sb.append(depRepr.mkString("\n").shift(2))
     }
     sb.append(s"\n${delim._2}")
 

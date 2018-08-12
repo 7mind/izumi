@@ -144,7 +144,7 @@ class TypeScriptTypeConverter() {
     if (forSerialized) {
       id match {
         case i: InterfaceId => s"{[key: string]: ${i.name + ts.implId(i).name + "Serialized"}}"
-        case _: AdtId => s"{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
+        case _: AdtId => "{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
         case al: AliasId => toNativeType(ts(al).asInstanceOf[Alias].target, ts, forSerialized)
         case _: DTOId => s"${id.name}Serialized"
         case _: EnumId => "string"

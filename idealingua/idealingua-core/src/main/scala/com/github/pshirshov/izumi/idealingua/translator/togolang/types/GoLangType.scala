@@ -230,7 +230,7 @@ final case class GoLangType (
         case _ => throw new IDLException(s"Should never parse non int or string types. Used for type ${id.name}")
       }
     } else {
-      throw new IDLException(s"Render from string for non unescaped ones is not supported yet!")
+      throw new IDLException("Render from string for non unescaped ones is not supported yet!")
     }
   }
 

@@ -17,7 +17,7 @@ trait AbstractGreeterServer1[C]
   }
 
   override def sayhi(ctx: C): Just[String] = just {
-    s"Hi!"
+    "Hi!"
   }
 
   override def alternative(ctx: C): Or[Long, String] = choice {
@@ -44,7 +44,7 @@ trait AbstractGreeterServer2[R[_, _], C]
   }
 
   override def sayhi(ctx: C): Just[String] = just {
-    s"Hi!"
+    "Hi!"
   }
 
   override def alternative(ctx: C): Or[Long, String] = choice {

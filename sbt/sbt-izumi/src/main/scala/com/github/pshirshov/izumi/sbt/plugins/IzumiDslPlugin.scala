@@ -59,7 +59,7 @@ object IzumiDslPlugin extends AutoPlugin {
               val notAggregated = loadedReferences.diff(knownReferences)
 
               if (notAggregated.nonEmpty) {
-                logger.warn(s"!!! WARNING !!! WARNING !!! WARNING !!! ")
+                logger.warn("!!! WARNING !!! WARNING !!! WARNING !!! ")
                 logger.warn(s"The following projects are loaded but not aggregated by `${project.id}` project:\n${notAggregated.mkString("\n")}")
               }
 

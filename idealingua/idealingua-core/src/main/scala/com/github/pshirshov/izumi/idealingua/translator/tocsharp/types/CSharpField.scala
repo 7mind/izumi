@@ -52,7 +52,7 @@ final case class CSharpField(
     if (tp.isNative) {
       s"${if (forInterface) "" else "public "}${tp.renderType()} ${if (by.isEmpty) "" else s"$by."}${renderMemberName()} { get; set; }"
     } else {
-      s"""Not Implemented renderMember()""".stripMargin
+      "Not Implemented renderMember()"
     }
   }
 

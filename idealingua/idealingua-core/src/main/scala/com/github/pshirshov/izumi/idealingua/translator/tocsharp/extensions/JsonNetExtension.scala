@@ -373,7 +373,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         """.stripMargin
 
 
-      case _ => s"""serializer.Serialize(writer, v);"""
+      case _ => """serializer.Serialize(writer, v);"""
     }
   }
 

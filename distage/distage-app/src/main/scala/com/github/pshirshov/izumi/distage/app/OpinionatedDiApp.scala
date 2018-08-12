@@ -140,7 +140,7 @@ abstract class OpinionatedDiApp {
     }
 
     if (appDef.definition.bindings.isEmpty) {
-      throw new DiAppBootstrapException(s"Empty app context. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
+      throw new DiAppBootstrapException("Empty app context. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
     }
   }
 
