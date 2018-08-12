@@ -28,8 +28,6 @@ final case class ServiceContext(ctx: STContext, svc: Service) {
   val basePath = TypePath(svc.id.domain, Seq(typeName))
   val svcBaseTpe: ScalaType = ctx.conv.toScala(IndefiniteId(svc.id.domain.toPackage, s"$typeName"))
 
-  //  val svcPath = TypePath(svc.id.domain, Seq(s"${typeName}Server"))
-
   private def typeId(name: String): ScalaType = {
     ctx.conv.toScala(IndefiniteId(svc.id.domain.toPackage, name))
   }
@@ -40,19 +38,6 @@ final case class ServiceContext(ctx: STContext, svc: Service) {
   val svcWrappedServerTpe: ScalaType = typeId(s"${typeName}WrappedServer")
   val svcWrappedClientTpe: ScalaType = typeId(s"${typeName}WrappedClient")
 
-  val svcMethods: ScalaType = svcBaseTpe //typeId(s"${typeName}Methods")
+  val svcMethods: ScalaType = svcBaseTpe
   val svcCodecs: ScalaType = typeId(s"${typeName}Codecs")
-
-  //  val svcBaseTpe: ScalaType = ctx.conv.toScala(baseId)
-  //
-  //  val svcWrappedTpe: ScalaType = ctx.conv.toScala(svcWrappedServerTpe)
-  //
-  //
-  //  import ctx.conv._
-  //
-  //  val serviceInputBase: ScalaType = svcBaseTpe.within(s"In${typeName.capitalize}")
-  //  val serviceOutputBase: ScalaType = svcBaseTpe.within(s"Out${typeName.capitalize}")
-  //
-  //  def dispatcherResult = result.parameterize(List(serviceOutputBase.typeFull)).typeFull
-
 }

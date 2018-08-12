@@ -156,66 +156,6 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     product.copy(companionBase = product.companionBase.prependBase(init), more = product.more :+ boilerplate.defn)
   }
 
-
-//  override def handleService(ctx: STContext, sCtx: FullServiceContext, product: CogenServiceProduct): CogenServiceProduct = {
-//    val requestEncoders = sCtx.methods.map {
-//      m =>
-//        p"case IRTReqBody(v: ${m.inputTypeWrapped.typeFull}) => v.asJson"
-//    }
-//
-//    val responseEncoders = sCtx.methods.map {
-//      m =>
-//        p"case IRTResBody(v: ${m.outputTypeWrapped.typeFull}) => v.asJson"
-//    }
-//
-//    val requestDecoders = sCtx.methods.map {
-//      m =>
-//        p"""
-//              case IRTCursorForMethod(m, packet) if m == ${m.fullMethodIdName}=>
-//                  packet.as[${m.inputTypeWrapped.typeFull}].map(v => IRTReqBody(v))
-//            """
-//    }
-//
-//    val responseDecoders = sCtx.methods.map {
-//      m =>
-//        p"""
-//              case IRTCursorForMethod(m, packet) if m == ${m.fullMethodIdName}=>
-//                  packet.as[${m.outputTypeWrapped.typeFull}].map(v => IRTResBody(v))
-//            """
-//    }
-//
-//    val cp = circeRuntimePkg.conv.toScala[IRTCirceMarshaller[IDLRuntimeTypes._2Arg]]
-//    //val base = circeRuntimePkg.conv.toScala[IRTCirceWrappedServiceDefinition]
-//
-//    val codecProvider =
-//      q""" object CodecProvider extends ${cp.init()} {
-//        import _root_.io.circe._
-//        import _root_.io.circe.syntax._
-//        import io.circe.Decoder.Result
-//
-//        def requestEncoders: List[PartialFunction[IRTReqBody, Json]] = List({..case $requestEncoders})
-//
-//        def responseEncoders: List[PartialFunction[IRTResBody, Json]] = List({..case $responseEncoders})
-//
-//        def requestDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTReqBody]]] = List({..case $requestDecoders})
-//
-//        def responseDecoders: List[PartialFunction[IRTCursorForMethod, Result[IRTResBody]]] =  List({..case $responseDecoders})
-//      }"""
-//
-//    // Circe have an issue, once it fixed we may simplify our logic: https://github.com/circe/circe/issues/868
-//
-//    val extensions: List[Stat] = List(q"override def codecProvider: ${cp.typeFull} = CodecProvider", codecProvider)
-//
-//    // TODO: lenses?
-//    product.copy(
-//      wrapped = product.wrapped.copy(
-//        companion = product.wrapped.companion.appendDefinitions(extensions) //.appendBase(base.init())
-//      )
-//      , imports = product.imports :+ runtime.Import.of(circeRuntimePkg)
-//    )
-//  }
-
-
   override def handleService(ctx: STContext, sCtx: FullServiceContext, product: CogenServiceProduct): CogenServiceProduct = {
     super.handleService(ctx, sCtx, product)
   }
@@ -301,12 +241,3 @@ object CirceDerivationTranslatorExtension extends CirceTranslatorExtensionBase {
     q""" import _root_.io.circe.derivation.{deriveDecoder, deriveEncoder} """
   )
 }
-
-///**
-//  * Slower but works for sealed traits
-//  */
-//object CirceGenericTranslatorExtension extends CirceTranslatorExtensionBase {
-////  override protected val classDeriverImports: List[Import] = List(
-////    q""" import _root_.io.circe.generic.semiauto.{deriveDecoder, deriveEncoder} """
-////  )
-//}

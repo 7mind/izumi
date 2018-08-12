@@ -31,16 +31,6 @@ class CompilerTest extends WordSpec {
       assume(IzFiles.haveExecutables("csc", "nunit-console"), "csc not available")
       assert(compilesCSharp(getClass.getSimpleName, loadDefs()))
     }
-
-//    "be able to compile into scala with circe-derivation" in {
-//      assume(IzFiles.haveExecutables("scalac"), "scalac not available")
-//      assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(CirceDerivationTranslatorExtension)))
-//    }
-//
-//    "be able to compile into scala with circe-generic" in {
-//      assume(IzFiles.haveExecutables("scalac"), "scalac not available")
-//      assert(compilesScala(getClass.getSimpleName, loadDefs(), ScalaTranslator.defaultExtensions ++ Seq(CirceGenericTranslatorExtension)))
-//    }
   }
 }
 
