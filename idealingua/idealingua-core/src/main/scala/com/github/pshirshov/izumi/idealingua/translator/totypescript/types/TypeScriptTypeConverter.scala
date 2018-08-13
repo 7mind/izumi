@@ -58,7 +58,7 @@ class TypeScriptTypeConverter() {
       case Primitive.TFloat => s"$value.toString()"
       case Primitive.TDouble => s"$value.toString()"
       case Primitive.TUUID => value
-      case id: IdentifierId => s"$value.toString()"
+      case _: IdentifierId => s"$value.toString()"
       case en: EnumId => s"$en[$value]"
       // TODO We do nothing for other types, should probably figure something out ...
       case _ => throw new Exception("Unsupported area in emitTypeAsString")
@@ -126,7 +126,7 @@ class TypeScriptTypeConverter() {
 
   def toNativeType(id: TypeId, ts: Typespace, forSerialized: Boolean = false, forMap: Boolean = false): String = {
     id match {
-      case t: Generic => toGenericType(t, ts, forSerialized, forMap)
+      case t: Generic => toGenericType(t, ts, forSerialized)
       case t: Primitive => toPrimitiveType(t, forSerialized)
       case _ => toCustomType(id, ts, forSerialized, forMap)
     }
@@ -181,7 +181,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TTsU => if (forSerialized) "string" else "Date"
   }
 
-  private def toGenericType(typeId: Generic, ts: Typespace, forSerialized: Boolean, forMap: Boolean): String = {
+  private def toGenericType(typeId: Generic, ts: Typespace, forSerialized: Boolean): String = {
     typeId match {
       case _: Generic.TSet => toNativeType(typeId.asInstanceOf[TSet].valueType, ts, forSerialized) + "[]"
       case _: Generic.TMap => "{[key: " + toNativeType(typeId.asInstanceOf[TMap].keyType, ts, forSerialized, forMap = true) + "]: " + toNativeType(typeId.asInstanceOf[TMap].valueType, ts, forSerialized) + "}"

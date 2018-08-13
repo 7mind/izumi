@@ -70,7 +70,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
   }
 
   override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct)(implicit manifest: Option[TypeScriptBuildManifest]): EnumProduct = {
-    implicit val ts: Typespace = ctx.typespace
+//    implicit val ts: Typespace = ctx.typespace
     val pkg = enum.id.path.toPackage.mkString(".")
     val short = enum.id.name
     val full = pkg + "." + short

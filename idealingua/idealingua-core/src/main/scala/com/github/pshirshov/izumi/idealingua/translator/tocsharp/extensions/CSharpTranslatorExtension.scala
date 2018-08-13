@@ -12,116 +12,116 @@ trait CSharpTranslatorExtension extends TranslatorExtension {
 
     // Enumeration
     def preModelEmit(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def postModelEmit(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def imports(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): Seq[String] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 
     def postEmitModules(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 
     // Identifier
     def preModelEmit(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def postModelEmit(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def imports(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): Seq[String] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 
     def postEmitModules(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 
     // Interface
     def preModelEmit(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def postModelEmit(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def imports(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): Seq[String] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 
     def postEmitModules(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 
     // DTO
     def preModelEmit(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def preModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, name, struct, im, ts)
       ""
     }
 
     def postModelEmit(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def postModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, name, struct, im, ts)
       ""
     }
 
     def imports(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): Seq[String] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 
     def postEmitModules(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 
     // ADT
     def preModelEmit(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def postModelEmit(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       ""
     }
 
     def imports(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): Seq[String] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 
     def postEmitModules(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
-      discard(ctx, id)
+      discard(ctx, id, im, ts)
       List.empty
     }
 }
