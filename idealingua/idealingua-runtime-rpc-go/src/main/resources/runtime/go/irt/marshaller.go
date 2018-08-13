@@ -1,6 +1,9 @@
 package irt
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Marshaller interface {
 	Marshal(data interface{}) ([]byte, error)
@@ -12,9 +15,9 @@ type JSONMarshaller struct {
 }
 
 func NewJSONMarshaller(pretty bool) *JSONMarshaller {
-	res := &JSONMarshaller{}
-	res.pretty = pretty
-	return res
+	return &JSONMarshaller{
+		pretty: pretty,
+	}
 }
 
 func (m *JSONMarshaller) Marshal(data interface{}) ([]byte, error) {
@@ -28,3 +31,18 @@ func (m *JSONMarshaller) Marshal(data interface{}) ([]byte, error) {
 func (m *JSONMarshaller) Unmarshal(data []byte, model interface{}) error {
 	return json.Unmarshal(data, model)
 }
+
+type BinaryMarshaller struct {
+}
+
+func NewBinaryMarshaller() *BinaryMarshaller {
+	return &BinaryMarshaller{}
+}
+
+func (m *BinaryMarshaller) Marshal(data interface{}) ([]byte, error) {
+	return nil, fmt.Errorf("binary marshaller is not implemented")
+}
+
+func (m *BinaryMarshaller) Unmarshal(data []byte, model interface{}) error {
+	return fmt.Errorf("binary marshaller is not implemented")
+	}

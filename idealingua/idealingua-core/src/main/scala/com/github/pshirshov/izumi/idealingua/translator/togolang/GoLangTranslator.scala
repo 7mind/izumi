@@ -806,10 +806,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |
        |type $name struct {
        |    ${i.id.name}
-       |    transport irt.ServiceClientTransport
+       |    transport irt.ClientTransport
        |}
        |
-       |func (v *$name) SetTransport(t irt.ServiceClientTransport) error {
+       |func (v *$name) SetTransport(t irt.ClientTransport) error {
        |    if t == nil {
        |        return fmt.Errorf("method SetTransport requires a valid transport, got nil")
        |    }
@@ -818,13 +818,32 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    return nil
        |}
        |
-       |func (v *$name) SetHTTPTransport(endpoint string, timeout int, skipSSLVerify bool) {
-       |    v.transport = irt.NewHTTPClientTransport(endpoint, timeout, skipSSLVerify)
+       |func (v *$name) SetHTTPTransport(endpoint string, timeout time.Duration) {
+       |    v.transport = irt.NewHTTPClientTransport(endpoint, timeout)
        |}
        |
-       |func New${name}OverHTTP(endpoint string) *$name{
+       |func (v *$name) SetWebSocketTransport(endpoint string, subprotocols []string) error {
+       |    transport, err := irt.NewWebSocketClientTransport(endpoint, subprotocols)
+       |    if err != nil {
+       |        return err
+       |    }
+       |
+       |    v.transport = transport
+       |    return nil
+       |}
+       |
+       |func New${name}OverWebSocket(endpoint string, subprotocols []string) (*$name, error) {
        |    res := &$name{}
-       |    res.SetHTTPTransport(endpoint, 15000, false)
+       |    err := res.SetWebSocketTransport(endpoint, subprotocols)
+       |    if err != nil {
+       |        return nil, err
+       |    }
+       |    return res, nil
+       |}
+       |
+       |func New${name}OverHTTP(endpoint string, timeout time.Duration) *$name{
+       |    res := &$name{}
+       |    res.SetHTTPTransport(endpoint, timeout)
        |    return res
        |}
        |
@@ -979,7 +998,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
            |${renderServiceServerDummy(i, imports)}
          """.stripMargin
 
-      ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", prefix + "irt")))
+      ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "time", prefix + "irt")))
   }
 }
 

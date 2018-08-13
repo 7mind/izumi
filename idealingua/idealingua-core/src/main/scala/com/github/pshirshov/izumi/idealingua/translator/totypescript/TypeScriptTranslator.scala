@@ -572,13 +572,13 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |
        |export class ${i.id.name}Client implements I${i.id.name}Client {
        |${renderRuntimeNames(i.id, s"${i.id.name}Client").shift(4)}
-       |    protected _transport: IRTClientTransport;
+       |    protected _transport: ClientTransport;
        |
-       |    constructor(transport: IRTClientTransport) {
+       |    constructor(transport: ClientTransport) {
        |        this._transport = transport;
        |    }
        |
-       |    private send<I extends IRTServiceClientInData, O extends IRTServiceClientOutData>(method: string, data: I, inputType: {new(): I}, outputType: {new(data: any): O} ): Promise<O> {
+       |    private send<I extends ServiceClientInData, O extends ServiceClientOutData>(method: string, data: I, inputType: {new(): I}, outputType: {new(data: any): O} ): Promise<O> {
        |        return new Promise((resolve, reject) => {
        |            this._transport.send(${i.id.name}Client.ClassName, method, data)
        |                .then((data: any) => {
@@ -633,8 +633,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
   protected def renderServiceMethodModels(method: DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
-      s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "IRTServiceClientInData", m.signature.input, export = false)}
-         |${renderServiceMethodOutModel(s"Out${m.name.capitalize}", "IRTServiceClientOutData", m.signature.output)}
+      s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "ServiceClientInData", m.signature.input, export = false)}
+         |${renderServiceMethodOutModel(s"Out${m.name.capitalize}", "ServiceClientOutData", m.signature.output)}
        """.stripMargin
 
   }
@@ -667,7 +667,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
       val header =
         s"""${imports.render(ts)}
-           |${importFromIRT(List("IRTServiceClientInData", "IRTServiceClientOutData", "IRTClientTransport"), i.id.domain.toPackage)}
+           |${importFromIRT(List("ServiceClientInData", "ServiceClientOutData", "ClientTransport"), i.id.domain.toPackage)}
          """.stripMargin
 
     ServiceProduct(svc, header, s"// $typeName client")
