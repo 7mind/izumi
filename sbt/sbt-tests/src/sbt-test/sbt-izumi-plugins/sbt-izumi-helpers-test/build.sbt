@@ -4,13 +4,17 @@ enablePlugins(IzumiEnvironmentPlugin)
 
 // -- build settings, root artifact settings, etc
 name := "sbt-izumi-helpers-test"
-crossScalaVersions in ThisBuild := Seq(
-  IzumiRootDeps.V.scala_212
-  , "2.11.12"
-)
 
 defaultStubPackage in ThisBuild:= Some("org.test.project")
 organization in ThisBuild := "com.github.pshirshov.izumi.test.idl"
+
+val legacyScalaVersions = Seq("2.11.12")
+val newScalaVersions = Seq(IzumiRootDeps.V.scala_212)
+val allScalaVersions = newScalaVersions ++ legacyScalaVersions
+
+val allScala = Seq(crossScalaVersions := allScalaVersions)
+val legacyScala = Seq(crossScalaVersions := legacyScalaVersions)
+val newScala = Seq(crossScalaVersions := newScalaVersions)
 
 // -- settings groups identifiers
 val AppSettings = new SettingsGroup {
@@ -28,23 +32,19 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
   )
 }
 
-// settings groups are saved in
-
 
 // -- common project directories
 lazy val base = Seq(GlobalSettings)
 lazy val inRoot = In(".").settingsSeq(base)
 lazy val inLibShared = In("lib").settingsSeq(base)
-lazy val sbase = base ++ Seq(WithShared)
-lazy val inLib = In("lib").settingsSeq(sbase)
-lazy val inApp = In("app").settingsSeq(sbase).settings(AppSettings)
 
 // -- shared definitions (will be added into each project extened with Izumi
-lazy val sharedLib = inLibShared.as.module
-lazy val testOnlySharedLib = inLibShared.as.module
+lazy val sharedLib = inLibShared.as.module.settings(allScala :_*)
+lazy val testOnlySharedLib = inLibShared.as.module.settings(allScala :_*)
 
 // this library definition is not being processed by Izumi
-lazy val `non-izumi-shared-lib` = project in file("lib/non-izumi-shared-lib")
+lazy val `non-izumi-shared-lib` = (project in file("lib/non-izumi-shared-lib"))
+  .settings(allScala :_*)
 
 lazy val WithShared = new SettingsGroup {
   override def sharedLibs: Seq[ProjectReferenceEx] = Seq(
@@ -53,15 +53,31 @@ lazy val WithShared = new SettingsGroup {
     , testOnlySharedLib.testOnlyRef // this library will be available in all the test scopes
   )
 }
+lazy val sbase = base ++ Seq(WithShared)
+lazy val inLib = In("lib").settingsSeq(sbase)
+lazy val inApp = In("app").settingsSeq(sbase).settings(AppSettings)
 
 // the rest
 lazy val justLib = inLib.as.module
+  .settings(newScala :_*)
 
 lazy val justApp = inApp.as.module
   .depends(justLib)
+  .settings(newScala :_*)
+
+lazy val legacyLib = inLib.as.module
+  .settings(legacyScala :_*)
+
+lazy val legacyApp = inApp.as.module
+  .settings(AppSettings)
+  .depends(legacyLib)
+  .settings(legacyScala :_*)
 
 lazy val root = inRoot.as.root
+  .settings(allScala :_*)
   .transitiveAggregate(
-    justApp, `non-izumi-shared-lib`
+    sharedLib, testOnlySharedLib, `non-izumi-shared-lib`,
+    justLib, legacyLib,
+    justApp, legacyApp,
   )
 
