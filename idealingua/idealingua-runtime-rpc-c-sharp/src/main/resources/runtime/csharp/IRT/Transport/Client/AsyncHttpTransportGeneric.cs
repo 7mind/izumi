@@ -4,8 +4,10 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Collections.Specialized;
+using IRT.Marshaller;
+using IRT.Transport.Authorization;
 
-namespace IRT {
+namespace IRT.Transport.Client {
     public class AsyncHttpTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
         private class RequestState<O> {
             public HttpWebRequest Request;
@@ -20,7 +22,8 @@ namespace IRT {
             }
         }
 
-        private IJsonMarshaller Marshaller;
+        private IJsonMarshaller marshaller;
+        private AuthMethod Auth;
 
         private string endpoint;
         public string Endpoint {
@@ -41,12 +44,16 @@ namespace IRT {
 
         public AsyncHttpTransportGeneric(string endpoint, IJsonMarshaller marshaller, int timeout = 60) {
             Endpoint = endpoint;
-            Marshaller = marshaller;
+            this.marshaller = marshaller;
             Timeout = timeout;
             ActiveRequests = 0;
         }
 
-        public void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx) {
+        public void SetAuthorization(AuthMethod method) {
+            Auth = method;
+        }
+
+        public virtual void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx) {
             try {
                 var request = (HttpWebRequest) WebRequest.Create(string.Format("{0}/{1}/{2}", endpoint, service, method));
                 request.Timeout = Timeout * 1000;
@@ -59,11 +66,15 @@ namespace IRT {
                     }
                 }
 
+                if (Auth != null) {
+                    request.Headers.Add("Authorization", Auth.ToValue());
+                }
+
                 var state = new RequestState<O>(request, callback, null);
                 if (payload == null) {
                     request.BeginGetResponse(ProcessResponse<O>, state);
                 } else {
-                    var data = Marshaller.Marshal<I>(payload);
+                    var data = marshaller.Marshal<I>(payload);
                     state.JsonString = data;
                     request.ContentType = "application/json";
                     request.BeginGetRequestStream(ProcessStreamRequest<O>, state);
@@ -111,7 +122,7 @@ namespace IRT {
                                 throw new TransportException("Empty Response");
                             }
 
-                            var data = Marshaller.Unmarshal<O>(jsonString);
+                            var data = marshaller.Unmarshal<O>(jsonString);
                             state.Response = data;
                             state.Callback.Success(state.Response);
                         }
@@ -125,10 +136,5 @@ namespace IRT {
                 );
             }
         }
-    }
-
-    public class AsyncHttpTransport: AsyncHttpTransportGeneric<IClientTransportContext> {
-        public AsyncHttpTransport(string endpoint, IJsonMarshaller marshaller, int timeout = 60):
-                            base(endpoint, marshaller, timeout) {}
     }
 }

@@ -5,8 +5,9 @@ using System.Net;
 using System.Threading;
 using System.Linq;
 using System.Text;
+using IRT.Marshaller;
 
-namespace IRT {
+namespace IRT.Transport.Server {
     public class SimpleHttpServerContext {
         public SimpleHttpServerContext(HttpListenerRequest req) {
         }

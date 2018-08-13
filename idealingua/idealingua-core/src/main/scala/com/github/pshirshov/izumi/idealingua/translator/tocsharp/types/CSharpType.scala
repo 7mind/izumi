@@ -334,7 +334,7 @@ final case class CSharpType (
     case Primitive.TTsU => "DateTime"
   }
 
-  protected def renderUserType(id: TypeId, forAlias: Boolean = false, forMap: Boolean = false, withPackage: Boolean = false): String = {
+  protected def renderUserType(id: TypeId, withPackage: Boolean = false): String = {
       val fullName = id.path.toPackage.map(p => p.capitalize).mkString(".") + "." + id.name
       id match {
         case _: EnumId => if (withPackage) fullName else s"${im.withImport(id)}"

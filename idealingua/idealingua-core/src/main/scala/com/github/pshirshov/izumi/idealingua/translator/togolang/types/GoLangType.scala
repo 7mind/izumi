@@ -53,10 +53,10 @@ final case class GoLangType (
 
   def isSlice(id: TypeId): Boolean = id match {
     case g: Generic => g match {
-      case go: Generic.TOption => false
-      case gl: Generic.TList => true
-      case gs: Generic.TSet => true
-      case gm: Generic.TMap => true
+      case _: Generic.TOption => false
+      case _: Generic.TList => true
+      case _: Generic.TSet => true
+      case _: Generic.TMap => true
     }
     case _ => false
   }
@@ -70,10 +70,10 @@ final case class GoLangType (
     case _: EnumId => false
     case al: AliasId => isPrimitive(ts.dealias(al))
     case g: Generic => g match {
-      case go: Generic.TOption => false //isPrimitive(go.valueType)
-      case gl: Generic.TList => true //isPrimitive(gl.valueType)
-      case gs: Generic.TSet => true // isPrimitive(gs.valueType)
-      case gm: Generic.TMap => true // isPrimitive(gm.valueType)
+      case _: Generic.TOption => false //isPrimitive(go.valueType)
+      case _: Generic.TList => true //isPrimitive(gl.valueType)
+      case _: Generic.TSet => true // isPrimitive(gs.valueType)
+      case _: Generic.TMap => true // isPrimitive(gm.valueType)
     }
     case _ => throw new IDLException(s"Unknown type is checked for primitiveness ${id.name}")
   }

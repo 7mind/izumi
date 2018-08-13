@@ -52,7 +52,8 @@ object NUnitExtension extends CSharpTranslatorExtension {
 
     val header =
       """using IRT;
-         |using NUnit.Framework;
+        |using IRT.Marshaller;
+        |using NUnit.Framework;
        """.stripMargin
 
     ctx.modules.toTestSource(id.id.path.domain, ctx.modules.toTestModuleId(id.id), header, code)
@@ -89,7 +90,8 @@ object NUnitExtension extends CSharpTranslatorExtension {
 
     val header =
       """using IRT;
-         |using NUnit.Framework;
+        |using IRT.Marshaller;
+        |using NUnit.Framework;
        """.stripMargin
 
     ctx.modules.toTestSource(id.id.path.domain, ctx.modules.toTestModuleId(id.id), header, code)
@@ -102,7 +104,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
       if (adt.typeId.isInstanceOf[InterfaceId])
         s"new ${CSharpType(adt.typeId).renderType()}Struct()"
     else
-      s"${CSharpType(adt.typeId).renderType()}TestHelper.Create()"
+      s"${CSharpType(adt.typeId).renderType(true)}TestHelper.Create()"
 
     val code =
       s"""public static class ${name}TestHelper {
@@ -133,12 +135,13 @@ object NUnitExtension extends CSharpTranslatorExtension {
 
     val header =
       """using IRT;
-         |using System;
-         |using System.Globalization;
-         |using System.Collections;
-         |using System.Collections.Generic;
-         |using NUnit.Framework;
-       """.stripMargin
+        |using IRT.Marshaller;
+        |using System;
+        |using System.Globalization;
+        |using System.Collections;
+        |using System.Collections.Generic;
+        |using NUnit.Framework;
+      """.stripMargin
 
     ctx.modules.toTestSource(i.id.path.domain, ctx.modules.toTestModuleId(i.id), header, code)
   }
@@ -181,6 +184,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
 
     val header =
       """using IRT;
+         |using IRT.Marshaller;
          |using System;
          |using System.Globalization;
          |using System.Collections;

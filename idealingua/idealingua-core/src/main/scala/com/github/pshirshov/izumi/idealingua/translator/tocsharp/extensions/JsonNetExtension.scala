@@ -32,7 +32,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "IRT")
+    List("Newtonsoft.Json", "IRT.Marshaller")
   }
 
   override def preModelEmit(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -56,7 +56,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "IRT")
+    List("Newtonsoft.Json", "IRT.Marshaller")
   }
 
   override def preModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -106,10 +106,10 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "Newtonsoft.Json.Linq", "IRT")
+    List("Newtonsoft.Json", "Newtonsoft.Json.Linq", "IRT.Marshaller")
   }
 
-  private def writePropertyValue(src: String, t: CSharpType, key: Option[String] = None)(implicit im: CSharpImports, ts: Typespace): String = {
+  private def writePropertyValue(src: String, t: CSharpType, key: Option[String] = None, depth: Int = 1)(implicit im: CSharpImports, ts: Typespace): String = {
     t.id match {
       case g: Generic.TOption =>
         val optionType = CSharpType(g.valueType)
@@ -123,27 +123,31 @@ object JsonNetExtension extends CSharpTranslatorExtension {
           t.id match {
             case g: Generic => g match {
               case m: Generic.TMap =>
+                val iter = s"mkv${if (depth > 1) depth.toString else ""}"
                 s"""writer.WriteStartObject();
-                   |foreach(var mkv in $src) {
-                   |    writer.WritePropertyName(mkv.Key.ToString());
-                   |${writePropertyValue("mkv.Value", CSharpType(m.valueType)).shift(4)}
+                   |foreach(var $iter in $src) {
+                   |    writer.WritePropertyName($iter.Key.ToString());
+                   |${writePropertyValue(s"$iter.Value", CSharpType(m.valueType), depth = depth + 1).shift(4)}
                    |}
                    |writer.WriteEndObject();
                  """.stripMargin
               case l: Generic.TList =>
+                val iter = s"lv${if (depth > 1) depth.toString else ""}"
                 s"""writer.WriteStartArray();
-                   |foreach (var lv in $src) {
-                   |${writePropertyValue("lv", CSharpType(l.valueType)).shift(4)}
+                   |foreach (var $iter in $src) {
+                   |${writePropertyValue(s"$iter", CSharpType(l.valueType), depth = depth + 1).shift(4)}
                    |}
                    |writer.WriteEndArray();
                  """.stripMargin
               case s: Generic.TSet =>
+                val iter = s"lv${if (depth > 1) depth.toString else ""}"
                 s"""writer.WriteStartArray();
-                   |foreach (var lv in $src) {
-                   |${writePropertyValue("lv", CSharpType(s.valueType)).shift(4)}
+                   |foreach (var $iter in $src) {
+                   |${writePropertyValue(s"$iter", CSharpType(s.valueType), depth = depth + 1).shift(4)}
                    |}
                    |writer.WriteEndArray();
                  """.stripMargin
+              case _ => throw new Exception("Option should have been checked already.")
             }
             case p: Primitive => p match {
               case Primitive.TBool => s"writer.WriteValue($src);"
@@ -284,6 +288,8 @@ object JsonNetExtension extends CSharpTranslatorExtension {
             s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
                |serializer.Populate($src.CreateReader(), $dst);""".stripMargin
           )
+
+        case _ => throw new Exception("Other cases should have been checked already.")
       }
     }
   }
@@ -354,7 +360,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT")
+    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT.Marshaller")
   }
 
   override def preModelEmit(ctx: CSTContext, i: Adt)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -419,6 +425,6 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT")
+    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT.Marshaller")
   }
 }

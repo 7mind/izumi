@@ -146,7 +146,7 @@ object IDLTestTools {
       license = "MIT",
       website = "http://project.website",
       copyright = "Copyright (C) Test Inc.",
-      dependencies = List(ManifestDependency("moment", "^2.20.1")),
+      dependencies = List(ManifestDependency("github.com/gorilla/websocket", "")),
       repository = "github.com/TestCompany/TestRepo",
       useRepositoryFolders = true
     )
@@ -159,11 +159,18 @@ object IDLTestTools {
     Files.move(outDir, tmp.resolve("src"))
     Files.move(tmp, outDir)
 
+    val env = Map("GOPATH" -> out.absoluteTargetDir.toString)
+    val goSrc = out.absoluteTargetDir.resolve("src")
+    if (manifest.dependencies.nonEmpty) {
+      manifest.dependencies.foreach(md => {
+        run(goSrc, Seq("go", "get", md.module), env, "go-dep-install")
+      })
+    }
+
     val cmdBuild = Seq("go", "install", "-pkgdir", out.phase3.toString, "./...")
     val cmdTest = Seq("go", "test", "./...")
 
-    val env = Map("GOPATH" -> out.absoluteTargetDir.toString)
-    val goSrc = out.absoluteTargetDir.resolve("src")
+
     val exitCodeBuild = run(goSrc, cmdBuild, env, "go-build")
     val exitCodeTest = run(goSrc, cmdTest, env, "go-test")
 

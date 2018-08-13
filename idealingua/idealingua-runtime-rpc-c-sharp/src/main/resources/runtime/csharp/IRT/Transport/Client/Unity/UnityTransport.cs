@@ -3,12 +3,15 @@ using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Networking;
+using IRT.Marshaller;
+using IRT.Transport.Client;
+using IRT.Transport.Authorization;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace IRT.Unity {
+namespace IRT.Transport.Client.Unity {
     public class UnityTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
         private const string CACHE_CONTROL_HEADER_KEY = "Cache-Control";
         private const string CACHE_CONTROL_HEADER_VALUES = "private, max-age=0, no-cache, no-store";
@@ -30,6 +33,11 @@ namespace IRT.Unity {
         public int ActiveRequests { get; private set; }
         public int Timeout; // In Seconds
         public IDictionary<string, string> HttpHeaders;
+        public AuthMethod Auth;
+
+        public void SetAuthorization(AuthMethod method) {
+            Auth = method;
+        }
 
 #if !UNITY_EDITOR
         public Action<IEnumerator> CoroutineProcessor;
@@ -65,6 +73,10 @@ namespace IRT.Unity {
                 foreach (KeyValuePair<string, string> kv in HttpHeaders) {
                     request.SetRequestHeader(kv.Key, kv.Value);
                 }
+            }
+
+            if (Auth != null) {
+                request.SetRequestHeader("Authorization", Auth.ToValue());
             }
 
             // API cached requests might be a pain, let's suppress that
