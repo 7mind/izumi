@@ -527,7 +527,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
     })
 
-    ServiceProduct(svc, im.renderImports(List("IRT", "System", "System.Collections", "System.Collections.Generic") ++ extraImports)) //imports.renderImports(List("irt")))
+    ServiceProduct(svc, im.renderImports(List("IRT", "IRT.Marshaller", "IRT.Transport.Client", "System", "System.Collections", "System.Collections.Generic") ++ extraImports))
   }
 }
 

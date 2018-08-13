@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace IRT {
+namespace IRT.Marshaller {
     public class JsonNetMarshaller: IJsonMarshaller {
         private JsonSerializerSettings settings;
 
