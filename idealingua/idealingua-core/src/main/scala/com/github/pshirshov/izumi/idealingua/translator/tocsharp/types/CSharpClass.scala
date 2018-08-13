@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.SimpleStructure
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.Struct
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports

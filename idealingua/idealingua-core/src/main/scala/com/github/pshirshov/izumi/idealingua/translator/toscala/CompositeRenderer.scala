@@ -19,11 +19,11 @@ class CompositeRenderer(ctx: STContext) {
     }
 
     val bases: List[Init] = source match {
-      case cs: ClassSource.CsMethodInput =>
+      case _: ClassSource.CsMethodInput =>
         List.empty
 //        List(cs.sc.serviceInputBase.init())
 
-      case cs: ClassSource.CsMethodOutput =>
+      case _: ClassSource.CsMethodOutput =>
         List.empty
 //        List(cs.sc.serviceOutputBase.init())
 

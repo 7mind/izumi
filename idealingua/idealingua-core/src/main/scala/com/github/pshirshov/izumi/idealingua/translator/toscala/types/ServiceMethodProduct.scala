@@ -14,7 +14,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
   import ctx.conv._
 
-  @deprecated("", "")
+  // TODO:TSASSYMMETRY this method is a workaround for assymetry between typespace representation and scala code we want to render
   def defStructs: List[Stat] = {
     Input.inputDefn ++ Output.outputDefn
   }

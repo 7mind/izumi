@@ -5,7 +5,6 @@ import distage._
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
-import scala.util.Try
 
 class HigherKindsTest extends WordSpec with MkInjector {
 
