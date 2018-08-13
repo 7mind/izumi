@@ -30,7 +30,12 @@ before_install:
   - echo "TS `tsc -version`"
   - echo "Java `java -version`"
   - mkdir -p ~/.sbt/1.0/plugins/
-  - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M6")' > ~/.sbt/1.0/plugins/build.sbt
+  - mkdir -p ~/.m2/
+  - mkdir -p ~/.ivy2/
+  - mkdir -p ~/.sbt/
+  - mkdir -p ~/.coursier/
+  - mkdir -p ~/.cache/coursier
+  - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M7")' > ~/.sbt/1.0/plugins/build.sbt
 
 before_script:
   - rm -rf ~/.ivy2/local
