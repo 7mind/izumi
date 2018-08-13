@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -43,7 +43,7 @@ final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty,
   }
 
   def findImport(id: TypeId): Option[TypeScriptImport] = {
-    return imports.find(i => i.id == id)
+    imports.find(i => i.id == id)
   }
 }
 
@@ -104,7 +104,7 @@ object TypeScriptImports {
     srcPkg = srcPkg.drop(matching)
     destPkg = destPkg.drop(matching)
 
-    if (srcPkg.size == 0 && destPkg.size == 0) {
+    if (srcPkg.isEmpty && destPkg.isEmpty) {
       // On the same level, let's just import the type file
       return Seq(s"./${t.name}")
     }
@@ -112,11 +112,11 @@ object TypeScriptImports {
     var importOffset = ""
     var importFile = ""
 
-    if (srcPkg.size > 0 && manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+    if (srcPkg.nonEmpty && manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
       importOffset = manifest.get.scope + "/" + t.path.toPackage.mkString("-")
       importFile = importOffset
     } else {
-      if (srcPkg.size > 0) {
+      if (srcPkg.nonEmpty) {
         (1 to srcPkg.size).foreach(_ => importOffset += "../")
       } else {
         importOffset = "./"
@@ -184,6 +184,8 @@ object TypeScriptImports {
         case st: Struct => st.struct.fields.flatMap(ff => collectTypes(ts, ff.typeId))
         case ad: Algebraic => ad.alternatives.flatMap(al => collectTypes(ts, al.typeId))
         case si: Singular => collectTypes(ts, si.typeId)
+        case _: Void => List.empty
+        case _: Alternative => throw new Exception("Not implemented")
       })
     }
 

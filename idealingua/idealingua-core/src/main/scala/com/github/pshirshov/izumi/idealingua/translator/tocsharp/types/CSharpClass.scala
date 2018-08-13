@@ -106,7 +106,7 @@ final case class CSharpClass (
   }
 
   private def renderSlice(i: InterfaceId): String = {
-    val interface = ts(i).asInstanceOf[Interface]
+//    val interface = ts(i).asInstanceOf[Interface]
     val eid = ts.implId(i)
     val eidStruct = ts.structure.structure(eid)
     val eidClass = CSharpClass(eid, i.name + eid.name, eidStruct, List.empty)

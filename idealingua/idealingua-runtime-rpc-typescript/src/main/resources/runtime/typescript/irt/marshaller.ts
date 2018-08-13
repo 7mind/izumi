@@ -1,13 +1,13 @@
 
-export interface IMarshaller<T> {
+export interface Marshaller<T> {
     Marshal<I>(data: I): T
     Unmarshal<O>(data: T): O
 }
 
-export interface IJSONMarshaller extends IMarshaller<string> {
+export interface JSONMarshaller extends Marshaller<string> {
 }
 
-export class JSONMarshaller implements IJSONMarshaller {
+export class JSONMarshallerImpl implements JSONMarshaller {
     private pretty: boolean;
 
     public constructor(pretty: boolean = false) {

@@ -3,12 +3,14 @@ using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Networking;
+using IRT.Marshaller;
+using IRT.Transport.Client;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace IRT.Unity {
+namespace IRT.Transport.Client.Unity {
     public class UnityTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
         private const string CACHE_CONTROL_HEADER_KEY = "Cache-Control";
         private const string CACHE_CONTROL_HEADER_VALUES = "private, max-age=0, no-cache, no-store";

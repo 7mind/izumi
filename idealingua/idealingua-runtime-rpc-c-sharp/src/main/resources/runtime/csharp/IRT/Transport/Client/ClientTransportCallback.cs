@@ -1,24 +1,7 @@
 
 using System;
 
-namespace IRT {
-    public interface IClientTransportContext {
-    }
-
-    public class TransportException: Exception {
-        public TransportException() {
-        }
-
-        public TransportException(string message): base(message) {
-        }
-
-        public TransportException(string message, Exception inner): base(message, inner) {
-        }
-    }
-
-    public interface IClientTransportCallback {
-    }
-
+namespace IRT.Transport.Client {
     public class ClientTransportCallback<T> : IClientTransportCallback {
         public Action<Exception> OnFailureHandler;
         public Action<T> OnSuccessHandler;
@@ -51,9 +34,5 @@ namespace IRT {
         }
 
         public static ClientTransportCallback<T> Empty { get {return new ClientTransportCallback<T>(onSuccess => {}, onFailure => {});} }
-    }
-
-    public interface IClientTransport<C> where C: class, IClientTransportContext {
-        void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx = null);
     }
 }

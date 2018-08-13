@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct, Void, Alternative}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
@@ -160,6 +160,8 @@ object CSharpImports {
         case st: Struct => st.struct.fields.flatMap(ff => collectTypes(ts, ff.typeId))
         case ad: Algebraic => ad.alternatives.flatMap(al => collectTypes(ts, al.typeId))
         case si: Singular => collectTypes(ts, si.typeId)
+        case _: Void => List.empty
+        case _: Alternative => throw new Exception("Alternative not implememnted.")
       })
     }
 

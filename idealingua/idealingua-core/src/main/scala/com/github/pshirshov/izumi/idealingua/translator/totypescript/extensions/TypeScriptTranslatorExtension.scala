@@ -11,27 +11,27 @@ trait TypeScriptTranslatorExtension extends TranslatorExtension {
   import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
   def handleInterface(ctx: TSTContext, interface: Interface, product: InterfaceProduct)(implicit manifest: Option[TypeScriptBuildManifest]): InterfaceProduct = {
-    discard(ctx, interface)
+    discard(ctx, interface, manifest)
     product
   }
 
   def handleDTO(ctx: TSTContext, dto: DTO, product: CompositeProduct)(implicit manifest: Option[TypeScriptBuildManifest]): CompositeProduct = {
-    discard(ctx, dto)
+    discard(ctx, dto, manifest)
     product
   }
 
   def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct)(implicit manifest: Option[TypeScriptBuildManifest]): EnumProduct = {
-    discard(ctx, enum)
+    discard(ctx, enum, manifest)
     product
   }
 
   def handleIdentifier(ctx: TSTContext, identifier: TypeDef.Identifier, product: IdentifierProduct)(implicit manifest: Option[TypeScriptBuildManifest]): IdentifierProduct = {
-    discard(ctx, identifier)
+    discard(ctx, identifier, manifest)
     product
   }
 
   def handleAdt(ctx: TSTContext, adt: TypeDef.Adt, product: AdtProduct)(implicit manifest: Option[TypeScriptBuildManifest]): AdtProduct = {
-    discard(ctx, adt)
+    discard(ctx, adt, manifest)
     product
   }
 }
