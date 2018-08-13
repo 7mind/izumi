@@ -33,6 +33,8 @@ before_install:
   - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M6")' > ~/.sbt/1.0/plugins/build.sbt
 
 before_script:
+  - rm -rf ~/.ivy2/local
+  - find .m2/ .ivy2/ .sbt/ .coursier/ .cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
   - bash travis.sh versionate
 
 script:
@@ -75,3 +77,5 @@ before_cache:
   - du -h -d 2 $HOME/.sbt/
   - find $HOME/.sbt -name "*.lock" -type f -delete
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+  - rm -rf ~/.ivy2/local
+  - find .m2/ .ivy2/ .sbt/ .coursier/ .cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
