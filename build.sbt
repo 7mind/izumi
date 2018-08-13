@@ -1,5 +1,5 @@
 import com.typesafe.sbt.pgp.PgpSettings
-import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
+import sbt.Keys.{baseDirectory, publishMavenStyle, sourceDirectory}
 import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import IzumiConvenienceTasksPlugin.Keys._
 import IzumiPublishingPlugin.Keys._
@@ -13,21 +13,12 @@ name := "izumi-r2"
 organization in ThisBuild := "com.github.pshirshov.izumi.r2"
 defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
 publishMavenStyle in ThisBuild := true
-pomExtra in ThisBuild := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
-  <licenses>
-    <license>
-      <name>BSD-style</name>
-      <url>http://www.opensource.org/licenses/bsd-license.php</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <developers>
-    <developer>
-      <id>pshirshov</id>
-      <name>Pavel Shirshov</name>
-      <url>https://github.com/pshirshov</url>
-    </developer>
-  </developers>
+homepage in ThisBuild := Some(url("https://izumi.7mind.io"))
+licenses in ThisBuild := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))
+developers in ThisBuild := List(
+  Developer(id = "pshirshov", name = "Pavel Shirshov", url = url("https://github.com/pshirshov"), email = "pshirshov@gmail.com"),
+  Developer(id = "kai", name = "Kai Shirshov", url = url("https://github.com/kaishh"), email = "kai.shirshov@gmail.com"),
+)
 
 
 releaseProcess := Seq[ReleaseStep](
@@ -300,34 +291,28 @@ lazy val fastparseShaded = inShade.as.module
 lazy val idealinguaModel = inIdealingua.as.module
   .settings()
 
-lazy val idealinguaRuntimeRpc = inIdealingua.as.module
+lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
+  .settings(libraryDependencies ++= Seq(R.circe, R.zio, R.cats_all).flatten)
 
-lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpc, idealinguaRuntimeRpcCirce)
+lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScala)
 
 lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect % scalaVersion.value, R.scalameta) ++ Seq(R.scala_compiler % scalaVersion.value % "test"))
-  .depends(idealinguaModel, idealinguaRuntimeRpc, fastparseShaded, idealinguaRuntimeRpcTypescript, idealinguaRuntimeRpcGo, idealinguaRuntimeRpcCSharp)
+  .depends(
+    idealinguaModel
+    , fastparseShaded
+    , idealinguaRuntimeRpcScala
+    , idealinguaRuntimeRpcTypescript
+    , idealinguaRuntimeRpcGo
+    , idealinguaRuntimeRpcCSharp
+  )
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(ShadingSettings)
 
-
-lazy val idealinguaRuntimeRpcCirce = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpc)
-  .settings(libraryDependencies ++= R.circe)
-
-lazy val idealinguaRuntimeRpcCats = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpc)
-  .settings(libraryDependencies ++= R.cats_all)
-
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpcCirce, idealinguaRuntimeRpcCats, logstageApiLogger, logstageAdapterSlf4j)
+  .depends(idealinguaRuntimeRpcScala, logstageApiLogger, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(libraryDependencies ++= R.http4s_all)
-
-lazy val idealinguaExtensionRpcFormatCirce = inIdealingua.as.module
-  .depends(idealinguaCore, idealinguaRuntimeRpcCirce)
-  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
-
 
 lazy val idealinguaRuntimeRpcTypescript = inIdealingua.as.module
 
@@ -337,7 +322,7 @@ lazy val idealinguaRuntimeRpcGo = inIdealingua.as.module
 
 
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
-  .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce, idealinguaRuntimeRpcTypescript, idealinguaRuntimeRpcGo, idealinguaRuntimeRpcCSharp)
+  .depends(idealinguaCore)
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
@@ -356,7 +341,7 @@ lazy val sbtIzumiDeps = inSbt.as
 
 lazy val sbtIdealingua = inSbt.as
   .module
-  .depends(idealinguaCore, idealinguaExtensionRpcFormatCirce)
+  .depends(idealinguaCore)
 
 lazy val sbtTests = inSbt.as
   .module
@@ -377,9 +362,6 @@ lazy val distage: Seq[ProjectReference] = Seq(
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
   , idealinguaRuntimeRpcHttp4s
-  , idealinguaRuntimeRpcCats
-  , idealinguaRuntimeRpcCirce
-  , idealinguaExtensionRpcFormatCirce
   , idealinguaCompiler
 )
 lazy val izsbt: Seq[ProjectReference] = Seq(
@@ -416,5 +398,5 @@ lazy val `izumi-r2` = inRoot.as
         }
       }
   )
-  .settings(addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
+  .settings(addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))

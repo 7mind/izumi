@@ -2,15 +2,15 @@ domain idltest.aliases
 
 import idltest.aliases2
 
-mixin M {
+mixin M1 {
   _: str
 }
 
-alias A = M
+alias A1 = M1
 
 alias A2 = idltest.aliases2#M2
 
-data D {
-  & A
+data D1 {
+  & A1
   & A2
 }

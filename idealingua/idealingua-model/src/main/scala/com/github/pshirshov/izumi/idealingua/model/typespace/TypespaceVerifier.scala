@@ -37,6 +37,10 @@ object Issue {
     override def toString: TypeName = s"All typenames must start with a capital letter: $t"
   }
 
+  final case class ShortName(t: TypeId) extends Issue {
+    override def toString: TypeName = s"All typenames be at least 2 characters long: $t"
+  }
+
   final case class ReservedTypenamePrefix(t: TypeId) extends Issue {
     override def toString: TypeName = s"Typenames can't start with reserved runtime prefixes ${TypespaceVerifier.badNames.mkString(",")}: $t"
   }
@@ -117,16 +121,7 @@ class TypespaceVerifier(ts: Typespace) {
         case m: RPCMethod =>
           val inDeps = extractDeps(m.signature.input)
 
-          val outDeps = m.signature.output match {
-            case t: Output.Singular =>
-              Seq(t.typeId)
-            case t: Output.Struct =>
-              extractDeps(t.struct)
-            case t: Output.Algebraic =>
-              t.alternatives.map(_.typeId)
-            case _: Output.Void =>
-              Seq.empty
-          }
+          val outDeps = getOutDeps(m.signature.output)
 
           (inDeps ++ outDeps).map(t => MissingDependency.DepServiceParameter(service.id, m.name, t))
       }
@@ -147,6 +142,21 @@ class TypespaceVerifier(ts: Typespace) {
     }
   }
 
+  private def getOutDeps(out: Output): Seq[TypeId] = {
+    out match {
+      case t: Output.Singular =>
+        Seq(t.typeId)
+      case t: Output.Struct =>
+        extractDeps(t.struct)
+      case t: Output.Algebraic =>
+        t.alternatives.map(_.typeId)
+      case _: Output.Void =>
+        Seq.empty
+      case t: Output.Alternative =>
+        getOutDeps(t.failure) ++ getOutDeps(t.success)
+    }
+  }
+
   private def checkCyclicInheritance: Seq[Issue] = {
     ts.domain.types.flatMap {
       t =>
@@ -164,6 +174,12 @@ class TypespaceVerifier(ts: Typespace) {
   private def checkNamingConventions: Seq[Issue] = {
     ts.domain.types.flatMap {
       t =>
+        val singleChar = if (t.id.name.size < 2) {
+          Seq(Issue.ShortName(t.id))
+        } else {
+          Seq.empty
+        }
+
         val noncapitalized = if (t.id.name.head.isLower) {
           Seq(Issue.NoncapitalizedTypename(t.id))
         } else {
@@ -175,7 +191,10 @@ class TypespaceVerifier(ts: Typespace) {
         } else {
           Seq.empty
         }
-        noncapitalized ++ reserved
+
+        singleChar ++
+          noncapitalized ++
+          reserved
     }
   }
 

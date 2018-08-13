@@ -264,6 +264,15 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
 
   protected def fixOut(output: raw.RawMethod.Output): typed.DefMethod.Output = {
     output match {
+      case o: raw.RawMethod.Output.Alternative =>
+        typed.DefMethod.Output.Alternative(fixNonAltOut(o.success), fixNonAltOut(o.failure))
+      case o: raw.RawMethod.Output.NonAlternativeOutput =>
+        fixNonAltOut(o)
+    }
+  }
+
+  protected def fixNonAltOut(output: raw.RawMethod.Output.NonAlternativeOutput): typed.DefMethod.Output.NonAlternativeOutput = {
+    output match {
       case o: raw.RawMethod.Output.Struct =>
         typed.DefMethod.Output.Struct(fixStructure(o.input))
       case o: raw.RawMethod.Output.Algebraic =>

@@ -53,10 +53,10 @@ final case class GoLangType (
 
   def isSlice(id: TypeId): Boolean = id match {
     case g: Generic => g match {
-      case go: Generic.TOption => false
-      case gl: Generic.TList => true
-      case gs: Generic.TSet => true
-      case gm: Generic.TMap => true
+      case _: Generic.TOption => false
+      case _: Generic.TList => true
+      case _: Generic.TSet => true
+      case _: Generic.TMap => true
     }
     case _ => false
   }
@@ -70,12 +70,12 @@ final case class GoLangType (
     case _: EnumId => false
     case al: AliasId => isPrimitive(ts.dealias(al))
     case g: Generic => g match {
-      case go: Generic.TOption => false //isPrimitive(go.valueType)
-      case gl: Generic.TList => true //isPrimitive(gl.valueType)
-      case gs: Generic.TSet => true // isPrimitive(gs.valueType)
-      case gm: Generic.TMap => true // isPrimitive(gm.valueType)
+      case _: Generic.TOption => false //isPrimitive(go.valueType)
+      case _: Generic.TList => true //isPrimitive(gl.valueType)
+      case _: Generic.TSet => true // isPrimitive(gs.valueType)
+      case _: Generic.TMap => true // isPrimitive(gm.valueType)
     }
-    case _ => throw new IDLException("Unknown type is checked for primitiveness " + id.name)
+    case _ => throw new IDLException(s"Unknown type is checked for primitiveness ${id.name}")
   }
 
   def isPolymorph(id: TypeId): Boolean = id match {
@@ -122,9 +122,9 @@ final case class GoLangType (
   protected def renderUserType(id: TypeId, serialized: Boolean = false, forAlias: Boolean = false, forMap: Boolean = false): String = {
     if (serialized) {
       id match {
-        case _: InterfaceId => s"map[string]json.RawMessage"
-        case _: AdtId => s"json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
-        case _: IdentifierId | _: EnumId => s"string"
+        case _: InterfaceId => "map[string]json.RawMessage"
+        case _: AdtId => "json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
+        case _: IdentifierId | _: EnumId => "string"
         case d: DTOId => s"*${im.withImport(d)}${d.name}Serialized"
         case al: AliasId => ts.dealias(al) match {
 //          case _: Primitive => id.name
@@ -185,13 +185,13 @@ final case class GoLangType (
          """.stripMargin
 
       case g: Generic => g match {
-        case _: Generic.TMap => s"Not implemented renderUnmarshal.Generic.TMap"
-        case _: Generic.TList => s"Not implemented renderUnmarshal.Generic.TMap"
-        case _: Generic.TOption => s"Not implemented renderUnmarshal.Generic.TMap"
-        case _: Generic.TSet => s"Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TMap => "{Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TList => "{Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TOption => "{Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TSet => "{Not implemented renderUnmarshal.Generic.TMap"
       }
 
-      case _ => throw new IDLException("Primitive types should not be unmarshalled manually " + id.name)
+      case _ => throw new IDLException(s"Primitive types should not be unmarshalled manually ${id.name}")
       // case _ => assignLeft + content + assignRight
     }
   }
@@ -230,7 +230,7 @@ final case class GoLangType (
         case _ => throw new IDLException(s"Should never parse non int or string types. Used for type ${id.name}")
       }
     } else {
-      throw new IDLException(s"Render from string for non unescaped ones is not supported yet!")
+      throw new IDLException("Render from string for non unescaped ones is not supported yet!")
     }
   }
 
@@ -261,8 +261,8 @@ final case class GoLangType (
     }
     case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).defaultValue()
     case e: EnumId => ts(e).asInstanceOf[Enumeration].members.head
-    case _: IdentifierId | _: DTOId => s"nil"
-    case _: InterfaceId => s"nil"
+    case _: IdentifierId | _: DTOId => "nil"
+    case _: InterfaceId => "nil"
     case _ => "nil"
   }
 
@@ -293,11 +293,11 @@ final case class GoLangType (
     }
     case al: AliasId => ts.dealias(al) match {
       case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${al.name}()"
-      case i: InterfaceId => s"${im.withImport(id)}NewTest${al.name + ts.implId(i).name}()"
+      case i: InterfaceId => s"${im.withImport(id)}NewTest${al.name + ts.tools.implId(i).name}()"
       case _ => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
     }
     case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${id.name}()"
-    case i: InterfaceId => s"${im.withImport(id)}NewTest${i.name + ts.implId(i).name}()"
+    case i: InterfaceId => s"${im.withImport(id)}NewTest${i.name + ts.tools.implId(i).name}()"
     case _ => "nil"
   }
 

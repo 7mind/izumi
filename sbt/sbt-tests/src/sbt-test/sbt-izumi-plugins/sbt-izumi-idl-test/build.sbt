@@ -3,7 +3,6 @@ import sbt.Keys._
 import IzumiConvenienceTasksPlugin.Keys._
 enablePlugins(IzumiEnvironmentPlugin)
 
-
 lazy val pluginVersion = if (sys.props.isDefinedAt("plugin.version")) {
   sys.props("plugin.version")
 } else {
@@ -30,8 +29,7 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val sharedDeps = Set(
     Izumi.R.idealingua_model
     , Izumi.R.idealingua_runtime_rpc_http4s
-    , Izumi.R.idealingua_runtime_rpc_circe
-    , Izumi.R.idealingua_runtime_rpc_cats
+    , Izumi.R.idealingua_runtime_rpc_scala
   )
 }
 

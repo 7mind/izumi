@@ -28,6 +28,11 @@ data Package {
 }
 
 service TestService {
+  // temporarily commented till we fix transpilers. https://github.com/pshirshov/izumi-r2/issues/328
+  def unitToUnit()
+  def anotherVoid() => ()
+  def unitResult(package: Package)
+
   def parameterless(): str
   def simpleMethod(a: str): str
   def simpleIntMethod(a: i32): i32
@@ -40,8 +45,7 @@ service TestService {
 
   def simpleGoReserved(package: Package): bool
 
-  // temporarily commented till we fix transpilers. https://github.com/pshirshov/izumi-r2/issues/328
-  //def unitResult(package: Package)
+  def simpleVoid(a: str)
 
   // simple instance
   def greetSingularOut(firstName: str, secondName: str) => str
@@ -80,14 +84,19 @@ service TestService {
    | ErrorData
   )
 
-  // ADT
-  def greetAlgebraicMultilineCurlyBracesSyntax
+  // alternatives
+  // commented till we fix https://github.com/pshirshov/izumi-r2/issues/211
+  /*def greetAlgebraicMultilineCurlyBracesSyntax
    {
      firstName: str
      secondName: str
    } => {
      SuccessData
+   } !! {
      ErrorData
    }
 
+   def alternative(firstName: str, secondName: str) => SuccessData !! ErrorData
+   def voidAlternative(firstName: str, secondName: str) => () !! ()*/
 }
+

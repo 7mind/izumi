@@ -58,7 +58,7 @@ class TypeScriptTypeConverter() {
       case Primitive.TFloat => s"$value.toString()"
       case Primitive.TDouble => s"$value.toString()"
       case Primitive.TUUID => value
-      case id: IdentifierId => s"$value.toString()"
+      case _: IdentifierId => s"$value.toString()"
       case en: EnumId => s"$en[$value]"
       // TODO We do nothing for other types, should probably figure something out ...
       case _ => throw new Exception("Unsupported area in emitTypeAsString")
@@ -126,7 +126,7 @@ class TypeScriptTypeConverter() {
 
   def toNativeType(id: TypeId, ts: Typespace, forSerialized: Boolean = false, forMap: Boolean = false): String = {
     id match {
-      case t: Generic => toGenericType(t, ts, forSerialized, forMap)
+      case t: Generic => toGenericType(t, ts, forSerialized)
       case t: Primitive => toPrimitiveType(t, forSerialized)
       case _ => toCustomType(id, ts, forSerialized, forMap)
     }
@@ -143,12 +143,12 @@ class TypeScriptTypeConverter() {
   def toCustomType(id: TypeId, ts: Typespace, forSerialized: Boolean = false, forMap: Boolean): String = {
     if (forSerialized) {
       id match {
-        case i: InterfaceId => s"{[key: string]: ${i.name + ts.implId(i).name + "Serialized"}}"
-        case _: AdtId => s"{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
+        case i: InterfaceId => s"{[key: string]: ${i.name + ts.tools.implId(i).name + "Serialized"}}"
+        case _: AdtId => "{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
         case al: AliasId => toNativeType(ts(al).asInstanceOf[Alias].target, ts, forSerialized)
         case _: DTOId => s"${id.name}Serialized"
         case _: EnumId => "string"
-        case _: IdentifierId => s"string"
+        case _: IdentifierId => "string"
         case _ => s"${id.name}"
       }
     } else {
@@ -181,7 +181,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TTsU => if (forSerialized) "string" else "Date"
   }
 
-  private def toGenericType(typeId: Generic, ts: Typespace, forSerialized: Boolean, forMap: Boolean): String = {
+  private def toGenericType(typeId: Generic, ts: Typespace, forSerialized: Boolean): String = {
     typeId match {
       case _: Generic.TSet => toNativeType(typeId.asInstanceOf[TSet].valueType, ts, forSerialized) + "[]"
       case _: Generic.TMap => "{[key: " + toNativeType(typeId.asInstanceOf[TMap].keyType, ts, forSerialized, forMap = true) + "]: " + toNativeType(typeId.asInstanceOf[TMap].valueType, ts, forSerialized) + "}"

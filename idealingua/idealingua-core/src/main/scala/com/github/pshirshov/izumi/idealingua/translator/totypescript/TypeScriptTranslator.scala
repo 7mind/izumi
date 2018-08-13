@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -151,7 +151,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     s"""// Runtime identification methods
        |public static readonly PackageName = '$pkg';
        |public static readonly ClassName = '${s.name}';
-       |public static readonly FullClassName = '${pkg}.${s.name}';
+       |public static readonly FullClassName = '$pkg.${s.name}';
        |
        |public getPackageName(): string { return ${if(holderName == null) s.name else holderName}.PackageName; }
        |public getClassName(): string { return ${if(holderName == null) s.name else holderName}.ClassName; }
@@ -161,25 +161,25 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
   protected def renderDtoInterfaceSerializer(iid: InterfaceId): String = {
     val fields = typespace.structure.structure(iid)
-    s"""public to${iid.name}Serialized(): ${iid.name}${typespace.implId(iid).name}Serialized {
+    s"""public to${iid.name}Serialized(): ${iid.name}${typespace.tools.implId(iid).name}Serialized {
        |    return {
        |${renderSerializedObject(fields.all.map(_.field)).shift(8)}
        |    };
        |}
        |
-       |public to${iid.name}(): ${iid.name}${typespace.implId(iid).name} {
-       |    return new ${iid.name}${typespace.implId(iid).name}(this.to${iid.name}Serialized());
+       |public to${iid.name}(): ${iid.name}${typespace.tools.implId(iid).name} {
+       |    return new ${iid.name}${typespace.tools.implId(iid).name}(this.to${iid.name}Serialized());
        |}
      """.stripMargin
   }
 
   protected def renderDtoInterfaceLoader(iid: InterfaceId): String = {
     val fields = typespace.structure.structure(iid)
-    s"""public load${iid.name}Serialized(slice: ${iid.name}${typespace.implId(iid).name}Serialized) {
+    s"""public load${iid.name}Serialized(slice: ${iid.name}${typespace.tools.implId(iid).name}Serialized) {
        |${renderDeserializeObject("slice", fields.all.map(_.field)).shift(4)}
        |}
        |
-       |public load${iid.name}(slice: ${iid.name}${typespace.implId(iid).name}) {
+       |public load${iid.name}(slice: ${iid.name}${typespace.tools.implId(iid).name}) {
        |    this.load${iid.name}Serialized(slice.serialize());
        |}
      """.stripMargin
@@ -200,7 +200,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     if (defVal.isDefined)
       s"$to = ${defVal.get};"
     else
-      s""
+      ""
   }
 
   protected def renderDto(i: DTO)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
@@ -217,7 +217,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val extendsInterfacesSerialized =
       if (i.struct.superclasses.interfaces.nonEmpty) {
-        "extends " + i.struct.superclasses.interfaces.map(iface => s"${iface.name}${typespace.implId(iface).name}Serialized").mkString(", ") + " "
+        "extends " + i.struct.superclasses.interfaces.map(iface => s"${iface.name}${typespace.tools.implId(iface).name}Serialized").mkString(", ") + " "
       } else {
         ""
       }
@@ -251,7 +251,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |${distinctFields.map(f => s"${conv.toNativeTypeName(f.name, f.typeId)}: ${conv.toNativeType(f.typeId, ts, forSerialized = true)};").mkString("\n").shift(4)}
          |}
          |
-         |${uniqueInterfaces.map(sc => sc.name + typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
+         |${uniqueInterfaces.map(sc => sc.name + typespace.tools.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
          """.stripMargin
 
     ext.extend(i, CompositeProduct(dto, imports.render(ts), s"// ${i.id.name} DTO"), _.handleDTO)
@@ -290,7 +290,10 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       s"""export type ${i.id.name} = ${i.alternatives.map(alt => alt.typeId.name).mkString(" | ")};
          |
          |export class ${i.id.name}Helpers {
-         |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (if (alt.typeId.isInstanceOf[InterfaceId]) alt.name + typespace.implId(alt.typeId.asInstanceOf[InterfaceId]).name else alt.typeId.name) + "Serialized").mkString(" | ")}} {
+         |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
+        case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
+        case _ => alt.typeId.name
+      }) + "Serialized").mkString(" | ")}} {
          |        let className = adt.getClassName();
          |${i.alternatives.filter(al => al.memberName.isDefined).map(a => s"if (className == '${a.typeId.name}') {\n    className = '${a.memberName.get}'\n}").mkString("\n").shift(8)}
          |        return {
@@ -298,7 +301,10 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |        };
          |    }
          |
-         |    public static deserialize(data: {[key: string]: ${i.alternatives.map(alt => (if (alt.typeId.isInstanceOf[InterfaceId]) alt.name + typespace.implId(alt.typeId.asInstanceOf[InterfaceId]).name else alt.typeId.name) + "Serialized").mkString(" | ")}}): ${i.id.name} {
+         |    public static deserialize(data: {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
+        case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
+        case _ => alt.typeId.name
+      }) + "Serialized").mkString(" | ")}}): ${i.id.name} {
          |        const id = Object.keys(data)[0];
          |        const content = data[id];
          |        switch (id) {
@@ -408,14 +414,14 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val extendsInterfacesSerialized =
       if (i.struct.superclasses.interfaces.nonEmpty) {
-        "extends " + i.struct.superclasses.interfaces.map(iface => iface.name + typespace.implId(iface).name + "Serialized").mkString(", ") + " "
+        "extends " + i.struct.superclasses.interfaces.map(iface => iface.name + typespace.tools.implId(iface).name + "Serialized").mkString(", ") + " "
       } else {
         ""
       }
 
     val fields = typespace.structure.structure(i)
     val distinctFields = fields.all.groupBy(_.field.name).map(_._2.head.field)
-    val implId = typespace.implId(i.id)
+    val implId = typespace.tools.implId(i.id)
     val eid = i.id.name + implId.name
 
 
@@ -436,7 +442,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val uniqueInterfaces = ts.inheritance.parentsInherited(i.id).groupBy(_.name).map(_._2.head)
     val companion =
-      s"""export class ${eid} implements ${i.id.name} {
+      s"""export class $eid implements ${i.id.name} {
          |${renderRuntimeNames(implId, eid).shift(4)}
          |${fields.all.map(f => conv.toFieldMember(f.field, ts)).mkString("\n").shift(4)}
          |
@@ -456,34 +462,34 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |        };
          |    }
          |
-         |    // Polymorphic section below. If a new type to be registered, use ${eid}.register method
+         |    // Polymorphic section below. If a new type to be registered, use $eid.register method
          |    // which will add it to the known list. You can also overwrite the existing registrations
          |    // in order to provide extended functionality on existing models, preserving the original class name.
          |
-         |    private static _knownPolymorphic: {[key: string]: {new (data?: ${eid} | ${eid}Serialized): ${i.id.name}}} = {
-         |        // This basic registration will happen below [${eid}.FullClassName]: ${eid}
+         |    private static _knownPolymorphic: {[key: string]: {new (data?: $eid | ${eid}Serialized): ${i.id.name}}} = {
+         |        // This basic registration will happen below [$eid.FullClassName]: $eid
          |    };
          |
-         |    public static register(className: string, ctor: {new (data?: ${eid} | ${eid}Serialized): ${i.id.name}}): void {
+         |    public static register(className: string, ctor: {new (data?: $eid | ${eid}Serialized): ${i.id.name}}): void {
          |        this._knownPolymorphic[className] = ctor;
          |    }
          |
          |    public static create(data: {[key: string]: ${eid}Serialized}): ${i.id.name} {
          |        const polymorphicId = Object.keys(data)[0];
-         |        const ctor = ${eid}._knownPolymorphic[polymorphicId];
+         |        const ctor = $eid._knownPolymorphic[polymorphicId];
          |        if (!ctor) {
-         |          throw new Error('Unknown polymorphic type ' + polymorphicId + ' for ${eid}.Create');
+         |          throw new Error('Unknown polymorphic type ' + polymorphicId + ' for $eid.Create');
          |        }
          |
          |        return new ctor(data[polymorphicId]);
          |    }
          |
          |    public static getRegisteredTypes(): string[] {
-         |        return Object.keys(${eid}._knownPolymorphic);
+         |        return Object.keys($eid._knownPolymorphic);
          |    }
          |}
          |
-         |${uniqueInterfaces.map(sc => sc.name + typespace.implId(sc).name + s".register(${eid}.FullClassName, ${eid});").mkString("\n")}
+         |${uniqueInterfaces.map(sc => sc.name + typespace.tools.implId(sc).name + s".register($eid.FullClassName, $eid);").mkString("\n")}
        """.stripMargin
 
     ext.extend(i, InterfaceProduct(iface, companion, imports.render(ts), s"// ${i.id.name} Interface"), _.handleInterface)
@@ -503,6 +509,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     case _: Struct => s"Out${method.name.capitalize}"
     case al: Algebraic => al.alternatives.map(alt => conv.toNativeType(alt.typeId, ts)).mkString(" | ")
     case si: Singular => conv.toNativeType(si.typeId, ts)
+    case _: Void => "void"
+    case _: Alternative => throw new Exception("Not implemented")
   }
 
   protected def renderServiceClientMethod(service: String, method: DefMethod): String = method match {
@@ -562,6 +570,24 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
            |        });
            |}
          """.stripMargin
+
+      case _: Void =>
+        s"""public ${renderServiceMethodSignature(method, spread = true)} {
+           |    const __data = new In${m.name.capitalize}();
+           |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
+           |    return new Promise((resolve, reject) => {
+           |        this._transport.send(${service}Client.ClassName, '${m.name}', __data)
+           |            .then(() => {
+           |              resolve();
+           |            })
+           |            .catch((err: any) => {
+           |                reject(err);
+           |            });
+           |        });
+           |}
+         """.stripMargin
+
+      case _: Alternative => throw new Exception("Not implemented")
     }
   }
 
@@ -572,13 +598,13 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |
        |export class ${i.id.name}Client implements I${i.id.name}Client {
        |${renderRuntimeNames(i.id, s"${i.id.name}Client").shift(4)}
-       |    protected _transport: IRTClientTransport;
+       |    protected _transport: ClientTransport;
        |
-       |    constructor(transport: IRTClientTransport) {
+       |    constructor(transport: ClientTransport) {
        |        this._transport = transport;
        |    }
        |
-       |    private send<I extends IRTServiceClientInData, O extends IRTServiceClientOutData>(method: string, data: I, inputType: {new(): I}, outputType: {new(data: any): O} ): Promise<O> {
+       |    private send<I extends ServiceClientInData, O extends ServiceClientOutData>(method: string, data: I, inputType: {new(): I}, outputType: {new(data: any): O} ): Promise<O> {
        |        return new Promise((resolve, reject) => {
        |            this._transport.send(${i.id.name}Client.ClassName, method, data)
        |                .then((data: any) => {
@@ -603,7 +629,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def renderServiceMethodOutModel(name: String, implements: String, out: DefMethod.Output): String = out match {
     case st: Struct => renderServiceMethodInModel(name, implements, st.struct, export = true)
 //    case al: Algebraic => renderAdt(al)
-    case _ => s""
+    case _ => ""
   }
 
   protected def renderServiceMethodInModel(name: String, implements: String, structure: SimpleStructure, export: Boolean): String = {
@@ -633,8 +659,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
   protected def renderServiceMethodModels(method: DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
-      s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "IRTServiceClientInData", m.signature.input, export = false)}
-         |${renderServiceMethodOutModel(s"Out${m.name.capitalize}", "IRTServiceClientOutData", m.signature.output)}
+      s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "ServiceClientInData", m.signature.input, export = false)}
+         |${renderServiceMethodOutModel(s"Out${m.name.capitalize}", "ServiceClientOutData", m.signature.output)}
        """.stripMargin
 
   }
@@ -667,7 +693,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
       val header =
         s"""${imports.render(ts)}
-           |${importFromIRT(List("IRTServiceClientInData", "IRTServiceClientOutData", "IRTClientTransport"), i.id.domain.toPackage)}
+           |${importFromIRT(List("ServiceClientInData", "ServiceClientOutData", "ClientTransport"), i.id.domain.toPackage)}
          """.stripMargin
 
     ServiceProduct(svc, header, s"// $typeName client")

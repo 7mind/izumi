@@ -32,7 +32,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "IRT")
+    List("Newtonsoft.Json", "IRT.Marshaller")
   }
 
   override def preModelEmit(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -56,7 +56,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "IRT")
+    List("Newtonsoft.Json", "IRT.Marshaller")
   }
 
   override def preModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -66,7 +66,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def preModelEmit(ctx: CSTContext, i: DTO)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
-    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
+    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.tools.implId(ii) == i.id)
     val converterName = if (implIface.isDefined) implIface.get.name + i.id.name else i.id.name
 
     s"[JsonConverter(typeof(${converterName}_JsonNetConverter))]"
@@ -76,7 +76,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
     discard(ctx)
     val structure = ts.structure.structure(i)
     val struct = CSharpClass(i.id, i.id.name, structure, List.empty)
-    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
+    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.tools.implId(ii) == i.id)
     val converterName = if (implIface.isDefined) implIface.get.name + i.id.name else i.id.name
 
     this.postModelEmit(ctx, converterName, struct)
@@ -106,7 +106,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: DTO)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "Newtonsoft.Json.Linq", "IRT")
+    List("Newtonsoft.Json", "Newtonsoft.Json.Linq", "IRT.Marshaller")
   }
 
   private def writePropertyValue(src: String, t: CSharpType, key: Option[String] = None)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -144,6 +144,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
                    |}
                    |writer.WriteEndArray();
                  """.stripMargin
+              case _ => throw new Exception("Option should have been checked already.")
             }
             case p: Primitive => p match {
               case Primitive.TBool => s"writer.WriteValue($src);"
@@ -284,6 +285,8 @@ object JsonNetExtension extends CSharpTranslatorExtension {
             s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
                |serializer.Populate($src.CreateReader(), $dst);""".stripMargin
           )
+
+        case _ => throw new Exception("Other cases should have been checked already.")
       }
     }
   }
@@ -334,7 +337,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def postModelEmit(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
-    val eid = ts.implId(id.id)
+    val eid = ts.tools.implId(id.id)
     val eidName = id.id.name + eid.name
     s"""public class ${id.id.name}_JsonNetConverter: JsonNetConverter<${id.id.name}> {
        |    public override void WriteJson(JsonWriter writer, ${id.id.name} value, JsonSerializer serializer) {
@@ -354,7 +357,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT")
+    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT.Marshaller")
   }
 
   override def preModelEmit(ctx: CSTContext, i: Adt)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -373,7 +376,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         """.stripMargin
 
 
-      case _ => s"""serializer.Serialize(writer, v);"""
+      case _ => """serializer.Serialize(writer, v);"""
     }
   }
 
@@ -419,6 +422,6 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def imports(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
-    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT")
+    List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT.Marshaller")
   }
 }

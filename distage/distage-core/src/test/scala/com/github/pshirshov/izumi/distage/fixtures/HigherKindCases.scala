@@ -73,6 +73,10 @@ object HigherKindCases {
     abstract class TestProvider1[A, G[_]: Pointed, F[_]: Pointed] {
       def f(a: A): F[A]
     }
+
+    abstract class TestProvider2[G[_]: Pointed, F[_]: Pointed, A] {
+      def f(a: A): F[A]
+    }
   }
 
 }

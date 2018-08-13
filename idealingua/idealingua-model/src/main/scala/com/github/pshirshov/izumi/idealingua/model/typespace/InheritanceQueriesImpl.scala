@@ -6,13 +6,13 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.{IDLCyclicInherita
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Structures
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.DTO
 
-protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeCollection) extends InheritanceQueries {
+protected[typespace] class InheritanceQueriesImpl(ts: Typespace) extends InheritanceQueries {
   def allParents(id: TypeId): List[InterfaceId] = {
     safeAllParents(id, Set.empty)
   }
 
   def implementingDtos(id: InterfaceId): List[DTOId] = {
-    types.index.underlying.collect { // 2.13 compat
+    ts.types.index.underlying.collect { // 2.13 compat
       case (tid, d: DTO) if parentsInherited(tid).contains(id) =>
         d.id
     }.toList
@@ -23,7 +23,7 @@ protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeC
   }
 
   protected[typespace] def compatibleDtos(id: InterfaceId): List[DTOId] = {
-    types.index.underlying.collect { // 2.13 compat
+    ts.types.index.underlying.collect { // 2.13 compat
       case (tid, d: DTO) if allParents(tid).contains(id) =>
         d.id
     }.toList
@@ -36,13 +36,13 @@ protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeC
   protected def safeParentsInherited(id: TypeId, excluded: Set[TypeId]): List[InterfaceId] = {
     id match {
       case i: InterfaceId =>
-        val defn = ts.get(i)
+        val defn = ts.resolver.get(i)
         val parents = defn.struct.superclasses.interfaces
         val newExclusions = checkCycles(excluded, i, parents)
         List(i) ++ parents.flatMap(safeParentsInherited(_, newExclusions))
 
       case i: DTOId =>
-        val defn = ts.get(i)
+        val defn = ts.resolver.get(i)
         val parents = defn.struct.superclasses.interfaces
         val newExclusions = checkCycles(excluded, i, parents)
         parents.flatMap(safeParentsInherited(_, newExclusions))
@@ -67,7 +67,7 @@ protected[typespace] class InheritanceQueriesImpl(ts: TypeResolver, types: TypeC
   protected def safeParentsConcepts(id: TypeId, excluded: Set[TypeId]): List[InterfaceId] = {
     id match {
       case i: StructureId =>
-        val defn = ts.get(i)
+        val defn = ts.resolver.get(i)
         val superclasses = defn.struct.superclasses
         val removed = superclasses.removedConcepts.toSet
         val newExclusions = checkCycles(excluded, i, superclasses.concepts)

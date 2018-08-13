@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.SimpleStructure
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.Struct
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
@@ -106,8 +105,8 @@ final case class CSharpClass (
   }
 
   private def renderSlice(i: InterfaceId): String = {
-    val interface = ts(i).asInstanceOf[Interface]
-    val eid = ts.implId(i)
+//    val interface = ts(i).asInstanceOf[Interface]
+    val eid = ts.tools.implId(i)
     val eidStruct = ts.structure.structure(eid)
     val eidClass = CSharpClass(eid, i.name + eid.name, eidStruct, List.empty)
 

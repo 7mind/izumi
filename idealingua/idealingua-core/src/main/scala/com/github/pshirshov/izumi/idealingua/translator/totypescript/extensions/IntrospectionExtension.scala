@@ -13,24 +13,24 @@ import com.github.pshirshov.izumi.idealingua.translator.totypescript.types.TypeS
 
 object IntrospectionExtension extends TypeScriptTranslatorExtension {
   private def unwindType(id: TypeId)(implicit ts: Typespace): String = id match {
-    case Primitive.TBool => s"{intro: IntrospectorTypes.Bool}"
-    case Primitive.TString => s"{intro: IntrospectorTypes.Str}"
-    case Primitive.TInt8 => s"{intro: IntrospectorTypes.I08}"
-    case Primitive.TInt16 => s"{intro: IntrospectorTypes.I16}"
-    case Primitive.TInt32 => s"{intro: IntrospectorTypes.I32}"
-    case Primitive.TInt64 => s"{intro: IntrospectorTypes.I64}"
-    case Primitive.TUInt8 => s"{intro: IntrospectorTypes.U08}"
-    case Primitive.TUInt16 => s"{intro: IntrospectorTypes.U16}"
-    case Primitive.TUInt32 => s"{intro: IntrospectorTypes.U32}"
-    case Primitive.TUInt64 => s"{intro: IntrospectorTypes.U64}"
-    case Primitive.TFloat => s"{intro: IntrospectorTypes.F32}"
-    case Primitive.TDouble => s"{intro: IntrospectorTypes.F64}"
-    case Primitive.TUUID => s"{intro: IntrospectorTypes.Uid}"
-    case Primitive.TTime => s"{intro: IntrospectorTypes.Time}"
-    case Primitive.TDate => s"{intro: IntrospectorTypes.Date}"
-    case Primitive.TTs => s"{intro: IntrospectorTypes.Tsl}"
-    case Primitive.TTsTz => s"{intro: IntrospectorTypes.Tsz}"
-    case Primitive.TTsU => s"{intro: IntrospectorTypes.Tsu}"
+    case Primitive.TBool => "{intro: IntrospectorTypes.Bool}"
+    case Primitive.TString => "{intro: IntrospectorTypes.Str}"
+    case Primitive.TInt8 => "{intro: IntrospectorTypes.I08}"
+    case Primitive.TInt16 => "{intro: IntrospectorTypes.I16}"
+    case Primitive.TInt32 => "{intro: IntrospectorTypes.I32}"
+    case Primitive.TInt64 => "{intro: IntrospectorTypes.I64}"
+    case Primitive.TUInt8 => "{intro: IntrospectorTypes.U08}"
+    case Primitive.TUInt16 => "{intro: IntrospectorTypes.U16}"
+    case Primitive.TUInt32 => "{intro: IntrospectorTypes.U32}"
+    case Primitive.TUInt64 => "{intro: IntrospectorTypes.U64}"
+    case Primitive.TFloat => "{intro: IntrospectorTypes.F32}"
+    case Primitive.TDouble => "{intro: IntrospectorTypes.F64}"
+    case Primitive.TUUID => "{intro: IntrospectorTypes.Uid}"
+    case Primitive.TTime => "{intro: IntrospectorTypes.Time}"
+    case Primitive.TDate => "{intro: IntrospectorTypes.Date}"
+    case Primitive.TTs => "{intro: IntrospectorTypes.Tsl}"
+    case Primitive.TTsTz => "{intro: IntrospectorTypes.Tsz}"
+    case Primitive.TTsU => "{intro: IntrospectorTypes.Tsu}"
     case g: Generic => g match {
       case gm: Generic.TMap => s"{intro: IntrospectorTypes.Map, key: ${unwindType(gm.keyType)}, value: ${unwindType(gm.valueType)}} as IIntrospectorMapType"
       case gl: Generic.TList => s"{intro: IntrospectorTypes.List, value: ${unwindType(gl.valueType)}} as IIntrospectorGenericType"
@@ -43,7 +43,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     case id: EnumId => s"{intro: IntrospectorTypes.Enum, full: '${id.path.toPackage.mkString(".") + "." + id.name}'} as IIntrospectorUserType"
     case id: IdentifierId => s"{intro: IntrospectorTypes.Id, full: '${id.path.toPackage.mkString(".") + "." + id.name}'} as IIntrospectorUserType"
     case al: AliasId => unwindType(ts.dealias(al))
-    case _ => throw new Exception("Unwind type is not implemented for type " + id)
+    case _ => throw new Exception(s"Unwind type is not implemented for type $id")
   }
 
   private def unwindField(name: String, id: TypeId)(implicit ts: Typespace, conv: TypeScriptTypeConverter): String = {
@@ -70,7 +70,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
   }
 
   override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct)(implicit manifest: Option[TypeScriptBuildManifest]): EnumProduct = {
-    implicit val ts: Typespace = ctx.typespace
+//    implicit val ts: Typespace = ctx.typespace
     val pkg = enum.id.path.toPackage.mkString(".")
     val short = enum.id.name
     val full = pkg + "." + short
@@ -168,10 +168,10 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
 
     val short = interface.id.name
     val pkg = interface.id.path.toPackage.mkString(".")
-    val full = pkg + "." + short
+    val full = s"$pkg.$short"
 
     val fields = interface.struct.fields
-    val implId = ts.implId(interface.id)
+    val implId = ts.tools.implId(interface.id)
     val eid = interface.id.name + implId.name
 
     val extension =

@@ -54,3 +54,14 @@ data Test02UserAnyVal {
   _: Test02DtoAnyVal
   _: i08
 }
+
+// https://github.com/pshirshov/izumi-r2/issues/334
+/*
+data Cyclic01 {
+  _: Cyclic01
+}
+
+mixin Cyclic02 {
+  _: Cyclic02
+}
+*/

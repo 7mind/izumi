@@ -16,11 +16,18 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val constructors: List[Defn.Def] = {
     val struct = fields.fields
 
-    ctx.typespace.structure.constructors(struct).map {
-      cdef =>
-        val constructorSignature = ctx.tools.makeParams(cdef)
-        val fullConstructorCode = ctx.tools.makeConstructor(cdef)
-
+    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    ctx.typespace.structure
+      .constructors(struct)
+      .map {
+        cdef =>
+          val constructorSignature = ctx.tools.makeParams(cdef)
+          val fullConstructorCode = ctx.tools.makeConstructor(cdef)
+          (cdef, constructorSignature, fullConstructorCode)
+      }
+      .distinctBy(_._2.types) // a fix for synthetic cornercase: https://github.com/pshirshov/izumi-r2/issues/334
+      .map {
+      case (cdef, constructorSignature, fullConstructorCode) =>
         val instantiator = q" new ${t.typeFull}(..$fullConstructorCode) "
 
         q"""def apply(..${constructorSignature.params}): ${t.typeFull} = {
@@ -29,7 +36,6 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
          }"""
     }
   }
-
 
 
   val decls: List[Term.Param] = fields.all.toParams

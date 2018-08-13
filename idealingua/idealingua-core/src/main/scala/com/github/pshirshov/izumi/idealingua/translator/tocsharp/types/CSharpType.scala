@@ -238,7 +238,7 @@ final case class CSharpType (
   private def randomDto(i: DTO, depth: Int): String = {
       val structure = ts.structure.structure(i)
       val struct = CSharpClass(i.id, i.id.name, structure, List.empty)
-      val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
+      val implIface = ts.inheritance.allParents(i.id).find(ii => ts.tools.implId(ii) == i.id)
       val dtoName = if (implIface.isDefined) implIface.get.path.toPackage.map(p => p.capitalize).mkString(".") + "." + implIface.get.name + i.id.name else
         i.id.path.toPackage.map(p => p.capitalize).mkString(".") + "." + i.id.name
       s"""new ${dtoName}(
@@ -334,7 +334,7 @@ final case class CSharpType (
     case Primitive.TTsU => "DateTime"
   }
 
-  protected def renderUserType(id: TypeId, forAlias: Boolean = false, forMap: Boolean = false, withPackage: Boolean = false): String = {
+  protected def renderUserType(id: TypeId, withPackage: Boolean = false): String = {
       val fullName = id.path.toPackage.map(p => p.capitalize).mkString(".") + "." + id.name
       id match {
         case _: EnumId => if (withPackage) fullName else s"${im.withImport(id)}"

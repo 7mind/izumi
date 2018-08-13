@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.logstage.sink
 import com.github.pshirshov.izumi.dummy.{DummyFile, DummyFileServiceImpl}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
+import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.sink.FileServiceUtils._
 import com.github.pshirshov.izumi.logstage.sink.LoggingFileSinkTest.{FileSinkBrokenImpl, randomInt, _}

@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct, Void, Alternative}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -156,8 +156,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
            """.stripMargin
         case ii: InterfaceId =>
           extra = Seq("encoding/json")
-          s"""type ${i.id.name + ts.implId(ii).name} = ${goType.renderType(forAlias = true)}Struct
-             |type ${i.id.name + ts.implId(ii).name}Serialized = ${goType.renderType(forAlias = true)}${ts.implId(ii).name}Serialized
+          s"""type ${i.id.name + ts.tools.implId(ii).name} = ${goType.renderType(forAlias = true)}Struct
+             |type ${i.id.name + ts.tools.implId(ii).name}Serialized = ${goType.renderType(forAlias = true)}${ts.tools.implId(ii).name}Serialized
              |func Create${i.id.name}(data map[string]json.RawMessage) (${i.id.name}, error) {
              |    return ${imports.withImport(i.target)}Create${i.target.name}(data)
              |}
@@ -175,7 +175,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
              |    return ${imports.withImport(i.target)}GetAll${i.target.name}()
              |}
            """.stripMargin
-        case _ => s""
+        case _ => ""
       }
 
       AliasProduct(
@@ -261,7 +261,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
         s"""
            |func NewTest$name() *$name {
            |    res := &$name{}
-           |    res.Set${alternatives.head.name}(NewTest${alternatives.head.typeId.name + (alternatives.head.typeId match { case iface: InterfaceId => ts.implId(iface).name; case _ => "" })}())
+           |    res.Set${alternatives.head.name}(NewTest${alternatives.head.typeId.name + (alternatives.head.typeId match { case iface: InterfaceId => ts.tools.implId(iface).name; case _ => "" })}())
            |    return res
            |}
          """.stripMargin
@@ -700,12 +700,12 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |}
          |
          |func Test${i.id.name}JSONSerialization(t *testing.T) {
-         |    v1 := New${i.id.name + ts.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    v1 := New${i.id.name + ts.tools.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
          |    serialized, err := json.Marshal(v1)
          |    if err != nil {
          |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
          |    }
-         |    var v2 ${i.id.name + ts.implId(i.id).name}
+         |    var v2 ${i.id.name + ts.tools.implId(i.id).name}
          |    err = json.Unmarshal(serialized, &v2)
          |    if err != nil {
          |        t.Fatalf("Type '%s' should deserialize from JSON using Unmarshal. %s", "${i.id.name}", err.Error())
@@ -752,20 +752,32 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     }
   }
 
-  protected def isServiceMethodOutputNullable(i: Service, method: DefMethod.RPCMethod): Boolean = method.signature.output match {
+  protected def isServiceMethodOutputNullable(method: DefMethod.RPCMethod): Boolean = method.signature.output match {
     case _: Struct => true
     case _: Algebraic => true
     case _: Singular => false // Should better detect here, there might be a singular object returned, which is nullable GoLangType(si.typeId, imports, ts).isPrimitive(si.typeId)
+    case _: Void => false
+    case _: Alternative => true
+  }
+
+  protected def isServiceMethodOutputExistent(method: DefMethod.RPCMethod): Boolean = method.signature.output match {
+    case _: Void => false
+    case _ => true
   }
 
   protected def renderServiceMethodOutputModel(i: Service, method: DefMethod.RPCMethod, imports: GoLangImports): String = method.signature.output match {
     case _: Struct => s"*${outName(i, method.name, public = true)}"
     case _: Algebraic => s"*${outName(i, method.name, public = true)}"
     case si: Singular => s"${GoLangType(si.typeId, imports, ts).renderType()}"
+    case _: Void => s""
+    case _: Alternative => throw new Exception("Not implemented")
   }
 
   protected def renderServiceMethodOutputSignature(i: Service, method: DefMethod.RPCMethod, imports: GoLangImports): String = {
-    s"(${renderServiceMethodOutputModel(i, method, imports)}, error)"
+    if (isServiceMethodOutputExistent(method))
+      s"(${renderServiceMethodOutputModel(i, method, imports)}, error)"
+    else
+      s"error"
   }
 
   protected def renderServiceClientMethod(i: Service, method: DefMethod, imports: GoLangImports): String = method match {
@@ -794,6 +806,15 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
            |    return outData, nil
            |}
        """.stripMargin
+
+      case _: Void =>
+        s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
+           |    return c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, nil)
+           |}
+       """.stripMargin
+
+      case _: Alternative => throw new Exception("Alternative is not implemented.")
     }
   }
 
@@ -806,10 +827,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |
        |type $name struct {
        |    ${i.id.name}
-       |    transport irt.ServiceClientTransport
+       |    transport irt.ClientTransport
        |}
        |
-       |func (v *$name) SetTransport(t irt.ServiceClientTransport) error {
+       |func (v *$name) SetTransport(t irt.ClientTransport) error {
        |    if t == nil {
        |        return fmt.Errorf("method SetTransport requires a valid transport, got nil")
        |    }
@@ -818,13 +839,32 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    return nil
        |}
        |
-       |func (v *$name) SetHTTPTransport(endpoint string, timeout int, skipSSLVerify bool) {
-       |    v.transport = irt.NewHTTPClientTransport(endpoint, timeout, skipSSLVerify)
+       |func (v *$name) SetHTTPTransport(endpoint string, timeout time.Duration) {
+       |    v.transport = irt.NewHTTPClientTransport(endpoint, timeout)
        |}
        |
-       |func New${name}OverHTTP(endpoint string) *$name{
+       |func (v *$name) SetWebSocketTransport(endpoint string, subprotocols []string) error {
+       |    transport, err := irt.NewWebSocketClientTransport(endpoint, subprotocols)
+       |    if err != nil {
+       |        return err
+       |    }
+       |
+       |    v.transport = transport
+       |    return nil
+       |}
+       |
+       |func New${name}OverWebSocket(endpoint string, subprotocols []string) (*$name, error) {
        |    res := &$name{}
-       |    res.SetHTTPTransport(endpoint, 15000, false)
+       |    err := res.SetWebSocketTransport(endpoint, subprotocols)
+       |    if err != nil {
+       |        return nil, err
+       |    }
+       |    return res, nil
+       |}
+       |
+       |func New${name}OverHTTP(endpoint string, timeout time.Duration) *$name{
+       |    res := &$name{}
+       |    res.SetHTTPTransport(endpoint, timeout)
        |    return res
        |}
        |
@@ -834,23 +874,33 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 
   protected def renderServiceDispatcherHandler(i: Service, method: DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
-      s"""case "${m.name}": {
-         |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(i, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
-         |    modelOut, err := v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
-         |    if err != nil {
-         |        return []byte{}, err
-         |    }
-         |
-         |    ${if (isServiceMethodOutputNullable(i, m)) s"""if modelOut == nil {\n        return []byte{}, fmt.Errorf("Method ${m.name} returned neither error nor result. Implementation might be broken.")\n    }""" else ""}
-         |    dataOut, err := v.marshaller.Marshal(modelOut)
-         |    if err != nil {
-         |        return []byte{}, fmt.Errorf("Marshalling model failed: %s", err.Error())
-         |    }
-         |
-         |    return dataOut, nil
-         |}
-         |
+      if (isServiceMethodOutputExistent(m)) {
+        s"""case "${m.name}": {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(i, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
+           |    modelOut, err := v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
+           |    if err != nil {
+           |        return []byte{}, err
+           |    }
+           |
+           |    ${if (isServiceMethodOutputNullable(m)) s"""if modelOut == nil {\n        return []byte{}, fmt.Errorf("Method ${m.name} returned neither error nor result. Implementation might be broken.")\n    }""" else ""}
+           |    dataOut, err := v.marshaller.Marshal(modelOut)
+           |    if err != nil {
+           |        return []byte{}, fmt.Errorf("Marshalling model failed: %s", err.Error())
+           |    }
+           |
+           |    return dataOut, nil
+           |}
+           |
        """.stripMargin
+      } else {
+        s"""case "${m.name}": {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(i, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
+           |    return []byte{}, v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
+           |}
+           |
+       """.stripMargin
+      }
+
   }
 
   protected def renderServiceDispatcher(i: Service, imports: GoLangImports): String = {
@@ -917,6 +967,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
         case _: Struct => "nil"
         case _: Algebraic => "nil"
         case si: Singular => GoLangType(si.typeId, imports, ts).defaultValue()
+        case _: Void => ""
+        case _: Alternative => throw new Exception("Not implemented")
       }
     }
   }
@@ -928,7 +980,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    // Implements ${i.id.name}Server interface
        |}
        |
-       |${i.methods.map(m => s"func (d *$name) " + renderServiceMethodSignature(i, m, imports, spread = true, withContext = true) + s""" {\n    return ${renderServiceMethodDefaultResult(i, m, imports)}, fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
+       |${i.methods.map(m => s"func (d *$name) " + renderServiceMethodSignature(i, m, imports, spread = true, withContext = true) + s""" {\n    return ${if (isServiceMethodOutputExistent(m.asInstanceOf[DefMethod.RPCMethod])) renderServiceMethodDefaultResult(i, m, imports) + ", " else ""}fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
      """.stripMargin
   }
 
@@ -936,6 +988,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     case st: Struct => renderServiceMethodInModel(i, name, st.struct, imports)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
     case si: Singular => s"// ${ si.typeId}"
+    case _: Void => s""
+    case _: Alternative => throw new Exception("Not implemented")
   }
 
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure, imports: GoLangImports): String = {
@@ -979,7 +1033,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
            |${renderServiceServerDummy(i, imports)}
          """.stripMargin
 
-      ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", prefix + "irt")))
+      ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "time", prefix + "irt")))
   }
 }
 

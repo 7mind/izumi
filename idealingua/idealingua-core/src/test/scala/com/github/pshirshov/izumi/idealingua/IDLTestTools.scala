@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
-import com.github.pshirshov.izumi.idealingua.il.renderer.ILRenderer
+import com.github.pshirshov.izumi.idealingua.il.renderer.IDLRenderer
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
@@ -146,7 +146,7 @@ object IDLTestTools {
       license = "MIT",
       website = "http://project.website",
       copyright = "Copyright (C) Test Inc.",
-      dependencies = List(ManifestDependency("moment", "^2.20.1")),
+      dependencies = List(ManifestDependency("github.com/gorilla/websocket", "")),
       repository = "github.com/TestCompany/TestRepo",
       useRepositoryFolders = true
     )
@@ -159,11 +159,18 @@ object IDLTestTools {
     Files.move(outDir, tmp.resolve("src"))
     Files.move(tmp, outDir)
 
+    val env = Map("GOPATH" -> out.absoluteTargetDir.toString)
+    val goSrc = out.absoluteTargetDir.resolve("src")
+    if (manifest.dependencies.nonEmpty) {
+      manifest.dependencies.foreach(md => {
+        run(goSrc, Seq("go", "get", md.module), env, "go-dep-install")
+      })
+    }
+
     val cmdBuild = Seq("go", "install", "-pkgdir", out.phase3.toString, "./...")
     val cmdTest = Seq("go", "test", "./...")
 
-    val env = Map("GOPATH" -> out.absoluteTargetDir.toString)
-    val goSrc = out.absoluteTargetDir.resolve("src")
+
     val exitCodeBuild = run(goSrc, cmdBuild, env, "go-build")
     val exitCodeTest = run(goSrc, cmdTest, env, "go-test")
 
@@ -211,7 +218,7 @@ object IDLTestTools {
   private def rerenderDomains(domainsDir: Path, domains: Seq[Typespace]): Unit = {
     domains.foreach {
       d =>
-        val rendered = new ILRenderer(d.domain).render()
+        val rendered = new IDLRenderer(d.domain).render()
         Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
     }
   }

@@ -10,7 +10,7 @@ final case class CSharpField(
                               tp: CSharpType,
                               structName: String,
                               by: Seq[String]
-                            ) (implicit im: CSharpImports, ts: Typespace) {
+                            ) {
   def renderMemberName(capitalize: Boolean = true, uncapitalize: Boolean = false): String = {
     safeName(name, capitalize, uncapitalize)
   }
@@ -52,7 +52,7 @@ final case class CSharpField(
     if (tp.isNative) {
       s"${if (forInterface) "" else "public "}${tp.renderType()} ${if (by.isEmpty) "" else s"$by."}${renderMemberName()} { get; set; }"
     } else {
-      s"""Not Implemented renderMember()""".stripMargin
+      "Not Implemented renderMember()"
     }
   }
 

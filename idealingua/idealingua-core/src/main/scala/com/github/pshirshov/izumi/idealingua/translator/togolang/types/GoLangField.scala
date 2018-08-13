@@ -129,7 +129,7 @@ final case class GoLangField(
                |for ${tempVal}Key, ${tempVal}Val := range $src {
                |${if (vt.isInstanceOf[Generic])
               renderPolymorphSerializedVar(vt.id, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
-              (renderPolymorphSerialized(vt.id, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
+              (renderPolymorphSerialized(vt.id, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
                |}
                |$dest := $tempVal
                  """.stripMargin
@@ -413,7 +413,7 @@ final case class GoLangField(
                    |for ${tempVal}Index, ${tempVal}Val := range $variable {
                    |${if (vt.isInstanceOf[Primitive])
                   renderAssignImpl(struct, vt, s"${tempVal}Val", serialized, optional).shift(4) else
-                  (renderDeserializedVar(vt, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)}
+                  (renderDeserializedVar(vt, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)}
                    |}
                    |$assignTemp
                  """.stripMargin
@@ -429,7 +429,7 @@ final case class GoLangField(
                    |for ${tempVal}Key, ${tempVal}Val := range $variable {
                    |${if (vt.isInstanceOf[Generic])
                       renderAssignImpl(struct, vt, s"${tempVal}Val", serialized, optional).shift(4) else
-                      (renderDeserializedVar(vt, s"__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
+                      (renderDeserializedVar(vt, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
                    |}
                    |$assignTemp
                  """.stripMargin

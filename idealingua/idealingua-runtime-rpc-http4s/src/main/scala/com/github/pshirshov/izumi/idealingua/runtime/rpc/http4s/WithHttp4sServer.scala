@@ -1,115 +1,78 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import cats.implicits._
-import com.github.pshirshov.izumi.idealingua.runtime.circe.IRTServerMarshallers
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import fs2.Stream
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
+import scalaz.zio.ExitResult
 
-import scala.language.higherKinds
-import scala.util.{Failure, Success, Try}
 
-trait WithHttp4sServer[R[_]] {
-  this: Http4sContext[R] with WithHttp4sLoggingMiddleware[R] =>
-
-  protected def serverMarshallers: IRTServerMarshallers
+trait WithHttp4sServer {
+  this: Http4sContext with WithHttp4sLoggingMiddleware =>
 
   class HttpServer[Ctx](
-                         protected val muxer: IRTServerMultiplexor[R, Ctx]
-                         , protected val contextProvider: AuthMiddleware[R, Ctx]
+                         protected val muxer: IRTServerMultiplexor[BIO, Ctx]
+                         , protected val contextProvider: AuthMiddleware[CIO, Ctx]
                        ) {
-    protected val dsl: Http4sDsl[R] = WithHttp4sServer.this.dsl
+    protected val dsl: Http4sDsl[CIO] = WithHttp4sServer.this.dsl
 
     import dsl._
 
-    def service: HttpRoutes[R] = {
-      val svc = AuthedService(wrapped(handler(muxer)))
-      val aservice: HttpRoutes[R] = contextProvider(svc)
+    def service: HttpRoutes[CIO] = {
+      val svc = AuthedService(handler())
+      val aservice: HttpRoutes[CIO] = contextProvider(svc)
       loggingMiddle(aservice)
     }
 
-    protected def handler(muxer: IRTServerMultiplexor[R, Ctx]): PartialFunction[AuthedRequest[R, Ctx], R[Response[R]]] = {
-      case GET -> Root / service / method as ctx =>
-        val methodId = IRTMethod(IRTServiceId(service), IRTMethodId(method))
-        val decodedRequest = IRTInContext(IRTMuxRequest[Product](methodId, methodId), ctx)
-        run(muxer, decodedRequest)
+    protected def handler(): PartialFunction[AuthedRequest[CIO, Ctx], CIO[Response[CIO]]] = {
+      case request@GET -> Root / service / method as ctx =>
+        val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
+        run(request, "{}", ctx, methodId)
 
       case request@POST -> Root / service / method as ctx =>
-        val methodId = IRTMethod(IRTServiceId(service), IRTMethodId(method))
-        implicit val dec: EntityDecoder[R, muxer.Input] = requestDecoder(ctx, methodId)
-        request.req.decode[IRTInContext[IRTMuxRequest[Product], Ctx]] {
-          decodedRequest =>
-            run(muxer, decodedRequest)
+        val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
+        request.req.decode[String] {
+          body =>
+            run(request, body, ctx, methodId)
         }
     }
 
-    protected def run(muxer: IRTServerMultiplexor[R, Ctx], request: IRTInContext[IRTMuxRequest[Product], Ctx]): R[Response[R]] = {
-      implicit val enc: EntityEncoder[R, muxer.Output] = respEncoder(request.context, request.value.method)
-      TM.flatMap(muxer.dispatch(request)) {
-        case Right(resp) =>
-          dsl.Ok(resp)
-        case Left(DispatchingFailure.NoHandler) =>
-          logger.warn(s"No handler found for $request")
+    protected def run(request: AuthedRequest[CIO, Ctx], body: String, context: Ctx, toInvoke: IRTMethodId): CIO[Response[CIO]] = {
+      muxer.doInvoke(body, context, toInvoke) match {
+        case Right(Some(value)) =>
+          ZIOR.unsafeRunSync(value) match {
+            case ExitResult.Completed(v) =>
+              dsl.Ok(v)
+
+            case ExitResult.Failed(error, _) =>
+              handleError(request, List(error), "failure")
+
+            case ExitResult.Terminated(causes) =>
+              handleError(request, causes, "termination")
+          }
+
+        case Right(None) =>
+          logger.trace(s"No handler for $request")
           dsl.NotFound()
-        case Left(DispatchingFailure.Rejected) =>
-          logger.info(s"Unautorized $request")
-          dsl.Forbidden()
-        case Left(DispatchingFailure.Thrown(t)) =>
-          logger.warn(s"Failure while handling $request: $t")
+
+        case Left(e) =>
+          logger.trace(s"Parsing failure while handling $request: $e")
+          dsl.BadRequest()
+
+      }
+    }
+
+    private def handleError(request: AuthedRequest[CIO, Ctx], causes: List[Throwable], kind: String): CIO[Response[CIO]] = {
+      causes.headOption match {
+        case Some(cause: IRTHttpFailureException) =>
+          logger.debug(s"Request rejected, $request, $cause")
+          CIO.pure(Response(status = cause.status))
+
+        case cause =>
+          logger.error(s"Execution failed, $kind, $request, $cause")
           dsl.InternalServerError()
       }
     }
-
-    protected def wrapped(pf: PartialFunction[AuthedRequest[R, Ctx], R[Response[R]]]): PartialFunction[AuthedRequest[R, Ctx], R[Response[R]]] = {
-      case arg: AuthedRequest[R, Ctx] =>
-        Try(pf(arg)) match {
-          case Success(value) =>
-            value
-          case Failure(_: MatchError) =>
-            logger.warn(s"Unexpected: No handler found for ${arg -> "request"}")
-            dsl.NotFound()
-          case Failure(exception) =>
-            logger.warn(s"Unexpected: Failure while handling ${arg -> "request"}: $exception")
-            dsl.InternalServerError().map(_.withEntity(s"Unexpected processing failure: ${exception.getMessage}"))
-        }
-    }
-
-    protected def requestDecoder(context: Ctx, method: IRTMethod): EntityDecoder[R, muxer.Input] = {
-      EntityDecoder.decodeBy(MediaRange.`*/*`) {
-        message =>
-          val decoded: R[Either[DecodeFailure, IRTInContext[IRTMuxRequest[Product], Ctx]]] = message.as[String].map {
-            body =>
-              logger.trace(s"$method: Going to decode request body $body ($context)")
-
-              serverMarshallers.decodeRequest(body, method).map {
-                decoded =>
-                  logger.trace(s"$method: request $decoded ($context)")
-                  IRTInContext(IRTMuxRequest(decoded.value, method), context)
-              }.leftMap {
-                error =>
-                  logger.info(s"$method: Cannot decode request body because of circe failure: $body => $error ($context)")
-                  InvalidMessageBodyFailure(s"$method: Cannot decode body because of circe failure: $body => $error ($context)", Option(error))
-              }
-          }
-
-          DecodeResult(decoded)
-      }
-    }
-
-
-    protected def respEncoder(context: Ctx, method: IRTMethod): EntityEncoder[R, muxer.Output] = {
-
-      EntityEncoder.encodeBy(headers.`Content-Type`(MediaType.application.json)) {
-        response =>
-          logger.trace(s"$method: Going to encode $response ($context)")
-          val encoded = Stream.emits(serverMarshallers.encodeResponse(response.body).getBytes).covary[R]
-          logger.trace(s"$method: response $encoded ($context)")
-          Entity.apply(encoded)
-      }
-    }
   }
-
 
 }

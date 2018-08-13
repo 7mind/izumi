@@ -1,65 +1,80 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import cats.implicits._
-import com.github.pshirshov.izumi.idealingua.runtime.circe.IRTClientMarshallers
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTDispatcher, IRTMuxRequest, IRTMuxResponse, IRTUnparseableDataException}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.Stream
 import org.http4s._
-import org.http4s.client.Client
-import org.http4s.client.blaze.Http1Client
+import org.http4s.client._
+import org.http4s.client.blaze._
+import scalaz.zio.ExitResult
 
-import scala.language.higherKinds
+trait WithHttp4sClient {
+  this: Http4sContext =>
 
-trait WithHttp4sClient[R[_]] {
-  this: Http4sContext[R] =>
+  class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor[BIO])
+    extends IRTDispatcher with IRTResultZio {
 
-  protected def clientMarshallers: IRTClientMarshallers
+    private val client: CIO[Client[CIO]] = Http1Client[CIO]()
 
-  class ClientDispatcher(baseUri: Uri)
-    extends IRTDispatcher[IRTMuxRequest[Product], IRTMuxResponse[Product], R] {
+    def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
+      logger.trace(s"${request.method -> "method"}: Goint to perform $request")
 
-    private val client: R[Client[R]] = Http1Client[R]()
+      codec
+        .encode(request)
+        .flatMap {
+          encoded =>
+            val outBytes: Array[Byte] = encoded.getBytes
+            val entityBody: EntityBody[CIO] = Stream.emits(outBytes).covary[CIO]
+            val req = buildRequest(baseUri, request, entityBody)
 
-    override def dispatch(input: IRTMuxRequest[Product]): Result[IRTMuxResponse[Product]] = {
-      val body = clientMarshallers.encodeRequest(input.body)
-      val outBytes: Array[Byte] = body.getBytes
-      val entityBody: EntityBody[R] = Stream.emits(outBytes).covary[R]
-      val req = buildRequest(baseUri, input, entityBody)
+            logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
 
-      logger.trace(s"${input.method -> "method"}: Prepared request $body")
-
-      client.flatMap(_.fetch(req)(handleResponse(input, _)))
+            ZIO.syncThrowable {
+              client
+                .flatMap(_.fetch(req)(handleResponse(request, _)))
+                .unsafeRunSync()
+            }
+        }
     }
 
-    protected def handleResponse(input: IRTMuxRequest[Product], resp: Response[R]): R[IRTMuxResponse[Product]] = {
-      logger.trace(s"${input.method -> "method"}: Received response, going to materialize")
-      if (resp.status == Status.Ok) {
-        resp
-          .as[MaterializedStream]
-          .flatMap {
-            body =>
-              logger.trace(s"${input.method -> "method"}: Received response: $body")
-              clientMarshallers.decodeResponse(body, input.method).map {
-                product =>
-                  logger.trace(s"${input.method -> "method"}: decoded response: $product")
-                  IRTMuxResponse(product.value, input.method)
-              } match {
-                case Right(v) =>
-                  E.pure(v)
-                case Left(f) =>
-                  logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
-                  E.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $f", Option(f)))
-              }
-          }
-      } else {
-        E.raiseError(IRTHttpFailureException(s"Unexpected HTTP status: ${resp.status}", resp.status, None))
+    protected def handleResponse(input: IRTMuxRequest, resp: Response[CIO]): CIO[IRTMuxResponse] = {
+      logger.trace(s"${input.method -> "method"}: Received response, going to materialize, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
+
+      if (resp.status != Status.Ok) {
+        logger.info(s"${input.method -> "method"}: unexpected HTTP response, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
+        return CIO.raiseError(IRTUnexpectedHttpStatus(resp.status))
       }
+
+      resp
+        .as[MaterializedStream]
+        .flatMap {
+          body =>
+            logger.trace(s"${input.method -> "method"}: Received response: $body")
+            val decoded = codec.decode(body, input.method).map {
+              product =>
+                logger.trace(s"${input.method -> "method"}: decoded response: $product")
+                product
+            }
+
+            ZIOR.unsafeRunSync(decoded) match {
+              case ExitResult.Completed(v) =>
+                CIO.pure(v)
+
+              case ExitResult.Failed(error, _) =>
+                logger.info(s"${input.method -> "method"}: decoder failed on $body: $error")
+                CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $error", Option(error)))
+
+              case ExitResult.Terminated(causes) =>
+                val f = causes.head
+                logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
+                CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $f", Option(f)))
+            }
+        }
     }
 
-    protected final def buildRequest(baseUri: Uri, input: IRTMuxRequest[Product], body: EntityBody[R]): Request[R] = {
+    protected final def buildRequest(baseUri: Uri, input: IRTMuxRequest, body: EntityBody[CIO]): Request[CIO] = {
       val uri = baseUri / input.method.service.value / input.method.methodId.value
 
-      val base: Request[R] = if (input.body.value.productArity > 0) {
+      val base: Request[CIO] = if (input.body.value.productArity > 0) {
         Request(org.http4s.Method.POST, uri, body = body)
       } else {
         Request(org.http4s.Method.GET, uri)
@@ -68,7 +83,7 @@ trait WithHttp4sClient[R[_]] {
       transformRequest(base)
     }
 
-    protected def transformRequest(request: Request[R]): Request[R] = request
+    protected def transformRequest(request: Request[CIO]): Request[CIO] = request
   }
 
 }

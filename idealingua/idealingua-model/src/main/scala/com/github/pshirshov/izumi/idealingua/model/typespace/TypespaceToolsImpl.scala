@@ -1,37 +1,30 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.common.{SigParam, StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.ConverterDef
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId}
+import com.github.pshirshov.izumi.idealingua.model.common.{StructureId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 
-class TypespaceToolsImpl(types: TypeCollection) extends TypespaceTools {
+class TypespaceToolsImpl(ts: Typespace) extends TypespaceTools {
+  val methodOutputSuffix = "Output"
+  val methodInputSuffix = "Input"
+
+  val goodAltBranchName = "MSuccess"
+  val badAltBranchName = "MFailure"
+
+  val goodAltSuffix = "Success"
+  val badAltSuffix = "Failure"
+
   def idToParaName(id: TypeId): String = id.name.toLowerCase
 
-  def mkConverter(innerFields: List[SigParam], outerFields: List[SigParam], targetId: StructureId): ConverterDef = {
-    val allFields = innerFields ++ outerFields
-    val outerParams = outerFields.map(_.source).distinct
-    assert(innerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$targetId: Contradictive inner fields: ${innerFields.niceList()}")
-    assert(outerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$targetId: Contradictive outer fields: ${outerFields.niceList()}")
-    assert(allFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$targetId: Contradictive fields: ${allFields.niceList()}")
-    assert(outerParams.groupBy(_.sourceName).forall(_._2.size == 1), s"$targetId: Contradictive outer params: ${outerParams.niceList()}")
-
-    // TODO: pass definition instead of id
-    ConverterDef(
-      targetId
-      , allFields
-      , outerParams
-    )
-  }
-
   override def implId(id: InterfaceId): DTOId = {
-    DTOId(id, types.toDtoName(id))
+    DTOId(id, toDtoName(id))
   }
 
   override def sourceId(id: DTOId): Option[InterfaceId] = {
     // TODO We can probably skip isEphemeral in this case since map will give an option anyway?
-    if (types.isInterfaceEphemeral(id)) {
-      types.interfaceEphemeralsReversed.get(id)
+    if (ts.types.isInterfaceEphemeral(id)) {
+      ts.types.interfaceEphemeralsReversed.get(id)
     } else {
       None
     }
@@ -39,14 +32,62 @@ class TypespaceToolsImpl(types: TypeCollection) extends TypespaceTools {
 
   override def defnId(id: StructureId): InterfaceId = {
     id match {
-      case d: DTOId if types.isInterfaceEphemeral(d) =>
-        types.interfaceEphemeralsReversed(d)
+      case d: DTOId if ts.types.isInterfaceEphemeral(d) =>
+        ts.types.interfaceEphemeralsReversed(d)
 
       case d: DTOId =>
-        InterfaceId(d, types.toInterfaceName(d))
+        InterfaceId(d, toInterfaceName(d))
 
       case i: InterfaceId =>
         i
     }
   }
+
+  def methodToOutputName(method: RPCMethod): String = {
+    s"${method.name.capitalize}$methodOutputSuffix"
+  }
+
+  def methodToPositiveTypeName(method: RPCMethod): String = {
+    s"${method.name.capitalize}$goodAltSuffix"
+  }
+
+  def methodToNegativeTypeName(method: RPCMethod): String = {
+    s"${method.name.capitalize}$badAltSuffix"
+  }
+
+
+  def toPositiveBranchName(id: AdtId): String = {
+    Quirks.discard(id)
+    goodAltBranchName
+  }
+
+  def toNegativeBranchName(id: AdtId): String = {
+    Quirks.discard(id)
+    badAltBranchName
+  }
+
+
+  def toDtoName(id: TypeId): String = {
+    id match {
+      case _: InterfaceId =>
+        //s"${id.name}Struct"
+        "Struct"
+      case _ =>
+        s"${id.name}"
+
+    }
+  }
+
+  def toInterfaceName(id: TypeId): String = {
+    id match {
+      case _: DTOId =>
+        //s"${id.name}Defn"
+
+        "Defn"
+      case _ =>
+        s"${id.name}"
+
+    }
+  }
+
 }

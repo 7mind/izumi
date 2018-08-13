@@ -51,8 +51,9 @@ object NUnitExtension extends CSharpTranslatorExtension {
          """.stripMargin
 
     val header =
-      s"""using IRT;
-         |using NUnit.Framework;
+      """using IRT;
+        |using IRT.Marshaller;
+        |using NUnit.Framework;
        """.stripMargin
 
     ctx.modules.toTestSource(id.id.path.domain, ctx.modules.toTestModuleId(id.id), header, code)
@@ -88,8 +89,9 @@ object NUnitExtension extends CSharpTranslatorExtension {
        """.stripMargin
 
     val header =
-      s"""using IRT;
-         |using NUnit.Framework;
+      """using IRT;
+        |using IRT.Marshaller;
+        |using NUnit.Framework;
        """.stripMargin
 
     ctx.modules.toTestSource(id.id.path.domain, ctx.modules.toTestModuleId(id.id), header, code)
@@ -132,19 +134,20 @@ object NUnitExtension extends CSharpTranslatorExtension {
        """.stripMargin
 
     val header =
-      s"""using IRT;
-         |using System;
-         |using System.Globalization;
-         |using System.Collections;
-         |using System.Collections.Generic;
-         |using NUnit.Framework;
-       """.stripMargin
+      """using IRT;
+        |using IRT.Marshaller;
+        |using System;
+        |using System.Globalization;
+        |using System.Collections;
+        |using System.Collections.Generic;
+        |using NUnit.Framework;
+      """.stripMargin
 
     ctx.modules.toTestSource(i.id.path.domain, ctx.modules.toTestModuleId(i.id), header, code)
   }
 
   override def postEmitModules(ctx: CSTContext, i: DTO)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
-    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
+    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.tools.implId(ii) == i.id)
     val dtoName = if (implIface.isDefined) implIface.get.name + i.id.name else i.id.name
 
     val structure = ts.structure.structure(i)
@@ -180,7 +183,8 @@ object NUnitExtension extends CSharpTranslatorExtension {
        """.stripMargin
 
     val header =
-      s"""using IRT;
+      """using IRT;
+         |using IRT.Marshaller;
          |using System;
          |using System.Globalization;
          |using System.Collections;

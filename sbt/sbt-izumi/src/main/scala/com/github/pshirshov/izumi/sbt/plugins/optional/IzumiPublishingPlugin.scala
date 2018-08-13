@@ -31,8 +31,8 @@ object IzumiPublishingPlugin extends AutoPlugin {
   override lazy val globalSettings = Seq(
     pomIncludeRepository := (_ => false)
     , publishTargets := Seq.empty
-    , releaseResolvers := Seq.empty
-    , snapshotResolvers := Seq.empty
+    , releaseResolvers := Seq(Opts.resolver.sonatypeReleases)
+    , snapshotResolvers := Seq(Opts.resolver.sonatypeSnapshots)
   )
 
   import laughedelic.sbt.PublishMore.autoImport._

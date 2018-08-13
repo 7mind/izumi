@@ -129,7 +129,7 @@ abstract class OpinionatedDiApp {
     val plan = injector.plan(appDef)
     logger.trace(s"Planning completed\n$plan")
     val context = injector.produce(plan)
-    logger.trace(s"Context produced")
+    logger.trace("Context produced")
     start(context, strategy.context)
   }
 
@@ -140,7 +140,7 @@ abstract class OpinionatedDiApp {
     }
 
     if (appDef.definition.bindings.isEmpty) {
-      throw new DiAppBootstrapException(s"Empty app context. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
+      throw new DiAppBootstrapException("Empty app context. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
     }
   }
 

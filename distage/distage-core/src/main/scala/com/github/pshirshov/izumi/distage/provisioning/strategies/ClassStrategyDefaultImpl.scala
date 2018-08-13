@@ -26,7 +26,7 @@ class ClassStrategyDefaultImpl
           case Some(dep) =>
             dep
           case _ =>
-            throw new InvalidPlanException(s"The impossible happened! Tried to instantiate class," +
+            throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
               s" but the dependency has not been initialized: dependency: ${key.wireWith} of class: $target")
         }
     }

@@ -4,23 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace IRT {
-    public class DispatcherException: Exception {
-        public DispatcherException() {
-        }
-
-        public DispatcherException(string message): base(message) {
-        }
-
-        public DispatcherException(string message, Exception inner): base(message, inner) {
-        }
-    }
-
-    public interface IServiceDispatcher<C, D> {
-        D Dispatch(C ctx, string method, D data);
-        string GetSupportedService();
-        string[] GetSupportedMethods();
-    }
-
     public class Dispatcher<C, D> {
         private Dictionary<string, IServiceDispatcher<C, D>> services;
 

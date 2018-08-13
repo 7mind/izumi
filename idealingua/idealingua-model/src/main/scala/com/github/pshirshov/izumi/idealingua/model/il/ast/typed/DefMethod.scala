@@ -11,14 +11,17 @@ object DefMethod {
   sealed trait Output
 
   object Output {
+    sealed trait NonAlternativeOutput extends Output
 
-    final case class Struct(struct: SimpleStructure) extends Output
+    final case class Void() extends NonAlternativeOutput
 
-    final case class Algebraic(alternatives: List[AdtMember]) extends Output
+    final case class Singular(typeId: TypeId) extends NonAlternativeOutput
 
-    final case class Singular(typeId: TypeId) extends Output
+    final case class Struct(struct: SimpleStructure) extends NonAlternativeOutput
 
-    final case class Void() extends Output
+    final case class Algebraic(alternatives: List[AdtMember]) extends NonAlternativeOutput
+
+    final case class Alternative(success: NonAlternativeOutput, failure: NonAlternativeOutput) extends Output
   }
 
   final case class Signature(input: SimpleStructure, output: Output)

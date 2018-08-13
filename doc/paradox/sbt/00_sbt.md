@@ -178,11 +178,11 @@ expands to
 You can attach settings and dependencies to the `In` part, that way you can apply common settings to all the projects in a directory:
 
 ```scala
-val ApiSettings: SettingsGroup = new SettingsGroup {
+val ApiSettings = new SettingsGroup {
   override val plugins = Set(IdealinguaPlugin)
 }
 
-lazy val inApi = In("api")
+lazy val inApi = In("api").settings(ApiSettings)
 
 lazy val petstoreApi = inApi.as.module
 lazy val todomvcApi = inApi.as.module
@@ -239,7 +239,7 @@ You can use it like this:
 
 ```scala
 libraryDependencies += Izumi.R.distage_core // Import an izumi library
-libraryDependencies += Izumi.D.cats_effect // Import an izumi dependency
+libraryDependencies += IzumiRootDeps.R.cats_effect // Import a dependency of izumi
 ```
 
 R is for Runtime, D is for Dependencies, T is for Test artifacts

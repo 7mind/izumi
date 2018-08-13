@@ -117,12 +117,15 @@ To define a multibinding use `.many` and `.add` methods in @scaladoc[ModuleDef](
 DSL:
 
 ```scala
-import cats.effect._, org.http4s._, org.http4s.dsl.io._, scala.concurrent.ExecutionContext.Implicits.global
+import cats.effect._, org.http4s._, org.http4s.dsl.io._
+import scala.concurrent.ExecutionContext.Implicits.global
 import distage._
 
 object HomeRouteModule extends ModuleDef {
   many[HttpRoutes[IO]].add {
-    HttpRoutes.of[IO] { case GET -> Root / "home" => Ok(s"Home page!") }
+    HttpRoutes.of[IO] { 
+      case GET -> Root / "home" => Ok(s"Home page!") 
+    }
   }
 }
 ```
@@ -135,7 +138,9 @@ import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.imp
 
 object BlogRouteModule extends ModuleDef {
   many[HttpRoutes[IO]].add {
-    HttpRoutes.of[IO] { case GET -> Root / "blog" / post => Ok("Blog post ``$post''!") }
+    HttpRoutes.of[IO] { 
+      case GET -> Root / "blog" / post => Ok("Blog post ``$post''!") 
+    }
   }
 }
 
@@ -197,7 +202,7 @@ distage has first-class support for tagless final style. Let's see what [freesty
 looks like in distage:
 
 ```scala
-class Program[F: TagK: Monad] extends ModuleDef {
+class Program[F[_]: TagK: Monad] extends ModuleDef {
   make[TaglessProgram[F]]
 }
 
@@ -210,7 +215,13 @@ object TryInterpreters extends ModuleDef {
 val TryProgram = new Program[Try] ++ TryInterpreters
 ```
 
-where
+@scaladoc[TagK](com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK) is distage's analogue
+of `TypeTag` or `Typeable` but for higher-kinded types like `F[_]`.
+Don't forget to add a @scaladoc[TagK](com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK) when you need to create a module parameterized by an abstract `F[_]`!
+You don't need it however, when your module refers to concrete monads such as `Future` or `IO`. If you want
+to create a module that's generic in a non-higher kinded parameter, use @scaladoc[Tag](com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#Tag).
+
+The rest of the program:
 
 ```scala
 class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
