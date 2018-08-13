@@ -13,24 +13,24 @@ class TestApp(
 
 }
 
-class BadApp {}
+class BadApp
 
 
-class DisabledByGc {}
+class DisabledByGc
 
 
-trait DisabledByTag {}
-trait WithGoodTag {}
+trait DisabledByTag
+trait WithGoodTag
 
-trait DisabledByKey {}
-class DisabledImplForByKeyTrait extends DisabledByKey {}
+trait DisabledByKey
+class DisabledImplForByKeyTrait extends DisabledByKey
 
-trait DisabledByImpl {}
-class DisabledImplForByImplTrait extends DisabledByImpl {}
+trait DisabledByImpl
+class DisabledImplForByImplTrait extends DisabledByImpl
 
-trait Conflict {}
-class ConflictA extends Conflict {}
-class ConflictB extends Conflict {}
+trait Conflict
+class ConflictA extends Conflict
+class ConflictB extends Conflict
 
 trait SetEl
 class SetEl1 extends SetEl
