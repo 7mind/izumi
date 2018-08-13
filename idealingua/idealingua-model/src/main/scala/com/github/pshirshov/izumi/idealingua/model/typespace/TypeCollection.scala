@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -21,6 +22,15 @@ class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
 class TypeCollection(domain: DomainDefinition) {
   val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
 
+  private val methodOutputSuffix = "Output"
+  private val methodInputSuffix = "Input"
+
+  private val goodAltBranchName = "MSuccess"
+  private val badAltBranchName = "MFailure"
+
+  private val goodAltSuffix = "Success"
+  private val badAltSuffix = "Failure"
+
   val serviceEphemerals: Seq[TypeDef] = (for {
     service <- services.values
     method <- service.methods
@@ -32,11 +42,11 @@ class TypeCollection(domain: DomainDefinition) {
         val inputDto = {
           val in = m.signature.input
           val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
-          val inId = DTOId(service.id, s"${baseName}Input")
+          val inId = DTOId(service.id, s"$baseName$methodInputSuffix")
           DTO(inId, inputStructure, NodeMeta.empty)
         }
 
-        val outDtos = outputEphemeral(service, baseName, "Output", m.signature.output)
+        val outDtos = outputEphemeral(service, baseName, methodOutputSuffix, m.signature.output)
 
         inputDto +: outDtos
     }
@@ -64,9 +74,15 @@ class TypeCollection(domain: DomainDefinition) {
         Seq(Adt(outId, o.alternatives, NodeMeta.empty))
 
       case o: Output.Alternative =>
-        val success = outputEphemeral(service, baseName, "Success", o.success)
-        val failure = outputEphemeral(service, baseName, "Failure", o.failure)
-        val altAdt = Output.Algebraic(List(AdtMember(success.head.id, Some("MSuccess")), AdtMember(failure.head.id, Some("MFailure"))))
+        val success = outputEphemeral(service, baseName, goodAltSuffix, o.success)
+        val failure = outputEphemeral(service, baseName, badAltSuffix, o.failure)
+        val successId = success.head.id
+        val failureId = failure.head.id
+        val adtId = AdtId(service.id, s"$baseName$suffix")
+        val altAdt = Output.Algebraic(List(
+          AdtMember(successId, Some(toPositiveBranchName(adtId)))
+            , AdtMember(failureId, Some(toNegativeBranchName(adtId)))
+        ))
         val alt = outputEphemeral(service, baseName, suffix, altAdt)
         success ++ failure ++ alt
     }
@@ -121,6 +137,30 @@ class TypeCollection(domain: DomainDefinition) {
   def index: CMap[TypeId, TypeDef] = {
     new CMap(domain.id, all.map(t => (t.id, t)).toMap)
   }
+
+  def methodToOutputName(method: RPCMethod): String = {
+    s"${method.name.capitalize}$methodOutputSuffix"
+  }
+
+  def methodToPositiveTypeName(method: RPCMethod): String = {
+    s"${method.name.capitalize}$goodAltSuffix"
+  }
+
+  def methodToNegativeTypeName(method: RPCMethod): String = {
+    s"${method.name.capitalize}$badAltSuffix"
+  }
+
+
+  def toPositiveBranchName(id: AdtId): String = {
+    Quirks.discard(id)
+    goodAltBranchName
+  }
+
+  def toNegativeBranchName(id: AdtId): String = {
+    Quirks.discard(id)
+    badAltBranchName
+  }
+
 
   def toDtoName(id: TypeId): String = {
     id match {

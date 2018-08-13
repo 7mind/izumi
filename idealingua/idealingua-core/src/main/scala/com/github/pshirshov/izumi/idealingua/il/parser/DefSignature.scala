@@ -10,7 +10,7 @@ trait DefSignature {
   import sep._
 
   final val sigSep = P("=>" | "->" | ":" | "⇒")
-  final val errSep = P("!!" | "?!" | "⭌")
+  final val errSep = P("!!" | "?!" | "⥃" | "↬")
 
   final val meta = (MaybeDoc ~ DefConst.defAnnos)
     .map {

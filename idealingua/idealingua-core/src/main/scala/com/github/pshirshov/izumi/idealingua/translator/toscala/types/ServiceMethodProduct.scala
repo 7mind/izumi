@@ -139,7 +139,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
            }"""
 
       case DefMethod.Output.Alternative(_, _) =>
-        q"""def $nameTerm(..${Input.signature}): ${sp.BIO.t}[${Output.negativeType.typeFull}, ${Output.positiveType.typeFull}] = {
+        q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
                _dispatcher
                  .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
                  .redeem(
@@ -212,47 +212,49 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
   protected object Output {
 
-    private def scalaType: ScalaType = sp.svcMethods.within(name).within("Output")
-
-    private def wrappedOutputType: Type = t"Just[${scalaType.typeFull}]"
+    private def typename: String = ctx.typespace.types.methodToOutputName(method)
 
     def outputType: Type = method.signature.output match {
       case DefMethod.Output.Void() =>
         t"Just[Unit]"
       case DefMethod.Output.Singular(t) =>
-        t"Just[${ctx.conv.toScala(t).typeFull}]"
+        val scalaType = ctx.conv.toScala(t)
+        t"Just[${scalaType.typeFull}]"
       case DefMethod.Output.Struct(_) | DefMethod.Output.Algebraic(_) =>
-        wrappedOutputType
+        val aliasType: ScalaType = sp.svcMethods.within(name).within("Output")
+        t"Just[${aliasType.typeFull}]"
       case DefMethod.Output.Alternative(_, _) =>
         t"Or[${negativeType.typeFull}, ${positiveType.typeFull}]"
     }
 
-    private def positiveId = s"${name.capitalize}Success"
-    private def negativeId = s"${name.capitalize}Failure"
+    private def positiveId: String = ctx.typespace.types.methodToPositiveTypeName(method)
+    private def negativeId: String = ctx.typespace.types.methodToNegativeTypeName(method)
 
-    def positiveType: ScalaType = ctx.conv.toScala(IndefiniteId(sp.basePath.toPackage, positiveId))
+    def positiveType: ScalaType =  sp.svcMethods.within(positiveId)
 
-    def negativeType: ScalaType = ctx.conv.toScala(IndefiniteId(sp.basePath.toPackage, negativeId))
+    def negativeType: ScalaType = sp.svcMethods.within(negativeId)
 
-    def positiveBranchType: ScalaType = wrappedTypespaceType.within("MSuccess")
+    private def adtId = AdtId(sp.basePath, typename)
 
-    def negativeBranchType: ScalaType = wrappedTypespaceType.within("MFailure")
+    private def dtoId = DTOId(sp.basePath, typename)
+
+    def positiveBranchType: ScalaType = wrappedTypespaceType.within(ctx.typespace.types.toPositiveBranchName(adtId))
+
+    def negativeBranchType: ScalaType = wrappedTypespaceType.within(ctx.typespace.types.toNegativeBranchName(adtId))
 
     // TODO:TSASSYMMETRY this method is a workaround for assymetry between typespace representation and scala code we want to render
     def wrappedTypespaceType: ScalaType = {
       val id = method.signature.output match {
         case DefMethod.Output.Struct(_) | DefMethod.Output.Void() | DefMethod.Output.Singular(_) =>
-          DTOId(sp.basePath, s"${name.capitalize}Output")
-
+          dtoId
         case DefMethod.Output.Algebraic(_) | DefMethod.Output.Alternative(_, _) =>
-          AdtId(sp.basePath, s"${name.capitalize}Output")
-
+          adtId
       }
       ctx.conv.toScala(id)
     }
 
     def outputDefn: List[Defn] = {
-      renderOutput(s"${name.capitalize}Output", method.signature.output)
+      renderOutput(typename, method.signature.output)
     }
 
     def defnEncoder: Defn.Def = {
@@ -281,8 +283,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
           ctx.adtRenderer.renderAdt(ctx.typespace.apply(typespaceId).asInstanceOf[Adt], List.empty).render
 
         case DefMethod.Output.Alternative(success, failure) =>
-          val typespaceId: AdtId = AdtId(sp.basePath, typename)
-          ctx.adtRenderer.renderAdt(ctx.typespace.apply(typespaceId).asInstanceOf[Adt], List.empty).render ++
+          ctx.adtRenderer.renderAdt(ctx.typespace.apply(adtId).asInstanceOf[Adt], List.empty).render ++
             renderOutput(positiveId, success) ++
             renderOutput(negativeId, failure)
       }
