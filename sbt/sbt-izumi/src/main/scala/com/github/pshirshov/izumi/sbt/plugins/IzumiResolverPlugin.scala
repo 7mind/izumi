@@ -9,9 +9,10 @@ object IzumiResolverPlugin extends AutoPlugin {
     aggregate in update := false,
     updateOptions := updateOptions
       .value
+      .withInterProjectFirst(true)
       .withCachedResolution(true)
       .withGigahorse(true)
-      .withLatestSnapshots(true)
-      .withInterProjectFirst(true),
+      .withLatestSnapshots(false)
+    ,
   )
 }

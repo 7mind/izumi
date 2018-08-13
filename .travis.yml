@@ -34,7 +34,7 @@ before_install:
 
 before_script:
   - rm -rf ~/.ivy2/local
-  - find .m2/ .ivy2/ .sbt/ .coursier/ .cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
+  - find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
   - bash travis.sh versionate
 
 script:
@@ -78,4 +78,5 @@ before_cache:
   - find $HOME/.sbt -name "*.lock" -type f -delete
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
   - rm -rf ~/.ivy2/local
-  - find .m2/ .ivy2/ .sbt/ .coursier/ .cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
+  - find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
+
