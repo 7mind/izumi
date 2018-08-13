@@ -36,38 +36,38 @@ class TypeCollection(domain: DomainDefinition) {
           DTO(inId, inputStructure, NodeMeta.empty)
         }
 
-        val outDtos = outputEphemeral(service, s"${baseName}Output", m.signature.output)
+        val outDtos = outputEphemeral(service, baseName, "Output", m.signature.output)
 
         inputDto +: outDtos
     }
   }).flatten.toSeq
 
-  private def outputEphemeral(service: Service, baseName: String, out: Output): Seq[TypeDef] = {
+  private def outputEphemeral(service: Service, baseName: String, suffix: String, out: Output): Seq[TypeDef] = {
     out match {
       case o: Output.Singular =>
         val outStructure = Structure.apply(List(Field(o.typeId, "value")), List.empty, Super.empty)
-        val outId = DTOId(service.id, baseName)
+        val outId = DTOId(service.id, s"$baseName$suffix")
         Seq(DTO(outId, outStructure, NodeMeta.empty))
 
       case o: Output.Struct =>
         val outStructure = Structure.apply(o.struct.fields, List.empty, Super(List.empty, o.struct.concepts, List.empty))
-        val outId = DTOId(service.id, baseName)
+        val outId = DTOId(service.id, s"$baseName$suffix")
         Seq(DTO(outId, outStructure, NodeMeta.empty))
 
       case _: Output.Void =>
         val outStructure = Structure.apply(List.empty, List.empty, Super(List.empty, List.empty, List.empty))
-        val outId = DTOId(service.id, baseName)
+        val outId = DTOId(service.id, s"$baseName$suffix")
         Seq(DTO(outId, outStructure, NodeMeta.empty))
 
       case o: Output.Algebraic =>
-        val outId = AdtId(service.id, baseName)
+        val outId = AdtId(service.id, s"$baseName$suffix")
         Seq(Adt(outId, o.alternatives, NodeMeta.empty))
 
       case o: Output.Alternative =>
-        val success = outputEphemeral(service, baseName + "Success", o.success)
-        val failure = outputEphemeral(service, baseName + "Failure", o.failure)
+        val success = outputEphemeral(service, baseName, "Success", o.success)
+        val failure = outputEphemeral(service, baseName, "Failure", o.failure)
         val altAdt = Output.Algebraic(List(AdtMember(success.head.id, Some("MSuccess")), AdtMember(failure.head.id, Some("MFailure"))))
-        val alt = outputEphemeral(service, baseName, altAdt)
+        val alt = outputEphemeral(service, baseName, suffix, altAdt)
         success ++ failure ++ alt
     }
   }

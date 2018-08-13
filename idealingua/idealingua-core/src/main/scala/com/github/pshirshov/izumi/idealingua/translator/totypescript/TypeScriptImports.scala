@@ -185,7 +185,7 @@ object TypeScriptImports {
         case ad: Algebraic => ad.alternatives.flatMap(al => collectTypes(ts, al.typeId))
         case si: Singular => collectTypes(ts, si.typeId)
         case _: Void => List.empty
-        case _: Alternative => throw new Exception("Not implemented")
+        case _: Alternative => throw new Exception("Alternative not implememnted.")
       })
     }
 

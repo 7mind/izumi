@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 
+import com.github.pshirshov.izumi.idealingua.model.common.IndefiniteId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
@@ -70,7 +71,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
       case DefMethod.Output.Alternative(_, _) =>
         q"""
            def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
-                 service.toZio(service.$nameTerm(ctx, ..${Input.sigCall}))
+                 _service.toZio(_service.$nameTerm(ctx, ..${Input.sigCall}))
                    .redeem(
                       err => ${sp.BIO.n}.point(new ${Output.negativeBranchType.typeFull}(err))
                       , succ => ${sp.BIO.n}.point(new ${Output.positiveBranchType.typeFull}(succ))
@@ -147,10 +148,10 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                        case IRTMuxResponse(IRTResBody(r), method) if method == _M.$nameTerm.id =>
                          r match {
                            case va : ${Output.negativeBranchType.typeFull} =>
-                             IO.fail(va.value)
+                             ${sp.BIO.n}.fail(va.value)
 
                            case va : ${Output.positiveBranchType.typeFull} =>
-                             IO.point(va.value)
+                             ${sp.BIO.n}.point(va.value)
 
                            case v =>
                              $exception
@@ -229,9 +230,9 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
     private def positiveId = s"${name.capitalize}Success"
     private def negativeId = s"${name.capitalize}Failure"
 
-    def positiveType: ScalaType = sp.svcMethods.within(name).within(positiveId)
+    def positiveType: ScalaType = ctx.conv.toScala(IndefiniteId(sp.basePath.toPackage, positiveId))
 
-    def negativeType: ScalaType = sp.svcMethods.within(name).within(negativeId)
+    def negativeType: ScalaType = ctx.conv.toScala(IndefiniteId(sp.basePath.toPackage, negativeId))
 
     def positiveBranchType: ScalaType = wrappedTypespaceType.within("MSuccess")
 

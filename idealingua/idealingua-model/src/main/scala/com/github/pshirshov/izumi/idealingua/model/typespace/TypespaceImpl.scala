@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
@@ -49,7 +50,12 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
     if (index.underlying.contains(id)) {
       index.fetch(id)
     } else {
-      referenced(id.path.domain).apply(id)
+      referenced.get(id.path.domain) match {
+        case Some(d) =>
+          d.apply(id)
+        case None =>
+          throw new IDLException(s"Foreign lookup from domain ${domain.id} failed: can't get ${id.path.domain} reference while looking for $id")
+      }
     }
   }
 

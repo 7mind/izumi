@@ -153,7 +153,7 @@ object GoLangImports {
         case ad: Algebraic => ad.alternatives.map(al => al.typeId)
         case si: Singular => List(si.typeId)
         case _: Void => List.empty
-        case _: Alternative => throw new Exception("Not implemented")
+        case _: Alternative => throw new Exception("Alternative not implememnted.")
       })
     }
 

@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, TypeDef, _}
 
-class ILRenderer(domain: DomainDefinition) {
+class IDLRenderer(domain: DomainDefinition) {
   def render(): String = {
     val sb = new StringBuffer()
     sb.append(s"domain ${render(domain.id)}")
@@ -238,6 +238,8 @@ class ILRenderer(domain: DomainDefinition) {
         Some(render(o.typeId))
       case _: DefMethod.Output.Void =>
         None
+      case o: DefMethod.Output.Alternative =>
+        Some(s"${render(o.success)} !! ${o.failure}")
     }
   }
 

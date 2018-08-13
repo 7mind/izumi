@@ -29,8 +29,9 @@ data Package {
 
 service TestService {
   // temporarily commented till we fix transpilers. https://github.com/pshirshov/izumi-r2/issues/328
-  //def unitToUnit()
-  //def unitResult(package: Package)
+  def unitToUnit()
+  def anotherVoid() => ()
+  def unitResult(package: Package)
 
   def parameterless(): str
   def simpleMethod(a: str): str
@@ -90,7 +91,11 @@ service TestService {
      secondName: str
    } => {
      SuccessData
+   } !! {
      ErrorData
    }
 
+   def alternative(firstName: str, secondName: str) => SuccessData !! ErrorData
+   def voidAlternative(firstName: str, secondName: str) => () !! ()
 }
+
