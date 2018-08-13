@@ -3,9 +3,6 @@ import sbt.Keys._
 import IzumiConvenienceTasksPlugin.Keys._
 enablePlugins(IzumiEnvironmentPlugin)
 
-// zio
-resolvers in Global += Opts.resolver.sonatypeSnapshots
-
 lazy val pluginVersion = if (sys.props.isDefinedAt("plugin.version")) {
   sys.props("plugin.version")
 } else {

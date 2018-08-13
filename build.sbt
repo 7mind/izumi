@@ -1,5 +1,5 @@
 import com.typesafe.sbt.pgp.PgpSettings
-import sbt.Keys.{baseDirectory, pomExtra, publishMavenStyle, sourceDirectory}
+import sbt.Keys.{baseDirectory, publishMavenStyle, sourceDirectory}
 import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import IzumiConvenienceTasksPlugin.Keys._
 import IzumiPublishingPlugin.Keys._
@@ -9,28 +9,16 @@ import ReleaseTransformations._
 enablePlugins(IzumiGitEnvironmentPlugin)
 disablePlugins(AssemblyPlugin, ScriptedPlugin)
 
-// zio
-resolvers in Global += Opts.resolver.sonatypeSnapshots
-
 name := "izumi-r2"
 organization in ThisBuild := "com.github.pshirshov.izumi.r2"
 defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
 publishMavenStyle in ThisBuild := true
-pomExtra in ThisBuild := <url>https://bitbucket.org/pshirshov/izumi-r2</url>
-  <licenses>
-    <license>
-      <name>BSD-style</name>
-      <url>http://www.opensource.org/licenses/bsd-license.php</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <developers>
-    <developer>
-      <id>pshirshov</id>
-      <name>Pavel Shirshov</name>
-      <url>https://github.com/pshirshov</url>
-    </developer>
-  </developers>
+homepage in ThisBuild := Some(url("https://izumi.7mind.io"))
+licenses in ThisBuild := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))
+developers in ThisBuild := List(
+  Developer(id = "pshirshov", name = "Pavel Shirshov", url = url("https://github.com/pshirshov"), email = "pshirshov@gmail.com"),
+  Developer(id = "kai", name = "Kai Shirshov", url = url("https://github.com/kaishh"), email = "kai.shirshov@gmail.com"),
+)
 
 
 releaseProcess := Seq[ReleaseStep](
