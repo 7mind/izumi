@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Networking;
 using IRT.Marshaller;
+using IRT.Transport.Client;
 
 #if UNITY_EDITOR
 using UnityEditor;
