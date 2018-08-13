@@ -1,12 +1,12 @@
 
 import { Logger } from './logger';
-import { WebSocketClientTransport } from './transport.websocket';
+import { WebSocketClientTransport } from './transport.websocket.client';
 import { ClientTransport, ServiceClientInData, ServiceClientOutData } from './transport';
-import { HTTPClientTransport } from './transport.http';
+import { HTTPClientTransport } from './transport.http.client';
 import { JSONMarshaller } from './marshaller';
 import { AuthMethod } from './auth';
 
-export class WebHybridClientTransport implements ClientTransport {
+export class HybridClientTransport implements ClientTransport {
     private _restTransport: HTTPClientTransport;
     private _wsTransport: WebSocketClientTransport;
 

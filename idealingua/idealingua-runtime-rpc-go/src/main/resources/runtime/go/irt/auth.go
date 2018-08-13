@@ -108,15 +108,15 @@ func (c *Authorization) UpdateFromValue(auth string) error {
 }
 
 func (c *Authorization) ToValue() string {
-	if (c.Token != nil) {
+	if c.Token != nil {
 		return "Bearer " + c.Token.Token
 	}
 
-	if (c.ApiKey!= nil) {
+	if c.ApiKey!= nil {
 		return "ApiKey " + c.ApiKey.ApiKey
 	}
 
-	if (c.Basic != nil) {
+	if c.Basic != nil {
 		return "Basic " + c.Basic.User + ":" + c.Basic.Pass
 	}
 

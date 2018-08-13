@@ -44,7 +44,7 @@ service TestService {
 
   def simpleGoReserved(package: Package): bool
 
-
+  def simpleVoid(a: str)
 
   // simple instance
   def greetSingularOut(firstName: str, secondName: str) => str

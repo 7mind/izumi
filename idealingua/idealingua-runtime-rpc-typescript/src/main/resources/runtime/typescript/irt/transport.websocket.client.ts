@@ -25,6 +25,8 @@ interface DeferredPromise {
     resolve?: any
     reject?: any
     timeout: number
+    service: string
+    method: string
 }
 
 export function RandomMessageID(prefix: string = ''): string {
@@ -43,6 +45,10 @@ export class WebSocketClientTransport implements ClientTransport {
     private _auth?: Authorization;
     private _authID?: string;
     private _authenticated: boolean;
+
+    public onSend: (service: string, method: string, payload: string) => void;
+    public onSuccess: (service: string, method: string, payload: string) => void;
+    public onFailure: (service: string, method: string,  error: string) => void;
 
     constructor(endpoint: string, marshaller: JSONMarshaller, logger: Logger, protocols: string | string[] = []) {
         this._supported = !!window['WebSocket'];
@@ -91,11 +97,17 @@ export class WebSocketClientTransport implements ClientTransport {
 
         this._logger.logf(LogLevel.Trace, '====================================================\nOutgoing message:\n', request);
         const serialized = this._marshaller.Marshal(request);
-
+        const onFailure = this.onFailure;
         const record: DeferredPromise = {
+            service,
+            method,
             timeout: setTimeout(
                 () => {
-                    record.reject(new Error('timed out request'));
+                    const error = 'timed out request to ' + service + '/' + method;
+                    if (onFailure) {
+                        onFailure(service, method, error);
+                    }
+                    record.reject(new Error(error));
                     delete this._requests[request.id];
                 },
                 60000,
@@ -107,6 +119,9 @@ export class WebSocketClientTransport implements ClientTransport {
         });
         this._requests[request.id] = record;
         this._wsc.send(serialized);
+        if (this.onSend) {
+            this.onSend(service, method, serialized);
+        }
         return record.promise;
     }
 
@@ -176,8 +191,14 @@ export class WebSocketClientTransport implements ClientTransport {
         clearTimeout(record.timeout);
 
         if (deserialized.error) {
+            if (this.onFailure) {
+                this.onFailure(record.service, record.method, deserialized.error);
+            }
             record.reject(deserialized.error);
         } else {
+            if (this.onSuccess) {
+                this.onSuccess(record.service, record.method, deserialized.data);
+            }
             record.resolve(deserialized.data);
         }
     }

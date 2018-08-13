@@ -140,10 +140,12 @@ func (t *wsClientTransport) Send(service string, method string, dataIn interface
 		return err
 	}
 
-	if err = t.marshaller.Unmarshal(res.Data, dataOut); err != nil {
-		msg := fmt.Sprintf("error while unmarshalling response message %+v. Data: %s.", err, string(res.Data))
-		t.logger.Logf(LogError, msg)
-		return fmt.Errorf(msg)
+	if dataOut != nil {
+		if err = t.marshaller.Unmarshal(res.Data, dataOut); err != nil {
+			msg := fmt.Sprintf("error while unmarshalling response message %+v. Data: %s.", err, string(res.Data))
+			t.logger.Logf(LogError, msg)
+			return fmt.Errorf(msg)
+		}
 	}
 
 	t.logger.Logf(LogDebug, "================================================")

@@ -19,7 +19,13 @@ namespace IRT {
         }
 
         public string Marshal<I>(I data) {
-            if (typeof(I).IsInterface) {
+            var ti = typeof(I);
+            // For void responses, we need to provide something that wouldn't break the marshaller
+            if (ti == typeof(IRT.Void)) {
+                return "{}";
+            }
+
+            if (ti.IsInterface) {
                 if (!(data is IRTTI)) {
                     throw new Exception("Trying to serialize an interface which doesn't expose an IRTTI interface: " + typeof(I).ToString());
                 }

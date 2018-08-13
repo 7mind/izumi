@@ -2,6 +2,9 @@
 using System;
 
 namespace IRT {
+    public sealed class Void {
+    }
+
     public interface IClientTransportContext {
     }
 

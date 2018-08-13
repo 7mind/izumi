@@ -11,6 +11,10 @@ export class HTTPClientTransport implements ClientTransport {
     private logger: Logger;
     private marshaller: JSONMarshaller;
 
+    public onSend: (service: string, method: string, payload: string) => void;
+    public onSuccess: (service: string, method: string, payload: string) => void;
+    public onFailure: (service: string, method: string,  error: string) => void;
+
     constructor(endpoint: string, marshaller: JSONMarshaller, logger: Logger = undefined) {
         this.setEndpoint(endpoint);
         this.timeout = 60 * 1000;
@@ -114,14 +118,23 @@ export class HTTPClientTransport implements ClientTransport {
                 this.logger.logf(LogLevel.Trace, 'Request Body:\n' + json);
             }
 
+            if (this.onSend) {
+                this.onSend(service, method, json);
+            }
             this.doRequest(url, json,
                 (successContent) => {
                     this.logger.logf(LogLevel.Trace, 'Response body:\n' + successContent);
+                    if (this.onSuccess) {
+                        this.onSuccess(service, method, successContent);
+                    }
                     const content = this.marshaller.Unmarshal<any>(successContent);
                     resolve(content);
                 },
                 (failureContent) => {
                     this.logger.logf(LogLevel.Error, 'Failure:\n' + failureContent);
+                    if (this.onFailure) {
+                        this.onFailure(service, method, failureContent);
+                    }
                     reject(failureContent);
                 });
         });

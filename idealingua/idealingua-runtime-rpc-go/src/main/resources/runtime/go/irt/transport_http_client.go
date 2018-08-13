@@ -102,10 +102,12 @@ func (c *httpClientTransport) Send(service string, method string, dataIn interfa
 		return fmt.Errorf(msg)
 	}
 
-	if err := c.marshaller.Unmarshal(respBody, dataOut); err != nil {
-		msg := fmt.Sprintf("error while unmarshalling data %+v Body: %s. Endpoint: %s", err, string(respBody), url)
-		c.logger.Logf(LogError, msg)
-		return fmt.Errorf(msg)
+	if dataOut != nil {
+		if err := c.marshaller.Unmarshal(respBody, dataOut); err != nil {
+			msg := fmt.Sprintf("error while unmarshalling data %+v Body: %s. Endpoint: %s", err, string(respBody), url)
+			c.logger.Logf(LogError, msg)
+			return fmt.Errorf(msg)
+		}
 	}
 
 	c.logger.Logf(LogDebug, "================================================")
