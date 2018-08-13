@@ -84,8 +84,9 @@ service TestService {
    | ErrorData
   )
 
-  // ADT
-  def greetAlgebraicMultilineCurlyBracesSyntax
+  // alternatives
+  // commented till we fix https://github.com/pshirshov/izumi-r2/issues/211
+  /*def greetAlgebraicMultilineCurlyBracesSyntax
    {
      firstName: str
      secondName: str
@@ -96,6 +97,6 @@ service TestService {
    }
 
    def alternative(firstName: str, secondName: str) => SuccessData !! ErrorData
-   def voidAlternative(firstName: str, secondName: str) => () !! ()
+   def voidAlternative(firstName: str, secondName: str) => () !! ()*/
 }
 
