@@ -769,7 +769,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     case _: Struct => s"*${outName(i, method.name, public = true)}"
     case _: Algebraic => s"*${outName(i, method.name, public = true)}"
     case si: Singular => s"${GoLangType(si.typeId, imports, ts).renderType()}"
-    case _: Void => s""
+    case _: Void => ""
     case _: Alternative => throw new Exception("Not implemented")
   }
 
@@ -988,7 +988,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     case st: Struct => renderServiceMethodInModel(i, name, st.struct, imports)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
     case si: Singular => s"// ${ si.typeId}"
-    case _: Void => s""
+    case _: Void => ""
     case _: Alternative => throw new Exception("Not implemented")
   }
 

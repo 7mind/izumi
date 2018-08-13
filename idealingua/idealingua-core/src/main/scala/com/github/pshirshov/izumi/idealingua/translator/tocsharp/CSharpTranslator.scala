@@ -456,7 +456,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     case st: Struct => renderServiceMethodInModel(i, name, st.struct)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
     case si: Singular => s"// ${si.typeId}"
-    case _: Void => s""
+    case _: Void => ""
     case _: Alternative => throw new Exception("Alternative not implememnted.")
   }
 
