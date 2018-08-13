@@ -2,9 +2,7 @@ package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.common.{SigParam, StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.ConverterDef
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.idealingua.model.common.{StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 
 class TypespaceToolsImpl(ts: Typespace) extends TypespaceTools {
@@ -18,22 +16,6 @@ class TypespaceToolsImpl(ts: Typespace) extends TypespaceTools {
   val badAltSuffix = "Failure"
 
   def idToParaName(id: TypeId): String = id.name.toLowerCase
-
-  def mkConverter(innerFields: List[SigParam], outerFields: List[SigParam], targetId: StructureId): ConverterDef = {
-    val allFields = innerFields ++ outerFields
-    val outerParams = outerFields.map(_.source).distinct
-    assert(innerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$targetId: Contradictive inner fields: ${innerFields.niceList()}")
-    assert(outerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$targetId: Contradictive outer fields: ${outerFields.niceList()}")
-    assert(allFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$targetId: Contradictive fields: ${allFields.niceList()}")
-    assert(outerParams.groupBy(_.sourceName).forall(_._2.size == 1), s"$targetId: Contradictive outer params: ${outerParams.niceList()}")
-
-    // TODO: pass definition instead of id
-    ConverterDef(
-      targetId
-      , allFields
-      , outerParams
-    )
-  }
 
   override def implId(id: InterfaceId): DTOId = {
     DTOId(id, toDtoName(id))

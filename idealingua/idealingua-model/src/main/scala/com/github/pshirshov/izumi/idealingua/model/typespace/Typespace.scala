@@ -83,8 +83,6 @@ trait TypespaceTools {
 
   def defnId(id: StructureId): InterfaceId
 
-  def mkConverter(innerFields: List[SigParam], outerFields: List[SigParam], targetId: StructureId): ConverterDef
-
   def methodToOutputName(method: RPCMethod): String
 
   def methodToPositiveTypeName(method: RPCMethod): String
@@ -101,29 +99,23 @@ trait TypespaceTools {
 }
 
 trait Typespace {
+  def domain: DomainDefinition
+
   def inheritance: InheritanceQueries
 
   def structure: StructuralQueries
 
   def tools: TypespaceTools
 
-  def domain: DomainDefinition
+  def types: TypeCollection
+
+  def resolver: TypeResolver
 
   def apply(id: TypeId): TypeDef
 
   def apply(id: ServiceId): Service
 
   def dealias(t: TypeId): TypeId
-
-  //  def implId(id: InterfaceId): DTOId
-  //
-  //  def sourceId(id: DTOId): Option[InterfaceId]
-  //
-  //  def defnId(id: StructureId): InterfaceId
-
-  def types: TypeCollection
-
-  def resolver: TypeResolver
 
   protected[typespace] def referenced: Map[DomainId, Typespace]
 }

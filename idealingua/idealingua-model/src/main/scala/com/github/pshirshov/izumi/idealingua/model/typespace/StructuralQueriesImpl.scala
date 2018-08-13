@@ -137,7 +137,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
       val constructorCodeNonUnique = local
         .map(f => SigParam(f.field.name, SigParamSource(f.field.typeId, f.field.name), None))
 
-      List(ts.tools.mkConverter(List.empty, constructorCode ++ constructorCodeNonUnique, struct.id))
+      List(mkConverter(List.empty, constructorCode ++ constructorCodeNonUnique, struct.id))
 
     } else {
       List.empty
@@ -227,12 +227,28 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
                |""".stripMargin
           )
 
-          ts.tools.mkConverter(innerFields, outerFields, targetId)
+          mkConverter(innerFields, outerFields, targetId)
       }
   }
 
 
   protected def signature(defn: WithStructure): List[Field] = {
     structure(defn).all.map(_.field).sortBy(_.name)
+  }
+
+  protected def mkConverter(innerFields: List[SigParam], outerFields: List[SigParam], targetId: StructureId): ConverterDef = {
+    val allFields = innerFields ++ outerFields
+    val outerParams = outerFields.map(_.source).distinct
+    assert(innerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$targetId: Contradictive inner fields: ${innerFields.niceList()}")
+    assert(outerFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$targetId: Contradictive outer fields: ${outerFields.niceList()}")
+    assert(allFields.groupBy(_.targetFieldName).forall(_._2.size == 1), s"$targetId: Contradictive fields: ${allFields.niceList()}")
+    assert(outerParams.groupBy(_.sourceName).forall(_._2.size == 1), s"$targetId: Contradictive outer params: ${outerParams.niceList()}")
+
+    // TODO: pass definition instead of id
+    ConverterDef(
+      targetId
+      , allFields
+      , outerParams
+    )
   }
 }
