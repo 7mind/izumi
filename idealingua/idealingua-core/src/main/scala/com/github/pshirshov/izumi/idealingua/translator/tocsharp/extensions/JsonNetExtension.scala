@@ -66,7 +66,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def preModelEmit(ctx: CSTContext, i: DTO)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
-    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
+    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.tools.implId(ii) == i.id)
     val converterName = if (implIface.isDefined) implIface.get.name + i.id.name else i.id.name
 
     s"[JsonConverter(typeof(${converterName}_JsonNetConverter))]"
@@ -76,7 +76,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
     discard(ctx)
     val structure = ts.structure.structure(i)
     val struct = CSharpClass(i.id, i.id.name, structure, List.empty)
-    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
+    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.tools.implId(ii) == i.id)
     val converterName = if (implIface.isDefined) implIface.get.name + i.id.name else i.id.name
 
     this.postModelEmit(ctx, converterName, struct)
@@ -337,7 +337,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
   override def postModelEmit(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
-    val eid = ts.implId(id.id)
+    val eid = ts.tools.implId(id.id)
     val eidName = id.id.name + eid.name
     s"""public class ${id.id.name}_JsonNetConverter: JsonNetConverter<${id.id.name}> {
        |    public override void WriteJson(JsonWriter writer, ${id.id.name} value, JsonSerializer serializer) {

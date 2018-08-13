@@ -33,7 +33,7 @@ object CastUpExtension extends ScalaTranslatorExtension {
         struct =>
           val parentImplId = struct.id match {
             case i: InterfaceId =>
-              ctx.typespace.implId(i)
+              ctx.typespace.tools.implId(i)
             case d: DTOId =>
               d
             case o =>

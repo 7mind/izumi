@@ -50,8 +50,8 @@ final case class GoLangStruct(
 
   def renderSlices(): String = {
     val refined = implements.filterNot(ignoreSlices.contains)
-    s"""${refined.map(intf => renderSlice(s"To${intf.name + ts.implId(intf).name}Serialized", s"${imports.withImport(intf) + intf.name + ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
-       |${refined.map(intf => renderLoadSlice(s"Load${intf.name + ts.implId(intf).name}Serialized", s"${imports.withImport(intf) + intf.name + ts.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
+    s"""${refined.map(intf => renderSlice(s"To${intf.name + ts.tools.implId(intf).name}Serialized", s"${imports.withImport(intf) + intf.name + ts.tools.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
+       |${refined.map(intf => renderLoadSlice(s"Load${intf.name + ts.tools.implId(intf).name}Serialized", s"${imports.withImport(intf) + intf.name + ts.tools.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
      """.stripMargin
   }
 

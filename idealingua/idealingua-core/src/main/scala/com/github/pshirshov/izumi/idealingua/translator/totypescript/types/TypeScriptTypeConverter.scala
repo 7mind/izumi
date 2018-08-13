@@ -143,7 +143,7 @@ class TypeScriptTypeConverter() {
   def toCustomType(id: TypeId, ts: Typespace, forSerialized: Boolean = false, forMap: Boolean): String = {
     if (forSerialized) {
       id match {
-        case i: InterfaceId => s"{[key: string]: ${i.name + ts.implId(i).name + "Serialized"}}"
+        case i: InterfaceId => s"{[key: string]: ${i.name + ts.tools.implId(i).name + "Serialized"}}"
         case _: AdtId => "{[key: string]: any}" // ${ts(a).asInstanceOf[Adt].alternatives.map(t => toNativeType(t.typeId, ts, forSerialized)).mkString(" | ")}
         case al: AliasId => toNativeType(ts(al).asInstanceOf[Alias].target, ts, forSerialized)
         case _: DTOId => s"${id.name}Serialized"

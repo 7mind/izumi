@@ -161,25 +161,25 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
   protected def renderDtoInterfaceSerializer(iid: InterfaceId): String = {
     val fields = typespace.structure.structure(iid)
-    s"""public to${iid.name}Serialized(): ${iid.name}${typespace.implId(iid).name}Serialized {
+    s"""public to${iid.name}Serialized(): ${iid.name}${typespace.tools.implId(iid).name}Serialized {
        |    return {
        |${renderSerializedObject(fields.all.map(_.field)).shift(8)}
        |    };
        |}
        |
-       |public to${iid.name}(): ${iid.name}${typespace.implId(iid).name} {
-       |    return new ${iid.name}${typespace.implId(iid).name}(this.to${iid.name}Serialized());
+       |public to${iid.name}(): ${iid.name}${typespace.tools.implId(iid).name} {
+       |    return new ${iid.name}${typespace.tools.implId(iid).name}(this.to${iid.name}Serialized());
        |}
      """.stripMargin
   }
 
   protected def renderDtoInterfaceLoader(iid: InterfaceId): String = {
     val fields = typespace.structure.structure(iid)
-    s"""public load${iid.name}Serialized(slice: ${iid.name}${typespace.implId(iid).name}Serialized) {
+    s"""public load${iid.name}Serialized(slice: ${iid.name}${typespace.tools.implId(iid).name}Serialized) {
        |${renderDeserializeObject("slice", fields.all.map(_.field)).shift(4)}
        |}
        |
-       |public load${iid.name}(slice: ${iid.name}${typespace.implId(iid).name}) {
+       |public load${iid.name}(slice: ${iid.name}${typespace.tools.implId(iid).name}) {
        |    this.load${iid.name}Serialized(slice.serialize());
        |}
      """.stripMargin
@@ -217,7 +217,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val extendsInterfacesSerialized =
       if (i.struct.superclasses.interfaces.nonEmpty) {
-        "extends " + i.struct.superclasses.interfaces.map(iface => s"${iface.name}${typespace.implId(iface).name}Serialized").mkString(", ") + " "
+        "extends " + i.struct.superclasses.interfaces.map(iface => s"${iface.name}${typespace.tools.implId(iface).name}Serialized").mkString(", ") + " "
       } else {
         ""
       }
@@ -251,7 +251,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |${distinctFields.map(f => s"${conv.toNativeTypeName(f.name, f.typeId)}: ${conv.toNativeType(f.typeId, ts, forSerialized = true)};").mkString("\n").shift(4)}
          |}
          |
-         |${uniqueInterfaces.map(sc => sc.name + typespace.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
+         |${uniqueInterfaces.map(sc => sc.name + typespace.tools.implId(sc).name + s".register(${i.id.name}.FullClassName, ${i.id.name});").mkString("\n")}
          """.stripMargin
 
     ext.extend(i, CompositeProduct(dto, imports.render(ts), s"// ${i.id.name} DTO"), _.handleDTO)
@@ -291,7 +291,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |
          |export class ${i.id.name}Helpers {
          |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
-        case interfaceId: InterfaceId => alt.name + typespace.implId(interfaceId).name
+        case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
         case _ => alt.typeId.name
       }) + "Serialized").mkString(" | ")}} {
          |        let className = adt.getClassName();
@@ -302,7 +302,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |    }
          |
          |    public static deserialize(data: {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
-        case interfaceId: InterfaceId => alt.name + typespace.implId(interfaceId).name
+        case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
         case _ => alt.typeId.name
       }) + "Serialized").mkString(" | ")}}): ${i.id.name} {
          |        const id = Object.keys(data)[0];
@@ -414,14 +414,14 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val extendsInterfacesSerialized =
       if (i.struct.superclasses.interfaces.nonEmpty) {
-        "extends " + i.struct.superclasses.interfaces.map(iface => iface.name + typespace.implId(iface).name + "Serialized").mkString(", ") + " "
+        "extends " + i.struct.superclasses.interfaces.map(iface => iface.name + typespace.tools.implId(iface).name + "Serialized").mkString(", ") + " "
       } else {
         ""
       }
 
     val fields = typespace.structure.structure(i)
     val distinctFields = fields.all.groupBy(_.field.name).map(_._2.head.field)
-    val implId = typespace.implId(i.id)
+    val implId = typespace.tools.implId(i.id)
     val eid = i.id.name + implId.name
 
 
@@ -489,7 +489,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |    }
          |}
          |
-         |${uniqueInterfaces.map(sc => sc.name + typespace.implId(sc).name + s".register($eid.FullClassName, $eid);").mkString("\n")}
+         |${uniqueInterfaces.map(sc => sc.name + typespace.tools.implId(sc).name + s".register($eid.FullClassName, $eid);").mkString("\n")}
        """.stripMargin
 
     ext.extend(i, InterfaceProduct(iface, companion, imports.render(ts), s"// ${i.id.name} Interface"), _.handleInterface)

@@ -156,8 +156,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
            """.stripMargin
         case ii: InterfaceId =>
           extra = Seq("encoding/json")
-          s"""type ${i.id.name + ts.implId(ii).name} = ${goType.renderType(forAlias = true)}Struct
-             |type ${i.id.name + ts.implId(ii).name}Serialized = ${goType.renderType(forAlias = true)}${ts.implId(ii).name}Serialized
+          s"""type ${i.id.name + ts.tools.implId(ii).name} = ${goType.renderType(forAlias = true)}Struct
+             |type ${i.id.name + ts.tools.implId(ii).name}Serialized = ${goType.renderType(forAlias = true)}${ts.tools.implId(ii).name}Serialized
              |func Create${i.id.name}(data map[string]json.RawMessage) (${i.id.name}, error) {
              |    return ${imports.withImport(i.target)}Create${i.target.name}(data)
              |}
@@ -261,7 +261,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
         s"""
            |func NewTest$name() *$name {
            |    res := &$name{}
-           |    res.Set${alternatives.head.name}(NewTest${alternatives.head.typeId.name + (alternatives.head.typeId match { case iface: InterfaceId => ts.implId(iface).name; case _ => "" })}())
+           |    res.Set${alternatives.head.name}(NewTest${alternatives.head.typeId.name + (alternatives.head.typeId match { case iface: InterfaceId => ts.tools.implId(iface).name; case _ => "" })}())
            |    return res
            |}
          """.stripMargin
@@ -700,12 +700,12 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |}
          |
          |func Test${i.id.name}JSONSerialization(t *testing.T) {
-         |    v1 := New${i.id.name + ts.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
+         |    v1 := New${i.id.name + ts.tools.implId(i.id).name}(${struct.fields.map(f => f.tp.testValue()).mkString(", ")})
          |    serialized, err := json.Marshal(v1)
          |    if err != nil {
          |        t.Fatalf("Type '%s' should serialize into JSON using Marshal. %s", "${i.id.name}", err.Error())
          |    }
-         |    var v2 ${i.id.name + ts.implId(i.id).name}
+         |    var v2 ${i.id.name + ts.tools.implId(i.id).name}
          |    err = json.Unmarshal(serialized, &v2)
          |    if err != nil {
          |        t.Fatalf("Type '%s' should deserialize from JSON using Unmarshal. %s", "${i.id.name}", err.Error())

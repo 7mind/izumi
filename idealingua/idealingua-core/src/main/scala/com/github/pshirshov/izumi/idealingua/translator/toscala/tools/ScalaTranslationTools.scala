@@ -46,7 +46,7 @@ class ScalaTranslationTools(ctx: STContext) {
             */
           val source = f.sourceType match {
             case s: DTOId =>
-              ctx.typespace.defnId(s)
+              ctx.typespace.tools.defnId(s)
 
             case o =>
               o

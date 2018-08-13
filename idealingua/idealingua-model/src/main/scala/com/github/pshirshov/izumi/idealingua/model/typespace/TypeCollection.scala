@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -19,17 +18,8 @@ class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
   }
 }
 
-class TypeCollection(domain: DomainDefinition) {
-  val services: Map[ServiceId, Service] = domain.services.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
-
-  private val methodOutputSuffix = "Output"
-  private val methodInputSuffix = "Input"
-
-  private val goodAltBranchName = "MSuccess"
-  private val badAltBranchName = "MFailure"
-
-  private val goodAltSuffix = "Success"
-  private val badAltSuffix = "Failure"
+class TypeCollection(ts: Typespace) {
+  val services: Map[ServiceId, Service] = ts.domain.services.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
 
   val serviceEphemerals: Seq[TypeDef] = (for {
     service <- services.values
@@ -42,11 +32,11 @@ class TypeCollection(domain: DomainDefinition) {
         val inputDto = {
           val in = m.signature.input
           val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
-          val inId = DTOId(service.id, s"$baseName$methodInputSuffix")
+          val inId = DTOId(service.id, s"$baseName${ts.tools.methodInputSuffix}")
           DTO(inId, inputStructure, NodeMeta.empty)
         }
 
-        val outDtos = outputEphemeral(service, baseName, methodOutputSuffix, m.signature.output)
+        val outDtos = outputEphemeral(service, baseName, ts.tools.methodOutputSuffix, m.signature.output)
 
         inputDto +: outDtos
     }
@@ -74,14 +64,14 @@ class TypeCollection(domain: DomainDefinition) {
         Seq(Adt(outId, o.alternatives, NodeMeta.empty))
 
       case o: Output.Alternative =>
-        val success = outputEphemeral(service, baseName, goodAltSuffix, o.success)
-        val failure = outputEphemeral(service, baseName, badAltSuffix, o.failure)
+        val success = outputEphemeral(service, baseName, ts.tools.goodAltSuffix, o.success)
+        val failure = outputEphemeral(service, baseName, ts.tools.badAltSuffix, o.failure)
         val successId = success.head.id
         val failureId = failure.head.id
         val adtId = AdtId(service.id, s"$baseName$suffix")
         val altAdt = Output.Algebraic(List(
-          AdtMember(successId, Some(toPositiveBranchName(adtId)))
-            , AdtMember(failureId, Some(toNegativeBranchName(adtId)))
+          AdtMember(successId, Some(ts.tools.toPositiveBranchName(adtId)))
+            , AdtMember(failureId, Some(ts.tools.toNegativeBranchName(adtId)))
         ))
         val alt = outputEphemeral(service, baseName, suffix, altAdt)
         success ++ failure ++ alt
@@ -89,10 +79,10 @@ class TypeCollection(domain: DomainDefinition) {
   }
 
   val interfaceEphemeralIndex: Map[InterfaceId, DTO] = {
-    domain.types
+    ts.domain.types
       .collect {
         case i: Interface =>
-          val iid = DTOId(i.id, toDtoName(i.id))
+          val iid = DTOId(i.id, ts.tools.toDtoName(i.id))
           i.id -> DTO(iid, Structure.interfaces(List(i.id)), NodeMeta.empty)
       }.toMap
   }
@@ -104,10 +94,10 @@ class TypeCollection(domain: DomainDefinition) {
   def isInterfaceEphemeral(dto: DTOId): Boolean = interfaceEphemeralsReversed.contains(dto)
 
   val dtoEphemeralIndex: Map[DTOId, Interface] = {
-    (domain.types ++ serviceEphemerals)
+    (ts.domain.types ++ serviceEphemerals)
       .collect {
         case i: DTO =>
-          val iid = InterfaceId(i.id, toInterfaceName(i.id))
+          val iid = InterfaceId(i.id, ts.tools.toInterfaceName(i.id))
           i.id -> Interface(iid, i.struct, NodeMeta.empty)
       }.toMap
 
@@ -119,7 +109,7 @@ class TypeCollection(domain: DomainDefinition) {
 
   val all: Seq[TypeDef] = {
     val definitions = Seq(
-      domain.types
+      ts.domain.types
       , serviceEphemerals
       , interfaceEphemerals
       , dtoEphemerals
@@ -131,58 +121,11 @@ class TypeCollection(domain: DomainDefinition) {
   val structures: Seq[WithStructure] = all.collect { case t: WithStructure => t }
 
   def domainIndex: Map[TypeId, TypeDef] = {
-    domain.types.map(t => (t.id, t)).toMap
+    ts.domain.types.map(t => (t.id, t)).toMap
   }
 
   def index: CMap[TypeId, TypeDef] = {
-    new CMap(domain.id, all.map(t => (t.id, t)).toMap)
-  }
-
-  def methodToOutputName(method: RPCMethod): String = {
-    s"${method.name.capitalize}$methodOutputSuffix"
-  }
-
-  def methodToPositiveTypeName(method: RPCMethod): String = {
-    s"${method.name.capitalize}$goodAltSuffix"
-  }
-
-  def methodToNegativeTypeName(method: RPCMethod): String = {
-    s"${method.name.capitalize}$badAltSuffix"
-  }
-
-
-  def toPositiveBranchName(id: AdtId): String = {
-    Quirks.discard(id)
-    goodAltBranchName
-  }
-
-  def toNegativeBranchName(id: AdtId): String = {
-    Quirks.discard(id)
-    badAltBranchName
-  }
-
-
-  def toDtoName(id: TypeId): String = {
-    id match {
-      case _: InterfaceId =>
-        //s"${id.name}Struct"
-        "Struct"
-      case _ =>
-        s"${id.name}"
-
-    }
-  }
-
-  def toInterfaceName(id: TypeId): String = {
-    id match {
-      case _: DTOId =>
-        //s"${id.name}Defn"
-
-        "Defn"
-      case _ =>
-        s"${id.name}"
-
-    }
+    new CMap(ts.domain.id, all.map(t => (t.id, t)).toMap)
   }
 
   protected def verified(types: Seq[TypeDef]): Seq[TypeDef] = {

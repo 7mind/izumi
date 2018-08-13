@@ -171,7 +171,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     val full = s"$pkg.$short"
 
     val fields = interface.struct.fields
-    val implId = ts.implId(interface.id)
+    val implId = ts.tools.implId(interface.id)
     val eid = interface.id.name + implId.name
 
     val extension =

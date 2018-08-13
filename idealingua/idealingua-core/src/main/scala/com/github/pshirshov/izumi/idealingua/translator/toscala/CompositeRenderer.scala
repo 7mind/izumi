@@ -32,7 +32,7 @@ class CompositeRenderer(ctx: STContext) {
     }
 
     val (mirrorInterface: List[Defn.Trait], moreBases: Interfaces) = if (withMirror) {
-      val eid = typespace.defnId(struct.fields.id)
+      val eid = typespace.tools.defnId(struct.fields.id)
       val implStructure = ctx.tools.mkStructure(eid)
       (List(ctx.interfaceRenderer.mkTrait(List.empty, conv.toScala(eid), implStructure.fields)), List(eid))
     } else {

@@ -18,7 +18,7 @@ class InterfaceRenderer(ctx: STContext) {
 
     val qqInterface = mkTrait(i.struct.superclasses.interfaces, t, fields)
 
-    val eid = typespace.implId(i.id)
+    val eid = typespace.tools.implId(i.id)
     val implStructure = ctx.tools.mkStructure(eid)
     val impl = compositeRenderer.defns(implStructure, ClassSource.CsInterface(i)).render
     val qqInterfaceCompanion =

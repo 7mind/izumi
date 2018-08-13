@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
@@ -62,6 +63,18 @@ trait StructuralQueries {
 }
 
 trait TypespaceTools {
+  def methodOutputSuffix: String
+
+  def badAltBranchName: String
+
+  def methodInputSuffix: String
+
+  def goodAltBranchName: String
+
+  def goodAltSuffix: String
+
+  def badAltSuffix: String
+
   def idToParaName(id: TypeId): String
 
   def implId(id: InterfaceId): DTOId
@@ -71,6 +84,20 @@ trait TypespaceTools {
   def defnId(id: StructureId): InterfaceId
 
   def mkConverter(innerFields: List[SigParam], outerFields: List[SigParam], targetId: StructureId): ConverterDef
+
+  def methodToOutputName(method: RPCMethod): String
+
+  def methodToPositiveTypeName(method: RPCMethod): String
+
+  def methodToNegativeTypeName(method: RPCMethod): String
+
+  def toPositiveBranchName(id: AdtId): String
+
+  def toNegativeBranchName(id: AdtId): String
+
+  def toDtoName(id: TypeId): String
+
+  def toInterfaceName(id: TypeId): String
 }
 
 trait Typespace {
@@ -88,13 +115,15 @@ trait Typespace {
 
   def dealias(t: TypeId): TypeId
 
-  def implId(id: InterfaceId): DTOId
-
-  def sourceId(id: DTOId): Option[InterfaceId]
-
-  def defnId(id: StructureId): InterfaceId
+  //  def implId(id: InterfaceId): DTOId
+  //
+  //  def sourceId(id: DTOId): Option[InterfaceId]
+  //
+  //  def defnId(id: StructureId): InterfaceId
 
   def types: TypeCollection
+
+  def resolver: TypeResolver
 
   protected[typespace] def referenced: Map[DomainId, Typespace]
 }

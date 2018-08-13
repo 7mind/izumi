@@ -17,9 +17,9 @@ final case class TypeScriptImport(id: TypeId, pkg: String)
 final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest] = None) {
   private def renderTypeImports(id: TypeId, ts: Typespace): String = id match {
     case adt: AdtId => s"${adt.name}, ${adt.name}Helpers"
-    case i: InterfaceId => s"${i.name}, ${i.name + ts.implId(i).name}, ${i.name + ts.implId(i).name}Serialized"
+    case i: InterfaceId => s"${i.name}, ${i.name + ts.tools.implId(i).name}, ${i.name + ts.tools.implId(i).name}Serialized"
     case d: DTOId => {
-      val mirrorInterface = ts.sourceId(d)
+      val mirrorInterface = ts.tools.sourceId(d)
       if (mirrorInterface.isDefined) {
         s"${mirrorInterface.get.name + d.name}, ${mirrorInterface.get.name + d.name}Serialized"
       } else {
@@ -164,11 +164,11 @@ object TypeScriptImports {
     case i: Interface =>
       i.struct.superclasses.interfaces ++
       ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id) ++
-      ts.inheritance.allParents(i.id).filterNot(i.struct.superclasses.interfaces.contains).filterNot(ff => ff == i.id).map(ifc => ts.implId(ifc))
+      ts.inheritance.allParents(i.id).filterNot(i.struct.superclasses.interfaces.contains).filterNot(ff => ff == i.id).map(ifc => ts.tools.implId(ifc))
     case d: DTO =>
       d.struct.superclasses.interfaces ++
       ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id) ++
-      ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains).map(ifc => ts.implId(ifc))
+      ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains).map(ifc => ts.tools.implId(ifc))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
   }

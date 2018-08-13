@@ -147,7 +147,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
   }
 
   override def postEmitModules(ctx: CSTContext, i: DTO)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
-    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.implId(ii) == i.id)
+    val implIface = ts.inheritance.allParents(i.id).find(ii => ts.tools.implId(ii) == i.id)
     val dtoName = if (implIface.isDefined) implIface.get.name + i.id.name else i.id.name
 
     val structure = ts.structure.structure(i)

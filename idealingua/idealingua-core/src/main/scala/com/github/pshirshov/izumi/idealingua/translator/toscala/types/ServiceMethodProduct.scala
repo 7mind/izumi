@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 
-import com.github.pshirshov.izumi.idealingua.model.common.IndefiniteId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
@@ -212,7 +211,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
   protected object Output {
 
-    private def typename: String = ctx.typespace.types.methodToOutputName(method)
+    private def typename: String = ctx.typespace.tools.methodToOutputName(method)
 
     def outputType: Type = method.signature.output match {
       case DefMethod.Output.Void() =>
@@ -227,8 +226,8 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
         t"Or[${negativeType.typeFull}, ${positiveType.typeFull}]"
     }
 
-    private def positiveId: String = ctx.typespace.types.methodToPositiveTypeName(method)
-    private def negativeId: String = ctx.typespace.types.methodToNegativeTypeName(method)
+    private def positiveId: String = ctx.typespace.tools.methodToPositiveTypeName(method)
+    private def negativeId: String = ctx.typespace.tools.methodToNegativeTypeName(method)
 
     def positiveType: ScalaType =  sp.svcMethods.within(positiveId)
 
@@ -238,9 +237,9 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
     private def dtoId = DTOId(sp.basePath, typename)
 
-    def positiveBranchType: ScalaType = wrappedTypespaceType.within(ctx.typespace.types.toPositiveBranchName(adtId))
+    def positiveBranchType: ScalaType = wrappedTypespaceType.within(ctx.typespace.tools.toPositiveBranchName(adtId))
 
-    def negativeBranchType: ScalaType = wrappedTypespaceType.within(ctx.typespace.types.toNegativeBranchName(adtId))
+    def negativeBranchType: ScalaType = wrappedTypespaceType.within(ctx.typespace.tools.toNegativeBranchName(adtId))
 
     // TODO:TSASSYMMETRY this method is a workaround for assymetry between typespace representation and scala code we want to render
     def wrappedTypespaceType: ScalaType = {

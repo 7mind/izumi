@@ -293,11 +293,11 @@ final case class GoLangType (
     }
     case al: AliasId => ts.dealias(al) match {
       case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${al.name}()"
-      case i: InterfaceId => s"${im.withImport(id)}NewTest${al.name + ts.implId(i).name}()"
+      case i: InterfaceId => s"${im.withImport(id)}NewTest${al.name + ts.tools.implId(i).name}()"
       case _ => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
     }
     case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${id.name}()"
-    case i: InterfaceId => s"${im.withImport(id)}NewTest${i.name + ts.implId(i).name}()"
+    case i: InterfaceId => s"${im.withImport(id)}NewTest${i.name + ts.tools.implId(i).name}()"
     case _ => "nil"
   }
 
