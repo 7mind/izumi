@@ -13,7 +13,7 @@ object IzumiDeps {
 
     val scala_java8_compat = "0.9.0" // 2.13+
     val kind_projector = "0.9.7" // 2.13+
-    val scalatest = "3.0.6-SNAP1" // 2.13+
+    val scalatest = "3.0.6-SNAP2" // 2.13+
 
     val shapeless = "2.3.3" // 2.13+
     val cats = "1.1.0" // https://github.com/typelevel/cats/issues/2267
@@ -25,7 +25,7 @@ object IzumiDeps {
     val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
 
-    val classgraph = "4.0.5" // java
+    val classgraph = "4.0.6" // java
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 
