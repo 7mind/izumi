@@ -145,8 +145,7 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
   private lazy val marginRe = Pattern.compile(raw"((\d+)\:)?(\.\.\.)?(\d+)?")
 
   private def parseMargin(payload: String): Option[Margin] = {
-    val trimmed = payload.filterNot(_.isSpaceChar)
-    val matcher = marginRe.matcher(payload)
+    val matcher = marginRe.matcher(payload.trim)
     if (matcher.matches()) {
       val minimize = Option(matcher.group(2)).filter(_.nonEmpty).map(_.toInt)
       val ellipsis = Option(matcher.group(3)).exists(_.nonEmpty)
