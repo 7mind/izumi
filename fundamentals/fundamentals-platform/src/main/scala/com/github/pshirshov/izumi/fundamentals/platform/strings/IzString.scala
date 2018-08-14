@@ -27,6 +27,20 @@ class IzString(s: String) {
     elem.toString * (len - s.length()) + s
   }
 
+  @inline def minimize(leave: Int): String = {
+    val parts = s.split('.').toVector
+    if (parts.size < leave) {
+      s
+    } else {
+      val toLeave = parts.takeRight(leave)
+      val theRest = parts.take(parts.size - leave)
+      val minimized = theRest
+        .filterNot(_.isEmpty).map(_.substring(0, 1))
+      (minimized ++ toLeave).mkString(".")
+    }
+  }
+
+
   @inline def ellipsedLeftPad(limit: Int): String = {
     val limited = if (s.length > limit && s.length > 3) {
       s"...${s.takeRight(limit - 3)}"
@@ -52,7 +66,7 @@ class IzString(s: String) {
   }
 
   def camelToUnderscores: String = {
-    "[A-Z\\d]".r.replaceAllIn(s, {m =>
+    "[A-Z\\d]".r.replaceAllIn(s, { m =>
       "_" + m.group(0).toLowerCase()
     })
   }
@@ -78,5 +92,6 @@ class IzIterable[A](s: Iterable[A]) {
 
 object IzString {
   implicit def toRich(s: String): IzString = new IzString(s)
+
   implicit def toRich[A](s: Iterable[A]): IzIterable[A] = new IzIterable(s)
 }
