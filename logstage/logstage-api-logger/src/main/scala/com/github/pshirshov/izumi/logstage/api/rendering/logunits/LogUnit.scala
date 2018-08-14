@@ -124,6 +124,19 @@ object LogUnit {
 
   }
 
+  case object IdUnit extends LogUnit {
+    override val aliases: Vector[String] = Vector(
+      "id"
+    )
+
+    override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
+      withMargin(entry.context.static.id.id, margin)
+    }
+
+    override def undefined(entry: Log.Entry): Boolean = false
+
+  }
+
   case object MessageUnit extends LogUnit {
     override val aliases: Vector[String] = Vector(
       "message", "msg"
@@ -163,7 +176,15 @@ object LogUnit {
     all.get(alias)
   }
 
-  private val all = Set(ThreadUnit, TimestampUnit, LevelUnit, LocationUnit, CustomContextUnit, MessageUnit).flatMap {
+  private val all = Set(
+    ThreadUnit
+    , TimestampUnit
+    , LevelUnit
+    , IdUnit
+    , LocationUnit
+    , CustomContextUnit
+    , MessageUnit
+  ).flatMap {
     unit =>
       unit.aliases.map(_ -> unit)
   }.toMap
