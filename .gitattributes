@@ -1,0 +1,13 @@
+*                           text=auto
+.git*                       text export-ignore
+
+*.sbt                       text
+*.scala                     text
+*.java                      text
+*.txt                       text
+
+.classpath                 -text whitespace=cr-at-eol merge=union
+*.md                        text conflict-marker-size=200
+*.xml                      -text whitespace=cr-at-eol
+
+*.sh        text eol=lf
