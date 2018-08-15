@@ -176,7 +176,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def renderDtoInterfaceLoader(iid: InterfaceId): String = {
     val fields = typespace.structure.structure(iid)
     s"""public load${iid.name}Serialized(slice: ${iid.name}${typespace.tools.implId(iid).name}Serialized) {
-       |${renderDeserializeObject("slice", fields.all.map(_.field)).shift(4)}
+       |${renderDeserializeObject(/*"slice", */fields.all.map(_.field)).shift(4)}
        |}
        |
        |public load${iid.name}(slice: ${iid.name}${typespace.tools.implId(iid).name}) {
