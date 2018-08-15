@@ -23,8 +23,9 @@ object RPCPacketKind extends RPCPacketKindCirce {
     , RpcResponse
     , RpcFail
 
-    , PushRequest
-    , PushResponse
+    , BuzzRequest
+    , BuzzResponse
+    , BuzzFailure
 
     , S2CStream
     , C2SStream
@@ -47,15 +48,19 @@ object RPCPacketKind extends RPCPacketKindCirce {
   }
 
   final case object RpcFail extends RPCPacketKind {
-    override def toString: String = "rpc:fail"
+    override def toString: String = "rpc:failure"
   }
 
-  final case object PushRequest extends RPCPacketKind {
-    override def toString: String = "push:request"
+  final case object BuzzRequest extends RPCPacketKind {
+    override def toString: String = "buzzer:request"
   }
 
-  final case object PushResponse extends RPCPacketKind {
-    override def toString: String = "push:response"
+  final case object BuzzResponse extends RPCPacketKind {
+    override def toString: String = "buzzer:response"
+  }
+
+  final case object BuzzFailure extends RPCPacketKind {
+    override def toString: String = "buzzer:failure"
   }
 
   final case object S2CStream extends RPCPacketKind {
