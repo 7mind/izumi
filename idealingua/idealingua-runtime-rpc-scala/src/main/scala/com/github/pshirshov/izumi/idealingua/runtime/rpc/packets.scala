@@ -117,15 +117,15 @@ object RpcResponse {
 }
 
 
-case class RpcStringResponse
+case class RpcFailureStringResponse
 (
   kind: RPCPacketKind
   , data: String
   , cause: String
 ) extends AnyRpcResponse
 
-object RpcStringResponse {
-  implicit def dec0: Decoder[RpcStringResponse] = deriveDecoder
+object RpcFailureStringResponse {
+  implicit def dec0: Decoder[RpcFailureStringResponse] = deriveDecoder
 
-  implicit def enc0: Encoder[RpcStringResponse] = deriveEncoder
+  implicit def enc0: Encoder[RpcFailureStringResponse] = deriveEncoder
 }
