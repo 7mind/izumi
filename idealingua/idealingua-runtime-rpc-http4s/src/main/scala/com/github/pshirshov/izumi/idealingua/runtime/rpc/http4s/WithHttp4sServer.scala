@@ -20,6 +20,7 @@ trait WithHttp4sServer {
   class HttpServer[Ctx](
                          protected val muxer: IRTServerMultiplexor[BIO, Ctx]
                          , protected val contextProvider: AuthMiddleware[CIO, Ctx]
+                         , val wsContextProvider: WsContextProvider[Ctx]
                        ) {
     protected val dsl: Http4sDsl[CIO] = WithHttp4sServer.this.dsl
 
@@ -47,23 +48,23 @@ trait WithHttp4sServer {
         }
     }
 
-    protected def setupWs(request: AuthedRequest[CIO, Ctx], context: Ctx): CIO[Response[CIO]] = {
+    protected def setupWs(request: AuthedRequest[CIO, Ctx], initialContext: Ctx): CIO[Response[CIO]] = {
       val queue = async.unboundedQueue[CIO, WebSocketFrame]
       queue.flatMap { q =>
         val d = q.dequeue.through {
-          _.map(handleWsMessage(request, context, _))
+          _.map(handleWsMessage(request, initialContext, _))
         }
         val e = q.enqueue
         WebSocketBuilder[CIO].build(d, e)
       }
     }
 
-    protected def handleWsMessage(request: AuthedRequest[CIO, Ctx], context: Ctx, input: WebSocketFrame): WebSocketFrame = {
+    protected def handleWsMessage(request: AuthedRequest[CIO, Ctx], initialContext: Ctx, input: WebSocketFrame): WebSocketFrame = {
       import io.circe.syntax._
 
       val output: String = input match {
         case Text(msg, _) =>
-          val ioresponse = makeResponse(request, context, msg)
+          val ioresponse = makeResponse(initialContext, msg)
 
           ZIOR.unsafeRunSync(ioresponse) match {
             case ExitResult.Completed(v) =>
@@ -73,12 +74,11 @@ trait WithHttp4sServer {
               handleWsError(request, List(error), None, "failure")
 
             case ExitResult.Terminated(causes) =>
-              handleWsError(request, List.empty, None, "termination")
-
+              handleWsError(request, causes, None, "termination")
           }
 
         case v =>
-          handleWsError(request, List.empty, Some(v.toString.toString.take(100) + "..."), "badframe")
+          handleWsError(request, List.empty, Some(v.toString.take(100) + "..."), "badframe")
       }
 
       Text(output)
@@ -96,11 +96,12 @@ trait WithHttp4sServer {
       }
     }
 
-    protected def makeResponse(request: AuthedRequest[CIO, Ctx], context: Ctx, message: String): ZIO[Throwable, RpcResponse] = {
+    protected def makeResponse(initialContext: Ctx, message: String): ZIO[Throwable, RpcResponse] = {
       for {
         parsed <- ZIO.fromEither(parse(message))
         unmarshalled <- ZIO.fromEither(parsed.as[RpcRequest])
-        response <- respond(request, context, unmarshalled)
+        context <- ZIO.syncThrowable(wsContextProvider.toContext(initialContext, unmarshalled))
+        response <- respond(initialContext, unmarshalled)
           .catchAll {
             exception =>
               logger.error(s"WS processing failed, $message, $exception")
@@ -111,7 +112,7 @@ trait WithHttp4sServer {
       }
     }
 
-    protected def respond(request: AuthedRequest[CIO, Ctx], context: Ctx, input: RpcRequest): ZIO[Throwable, RpcResponse] = {
+    protected def respond(context: Ctx, input: RpcRequest): ZIO[Throwable, RpcResponse] = {
       input.kind match {
         case RPCPacketKind.RpcRequest =>
           val methodId = IRTMethodId(IRTServiceId(input.service), IRTMethodName(input.method))

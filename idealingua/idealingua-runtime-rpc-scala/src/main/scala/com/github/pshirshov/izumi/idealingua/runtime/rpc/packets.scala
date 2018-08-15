@@ -87,7 +87,7 @@ case class RpcRequest
   , method: String
   , id: RpcPacketId
   , data: Json
-  , @deprecated authorization: Option[String]
+  , headers: Map[String, String]
 ) extends RpcPacket
 
 object RpcRequest {

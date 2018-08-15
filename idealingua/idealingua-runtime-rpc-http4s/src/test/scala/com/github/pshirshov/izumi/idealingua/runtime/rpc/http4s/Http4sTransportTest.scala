@@ -21,14 +21,14 @@ import scala.language.reflectiveCalls
 
 
 class Http4sTransportTest extends WordSpec {
-
   import Http4sTransportTest.Http4sTestContext._
+  import Http4sTransportTest._
 
   "Http4s transport" should {
     "support direct calls" in {
 
       import scala.concurrent.ExecutionContext.Implicits.global
-      val builder = BlazeBuilder[IO]
+      val builder = BlazeBuilder[CIO]
         .bindHttp(port, host)
         .withWebSockets(true)
         .mountService(ioService.service, "/")
@@ -80,19 +80,20 @@ class Http4sTransportTest extends WordSpec {
 }
 
 object Http4sTransportTest {
-
+  type ZIO[E, V] = zio.IO[E, V]
+  type CIO[T] = cats.effect.IO[T]
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
 
-  final class AuthCheckDispatcher2[Ctx](proxied: IRTWrappedService[zio.IO, Ctx]) extends IRTWrappedService[zio.IO, Ctx] {
+  final class AuthCheckDispatcher2[Ctx](proxied: IRTWrappedService[ZIO, Ctx]) extends IRTWrappedService[ZIO, Ctx] {
     override def serviceId: IRTServiceId = proxied.serviceId
 
-    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[zio.IO, Ctx]] = proxied.allMethods.mapValues {
+    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[ZIO, Ctx]] = proxied.allMethods.mapValues {
       method =>
-        new IRTMethodWrapper[zio.IO, Ctx] with IRTResultZio {
+        new IRTMethodWrapper[ZIO, Ctx] with IRTResultZio {
 
           override val signature: IRTMethodSignature = method.signature
-          override val marshaller: IRTCirceMarshaller[zio.IO] = method.marshaller
+          override val marshaller: IRTCirceMarshaller[ZIO] = method.marshaller
 
           override def invoke(ctx: Ctx, input: signature.Input): zio.IO[Nothing, signature.Output] = {
             ctx match {
@@ -114,10 +115,10 @@ object Http4sTransportTest {
   class DemoContext[Ctx] {
     private val greeterService = new AbstractGreeterServer1.Impl[Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
-    private val dispatchers: Set[IRTWrappedService[zio.IO, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
-    private val clients: Set[IRTWrappedClient[zio.IO]] = Set(GreeterServiceClientWrapped)
+    private val dispatchers: Set[IRTWrappedService[ZIO, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
+    private val clients: Set[IRTWrappedClient[ZIO]] = Set(GreeterServiceClientWrapped)
     val codec = new IRTClientMultiplexor(clients)
-    val multiplexor = new IRTServerMultiplexor[zio.IO, Ctx](dispatchers)
+    val multiplexor = new IRTServerMultiplexor[ZIO, Ctx](dispatchers)
   }
 
   object Http4sTestContext {
@@ -133,9 +134,9 @@ object Http4sTransportTest {
     final val demo = new DemoContext[DummyContext]()
 
     //
-    final val authUser: Kleisli[OptionT[IO, ?], Request[IO], DummyContext] =
+    final val authUser: Kleisli[OptionT[CIO, ?], Request[CIO], DummyContext] =
       Kleisli {
-        request: Request[IO] =>
+        request: Request[CIO] =>
           val context = DummyContext(request.remoteAddr.getOrElse("0.0.0.0"), request.headers.get(Authorization).map(_.credentials))
 
           OptionT.liftF(IO(context))
@@ -143,8 +144,8 @@ object Http4sTransportTest {
 
     final val logger = IzLogger.basic(Log.Level.Trace)
     StaticLogRouter.instance.setup(logger.receiver)
-    final val rt = new Http4sRuntime[zio.IO](logger)
-    final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser))
+    final val rt = new Http4sRuntime[ZIO](logger)
+    final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser), WsContextProvider.id)
 
     //
     final val clientDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) {
@@ -158,7 +159,7 @@ object Http4sTransportTest {
         creds.set(Seq.empty)
       }
 
-      override protected def transformRequest(request: Request[IO]): Request[IO] = {
+      override protected def transformRequest(request: Request[CIO]): Request[CIO] = {
         request.withHeaders(Headers(creds.get(): _*))
       }
     }
