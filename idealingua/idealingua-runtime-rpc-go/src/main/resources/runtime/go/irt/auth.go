@@ -7,6 +7,16 @@ import (
 	"fmt"
 )
 
+type AuthCustom struct {
+	Value string
+}
+
+func NewAuthCustom(value string) *AuthCustom {
+	return &AuthCustom{
+		Value: value,
+	}
+}
+
 type AuthApiKey struct {
 	ApiKey string
 }
@@ -52,12 +62,14 @@ type Authorization struct {
 	ApiKey *AuthApiKey
 	Token  *AuthToken
 	Basic  *AuthBasic
+	Custom *AuthCustom
 }
 
 func (c *Authorization) Reset() {
 	c.ApiKey = nil
 	c.Token = nil
 	c.Basic = nil
+	c.Custom = nil
 }
 
 func (c *Authorization) UpdateFromRequest(r http.Request) error {
@@ -76,6 +88,11 @@ func (c *Authorization) UpdateFromHeaders(h http.Header) error {
 func (c *Authorization) UpdateFromValue(auth string) error {
 	pieces := strings.Split(auth, " ")
 	if len(pieces) != 2 {
+		if len(auth) != 0 {
+			c.Custom = NewAuthCustom(auth)
+			return nil
+		}
+
 		return fmt.Errorf("authorization update expects 'Type Value' format, got '%s'", auth)
 	}
 
@@ -101,7 +118,7 @@ func (c *Authorization) UpdateFromValue(auth string) error {
 			Pass: basicPieces[1],
 		}
 	default:
-		return fmt.Errorf("unsupported authorization mechanism: %s", auth)
+		c.Custom = NewAuthCustom(auth)
 	}
 
 	return nil
@@ -113,11 +130,15 @@ func (c *Authorization) ToValue() string {
 	}
 
 	if c.ApiKey!= nil {
-		return "ApiKey " + c.ApiKey.ApiKey
+		return "Api-Key " + c.ApiKey.ApiKey
 	}
 
 	if c.Basic != nil {
 		return "Basic " + c.Basic.User + ":" + c.Basic.Pass
+	}
+
+	if c.Custom != nil {
+		return c.Custom.Value
 	}
 
 	return ""

@@ -117,7 +117,7 @@ class TypeScriptTypeConverter() {
     case a: AdtId => s"${a.name}Helpers.deserialize($variable)"
     case i: InterfaceId => s"${i.name}Struct.create(${variable + (if (asAny) " as any" else "")})"
     case d: DTOId => s"new ${d.name}(${variable + (if (asAny) " as any" else "")})"
-    case al: AliasId => deserializeType(variable, ts.dealias(al), ts)
+    case al: AliasId => deserializeType(variable, ts.dealias(al), ts, asAny)
     case id: IdentifierId => s"new ${id.name}($variable)"
     case en: EnumId => s"${en.name}[$variable]"
 
@@ -194,7 +194,7 @@ class TypeScriptTypeConverter() {
     s"${field.name}: ${serializeValue("this." + safeName(field.name), field.typeId, ts)}"
   }
 
-  def deserializeField(slice: String, field: Field, ts: Typespace): String = {
+  def deserializeField(/*slice: String, */field: Field, ts: Typespace): String = {
     s"${deserializeName("this." + safeName(field.name), field.typeId)} = ${deserializeType(s"slice.${field.name}", field.typeId, ts)};"
   }
 

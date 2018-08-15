@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine.Networking;
 using IRT.Marshaller;
 using IRT.Transport.Client;
+using IRT.Transport.Authorization;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -32,6 +33,11 @@ namespace IRT.Transport.Client.Unity {
         public int ActiveRequests { get; private set; }
         public int Timeout; // In Seconds
         public IDictionary<string, string> HttpHeaders;
+        public AuthMethod Auth;
+
+        public void SetAuthorization(AuthMethod method) {
+            Auth = method;
+        }
 
 #if !UNITY_EDITOR
         public Action<IEnumerator> CoroutineProcessor;
@@ -67,6 +73,10 @@ namespace IRT.Transport.Client.Unity {
                 foreach (KeyValuePair<string, string> kv in HttpHeaders) {
                     request.SetRequestHeader(kv.Key, kv.Value);
                 }
+            }
+
+            if (Auth != null) {
+                request.SetRequestHeader("Authorization", Auth.ToValue());
             }
 
             // API cached requests might be a pain, let's suppress that

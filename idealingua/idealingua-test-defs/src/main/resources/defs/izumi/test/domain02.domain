@@ -13,6 +13,8 @@ include "model02.model"
 alias RTestEnumIndirect = izumi.test.domain01#RTestEnum
 alias RTestEnumDirect = RTestEnum
 
+alias ImportedBasicFailure = izumi.test.domain01#BasicFailure
+
 mixin TestInterface1 {
   if1Field_overriden: i32
   if1Field_inherited: i32
@@ -77,4 +79,10 @@ service TestAliasServ {
     /** docstring
       */
     def ifaceMethod(va: AnyValTest2) => i32
+}
+
+
+adt SomeResp {
+    ImportedBasicFailure
+    DTO1
 }

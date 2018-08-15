@@ -130,6 +130,10 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |        this.Value = value;
        |    }
        |
+       |    public override void Visit(I${adtName}Visitor visitor) {
+       |        visitor.Visit(this);
+       |    }
+       |
        |${if (member.typeId.isInstanceOf[InterfaceId]) operatorsDummy else operators}
        |}
      """.stripMargin
@@ -146,7 +150,13 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |
        |${ext.preModelEmit(ctx, adt)}
        |public abstract class $adtName {
+       |    public interface I${adtName}Visitor {
+       |${members.map(m => s"        void Visit(${m.name} visitor);").mkString("\n")}
+       |    }
+       |
+       |    public abstract void Visit(I${adtName}Visitor visitor);
        |    private $adtName() {}
+       |
        |${members.map(m => renderAdtMember(adtName, m)).mkString("\n").shift(4)}
        |}
        |${ext.postModelEmit(ctx, adt)}
@@ -529,5 +539,3 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     ServiceProduct(svc, im.renderImports(List("IRT", "IRT.Marshaller", "IRT.Transport.Client", "System", "System.Collections", "System.Collections.Generic") ++ extraImports))
   }
 }
-
-

@@ -190,3 +190,16 @@ service UserService {
   def anyvalTest(AnyValTest): (AnyValTest)
 }
 */
+
+
+data NestedGenerics {
+    nested: list[list[str]]
+}
+
+mixin CommonFailure {
+    code: i32
+}
+
+data BasicFailure {
+    &CommonFailure
+}

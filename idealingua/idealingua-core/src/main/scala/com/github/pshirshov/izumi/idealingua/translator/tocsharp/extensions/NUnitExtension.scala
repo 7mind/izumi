@@ -104,7 +104,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
       if (adt.typeId.isInstanceOf[InterfaceId])
         s"new ${CSharpType(adt.typeId).renderType()}Struct()"
     else
-      s"${CSharpType(adt.typeId).renderType()}TestHelper.Create()"
+      s"${CSharpType(adt.typeId).renderType(true)}TestHelper.Create()"
 
     val code =
       s"""public static class ${name}TestHelper {

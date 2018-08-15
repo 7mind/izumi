@@ -278,6 +278,11 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 
       s"""type $name struct {
          |    value interface{}
+         |    // valueType could be removed and optimized using .(type) or reflect package assertion,
+         |    // however there would be a problem with interface types inside of the ADT, they would reflect
+         |    // to the original structure, making it impossible to detect whether something is
+         |    // an interface (for unknown at compile time types, but provided as some implementations
+         |    // known only to the app code).
          |    valueType string
          |}
          |
@@ -1036,4 +1041,3 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "time", prefix + "irt")))
   }
 }
-

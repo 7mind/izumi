@@ -287,11 +287,12 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def renderAdt(i: Adt)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val base =
-      s"""export type ${i.id.name} = ${i.alternatives.map(alt => alt.typeId.name).mkString(" | ")};
+      s"""export type ${i.id.name} = ${i.alternatives.map(alt => conv.toNativeType(alt.typeId, typespace)).mkString(" | ")};
          |
          |export class ${i.id.name}Helpers {
          |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
         case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
+        case al: AliasId => typespace.dealias(al).name
         case _ => alt.typeId.name
       }) + "Serialized").mkString(" | ")}} {
          |        let className = adt.getClassName();
@@ -303,6 +304,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |
          |    public static deserialize(data: {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
         case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
+        case al: AliasId => typespace.dealias(al).name
         case _ => alt.typeId.name
       }) + "Serialized").mkString(" | ")}}): ${i.id.name} {
          |        const id = Object.keys(data)[0];
@@ -399,8 +401,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     it.map { m => s"$m${if (it.hasNext) "," else ""}" }.mkString("\n")
   }
 
-  protected def renderDeserializeObject(slice: String, fields: List[Field]): String = {
-    fields.map(f => conv.deserializeField(slice, f, typespace)).mkString("\n")
+  protected def renderDeserializeObject(/*slice: String, */fields: List[Field]): String = {
+    fields.map(f => conv.deserializeField(/*slice, */f, typespace)).mkString("\n")
   }
 
   protected def renderInterface(i: Interface)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
