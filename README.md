@@ -41,7 +41,7 @@ Key goals
 
 We aim to provide tools which are:
 
-1. Boosting productiviy 
+1. Boosting productivity while reducing code-bloat
 2. Non-invasive as it possible
 3. Introspectable
 4. Better than anything else :3
