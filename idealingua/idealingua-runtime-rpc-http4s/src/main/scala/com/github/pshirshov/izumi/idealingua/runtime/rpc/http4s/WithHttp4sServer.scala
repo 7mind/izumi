@@ -88,11 +88,11 @@ trait WithHttp4sServer {
       causes.headOption match {
         case Some(cause) =>
           logger.error(s"WS Execution failed, $kind, $request, $cause")
-          RpcStringResponse(RPCPacketKind.Fail, data.getOrElse(cause.getMessage), kind).asJson.noSpaces
+          RpcFailureStringResponse(RPCPacketKind.Fail, data.getOrElse(cause.getMessage), kind).asJson.noSpaces
 
         case None =>
           logger.error(s"WS Execution failed, $kind, $request")
-          RpcStringResponse(RPCPacketKind.Fail, "?", kind).asJson.noSpaces
+          RpcFailureStringResponse(RPCPacketKind.Fail, "?", kind).asJson.noSpaces
       }
     }
 
