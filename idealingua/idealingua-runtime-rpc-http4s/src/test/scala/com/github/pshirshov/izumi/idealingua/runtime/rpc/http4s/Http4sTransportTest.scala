@@ -30,6 +30,7 @@ class Http4sTransportTest extends WordSpec {
       import scala.concurrent.ExecutionContext.Implicits.global
       val builder = BlazeBuilder[IO]
         .bindHttp(port, host)
+        .withWebSockets(true)
         .mountService(ioService.service, "/")
         .start
 

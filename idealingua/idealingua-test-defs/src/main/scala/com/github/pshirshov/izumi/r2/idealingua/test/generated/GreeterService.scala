@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.r2.idealingua.test.impls
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
-import scalaz.zio.{ExitResult, IO, RTS}
+import scalaz.zio.{IO, RTS}
 
 import scala.language.higherKinds
 
@@ -130,38 +130,23 @@ object Test {
     val multiplexor = new IRTServerMultiplexor[IO, Unit](Set(greeter))
 
     val req1 = new greeter.greet.signature.Input("John", "Doe")
-    val json1 = req1.asJson.noSpaces
+    val json1 = req1.asJson
     println(json1)
 
     val req2 = new greeter.alternative.signature.Input()
-    val json2 = req2.asJson.noSpaces
+    val json2 = req2.asJson
     println(json2)
 
-    val toInvoke = greeter.greet.signature.id
 
-
-    val invoked = multiplexor.doInvoke(json1, (), toInvoke)
+    val invoked1 = multiplexor.doInvoke(json1, (), greeter.greet.signature.id)
+    val invoked2 = multiplexor.doInvoke(json1, (), greeter.alternative.signature.id)
 
     object io extends RTS {
       override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = _ => IO.sync(())
     }
 
-    invoked match {
-      case Right(Some(value)) =>
-        io.unsafeRunSync(value) match {
-          case ExitResult.Completed(v) =>
-            println(("Success", v))
-          case ExitResult.Failed(error, defects) =>
-            println(("Failure", error, defects))
-          case ExitResult.Terminated(causes) =>
-            println(("Termination", causes))
-        }
-      case Right(None) =>
-        println("Failure/404")
-
-      case Left(e) =>
-        println(("Failure/500", e))
-    }
+    println(io.unsafeRunSync(invoked1))
+    println(io.unsafeRunSync(invoked2))
   }
 
 
