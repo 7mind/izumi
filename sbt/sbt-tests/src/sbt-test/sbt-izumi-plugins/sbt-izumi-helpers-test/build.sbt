@@ -80,4 +80,4 @@ lazy val root = inRoot.as.root
     justLib, legacyLib,
     justApp, legacyApp,
   )
-
+  .settings(crossScalaVersions := List()) // https://github.com/sbt/sbt/issues/3465

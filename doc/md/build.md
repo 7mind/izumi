@@ -28,5 +28,5 @@ Once you have the project published locally you may open projects from `sbt/sbt-
 So, in case you wish to work with IDL animal model project you should:
 
 1. Perform `sbt publishLocal` from project root
-2. `cd` into [sbt/sbt-tests/src/sbt-test/sbt-izumi-idl/sbt-izumi-idl-test](sbt/sbt-tests/src/sbt-test/sbt-izumi-idl/sbt-izumi-idl-test) or open it as a project
+2. `cd` into [sbt/sbt-tests/src/sbt-test](sbt/sbt-tests/src/sbt-test/) or open it as a project
 3. Play 
