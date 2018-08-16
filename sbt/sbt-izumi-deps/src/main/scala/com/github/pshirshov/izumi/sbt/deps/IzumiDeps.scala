@@ -21,6 +21,7 @@ object IzumiDeps {
     val circe = "0.10.0-M1" // https://github.com/circe/circe/issues/770
     val circe_derivation = "0.9.0-M5"
     val http4s = "0.19.0-M1" // https://github.com/http4s/http4s/issues/1797
+    val java_websocket =  "1.3.9" // java, we need it bcs http4s ws client isn't ready yet
 
     val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
@@ -108,6 +109,7 @@ object IzumiDeps {
 
     val http4s_all: Seq[ModuleID] = http4s_server ++ http4s_client
 
+    val java_websocket = "org.java-websocket" % "Java-WebSocket" % V.java_websocket
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % V.slf4j
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % V.slf4j
@@ -118,13 +120,14 @@ object IzumiDeps {
   }
 
   object T {
-    val scalatest = R.scalatest % "test"
-    val slf4j_simple = R.slf4j_simple % "test"
+    val scalatest = R.scalatest % Test
+    val slf4j_simple = R.slf4j_simple % Test
 
     val essentials = Seq(scalatest)
 
-    val circe: Seq[ModuleID] = R.circe.map(_ % "test")
-    val cats_all: Seq[ModuleID] = R.cats_all.map(_ % "test")
+    val java_websocket = R.java_websocket % Test
+    val circe: Seq[ModuleID] = R.circe.map(_ % Test)
+    val cats_all: Seq[ModuleID] = R.cats_all.map(_ % Test)
   }
 
 }
