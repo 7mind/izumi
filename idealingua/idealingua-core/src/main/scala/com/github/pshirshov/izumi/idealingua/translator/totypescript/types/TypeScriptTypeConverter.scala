@@ -488,12 +488,13 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
+       |    ${if(optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
        |    return Formatter.write${if(local) "Local" else if (utc) "UTC" else "Zone"}DateTime(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
        |    if (typeof value !== 'string') {
-       |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
+       |        ${if(optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
        |    }
        |    this._$name = Formatter.read${if(local) "Local" else if (utc) "UTC" else "Zone"}DateTime(value);
        |}
@@ -518,12 +519,13 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
+       |    ${if(optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
        |    return Formatter.writeDate(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
        |    if (typeof value !== 'string') {
-       |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
+       |        ${if(optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
        |    }
        |    this._$name = Formatter.readDate(value);
        |}
@@ -548,12 +550,13 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string {
+       |    ${if(optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
        |    return Formatter.writeTime(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string) {
        |    if (typeof value !== 'string') {
-       |        throw new Error('${safeName(name)}AsString expects type string, got ' + value);
+       |        ${if(optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
        |    }
        |
        |    this._$name = Formatter.readTime(value);

@@ -23,25 +23,26 @@ namespace IRT.Transport.Client {
             public Action<Exception> Failure;
         }
         
-        private IJsonMarshaller marshaller;
-        private WebSocket ws;
-        private ILogger logger;
-        private bool disposed;
-        private bool authorized;
-        private AuthMethod auth;
-        private string authID;
-        private Dictionary<string, WSRequest> requests;
+        private IJsonMarshaller _marshaller;
+        private WebSocket _ws;
+        private ILogger _logger;
+        private bool _disposed;
+        private bool _headersUpdated;
+        private AuthMethod _auth;
+        private string _headersUpdateID;
+        private Dictionary<string, WSRequest> _requests;
+        private Dictionary<string, string> _headers;
 
-        private WebSocketTransportState state;
+        private WebSocketTransportState _state;
         public WebSocketTransportState State {
             get {
-                return state;
+                return _state;
             }
         }
 
         public bool Ready {
             get {
-                return state == WebSocketTransportState.Connected && authorized;
+                return _state == WebSocketTransportState.Connected && _headersUpdated;
             }
         }
 
@@ -58,85 +59,133 @@ namespace IRT.Transport.Client {
             }
         }
 
-        public int Timeout; // In Seconds
+        private int _timeout; // In Seconds
 
         public WebSocketTransportGeneric(string endpoint, IJsonMarshaller marshaller, ILogger logger, int timeout = 60) {
             Endpoint = endpoint;
-            this.logger = logger;
-            this.marshaller = marshaller;
-            Timeout = timeout;
-            ws = new WebSocket(endpoint);
-            ws.OnMessage += (sender, e) => {
+            _logger = logger;
+            _marshaller = marshaller;
+            _timeout = timeout;
+            _ws = new WebSocket(endpoint);
+            _ws.OnMessage += (sender, e) => {
                 if (e.IsPing) {
                     logger.Logf(LogLevel.Trace, "WebSocketTransport: Ping received.");
                     return;
                 }
                 OnMessage(e);
             };
-            ws.OnOpen += (sender, e) => {
+            _ws.OnOpen += (sender, e) => {
                 OnOpen();
             };
-            ws.OnError += (sender, e) => {
+            _ws.OnError += (sender, e) => {
                 OnError(e);
             };
-            ws.OnClose += (sender, e) => {
+            _ws.OnClose += (sender, e) => {
                 OnClose(e);
             };
-            ws.Compression = CompressionMethod.Deflate;
-            ws.EmitOnPing = true;
-            state = WebSocketTransportState.Stopped;
-            authorized = true;
-            requests = new Dictionary<string, WSRequest>();
+            _ws.Compression = CompressionMethod.Deflate;
+            _ws.EmitOnPing = true;
+            _state = WebSocketTransportState.Stopped;
+            _headersUpdated = true;
+            _requests = new Dictionary<string, WSRequest>();
         }
         
         private void OnMessage(MessageEventArgs e) {
-            logger.Logf(LogLevel.Trace, "WebSocketTransport: Incoming message:\nType: {0}\nData: {1}", e.IsBinary ? "Binary" : "Text", e.Data);
+            _logger.Logf(LogLevel.Trace, "WebSocketTransport: Incoming message:\nType: {0}\nData: {1}", e.IsBinary ? "Binary" : "Text", e.Data);
 
             if (e.IsBinary) {
                 throw new Exception("Binary data is not supported.");
             }
-            
-            HandleSuccess(e.Data);
+
+            WebSocketMessageBase messageBase;
+            try {
+                messageBase = _marshaller.Unmarshal<WebSocketMessageBase>(e.Data);
+            }
+            catch (Exception ex) {
+                _logger.Logf(LogLevel.Error, "Exception during message unmarshalling: {0}", ex.Message);
+                return;
+            }
+
+            switch (messageBase.Kind) {
+                case WebSocketMessageKind.RpcFailure:
+                case WebSocketMessageKind.RpcResponse: {
+                    WebSocketResponseMessageJson msg;
+                    try {
+                        msg = _marshaller.Unmarshal<WebSocketResponseMessageJson>(e.Data);
+                    }
+                    catch (Exception ex) {
+                        _logger.Logf(LogLevel.Error, "Exception during RPC message unmarshalling: {0}", ex.Message);
+                        return;
+                    }
+                    HandleRPCSuccess(msg);  
+                } break;
+
+                case WebSocketMessageKind.Failure: {
+                    WebSocketFailureMessage msg;
+                    try {
+                        msg = _marshaller.Unmarshal<WebSocketFailureMessage>(e.Data);
+                    } catch (Exception ex) {
+                        _logger.Logf(LogLevel.Error, "Exception during failure message unmarshalling: {0}", ex.Message);
+                        return;
+                    }
+                    HandleFailure(msg);
+                } break;
+               default:
+                   throw new Exception("Not implemented");    
+            }
         }
 
         private void OnClose(CloseEventArgs e) {
-            logger.Logf(LogLevel.Debug, "WebSocketTransport: Closed socket. Code: {0} Reason: {1}", e.Code, e.Reason);
-            state = WebSocketTransportState.Stopped;
+            _logger.Logf(LogLevel.Debug, "WebSocketTransport: Closed socket. Code: {0} Reason: {1}", e.Code, e.Reason);
+            _state = WebSocketTransportState.Stopped;
         }
 
         private void OnError(WebSocketSharp.ErrorEventArgs e) {
-            logger.Logf(LogLevel.Error, "WebSocketTransport: Error: " + e.Message);
-            logger.Logf(LogLevel.Debug, "WebSocketTransport: Stacktrace:\n" + e.Exception.StackTrace);
+            _logger.Logf(LogLevel.Error, "WebSocketTransport: Error: " + e.Message);
+            _logger.Logf(LogLevel.Debug, "WebSocketTransport: Stacktrace:\n" + e.Exception.StackTrace);
         }
 
         private void OnOpen() {
-            logger.Logf(LogLevel.Debug, "WebSocketTransport: Opened socket.");
-            state = WebSocketTransportState.Connected;
+            _logger.Logf(LogLevel.Debug, "WebSocketTransport: Opened socket.");
+            _state = WebSocketTransportState.Connected;
         }
 
         public bool Open() {
-            if(state != WebSocketTransportState.Stopped) {
+            if(_state != WebSocketTransportState.Stopped) {
                 return false;
             }
 
-            state = WebSocketTransportState.Connecting;
-            ws.ConnectAsync();
+            _state = WebSocketTransportState.Connecting;
+            _ws.ConnectAsync();
             return true;
         }
 
         public void Close() {
-            if (state == WebSocketTransportState.Stopped ||
-                state != WebSocketTransportState.Stopping) {
+            if (_state == WebSocketTransportState.Stopped ||
+                _state != WebSocketTransportState.Stopping) {
                 return;
             }
 
-            state = WebSocketTransportState.Stopping;
-            ws.Close(CloseStatusCode.Away);
+            _state = WebSocketTransportState.Stopping;
+            _ws.Close(CloseStatusCode.Away);
         }
 
         public void SetAuthorization(AuthMethod method) {
-            auth = method;
-            Authorize();
+            _auth = method;
+            sendHeaders();
+        }
+
+        public AuthMethod GetAuthorization() {
+            return _auth;
+        }
+
+        public void SetHeaders(Dictionary<string, string> headers) {
+            _headers = headers;
+            sendHeaders();
+        }
+
+        public Dictionary<string, string> GetHeaders() {
+            return _headers;
         }
 
         protected string GetRandomMessageId(string prefix = "") {
@@ -144,14 +193,14 @@ namespace IRT.Transport.Client {
              return prefix + id;
         }
 
-        protected void HandleFailure(string id, Exception ex) {
-            if (!requests.ContainsKey(id)) {
-                logger.Logf(LogLevel.Warning, "WebSocketTransport: Can't handle failure, request with ID {0} was not found in the list of requests.", id);
+        protected void HandleRPCFailure(string id, Exception ex) {
+            if (!_requests.ContainsKey(id)) {
+                _logger.Logf(LogLevel.Warning, "Can't handle failure, request with ID {0} was not found in the list of requests.", id);
                 return;
             }
 
-            var req = requests[id];
-            requests.Remove(id);
+            var req = _requests[id];
+            _requests.Remove(id);
             if (req.Timer != null) {
                 req.Timer.Stop();
                 req.Timer = null;   
@@ -160,48 +209,61 @@ namespace IRT.Transport.Client {
             req.Failure.Invoke(ex);
         }
 
-        protected void HandleSuccess(string data) {
-            WebSocketResponseMessageJson res = null;
-            try {
-                res = marshaller.Unmarshal<WebSocketResponseMessageJson>(data);
-            } catch (Exception ex) {
-                logger.Logf(LogLevel.Error, "WebSocketTransport: Failed to parse incoming message: {0}. Data: {1}", ex, data);
-                return;
-            }
-            
-            if (!requests.ContainsKey(res.Ref)) {
-                if (res.Ref == authID) {
-                    if (!string.IsNullOrEmpty(res.Error)) {
-                        logger.Logf(LogLevel.Error, "WebSocketTransport: Authentication failed {0}", res.Error);
+        protected void HandleRPCSuccess(WebSocketResponseMessageJson msg) {
+            if (!_requests.ContainsKey(msg.Ref)) {
+                if (msg.Ref == _headersUpdateID) {
+                    if (msg.Kind == WebSocketMessageKind.RpcFailure) {
+                        _logger.Logf(LogLevel.Error, "Headers update failed {0}", msg.Data);
+                    } else {
+                        _logger.Logf(LogLevel.Debug, "Headers updated succesfully.");
                     }
-                    authorized = true;
+                    _headersUpdated = true;
                     return;
                 }
                 
-                logger.Logf(LogLevel.Warning, "WebSocketTransport: Can't handle success, request with ID {0} was not found in the list of requests.", res.Ref);
+                _logger.Logf(LogLevel.Warning, "Can't handle RPC response, request with ID {0} was not found in the list of requests.", msg.Ref);
                 return;
             }
-
-            var req = requests[res.Ref];
-            requests.Remove(res.Ref);
+            
+            var req = _requests[msg.Ref];
+            _requests.Remove(msg.Ref);
             if (req.Timer != null) {
                 req.Timer.Stop();
                 req.Timer = null;   
             }
 
-            req.Success(res);
+            if (msg.Kind == WebSocketMessageKind.RpcFailure) {
+                req.Failure.Invoke(new Exception(msg.Data));
+                return;
+            }
+            
+            req.Success.Invoke(msg);
+        }
+        
+        protected void HandleFailure(WebSocketFailureMessage msg) {
+            _logger.Logf(LogLevel.Error, "WebSocketTransport: Failure message received from the server:\nCause: {0}\nData:\n{1}", msg.Cause, msg.Data);
         }
 
-        protected void Authorize()
+        protected void sendHeaders()
         {
-            authorized = false;
-            authID = GetRandomMessageId("auth-");
-            var msg = new WebSocketRequestMessageJson();
-            msg.ID = authID;
-            msg.Authorization = auth.ToValue();
-            var serialized = marshaller.Marshal(msg);
-            logger.Logf(LogLevel.Trace, "WebSocketTransport Authorizing:\n{0}", serialized);
-            ws.Send(serialized);
+            _headersUpdated = false;
+            _headersUpdateID = GetRandomMessageId("headersupdate-");
+            var msg = new WebSocketRequestMessageJson(WebSocketMessageKind.RpcRequest);
+            msg.ID = _headersUpdateID;
+            msg.Headers = new Dictionary<string, string>();
+            if (_headers != null) {
+                foreach (var key in _headers.Keys) {
+                    msg.Headers.Add(key, _headers[key]);
+                }
+            }
+
+            if (_auth != null) {
+                msg.Headers.Add("Authorization", _auth.ToValue());
+            }
+            
+            var serialized = _marshaller.Marshal(msg);
+            _logger.Logf(LogLevel.Trace, "WebSocketTransport Updating headers:\n{0}", serialized);
+            _ws.Send(serialized);
         }
 
         public virtual void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx) {
@@ -210,23 +272,18 @@ namespace IRT.Transport.Client {
                     throw new Exception("WebSocketTransport is not ready.");
                 }
                 
-                var req = new WebSocketRequestMessageJson();
+                var req = new WebSocketRequestMessageJson(WebSocketMessageKind.RpcRequest);
                 req.ID = GetRandomMessageId();
                 req.Service = service;
                 req.Method = method;
-                req.Data = marshaller.Marshal(payload);
+                req.Data = _marshaller.Marshal(payload);
 
                 var record = new WSRequest();
-                requests.Add(req.ID, record);
+                _requests.Add(req.ID, record);
                 record.Timer = new Timer();
                 record.Success = msg => {
-                    if (!string.IsNullOrEmpty(msg.Error)) {
-                        callback.Failure(new TransportException(msg.Error));
-                        return;
-                    }
-
                     try {
-                        var data = marshaller.Unmarshal<O>(msg.Data);
+                        var data =_marshaller.Unmarshal<O>(msg.Data);
                         callback.Success(data);
                     }
                     catch (Exception ex) {
@@ -239,15 +296,15 @@ namespace IRT.Transport.Client {
                 };
                 record.Timer.Interval = DefaultTimeoutInterval * 1000;
                 record.Timer.Elapsed += (sender, e) => {
-                    HandleFailure(req.ID, new Exception("Request timed out."));
+                    HandleRPCFailure(req.ID, new Exception("Request timed out."));
                 };
 
-                var serialized = marshaller.Marshal(req);
-                logger.Logf(LogLevel.Trace, "WebSocketTransport: Outgoing message: \n{0}", serialized);
+                var serialized = _marshaller.Marshal(req);
+                _logger.Logf(LogLevel.Trace, "WebSocketTransport: Outgoing message: \n{0}", serialized);
                 
-                ws.SendAsync(serialized, success => {
+                _ws.SendAsync(serialized, success => {
                     if (success) return;
-                    HandleFailure(req.ID, new Exception("Sending request failed."));
+                    HandleRPCFailure(req.ID, new Exception("Sending request failed."));
                 });
                 record.Timer.Start();
             }
@@ -267,18 +324,18 @@ namespace IRT.Transport.Client {
 
         protected virtual void Dispose(bool disposing)
         {
-          if (disposed) {
+          if (_disposed) {
               return;
           }
 
           if (disposing) {
-             if (ws != null) {
+             if (_ws != null) {
                  Close();
-                 ((IDisposable)ws).Dispose();
+                 ((IDisposable)_ws).Dispose();
              }
           }
 
-          disposed = true;
+          _disposed = true;
        }
     }
 }

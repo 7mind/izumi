@@ -1,12 +1,17 @@
 
 using System;
+using System.Collections.Generic;
+using Io.Protoforce.Auth;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using IRT.Transport;
+using Newtonsoft.Json.Linq;
 
 namespace IRT.Marshaller {
     public class JsonNetMarshaller: IJsonMarshaller {
         private JsonSerializerSettings settings;
+        private JsonConverter[] webSocketConverters;
 
         public JsonNetMarshaller(bool pretty = false) {
             settings = new JsonSerializerSettings();
@@ -16,6 +21,12 @@ namespace IRT.Marshaller {
             settings.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
             settings.DateParseHandling = DateParseHandling.None;
             settings.Formatting = pretty ? Formatting.Indented : Formatting.None;
+            webSocketConverters = new JsonConverter[] {
+                new WebSocketRequestMessage_JsonNetConverter(),
+                new WebSocketResponseMessage_JsonNetConverter(),
+                new WebSocketFailureMessage_JsonNetConverter(),
+                new WebSocketMessageBase_JsonNetConverter()
+            };
         }
 
         public string Marshal<I>(I data) {
@@ -23,6 +34,11 @@ namespace IRT.Marshaller {
             // For void responses, we need to provide something that wouldn't break the marshaller
             if (ti == typeof(IRT.Void)) {
                 return "{}";
+            }
+
+            if (data is WebSocketRequestMessageJson || data is WebSocketResponseMessageJson ||
+                data is WebSocketFailureMessage || data is WebSocketMessageBase) {
+                return JsonConvert.SerializeObject(data, webSocketConverters);
             }
 
             if (ti.IsInterface) {
@@ -36,6 +52,11 @@ namespace IRT.Marshaller {
         }
 
         public O Unmarshal<O>(string data) {
+            var to = typeof(O);
+            if (to == typeof(WebSocketRequestMessageJson) || to == typeof(WebSocketResponseMessageJson)) {
+                return JsonConvert.DeserializeObject<O>(data, webSocketConverters);
+            }
+            
             return JsonConvert.DeserializeObject<O>(data, settings);
         }
 
@@ -59,6 +80,169 @@ namespace IRT.Marshaller {
 
             public override InterfaceMarshalWorkaround ReadJson(JsonReader reader, System.Type objectType, InterfaceMarshalWorkaround existingValue, bool hasExistingValue, JsonSerializer serializer) {
                 throw new Exception("Should not be used for Reading, workaround only for writing.");
+            }
+        }
+        
+        private class WebSocketMessageBase_JsonNetConverter: JsonNetConverter<WebSocketMessageBase> {
+            public override void WriteJson(JsonWriter writer, WebSocketMessageBase holder, JsonSerializer serializer) {
+                throw new Exception("WebSocketMessageBase should never be serialized.");
+            }
+
+            public override WebSocketMessageBase ReadJson(JsonReader reader, System.Type objectType, WebSocketMessageBase existingValue, bool hasExistingValue, JsonSerializer serializer) {
+                var json = JObject.Load(reader);
+                var kind = json["kind"].Value<string>();
+                
+                var res = hasExistingValue ? existingValue : new WebSocketMessageBase(kind);
+                res.Kind = kind;
+                return res;
+            }
+        }
+        
+        private class WebSocketFailureMessage_JsonNetConverter: JsonNetConverter<WebSocketFailureMessage> {
+            public override void WriteJson(JsonWriter writer, WebSocketFailureMessage holder, JsonSerializer serializer) {
+                writer.WriteStartObject();
+                // Kind
+                writer.WritePropertyName("kind");
+                writer.WriteValue(holder.Kind);
+                
+                // Cause
+                writer.WritePropertyName("cause");
+                writer.WriteValue(holder.Cause);
+                
+                // Data
+                writer.WritePropertyName("data");
+                writer.WriteValue(holder.Data);
+                
+                writer.WriteEndObject();
+            }
+
+            public override WebSocketFailureMessage ReadJson(JsonReader reader, System.Type objectType, WebSocketFailureMessage existingValue, bool hasExistingValue, JsonSerializer serializer) {
+                var json = JObject.Load(reader);
+                
+                var kind = json["kind"].Value<string>();
+                var res = hasExistingValue ? existingValue : new WebSocketFailureMessage();
+                res.Kind = kind;
+                res.Cause = json["cause"].Value<string>();
+                res.Data = json["data"].Value<string>();
+                return res;
+            }
+        }
+
+        private class WebSocketRequestMessage_JsonNetConverter: JsonNetConverter<WebSocketRequestMessageJson> {
+            public override void WriteJson(JsonWriter writer, WebSocketRequestMessageJson holder, JsonSerializer serializer) {
+                writer.WriteStartObject();
+                // Kind
+                writer.WritePropertyName("kind");
+                writer.WriteValue(holder.Kind);
+                
+                // ID
+                writer.WritePropertyName("id");
+                writer.WriteValue(holder.ID);
+                
+                // Service
+                if (!string.IsNullOrEmpty(holder.Service)) {
+                    writer.WritePropertyName("service");
+                    writer.WriteValue(holder.Service);
+                }
+                
+                // Method
+                if (!string.IsNullOrEmpty(holder.Method)) {
+                    writer.WritePropertyName("method");
+                    writer.WriteValue(holder.Method);
+                }
+                
+                // Headers
+                if (holder.Headers != null && holder.Headers.Count > 0) {
+                    writer.WritePropertyName("headers");
+                    writer.WriteValue(holder.Headers);
+                }
+                
+                // Data
+                if (!string.IsNullOrEmpty(holder.Data)) {
+                    writer.WritePropertyName("data");
+                    writer.WriteRawValue(holder.Data);
+                }
+                writer.WriteEndObject();
+
+            }
+
+            public override WebSocketRequestMessageJson ReadJson(JsonReader reader, System.Type objectType, WebSocketRequestMessageJson existingValue, bool hasExistingValue, JsonSerializer serializer) {
+                var json = JObject.Load(reader);
+                
+                var kind = json["kind"].Value<string>();
+
+                var res = hasExistingValue ? existingValue : new WebSocketRequestMessageJson(kind);
+                res.Kind = kind;
+                res.ID = json["id"].Value<string>();
+                res.Service = json["service"] != null ? json["service"].Value<string>() : null;
+                res.Method = json["method"] != null ? json["method"].Value<string>() : null;
+                res.Headers = json["headers"] != null ? json["headers"].Value<Dictionary<string, string>>() : null;
+                // TODO See ResponseConverter message below, need to change to Reader and use Raw access
+                if (json["data"] != null) {
+                    var dataObj = json["data"];
+                    res.Data = dataObj.ToString();
+                }
+                return res;
+            }
+        }
+        
+        private class WebSocketResponseMessage_JsonNetConverter: JsonNetConverter<WebSocketResponseMessageJson> {
+            public override void WriteJson(JsonWriter writer, WebSocketResponseMessageJson holder, JsonSerializer serializer) {
+                writer.WriteStartObject();
+                // Kind
+                writer.WritePropertyName("kind");
+                writer.WriteValue(holder.Kind);
+                
+                // Ref
+                writer.WritePropertyName("ref");
+                writer.WriteValue(holder.Ref);
+                
+                // Data
+                if (!string.IsNullOrEmpty(holder.Data)) {
+                    writer.WritePropertyName("data");
+                    writer.WriteRawValue(holder.Data);
+                }
+                writer.WriteEndObject();
+            }
+
+            public override WebSocketResponseMessageJson ReadJson(JsonReader reader, System.Type objectType, WebSocketResponseMessageJson existingValue, bool hasExistingValue, JsonSerializer serializer) {
+                var json = JObject.Load(reader);
+                var kind = json["kind"].Value<string>();
+                
+                var res = hasExistingValue ? existingValue : new WebSocketResponseMessageJson(kind);
+                res.Kind = kind;
+                res.Ref = json["ref"].Value<string>();
+                if (json["data"] != null) {
+                    var dataObj = json["data"];
+                    res.Data = dataObj.ToString();
+                }
+                /*
+                // TODO Avoid unnecessary double parsing and emitting, should use raw reader
+                while (reader.Read()) {
+                    if (reader.Value != null) {
+                        if (reader.TokenType == JsonToken.PropertyName) {
+                            Console.WriteLine("Found: " + reader.Value);
+                            
+                            switch (reader.Value) {
+                                case "ref": res.Ref = reader.ReadAsString();
+                                    break;
+                                case "error": res.Error = reader.ReadAsString();
+                                    break;
+                                case "data":
+                                    var currentDepth = reader.Depth;
+                                    while (reader.Read() && reader.Depth > currentDepth) {
+                                        reader.
+                                    }
+                                    var raw = JRaw.Create(reader);;
+                                    res.Data = reader.ReadAsBytes().ToString();// raw.ToString();
+                                    Console.WriteLine(res.Data);
+                                    break;
+                            }
+                        }
+                    }
+                }
+                */
+                return res;
             }
         }
     }
