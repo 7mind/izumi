@@ -6,10 +6,9 @@ import java.util.concurrent.{ConcurrentHashMap, TimeUnit, TimeoutException}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{RPCPacketKind, _}
 import io.circe.parser.parse
 import io.circe.syntax._
-import org.http4s._
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
-import scalaz.zio.{ExitResult, IO, Promise}
+import scalaz.zio.{ExitResult, IO}
 
 import scala.concurrent.duration.Duration
 
@@ -27,7 +26,7 @@ trait WithHttp4sWsClient {
       override def onOpen(handshakedata: ServerHandshake): Unit = {}
 
       override def onMessage(message: String): Unit = {
-        logger.trace(s"Incoming WS message: $message")
+        logger.error(s"Incoming WS message: $message")
 
         val result = for {
           parsed <- IO.fromEither(parse(message))

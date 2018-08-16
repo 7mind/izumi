@@ -64,7 +64,8 @@ class Http4sTransportTest extends WordSpec {
 
     disp.setupCredentials("user", "badpass")
     intercept[TimeoutException] {
-      ZIOR.unsafeRun(greeterClient.alternative())
+      import scala.concurrent.duration._
+      ZIOR.unsafeRun(greeterClient.alternative().delay(10.seconds))
     }
     ()
 
@@ -185,18 +186,17 @@ object Http4sTransportTest {
     final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser), wsContextProvider)
 
     //
-    final val clientDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) with TestDispatcher {
+    final val clientDispatcher: rt.ClientDispatcher with TestDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) with TestDispatcher {
       override protected def transformRequest(request: Request[CIO]): Request[CIO] = {
         request.withHeaders(Headers(creds.get(): _*))
       }
     }
 
-    final def wsClientDispatcher() = new rt.ClientWsDispatcher(wsUri, demo.codec) with TestDispatcher {
+    final def wsClientDispatcher(): rt.ClientWsDispatcher with TestDispatcher = new rt.ClientWsDispatcher(wsUri, demo.codec) with TestDispatcher {
       override protected def transformRequest(request: RpcRequest): RpcRequest = {
         Option(creds.get()) match {
           case Some(value) =>
             val update = value.map(h => (h.name.value, h.value)).toMap
-            logger.error(s"HEADERS = $update")
             request.copy(headers = request.headers ++ update)
           case None => request
         }
@@ -208,14 +208,4 @@ object Http4sTransportTest {
 
 }
 
-trait TestDispatcher {
-  val creds = new AtomicReference[Seq[Header]](Seq.empty)
 
-  def setupCredentials(login: String, password: String): Unit = {
-    creds.set(Seq(Authorization(BasicCredentials(login, password))))
-  }
-
-  def cancelCredentials(): Unit = {
-    creds.set(Seq.empty)
-  }
-}

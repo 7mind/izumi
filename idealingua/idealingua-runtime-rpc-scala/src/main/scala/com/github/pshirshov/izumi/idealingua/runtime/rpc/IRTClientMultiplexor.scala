@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import io.circe.Json
-import io.circe.parser.parse
 import scalaz.zio.IO
 
 import scala.language.higherKinds

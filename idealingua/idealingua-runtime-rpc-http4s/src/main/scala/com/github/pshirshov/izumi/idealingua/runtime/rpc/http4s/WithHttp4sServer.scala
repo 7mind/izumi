@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import java.util.concurrent.ConcurrentHashMap
+
 import _root_.io.circe.parser._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{RPCPacketKind, _}
 import fs2.async
@@ -26,6 +28,9 @@ trait WithHttp4sServer {
 
     import dsl._
 
+    type ClientId = String
+    protected val clients = new ConcurrentHashMap[ClientId, WebSocketFrame]()
+
     def service: HttpRoutes[CIO] = {
       val svc = AuthedService(handler())
       val aservice: HttpRoutes[CIO] = contextProvider(svc)
@@ -48,14 +53,31 @@ trait WithHttp4sServer {
         }
     }
 
+
     protected def setupWs(request: AuthedRequest[CIO, Ctx], initialContext: Ctx): CIO[Response[CIO]] = {
       val queue = async.unboundedQueue[CIO, WebSocketFrame]
+      import scala.concurrent.duration._
+      val outStream: fs2.Stream[CIO, WebSocketFrame] =
+        fs2.Stream.awakeEvery[CIO](100.millis)
+          .map {
+            d =>
+              if (false) {
+                Some(Text("test"))
+              } else {
+                None
+              }
+          }
+          .collect {
+            case Some(frame) =>
+              frame
+          }
+
       queue.flatMap { q =>
         val d = q.dequeue.through {
           _.map(handleWsMessage(request, initialContext, _))
         }
         val e = q.enqueue
-        WebSocketBuilder[CIO].build(d, e)
+        WebSocketBuilder[CIO].build(d.merge(outStream), e)
       }
     }
 
