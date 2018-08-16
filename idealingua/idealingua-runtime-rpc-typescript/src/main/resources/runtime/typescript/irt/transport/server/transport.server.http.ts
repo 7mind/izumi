@@ -17,9 +17,10 @@ export class HttpServerGeneric<C> {
         return this._server;
     }
 
-    constructor(endpoint: string, port: number, logger: Logger, open: boolean = true, handlers: TransportHandlers<C> = undefined) {
+    constructor(endpoint: string, port: number, dispatcher: Dispatcher<C, string>, logger: Logger, open: boolean = true, handlers: TransportHandlers<C> = undefined) {
         this._port = port;
         this._endpoint = endpoint;
+        this._dispatcher = dispatcher;
         this._logger = logger;
         this._handlers = handlers;
         this._server = http.createServer(this.requestHandler);
