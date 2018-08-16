@@ -2,10 +2,11 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.Stream
+import io.circe.parser.parse
 import org.http4s._
 import org.http4s.client._
 import org.http4s.client.blaze._
-import scalaz.zio.ExitResult
+import scalaz.zio.{ExitResult, IO}
 
 trait WithHttp4sClient {
   this: Http4sContext =>
@@ -22,7 +23,7 @@ trait WithHttp4sClient {
         .encode(request)
         .flatMap {
           encoded =>
-            val outBytes: Array[Byte] = encoded.getBytes
+            val outBytes: Array[Byte] = encoded.noSpaces.getBytes
             val entityBody: EntityBody[CIO] = Stream.emits(outBytes).covary[CIO]
             val req = buildRequest(baseUri, request, entityBody)
 
@@ -49,10 +50,12 @@ trait WithHttp4sClient {
         .flatMap {
           body =>
             logger.trace(s"${input.method -> "method"}: Received response: $body")
-            val decoded = codec.decode(body, input.method).map {
-              product =>
-                logger.trace(s"${input.method -> "method"}: decoded response: $product")
-                product
+            val decoded = for {
+              parsed <- IO.fromEither(parse(body))
+              product <- codec.decode(parsed, input.method)
+            } yield {
+              logger.trace(s"${input.method -> "method"}: decoded response: $product")
+              product
             }
 
             ZIOR.unsafeRunSync(decoded) match {

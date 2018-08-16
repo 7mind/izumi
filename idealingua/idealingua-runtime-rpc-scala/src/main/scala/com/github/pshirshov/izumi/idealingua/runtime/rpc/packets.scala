@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
+import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
 import io.circe.{Decoder, Encoder, Json}
 import io.circe._
 import io.circe.generic.semiauto._
@@ -77,9 +78,11 @@ sealed trait RpcPacket {
   def kind: RPCPacketKind
 }
 
-case class RpcPacketId(v: String) extends AnyVal
+case class RpcPacketId(v: String)
 
 object RpcPacketId {
+  def random(): RpcPacketId = RpcPacketId(UUIDGen.getTimeUUID.toString)
+
   implicit def dec0: Decoder[RpcPacketId] = Decoder.decodeString.map(RpcPacketId.apply)
 
   implicit def enc0: Encoder[RpcPacketId] = Encoder.encodeString.contramap(_.v)
