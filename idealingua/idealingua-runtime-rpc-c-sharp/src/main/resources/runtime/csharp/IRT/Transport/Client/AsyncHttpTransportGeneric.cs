@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -22,59 +23,69 @@ namespace IRT.Transport.Client {
             }
         }
 
-        private IJsonMarshaller marshaller;
-        private AuthMethod Auth;
+        private IJsonMarshaller _marshaller;
+        private AuthMethod _auth;
+        private Dictionary<string, string> _headers;
 
-        private string endpoint;
+        private string _endpoint;
         public string Endpoint {
             get {
-                return endpoint;
+                return _endpoint;
             }
             set {
-                endpoint = value;
-                if (!endpoint.EndsWith("\\") && !endpoint.EndsWith("/")) {
-                    endpoint += "/";
+                _endpoint = value;
+                if (!_endpoint.EndsWith("\\") && !_endpoint.EndsWith("/")) {
+                    _endpoint += "/";
                 }
             }
         }
 
-        public int ActiveRequests { get; private set; }
-        public int Timeout; // In Seconds
-        public NameValueCollection HttpHeaders;
+        public int ActiveRequests { get; }
+        private int _timeout; // In Seconds
 
         public AsyncHttpTransportGeneric(string endpoint, IJsonMarshaller marshaller, int timeout = 60) {
             Endpoint = endpoint;
-            this.marshaller = marshaller;
-            Timeout = timeout;
+            _marshaller = marshaller;
+            _timeout = timeout;
             ActiveRequests = 0;
         }
 
         public void SetAuthorization(AuthMethod method) {
-            Auth = method;
+            _auth = method;
+        }
+
+        public AuthMethod GetAuthorization() {
+            return _auth;
+        }
+
+        public void SetHeaders(Dictionary<string, string> headers) {
+            _headers = headers;
+        }
+
+        public Dictionary<string, string> GetHeaders() {
+            return _headers;
         }
 
         public virtual void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx) {
             try {
-                var request = (HttpWebRequest) WebRequest.Create(string.Format("{0}/{1}/{2}", endpoint, service, method));
-                request.Timeout = Timeout * 1000;
+                var request = (HttpWebRequest) WebRequest.Create(string.Format("{0}/{1}/{2}", _endpoint, service, method));
+                request.Timeout = _timeout * 1000;
                 request.Method = payload == null ? "GET" : "POST";
-                if (HttpHeaders != null) {
-                    foreach (var key in HttpHeaders.AllKeys) {
-                        foreach (var value in HttpHeaders.GetValues(key)) {
-                            request.Headers.Add(key, value);
-                        }
+                if (_headers != null) {
+                    foreach (var key in _headers.Keys) {
+                        request.Headers.Add(key, _headers[key]);
                     }
                 }
 
-                if (Auth != null) {
-                    request.Headers.Add("Authorization", Auth.ToValue());
+                if (_auth != null) {
+                    request.Headers.Add("Authorization", _auth.ToValue());
                 }
 
                 var state = new RequestState<O>(request, callback, null);
                 if (payload == null) {
                     request.BeginGetResponse(ProcessResponse<O>, state);
                 } else {
-                    var data = marshaller.Marshal<I>(payload);
+                    var data = _marshaller.Marshal<I>(payload);
                     state.JsonString = data;
                     request.ContentType = "application/json";
                     request.BeginGetRequestStream(ProcessStreamRequest<O>, state);
@@ -122,7 +133,7 @@ namespace IRT.Transport.Client {
                                 throw new TransportException("Empty Response");
                             }
 
-                            var data = marshaller.Unmarshal<O>(jsonString);
+                            var data = _marshaller.Unmarshal<O>(jsonString);
                             state.Response = data;
                             state.Callback.Success(state.Response);
                         }

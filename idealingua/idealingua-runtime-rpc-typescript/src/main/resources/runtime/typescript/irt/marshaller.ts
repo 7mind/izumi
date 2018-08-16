@@ -1,3 +1,4 @@
+import { Void } from './void';
 
 export interface Marshaller<T> {
     Marshal<I>(data: I): T
@@ -15,6 +16,10 @@ export class JSONMarshallerImpl implements JSONMarshaller {
     }
 
     public Marshal<I>(data: I): string {
+        if (data instanceof Void) {
+            return '{}';
+        }
+
         if (this.pretty) {
             return JSON.stringify(data, null, 4);
         } else {

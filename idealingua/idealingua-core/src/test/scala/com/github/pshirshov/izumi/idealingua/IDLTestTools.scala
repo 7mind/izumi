@@ -86,7 +86,11 @@ object IDLTestTools {
       license = "MIT",
       website = "http://project.website",
       copyright = "Copyright (C) Test Inc.",
-      dependencies = List(ManifestDependency("moment", "^2.20.1")),
+      dependencies = List(ManifestDependency("moment", "^2.20.1"),
+        ManifestDependency("@types/node", "^10.7.1"),
+//        ManifestDependency("websocket", "1.0.26"),
+        ManifestDependency("@types/websocket", "0.0.39")
+      ),
       scope = "@TestScope",
       moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED
     )

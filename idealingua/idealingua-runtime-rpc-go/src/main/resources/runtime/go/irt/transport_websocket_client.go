@@ -15,6 +15,8 @@ type wsClientTransport struct {
 	conn       *websocket.Conn
 	logger     Logger
 	marshaller Marshaller
+	headers    TransportHeaders
+	auth       *Authorization
 }
 
 func NewWebSocketClientTransportEx(endpoint string, timeout time.Duration, skipSSLVerify bool, subprotocols []string,
@@ -23,6 +25,7 @@ func NewWebSocketClientTransportEx(endpoint string, timeout time.Duration, skipS
 		logger:     logger,
 		marshaller: marshaller,
 		endpoint:   endpoint,
+		headers:    map[string]string{},
 		dialer: &websocket.Dialer{
 			TLSClientConfig:   &tls.Config{InsecureSkipVerify: skipSSLVerify},
 			Subprotocols:      subprotocols,
@@ -93,17 +96,40 @@ func (t *wsClientTransport) requestResponse(req *WebSocketRequestMessage) (*WebS
 	return res, nil
 }
 
+func (t *wsClientTransport) GetHeaders() TransportHeaders {
+	return t.headers
+}
+
+func (t *wsClientTransport) SetHeaders(headers TransportHeaders) error {
+	t.headers = headers
+	return t.sendHeaders()
+}
+
+func (t *wsClientTransport) GetAuthorization() *Authorization {
+	return t.auth
+}
+
 func (t *wsClientTransport) SetAuthorization(auth *Authorization) error {
+	t.auth = auth
+	return t.sendHeaders()
+}
+
+func (t *wsClientTransport) sendHeaders() error {
 	req := &WebSocketRequestMessage{}
-	req.ID = RandomMessageID("auth-")
-	if auth == nil {
-		req.Authorization = "Reset"
+	req.ID = RandomMessageID("updateheaders-")
+	req.Headers = map[string]string{}
+	if t.auth == nil {
+		req.Headers["Authorization"] = ""
 	} else {
-		req.Authorization = auth.ToValue()
+		req.Headers["Authorization"] = t.auth.ToValue()
+	}
+
+	for k, v := range t.headers {
+		req.Headers[k] = v
 	}
 
 	t.logger.Logf(LogDebug, "================================================")
-	t.logger.Logf(LogDebug, "Updating Authorization: %s", req.Authorization)
+	t.logger.Logf(LogDebug, "Updating Authorization: %+v", req.Headers)
 
 	_, err := t.requestResponse(req)
 	if err != nil {
@@ -113,7 +139,6 @@ func (t *wsClientTransport) SetAuthorization(auth *Authorization) error {
 	t.logger.Logf(LogDebug, "================================================")
 	return nil
 }
-
 
 func (t *wsClientTransport) Send(service string, method string, dataIn interface{}, dataOut interface{}) error {
 	t.logger.Logf(LogDebug, "================================================")
@@ -132,7 +157,6 @@ func (t *wsClientTransport) Send(service string, method string, dataIn interface
 	req.Service = service
 	req.Method = method
 	req.ID = RandomMessageID("")
-	req.Authorization = ""
 	req.Data = data
 
 	res, err := t.requestResponse(req)

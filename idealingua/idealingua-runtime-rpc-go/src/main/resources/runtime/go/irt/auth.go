@@ -1,10 +1,10 @@
 package irt
 
 import (
-	"strings"
 	"encoding/base64"
-	"net/http"
 	"fmt"
+	"net/http"
+	"strings"
 )
 
 type AuthCustom struct {
@@ -129,7 +129,7 @@ func (c *Authorization) ToValue() string {
 		return "Bearer " + c.Token.Token
 	}
 
-	if c.ApiKey!= nil {
+	if c.ApiKey != nil {
 		return "Api-Key " + c.ApiKey.ApiKey
 	}
 
