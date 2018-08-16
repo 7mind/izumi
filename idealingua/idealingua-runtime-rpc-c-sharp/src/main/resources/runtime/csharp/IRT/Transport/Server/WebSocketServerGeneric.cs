@@ -33,18 +33,18 @@ namespace IRT.Transport.Server {
             get { return _started; }
         }
 
-        private class WebSocketServerHandler<C>: WebSocketBehavior {
-            private readonly Dispatcher<ConnectionContext<C>, string> _dispatcher;
+        private class WebSocketServerHandler<CH>: WebSocketBehavior {
+            private readonly Dispatcher<ConnectionContext<CH>, string> _dispatcher;
             private readonly IJsonMarshaller _marshaller;
             private readonly ILogger _logger;
-            private ConnectionContext<C> _context;
-            private readonly IWebSocketServerHandlers<C> _handlers;
+            private ConnectionContext<CH> _context;
+            private readonly IWebSocketServerHandlers<CH> _handlers;
 
             public WebSocketServerHandler() {
             }
 
-            public WebSocketServerHandler(Dispatcher<ConnectionContext<C>, string> dispatcher, IJsonMarshaller marshaller,
-                ILogger logger, IWebSocketServerHandlers<C> handlers = null) {
+            public WebSocketServerHandler(Dispatcher<ConnectionContext<CH>, string> dispatcher, IJsonMarshaller marshaller,
+                ILogger logger, IWebSocketServerHandlers<CH> handlers = null) {
                 _handlers = handlers;
                 _dispatcher = dispatcher;
                 _logger = logger;
@@ -135,7 +135,7 @@ namespace IRT.Transport.Server {
 
             protected override void OnOpen() {
                 _logger.Logf(LogLevel.Trace, "WebSocketServer: Connection opened (Total: {0})", Sessions.Count);
-                _context = new ConnectionContext<C>();
+                _context = new ConnectionContext<CH>();
                 _context.System = new SystemContext();
                 if (_handlers != null) {
                     if (!_handlers.OnConnect(_context, Context)) {
