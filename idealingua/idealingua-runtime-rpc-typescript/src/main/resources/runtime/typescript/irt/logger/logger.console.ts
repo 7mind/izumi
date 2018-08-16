@@ -1,17 +1,6 @@
 
-import { Formatter } from './formatter';
-
-export enum LogLevel {
-    Trace,
-    Debug,
-    Info,
-    Warning,
-    Error
-}
-
-export interface Logger {
-    logf(level: LogLevel, ...args: any[]): void
-}
+import { Formatter } from '../formatter';
+import { Logger, LogLevel } from './logger';
 
 export class ConsoleLogger implements Logger {
     private level: LogLevel;
@@ -66,10 +55,4 @@ export class ConsoleLogger implements Logger {
         }
     }
     /* tslint:enable:no-console */
-}
-
-export class DummyLogger implements Logger {
-    public logf(level: LogLevel, ...args: any[]) {
-        // Do nothing here...
-    }
 }

@@ -11,12 +11,13 @@ import (
 
 type httpClientTransport struct {
 	// Implements ServiceClientTransport
-	endpoint      string
-	client        *http.Client
-	transport     *http.Transport
-	auth 		  *Authorization
-	logger        Logger
-	marshaller    Marshaller
+	endpoint   string
+	client     *http.Client
+	transport  *http.Transport
+	auth       *Authorization
+	logger     Logger
+	marshaller Marshaller
+	headers    TransportHeaders
 }
 
 func NewHTTPClientTransportEx(endpoint string, timeout time.Duration, skipSSLVerify bool, marshaller Marshaller, logger Logger) ClientTransport {
@@ -32,6 +33,7 @@ func NewHTTPClientTransportEx(endpoint string, timeout time.Duration, skipSSLVer
 		client:     client,
 		logger:     logger,
 		marshaller: marshaller,
+		headers:    map[string]string{},
 	}
 }
 
@@ -41,6 +43,19 @@ func NewHTTPClientTransport(endpoint string, timeout time.Duration) ClientTransp
 
 func (c *httpClientTransport) SetAuthorization(auth *Authorization) error {
 	c.auth = auth
+	return nil
+}
+
+func (c *httpClientTransport) GetAuthorization() *Authorization {
+	return c.auth
+}
+
+func (c *httpClientTransport) GetHeaders() TransportHeaders {
+	return c.headers
+}
+
+func (c *httpClientTransport) SetHeaders(headers TransportHeaders) error {
+	c.headers = headers
 	return nil
 }
 
@@ -72,6 +87,12 @@ func (c *httpClientTransport) Send(service string, method string, dataIn interfa
 		c.logger.Logf(LogTrace, "Request body:\n`%s`", string(body))
 		c.logger.Logf(LogDebug, "Header: Content-Type: application/json")
 		req.Header.Set("Content-Type", "application/json")
+	}
+
+	if c.headers != nil {
+		for k, v := range c.headers {
+			req.Header.Set(k, v)
+		}
 	}
 
 	if c.auth != nil {

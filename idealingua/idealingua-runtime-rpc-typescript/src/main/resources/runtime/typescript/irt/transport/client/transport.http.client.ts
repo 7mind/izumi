@@ -1,8 +1,8 @@
 
-import { AuthMethod, Authorization } from './auth';
-import { ClientTransport, ServiceClientInData } from './transport';
-import { DummyLogger, Logger, LogLevel } from './logger';
-import { JSONMarshaller } from './marshaller';
+import { AuthMethod, Authorization } from '../auth/auth';
+import { ClientTransport, ServiceClientInData, TransportHeaders } from '../../transport';
+import { DummyLogger, Logger, LogLevel } from '../../logger';
+import { JSONMarshaller } from '../../marshaller';
 
 export class HTTPClientTransport implements ClientTransport {
     public endpoint: string;
@@ -10,6 +10,7 @@ export class HTTPClientTransport implements ClientTransport {
     private timeout: number;
     private logger: Logger;
     private marshaller: JSONMarshaller;
+    private headers: TransportHeaders;
 
     public onSend: (service: string, method: string, payload: string) => void;
     public onSuccess: (service: string, method: string, payload: string) => void;
@@ -23,6 +24,7 @@ export class HTTPClientTransport implements ClientTransport {
             this.logger = new DummyLogger();
         }
         this.marshaller = marshaller;
+        this.headers = {};
     }
 
     private get isReady(): boolean {
@@ -57,6 +59,16 @@ export class HTTPClientTransport implements ClientTransport {
             req.open('GET', url, true);
         }
 
+        if (this.headers) {
+            for (var key in this.headers) {
+                if (!this.headers.hasOwnProperty(key)) {
+                    continue;
+                }
+
+                req.setRequestHeader(key, this.headers[key]);
+            }
+        }
+
         if (this.auth) {
             req.setRequestHeader('Authorization', this.auth.toValue());
             this.logger.logf(LogLevel.Debug, 'Header: Authorization: ' + this.auth.toValue());
@@ -80,6 +92,18 @@ export class HTTPClientTransport implements ClientTransport {
 
     public setEndpoint(endpoint: string) {
         this.endpoint = this.sanitizeEndpoint(endpoint);
+    }
+
+    public setHeaders(headers: TransportHeaders) {
+        this.headers = headers;
+    }
+
+    public getHeaders(): TransportHeaders {
+        return this.headers;
+    }
+
+    public getAuthorization(): AuthMethod | undefined {
+        return this.auth ? this.auth.method : undefined;
     }
 
     public setAuthorization(method: AuthMethod) {
