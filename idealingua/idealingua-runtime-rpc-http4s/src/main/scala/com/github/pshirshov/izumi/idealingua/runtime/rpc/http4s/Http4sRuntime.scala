@@ -12,6 +12,7 @@ class Http4sRuntime[IO[_, _]]
   extends Http4sContext
     with WithHttp4sLoggingMiddleware
     with WithHttp4sClient
+    with WithHttp4sWsClient
     with WithHttp4sServer {
 
 

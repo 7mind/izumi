@@ -101,7 +101,7 @@ trait WithHttp4sServer {
         parsed <- ZIO.fromEither(parse(message))
         unmarshalled <- ZIO.fromEither(parsed.as[RpcRequest])
         context <- ZIO.syncThrowable(wsContextProvider.toContext(initialContext, unmarshalled))
-        response <- respond(initialContext, unmarshalled)
+        response <- respond(context, unmarshalled)
           .catchAll {
             exception =>
               logger.error(s"WS processing failed, $message, $exception")

@@ -312,7 +312,7 @@ lazy val idealinguaCore = inIdealingua.as.module
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcScala, logstageApiLogger, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
-  .settings(libraryDependencies ++= R.http4s_all ++ Seq(T.java_websocket))
+  .settings(libraryDependencies ++= R.http4s_all ++ Seq(R.java_websocket))
 
 lazy val idealinguaRuntimeRpcTypescript = inIdealingua.as.module
 
