@@ -195,7 +195,6 @@ object Http4sTransportTest {
         }
         initial.copy(credentials = Option(knownAuthorization.get()))
       }
-    }
 
       override def toId(initial: DummyContext, packet: RpcRequest): Option[String] = None
     }
