@@ -23,6 +23,7 @@ trait WithHttp4sServer {
                                    , protected val codec: IRTClientMultiplexor[BIO]
                                    , protected val contextProvider: AuthMiddleware[CIO, Ctx]
                                    , protected val wsContextProvider: WsContextProvider[Ctx, ClientId]
+                                   , protected val listener: WsSessionListener[Ctx, ClientId]
                                  ) {
     protected val dsl: Http4sDsl[CIO] = WithHttp4sServer.this.dsl
 
@@ -55,7 +56,8 @@ trait WithHttp4sServer {
 
 
     protected def setupWs(request: AuthedRequest[CIO, Ctx], initialContext: Ctx): CIO[Response[CIO]] = {
-      val context = new WebsocketClientContext[ClientId, Ctx](request, initialContext, clients)
+      val context = new WebsocketClientContext[ClientId, Ctx](request, initialContext, listener, clients)
+      context.start()
       logger.debug(s"${context -> null}: Websocket client connected")
 
       val handler = handleWsMessage(context) andThen {

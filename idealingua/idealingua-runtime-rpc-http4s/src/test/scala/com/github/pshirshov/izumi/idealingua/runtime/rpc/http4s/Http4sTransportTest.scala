@@ -49,26 +49,26 @@ class Http4sTransportTest extends WordSpec {
       }
     }
 
-    "support xdirect calls" in {
-      import scala.concurrent.ExecutionContext.Implicits.global
-      val builder = BlazeBuilder[CIO]
-        .bindHttp(8080, host)
-        .withWebSockets(true)
-        .mountService(ioService.service, "/")
-        .start
-
-      builder.unsafeRunAsync {
-        case Right(server) =>
-          try {
-            Thread.sleep(1000*1000)
-          } finally {
-            server.shutdownNow()
-          }
-
-        case Left(error) =>
-          throw error
-      }
-    }
+//    "xxx" in {
+//      import scala.concurrent.ExecutionContext.Implicits.global
+//      val builder = BlazeBuilder[CIO]
+//        .bindHttp(8080, host)
+//        .withWebSockets(true)
+//        .mountService(ioService.service, "/")
+//        .start
+//
+//      builder.unsafeRunAsync {
+//        case Right(server) =>
+//          try {
+//            Thread.sleep(1000*1000)
+//          } finally {
+//            server.shutdownNow()
+//          }
+//
+//        case Left(error) =>
+//          throw error
+//      }
+//    }
   }
 
   private def performWsTests(disp: IRTDispatcher with TestDispatcher with AutoCloseable): Unit = {
@@ -199,7 +199,7 @@ object Http4sTransportTest {
       override def toId(initial: DummyContext, packet: RpcRequest): Option[String] = None
     }
 
-    final val ioService = new rt.HttpServer(demo.multiplexor, demo.codec, AuthMiddleware(authUser), wsContextProvider)
+    final val ioService = new rt.HttpServer(demo.multiplexor, demo.codec, AuthMiddleware(authUser), wsContextProvider, rt.WsSessionListener.empty)
 
     //
     final val clientDispatcher: rt.ClientDispatcher with TestDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) with TestDispatcher {

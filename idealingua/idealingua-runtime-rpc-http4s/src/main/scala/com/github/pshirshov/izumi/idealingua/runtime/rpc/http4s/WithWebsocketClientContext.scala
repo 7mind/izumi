@@ -19,11 +19,24 @@ import scala.concurrent.duration._
 trait WithWebsocketClientContext {
   this: Http4sContext =>
 
+  trait WsSessionListener[Ctx, ClientId] {
+    def onSessionOpened(context: WebsocketClientContext[ClientId, Ctx]): Unit
+    def onSessionClosed(context: WebsocketClientContext[ClientId, Ctx]): Unit
+  }
+
+  object WsSessionListener {
+    def empty[Ctx, ClientId]: WsSessionListener[Ctx, ClientId] = new WsSessionListener[Ctx, ClientId] {
+      override def onSessionOpened(context: WebsocketClientContext[ClientId, Ctx]): Unit = {}
+
+      override def onSessionClosed(context: WebsocketClientContext[ClientId, Ctx]): Unit = {}
+    }
+  }
 
   class WebsocketClientContext[ClientId, Ctx]
   (
     val initialRequest: AuthedRequest[CIO, Ctx]
     , val initialContext: Ctx
+    , listener: WsSessionListener[Ctx, ClientId]
     , sessions: ConcurrentHashMap[WsSessionId, WebsocketClientContext[ClientId, Ctx]]
   ) {
     private val pingTimeout: FiniteDuration = 25.seconds
@@ -71,9 +84,14 @@ trait WithWebsocketClientContext {
 
     def finish(): Unit = {
       Quirks.discard(sessions.remove(id))
+      listener.onSessionClosed(this)
     }
 
-    Quirks.discard(sessions.put(sessionId, this))
+    def start(): Unit = {
+      Quirks.discard(sessions.put(sessionId, this))
+      listener.onSessionOpened(this)
+    }
+
 
     override def toString: String = s"[${id.toString}, ${duration().toSeconds}s]"
   }
