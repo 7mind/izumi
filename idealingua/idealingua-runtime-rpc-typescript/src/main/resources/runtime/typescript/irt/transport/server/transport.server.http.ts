@@ -1,6 +1,6 @@
 
 import * as http from 'http';
-import { Dispatcher } from '../../dispatcher';
+import { Dispatcher, ServiceDispatcher } from '../../dispatcher';
 import { Logger, LogLevel } from '../../logger';
 import {TransportHandlers} from "./transport.server";
 
@@ -17,10 +17,20 @@ export class HttpServerGeneric<C> {
         return this._server;
     }
 
-    constructor(endpoint: string, port: number, dispatcher: Dispatcher<C, string>, logger: Logger, open: boolean = true, handlers: TransportHandlers<C> = undefined) {
+    constructor(endpoint: string, port: number, services: ServiceDispatcher<C, string>[], logger: Logger, open: boolean = true,
+                dispatcher: Dispatcher<C, string> = undefined, handlers: TransportHandlers<C> = undefined) {
         this._port = port;
         this._endpoint = endpoint;
-        this._dispatcher = dispatcher;
+        if (!dispatcher) {
+            this._dispatcher = new Dispatcher<C, string>();
+        } else {
+            this._dispatcher = dispatcher;
+        }
+
+        services.forEach(s => {
+            this._dispatcher.register(s);
+        });
+
         this._logger = logger;
         this._handlers = handlers;
         this._server = http.createServer(this.requestHandler);

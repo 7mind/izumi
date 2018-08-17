@@ -1,7 +1,7 @@
 
 import * as http from 'http';
 import { server as wsServer, request as wsRequest, connection as wsConnection, IMessage } from 'websocket';
-import { Dispatcher } from '../../dispatcher';
+import { Dispatcher, ServiceDispatcher } from '../../dispatcher';
 import { Logger, LogLevel } from '../../logger';
 import { TransportHandlers } from "./transport.server";
 
@@ -12,9 +12,19 @@ export class WebSocketServerGeneric<C, D> {
     private _handlers: TransportHandlers<C>;
     private _connections: wsConnection[];
 
-    constructor(server: http.Server, dispatcher: Dispatcher<C, D>, logger: Logger, handlers: TransportHandlers<C> = undefined) {
+    constructor(server: http.Server, services: ServiceDispatcher<C, D>[], logger: Logger, open: boolean = true,
+                dispatcher: Dispatcher<C, D> = undefined, handlers: TransportHandlers<C> = undefined) {
         this._logger = logger;
-        this._dispatcher = dispatcher;
+        if (!dispatcher) {
+            this._dispatcher = new Dispatcher<C, D>();
+        } else {
+            this._dispatcher = dispatcher;
+        }
+
+        services.forEach(s => {
+            this._dispatcher.register(s);
+        });
+
         this._handlers = handlers;
         this._connections = [];
         this._server = new wsServer({

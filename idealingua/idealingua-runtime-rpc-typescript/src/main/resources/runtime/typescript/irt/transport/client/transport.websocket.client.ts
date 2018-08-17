@@ -2,13 +2,13 @@
 import { WSClient, WSClientState } from '../wsclient';
 import { JSONMarshaller } from '../../marshaller';
 import { Logger, LogLevel } from '../../logger';
-import { ClientSocketTransport, ServiceClientInData, ServiceClientOutData } from '../../transport';
+import { ClientSocketTransport, IncomingData, OutgoingData } from '../../transport';
 import { AuthMethod, Authorization } from '../auth/auth';
 import { WebSocketRequestMessage, WebSocketResponseMessage, WebSocketMessageKind, WebSocketMessageBase, WebSocketFailureMessage } from '../transport.websocket';
 import { TransportHeaders } from '../transport';
 
 interface DeferredPromise {
-    promise?: Promise<ServiceClientOutData>
+    promise?: Promise<OutgoingData>
     resolve?: any
     reject?: any
     timeout: number
@@ -72,7 +72,7 @@ export class WebSocketClientTransport implements ClientSocketTransport {
         return this._wsc.state === WSClientState.Connected;
     }
 
-    public send(service: string, method: string, data: ServiceClientInData): Promise<ServiceClientOutData> {
+    public send(service: string, method: string, data: IncomingData): Promise<OutgoingData> {
         const request: WebSocketRequestMessage = {
             service,
             method,
@@ -102,7 +102,7 @@ export class WebSocketClientTransport implements ClientSocketTransport {
                 60000
             )
         };
-        record.promise = new Promise<ServiceClientOutData>((resolve, reject) => {
+        record.promise = new Promise<OutgoingData>((resolve, reject) => {
             record.reject = reject;
             record.resolve = resolve;
         });

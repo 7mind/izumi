@@ -1,6 +1,6 @@
 
 import { AuthMethod, Authorization } from '../auth/auth';
-import { ClientTransport, ServiceClientInData, TransportHeaders } from '../../transport';
+import { ClientTransport, IncomingData, TransportHeaders } from '../../transport';
 import { DummyLogger, Logger, LogLevel } from '../../logger';
 import { JSONMarshaller } from '../../marshaller';
 
@@ -120,7 +120,7 @@ export class HTTPClientTransport implements ClientTransport {
         this.timeout = timeout;
     }
 
-    public send(service: string, method: string, data: ServiceClientInData): Promise<any> {
+    public send(service: string, method: string, data: IncomingData): Promise<any> {
         if (!this.isReady) {
             return new Promise((resolve, reject) => {
                 reject("Transport has not been initialized or endpoint is undefined.")
@@ -134,7 +134,7 @@ export class HTTPClientTransport implements ClientTransport {
             const url = `${this.endpoint}/${service}/${method}`;
             const payload = data.serialize();
             const payloadHasNoData = Object.keys(payload).length === 0 && payload.constructor === Object;
-            const json = payloadHasNoData ? null : this.marshaller.Marshal<ServiceClientInData>(payload);
+            const json = payloadHasNoData ? null : this.marshaller.Marshal<IncomingData>(payload);
             this.logger.logf(LogLevel.Debug, 'Endpoint: ' + url);
             this.logger.logf(LogLevel.Debug, 'Method: ' + (payloadHasNoData ? 'GET' : 'POST'));
 
