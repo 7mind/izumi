@@ -4,8 +4,15 @@ import { JSONMarshaller } from '../../marshaller';
 import { Logger, LogLevel } from '../../logger';
 import { ClientSocketTransport, IncomingData, OutgoingData } from '../../transport';
 import { AuthMethod, Authorization } from '../auth/auth';
-import { WebSocketRequestMessage, WebSocketResponseMessage, WebSocketMessageKind, WebSocketMessageBase, WebSocketFailureMessage } from '../transport.websocket';
+import {
+    WebSocketRequestMessage,
+    WebSocketResponseMessage,
+    WebSocketMessageKind,
+    WebSocketMessageBase,
+    WebSocketFailureMessage
+} from '../transport.websocket';
 import { TransportHeaders } from '../transport';
+import { Dispatcher, ServiceDispatcher } from '../../dispatcher';
 
 interface DeferredPromise {
     promise?: Promise<OutgoingData>
@@ -23,7 +30,7 @@ export function RandomMessageID(prefix: string = ''): string {
     });
 }
 
-export class WebSocketClientTransport implements ClientSocketTransport {
+export class WebSocketClientTransport<C> implements ClientSocketTransport<C, string> {
     private _supported: boolean;
     private _wsc: WSClient;
     private _marshaller: JSONMarshaller;
@@ -33,6 +40,8 @@ export class WebSocketClientTransport implements ClientSocketTransport {
     private _headersUpdateID?: string;
     private _headersUpdated: boolean;
     private _headers: TransportHeaders;
+    private _dispatcher: Dispatcher<C, string>;
+    private _context: C;
 
     public onSend: (service: string, method: string, payload: string) => void;
     public onSuccess: (service: string, method: string, payload: string) => void;
@@ -58,6 +67,7 @@ export class WebSocketClientTransport implements ClientSocketTransport {
         this._wsc.onConnect = this.onOpen;
         this._wsc.onConnecting = this.onConnecting;
         this._headersUpdated = true;
+        this._dispatcher = new Dispatcher<C, string>();
     }
 
     public isReady(checkHeaders: boolean = true): boolean {
@@ -219,8 +229,24 @@ export class WebSocketClientTransport implements ClientSocketTransport {
         this._logger.logf(LogLevel.Error, `Server was unable to process a request. Error: ${res.cause}`, res.data);
     }
 
-    private onBuzzerRequestMessage(res: WebSocketRequestMessage) {
-        this._logger.logf(LogLevel.Warning, 'Incoming buzzer call, not supported!', res);
+    private onBuzzerRequestMessage(req: WebSocketRequestMessage) {
+        this._logger.logf(LogLevel.Debug, 'Incoming buzzer call:', req);
+
+        const res: WebSocketResponseMessage = {
+            kind: WebSocketMessageKind.BuzzerResponse,
+            ref: req.id,
+            data: undefined,
+        };
+        this._dispatcher.dispatch(this._context, req.service, req.method, req.data)
+            .then((data: string) => {
+                res.data = data;
+                this._wsc.send(res)
+            })
+            .catch((err: string) => {
+                res.kind = WebSocketMessageKind.BuzzerFailure;
+                res.data = err;
+                this._wsc.send(res);
+            });
     }
 
     private onStreamS2CMessage(res: WebSocketMessageBase) {
@@ -254,5 +280,21 @@ export class WebSocketClientTransport implements ClientSocketTransport {
 
     private onOpen() {
         this.checkHeaders();
+    }
+
+    public registerBuzzer(buzzer: ServiceDispatcher<C, string>): boolean {
+        return this._dispatcher.register(buzzer);
+    }
+
+    public unregisterBuzzer(id: string): boolean {
+        return this._dispatcher.unregister(id);
+    }
+
+    public setContext(context: C): void {
+        this._context = context;
+    }
+
+    public getContext(): C {
+        return this._context;
     }
 }
