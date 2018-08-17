@@ -66,7 +66,7 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
       }
 
       override def router(): LogRouter = {
-        IzLogger.basicRouter(IzLogger.Level.Trace, testSink)
+        IzLogger.router(IzLogger.Level.Trace, Map.empty, testSink)
       }
     }
   }

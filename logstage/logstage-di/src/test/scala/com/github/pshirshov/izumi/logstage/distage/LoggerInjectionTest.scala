@@ -22,7 +22,7 @@ class LoggerInjectionTest extends WordSpec {
   "Logging module for distage" should {
     "inject loggers" in {
       val testSink = new TestSink()
-      val router = IzLogger.basicRouter(IzLogger.Level.Trace, testSink)
+      val router = IzLogger.router(IzLogger.Level.Trace, Map.empty, testSink)
 
       val definition = new ModuleDef {
         make[ExampleService]

@@ -21,7 +21,13 @@ object IzumiDeps {
     val circe = "0.10.0-M1" // https://github.com/circe/circe/issues/770
     val circe_derivation = "0.9.0-M5"
     val http4s = "0.19.0-M1" // https://github.com/http4s/http4s/issues/1797
-    val java_websocket =  "1.3.9" // java, we need it bcs http4s ws client isn't ready yet
+
+    // TODO: we need to get rid of this
+    val java_websocket = "1.3.9" // java, we need it bcs http4s ws client isn't ready yet
+    val jaxb_api = "2.3.0" // https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
+    val jaxb_core = "2.3.0"
+    val jaxb_impl = "2.3.0"
+    val activation = "1.1.1"
 
     val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
@@ -33,10 +39,10 @@ object IzumiDeps {
     val scalacheck = "1.14.0"
     val scalacheck_shapeless = "1.1.6"
 
-    val zio = "0.1.0-1167e15"
+    val zio = "0.1.0-dc8b6a3"
 
     // good to drop
-    val json4s = "3.6.0"  // 2.13+
+    val json4s = "3.6.0" // 2.13+
     val scopt = "3.7.0" // 2.13+
 
     // good to drop
@@ -108,7 +114,13 @@ object IzumiDeps {
 
     val http4s_all: Seq[ModuleID] = http4s_server ++ http4s_client
 
-    val java_websocket = "org.java-websocket" % "Java-WebSocket" % V.java_websocket
+    val java_websocket = Seq(
+      "org.java-websocket" % "Java-WebSocket" % V.java_websocket
+      , "javax.xml.bind" % "jaxb-api" % V.jaxb_api
+      , "com.sun.xml.bind" % "jaxb-core" % V.jaxb_core
+      , "com.sun.xml.bind" % "jaxb-impl" % V.jaxb_impl
+      , "javax.activation" % "activation" % V.activation
+    )
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % V.slf4j
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % V.slf4j
@@ -124,7 +136,7 @@ object IzumiDeps {
 
     val essentials = Seq(scalatest)
 
-    val java_websocket = R.java_websocket % Test
+    val java_websocket: Seq[ModuleID] = R.java_websocket.map(_ % Test)
     val circe: Seq[ModuleID] = R.circe.map(_ % Test)
     val cats_all: Seq[ModuleID] = R.cats_all.map(_ % Test)
   }
@@ -137,4 +149,5 @@ object IzumiDepsPlugin extends AutoPlugin {
   object autoImport {
     val IzumiRootDeps: IzumiDeps.type = com.github.pshirshov.izumi.sbt.deps.IzumiDeps
   }
+
 }
