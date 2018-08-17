@@ -78,7 +78,7 @@ trait WithHttp4sWsClient {
     protected val timeout: FiniteDuration = 2.seconds
 
     def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
-      logger.trace(s"${request.method -> "method"}: Goint to perform $request")
+      logger.trace(s"${request.method -> "method"}: Going to perform $request")
 
       codec
         .encode(request)
@@ -97,13 +97,15 @@ trait WithHttp4sWsClient {
 
 
             IO.bracket0[Throwable, RpcRequest, IRTMuxResponse](wrapped) {
-              (id, _) => IO.sync(Quirks.discard(requests.remove(id.id)))
+              (id, _) =>
+                logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
+                IO.sync(Quirks.discard(requests.remove(id.id), responses.remove(id.id)))
             } {
               w =>
                 IO.syncThrowable {
                   val out = transformRequest(w).asJson.noSpaces
                   requests.put(w.id, request.method)
-                  logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
+                  logger.debug(s"${request.method -> "method"}, ${w.id -> "id"}: Prepared request $encoded")
                   wsClient.send(out)
                   w.id
                 }
@@ -125,11 +127,11 @@ trait WithHttp4sWsClient {
                         .retryFor[Option[IRTMuxResponse]](None)(id => id)(timeout)
                         .flatMap {
                           case Some(value) =>
-                            logger.debug(s"Have response: $value")
+                            logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
                             IO.point(value)
 
                           case None =>
-                            IO.terminate(new TimeoutException(s"No response for $id in $timeout"))
+                            IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                         }
                   }
 
