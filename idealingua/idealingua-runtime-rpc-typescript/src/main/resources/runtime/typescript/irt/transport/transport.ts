@@ -1,15 +1,15 @@
 
 import { AuthMethod } from './auth/auth';
 
-export interface ServiceClientInData {
+export interface IncomingData {
     serialize(): any;
 }
 
-export type ServiceClientOutData = any;
+export type OutgoingData = any;
 export type TransportHeaders = {[key: string]: string};
 
 export interface ClientTransport {
-    send(service: string, method: string, data: ServiceClientInData): Promise<ServiceClientOutData>
+    send(service: string, method: string, data: IncomingData): Promise<OutgoingData>
     setAuthorization(method: AuthMethod): void
     getAuthorization(): AuthMethod | undefined
     setHeaders(headers: TransportHeaders): void

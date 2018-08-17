@@ -69,6 +69,22 @@ object CogenProduct {
     }
   }
 
+  final case class EmitterProduct(client: String = ""
+                                  , header: String = ""
+                                 ) extends RenderableCogenProduct {
+    def render: List[String] = {
+      client.split("\n").toList
+    }
+
+    def renderHeader: List[String] = {
+      header.split("\n").toList
+    }
+
+    def renderTests: List[String] = {
+      List.empty
+    }
+  }
+
   final case class EnumProduct(content: String = ""
                          , header: String = ""
                         , tests: String = ""

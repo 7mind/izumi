@@ -31,6 +31,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)
+      , typespace.domain.emitters.flatMap(translateEmitter)
     ).flatten
 
     val extendedModules = addRuntime(options, modules)
@@ -44,6 +45,11 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   protected def translateService(definition: Service): Seq[Module] = {
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id),
       ctx.modules.toTestModuleId(definition.id), renderService(definition))
+  }
+
+  protected def translateEmitter(definition: Emitter): Seq[Module] = {
+    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id),
+      ctx.modules.toTestModuleId(definition.id), renderEmitter(definition))
   }
 
   protected def translateDef(definition: TypeDef): Seq[Module] = {
@@ -729,29 +735,29 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     InterfaceProduct(iface, companion, imports.renderImports(List("encoding/json", "fmt")), tests)
   }
 
-  protected def inName(i: Service, name: String, public: Boolean): String = {
+  protected def inName(svcOrEmitter: String, name: String, public: Boolean): String = {
     if (public)
-      s"In${i.id.name.capitalize}${name.capitalize}"
+      s"In${svcOrEmitter.capitalize}${name.capitalize}"
     else
-      s"in${i.id.name.capitalize}${name.capitalize}"
+      s"in${svcOrEmitter.capitalize}${name.capitalize}"
   }
 
-  protected def outName(i: Service, name: String, public: Boolean): String = {
+  protected def outName(svcOrEmitter: String, name: String, public: Boolean): String = {
     if (public)
-      s"Out${i.id.name.capitalize}${name.capitalize}"
+      s"Out${svcOrEmitter.capitalize}${name.capitalize}"
     else
-      s"out${i.id.name.capitalize}${name.capitalize}"
+      s"out${svcOrEmitter.capitalize}${name.capitalize}"
   }
 
-  protected def renderServiceMethodSignature(i: Service, method: DefMethod, imports: GoLangImports, spread: Boolean = false, withContext: Boolean = false): String = {
+  protected def renderRPCMethodSignature(svcOrEmitter: String, method: DefMethod, imports: GoLangImports, spread: Boolean = false, withContext: Boolean = false): String = {
     method match {
       case m: DefMethod.RPCMethod => {
         val context = if (withContext) s"context interface{}${if (m.signature.input.fields.isEmpty) "" else ", "}" else ""
         if (spread) {
           val fields = m.signature.input.fields.map(f => GoLangField(f.name, GoLangType(f.typeId, imports, ts), "").renderMemberName(capitalize = false) + " " + GoLangType(f.typeId, imports, ts).renderType()).mkString(", ")
-          s"${m.name.capitalize}($context$fields) ${renderServiceMethodOutputSignature(i, m, imports)}"
+          s"${m.name.capitalize}($context$fields) ${renderRPCMethodOutputSignature(svcOrEmitter, m, imports)}"
         } else {
-          s"${m.name.capitalize}(${context}input: ${inName(i, m.name, public = true)}) ${renderServiceMethodOutputSignature(i, m, imports)}"
+          s"${m.name.capitalize}(${context}input: ${inName(svcOrEmitter, m.name, public = true)}) ${renderRPCMethodOutputSignature(svcOrEmitter, m, imports)}"
         }
       }
     }
@@ -770,30 +776,30 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     case _ => true
   }
 
-  protected def renderServiceMethodOutputModel(i: Service, method: DefMethod.RPCMethod, imports: GoLangImports): String = method.signature.output match {
-    case _: Struct => s"*${outName(i, method.name, public = true)}"
-    case _: Algebraic => s"*${outName(i, method.name, public = true)}"
+  protected def renderServiceMethodOutputModel(svcOrEmitter: String, method: DefMethod.RPCMethod, imports: GoLangImports): String = method.signature.output match {
+    case _: Struct => s"*${outName(svcOrEmitter, method.name, public = true)}"
+    case _: Algebraic => s"*${outName(svcOrEmitter, method.name, public = true)}"
     case si: Singular => s"${GoLangType(si.typeId, imports, ts).renderType()}"
     case _: Void => ""
     case _: Alternative => throw new Exception("Not implemented")
   }
 
-  protected def renderServiceMethodOutputSignature(i: Service, method: DefMethod.RPCMethod, imports: GoLangImports): String = {
+  protected def renderRPCMethodOutputSignature(svcOrEmitter: String, method: DefMethod.RPCMethod, imports: GoLangImports): String = {
     if (isServiceMethodOutputExistent(method))
-      s"(${renderServiceMethodOutputModel(i, method, imports)}, error)"
+      s"(${renderServiceMethodOutputModel(svcOrEmitter, method, imports)}, error)"
     else
       s"error"
   }
 
-  protected def renderServiceClientMethod(i: Service, method: DefMethod, imports: GoLangImports): String = method match {
+  protected def renderRPCClientMethod(svcOrEmitter: String, method: DefMethod, imports: GoLangImports): String = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct | _: Algebraic =>
-        s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
-           |    outData := &${outName(i, m.name, public = true)}{}
-           |    err := c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
+        s"""func (c *${svcOrEmitter}Client) ${renderRPCMethodSignature(svcOrEmitter, method, imports, spread = true)} {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(svcOrEmitter, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
+           |    outData := &${outName(svcOrEmitter, m.name, public = true)}{}
+           |    err := c.transport.Send("${svcOrEmitter}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
            |    if err != nil {
-           |        return ${renderServiceMethodDefaultResult(i, method, imports)}, err
+           |        return ${renderServiceMethodDefaultResult(method, imports)}, err
            |    }
            |    return outData, nil
            |}
@@ -801,21 +807,21 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 
       case so: Singular =>
         val resType = GoLangType(so.typeId, imports, ts)
-        s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
+        s"""func (c *${svcOrEmitter}Client) ${renderRPCMethodSignature(svcOrEmitter, method, imports, spread = true)} {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(svcOrEmitter, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
            |    ${if (resType.isPrimitive(so.typeId)) s"var outData ${resType.renderType(forAlias = true)}" else s"outData := &${resType.renderType(forAlias = true)}{}"}
-           |    err := c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, ${if (resType.isPrimitive(so.typeId)) "&" else ""}outData)
+           |    err := c.transport.Send("${svcOrEmitter}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, ${if (resType.isPrimitive(so.typeId)) "&" else ""}outData)
            |    if err != nil {
-           |        return ${renderServiceMethodDefaultResult(i, method, imports)}, err
+           |        return ${renderServiceMethodDefaultResult(method, imports)}, err
            |    }
            |    return outData, nil
            |}
        """.stripMargin
 
       case _: Void =>
-        s"""func (c *${i.id.name}Client) ${renderServiceMethodSignature(i, method, imports, spread = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(i, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
-           |    return c.transport.Send("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, nil)
+        s"""func (c *${svcOrEmitter}Client) ${renderRPCMethodSignature(svcOrEmitter, method, imports, spread = true)} {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(svcOrEmitter, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
+           |    return c.transport.Send("${svcOrEmitter}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, nil)
            |}
        """.stripMargin
 
@@ -827,7 +833,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     val name = s"${i.id.name}Client"
 
     s"""type ${i.id.name} interface {
-       |${i.methods.map(m => renderServiceMethodSignature(i, m, imports, spread = true)).mkString("\n").shift(4)}
+       |${i.methods.map(m => renderRPCMethodSignature(i.id.name, m, imports, spread = true)).mkString("\n").shift(4)}
        |}
        |
        |type $name struct {
@@ -873,16 +879,16 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    return res
        |}
        |
-       |${i.methods.map(me => renderServiceClientMethod(i, me, imports)).mkString("\n")}
+       |${i.methods.map(me => renderRPCClientMethod(i.id.name, me, imports)).mkString("\n")}
      """.stripMargin
   }
 
-  protected def renderServiceDispatcherHandler(i: Service, method: DefMethod): String = method match {
+  protected def renderDispatcherHandler(svcOrEmitter: String, method: DefMethod, service: String): String = method match {
     case m: DefMethod.RPCMethod =>
       if (isServiceMethodOutputExistent(m)) {
         s"""case "${m.name}": {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(i, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
-           |    modelOut, err := v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(svcOrEmitter, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
+           |    modelOut, err := v.$service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
            |    if err != nil {
            |        return []byte{}, err
            |    }
@@ -899,8 +905,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        """.stripMargin
       } else {
         s"""case "${m.name}": {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(i, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
-           |    return []byte{}, v.service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(svcOrEmitter, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
+           |    return []byte{}, v.$service.${m.name.capitalize}(context${if(m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${GoLangField(f.name, GoLangType(f.typeId), "").renderMemberName(capitalize = true)}()").mkString(", ")})
            |}
            |
        """.stripMargin
@@ -912,11 +918,11 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     val name = s"${i.id.name}Dispatcher"
 
     s"""type ${i.id.name}Server interface {
-       |${i.methods.map(m => renderServiceMethodSignature(i, m, imports, spread = true, withContext = true)).mkString("\n").shift(4)}
+       |${i.methods.map(m => renderRPCMethodSignature(i.id.name, m, imports, spread = true, withContext = true)).mkString("\n").shift(4)}
        |}
        |
        |type $name struct {
-       |    service ${i.id.name}Server
+       |    server ${i.id.name}Server
        |    marshaller irt.Marshaller
        |}
        |
@@ -925,7 +931,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |        return fmt.Errorf("method SetServer requires a valid server implementation, got nil")
        |    }
        |
-       |    v.service = s
+       |    v.server = s
        |    return nil
        |}
        |
@@ -950,23 +956,22 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |
        |func (v *$name) Dispatch(context interface{}, method string, data []byte) ([]byte, error) {
        |    switch method {
-       |${i.methods.map(m => renderServiceDispatcherHandler(i, m)).mkString("\n").shift(8)}
+       |${i.methods.map(m => renderDispatcherHandler(i.id.name, m, "server")).mkString("\n").shift(8)}
        |        default:
        |            return nil, fmt.Errorf("$name dispatch doesn't support method %s", method)
        |    }
        |}
        |
-       |func New${name}(service ${i.id.name}Server, marshaller irt.Marshaller) *$name{
+       |func New${name}(server ${i.id.name}Server, marshaller irt.Marshaller) *$name{
        |    res := &$name{}
-       |    res.SetServer(service)
+       |    res.SetServer(server)
        |    res.SetMarshaller(marshaller)
        |    return res
        |}
      """.stripMargin
   }
 
-  protected def renderServiceMethodDefaultResult(i: Service, method: DefMethod, imports: GoLangImports): String = {
-    Quirks.discard(i)
+  protected def renderServiceMethodDefaultResult(method: DefMethod, imports: GoLangImports): String = {
     method match {
       case m: DefMethod.RPCMethod => m.signature.output match {
         case _: Struct => "nil"
@@ -985,7 +990,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    // Implements ${i.id.name}Server interface
        |}
        |
-       |${i.methods.map(m => s"func (d *$name) " + renderServiceMethodSignature(i, m, imports, spread = true, withContext = true) + s""" {\n    return ${if (isServiceMethodOutputExistent(m.asInstanceOf[DefMethod.RPCMethod])) renderServiceMethodDefaultResult(i, m, imports) + ", " else ""}fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
+       |${i.methods.map(m => s"func (d *$name) " + renderRPCMethodSignature(i.id.name, m, imports, spread = true, withContext = true) + s""" {\n    return ${if (isServiceMethodOutputExistent(m.asInstanceOf[DefMethod.RPCMethod])) renderServiceMethodDefaultResult(m, imports) + ", " else ""}fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
      """.stripMargin
   }
 
@@ -1010,8 +1015,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   protected def renderServiceMethodModels(i: Service, method: DefMethod, imports: GoLangImports): String = method match {
     case m: DefMethod.RPCMethod =>
       s"""// Method ${m.name} models
-         |${if(m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, inName(i, m.name, public = true), m.signature.input, imports)}
-         |${renderServiceMethodOutModel(i, outName(i, m.name, public = true), m.signature.output, imports)}
+         |${if(m.signature.input.fields.isEmpty) "" else renderServiceMethodInModel(i, inName(i.id.name, m.name, public = true), m.signature.input, imports)}
+         |${renderServiceMethodOutModel(i, outName(i.id.name, m.name, public = true), m.signature.output, imports)}
        """.stripMargin
 
   }
@@ -1039,5 +1044,149 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          """.stripMargin
 
       ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "time", prefix + "irt")))
+  }
+
+  protected def renderEmitterModels(i: Emitter, imports: GoLangImports): String = {
+    i.events.map(me => renderEmitterMethodModels(i, me, imports)).mkString("\n")
+  }
+
+  protected def renderEmitterMethodModels(i: Emitter, method: DefMethod, imports: GoLangImports): String = method match {
+    case m: DefMethod.RPCMethod =>
+      s"""// Method ${m.name} models
+         |${if(m.signature.input.fields.isEmpty) "" else renderEmitterMethodInModel(i, inName(i.id.name, m.name, public = true), m.signature.input, imports)}
+         |${renderEmitterMethodOutModel(i, outName(i.id.name, m.name, public = true), m.signature.output, imports)}
+       """.stripMargin
+  }
+
+  protected def renderEmitterMethodOutModel(i: Emitter, name: String, out: DefMethod.Output, imports: GoLangImports): String = out match {
+    case st: Struct => renderEmitterMethodInModel(i, name, st.struct, imports)
+    case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
+    case si: Singular => s"// ${ si.typeId}"
+    case _: Void => ""
+    case _: Alternative => throw new Exception("Not implemented")
+  }
+
+  protected def renderEmitterMethodInModel(i: Emitter, name: String, structure: SimpleStructure, imports: GoLangImports): String = {
+    val struct = GoLangStruct(name, DTOId(i.id, name), List.empty,
+      structure.fields.map(ef => GoLangField(ef.name, GoLangType(ef.typeId, imports, ts), name, imports, ts)),
+      imports, ts
+    )
+    s"""${struct.render(withTest = false)}
+       |${struct.renderSerialized()}
+     """.stripMargin
+  }
+
+  protected def renderEmitterClient(i: Emitter, imports: GoLangImports): String = {
+    val name = s"${i.id.name}Client"
+
+    s"""type ${i.id.name} interface {
+       |${i.events.map(m => renderRPCMethodSignature(i.id.name, m, imports, spread = true)).mkString("\n").shift(4)}
+       |}
+       |
+       |type $name struct {
+       |    ${i.id.name}
+       |    transport irt.ClientSocketTransport
+       |}
+       |
+       |func (v *$name) SetTransport(t irt.ClientSocketTransport) error {
+       |    if t == nil {
+       |        return fmt.Errorf("method SetTransport requires a valid transport, got nil")
+       |    }
+       |
+       |    v.transport = t
+       |    return nil
+       |}
+       |
+       |${i.events.map(me => renderRPCClientMethod(i.id.name, me, imports)).mkString("\n")}
+     """.stripMargin
+  }
+
+  protected def renderEmitterDispatcher(i: Emitter, imports: GoLangImports): String = {
+    val name = s"${i.id.name}Dispatcher"
+
+    s"""type ${i.id.name}BuzzerHandlers interface {
+       |${i.events.map(m => renderRPCMethodSignature(i.id.name, m, imports, spread = true, withContext = true)).mkString("\n").shift(4)}
+       |}
+       |
+       |type $name struct {
+       |    handlers ${i.id.name}BuzzerHandlers
+       |    marshaller irt.Marshaller
+       |}
+       |
+       |func (v *$name) SetHandlers(h ${i.id.name}BuzzerHandlers) error {
+       |    if h == nil {
+       |        return fmt.Errorf("method SetHandlers requires a valid handlers implementation, got nil")
+       |    }
+       |
+       |    v.handlers = h
+       |    return nil
+       |}
+       |
+       |func (v *$name) SetMarshaller(marshaller irt.Marshaller) error {
+       |    if marshaller == nil {
+       |        return fmt.Errorf("method SetMarshaller requires a valid marshaller, got nil")
+       |    }
+       |
+       |    v.marshaller = marshaller
+       |    return nil
+       |}
+       |
+       |func (v *$name) GetSupportedService() string {
+       |    return "${i.id.name}"
+       |}
+       |
+       |func (v *$name) GetSupportedMethods() []string {
+       |    return []string{
+       |${i.events.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "\"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"," else "").mkString("\n").shift(8)}
+       |    }
+       |}
+       |
+       |func (v *$name) Dispatch(context interface{}, method string, data []byte) ([]byte, error) {
+       |    switch method {
+       |${i.events.map(m => renderDispatcherHandler(i.id.name, m, "handlers")).mkString("\n").shift(8)}
+       |        default:
+       |            return nil, fmt.Errorf("$name dispatch doesn't support method %s", method)
+       |    }
+       |}
+       |
+       |func New${name}(handlers ${i.id.name}BuzzerHandlers, marshaller irt.Marshaller) *$name{
+       |    res := &$name{}
+       |    res.SetHandlers(handlers)
+       |    res.SetMarshaller(marshaller)
+       |    return res
+       |}
+     """.stripMargin
+  }
+
+  protected def renderEmitterHandlersDummy(i: Emitter, imports: GoLangImports): String = {
+    val name = s"${i.id.name}BuzzerHandlersDummy"
+    s"""// $name is a dummy for implementation references
+       |type $name struct {
+       |    // Implements ${i.id.name}BuzzerHandlers interface
+       |}
+       |
+       |${i.events.map(m => s"func (d *$name) " + renderRPCMethodSignature(i.id.name, m, imports, spread = true, withContext = true) + s""" {\n    return ${if (isServiceMethodOutputExistent(m.asInstanceOf[DefMethod.RPCMethod])) renderServiceMethodDefaultResult(m, imports) + ", " else ""}fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
+     """.stripMargin
+  }
+
+  protected def renderEmitter(i: Emitter): RenderableCogenProduct = {
+    val imports = GoLangImports(i, i.id.domain.toPackage, List.empty, options.manifest)
+    val prefix = if (options.manifest.isDefined) GoLangBuildManifest.importPrefix(options.manifest.get).get else ""
+
+    val svc =
+      s"""// ============== Models ==============
+         |${renderEmitterModels(i, imports)}
+         |
+         |// ============== Client ==============
+         |${renderEmitterClient(i, imports)}
+         |
+         |// ============== Dispatcher ==============
+         |${renderEmitterDispatcher(i, imports)}
+         |
+         |// ============== Handlers Dummy ==============
+         |${renderEmitterHandlersDummy(i, imports)}
+         """.stripMargin
+
+    EmitterProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", prefix + "irt")))
   }
 }

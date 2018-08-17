@@ -12,4 +12,7 @@ namespace IRT.Transport.Client {
         void SetHeaders(Dictionary<string, string> headers);
         Dictionary<string, string> GetHeaders();
     }
+
+    public interface IClientSocketTransport<C>: IClientTransport<C> where C: class, IClientTransportContext {
+    }
 }

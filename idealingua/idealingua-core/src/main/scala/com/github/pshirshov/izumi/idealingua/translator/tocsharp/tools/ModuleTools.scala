@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp.tools
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EmitterId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -56,6 +56,10 @@ class ModuleTools() {
     ModuleId(id.domain.toPackage.map(p => p.capitalize), s"${id.name.capitalize}.cs")
   }
 
+  def toModuleId(id: EmitterId): ModuleId = {
+    ModuleId(id.domain.toPackage.map(p => p.capitalize), s"${id.name.capitalize}.cs")
+  }
+
   def toTestSource(id: DomainId, moduleId: ModuleId, header: String, code: String): Seq[Module] = {
     val text =
       s"""#if IRT_NO_TESTS
@@ -74,6 +78,10 @@ class ModuleTools() {
   }
 
   def toTestModuleId(id: ServiceId): ModuleId = {
+    ModuleId(id.domain.toPackage.map(p => p.capitalize), s"${id.name}_test.cs")
+  }
+
+  def toTestModuleId(id: EmitterId): ModuleId = {
     ModuleId(id.domain.toPackage.map(p => p.capitalize), s"${id.name}_test.cs")
   }
 }
