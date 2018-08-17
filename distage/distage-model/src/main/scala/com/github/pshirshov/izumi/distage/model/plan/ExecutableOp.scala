@@ -78,7 +78,7 @@ object ExecutableOp {
 
   }
 
-  sealed trait ProxyOp extends ExecutableOp {}
+  sealed trait ProxyOp extends ExecutableOp
 
   object ProxyOp {
 

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import java.net.URI
 import java.util.concurrent.atomic.AtomicReference
 
 import cats.data.{Kleisli, OptionT}
@@ -17,26 +18,29 @@ import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
 
-import scala.language.reflectiveCalls
+import scala.concurrent.TimeoutException
 
 
 class Http4sTransportTest extends WordSpec {
 
   import Http4sTransportTest.Http4sTestContext._
+  import Http4sTransportTest._
 
   "Http4s transport" should {
     "support direct calls" in {
 
       import scala.concurrent.ExecutionContext.Implicits.global
-      val builder = BlazeBuilder[IO]
+      val builder = BlazeBuilder[CIO]
         .bindHttp(port, host)
+        .withWebSockets(true)
         .mountService(ioService.service, "/")
         .start
 
       builder.unsafeRunAsync {
         case Right(server) =>
           try {
-            performTests()
+            performTests(clientDispatcher)
+            performWsTests(wsClientDispatcher())
           } finally {
             server.shutdownNow()
           }
@@ -49,26 +53,38 @@ class Http4sTransportTest extends WordSpec {
     }
   }
 
-  private def performTests(): Unit = {
-    clientDispatcher.setupCredentials("user", "pass")
+  private def performWsTests(disp: IRTDispatcher with TestDispatcher): Unit = {
+    val greeterClient = new GreeterServiceClientWrapped(disp)
+
+    disp.setupCredentials("user", "pass")
 
     assert(ZIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
     assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
-    //    assert(greeterClient.sayhi().unsafeRunSync() == "Hi!")
-    //    assert(calculatorClient.sum(2, 5).unsafeRunSync() == 7)
-    //
-    //    val missingHandler = intercept[IRTHttpFailureException] {
-    //      greeterClient.broken(HowBroken.MissingServerHandler).unsafeRunSync()
-    //    }
-    //    assert(missingHandler.status == Status.NotFound)
-    //
-    clientDispatcher.cancelCredentials()
+
+    disp.setupCredentials("user", "badpass")
+    intercept[TimeoutException] {
+      import scala.concurrent.duration._
+      ZIOR.unsafeRun(greeterClient.alternative().delay(10.seconds))
+    }
+    ()
+
+  }
+
+  private def performTests(disp: IRTDispatcher with TestDispatcher): Unit = {
+    val greeterClient = new GreeterServiceClientWrapped(disp)
+
+    disp.setupCredentials("user", "pass")
+
+    assert(ZIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
+    assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
+
+    disp.cancelCredentials()
     val forbidden = intercept[IRTUnexpectedHttpStatus] {
       ZIOR.unsafeRun(greeterClient.alternative())
     }
     assert(forbidden.status == Status.Forbidden)
 
-    clientDispatcher.setupCredentials("user", "badpass")
+    disp.setupCredentials("user", "badpass")
     val unauthorized = intercept[IRTUnexpectedHttpStatus] {
       ZIOR.unsafeRun(greeterClient.alternative())
     }
@@ -79,19 +95,21 @@ class Http4sTransportTest extends WordSpec {
 }
 
 object Http4sTransportTest {
+  type ZIO[E, V] = zio.IO[E, V]
+  type CIO[T] = cats.effect.IO[T]
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
 
-  final class AuthCheckDispatcher2[Ctx](proxied: IRTWrappedService[zio.IO, Ctx]) extends IRTWrappedService[zio.IO, Ctx] {
+  final class AuthCheckDispatcher2[Ctx](proxied: IRTWrappedService[ZIO, Ctx]) extends IRTWrappedService[ZIO, Ctx] {
     override def serviceId: IRTServiceId = proxied.serviceId
 
-    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[zio.IO, Ctx]] = proxied.allMethods.mapValues {
+    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[ZIO, Ctx]] = proxied.allMethods.mapValues {
       method =>
-        new IRTMethodWrapper[zio.IO, Ctx] with IRTResultZio {
+        new IRTMethodWrapper[ZIO, Ctx] with IRTResultZio {
 
           override val signature: IRTMethodSignature = method.signature
-          override val marshaller: IRTCirceMarshaller[zio.IO] = method.marshaller
+          override val marshaller: IRTCirceMarshaller[ZIO] = method.marshaller
 
           override def invoke(ctx: Ctx, input: signature.Input): zio.IO[Nothing, signature.Output] = {
             ctx match {
@@ -113,10 +131,10 @@ object Http4sTransportTest {
   class DemoContext[Ctx] {
     private val greeterService = new AbstractGreeterServer1.Impl[Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
-    private val dispatchers: Set[IRTWrappedService[zio.IO, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
-    private val clients: Set[IRTWrappedClient[zio.IO]] = Set(GreeterServiceClientWrapped)
+    private val dispatchers: Set[IRTWrappedService[ZIO, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
+    private val clients: Set[IRTWrappedClient[ZIO]] = Set(GreeterServiceClientWrapped)
     val codec = new IRTClientMultiplexor(clients)
-    val multiplexor = new IRTServerMultiplexor[zio.IO, Ctx](dispatchers)
+    val multiplexor = new IRTServerMultiplexor[ZIO, Ctx](dispatchers)
   }
 
   object Http4sTestContext {
@@ -127,38 +145,64 @@ object Http4sTransportTest {
     final val port = addr.getPort
     final val host = addr.getHostName
     final val baseUri = Uri(Some(Uri.Scheme.http), Some(Uri.Authority(host = Uri.RegName(host), port = Some(port))))
+    final val wsUri = new URI("ws", null, host, port, "/ws", null, null)
 
     //
     final val demo = new DemoContext[DummyContext]()
 
     //
-    final val authUser: Kleisli[OptionT[IO, ?], Request[IO], DummyContext] =
+    final val authUser: Kleisli[OptionT[CIO, ?], Request[CIO], DummyContext] =
       Kleisli {
-        request: Request[IO] =>
+        request: Request[CIO] =>
           val context = DummyContext(request.remoteAddr.getOrElse("0.0.0.0"), request.headers.get(Authorization).map(_.credentials))
-
           OptionT.liftF(IO(context))
       }
 
-    final val logger = IzLogger.basic(Log.Level.Trace)
+    final val wsContextProvider: WsContextProvider[DummyContext] = new WsContextProvider[DummyContext] {
+      val knownAuthorization = new AtomicReference[Credentials](null)
+
+      override def toContext(initial: DummyContext, packet: RpcRequest): DummyContext = {
+        initial.credentials match {
+          case Some(value) =>
+            knownAuthorization.compareAndSet(null, value)
+          case None =>
+        }
+
+        packet.headers.get("Authorization").map(Authorization.parse).flatMap(_.toOption) match {
+          case Some(value) =>
+            knownAuthorization.set(value.credentials)
+          case None =>
+        }
+
+        initial.copy(credentials = Option(knownAuthorization.get()))
+
+      }
+    }
+
+    final val logger = IzLogger.basic(Log.Level.Info, Map(
+      "org.http4s" -> Log.Level.Warn
+      , "org.http4s.server.blaze" -> Log.Level.Error
+      , "org.http4s.blaze.channel.nio1" -> Log.Level.Crit
+    ))
     StaticLogRouter.instance.setup(logger.receiver)
-    final val rt = new Http4sRuntime[zio.IO](logger)
-    final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser))
+    final val rt = new Http4sRuntime[ZIO](logger)
+    final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser), wsContextProvider)
 
     //
-    final val clientDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) {
-      val creds = new AtomicReference[Seq[Header]](Seq.empty)
-
-      def setupCredentials(login: String, password: String): Unit = {
-        creds.set(Seq(Authorization(BasicCredentials(login, password))))
-      }
-
-      def cancelCredentials(): Unit = {
-        creds.set(Seq.empty)
-      }
-
-      override protected def transformRequest(request: Request[IO]): Request[IO] = {
+    final val clientDispatcher: rt.ClientDispatcher with TestDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) with TestDispatcher {
+      override protected def transformRequest(request: Request[CIO]): Request[CIO] = {
         request.withHeaders(Headers(creds.get(): _*))
+      }
+    }
+
+    final def wsClientDispatcher(): rt.ClientWsDispatcher with TestDispatcher = new rt.ClientWsDispatcher(wsUri, demo.codec) with TestDispatcher {
+      override protected def transformRequest(request: RpcRequest): RpcRequest = {
+        Option(creds.get()) match {
+          case Some(value) =>
+            val update = value.map(h => (h.name.value, h.value)).toMap
+            request.copy(headers = request.headers ++ update)
+          case None => request
+        }
       }
     }
 
@@ -166,3 +210,5 @@ object Http4sTransportTest {
   }
 
 }
+
+

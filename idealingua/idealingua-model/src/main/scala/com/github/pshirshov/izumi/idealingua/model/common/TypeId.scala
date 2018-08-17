@@ -64,6 +64,8 @@ object TypeId {
     def apply(parent: TypeId, name: TypeName): DTOId = new DTOId(parent.path.sub(parent.name), name)
 
     def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(TypePath(parent.domain, Seq(parent.name)), name)
+
+    def apply(parent: EmitterId, name: TypeName): DTOId = new DTOId(TypePath(parent.domain, Seq(parent.name)), name)
   }
 
   final case class IdentifierId(path: TypePath, name: TypeName) extends ScalarId

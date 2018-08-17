@@ -109,7 +109,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
     List("Newtonsoft.Json", "Newtonsoft.Json.Linq", "IRT.Marshaller")
   }
 
-  private def writePropertyValue(src: String, t: CSharpType, key: Option[String] = None)(implicit im: CSharpImports, ts: Typespace): String = {
+  private def writePropertyValue(src: String, t: CSharpType, key: Option[String] = None, depth: Int = 1)(implicit im: CSharpImports, ts: Typespace): String = {
     t.id match {
       case g: Generic.TOption =>
         val optionType = CSharpType(g.valueType)
@@ -123,24 +123,27 @@ object JsonNetExtension extends CSharpTranslatorExtension {
           t.id match {
             case g: Generic => g match {
               case m: Generic.TMap =>
+                val iter = s"mkv${if (depth > 1) depth.toString else ""}"
                 s"""writer.WriteStartObject();
-                   |foreach(var mkv in $src) {
-                   |    writer.WritePropertyName(mkv.Key.ToString());
-                   |${writePropertyValue("mkv.Value", CSharpType(m.valueType)).shift(4)}
+                   |foreach(var $iter in $src) {
+                   |    writer.WritePropertyName($iter.Key.ToString());
+                   |${writePropertyValue(s"$iter.Value", CSharpType(m.valueType), depth = depth + 1).shift(4)}
                    |}
                    |writer.WriteEndObject();
                  """.stripMargin
               case l: Generic.TList =>
+                val iter = s"lv${if (depth > 1) depth.toString else ""}"
                 s"""writer.WriteStartArray();
-                   |foreach (var lv in $src) {
-                   |${writePropertyValue("lv", CSharpType(l.valueType)).shift(4)}
+                   |foreach (var $iter in $src) {
+                   |${writePropertyValue(s"$iter", CSharpType(l.valueType), depth = depth + 1).shift(4)}
                    |}
                    |writer.WriteEndArray();
                  """.stripMargin
               case s: Generic.TSet =>
+                val iter = s"lv${if (depth > 1) depth.toString else ""}"
                 s"""writer.WriteStartArray();
-                   |foreach (var lv in $src) {
-                   |${writePropertyValue("lv", CSharpType(s.valueType)).shift(4)}
+                   |foreach (var $iter in $src) {
+                   |${writePropertyValue(s"$iter", CSharpType(s.valueType), depth = depth + 1).shift(4)}
                    |}
                    |writer.WriteEndArray();
                  """.stripMargin

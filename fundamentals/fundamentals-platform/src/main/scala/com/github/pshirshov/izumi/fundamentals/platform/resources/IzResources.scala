@@ -111,8 +111,7 @@ class IzResources(clazz: Class[_]) {
     RecursiveCopyOutput(targets.toSeq) // 2.13 compat
   }
 
-  case class ContentIterator(files: Iterable[FileContent]){
-  }
+  case class ContentIterator(files: Iterable[FileContent])
 
   def enumerateClasspath(sourcePath: String): ContentIterator = {
     val pathReference = getPath(sourcePath)

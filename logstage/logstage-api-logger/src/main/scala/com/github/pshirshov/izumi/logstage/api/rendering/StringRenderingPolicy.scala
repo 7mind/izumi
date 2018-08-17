@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api.rendering
 
 import java.awt.GraphicsEnvironment
+import java.util.regex.Pattern
 
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -128,21 +129,30 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
       unit =>
         val maybeMargin = marginPart match {
           case '[' +: payload :+ ']' =>
-            val trimmed = payload.filterNot(_.isSpaceChar)
-            trimmed match {
-              case digits if digits.forall(_.isDigit) =>
-                Some(Margin(elipsed = false, digits.mkString("").toInt))
-              case '.' +: '.' +: digits if digits.forall(_.isDigit) =>
-                Some(Margin(elipsed = true, digits.mkString("").toInt))
-              case _ =>
-                throw new IllegalArgumentException("Unexpected margin format")
-            }
+            parseMargin(payload.mkString)
+
           case Nil =>
             None
+
           case _ =>
             throw new IllegalArgumentException("Unexpected margin format")
         }
         WithMargin(unit, maybeMargin)
+    }
+  }
+
+  // TODO: still shitty, we need more options!
+  private lazy val marginRe = Pattern.compile(raw"((\d+)\:)?(\.\.\.)?(\d+)?")
+
+  private def parseMargin(payload: String): Option[Margin] = {
+    val matcher = marginRe.matcher(payload.trim)
+    if (matcher.matches()) {
+      val minimize = Option(matcher.group(2)).filter(_.nonEmpty).map(_.toInt)
+      val ellipsis = Option(matcher.group(3)).exists(_.nonEmpty)
+      val size = Option(matcher.group(4)).filter(_.nonEmpty).map(_.toInt)
+      Some(Margin(minimize, ellipsis, size))
+    } else {
+      throw new IllegalArgumentException("Unexpected margin format")
     }
   }
 
@@ -173,7 +183,7 @@ case class WithConstants[T <: LogUnit](unit: Option[WithMargin[T]] = None) {
 
 object StringRenderingPolicy {
 
-  val defaultMessageLayout: String = s"$${level} $${ts} $${thread} $${location} $${custom-ctx} $${msg}"
+  val defaultMessageLayout: String = s"$${level} $${ts} $${id[2:]} $${thread} $${location} $${custom-ctx} $${msg}"
 
   sealed trait LogMessageItem {
     def perform(e: Log.Entry, withColor: Boolean): String

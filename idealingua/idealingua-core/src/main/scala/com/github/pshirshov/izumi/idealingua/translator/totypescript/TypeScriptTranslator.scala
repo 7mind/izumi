@@ -43,6 +43,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)
+      , typespace.domain.emitters.flatMap(translateEmitter)
     ).flatten ++
       (
         if (tsManifest.isDefined && tsManifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
@@ -57,7 +58,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val extendedModules = addRuntime(options, modules)
     if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
-      extendedModules.map(m => Module(ModuleId(Seq(manifest.get.scope, m.id.path.mkString("-")), m.id.name), m.content))
+      extendedModules.map(m => Module(ModuleId(Seq(manifest.get.scope, if(m.id.path.head == "irt") m.id.path.mkString("/")
+        else m.id.path.mkString("-")), m.id.name), m.content))
     else
       extendedModules
   }
@@ -85,7 +87,9 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       manifest.get.license,
       manifest.get.website,
       manifest.get.copyright,
-      List(ManifestDependency("moment", "^2.20.1")),
+      List(
+        ManifestDependency("moment", "^2.20.1")
+      ),
       manifest.get.scope,
       manifest.get.moduleSchema
     ), "index", "irt")
@@ -106,6 +110,10 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
   protected def translateService(definition: Service)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderService(definition))
+  }
+
+  protected def translateEmitter(definition: Emitter)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
+    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderEmitter(definition))
   }
 
   protected def translateDef(definition: TypeDef)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
@@ -159,6 +167,19 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        """.stripMargin
   }
 
+  protected def renderRuntimeNames(i: EmitterId, holderName: String): String = {
+    val pkg = i.domain.toPackage.mkString(".")
+    s"""// Runtime identification methods
+       |public static readonly PackageName = '$pkg';
+       |public static readonly ClassName = '${i.name}';
+       |public static readonly FullClassName = '$pkg.${i.name}';
+       |
+       |public getPackageName(): string { return ${if(holderName == null) i.name else holderName}.PackageName; }
+       |public getClassName(): string { return ${if(holderName == null) i.name else holderName}.ClassName; }
+       |public getFullClassName(): string { return ${if(holderName == null) i.name else holderName}.FullClassName; }
+       """.stripMargin
+  }
+
   protected def renderDtoInterfaceSerializer(iid: InterfaceId): String = {
     val fields = typespace.structure.structure(iid)
     s"""public to${iid.name}Serialized(): ${iid.name}${typespace.tools.implId(iid).name}Serialized {
@@ -176,7 +197,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def renderDtoInterfaceLoader(iid: InterfaceId): String = {
     val fields = typespace.structure.structure(iid)
     s"""public load${iid.name}Serialized(slice: ${iid.name}${typespace.tools.implId(iid).name}Serialized) {
-       |${renderDeserializeObject("slice", fields.all.map(_.field)).shift(4)}
+       |${renderDeserializeObject(/*"slice", */fields.all.map(_.field)).shift(4)}
        |}
        |
        |public load${iid.name}(slice: ${iid.name}${typespace.tools.implId(iid).name}) {
@@ -287,11 +308,12 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def renderAdt(i: Adt)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val base =
-      s"""export type ${i.id.name} = ${i.alternatives.map(alt => alt.typeId.name).mkString(" | ")};
+      s"""export type ${i.id.name} = ${i.alternatives.map(alt => conv.toNativeType(alt.typeId, typespace)).mkString(" | ")};
          |
          |export class ${i.id.name}Helpers {
          |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
         case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
+        case al: AliasId => typespace.dealias(al).name
         case _ => alt.typeId.name
       }) + "Serialized").mkString(" | ")}} {
          |        let className = adt.getClassName();
@@ -303,6 +325,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |
          |    public static deserialize(data: {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
         case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
+        case al: AliasId => typespace.dealias(al).name
         case _ => alt.typeId.name
       }) + "Serialized").mkString(" | ")}}): ${i.id.name} {
          |        const id = Object.keys(data)[0];
@@ -399,8 +422,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     it.map { m => s"$m${if (it.hasNext) "," else ""}" }.mkString("\n")
   }
 
-  protected def renderDeserializeObject(slice: String, fields: List[Field]): String = {
-    fields.map(f => conv.deserializeField(slice, f, typespace)).mkString("\n")
+  protected def renderDeserializeObject(/*slice: String, */fields: List[Field]): String = {
+    fields.map(f => conv.deserializeField(/*slice, */f, typespace)).mkString("\n")
   }
 
   protected def renderInterface(i: Interface)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
@@ -495,11 +518,14 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     ext.extend(i, InterfaceProduct(iface, companion, imports.render(ts), s"// ${i.id.name} Interface"), _.handleInterface)
   }
 
-  protected def renderServiceMethodSignature(method: DefMethod, spread: Boolean = false): String = method match {
+  protected def renderRPCMethodSignature(method: DefMethod, spread: Boolean = false, forClient: Boolean = true): String = method match {
     case m: DefMethod.RPCMethod =>
       if (spread) {
         val fields = m.signature.input.fields.map(f => conv.safeName(f.name) + s": ${conv.toNativeType(f.typeId, ts)}").mkString(", ")
-        s"""${m.name}($fields): Promise<${renderServiceMethodOutputSignature(m)}>"""
+        if (forClient)
+          s"""${m.name}($fields): Promise<${renderServiceMethodOutputSignature(m)}>"""
+        else
+          s"""${m.name}(context: C${if(m.signature.input.fields.nonEmpty) ", " else ""}$fields): Promise<${renderServiceMethodOutputSignature(m)}>"""
       } else {
         s"""${m.name}(input: In${m.name.capitalize}): Promise<${renderServiceMethodOutputSignature(m)}>"""
       }
@@ -513,10 +539,10 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     case _: Alternative => throw new Exception("Not implemented")
   }
 
-  protected def renderServiceClientMethod(service: String, method: DefMethod): String = method match {
+  protected def renderRPCClientMethod(service: String, method: DefMethod): String = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct =>
-        s"""public ${renderServiceMethodSignature(method, spread = true)} {
+        s"""public ${renderRPCMethodSignature(method, spread = true)} {
            |    const __data = new In${m.name.capitalize}();
            |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
            |    return this.send('${m.name}', __data, In${m.name.capitalize}, ${renderServiceMethodOutputSignature(m)});
@@ -524,7 +550,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        """.stripMargin
 
       case al: Algebraic =>
-        s"""public ${renderServiceMethodSignature(method, spread = true)} {
+        s"""public ${renderRPCMethodSignature(method, spread = true)} {
            |    const __data = new In${m.name.capitalize}();
            |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
            |    return new Promise((resolve, reject) => {
@@ -550,7 +576,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          """.stripMargin
 
       case si: Singular =>
-        s"""public ${renderServiceMethodSignature(method, spread = true)} {
+        s"""public ${renderRPCMethodSignature(method, spread = true)} {
            |    const __data = new In${m.name.capitalize}();
            |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
            |    return new Promise((resolve, reject) => {
@@ -572,7 +598,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          """.stripMargin
 
       case _: Void =>
-        s"""public ${renderServiceMethodSignature(method, spread = true)} {
+        s"""public ${renderRPCMethodSignature(method, spread = true)} {
            |    const __data = new In${m.name.capitalize}();
            |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
            |    return new Promise((resolve, reject) => {
@@ -593,7 +619,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
   protected def renderServiceClient(i: Service): String = {
     s"""export interface I${i.id.name}Client {
-       |${i.methods.map(me => renderServiceMethodSignature(me, spread = true)).mkString("\n").shift(4)}
+       |${i.methods.map(me => renderRPCMethodSignature(me, spread = true)).mkString("\n").shift(4)}
        |}
        |
        |export class ${i.id.name}Client implements I${i.id.name}Client {
@@ -604,7 +630,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |        this._transport = transport;
        |    }
        |
-       |    private send<I extends ServiceClientInData, O extends ServiceClientOutData>(method: string, data: I, inputType: {new(): I}, outputType: {new(data: any): O} ): Promise<O> {
+       |    private send<I extends IncomingData, O extends OutgoingData>(method: string, data: I, inputType: {new(): I}, outputType: {new(data: any): O} ): Promise<O> {
        |        return new Promise((resolve, reject) => {
        |            this._transport.send(${i.id.name}Client.ClassName, method, data)
        |                .then((data: any) => {
@@ -621,7 +647,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |                });
        |            });
        |    }
-       |${i.methods.map(me => renderServiceClientMethod(i.id.name, me)).mkString("\n").shift(4)}
+       |${i.methods.map(me => renderRPCClientMethod(i.id.name, me)).mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
@@ -657,16 +683,108 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def renderServiceMethodModels(method: DefMethod): String = method match {
+  protected def renderRPCMethodModels(method: DefMethod): String = method match {
     case m: DefMethod.RPCMethod =>
-      s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "ServiceClientInData", m.signature.input, export = false)}
-         |${renderServiceMethodOutModel(s"Out${m.name.capitalize}", "ServiceClientOutData", m.signature.output)}
+      s"""${renderServiceMethodInModel(s"In${m.name.capitalize}", "IncomingData", m.signature.input, export = false)}
+         |${renderServiceMethodOutModel(s"Out${m.name.capitalize}", "OutgoingData", m.signature.output)}
        """.stripMargin
 
   }
 
   protected def renderServiceModels(i: Service): String = {
-    i.methods.map(me => renderServiceMethodModels(me)).mkString("\n")
+    i.methods.map(me => renderRPCMethodModels(me)).mkString("\n")
+  }
+
+  protected def isServiceMethodReturnExistent(method: DefMethod.RPCMethod): Boolean = method.signature.output match {
+    case _: Void => false
+    case _ => true
+  }
+
+  protected def renderServiceDispatcherHandler(method: DefMethod, impl: String): String = method match {
+    case m: DefMethod.RPCMethod =>
+      if (isServiceMethodReturnExistent(m))
+        s"""case "${m.name}": {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"const obj = this.marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"In${m.name.capitalize}" else "object"}>(data);"}
+           |    return new Promise((resolve, reject) => {
+           |        this.$impl.${m.name}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${conv.safeName(f.name)}").mkString(", ")})
+           |            .then((res: ${renderServiceMethodOutputSignature(m)}) => {
+           |                resolve(this.marshaller.Marshal<${renderServiceMethodOutputSignature(m)}>(res));
+           |            })
+           |            .catch((err) => {
+           |                reject(err);
+           |            });
+           |    });
+           |}
+         """.stripMargin
+      else
+      s"""case "${m.name}": {
+         |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"const obj = this.marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"In${m.name.capitalize}" else "object"}>(data);"}
+         |    return new Promise((resolve, reject) => {
+         |        this.$impl.${m.name}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${conv.safeName(f.name)}").mkString(", ")})
+         |            .then(() => {
+         |                resolve(this.marshaller.Marshal<Void>(Void.instance));
+         |            })
+         |            .catch((err) => {
+         |                reject(err);
+         |            });
+         |    });
+         |}
+         """.stripMargin
+  }
+
+  protected def renderServiceDispatcher(i: Service): String = {
+    s"""export interface I${i.id.name}Server<C> {
+       |${i.methods.map(me => renderRPCMethodSignature(me, spread = true, forClient = false)).mkString("\n").shift(4)}
+       |}
+       |
+       |export class ${i.id.name}Dispatcher<C, D> implements ServiceDispatcher<C, D> {
+       |    private static readonly methods: string[] = [
+       |${i.methods.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "        \"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"" else "").mkString(",\n")}\n    ];
+       |    protected marshaller: Marshaller<D>;
+       |    protected server: I${i.id.name}Server<C>;
+       |
+       |    constructor(marshaller: Marshaller<D>, server: I${i.id.name}Server<C>) {
+       |        this.marshaller = marshaller;
+       |        this.server = server;
+       |    }
+       |
+       |    public getSupportedService(): string {
+       |        return '${i.id.name}';
+       |    }
+       |
+       |    public getSupportedMethods(): string[] {
+       |        return  ${i.id.name}Dispatcher.methods;
+       |    }
+       |
+       |    public dispatch(context: C, method: string, data: D): Promise<D> {
+       |        switch (method) {
+       |${i.methods.map(m => renderServiceDispatcherHandler(m, "server")).mkString("\n").shift(12)}
+       |            default:
+       |                throw new Error(`Method $${method} is not supported by ${i.id.name}Dispatcher.`);
+       |        }
+       |    }
+       |}
+     """
+  }
+
+  protected def renderServiceServerDummyMethod(member: DefMethod): String = {
+    s"""public ${renderRPCMethodSignature(member, spread = true, forClient = false)} {
+       |    throw new Error('Not implemented.');
+       |}
+     """.stripMargin
+  }
+
+  protected def renderServiceServer(i: Service): String = {
+    val name = s"${i.id.name}Server"
+    s"""export abstract class $name<C, D> extends ${i.id.name}Dispatcher<C, D> implements I${i.id.name}Server<C> {
+       |    constructor(marshaller: Marshaller<D>) {
+       |        super(marshaller, null);
+       |        this.server = this;
+       |    }
+       |
+       |${i.methods.map(m => renderServiceServerDummyMethod(m)).mkString("\n").shift(4)}
+       |}
+     """.stripMargin
   }
 
   protected def importFromIRT(names: List[String], pkg: Package)(implicit manifest: Option[TypeScriptBuildManifest]): String = {
@@ -687,15 +805,144 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       val typeName = i.id.name
 
       val svc =
-        s"""${renderServiceModels(i)}
+        s"""// Models
+           |${renderServiceModels(i)}
+           |
+           |// Client
            |${renderServiceClient(i)}
+           |
+           |// Dispatcher
+           |${renderServiceDispatcher(i)}
+           |
+           |// Base Server
+           |${renderServiceServer(i)}
          """.stripMargin
 
       val header =
         s"""${imports.render(ts)}
-           |${importFromIRT(List("ServiceClientInData", "ServiceClientOutData", "ClientTransport"), i.id.domain.toPackage)}
+           |${importFromIRT(List("ServiceDispatcher", "Marshaller", "Void", "IncomingData", "OutgoingData", "ClientTransport"), i.id.domain.toPackage)}
          """.stripMargin
 
     ServiceProduct(svc, header, s"// $typeName client")
+  }
+
+  protected def renderEmitterModels(i: Emitter): String = {
+    i.events.map(me => renderRPCMethodModels(me)).mkString("\n")
+  }
+
+  protected def renderEmitterClient(i: Emitter): String = {
+    s"""export interface I${i.id.name}Client {
+       |${i.events.map(me => renderRPCMethodSignature(me, spread = true)).mkString("\n").shift(4)}
+       |}
+       |
+       |export class ${i.id.name}Client implements I${i.id.name}Client {
+       |${renderRuntimeNames(i.id, s"${i.id.name}Client").shift(4)}
+       |    protected _transport: ClientSocketTransport;
+       |
+       |    constructor(transport: ClientSocketTransport) {
+       |        this._transport = transport;
+       |    }
+       |
+       |    private send<I extends IncomingData, O extends OutgoingData>(method: string, data: I, inputType: {new(): I}, outputType: {new(data: any): O} ): Promise<O> {
+       |        return new Promise((resolve, reject) => {
+       |            this._transport.send(${i.id.name}Client.ClassName, method, data)
+       |                .then((data: any) => {
+       |                    try {
+       |                        const output = new outputType(data);
+       |                        resolve(output);
+       |                    }
+       |                    catch (err) {
+       |                        reject(err);
+       |                    }
+       |                })
+       |                .catch((err: any) => {
+       |                    reject(err);
+       |                });
+       |            });
+       |    }
+       |${i.events.map(me => renderRPCClientMethod(i.id.name, me)).mkString("\n").shift(4)}
+       |}
+     """.stripMargin
+  }
+
+  protected def renderEmitterDispatcher(i: Emitter): String = {
+    s"""export interface I${i.id.name}BuzzerHandlers<C> {
+       |${i.events.map(me => renderRPCMethodSignature(me, spread = true, forClient = false)).mkString("\n").shift(4)}
+       |}
+       |
+       |export class ${i.id.name}Dispatcher<C, D> implements ServiceDispatcher<C, D> {
+       |    private static readonly methods: string[] = [
+       |${i.events.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "        \"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"" else "").mkString(",\n")}\n    ];
+       |    protected marshaller: Marshaller<D>;
+       |    protected handlers: I${i.id.name}BuzzerHandlers<C>;
+       |
+       |    constructor(marshaller: Marshaller<D>, handlers: I${i.id.name}BuzzerHandlers<C>) {
+       |        this.marshaller = marshaller;
+       |        this.handlers = handlers;
+       |    }
+       |
+       |    public getSupportedService(): string {
+       |        return '${i.id.name}';
+       |    }
+       |
+       |    public getSupportedMethods(): string[] {
+       |        return  ${i.id.name}Dispatcher.methods;
+       |    }
+       |
+       |    public dispatch(context: C, method: string, data: D): Promise<D> {
+       |        switch (method) {
+       |${i.events.map(m => renderServiceDispatcherHandler(m, "handlers")).mkString("\n").shift(12)}
+       |            default:
+       |                throw new Error(`Method $${method} is not supported by ${i.id.name}Dispatcher.`);
+       |        }
+       |    }
+       |}
+     """
+  }
+
+  protected def renderEmitterHandlerDummyMethod(member: DefMethod): String = {
+    s"""public ${renderRPCMethodSignature(member, spread = true, forClient = false)} {
+       |    throw new Error('Not implemented.');
+       |}
+     """.stripMargin
+  }
+
+  protected def renderEmitterBase(i: Emitter): String = {
+    val name = s"${i.id.name}BuzzerHandlers"
+    s"""export abstract class $name<C, D> extends ${i.id.name}Dispatcher<C, D> implements I${i.id.name}BuzzerHandlers<C> {
+       |    constructor(marshaller: Marshaller<D>) {
+       |        super(marshaller, null);
+       |        this.handlers = this;
+       |    }
+       |
+       |${i.events.map(m => renderEmitterHandlerDummyMethod(m)).mkString("\n").shift(4)}
+       |}
+     """.stripMargin
+  }
+
+  protected def renderEmitter(i: Emitter)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
+    val imports = TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty, manifest)
+    val typeName = i.id.name
+
+    val svc =
+      s"""// Models
+         |${renderEmitterModels(i)}
+         |
+         |// Client
+         |${renderEmitterClient(i)}
+         |
+         |// Dispatcher
+         |${renderEmitterDispatcher(i)}
+         |
+         |// Buzzer Handlers Base
+         |${renderEmitterBase(i)}
+         """.stripMargin
+
+    val header =
+      s"""${imports.render(ts)}
+         |${importFromIRT(List("ServiceDispatcher", "Marshaller", "Void", "IncomingData", "OutgoingData", "ClientSocketTransport"), i.id.domain.toPackage)}
+         """.stripMargin
+
+    EmitterProduct(svc, header, s"// $typeName")
   }
 }

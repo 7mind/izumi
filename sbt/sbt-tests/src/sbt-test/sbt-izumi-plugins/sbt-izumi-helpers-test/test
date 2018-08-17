@@ -21,9 +21,12 @@ $ exists lib/yyy
 > +clean
 > +test:compile
 $ exists app/just-app/target/scala-2.12/test-classes-exposed
-> test
-> package
-> plugins
+$ exists app/legacy-app/target/scala-2.11/test-classes-exposed
+-$ exists app/just-app/target/scala-2.11/test-classes-exposed
+-$ exists app/legacy-app/target/scala-2.12/test-classes-exposed
+> +test
+> +package
+> +plugins
 
 # check convenience helpers
 > preserveTargets test

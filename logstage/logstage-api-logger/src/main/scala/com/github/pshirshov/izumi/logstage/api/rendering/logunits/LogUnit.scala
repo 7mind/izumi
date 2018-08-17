@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.logstage.api.rendering.{ConsoleColors, Rendere
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
-case class Margin(elipsed: Boolean, size: Int)
+case class Margin(minimized: Option[Int], elipsed: Boolean, size: Option[Int])
 
 sealed trait LogUnit {
 
@@ -25,10 +25,19 @@ sealed trait LogUnit {
 object LogUnit {
 
   def withMargin(string: String, margin: Option[Margin]): String = {
-    margin match {
-      case Some(Margin(true, pad)) => string.ellipsedLeftPad(pad)
-      case Some(Margin(_, pad)) => string.leftPad(pad)
-      case None => string
+    margin
+      .map {
+        case m@Margin(Some(v), _, _) =>
+          (string.minimize(v), m)
+        case m@Margin(None, _, _) =>
+          (string, m)
+      }.fold(string) {
+      case (s, Margin(_, true, Some(pad))) =>
+        s.ellipsedLeftPad(pad)
+      case (s, Margin(_, _, Some(pad))) =>
+        s.leftPad(pad)
+      case (s, _) =>
+        s
     }
   }
 
@@ -124,6 +133,19 @@ object LogUnit {
 
   }
 
+  case object IdUnit extends LogUnit {
+    override val aliases: Vector[String] = Vector(
+      "id"
+    )
+
+    override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
+      withMargin(entry.context.static.id.id, margin)
+    }
+
+    override def undefined(entry: Log.Entry): Boolean = false
+
+  }
+
   case object MessageUnit extends LogUnit {
     override val aliases: Vector[String] = Vector(
       "message", "msg"
@@ -163,7 +185,15 @@ object LogUnit {
     all.get(alias)
   }
 
-  private val all = Set(ThreadUnit, TimestampUnit, LevelUnit, LocationUnit, CustomContextUnit, MessageUnit).flatMap {
+  private val all = Set(
+    ThreadUnit
+    , TimestampUnit
+    , LevelUnit
+    , IdUnit
+    , LocationUnit
+    , CustomContextUnit
+    , MessageUnit
+  ).flatMap {
     unit =>
       unit.aliases.map(_ -> unit)
   }.toMap

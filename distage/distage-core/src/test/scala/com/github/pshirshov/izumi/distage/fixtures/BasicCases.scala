@@ -13,11 +13,9 @@ object BasicCases {
       def boom(): Int = 1
     }
 
-    class TestImpl0 extends TestDependency0 {
+    class TestImpl0 extends TestDependency0
 
-    }
-
-    trait NotInContext {}
+    trait NotInContext
 
     trait TestDependency1 {
       def unresolved: NotInContext
@@ -46,7 +44,7 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     case class TestCaseClass2(a: TestInstanceBinding)
 
-    trait JustTrait {}
+    trait JustTrait
 
     class Impl0 extends JustTrait
 

@@ -1,11 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime
 
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DomainDefinition, TypeDef}
-import com.github.pshirshov.izumi.idealingua.runtime.{IRTCast, IRTConversions, IRTExtend}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.runtime.model._
-import com.github.pshirshov.izumi.idealingua.runtime.model.introspection.{IDLDomainCompanion, IDLTypeInfo, IDLWithInfo}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMethodName, IRTMethodSignature, IRTResultTransZio, IRTWrappedService, _}
+import com.github.pshirshov.izumi.idealingua.runtime.{IRTCast, IRTConversions, IRTExtend}
 
 
 object IDLRuntimeTypes {
@@ -40,14 +38,4 @@ object IDLRuntimeTypes {
   final val Conversions = model.conv.toScala[IRTConversions[_0Arg]]
   final val Cast = model.conv.toScala[IRTCast[_0Arg, _0Arg]]
   final val Extend = model.conv.toScala[IRTExtend[_0Arg, _0Arg]]
-
-  // introspection
-  final val typeId = model.conv.toScala[TypeId]
-  final val typeInfo = model.conv.toScala[IDLTypeInfo]
-  final val withTypeInfo = model.conv.toScala[IDLWithInfo]
-  final val tFinalDefinition = model.conv.toScala[TypeDef]
-  final val tDomainDefinition = model.conv.toScala[DomainDefinition]
-  final val tDomainId = model.conv.toScala[DomainId]
-  final val tDomainCompanion = model.conv.toScala[IDLDomainCompanion]
-
 }

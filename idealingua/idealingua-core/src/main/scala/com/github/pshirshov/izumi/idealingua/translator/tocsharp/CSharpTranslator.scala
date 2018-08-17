@@ -32,6 +32,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)
+      , typespace.domain.emitters.flatMap(translateEmitter)
     ).flatten
 
     addRuntime(options, modules)
@@ -42,6 +43,12 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     implicit val ts: Typespace = this.ts
     implicit val imports: CSharpImports = CSharpImports(definition, definition.id.domain.toPackage, List.empty)
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderService(definition))
+  }
+
+  protected def translateEmitter(definition: Emitter): Seq[Module] = {
+    implicit val ts: Typespace = this.ts
+    implicit val imports: CSharpImports = CSharpImports(definition, definition.id.domain.toPackage, List.empty)
+    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderEmitter(definition))
   }
 
   protected def translateDef(definition: TypeDef): Seq[Module] = {
@@ -130,6 +137,10 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |        this.Value = value;
        |    }
        |
+       |    public override void Visit(I${adtName}Visitor visitor) {
+       |        visitor.Visit(this);
+       |    }
+       |
        |${if (member.typeId.isInstanceOf[InterfaceId]) operatorsDummy else operators}
        |}
      """.stripMargin
@@ -146,7 +157,13 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |
        |${ext.preModelEmit(ctx, adt)}
        |public abstract class $adtName {
+       |    public interface I${adtName}Visitor {
+       |${members.map(m => s"        void Visit(${m.name} visitor);").mkString("\n")}
+       |    }
+       |
+       |    public abstract void Visit(I${adtName}Visitor visitor);
        |    private $adtName() {}
+       |
        |${members.map(m => renderAdtMember(adtName, m)).mkString("\n").shift(4)}
        |}
        |${ext.postModelEmit(ctx, adt)}
@@ -287,11 +304,11 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     case _ => true
   }
 
-  protected def renderServiceMethodSignature(i: Service, method: DefMethod, forClient: Boolean)
-                                            (implicit imports: CSharpImports, ts: Typespace): String = {
+  protected def renderRPCMethodSignature(svcOrEmitter: String, method: DefMethod, forClient: Boolean)
+                                        (implicit imports: CSharpImports, ts: Typespace): String = {
     method match {
       case m: DefMethod.RPCMethod => {
-        val returnValue = if (isServiceMethodReturnExistent(method.asInstanceOf[DefMethod.RPCMethod])) s"<${renderServiceMethodOutputSignature(i, m)}>" else ""
+        val returnValue = if (isServiceMethodReturnExistent(method.asInstanceOf[DefMethod.RPCMethod])) s"<${renderRPCMethodOutputSignature(svcOrEmitter, m)}>" else ""
 
         val callback = s"${if (m.signature.input.fields.isEmpty) "" else ", "}Action$returnValue onSuccess, Action<Exception> onFailure, Action onAny = null, C ctx = null"
         val fields = m.signature.input.fields.map(f => CSharpType(f.typeId).renderType() + " " + f.name).mkString(", ")
@@ -299,46 +316,46 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
         if (forClient) {
           s"void ${m.name.capitalize}($fields$callback)"
         } else {
-          s"${renderServiceMethodOutputSignature(i, m)} ${m.name.capitalize}($context$fields)"
+          s"${renderRPCMethodOutputSignature(svcOrEmitter, m)} ${m.name.capitalize}($context$fields)"
         }
       }
     }
   }
 
-  protected def renderServiceMethodOutputModel(i: Service, method: DefMethod.RPCMethod)(implicit imports: CSharpImports, ts: Typespace): String = method.signature.output match {
-    case _: Struct => s"${i.id.name}.Out${method.name.capitalize}"
-    case _: Algebraic => s"${i.id.name}.Out${method.name.capitalize}"
+  protected def renderRPCMethodOutputModel(svcOrEmitter: String, method: DefMethod.RPCMethod)(implicit imports: CSharpImports, ts: Typespace): String = method.signature.output match {
+    case _: Struct => s"$svcOrEmitter.Out${method.name.capitalize}"
+    case _: Algebraic => s"$svcOrEmitter.Out${method.name.capitalize}"
     case si: Singular => s"${CSharpType(si.typeId).renderType()}"
     case _: Void => "void"
     case _: Alternative => throw new Exception("Alternative not implemented.")
   }
 
-  protected def renderServiceMethodOutputSignature(i: Service, method: DefMethod.RPCMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
-    s"${renderServiceMethodOutputModel(i, method)}"
+  protected def renderRPCMethodOutputSignature(svcOrEmitter: String, method: DefMethod.RPCMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
+    s"${renderRPCMethodOutputModel(svcOrEmitter, method)}"
   }
 
-  protected def renderServiceClientMethod(i: Service, method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
+  protected def renderRPCClientMethod(svcOrEmitter: String, method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct | _: Algebraic =>
-        s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
-           |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
-           |        new ClientTransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
+        s"""public ${renderRPCMethodSignature(svcOrEmitter, method, forClient = true)} {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrEmitter.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
+           |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"$svcOrEmitter.In${m.name.capitalize}" else "object"}, ${renderRPCMethodOutputModel(svcOrEmitter, m)}>("$svcOrEmitter", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
+           |        new ClientTransportCallback<${renderRPCMethodOutputModel(svcOrEmitter, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
        """.stripMargin
 
       case _: Singular =>
-        s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
-           |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, ${renderServiceMethodOutputModel(i, m)}>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
-           |        new ClientTransportCallback<${renderServiceMethodOutputModel(i, m)}>(onSuccess, onFailure, onAny), ctx);
+        s"""public ${renderRPCMethodSignature(svcOrEmitter, method, forClient = true)} {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrEmitter.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
+           |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"$svcOrEmitter.In${m.name.capitalize}" else "object"}, ${renderRPCMethodOutputModel(svcOrEmitter, m)}>("$svcOrEmitter", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
+           |        new ClientTransportCallback<${renderRPCMethodOutputModel(svcOrEmitter, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
        """.stripMargin
 
       case _: Void =>
-        s"""public ${renderServiceMethodSignature(i, method, forClient = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new ${i.id.name}.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
-           |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}, IRT.Void>("${i.id.name}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
+        s"""public ${renderRPCMethodSignature(svcOrEmitter, method, forClient = true)} {
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrEmitter.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
+           |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"$svcOrEmitter.In${m.name.capitalize}" else "object"}, IRT.Void>("$svcOrEmitter", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
            |        new ClientTransportCallback<IRT.Void>(_ => onSuccess(), onFailure, onAny), ctx);
            |}
        """.stripMargin
@@ -351,7 +368,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     val name = s"${i.id.name}Client"
 
     s"""public interface I$name<C> where C: class, IClientTransportContext {
-       |${i.methods.map(m => renderServiceMethodSignature(i, m, forClient = true) + ";").mkString("\n").shift(4)}
+       |${i.methods.map(m => renderRPCMethodSignature(i.id.name, m, forClient = true) + ";").mkString("\n").shift(4)}
        |}
        |
        |public class ${name}Generic<C>: I$name<C> where C: class, IClientTransportContext {
@@ -368,7 +385,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |            this.Transport = new AsyncHttpTransportGeneric<C>(endpoint, marshaller, timeout);
        |        }
        |    }
-       |${i.methods.map(me => renderServiceClientMethod(i, me)).mkString("\n").shift(4)}
+       |${i.methods.map(me => renderRPCClientMethod(i.id.name, me)).mkString("\n").shift(4)}
        |}
        |
        |public class $name: ${name}Generic<IClientTransportContext> {
@@ -377,18 +394,18 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
      """.stripMargin
   }
 
-  protected def renderServiceDispatcherHandler(i: Service, method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
+  protected def renderRPCDispatcherHandler(svcOrEmitter: String, method: DefMethod, server: String)(implicit imports: CSharpImports, ts: Typespace): String = method match {
     case m: DefMethod.RPCMethod =>
       if (isServiceMethodReturnExistent(m))
         s"""case "${m.name}": {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var obj = marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}>(data);"}
-           |    return marshaller.Marshal<${renderServiceMethodOutputModel(i, m)}>(\n        server.${m.name.capitalize}(ctx${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${f.name.capitalize}").mkString(", ")})\n    );
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var obj = marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"$svcOrEmitter.In${m.name.capitalize}" else "object"}>(data);"}
+           |    return marshaller.Marshal<${renderRPCMethodOutputModel(svcOrEmitter, m)}>(\n        $server.${m.name.capitalize}(ctx${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${f.name.capitalize}").mkString(", ")})\n    );
            |}
          """.stripMargin
       else
         s"""case "${m.name}": {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var obj = marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"${i.id.name}.In${m.name.capitalize}" else "object"}>(data);"}
-           |    server.${m.name.capitalize}(ctx${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${f.name.capitalize}").mkString(", ")});
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var obj = marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"$svcOrEmitter.In${m.name.capitalize}" else "object"}>(data);"}
+           |    $server.${m.name.capitalize}(ctx${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${f.name.capitalize}").mkString(", ")});
            |    return marshaller.Marshal<IRT.Void>(null);
            |}
        """.stripMargin
@@ -396,13 +413,13 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
   protected def renderServiceDispatcher(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
     s"""public interface I${i.id.name}Server<C> {
-       |${i.methods.map(m => renderServiceMethodSignature(i, m, forClient = false) + ";").mkString("\n").shift(4)}
+       |${i.methods.map(m => renderRPCMethodSignature(i.id.name, m, forClient = false) + ";").mkString("\n").shift(4)}
        |}
        |
        |public class ${i.id.name}Dispatcher<C, D>: IServiceDispatcher<C, D> {
        |    private static readonly string[] methods = { ${i.methods.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "\"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"" else "").mkString(", ")} };
-       |    private IMarshaller<D> marshaller;
-       |    private I${i.id.name}Server<C> server;
+       |    protected IMarshaller<D> marshaller;
+       |    protected I${i.id.name}Server<C> server;
        |
        |    public ${i.id.name}Dispatcher(IMarshaller<D> marshaller, I${i.id.name}Server<C> server) {
        |        this.marshaller = marshaller;
@@ -419,7 +436,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |
        |    public D Dispatch(C ctx, string method, D data) {
        |        switch(method) {
-       |${i.methods.map(m => renderServiceDispatcherHandler(i, m)).mkString("\n").shift(12)}
+       |${i.methods.map(m => renderRPCDispatcherHandler(i.id.name, m, "server")).mkString("\n").shift(12)}
        |            default:
        |                throw new DispatcherException(string.Format("Method {0} is not supported by ${i.id.name}Dispatcher.", method));
        |        }
@@ -428,7 +445,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
      """.stripMargin
   }
 
-  protected def renderServiceServerDummyMethod(i: Service, member: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
+  protected def renderRPCDummyMethod(svcOrEmitter: String, member: DefMethod, virtual: Boolean)(implicit imports: CSharpImports, ts: Typespace): String = {
     val retValue = member match {
       case m: DefMethod.RPCMethod => m.signature.output match {
         case _: Struct | _: Algebraic => "return null;"
@@ -438,16 +455,20 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
       }
       case _ => throw new Exception("Unsupported renderServiceServerDummyMethod case.")
     }
-    s"""public ${renderServiceMethodSignature(i, member, forClient = false)} {
+    s"""public ${if(virtual) "virtual " else ""}${renderRPCMethodSignature(svcOrEmitter, member, forClient = false)} {
        |    $retValue
        |}
      """.stripMargin
   }
 
-  protected def renderServiceServerDummy(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
-    val name = s"${i.id.name}ServerDummy"
-    s"""public class $name<C>: I${i.id.name}Server<C> {
-       |${i.methods.map(m => renderServiceServerDummyMethod(i, m)).mkString("\n").shift(4)}
+  protected def renderServiceServerBase(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val name = s"${i.id.name}Server"
+    s"""public abstract class $name<C, D>: ${i.id.name}Dispatcher<C, D>,  I${i.id.name}Server<C> {
+       |    public $name(IMarshaller<D> marshaller): base(marshaller, null) {
+       |        server = this;
+       |    }
+       |
+       |${i.methods.map(m => renderRPCDummyMethod(i.id.name, m, virtual = true)).mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
@@ -456,11 +477,27 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     case st: Struct => renderServiceMethodInModel(i, name, st.struct)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
     case si: Singular => s"// ${si.typeId}"
-    case _: Void => s""
-    case _: Alternative => throw new Exception("Alternative not implememnted.")
+    case _: Void => ""
+    case _: Alternative => throw new Exception("Alternative not implemented.")
+  }
+
+  protected def renderEmitterMethodOutModel(i: Emitter, name: String, out: DefMethod.Output)(implicit imports: CSharpImports, ts: Typespace): String = out match {
+    case st: Struct => renderEmitterMethodInModel(i, name, st.struct)
+    case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
+    case si: Singular => s"// ${si.typeId}"
+    case _: Void => ""
+    case _: Alternative => throw new Exception("Alternative not implemented.")
   }
 
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val csClass = CSharpClass(DTOId(i.id, name), structure)
+
+    s"""${ext.preModelEmit(ctx, csClass.id.name, csClass)}
+       |${csClass.render(withWrapper = true, withSlices = false, withRTTI = true)}
+       |${ext.postModelEmit(ctx, csClass.id.name, csClass)}""".stripMargin
+  }
+
+  protected def renderEmitterMethodInModel(i: Emitter, name: String, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
     val csClass = CSharpClass(DTOId(i.id, name), structure)
 
     s"""${ext.preModelEmit(ctx, csClass.id.name, csClass)}
@@ -505,8 +542,8 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
          |// ============== Service Dispatcher ==============
          |${renderServiceDispatcher(i)}
          |
-         |// ============== Service Server Dummy ==============
-         |${renderServiceServerDummy(i)}
+         |// ============== Service Server Base ==============
+         |${renderServiceServerBase(i)}
          """.stripMargin
 
     val extraImports = i.methods.flatMap(me => me match {
@@ -517,7 +554,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
           case si: Singular => Seq(si.typeId)
           case st: Struct => st.struct.fields.map(_.typeId) ++ st.struct.concepts
           case _: Void => Seq.empty
-          case _: Alternative => throw new Exception("Alternative not implememnted.")
+          case _: Alternative => throw new Exception("Alternative not implemented.")
         }
 
         (sigTypes.filterNot(_.isInstanceOf[Builtin]).map(typespace.apply)
@@ -528,6 +565,126 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
     ServiceProduct(svc, im.renderImports(List("IRT", "IRT.Marshaller", "IRT.Transport.Client", "System", "System.Collections", "System.Collections.Generic") ++ extraImports))
   }
+
+  protected def renderEmitterUsings(i: Emitter)(implicit imports: CSharpImports, ts: Typespace): String = {
+    i.events.flatMap(me => renderServiceMethodAdtUsings(me)).distinct.mkString("\n")
+  }
+
+  protected def renderEmitterModels(i: Emitter)(implicit imports: CSharpImports, ts: Typespace): String = {
+    i.events.map(me => renderEmitterMethodModels(i, me)).mkString("\n")
+  }
+
+  protected def renderEmitterMethodModels(i: Emitter, method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
+    case m: DefMethod.RPCMethod =>
+      s"""${if (m.signature.input.fields.isEmpty) "" else renderEmitterMethodInModel(i, s"In${m.name.capitalize}", m.signature.input)}
+         |${renderEmitterMethodOutModel(i, s"Out${m.name.capitalize}", m.signature.output)}
+       """.stripMargin
+  }
+
+  protected def renderEmitterClient(i: Emitter)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val name = s"${i.id.name}Client"
+
+    s"""public interface I$name<C> where C: class, IClientTransportContext {
+       |${i.events.map(m => renderRPCMethodSignature(i.id.name, m, forClient = true) + ";").mkString("\n").shift(4)}
+       |}
+       |
+       |public class ${name}Generic<C>: I$name<C> where C: class, IClientTransportContext {
+       |    public IClientSocketTransport<C> Transport { get; private set; }
+       |
+       |    public ${name}Generic(IClientSocketTransport<C> t) {
+       |        Transport = t;
+       |    }
+       |
+       |${i.events.map(me => renderRPCClientMethod(i.id.name, me)).mkString("\n").shift(4)}
+       |}
+       |
+       |public class $name: ${name}Generic<IClientTransportContext> {
+       |    public $name(IClientSocketTransport<IClientTransportContext> t): base(t) {}
+       |}
+     """.stripMargin
+  }
+
+  protected def renderEmitterDispatcher(i: Emitter)(implicit imports: CSharpImports, ts: Typespace): String = {
+    s"""public interface I${i.id.name}BuzzerHandlers<C> {
+       |${i.events.map(m => renderRPCMethodSignature(i.id.name, m, forClient = false) + ";").mkString("\n").shift(4)}
+       |}
+       |
+       |public class ${i.id.name}Dispatcher<C, D>: IServiceDispatcher<C, D> {
+       |    private static readonly string[] methods = { ${i.events.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "\"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"" else "").mkString(", ")} };
+       |    protected IMarshaller<D> marshaller;
+       |    protected I${i.id.name}BuzzerHandlers<C> handlers;
+       |
+       |    public ${i.id.name}Dispatcher(IMarshaller<D> marshaller, I${i.id.name}BuzzerHandlers<C> handlers) {
+       |        this.marshaller = marshaller;
+       |        this.handlers = handlers;
+       |    }
+       |
+       |    public string GetSupportedService() {
+       |        return "${i.id.name}";
+       |    }
+       |
+       |    public string[] GetSupportedMethods() {
+       |        return ${i.id.name}Dispatcher<C, D>.methods;
+       |    }
+       |
+       |    public D Dispatch(C ctx, string method, D data) {
+       |        switch(method) {
+       |${i.events.map(m => renderRPCDispatcherHandler(i.id.name, m, "handlers")).mkString("\n").shift(12)}
+       |            default:
+       |                throw new DispatcherException(string.Format("Method {0} is not supported by ${i.id.name}Dispatcher.", method));
+       |        }
+       |    }
+       |}
+     """.stripMargin
+  }
+
+  protected def renderEmitterHandlersDummy(i: Emitter)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val name = s"${i.id.name}BuzzerHandlers"
+    s"""public abstract class $name<C, D>: ${i.id.name}Dispatcher<C, D>,  I${i.id.name}BuzzerHandlers<C> {
+       |    public $name(IMarshaller<D> marshaller): base(marshaller, null) {
+       |        handlers = this;
+       |    }
+       |
+       |${i.events.map(m => renderRPCDummyMethod(i.id.name, m, virtual = true)).mkString("\n").shift(4)}
+       |}
+     """.stripMargin
+  }
+
+  protected def renderEmitter(i: Emitter)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
+    val svc =
+      s"""${renderEmitterUsings(i)}
+         |
+         |public static class ${i.id.name} {
+         |${renderEmitterModels(i).shift(4)}
+         |}
+         |
+         |// ============== Client ==============
+         |${renderEmitterClient(i)}
+         |
+         |// ============== Dispatcher ==============
+         |${renderEmitterDispatcher(i)}
+         |
+         |// ============== Buzzer Handlers Base ==============
+         |${renderEmitterHandlersDummy(i)}
+         """.stripMargin
+
+    val extraImports = i.events.flatMap(me => me match {
+      case m: DefMethod.RPCMethod =>
+
+        val sigTypes = m.signature.output match {
+          case al: Algebraic => al.alternatives.map(_.typeId)
+          case si: Singular => Seq(si.typeId)
+          case st: Struct => st.struct.fields.map(_.typeId) ++ st.struct.concepts
+          case _: Void => Seq.empty
+          case _: Alternative => throw new Exception("Alternative not implemented.")
+        }
+
+        (sigTypes.filterNot(_.isInstanceOf[Builtin]).map(typespace.apply)
+          ++ Seq(Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), "FakeName"), List.empty, NodeMeta.empty)) // TODO:fake entry to trigger imports (unsafe)
+          ).flatMap(defn => ext.imports(ctx, defn))
+
+    })
+
+    EmitterProduct(svc, im.renderImports(List("IRT", "IRT.Marshaller", "IRT.Transport.Client", "System", "System.Collections", "System.Collections.Generic") ++ extraImports))
+  }
 }
-
-

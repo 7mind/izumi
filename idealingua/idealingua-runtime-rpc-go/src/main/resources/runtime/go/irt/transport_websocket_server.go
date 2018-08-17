@@ -1,6 +1,7 @@
 package irt
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -8,12 +9,12 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type processorTaskMessage struct {
+type processorRpcRequestMessage struct {
 	connection *wsConnection
 	message    *WebSocketRequestMessage
 }
 
-type processorResultMessage struct {
+type processorRpcResponseMessage struct {
 	connection *wsConnection
 	message    *WebSocketResponseMessage
 }
@@ -21,7 +22,7 @@ type processorResultMessage struct {
 type wsConnection struct {
 	conn     *websocket.Conn
 	header   http.Header
-	messages chan *processorResultMessage
+	messages chan *processorRpcResponseMessage
 	context  *ConnectionContext
 }
 
@@ -40,8 +41,8 @@ type WebSocketServerTransport struct {
 	unregister  chan *wsConnection
 	terminate   chan bool
 
-	tasks   chan *processorTaskMessage
-	results chan *processorResultMessage
+	rpcRequests  chan *processorRpcRequestMessage
+	rpcResponses chan *processorRpcResponseMessage
 }
 
 func NewWebSocketServerTransportEx(dispatcher *Dispatcher, marshaller Marshaller, logger Logger,
@@ -64,8 +65,8 @@ func NewWebSocketServerTransportEx(dispatcher *Dispatcher, marshaller Marshaller
 
 		handlers: handlers,
 
-		tasks:   make(chan *processorTaskMessage, DefaultProcessingThreads),
-		results: make(chan *processorResultMessage, DefaultProcessingThreads),
+		rpcRequests:  make(chan *processorRpcRequestMessage, DefaultProcessingThreads),
+		rpcResponses: make(chan *processorRpcResponseMessage, DefaultProcessingThreads),
 	}
 
 	return transport
@@ -99,35 +100,6 @@ func (t *WebSocketServerTransport) runConnectionReader(c *wsConnection) {
 			continue
 		}
 
-		msg := &WebSocketRequestMessage{}
-		err = t.marshaller.Unmarshal(message, msg)
-		if err != nil {
-			t.logger.Logf(LogError, "Can't unmarshal %s, body: %s", err.Error(), string(message))
-			continue
-		}
-
-		if msg.Authorization != "" {
-			t.logger.Logf(LogTrace, "Incoming message: Auth Update\n\n%s", msg.Authorization)
-			c.context.System.Auth.UpdateFromValue(msg.Authorization)
-			if t.handlers != nil && t.handlers.OnAuth != nil {
-				if err := t.handlers.OnAuth(c.context); err != nil {
-					c.conn.WriteMessage(websocket.CloseMessage, []byte(fmt.Sprintf("{\"error\": \"%s\"}", err.Error())))
-					continue
-				}
-			}
-
-			if msg.Service == "" || msg.Method == "" {
-				// This was just auth updated
-				c.messages <- &processorResultMessage{
-					connection: c,
-					message: &WebSocketResponseMessage{
-						Ref: msg.ID,
-					},
-				}
-				continue
-			}
-		}
-
 		var msgType string
 		switch msgtype {
 		case websocket.TextMessage:
@@ -141,10 +113,54 @@ func (t *WebSocketServerTransport) runConnectionReader(c *wsConnection) {
 			msgType = "Unknown"
 		}
 
-		t.logger.Logf(LogTrace, "Incoming message:\n\nService: %s\nMethod: %s\nID: %s\nType: %s\nData: %s", msg.Service, msg.Method, msg.ID, msgType, string(msg.Data))
-		t.tasks <- &processorTaskMessage{
-			connection: c,
-			message:    msg,
+		t.logger.Logf(LogTrace, "Incoming message:\n\nType:%s\nMessage:%s", msgType, string(message))
+
+		msgBase := &WebSocketMessageBase{}
+		err = t.marshaller.Unmarshal(message, msgBase)
+		if err != nil || msgBase.Kind == "" {
+			t.logger.Logf(LogError, "Can't unmarshal %s, body: %s", err.Error(), string(message))
+		}
+
+		switch msgBase.Kind {
+		case MessageKindRPCRequest:
+			msg := &WebSocketRequestMessage{}
+			err = t.marshaller.Unmarshal(message, msg)
+			if err != nil {
+				t.logger.Logf(LogError, "Can't unmarshal %s, body: %s", err.Error(), string(message))
+				continue
+			}
+
+			if msg.Headers != nil {
+				authorization, ok := msg.Headers["Authorization"]
+				if ok {
+					t.logger.Logf(LogTrace, "Incoming message: Auth Update\n\n%s", authorization)
+					c.context.System.Auth.UpdateFromValue(authorization)
+					if t.handlers != nil && t.handlers.OnAuth != nil {
+						if err := t.handlers.OnAuth(c.context); err != nil {
+							c.conn.WriteMessage(websocket.CloseMessage, []byte(fmt.Sprintf("{\"error\": \"%s\"}", err.Error())))
+							continue
+						}
+					}
+
+					if msg.Service == "" || msg.Method == "" {
+						// This was just auth updated
+						c.messages <- &processorRpcResponseMessage{
+							connection: c,
+							message: &WebSocketResponseMessage{
+								Ref: msg.ID,
+							},
+						}
+						continue
+					}
+				}
+			}
+
+			t.rpcRequests <- &processorRpcRequestMessage{
+				connection: c,
+				message:    msg,
+			}
+		default:
+			t.logger.Logf(LogError, "Unsupported request: %s", string(message))
 		}
 	}
 }
@@ -167,17 +183,13 @@ func (t *WebSocketServerTransport) runConnectionWriter(c *wsConnection) {
 				return
 			}
 
-			if message.message.Error != "" {
-				t.logger.Logf(LogTrace, "Outgoing message:\n\nRef: %s\nError: %s", message.message.Ref, message.message.Error)
-			} else {
-				t.logger.Logf(LogTrace, "Outgoing message:\n\nRef: %s\nData: %s", message.message.Ref, string(message.message.Data))
-			}
-
 			data, err := t.marshaller.Marshal(message.message)
 			if err != nil {
 				t.logger.Logf(LogError, "Can't marshal %s", err.Error())
 				continue
 			}
+
+			t.logger.Logf(LogTrace, "Outgoing message:\n\nRef: %s\nData: %s", string(data))
 
 			w, err := c.conn.NextWriter(websocket.TextMessage)
 			if err != nil {
@@ -206,25 +218,28 @@ func (t *WebSocketServerTransport) runProcessor() {
 			t.logger.Logf(LogTrace, "WebSocket Requests Processor - Finished")
 			return
 
-		case task := <-t.tasks:
+		case task := <-t.rpcRequests:
 			{
 				msg := &WebSocketResponseMessage{
-					Ref: task.message.ID,
+					Kind: MessageKindRPCResponse,
+					Ref:  task.message.ID,
 				}
-				result := &processorResultMessage{
+				result := &processorRpcResponseMessage{
 					connection: task.connection,
 					message:    msg,
 				}
 
 				data, err := t.dispatcher.Dispatch(task.connection.context, task.message.Service, task.message.Method, task.message.Data)
 				if err != nil {
-					msg.Error = err.Error()
-					t.results <- result
+					msg.Kind = MessageKindRPCFailure
+					errStr, _ := json.Marshal(err.Error())
+					msg.Data = errStr
+					t.rpcResponses <- result
 					continue
 				}
 
 				msg.Data = data
-				t.results <- result
+				t.rpcResponses <- result
 			}
 		}
 	}
@@ -261,7 +276,7 @@ func (t *WebSocketServerTransport) run() {
 				}
 
 				t.logger.Logf(LogDebug, "Disconnected (Connections %d)", len(t.connections))
-			case result := <-t.results:
+			case result := <-t.rpcResponses:
 				select {
 				case result.connection.messages <- result:
 				default:
@@ -317,7 +332,7 @@ func (t *WebSocketServerTransport) ServeWS(w http.ResponseWriter, r *http.Reques
 
 	wsConnection := &wsConnection{
 		conn:     conn,
-		messages: make(chan *processorResultMessage, DefaultConnectionBuffer),
+		messages: make(chan *processorRpcResponseMessage, DefaultConnectionBuffer),
 		context: &ConnectionContext{
 			System: &SystemContext{
 				Auth:       &Authorization{},

@@ -26,6 +26,19 @@ class IzStringTest extends WordSpec {
       assert("xxxxxx".ellipsedLeftPad(5) == "...xx")
       assert("xx".ellipsedLeftPad(1) == "x")
     }
+
+    "support minimization" in {
+      assert("x".minimize(0) == "x")
+      assert("x.y.z".minimize(0) == "x.y.z")
+      assert("x..z".minimize(0) == "x.z")
+      assert("com.github.izumi.Class".minimize(0) == "c.g.i.C")
+
+      assert("x".minimize(1) == "x")
+      assert("x.y.z".minimize(1) == "x.y.z")
+      assert("x..z".minimize(1) == "x.z")
+      assert("com.github.izumi.Class".minimize(1) == "c.g.i.Class")
+      assert("com.github.izumi.Class".minimize(2) == "c.g.izumi.Class")
+    }
   }
 
 

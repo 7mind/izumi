@@ -27,7 +27,7 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
       }
       .distinctBy(_._2.types) // a fix for synthetic cornercase: https://github.com/pshirshov/izumi-r2/issues/334
       .map {
-      case (cdef, constructorSignature, fullConstructorCode) =>
+      case (_, constructorSignature, fullConstructorCode) =>
         val instantiator = q" new ${t.typeFull}(..$fullConstructorCode) "
 
         q"""def apply(..${constructorSignature.params}): ${t.typeFull} = {

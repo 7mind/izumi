@@ -47,15 +47,22 @@ object IzLogger {
   /**
     * Configures basic console logger with global level threshold
     */
-  final def basic(threshold: Log.Level = IzLogger.Level.Trace): IzLogger = basic(threshold, ConsoleSink.ColoredConsoleSink)
-
-  def basic(threshold: Log.Level, sink: LogSink, sinks: LogSink*): IzLogger = {
-    val router: ConfigurableLogRouter = basicRouter(threshold, sink +: sinks :_*)
-    new IzLogger(router, CustomContext.empty)
+  final def basic(threshold: Log.Level = IzLogger.Level.Trace, levels: Map[String, Log.Level] = Map.empty): IzLogger = {
+    simple(threshold, levels, ConsoleSink.ColoredConsoleSink)
   }
 
-  def basicRouter(threshold: Log.Level, sinks: LogSink*): ConfigurableLogRouter = {
-    val configService = new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(threshold, sinks))
+  final def basic(threshold: Log.Level, sink: LogSink, sinks: LogSink*): IzLogger = {
+    simple(threshold, Map.empty, sink, sinks :_*)
+  }
+
+  final def simple(threshold: Log.Level, levels: Map[String, Log.Level], sink: LogSink, sinks: LogSink*): IzLogger = {
+    val r = router(threshold, levels, sink +: sinks :_*)
+    new IzLogger(r, CustomContext.empty)
+  }
+
+  final def router(threshold: Log.Level, levels: Map[String, Log.Level], sinks: LogSink*): ConfigurableLogRouter = {
+    val levelConfigs = levels.mapValues(l => LoggerConfig(l, sinks))
+    val configService = new LogConfigServiceStaticImpl(levelConfigs, LoggerConfig(threshold, sinks))
     val router = new ConfigurableLogRouter(configService)
     router
   }

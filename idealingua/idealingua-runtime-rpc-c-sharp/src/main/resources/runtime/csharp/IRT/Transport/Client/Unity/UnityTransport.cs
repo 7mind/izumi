@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine.Networking;
 using IRT.Marshaller;
 using IRT.Transport.Client;
+using IRT.Transport.Authorization;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -16,22 +17,39 @@ namespace IRT.Transport.Client.Unity {
         private const string CACHE_CONTROL_HEADER_VALUES = "private, max-age=0, no-cache, no-store";
         private const string PRAGMA_HEADER_KEY = "Pragma";
         private const string PRAGMA_HEADER_VALUES = "no-cache";
-        private IJsonMarshaller Marshaller;
-        private string endpoint;
+        private IJsonMarshaller _marshaller;
+        private string _endpoint;
         public string Endpoint         {
-            get { return endpoint; }
+            get { return _endpoint; }
             set {
-                endpoint = value;
-                if (!endpoint.EndsWith("\\") && !endpoint.EndsWith("/"))
+                _endpoint = value;
+                if (!_endpoint .EndsWith("\\") && !_endpoint .EndsWith("/"))
                 {
-                    endpoint += "/";
+                    _endpoint  += "/";
                 }
             }
         }
 
         public int ActiveRequests { get; private set; }
-        public int Timeout; // In Seconds
-        public IDictionary<string, string> HttpHeaders;
+        private int _timeout; // In Seconds
+        private Dictionary<string, string> _headers;
+        private AuthMethod _auth;
+
+        public void SetAuthorization(AuthMethod method) {
+            _auth = method;
+        }
+
+        public AuthMethod GetAuthorization() {
+            return _auth;
+        }
+
+        public void SetHeaders(Dictionary<string, string> headers) {
+            _headers = headers;
+        }
+
+        public Dictionary<string, string> GetHeaders() {
+            return _headers;
+        }
 
 #if !UNITY_EDITOR
         public Action<IEnumerator> CoroutineProcessor;
@@ -42,16 +60,16 @@ namespace IRT.Transport.Client.Unity {
                 Action<IEnumerator> coroutineProcessor,
                 int timeout = 60) {
             Endpoint = endpoint;
-            Marshaller = marshaller;
-            Timeout = timeout;
+            _marshaller = marshaller;
+            _timeout = timeout;
             CoroutineProcessor = coroutineProcessor;
             ActiveRequests = 0;
         }
 #else
         public UnityTransportGeneric(string endpoint, IJsonMarshaller marshaller, int timeout = 60) {
             Endpoint = endpoint;
-            Marshaller = marshaller;
-            Timeout = timeout;
+            _mMarshaller = marshaller;
+            _timeout = timeout;
             ActiveRequests = 0;
         }
 #endif
@@ -59,21 +77,25 @@ namespace IRT.Transport.Client.Unity {
         protected UnityWebRequest PrepareRequest<I>(string service, string method, I payload) {
             var request = new UnityWebRequest {
                 downloadHandler = new DownloadHandlerBuffer(),
-                url = string.Format("{0}/{1}/{2}", endpoint, service, method),
+                url = string.Format("{0}/{1}/{2}", _endpoint, service, method),
                 method = payload == null ? "GET" : "POST"
             };
 
-            if (HttpHeaders != null) {
-                foreach (KeyValuePair<string, string> kv in HttpHeaders) {
+            if (_headers != null) {
+                foreach (KeyValuePair<string, string> kv in _headers) {
                     request.SetRequestHeader(kv.Key, kv.Value);
                 }
+            }
+
+            if (_auth != null) {
+                request.SetRequestHeader("Authorization", _auth.ToValue());
             }
 
             // API cached requests might be a pain, let's suppress that
             request.SetRequestHeader(CACHE_CONTROL_HEADER_KEY, CACHE_CONTROL_HEADER_VALUES);
             request.SetRequestHeader(PRAGMA_HEADER_KEY, PRAGMA_HEADER_VALUES);
             if (payload != null) {
-                var data = Marshaller.Marshal<I>(payload);
+                var data = _marshaller.Marshal<I>(payload);
                 if (data == null) {
                     throw new TransportException("UnityTransport only supports Marshallers which return a string.");
                 }
@@ -83,7 +105,7 @@ namespace IRT.Transport.Client.Unity {
                     contentType = "application/json"
                 };
             }
-            request.timeout = Timeout;
+            request.timeout = _timeout;
             return request;
         }
 
@@ -142,7 +164,7 @@ namespace IRT.Transport.Client.Unity {
                 if (string.IsNullOrEmpty(text)) {
                     throw new TransportException("Empty response.");
                 }
-                var data = Marshaller.Unmarshal<O>(text);
+                var data = _marshaller.Unmarshal<O>(text);
                 callback.Success(data);
             } catch (Exception ex) {
                 callback.Failure(

@@ -16,8 +16,7 @@ publishMavenStyle in ThisBuild := true
 homepage in ThisBuild := Some(url("https://izumi.7mind.io"))
 licenses in ThisBuild := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))
 developers in ThisBuild := List(
-  Developer(id = "pshirshov", name = "Pavel Shirshov", url = url("https://github.com/pshirshov"), email = "pshirshov@gmail.com"),
-  Developer(id = "kai", name = "Kai Shirshov", url = url("https://github.com/kaishh"), email = "kai.shirshov@gmail.com"),
+  Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/pshirshov"), email = "team@7mind.io"),
 )
 
 
@@ -312,7 +311,7 @@ lazy val idealinguaCore = inIdealingua.as.module
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcScala, logstageApiLogger, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
-  .settings(libraryDependencies ++= R.http4s_all)
+  .settings(libraryDependencies ++= R.http4s_all ++ R.java_websocket)
 
 lazy val idealinguaRuntimeRpcTypescript = inIdealingua.as.module
 

@@ -1,52 +1,73 @@
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Collections.Specialized;
 using IRT.Marshaller;
+using IRT.Transport.Authorization;
 
 namespace IRT.Transport.Client {
     public class SyncHttpTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
-        private IJsonMarshaller Marshaller;
+        private IJsonMarshaller _marshaller;
 
-        private string endpoint;
+        private string _endpoint;
         public string Endpoint {
             get {
-                return endpoint;
+                return _endpoint;
             }
             set {
-                endpoint = value;
-                if (!endpoint.EndsWith("\\") && !endpoint.EndsWith("/")) {
-                    endpoint += "/";
+                _endpoint = value;
+                if (!_endpoint.EndsWith("\\") && !_endpoint.EndsWith("/")) {
+                    _endpoint += "/";
                 }
             }
         }
 
-        public int Timeout; // In Seconds
-        public NameValueCollection HttpHeaders;
+        private int _timeout; // In Seconds
+        private AuthMethod _auth;
+        private Dictionary<string, string> _headers;
 
         public SyncHttpTransportGeneric(string endpoint, IJsonMarshaller marshaller, int timeout = 60) {
-            Endpoint = endpoint;
-            Marshaller = marshaller;
-            Timeout = timeout;
+            _endpoint = endpoint;
+            _marshaller = marshaller;
+            _timeout = timeout;
         }
 
-        public void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx) {
+        public void SetAuthorization(AuthMethod method) {
+            _auth = method;
+        }
+
+        public AuthMethod GetAuthorization() {
+            return _auth;
+        }
+
+        public void SetHeaders(Dictionary<string, string> headers) {
+            _headers = headers;
+        }
+
+        public Dictionary<string, string> GetHeaders() {
+            return _headers;
+        }
+
+        public virtual void Send<I, O>(string service, string method, I payload, ClientTransportCallback<O> callback, C ctx) {
             try {
-                var request = (HttpWebRequest) WebRequest.Create(string.Format("{0}/{1}/{2}", endpoint, service, method));
-                request.Timeout = Timeout * 1000;
+                var request = (HttpWebRequest) WebRequest.Create(string.Format("{0}/{1}/{2}", _endpoint, service, method));
+                request.Timeout = _timeout * 1000;
                 request.Method = payload == null ? "GET" : "POST";
-                if (HttpHeaders != null) {
-                    foreach (var key in HttpHeaders.AllKeys) {
-                        foreach (var value in HttpHeaders.GetValues(key)) {
-                            request.Headers.Add(key, value);
-                        }
+                if (_headers != null) {
+                    foreach (var key in _headers.Keys) {
+                        request.Headers.Add(key, _headers[key]);
                     }
                 }
 
+                if (_auth != null) {
+                    request.Headers.Add("Authorization", _auth.ToValue());
+                }
+
                 if (payload != null) {
-                    var data = Marshaller.Marshal<I>(payload);
+                    var data = _marshaller.Marshal<I>(payload);
                     if (data == null) {
                         throw new TransportException("HttpTransport only supports Marshallers which return a string.");
                     }
@@ -68,7 +89,7 @@ namespace IRT.Transport.Client {
                                 throw new TransportException("Empty Response");
                             }
 
-                            var data = Marshaller.Unmarshal<O>(jsonString);
+                            var data = _marshaller.Unmarshal<O>(jsonString);
                             callback.Success(data);
                         }
                     }
