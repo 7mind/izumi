@@ -4,32 +4,31 @@ import java.util.concurrent.ConcurrentHashMap
 
 import _root_.io.circe.parser._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{RPCPacketKind, _}
-import fs2.async
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder
-import org.http4s.websocket.WebsocketBits.{Text, WebSocketFrame}
+import org.http4s.websocket.WebsocketBits.{Binary, Close, Text, WebSocketFrame}
 import scalaz.zio.ExitResult
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
 trait WithHttp4sServer {
-  this: Http4sContext with WithHttp4sLoggingMiddleware =>
+  this: Http4sContext with WithHttp4sLoggingMiddleware with WithHttp4sHttpRequestContext with WithWebsocketClientContext =>
 
-  class HttpServer[Ctx](
-                         protected val muxer: IRTServerMultiplexor[BIO, Ctx]
-                         , protected val contextProvider: AuthMiddleware[CIO, Ctx]
-                         , val wsContextProvider: WsContextProvider[Ctx]
-                       ) {
+  class HttpServer[Ctx, ClientId](
+                                   protected val muxer: IRTServerMultiplexor[BIO, Ctx]
+                                   , protected val contextProvider: AuthMiddleware[CIO, Ctx]
+                                   , val wsContextProvider: WsContextProvider[Ctx, ClientId]
+                                 ) {
     protected val dsl: Http4sDsl[CIO] = WithHttp4sServer.this.dsl
 
     import dsl._
 
-    type ClientId = String
-    protected val clients = new ConcurrentHashMap[ClientId, WebSocketFrame]()
+    type WSC = WebsocketClientContext[ClientId, Ctx]
+    protected val clients = new ConcurrentHashMap[WsSessionId, WSC]()
 
     def service: HttpRoutes[CIO] = {
       val svc = AuthedService(handler())
@@ -43,90 +42,85 @@ trait WithHttp4sServer {
 
       case request@GET -> Root / service / method as ctx =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
-        run(request, ctx, body = "{}", methodId)
+        run(HttpRequestContext(request, ctx), body = "{}", methodId)
 
       case request@POST -> Root / service / method as ctx =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         request.req.decode[String] {
           body =>
-            run(request, ctx, body, methodId)
+            run(HttpRequestContext(request, ctx), body, methodId)
         }
     }
 
 
     protected def setupWs(request: AuthedRequest[CIO, Ctx], initialContext: Ctx): CIO[Response[CIO]] = {
-      val queue = async.unboundedQueue[CIO, WebSocketFrame]
-      import scala.concurrent.duration._
-      val outStream: fs2.Stream[CIO, WebSocketFrame] =
-        fs2.Stream.awakeEvery[CIO](100.millis)
-          .map {
-            d =>
-              if (false) {
-                Some(Text("test"))
-              } else {
-                None
-              }
-          }
-          .collect {
-            case Some(frame) =>
-              frame
-          }
+      val context = new WebsocketClientContext[ClientId, Ctx](request, initialContext, clients)
 
-      queue.flatMap { q =>
+      val handler = handleWsMessage(context) andThen {
+        s => Text(s)
+      }
+
+      context.queue.flatMap { q =>
         val d = q.dequeue.through {
-          _.map(handleWsMessage(request, initialContext, _))
+          stream =>
+            stream
+              .map {
+                case m: Close =>
+                  logger.info(s"${context -> null}: Websocket client disconnected")
+                  context.finish()
+                  m
+                case m => m
+              }
+              .collect(handler)
         }
         val e = q.enqueue
-        WebSocketBuilder[CIO].build(d.merge(outStream), e)
+        WebSocketBuilder[CIO].build(d.merge(context.outStream).merge(context.pingStream), e)
       }
     }
 
-    protected def handleWsMessage(request: AuthedRequest[CIO, Ctx], initialContext: Ctx, input: WebSocketFrame): WebSocketFrame = {
-      import io.circe.syntax._
+    protected def handleWsMessage(context: WSC): PartialFunction[WebSocketFrame, String] = {
+      case Text(msg, _) =>
+        val ioresponse = makeResponse(context, msg)
 
-      val output: String = input match {
-        case Text(msg, _) =>
-          val ioresponse = makeResponse(initialContext, msg)
+        ZIOR.unsafeRunSync(ioresponse) match {
+          case ExitResult.Completed(v) =>
+            v.asJson.noSpaces
 
-          ZIOR.unsafeRunSync(ioresponse) match {
-            case ExitResult.Completed(v) =>
-              v.asJson.noSpaces
+          case ExitResult.Failed(error, _) =>
+            handleWsError(context, List(error), None, "failure")
 
-            case ExitResult.Failed(error, _) =>
-              handleWsError(request, List(error), None, "failure")
+          case ExitResult.Terminated(causes) =>
+            handleWsError(context, causes, None, "termination")
+        }
 
-            case ExitResult.Terminated(causes) =>
-              handleWsError(request, causes, None, "termination")
-          }
-
-        case v =>
-          handleWsError(request, List.empty, Some(v.toString.take(100) + "..."), "badframe")
-      }
-
-      Text(output)
+      case v: Binary =>
+        handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")
     }
 
-    protected def handleWsError(request: AuthedRequest[CIO, Ctx], causes: List[Throwable], data: Option[String], kind: String): String = {
+    protected def handleWsError(context: WSC, causes: List[Throwable], data: Option[String], kind: String): String = {
       causes.headOption match {
         case Some(cause) =>
-          logger.error(s"WS Execution failed, $kind, $request, $cause")
+          logger.error(s"${context -> null}: WS Execution failed, $kind, $data, $cause")
           RpcFailureStringResponse(RPCPacketKind.Fail, data.getOrElse(cause.getMessage), kind).asJson.noSpaces
 
         case None =>
-          logger.error(s"WS Execution failed, $kind, $request")
+          logger.error(s"${context -> null}: WS Execution failed, $kind, $data")
           RpcFailureStringResponse(RPCPacketKind.Fail, "?", kind).asJson.noSpaces
       }
     }
 
-    protected def makeResponse(initialContext: Ctx, message: String): ZIO[Throwable, RpcResponse] = {
+    protected def makeResponse(context: WSC, message: String): ZIO[Throwable, RpcResponse] = {
       for {
         parsed <- ZIO.fromEither(parse(message))
         unmarshalled <- ZIO.fromEither(parsed.as[RpcRequest])
-        context <- ZIO.syncThrowable(wsContextProvider.toContext(initialContext, unmarshalled))
-        response <- respond(context, unmarshalled)
+        id <- ZIO.syncThrowable(wsContextProvider.toId(context.initialContext, unmarshalled))
+        _ <- ZIO.syncThrowable(context.updateId(id))
+        userCtx <- ZIO.syncThrowable(wsContextProvider.toContext(context.initialContext, unmarshalled))
+        _ <- ZIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
+        response <- respond(userCtx, unmarshalled)
           .catchAll {
             exception =>
-              logger.error(s"WS processing failed, $message, $exception")
+              logger.error(s"${context -> null}: WS processing failed, $message, $exception")
               ZIO.point(RpcResponse(RPCPacketKind.RpcFail, unmarshalled.id, exception.getMessage.asJson))
           }
       } yield {
@@ -140,7 +134,7 @@ trait WithHttp4sServer {
           val methodId = IRTMethodId(IRTServiceId(input.service), IRTMethodName(input.method))
           muxer.doInvoke(input.data, context, methodId).flatMap {
             case None =>
-              ZIO.fail(new IRTMissingHandlerException(s"No handler for $methodId", input))
+              ZIO.fail(new IRTMissingHandlerException(s"${context -> null}: No handler for $methodId", input))
             case Some(resp) =>
               ZIO.point(RpcResponse(RPCPacketKind.RpcResponse, input.id, resp))
           }
@@ -150,16 +144,17 @@ trait WithHttp4sServer {
       }
     }
 
-    protected def run(request: AuthedRequest[CIO, Ctx], context: Ctx, body: String, toInvoke: IRTMethodId): CIO[Response[CIO]] = {
+
+    protected def run(context: HttpRequestContext[Ctx], body: String, toInvoke: IRTMethodId): CIO[Response[CIO]] = {
       val ioR = for {
         parsed <- ZIO.fromEither(parse(body))
-        maybeResult <- muxer.doInvoke(parsed, context, toInvoke)
+        maybeResult <- muxer.doInvoke(parsed, context.context, toInvoke)
       } yield {
         maybeResult match {
           case Some(value) =>
             dsl.Ok(value.noSpaces)
           case None =>
-            logger.trace(s"No handler for $request")
+            logger.warn(s"${context -> null}: No handler for $toInvoke")
             dsl.NotFound()
         }
 
@@ -170,21 +165,21 @@ trait WithHttp4sServer {
         case ExitResult.Completed(v) =>
           v
         case ExitResult.Failed(error, _) =>
-          logger.trace(s"Parsing failure while handling $request: $error")
+          logger.info(s"${context -> null}: Parsing failure while handling $toInvoke: $error")
           dsl.BadRequest()
         case ExitResult.Terminated(causes) =>
-          handleError(request, causes, "termination")
+          handleError(context, causes, "termination")
       }
     }
 
-    protected def handleError(request: AuthedRequest[CIO, Ctx], causes: List[Throwable], kind: String): CIO[Response[CIO]] = {
+    protected def handleError(context: HttpRequestContext[Ctx], causes: List[Throwable], kind: String): CIO[Response[CIO]] = {
       causes.headOption match {
         case Some(cause: IRTHttpFailureException) =>
-          logger.debug(s"Request rejected, $request, $cause")
+          logger.debug(s"${context -> null}: Request rejected, ${context.request}, $cause")
           CIO.pure(Response(status = cause.status))
 
         case cause =>
-          logger.error(s"Execution failed, $kind, $request, $cause")
+          logger.error(s"${context -> null}: Execution failed, $kind, ${context.request}, $cause")
           dsl.InternalServerError()
       }
     }

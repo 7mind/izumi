@@ -28,7 +28,6 @@ class Http4sTransportTest extends WordSpec {
 
   "Http4s transport" should {
     "support direct calls" in {
-
       import scala.concurrent.ExecutionContext.Implicits.global
       val builder = BlazeBuilder[CIO]
         .bindHttp(port, host)
@@ -48,8 +47,27 @@ class Http4sTransportTest extends WordSpec {
         case Left(error) =>
           throw error
       }
+    }
 
+    "support xdirect calls" in {
+      import scala.concurrent.ExecutionContext.Implicits.global
+      val builder = BlazeBuilder[CIO]
+        .bindHttp(8080, host)
+        .withWebSockets(true)
+        .mountService(ioService.service, "/")
+        .start
 
+      builder.unsafeRunAsync {
+        case Right(server) =>
+          try {
+            Thread.sleep(1000*1000)
+          } finally {
+            server.shutdownNow()
+          }
+
+        case Left(error) =>
+          throw error
+      }
     }
   }
 
@@ -149,6 +167,7 @@ object Http4sTransportTest {
 
     //
     final val demo = new DemoContext[DummyContext]()
+    final val rt = new Http4sRuntime[ZIO](makeLogger())
 
     //
     final val authUser: Kleisli[OptionT[CIO, ?], Request[CIO], DummyContext] =
@@ -158,7 +177,7 @@ object Http4sTransportTest {
           OptionT.liftF(IO(context))
       }
 
-    final val wsContextProvider: WsContextProvider[DummyContext] = new WsContextProvider[DummyContext] {
+    final val wsContextProvider = new rt.WsContextProvider[DummyContext, String] {
       val knownAuthorization = new AtomicReference[Credentials](null)
 
       override def toContext(initial: DummyContext, packet: RpcRequest): DummyContext = {
@@ -175,17 +194,11 @@ object Http4sTransportTest {
         }
 
         initial.copy(credentials = Option(knownAuthorization.get()))
-
       }
+
+      override def toId(initial: DummyContext, packet: RpcRequest): Option[String] = None
     }
 
-    final val logger = IzLogger.basic(Log.Level.Info, Map(
-      "org.http4s" -> Log.Level.Warn
-      , "org.http4s.server.blaze" -> Log.Level.Error
-      , "org.http4s.blaze.channel.nio1" -> Log.Level.Crit
-    ))
-    StaticLogRouter.instance.setup(logger.receiver)
-    final val rt = new Http4sRuntime[ZIO](logger)
     final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser), wsContextProvider)
 
     //
@@ -209,6 +222,16 @@ object Http4sTransportTest {
     final val greeterClient = new GreeterServiceClientWrapped(clientDispatcher)
   }
 
+  private def makeLogger(): IzLogger = {
+    val out = IzLogger.basic(Log.Level.Info, Map(
+      "org.http4s" -> Log.Level.Warn
+      , "org.http4s.server.blaze" -> Log.Level.Error
+      , "org.http4s.blaze.channel.nio1" -> Log.Level.Crit
+      , "com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s" -> Log.Level.Debug
+    ))
+    StaticLogRouter.instance.setup(out.receiver)
+    out
+  }
 }
 
 

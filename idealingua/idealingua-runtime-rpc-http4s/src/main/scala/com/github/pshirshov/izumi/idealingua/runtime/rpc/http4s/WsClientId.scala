@@ -1,0 +1,7 @@
+package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+
+import java.util.UUID
+
+case class WsSessionId(sessionId: UUID) extends AnyVal
+
+case class WsClientId[ClientId](sessionId: WsSessionId, id: Option[ClientId])
