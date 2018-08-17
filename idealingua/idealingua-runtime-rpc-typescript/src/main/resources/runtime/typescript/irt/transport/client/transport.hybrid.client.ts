@@ -1,7 +1,7 @@
 
 import { Logger } from '../../logger';
 import { WebSocketClientTransport } from './transport.websocket.client';
-import { ClientTransport, ServiceClientInData, ServiceClientOutData } from '../../transport';
+import { ClientTransport, IncomingData, OutgoingData } from '../../transport';
 import { HTTPClientTransport } from './transport.http.client';
 import { JSONMarshaller } from '../../marshaller';
 import { AuthMethod } from '../auth/auth';
@@ -39,7 +39,7 @@ export class HybridClientTransport implements ClientTransport {
         this._wsTransport.setHeaders(headers);
     }
 
-    public send(service: string, method: string, data: ServiceClientInData): Promise<ServiceClientOutData> {
+    public send(service: string, method: string, data: IncomingData): Promise<OutgoingData> {
         if (this._wsTransport.isReady()) {
             return this._wsTransport.send(service, method, data);
         }

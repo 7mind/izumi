@@ -22,6 +22,11 @@ type ClientTransport interface {
 	Send(service string, method string, dataIn interface{}, dataOut interface{}) error
 }
 
+type ClientSocketTransport interface {
+	ClientTransport
+	// This one supports Buzzer and Streams
+}
+
 // Server specific
 type OnConnect func(connection *ConnectionContext, request *http.Request) error
 type OnAuth func(connection *ConnectionContext) error
