@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import java.net.URI
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit, TimeoutException}
+import java.util.concurrent.{ConcurrentHashMap, TimeoutException}
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{RPCPacketKind, _}
@@ -10,8 +10,6 @@ import io.circe.syntax._
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import scalaz.zio.{ExitResult, IO}
-
-import scala.concurrent.duration.Duration
 
 trait WithHttp4sWsClient {
   this: Http4sContext =>
@@ -75,10 +73,26 @@ trait WithHttp4sWsClient {
       wsClient.closeBlocking()
     }
 
-    protected val timeout = Duration.apply(2, TimeUnit.SECONDS)
+    import scala.concurrent.duration._
+
+    protected val timeout = 2.seconds
 
     def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Goint to perform $request")
+
+      for {
+        encoded <- codec.encode(request)
+        wrapped = RpcRequest(
+          RPCPacketKind.RpcRequest,
+          request.method.service.value,
+          request.method.methodId.value,
+          RpcPacketId.random(),
+          encoded,
+          Map.empty,
+        )
+      } yield {
+
+      }
 
       codec
         .encode(request)
@@ -93,28 +107,32 @@ trait WithHttp4sWsClient {
               Map.empty,
             )
 
-            val out = transformRequest(wrapped).asJson.noSpaces
-            requests.put(wrapped.id, request.method)
-            wsClient.send(out)
-            logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
 
+            IO.bracket0[Throwable, RpcRequest, IRTMuxResponse](IO.point(wrapped))((id, _) => IO.sync(Quirks.discard(requests.remove(id.id)))) {
+              id =>
+                IO.syncThrowable {
+                  val out = transformRequest(wrapped).asJson.noSpaces
 
-            IO.sync {
-              val started = System.nanoTime()
-              while (!responses.containsKey(wrapped.id) && Duration.fromNanos(System.nanoTime() - started) <= timeout) {
-                Thread.sleep(10)
-              }
-            }.flatMap {
-              _ =>
-                Option(responses.get(wrapped.id)) match {
-                  case Some(value) =>
-                    logger.debug(s"Have response: $value")
-                    IO.point(value)
-
-                  case None =>
-                    IO.terminate(new TimeoutException(s"No response for ${wrapped.id} in $timeout"))
-
+                  requests.put(id.id, request.method)
+                  wsClient.send(out)
+                  logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
+                  val started = System.nanoTime()
+                  while (!responses.containsKey(wrapped.id) && Duration.fromNanos(System.nanoTime() - started) <= timeout) {
+                    IO.sleep(50.millis)
+                  }
                 }
+                  .flatMap {
+                    _ =>
+                      Option(responses.get(wrapped.id)) match {
+                        case Some(value) =>
+                          logger.debug(s"Have response: $value")
+                          IO.point(value)
+
+                        case None =>
+                          IO.terminate(new TimeoutException(s"No response for ${wrapped.id} in $timeout"))
+
+                      }
+                  }
             }
         }
     }

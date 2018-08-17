@@ -71,7 +71,7 @@ class Http4sTransportTest extends WordSpec {
     }
   }
 
-  private def performWsTests(disp: IRTDispatcher with TestDispatcher): Unit = {
+  private def performWsTests(disp: IRTDispatcher with TestDispatcher with AutoCloseable): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
@@ -84,6 +84,7 @@ class Http4sTransportTest extends WordSpec {
       import scala.concurrent.duration._
       ZIOR.unsafeRun(greeterClient.alternative().delay(10.seconds))
     }
+    disp.close()
     ()
 
   }

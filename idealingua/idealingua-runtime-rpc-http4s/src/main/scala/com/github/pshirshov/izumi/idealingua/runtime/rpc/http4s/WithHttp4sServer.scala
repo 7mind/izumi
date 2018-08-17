@@ -55,6 +55,7 @@ trait WithHttp4sServer {
 
     protected def setupWs(request: AuthedRequest[CIO, Ctx], initialContext: Ctx): CIO[Response[CIO]] = {
       val context = new WebsocketClientContext[ClientId, Ctx](request, initialContext, clients)
+      logger.debug(s"${context -> null}: Websocket client connected")
 
       val handler = handleWsMessage(context) andThen {
         s => Text(s)
@@ -66,7 +67,7 @@ trait WithHttp4sServer {
             stream
               .map {
                 case m: Close =>
-                  logger.info(s"${context -> null}: Websocket client disconnected")
+                  logger.debug(s"${context -> null}: Websocket client disconnected")
                   context.finish()
                   m
                 case m => m

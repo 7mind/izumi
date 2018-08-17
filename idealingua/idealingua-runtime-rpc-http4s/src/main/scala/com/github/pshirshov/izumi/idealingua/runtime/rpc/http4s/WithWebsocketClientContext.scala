@@ -1,9 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import java.util.concurrent.ConcurrentHashMap
+import java.time.ZonedDateTime
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.RpcRequest
 import fs2.async
@@ -28,9 +30,18 @@ trait WithWebsocketClientContext {
 
     private val queuePollTimeout: FiniteDuration = 100.millis
 
-    private val sessionId = WsSessionId(UUIDGen.getTimeUUID)
-
     private val maybeId = new AtomicReference[ClientId]()
+
+    val openingTime: ZonedDateTime = IzTime.utcNow
+
+    def duration(): FiniteDuration = {
+      val now = IzTime.utcNow
+
+      val d = java.time.Duration.between(openingTime, now)
+      FiniteDuration(d.toNanos, TimeUnit.NANOSECONDS)
+    }
+
+    val sessionId = WsSessionId(UUIDGen.getTimeUUID)
 
     val queue: CIO[Queue[CIO, WebSocketFrame]] = async.unboundedQueue[CIO, WebSocketFrame]
 
@@ -63,6 +74,8 @@ trait WithWebsocketClientContext {
     }
 
     Quirks.discard(sessions.put(sessionId, this))
+
+    override def toString: String = s"[${id.toString}, ${duration().toSeconds}s]"
   }
 
   trait WsContextProvider[Ctx, ClientId] {
