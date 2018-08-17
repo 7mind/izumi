@@ -134,9 +134,7 @@ trait WithHttp4sWsClient {
                             IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                         }
                   }
-
-
-            }
+           }
         }
     }
 

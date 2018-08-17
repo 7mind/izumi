@@ -20,7 +20,6 @@ import scalaz.zio
 
 import scala.concurrent.TimeoutException
 
-
 class Http4sTransportTest extends WordSpec {
 
   import Http4sTransportTest.Http4sTestContext._
@@ -87,6 +86,7 @@ class Http4sTransportTest extends WordSpec {
     ()
 
   }
+
 
   private def performTests(disp: IRTDispatcher with TestDispatcher): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
@@ -177,6 +177,7 @@ object Http4sTransportTest {
           OptionT.liftF(IO(context))
       }
 
+
     final val wsContextProvider = new rt.WsContextProvider[DummyContext, String] {
       val knownAuthorization = new AtomicReference[Credentials](null)
 
@@ -192,9 +193,9 @@ object Http4sTransportTest {
             knownAuthorization.set(value.credentials)
           case None =>
         }
-
         initial.copy(credentials = Option(knownAuthorization.get()))
       }
+    }
 
       override def toId(initial: DummyContext, packet: RpcRequest): Option[String] = None
     }

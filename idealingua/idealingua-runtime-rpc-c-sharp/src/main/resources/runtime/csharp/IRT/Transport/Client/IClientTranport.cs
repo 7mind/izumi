@@ -13,6 +13,10 @@ namespace IRT.Transport.Client {
         Dictionary<string, string> GetHeaders();
     }
 
-    public interface IClientSocketTransport<C>: IClientTransport<C> where C: class, IClientTransportContext {
+    public interface IClientSocketTransport<C, D>: IClientTransport<C> where C: class, IClientTransportContext {
+        bool RegisterBuzzer(IServiceDispatcher<C, D> buzzer);
+        bool UnregisterBuzzer(string id);
+        void SetBuzzerContext(C context);
+        C GetBuzzerContext();
     }
 }

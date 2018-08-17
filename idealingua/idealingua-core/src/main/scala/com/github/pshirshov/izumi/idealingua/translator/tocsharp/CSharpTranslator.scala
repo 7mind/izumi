@@ -588,18 +588,18 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |${i.events.map(m => renderRPCMethodSignature(i.id.name, m, forClient = true) + ";").mkString("\n").shift(4)}
        |}
        |
-       |public class ${name}Generic<C>: I$name<C> where C: class, IClientTransportContext {
-       |    public IClientSocketTransport<C> Transport { get; private set; }
+       |public class ${name}Generic<C, D>: I$name<C> where C: class, IClientTransportContext {
+       |    public IClientSocketTransport<C, D> Transport { get; private set; }
        |
-       |    public ${name}Generic(IClientSocketTransport<C> t) {
+       |    public ${name}Generic(IClientSocketTransport<C, D> t) {
        |        Transport = t;
        |    }
        |
        |${i.events.map(me => renderRPCClientMethod(i.id.name, me)).mkString("\n").shift(4)}
        |}
        |
-       |public class $name: ${name}Generic<IClientTransportContext> {
-       |    public $name(IClientSocketTransport<IClientTransportContext> t): base(t) {}
+       |public class $name: ${name}Generic<IClientTransportContext, string> {
+       |    public $name(IClientSocketTransport<IClientTransportContext, string> t): base(t) {}
        |}
      """.stripMargin
   }
