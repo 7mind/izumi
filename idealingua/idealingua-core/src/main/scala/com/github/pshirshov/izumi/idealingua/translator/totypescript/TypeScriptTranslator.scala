@@ -740,8 +740,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |export class ${i.id.name}Dispatcher<C, D> implements ServiceDispatcher<C, D> {
        |    private static readonly methods: string[] = [
        |${i.methods.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "        \"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"" else "").mkString(",\n")}\n    ];
-       |    private marshaller: Marshaller<D>;
-       |    private server: I${i.id.name}Server<C>;
+       |    protected marshaller: Marshaller<D>;
+       |    protected server: I${i.id.name}Server<C>;
        |
        |    constructor(marshaller: Marshaller<D>, server: I${i.id.name}Server<C>) {
        |        this.marshaller = marshaller;
@@ -774,9 +774,14 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def renderServiceServerDummy(i: Service): String = {
-    val name = s"${i.id.name}ServerDummy"
-    s"""export class $name<C> implements I${i.id.name}Server<C> {
+  protected def renderServiceServer(i: Service): String = {
+    val name = s"${i.id.name}Server"
+    s"""export abstract class $name<C, D> extends ${i.id.name}Dispatcher<C, D> implements I${i.id.name}Server<C> {
+       |    constructor(marshaller: Marshaller<D>) {
+       |        super(marshaller, null);
+       |        this.server = this;
+       |    }
+       |
        |${i.methods.map(m => renderServiceServerDummyMethod(m)).mkString("\n").shift(4)}
        |}
      """.stripMargin
@@ -809,8 +814,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
            |// Dispatcher
            |${renderServiceDispatcher(i)}
            |
-           |// Dummy Server
-           |${renderServiceServerDummy(i)}
+           |// Base Server
+           |${renderServiceServer(i)}
          """.stripMargin
 
       val header =
@@ -868,8 +873,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |export class ${i.id.name}Dispatcher<C, D> implements ServiceDispatcher<C, D> {
        |    private static readonly methods: string[] = [
        |${i.events.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "        \"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"" else "").mkString(",\n")}\n    ];
-       |    private marshaller: Marshaller<D>;
-       |    private handlers: I${i.id.name}BuzzerHandlers<C>;
+       |    protected marshaller: Marshaller<D>;
+       |    protected handlers: I${i.id.name}BuzzerHandlers<C>;
        |
        |    constructor(marshaller: Marshaller<D>, handlers: I${i.id.name}BuzzerHandlers<C>) {
        |        this.marshaller = marshaller;
@@ -902,9 +907,14 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def renderEmitterDummyHandler(i: Emitter): String = {
-    val name = s"${i.id.name}BuzzerHandlersDummy"
-    s"""export class $name<C> implements I${i.id.name}BuzzerHandlers<C> {
+  protected def renderEmitterBase(i: Emitter): String = {
+    val name = s"${i.id.name}BuzzerHandlers"
+    s"""export abstract class $name<C, D> extends ${i.id.name}Dispatcher<C, D> implements I${i.id.name}BuzzerHandlers<C> {
+       |    constructor(marshaller: Marshaller<D>) {
+       |        super(marshaller, null);
+       |        this.handlers = this;
+       |    }
+       |
        |${i.events.map(m => renderEmitterHandlerDummyMethod(m)).mkString("\n").shift(4)}
        |}
      """.stripMargin
@@ -924,8 +934,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |// Dispatcher
          |${renderEmitterDispatcher(i)}
          |
-         |// Dummy Handler
-         |${renderEmitterDummyHandler(i)}
+         |// Buzzer Handlers Base
+         |${renderEmitterBase(i)}
          """.stripMargin
 
     val header =

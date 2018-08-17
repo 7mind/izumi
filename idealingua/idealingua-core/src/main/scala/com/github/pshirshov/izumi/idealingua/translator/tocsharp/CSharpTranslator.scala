@@ -418,8 +418,8 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |
        |public class ${i.id.name}Dispatcher<C, D>: IServiceDispatcher<C, D> {
        |    private static readonly string[] methods = { ${i.methods.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "\"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"" else "").mkString(", ")} };
-       |    private IMarshaller<D> marshaller;
-       |    private I${i.id.name}Server<C> server;
+       |    protected IMarshaller<D> marshaller;
+       |    protected I${i.id.name}Server<C> server;
        |
        |    public ${i.id.name}Dispatcher(IMarshaller<D> marshaller, I${i.id.name}Server<C> server) {
        |        this.marshaller = marshaller;
@@ -445,7 +445,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
      """.stripMargin
   }
 
-  protected def renderRPCDummyMethod(svcOrEmitter: String, member: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
+  protected def renderRPCDummyMethod(svcOrEmitter: String, member: DefMethod, virtual: Boolean)(implicit imports: CSharpImports, ts: Typespace): String = {
     val retValue = member match {
       case m: DefMethod.RPCMethod => m.signature.output match {
         case _: Struct | _: Algebraic => "return null;"
@@ -455,16 +455,20 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
       }
       case _ => throw new Exception("Unsupported renderServiceServerDummyMethod case.")
     }
-    s"""public ${renderRPCMethodSignature(svcOrEmitter, member, forClient = false)} {
+    s"""public ${if(virtual) "virtual " else ""}${renderRPCMethodSignature(svcOrEmitter, member, forClient = false)} {
        |    $retValue
        |}
      """.stripMargin
   }
 
-  protected def renderServiceServerDummy(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
-    val name = s"${i.id.name}ServerDummy"
-    s"""public class $name<C>: I${i.id.name}Server<C> {
-       |${i.methods.map(m => renderRPCDummyMethod(i.id.name, m)).mkString("\n").shift(4)}
+  protected def renderServiceServerBase(i: Service)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val name = s"${i.id.name}Server"
+    s"""public abstract class $name<C, D>: ${i.id.name}Dispatcher<C, D>,  I${i.id.name}Server<C> {
+       |    public $name(IMarshaller<D> marshaller): base(marshaller, null) {
+       |        server = this;
+       |    }
+       |
+       |${i.methods.map(m => renderRPCDummyMethod(i.id.name, m, virtual = true)).mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
@@ -538,8 +542,8 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
          |// ============== Service Dispatcher ==============
          |${renderServiceDispatcher(i)}
          |
-         |// ============== Service Server Dummy ==============
-         |${renderServiceServerDummy(i)}
+         |// ============== Service Server Base ==============
+         |${renderServiceServerBase(i)}
          """.stripMargin
 
     val extraImports = i.methods.flatMap(me => me match {
@@ -607,8 +611,8 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |
        |public class ${i.id.name}Dispatcher<C, D>: IServiceDispatcher<C, D> {
        |    private static readonly string[] methods = { ${i.events.map(m => if (m.isInstanceOf[DefMethod.RPCMethod]) "\"" + m.asInstanceOf[DefMethod.RPCMethod].name + "\"" else "").mkString(", ")} };
-       |    private IMarshaller<D> marshaller;
-       |    private I${i.id.name}BuzzerHandlers<C> handlers;
+       |    protected IMarshaller<D> marshaller;
+       |    protected I${i.id.name}BuzzerHandlers<C> handlers;
        |
        |    public ${i.id.name}Dispatcher(IMarshaller<D> marshaller, I${i.id.name}BuzzerHandlers<C> handlers) {
        |        this.marshaller = marshaller;
@@ -635,9 +639,13 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   }
 
   protected def renderEmitterHandlersDummy(i: Emitter)(implicit imports: CSharpImports, ts: Typespace): String = {
-    val name = s"${i.id.name}BuzzerHandlersDummy"
-    s"""public class $name<C>: I${i.id.name}BuzzerHandlers<C> {
-       |${i.events.map(m => renderRPCDummyMethod(i.id.name, m)).mkString("\n").shift(4)}
+    val name = s"${i.id.name}BuzzerHandlers"
+    s"""public abstract class $name<C, D>: ${i.id.name}Dispatcher<C, D>,  I${i.id.name}BuzzerHandlers<C> {
+       |    public $name(IMarshaller<D> marshaller): base(marshaller, null) {
+       |        handlers = this;
+       |    }
+       |
+       |${i.events.map(m => renderRPCDummyMethod(i.id.name, m, virtual = true)).mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
@@ -656,7 +664,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
          |// ============== Dispatcher ==============
          |${renderEmitterDispatcher(i)}
          |
-         |// ============== Buzzer Handlers Dummy ==============
+         |// ============== Buzzer Handlers Base ==============
          |${renderEmitterHandlersDummy(i)}
          """.stripMargin
 
