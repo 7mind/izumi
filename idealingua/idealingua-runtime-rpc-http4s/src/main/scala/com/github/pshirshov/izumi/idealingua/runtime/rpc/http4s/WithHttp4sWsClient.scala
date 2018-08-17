@@ -75,64 +75,65 @@ trait WithHttp4sWsClient {
 
     import scala.concurrent.duration._
 
-    protected val timeout = 2.seconds
+    protected val timeout: FiniteDuration = 2.seconds
 
     def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Goint to perform $request")
-
-      for {
-        encoded <- codec.encode(request)
-        wrapped = RpcRequest(
-          RPCPacketKind.RpcRequest,
-          request.method.service.value,
-          request.method.methodId.value,
-          RpcPacketId.random(),
-          encoded,
-          Map.empty,
-        )
-      } yield {
-
-      }
 
       codec
         .encode(request)
         .flatMap {
           encoded =>
-            val wrapped = RpcRequest(
-              RPCPacketKind.RpcRequest,
-              request.method.service.value,
-              request.method.methodId.value,
-              RpcPacketId.random(),
-              encoded,
-              Map.empty,
-            )
+            val wrapped = IO.point {
+              RpcRequest(
+                RPCPacketKind.RpcRequest,
+                request.method.service.value,
+                request.method.methodId.value,
+                RpcPacketId.random(),
+                encoded,
+                Map.empty,
+              )
+            }
 
 
-            IO.bracket0[Throwable, RpcRequest, IRTMuxResponse](IO.point(wrapped))((id, _) => IO.sync(Quirks.discard(requests.remove(id.id)))) {
-              id =>
+            IO.bracket0[Throwable, RpcRequest, IRTMuxResponse](wrapped) {
+              (id, _) => IO.sync(Quirks.discard(requests.remove(id.id)))
+            } {
+              w =>
                 IO.syncThrowable {
-                  val out = transformRequest(wrapped).asJson.noSpaces
-
-                  requests.put(id.id, request.method)
-                  wsClient.send(out)
+                  val out = transformRequest(w).asJson.noSpaces
+                  requests.put(w.id, request.method)
                   logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
-                  val started = System.nanoTime()
-                  while (!responses.containsKey(wrapped.id) && Duration.fromNanos(System.nanoTime() - started) <= timeout) {
-                    IO.sleep(50.millis)
-                  }
+                  wsClient.send(out)
+                  w.id
                 }
                   .flatMap {
-                    _ =>
-                      Option(responses.get(wrapped.id)) match {
-                        case Some(value) =>
-                          logger.debug(s"Have response: $value")
-                          IO.point(value)
-
-                        case None =>
-                          IO.terminate(new TimeoutException(s"No response for ${wrapped.id} in $timeout"))
-
+                    id =>
+                      val onTimeout = new RuntimeException() // TODO: ZIO interface isn't nice
+                      IO.sync {
+                        id
                       }
+                        .flatMap {
+                          id =>
+                            Option(responses.get(id)) match {
+                              case None =>
+                                IO.fail(onTimeout)
+                              case Some(value) =>
+                                IO.point(Some(value))
+                            }
+                        }
+                        .retryFor[Option[IRTMuxResponse]](None)(id => id)(timeout)
+                        .flatMap {
+                          case Some(value) =>
+                            logger.debug(s"Have response: $value")
+                            IO.point(value)
+
+                          case None =>
+                            IO.terminate(new TimeoutException(s"No response for $id in $timeout"))
+                        }
                   }
+
+
             }
         }
     }

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import java.util.concurrent.ConcurrentHashMap
 
 import _root_.io.circe.parser._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{RPCPacketKind, _}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
@@ -20,8 +20,9 @@ trait WithHttp4sServer {
 
   class HttpServer[Ctx, ClientId](
                                    protected val muxer: IRTServerMultiplexor[BIO, Ctx]
+                                   , protected val codec: IRTClientMultiplexor[BIO]
                                    , protected val contextProvider: AuthMiddleware[CIO, Ctx]
-                                   , val wsContextProvider: WsContextProvider[Ctx, ClientId]
+                                   , protected val wsContextProvider: WsContextProvider[Ctx, ClientId]
                                  ) {
     protected val dsl: Http4sDsl[CIO] = WithHttp4sServer.this.dsl
 

@@ -81,8 +81,7 @@ class Http4sTransportTest extends WordSpec {
 
     disp.setupCredentials("user", "badpass")
     intercept[TimeoutException] {
-      import scala.concurrent.duration._
-      ZIOR.unsafeRun(greeterClient.alternative().delay(10.seconds))
+      ZIOR.unsafeRun(greeterClient.alternative())
     }
     disp.close()
     ()
@@ -200,7 +199,7 @@ object Http4sTransportTest {
       override def toId(initial: DummyContext, packet: RpcRequest): Option[String] = None
     }
 
-    final val ioService = new rt.HttpServer(demo.multiplexor, AuthMiddleware(authUser), wsContextProvider)
+    final val ioService = new rt.HttpServer(demo.multiplexor, demo.codec, AuthMiddleware(authUser), wsContextProvider)
 
     //
     final val clientDispatcher: rt.ClientDispatcher with TestDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) with TestDispatcher {
