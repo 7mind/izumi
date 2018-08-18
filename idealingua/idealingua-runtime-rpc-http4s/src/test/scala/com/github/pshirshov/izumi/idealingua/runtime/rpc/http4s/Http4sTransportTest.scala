@@ -48,26 +48,26 @@ class Http4sTransportTest extends WordSpec {
       }
     }
 
-//    "xxx" in {
-//      import scala.concurrent.ExecutionContext.Implicits.global
-//      val builder = BlazeBuilder[CIO]
-//        .bindHttp(8080, host)
-//        .withWebSockets(true)
-//        .mountService(ioService.service, "/")
-//        .start
-//
-//      builder.unsafeRunAsync {
-//        case Right(server) =>
-//          try {
-//            Thread.sleep(1000*1000)
-//          } finally {
-//            server.shutdownNow()
-//          }
-//
-//        case Left(error) =>
-//          throw error
-//      }
-//    }
+    //    "xxx" in {
+    //      import scala.concurrent.ExecutionContext.Implicits.global
+    //      val builder = BlazeBuilder[CIO]
+    //        .bindHttp(8080, host)
+    //        .withWebSockets(true)
+    //        .mountService(ioService.service, "/")
+    //        .start
+    //
+    //      builder.unsafeRunAsync {
+    //        case Right(server) =>
+    //          try {
+    //            Thread.sleep(1000*1000)
+    //          } finally {
+    //            server.shutdownNow()
+    //          }
+    //
+    //        case Left(error) =>
+    //          throw error
+    //      }
+    //    }
   }
 
   private def performWsTests(disp: IRTDispatcher with TestDispatcher with AutoCloseable): Unit = {
@@ -188,7 +188,9 @@ object Http4sTransportTest {
           case None =>
         }
 
-        packet.headers.get("Authorization").map(Authorization.parse).flatMap(_.toOption) match {
+        val maybeAuth = packet.headers.get("Authorization")
+
+        maybeAuth.map(Authorization.parse).flatMap(_.toOption) match {
           case Some(value) =>
             knownAuthorization.set(value.credentials)
           case None =>
@@ -196,7 +198,14 @@ object Http4sTransportTest {
         initial.copy(credentials = Option(knownAuthorization.get()))
       }
 
-      override def toId(initial: DummyContext, packet: RpcRequest): Option[String] = None
+      override def toId(initial: DummyContext, packet: RpcRequest): Option[String] = {
+        packet.headers.get("Authorization")
+          .map(Authorization.parse)
+          .flatMap(_.toOption)
+          .collect {
+            case Authorization(BasicCredentials((user, _))) => user
+          }
+      }
     }
 
     final val ioService = new rt.HttpServer(demo.multiplexor, demo.codec, AuthMiddleware(authUser), wsContextProvider, rt.WsSessionListener.empty)
