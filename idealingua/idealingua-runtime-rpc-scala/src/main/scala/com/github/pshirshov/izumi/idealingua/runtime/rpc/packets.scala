@@ -122,6 +122,18 @@ object RpcPacket {
       Map.empty,
     )
   }
+
+  def buzzerRequest(method: IRTMethodId, data: Json): RpcPacket = {
+    RpcPacket(
+      RPCPacketKind.BuzzRequest,
+      data,
+      Some(RpcPacketId.random()),
+      None,
+      Some(method.service.value),
+      Some(method.methodId.value),
+      Map.empty,
+    )
+  }
 }
 
 

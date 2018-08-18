@@ -61,9 +61,7 @@ trait WithHttp4sServer {
       context.start()
       logger.debug(s"${context -> null}: Websocket client connected")
 
-      val handler = handleWsMessage(context) andThen {
-        s => Text(s)
-      }
+      val handler = handleWsMessage(context)
 
       context.queue.flatMap { q =>
         val d = q.dequeue.through {
@@ -77,32 +75,33 @@ trait WithHttp4sServer {
                 case m => m
               }
               .collect(handler)
+              .collect({case Some(v) => Text(v)})
         }
         val e = q.enqueue
         WebSocketBuilder[CIO].build(d.merge(context.outStream).merge(context.pingStream), e)
       }
     }
 
-    protected def handleWsMessage(context: WSC): PartialFunction[WebSocketFrame, String] = {
+    protected def handleWsMessage(context: WSC): PartialFunction[WebSocketFrame, Option[String]] = {
       case Text(msg, _) =>
         val ioresponse = makeResponse(context, msg)
 
         ZIOR.unsafeRunSync(ioresponse) match {
           case ExitResult.Completed(v) =>
-            encode(v.asJson)
+            v.map(_.asJson).map(encode)
 
           case ExitResult.Failed(error, _) =>
-            handleWsError(context, List(error), None, "failure")
+            Some(handleWsError(context, List(error), None, "failure"))
 
           case ExitResult.Terminated(causes) =>
-            handleWsError(context, causes, None, "termination")
+            Some(handleWsError(context, causes, None, "termination"))
         }
 
       case v: Binary =>
-        handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")
+        Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe"))
     }
 
-    protected def makeResponse(context: WSC, message: String): ZIO[Throwable, RpcPacket] = {
+    protected def makeResponse(context: WSC, message: String): ZIO[Throwable, Option[RpcPacket]] = {
       for {
         parsed <- ZIO.fromEither(parse(message))
         unmarshalled <- ZIO.fromEither(parsed.as[RpcPacket])
@@ -115,12 +114,12 @@ trait WithHttp4sServer {
             {
               case Left(exception :: otherIssues) =>
                 logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $otherIssues")
-                ZIO.point(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage))
+                ZIO.point(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
               case Left(Nil) =>
                 ZIO.terminate(new IllegalStateException())
               case Right(exception) =>
                 logger.error(s"${context -> null}: WS processing failed, $message, $exception")
-                ZIO.point(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage))
+                ZIO.point(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
             }, {
               succ => ZIO.point(succ)
             }
@@ -143,7 +142,7 @@ trait WithHttp4sServer {
       }
     }
 
-    protected def respond(context: WSC, userContext: Ctx, input: RpcPacket): ZIO[Throwable, RpcPacket] = {
+    protected def respond(context: WSC, userContext: Ctx, input: RpcPacket): ZIO[Throwable, Option[RpcPacket]] = {
       input match {
         case RpcPacket(RPCPacketKind.RpcRequest, data, Some(id), _, Some(service), Some(method), _) =>
           val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
@@ -151,11 +150,11 @@ trait WithHttp4sServer {
             case None =>
               ZIO.fail(new IRTMissingHandlerException(s"${context -> null}: No handler for $methodId", input))
             case Some(resp) =>
-              ZIO.point(rpc.RpcPacket.rpcResponse(id, resp))
+              ZIO.point(Some(rpc.RpcPacket.rpcResponse(id, resp)))
           }
 
         case RpcPacket(RPCPacketKind.BuzzResponse, data, _, Some(id), _, _, _) =>
-        ???
+          context.handleResponse(id, data)
 
         case k =>
           ZIO.fail(new UnsupportedOperationException(s"Can't handle $k"))

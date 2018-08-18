@@ -1,15 +1,17 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import java.time.ZonedDateTime
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit}
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.RpcPacket
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.{http4s, _}
 import fs2.async
 import fs2.async.mutable.Queue
+import io.circe.Json
+import io.circe.syntax._
 import org.http4s.AuthedRequest
 import org.http4s.websocket.WebsocketBits._
 
@@ -55,8 +57,10 @@ trait WithWebsocketClientContext {
       FiniteDuration(d.toNanos, TimeUnit.NANOSECONDS)
     }
 
-    def enqueue(messages: WebSocketFrame*): Unit = {
-      messages.foreach(sendQueue.add)
+    def enqueue(method: IRTMethodId, data: Json): Unit = {
+      val request = RpcPacket.buzzerRequest(method, data)
+      sendQueue.add(Text(encode(request.asJson)))
+      requests.put(request.id.get, method)
     }
 
     protected[http4s] def updateId(maybeNewId: Option[ClientId]): Unit = {
@@ -98,6 +102,28 @@ trait WithWebsocketClientContext {
     protected[http4s] def start(): Unit = {
       Quirks.discard(sessions.put(sessionId, this))
       listener.onSessionOpened(this)
+      requests.clear()
+      responses.clear()
+    }
+
+    // TODO: no stale item cleanups
+    protected val requests: ConcurrentHashMap[RpcPacketId, IRTMethodId] = new ConcurrentHashMap[RpcPacketId, IRTMethodId]()
+    protected val responses: ConcurrentHashMap[RpcPacketId, RawResponse] = new ConcurrentHashMap[RpcPacketId, RawResponse]()
+
+    def handleResponse(id: RpcPacketId, data: Json): ZIO[Throwable, Option[RpcPacket]] = {
+      for {
+        v <- ZIO.sync(Option(requests.remove(id)))
+        _ <- ZIO.sync {
+          v match {
+            case Some(method) =>
+              responses.put(id, http4s.RawResponse(data, method))
+
+            case None =>
+          }
+        }
+      } yield {
+        None
+      }
     }
 
     override def toString: String = s"[${id.toString}, ${duration().toSeconds}s]"
@@ -124,3 +150,5 @@ trait WithWebsocketClientContext {
   }
 
 }
+
+case class RawResponse(data: Json, method: IRTMethodId)
