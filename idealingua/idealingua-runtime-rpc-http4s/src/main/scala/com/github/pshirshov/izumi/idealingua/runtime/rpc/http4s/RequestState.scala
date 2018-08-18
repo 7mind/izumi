@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import java.util.concurrent.ConcurrentHashMap
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMethodId, IRTMissingHandlerException, RpcPacketId, http4s}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMethodId, IRTMissingHandlerException, RpcPacketId}
 import io.circe.Json
-import scalaz.zio.IO
+import scalaz.zio.{IO, Retry}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -57,25 +57,27 @@ class RequestState {
           respond(id, RawResponse(data, method))
           IO.point((id, method))
         case None =>
-          IO.terminate(new IRTMissingHandlerException(s"No handler for $mid", data))
+          IO.fail(new IRTMissingHandlerException(s"No handler for $mid", data))
       }
     } yield {
       method
     }
   }
 
-  def poll(id: RpcPacketId, interval: FiniteDuration, timeout: FiniteDuration): IO[RuntimeException, Option[RawResponse]] = {
-    val onTimeout = new RuntimeException() // TODO: new zio: https://github.com/scalaz/scalaz-zio/issues/193
+  def poll(id: RpcPacketId, interval: FiniteDuration, timeout: FiniteDuration): IO[Nothing, Option[RawResponse]] = {
     IO.sleep(interval)
       .flatMap {
         _ =>
           checkResponse(id) match {
             case None =>
-              IO.fail(onTimeout)
+              IO.fail(None)
             case Some(value) =>
               IO.point(Some(value))
           }
       }
-      .retryFor[Option[RawResponse]](None)(resp => resp)(timeout)
+      .retryOrElse(Retry.duration(timeout), {
+        (_: Any, _: Any) =>
+          IO.point(None)
+      })
   }
 }
