@@ -101,6 +101,35 @@ trait WithHttp4sServer {
         handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")
     }
 
+    protected def makeResponse(context: WSC, message: String): ZIO[Throwable, RpcResponse] = {
+      for {
+        parsed <- ZIO.fromEither(parse(message))
+        unmarshalled <- ZIO.fromEither(parsed.as[RpcRequest])
+        id <- ZIO.syncThrowable(wsContextProvider.toId(context.initialContext, unmarshalled))
+        userCtx <- ZIO.syncThrowable(wsContextProvider.toContext(context.initialContext, unmarshalled))
+        _ <- ZIO.syncThrowable(context.updateId(id))
+        _ <- ZIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
+        response <- respond(userCtx, unmarshalled).sandboxWith {
+          _.redeem(
+            {
+              case Left(exception :: otherIssues) =>
+                logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $otherIssues")
+                ZIO.point(RpcResponse(RPCPacketKind.RpcFail, unmarshalled.id, exception.getMessage.asJson))
+
+              case Right(exception) =>
+                logger.error(s"${context -> null}: WS processing failed, $message, $exception")
+                ZIO.point(RpcResponse(RPCPacketKind.RpcFail, unmarshalled.id, exception.getMessage.asJson))
+            }, {
+              succ => ZIO.point(succ)
+            }
+          )
+
+        }
+      } yield {
+        response
+      }
+    }
+
     protected def handleWsError(context: WSC, causes: List[Throwable], data: Option[String], kind: String): String = {
       causes.headOption match {
         case Some(cause) =>
@@ -110,25 +139,6 @@ trait WithHttp4sServer {
         case None =>
           logger.error(s"${context -> null}: WS Execution failed, $kind, $data")
           RpcFailureStringResponse(RPCPacketKind.Fail, "?", kind).asJson.noSpaces
-      }
-    }
-
-    protected def makeResponse(context: WSC, message: String): ZIO[Throwable, RpcResponse] = {
-      for {
-        parsed <- ZIO.fromEither(parse(message))
-        unmarshalled <- ZIO.fromEither(parsed.as[RpcRequest])
-        id <- ZIO.syncThrowable(wsContextProvider.toId(context.initialContext, unmarshalled))
-        _ <- ZIO.syncThrowable(context.updateId(id))
-        userCtx <- ZIO.syncThrowable(wsContextProvider.toContext(context.initialContext, unmarshalled))
-        _ <- ZIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
-        response <- respond(userCtx, unmarshalled)
-          .catchAll {
-            exception =>
-              logger.error(s"${context -> null}: WS processing failed, $message, $exception")
-              ZIO.point(RpcResponse(RPCPacketKind.RpcFail, unmarshalled.id, exception.getMessage.asJson))
-          }
-      } yield {
-        response
       }
     }
 
@@ -143,8 +153,11 @@ trait WithHttp4sServer {
               ZIO.point(RpcResponse(RPCPacketKind.RpcResponse, input.id, resp))
           }
 
+        case RPCPacketKind.BuzzResponse =>
+          ???
+
         case k =>
-          ZIO.fail(new UnsupportedOperationException(s"Can't handle $k. At the moment WS transport supports client2server requests only."))
+          ZIO.fail(new UnsupportedOperationException(s"Can't handle $k"))
       }
     }
 
