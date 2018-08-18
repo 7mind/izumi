@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import java.time.ZonedDateTime
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
@@ -21,6 +21,7 @@ trait WithWebsocketClientContext {
 
   trait WsSessionListener[Ctx, ClientId] {
     def onSessionOpened(context: WebsocketClientContext[ClientId, Ctx]): Unit
+
     def onSessionClosed(context: WebsocketClientContext[ClientId, Ctx]): Unit
   }
 
@@ -39,11 +40,11 @@ trait WithWebsocketClientContext {
     , listener: WsSessionListener[Ctx, ClientId]
     , sessions: ConcurrentHashMap[WsSessionId, WebsocketClientContext[ClientId, Ctx]]
   ) {
-    private val pingTimeout: FiniteDuration = 25.seconds
-
-    private val queuePollTimeout: FiniteDuration = 100.millis
+    private val sessionId = WsSessionId(UUIDGen.getTimeUUID)
 
     private val maybeId = new AtomicReference[ClientId]()
+
+    def id: WsClientId[ClientId] = WsClientId(sessionId, Option(maybeId.get()))
 
     val openingTime: ZonedDateTime = IzTime.utcNow
 
@@ -54,50 +55,57 @@ trait WithWebsocketClientContext {
       FiniteDuration(d.toNanos, TimeUnit.NANOSECONDS)
     }
 
-    val sessionId = WsSessionId(UUIDGen.getTimeUUID)
+    def enqueue(messages: WebSocketFrame*): Unit = {
+      messages.foreach(sendQueue.add)
+    }
 
-    val queue: CIO[Queue[CIO, WebSocketFrame]] = async.unboundedQueue[CIO, WebSocketFrame]
+    protected[http4s] def updateId(maybeNewId: Option[ClientId]): Unit = {
+      maybeNewId.foreach(maybeId.set)
+    }
 
-    val outStream: fs2.Stream[CIO, WebSocketFrame] =
+    private val pingTimeout: FiniteDuration = 25.seconds
+
+    private val queuePollTimeout: FiniteDuration = 100.millis
+
+    private val queueBatchSize: Int = 10
+
+    private val sendQueue = new ConcurrentLinkedDeque[WebSocketFrame]()
+
+    protected[http4s] val queue: CIO[Queue[CIO, WebSocketFrame]] = async.unboundedQueue[CIO, WebSocketFrame]
+
+    protected[http4s] val outStream: fs2.Stream[CIO, WebSocketFrame] =
       fs2.Stream.awakeEvery[CIO](queuePollTimeout)
         .flatMap {
           d =>
-            if (false) {
-              fs2.Stream.apply(Text("test"))
-            } else {
-              fs2.Stream.empty
+            val messages = (0 until queueBatchSize).map(_ => Option(sendQueue.poll())).collect {
+              case Some(m) => m
             }
+            fs2.Stream.apply(messages: _*)
         }
 
-    val pingStream: fs2.Stream[CIO, WebSocketFrame] =
+    protected[http4s] val pingStream: fs2.Stream[CIO, WebSocketFrame] =
       fs2.Stream.awakeEvery[CIO](pingTimeout)
         .flatMap {
           _ =>
             fs2.Stream(Ping())
         }
 
-    def updateId(maybeNewId: Option[ClientId]): Unit = {
-      maybeNewId.foreach(maybeId.set)
-    }
-
-    def id: WsClientId[ClientId] = WsClientId(sessionId, Option(maybeId.get()))
-
-    def finish(): Unit = {
+    protected[http4s] def finish(): Unit = {
       Quirks.discard(sessions.remove(id))
       listener.onSessionClosed(this)
     }
 
-    def start(): Unit = {
+    protected[http4s] def start(): Unit = {
       Quirks.discard(sessions.put(sessionId, this))
       listener.onSessionOpened(this)
     }
-
 
     override def toString: String = s"[${id.toString}, ${duration().toSeconds}s]"
   }
 
   trait WsContextProvider[Ctx, ClientId] {
     def toContext(initial: Ctx, packet: RpcRequest): Ctx
+
     def toId(initial: Ctx, packet: RpcRequest): Option[ClientId]
   }
 
@@ -114,4 +122,5 @@ trait WithWebsocketClientContext {
       }
     }
   }
+
 }

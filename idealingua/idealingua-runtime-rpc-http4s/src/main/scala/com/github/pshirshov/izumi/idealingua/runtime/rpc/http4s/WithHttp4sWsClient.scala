@@ -76,6 +76,7 @@ trait WithHttp4sWsClient {
     import scala.concurrent.duration._
 
     protected val timeout: FiniteDuration = 2.seconds
+    protected val pollingInterval: FiniteDuration = 50.millis
 
     def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Going to perform $request")
@@ -112,11 +113,9 @@ trait WithHttp4sWsClient {
                   .flatMap {
                     id =>
                       val onTimeout = new RuntimeException() // TODO: ZIO interface isn't nice
-                      IO.sync {
-                        id
-                      }
+                      IO.sleep(pollingInterval)
                         .flatMap {
-                          id =>
+                          _ =>
                             Option(responses.get(id)) match {
                               case None =>
                                 IO.fail(onTimeout)
