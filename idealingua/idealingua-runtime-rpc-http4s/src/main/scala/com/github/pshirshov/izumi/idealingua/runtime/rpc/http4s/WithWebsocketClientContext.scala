@@ -7,7 +7,7 @@ import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{http4s, _}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.async
 import fs2.async.mutable.Queue
 import io.circe.Json
@@ -57,10 +57,12 @@ trait WithWebsocketClientContext {
       FiniteDuration(d.toNanos, TimeUnit.NANOSECONDS)
     }
 
-    def enqueue(method: IRTMethodId, data: Json): Unit = {
+    def enqueue(method: IRTMethodId, data: Json): RpcPacketId = {
       val request = RpcPacket.buzzerRequest(method, data)
+      val id = request.id.get
       sendQueue.add(Text(encode(request.asJson)))
-      requests.put(request.id.get, method)
+      requestState.request(id, method)
+      id
     }
 
     protected[http4s] def updateId(maybeNewId: Option[ClientId]): Unit = {
@@ -97,34 +99,15 @@ trait WithWebsocketClientContext {
     protected[http4s] def finish(): Unit = {
       Quirks.discard(sessions.remove(id))
       listener.onSessionClosed(this)
+      requestState.clear()
     }
 
     protected[http4s] def start(): Unit = {
       Quirks.discard(sessions.put(sessionId, this))
       listener.onSessionOpened(this)
-      requests.clear()
-      responses.clear()
     }
 
-    // TODO: no stale item cleanups
-    protected val requests: ConcurrentHashMap[RpcPacketId, IRTMethodId] = new ConcurrentHashMap[RpcPacketId, IRTMethodId]()
-    protected val responses: ConcurrentHashMap[RpcPacketId, RawResponse] = new ConcurrentHashMap[RpcPacketId, RawResponse]()
-
-    def handleResponse(id: RpcPacketId, data: Json): ZIO[Throwable, Option[RpcPacket]] = {
-      for {
-        v <- ZIO.sync(Option(requests.remove(id)))
-        _ <- ZIO.sync {
-          v match {
-            case Some(method) =>
-              responses.put(id, http4s.RawResponse(data, method))
-
-            case None =>
-          }
-        }
-      } yield {
-        None
-      }
-    }
+    val requestState = new RequestState()
 
     override def toString: String = s"[${id.toString}, ${duration().toSeconds}s]"
   }

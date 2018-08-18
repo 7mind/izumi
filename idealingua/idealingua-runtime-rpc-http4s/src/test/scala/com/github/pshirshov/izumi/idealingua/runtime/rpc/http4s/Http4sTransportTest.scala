@@ -11,14 +11,13 @@ import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceServerWrapped}
 import com.github.pshirshov.izumi.r2.idealingua.test.impls._
+import io.circe.DecodingFailure
 import org.http4s._
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
-
-import scala.concurrent.TimeoutException
 
 class Http4sTransportTest extends WordSpec {
 
@@ -79,7 +78,7 @@ class Http4sTransportTest extends WordSpec {
     assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
 
     disp.setupCredentials("user", "badpass")
-    intercept[TimeoutException] {
+    intercept[DecodingFailure] {
       ZIOR.unsafeRun(greeterClient.alternative())
     }
     disp.close()

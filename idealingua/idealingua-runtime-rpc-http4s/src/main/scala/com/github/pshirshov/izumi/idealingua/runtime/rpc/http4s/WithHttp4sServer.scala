@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, TimeoutException}
 
 import _root_.io.circe.parser._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
@@ -11,9 +11,11 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebsocketBits.{Binary, Close, Text, WebSocketFrame}
-import scalaz.zio.ExitResult
+import scalaz.zio.{ExitResult, IO}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.collection.JavaConverters._
+import scala.concurrent.duration._
 
 
 trait WithHttp4sServer {
@@ -32,11 +34,52 @@ trait WithHttp4sServer {
 
     type WSC = WebsocketClientContext[ClientId, Ctx]
     protected val clients = new ConcurrentHashMap[WsSessionId, WSC]()
+    protected val timeout: FiniteDuration = 2.seconds
+    protected val pollingInterval: FiniteDuration = 50.millis
 
     def service: HttpRoutes[CIO] = {
       val svc = AuthedService(handler())
       val aservice: HttpRoutes[CIO] = contextProvider(svc)
       loggingMiddle(aservice)
+    }
+
+    def buzzersFor(clientId: ClientId): List[IRTDispatcher] = {
+      clients.values().asScala
+        .filter(_.id.id.contains(clientId))
+        .map {
+          sess =>
+            new IRTDispatcher {
+              override def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
+                for {
+                  session <- ZIO.point(sess)
+                  json <- codec.encode(request)
+                  id <- ZIO.sync(session.enqueue(request.method, json))
+                  resp <- IO.bracket0[Throwable, RpcPacketId, IRTMuxResponse](IO.point(id)) {
+                    (id, _) =>
+                      logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
+                      IO.sync(sess.requestState.forget(id))
+                  } {
+                    w =>
+                      IO.point(w).flatMap {
+                        id =>
+                          sess.requestState.poll(id, pollingInterval, timeout)
+                            .flatMap {
+                              case Some(value) =>
+                                logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                                codec.decode(value.data, value.method)
+
+                              case None =>
+                                IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                            }
+                      }
+                  }
+                } yield {
+                  resp
+                }
+              }
+            }
+        }
+        .toList
     }
 
     protected def handler(): PartialFunction[AuthedRequest[CIO, Ctx], CIO[Response[CIO]]] = {
@@ -75,7 +118,7 @@ trait WithHttp4sServer {
                 case m => m
               }
               .collect(handler)
-              .collect({case Some(v) => Text(v)})
+              .collect({ case Some(v) => Text(v) })
         }
         val e = q.enqueue
         WebSocketBuilder[CIO].build(d.merge(context.outStream).merge(context.pingStream), e)
@@ -153,8 +196,8 @@ trait WithHttp4sServer {
               ZIO.point(Some(rpc.RpcPacket.rpcResponse(id, resp)))
           }
 
-        case RpcPacket(RPCPacketKind.BuzzResponse, data, _, Some(id), _, _, _) =>
-          context.handleResponse(id, data)
+        case RpcPacket(RPCPacketKind.BuzzResponse, data, _, id, _, _, _) =>
+          context.requestState.handleResponse(id, data).flatMap(_ => ZIO.point(None))
 
         case k =>
           ZIO.fail(new UnsupportedOperationException(s"Can't handle $k"))
