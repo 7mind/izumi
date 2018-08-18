@@ -4,7 +4,7 @@ import java.net.URI
 import java.util.concurrent.{ConcurrentHashMap, TimeoutException}
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{RPCPacketKind, _}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.parser.parse
 import io.circe.syntax._
 import org.java_websocket.client.WebSocketClient
@@ -30,21 +30,24 @@ trait WithHttp4sWsClient {
         val result = for {
           parsed <- IO.fromEither(parse(message))
           _ <- IO.sync(logger.info(s"parsed: $parsed"))
-          decoded <- IO.fromEither(parsed.as[RpcResponse])
-          method <- Option(requests.get(decoded.ref)) match {
-            case Some(id) =>
-              requests.remove(decoded.ref)
-              IO.point(id)
-            case None => IO.terminate(new IRTMissingHandlerException(s"No handler for ${decoded.ref}", decoded))
+          decoded <- IO.fromEither(parsed.as[RpcPacket])
+          v <- decoded.ref.flatMap(r => Option(requests.get(r)).map(m => (m, r))) match {
+            case Some((m, id)) =>
+              requests.remove(id)
+              IO.point((m, id))
+
+            case None =>
+              IO.terminate(new IRTMissingHandlerException(s"No handler for ${decoded.ref}", decoded))
           }
-          product <- codec.decode(decoded.data, method)
+          product <- codec.decode(decoded.data, v._1)
         } yield {
-          (product, decoded)
+          (product, v._2)
         }
 
         ZIOR.unsafeRunSync(result) match {
-          case ExitResult.Completed(v) =>
-            Quirks.discard(responses.put(v._2.ref, v._1))
+          case ExitResult.Completed((response, id)) =>
+            logger.debug(s"Have reponse for packet $id: $response")
+            Quirks.discard(responses.put(id, response))
 
           case ExitResult.Failed(error, _) =>
             logger.error(s"Failed to process request: $error")
@@ -85,30 +88,21 @@ trait WithHttp4sWsClient {
         .encode(request)
         .flatMap {
           encoded =>
-            val wrapped = IO.point {
-              RpcRequest(
-                RPCPacketKind.RpcRequest,
-                request.method.service.value,
-                request.method.methodId.value,
-                RpcPacketId.random(),
-                encoded,
-                Map.empty,
-              )
-            }
-
-
-            IO.bracket0[Throwable, RpcRequest, IRTMuxResponse](wrapped) {
+            val wrapped = IO.point(RpcPacket.rpcRequest(request.method, encoded))
+            IO.bracket0[Throwable, RpcPacket, IRTMuxResponse](wrapped) {
               (id, _) =>
                 logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
                 IO.sync(Quirks.discard(requests.remove(id.id), responses.remove(id.id)))
             } {
               w =>
+                val pid = w.id.get // guaranteed to be present
+
                 IO.syncThrowable {
-                  val out = transformRequest(w).asJson.noSpaces
-                  requests.put(w.id, request.method)
-                  logger.debug(s"${request.method -> "method"}, ${w.id -> "id"}: Prepared request $encoded")
+                  val out = encode(transformRequest(w).asJson)
+                  requests.put(pid, request.method)
+                  logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
                   wsClient.send(out)
-                  w.id
+                  pid
                 }
                   .flatMap {
                     id =>
@@ -123,7 +117,7 @@ trait WithHttp4sWsClient {
                                 IO.point(Some(value))
                             }
                         }
-                        .retryFor[Option[IRTMuxResponse]](None)(id => id)(timeout)
+                        .retryFor[Option[IRTMuxResponse]](None)(resp => resp)(timeout)
                         .flatMap {
                           case Some(value) =>
                             logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
@@ -133,11 +127,11 @@ trait WithHttp4sWsClient {
                             IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                         }
                   }
-           }
+            }
         }
     }
 
-    protected def transformRequest(request: RpcRequest): RpcRequest = request
+    protected def transformRequest(request: RpcPacket): RpcPacket = request
   }
 
 }

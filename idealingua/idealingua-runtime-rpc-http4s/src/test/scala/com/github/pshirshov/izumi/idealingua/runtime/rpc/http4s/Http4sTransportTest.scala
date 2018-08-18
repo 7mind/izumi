@@ -181,7 +181,7 @@ object Http4sTransportTest {
     final val wsContextProvider = new rt.WsContextProvider[DummyContext, String] {
       val knownAuthorization = new AtomicReference[Credentials](null)
 
-      override def toContext(initial: DummyContext, packet: RpcRequest): DummyContext = {
+      override def toContext(initial: DummyContext, packet: RpcPacket): DummyContext = {
         initial.credentials match {
           case Some(value) =>
             knownAuthorization.compareAndSet(null, value)
@@ -198,7 +198,7 @@ object Http4sTransportTest {
         initial.copy(credentials = Option(knownAuthorization.get()))
       }
 
-      override def toId(initial: DummyContext, packet: RpcRequest): Option[String] = {
+      override def toId(initial: DummyContext, packet: RpcPacket): Option[String] = {
         packet.headers.get("Authorization")
           .map(Authorization.parse)
           .flatMap(_.toOption)
@@ -218,7 +218,7 @@ object Http4sTransportTest {
     }
 
     final def wsClientDispatcher(): rt.ClientWsDispatcher with TestDispatcher = new rt.ClientWsDispatcher(wsUri, demo.codec) with TestDispatcher {
-      override protected def transformRequest(request: RpcRequest): RpcRequest = {
+      override protected def transformRequest(request: RpcPacket): RpcPacket = {
         Option(creds.get()) match {
           case Some(value) =>
             val update = value.map(h => (h.name.value, h.value)).toMap

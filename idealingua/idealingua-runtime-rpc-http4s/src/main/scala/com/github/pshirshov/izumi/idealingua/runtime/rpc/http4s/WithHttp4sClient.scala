@@ -23,7 +23,7 @@ trait WithHttp4sClient {
         .encode(request)
         .flatMap {
           encoded =>
-            val outBytes: Array[Byte] = encoded.noSpaces.getBytes
+            val outBytes: Array[Byte] = encode(encoded).getBytes
             val entityBody: EntityBody[CIO] = Stream.emits(outBytes).covary[CIO]
             val req = buildRequest(baseUri, request, entityBody)
 

@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.RpcRequest
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.RpcPacket
 import fs2.async
 import fs2.async.mutable.Queue
 import org.http4s.AuthedRequest
@@ -104,19 +104,19 @@ trait WithWebsocketClientContext {
   }
 
   trait WsContextProvider[Ctx, ClientId] {
-    def toContext(initial: Ctx, packet: RpcRequest): Ctx
+    def toContext(initial: Ctx, packet: RpcPacket): Ctx
 
-    def toId(initial: Ctx, packet: RpcRequest): Option[ClientId]
+    def toId(initial: Ctx, packet: RpcPacket): Option[ClientId]
   }
 
   object WsContextProvider {
     def id[Ctx, ClientId]: WsContextProvider[Ctx, ClientId] = new WsContextProvider[Ctx, ClientId] {
-      override def toContext(initial: Ctx, packet: RpcRequest): Ctx = {
+      override def toContext(initial: Ctx, packet: RpcPacket): Ctx = {
         Quirks.discard(packet)
         initial
       }
 
-      override def toId(initial: Ctx, packet: RpcRequest): Option[ClientId] = {
+      override def toId(initial: Ctx, packet: RpcPacket): Option[ClientId] = {
         Quirks.discard(initial, packet)
         None
       }

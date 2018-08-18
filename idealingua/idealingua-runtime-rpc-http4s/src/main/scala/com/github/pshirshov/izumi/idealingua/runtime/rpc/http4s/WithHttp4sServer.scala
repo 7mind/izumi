@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import java.util.concurrent.ConcurrentHashMap
 
 import _root_.io.circe.parser._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
 import io.circe.syntax._
 import org.http4s._
@@ -88,7 +89,7 @@ trait WithHttp4sServer {
 
         ZIOR.unsafeRunSync(ioresponse) match {
           case ExitResult.Completed(v) =>
-            v.asJson.noSpaces
+            encode(v.asJson)
 
           case ExitResult.Failed(error, _) =>
             handleWsError(context, List(error), None, "failure")
@@ -101,29 +102,29 @@ trait WithHttp4sServer {
         handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")
     }
 
-    protected def makeResponse(context: WSC, message: String): ZIO[Throwable, RpcResponse] = {
+    protected def makeResponse(context: WSC, message: String): ZIO[Throwable, RpcPacket] = {
       for {
         parsed <- ZIO.fromEither(parse(message))
-        unmarshalled <- ZIO.fromEither(parsed.as[RpcRequest])
+        unmarshalled <- ZIO.fromEither(parsed.as[RpcPacket])
         id <- ZIO.syncThrowable(wsContextProvider.toId(context.initialContext, unmarshalled))
         userCtx <- ZIO.syncThrowable(wsContextProvider.toContext(context.initialContext, unmarshalled))
         _ <- ZIO.syncThrowable(context.updateId(id))
         _ <- ZIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
-        response <- respond(userCtx, unmarshalled).sandboxWith {
+        response <- respond(context, userCtx, unmarshalled).sandboxWith {
           _.redeem(
             {
               case Left(exception :: otherIssues) =>
                 logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $otherIssues")
-                ZIO.point(RpcResponse(RPCPacketKind.RpcFail, unmarshalled.id, exception.getMessage.asJson))
-
+                ZIO.point(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage))
+              case Left(Nil) =>
+                ZIO.terminate(new IllegalStateException())
               case Right(exception) =>
                 logger.error(s"${context -> null}: WS processing failed, $message, $exception")
-                ZIO.point(RpcResponse(RPCPacketKind.RpcFail, unmarshalled.id, exception.getMessage.asJson))
+                ZIO.point(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage))
             }, {
               succ => ZIO.point(succ)
             }
           )
-
         }
       } yield {
         response
@@ -134,27 +135,27 @@ trait WithHttp4sServer {
       causes.headOption match {
         case Some(cause) =>
           logger.error(s"${context -> null}: WS Execution failed, $kind, $data, $cause")
-          RpcFailureStringResponse(RPCPacketKind.Fail, data.getOrElse(cause.getMessage), kind).asJson.noSpaces
+          encode(RpcFailureStringResponse(RPCPacketKind.Fail, data.getOrElse(cause.getMessage), kind).asJson)
 
         case None =>
           logger.error(s"${context -> null}: WS Execution failed, $kind, $data")
-          RpcFailureStringResponse(RPCPacketKind.Fail, "?", kind).asJson.noSpaces
+          encode(RpcFailureStringResponse(RPCPacketKind.Fail, "?", kind).asJson)
       }
     }
 
-    protected def respond(context: Ctx, input: RpcRequest): ZIO[Throwable, RpcResponse] = {
-      input.kind match {
-        case RPCPacketKind.RpcRequest =>
-          val methodId = IRTMethodId(IRTServiceId(input.service), IRTMethodName(input.method))
-          muxer.doInvoke(input.data, context, methodId).flatMap {
+    protected def respond(context: WSC, userContext: Ctx, input: RpcPacket): ZIO[Throwable, RpcPacket] = {
+      input match {
+        case RpcPacket(RPCPacketKind.RpcRequest, data, Some(id), _, Some(service), Some(method), _) =>
+          val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
+          muxer.doInvoke(data, userContext, methodId).flatMap {
             case None =>
               ZIO.fail(new IRTMissingHandlerException(s"${context -> null}: No handler for $methodId", input))
             case Some(resp) =>
-              ZIO.point(RpcResponse(RPCPacketKind.RpcResponse, input.id, resp))
+              ZIO.point(rpc.RpcPacket.rpcResponse(id, resp))
           }
 
-        case RPCPacketKind.BuzzResponse =>
-          ???
+        case RpcPacket(RPCPacketKind.BuzzResponse, data, _, Some(id), _, _, _) =>
+        ???
 
         case k =>
           ZIO.fail(new UnsupportedOperationException(s"Can't handle $k"))
@@ -169,14 +170,12 @@ trait WithHttp4sServer {
       } yield {
         maybeResult match {
           case Some(value) =>
-            dsl.Ok(value.noSpaces)
+            dsl.Ok(encode(value))
           case None =>
             logger.warn(s"${context -> null}: No handler for $toInvoke")
             dsl.NotFound()
         }
-
       }
-
 
       ZIOR.unsafeRunSync(ioR) match {
         case ExitResult.Completed(v) =>

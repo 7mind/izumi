@@ -5,6 +5,8 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s._
 import org.http4s.dsl._
 import scalaz.zio.IO
+import _root_.io.circe._
+import _root_.io.circe.syntax._
 
 import scala.language.higherKinds
 
@@ -24,5 +26,8 @@ trait Http4sContext {
 
   protected def logger: IzLogger
 
+  protected def encode(json: Json): String = {
+    json.pretty(Printer.noSpaces.copy(dropNullValues = true))
+  }
 
 }
