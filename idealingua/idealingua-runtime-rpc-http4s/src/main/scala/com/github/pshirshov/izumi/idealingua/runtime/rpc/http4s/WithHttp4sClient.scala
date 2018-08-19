@@ -11,6 +11,8 @@ import scalaz.zio.{ExitResult, IO}
 trait WithHttp4sClient {
   this: Http4sContext =>
 
+  def client(baseUri: Uri, codec: IRTClientMultiplexor[BIO]): ClientDispatcher = new ClientDispatcher(baseUri, codec)
+
   class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor[BIO])
     extends IRTDispatcher with IRTResultZio {
 

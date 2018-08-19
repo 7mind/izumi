@@ -14,6 +14,8 @@ import scalaz.zio.{ExitResult, IO}
 trait WithHttp4sWsClient {
   this: Http4sContext =>
 
+  def wsClient(baseUri: URI, codec: IRTClientMultiplexor[BIO]): ClientWsDispatcher = new ClientWsDispatcher(baseUri, codec)
+
   class ClientWsDispatcher(baseUri: URI, codec: IRTClientMultiplexor[BIO])
     extends IRTDispatcher with IRTResultZio with AutoCloseable {
 

@@ -21,6 +21,13 @@ import scala.concurrent.duration._
 trait WithHttp4sServer {
   this: Http4sContext with WithHttp4sLoggingMiddleware with WithHttp4sHttpRequestContext with WithWebsocketClientContext =>
 
+  def server[Ctx, ClientId](muxer: IRTServerMultiplexor[BIO, Ctx]
+                            , codec: IRTClientMultiplexor[BIO]
+                            , contextProvider: AuthMiddleware[CIO, Ctx]
+                            , wsContextProvider: WsContextProvider[Ctx, ClientId]
+                            , listener: WsSessionListener[Ctx, ClientId]): HttpServer[Ctx, ClientId] =
+    new HttpServer[Ctx, ClientId](muxer, codec, contextProvider, wsContextProvider, listener)
+
   class HttpServer[Ctx, ClientId](
                                    protected val muxer: IRTServerMultiplexor[BIO, Ctx]
                                    , protected val codec: IRTClientMultiplexor[BIO]
