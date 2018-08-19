@@ -12,6 +12,7 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
       //, "-Xfatal-warnings"
 
       , "-Xfuture"
+      , "-language:higherKinds"
 
       , "-feature"
       , "-unchecked"
