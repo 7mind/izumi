@@ -204,7 +204,7 @@ trait WithHttp4sServer {
           }
 
         case RpcPacket(RPCPacketKind.BuzzResponse, data, _, id, _, _, _) =>
-          BIO.fromZio(context.requestState.handleResponse(id, data).flatMap(_ => ZIO.point(None)))
+          BIO.fromZio(context.requestState.handleResponse(id, data).flatMap(_ => IO.point(None)))
 
         case k =>
           BIO.fail(new UnsupportedOperationException(s"Can't handle $k"))

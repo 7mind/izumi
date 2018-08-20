@@ -83,7 +83,7 @@ trait WithHttp4sWsClient {
 
             BIO.fromZio {
 
-              ZIO.bracket0[Throwable, RpcPacket, IRTMuxResponse](BIO.toZio(wrapped)) {
+              IO.bracket0[Throwable, RpcPacket, IRTMuxResponse](BIO.toZio(wrapped)) {
                 (id, _) =>
                   logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
                   IO.sync(requestState.forget(id.id.get))
