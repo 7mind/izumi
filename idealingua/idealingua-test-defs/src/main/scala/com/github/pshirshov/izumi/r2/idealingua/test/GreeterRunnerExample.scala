@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceSer
 import scalaz.zio._
 import _root_.io.circe.syntax._
 
-object Test {
+object GreeterRunnerExample {
   def main(args: Array[String]): Unit = {
     import IRTResultTransZio._
     val greeter = new GreeterServiceServerWrapped[IO, Unit](new impls.AbstractGreeterServer.Impl[IO, Unit]())
