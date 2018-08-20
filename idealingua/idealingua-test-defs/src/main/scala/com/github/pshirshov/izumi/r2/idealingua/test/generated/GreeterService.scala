@@ -73,14 +73,12 @@ class GreeterServiceClientWrapped[R[+_, +_] : IRTResult](dispatcher: IRTDispatch
   override def nothing(): R.Just[Unit] = ???
 }
 
-object GreeterServiceClientWrapped {
-  class Codecs[R[+_, +_] : IRTResult] extends IRTWrappedClient {
-    val allCodecs: Map[IRTMethodId, IRTCirceMarshaller] = {
-      Map(
-        GreeterServiceMethods.greet.id -> GreeterServerMarshallers.greet
-        , GreeterServiceMethods.alternative.id -> GreeterServerMarshallers.alternative
-      )
-    }
+object GreeterServiceClientWrapped extends IRTWrappedClient {
+  val allCodecs: Map[IRTMethodId, IRTCirceMarshaller] = {
+    Map(
+      GreeterServiceMethods.greet.id -> GreeterServerMarshallers.greet
+      , GreeterServiceMethods.alternative.id -> GreeterServerMarshallers.alternative
+    )
   }
 }
 

@@ -156,7 +156,7 @@ object Http4sTransportTest {
     private val dispatchers: Set[IRTWrappedService[R, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
     val multiplexor = new IRTServerMultiplexor[R, Ctx](dispatchers)
 
-    private val clients: Set[IRTWrappedClient] = Set(new GreeterServiceClientWrapped.Codecs[R])
+    private val clients: Set[IRTWrappedClient] = Set(GreeterServiceClientWrapped)
     val codec = new IRTClientMultiplexor[R](clients)
   }
 
