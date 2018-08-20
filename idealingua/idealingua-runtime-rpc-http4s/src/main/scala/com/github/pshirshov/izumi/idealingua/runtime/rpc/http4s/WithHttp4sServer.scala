@@ -186,11 +186,11 @@ trait WithHttp4sServer {
       causes.headOption match {
         case Some(cause) =>
           logger.error(s"${context -> null}: WS Execution failed, $kind, $data, $cause")
-          printer.pretty(RpcFailureStringResponse(RPCPacketKind.Fail, data.getOrElse(cause.getMessage), kind).asJson)
+          printer.pretty(rpc.RpcPacket.rpcCritical(data.getOrElse(cause.getMessage), kind).asJson)
 
         case None =>
           logger.error(s"${context -> null}: WS Execution failed, $kind, $data")
-          printer.pretty(RpcFailureStringResponse(RPCPacketKind.Fail, "?", kind).asJson)
+          printer.pretty(rpc.RpcPacket.rpcCritical("?", kind).asJson)
       }
     }
 
