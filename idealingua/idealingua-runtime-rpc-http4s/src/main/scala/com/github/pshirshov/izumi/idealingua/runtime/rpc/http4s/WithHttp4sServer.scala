@@ -13,7 +13,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebsocketBits.{Binary, Close, Text, WebSocketFrame}
-import scalaz.zio.{ExitResult, IO}
+import scalaz.zio.ExitResult
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -61,27 +61,25 @@ trait WithHttp4sServer {
                   session <- BIO.point(sess)
                   json <- codec.encode(request)
                   id <- BIO.sync(session.enqueue(request.method, json))
-                  resp <- BIO.fromZio(IO.bracket0[Throwable, RpcPacketId, IRTMuxResponse](IO.point(id)) {
-                    (id, _) =>
+                  resp <- BIO.bracket0[Throwable, RpcPacketId, IRTMuxResponse](BIO.point(id)) {
+                    id =>
                       logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
-                      IO.sync(sess.requestState.forget(id))
+                      BIO.sync(sess.requestState.forget(id))
                   } {
                     w =>
-                      BIO.toZio {
-                        BIO.point(w).flatMap {
-                          id =>
-                            sess.requestState.poll(id, pollingInterval, timeout)
-                              .flatMap {
-                                case Some(value) =>
-                                  logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                                  codec.decode(value.data, value.method)
+                      BIO.point(w).flatMap {
+                        id =>
+                          sess.requestState.poll(id, pollingInterval, timeout)
+                            .flatMap {
+                              case Some(value) =>
+                                logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                                codec.decode(value.data, value.method)
 
-                                case None =>
-                                  BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
-                              }
-                        }
+                              case None =>
+                                BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                            }
                       }
-                  })
+                  }
                 } yield {
                   resp
                 }

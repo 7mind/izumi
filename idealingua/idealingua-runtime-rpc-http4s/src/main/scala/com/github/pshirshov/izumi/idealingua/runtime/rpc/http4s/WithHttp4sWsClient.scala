@@ -3,13 +3,13 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import java.net.URI
 import java.util.concurrent.TimeoutException
 
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.parser.parse
 import io.circe.syntax._
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
-import scalaz.zio.{ExitResult, IO}
-import IRTResult._
+import scalaz.zio.ExitResult
 
 trait WithHttp4sWsClient {
   this: Http4sContext =>
@@ -81,38 +81,34 @@ trait WithHttp4sWsClient {
           encoded =>
             val wrapped = BIO.point(RpcPacket.rpcRequest(request.method, encoded))
 
-            BIO.fromZio {
 
-              IO.bracket0[Throwable, RpcPacket, IRTMuxResponse](BIO.toZio(wrapped)) {
-                (id, _) =>
-                  logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
-                  IO.sync(requestState.forget(id.id.get))
-              } {
-                w =>
-                  val pid = w.id.get // guaranteed to be present
+            BIO.bracket0[Throwable, RpcPacket, IRTMuxResponse](wrapped) {
+              id =>
+                logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
+                BIO.sync(requestState.forget(id.id.get))
+            } {
+              w =>
+                val pid = w.id.get // guaranteed to be present
 
-                  BIO.toZio {
-                    BIO.syncThrowable {
-                      val out = printer.pretty(transformRequest(w).asJson)
-                      logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
-                      requestState.request(pid, request.method)
-                      wsClient.send(out)
-                      pid
-                    }
-                      .flatMap {
-                        id =>
-                          requestState.poll(id, pollingInterval, timeout)
-                            .flatMap {
-                              case Some(value) =>
-                                logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                                codec.decode(value.data, value.method)
+                BIO.syncThrowable {
+                  val out = printer.pretty(transformRequest(w).asJson)
+                  logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
+                  requestState.request(pid, request.method)
+                  wsClient.send(out)
+                  pid
+                }
+                  .flatMap {
+                    id =>
+                      requestState.poll(id, pollingInterval, timeout)
+                        .flatMap {
+                          case Some(value) =>
+                            logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                            codec.decode(value.data, value.method)
 
-                              case None =>
-                                BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
-                            }
-                      }
+                          case None =>
+                            BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                        }
                   }
-              }
             }
         }
     }

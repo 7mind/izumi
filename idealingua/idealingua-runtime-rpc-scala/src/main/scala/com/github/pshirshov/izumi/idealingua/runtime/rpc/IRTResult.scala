@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 
 import cats.arrow.FunctionK
-import scalaz.zio.IO
+import scalaz.zio.{ExitResult, IO}
 
 import scala.concurrent.duration.Duration
 import scala.language.higherKinds
@@ -36,6 +36,8 @@ trait IRTResult[R[+_, +_]] {
 
   final val unit: Just[Unit] = now(())
 
+  @inline def bracket0[E, A, B](acquire: R[E, A])(release: A => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
+
   //
   @inline def sleep(duration: Duration): Or[Nothing, Unit]
 
@@ -50,6 +52,7 @@ trait IRTResult[R[+_, +_]] {
   @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
 
   @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
+
 }
 
 trait IRTResultApi[T[K[+_, +_]] <: IRTResult[K]] {
@@ -88,6 +91,10 @@ trait IRTResultTransZio[R[+_, +_]] extends IRTResult[R] {
 object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
 
   implicit object IRTResultZio extends IRTResultTransZio[IO] {
+
+    @inline def bracket0[E, A, B](acquire: Or[E, A])(release: A => Or[Nothing, Unit])(use: A => Or[E, B]): Or[E, B] =
+      IO.bracket0(acquire)((v, _: ExitResult[E, B]) => release(v))(use)
+
     @inline def sleep(duration: Duration): IRTResultZio.Or[Nothing, Unit] = IO.sleep(duration)
 
     @inline def sync[A](effect: => A): Or[Nothing, A] = IO.sync(effect)
@@ -114,7 +121,8 @@ object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
 
     @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => Or[E2, B], succ: A => Or[E2, B]): Or[E2, B] = r.redeem(err, succ)
 
-    @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: Or[Either[List[Throwable], E], A] => Or[Either[List[Throwable], E2], B]): Or[E2, B] = r.sandboxWith(f)
+    @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: Or[Either[List[Throwable], E], A] => Or[Either[List[Throwable], E2], B]): Or[E2, B] =
+      r.sandboxWith(f)
 
     @inline def toZio[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id
 
