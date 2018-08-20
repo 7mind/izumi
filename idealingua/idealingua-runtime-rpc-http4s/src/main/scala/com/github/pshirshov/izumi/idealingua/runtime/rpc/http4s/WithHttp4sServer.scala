@@ -50,12 +50,12 @@ trait WithHttp4sServer {
       loggingMiddle(aservice)
     }
 
-    def buzzersFor(clientId: ClientId): List[IRTDispatcher] = {
+    def buzzersFor(clientId: ClientId): List[IRTDispatcher[ZIO]] = {
       clients.values().asScala
         .filter(_.id.id.contains(clientId))
         .map {
           sess =>
-            new IRTDispatcher {
+            new IRTDispatcher[ZIO] {
               override def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
                 for {
                   session <- ZIO.point(sess)

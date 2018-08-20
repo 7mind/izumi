@@ -14,10 +14,10 @@ import scala.language.higherKinds
 trait Http4sContext {
   type CIO[T] = cats.effect.IO[T]
   val CIO: effect.IO.type = cats.effect.IO
-  type ZIO[E, V] = scalaz.zio.IO[E, V]
+  type ZIO[+E, +V] = scalaz.zio.IO[E, V]
   val ZIO: IO.type = scalaz.zio.IO
 
-  type BIO[E, V]
+  type BIO[+E, +V]
 
   type MaterializedStream = String
   type StreamDecoder = EntityDecoder[CIO, MaterializedStream]

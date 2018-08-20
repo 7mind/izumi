@@ -7,6 +7,7 @@ import io.circe.generic.semiauto._
 import io.circe.syntax._
 import scalaz.zio.{IO, RTS}
 import IRTResultTransZio._
+import IRTResult._
 
 import scala.language.higherKinds
 
@@ -34,40 +35,39 @@ trait GreeterServiceClient[Or[_, _]] {
   def alternative(): Or[Long, String]
 }
 
-class GreeterServiceClientWrapped[R[+_, +_] : IRTResultTransZio](dispatcher: IRTDispatcher)
+class GreeterServiceClientWrapped[R[+_, +_] : IRTResult](dispatcher: IRTDispatcher[R])
   extends GreeterServiceClient[R] {
 
-  val R: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
+  val R: IRTResult[R] = implicitly[IRTResult[R]]
 
-  override def greet(name: String, surname: String): R.Just[String] = R.fromZio {
+  override def greet(name: String, surname: String): R.Just[String] = {
     dispatcher
       .dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id))
-      .redeem({ err => IO.terminate(err) }, { case IRTMuxResponse(IRTResBody(v: GreeterServiceMethods.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
-        IO.point(v.value)
+      .redeem({ err => R.terminate(err) }, { case IRTMuxResponse(IRTResBody(v: GreeterServiceMethods.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
+        R.point(v.value)
       case v =>
-        IO.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
+        R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
       })
 
   }
 
 
-  override def alternative(): R.Or[Long, String] = R.fromZio {
+  override def alternative(): R.Or[Long, String] = {
     dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.alternative.Input()), GreeterServiceMethods.alternative.id))
       .redeem({
-        err => IO.terminate(err)
+        err => R.terminate(err)
       }, {
         case IRTMuxResponse(IRTResBody(v), method) if method == GreeterServiceMethods.alternative.id =>
           v match {
             case va : GreeterServiceMethods.alternative.AlternativeOutput.Failure =>
-              IO.fail(va.value)
-
+              R.fail(va.value)
             case va : GreeterServiceMethods.alternative.AlternativeOutput.Success =>
-              IO.point(va.value)
+              R.point(va.value)
             case _ =>
-              IO.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
+              R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
           }
         case _ =>
-          IO.terminate(new RuntimeException())
+          R.terminate(new RuntimeException())
       })
   }
 
@@ -89,8 +89,6 @@ object GreeterServiceClientWrapped {
 
 class GreeterServiceServerWrapped[F[+_, +_] : IRTResult, C](service: GreeterServiceServer[F, C])
   extends IRTWrappedService[F, C] {
-
-  import IRTResult._
 
   val F: IRTResult[F] = implicitly[IRTResult[F]]
 

@@ -17,7 +17,7 @@ trait WithHttp4sWsClient {
   def wsClient(baseUri: URI, codec: IRTClientMultiplexor[BIO]): ClientWsDispatcher = new ClientWsDispatcher(baseUri, codec)
 
   class ClientWsDispatcher(baseUri: URI, codec: IRTClientMultiplexor[BIO])
-    extends IRTDispatcher with AutoCloseable {
+    extends IRTDispatcher[ZIO] with AutoCloseable {
 
     val requestState = new RequestState()
 

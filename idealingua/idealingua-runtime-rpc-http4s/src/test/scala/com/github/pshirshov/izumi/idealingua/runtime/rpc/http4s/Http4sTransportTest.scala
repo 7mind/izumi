@@ -18,6 +18,7 @@ import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
+import IRTResultTransZio._
 
 import scala.language.higherKinds
 
@@ -71,7 +72,7 @@ class Http4sTransportTest extends WordSpec {
     //    }
   }
 
-  private def performWsTests(disp: IRTDispatcher with TestDispatcher with AutoCloseable): Unit = {
+  private def performWsTests(disp: IRTDispatcher[ZIO] with TestDispatcher with AutoCloseable): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
@@ -89,7 +90,7 @@ class Http4sTransportTest extends WordSpec {
   }
 
 
-  private def performTests(disp: IRTDispatcher with TestDispatcher): Unit = {
+  private def performTests(disp: IRTDispatcher[ZIO] with TestDispatcher): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
