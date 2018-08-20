@@ -5,7 +5,7 @@ import scalaz.zio._
 
 import scala.language.higherKinds
 
-trait IRTResultTransZio[R[+ _, + _]] {
+trait IRTResultTransZio[R[_, _]] {
   def toZio[E]: FunctionK[R[E, ?], IO[E, ?]]
 
   def ofZio[E]: FunctionK[IO[E, ?], R[E, ?]]

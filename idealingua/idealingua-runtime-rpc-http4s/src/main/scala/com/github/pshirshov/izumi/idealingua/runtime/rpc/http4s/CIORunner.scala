@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import scala.language.higherKinds
 
-trait CIORunner[CIO[+_]] {
+trait CIORunner[CIO[_]] {
   def unsafeRunSync[A](cio: CIO[A]): A
 }
 
