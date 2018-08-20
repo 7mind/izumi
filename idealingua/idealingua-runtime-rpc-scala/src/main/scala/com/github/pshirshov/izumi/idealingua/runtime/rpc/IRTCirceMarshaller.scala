@@ -1,19 +1,15 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-import io.circe.{DecodingFailure, Json}
+import io.circe.Json
 
 import scala.language.higherKinds
 
-abstract class IRTCirceMarshaller[Or[_, _]] {
-  type Just[T] = Or[Nothing, T]
-
+abstract class IRTCirceMarshaller {
   def encodeRequest: PartialFunction[IRTReqBody, Json]
 
   def encodeResponse: PartialFunction[IRTResBody, Json]
 
-  def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]]
+  def decodeRequest[Or[+_, +_] : IRTResult]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]]
 
-  def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]]
-
-  protected def decoded[V](result: Either[DecodingFailure, V]): Just[V]
+  def decodeResponse[Or[+_, +_] : IRTResult]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]]
 }

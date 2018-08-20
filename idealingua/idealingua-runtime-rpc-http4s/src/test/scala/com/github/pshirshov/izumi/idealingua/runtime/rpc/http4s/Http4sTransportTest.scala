@@ -132,7 +132,7 @@ object Http4sTransportTest {
           val R: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
 
           override val signature: IRTMethodSignature = method.signature
-          override val marshaller: IRTCirceMarshaller[R] = method.marshaller
+          override val marshaller: IRTCirceMarshaller = method.marshaller
 
           override def invoke(ctx: Ctx, input: signature.Input): R.Just[signature.Output] = R.fromZio {
             ctx match {

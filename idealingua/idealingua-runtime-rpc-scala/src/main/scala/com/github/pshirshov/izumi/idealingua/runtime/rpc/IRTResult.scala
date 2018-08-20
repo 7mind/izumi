@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 
 import cats.arrow.FunctionK
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio.IRTResultZio
 import scalaz.zio.IO
 
 import scala.concurrent.duration.Duration

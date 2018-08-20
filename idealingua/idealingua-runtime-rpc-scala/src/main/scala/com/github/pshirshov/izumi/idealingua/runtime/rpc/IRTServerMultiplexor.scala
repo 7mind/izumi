@@ -27,7 +27,7 @@ class IRTServerMultiplexor[R[+_, +_] : IRTResult, C](list: Set[IRTWrappedService
 
   private def toM(parsedBody: Json, context: C, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C]): R[Throwable, Json] = {
     for {
-      decoded <- method.marshaller.decodeRequest(IRTJsonBody(toInvoke, parsedBody))
+      decoded <- method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody))
       casted <- R.syncThrowable(decoded.value.asInstanceOf[method.signature.Input])
       result <- R.syncThrowable(method.invoke(context, casted))
       safeResult <- result
