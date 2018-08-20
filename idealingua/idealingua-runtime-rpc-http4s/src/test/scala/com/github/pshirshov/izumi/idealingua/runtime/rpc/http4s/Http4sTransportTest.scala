@@ -72,17 +72,17 @@ class Http4sTransportTest extends WordSpec {
     //    }
   }
 
-  private def performWsTests(disp: IRTDispatcher[ZIO] with TestDispatcher with AutoCloseable): Unit = {
+  private def performWsTests(disp: IRTDispatcher[BIO] with TestDispatcher with AutoCloseable): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
 
-    assert(ZIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
-    assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
+    assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
+    assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
     disp.setupCredentials("user", "badpass")
     intercept[DecodingFailure] {
-      ZIOR.unsafeRun(greeterClient.alternative())
+      BIOR.unsafeRun(greeterClient.alternative())
     }
     disp.close()
     ()
@@ -90,23 +90,23 @@ class Http4sTransportTest extends WordSpec {
   }
 
 
-  private def performTests(disp: IRTDispatcher[ZIO] with TestDispatcher): Unit = {
+  private def performTests(disp: IRTDispatcher[BIO] with TestDispatcher): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
 
-    assert(ZIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
-    assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
+    assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
+    assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
     disp.cancelCredentials()
     val forbidden = intercept[IRTUnexpectedHttpStatus] {
-      ZIOR.unsafeRun(greeterClient.alternative())
+      BIOR.unsafeRun(greeterClient.alternative())
     }
     assert(forbidden.status == Status.Forbidden)
 
     disp.setupCredentials("user", "badpass")
     val unauthorized = intercept[IRTUnexpectedHttpStatus] {
-      ZIOR.unsafeRun(greeterClient.alternative())
+      BIOR.unsafeRun(greeterClient.alternative())
     }
     assert(unauthorized.status == Status.Unauthorized)
     ()
@@ -117,9 +117,9 @@ class Http4sTransportTest extends WordSpec {
 import IRTResultTransZio._
 
 object Http4sTransportTest {
-  type ZIO[+E, +V] = zio.IO[E, V]
+  type BIO[+E, +V] = zio.IO[E, V]
   type CIO[+T] = cats.effect.IO[T]
-  val ZIOR: BIORunner[ZIO] = implicitly[BIORunner[ZIO]]
+  val BIOR: BIORunner[BIO] = implicitly[BIORunner[BIO]]
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
@@ -173,9 +173,9 @@ object Http4sTransportTest {
     final val wsUri = new URI("ws", null, host, port, "/ws", null, null)
 
     //
-    final val demo = new DemoContext[ZIO, DummyContext]()
+    final val demo = new DemoContext[BIO, DummyContext]()
     import scala.concurrent.ExecutionContext.Implicits.global
-    final val rt = new Http4sRuntime[ZIO, CIO](makeLogger())
+    final val rt = new Http4sRuntime[BIO, CIO](makeLogger())
 
     //
     final val authUser: Kleisli[OptionT[CIO, ?], Request[CIO], DummyContext] =

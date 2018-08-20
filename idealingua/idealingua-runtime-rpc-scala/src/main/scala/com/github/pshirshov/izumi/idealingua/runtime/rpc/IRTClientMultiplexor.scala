@@ -6,16 +6,16 @@ import scala.language.higherKinds
 import IRTResult._
 
 class IRTClientMultiplexor[R[+ _, + _] : IRTResultTransZio](clients: Set[IRTWrappedClient[R]]) {
-  protected val ZIO: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
+  protected val BIO: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
 
   val codecs: Map[IRTMethodId, IRTCirceMarshaller] = clients.flatMap(_.allCodecs).toMap
 
   def encode(input: IRTMuxRequest): R[Throwable, Json] = {
     codecs.get(input.method) match {
       case Some(marshaller) =>
-        ZIO.syncThrowable(marshaller.encodeRequest(input.body))
+        BIO.syncThrowable(marshaller.encodeRequest(input.body))
       case None =>
-        ZIO.terminate(new IRTMissingHandlerException(s"No codec for $input", input, None))
+        BIO.terminate(new IRTMissingHandlerException(s"No codec for $input", input, None))
     }
   }
 
@@ -30,7 +30,7 @@ class IRTClientMultiplexor[R[+ _, + _] : IRTResultTransZio](clients: Set[IRTWrap
 
 
       case None =>
-        ZIO.terminate(new IRTMissingHandlerException(s"No codec for $method, input=$input", input, None))
+        BIO.terminate(new IRTMissingHandlerException(s"No codec for $method, input=$input", input, None))
     }
   }
 }

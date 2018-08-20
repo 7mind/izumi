@@ -142,7 +142,7 @@ object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
   //type xyz[λ[(-[A], +[B]) => Function2[A, Int, B]]]
 
   //type xyz[λ[(`E[+_]`, `A[+_]`) => EitherT[cats.effect.IO, E, A]]]
-  //  @deprecated("ZIO<->EitherT adapter is not recommended to use", "")
+  //  @deprecated("BIO<->EitherT adapter is not recommended to use", "")
   //  implicit object EitherTResult extends IRTResult[λ[(`+E`, `+A`) => EitherT[cats.effect.IO, E, A]]] {
   //    def ME[E]: MonadError[Or[E, ?], E] = implicitly
   //
