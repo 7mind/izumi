@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import _root_.io.circe._
 import cats.effect.{ConcurrentEffect, Timer}
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s._
 import org.http4s.dsl._
@@ -11,25 +11,25 @@ import scala.language.higherKinds
 
 
 trait Http4sContext {
-  type BIO[+E, +V]
+  type BiIO[+E, +V]
 
-  type CIO[+T]
+  type CatsIO[+T]
 
   type MaterializedStream = String
 
-  type StreamDecoder = EntityDecoder[CIO, MaterializedStream]
+  type StreamDecoder = EntityDecoder[CatsIO, MaterializedStream]
 
-  protected implicit def BIO: IRTResult[BIO]
+  protected implicit def BIO: BIO[BiIO]
 
-  protected implicit def CIO: ConcurrentEffect[CIO]
+  protected implicit def CIO: ConcurrentEffect[CatsIO]
 
-  protected implicit def CIOT: Timer[CIO]
+  protected implicit def CIOT: Timer[CatsIO]
 
-  protected def CIORunner: CIORunner[CIO]
+  protected def CIORunner: CIORunner[CatsIO]
 
-  protected def BIORunner: BIORunner[BIO]
+  protected def BIORunner: BIORunner[BiIO]
 
-  protected def dsl: Http4sDsl[CIO]
+  protected def dsl: Http4sDsl[CatsIO]
 
   protected def logger: IzLogger
 

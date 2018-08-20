@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicReference
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
@@ -18,7 +19,7 @@ import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
-import IRTResult._
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 
 import scala.language.higherKinds
 
@@ -72,7 +73,7 @@ class Http4sTransportTest extends WordSpec {
     //    }
   }
 
-  private def performWsTests(disp: IRTDispatcher[BIO] with TestDispatcher with AutoCloseable): Unit = {
+  private def performWsTests(disp: IRTDispatcher[BiIO] with TestDispatcher with AutoCloseable): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
@@ -90,7 +91,7 @@ class Http4sTransportTest extends WordSpec {
   }
 
 
-  private def performTests(disp: IRTDispatcher[BIO] with TestDispatcher): Unit = {
+  private def performTests(disp: IRTDispatcher[BiIO] with TestDispatcher): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
@@ -115,20 +116,20 @@ class Http4sTransportTest extends WordSpec {
 }
 
 object Http4sTransportTest {
-  type BIO[+E, +V] = zio.IO[E, V]
+  type BiIO[+E, +V] = zio.IO[E, V]
   type CIO[+T] = cats.effect.IO[T]
-  val BIOR: BIORunner[BIO] = implicitly
+  val BIOR: BIORunner[BiIO] = implicitly
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
 
-  final class AuthCheckDispatcher2[R[+ _, + _] : IRTResult, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
+  final class AuthCheckDispatcher2[R[+ _, + _] : BIO, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
     override def serviceId: IRTServiceId = proxied.serviceId
 
     override def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, Ctx]] = proxied.allMethods.mapValues {
       method =>
         new IRTMethodWrapper[R, Ctx] {
-          val R: IRTResult[R] = implicitly
+          val R: BIO[R] = implicitly
 
           override val signature: IRTMethodSignature = method.signature
           override val marshaller: IRTCirceMarshaller = method.marshaller
@@ -150,7 +151,7 @@ object Http4sTransportTest {
     }
   }
 
-  class DemoContext[R[+ _, + _] : IRTResult, Ctx] {
+  class DemoContext[R[+ _, + _] : BIO, Ctx] {
     private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
     private val dispatchers: Set[IRTWrappedService[R, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
@@ -171,11 +172,11 @@ object Http4sTransportTest {
     final val wsUri = new URI("ws", null, host, port, "/ws", null, null)
 
     //
-    final val demo = new DemoContext[BIO, DummyContext]()
+    final val demo = new DemoContext[BiIO, DummyContext]()
 
     import scala.concurrent.ExecutionContext.Implicits.global
 
-    final val rt = new Http4sRuntime[BIO, CIO](makeLogger())
+    final val rt = new Http4sRuntime[BiIO, CIO](makeLogger())
 
     //
     final val authUser: Kleisli[OptionT[CIO, ?], Request[CIO], DummyContext] =

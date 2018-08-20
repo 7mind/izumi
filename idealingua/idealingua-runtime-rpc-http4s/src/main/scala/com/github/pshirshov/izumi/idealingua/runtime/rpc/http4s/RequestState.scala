@@ -3,15 +3,16 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import java.util.concurrent.ConcurrentHashMap
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult._
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.Json
 
 import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
-class RequestState[Or[+ _, + _] : IRTResult] {
-  val R: IRTResult[Or] = implicitly
+class RequestState[Or[+ _, + _] : BIO] {
+  val R: BIO[Or] = implicitly
   // TODO: stale item cleanups
   protected val requests: ConcurrentHashMap[RpcPacketId, IRTMethodId] = new ConcurrentHashMap[RpcPacketId, IRTMethodId]()
   protected val responses: ConcurrentHashMap[RpcPacketId, RawResponse] = new ConcurrentHashMap[RpcPacketId, RawResponse]()

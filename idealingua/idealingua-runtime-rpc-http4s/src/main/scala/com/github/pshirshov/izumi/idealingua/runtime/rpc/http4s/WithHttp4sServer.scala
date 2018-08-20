@@ -5,7 +5,7 @@ import java.util.concurrent.{ConcurrentHashMap, TimeoutException}
 import _root_.io.circe.parser._
 import cats.implicits._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult._
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
 import io.circe.syntax._
 import org.http4s._
@@ -21,21 +21,21 @@ import scala.concurrent.duration._
 trait WithHttp4sServer {
   this: Http4sContext with WithHttp4sLoggingMiddleware with WithHttp4sHttpRequestContext with WithWebsocketClientContext =>
 
-  def server[Ctx, ClientId](muxer: IRTServerMultiplexor[BIO, Ctx]
-                            , codec: IRTClientMultiplexor[BIO]
-                            , contextProvider: AuthMiddleware[CIO, Ctx]
+  def server[Ctx, ClientId](muxer: IRTServerMultiplexor[BiIO, Ctx]
+                            , codec: IRTClientMultiplexor[BiIO]
+                            , contextProvider: AuthMiddleware[CatsIO, Ctx]
                             , wsContextProvider: WsContextProvider[Ctx, ClientId]
                             , listener: WsSessionListener[Ctx, ClientId]): HttpServer[Ctx, ClientId] =
     new HttpServer[Ctx, ClientId](muxer, codec, contextProvider, wsContextProvider, listener)
 
   class HttpServer[Ctx, ClientId](
-                                   protected val muxer: IRTServerMultiplexor[BIO, Ctx]
-                                   , protected val codec: IRTClientMultiplexor[BIO]
-                                   , protected val contextProvider: AuthMiddleware[CIO, Ctx]
+                                   protected val muxer: IRTServerMultiplexor[BiIO, Ctx]
+                                   , protected val codec: IRTClientMultiplexor[BiIO]
+                                   , protected val contextProvider: AuthMiddleware[CatsIO, Ctx]
                                    , protected val wsContextProvider: WsContextProvider[Ctx, ClientId]
                                    , protected val listener: WsSessionListener[Ctx, ClientId]
                                  ) {
-    protected val dsl: Http4sDsl[CIO] = WithHttp4sServer.this.dsl
+    protected val dsl: Http4sDsl[CatsIO] = WithHttp4sServer.this.dsl
 
     import dsl._
 
@@ -44,19 +44,19 @@ trait WithHttp4sServer {
     protected val timeout: FiniteDuration = 2.seconds
     protected val pollingInterval: FiniteDuration = 50.millis
 
-    def service: HttpRoutes[CIO] = {
+    def service: HttpRoutes[CatsIO] = {
       val svc = AuthedService(handler())
-      val aservice: HttpRoutes[CIO] = contextProvider(svc)
+      val aservice: HttpRoutes[CatsIO] = contextProvider(svc)
       loggingMiddle(aservice)
     }
 
-    def buzzersFor(clientId: ClientId): List[IRTDispatcher[BIO]] = {
+    def buzzersFor(clientId: ClientId): List[IRTDispatcher[BiIO]] = {
       clients.values().asScala
         .filter(_.id.id.contains(clientId))
         .map {
           sess =>
-            new IRTDispatcher[BIO] {
-              override def dispatch(request: IRTMuxRequest): BIO[Throwable, IRTMuxResponse] = {
+            new IRTDispatcher[BiIO] {
+              override def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
                 for {
                   session <- BIO.point(sess)
                   json <- codec.encode(request)
@@ -89,7 +89,7 @@ trait WithHttp4sServer {
         .toList
     }
 
-    protected def handler(): PartialFunction[AuthedRequest[CIO, Ctx], CIO[Response[CIO]]] = {
+    protected def handler(): PartialFunction[AuthedRequest[CatsIO, Ctx], CatsIO[Response[CatsIO]]] = {
       case request@GET -> Root / "ws" as ctx =>
         setupWs(request, ctx)
 
@@ -106,7 +106,7 @@ trait WithHttp4sServer {
     }
 
 
-    protected def setupWs(request: AuthedRequest[CIO, Ctx], initialContext: Ctx): CIO[Response[CIO]] = {
+    protected def setupWs(request: AuthedRequest[CatsIO, Ctx], initialContext: Ctx): CatsIO[Response[CatsIO]] = {
       val context = new WebsocketClientContext[ClientId, Ctx](request, initialContext, listener, clients)
       context.start()
       logger.debug(s"${context -> null}: Websocket client connected")
@@ -128,7 +128,7 @@ trait WithHttp4sServer {
               .collect({ case Some(v) => Text(v) })
         }
         val e = q.enqueue
-        WebSocketBuilder[CIO].build(d.merge(context.outStream).merge(context.pingStream), e)
+        WebSocketBuilder[CatsIO].build(d.merge(context.outStream).merge(context.pingStream), e)
       }
     }
 
@@ -151,7 +151,7 @@ trait WithHttp4sServer {
         Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe"))
     }
 
-    protected def makeResponse(context: WSC, message: String): BIO[Throwable, Option[RpcPacket]] = {
+    protected def makeResponse(context: WSC, message: String): BiIO[Throwable, Option[RpcPacket]] = {
       for {
         parsed <- BIO.fromEither(parse(message))
         unmarshalled <- BIO.fromEither(parsed.as[RpcPacket])
@@ -192,7 +192,7 @@ trait WithHttp4sServer {
       }
     }
 
-    protected def respond(context: WSC, userContext: Ctx, input: RpcPacket): BIO[Throwable, Option[RpcPacket]] = {
+    protected def respond(context: WSC, userContext: Ctx, input: RpcPacket): BiIO[Throwable, Option[RpcPacket]] = {
       input match {
         case RpcPacket(RPCPacketKind.RpcRequest, data, Some(id), _, Some(service), Some(method), _) =>
           val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
@@ -212,7 +212,7 @@ trait WithHttp4sServer {
     }
 
 
-    protected def run(context: HttpRequestContext[Ctx], body: String, toInvoke: IRTMethodId): CIO[Response[CIO]] = {
+    protected def run(context: HttpRequestContext[Ctx], body: String, toInvoke: IRTMethodId): CatsIO[Response[CatsIO]] = {
       val ioR = for {
         parsed <- BIO.fromEither(parse(body))
         maybeResult <- muxer.doInvoke(parsed, context.context, toInvoke)
@@ -237,7 +237,7 @@ trait WithHttp4sServer {
       }
     }
 
-    protected def handleError(context: HttpRequestContext[Ctx], causes: List[Throwable], kind: String): CIO[Response[CIO]] = {
+    protected def handleError(context: HttpRequestContext[Ctx], causes: List[Throwable], kind: String): CatsIO[Response[CatsIO]] = {
       causes.headOption match {
         case Some(cause: IRTHttpFailureException) =>
           logger.debug(s"${context -> null}: Request rejected, ${context.request}, $cause")

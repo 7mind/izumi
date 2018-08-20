@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc
+package com.github.pshirshov.izumi.idealingua.runtime.bio
 
 import scalaz.zio.{ExitResult, IO, Retry}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.higherKinds
 
-trait IRTResult[R[+_, +_]] {
+trait BIO[R[+_, +_]] {
   type Or[+E, +V] = R[E, V]
   type Just[+V] = R[Nothing, V]
 
@@ -54,7 +54,7 @@ trait IRTResult[R[+_, +_]] {
   @inline def retryOrElse[A, E, A2 >: A, E1 >: E, S, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2]
 }
 
-trait IRTResultApi[T[K[+ _, + _]] <: IRTResult[K]] {
+trait BIOApi[T[K[+ _, + _]] <: BIO[K]] {
 
   implicit class IRTResultApi[R[+ _, + _] : T, +E, +A](val r: R[E, A]) {
     val R: T[R] = implicitly
@@ -80,9 +80,9 @@ trait IRTResultApi[T[K[+ _, + _]] <: IRTResult[K]] {
   def apply[R[+ _, + _] : T, E, A](r: R[E, A]): IRTResultApi[R, E, A] = new IRTResultApi[R, E, A](r)
 }
 
-object IRTResult extends IRTResultApi[IRTResult] {
+object BIO extends BIOApi[BIO] {
 
-  implicit object IRTResultZio extends IRTResult[IO] {
+  implicit object BIOZio extends BIO[IO] {
     @inline def bracket0[E, A, B](acquire: Or[E, A])(release: A => Or[Nothing, Unit])(use: A => Or[E, B]): Or[E, B] =
       IO.bracket0(acquire)((v, _: ExitResult[E, B]) => release(v))(use)
 

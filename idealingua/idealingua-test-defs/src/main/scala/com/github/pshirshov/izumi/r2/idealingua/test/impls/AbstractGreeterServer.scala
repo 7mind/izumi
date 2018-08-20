@@ -1,14 +1,14 @@
 package com.github.pshirshov.izumi.r2.idealingua.test.impls
 
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import com.github.pshirshov.izumi.r2.idealingua.test.generated._
 
 import scala.language.higherKinds
 
-abstract class AbstractGreeterServer[R[+_, +_] : IRTResult, C]
+abstract class AbstractGreeterServer[R[+_, +_] : BIO, C]
   extends GreeterServiceServer[R, C] {
 
-  val R: IRTResult[R] = implicitly
+  val R: BIO[R] = implicitly
 
   import R._
 
@@ -30,5 +30,5 @@ abstract class AbstractGreeterServer[R[+_, +_] : IRTResult, C]
 }
 
 object AbstractGreeterServer {
-  class Impl[R[+_, +_] : IRTResult, C] extends AbstractGreeterServer[R, C]
+  class Impl[R[+_, +_] : BIO, C] extends AbstractGreeterServer[R, C]
 }

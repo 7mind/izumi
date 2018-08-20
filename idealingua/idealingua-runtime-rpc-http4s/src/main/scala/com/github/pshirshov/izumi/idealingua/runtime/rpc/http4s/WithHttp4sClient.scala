@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import cats.implicits._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult._
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.Stream
 import io.circe.parser.parse
@@ -13,21 +13,21 @@ import scalaz.zio.ExitResult
 trait WithHttp4sClient {
   this: Http4sContext =>
 
-  def client(baseUri: Uri, codec: IRTClientMultiplexor[BIO]): ClientDispatcher = new ClientDispatcher(baseUri, codec)
+  def client(baseUri: Uri, codec: IRTClientMultiplexor[BiIO]): ClientDispatcher = new ClientDispatcher(baseUri, codec)
 
-  class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor[BIO])
-    extends IRTDispatcher[BIO] {
+  class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor[BiIO])
+    extends IRTDispatcher[BiIO] {
 
-    private val client: CIO[Client[CIO]] = Http1Client[CIO]()
+    private val client: CatsIO[Client[CatsIO]] = Http1Client[CatsIO]()
 
-    def dispatch(request: IRTMuxRequest): BIO[Throwable, IRTMuxResponse] = {
+    def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Goint to perform $request")
       codec
         .encode(request)
         .flatMap {
           encoded =>
             val outBytes: Array[Byte] = printer.pretty(encoded).getBytes
-            val entityBody: EntityBody[CIO] = Stream.emits(outBytes).covary[CIO]
+            val entityBody: EntityBody[CatsIO] = Stream.emits(outBytes).covary[CatsIO]
             val req = buildRequest(baseUri, request, entityBody)
 
             logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
@@ -41,7 +41,7 @@ trait WithHttp4sClient {
         }
     }
 
-    protected def handleResponse(input: IRTMuxRequest, resp: Response[CIO]): CIO[IRTMuxResponse] = {
+    protected def handleResponse(input: IRTMuxRequest, resp: Response[CatsIO]): CatsIO[IRTMuxResponse] = {
       logger.trace(s"${input.method -> "method"}: Received response, going to materialize, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
 
       if (resp.status != Status.Ok) {
@@ -78,10 +78,10 @@ trait WithHttp4sClient {
         }
     }
 
-    protected final def buildRequest(baseUri: Uri, input: IRTMuxRequest, body: EntityBody[CIO]): Request[CIO] = {
+    protected final def buildRequest(baseUri: Uri, input: IRTMuxRequest, body: EntityBody[CatsIO]): Request[CatsIO] = {
       val uri = baseUri / input.method.service.value / input.method.methodId.value
 
-      val base: Request[CIO] = if (input.body.value.productArity > 0) {
+      val base: Request[CatsIO] = if (input.body.value.productArity > 0) {
         Request(org.http4s.Method.POST, uri, body = body)
       } else {
         Request(org.http4s.Method.GET, uri)
@@ -90,7 +90,7 @@ trait WithHttp4sClient {
       transformRequest(base)
     }
 
-    protected def transformRequest(request: Request[CIO]): Request[CIO] = request
+    protected def transformRequest(request: Request[CatsIO]): Request[CatsIO] = request
   }
 
 }

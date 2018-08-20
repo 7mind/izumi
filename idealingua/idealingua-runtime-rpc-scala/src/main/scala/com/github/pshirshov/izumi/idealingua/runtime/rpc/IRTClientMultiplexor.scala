@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import io.circe.Json
+import BIO._
 
 import scala.language.higherKinds
-import IRTResult._
 
-class IRTClientMultiplexor[R[+ _, + _] : IRTResult](clients: Set[IRTWrappedClient]) {
-  protected val BIO: IRTResult[R] = implicitly
+class IRTClientMultiplexor[R[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {
+  protected val BIO: BIO[R] = implicitly
 
   val codecs: Map[IRTMethodId, IRTCirceMarshaller] = clients.flatMap(_.allCodecs).toMap
 

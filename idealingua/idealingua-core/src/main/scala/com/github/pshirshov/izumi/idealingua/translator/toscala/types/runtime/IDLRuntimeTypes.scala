@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.runtime.bio.{BIO, BIOTransZio}
 import com.github.pshirshov.izumi.idealingua.runtime.model._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMethodName, IRTMethodSignature, IRTResultTransZio, IRTWrappedService, _}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMethodName, IRTMethodSignature, IRTWrappedService, _}
 import com.github.pshirshov.izumi.idealingua.runtime.{IRTCast, IRTConversions, IRTExtend}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaType
 
@@ -10,7 +11,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaType
 object IDLRuntimeTypes {
 
   val model: Pkg = Pkg.parentOf[TypeId]
-  val services: Pkg = Pkg.of[IRTResult[_2Arg]]
+  val services: Pkg = Pkg.of[IRTServerMultiplexor[_2Arg, _0Arg]]
 
   type _2Arg[+X, +Y] = Nothing
   type _1Arg[R] = Nothing
@@ -26,10 +27,9 @@ object IDLRuntimeTypes {
   final val adt = model.conv.toScala[IDLAdt]
   final val adtEl = model.conv.toScala[IDLAdtElement]
 
-  final val WithResult = services.conv.toScala[IRTResult[_2Arg]]
-  // FIXME ???
-  final val WithResultZio: ScalaType = ??? //services.conv.toScala[IRTResultZio]
-  final val IRTResultTransZio = services.conv.toScala[IRTResultTransZio[_2Arg]]
+  final val WithResult = services.conv.toScala[BIO[_2Arg]]
+  final val IRTBio: ScalaType = services.conv.toScala[BIO[_2Arg]]
+  final val IRTTransZio = services.conv.toScala[BIOTransZio[_2Arg]]
   final val IRTMethodSignature = services.conv.toScala[IRTMethodSignature]
   final val IRTServiceId = services.conv.toScala[IRTServiceId]
   final val IRTMethodId = services.conv.toScala[IRTMethodId]

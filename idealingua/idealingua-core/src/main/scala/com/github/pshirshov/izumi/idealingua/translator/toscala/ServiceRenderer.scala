@@ -5,10 +5,10 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.CogenServiceProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{runtime, _}
-import scalaz.zio.IO
 
 import scala.meta._
 import _root_.io.circe.Json
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 
 class ServiceRenderer(ctx: STContext) {
 
@@ -22,41 +22,45 @@ class ServiceRenderer(ctx: STContext) {
       .map(ServiceMethodProduct(ctx, c, _))
 
     val qqServer =
-      q"""trait ${c.svcServerTpe.typeName}[${c.F.p}, ${c.Ctx.p}]
-              extends ${rt.WithResult.parameterize(List(c.F.t)).init()} {
+      q"""trait ${c.svcServerTpe.typeName}[Or[+_, +_], ${c.Ctx.p}] {
+            type Just[T] = Or[Nothing, T]
             ..${decls.map(_.defnServer)}
           }"""
 
     val qqClient =
-      q"""trait ${c.svcClientTpe.typeName}[${c.F.p}]
-              extends ${rt.WithResult.parameterize(List(c.F.t)).init()} {
+      q"""trait ${c.svcClientTpe.typeName}[Or[+_, +_]] {
+            type Just[T] = Or[Nothing, T]
             ..${decls.map(_.defnClient)}
           }"""
 
     val qqClientWrapped =
-      q"""class ${c.svcWrappedClientTpe.typeName}(_dispatcher: ${rt.IRTDispatcher.typeName})
-               extends ${c.svcClientTpe.parameterize(List(c.BIO.t)).init()} with ${rt.WithResultZio.init()} {
+      q"""class ${c.svcWrappedClientTpe.typeName}[F[+_, +_] : IRTBIO](_dispatcher: ${rt.IRTDispatcher.parameterize(List(c.F.t)).typeFull})
+               extends ${c.svcClientTpe.parameterize(List(c.F.t)).init()} {
+               final val _F: IRTBIO[F] =  implicitly
                private final val _M = ${c.svcMethods.termFull}
+
                ..${decls.map(_.defnClientWrapped)}
           }"""
 
     val qqClientWrappedCompanion =
       q"""
-         object ${c.svcWrappedClientTpe.termName} extends ${rt.IRTWrappedClient.parameterize(List(c.BIO.t)).init()} {
-           val allCodecs: Map[${rt.IRTMethodId.typeName}, IRTCirceMarshaller[${c.BIO.t}]] = {
+         object ${c.svcWrappedClientTpe.termName} extends ${rt.IRTWrappedClient.init()} {
+           val allCodecs: Map[${rt.IRTMethodId.typeName}, IRTCirceMarshaller] = {
              Map(..${decls.map(_.defnCodecRegistration)})
            }
          }
        """
 
     val qqServerWrapped =
-      q"""class ${c.svcWrappedServerTpe.typeName}[${c.F.p}, ${c.Ctx.p}](
-              _service: ${c.svcServerTpe.typeName}[${c.F.t}, ${c.Ctx.t}] with ${rt.IRTResultTransZio.typeName}[${c.F.t}]
+      q"""class ${c.svcWrappedServerTpe.typeName}[F[+_, +_] : IRTBIO, ${c.Ctx.p}](
+              _service: ${c.svcServerTpe.typeName}[${c.F.t}, ${c.Ctx.t}]
             )
-               extends IRTWrappedService[${c.BIO.t}, ${c.Ctx.t}] {
+               extends IRTWrappedService[${c.F.t}, ${c.Ctx.t}] {
+            final val _F: IRTBIO[F] = implicitly
+
             final val serviceId: ${rt.IRTServiceId.typeName} = ${c.svcMethods.termName}.serviceId
 
-            val allMethods: Map[${rt.IRTMethodId.typeName}, IRTMethodWrapper[${c.BIO.t}, ${c.Ctx.t}]] = {
+            val allMethods: Map[${rt.IRTMethodId.typeName}, IRTMethodWrapper[${c.F.t}, ${c.Ctx.t}]] = {
               Seq(..${decls.map(_.defnMethodRegistration)})
                 .map(m => m.signature.id -> m)
                 .toMap
@@ -88,6 +92,7 @@ class ServiceRenderer(ctx: STContext) {
          }
        """
 
+    type Dummy[+X, +Y] = Nothing
     val out = CogenServiceProduct(
       qqServer
       , qqClient
@@ -97,7 +102,8 @@ class ServiceRenderer(ctx: STContext) {
       , qqServiceCodecs
       , List(
         runtime.Import.from(runtime.Pkg.language, "higherKinds")
-        , runtime.Import[IO[Nothing, Nothing]](Some("IRTBIO"))
+        , runtime.Import[BIO[Dummy]](Some("IRTBIO"))
+        , runtime.Pkg.of[BIO.BIOZio.type].`import`
         , runtime.Import[Json](Some("IRTJson"))
         , runtime.Pkg.of[_root_.io.circe.syntax.EncoderOps[Nothing]].`import`
         , rt.services.`import`

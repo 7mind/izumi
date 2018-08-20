@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import io.circe.Json
-import IRTResult._
+import BIO._
 
 import scala.language.higherKinds
 
-class IRTServerMultiplexor[R[+_, +_] : IRTResult, C](list: Set[IRTWrappedService[R, C]]) {
-  protected val R: IRTResult[R] = implicitly
+class IRTServerMultiplexor[R[+_, +_] : BIO, C](list: Set[IRTWrappedService[R, C]]) {
+  protected val R: BIO[R] = implicitly
 
   val services: Map[IRTServiceId, IRTWrappedService[R, C]] = list.map(s => s.serviceId -> s).toMap
 

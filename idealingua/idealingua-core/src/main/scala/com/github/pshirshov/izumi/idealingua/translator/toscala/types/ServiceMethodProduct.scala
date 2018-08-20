@@ -37,7 +37,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
   def defnCodec: Stat = {
     val methods = List(Input.defnEncoder, Input.defnDecoder, Output.defnEncoder, Output.defnDecoder)
 
-    q"""object $nameTerm extends IRTCirceMarshaller[${sp.BIO.t}] with ${ctx.rt.WithResultZio.init()} {
+    q"""object $nameTerm extends IRTCirceMarshaller {
           import ${sp.svcMethods.termName}.$nameTerm._
           ..$methods
        }
@@ -50,35 +50,35 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
       case DefMethod.Output.Singular(_) =>
         q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               assert(ctx != null && input != null)
-              _service.toZio(_service.$nameTerm(ctx, ..${Input.sigCall}))
+              _service.$nameTerm(ctx, ..${Input.sigCall})
                 .map(v => new Output(v))
            }"""
 
       case DefMethod.Output.Void() =>
         q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               assert(ctx != null && input != null)
-              _service.toZio(_service.$nameTerm(ctx, ..${Input.sigCall}))
+              _service.$nameTerm(ctx, ..${Input.sigCall})
                 .map(_ => new Output())
            }"""
 
       case DefMethod.Output.Algebraic(_) | DefMethod.Output.Struct(_) =>
         q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               assert(ctx != null && input != null)
-              _service.toZio(_service.$nameTerm(ctx, ..${Input.sigCall}))
+              _service.$nameTerm(ctx, ..${Input.sigCall})
            }"""
 
       case DefMethod.Output.Alternative(_, _) =>
         q"""
            def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
-                 _service.toZio(_service.$nameTerm(ctx, ..${Input.sigCall}))
+                 _service.$nameTerm(ctx, ..${Input.sigCall})
                    .redeem(
-                      err => ${sp.BIO.n}.point(new ${Output.negativeBranchType.typeFull}(err))
-                      , succ => ${sp.BIO.n}.point(new ${Output.positiveBranchType.typeFull}(succ))
+                      err => _F.point(new ${Output.negativeBranchType.typeFull}(err))
+                      , succ => _F.point(new ${Output.positiveBranchType.typeFull}(succ))
                    )
            }"""
     }
 
-    q"""object $nameTerm extends IRTMethodWrapper[${sp.BIO.t}, ${sp.Ctx.t}] with ${ctx.rt.WithResultZio.init()} {
+    q"""object $nameTerm extends IRTMethodWrapper[${sp.F.t}, ${sp.Ctx.t}] {
           import ${sp.svcMethods.termName}.$nameTerm._
 
           val signature: ${sp.svcMethods.termName}.$nameTerm.type = ${sp.svcMethods.termName}.$nameTerm
@@ -203,7 +203,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
           }"""
 
     def defnDecoder: Defn.Def =
-      q"""def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
+      q"""def decodeRequest[Or[+_, +_] : IRTBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
             case IRTJsonBody(m, packet) if m == id => this.decoded(packet.as[Input].map(v => IRTReqBody(v)))
           }
        """
@@ -263,7 +263,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
     }
 
     def defnDecoder: Defn.Def = {
-      q"""def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
+      q"""def decodeResponse[Or[+_, +_] : IRTBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
             case IRTJsonBody(m, packet) if m == id =>
               decoded(packet.as[Output].map(v => IRTResBody(v)))
           }"""

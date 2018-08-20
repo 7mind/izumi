@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-import io.circe.Json
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
+import io.circe.{DecodingFailure, Json}
 
 import scala.language.higherKinds
 
@@ -9,7 +10,9 @@ abstract class IRTCirceMarshaller {
 
   def encodeResponse: PartialFunction[IRTResBody, Json]
 
-  def decodeRequest[Or[+_, +_] : IRTResult]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]]
+  def decodeRequest[Or[+_, +_] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]]
 
-  def decodeResponse[Or[+_, +_] : IRTResult]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]]
+  def decodeResponse[Or[+_, +_] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]]
+
+  protected def decoded[Or[+_, +_] : BIO, V](result: Either[DecodingFailure, V]): Or[Nothing, V] = implicitly[BIO[Or]].maybe(result)
 }

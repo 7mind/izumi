@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import java.net.URI
 import java.util.concurrent.TimeoutException
 
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult._
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.parser.parse
 import io.circe.syntax._
@@ -14,12 +14,12 @@ import scalaz.zio.ExitResult
 trait WithHttp4sWsClient {
   self: Http4sContext =>
 
-  def wsClient(baseUri: URI, codec: IRTClientMultiplexor[BIO]): ClientWsDispatcher = new ClientWsDispatcher(baseUri, codec)
+  def wsClient(baseUri: URI, codec: IRTClientMultiplexor[BiIO]): ClientWsDispatcher = new ClientWsDispatcher(baseUri, codec)
 
-  class ClientWsDispatcher(baseUri: URI, codec: IRTClientMultiplexor[BIO])
-    extends IRTDispatcher[BIO] with AutoCloseable {
+  class ClientWsDispatcher(baseUri: URI, codec: IRTClientMultiplexor[BiIO])
+    extends IRTDispatcher[BiIO] with AutoCloseable {
 
-    val requestState = new RequestState[BIO]()
+    val requestState = new RequestState[BiIO]()
 
     protected val wsClient: WebSocketClient = new WebSocketClient(baseUri) {
       override def onOpen(handshakedata: ServerHandshake): Unit = {}
@@ -72,7 +72,7 @@ trait WithHttp4sWsClient {
     protected val timeout: FiniteDuration = 2.seconds
     protected val pollingInterval: FiniteDuration = 50.millis
 
-    def dispatch(request: IRTMuxRequest): BIO[Throwable, IRTMuxResponse] = {
+    def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Going to perform $request")
 
       codec
