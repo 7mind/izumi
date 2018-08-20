@@ -1,22 +1,22 @@
 
 import { Logger } from '../../logger';
 import { WebSocketClientTransport } from './transport.websocket.client';
-import { ClientTransport, IncomingData, OutgoingData } from '../../transport';
+import { ClientTransport, IncomingData, OutgoingData } from '../transport';
 import { HTTPClientTransport } from './transport.http.client';
 import { JSONMarshaller } from '../../marshaller';
-import { AuthMethod } from '../auth/auth';
+import { AuthMethod } from '../auth';
 import { TransportHeaders } from '../transport';
 
-export class HybridClientTransport implements ClientTransport {
+export class HybridClientTransportGeneric<C> implements ClientTransport {
     private _restTransport: HTTPClientTransport;
-    private _wsTransport: WebSocketClientTransport;
+    private _wsTransport: WebSocketClientTransport<C>;
     private _authMethod: AuthMethod;
     private _headers: TransportHeaders;
 
     constructor(restEndpoint: string, wsEndpoint: string, marshaller: JSONMarshaller, logger: Logger) {
         this._headers = {};
         this._restTransport = new HTTPClientTransport(restEndpoint, marshaller, logger);
-        this._wsTransport = new WebSocketClientTransport(wsEndpoint, marshaller, logger);
+        this._wsTransport = new WebSocketClientTransport<C>(wsEndpoint, marshaller, logger);
     }
 
     public getAuthorization(): AuthMethod | undefined {
@@ -46,4 +46,7 @@ export class HybridClientTransport implements ClientTransport {
 
         return this._restTransport.send(service, method, data);
     }
+}
+
+export class HybridClientTransport extends HybridClientTransportGeneric<object> {
 }

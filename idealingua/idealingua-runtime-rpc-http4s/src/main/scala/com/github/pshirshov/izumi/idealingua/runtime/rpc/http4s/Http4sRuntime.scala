@@ -13,6 +13,8 @@ class Http4sRuntime[IO[_, _]]
     with WithHttp4sLoggingMiddleware
     with WithHttp4sClient
     with WithHttp4sWsClient
+    with WithHttp4sHttpRequestContext
+    with WithWebsocketClientContext
     with WithHttp4sServer {
 
 

@@ -39,7 +39,7 @@ object IzumiDeps {
     val scalacheck = "1.14.0"
     val scalacheck_shapeless = "1.1.6"
 
-    val zio = "0.1.0-dc8b6a3"
+    val zio = "0.1.0-0d68970"
 
     // good to drop
     val json4s = "3.6.0" // 2.13+

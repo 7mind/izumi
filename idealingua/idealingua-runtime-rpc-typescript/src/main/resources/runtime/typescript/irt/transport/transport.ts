@@ -1,5 +1,6 @@
 
-import { AuthMethod } from './auth/auth';
+import { AuthMethod } from './auth';
+import { ServiceDispatcher } from '../dispatcher';
 
 export interface IncomingData {
     serialize(): any;
@@ -16,6 +17,13 @@ export interface ClientTransport {
     getHeaders(): TransportHeaders
 }
 
-export interface ClientSocketTransport extends ClientTransport { 
-    // ClientSocketTransport supports streams and buzzer calls
+export interface ClientSocketTransport<C, D> extends ClientTransport {
+    setContext(context: C): void
+    getContext(): C
+    registerBuzzer(buzzer: ServiceDispatcher<C, D>): boolean
+    unregisterBuzzer(id: string): boolean
+}
+
+export interface ServerSocketTransport {
+    send(service: string, method: string, data: IncomingData): Promise<OutgoingData>
 }

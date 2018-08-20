@@ -837,9 +837,9 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |
        |export class ${i.id.name}Client implements I${i.id.name}Client {
        |${renderRuntimeNames(i.id, s"${i.id.name}Client").shift(4)}
-       |    protected _transport: ClientSocketTransport;
+       |    protected _transport: ServerSocketTransport;
        |
-       |    constructor(transport: ClientSocketTransport) {
+       |    constructor(transport: ServerSocketTransport) {
        |        this._transport = transport;
        |    }
        |
@@ -940,7 +940,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val header =
       s"""${imports.render(ts)}
-         |${importFromIRT(List("ServiceDispatcher", "Marshaller", "Void", "IncomingData", "OutgoingData", "ClientSocketTransport"), i.id.domain.toPackage)}
+         |${importFromIRT(List("ServiceDispatcher", "Marshaller", "Void", "IncomingData", "OutgoingData", "ServerSocketTransport"), i.id.domain.toPackage)}
          """.stripMargin
 
     EmitterProduct(svc, header, s"// $typeName")

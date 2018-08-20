@@ -11,6 +11,8 @@ import scalaz.zio.{ExitResult, IO}
 trait WithHttp4sClient {
   this: Http4sContext =>
 
+  def client(baseUri: Uri, codec: IRTClientMultiplexor[BIO]): ClientDispatcher = new ClientDispatcher(baseUri, codec)
+
   class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor[BIO])
     extends IRTDispatcher with IRTResultZio {
 
@@ -23,7 +25,7 @@ trait WithHttp4sClient {
         .encode(request)
         .flatMap {
           encoded =>
-            val outBytes: Array[Byte] = encoded.noSpaces.getBytes
+            val outBytes: Array[Byte] = encode(encoded).getBytes
             val entityBody: EntityBody[CIO] = Stream.emits(outBytes).covary[CIO]
             val req = buildRequest(baseUri, request, entityBody)
 

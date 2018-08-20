@@ -40,8 +40,10 @@ object ArgumentNameExtractionMacro {
     object ArrowArg {
       def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
         arg match {
-          case ArrowPair(expr, Literal(Constant(name: String))) =>
+          case ArrowPair(expr, Literal(Constant(name: String))) => // ${value -> "name"}
             Some((c.Expr(expr), name))
+          case ArrowPair(expr@NameSeq(names), Literal(Constant(null))) => // ${value -> null}
+            Some((c.Expr(expr), names.last))
           case _ =>
             None
         }
@@ -51,7 +53,7 @@ object ArgumentNameExtractionMacro {
     object HiddenArrowArg {
       def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
         arg match {
-          case ArrowPair(expr, Literal(Constant(null))) =>
+          case ArrowPair(expr, Literal(Constant(null))) => // ${value -> "name" -> null}
             ArrowArg.unapply(expr)
 
           case _ =>
@@ -113,6 +115,7 @@ object ArgumentNameExtractionMacro {
                  |2) Chain: logger.log(s"My message: $${call.method} $${access.value}")
                  |3) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
                  |4) Hidden arg expression: logger.log(s"My message: $${Some.expression -> "argname" -> null}")
+                 |5) Hidden arg expression: logger.log(s"My message: $${Some.expression -> null}")
                  |
                  |Tree: ${c.universe.showRaw(v)}
                """.stripMargin)

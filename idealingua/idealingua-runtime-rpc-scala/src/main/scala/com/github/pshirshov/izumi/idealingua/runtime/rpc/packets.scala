@@ -4,6 +4,8 @@ import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
 import io.circe.{Decoder, Encoder, Json}
 import io.circe._
 import io.circe.generic.semiauto._
+import io.circe.syntax._
+
 sealed trait RPCPacketKind
 
 trait RPCPacketKindCirce {
@@ -71,11 +73,7 @@ object RPCPacketKind extends RPCPacketKindCirce {
   final case object C2SStream extends RPCPacketKind {
     override def toString: String = "stream:c2s"
   }
-}
 
-sealed trait RpcPacket {
-  type PacketId = String
-  def kind: RPCPacketKind
 }
 
 case class RpcPacketId(v: String)
@@ -88,35 +86,54 @@ object RpcPacketId {
   implicit def enc0: Encoder[RpcPacketId] = Encoder.encodeString.contramap(_.v)
 }
 
-case class RpcRequest
+case class RpcPacket
 (
   kind: RPCPacketKind
-  , service: String
-  , method: String
-  , id: RpcPacketId
   , data: Json
+
+  , id: Option[RpcPacketId]
+  , ref: Option[RpcPacketId]
+  , service: Option[String]
+  , method: Option[String]
   , headers: Map[String, String]
-) extends RpcPacket
+)
 
-object RpcRequest {
-  implicit def dec0: Decoder[RpcRequest] = deriveDecoder
+object RpcPacket {
+  implicit def dec0: Decoder[RpcPacket] = deriveDecoder
 
-  implicit def enc0: Encoder[RpcRequest] = deriveEncoder
-}
+  implicit def enc0: Encoder[RpcPacket] = deriveEncoder
 
-sealed trait AnyRpcResponse extends RpcPacket
+  def rpcFail(ref: Option[RpcPacketId], cause: String): RpcPacket = {
+    RpcPacket(RPCPacketKind.RpcFail, Map("cause" -> cause).asJson, None, ref, None, None, Map.empty)
+  }
 
-case class RpcResponse
-(
-  kind: RPCPacketKind
-  , ref: RpcPacketId
-  , data: Json
-) extends AnyRpcResponse
+  def rpcResponse(ref: RpcPacketId, data: Json): RpcPacket = {
+    RpcPacket(RPCPacketKind.RpcResponse, data, None, Some(ref), None, None, Map.empty)
+  }
 
-object RpcResponse {
-  implicit def dec0: Decoder[RpcResponse] = deriveDecoder
+  def rpcRequest(method: IRTMethodId, data: Json): RpcPacket = {
+    RpcPacket(
+      RPCPacketKind.RpcRequest,
+      data,
+      Some(RpcPacketId.random()),
+      None,
+      Some(method.service.value),
+      Some(method.methodId.value),
+      Map.empty,
+    )
+  }
 
-  implicit def enc0: Encoder[RpcResponse] = deriveEncoder
+  def buzzerRequest(method: IRTMethodId, data: Json): RpcPacket = {
+    RpcPacket(
+      RPCPacketKind.BuzzRequest,
+      data,
+      Some(RpcPacketId.random()),
+      None,
+      Some(method.service.value),
+      Some(method.methodId.value),
+      Map.empty,
+    )
+  }
 }
 
 
@@ -125,7 +142,7 @@ case class RpcFailureStringResponse
   kind: RPCPacketKind
   , data: String
   , cause: String
-) extends AnyRpcResponse
+)
 
 object RpcFailureStringResponse {
   implicit def dec0: Decoder[RpcFailureStringResponse] = deriveDecoder
