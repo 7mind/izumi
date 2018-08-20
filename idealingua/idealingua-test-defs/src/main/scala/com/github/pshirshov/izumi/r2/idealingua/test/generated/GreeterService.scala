@@ -10,34 +10,34 @@ import IRTResultTransZio._
 
 import scala.language.higherKinds
 
-trait GreeterServiceServer[R[_, _], C] {
-  val R: IRTResult[R]
+trait GreeterServiceServer[Or[_, _], C] {
+  type Just[T] = Or[Nothing, T]
 
-  def greet(ctx: C, name: String, surname: String): R.Just[String]
+  def greet(ctx: C, name: String, surname: String): Just[String]
 
-  def sayhi(ctx: C): R.Just[String]
+  def sayhi(ctx: C): Just[String]
 
-  def nothing(ctx: C): R.Just[String]
+  def nothing(ctx: C): Just[String]
 
-  def alternative(ctx: C): R.Or[Long, String]
+  def alternative(ctx: C): Or[Long, String]
 }
 
-trait GreeterServiceClient[R[_, _]] {
-  val R: IRTResult[R]
+trait GreeterServiceClient[Or[_, _]] {
+  type Just[T] = Or[Nothing, T]
 
-  def greet(name: String, surname: String): R.Just[String]
+  def greet(name: String, surname: String): Just[String]
 
-  def sayhi(): R.Just[String]
+  def sayhi(): Just[String]
 
-  def nothing(): R.Just[Unit]
+  def nothing(): Just[Unit]
 
-  def alternative(): R.Or[Long, String]
+  def alternative(): Or[Long, String]
 }
 
 class GreeterServiceClientWrapped[R[_, _] : IRTResultTransZio](dispatcher: IRTDispatcher)
   extends GreeterServiceClient[R] {
 
-  override val R: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
+  val R: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
 
   override def greet(name: String, surname: String): R.Just[String] = R.fromZio {
     dispatcher

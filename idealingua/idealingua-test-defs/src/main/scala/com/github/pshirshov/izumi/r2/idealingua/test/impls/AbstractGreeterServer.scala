@@ -12,7 +12,7 @@ import scala.language.higherKinds
 abstract class AbstractGreeterServer1[R[_, _] : IRTResult, C]
   extends GreeterServiceServer[R, C] {
 
-  override val R: IRTResult[R] = implicitly[IRTResult[R]]
+  val R: IRTResult[R] = implicitly[IRTResult[R]]
 
   import R._
 
