@@ -136,7 +136,7 @@ trait WithHttp4sServer {
       case Text(msg, _) =>
         val ioresponse = makeResponse(context, msg)
 
-        ZIOR.unsafeRunSync(BIO.toZio(ioresponse)) match {
+        BIORunner.unsafeRunSync0(ioresponse) match {
           case ExitResult.Completed(v) =>
             v.map(_.asJson).map(printer.pretty)
 
@@ -226,7 +226,7 @@ trait WithHttp4sServer {
         }
       }
 
-      ZIOR.unsafeRunSync(BIO.toZio(ioR)) match {
+      BIORunner.unsafeRunSync0(ioR) match {
         case ExitResult.Completed(v) =>
           v
         case ExitResult.Failed(error, _) =>

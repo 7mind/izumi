@@ -62,7 +62,7 @@ trait WithHttp4sClient {
               product
             }
 
-            ZIOR.unsafeRunSync(BIO.toZio(decoded)) match {
+            BIORunner.unsafeRunSync0(decoded) match {
               case ExitResult.Completed(v) =>
                 CIO.pure(v)
 

@@ -27,6 +27,8 @@ trait Http4sContext {
 
   protected def CIORunner: CIORunner[CIO]
 
+  protected def BIORunner: BIORunner[BIO]
+
   protected def dsl: Http4sDsl[CIO]
 
   protected def logger: IzLogger

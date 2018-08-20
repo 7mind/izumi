@@ -36,7 +36,7 @@ trait WithHttp4sWsClient {
           v
         }
 
-        ZIOR.unsafeRunSync(BIO.toZio(result)) match {
+        BIORunner.unsafeRunSync0(result) match {
           case ExitResult.Completed((packetId, method)) =>
             logger.debug(s"Have reponse for method $method: $packetId")
 

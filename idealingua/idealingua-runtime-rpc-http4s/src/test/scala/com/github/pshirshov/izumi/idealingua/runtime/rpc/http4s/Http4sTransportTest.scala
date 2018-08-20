@@ -119,6 +119,7 @@ import IRTResultTransZio._
 object Http4sTransportTest {
   type ZIO[+E, +V] = zio.IO[E, V]
   type CIO[+T] = cats.effect.IO[T]
+  val ZIOR: BIORunner[ZIO] = implicitly[BIORunner[ZIO]]
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
@@ -134,17 +135,17 @@ object Http4sTransportTest {
           override val signature: IRTMethodSignature = method.signature
           override val marshaller: IRTCirceMarshaller = method.marshaller
 
-          override def invoke(ctx: Ctx, input: signature.Input): R.Just[signature.Output] = R.fromZio {
+          override def invoke(ctx: Ctx, input: signature.Input): R.Just[signature.Output] = {
             ctx match {
               case DummyContext(_, Some(BasicCredentials(user, pass))) =>
                 if (user == "user" && pass == "pass") {
-                  R.toZio(method.invoke(ctx, input.asInstanceOf[method.signature.Input])).map(_.asInstanceOf[signature.Output])
+                  method.invoke(ctx, input.asInstanceOf[method.signature.Input]).map(_.asInstanceOf[signature.Output])
                 } else {
-                  zio.IO.terminate(IRTBadCredentialsException(Status.Unauthorized))
+                  R.terminate(IRTBadCredentialsException(Status.Unauthorized))
                 }
 
               case _ =>
-                zio.IO.terminate(IRTNoCredentialsException(Status.Forbidden))
+                R.terminate(IRTNoCredentialsException(Status.Forbidden))
             }
           }
         }

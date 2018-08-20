@@ -9,7 +9,7 @@ import _root_.io.circe.Printer
 import scala.language.higherKinds
 
 
-class Http4sRuntime[ZIO[+ _, + _] : IRTResultTransZio, CaIO[+ _] : ConcurrentEffect : CIORunner : Timer]
+class Http4sRuntime[ZIO[+ _, + _] : IRTResultTransZio : BIORunner, CaIO[+ _] : ConcurrentEffect : CIORunner : Timer]
 (
   override protected val logger: IzLogger
 )
@@ -33,6 +33,8 @@ class Http4sRuntime[ZIO[+ _, + _] : IRTResultTransZio, CaIO[+ _] : ConcurrentEff
   override protected val CIOT: Timer[CIO] = implicitly
 
   override protected val CIORunner: CIORunner[CaIO] = implicitly
+
+  override protected val BIORunner: BIORunner[BIO] = implicitly
 
   override protected val dsl: Http4sDsl[CIO] = Http4sDsl.apply[CIO]
 
