@@ -2,9 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 
 import cats.arrow.FunctionK
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio.IRTResultZio
 import scalaz.zio.IO
-import scalaz.zio.IO.SyncEffect
 
 import scala.language.higherKinds
 
@@ -52,11 +50,9 @@ trait IRTResult[R[+_, +_]] {
   @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
 }
 
-object IRTResult {
-  def apply[R[+_, +_] : IRTResult, E, A](r: R[E, A]): IRTResultApi[R, E, A] = new IRTResultApi[R, E, A](r)
-
-  implicit class IRTResultApi[R[+_, +_] : IRTResult, +E, +A](r: R[E, A]) {
-    val R: IRTResult[R] = implicitly[IRTResult[R]]
+trait IRTResultApi[T[K[+_, +_]] <: IRTResult[K]] {
+  implicit class IRTResultApi[R[+_, +_] : T, +E, +A](r: R[E, A]) {
+    val R: T[R] = implicitly[T[R]]
 
     @inline def map[B](f: A => B): R[E, B] = R.map(r)(f)
 
@@ -73,6 +69,12 @@ object IRTResult {
 
     @inline def sandboxWith[E2, B](f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B] = R.sandboxWith(r)(f)
   }
+
+  def apply[R[+_, +_] : T, E, A](r: R[E, A]): IRTResultApi[R, E, A] = new IRTResultApi[R, E, A](r)
+}
+
+object IRTResult extends IRTResultApi[IRTResult] {
+
 }
 
 trait IRTResultTransZio[R[+_, +_]] extends IRTResult[R] {
@@ -81,38 +83,7 @@ trait IRTResultTransZio[R[+_, +_]] extends IRTResult[R] {
   def fromZio[E]: FunctionK[IO[E, ?], R[E, ?]]
 }
 
-object IRTResultTransZio {
-  //type xyz[λ[(-[A], +[B]) => Function2[A, Int, B]]]
-
-  //type xyz[λ[(`E[+_]`, `A[+_]`) => EitherT[cats.effect.IO, E, A]]]
-//  @deprecated("ZIO<->EitherT adapter is not recommended to use", "")
-//  implicit object EitherTResult extends IRTResult[λ[(`+E`, `+A`) => EitherT[cats.effect.IO, E, A]]] {
-//    def ME[E]: MonadError[Or[E, ?], E] = implicitly
-//
-//    // this isn't nice
-//    @inline def cancel[V](v: => Throwable): Just[V] = ME[Nothing].point(throw v)
-//
-//    @inline def choice[E, V](v: => Either[E, V]): Or[E, V] = v match {
-//      case Right(r) =>
-//        ME[E].pure(r)
-//
-//      case Left(l) =>
-//        ME[E].raiseError(l)
-//    }
-//
-//    @inline def just[V](v: => V): Just[V] = ME[Nothing].pure(v)
-//
-//    @inline def stop[E](v: => E): EitherTResult.Or[E, Nothing] = ME[E].raiseError(v)
-//
-//    @inline def map[E, A, B](r: EitherTResult.Or[E, A])(f: A => B): EitherTResult.Or[E, B] = r.map(f)
-//
-//    @inline def leftMap[E, A, E2](r: EitherTResult.Or[E, A])(f: E => E2): EitherTResult.Or[E2, A] = r.leftMap(f)
-//
-//    @inline def bimap[E, A, E2, B](r: EitherTResult.Or[E, A])(f: E => E2, g: A => B): EitherTResult.Or[E2, B] = r.bimap(f, g)
-//
-//    @inline def flatMap[E, A, E1 >: E, B](r: EitherTResult.Or[E, A])(f0: A => EitherT[effect.IO, E1, B]): EitherT[effect.IO, E1, B] = r.flatMap(f0)
-//  }
-
+object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
 
   implicit object IRTResultZio extends IRTResultTransZio[IO] {
     @inline override def sync[A](effect: => A): Or[Nothing, A] = IO.sync(effect)
@@ -147,5 +118,36 @@ object IRTResultTransZio {
     @inline def fromZio[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id
   }
 
+
+  //type xyz[λ[(-[A], +[B]) => Function2[A, Int, B]]]
+
+  //type xyz[λ[(`E[+_]`, `A[+_]`) => EitherT[cats.effect.IO, E, A]]]
+  //  @deprecated("ZIO<->EitherT adapter is not recommended to use", "")
+  //  implicit object EitherTResult extends IRTResult[λ[(`+E`, `+A`) => EitherT[cats.effect.IO, E, A]]] {
+  //    def ME[E]: MonadError[Or[E, ?], E] = implicitly
+  //
+  //    // this isn't nice
+  //    @inline def cancel[V](v: => Throwable): Just[V] = ME[Nothing].point(throw v)
+  //
+  //    @inline def choice[E, V](v: => Either[E, V]): Or[E, V] = v match {
+  //      case Right(r) =>
+  //        ME[E].pure(r)
+  //
+  //      case Left(l) =>
+  //        ME[E].raiseError(l)
+  //    }
+  //
+  //    @inline def just[V](v: => V): Just[V] = ME[Nothing].pure(v)
+  //
+  //    @inline def stop[E](v: => E): EitherTResult.Or[E, Nothing] = ME[E].raiseError(v)
+  //
+  //    @inline def map[E, A, B](r: EitherTResult.Or[E, A])(f: A => B): EitherTResult.Or[E, B] = r.map(f)
+  //
+  //    @inline def leftMap[E, A, E2](r: EitherTResult.Or[E, A])(f: E => E2): EitherTResult.Or[E2, A] = r.leftMap(f)
+  //
+  //    @inline def bimap[E, A, E2, B](r: EitherTResult.Or[E, A])(f: E => E2, g: A => B): EitherTResult.Or[E2, B] = r.bimap(f, g)
+  //
+  //    @inline def flatMap[E, A, E1 >: E, B](r: EitherTResult.Or[E, A])(f0: A => EitherT[effect.IO, E1, B]): EitherT[effect.IO, E1, B] = r.flatMap(f0)
+  //  }
 }
 
