@@ -152,7 +152,7 @@ object Http4sTransportTest {
   }
 
   class DemoContext[R[+_, +_] : IRTResultTransZio, Ctx] {
-    private val greeterService = new AbstractGreeterServer1.Impl[R, Ctx]
+    private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
     private val dispatchers: Set[IRTWrappedService[R, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
     val multiplexor = new IRTServerMultiplexor[R, Ctx](dispatchers)

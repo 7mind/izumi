@@ -1,17 +1,17 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import io.circe.Json
-import scalaz.zio.IO
+import IRTResult._
 
 import scala.language.higherKinds
 
-class IRTServerMultiplexor[R[+_, +_] : IRTResultTransZio, C](list: Set[IRTWrappedService[R, C]]) {
-  protected val ZIO: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
+class IRTServerMultiplexor[R[+_, +_] : IRTResult, C](list: Set[IRTWrappedService[R, C]]) {
+  protected val R: IRTResult[R] = implicitly[IRTResult[R]]
 
   val services: Map[IRTServiceId, IRTWrappedService[R, C]] = list.map(s => s.serviceId -> s).toMap
 
 
-  def doInvoke(parsedBody: Json, context: C, toInvoke: IRTMethodId): IO[Throwable, Option[Json]] = {
+  def doInvoke(parsedBody: Json, context: C, toInvoke: IRTMethodId): R[Throwable, Option[Json]] = {
     (for {
       service <- services.get(toInvoke.service)
       method <- service.allMethods.get(toInvoke)
@@ -21,17 +21,17 @@ class IRTServerMultiplexor[R[+_, +_] : IRTResultTransZio, C](list: Set[IRTWrappe
       case Some(value) =>
         toM(parsedBody, context, toInvoke, value).map(Some.apply)
       case None =>
-        IO.point(None)
+        R.point(None)
     }
   }
 
-  private def toM(parsedBody: Json, context: C, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C]) = {
+  private def toM(parsedBody: Json, context: C, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C]): R[Throwable, Json] = {
     for {
-      decoded <- ZIO.toZio(method.marshaller.decodeRequest(IRTJsonBody(toInvoke, parsedBody)))
-      casted <- IO.syncThrowable(decoded.value.asInstanceOf[method.signature.Input])
-      result <- IO.syncThrowable(method.invoke(context, casted))
-      safeResult <- ZIO.toZio(result)
-      encoded <- IO.syncThrowable(method.marshaller.encodeResponse(IRTResBody(safeResult)))
+      decoded <- method.marshaller.decodeRequest(IRTJsonBody(toInvoke, parsedBody))
+      casted <- R.syncThrowable(decoded.value.asInstanceOf[method.signature.Input])
+      result <- R.syncThrowable(method.invoke(context, casted))
+      safeResult <- result
+      encoded <- R.syncThrowable(method.marshaller.encodeResponse(IRTResBody(safeResult)))
     } yield {
       encoded
     }

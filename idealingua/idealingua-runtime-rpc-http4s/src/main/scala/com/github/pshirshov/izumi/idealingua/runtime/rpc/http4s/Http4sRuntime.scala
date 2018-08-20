@@ -1,11 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s.dsl._
 
 import scala.language.higherKinds
 
-class Http4sRuntime[IO[+_, +_]]
+class Http4sRuntime[IO[+_, +_] : IRTResultTransZio]
 (
   override protected val logger: IzLogger
 )
@@ -19,5 +20,8 @@ class Http4sRuntime[IO[+_, +_]]
 
 
   override type BIO[+E, +V] = IO[E, V]
+
+  override protected def bioZio: IRTResultTransZio[BIO] = implicitly
+
   override protected val dsl: Http4sDsl[CIO] = org.http4s.dsl.io
 }

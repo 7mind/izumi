@@ -20,6 +20,8 @@ trait IRTResult[R[+_, +_]] {
 
   @inline def terminate[V](v: => Throwable): Just[V]
 
+  @inline def syncThrowable[A](effect: => A): Or[Throwable, A]
+
   @inline def maybe[V](v: => Either[Throwable, V]): Just[V] = {
     v match {
       case Left(f) =>
@@ -106,6 +108,8 @@ object IRTResultTransZio {
 
   implicit object IRTResultZio extends IRTResultTransZio[IO] {
     @inline def now[A](a: A): IRTResultZio.Just[A] = IO.now(a)
+
+    @inline def syncThrowable[A](effect: => A): Or[Throwable, A] = IO.syncThrowable(effect)
 
     @inline def fromEither[L, R](v: => Either[L, R]): Or[L, R] = IO.fromEither(v)
 

@@ -6,7 +6,6 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import scalaz.zio.{IO, RTS}
-import IRTResultTransZio._
 import IRTResult._
 
 import scala.language.higherKinds
@@ -131,33 +130,7 @@ class GreeterServiceServerWrapped[F[+_, +_] : IRTResult, C](service: GreeterServ
 }
 
 
-object Test {
-  def main(args: Array[String]): Unit = {
-    val greeter = new GreeterServiceServerWrapped[IO, Unit](new impls.AbstractGreeterServer1.Impl[IO, Unit]())
-    val multiplexor = new IRTServerMultiplexor[IO, Unit](Set(greeter))
 
-    val req1 = new greeter.greet.signature.Input("John", "Doe")
-    val json1 = req1.asJson
-    println(json1)
-
-    val req2 = new greeter.alternative.signature.Input()
-    val json2 = req2.asJson
-    println(json2)
-
-
-    val invoked1 = multiplexor.doInvoke(json1, (), greeter.greet.signature.id)
-    val invoked2 = multiplexor.doInvoke(json1, (), greeter.alternative.signature.id)
-
-    object io extends RTS {
-      override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = _ => IO.sync(())
-    }
-
-    println(io.unsafeRunSync(invoked1))
-    println(io.unsafeRunSync(invoked2))
-  }
-
-
-}
 
 object GreeterServiceMethods {
   val serviceId: IRTServiceId = IRTServiceId("GreeterService")

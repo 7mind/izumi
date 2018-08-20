@@ -13,10 +13,9 @@ import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebsocketBits.{Binary, Close, Text, WebSocketFrame}
 import scalaz.zio.{ExitResult, IO}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-
 
 trait WithHttp4sServer {
   this: Http4sContext with WithHttp4sLoggingMiddleware with WithHttp4sHttpRequestContext with WithWebsocketClientContext =>
@@ -196,7 +195,7 @@ trait WithHttp4sServer {
       input match {
         case RpcPacket(RPCPacketKind.RpcRequest, data, Some(id), _, Some(service), Some(method), _) =>
           val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
-          muxer.doInvoke(data, userContext, methodId).flatMap {
+          bioZio.toZio(muxer.doInvoke(data, userContext, methodId)).flatMap {
             case None =>
               ZIO.fail(new IRTMissingHandlerException(s"${context -> null}: No handler for $methodId", input))
             case Some(resp) =>
@@ -215,7 +214,7 @@ trait WithHttp4sServer {
     protected def run(context: HttpRequestContext[Ctx], body: String, toInvoke: IRTMethodId): CIO[Response[CIO]] = {
       val ioR = for {
         parsed <- ZIO.fromEither(parse(body))
-        maybeResult <- muxer.doInvoke(parsed, context.context, toInvoke)
+        maybeResult <- bioZio.toZio(muxer.doInvoke(parsed, context.context, toInvoke))
       } yield {
         maybeResult match {
           case Some(value) =>

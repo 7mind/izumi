@@ -12,7 +12,7 @@ object IDLRuntimeTypes {
   val model: Pkg = Pkg.parentOf[TypeId]
   val services: Pkg = Pkg.of[IRTResult[_2Arg]]
 
-  type _2Arg[X, Y] = Nothing
+  type _2Arg[+X, +Y] = Nothing
   type _1Arg[R] = Nothing
   type _0Arg = Nothing
 
@@ -35,7 +35,7 @@ object IDLRuntimeTypes {
   final val IRTMethodName = services.conv.toScala[IRTMethodName]
   final val IRTWrappedClient = services.conv.toScala[IRTWrappedClient[_2Arg]]
   final val IRTWrappedService = services.conv.toScala[IRTWrappedService[_2Arg, _0Arg]]
-  final val IRTDispatcher = services.conv.toScala[IRTDispatcher]
+  final val IRTDispatcher = services.conv.toScala[IRTDispatcher[_2Arg]]
   final val Conversions = model.conv.toScala[IRTConversions[_0Arg]]
   final val Cast = model.conv.toScala[IRTCast[_0Arg, _0Arg]]
   final val Extend = model.conv.toScala[IRTExtend[_0Arg, _0Arg]]

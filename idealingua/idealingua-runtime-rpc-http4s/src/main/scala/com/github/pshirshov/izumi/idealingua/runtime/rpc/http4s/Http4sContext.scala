@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import _root_.io.circe._
 import cats.effect
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s._
 import org.http4s.dsl._
 import scalaz.zio.IO
-import _root_.io.circe._
-import _root_.io.circe.syntax._
 
 import scala.language.higherKinds
 
@@ -18,6 +18,8 @@ trait Http4sContext {
   val ZIO: IO.type = scalaz.zio.IO
 
   type BIO[+E, +V]
+
+  protected implicit def bioZio: IRTResultTransZio[BIO]
 
   type MaterializedStream = String
   type StreamDecoder = EntityDecoder[CIO, MaterializedStream]
