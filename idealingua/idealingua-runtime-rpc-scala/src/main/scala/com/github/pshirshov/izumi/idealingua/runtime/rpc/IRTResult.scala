@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 
+import cats.MonadError
 import cats.arrow.FunctionK
+import cats.data.EitherT
 import scalaz.zio.IO
 
 import scala.language.higherKinds
@@ -32,6 +34,23 @@ trait IRTResultTransZio[R[_, _]] extends IRTResult[R] {
 }
 
 object IRTResultTransZio {
+  @deprecated("ZIO<->EitherT adapter is not recommended to use", "")
+  implicit object EitherTResult extends IRTResult[EitherT[cats.effect.IO, ?, ?]] {
+    def ME[E]: MonadError[Or[E, ?], E] = implicitly
+
+    def stop[V](v: => Throwable): Just[V] = ME[Nothing].point(throw v)
+
+    def choice[E, V](v: => Either[E, V]): Or[E, V] = v match {
+      case Right(r) =>
+        ME[E].pure(r)
+
+      case Left(l) =>
+        ME[E].raiseError(l)
+    }
+
+    def just[V](v: => V): Just[V] = ME[Nothing].pure(v)
+  }
+
 
   implicit object IRTResultZio extends IRTResultTransZio[IO] {
     @inline def choice[L, R](v: => Either[L, R]): Or[L, R] = IO.fromEither(v)

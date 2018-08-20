@@ -4,6 +4,7 @@ import cats.MonadError
 import cats.data.EitherT
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.r2.idealingua.test.generated._
+import IRTResultTransZio._
 
 import scala.language.higherKinds
 
@@ -35,25 +36,40 @@ object AbstractGreeterServer1 {
 
   class Impl[R[_, _] : IRTResult, C] extends AbstractGreeterServer1[R, C]
 
+  class ImplEitherT[C] extends AbstractGreeterServer1[EitherT[cats.effect.IO, ?, ?], C]
+
 }
 
-object AbstractGreeterServer2 {
+trait AbstractGreeterServerMonomorphicForeign[C]
+  extends GreeterServiceServer[EitherT[cats.effect.IO, ?, ?], C] {
+  val R: EitherTResult.type = EitherTResult
 
-  implicit object EitherTResult extends IRTResult[EitherT[cats.effect.IO, ?, ?]] {
-    def ME[E]: MonadError[Or[E, ?], E] = implicitly
+  import R._
 
-    def stop[V](v: => Throwable): Just[V] = ME[Nothing].point(throw v)
+  protected implicit def ME[E]: MonadError[Or[E, ?], E] = R.ME[E]
 
-    def choice[E, V](v: => Either[E, V]): Or[E, V] = v match {
-      case Right(r) =>
-        ME[E].pure(r)
-
-      case Left(l) =>
-        ME[E].raiseError(l)
-    }
-
-    def just[V](v: => V): Just[V] = ME[Nothing].pure(v)
+  override def greet(ctx: C, name: String, surname: String): Just[String] = just {
+    s"Hi, $name $surname!"
   }
 
-  class Impl[C] extends AbstractGreeterServer1[EitherT[cats.effect.IO, ?, ?], C]
+  override def sayhi(ctx: C): Just[String] = just {
+    "Hi!"
+  }
+
+  override def alternative(ctx: C): Or[Long, String] = choice {
+    /*
+    ME[Long].raiseError(45)
+    ME[Long].pure("test")
+    */
+    Right("value")
+  }
+
+  override def nothing(ctx: C): Or[Nothing, String] = just {
+    ""
+  }
+}
+
+object AbstractGreeterServerMonomorphicForeign {
+
+
 }
