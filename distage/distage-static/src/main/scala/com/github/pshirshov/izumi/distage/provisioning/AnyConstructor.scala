@@ -16,7 +16,7 @@ final case class TraitConstructor[T](provider: ProviderMagnet[T]) extends AnyCon
 final case class FactoryConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
 
 object AnyConstructor {
-  def apply[T: AnyConstructor]: AnyConstructor[T] = implicitly[AnyConstructor[T]]
+  def apply[T: AnyConstructor]: AnyConstructor[T] = implicitly
 
   implicit def derive[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructor[T]
 
@@ -24,19 +24,19 @@ object AnyConstructor {
 }
 
 object ConcreteConstructor {
-  def apply[T: ConcreteConstructor]: ConcreteConstructor[T] = implicitly[ConcreteConstructor[T]]
+  def apply[T: ConcreteConstructor]: ConcreteConstructor[T] = implicitly
 
   implicit def derive[T]: ConcreteConstructor[T] = macro ConcreteConstructorMacro.mkConcreteConstructor[T]
 }
 
 object TraitConstructor {
-  def apply[T: TraitConstructor]: TraitConstructor[T] = implicitly[TraitConstructor[T]]
+  def apply[T: TraitConstructor]: TraitConstructor[T] = implicitly
 
   implicit def derive[T]: TraitConstructor[T] = macro TraitConstructorMacro.mkTraitConstructor[T]
 }
 
 object FactoryConstructor {
-  def apply[T: FactoryConstructor]: FactoryConstructor[T] = implicitly[FactoryConstructor[T]]
+  def apply[T: FactoryConstructor]: FactoryConstructor[T] = implicitly
 
   implicit def derive[T]: FactoryConstructor[T] = macro FactoryConstructorMacro.mkFactoryConstructor[T]
 }

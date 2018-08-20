@@ -7,8 +7,8 @@ trait WithHttp4sLoggingMiddleware {
   this: Http4sContext =>
 
 
-  protected def loggingMiddle(service: HttpRoutes[CIO]): HttpRoutes[CIO] = cats.data.Kleisli {
-    req: Request[CIO] =>
+  protected def loggingMiddle(service: HttpRoutes[CatsIO]): HttpRoutes[CatsIO] = cats.data.Kleisli {
+    req: Request[CatsIO] =>
       logger.trace(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}: initiated")
 
       try {

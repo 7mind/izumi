@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicReference
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
@@ -18,6 +19,9 @@ import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
+
+import scala.language.higherKinds
 
 class Http4sTransportTest extends WordSpec {
 
@@ -69,17 +73,17 @@ class Http4sTransportTest extends WordSpec {
     //    }
   }
 
-  private def performWsTests(disp: IRTDispatcher with TestDispatcher with AutoCloseable): Unit = {
+  private def performWsTests(disp: IRTDispatcher[BiIO] with TestDispatcher with AutoCloseable): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
 
-    assert(ZIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
-    assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
+    assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
+    assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
     disp.setupCredentials("user", "badpass")
     intercept[DecodingFailure] {
-      ZIOR.unsafeRun(greeterClient.alternative())
+      BIOR.unsafeRun(greeterClient.alternative())
     }
     disp.close()
     ()
@@ -87,23 +91,23 @@ class Http4sTransportTest extends WordSpec {
   }
 
 
-  private def performTests(disp: IRTDispatcher with TestDispatcher): Unit = {
+  private def performTests(disp: IRTDispatcher[BiIO] with TestDispatcher): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
 
-    assert(ZIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
-    assert(ZIOR.unsafeRun(greeterClient.alternative()) == "value")
+    assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
+    assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
     disp.cancelCredentials()
     val forbidden = intercept[IRTUnexpectedHttpStatus] {
-      ZIOR.unsafeRun(greeterClient.alternative())
+      BIOR.unsafeRun(greeterClient.alternative())
     }
     assert(forbidden.status == Status.Forbidden)
 
     disp.setupCredentials("user", "badpass")
     val unauthorized = intercept[IRTUnexpectedHttpStatus] {
-      ZIOR.unsafeRun(greeterClient.alternative())
+      BIOR.unsafeRun(greeterClient.alternative())
     }
     assert(unauthorized.status == Status.Unauthorized)
     ()
@@ -112,46 +116,49 @@ class Http4sTransportTest extends WordSpec {
 }
 
 object Http4sTransportTest {
-  type ZIO[E, V] = zio.IO[E, V]
-  type CIO[T] = cats.effect.IO[T]
+  type BiIO[+E, +V] = zio.IO[E, V]
+  type CIO[+T] = cats.effect.IO[T]
+  val BIOR: BIORunner[BiIO] = implicitly
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
 
-  final class AuthCheckDispatcher2[Ctx](proxied: IRTWrappedService[ZIO, Ctx]) extends IRTWrappedService[ZIO, Ctx] {
+  final class AuthCheckDispatcher2[R[+ _, + _] : BIO, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
     override def serviceId: IRTServiceId = proxied.serviceId
 
-    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[ZIO, Ctx]] = proxied.allMethods.mapValues {
+    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, Ctx]] = proxied.allMethods.mapValues {
       method =>
-        new IRTMethodWrapper[ZIO, Ctx] with IRTResultZio {
+        new IRTMethodWrapper[R, Ctx] {
+          val R: BIO[R] = implicitly
 
           override val signature: IRTMethodSignature = method.signature
-          override val marshaller: IRTCirceMarshaller[ZIO] = method.marshaller
+          override val marshaller: IRTCirceMarshaller = method.marshaller
 
-          override def invoke(ctx: Ctx, input: signature.Input): zio.IO[Nothing, signature.Output] = {
+          override def invoke(ctx: Ctx, input: signature.Input): R.Just[signature.Output] = {
             ctx match {
               case DummyContext(_, Some(BasicCredentials(user, pass))) =>
                 if (user == "user" && pass == "pass") {
                   method.invoke(ctx, input.asInstanceOf[method.signature.Input]).map(_.asInstanceOf[signature.Output])
                 } else {
-                  zio.IO.terminate(IRTBadCredentialsException(Status.Unauthorized))
+                  R.terminate(IRTBadCredentialsException(Status.Unauthorized))
                 }
 
               case _ =>
-                zio.IO.terminate(IRTNoCredentialsException(Status.Forbidden))
+                R.terminate(IRTNoCredentialsException(Status.Forbidden))
             }
           }
         }
     }
   }
 
-  class DemoContext[Ctx] {
-    private val greeterService = new AbstractGreeterServer1.Impl[Ctx]
+  class DemoContext[R[+ _, + _] : BIO, Ctx] {
+    private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
-    private val dispatchers: Set[IRTWrappedService[ZIO, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
-    private val clients: Set[IRTWrappedClient[ZIO]] = Set(GreeterServiceClientWrapped)
-    val codec = new IRTClientMultiplexor(clients)
-    val multiplexor = new IRTServerMultiplexor[ZIO, Ctx](dispatchers)
+    private val dispatchers: Set[IRTWrappedService[R, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
+    val multiplexor = new IRTServerMultiplexor[R, Ctx](dispatchers)
+
+    private val clients: Set[IRTWrappedClient] = Set(GreeterServiceClientWrapped)
+    val codec = new IRTClientMultiplexor[R](clients)
   }
 
   object Http4sTestContext {
@@ -165,8 +172,11 @@ object Http4sTransportTest {
     final val wsUri = new URI("ws", null, host, port, "/ws", null, null)
 
     //
-    final val demo = new DemoContext[DummyContext]()
-    final val rt = new Http4sRuntime[ZIO](makeLogger())
+    final val demo = new DemoContext[BiIO, DummyContext]()
+
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    final val rt = new Http4sRuntime[BiIO, CIO](makeLogger())
 
     //
     final val authUser: Kleisli[OptionT[CIO, ?], Request[CIO], DummyContext] =

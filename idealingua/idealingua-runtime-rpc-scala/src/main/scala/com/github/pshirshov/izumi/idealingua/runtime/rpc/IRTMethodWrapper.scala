@@ -3,9 +3,11 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 import scala.language.higherKinds
 
 
-abstract class IRTMethodWrapper[R[_, _], C] extends IRTResult[R] {
+abstract class IRTMethodWrapper[Or[_, _], C] {
+  type Just[T] = Or[Nothing, T]
+
   val signature: IRTMethodSignature
-  val marshaller: IRTCirceMarshaller[R]
+  val marshaller: IRTCirceMarshaller
 
   def invoke(ctx: C, input: signature.Input): Just[signature.Output]
 }

@@ -16,7 +16,7 @@ object HigherKindCases {
     }
 
     object Pointed {
-      def apply[F[_]: Pointed]: Pointed[F] = implicitly[Pointed[F]]
+      def apply[F[_]: Pointed]: Pointed[F] = implicitly
 
       implicit final val pointedList: Pointed[List] =
         new Pointed[List] {

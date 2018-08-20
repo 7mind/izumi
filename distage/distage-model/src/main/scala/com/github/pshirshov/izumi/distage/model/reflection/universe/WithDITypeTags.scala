@@ -34,7 +34,7 @@ trait WithDITypeTags {
   }
 
   object Tag extends TagInstances0 {
-    def apply[T: Tag]: Tag[T] = implicitly[Tag[T]]
+    def apply[T: Tag]: Tag[T] = implicitly
 
     def apply[T](t: TypeTag[T]): Tag[T] =
       new Tag[T] {
@@ -200,7 +200,7 @@ trait WithDITypeTags {
     *     TagK[Option]
     * }}}
     **/
-    def apply[K[_] : TagK]: TagK[K] = implicitly[TagK[K]]
+    def apply[K[_] : TagK]: TagK[K] = implicitly
   }
 
   trait TagKInstances {
@@ -244,7 +244,7 @@ trait WithDITypeTags {
   }
 
   object WeakTag extends WeakTagInstances0 {
-    def apply[T: WeakTag]: WeakTag[T] = implicitly[WeakTag[T]]
+    def apply[T: WeakTag]: WeakTag[T] = implicitly
 
     def apply[T](t: WeakTypeTag[T]): WeakTag[T] =
       new WeakTag[T] {

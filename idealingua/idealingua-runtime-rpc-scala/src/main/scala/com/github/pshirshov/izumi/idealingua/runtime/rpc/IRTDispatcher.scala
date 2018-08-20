@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-import scalaz.zio.IO
+import scala.language.higherKinds
 
-trait IRTDispatcher {
-  def dispatch(input: IRTMuxRequest): IO[Throwable, IRTMuxResponse]
+trait IRTDispatcher[Or[+_, +_]] {
+  def dispatch(input: IRTMuxRequest): Or[Throwable, IRTMuxResponse]
 }
