@@ -24,7 +24,7 @@ trait WithDIKey {
     }
 
     case class IdKey[I: IdContract](tpe: SafeType, id: I) extends BasicKey {
-      val idContract: IdContract[I] = implicitly[IdContract[I]]
+      val idContract: IdContract[I] = implicitly
 
       override def toString: String = s"${tpe.toString}#$id"
     }

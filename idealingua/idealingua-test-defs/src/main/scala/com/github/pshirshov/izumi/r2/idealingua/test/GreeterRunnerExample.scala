@@ -1,0 +1,34 @@
+package com.github.pshirshov.izumi.r2.idealingua.test
+
+import _root_.io.circe.syntax._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTServerMultiplexor
+import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceServerWrapped
+import scalaz.zio._
+
+object GreeterRunnerExample {
+  def main(args: Array[String]): Unit = {
+    val greeter = new GreeterServiceServerWrapped[IO, Unit](new impls.AbstractGreeterServer.Impl[IO, Unit]())
+    val multiplexor = new IRTServerMultiplexor[IO, Unit](Set(greeter))
+
+    val req1 = new greeter.greet.signature.Input("John", "Doe")
+    val json1 = req1.asJson
+    println(json1)
+
+    val req2 = new greeter.alternative.signature.Input()
+    val json2 = req2.asJson
+    println(json2)
+
+
+    val invoked1 = multiplexor.doInvoke(json1, (), greeter.greet.signature.id)
+    val invoked2 = multiplexor.doInvoke(json1, (), greeter.alternative.signature.id)
+
+    object io extends RTS {
+      override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = _ => IO.sync(())
+    }
+
+    println(io.unsafeRunSync(invoked1))
+    println(io.unsafeRunSync(invoked2))
+  }
+
+
+}

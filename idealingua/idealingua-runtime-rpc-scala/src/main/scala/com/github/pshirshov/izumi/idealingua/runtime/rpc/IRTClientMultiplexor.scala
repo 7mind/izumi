@@ -1,27 +1,29 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import io.circe.Json
-import scalaz.zio.IO
+import BIO._
 
 import scala.language.higherKinds
 
-class IRTClientMultiplexor[R[_, _]](clients: Set[IRTWrappedClient[R]])
-  extends IRTResultZio {
-  val codecs: Map[IRTMethodId, IRTCirceMarshaller[R]] = clients.flatMap(_.allCodecs).toMap
+class IRTClientMultiplexor[R[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {
+  protected val BIO: BIO[R] = implicitly
 
-  def encode(input: IRTMuxRequest): IO[Throwable, Json] = {
+  val codecs: Map[IRTMethodId, IRTCirceMarshaller] = clients.flatMap(_.allCodecs).toMap
+
+  def encode(input: IRTMuxRequest): R[Throwable, Json] = {
     codecs.get(input.method) match {
       case Some(marshaller) =>
-        IO.syncThrowable(marshaller.encodeRequest(input.body))
+        BIO.syncThrowable(marshaller.encodeRequest(input.body))
       case None =>
-        IO.terminate(new IRTMissingHandlerException(s"No codec for $input", input, None))
+        BIO.terminate(new IRTMissingHandlerException(s"No codec for $input", input, None))
     }
   }
 
-  def decode(input: Json, method: IRTMethodId): IO[Throwable, IRTMuxResponse] = {
+  def decode(input: Json, method: IRTMethodId): R[Throwable, IRTMuxResponse] = {
     codecs.get(method) match {
       case Some(marshaller) =>
-        marshaller.toZio(marshaller.decodeResponse(IRTJsonBody(method, input)))
+        marshaller.decodeResponse[R].apply(IRTJsonBody(method, input))
           .map {
             body =>
               IRTMuxResponse(body, method)
@@ -29,7 +31,7 @@ class IRTClientMultiplexor[R[_, _]](clients: Set[IRTWrappedClient[R]])
 
 
       case None =>
-        IO.terminate(new IRTMissingHandlerException(s"No codec for $method, input=$input", input, None))
+        BIO.terminate(new IRTMissingHandlerException(s"No codec for $method, input=$input", input, None))
     }
   }
 }

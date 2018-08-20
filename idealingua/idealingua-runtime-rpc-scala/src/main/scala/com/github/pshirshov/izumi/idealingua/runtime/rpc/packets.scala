@@ -134,18 +134,8 @@ object RpcPacket {
       Map.empty,
     )
   }
-}
 
-
-case class RpcFailureStringResponse
-(
-  kind: RPCPacketKind
-  , data: String
-  , cause: String
-)
-
-object RpcFailureStringResponse {
-  implicit def dec0: Decoder[RpcFailureStringResponse] = deriveDecoder
-
-  implicit def enc0: Encoder[RpcFailureStringResponse] = deriveEncoder
+  def rpcCritical(data: String, cause: String): RpcPacket = {
+    RpcPacket(RPCPacketKind.Fail, Map("data" -> data, "cause" -> cause).asJson, None, None, None, None, Map.empty)
+  }
 }

@@ -3,23 +3,23 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import java.net.URI
 import java.util.concurrent.TimeoutException
 
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.parser.parse
 import io.circe.syntax._
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
-import scalaz.zio.{ExitResult, IO}
-
+import scalaz.zio.ExitResult
 
 trait WithHttp4sWsClient {
-  this: Http4sContext =>
+  self: Http4sContext =>
 
-  def wsClient(baseUri: URI, codec: IRTClientMultiplexor[BIO]): ClientWsDispatcher = new ClientWsDispatcher(baseUri, codec)
+  def wsClient(baseUri: URI, codec: IRTClientMultiplexor[BiIO]): ClientWsDispatcher = new ClientWsDispatcher(baseUri, codec)
 
-  class ClientWsDispatcher(baseUri: URI, codec: IRTClientMultiplexor[BIO])
-    extends IRTDispatcher with IRTResultZio with AutoCloseable {
+  class ClientWsDispatcher(baseUri: URI, codec: IRTClientMultiplexor[BiIO])
+    extends IRTDispatcher[BiIO] with AutoCloseable {
 
-    val requestState = new RequestState()
+    val requestState = new RequestState[BiIO]()
 
     protected val wsClient: WebSocketClient = new WebSocketClient(baseUri) {
       override def onOpen(handshakedata: ServerHandshake): Unit = {}
@@ -28,15 +28,15 @@ trait WithHttp4sWsClient {
         logger.error(s"Incoming WS message: $message")
 
         val result = for {
-          parsed <- IO.fromEither(parse(message))
-          _ <- IO.sync(logger.info(s"parsed: $parsed"))
-          decoded <- IO.fromEither(parsed.as[RpcPacket])
+          parsed <- BIO.fromEither(parse(message))
+          _ <- BIO.sync(logger.info(s"parsed: $parsed"))
+          decoded <- BIO.fromEither(parsed.as[RpcPacket])
           v <- requestState.handleResponse(decoded.ref, decoded.data)
         } yield {
           v
         }
 
-        ZIOR.unsafeRunSync(result) match {
+        BIORunner.unsafeRunSync0(result) match {
           case ExitResult.Completed((packetId, method)) =>
             logger.debug(s"Have reponse for method $method: $packetId")
 
@@ -72,24 +72,26 @@ trait WithHttp4sWsClient {
     protected val timeout: FiniteDuration = 2.seconds
     protected val pollingInterval: FiniteDuration = 50.millis
 
-    def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
+    def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Going to perform $request")
 
       codec
         .encode(request)
         .flatMap {
           encoded =>
-            val wrapped = IO.point(RpcPacket.rpcRequest(request.method, encoded))
-            IO.bracket0[Throwable, RpcPacket, IRTMuxResponse](wrapped) {
-              (id, _) =>
+            val wrapped = BIO.point(RpcPacket.rpcRequest(request.method, encoded))
+
+
+            BIO.bracket0[Throwable, RpcPacket, IRTMuxResponse](wrapped) {
+              id =>
                 logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
-                IO.sync(requestState.forget(id.id.get))
+                BIO.sync(requestState.forget(id.id.get))
             } {
               w =>
                 val pid = w.id.get // guaranteed to be present
 
-                IO.syncThrowable {
-                  val out = encode(transformRequest(w).asJson)
+                BIO.syncThrowable {
+                  val out = printer.pretty(transformRequest(w).asJson)
                   logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
                   requestState.request(pid, request.method)
                   wsClient.send(out)
@@ -104,7 +106,7 @@ trait WithHttp4sWsClient {
                             codec.decode(value.data, value.method)
 
                           case None =>
-                            IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                            BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                         }
                   }
             }

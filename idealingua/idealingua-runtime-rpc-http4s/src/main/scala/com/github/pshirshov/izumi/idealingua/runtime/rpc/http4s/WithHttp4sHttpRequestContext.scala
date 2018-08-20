@@ -5,5 +5,5 @@ import org.http4s.AuthedRequest
 trait WithHttp4sHttpRequestContext {
   this: Http4sContext =>
 
-  case class HttpRequestContext[Ctx](request: AuthedRequest[CIO, Ctx], context: Ctx)
+  case class HttpRequestContext[Ctx](request: AuthedRequest[CatsIO, Ctx], context: Ctx)
 }

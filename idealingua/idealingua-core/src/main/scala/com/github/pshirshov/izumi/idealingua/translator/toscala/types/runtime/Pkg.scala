@@ -9,6 +9,8 @@ import scala.reflect._
 final case class Pkg private(pkgParts: Seq[String]) {
   final val conv = new ScalaTypeConverter(DomainId(pkgParts.init, pkgParts.last))
 
+  def within(name: String) = Pkg(pkgParts :+ name)
+
   def `import`: Import = Import.AllPackage(this)
 }
 

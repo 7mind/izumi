@@ -15,7 +15,6 @@ import io.circe.syntax._
 import org.http4s.AuthedRequest
 import org.http4s.websocket.WebsocketBits._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 trait WithWebsocketClientContext {
@@ -37,7 +36,7 @@ trait WithWebsocketClientContext {
 
   class WebsocketClientContext[ClientId, Ctx]
   (
-    val initialRequest: AuthedRequest[CIO, Ctx]
+    val initialRequest: AuthedRequest[CatsIO, Ctx]
     , val initialContext: Ctx
     , listener: WsSessionListener[Ctx, ClientId]
     , sessions: ConcurrentHashMap[WsSessionId, WebsocketClientContext[ClientId, Ctx]]
@@ -60,7 +59,7 @@ trait WithWebsocketClientContext {
     def enqueue(method: IRTMethodId, data: Json): RpcPacketId = {
       val request = RpcPacket.buzzerRequest(method, data)
       val id = request.id.get
-      sendQueue.add(Text(encode(request.asJson)))
+      sendQueue.add(Text(printer.pretty(request.asJson)))
       requestState.request(id, method)
       id
     }
@@ -77,10 +76,10 @@ trait WithWebsocketClientContext {
 
     private val sendQueue = new ConcurrentLinkedDeque[WebSocketFrame]()
 
-    protected[http4s] val queue: CIO[Queue[CIO, WebSocketFrame]] = async.unboundedQueue[CIO, WebSocketFrame]
+    protected[http4s] val queue: CatsIO[Queue[CatsIO, WebSocketFrame]] = async.unboundedQueue[CatsIO, WebSocketFrame]
 
-    protected[http4s] val outStream: fs2.Stream[CIO, WebSocketFrame] =
-      fs2.Stream.awakeEvery[CIO](queuePollTimeout)
+    protected[http4s] val outStream: fs2.Stream[CatsIO, WebSocketFrame] =
+      fs2.Stream.awakeEvery[CatsIO](queuePollTimeout)
         .flatMap {
           d =>
             val messages = (0 until queueBatchSize).map(_ => Option(sendQueue.poll())).collect {
@@ -89,8 +88,8 @@ trait WithWebsocketClientContext {
             fs2.Stream.apply(messages: _*)
         }
 
-    protected[http4s] val pingStream: fs2.Stream[CIO, WebSocketFrame] =
-      fs2.Stream.awakeEvery[CIO](pingTimeout)
+    protected[http4s] val pingStream: fs2.Stream[CatsIO, WebSocketFrame] =
+      fs2.Stream.awakeEvery[CatsIO](pingTimeout)
         .flatMap {
           _ =>
             fs2.Stream(Ping())
