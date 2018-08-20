@@ -6,7 +6,7 @@ import IRTResult._
 import scala.language.higherKinds
 
 class IRTServerMultiplexor[R[+_, +_] : IRTResult, C](list: Set[IRTWrappedService[R, C]]) {
-  protected val R: IRTResult[R] = implicitly[IRTResult[R]]
+  protected val R: IRTResult[R] = implicitly
 
   val services: Map[IRTServiceId, IRTWrappedService[R, C]] = list.map(s => s.serviceId -> s).toMap
 

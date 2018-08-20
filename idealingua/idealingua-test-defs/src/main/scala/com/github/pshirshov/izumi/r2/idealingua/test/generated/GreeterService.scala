@@ -35,7 +35,7 @@ trait GreeterServiceClient[Or[+_, +_]] {
 class GreeterServiceClientWrapped[R[+_, +_] : IRTResult](dispatcher: IRTDispatcher[R])
   extends GreeterServiceClient[R] {
 
-  val R: IRTResult[R] = implicitly[IRTResult[R]]
+  val R: IRTResult[R] = implicitly
 
   override def greet(name: String, surname: String): R.Just[String] = {
     dispatcher
@@ -87,7 +87,7 @@ object GreeterServiceClientWrapped {
 class GreeterServiceServerWrapped[F[+_, +_] : IRTResult, C](service: GreeterServiceServer[F, C])
   extends IRTWrappedService[F, C] {
 
-  val F: IRTResult[F] = implicitly[IRTResult[F]]
+  val F: IRTResult[F] = implicitly
 
   object greet extends IRTMethodWrapper[F, C] {
 

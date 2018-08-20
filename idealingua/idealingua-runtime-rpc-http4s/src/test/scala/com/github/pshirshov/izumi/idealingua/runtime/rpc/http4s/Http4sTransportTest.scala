@@ -119,18 +119,19 @@ import IRTResultTransZio._
 object Http4sTransportTest {
   type BIO[+E, +V] = zio.IO[E, V]
   type CIO[+T] = cats.effect.IO[T]
-  val BIOR: BIORunner[BIO] = implicitly[BIORunner[BIO]]
+  val BIOR: BIORunner[BIO] = implicitly
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
 
-  final class AuthCheckDispatcher2[R[+_, +_] : IRTResultTransZio, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
+  final class AuthCheckDispatcher2[R[+_, +_] : IRTResult, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
+    import IRTResult._
     override def serviceId: IRTServiceId = proxied.serviceId
 
     override def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, Ctx]] = proxied.allMethods.mapValues {
       method =>
         new IRTMethodWrapper[R, Ctx] {
-          val R: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
+          val R: IRTResult[R] = implicitly
 
           override val signature: IRTMethodSignature = method.signature
           override val marshaller: IRTCirceMarshaller = method.marshaller

@@ -1,15 +1,15 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import _root_.io.circe.Printer
 import cats.effect.{ConcurrentEffect, Timer}
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s.dsl._
-import _root_.io.circe.Printer
 
 import scala.language.higherKinds
 
 
-class Http4sRuntime[BiIO[+ _, + _] : IRTResultTransZio : BIORunner, CaIO[+ _] : ConcurrentEffect : CIORunner : Timer]
+class Http4sRuntime[BiIO[+ _, + _] : IRTResult : BIORunner, CatsIO[+ _] : ConcurrentEffect : CIORunner : Timer]
 (
   override protected val logger: IzLogger
 )
@@ -24,15 +24,15 @@ class Http4sRuntime[BiIO[+ _, + _] : IRTResultTransZio : BIORunner, CaIO[+ _] : 
 
   override type BIO[+E, +V] = BiIO[E, V]
 
-  override type CIO[+T] = CaIO[T]
+  override type CIO[+T] = CatsIO[T]
 
-  override protected val BIO: IRTResultTransZio[BIO] = implicitly
+  override protected val BIO: IRTResult[BIO] = implicitly
 
   override protected val CIO: ConcurrentEffect[CIO] = implicitly
 
   override protected val CIOT: Timer[CIO] = implicitly
 
-  override protected val CIORunner: CIORunner[CaIO] = implicitly
+  override protected val CIORunner: CIORunner[CatsIO] = implicitly
 
   override protected val BIORunner: BIORunner[BIO] = implicitly
 

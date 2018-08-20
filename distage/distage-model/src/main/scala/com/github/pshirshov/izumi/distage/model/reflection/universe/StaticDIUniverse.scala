@@ -10,7 +10,7 @@ trait StaticDIUniverse extends DIUniverse {
   class IdContractImpl[T: u.Liftable] extends IdContract[T] {
     override def repr(v: T): String = v.toString
 
-    val liftable: u.Liftable[T] = implicitly[u.Liftable[T]]
+    val liftable: u.Liftable[T] = implicitly
   }
 }
 
