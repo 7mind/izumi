@@ -18,7 +18,6 @@ import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
-import IRTResultTransZio._
 import IRTResult._
 
 import scala.language.higherKinds

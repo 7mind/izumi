@@ -12,14 +12,14 @@ import org.java_websocket.handshake.ServerHandshake
 import scalaz.zio.ExitResult
 
 trait WithHttp4sWsClient {
-  this: Http4sContext =>
+  self: Http4sContext =>
 
   def wsClient(baseUri: URI, codec: IRTClientMultiplexor[BIO]): ClientWsDispatcher = new ClientWsDispatcher(baseUri, codec)
 
   class ClientWsDispatcher(baseUri: URI, codec: IRTClientMultiplexor[BIO])
     extends IRTDispatcher[BIO] with AutoCloseable {
 
-    val requestState = new RequestState()
+    val requestState = new RequestState[BIO]()
 
     protected val wsClient: WebSocketClient = new WebSocketClient(baseUri) {
       override def onOpen(handshakedata: ServerHandshake): Unit = {}

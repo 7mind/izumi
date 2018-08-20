@@ -222,12 +222,12 @@ object GreeterServerMarshallers {
 
     override def decodeRequest[Or[+_, +_] : IRTResult]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
-        decoded(packet.as[Input].map(v => IRTReqBody(v)))
+        decoded(packet.as[Input].map(v => IRTReqBody(v)))(implicitly[IRTResult[Or]])
     }
 
     override def decodeResponse[Or[+_, +_]: IRTResult]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
-        decoded(packet.as[Output].map(v => IRTResBody(v)))
+        decoded(packet.as[Output].map(v => IRTResBody(v)))(implicitly[IRTResult[Or]])
     }
 
     protected def decoded[Or[+_, +_] : IRTResult, V](result: Either[DecodingFailure, V]): Or[Nothing, V] = implicitly[IRTResult[Or]].maybe(result)

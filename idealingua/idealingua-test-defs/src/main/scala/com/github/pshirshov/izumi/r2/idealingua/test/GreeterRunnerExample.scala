@@ -1,13 +1,12 @@
 package com.github.pshirshov.izumi.r2.idealingua.test
 
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTResultTransZio, IRTServerMultiplexor}
+import _root_.io.circe.syntax._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTServerMultiplexor
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceServerWrapped
 import scalaz.zio._
-import _root_.io.circe.syntax._
 
 object GreeterRunnerExample {
   def main(args: Array[String]): Unit = {
-    import IRTResultTransZio._
     val greeter = new GreeterServiceServerWrapped[IO, Unit](new impls.AbstractGreeterServer.Impl[IO, Unit]())
     val multiplexor = new IRTServerMultiplexor[IO, Unit](Set(greeter))
 

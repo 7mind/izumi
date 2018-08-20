@@ -83,7 +83,7 @@ trait IRTResultApi[T[K[+ _, + _]] <: IRTResult[K]] {
 
 object IRTResult extends IRTResultApi[IRTResult] {
 
-  implicit object IRTResultZZio extends IRTResult[IO] {
+  implicit object IRTResultZio extends IRTResult[IO] {
     @inline def bracket0[E, A, B](acquire: Or[E, A])(release: A => Or[Nothing, Unit])(use: A => Or[E, B]): Or[E, B] =
       IO.bracket0(acquire)((v, _: ExitResult[E, B]) => release(v))(use)
 
