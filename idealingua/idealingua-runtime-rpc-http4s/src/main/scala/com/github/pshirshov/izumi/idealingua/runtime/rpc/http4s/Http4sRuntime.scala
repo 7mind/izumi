@@ -21,7 +21,7 @@ class Http4sRuntime[IO[+_, +_] : IRTResultTransZio]
 
   override type BIO[+E, +V] = IO[E, V]
 
-  override protected def bioZio: IRTResultTransZio[BIO] = implicitly
+  override protected def BIO: IRTResultTransZio[BIO] = implicitly
 
   override protected val dsl: Http4sDsl[CIO] = org.http4s.dsl.io
 }

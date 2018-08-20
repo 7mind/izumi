@@ -9,7 +9,7 @@ import io.circe.syntax._
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import scalaz.zio.{ExitResult, IO}
-
+import IRTResult._
 
 trait WithHttp4sWsClient {
   this: Http4sContext =>
@@ -17,7 +17,7 @@ trait WithHttp4sWsClient {
   def wsClient(baseUri: URI, codec: IRTClientMultiplexor[BIO]): ClientWsDispatcher = new ClientWsDispatcher(baseUri, codec)
 
   class ClientWsDispatcher(baseUri: URI, codec: IRTClientMultiplexor[BIO])
-    extends IRTDispatcher[ZIO] with AutoCloseable {
+    extends IRTDispatcher[BIO] with AutoCloseable {
 
     val requestState = new RequestState()
 
@@ -28,15 +28,15 @@ trait WithHttp4sWsClient {
         logger.error(s"Incoming WS message: $message")
 
         val result = for {
-          parsed <- IO.fromEither(parse(message))
-          _ <- IO.sync(logger.info(s"parsed: $parsed"))
-          decoded <- IO.fromEither(parsed.as[RpcPacket])
-          v <- requestState.handleResponse(decoded.ref, decoded.data)
+          parsed <- BIO.fromEither(parse(message))
+          _ <- BIO.sync(logger.info(s"parsed: $parsed"))
+          decoded <- BIO.fromEither(parsed.as[RpcPacket])
+          v <- BIO.fromZio(requestState.handleResponse(decoded.ref, decoded.data))
         } yield {
           v
         }
 
-        ZIOR.unsafeRunSync(result) match {
+        ZIOR.unsafeRunSync(BIO.toZio(result)) match {
           case ExitResult.Completed((packetId, method)) =>
             logger.debug(s"Have reponse for method $method: $packetId")
 
@@ -72,41 +72,45 @@ trait WithHttp4sWsClient {
     protected val timeout: FiniteDuration = 2.seconds
     protected val pollingInterval: FiniteDuration = 50.millis
 
-    def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
+    def dispatch(request: IRTMuxRequest): BIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Going to perform $request")
 
       codec
         .encode(request)
         .flatMap {
           encoded =>
-            val wrapped = IO.point(RpcPacket.rpcRequest(request.method, encoded))
-            IO.bracket0[Throwable, RpcPacket, IRTMuxResponse](wrapped) {
-              (id, _) =>
-                logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
-                IO.sync(requestState.forget(id.id.get))
-            } {
-              w =>
-                val pid = w.id.get // guaranteed to be present
+            val wrapped = BIO.point(RpcPacket.rpcRequest(request.method, encoded))
 
-                IO.syncThrowable {
-                  val out = encode(transformRequest(w).asJson)
-                  logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
-                  requestState.request(pid, request.method)
-                  wsClient.send(out)
-                  pid
-                }
-                  .flatMap {
-                    id =>
-                      requestState.poll(id, pollingInterval, timeout)
-                        .flatMap {
-                          case Some(value) =>
-                            logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                            codec.decode(value.data, value.method)
+            BIO.fromZio {
 
-                          case None =>
-                            IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
-                        }
+              ZIO.bracket0[Throwable, RpcPacket, IRTMuxResponse](BIO.toZio(wrapped)) {
+                (id, _) =>
+                  logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
+                  IO.sync(requestState.forget(id.id.get))
+              } {
+                w =>
+                  val pid = w.id.get // guaranteed to be present
+
+                  IO.syncThrowable {
+                    val out = encode(transformRequest(w).asJson)
+                    logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
+                    requestState.request(pid, request.method)
+                    wsClient.send(out)
+                    pid
                   }
+                    .flatMap {
+                      id =>
+                        requestState.poll(id, pollingInterval, timeout)
+                          .flatMap {
+                            case Some(value) =>
+                              logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                              BIO.toZio(codec.decode(value.data, value.method))
+
+                            case None =>
+                              IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                          }
+                    }
+              }
             }
         }
     }

@@ -12,14 +12,14 @@ import scala.language.higherKinds
 
 
 trait Http4sContext {
+  type BIO[+E, +V]
+  protected implicit def BIO: IRTResultTransZio[BIO]
+
   type CIO[T] = cats.effect.IO[T]
   val CIO: effect.IO.type = cats.effect.IO
+
   type ZIO[+E, +V] = scalaz.zio.IO[E, V]
   val ZIO: IO.type = scalaz.zio.IO
-
-  type BIO[+E, +V]
-
-  protected implicit def bioZio: IRTResultTransZio[BIO]
 
   type MaterializedStream = String
   type StreamDecoder = EntityDecoder[CIO, MaterializedStream]

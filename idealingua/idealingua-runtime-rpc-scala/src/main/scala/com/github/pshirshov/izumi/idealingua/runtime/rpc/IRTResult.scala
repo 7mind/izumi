@@ -2,7 +2,9 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 
 import cats.arrow.FunctionK
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio.IRTResultZio
 import scalaz.zio.IO
+import scalaz.zio.IO.SyncEffect
 
 import scala.language.higherKinds
 
@@ -21,6 +23,8 @@ trait IRTResult[R[+_, +_]] {
   @inline def terminate[V](v: => Throwable): Just[V]
 
   @inline def syncThrowable[A](effect: => A): Or[Throwable, A]
+
+  @inline def sync[A](effect: => A): Or[Nothing, A]
 
   @inline def maybe[V](v: => Either[Throwable, V]): Just[V] = {
     v match {
@@ -45,9 +49,12 @@ trait IRTResult[R[+_, +_]] {
 
   @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
 
+  @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
 }
 
 object IRTResult {
+  def apply[R[+_, +_] : IRTResult, E, A](r: R[E, A]): IRTResultApi[R, E, A] = new IRTResultApi[R, E, A](r)
+
   implicit class IRTResultApi[R[+_, +_] : IRTResult, +E, +A](r: R[E, A]) {
     val R: IRTResult[R] = implicitly[IRTResult[R]]
 
@@ -64,6 +71,7 @@ object IRTResult {
     @inline final def redeemPure[E2, B](err: E => B, succ: A => B): R[E2, B] =
       redeem(err.andThen(R.now), succ.andThen(R.now))
 
+    @inline def sandboxWith[E2, B](f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B] = R.sandboxWith(r)(f)
   }
 }
 
@@ -107,7 +115,9 @@ object IRTResultTransZio {
 
 
   implicit object IRTResultZio extends IRTResultTransZio[IO] {
-    @inline def now[A](a: A): IRTResultZio.Just[A] = IO.now(a)
+    @inline override def sync[A](effect: => A): Or[Nothing, A] = IO.sync(effect)
+
+    @inline def now[A](a: A): Just[A] = IO.now(a)
 
     @inline def syncThrowable[A](effect: => A): Or[Throwable, A] = IO.syncThrowable(effect)
 
@@ -121,13 +131,16 @@ object IRTResultTransZio {
 
     @inline def map[E, A, B](r: Or[E, A])(f: A => B): Or[E, B] = r.map(f)
 
-    @inline def leftMap[E, A, E2](r: IRTResultZio.Or[E, A])(f: E => E2): IRTResultZio.Or[E2, A] = r.leftMap(f)
+    @inline def leftMap[E, A, E2](r: Or[E, A])(f: E => E2): Or[E2, A] = r.leftMap(f)
 
     @inline def bimap[E, A, E2, B](r: Or[E, A])(f: E => E2, g: A => B): Or[E2, B] = r.bimap(f, g)
 
     @inline def flatMap[E, A, E1 >: E, B](r: Or[E, A])(f0: A => IO[E1, B]): Or[E1, B] = r.flatMap(f0)
 
-    @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => Or[E2, B], succ: A => Or[E2, B]): IO[E2, B] = r.redeem(err, succ)
+    @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => Or[E2, B], succ: A => Or[E2, B]): Or[E2, B] = r.redeem(err, succ)
+
+
+    override def sandboxWith[E, A, E2, B](r: Or[E, A])(f: Or[Either[List[Throwable], E], A] => Or[Either[List[Throwable], E2], B]): Or[E2, B] = r.sandboxWith(f)
 
     @inline def toZio[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id
 

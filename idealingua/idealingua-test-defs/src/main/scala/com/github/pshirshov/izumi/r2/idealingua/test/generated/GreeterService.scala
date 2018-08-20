@@ -1,12 +1,10 @@
 package com.github.pshirshov.izumi.r2.idealingua.test.generated
 
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import com.github.pshirshov.izumi.r2.idealingua.test.impls
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
-import scalaz.zio.{IO, RTS}
-import IRTResult._
 
 import scala.language.higherKinds
 

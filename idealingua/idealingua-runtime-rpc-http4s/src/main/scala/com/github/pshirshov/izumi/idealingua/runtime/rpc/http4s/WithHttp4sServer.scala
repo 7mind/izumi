@@ -16,6 +16,7 @@ import scalaz.zio.{ExitResult, IO}
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import IRTResult._
 
 trait WithHttp4sServer {
   this: Http4sContext with WithHttp4sLoggingMiddleware with WithHttp4sHttpRequestContext with WithWebsocketClientContext =>
@@ -49,18 +50,18 @@ trait WithHttp4sServer {
       loggingMiddle(aservice)
     }
 
-    def buzzersFor(clientId: ClientId): List[IRTDispatcher[ZIO]] = {
+    def buzzersFor(clientId: ClientId): List[IRTDispatcher[BIO]] = {
       clients.values().asScala
         .filter(_.id.id.contains(clientId))
         .map {
           sess =>
-            new IRTDispatcher[ZIO] {
-              override def dispatch(request: IRTMuxRequest): ZIO[Throwable, IRTMuxResponse] = {
+            new IRTDispatcher[BIO] {
+              override def dispatch(request: IRTMuxRequest): BIO[Throwable, IRTMuxResponse] = {
                 for {
-                  session <- ZIO.point(sess)
+                  session <- BIO.point(sess)
                   json <- codec.encode(request)
-                  id <- ZIO.sync(session.enqueue(request.method, json))
-                  resp <- IO.bracket0[Throwable, RpcPacketId, IRTMuxResponse](IO.point(id)) {
+                  id <- BIO.sync(session.enqueue(request.method, json))
+                  resp <- BIO.fromZio(IO.bracket0[Throwable, RpcPacketId, IRTMuxResponse](IO.point(id)) {
                     (id, _) =>
                       logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
                       IO.sync(sess.requestState.forget(id))
@@ -72,13 +73,13 @@ trait WithHttp4sServer {
                             .flatMap {
                               case Some(value) =>
                                 logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                                codec.decode(value.data, value.method)
+                                BIO.toZio(codec.decode(value.data, value.method))
 
                               case None =>
                                 IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                             }
                       }
-                  }
+                  })
                 } yield {
                   resp
                 }
@@ -135,7 +136,7 @@ trait WithHttp4sServer {
       case Text(msg, _) =>
         val ioresponse = makeResponse(context, msg)
 
-        ZIOR.unsafeRunSync(ioresponse) match {
+        ZIOR.unsafeRunSync(BIO.toZio(ioresponse)) match {
           case ExitResult.Completed(v) =>
             v.map(_.asJson).map(encode)
 
@@ -150,27 +151,27 @@ trait WithHttp4sServer {
         Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe"))
     }
 
-    protected def makeResponse(context: WSC, message: String): ZIO[Throwable, Option[RpcPacket]] = {
+    protected def makeResponse(context: WSC, message: String): BIO[Throwable, Option[RpcPacket]] = {
       for {
-        parsed <- ZIO.fromEither(parse(message))
-        unmarshalled <- ZIO.fromEither(parsed.as[RpcPacket])
-        id <- ZIO.syncThrowable(wsContextProvider.toId(context.initialContext, unmarshalled))
-        userCtx <- ZIO.syncThrowable(wsContextProvider.toContext(context.initialContext, unmarshalled))
-        _ <- ZIO.syncThrowable(context.updateId(id))
-        _ <- ZIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
+        parsed <- BIO.fromEither(parse(message))
+        unmarshalled <- BIO.fromEither(parsed.as[RpcPacket])
+        id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, unmarshalled))
+        userCtx <- BIO.syncThrowable(wsContextProvider.toContext(context.initialContext, unmarshalled))
+        _ <- BIO.syncThrowable(context.updateId(id))
+        _ <- BIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
         response <- respond(context, userCtx, unmarshalled).sandboxWith {
           _.redeem(
             {
               case Left(exception :: otherIssues) =>
                 logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $otherIssues")
-                ZIO.point(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
+                BIO.point(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
               case Left(Nil) =>
-                ZIO.terminate(new IllegalStateException())
+                BIO.terminate(new IllegalStateException())
               case Right(exception) =>
                 logger.error(s"${context -> null}: WS processing failed, $message, $exception")
-                ZIO.point(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
+                BIO.point(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
             }, {
-              succ => ZIO.point(succ)
+              succ => BIO.point(succ)
             }
           )
         }
@@ -191,30 +192,30 @@ trait WithHttp4sServer {
       }
     }
 
-    protected def respond(context: WSC, userContext: Ctx, input: RpcPacket): ZIO[Throwable, Option[RpcPacket]] = {
+    protected def respond(context: WSC, userContext: Ctx, input: RpcPacket): BIO[Throwable, Option[RpcPacket]] = {
       input match {
         case RpcPacket(RPCPacketKind.RpcRequest, data, Some(id), _, Some(service), Some(method), _) =>
           val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
-          bioZio.toZio(muxer.doInvoke(data, userContext, methodId)).flatMap {
+          muxer.doInvoke(data, userContext, methodId).flatMap {
             case None =>
-              ZIO.fail(new IRTMissingHandlerException(s"${context -> null}: No handler for $methodId", input))
+              BIO.fail(new IRTMissingHandlerException(s"${context -> null}: No handler for $methodId", input))
             case Some(resp) =>
-              ZIO.point(Some(rpc.RpcPacket.rpcResponse(id, resp)))
+              BIO.point(Some(rpc.RpcPacket.rpcResponse(id, resp)))
           }
 
         case RpcPacket(RPCPacketKind.BuzzResponse, data, _, id, _, _, _) =>
-          context.requestState.handleResponse(id, data).flatMap(_ => ZIO.point(None))
+          BIO.fromZio(context.requestState.handleResponse(id, data).flatMap(_ => ZIO.point(None)))
 
         case k =>
-          ZIO.fail(new UnsupportedOperationException(s"Can't handle $k"))
+          BIO.fail(new UnsupportedOperationException(s"Can't handle $k"))
       }
     }
 
 
     protected def run(context: HttpRequestContext[Ctx], body: String, toInvoke: IRTMethodId): CIO[Response[CIO]] = {
       val ioR = for {
-        parsed <- ZIO.fromEither(parse(body))
-        maybeResult <- bioZio.toZio(muxer.doInvoke(parsed, context.context, toInvoke))
+        parsed <- BIO.fromEither(parse(body))
+        maybeResult <- muxer.doInvoke(parsed, context.context, toInvoke)
       } yield {
         maybeResult match {
           case Some(value) =>
@@ -225,7 +226,7 @@ trait WithHttp4sServer {
         }
       }
 
-      ZIOR.unsafeRunSync(ioR) match {
+      ZIOR.unsafeRunSync(BIO.toZio(ioR)) match {
         case ExitResult.Completed(v) =>
           v
         case ExitResult.Failed(error, _) =>
