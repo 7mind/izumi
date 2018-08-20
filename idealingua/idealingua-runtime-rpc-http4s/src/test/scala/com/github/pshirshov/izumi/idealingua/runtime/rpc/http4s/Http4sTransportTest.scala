@@ -19,6 +19,7 @@ import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
 import IRTResultTransZio._
+import IRTResult._
 
 import scala.language.higherKinds
 
@@ -114,8 +115,6 @@ class Http4sTransportTest extends WordSpec {
   }
 }
 
-import IRTResultTransZio._
-
 object Http4sTransportTest {
   type BIO[+E, +V] = zio.IO[E, V]
   type CIO[+T] = cats.effect.IO[T]
@@ -124,8 +123,7 @@ object Http4sTransportTest {
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
 
-  final class AuthCheckDispatcher2[R[+_, +_] : IRTResult, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
-    import IRTResult._
+  final class AuthCheckDispatcher2[R[+ _, + _] : IRTResult, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
     override def serviceId: IRTServiceId = proxied.serviceId
 
     override def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, Ctx]] = proxied.allMethods.mapValues {
@@ -153,7 +151,7 @@ object Http4sTransportTest {
     }
   }
 
-  class DemoContext[R[+_, +_] : IRTResultTransZio, Ctx] {
+  class DemoContext[R[+ _, + _] : IRTResult, Ctx] {
     private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
     private val dispatchers: Set[IRTWrappedService[R, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
@@ -175,7 +173,9 @@ object Http4sTransportTest {
 
     //
     final val demo = new DemoContext[BIO, DummyContext]()
+
     import scala.concurrent.ExecutionContext.Implicits.global
+
     final val rt = new Http4sRuntime[BIO, CIO](makeLogger())
 
     //

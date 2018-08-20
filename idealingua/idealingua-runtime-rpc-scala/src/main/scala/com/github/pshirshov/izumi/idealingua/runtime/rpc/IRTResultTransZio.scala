@@ -6,19 +6,19 @@ import scalaz.zio._
 import scala.concurrent.duration._
 import scala.language.higherKinds
 
-trait IRTResultTransZio[R[+ _, + _]] extends IRTResult[R] {
+trait IRTResultTransZio[R[+ _, + _]] {
   def toZio[E]: FunctionK[R[E, ?], IO[E, ?]]
 
   def ofZio[E]: FunctionK[IO[E, ?], R[E, ?]]
 }
 
-object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
+object IRTResultTransZio {
 
-  implicit object IRTResultZio extends IRTResultTransZio[IO] {
+  implicit object IRTResultZZio extends IRTResult[IO] with IRTResultTransZio[IO] {
     @inline def bracket0[E, A, B](acquire: Or[E, A])(release: A => Or[Nothing, Unit])(use: A => Or[E, B]): Or[E, B] =
       IO.bracket0(acquire)((v, _: ExitResult[E, B]) => release(v))(use)
 
-    @inline def sleep(duration: Duration): IRTResultZio.Or[Nothing, Unit] = IO.sleep(duration)
+    @inline def sleep(duration: Duration): Or[Nothing, Unit] = IO.sleep(duration)
 
     @inline def sync[A](effect: => A): Or[Nothing, A] = IO.sync(effect)
 
@@ -57,7 +57,6 @@ object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
 
     @inline def ofZio[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id
   }
-
 
   //type xyz[λ[(-[A], +[B]) => Function2[A, Int, B]]]
 
