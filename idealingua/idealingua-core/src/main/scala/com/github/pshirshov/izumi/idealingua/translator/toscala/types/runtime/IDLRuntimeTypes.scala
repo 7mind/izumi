@@ -27,13 +27,14 @@ object IDLRuntimeTypes {
   final val adtEl = model.conv.toScala[IDLAdtElement]
 
   final val WithResult = services.conv.toScala[IRTResult[_2Arg]]
+  // FIXME ???
   final val WithResultZio: ScalaType = ??? //services.conv.toScala[IRTResultZio]
   final val IRTResultTransZio = services.conv.toScala[IRTResultTransZio[_2Arg]]
   final val IRTMethodSignature = services.conv.toScala[IRTMethodSignature]
   final val IRTServiceId = services.conv.toScala[IRTServiceId]
   final val IRTMethodId = services.conv.toScala[IRTMethodId]
   final val IRTMethodName = services.conv.toScala[IRTMethodName]
-  final val IRTWrappedClient = services.conv.toScala[IRTWrappedClient[_2Arg]]
+  final val IRTWrappedClient = services.conv.toScala[IRTWrappedClient]
   final val IRTWrappedService = services.conv.toScala[IRTWrappedService[_2Arg, _0Arg]]
   final val IRTDispatcher = services.conv.toScala[IRTDispatcher[_2Arg]]
   final val Conversions = model.conv.toScala[IRTConversions[_0Arg]]

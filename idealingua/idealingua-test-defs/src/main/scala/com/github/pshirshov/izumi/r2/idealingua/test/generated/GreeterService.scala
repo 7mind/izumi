@@ -74,7 +74,7 @@ class GreeterServiceClientWrapped[R[+_, +_] : IRTResult](dispatcher: IRTDispatch
 }
 
 object GreeterServiceClientWrapped {
-  class Codecs[R[+_, +_] : IRTResult] extends IRTWrappedClient[R] {
+  class Codecs[R[+_, +_] : IRTResult] extends IRTWrappedClient {
     val allCodecs: Map[IRTMethodId, IRTCirceMarshaller] = {
       Map(
         GreeterServiceMethods.greet.id -> GreeterServerMarshallers.greet

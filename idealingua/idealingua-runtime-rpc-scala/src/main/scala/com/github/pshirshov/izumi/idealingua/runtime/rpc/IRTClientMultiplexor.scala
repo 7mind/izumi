@@ -5,7 +5,7 @@ import io.circe.Json
 import scala.language.higherKinds
 import IRTResult._
 
-class IRTClientMultiplexor[R[+ _, + _] : IRTResult](clients: Set[IRTWrappedClient[R]]) {
+class IRTClientMultiplexor[R[+ _, + _] : IRTResult](clients: Set[IRTWrappedClient]) {
   protected val BIO: IRTResult[R] = implicitly
 
   val codecs: Map[IRTMethodId, IRTCirceMarshaller] = clients.flatMap(_.allCodecs).toMap

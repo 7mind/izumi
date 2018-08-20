@@ -1,12 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-
 import scalaz.zio.{ExitResult, IO, Retry}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.higherKinds
 
-trait IRTResult[R[+ _, + _]] {
+trait IRTResult[R[+_, +_]] {
   type Or[+E, +V] = R[E, V]
   type Just[+V] = R[Nothing, V]
 
@@ -123,33 +122,57 @@ object IRTResult extends IRTResultApi[IRTResult] {
       })
   }
 
-  //  @deprecated("BIO<->EitherT adapter is not recommended to use", "")
-  //  implicit object EitherTResult extends IRTResult[λ[(`+E`, `+A`) => EitherT[cats.effect.IO, E, A]]] {
-  //    def ME[E]: MonadError[Or[E, ?], E] = implicitly
-  //
-  //    // this isn't nice
-  //    @inline def cancel[V](v: => Throwable): Just[V] = ME[Nothing].point(throw v)
-  //
-  //    @inline def choice[E, V](v: => Either[E, V]): Or[E, V] = v match {
-  //      case Right(r) =>
-  //        ME[E].pure(r)
-  //
-  //      case Left(l) =>
-  //        ME[E].raiseError(l)
-  //    }
-  //
-  //    @inline def just[V](v: => V): Just[V] = ME[Nothing].pure(v)
-  //
-  //    @inline def stop[E](v: => E): EitherTResult.Or[E, Nothing] = ME[E].raiseError(v)
-  //
-  //    @inline def map[E, A, B](r: EitherTResult.Or[E, A])(f: A => B): EitherTResult.Or[E, B] = r.map(f)
-  //
-  //    @inline def leftMap[E, A, E2](r: EitherTResult.Or[E, A])(f: E => E2): EitherTResult.Or[E2, A] = r.leftMap(f)
-  //
-  //    @inline def bimap[E, A, E2, B](r: EitherTResult.Or[E, A])(f: E => E2, g: A => B): EitherTResult.Or[E2, B] = r.bimap(f, g)
-  //
-  //    @inline def flatMap[E, A, E1 >: E, B](r: EitherTResult.Or[E, A])(f0: A => EitherT[effect.IO, E1, B]): EitherT[effect.IO, E1, B] = r.flatMap(f0)
-  //  }
+//    @deprecated("BIO<->EitherT adapter is not recommended to use", "")
+//    implicit def EitherTResult extends IRTResult[EitherT[cats.effect.IO, ?, ?]] {
+//      def ME[E]: MonadError[Or[E, ?], E] = implicitly
+//
+//      // this isn't nice
+//      @inline def cancel[V](v: => Throwable): Just[V] = ME[Nothing].point(throw v)
+//
+//      @inline def choice[E, V](v: => Either[E, V]): Or[E, V] = v match {
+//        case Right(r) =>
+//          ME[E].pure(r)
+//
+//        case Left(l) =>
+//          ME[E].raiseError(l)
+//      }
+//
+//      @inline def just[V](v: => V): Just[V] = ME[Nothing].pure(v)
+//
+//      @inline def stop[E](v: => E): EitherTResult.Or[E, Nothing] = ME[E].raiseError(v)
+//
+//      @inline def map[E, A, B](r: EitherTResult.Or[E, A])(f: A => B): EitherTResult.Or[E, B] = r.map(f)
+//
+//      @inline def leftMap[E, A, E2](r: EitherTResult.Or[E, A])(f: E => E2): EitherTResult.Or[E2, A] = r.leftMap(f)
+//
+//      @inline def bimap[E, A, E2, B](r: EitherTResult.Or[E, A])(f: E => E2, g: A => B): EitherTResult.Or[E2, B] = r.bimap(f, g)
+//
+//      @inline def flatMap[E, A, E1 >: E, B](r: EitherTResult.Or[E, A])(f0: A => EitherT[cats.effect.IO, E1, B]): EitherT[cats.effect.IO, E1, B] = r.flatMap(f0)
+//
+//      override def fromEither[E, V](v: => Either[E, V]): EitherTResult.Or[E, V] = ???
+//
+//      override def point[V](v: => V): EitherTResult.Just[V] = ???
+//
+//      override def now[A](a: A): EitherTResult.Just[A] = ???
+//
+//      override def fail[E](v: => E): EitherTResult.Or[E, Nothing] = ???
+//
+//      override def terminate[V](v: => Throwable): EitherTResult.Just[V] = ???
+//
+//      override def syncThrowable[A](effect: => A): EitherTResult.Or[Throwable, A] = ???
+//
+//      override def sync[A](effect: => A): EitherTResult.Or[Nothing, A] = ???
+//
+//      override def bracket0[E, A, B](acquire: EitherT[cats.effect.IO, E, A])(release: A => EitherT[cats.effect.IO, Nothing, Unit])(use: A => EitherT[cats.effect.IO, E, B]): EitherT[cats.effect.IO, E, B] = ???
+//
+//      override def sleep(duration: Duration): EitherTResult.Or[Nothing, Unit] = ???
+//
+//      override def redeem[E, A, E2, B](r: EitherTResult.Or[E, A])(err: E => EitherT[cats.effect.IO, E2, B], succ: A => EitherT[cats.effect.IO, E2, B]): EitherT[cats.effect.IO, E2, B] = ???
+//
+//      override def sandboxWith[E, A, E2, B](r: EitherTResult.Or[E, A])(f: EitherT[cats.effect.IO, Either[List[Throwable], E], A] => EitherT[cats.effect.IO, Either[List[Throwable], E2], B]): EitherT[cats.effect.IO, E2, B] = ???
+//
+//      override def retryOrElse[A, E, A2 >: A, E1 >: E, S, E2](r: EitherTResult.Or[E, A])(duration: FiniteDuration, orElse: => EitherT[cats.effect.IO, E2, A2]): EitherT[cats.effect.IO, E2, A2] = ???
+//    }
 }
 
 
