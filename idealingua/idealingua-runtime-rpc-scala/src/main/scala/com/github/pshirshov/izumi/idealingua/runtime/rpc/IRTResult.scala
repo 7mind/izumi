@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import cats.{Monad, MonadError}
 import cats.data.EitherT
-import cats.effect.{ConcurrentEffect, Sync, Timer}
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult.EitherTResult
+import cats.effect.{Concurrent, ConcurrentEffect, Sync, Timer}
+import cats.instances.duration
 import scalaz.zio.{ExitResult, IO, Retry}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -124,66 +124,80 @@ object IRTResult extends IRTResultApi[IRTResult] {
           orElse
       })
   }
-//
-//    implicit def EitherTMonadResult[M[_]: ConcurrentEffect: Timer]: IRTResult[EitherT[M, ?, ?]] = new EitherTResultBase[M]
-//
-//    class EitherTResultBase[M[_]: ConcurrentEffect: Timer] extends IRTResult[EitherT[M, ?, ?]] {
-//      import cats.implicits._
-//      import cats.effect.implicits._
-//
-//      def ME[E](implicit me: MonadError[EitherT[M, E, ?], E]): MonadError[Or[E, ?], E] = me
-//
-//      case class Bracket0Exception[E](e: E) extends RuntimeException(s"Exception in EitherT bracket0: $e")
-//
-//      @inline override def terminate[E, V](v: => Throwable): Or[E, V] = EitherT(MonadError[M, Throwable].raiseError[Either[E, V]](v))
-//
-//      @inline override def point[E, V](v: => V): Or[E, V] = ME[E].pure(v)
-//
-//      @inline override def fail[E, A](v: => E): Or[E, A] = ME[E].raiseError(v)
-//
-//      @inline override def map[E, A, B](r: Or[E, A])(f: A => B): Or[E, B] = r.map(f)
-//
-//      @inline override def leftMap[E, A, E2](r: Or[E, A])(f: E => E2): Or[E2, A] = r.leftMap(f)
-//
-//      @inline override def bimap[E, A, E2, B](r: Or[E, A])(f: E => E2, g: A => B): Or[E2, B] = r.bimap(f, g)
-//
-//      @inline override def flatMap[E, A, E1 >: E, B](r: Or[E, A])(f0: A => EitherT[M, E1, B]): EitherT[M, E1, B] = r.flatMap(f0)
-//
-//      @inline override def fromEither[E, V](v: => Either[E, V]): Or[E, V] = EitherT.fromEither(v)
-//
-//      @inline override def syncThrowable[A](effect: => A): Or[Throwable, A] = ME[Throwable].catchNonFatal(effect)
-//
-//      @inline override def sync[E, A](effect: => A): Or[E, A] = EitherT(Sync[M].catchNonFatal(effect).map(Right(_)))
-//
-//      @inline override def bracket0[E, A, B](acquire: EitherT[M, E, A])(release: A => EitherT[M, Nothing, Unit])(use: A => EitherT[M, E, B]): EitherT[M, E, B] =
-//        ConcurrentEffect[EitherT[M, Throwable, ?]]
-//          .bracket {
-//            acquire.leftMap[Throwable](Bracket0Exception(_))
-//          } {
-//            use.andThen(_.leftMap[Throwable](Bracket0Exception(_)))
-//          } {
-//            release.andThen(_.leftMap[Throwable](Bracket0Exception(_)))
-//          }.leftFlatMap {
-//          case Bracket0Exception(e: E @unchecked) =>
-//            fail[E, B](e)
-//          case e =>
-//            terminate(e)
-//        }
-//
-//      @inline override def sleep[E](duration: FiniteDuration): Or[E, Unit] = EitherT(Timer[M].sleep(duration).map(Right(_)))
-//
-//      @inline override def redeem[E, A, E2, B](r: Or[E, A])(err: E => EitherT[M, E2, B], succ: A => EitherT[M, E2, B]): EitherT[M, E2, B] =
-//        EitherT[M, E2, B](r.value.map {
-//          case Left(e) => err(e)
-//          case Right(v) => succ(v)
-//        }.map(Right[E2, B](_))).flatten
-//
-//      @inline override def sandboxWith[E, A, E2, B](r: Or[E, A])(f: EitherT[M, Either[List[Throwable], E], A] => EitherT[M, Either[List[Throwable], E2], B]): EitherT[M, E2, B] = ???
+
+    implicit def EitherTMonadResult[M[_]: ConcurrentEffect: Timer]: IRTResult[EitherT[M, ?, ?]] = new EitherTResultBase[M]
+
+    class EitherTResultBase[M[_]: ConcurrentEffect: Timer] extends IRTResult[EitherT[M, ?, ?]] {
+      import cats.implicits._
+      import cats.effect.implicits._
+
+      def ME[E](implicit me: MonadError[EitherT[M, E, ?], E]): MonadError[Or[E, ?], E] = me
+
+      case class Bracket0Exception[E](e: E) extends RuntimeException(s"Exception in EitherT bracket0: $e")
+      case class RetryOrElseException[E](e: E) extends RuntimeException(s"Exception in EitherT retryOrElse: $e")
+
+      @inline override def terminate[E, V](v: => Throwable): Or[E, V] = EitherT(MonadError[M, Throwable].raiseError[Either[E, V]](v))
+
+      @inline override def point[E, V](v: => V): Or[E, V] = ME[E].pure(v)
+
+      @inline override def fail[E, A](v: => E): Or[E, A] = ME[E].raiseError(v)
+
+      @inline override def map[E, A, B](r: Or[E, A])(f: A => B): Or[E, B] = r.map(f)
+
+      @inline override def leftMap[E, A, E2](r: Or[E, A])(f: E => E2): Or[E2, A] = r.leftMap(f)
+
+      @inline override def bimap[E, A, E2, B](r: Or[E, A])(f: E => E2, g: A => B): Or[E2, B] = r.bimap(f, g)
+
+      @inline override def flatMap[E, A, E1 >: E, B](r: Or[E, A])(f0: A => EitherT[M, E1, B]): EitherT[M, E1, B] = r.flatMap(f0)
+
+      @inline override def fromEither[E, V](v: => Either[E, V]): Or[E, V] = EitherT.fromEither(v)
+
+      @inline override def syncThrowable[A](effect: => A): Or[Throwable, A] = ME[Throwable].catchNonFatal(effect)
+
+      @inline override def sync[E, A](effect: => A): Or[E, A] = EitherT(Sync[M].catchNonFatal(effect).map(Right(_)))
+
+      @inline override def bracket0[E, A, B](acquire: EitherT[M, E, A])(release: A => EitherT[M, Nothing, Unit])(use: A => EitherT[M, E, B]): EitherT[M, E, B] =
+        ConcurrentEffect[EitherT[M, Throwable, ?]]
+          .bracket {
+            acquire.leftMap[Throwable](Bracket0Exception(_))
+          } {
+            use.andThen(_.leftMap[Throwable](Bracket0Exception(_)))
+          } {
+            release.andThen(_.leftMap[Throwable](Bracket0Exception(_)))
+          }.leftFlatMap {
+          case Bracket0Exception(e: E @unchecked) =>
+            fail[E, B](e)
+          case e =>
+            terminate(e)
+        }
+
+      @inline override def sleep[E](duration: FiniteDuration): Or[E, Unit] = EitherT(Timer[M].sleep(duration).map(Right(_)))
+
+      @inline override def redeem[E, A, E2, B](r: Or[E, A])(err: E => EitherT[M, E2, B], succ: A => EitherT[M, E2, B]): EitherT[M, E2, B] =
+        EitherT[M, E2, B](r.value.map {
+          case Left(e) => err(e)
+          case Right(v) => succ(v)
+        }.map(Right[E2, B](_))).flatten
+
+      @inline override def sandboxWith[E, A, E2, B](r: Or[E, A])(f: EitherT[M, Either[List[Throwable], E], A] => EitherT[M, Either[List[Throwable], E2], B]): EitherT[M, E2, B] = ???
 //        dunno
-//
-//      @inline override def retryOrElse[A, E, A2 >: A, E1 >: E, S, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => EitherT[M, E2, A2]): EitherT[M, E2, A2] =
-//        dunno
-//    }
+      ???
+
+      @inline override def retryOrElse[A, E, A2 >: A, E1 >: E, S, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => EitherT[M, E2, A2]): EitherT[M, E2, A2] = {
+        def retryForever: Or[E, A] = r orElse retryForever
+
+        Concurrent.timeoutTo(
+          retryForever.leftMap[Throwable](RetryOrElseException(_))
+          , duration
+          , orElse.leftMap[Throwable](RetryOrElseException(_))
+        ).leftFlatMap {
+          case RetryOrElseException(e: E2@unchecked) =>
+            fail[E2, A2](e)
+          case e =>
+            terminate(e)
+        }
+        }
+    }
 }
 
 
