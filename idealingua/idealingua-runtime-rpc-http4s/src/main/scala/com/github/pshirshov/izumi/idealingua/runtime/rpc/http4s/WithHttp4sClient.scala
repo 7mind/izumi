@@ -33,7 +33,7 @@ trait WithHttp4sClient {
             logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
 
             BIO.syncThrowable {
-              unsafeRunSync {
+              CIORunner.unsafeRunSync {
                 client
                   .flatMap(_.fetch(req)(handleResponse(request, _)))
               }

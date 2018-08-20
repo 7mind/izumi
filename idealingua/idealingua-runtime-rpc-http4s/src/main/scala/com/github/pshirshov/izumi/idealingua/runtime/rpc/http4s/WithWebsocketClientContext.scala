@@ -15,7 +15,6 @@ import io.circe.syntax._
 import org.http4s.AuthedRequest
 import org.http4s.websocket.WebsocketBits._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 trait WithWebsocketClientContext {
