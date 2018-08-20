@@ -68,16 +68,18 @@ class RequestState[Or[+ _, + _] : IRTResultTransZio] {
   }
 
   def poll(id: RpcPacketId, interval: FiniteDuration, timeout: FiniteDuration): Or[Nothing, Option[RawResponse]] = R.fromZio {
-    IO.sleep(interval)
-      .flatMap {
-        _ =>
-          checkResponse(id) match {
-            case None =>
-              IO.fail(None)
-            case Some(value) =>
-              IO.point(Some(value))
-          }
-      }
+    R.toZio {
+      R.sleep(interval)
+        .flatMap {
+          _ =>
+            checkResponse(id) match {
+              case None =>
+                R.fail(None)
+              case Some(value) =>
+                R.point(Some(value))
+            }
+        }
+    }
       .retryOrElse(Retry.duration(timeout), {
         (_: Any, _: Any) =>
           IO.point(None)
