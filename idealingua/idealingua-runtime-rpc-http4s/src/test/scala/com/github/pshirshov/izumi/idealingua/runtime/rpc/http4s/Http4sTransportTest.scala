@@ -116,19 +116,19 @@ class Http4sTransportTest extends WordSpec {
 import IRTResultTransZio._
 
 object Http4sTransportTest {
-  type ZIO[E, V] = zio.IO[E, V]
+  type ZIO[+E, +V] = zio.IO[E, V]
   type CIO[T] = cats.effect.IO[T]
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
 
-  final class AuthCheckDispatcher2[R[_, _] : IRTResultTransZio, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
+  final class AuthCheckDispatcher2[R[+_, +_] : IRTResultTransZio, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
     override def serviceId: IRTServiceId = proxied.serviceId
 
     override def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, Ctx]] = proxied.allMethods.mapValues {
       method =>
         new IRTMethodWrapper[R, Ctx] {
-          override val R: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
+          val R: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
 
           override val signature: IRTMethodSignature = method.signature
           override val marshaller: IRTCirceMarshaller[R] = method.marshaller
@@ -150,7 +150,7 @@ object Http4sTransportTest {
     }
   }
 
-  class DemoContext[R[_, _] : IRTResultTransZio, Ctx] {
+  class DemoContext[R[+_, +_] : IRTResultTransZio, Ctx] {
     private val greeterService = new AbstractGreeterServer1.Impl[R, Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
     private val dispatchers: Set[IRTWrappedService[R, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))

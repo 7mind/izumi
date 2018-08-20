@@ -8,68 +8,79 @@ import IRTResultTransZio._
 
 import scala.language.higherKinds
 
-abstract class AbstractGreeterServer1[R[_, _] : IRTResult, C]
+abstract class AbstractGreeterServer1[R[+_, +_] : IRTResult, C]
   extends GreeterServiceServer[R, C] {
 
   val R: IRTResult[R] = implicitly[IRTResult[R]]
 
   import R._
 
-  override def greet(ctx: C, name: String, surname: String): Just[String] = just {
+  override def greet(ctx: C, name: String, surname: String): Just[String] = point {
     s"Hi, $name $surname!"
   }
 
-  override def sayhi(ctx: C): Just[String] = just {
+  override def sayhi(ctx: C): Just[String] = point {
     "Hi!"
   }
 
-  override def alternative(ctx: C): Or[Long, String] = choice {
+  override def alternative(ctx: C): Or[Long, String] = fromEither {
     Right("value")
   }
 
-  override def nothing(ctx: C): Or[Nothing, String] = just {
+  override def nothing(ctx: C): Or[Nothing, String] = point {
     ""
   }
 }
 
 object AbstractGreeterServer1 {
 
-  class Impl[R[_, _] : IRTResult, C] extends AbstractGreeterServer1[R, C]
+  class Impl[R[+_, +_] : IRTResult, C] extends AbstractGreeterServer1[R, C]
 
-  class ImplEitherT[C] extends AbstractGreeterServer1[EitherT[cats.effect.IO, ?, ?], C]
+//  class ImplEitherT[C] extends AbstractGreeterServer1[EitherT[cats.effect.IO, ?, ?], C]
 
+//  class ImplForeignProxy[R[_, _] : IRTResult, C](proxied: ImplEitherT[C]) extends GreeterServiceServer[R, C] {
+//    override def greet(ctx: C, name: String, surname: String): Just[String] = {
+//      proxied.greet(ctx, name, surname)
+//    }
+//
+//    override def sayhi(ctx: C): Just[String] = ???
+//
+//    override def nothing(ctx: C): Just[String] = ???
+//
+//    override def alternative(ctx: C): R[Long, String] = ???
+//  }
 }
 
-trait AbstractGreeterServerMonomorphicForeign[C]
-  extends GreeterServiceServer[EitherT[cats.effect.IO, ?, ?], C] {
-  val R: EitherTResult.type = EitherTResult
-
-  import R._
-
-  protected implicit def ME[E]: MonadError[Or[E, ?], E] = R.ME[E]
-
-  override def greet(ctx: C, name: String, surname: String): Just[String] = just {
-    s"Hi, $name $surname!"
-  }
-
-  override def sayhi(ctx: C): Just[String] = just {
-    "Hi!"
-  }
-
-  override def alternative(ctx: C): Or[Long, String] = choice {
-    /*
-    ME[Long].raiseError(45)
-    ME[Long].pure("test")
-    */
-    Right("value")
-  }
-
-  override def nothing(ctx: C): Or[Nothing, String] = just {
-    ""
-  }
-}
-
-object AbstractGreeterServerMonomorphicForeign {
-
-
-}
+//trait AbstractGreeterServerMonomorphicForeign[C]
+//  extends GreeterServiceServer[EitherT[cats.effect.IO, ?, ?], C] {
+//  val R: EitherTResult.type = EitherTResult
+//
+//  import R._
+//
+//  protected implicit def ME[E]: MonadError[Or[E, ?], E] = R.ME[E]
+//
+//  override def greet(ctx: C, name: String, surname: String): Just[String] = just {
+//    s"Hi, $name $surname!"
+//  }
+//
+//  override def sayhi(ctx: C): Just[String] = just {
+//    "Hi!"
+//  }
+//
+//  override def alternative(ctx: C): Or[Long, String] = choice {
+//    /*
+//    ME[Long].raiseError(45)
+//    ME[Long].pure("test")
+//    */
+//    Right("value")
+//  }
+//
+//  override def nothing(ctx: C): Or[Nothing, String] = just {
+//    ""
+//  }
+//}
+//
+//object AbstractGreeterServerMonomorphicForeign {
+//
+//
+//}

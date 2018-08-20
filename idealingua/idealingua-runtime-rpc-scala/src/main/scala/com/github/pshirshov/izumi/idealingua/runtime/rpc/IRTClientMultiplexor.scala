@@ -5,7 +5,7 @@ import scalaz.zio.IO
 
 import scala.language.higherKinds
 
-class IRTClientMultiplexor[R[_, _] : IRTResultTransZio](clients: Set[IRTWrappedClient[R]]) {
+class IRTClientMultiplexor[R[+_, +_] : IRTResultTransZio](clients: Set[IRTWrappedClient[R]]) {
   protected val ZIO: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
 
   val codecs: Map[IRTMethodId, IRTCirceMarshaller[R]] = clients.flatMap(_.allCodecs).toMap

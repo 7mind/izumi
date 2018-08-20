@@ -5,7 +5,7 @@ import scalaz.zio.IO
 
 import scala.language.higherKinds
 
-class IRTServerMultiplexor[R[_, _] : IRTResultTransZio, C](list: Set[IRTWrappedService[R, C]]) {
+class IRTServerMultiplexor[R[+_, +_] : IRTResultTransZio, C](list: Set[IRTWrappedService[R, C]]) {
   protected val ZIO: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
 
   val services: Map[IRTServiceId, IRTWrappedService[R, C]] = list.map(s => s.serviceId -> s).toMap
