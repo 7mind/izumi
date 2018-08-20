@@ -4,6 +4,7 @@ import cats.effect.{ConcurrentEffect, Timer}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s.dsl._
+import _root_.io.circe.Printer
 
 import scala.language.higherKinds
 
@@ -35,4 +36,5 @@ class Http4sRuntime[ZIO[+ _, + _] : IRTResultTransZio, CaIO[+ _] : ConcurrentEff
 
   override protected val dsl: Http4sDsl[CIO] = Http4sDsl.apply[CIO]
 
+  override protected def printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
 }

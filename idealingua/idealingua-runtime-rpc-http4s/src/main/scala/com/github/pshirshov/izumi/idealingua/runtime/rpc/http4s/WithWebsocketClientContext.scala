@@ -59,7 +59,7 @@ trait WithWebsocketClientContext {
     def enqueue(method: IRTMethodId, data: Json): RpcPacketId = {
       val request = RpcPacket.buzzerRequest(method, data)
       val id = request.id.get
-      sendQueue.add(Text(encode(request.asJson)))
+      sendQueue.add(Text(printer.pretty(request.asJson)))
       requestState.request(id, method)
       id
     }

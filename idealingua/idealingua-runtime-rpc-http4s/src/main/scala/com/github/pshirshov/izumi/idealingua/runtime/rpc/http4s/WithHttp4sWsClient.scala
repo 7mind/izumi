@@ -93,7 +93,7 @@ trait WithHttp4sWsClient {
 
                   BIO.toZio {
                     BIO.syncThrowable {
-                      val out = encode(transformRequest(w).asJson)
+                      val out = printer.pretty(transformRequest(w).asJson)
                       logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
                       requestState.request(pid, request.method)
                       wsClient.send(out)

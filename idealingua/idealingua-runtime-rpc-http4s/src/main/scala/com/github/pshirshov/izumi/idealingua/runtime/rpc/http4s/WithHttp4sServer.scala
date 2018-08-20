@@ -140,7 +140,7 @@ trait WithHttp4sServer {
 
         ZIOR.unsafeRunSync(BIO.toZio(ioresponse)) match {
           case ExitResult.Completed(v) =>
-            v.map(_.asJson).map(encode)
+            v.map(_.asJson).map(printer.pretty)
 
           case ExitResult.Failed(error, _) =>
             Some(handleWsError(context, List(error), None, "failure"))
@@ -186,11 +186,11 @@ trait WithHttp4sServer {
       causes.headOption match {
         case Some(cause) =>
           logger.error(s"${context -> null}: WS Execution failed, $kind, $data, $cause")
-          encode(RpcFailureStringResponse(RPCPacketKind.Fail, data.getOrElse(cause.getMessage), kind).asJson)
+          printer.pretty(RpcFailureStringResponse(RPCPacketKind.Fail, data.getOrElse(cause.getMessage), kind).asJson)
 
         case None =>
           logger.error(s"${context -> null}: WS Execution failed, $kind, $data")
-          encode(RpcFailureStringResponse(RPCPacketKind.Fail, "?", kind).asJson)
+          printer.pretty(RpcFailureStringResponse(RPCPacketKind.Fail, "?", kind).asJson)
       }
     }
 
@@ -221,7 +221,7 @@ trait WithHttp4sServer {
       } yield {
         maybeResult match {
           case Some(value) =>
-            dsl.Ok(encode(value))
+            dsl.Ok(printer.pretty(value))
           case None =>
             logger.warn(s"${context -> null}: No handler for $toInvoke")
             dsl.NotFound()
