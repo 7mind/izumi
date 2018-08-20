@@ -5,8 +5,9 @@ import scalaz.zio.IO
 
 import scala.language.higherKinds
 
-class IRTServerMultiplexor[R[_, _], C](list: Set[IRTWrappedService[R, C]])
-  extends IRTResultZio {
+class IRTServerMultiplexor[R[_, _] : IRTResultTransZio, C](list: Set[IRTWrappedService[R, C]]) {
+  protected val ZIO: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
+
   val services: Map[IRTServiceId, IRTWrappedService[R, C]] = list.map(s => s.serviceId -> s).toMap
 
 
@@ -26,10 +27,10 @@ class IRTServerMultiplexor[R[_, _], C](list: Set[IRTWrappedService[R, C]])
 
   private def toM(parsedBody: Json, context: C, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C]) = {
     for {
-      decoded <- method.marshaller.toZio(method.marshaller.decodeRequest(IRTJsonBody(toInvoke, parsedBody)))
+      decoded <- ZIO.toZio(method.marshaller.decodeRequest(IRTJsonBody(toInvoke, parsedBody)))
       casted <- IO.syncThrowable(decoded.value.asInstanceOf[method.signature.Input])
       result <- IO.syncThrowable(method.invoke(context, casted))
-      safeResult <- method.marshaller.toZio(result)
+      safeResult <- ZIO.toZio(result)
       encoded <- IO.syncThrowable(method.marshaller.encodeResponse(IRTResBody(safeResult)))
     } yield {
       encoded

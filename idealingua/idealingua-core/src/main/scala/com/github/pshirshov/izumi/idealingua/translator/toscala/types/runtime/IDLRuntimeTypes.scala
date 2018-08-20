@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMethodName, IRTMethodSignature, IRTResultTransZio, IRTWrappedService, _}
 import com.github.pshirshov.izumi.idealingua.runtime.{IRTCast, IRTConversions, IRTExtend}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaType
 
 
 object IDLRuntimeTypes {
@@ -26,7 +27,7 @@ object IDLRuntimeTypes {
   final val adtEl = model.conv.toScala[IDLAdtElement]
 
   final val WithResult = services.conv.toScala[IRTResult[_2Arg]]
-  final val WithResultZio = services.conv.toScala[IRTResultZio]
+  final val WithResultZio: ScalaType = ??? //services.conv.toScala[IRTResultZio]
   final val IRTResultTransZio = services.conv.toScala[IRTResultTransZio[_2Arg]]
   final val IRTMethodSignature = services.conv.toScala[IRTMethodSignature]
   final val IRTServiceId = services.conv.toScala[IRTServiceId]

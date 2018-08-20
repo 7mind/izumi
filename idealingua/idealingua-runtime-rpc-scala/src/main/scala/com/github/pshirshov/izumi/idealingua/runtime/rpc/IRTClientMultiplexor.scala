@@ -5,8 +5,9 @@ import scalaz.zio.IO
 
 import scala.language.higherKinds
 
-class IRTClientMultiplexor[R[_, _]](clients: Set[IRTWrappedClient[R]])
-  extends IRTResultZio {
+class IRTClientMultiplexor[R[_, _] : IRTResultTransZio](clients: Set[IRTWrappedClient[R]]) {
+  protected val ZIO: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
+
   val codecs: Map[IRTMethodId, IRTCirceMarshaller[R]] = clients.flatMap(_.allCodecs).toMap
 
   def encode(input: IRTMuxRequest): IO[Throwable, Json] = {
@@ -21,7 +22,7 @@ class IRTClientMultiplexor[R[_, _]](clients: Set[IRTWrappedClient[R]])
   def decode(input: Json, method: IRTMethodId): IO[Throwable, IRTMuxResponse] = {
     codecs.get(method) match {
       case Some(marshaller) =>
-        marshaller.toZio(marshaller.decodeResponse(IRTJsonBody(method, input)))
+        ZIO.toZio(marshaller.decodeResponse(IRTJsonBody(method, input)))
           .map {
             body =>
               IRTMuxResponse(body, method)

@@ -19,6 +19,8 @@ import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
 
+import scala.language.higherKinds
+
 class Http4sTransportTest extends WordSpec {
 
   import Http4sTransportTest.Http4sTestContext._
@@ -111,6 +113,8 @@ class Http4sTransportTest extends WordSpec {
   }
 }
 
+import IRTResultTransZio._
+
 object Http4sTransportTest {
   type ZIO[E, V] = zio.IO[E, V]
   type CIO[T] = cats.effect.IO[T]
@@ -118,21 +122,22 @@ object Http4sTransportTest {
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
 
-  final class AuthCheckDispatcher2[Ctx](proxied: IRTWrappedService[ZIO, Ctx]) extends IRTWrappedService[ZIO, Ctx] {
+  final class AuthCheckDispatcher2[R[_, _] : IRTResultTransZio, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
     override def serviceId: IRTServiceId = proxied.serviceId
 
-    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[ZIO, Ctx]] = proxied.allMethods.mapValues {
+    override def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, Ctx]] = proxied.allMethods.mapValues {
       method =>
-        new IRTMethodWrapper[ZIO, Ctx] with IRTResultZio {
+        new IRTMethodWrapper[R, Ctx] {
+          override val R: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
 
           override val signature: IRTMethodSignature = method.signature
-          override val marshaller: IRTCirceMarshaller[ZIO] = method.marshaller
+          override val marshaller: IRTCirceMarshaller[R] = method.marshaller
 
-          override def invoke(ctx: Ctx, input: signature.Input): zio.IO[Nothing, signature.Output] = {
+          override def invoke(ctx: Ctx, input: signature.Input): R.Just[signature.Output] = R.fromZio {
             ctx match {
               case DummyContext(_, Some(BasicCredentials(user, pass))) =>
                 if (user == "user" && pass == "pass") {
-                  method.invoke(ctx, input.asInstanceOf[method.signature.Input]).map(_.asInstanceOf[signature.Output])
+                  R.toZio(method.invoke(ctx, input.asInstanceOf[method.signature.Input])).map(_.asInstanceOf[signature.Output])
                 } else {
                   zio.IO.terminate(IRTBadCredentialsException(Status.Unauthorized))
                 }
@@ -145,13 +150,14 @@ object Http4sTransportTest {
     }
   }
 
-  class DemoContext[Ctx] {
-    private val greeterService = new AbstractGreeterServer1.Impl[Ctx]
+  class DemoContext[R[_, _] : IRTResultTransZio, Ctx] {
+    private val greeterService = new AbstractGreeterServer1.Impl[R, Ctx]
     private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
-    private val dispatchers: Set[IRTWrappedService[ZIO, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
-    private val clients: Set[IRTWrappedClient[ZIO]] = Set(GreeterServiceClientWrapped)
+    private val dispatchers: Set[IRTWrappedService[R, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
+    val multiplexor = new IRTServerMultiplexor[R, Ctx](dispatchers)
+
+    private val clients: Set[IRTWrappedClient[R]] = Set(new GreeterServiceClientWrapped.Codecs[R])
     val codec = new IRTClientMultiplexor(clients)
-    val multiplexor = new IRTServerMultiplexor[ZIO, Ctx](dispatchers)
   }
 
   object Http4sTestContext {
@@ -165,7 +171,7 @@ object Http4sTransportTest {
     final val wsUri = new URI("ws", null, host, port, "/ws", null, null)
 
     //
-    final val demo = new DemoContext[DummyContext]()
+    final val demo = new DemoContext[ZIO, DummyContext]()
     final val rt = new Http4sRuntime[ZIO](makeLogger())
 
     //

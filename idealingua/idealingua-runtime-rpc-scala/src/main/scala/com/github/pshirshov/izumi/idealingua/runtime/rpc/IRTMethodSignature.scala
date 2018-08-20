@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-trait IRTMethodSignature extends IRTResultZio {
+trait IRTMethodSignature {
   type Input <: Product
   type Output <: Product
 

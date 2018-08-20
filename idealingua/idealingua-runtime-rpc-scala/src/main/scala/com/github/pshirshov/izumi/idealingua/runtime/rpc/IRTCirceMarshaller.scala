@@ -4,16 +4,18 @@ import io.circe.{DecodingFailure, Json}
 
 import scala.language.higherKinds
 
-trait IRTCirceMarshaller[R[_, _]] extends IRTResultTransZio[R] {
+abstract class IRTCirceMarshaller[R[_, _] : IRTResult] {
+  val R: IRTResult[R] = implicitly[IRTResult[R]]
+
   def encodeRequest: PartialFunction[IRTReqBody, Json]
 
   def encodeResponse: PartialFunction[IRTResBody, Json]
 
-  def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]]
+  def decodeRequest: PartialFunction[IRTJsonBody, R.Just[IRTReqBody]]
 
-  def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]]
+  def decodeResponse: PartialFunction[IRTJsonBody, R.Just[IRTResBody]]
 
-  protected def decoded[V](result: Either[DecodingFailure, V]): Just[V] = {
-    maybe(result)
+  protected def decoded[V](result: Either[DecodingFailure, V]): R.Just[V] = {
+    R.maybe(result)
   }
 }

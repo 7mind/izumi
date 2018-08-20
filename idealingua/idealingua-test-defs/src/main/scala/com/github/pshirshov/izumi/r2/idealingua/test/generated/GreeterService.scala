@@ -6,35 +6,40 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import scalaz.zio.{IO, RTS}
+import IRTResultTransZio._
 
 import scala.language.higherKinds
 
-trait GreeterServiceServer[R[_, _], C]
-  extends IRTResult[R] {
-  def greet(ctx: C, name: String, surname: String): Just[String]
+trait GreeterServiceServer[R[_, _], C] {
+  val R: IRTResult[R]
 
-  def sayhi(ctx: C): Just[String]
+  def greet(ctx: C, name: String, surname: String): R.Just[String]
 
-  def nothing(ctx: C): Just[String]
+  def sayhi(ctx: C): R.Just[String]
 
-  def alternative(ctx: C): Or[Long, String]
+  def nothing(ctx: C): R.Just[String]
+
+  def alternative(ctx: C): R.Or[Long, String]
 }
 
-trait GreeterServiceClient[R[_, _]]
-  extends IRTResult[R] {
-  def greet(name: String, surname: String): Just[String]
+trait GreeterServiceClient[R[_, _]] {
+  val R: IRTResult[R]
 
-  def sayhi(): Just[String]
+  def greet(name: String, surname: String): R.Just[String]
 
-  def nothing(): Just[Unit]
+  def sayhi(): R.Just[String]
 
-  def alternative(): Or[Long, String]
+  def nothing(): R.Just[Unit]
+
+  def alternative(): R.Or[Long, String]
 }
 
-class GreeterServiceClientWrapped(dispatcher: IRTDispatcher)
-  extends GreeterServiceClient[IO]
-    with IRTResultZio {
-  override def greet(name: String, surname: String): IO[Nothing, String] = {
+class GreeterServiceClientWrapped[R[_, _] : IRTResultTransZio](dispatcher: IRTDispatcher)
+  extends GreeterServiceClient[R] {
+
+  override val R: IRTResultTransZio[R] = implicitly[IRTResultTransZio[R]]
+
+  override def greet(name: String, surname: String): R.Just[String] = R.fromZio {
     dispatcher
       .dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id))
       .redeem({ err => IO.terminate(err) }, { case IRTMuxResponse(IRTResBody(v: GreeterServiceMethods.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
@@ -46,7 +51,7 @@ class GreeterServiceClientWrapped(dispatcher: IRTDispatcher)
   }
 
 
-  override def alternative(): IO[Long, String] = {
+  override def alternative(): R.Or[Long, String] = R.fromZio {
     dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.alternative.Input()), GreeterServiceMethods.alternative.id))
       .redeem({
         err => IO.terminate(err)
@@ -66,55 +71,57 @@ class GreeterServiceClientWrapped(dispatcher: IRTDispatcher)
       })
   }
 
-  override def sayhi(): IO[Nothing, String] = ???
+  override def sayhi(): R.Just[String] = ???
 
-  override def nothing(): IO[Nothing, Unit] = ???
-
-
+  override def nothing(): R.Just[Unit] = ???
 }
 
-object GreeterServiceClientWrapped extends IRTWrappedClient[IO] {
-  val allCodecs: Map[IRTMethodId, IRTCirceMarshaller[IO]] = {
-    Map(
-      GreeterServiceMethods.greet.id -> GreeterServerMarshallers.greet
-      , GreeterServiceMethods.alternative.id -> GreeterServerMarshallers.alternative
-    )
+object GreeterServiceClientWrapped {
+  class Codecs[R[_, _] : IRTResult] extends IRTWrappedClient[R] {
+    val allCodecs: Map[IRTMethodId, IRTCirceMarshaller[R]] = {
+      Map(
+        GreeterServiceMethods.greet.id -> new GreeterServerMarshallers.greet[R]
+        , GreeterServiceMethods.alternative.id -> new GreeterServerMarshallers.alternative[R]
+      )
+    }
   }
 }
 
-class GreeterServiceServerWrapped[F[_, _], C](service: GreeterServiceServer[F, C] with IRTResultTransZio[F])
-  extends IRTWrappedService[IO, C] {
+class GreeterServiceServerWrapped[F[_, _] : IRTResultTransZio, C](service: GreeterServiceServer[F, C])
+  extends IRTWrappedService[F, C] {
 
-  object greet extends IRTMethodWrapper[IO, C] with IRTResultZio {
+  val F: IRTResultTransZio[F] = implicitly[IRTResultTransZio[F]]
+
+  object greet extends IRTMethodWrapper[F, C] {
 
     import GreeterServiceMethods.greet._
 
     override val signature: GreeterServiceMethods.greet.type = GreeterServiceMethods.greet
-    override val marshaller: GreeterServerMarshallers.greet.type = GreeterServerMarshallers.greet
+    override val marshaller: GreeterServerMarshallers.greet[F] = new GreeterServerMarshallers.greet[F]
 
-    override def invoke(ctx: C, input: Input): Just[Output] = {
-      service.toZio(service.greet(ctx, input.name, input.surname))
-        .map(v => Output(v))
+    override def invoke(ctx: C, input: Input): R.Just[Output] = {
+      F.fromZio(F.toZio(service.greet(ctx, input.name, input.surname))
+        .map(v => Output(v)))
     }
   }
 
-  object alternative extends IRTMethodWrapper[IO, C] with IRTResultZio {
+  object alternative extends IRTMethodWrapper[F, C] {
 
     import GreeterServiceMethods.alternative._
 
     override val signature: GreeterServiceMethods.alternative.type = GreeterServiceMethods.alternative
-    override val marshaller: GreeterServerMarshallers.alternative.type = GreeterServerMarshallers.alternative
+    override val marshaller: GreeterServerMarshallers.alternative[F] = new GreeterServerMarshallers.alternative[F]
 
-    override def invoke(ctx: C, input: Input): Just[Output] = {
-      service.toZio(service.alternative(ctx))
-        .redeem(err => IO.point(AlternativeOutput.Failure(err)), succ => IO.point(AlternativeOutput.Success(succ)))
+    override def invoke(ctx: C, input: Input): R.Just[Output] = {
+      F.fromZio(F.toZio(service.alternative(ctx))
+        .redeem(err => IO.point(AlternativeOutput.Failure(err)), succ => IO.point(AlternativeOutput.Success(succ))))
     }
   }
 
 
   override def serviceId: IRTServiceId = GreeterServiceMethods.serviceId
 
-  val allMethods: Map[IRTMethodId, IRTMethodWrapper[IO, C]] = {
+  val allMethods: Map[IRTMethodId, IRTMethodWrapper[F, C]] = {
     Seq(
       greet
       , alternative
@@ -126,7 +133,7 @@ class GreeterServiceServerWrapped[F[_, _], C](service: GreeterServiceServer[F, C
 
 object Test {
   def main(args: Array[String]): Unit = {
-    val greeter = new GreeterServiceServerWrapped[IO, Unit](new impls.AbstractGreeterServer1.Impl[Unit]())
+    val greeter = new GreeterServiceServerWrapped[IO, Unit](new impls.AbstractGreeterServer1.Impl[IO, Unit]())
     val multiplexor = new IRTServerMultiplexor[IO, Unit](Set(greeter))
 
     val req1 = new greeter.greet.signature.Input("John", "Doe")
@@ -204,7 +211,7 @@ object GreeterServiceMethods {
 
 object GreeterServerMarshallers {
 
-  object greet extends IRTCirceMarshaller[IO] with IRTResultZio {
+  class greet[R[_, _] : IRTResult] extends IRTCirceMarshaller[R] {
 
     import GreeterServiceMethods.greet._
 
@@ -217,18 +224,18 @@ object GreeterServerMarshallers {
       case IRTResBody(value: Output) => value.asJson
     }
 
-    override def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
+    override def decodeRequest: PartialFunction[IRTJsonBody, R.Just[IRTReqBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded(packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
+    override def decodeResponse: PartialFunction[IRTJsonBody, R.Just[IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded(packet.as[Output].map(v => IRTResBody(v)))
     }
   }
 
-  object alternative extends IRTCirceMarshaller[IO] with IRTResultZio {
+  class alternative[R[_, _] : IRTResult] extends IRTCirceMarshaller[R] {
 
     import GreeterServiceMethods.alternative._
 
@@ -240,12 +247,12 @@ object GreeterServerMarshallers {
       case IRTResBody(value: Output) => value.asJson
     }
 
-    override def decodeRequest: PartialFunction[IRTJsonBody, Just[IRTReqBody]] = {
+    override def decodeRequest: PartialFunction[IRTJsonBody, R.Just[IRTReqBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded(packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse: PartialFunction[IRTJsonBody, Just[IRTResBody]] = {
+    override def decodeResponse: PartialFunction[IRTJsonBody, R.Just[IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded(packet.as[Output].map(v => IRTResBody(v)))
     }
