@@ -6,13 +6,12 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.Json
-import scalaz.zio.{IO, Retry}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
-class RequestState[Or[+ _, + _] : IRTResultTransZio] {
-  val R: IRTResultTransZio[Or] = implicitly
+class RequestState[Or[+ _, + _] : IRTResult] {
+  val R: IRTResult[Or] = implicitly
   // TODO: stale item cleanups
   protected val requests: ConcurrentHashMap[RpcPacketId, IRTMethodId] = new ConcurrentHashMap[RpcPacketId, IRTMethodId]()
   protected val responses: ConcurrentHashMap[RpcPacketId, RawResponse] = new ConcurrentHashMap[RpcPacketId, RawResponse]()
@@ -67,22 +66,16 @@ class RequestState[Or[+ _, + _] : IRTResultTransZio] {
     }
   }
 
-  def poll(id: RpcPacketId, interval: FiniteDuration, timeout: FiniteDuration): Or[Nothing, Option[RawResponse]] = R.fromZio {
-    R.toZio {
-      R.sleep(interval)
-        .flatMap {
-          _ =>
-            checkResponse(id) match {
-              case None =>
-                R.fail(None)
-              case Some(value) =>
-                R.point(Some(value))
-            }
-        }
-    }
-      .retryOrElse(Retry.duration(timeout), {
-        (_: Any, _: Any) =>
-          IO.point(None)
-      })
-  }
+  def poll(id: RpcPacketId, interval: FiniteDuration, timeout: FiniteDuration): Or[Nothing, Option[RawResponse]] =
+    R.sleep(interval)
+      .flatMap {
+        _ =>
+          checkResponse(id) match {
+            case None =>
+              R.fail(None)
+            case Some(value) =>
+              R.point(Some(value))
+          }
+      }
+      .retryOrElse(timeout, R.point(None))
 }

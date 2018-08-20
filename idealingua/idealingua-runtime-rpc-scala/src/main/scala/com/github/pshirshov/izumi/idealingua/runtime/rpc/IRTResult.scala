@@ -2,12 +2,12 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 
 import cats.arrow.FunctionK
-import scalaz.zio.{ExitResult, IO}
+import scalaz.zio.{ExitResult, IO, Retry}
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.higherKinds
 
-trait IRTResult[R[+_, +_]] {
+trait IRTResult[R[+ _, + _]] {
   type Or[+E, +V] = R[E, V]
   type Just[+V] = R[Nothing, V]
 
@@ -53,10 +53,12 @@ trait IRTResult[R[+_, +_]] {
 
   @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
 
+  @inline def retryOrElse[A, E, A2 >: A, E1 >: E, S, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2]
 }
 
-trait IRTResultApi[T[K[+_, +_]] <: IRTResult[K]] {
-  implicit class IRTResultApi[R[+_, +_] : T, +E, +A](val r: R[E, A]) {
+trait IRTResultApi[T[K[+ _, + _]] <: IRTResult[K]] {
+
+  implicit class IRTResultApi[R[+ _, + _] : T, +E, +A](val r: R[E, A]) {
     val R: T[R] = implicitly[T[R]]
 
     @inline def map[B](f: A => B): R[E, B] = R.map(r)(f)
@@ -73,16 +75,18 @@ trait IRTResultApi[T[K[+_, +_]] <: IRTResult[K]] {
       redeem(err.andThen(R.now), succ.andThen(R.now))
 
     @inline def sandboxWith[E2, B](f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B] = R.sandboxWith(r)(f)
+
+    @inline def retryOrElse[A2 >: A, E1 >: E, S, E2](duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2] = R.retryOrElse[A, E, A2, E1, S, E2](r)(duration, orElse)
   }
 
-  def apply[R[+_, +_] : T, E, A](r: R[E, A]): IRTResultApi[R, E, A] = new IRTResultApi[R, E, A](r)
+  def apply[R[+ _, + _] : T, E, A](r: R[E, A]): IRTResultApi[R, E, A] = new IRTResultApi[R, E, A](r)
 }
 
 object IRTResult extends IRTResultApi[IRTResult] {
 
 }
 
-trait IRTResultTransZio[R[+_, +_]] extends IRTResult[R] {
+trait IRTResultTransZio[R[+ _, + _]] extends IRTResult[R] {
   def toZio[E]: FunctionK[R[E, ?], IO[E, ?]]
 
   def fromZio[E]: FunctionK[IO[E, ?], R[E, ?]]
@@ -91,7 +95,6 @@ trait IRTResultTransZio[R[+_, +_]] extends IRTResult[R] {
 object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
 
   implicit object IRTResultZio extends IRTResultTransZio[IO] {
-
     @inline def bracket0[E, A, B](acquire: Or[E, A])(release: A => Or[Nothing, Unit])(use: A => Or[E, B]): Or[E, B] =
       IO.bracket0(acquire)((v, _: ExitResult[E, B]) => release(v))(use)
 
@@ -123,6 +126,12 @@ object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
 
     @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: Or[Either[List[Throwable], E], A] => Or[Either[List[Throwable], E2], B]): Or[E2, B] =
       r.sandboxWith(f)
+
+    @inline def retryOrElse[A, E, A2 >: A, E1 >: E, S, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => Or[E2, A2]): Or[E2, A2] =
+      r.retryOrElse(Retry.duration(duration), {
+        (_: Any, _: Any) =>
+          orElse
+      })
 
     @inline def toZio[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id
 
