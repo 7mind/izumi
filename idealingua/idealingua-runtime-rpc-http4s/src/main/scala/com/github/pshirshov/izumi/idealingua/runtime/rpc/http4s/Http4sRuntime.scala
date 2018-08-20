@@ -1,12 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import cats.effect.ConcurrentEffect
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s.dsl._
 
 import scala.language.higherKinds
 
-class Http4sRuntime[IO[+_, +_] : IRTResultTransZio]
+
+class Http4sRuntime[ZIO[+ _, + _] : IRTResultTransZio, CaIO[+ _] : ConcurrentEffect : CIORunner]
 (
   override protected val logger: IzLogger
 )
@@ -19,9 +21,15 @@ class Http4sRuntime[IO[+_, +_] : IRTResultTransZio]
     with WithHttp4sServer {
 
 
-  override type BIO[+E, +V] = IO[E, V]
+  override type BIO[+E, +V] = ZIO[E, V]
 
-  override protected def BIO: IRTResultTransZio[BIO] = implicitly
+  override protected val BIO: IRTResultTransZio[BIO] = implicitly
 
-  override protected val dsl: Http4sDsl[CIO] = org.http4s.dsl.io
+  override type CIO[+T] = CaIO[T]
+
+  override protected val CIO: ConcurrentEffect[CIO] = implicitly
+
+  override protected val dsl: Http4sDsl[CIO] = Http4sDsl.apply[CIO]
+
+  override protected def unsafeRunSync[A](cio: CIO[A]): A = implicitly[CIORunner[CIO]].unsafeRunSync(cio)
 }

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import cats.implicits._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.Stream
@@ -32,9 +33,10 @@ trait WithHttp4sClient {
             logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
 
             BIO.syncThrowable {
-              client
-                .flatMap(_.fetch(req)(handleResponse(request, _)))
-                .unsafeRunSync()
+              unsafeRunSync {
+                client
+                  .flatMap(_.fetch(req)(handleResponse(request, _)))
+              }
             }
         }
     }

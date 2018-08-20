@@ -3,7 +3,9 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import java.util.concurrent.{ConcurrentHashMap, TimeoutException}
 
 import _root_.io.circe.parser._
+import cats.implicits._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResult._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
 import io.circe.syntax._
 import org.http4s._
@@ -14,9 +16,7 @@ import org.http4s.websocket.WebsocketBits.{Binary, Close, Text, WebSocketFrame}
 import scalaz.zio.{ExitResult, IO}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import IRTResult._
 
 trait WithHttp4sServer {
   this: Http4sContext with WithHttp4sLoggingMiddleware with WithHttp4sHttpRequestContext with WithWebsocketClientContext =>

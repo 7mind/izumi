@@ -118,7 +118,7 @@ import IRTResultTransZio._
 
 object Http4sTransportTest {
   type ZIO[+E, +V] = zio.IO[E, V]
-  type CIO[T] = cats.effect.IO[T]
+  type CIO[+T] = cats.effect.IO[T]
 
   final case class DummyContext(ip: String, credentials: Option[Credentials])
 
@@ -173,7 +173,8 @@ object Http4sTransportTest {
 
     //
     final val demo = new DemoContext[ZIO, DummyContext]()
-    final val rt = new Http4sRuntime[ZIO](makeLogger())
+    import scala.concurrent.ExecutionContext.Implicits.global
+    final val rt = new Http4sRuntime[ZIO, CIO](makeLogger())
 
     //
     final val authUser: Kleisli[OptionT[CIO, ?], Request[CIO], DummyContext] =

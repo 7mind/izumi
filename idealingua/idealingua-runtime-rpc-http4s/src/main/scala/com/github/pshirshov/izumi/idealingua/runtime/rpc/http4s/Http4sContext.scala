@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import _root_.io.circe._
-import cats.effect
+import cats.effect.ConcurrentEffect
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s._
@@ -14,8 +14,10 @@ trait Http4sContext {
   type BIO[+E, +V]
   protected implicit def BIO: IRTResultTransZio[BIO]
 
-  type CIO[T] = cats.effect.IO[T]
-  val CIO: effect.IO.type = cats.effect.IO
+  type CIO[T]
+  protected implicit def CIO: ConcurrentEffect[CIO]
+  protected def unsafeRunSync[A](cio: CIO[A]): A
+
 
   type MaterializedStream = String
   type StreamDecoder = EntityDecoder[CIO, MaterializedStream]
