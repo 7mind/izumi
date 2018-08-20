@@ -2,8 +2,10 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 
 import cats.arrow.FunctionK
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTResultTransZio.IRTResultZio
 import scalaz.zio.IO
 
+import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 
 trait IRTResult[R[+_, +_]] {
@@ -36,6 +38,7 @@ trait IRTResult[R[+_, +_]] {
   final val unit: Just[Unit] = now(())
 
   //
+  @inline def sleep(duration: Duration): Or[Nothing, Unit]
 
   @inline def map[E, A, B](r: Or[E, A])(f: A => B): R[E, B]
 
@@ -51,7 +54,7 @@ trait IRTResult[R[+_, +_]] {
 }
 
 trait IRTResultApi[T[K[+_, +_]] <: IRTResult[K]] {
-  implicit class IRTResultApi[R[+_, +_] : T, +E, +A](r: R[E, A]) {
+  implicit class IRTResultApi[R[+_, +_] : T, +E, +A](val r: R[E, A]) {
     val R: T[R] = implicitly[T[R]]
 
     @inline def map[B](f: A => B): R[E, B] = R.map(r)(f)
@@ -86,7 +89,9 @@ trait IRTResultTransZio[R[+_, +_]] extends IRTResult[R] {
 object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
 
   implicit object IRTResultZio extends IRTResultTransZio[IO] {
-    @inline override def sync[A](effect: => A): Or[Nothing, A] = IO.sync(effect)
+    @inline def sleep(duration: Duration): IRTResultZio.Or[Nothing, Unit] = IO.sleep(duration)
+
+    @inline def sync[A](effect: => A): Or[Nothing, A] = IO.sync(effect)
 
     @inline def now[A](a: A): Just[A] = IO.now(a)
 
@@ -110,8 +115,7 @@ object IRTResultTransZio extends IRTResultApi[IRTResultTransZio] {
 
     @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => Or[E2, B], succ: A => Or[E2, B]): Or[E2, B] = r.redeem(err, succ)
 
-
-    override def sandboxWith[E, A, E2, B](r: Or[E, A])(f: Or[Either[List[Throwable], E], A] => Or[Either[List[Throwable], E2], B]): Or[E2, B] = r.sandboxWith(f)
+    @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: Or[Either[List[Throwable], E], A] => Or[Either[List[Throwable], E2], B]): Or[E2, B] = r.sandboxWith(f)
 
     @inline def toZio[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id
 

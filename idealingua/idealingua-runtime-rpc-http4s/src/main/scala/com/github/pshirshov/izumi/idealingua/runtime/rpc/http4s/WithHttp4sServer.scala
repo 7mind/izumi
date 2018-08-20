@@ -67,17 +67,19 @@ trait WithHttp4sServer {
                       IO.sync(sess.requestState.forget(id))
                   } {
                     w =>
-                      IO.point(w).flatMap {
-                        id =>
-                          sess.requestState.poll(id, pollingInterval, timeout)
-                            .flatMap {
-                              case Some(value) =>
-                                logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                                BIO.toZio(codec.decode(value.data, value.method))
+                      BIO.toZio {
+                        BIO.point(w).flatMap {
+                          id =>
+                            sess.requestState.poll(id, pollingInterval, timeout)
+                              .flatMap {
+                                case Some(value) =>
+                                  logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                                  codec.decode(value.data, value.method)
 
-                              case None =>
-                                IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
-                            }
+                                case None =>
+                                  BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                              }
+                        }
                       }
                   })
                 } yield {
@@ -204,7 +206,7 @@ trait WithHttp4sServer {
           }
 
         case RpcPacket(RPCPacketKind.BuzzResponse, data, _, id, _, _, _) =>
-          BIO.fromZio(context.requestState.handleResponse(id, data).flatMap(_ => IO.point(None)))
+          context.requestState.handleResponse(id, data).flatMap(_ => BIO.point(None))
 
         case k =>
           BIO.fail(new UnsupportedOperationException(s"Can't handle $k"))

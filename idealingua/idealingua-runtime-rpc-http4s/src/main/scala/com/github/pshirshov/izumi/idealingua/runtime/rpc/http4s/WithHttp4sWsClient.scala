@@ -31,7 +31,7 @@ trait WithHttp4sWsClient {
           parsed <- BIO.fromEither(parse(message))
           _ <- BIO.sync(logger.info(s"parsed: $parsed"))
           decoded <- BIO.fromEither(parsed.as[RpcPacket])
-          v <- BIO.fromZio(requestState.handleResponse(decoded.ref, decoded.data))
+          v <- requestState.handleResponse(decoded.ref, decoded.data)
         } yield {
           v
         }
@@ -91,25 +91,27 @@ trait WithHttp4sWsClient {
                 w =>
                   val pid = w.id.get // guaranteed to be present
 
-                  IO.syncThrowable {
-                    val out = encode(transformRequest(w).asJson)
-                    logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
-                    requestState.request(pid, request.method)
-                    wsClient.send(out)
-                    pid
-                  }
-                    .flatMap {
-                      id =>
-                        requestState.poll(id, pollingInterval, timeout)
-                          .flatMap {
-                            case Some(value) =>
-                              logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                              BIO.toZio(codec.decode(value.data, value.method))
-
-                            case None =>
-                              IO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
-                          }
+                  BIO.toZio {
+                    BIO.syncThrowable {
+                      val out = encode(transformRequest(w).asJson)
+                      logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
+                      requestState.request(pid, request.method)
+                      wsClient.send(out)
+                      pid
                     }
+                      .flatMap {
+                        id =>
+                          requestState.poll(id, pollingInterval, timeout)
+                            .flatMap {
+                              case Some(value) =>
+                                logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                                codec.decode(value.data, value.method)
+
+                              case None =>
+                                BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                            }
+                      }
+                  }
               }
             }
         }
