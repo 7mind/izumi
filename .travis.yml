@@ -1,6 +1,9 @@
 sudo: required
 dist: trusty
 
+services:
+- docker
+
 stages:
 - name: test
 - name: sbttest
@@ -17,7 +20,7 @@ jobs:
     script: bash travis.sh deploy
     if: (tag IS present)
     env: TRAVIS_PULL_REQUEST=true
-    
+
 language: scala
 
 jdk:
