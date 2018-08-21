@@ -22,12 +22,12 @@ trait Keywords extends Separators {
   final val mixin = kw("mixin", "interface")
   final val data = kw("data", "dto", "struct")
   final val service = kw("service", "server")
-  final val emitter = kw("emitter", "sender")
+  final val buzzer = kw("buzzer", "sender")
   final val streams = kw("streams", "tunnel", "pump")
   final val consts = kw("const", "values")
 
   final val defm = kw("def", "fn", "fun", "func")
-  final val defe = kw("event", "ev", "msg")
+  final val defe = kw("line", "event")
   final val upstream = kw("toserver", "up", "upstream")
   final val downstream = kw("toclient", "down", "downstream")
 

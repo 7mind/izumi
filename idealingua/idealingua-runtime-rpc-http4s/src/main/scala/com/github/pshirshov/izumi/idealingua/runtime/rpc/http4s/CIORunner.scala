@@ -7,6 +7,8 @@ trait CIORunner[CIO[_]] {
 }
 
 object CIORunner {
+  def apply[CIO[_]: CIORunner]: CIORunner[CIO] = implicitly
+
   implicit object CatsRunner extends CIORunner[cats.effect.IO] {
     override def unsafeRunSync[A](cio: cats.effect.IO[A]): A = cio.unsafeRunSync()
   }

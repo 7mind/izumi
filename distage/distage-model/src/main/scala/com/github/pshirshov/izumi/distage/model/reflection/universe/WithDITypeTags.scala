@@ -101,6 +101,9 @@ trait WithDITypeTags {
 
     implicit def tagFromTypeTagTKAAAAA[T[_[_], _, _, _, _, _], K[_], A0, A1, A2, A3, A4](implicit t: TypeTag[T[K, A0, A1, A2, A3, A4]]): Tag[T[K, A0, A1, A2, A3, A4]] = Tag(t)
 
+    // FIXME: wtf?
+    implicit def tagFromTypeTagKK2A[K[_[_, _], _], K2[_, _], A](implicit t: TypeTag[K[K2, A]]): Tag[K[K2, A]] = Tag(t)
+
   }
 
   trait TagInstances2 extends TagInstances3 {
@@ -108,12 +111,34 @@ trait WithDITypeTags {
     implicit def tagFromTagTAAK[T[_, _, _[_]], A0: Tag, A1: Tag, K[_]: TagK](implicit t: TypeTag[T[Nothing, Nothing, Nothing]]): Tag[T[A0, A1, K]] =
       Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, TagK[K].tag))
 
+    // FIXME special cases for +_ types – scalac bug
+
+    implicit def ZIOtagFromTagKK2A[K[_[_, _], _], K2[+_, +_]: TagKK, A: Tag](implicit t: TypeTag[K[Nothing, Nothing]]): Tag[K[K2, A]] =
+      Tag.appliedTag(t, List(TagKK[K2].tag, Tag[A].tag))
+
+    implicit def ZIOtagFromTagKK2K[K[_[_, _], _[_]], K2[+_, +_]: TagKK, K1[_]: TagK](implicit t: TypeTag[K[Nothing, Nothing]]): Tag[K[K2, K1]] =
+      Tag.appliedTag(t, List(TagKK[K2].tag, TagK[K1].tag))
+
+    implicit def ZIOtagFromTagKK2[K[_[_, _]], K2[+_, +_]: TagKK](implicit t: TypeTag[K[Nothing]]): Tag[K[K2]] =
+      Tag.appliedTag(t, List(TagKK[K2].tag))
+
+
   }
 
   trait TagInstances3 extends TagInstances4 {
 
     implicit def tagFromTagTAK[T[_, _[_]], A: Tag, K[_]: TagK](implicit t: TypeTag[T[Nothing, Nothing]]): Tag[T[A, K]] =
       Tag.appliedTag(t, List(Tag[A].tag, TagK[K].tag))
+
+    //
+    implicit def tagFromTagKK2A[K[_[_, _], _], K2[_, _]: TagKK, A: Tag](implicit t: TypeTag[K[Nothing, Nothing]]): Tag[K[K2, A]] =
+      Tag.appliedTag(t, List(TagKK[K2].tag, Tag[A].tag))
+
+    implicit def tagFromTagKK2K[K[_[_, _], _[_]], K2[_, _]: TagKK, K1[_]: TagK](implicit t: TypeTag[K[Nothing, Nothing]]): Tag[K[K2, K1]] =
+      Tag.appliedTag(t, List(TagKK[K2].tag, TagK[K1].tag))
+
+    implicit def tagFromTagKK2[K[_[_, _]], K2[_, _]: TagKK](implicit t: TypeTag[K[Nothing]]): Tag[K[K2]] =
+      Tag.appliedTag(t, List(TagKK[K2].tag))
 
   }
 
@@ -210,7 +235,7 @@ trait WithDITypeTags {
           val ctorCreator = new TypeCreator {
             override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
               t.migrate(m).tpe match {
-                case r if r.typeArgs.length <= 1 =>
+                case r if r.typeArgs.length == 1 =>
                   r.typeConstructor
                 case r =>
                   // create a type lambda preserving embedded arguments
@@ -221,6 +246,40 @@ trait WithDITypeTags {
                   val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(1) ++ List(freshParam))
 
                   m.universe.internal.polyType(List(freshParam.typeSymbol), appliedRes)
+              }
+          }
+          TypeTag(t.mirror, ctorCreator)
+        }
+      }
+  }
+
+  trait TagKK[F[_, _]] {
+    def tag: TypeTag[_]
+
+    override def toString: String = s"TagKK[${tag.tpe}]"
+  }
+
+  object TagKK {
+    def apply[F[_, _]: TagKK]: TagKK[F] = implicitly
+
+    implicit def tagKKFromTypeTag[F[_, _]](implicit t: TypeTag[F[Nothing, Nothing]]): TagKK[F] =
+      new TagKK[F] {
+        override val tag: TypeTag[_] = {
+          val ctorCreator = new TypeCreator {
+            override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
+              t.migrate(m).tpe match {
+                case r if r.typeArgs.length == 2 =>
+                  r.typeConstructor
+                case r =>
+                  // create a type lambda preserving embedded arguments
+                  // i.e. OptionT[List, ?] === [A => OptionT[List, A]]
+                  def newTypeParam[A]: m.universe.Type = m.universe.weakTypeOf[A]
+
+                  val freshParam1 = newTypeParam
+                  val freshParam2 = newTypeParam
+                  val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(2) ++ List(freshParam1, freshParam2))
+
+                  m.universe.internal.polyType(List(freshParam1.typeSymbol, freshParam2.typeSymbol), appliedRes)
               }
           }
           TypeTag(t.mirror, ctorCreator)

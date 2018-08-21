@@ -28,7 +28,7 @@ class IDLPretyper(defn: DomainDefinitionParsed) {
     }
     val imports = defn.members.collect({ case d: ILImport => d })
     val services = defn.members.collect({ case d: ILService => d.v })
-    val emitters = defn.members.collect({ case d: ILEmitter => d.v })
+    val buzzers = defn.members.collect({ case d: ILBuzzer => d.v })
     val streams = defn.members.collect({ case d: ILStreams => d.v })
     val consts = defn.members.collect({ case d: ILConst => d.v })
 
@@ -51,7 +51,7 @@ class IDLPretyper(defn: DomainDefinitionParsed) {
       defn.id,
       types,
       services,
-      emitters,
+      buzzers,
       streams,
       consts,
       imports,
@@ -95,14 +95,14 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   def perform(): typed.DomainDefinition = {
     val mappedTypes = defn.types.map(fixType)
     val mappedServices = defn.services.map(fixService)
-    val mappedEmitters = defn.emitters.map(fixEmitter)
+    val mappedBuzzers = defn.buzzers.map(fixBuzzer)
     val mappedStreams = defn.streams.map(fixStreams)
 
     typed.DomainDefinition(
       id = domainId,
       types = mappedTypes,
       services = mappedServices,
-      emitters = mappedEmitters,
+      buzzers = mappedBuzzers,
       streams = mappedStreams,
       referenced = refs.mapValues(_.perform())
     )
@@ -202,8 +202,8 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod), doc = fixMeta(defn.meta))
   }
 
-  protected def fixEmitter(defn: raw.Emitter): typed.Emitter = {
-    typed.Emitter(id = fixEmitterId(defn.id), events = defn.events.map(fixMethod), doc = fixMeta(defn.meta))
+  protected def fixBuzzer(defn: raw.Buzzer): typed.Buzzer = {
+    typed.Buzzer(id = fixBuzzerId(defn.id), events = defn.events.map(fixMethod), doc = fixMeta(defn.meta))
   }
 
   protected def fixStreams(defn: raw.Streams): typed.Streams = {
@@ -382,7 +382,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     t.copy(domain = domainId)
   }
 
-  protected def fixEmitterId(t: EmitterId): EmitterId = {
+  protected def fixBuzzerId(t: BuzzerId): BuzzerId = {
     t.copy(domain = domainId)
   }
 

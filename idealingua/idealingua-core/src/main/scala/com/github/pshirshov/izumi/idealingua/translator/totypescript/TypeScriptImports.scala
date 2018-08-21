@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Emitter, Service, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
@@ -57,8 +57,8 @@ object TypeScriptImports {
   def apply(ts: Typespace, i: Service, fromPkg: Package, extra: List[TypeScriptImport], manifest: Option[TypeScriptBuildManifest]): TypeScriptImports =
     TypeScriptImports(fromService(ts, i, fromPkg, extra, manifest), manifest)
 
-  def apply(ts: Typespace, i: Emitter, fromPkg: Package, extra: List[TypeScriptImport], manifest: Option[TypeScriptBuildManifest]): TypeScriptImports =
-    TypeScriptImports(fromEmitter(ts, i, fromPkg, extra, manifest), manifest)
+  def apply(ts: Typespace, i: Buzzer, fromPkg: Package, extra: List[TypeScriptImport], manifest: Option[TypeScriptBuildManifest]): TypeScriptImports =
+    TypeScriptImports(fromBuzzer(ts, i, fromPkg, extra, manifest), manifest)
 
   protected def withImport(t: TypeId, fromPackage: Package, manifest: Option[TypeScriptBuildManifest]): Seq[String] = {
     var pathToRoot = ""
@@ -195,7 +195,7 @@ object TypeScriptImports {
     fromTypes(types, fromPkg, extra, manifest)
   }
 
-  protected def fromEmitter(ts: Typespace, i: Emitter, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
+  protected def fromBuzzer(ts: Typespace, i: Buzzer, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
     val types = i.events.flatMap {
       case m: RPCMethod => m.signature.input.fields.flatMap(f => collectTypes(ts, f.typeId)) ++ (m.signature.output match {
         case st: Struct => st.struct.fields.flatMap(ff => collectTypes(ts, ff.typeId))

@@ -35,7 +35,7 @@ class LoaderTest extends WordSpec {
 
               assert(restoredTypespace.domain.types.toSet == original.domain.types.toSet, domainId)
               assert(restoredTypespace.domain.services.toSet == original.domain.services.toSet, domainId)
-              assert(restoredTypespace.domain.emitters.toSet == original.domain.emitters.toSet, domainId)
+              assert(restoredTypespace.domain.buzzers.toSet == original.domain.buzzers.toSet, domainId)
               assert(restoredTypespace.domain.streams.toSet == original.domain.streams.toSet, domainId)
 
             case f =>

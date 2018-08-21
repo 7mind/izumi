@@ -1,7 +1,7 @@
 domain idltest.events
 
-emitter TestEmitter {
-  event empty()
-  event userRegistered(firstName: str, secondName: str)
-  event hello(name: str): str
+buzzer TestBuzzer {
+  line empty()
+  line userRegistered(firstName: str, secondName: str)
+  line hello(name: str): str
 }

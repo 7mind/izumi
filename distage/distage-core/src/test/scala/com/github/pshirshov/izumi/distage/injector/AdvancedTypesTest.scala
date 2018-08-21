@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.TraitCases._
 import com.github.pshirshov.izumi.distage.fixtures.TypesCases._
-import distage.{Id, ModuleBase, ModuleDef}
+import distage._
 import org.scalatest.WordSpec
 
 class AdvancedTypesTest extends WordSpec with MkInjector {
@@ -70,9 +70,143 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val context = injector.produce(plan)
 
     val instantiated = context.get[Dependency1]
-    val instantiated1 = context.get[Dependency1@Id("special")]
+    val instantiated1 = context.get[Dependency1 @Id("special")]
 
     assert(instantiated eq instantiated1)
+  }
+
+  "handle `with` types" in {
+    import TypesCase3._
+
+    val definition = new ModuleDef {
+      make[Dep]
+      make[Trait2 with Trait1].from[Trait2]
+    }
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    val instantiated = context.get[Trait2 with Trait1]
+
+    assert(instantiated.dep == context.get[Dep])
+  }
+
+  "handle refinement & structural types" in {
+    import TypesCase3._
+
+    val definition = new ModuleDef {
+      make[Dep]
+      make[Dep2]
+      make[Trait1 { def dep: Dep2 }].from[Trait3[Dep2]]
+      make[{def dep: Dep}].from[Trait2]
+    }
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    val instantiated1 = context.get[Trait1 { def dep: Dep2 }]
+    val instantiated2 = context.get[{def dep: Dep}]
+
+    assert(instantiated1.dep == context.get[Dep2])
+    assert(instantiated2.dep == context.get[Dep])
+  }
+
+  "progression test: can't handle abstract refinement types" in {
+    assertTypeError(
+      """
+      import TypesCase3._
+
+      class Definition[T: Tag] extends ModuleDef {
+        make[Dep]
+        make[T { def dep: Dep }].from[T]
+      }
+
+      val definition = new Definition[Trait2]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[Trait2 { def dep: Dep }]
+
+      assert(instantiated.dep == context.get[Dep])
+    """)
+  }
+
+  "progression test: handle abstract `with` types" in {
+    assertTypeError("""
+      import TypesCase3._
+
+      class Definition[T: Tag] extends ModuleDef {
+        make[Dep]
+        make[T with Trait1].from[T]
+      }
+
+      val definition = new Definition[Trait2]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[Trait2 with Trait1]
+
+      assert(instantiated.dep == context.get[Dep])
+    """)
+  }
+
+  "progression test: can't handle generics in abstract `with` types" in {
+    assertTypeError("""
+      import TypesCase3._
+
+      class Definition[T: Tag] extends ModuleDef {
+        make[T]
+        make[Trait5[T] with Trait4].from[Trait5[T]]
+      }
+
+      val definition = new Definition[Dep]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[Trait5[Dep]]
+
+      assert(instantiated.dep == context.get[Dep])
+    """)
+  }
+
+  "progression test: can't handle constrained generics i.e. <: Dep in TagK" in {
+    assertTypeError("""
+      import TypesCase3._
+
+      val tagK = TagK[Trait3]
+
+      class Definition[T <: Dep: Tag] extends ModuleDef {
+        make[T]
+        make[Trait3[T]].from[Trait3[T]]
+      }
+
+      val definition = new Definition[Dep2]
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[Trait3[Dep2]]
+
+      assert(instantiated.dep == context.get[Dep2])
+    """)
+  }
+
+  "progression test: Support type lambdas in TagK when lambda closes on a generic: Tag parameter" in {
+    assertTypeError("""
+      def partialEitherTagK[A: Tag] = TagK[Either[A, ?]]
+
+      print(partialEitherTagK[Int])
+      assert(partialEitherTagK[Int] != null)
+    """)
   }
 
 }

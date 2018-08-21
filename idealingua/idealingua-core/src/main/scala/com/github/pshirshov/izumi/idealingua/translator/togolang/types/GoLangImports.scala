@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Emitter, Service, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
@@ -57,8 +57,8 @@ object GoLangImports {
   def apply(i: Service, fromPkg: Package, extra: List[GoLangImportRecord], manifest: Option[GoLangBuildManifest]): GoLangImports =
     GoLangImports(fromService(i, fromPkg, extra), manifest)
 
-  def apply(i: Emitter, fromPkg: Package, extra: List[GoLangImportRecord], manifest: Option[GoLangBuildManifest]): GoLangImports =
-    GoLangImports(fromEmitter(i, fromPkg, extra), manifest)
+  def apply(i: Buzzer, fromPkg: Package, extra: List[GoLangImportRecord], manifest: Option[GoLangBuildManifest]): GoLangImports =
+    GoLangImports(fromBuzzer(i, fromPkg, extra), manifest)
 
   protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[Seq[String]] = {
     t match {
@@ -163,7 +163,7 @@ object GoLangImports {
     fromTypes(types, fromPkg, extra)
   }
 
-  protected def fromEmitter(i: Emitter, fromPkg: Package, extra: List[GoLangImportRecord] = List.empty): List[GoLangImportRecord] = {
+  protected def fromBuzzer(i: Buzzer, fromPkg: Package, extra: List[GoLangImportRecord] = List.empty): List[GoLangImportRecord] = {
     val types = i.events.flatMap {
       case m: RPCMethod => m.signature.input.fields.map(f => f.typeId) ++ (m.signature.output match {
         case st: Struct => st.struct.fields.map(ff => ff.typeId)

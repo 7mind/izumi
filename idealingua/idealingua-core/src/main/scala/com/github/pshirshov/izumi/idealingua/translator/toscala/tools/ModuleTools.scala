@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.tools
 
 import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{BuzzerId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -52,4 +52,9 @@ class ModuleTools() {
   def toModuleId(id: ServiceId): ModuleId = {
     ModuleId(id.domain.toPackage, s"${id.name}.scala")
   }
+
+  def toModuleId(id: BuzzerId): ModuleId = {
+    ModuleId(id.domain.toPackage, s"${id.name}.scala")
+  }
+
 }

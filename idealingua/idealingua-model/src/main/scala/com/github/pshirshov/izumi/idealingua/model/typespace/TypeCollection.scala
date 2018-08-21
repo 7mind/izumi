@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -20,60 +20,71 @@ class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
 
 class TypeCollection(ts: Typespace) {
   val services: Map[ServiceId, Service] = ts.domain.services.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
+  val buzzers: Map[BuzzerId, Buzzer] = ts.domain.buzzers.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
 
-  val serviceEphemerals: Seq[TypeDef] = (for {
-    service <- services.values
-    method <- service.methods
-  } yield {
-    method match {
-      case m: RPCMethod =>
-        val baseName = m.name.capitalize
+  val serviceEphemerals: Seq[TypeDef] = {
+    makeServiceEphemerals(services.values )
+  }
 
-        val inputDto = {
-          val in = m.signature.input
-          val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
-          val inId = DTOId(service.id, s"$baseName${ts.tools.methodInputSuffix}")
-          DTO(inId, inputStructure, NodeMeta.empty)
-        }
+  val buzzerEphemerals: Seq[TypeDef] = {
+    makeServiceEphemerals(buzzers.values.map(_.asService))
+  }
 
-        val outDtos = outputEphemeral(service, baseName, ts.tools.methodOutputSuffix, m.signature.output)
+  private def makeServiceEphemerals(src: Iterable[Service]): Seq[TypeDef] = {
+    (for {
+      service <- src
+      method <- service.methods
+    } yield {
+      method match {
+        case m: RPCMethod =>
+          val baseName = m.name.capitalize
 
-        inputDto +: outDtos
-    }
-  }).flatten.toSeq
+          val inputDto = {
+            val in = m.signature.input
+            val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
+            val inId = DTOId(service.id, s"$baseName${ts.tools.methodInputSuffix}")
+            DTO(inId, inputStructure, NodeMeta.empty)
+          }
 
-  private def outputEphemeral(service: Service, baseName: String, suffix: String, out: Output): Seq[TypeDef] = {
+          val outDtos = outputEphemeral(service.id, baseName, ts.tools.methodOutputSuffix, m.signature.output)
+
+          inputDto +: outDtos
+      }
+    }).flatten.toSeq
+  }
+
+  private def outputEphemeral(serviceId: ServiceId, baseName: String, suffix: String, out: Output): Seq[TypeDef] = {
     out match {
       case o: Output.Singular =>
         val outStructure = Structure.apply(List(Field(o.typeId, "value")), List.empty, Super.empty)
-        val outId = DTOId(service.id, s"$baseName$suffix")
+        val outId = DTOId(serviceId, s"$baseName$suffix")
         Seq(DTO(outId, outStructure, NodeMeta.empty))
 
       case o: Output.Struct =>
         val outStructure = Structure.apply(o.struct.fields, List.empty, Super(List.empty, o.struct.concepts, List.empty))
-        val outId = DTOId(service.id, s"$baseName$suffix")
+        val outId = DTOId(serviceId, s"$baseName$suffix")
         Seq(DTO(outId, outStructure, NodeMeta.empty))
 
       case _: Output.Void =>
         val outStructure = Structure.apply(List.empty, List.empty, Super(List.empty, List.empty, List.empty))
-        val outId = DTOId(service.id, s"$baseName$suffix")
+        val outId = DTOId(serviceId, s"$baseName$suffix")
         Seq(DTO(outId, outStructure, NodeMeta.empty))
 
       case o: Output.Algebraic =>
-        val outId = AdtId(service.id, s"$baseName$suffix")
+        val outId = AdtId(serviceId, s"$baseName$suffix")
         Seq(Adt(outId, o.alternatives, NodeMeta.empty))
 
       case o: Output.Alternative =>
-        val success = outputEphemeral(service, baseName, ts.tools.goodAltSuffix, o.success)
-        val failure = outputEphemeral(service, baseName, ts.tools.badAltSuffix, o.failure)
+        val success = outputEphemeral(serviceId, baseName, ts.tools.goodAltSuffix, o.success)
+        val failure = outputEphemeral(serviceId, baseName, ts.tools.badAltSuffix, o.failure)
         val successId = success.head.id
         val failureId = failure.head.id
-        val adtId = AdtId(service.id, s"$baseName$suffix")
+        val adtId = AdtId(serviceId, s"$baseName$suffix")
         val altAdt = Output.Algebraic(List(
           AdtMember(successId, Some(ts.tools.toPositiveBranchName(adtId)))
             , AdtMember(failureId, Some(ts.tools.toNegativeBranchName(adtId)))
         ))
-        val alt = outputEphemeral(service, baseName, suffix, altAdt)
+        val alt = outputEphemeral(serviceId, baseName, suffix, altAdt)
         success ++ failure ++ alt
     }
   }
@@ -94,7 +105,7 @@ class TypeCollection(ts: Typespace) {
   def isInterfaceEphemeral(dto: DTOId): Boolean = interfaceEphemeralsReversed.contains(dto)
 
   val dtoEphemeralIndex: Map[DTOId, Interface] = {
-    (ts.domain.types ++ serviceEphemerals)
+    (ts.domain.types ++ serviceEphemerals ++ buzzerEphemerals)
       .collect {
         case i: DTO =>
           val iid = InterfaceId(i.id, ts.tools.toInterfaceName(i.id))
@@ -111,6 +122,7 @@ class TypeCollection(ts: Typespace) {
     val definitions = Seq(
       ts.domain.types
       , serviceEphemerals
+      , buzzerEphemerals
       , interfaceEphemerals
       , dtoEphemerals
     ).flatten

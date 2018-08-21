@@ -13,7 +13,7 @@ trait IDLRenderers {
   protected implicit lazy val idField: Renderable[IdField] = new RIdField()
   protected implicit lazy val field: Renderable[Field] = new RField()
   protected implicit lazy val structure: Renderable[Structure] = new RStructure()
-  protected implicit lazy val emitter: Renderable[Emitter] = new REmitter
+  protected implicit lazy val buzzer: Renderable[Buzzer] = new RBuzzer
   protected implicit lazy val service: Renderable[Service] = new RService()
   protected implicit lazy val typedef: Renderable[TypeDef] = new RTypeDef()
   protected implicit lazy val adtMember: Renderable[AdtMember] = new RAdtMember()

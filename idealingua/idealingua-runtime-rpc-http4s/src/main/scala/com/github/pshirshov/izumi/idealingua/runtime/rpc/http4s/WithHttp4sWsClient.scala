@@ -11,12 +11,31 @@ import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import scalaz.zio.ExitResult
 
+case class PacketInfo(method: IRTMethodId, packetId: RpcPacketId)
+
+trait WsClientContextProvider[Ctx] {
+  def toContext(packet: RpcPacket): Ctx
+}
+
 trait WithHttp4sWsClient {
   self: Http4sContext =>
 
-  def wsClient(baseUri: URI, codec: IRTClientMultiplexor[BiIO]): ClientWsDispatcher = new ClientWsDispatcher(baseUri, codec)
+  def wsClient[Ctx](
+                     baseUri: URI
+                     , codec: IRTClientMultiplexor[BiIO]
+                     , buzzerMuxer: IRTServerMultiplexor[BiIO, Ctx]
+                     , wsClientContextProvider: WsClientContextProvider[Ctx]
+                   ): ClientWsDispatcher[Ctx] = new ClientWsDispatcher[Ctx](baseUri, codec, buzzerMuxer, wsClientContextProvider)
 
-  class ClientWsDispatcher(baseUri: URI, codec: IRTClientMultiplexor[BiIO])
+  /**
+    * TODO: this is a naive client implementation, good for testing purposes but not mature enough for production usage
+    */
+  class ClientWsDispatcher[Ctx](
+                                 protected val baseUri: URI
+                                 , protected val codec: IRTClientMultiplexor[BiIO]
+                                 , protected val buzzerMuxer: IRTServerMultiplexor[BiIO, Ctx]
+                                 , protected val wsClientContextProvider: WsClientContextProvider[Ctx]
+                               )
     extends IRTDispatcher[BiIO] with AutoCloseable {
 
     val requestState = new RequestState[BiIO]()
@@ -31,14 +50,14 @@ trait WithHttp4sWsClient {
           parsed <- BIO.fromEither(parse(message))
           _ <- BIO.sync(logger.info(s"parsed: $parsed"))
           decoded <- BIO.fromEither(parsed.as[RpcPacket])
-          v <- requestState.handleResponse(decoded.ref, decoded.data)
+          v <- routeResponse(decoded)
         } yield {
           v
         }
 
         BIORunner.unsafeRunSync0(result) match {
-          case ExitResult.Completed((packetId, method)) =>
-            logger.debug(s"Have reponse for method $method: $packetId")
+          case ExitResult.Completed(PacketInfo(packetId, method)) =>
+            logger.debug(s"Processed incoming packet $method: $packetId")
 
           case ExitResult.Failed(error, _) =>
             logger.error(s"Failed to process request: $error")
@@ -55,6 +74,51 @@ trait WithHttp4sWsClient {
 
       override def onError(exception: Exception): Unit = {
         logger.debug(s"WS connection errored: $exception")
+      }
+    }
+
+    protected def routeResponse(decoded: RpcPacket): BiIO[Throwable, PacketInfo] = {
+      decoded match {
+        case RpcPacket(RPCPacketKind.RpcResponse, data, _, ref, _, _, _) =>
+          requestState.handleResponse(ref, data)
+
+        case p@RpcPacket(RPCPacketKind.BuzzRequest, data, Some(id), _, Some(service), Some(method), _) =>
+          val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
+          val packetInfo = PacketInfo(methodId, id)
+          for {
+            maybeResponse <- buzzerMuxer.doInvoke(data, wsClientContextProvider.toContext(p), methodId)
+            maybePacket <- BIO.point(maybeResponse.map(r => RpcPacket.buzzerResponse(id, r)))
+            maybeEncoded <- BIO.syncThrowable(maybePacket.map(r => printer.pretty(r.asJson)))
+            _ <- BIO.point {
+              maybeEncoded match {
+                case Some(response) =>
+                  logger.debug(s"${method -> "method"}, ${id -> "id"}: Prepared buzzer $response")
+
+                  wsClient.send(response)
+                case None =>
+              }
+            }
+          } yield {
+            packetInfo
+          }
+
+        case RpcPacket(RPCPacketKind.RpcFail, data, _, ref, _, _, _) =>
+          ref match {
+            case Some(value) =>
+              if (requestState.methodOf(value).nonEmpty) {
+                requestState.forget(value) // TODO: we should support exception passing in RequestState
+              }
+            case None =>
+          }
+
+          ref.foreach(requestState.forget)
+          BIO.fail(new IRTGenericFailure(s"RPC failure for $ref: $data"))
+
+        case RpcPacket(RPCPacketKind.Fail, data, _, _, _, _, _) =>
+          BIO.fail(new IRTGenericFailure(s"Critical RPC failure: $data"))
+
+        case o =>
+          BIO.fail(new IRTMissingHandlerException(s"No buzzer client handler for $o", o))
       }
     }
 

@@ -15,7 +15,7 @@ trait DefService {
   // other method kinds should be added here
   final val methods: Parser[Seq[RawMethod]] = P(method.rep(sep = any))
 
-  final val serviceBlock = aggregates.cblock(kw.service, DefService.methods)
+  final val serviceBlock = aggregates.cblock(kw.service, methods)
     .map {
       case (c, i, v) => ILService(Service(i.toServiceId, v.toList, c))
     }

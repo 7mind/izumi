@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 class RDomain()(
   implicit ev1: Renderable[TypeDef]
   , ev2: Renderable[Service]
-  , ev3: Renderable[Emitter]
+  , ev3: Renderable[Buzzer]
   , ev4: Renderable[Streams]
   , ev5: Renderable[DomainId]
 ) extends Renderable[DomainDefinition] {
@@ -25,7 +25,7 @@ class RDomain()(
     sb.append(domain.services.map(_.render()).map(_.trim).mkString("\n\n"))
 
     sb.append("\n\n")
-    sb.append(domain.emitters.map(_.render()).map(_.trim).mkString("\n\n"))
+    sb.append(domain.buzzers.map(_.render()).map(_.trim).mkString("\n\n"))
 
     sb.append("\n\n")
     sb.append(domain.streams.map(_.render()).map(_.trim).mkString("\n\n"))
