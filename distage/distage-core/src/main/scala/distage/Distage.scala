@@ -8,11 +8,14 @@ import scala.language.higherKinds
 
 trait Distage {
 
+  type Tag[T] = RuntimeDIUniverse.Tag[T]
+  val Tag: RuntimeDIUniverse.Tag.type = RuntimeDIUniverse.Tag
+
   type TagK[T[_]] = RuntimeDIUniverse.TagK[T]
   val TagK: RuntimeDIUniverse.TagK.type = RuntimeDIUniverse.TagK
 
-  type Tag[T] = RuntimeDIUniverse.Tag[T]
-  val Tag: RuntimeDIUniverse.Tag.type = RuntimeDIUniverse.Tag
+  type TagKK[T[_, _]] = RuntimeDIUniverse.TagKK[T]
+  val TagKK: RuntimeDIUniverse.TagKK.type = RuntimeDIUniverse.TagKK
 
   type DIKey = RuntimeDIUniverse.DIKey
   val DIKey: RuntimeDIUniverse.DIKey.type = RuntimeDIUniverse.DIKey
