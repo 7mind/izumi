@@ -5,6 +5,8 @@ import com.github.pshirshov.izumi.distage.fixtures.TypesCases._
 import distage._
 import org.scalatest.WordSpec
 
+import scala.language.reflectiveCalls
+
 class AdvancedTypesTest extends WordSpec with MkInjector {
 
   "support generics" in {
