@@ -133,4 +133,11 @@ trait WithWebsocketClientContext {
 
 }
 
-case class RawResponse(data: Json, method: IRTMethodId)
+sealed trait RawResponse
+
+object RawResponse {
+
+  case class GoodRawResponse(data: Json, method: IRTMethodId) extends RawResponse
+  case class BadRawResponse() extends RawResponse // This needs to be extended: https://github.com/pshirshov/izumi-r2/issues/355
+
+}

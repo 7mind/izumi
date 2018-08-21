@@ -4,6 +4,7 @@ import java.net.URI
 import java.util.concurrent.TimeoutException
 
 import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.parser.parse
 import io.circe.syntax._
@@ -85,15 +86,36 @@ trait WithHttp4sWsClient {
         case p@RpcPacket(RPCPacketKind.BuzzRequest, data, Some(id), _, Some(service), Some(method), _) =>
           val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
           val packetInfo = PacketInfo(methodId, id)
-          for {
+
+          val responsePkt = for {
             maybeResponse <- buzzerMuxer.doInvoke(data, wsClientContextProvider.toContext(p), methodId)
-            maybePacket <- BIO.point(maybeResponse.map(r => RpcPacket.buzzerResponse(id, r)))
+            maybePacket <- BIO.now(maybeResponse.map(r => RpcPacket.buzzerResponse(id, r)))
+          } yield {
+            maybePacket
+          }
+
+          for {
+            maybePacket <- responsePkt.sandboxWith {
+              _.redeem(
+                {
+                  case Left(exception :: otherIssues) =>
+                    logger.error(s"${packetInfo -> null}: WS processing terminated, $exception, $otherIssues")
+                    BIO.point(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
+                  case Left(Nil) =>
+                    BIO.terminate(new IllegalStateException())
+                  case Right(exception) =>
+                    logger.error(s"${packetInfo -> null}: WS processing failed, $exception")
+                    BIO.point(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
+                }, {
+                  succ => BIO.point(succ)
+                }
+              )
+            }
             maybeEncoded <- BIO.syncThrowable(maybePacket.map(r => printer.pretty(r.asJson)))
             _ <- BIO.point {
               maybeEncoded match {
                 case Some(response) =>
                   logger.debug(s"${method -> "method"}, ${id -> "id"}: Prepared buzzer $response")
-
                   wsClient.send(response)
                 case None =>
               }
@@ -102,17 +124,12 @@ trait WithHttp4sWsClient {
             packetInfo
           }
 
-        case RpcPacket(RPCPacketKind.RpcFail, data, _, ref, _, _, _) =>
-          ref match {
-            case Some(value) =>
-              if (requestState.methodOf(value).nonEmpty) {
-                requestState.forget(value) // TODO: we should support exception passing in RequestState
-              }
-            case None =>
-          }
-
-          ref.foreach(requestState.forget)
+        case RpcPacket(RPCPacketKind.RpcFail, data, _, Some(ref), _, _, _) =>
+          requestState.respond(ref, RawResponse.BadRawResponse())
           BIO.fail(new IRTGenericFailure(s"RPC failure for $ref: $data"))
+
+        case RpcPacket(RPCPacketKind.RpcFail, data, _, None, _, _, _) =>
+          BIO.fail(new IRTGenericFailure(s"Missing ref in RPC failure: $data"))
 
         case RpcPacket(RPCPacketKind.Fail, data, _, _, _, _, _) =>
           BIO.fail(new IRTGenericFailure(s"Critical RPC failure: $data"))
@@ -165,9 +182,13 @@ trait WithHttp4sWsClient {
                     id =>
                       requestState.poll(id, pollingInterval, timeout)
                         .flatMap {
-                          case Some(value) =>
+                          case Some(value : RawResponse.GoodRawResponse) =>
                             logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
                             codec.decode(value.data, value.method)
+
+                          case Some(value : RawResponse.BadRawResponse) =>
+                            logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                            BIO.terminate(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
                           case None =>
                             BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))

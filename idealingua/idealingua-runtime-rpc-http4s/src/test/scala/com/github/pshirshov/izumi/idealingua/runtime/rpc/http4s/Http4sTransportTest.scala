@@ -20,7 +20,6 @@ import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
 
-import scala.concurrent.TimeoutException
 import scala.language.higherKinds
 
 class Http4sTransportTest extends WordSpec {
@@ -67,7 +66,7 @@ class Http4sTransportTest extends WordSpec {
     }
 
     disp.setupCredentials("user", "badpass")
-    intercept[TimeoutException] {
+    intercept[IRTGenericFailure] {
       BIOR.unsafeRun(greeterClient.alternative())
     }
     disp.close()
