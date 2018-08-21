@@ -50,15 +50,13 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
       case DefMethod.Output.Singular(_) =>
         q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               assert(ctx != null && input != null)
-              _service.$nameTerm(ctx, ..${Input.sigCall})
-                .map(v => new Output(v))
+            ${sp.BIO.n}.map(_service.$nameTerm(ctx, ..${Input.sigCall}))(v => new Output(v))
            }"""
 
       case DefMethod.Output.Void() =>
         q"""def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               assert(ctx != null && input != null)
-              _service.$nameTerm(ctx, ..${Input.sigCall})
-                .map(_ => new Output())
+              ${sp.BIO.n}.map(_service.$nameTerm(ctx, ..${Input.sigCall}))(v => new Output())
            }"""
 
       case DefMethod.Output.Algebraic(_) | DefMethod.Output.Struct(_) =>
@@ -70,8 +68,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
       case DefMethod.Output.Alternative(_, _) =>
         q"""
            def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
-                 _service.$nameTerm(ctx, ..${Input.sigCall})
-                   .redeem(
+              ${sp.BIO.n}.redeem(_service.$nameTerm(ctx, ..${Input.sigCall}))(
                       err => _F.point(new ${Output.negativeBranchType.typeFull}(err))
                       , succ => _F.point(new ${Output.positiveBranchType.typeFull}(succ))
                    )
@@ -100,9 +97,9 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
     method.signature.output match {
       case DefMethod.Output.Singular(_) =>
         q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
-               _dispatcher
+               ${sp.BIO.n}.redeem(_dispatcher
                  .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
-                 .redeem(
+               )(
                   { err => ${sp.BIO.n}.terminate(err) },
                   {
                     case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
@@ -113,9 +110,9 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
       case DefMethod.Output.Void() =>
         q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
-               _dispatcher
+               ${sp.BIO.n}.redeem(_dispatcher
                  .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
-                 .redeem(
+               )(
                    { err => ${sp.BIO.n}.terminate(err) },
                    {
                      case IRTMuxResponse(IRTResBody(_: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
@@ -126,9 +123,9 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
       case DefMethod.Output.Algebraic(_) | DefMethod.Output.Struct(_) =>
         q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
-               _dispatcher
+            ${sp.BIO.n}.redeem(_dispatcher
                  .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
-                 .redeem(
+               )(
                     { err => ${sp.BIO.n}.terminate(err) },
                     {
                       case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
@@ -139,9 +136,9 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
       case DefMethod.Output.Alternative(_, _) =>
         q"""def $nameTerm(..${Input.signature}): ${Output.outputType} = {
-               _dispatcher
+           ${sp.BIO.n}.redeem(_dispatcher
                  .dispatch(IRTMuxRequest(IRTReqBody(new _M.$nameTerm.Input(..${Input.sigDirectCall})), _M.$nameTerm.id))
-                 .redeem(
+               )(
                     { err => ${sp.BIO.n}.terminate(err) },
                     {
                        case IRTMuxResponse(IRTResBody(r), method) if method == _M.$nameTerm.id =>
