@@ -5,23 +5,32 @@ import scalaz.zio.{ExitResult, IO, Retry}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.higherKinds
 
-trait BIO[R[+_, +_]] {
-  type Or[+E, +V] = R[E, V]
-  type Just[+V] = R[Nothing, V]
+trait MicroBIO[R[_, _]] {
+  type Or[E, V] = R[E, V]
+  type Just[V] = R[Nothing, V]
 
-  @inline def fromEither[E, V](v: => Either[E, V]): Or[E, V]
+  @inline def map[E, A, B](r: Or[E, A])(f: A => B): R[E, B]
 
   @inline def point[V](v: => V): Just[V]
-
-  @inline def now[A](a: A): Just[A]
 
   @inline def fail[E](v: => E): Or[E, Nothing]
 
   @inline def terminate[V](v: => Throwable): Just[V]
 
+  @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
+}
+
+trait BIO[R[+_, +_]] extends MicroBIO[R] {
+  override type Or[+E, +V] = R[E, V]
+  override type Just[+V] = R[Nothing, V]
+
+  @inline def now[A](a: A): Just[A]
+
   @inline def syncThrowable[A](effect: => A): Or[Throwable, A]
 
   @inline def sync[A](effect: => A): Or[Nothing, A]
+
+  @inline def flatMap[E, A, E1 >: E, B](r: Or[E, A])(f0: A => R[E1, B]): R[E1, B]
 
   @inline def maybe[V](v: => Either[Throwable, V]): Just[V] = {
     v match {
@@ -34,20 +43,16 @@ trait BIO[R[+_, +_]] {
 
   final val unit: Just[Unit] = now(())
 
-  @inline def bracket0[E, A, B](acquire: R[E, A])(release: A => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
-
-  //
-  @inline def sleep(duration: Duration): Or[Nothing, Unit]
-
-  @inline def map[E, A, B](r: Or[E, A])(f: A => B): R[E, B]
-
   @inline def leftMap[E, A, E2](r: Or[E, A])(f: E => E2): R[E2, A]
 
   @inline def bimap[E, A, E2, B](r: Or[E, A])(f: E => E2, g: A => B): R[E2, B]
 
-  @inline def flatMap[E, A, E1 >: E, B](r: Or[E, A])(f0: A => R[E1, B]): R[E1, B]
+  @inline def fromEither[E, V](v: => Either[E, V]): Or[E, V]
 
-  @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
+  //
+  @inline def sleep(duration: Duration): Or[Nothing, Unit]
+
+  @inline def bracket0[E, A, B](acquire: R[E, A])(release: A => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
 
   @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
 

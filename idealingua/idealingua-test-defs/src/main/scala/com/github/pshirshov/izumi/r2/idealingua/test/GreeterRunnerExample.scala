@@ -4,6 +4,7 @@ import _root_.io.circe.syntax._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTServerMultiplexor
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceServerWrapped
 import scalaz.zio._
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 
 object GreeterRunnerExample {
   def main(args: Array[String]): Unit = {

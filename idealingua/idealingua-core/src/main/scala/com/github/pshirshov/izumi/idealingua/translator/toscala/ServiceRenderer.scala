@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{runtime, 
 
 import scala.meta._
 import _root_.io.circe.Json
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
+import com.github.pshirshov.izumi.idealingua.runtime.bio.{BIO, MicroBIO}
 
 class ServiceRenderer(ctx: STContext) {
 
@@ -34,9 +34,9 @@ class ServiceRenderer(ctx: STContext) {
           }"""
 
     val qqClientWrapped =
-      q"""class ${c.svcWrappedClientTpe.typeName}[F[+_, +_] : IRTBIO](_dispatcher: ${rt.IRTDispatcher.parameterize(List(c.F.t)).typeFull})
+      q"""class ${c.svcWrappedClientTpe.typeName}[F[+_, +_] : IRTMicroBIO](_dispatcher: ${rt.IRTDispatcher.parameterize(List(c.F.t)).typeFull})
                extends ${c.svcClientTpe.parameterize(List(c.F.t)).init()} {
-               final val _F: IRTBIO[F] =  implicitly
+               final val _F: IRTMicroBIO[F] =  implicitly
                private final val _M = ${c.svcMethods.termFull}
 
                ..${decls.map(_.defnClientWrapped)}
@@ -52,11 +52,11 @@ class ServiceRenderer(ctx: STContext) {
        """
 
     val qqServerWrapped =
-      q"""class ${c.svcWrappedServerTpe.typeName}[F[+_, +_] : IRTBIO, ${c.Ctx.p}](
+      q"""class ${c.svcWrappedServerTpe.typeName}[F[+_, +_] : IRTMicroBIO, ${c.Ctx.p}](
               _service: ${c.svcServerTpe.typeName}[${c.F.t}, ${c.Ctx.t}]
             )
                extends IRTWrappedService[${c.F.t}, ${c.Ctx.t}] {
-            final val _F: IRTBIO[F] = implicitly
+            final val _F: IRTMicroBIO[F] = implicitly
 
             final val serviceId: ${rt.IRTServiceId.typeName} = ${c.svcMethods.termName}.serviceId
 
@@ -103,6 +103,7 @@ class ServiceRenderer(ctx: STContext) {
       , List(
         runtime.Import.from(runtime.Pkg.language, "higherKinds")
         , runtime.Import[BIO[Dummy]](Some("IRTBIO"))
+        , runtime.Import[MicroBIO[Dummy]](Some("IRTMicroBIO"))
         , runtime.Pkg.of[BIO[Dummy]].within("BIO").`import`
         , runtime.Import[Json](Some("IRTJson"))
         , runtime.Pkg.of[_root_.io.circe.syntax.EncoderOps[Nothing]].`import`
