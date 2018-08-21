@@ -7,19 +7,18 @@ import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
 import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceServerWrapped}
 import com.github.pshirshov.izumi.r2.idealingua.test.impls._
-import io.circe.DecodingFailure
 import org.http4s._
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 
 import scala.concurrent.TimeoutException
 import scala.language.higherKinds

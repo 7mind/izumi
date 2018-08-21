@@ -1,16 +1,15 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
-import io.circe.{Decoder, Encoder, Json}
-import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
+import io.circe.{Decoder, Encoder, Json}
 
 sealed trait RPCPacketKind
 
 trait RPCPacketKindCirce {
 
-  import _root_.io.circe.{Encoder, Decoder, KeyEncoder, KeyDecoder}
+  import _root_.io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 
   implicit val encodeTestEnum: Encoder[RPCPacketKind] = Encoder.encodeString.contramap(_.toString)
   implicit val decodeTestEnum: Decoder[RPCPacketKind] = Decoder.decodeString.map(RPCPacketKind.parse)
