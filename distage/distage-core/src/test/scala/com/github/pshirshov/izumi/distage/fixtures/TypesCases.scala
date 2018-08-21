@@ -37,4 +37,27 @@ object TypesCases {
 
   }
 
+  object TypesCase3 {
+    class Dep
+
+    class Dep2 extends Dep
+
+    trait Trait1 {
+      def dep: Dep
+    }
+
+    trait Trait2 extends Trait1
+
+    trait Trait3[T <: Dep] extends Trait1 {
+      def dep: T
+    }
+
+    trait Trait4
+
+    trait Trait5[T] extends Trait4 {
+      def dep: T
+    }
+  }
+
+
 }
