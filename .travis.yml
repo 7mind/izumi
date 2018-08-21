@@ -1,13 +1,24 @@
 sudo: required
 dist: trusty
 
+stages:
+- name: test
+- name: sbttest
+- name: deploy
 
+
+jobs:
+  include:
+  - stage: test
+    script: bash travis.sh coverage
+  - stage: sbttest
+    script: bash travis.sh scripted
+  - stage: deploy
+    script: bash travis.sh deploy
+    if: (tag IS present)
+    env: TRAVIS_PULL_REQUEST=true
+    
 language: scala
-
-#language: csharp
-#solution: solution-name.sln
-#go:
-#  - "1.10"
 
 jdk:
   - oraclejdk9
@@ -42,10 +53,6 @@ before_script:
   - find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
   - bash travis.sh versionate
 
-script:
-  - bash travis.sh coverage
-  - bash travis.sh scripted
-
 before_deploy:
   - git config --global user.name "$USER"
   - git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"
@@ -56,13 +63,13 @@ before_deploy:
   - eval "$(ssh-agent -s)"
   - ssh-add .secrets/travis-deploy-key
 
-deploy:
-  - provider: script
-    script: bash travis.sh deploy
-    skip_cleanup: true
-    on:
-      all_branches: true
-      condition: $TRAVIS_PULL_REQUEST = false
+#deploy:
+#  - provider: script
+#    script: bash travis.sh deploy
+#    skip_cleanup: true
+#    on:
+#      all_branches: true
+#      condition: $TRAVIS_PULL_REQUEST = false
 
 
 # Some static settings
