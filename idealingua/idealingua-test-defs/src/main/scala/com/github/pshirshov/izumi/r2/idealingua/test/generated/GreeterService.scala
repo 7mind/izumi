@@ -44,9 +44,7 @@ class GreeterServiceClientWrapped[R[+ _, + _] : MicroBIO](dispatcher: IRTDispatc
       case v =>
         R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
     })
-
   }
-
 
   override def alternative(): R.Or[Long, String] = {
     R.redeem(dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.alternative.Input()), GreeterServiceMethods.alternative.id)))({
@@ -187,12 +185,12 @@ object GreeterServerMarshallers {
       case IRTResBody(value: Output) => value.asJson
     }
 
-    override def decodeRequest[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
+    override def decodeRequest[Or[+ _, + _] : MicroBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTReqBody](packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
+    override def decodeResponse[Or[+ _, + _] : MicroBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTResBody](packet.as[Output].map(v => IRTResBody(v)))
     }
@@ -210,12 +208,12 @@ object GreeterServerMarshallers {
       case IRTResBody(value: Output) => value.asJson
     }
 
-    override def decodeRequest[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
+    override def decodeRequest[Or[+ _, + _] : MicroBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTReqBody](packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
+    override def decodeResponse[Or[+ _, + _] : MicroBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTResBody](packet.as[Output].map(v => IRTResBody(v)))
     }

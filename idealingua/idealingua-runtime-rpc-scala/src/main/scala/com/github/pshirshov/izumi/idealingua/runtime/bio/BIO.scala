@@ -18,6 +18,15 @@ trait MicroBIO[R[_, _]] {
   @inline def terminate[V](v: => Throwable): Just[V]
 
   @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
+
+  @inline def maybe[V](v: => Either[Throwable, V]): Just[V] = {
+    v match {
+      case Left(f) =>
+        terminate(f)
+      case Right(r) =>
+        point(r)
+    }
+  }
 }
 
 trait BIO[R[+_, +_]] extends MicroBIO[R] {
@@ -32,14 +41,7 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
 
   @inline def flatMap[E, A, E1 >: E, B](r: Or[E, A])(f0: A => R[E1, B]): R[E1, B]
 
-  @inline def maybe[V](v: => Either[Throwable, V]): Just[V] = {
-    v match {
-      case Left(f) =>
-        terminate(f)
-      case Right(r) =>
-        point(r)
-    }
-  }
+
 
   final val unit: Just[Unit] = now(())
 
