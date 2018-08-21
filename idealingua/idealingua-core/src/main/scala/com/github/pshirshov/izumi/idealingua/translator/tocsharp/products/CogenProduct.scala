@@ -69,8 +69,8 @@ object CogenProduct {
     }
   }
 
-  final case class EmitterProduct(client: String = ""
-                                  , header: String = ""
+  final case class BuzzerProduct(client: String = ""
+                                 , header: String = ""
                                  ) extends RenderableCogenProduct {
     def render: List[String] = {
       client.split("\n").toList

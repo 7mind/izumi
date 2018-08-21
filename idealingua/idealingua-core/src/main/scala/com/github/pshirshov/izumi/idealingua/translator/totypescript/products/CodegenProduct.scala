@@ -55,7 +55,7 @@ object CogenProduct {
     }
   }
 
-  final case class EmitterProduct(client: String = ""
+  final case class BuzzerProduct(client: String = ""
                                   , header: String = ""
                                   , preamble: String = ""
                                  ) extends RenderableCogenProduct {

@@ -21,7 +21,7 @@ trait DefMember extends Aggregates {
     DefStructure.mixinBlock |
     DefStructure.dtoBlock |
     DefService.serviceBlock |
-    DefEmitter.emitterBlock |
+    DefBuzzer.buzzerBlock |
     DefStreams.streamsBlock |
     DefConst.constBlock |
     inclusion

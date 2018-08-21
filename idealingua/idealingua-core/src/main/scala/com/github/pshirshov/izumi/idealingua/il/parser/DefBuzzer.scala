@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILEmitter
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILBuzzer
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import fastparse.all._
 
 
-trait DefEmitter {
+trait DefBuzzer {
 
   import sep._
 
@@ -15,14 +15,14 @@ trait DefEmitter {
   // other method kinds should be added here
   final val methods: Parser[Seq[RawMethod]] = P(method.rep(sep = any))
 
-  final val emitterBlock = aggregates.cblock(kw.emitter, methods)
+  final val buzzerBlock = aggregates.cblock(kw.buzzer, methods)
     .map {
-      case (c, i, v) => ILEmitter(Emitter(i.toEmitterId, v.toList, c))
+      case (c, i, v) => ILBuzzer(Buzzer(i.toBuzzerId, v.toList, c))
     }
 
 }
 
-object DefEmitter extends DefEmitter {
+object DefBuzzer extends DefBuzzer {
 }
 
 

@@ -8,7 +8,7 @@ final case class DomainDefinitionInterpreted(
                                               id: DomainId
                                               , types: Seq[RawTypeDef]
                                               , services: Seq[raw.Service]
-                                              , emitters: Seq[raw.Emitter]
+                                              , buzzers: Seq[raw.Buzzer]
                                               , streams: Seq[raw.Streams]
                                               , consts: Seq[raw.Constants]
                                               , imports: Seq[IL.ILImport]

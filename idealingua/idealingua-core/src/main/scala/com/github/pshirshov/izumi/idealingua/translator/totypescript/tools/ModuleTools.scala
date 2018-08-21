@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript.tools
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EmitterId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{BuzzerId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
@@ -57,7 +57,7 @@ class ModuleTools() {
     ModuleId(id.domain.toPackage, s"${id.name}.ts")
   }
 
-  def toModuleId(id: EmitterId): ModuleId = {
+  def toModuleId(id: BuzzerId): ModuleId = {
     ModuleId(id.domain.toPackage, s"${id.name}.ts")
   }
 }

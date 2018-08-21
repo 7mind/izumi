@@ -28,7 +28,6 @@ data Package {
 }
 
 service TestService {
-  // temporarily commented till we fix transpilers. https://github.com/pshirshov/izumi-r2/issues/328
   def unitToUnit()
   def anotherVoid() => ()
   def unitResult(package: Package)

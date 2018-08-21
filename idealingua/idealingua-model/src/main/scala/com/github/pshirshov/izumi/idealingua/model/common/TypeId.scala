@@ -65,7 +65,7 @@ object TypeId {
 
     def apply(parent: ServiceId, name: TypeName): DTOId = new DTOId(TypePath(parent.domain, Seq(parent.name)), name)
 
-    def apply(parent: EmitterId, name: TypeName): DTOId = new DTOId(TypePath(parent.domain, Seq(parent.name)), name)
+    def apply(parent: BuzzerId, name: TypeName): DTOId = new DTOId(TypePath(parent.domain, Seq(parent.name)), name)
   }
 
   final case class IdentifierId(path: TypePath, name: TypeName) extends ScalarId
@@ -83,7 +83,7 @@ object TypeId {
 
   final case class ServiceId(domain: DomainId, name: TypeName)
 
-  final case class EmitterId(domain: DomainId, name: TypeName)
+  final case class BuzzerId(domain: DomainId, name: TypeName)
 
   final case class StreamsId(domain: DomainId, name: TypeName)
 

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.togolang.tools
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EmitterId, ServiceId}
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{BuzzerId, ServiceId}
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -78,11 +78,11 @@ class ModuleTools() {
     ModuleId(id.domain.toPackage, s"${id.name}_test.go")
   }
 
-  def toModuleId(id: EmitterId): ModuleId = {
+  def toModuleId(id: BuzzerId): ModuleId = {
     ModuleId(id.domain.toPackage, s"${id.name}.go")
   }
 
-  def toTestModuleId(id: EmitterId): ModuleId = {
+  def toTestModuleId(id: BuzzerId): ModuleId = {
     ModuleId(id.domain.toPackage, s"${id.name}_test.go")
   }
 }

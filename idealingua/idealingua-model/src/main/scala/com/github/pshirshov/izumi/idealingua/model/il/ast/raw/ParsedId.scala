@@ -31,7 +31,7 @@ final case class ParsedId(pkg: Seq[String], name: String) {
 
   def toServiceId: ServiceId = ServiceId(typePath.domain, name)
 
-  def toEmitterId: EmitterId = EmitterId(typePath.domain, name)
+  def toBuzzerId: BuzzerId = BuzzerId(typePath.domain, name)
 
   def toStreamsId: StreamsId = StreamsId(typePath.domain, name)
 

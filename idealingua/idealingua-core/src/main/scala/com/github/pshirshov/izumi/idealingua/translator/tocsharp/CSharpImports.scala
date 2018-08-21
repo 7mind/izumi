@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Emitter, Service, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpType
 
@@ -64,8 +64,8 @@ object CSharpImports {
   def apply(i: Service, fromPkg: Package, extra: List[CSharpImport])(implicit ts: Typespace): CSharpImports =
     CSharpImports(fromService(ts, i, fromPkg, extra))
 
-  def apply(i: Emitter, fromPkg: Package, extra: List[CSharpImport])(implicit ts: Typespace): CSharpImports =
-    CSharpImports(fromEmitter(ts, i, fromPkg, extra))
+  def apply(i: Buzzer, fromPkg: Package, extra: List[CSharpImport])(implicit ts: Typespace): CSharpImports =
+    CSharpImports(fromBuzzer(ts, i, fromPkg, extra))
 
   protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[String] = {
     t match {
@@ -171,7 +171,7 @@ object CSharpImports {
     fromTypes(types, fromPkg, extra)
   }
 
-  protected def fromEmitter(ts: Typespace, i: Emitter, fromPkg: Package, extra: List[CSharpImport] = List.empty): List[CSharpImport] = {
+  protected def fromBuzzer(ts: Typespace, i: Buzzer, fromPkg: Package, extra: List[CSharpImport] = List.empty): List[CSharpImport] = {
     val types = i.events.flatMap {
       case m: RPCMethod => m.signature.input.fields.flatMap(f => collectTypes(ts, f.typeId)) ++ (m.signature.output match {
         case st: Struct => st.struct.fields.flatMap(ff => collectTypes(ts, ff.typeId))

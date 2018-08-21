@@ -43,7 +43,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)
-      , typespace.domain.emitters.flatMap(translateEmitter)
+      , typespace.domain.buzzers.flatMap(translateBuzzer)
     ).flatten ++
       (
         if (tsManifest.isDefined && tsManifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
@@ -112,8 +112,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderService(definition))
   }
 
-  protected def translateEmitter(definition: Emitter)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
-    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderEmitter(definition))
+  protected def translateBuzzer(definition: Buzzer)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
+    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderBuzzer(definition))
   }
 
   protected def translateDef(definition: TypeDef)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
@@ -167,7 +167,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        """.stripMargin
   }
 
-  protected def renderRuntimeNames(i: EmitterId, holderName: String): String = {
+  protected def renderRuntimeNames(i: BuzzerId, holderName: String): String = {
     val pkg = i.domain.toPackage.mkString(".")
     s"""// Runtime identification methods
        |public static readonly PackageName = '$pkg';
@@ -826,11 +826,11 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     ServiceProduct(svc, header, s"// $typeName client")
   }
 
-  protected def renderEmitterModels(i: Emitter): String = {
+  protected def renderBuzzerModels(i: Buzzer): String = {
     i.events.map(me => renderRPCMethodModels(me)).mkString("\n")
   }
 
-  protected def renderEmitterClient(i: Emitter): String = {
+  protected def renderBuzzerClient(i: Buzzer): String = {
     s"""export interface I${i.id.name}Client {
        |${i.events.map(me => renderRPCMethodSignature(me, spread = true)).mkString("\n").shift(4)}
        |}
@@ -865,7 +865,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def renderEmitterDispatcher(i: Emitter): String = {
+  protected def renderBuzzerDispatcher(i: Buzzer): String = {
     s"""export interface I${i.id.name}BuzzerHandlers<C> {
        |${i.events.map(me => renderRPCMethodSignature(me, spread = true, forClient = false)).mkString("\n").shift(4)}
        |}
@@ -900,14 +900,14 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """
   }
 
-  protected def renderEmitterHandlerDummyMethod(member: DefMethod): String = {
+  protected def renderBuzzerHandlerDummyMethod(member: DefMethod): String = {
     s"""public ${renderRPCMethodSignature(member, spread = true, forClient = false)} {
        |    throw new Error('Not implemented.');
        |}
      """.stripMargin
   }
 
-  protected def renderEmitterBase(i: Emitter): String = {
+  protected def renderBuzzerBase(i: Buzzer): String = {
     val name = s"${i.id.name}BuzzerHandlers"
     s"""export abstract class $name<C, D> extends ${i.id.name}Dispatcher<C, D> implements I${i.id.name}BuzzerHandlers<C> {
        |    constructor(marshaller: Marshaller<D>) {
@@ -915,27 +915,27 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |        this.handlers = this;
        |    }
        |
-       |${i.events.map(m => renderEmitterHandlerDummyMethod(m)).mkString("\n").shift(4)}
+       |${i.events.map(m => renderBuzzerHandlerDummyMethod(m)).mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
 
-  protected def renderEmitter(i: Emitter)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
+  protected def renderBuzzer(i: Buzzer)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty, manifest)
     val typeName = i.id.name
 
     val svc =
       s"""// Models
-         |${renderEmitterModels(i)}
+         |${renderBuzzerModels(i)}
          |
          |// Client
-         |${renderEmitterClient(i)}
+         |${renderBuzzerClient(i)}
          |
          |// Dispatcher
-         |${renderEmitterDispatcher(i)}
+         |${renderBuzzerDispatcher(i)}
          |
          |// Buzzer Handlers Base
-         |${renderEmitterBase(i)}
+         |${renderBuzzerBase(i)}
          """.stripMargin
 
     val header =
@@ -943,6 +943,6 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |${importFromIRT(List("ServiceDispatcher", "Marshaller", "Void", "IncomingData", "OutgoingData", "ServerSocketTransport"), i.id.domain.toPackage)}
          """.stripMargin
 
-    EmitterProduct(svc, header, s"// $typeName")
+    BuzzerProduct(svc, header, s"// $typeName")
   }
 }

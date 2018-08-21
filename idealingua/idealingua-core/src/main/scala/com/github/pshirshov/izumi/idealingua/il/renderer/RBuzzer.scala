@@ -6,21 +6,21 @@ import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
 
-class REmitter()(
+class RBuzzer()(
   implicit protected val evSimpleStructure: Renderable[SimpleStructure]
   , protected val evAnno: Renderable[Anno]
   , protected val evTypeId: Renderable[TypeId]
   , protected val evAdtMember: Renderable[AdtMember]
-) extends Renderable[Emitter] with WithMethodRenderer {
+) extends Renderable[Buzzer] with WithMethodRenderer {
 
-  override def kw: String = "event"
+  override def kw: String = "line"
 
-  override def render(emitter: Emitter): String = {
+  override def render(buzzer: Buzzer): String = {
     val out =
-      s"""emitter ${emitter.id.name} {
-         |${emitter.events.map(renderMethod).mkString("\n").shift(2)}
+      s"""buzzer ${buzzer.id.name} {
+         |${buzzer.events.map(renderMethod).mkString("\n").shift(2)}
          |}
      """.stripMargin
-    withComment(emitter.doc, out)
+    withComment(buzzer.doc, out)
   }
 }

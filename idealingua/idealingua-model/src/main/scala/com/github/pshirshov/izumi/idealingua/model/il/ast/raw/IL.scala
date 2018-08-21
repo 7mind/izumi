@@ -27,7 +27,7 @@ object IL {
 
   final case class ILStreams(v: Streams) extends Val
 
-  final case class ILEmitter(v: Emitter) extends Val
+  final case class ILBuzzer(v: Buzzer) extends Val
 
   final case class ILConst(v: Constants) extends Val
 
