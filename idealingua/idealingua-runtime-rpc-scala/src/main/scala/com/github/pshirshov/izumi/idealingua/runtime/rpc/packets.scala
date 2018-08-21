@@ -102,12 +102,8 @@ object RpcPacket {
 
   implicit def enc0: Encoder[RpcPacket] = deriveEncoder
 
-  def rpcFail(ref: Option[RpcPacketId], cause: String): RpcPacket = {
-    RpcPacket(RPCPacketKind.RpcFail, Map("cause" -> cause).asJson, None, ref, None, None, Map.empty)
-  }
-
-  def rpcResponse(ref: RpcPacketId, data: Json): RpcPacket = {
-    RpcPacket(RPCPacketKind.RpcResponse, data, None, Some(ref), None, None, Map.empty)
+  def rpcCritical(data: String, cause: String): RpcPacket = {
+    RpcPacket(RPCPacketKind.Fail, Map("data" -> data, "cause" -> cause).asJson, None, None, None, None, Map.empty)
   }
 
   def rpcRequest(method: IRTMethodId, data: Json): RpcPacket = {
@@ -120,6 +116,14 @@ object RpcPacket {
       Some(method.methodId.value),
       Map.empty,
     )
+  }
+
+  def rpcResponse(ref: RpcPacketId, data: Json): RpcPacket = {
+    RpcPacket(RPCPacketKind.RpcResponse, data, None, Some(ref), None, None, Map.empty)
+  }
+
+  def rpcFail(ref: Option[RpcPacketId], cause: String): RpcPacket = {
+    RpcPacket(RPCPacketKind.RpcFail, Map("cause" -> cause).asJson, None, ref, None, None, Map.empty)
   }
 
   def buzzerRequest(method: IRTMethodId, data: Json): RpcPacket = {
@@ -139,7 +143,7 @@ object RpcPacket {
 
   }
 
-  def rpcCritical(data: String, cause: String): RpcPacket = {
-    RpcPacket(RPCPacketKind.Fail, Map("data" -> data, "cause" -> cause).asJson, None, None, None, None, Map.empty)
+  def buzzerFail(ref: Option[RpcPacketId], cause: String): RpcPacket = {
+    RpcPacket(RPCPacketKind.BuzzFailure, Map("cause" -> cause).asJson, None, ref, None, None, Map.empty)
   }
 }

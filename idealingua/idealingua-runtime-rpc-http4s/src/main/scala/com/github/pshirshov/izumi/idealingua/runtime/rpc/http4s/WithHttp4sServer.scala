@@ -71,9 +71,13 @@ trait WithHttp4sServer {
                         id =>
                           sess.requestState.poll(id, pollingInterval, timeout)
                             .flatMap {
-                              case Some(value) =>
+                              case Some(value: RawResponse.GoodRawResponse) =>
                                 logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
                                 codec.decode(value.data, value.method)
+
+                              case Some(value : RawResponse.BadRawResponse) =>
+                                logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
+                                BIO.terminate(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
                               case None =>
                                 BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
@@ -206,8 +210,12 @@ trait WithHttp4sServer {
         case RpcPacket(RPCPacketKind.BuzzResponse, data, _, id, _, _, _) =>
           context.requestState.handleResponse(id, data).flatMap(_ => BIO.point(None))
 
+        case RpcPacket(RPCPacketKind.BuzzFailure, data, _, Some(id), _, _, _) =>
+          context.requestState.respond(id, RawResponse.BadRawResponse())
+          BIO.fail(new IRTGenericFailure(s"Buzzer has returned failure: $data"))
+
         case k =>
-          BIO.fail(new UnsupportedOperationException(s"Can't handle $k"))
+          BIO.fail(new IRTMissingHandlerException(s"Can't handle $k", k))
       }
     }
 

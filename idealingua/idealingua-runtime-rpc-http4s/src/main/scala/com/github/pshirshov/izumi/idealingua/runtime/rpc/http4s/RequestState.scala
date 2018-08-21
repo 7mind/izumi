@@ -58,7 +58,7 @@ class RequestState[Or[+ _, + _] : BIO] {
 
       method <- maybeMethod match {
         case Some(m@PacketInfo(method, id)) =>
-          respond(id, RawResponse(data, method))
+          respond(id, RawResponse.GoodRawResponse(data, method))
           R.now(m)
 
         case None =>
