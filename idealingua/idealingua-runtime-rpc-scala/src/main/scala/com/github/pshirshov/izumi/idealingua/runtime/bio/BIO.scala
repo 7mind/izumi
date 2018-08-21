@@ -41,8 +41,6 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
 
   @inline def flatMap[E, A, E1 >: E, B](r: Or[E, A])(f0: A => R[E1, B]): R[E1, B]
 
-
-
   final val unit: Just[Unit] = now(())
 
   @inline def leftMap[E, A, E2](r: Or[E, A])(f: E => E2): R[E2, A]
@@ -58,13 +56,13 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
 
   @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
 
-  @inline def retryOrElse[A, E, A2 >: A, E1 >: E, S, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2]
+  @inline def retryOrElse[A, E, A2 >: A, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2]
 }
 
-trait BIOApi[T[K[+ _, + _]] <: BIO[K]] {
+trait BIOApi {
 
-  implicit class IRTResultApi[R[+ _, + _] : T, +E, +A](val r: R[E, A]) {
-    val R: T[R] = implicitly
+  implicit class BIOOps[R[+ _, + _] : BIO, +E, +A](val r: R[E, A]) {
+    val R: BIO[R] = implicitly
 
     @inline def map[B](f: A => B): R[E, B] = R.map(r)(f)
 
@@ -81,13 +79,13 @@ trait BIOApi[T[K[+ _, + _]] <: BIO[K]] {
 
     @inline def sandboxWith[E2, B](f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B] = R.sandboxWith(r)(f)
 
-    @inline def retryOrElse[A2 >: A, E1 >: E, S, E2](duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2] = R.retryOrElse[A, E, A2, E1, S, E2](r)(duration, orElse)
+    @inline def retryOrElse[A2 >: A, E2](duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2] = R.retryOrElse[A, E, A2, E2](r)(duration, orElse)
   }
-
-  def apply[R[+ _, + _] : T, E, A](r: R[E, A]): IRTResultApi[R, E, A] = new IRTResultApi[R, E, A](r)
 }
 
-object BIO extends BIOApi[BIO] {
+object BIO extends BIOApi {
+
+  def apply[R[+_, +_]: BIO]: BIO[R] = implicitly
 
   implicit object BIOZio extends BIO[IO] {
     @inline def bracket0[E, A, B](acquire: Or[E, A])(release: A => Or[Nothing, Unit])(use: A => Or[E, B]): Or[E, B] =
@@ -122,8 +120,8 @@ object BIO extends BIOApi[BIO] {
     @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: Or[Either[List[Throwable], E], A] => Or[Either[List[Throwable], E2], B]): Or[E2, B] =
       r.sandboxWith(f)
 
-    @inline def retryOrElse[A, E, A2 >: A, E1 >: E, S, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => Or[E2, A2]): Or[E2, A2] =
-      r.retryOrElse(Retry.duration(duration), {
+    @inline def retryOrElse[A, E, A2 >: A, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => Or[E2, A2]): Or[E2, A2] =
+      r.retryOrElse[A2, Any, Duration, E2](Retry.duration(duration), {
         (_: Any, _: Any) =>
           orElse
       })

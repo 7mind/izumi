@@ -10,6 +10,7 @@ trait BIORunner[BIO[_, _]] {
 }
 
 object BIORunner {
+  def apply[BIO[_, _]: BIORunner]: BIORunner[BIO] = implicitly
 
   implicit object ZIORunner extends BIORunner[IO] with RTS {
     override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = {

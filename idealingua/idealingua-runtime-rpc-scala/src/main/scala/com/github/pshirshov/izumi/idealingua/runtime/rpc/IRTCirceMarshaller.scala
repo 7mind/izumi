@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-import com.github.pshirshov.izumi.idealingua.runtime.bio.{BIO, MicroBIO}
+import com.github.pshirshov.izumi.idealingua.runtime.bio.MicroBIO
 import io.circe.{DecodingFailure, Json}
 
 import scala.language.higherKinds
