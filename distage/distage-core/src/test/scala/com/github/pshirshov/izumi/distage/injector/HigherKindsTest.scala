@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase1
+import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases._
 import distage._
 import org.scalatest.WordSpec
 
@@ -110,6 +110,33 @@ class HigherKindsTest extends WordSpec with MkInjector {
     }
 
     assert(new Parent[List, List, Int]{}.bindings.head.key.tpe == SafeType.get[TestProvider2[List, List, Int]])
+  }
+
+  "TagKK works sometimes" in {
+    import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase2._
+
+    class Definition[F[+_, +_]: TagKK: TestCovariantTC, G[_]: TagK, A: Tag] extends ModuleDef {
+      make[TestCovariantTC[F]].from(implicitly[TestCovariantTC[F]])
+
+      make[TestClassFG[F, G]]
+      make[TestClassFG[Either, G]]
+      make[TestClassFG[F, Option]]
+      final val t1 = Tag[TestClassFG[F, G]]
+
+      make[TestClassFA[F, A]]
+      make[TestClassFA[Either, A]]
+      make[TestClassFA[F, Int]]
+      final val t2 = Tag[TestClassFA[F, A]]
+    }
+
+    val definition = new Definition[Either, Option, Int]
+
+    assert(Injector().produce(definition) != null)
+
+    System.err println(Tag[TestClassFG[Either, Option]])
+
+    assert(definition.t1.tag.tpe =:= Tag[TestClassFG[Either, Option]].tag.tpe)
+    assert(definition.t2.tag.tpe =:= Tag[TestClassFA[Either, Int]].tag.tpe)
   }
 
 }
