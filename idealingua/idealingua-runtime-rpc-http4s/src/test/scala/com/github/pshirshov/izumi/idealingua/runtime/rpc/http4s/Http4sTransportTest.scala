@@ -224,7 +224,11 @@ object Http4sTransportTest {
       }
     }
 
-    final def wsClientDispatcher(): rt.ClientWsDispatcher with TestDispatcher = new rt.ClientWsDispatcher(wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor) with TestDispatcher {
+    final val wsClientContextProvider = new WsClientContextProvider[Unit] {
+      override def toContext(packet: RpcPacket): Unit = ()
+    }
+
+    final def wsClientDispatcher(): rt.ClientWsDispatcher[Unit] with TestDispatcher = new rt.ClientWsDispatcher(wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider) with TestDispatcher {
       override protected def transformRequest(request: RpcPacket): RpcPacket = {
         Option(creds.get()) match {
           case Some(value) =>
