@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
@@ -65,11 +64,10 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
   }
 
   protected def translateBuzzer(definition: Buzzer): Seq[Module] = {
-    val asService = Service(ServiceId(definition.id.domain, definition.id.name), definition.events, definition.doc)
     ctx.modules.toSource(
       definition.id.domain
       , ctx.modules.toModuleId(definition.id)
-      , ctx.serviceRenderer.renderService(asService)
+      , ctx.serviceRenderer.renderService(definition.asService)
     )
   }
 

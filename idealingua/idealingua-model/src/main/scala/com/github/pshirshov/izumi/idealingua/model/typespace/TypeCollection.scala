@@ -22,49 +22,36 @@ class TypeCollection(ts: Typespace) {
   val services: Map[ServiceId, Service] = ts.domain.services.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
   val buzzers: Map[BuzzerId, Buzzer] = ts.domain.buzzers.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
 
-  val serviceEphemerals: Seq[TypeDef] = (for {
-    service <- services.values
-    method <- service.methods
-  } yield {
-    method match {
-      case m: RPCMethod =>
-        val baseName = m.name.capitalize
+  val serviceEphemerals: Seq[TypeDef] = {
+    makeServiceEphemerals(services.values )
+  }
 
-        val inputDto = {
-          val in = m.signature.input
-          val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
-          val inId = DTOId(service.id, s"$baseName${ts.tools.methodInputSuffix}")
-          DTO(inId, inputStructure, NodeMeta.empty)
-        }
+  val buzzerEphemerals: Seq[TypeDef] = {
+    makeServiceEphemerals(buzzers.values.map(_.asService))
+  }
 
-        val outDtos = outputEphemeral(service.id, baseName, ts.tools.methodOutputSuffix, m.signature.output)
+  private def makeServiceEphemerals(src: Iterable[Service]): Seq[TypeDef] = {
+    (for {
+      service <- src
+      method <- service.methods
+    } yield {
+      method match {
+        case m: RPCMethod =>
+          val baseName = m.name.capitalize
 
-        inputDto +: outDtos
-    }
-  }).flatten.toSeq
+          val inputDto = {
+            val in = m.signature.input
+            val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
+            val inId = DTOId(service.id, s"$baseName${ts.tools.methodInputSuffix}")
+            DTO(inId, inputStructure, NodeMeta.empty)
+          }
 
+          val outDtos = outputEphemeral(service.id, baseName, ts.tools.methodOutputSuffix, m.signature.output)
 
-  // TODO: decopypaste
-  val buzzerEphemerals: Seq[TypeDef] = (for {
-    service <- buzzers.values
-    method <- service.events
-  } yield {
-    method match {
-      case m: RPCMethod =>
-        val baseName = m.name.capitalize
-
-        val inputDto = {
-          val in = m.signature.input
-          val inputStructure = Structure.apply(in.fields, List.empty, Super(List.empty, in.concepts, List.empty))
-          val inId = DTOId(service.id, s"$baseName${ts.tools.methodInputSuffix}")
-          DTO(inId, inputStructure, NodeMeta.empty)
-        }
-
-        val outDtos = outputEphemeral(ServiceId(service.id.domain, service.id.name), baseName, ts.tools.methodOutputSuffix, m.signature.output)
-
-        inputDto +: outDtos
-    }
-  }).flatten.toSeq
+          inputDto +: outDtos
+      }
+    }).flatten.toSeq
+  }
 
   private def outputEphemeral(serviceId: ServiceId, baseName: String, suffix: String, out: Output): Seq[TypeDef] = {
     out match {
