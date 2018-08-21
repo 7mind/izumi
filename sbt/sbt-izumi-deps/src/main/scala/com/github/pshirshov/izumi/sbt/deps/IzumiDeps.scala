@@ -16,36 +16,39 @@ object IzumiDeps {
     val scalatest = "3.0.6-SNAP2" // 2.13+
 
     val shapeless = "2.3.3" // 2.13+
-    val cats = "1.1.0" // https://github.com/typelevel/cats/issues/2267
+
+    val cats = "1.1.0" // 1.2.0 is 2.13+ but we are blocked by http4s
     val cats_effect = "1.0.0-RC2"
-    val circe = "0.10.0-M1" // https://github.com/circe/circe/issues/770
+
+    val circe = "0.10.0-M2" // 2.13+
     val circe_derivation = "0.9.0-M5"
+
     val http4s = "0.19.0-M1" // https://github.com/http4s/http4s/issues/1797
+
+    val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
+    val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
+
+    val scalacheck = "1.14.0"
+    val scalacheck_shapeless = "1.1.6"
+
+    val zio = "0.1.0-344913e"
 
     // TODO: we need to get rid of this
     val java_websocket = "1.3.9" // java, we need it bcs http4s ws client isn't ready yet
     val jaxb_api = "2.3.0" // https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
-    val jaxb_core = "2.3.0"
-    val jaxb_impl = "2.3.0"
+    val jaxb_core = "2.3.0.1"
+    val jaxb_impl = "2.3.0.1"
     val activation = "1.1.1"
-
-    val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
-    val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
 
     val classgraph = "4.0.6" // java
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 
-    val scalacheck = "1.14.0"
-    val scalacheck_shapeless = "1.1.6"
-
-    val zio = "0.1.0-0d68970"
-
-    // good to drop
+    // good to drop - scala
     val json4s = "3.6.0" // 2.13+
     val scopt = "3.7.0" // 2.13+
 
-    // good to drop
+    // good to drop - java
     val cglib_nodep = "3.2.7" // java
   }
 
@@ -61,11 +64,7 @@ object IzumiDeps {
 
     val zio: Seq[ModuleID] = Seq(
       "org.scalaz" %% "scalaz-zio",
-      "org.scalaz" %% "scalaz-zio-interop",
     ).map(_ % V.zio)
-
-    //val scala_asm = "org.scala-lang.modules" % "scala-asm" % "6.0.0-scala-1"
-    //val scala_arm = "com.jsuereth" %% "scala-arm" % "2.0"
 
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % V.scala_java8_compat
     val essentials = Seq(scala_java8_compat, collection_compat)
@@ -106,6 +105,7 @@ object IzumiDeps {
     val http4s_client: Seq[ModuleID] = Seq(
       "org.http4s" %% "http4s-blaze-client"
     ).map(_ % V.http4s)
+
     val http4s_server: Seq[ModuleID] = Seq(
       "org.http4s" %% "http4s-dsl"
       , "org.http4s" %% "http4s-circe"
