@@ -47,20 +47,22 @@ class RequestState[Or[+ _, + _] : BIO] {
     Quirks.discard(requests.clear(), responses.clear())
   }
 
-  def handleResponse(mid: Option[RpcPacketId], data: Json): Or[Throwable, (RpcPacketId, IRTMethodId)] = {
+  def handleResponse(maybePacketId: Option[RpcPacketId], data: Json): Or[Throwable, PacketInfo] = {
     for {
       maybeMethod <- R.sync {
         for {
-          id <- mid
+          id <- maybePacketId
           method <- methodOf(id)
-        } yield (id, method)
+        } yield PacketInfo(method, id)
       }
+
       method <- maybeMethod match {
-        case Some((id, method)) =>
+        case Some(m@PacketInfo(method, id)) =>
           respond(id, RawResponse(data, method))
-          R.point((id, method))
+          R.now(m)
+
         case None =>
-          R.fail(new IRTMissingHandlerException(s"No handler for $mid", data))
+          R.fail(new IRTMissingHandlerException(s"Cannot handle response for async request $maybePacketId: no service handler", data))
       }
     } yield {
       method

@@ -198,7 +198,7 @@ trait WithHttp4sServer {
           val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
           muxer.doInvoke(data, userContext, methodId).flatMap {
             case None =>
-              BIO.fail(new IRTMissingHandlerException(s"${context -> null}: No handler for $methodId", input))
+              BIO.fail(new IRTMissingHandlerException(s"${context -> null}: No rpc handler for $methodId", input))
             case Some(resp) =>
               BIO.point(Some(rpc.RpcPacket.rpcResponse(id, resp)))
           }
@@ -212,16 +212,16 @@ trait WithHttp4sServer {
     }
 
 
-    protected def run(context: HttpRequestContext[Ctx], body: String, toInvoke: IRTMethodId): CatsIO[Response[CatsIO]] = {
+    protected def run(context: HttpRequestContext[Ctx], body: String, method: IRTMethodId): CatsIO[Response[CatsIO]] = {
       val ioR = for {
         parsed <- BIO.fromEither(parse(body))
-        maybeResult <- muxer.doInvoke(parsed, context.context, toInvoke)
+        maybeResult <- muxer.doInvoke(parsed, context.context, method)
       } yield {
         maybeResult match {
           case Some(value) =>
             dsl.Ok(printer.pretty(value))
           case None =>
-            logger.warn(s"${context -> null}: No handler for $toInvoke")
+            logger.warn(s"${context -> null}: No service handler for $method")
             dsl.NotFound()
         }
       }
@@ -230,7 +230,7 @@ trait WithHttp4sServer {
         case ExitResult.Completed(v) =>
           v
         case ExitResult.Failed(error, _) =>
-          logger.info(s"${context -> null}: Parsing failure while handling $toInvoke: $error")
+          logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
           dsl.BadRequest()
         case ExitResult.Terminated(causes) =>
           handleError(context, causes, "termination")

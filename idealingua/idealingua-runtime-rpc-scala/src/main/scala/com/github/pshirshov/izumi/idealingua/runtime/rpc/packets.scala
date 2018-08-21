@@ -135,6 +135,11 @@ object RpcPacket {
     )
   }
 
+  def buzzerResponse(ref: RpcPacketId, data: Json): RpcPacket = {
+    RpcPacket(RPCPacketKind.BuzzResponse, data, None, Some(ref), None, None, Map.empty)
+
+  }
+
   def rpcCritical(data: String, cause: String): RpcPacket = {
     RpcPacket(RPCPacketKind.Fail, Map("data" -> data, "cause" -> cause).asJson, None, None, None, None, Map.empty)
   }

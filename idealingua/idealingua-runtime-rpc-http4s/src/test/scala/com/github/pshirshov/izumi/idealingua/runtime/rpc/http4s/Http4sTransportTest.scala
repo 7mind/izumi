@@ -21,6 +21,7 @@ import org.scalatest.WordSpec
 import scalaz.zio
 import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 
+import scala.concurrent.TimeoutException
 import scala.language.higherKinds
 
 class Http4sTransportTest extends WordSpec {
@@ -40,7 +41,7 @@ class Http4sTransportTest extends WordSpec {
       builder.unsafeRunAsync {
         case Right(server) =>
           try {
-            performTests(clientDispatcher)
+            performTests(clientDispatcher())
             performWsTests(wsClientDispatcher())
           } finally {
             server.shutdownNow()
@@ -50,27 +51,6 @@ class Http4sTransportTest extends WordSpec {
           throw error
       }
     }
-
-    //    "xxx" in {
-    //      import scala.concurrent.ExecutionContext.Implicits.global
-    //      val builder = BlazeBuilder[CIO]
-    //        .bindHttp(8080, host)
-    //        .withWebSockets(true)
-    //        .mountService(ioService.service, "/")
-    //        .start
-    //
-    //      builder.unsafeRunAsync {
-    //        case Right(server) =>
-    //          try {
-    //            Thread.sleep(1000*1000)
-    //          } finally {
-    //            server.shutdownNow()
-    //          }
-    //
-    //        case Left(error) =>
-    //          throw error
-    //      }
-    //    }
   }
 
   private def performWsTests(disp: IRTDispatcher[BiIO] with TestDispatcher with AutoCloseable): Unit = {
@@ -81,8 +61,14 @@ class Http4sTransportTest extends WordSpec {
     assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
     assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
+    ioService.buzzersFor("user").foreach {
+      buzzer =>
+        val client = new GreeterServiceClientWrapped(buzzer)
+        assert(BIOR.unsafeRun(client.greet("John", "Buzzer")) == "Hi, John Buzzer!")
+    }
+
     disp.setupCredentials("user", "badpass")
-    intercept[DecodingFailure] {
+    intercept[TimeoutException] {
       BIOR.unsafeRun(greeterClient.alternative())
     }
     disp.close()
@@ -152,13 +138,26 @@ object Http4sTransportTest {
   }
 
   class DemoContext[R[+ _, + _] : BIO, Ctx] {
-    private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
-    private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
-    private val dispatchers: Set[IRTWrappedService[R, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
-    val multiplexor = new IRTServerMultiplexor[R, Ctx](dispatchers)
+    object Server {
+      private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
+      private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
+      private val dispatchers: Set[IRTWrappedService[R, Ctx]] = Set(greeterDispatcher).map(d => new AuthCheckDispatcher2(d))
+      val multiplexor = new IRTServerMultiplexor[R, Ctx](dispatchers)
 
-    private val clients: Set[IRTWrappedClient] = Set(GreeterServiceClientWrapped)
-    val codec = new IRTClientMultiplexor[R](clients)
+      private val clients: Set[IRTWrappedClient] = Set(GreeterServiceClientWrapped)
+      val codec = new IRTClientMultiplexor[R](clients)
+    }
+
+    object Client {
+      private val greeterService = new AbstractGreeterServer.Impl[R, Unit]
+      private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
+      private val dispatchers: Set[IRTWrappedService[R, Unit]] = Set(greeterDispatcher)
+
+      private val clients: Set[IRTWrappedClient] = Set(GreeterServiceClientWrapped)
+      val codec = new IRTClientMultiplexor[R](clients)
+      val buzzerMultiplexor = new IRTServerMultiplexor[R, Unit](dispatchers)
+    }
+
   }
 
   object Http4sTestContext {
@@ -217,16 +216,16 @@ object Http4sTransportTest {
       }
     }
 
-    final val ioService = new rt.HttpServer(demo.multiplexor, demo.codec, AuthMiddleware(authUser), wsContextProvider, rt.WsSessionListener.empty)
+    final val ioService = new rt.HttpServer(demo.Server.multiplexor, demo.Server.codec, AuthMiddleware(authUser), wsContextProvider, rt.WsSessionListener.empty)
 
     //
-    final val clientDispatcher: rt.ClientDispatcher with TestDispatcher = new rt.ClientDispatcher(baseUri, demo.codec) with TestDispatcher {
+    final def clientDispatcher(): rt.ClientDispatcher with TestDispatcher = new rt.ClientDispatcher(baseUri, demo.Client.codec) with TestDispatcher {
       override protected def transformRequest(request: Request[CIO]): Request[CIO] = {
         request.withHeaders(Headers(creds.get(): _*))
       }
     }
 
-    final def wsClientDispatcher(): rt.ClientWsDispatcher with TestDispatcher = new rt.ClientWsDispatcher(wsUri, demo.codec) with TestDispatcher {
+    final def wsClientDispatcher(): rt.ClientWsDispatcher with TestDispatcher = new rt.ClientWsDispatcher(wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor) with TestDispatcher {
       override protected def transformRequest(request: RpcPacket): RpcPacket = {
         Option(creds.get()) match {
           case Some(value) =>
