@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Service, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.Translator
@@ -56,12 +57,21 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
     val modules = Seq(
       ctx.typespace.domain.types.flatMap(translateDef)
       , ctx.typespace.domain.services.flatMap(translateService)
+      , ctx.typespace.domain.buzzers.flatMap(translateBuzzer)
       , packageObjects
     ).flatten
 
     addRuntime(options, ctx.ext.extend(modules))
   }
 
+  protected def translateBuzzer(definition: Buzzer): Seq[Module] = {
+    val asService = Service(ServiceId(definition.id.domain, definition.id.name), definition.events, definition.doc)
+    ctx.modules.toSource(
+      definition.id.domain
+      , ctx.modules.toModuleId(definition.id)
+      , ctx.serviceRenderer.renderService(asService)
+    )
+  }
 
   protected def translateService(definition: Service): Seq[Module] = {
     ctx.modules.toSource(
