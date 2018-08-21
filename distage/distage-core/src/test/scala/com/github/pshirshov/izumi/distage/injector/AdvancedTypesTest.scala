@@ -200,4 +200,13 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     """)
   }
 
+  "progression test: Support type lambdas in TagK when lambda closes on a generic: Tag parameter" in {
+    assertTypeError("""
+      def partialEitherTagK[A: Tag] = TagK[Either[A, ?]]
+
+      print(partialEitherTagK[Int])
+      assert(partialEitherTagK[Int] != null)
+    """)
+  }
+
 }
