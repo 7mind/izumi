@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, LogArg}
-import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
+import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
-import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
+import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl}
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
@@ -61,8 +61,9 @@ object IzLogger {
   }
 
   final def router(threshold: Log.Level, levels: Map[String, Log.Level], sinks: LogSink*): ConfigurableLogRouter = {
-    val levelConfigs = levels.mapValues(l => LoggerConfig(l, sinks))
-    val configService = new LogConfigServiceStaticImpl(levelConfigs, LoggerConfig(threshold, sinks))
+    val levelConfigs = levels.mapValues(lvl => LoggerPathConfig(lvl, sinks))
+    val rootConfig = LoggerPathConfig(threshold, sinks)
+    val configService = new LogConfigServiceImpl(LoggerConfig(rootConfig, levelConfigs))
     val router = new ConfigurableLogRouter(configService)
     router
   }

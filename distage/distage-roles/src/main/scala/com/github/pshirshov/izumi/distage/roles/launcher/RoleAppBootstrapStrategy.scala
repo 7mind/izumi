@@ -18,11 +18,11 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
-import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
+import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
-import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
+import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl}
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 
 import scala.reflect.ClassTag
@@ -125,7 +125,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
     // TODO: here we may read log configuration from config file
     new ConfigurableLogRouter(
-      new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(rootLogLevel, sinks))
+      new LogConfigServiceImpl(LoggerConfig(LoggerPathConfig(rootLogLevel, sinks), Map.empty))
     )
   }
 

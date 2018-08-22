@@ -9,7 +9,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 
 import scala.util.Try
 
-class LogSinkCodec(policyReader: RenderingPolicyCodec, mappers: Set[LogSinkMapper[_ <: LogSink]]) extends ConfigReader[LogSink] {
+class LogSinkCodec(policyReader: RenderingPolicyCodec, mappers: Set[LogSinkMapper[LogSink]]) extends ConfigReader[LogSink] {
   private val instancesMappers = scala.collection.mutable.HashMap.empty[String, NamedLogSink]
   private val mappersMem = scala.collection.mutable.HashMap.empty[String, (Config, RenderingPolicy) => _ <: LogSink]
 

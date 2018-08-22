@@ -9,7 +9,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 
 import scala.util.Try
 
-class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy]], policyConfig: ConfigReader[PolicyConfig]) extends ConfigReader[RenderingPolicy] {
+class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[RenderingPolicy]], policyConfig: ConfigReader[PolicyConfig]) extends ConfigReader[RenderingPolicy] {
   private val instancesMappers = scala.collection.mutable.HashMap.empty[String, NamedRenderingPolicy]
   private val mappersMem = scala.collection.mutable.HashMap.empty[String, PolicyConfig => _ <: RenderingPolicy]
 
