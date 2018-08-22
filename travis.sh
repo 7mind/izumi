@@ -88,7 +88,6 @@ function info {
   bopen
   ls -la .
   ls -la ~
-  ls -la ~/.secrets
   bclose
 }
 
