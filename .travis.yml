@@ -48,7 +48,6 @@ before_cache:
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
   - sudo rm -rf ~/.ivy2/local
   - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
-  - sudo chown -R root:root ~/.ssh
 
 jobs:
   include:

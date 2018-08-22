@@ -52,6 +52,7 @@ function site {
   bopen
   if [[ "$TRAVIS_BRANCH" == "develop" || "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
     echo "Publishing site from branch=$TRAVIS_BRANCH; tag=$TRAVIS_TAG"
+    chown -R root:root ~/.ssh
     csbt ghpagesPushSite || exit 1
   else
     echo "Not publishing site, because $TRAVIS_BRANCH is not 'develop'"
