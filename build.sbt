@@ -253,7 +253,7 @@ lazy val logstageApiLogger = inLogStage.as.module
   .depends(logstageApiBaseMacro)
 
 lazy val logstageConfig = inLogStage.as.module
-  .depends(distageConfig, distageModel, logstageApiLogger, logstageRenderingJson4s)
+  .depends(distageConfig, logstageApiLogger, logstageRenderingJson4s)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
