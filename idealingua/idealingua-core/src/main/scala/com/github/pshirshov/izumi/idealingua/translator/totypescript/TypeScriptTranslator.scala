@@ -88,7 +88,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       manifest.get.website,
       manifest.get.copyright,
       List(
-        ManifestDependency("moment", "^2.20.1")
+        ManifestDependency("moment", "^2.20.1"),
+        ManifestDependency("websocket", "^1.0.26")
       ),
       manifest.get.scope,
       manifest.get.moduleSchema

@@ -1,6 +1,6 @@
 
-import { AuthMethod, Authorization } from '../auth/auth';
-import { ClientTransport, IncomingData, TransportHeaders } from '../../transport';
+import { AuthMethod, Authorization } from '../auth';
+import { ClientTransport, IncomingData, TransportHeaders } from '../transport';
 import { DummyLogger, Logger, LogLevel } from '../../logger';
 import { JSONMarshaller } from '../../marshaller';
 
