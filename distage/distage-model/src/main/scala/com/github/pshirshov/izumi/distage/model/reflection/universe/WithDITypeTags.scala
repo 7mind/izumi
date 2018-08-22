@@ -89,9 +89,9 @@ trait WithDITypeTags {
 
     implicit def tagFromTypeTagKAAAAA[K[_, _, _, _, _], A0, A1, A2, A3, A4](implicit t: TypeTag[K[A0, A1, A2, A3, A4]]): Tag[K[A0, A1, A2, A3, A4]] = Tag(t)
 
-    implicit def tagFromTypeTagTK[T[_[_]], K[_]](implicit t: TypeTag[T[K]]): Tag[T[K]] = Tag(t) // scala.Function.const(Tag(t))(println(t))
+    implicit def tagFromTypeTagTK[T[_[_]], K[_]](implicit t: TypeTag[T[K]]): Tag[T[K]] = Tag(t)
 
-    implicit def tagFromTypeTagTKA[T[_[_], _], K[_], A](implicit t: TypeTag[T[K, A]]): Tag[T[K, A]] = scala.Function.const(Tag(t))(println(t))
+    implicit def tagFromTypeTagTKA[T[_[_], _], K[_], A](implicit t: TypeTag[T[K, A]]): Tag[T[K, A]] = Tag(t)
 
     implicit def tagFromTypeTagTKAA[T[_[_], _, _], K[_], A0, A1](implicit t: TypeTag[T[K, A0, A1]]): Tag[T[K, A0, A1]] = Tag(t)
 
