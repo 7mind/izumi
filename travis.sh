@@ -83,6 +83,17 @@ function deploy {
   site
 }
 
+
+function info {
+  bopen
+  ls -la .
+  ls -la ~
+  ls -la ~/.secrets
+  bclose
+}
+
+info
+
 PARAMS=()
 SOFT=0
 SKIP=()
