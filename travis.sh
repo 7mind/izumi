@@ -57,7 +57,7 @@ function site {
     eval "$(ssh-agent -s)"
     ssh-add .secrets/travis-deploy-key
 
-    csbt ghpagesPushSite || exit 1
+    csbt clean test:compile ghpagesPushSite || exit 1
   else
     echo "Not publishing site, because $TRAVIS_BRANCH is not 'develop'"
   fi
@@ -75,7 +75,7 @@ function publish {
   fi
 
   echo "PUBLISH..."
-  csbt clean publishSigned || exit 1
+  csbt clean test:compile publishSigned || exit 1
 
   if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
     csbt sonatypeRelease || exit 1
