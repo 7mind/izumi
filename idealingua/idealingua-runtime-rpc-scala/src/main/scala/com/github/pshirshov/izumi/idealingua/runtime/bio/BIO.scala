@@ -9,17 +9,17 @@ trait MicroBIO[R[_, _]] {
   type Or[E, V] = R[E, V]
   type Just[V] = R[Nothing, V]
 
-  @inline def map[E, A, B](r: Or[E, A])(f: A => B): R[E, B]
+  @inline def map[E, A, B](r: R[E, A])(f: A => B): R[E, B]
 
-  @inline def point[V](v: => V): Just[V]
+  @inline def point[V](v: => V): R[Nothing, V]
 
-  @inline def fail[E](v: => E): Or[E, Nothing]
+  @inline def fail[E](v: => E): R[E, Nothing]
 
-  @inline def terminate[V](v: => Throwable): Just[V]
+  @inline def terminate[V](v: => Throwable): R[Nothing, V]
 
-  @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
+  @inline def redeem[E, A, E2, B](r: R[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
 
-  @inline def maybe[V](v: => Either[Throwable, V]): Just[V] = {
+  @inline def maybe[V](v: => Either[Throwable, V]): R[Nothing, V] = {
     v match {
       case Left(f) =>
         terminate(f)
@@ -33,33 +33,33 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
   override type Or[+E, +V] = R[E, V]
   override type Just[+V] = R[Nothing, V]
 
-  @inline def now[A](a: A): Just[A]
+  @inline def now[A](a: A): R[Nothing, A]
 
-  @inline def syncThrowable[A](effect: => A): Or[Throwable, A]
+  @inline def syncThrowable[A](effect: => A): R[Throwable, A]
 
-  @inline def sync[A](effect: => A): Or[Nothing, A]
+  @inline def sync[A](effect: => A): R[Nothing, A]
 
-  @inline def flatMap[E, A, E1 >: E, B](r: Or[E, A])(f0: A => R[E1, B]): R[E1, B]
+  @inline def flatMap[E, A, E1 >: E, B](r: R[E, A])(f0: A => R[E1, B]): R[E1, B]
 
-  final val unit: Just[Unit] = now(())
+  final val unit: R[Nothing, Unit] = now(())
 
-  @inline def leftMap[E, A, E2](r: Or[E, A])(f: E => E2): R[E2, A]
+  @inline def leftMap[E, A, E2](r: R[E, A])(f: E => E2): R[E2, A]
 
-  @inline def bimap[E, A, E2, B](r: Or[E, A])(f: E => E2, g: A => B): R[E2, B]
+  @inline def bimap[E, A, E2, B](r: R[E, A])(f: E => E2, g: A => B): R[E2, B]
 
-  @inline def fromEither[E, V](v: => Either[E, V]): Or[E, V]
+  @inline def fromEither[E, V](v: => Either[E, V]): R[E, V]
 
   //
-  @inline def sleep(duration: Duration): Or[Nothing, Unit]
+  @inline def sleep(duration: Duration): R[Nothing, Unit]
 
   @inline def bracket0[E, A, B](acquire: R[E, A])(release: A => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
 
-  @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
+  @inline def sandboxWith[E, A, E2, B](r: R[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
 
-  @inline def retryOrElse[A, E, A2 >: A, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2]
+  @inline def retryOrElse[A, E, A2 >: A, E2](r: R[E, A])(duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2]
 }
 
-trait BIOApi {
+trait BIOSyntax {
 
   implicit class BIOOps[R[+ _, + _] : BIO, +E, +A](val r: R[E, A]) {
     val R: BIO[R] = implicitly
@@ -83,44 +83,44 @@ trait BIOApi {
   }
 }
 
-object BIO extends BIOApi {
+object BIO extends BIOSyntax {
 
   def apply[R[+_, +_]: BIO]: BIO[R] = implicitly
 
   implicit object BIOZio extends BIO[IO] {
-    @inline def bracket0[E, A, B](acquire: Or[E, A])(release: A => Or[Nothing, Unit])(use: A => Or[E, B]): Or[E, B] =
+    @inline def bracket0[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =
       IO.bracket0(acquire)((v, _: ExitResult[E, B]) => release(v))(use)
 
-    @inline def sleep(duration: Duration): Or[Nothing, Unit] = IO.sleep(duration)
+    @inline def sleep(duration: Duration): IO[Nothing, Unit] = IO.sleep(duration)
 
-    @inline def sync[A](effect: => A): Or[Nothing, A] = IO.sync(effect)
+    @inline def sync[A](effect: => A): IO[Nothing, A] = IO.sync(effect)
 
-    @inline def now[A](a: A): Just[A] = IO.now(a)
+    @inline def now[A](a: A): IO[Nothing, A] = IO.now(a)
 
-    @inline def syncThrowable[A](effect: => A): Or[Throwable, A] = IO.syncThrowable(effect)
+    @inline def syncThrowable[A](effect: => A): IO[Throwable, A] = IO.syncThrowable(effect)
 
-    @inline def fromEither[L, R](v: => Either[L, R]): Or[L, R] = IO.fromEither(v)
+    @inline def fromEither[L, R](v: => Either[L, R]): IO[L, R] = IO.fromEither(v)
 
-    @inline def point[R](v: => R): Just[R] = IO.point(v)
+    @inline def point[R](v: => R): IO[Nothing, R] = IO.point(v)
 
-    @inline def terminate[R](v: => Throwable): Just[R] = IO.terminate(v)
+    @inline def terminate[R](v: => Throwable): IO[Nothing, R] = IO.terminate(v)
 
-    @inline def fail[E](v: => E): Or[E, Nothing] = IO.fail(v)
+    @inline def fail[E](v: => E): IO[E, Nothing] = IO.fail(v)
 
-    @inline def map[E, A, B](r: Or[E, A])(f: A => B): Or[E, B] = r.map(f)
+    @inline def map[E, A, B](r: IO[E, A])(f: A => B): IO[E, B] = r.map(f)
 
-    @inline def leftMap[E, A, E2](r: Or[E, A])(f: E => E2): Or[E2, A] = r.leftMap(f)
+    @inline def leftMap[E, A, E2](r: IO[E, A])(f: E => E2): IO[E2, A] = r.leftMap(f)
 
-    @inline def bimap[E, A, E2, B](r: Or[E, A])(f: E => E2, g: A => B): Or[E2, B] = r.bimap(f, g)
+    @inline def bimap[E, A, E2, B](r: IO[E, A])(f: E => E2, g: A => B): IO[E2, B] = r.bimap(f, g)
 
-    @inline def flatMap[E, A, E1 >: E, B](r: Or[E, A])(f0: A => IO[E1, B]): Or[E1, B] = r.flatMap(f0)
+    @inline def flatMap[E, A, E1 >: E, B](r: IO[E, A])(f0: A => IO[E1, B]): IO[E1, B] = r.flatMap(f0)
 
-    @inline def redeem[E, A, E2, B](r: Or[E, A])(err: E => Or[E2, B], succ: A => Or[E2, B]): Or[E2, B] = r.redeem(err, succ)
+    @inline def redeem[E, A, E2, B](r: IO[E, A])(err: E => IO[E2, B], succ: A => IO[E2, B]): IO[E2, B] = r.redeem(err, succ)
 
-    @inline def sandboxWith[E, A, E2, B](r: Or[E, A])(f: Or[Either[List[Throwable], E], A] => Or[Either[List[Throwable], E2], B]): Or[E2, B] =
+    @inline def sandboxWith[E, A, E2, B](r: IO[E, A])(f: IO[Either[List[Throwable], E], A] => IO[Either[List[Throwable], E2], B]): IO[E2, B] =
       r.sandboxWith(f)
 
-    @inline def retryOrElse[A, E, A2 >: A, E2](r: Or[E, A])(duration: FiniteDuration, orElse: => Or[E2, A2]): Or[E2, A2] =
+    @inline def retryOrElse[A, E, A2 >: A, E2](r: IO[E, A])(duration: FiniteDuration, orElse: => IO[E2, A2]): IO[E2, A2] =
       r.retryOrElse[A2, Any, Duration, E2](Retry.duration(duration), {
         (_: Any, _: Any) =>
           orElse

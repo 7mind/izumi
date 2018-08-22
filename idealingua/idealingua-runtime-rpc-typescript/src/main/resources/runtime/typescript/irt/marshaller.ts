@@ -20,10 +20,11 @@ export class JSONMarshallerImpl implements JSONMarshaller {
             return '{}';
         }
 
+        const serialized = typeof data['serialize'] === 'function' ? data['serialize']() : data;
         if (this.pretty) {
-            return JSON.stringify(data, null, 4);
+            return JSON.stringify(serialized, null, 4);
         } else {
-            return JSON.stringify(data);
+            return JSON.stringify(serialized);
         }
     }
 

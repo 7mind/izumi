@@ -2,8 +2,8 @@
 import { WSClient, WSClientState } from '../wsclient';
 import { JSONMarshaller } from '../../marshaller';
 import { Logger, LogLevel } from '../../logger';
-import { ClientSocketTransport, IncomingData, OutgoingData } from '../../transport';
-import { AuthMethod, Authorization } from '../auth/auth';
+import { ClientSocketTransport, IncomingData, OutgoingData } from '../transport';
+import { AuthMethod, Authorization } from '../auth';
 import {
     WebSocketRequestMessage,
     WebSocketResponseMessage,

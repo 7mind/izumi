@@ -1,4 +1,4 @@
-import { AuthMethod } from './auth';
+import { AuthMethod } from './auth.method';
 
 export class AuthCustom extends AuthMethod {
     public value: string;

@@ -33,6 +33,7 @@ export class HttpServerGeneric<C> {
 
         this._logger = logger;
         this._handlers = handlers;
+        this.requestHandler = this.requestHandler.bind(this);
         this._server = http.createServer(this.requestHandler);
     }
 
@@ -59,43 +60,61 @@ export class HttpServerGeneric<C> {
             this._logger.logf(LogLevel.Error, msg);
             response.statusCode = 500;
             response.write(msg);
+            response.end();
             return;
         }
 
         const urlEnd = url.substr(endpointPos + this._endpoint.length);
         const pieces = urlEnd.split('/');
-        if (pieces.length != 2) {
+        if (pieces.length != 3) {
             const msg = 'Invalid endpoint format. Expected to be /serviceName/serviceMethod, got ' + urlEnd;
             this._logger.logf(LogLevel.Error, msg);
             response.statusCode = 500;
             response.write(msg);
+            response.end();
             return;
         }
 
-        const rpcService = pieces[0];
-        const rpcMethod = pieces[1];
+        const rpcService = pieces[1];
+        const rpcMethod = pieces[2];
 
-        var data: string = null;
-        if (method === 'POST') {
-            let body: any[] = [];
-            request.on('data', (chunk: any) => {
-                body.push(chunk);
-            }).on('end', () => {
-                data = Buffer.concat(body).toString();
-            });
-        }
-
-        this._logger.logf(LogLevel.Trace, 'Incoming request:\n', url, method, data);
-
-        this._dispatcher.dispatch(null, rpcService, rpcMethod, data)
-            .then((res) => {
-                this._logger.logf(LogLevel.Trace, 'Outgoing response:\n', res);
-                response.write(res);
+        this._logger.logf(LogLevel.Trace, 'Incoming request:\n', url, method);
+        let body: any[] = [];
+        request
+            .on('error', (err) => {
+                this._logger.logf(LogLevel.Error, 'Error while serving request: ', err);
             })
-            .catch((err) => {
-                this._logger.logf(LogLevel.Trace, 'Outgoing response:\n', 500, err);
-                response.statusCode = 500;
-                response.write(err);
+            .on('data', (chunk) => {
+                body.push(chunk);
+            })
+            .on('end', () => {
+                const data = method === 'POST' ? Buffer.concat(body).toString() : null;
+                this._logger.logf(LogLevel.Trace, data);
+                response.on('error', (err) => {
+                    this._logger.logf(LogLevel.Error, 'Error while serving response: ', err);
+                });
+
+                try {
+                    this._dispatcher.dispatch(null, rpcService, rpcMethod, data)
+                        .then((res) => {
+                            this._logger.logf(LogLevel.Trace, 'Outgoing response:\n', res);
+                            response.statusCode = 200;
+                            response.setHeader('Content-Type', 'application/json');
+                            response.write(res);
+                            response.end();
+                        })
+                        .catch((err) => {
+                            this._logger.logf(LogLevel.Trace, 'Outgoing response:\n', 500, err);
+                            response.statusCode = 500;
+                            response.write(err);
+                            response.end();
+                        });
+                } catch (err) {
+                    this._logger.logf(LogLevel.Warning, 'Dispatching failed:\n', err);
+                    response.statusCode = 500;
+                    response.write(err);
+                    response.end();
+                }
             });
     }
 }

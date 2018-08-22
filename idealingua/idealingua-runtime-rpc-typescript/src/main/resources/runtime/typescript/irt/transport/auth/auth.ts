@@ -1,12 +1,8 @@
+import { AuthMethod } from './auth.method';
 import { AuthCustom } from './auth.custom';
 import { AuthToken } from './auth.token';
 import { AuthApiKey } from './auth.apikey';
 import { AuthBasic } from './auth.basic';
-
-export abstract class AuthMethod {
-    public abstract fromValue(value: string): Error;
-    public abstract toValue(): string;
-}
 
 export class Authorization {
     public method: AuthMethod;
