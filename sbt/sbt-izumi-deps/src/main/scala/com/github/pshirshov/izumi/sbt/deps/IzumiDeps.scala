@@ -45,7 +45,6 @@ object IzumiDeps {
     val typesafe_config = "1.3.3" // java
 
     // good to drop - scala
-    val json4s = "3.6.0" // 2.13+
     val scopt = "3.7.0" // 2.13+
 
     // good to drop - java
@@ -89,10 +88,7 @@ object IzumiDeps {
     // TODO: It would be good to completely get rid of cglib and build our own proxy generator on top of scala-asm
     val fastparse = "com.lihaoyi" %% "fastparse" % V.fastparse % "shaded"
 
-
-    val json4s_native = "org.json4s" %% "json4s-native" % V.json4s
     val shapeless = "com.chuusai" %% "shapeless" % V.shapeless
-
 
     val circe: Seq[ModuleID] = Seq(
       "io.circe" %% "circe-core"

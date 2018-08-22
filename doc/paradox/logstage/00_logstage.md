@@ -65,12 +65,10 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "logstage-api-logger" 
 
 // LogStage machinery
 libraryDependencies ++= Seq(
-    // console sink
-    "com.github.pshirshov.izumi.r2" %% "logstage-sink-console" % izumi_version
     // file sink
-    , "com.github.pshirshov.izumi.r2" %% "logstage-sink-file" % izumi_version
+    "com.github.pshirshov.izumi.r2" %% "logstage-sink-file" % izumi_version
     // json formatting
-    , "com.github.pshirshov.izumi.r2" %% "logstage-json-json4s" % izumi_version
+    , "com.github.pshirshov.izumi.r2" %% "logstage-json-circe" % izumi_version
     // adapter for Slf4J loggers
     , "com.github.pshirshov.izumi.r2" %% "logstage-adapter-slf4j" % izumi_version    
 )

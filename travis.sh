@@ -56,7 +56,7 @@ function site {
     chmod 600 .secrets/travis-deploy-key
     eval "$(ssh-agent -s)"
     ssh-add .secrets/travis-deploy-key
-    
+
     csbt ghpagesPushSite || exit 1
   else
     echo "Not publishing site, because $TRAVIS_BRANCH is not 'develop'"

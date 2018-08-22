@@ -20,7 +20,7 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.api.rendering.json.JsonRenderingPolicy
+import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
 import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
@@ -116,7 +116,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
   private def makeLogRouter: LogRouter = {
     val renderingPolicy = if (jsonLogging) {
-      new JsonRenderingPolicy()
+      new LogstageCirceRenderingPolicy()
     } else {
       new StringRenderingPolicy(RenderingOptions(withExceptions = true, withColors = true))
     }
