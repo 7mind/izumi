@@ -20,8 +20,8 @@ before_install:
   - mkdir -p ~/.coursier/
   - mkdir -p ~/.cache/coursier
   - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M7")' > ~/.sbt/1.0/plugins/build.sbt
-  - rm -rf ~/.ivy2/local
-  - find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
+  - sudo rm -rf ~/.ivy2/local
+  - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
 
 before_script:
   - bash travis.sh versionate
@@ -46,8 +46,8 @@ before_cache:
   - du -h -d 2 $HOME/.cache/coursier/
   - find $HOME/.sbt -name "*.lock" -type f -delete
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
-  - rm -rf ~/.ivy2/local
-  - find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
+  - sudo rm -rf ~/.ivy2/local
+  - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
 
 jobs:
   include:
