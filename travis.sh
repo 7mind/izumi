@@ -78,12 +78,6 @@ function publish {
   bclose
 }
 
-function deploy {
-  publish
-  site
-}
-
-
 function info {
   bopen
   ls -la .
@@ -115,8 +109,12 @@ case $i in
         scripted
     ;;
 
-    deploy)
-        deploy
+    publish)
+        publish
+    ;;
+
+    site)
+        site
     ;;
 
     *)
