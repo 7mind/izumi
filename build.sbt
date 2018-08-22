@@ -396,5 +396,5 @@ lazy val `izumi-r2` = inRoot.as
         }
       }
   )
-  .settings(addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
+//.settings(addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
