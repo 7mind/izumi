@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.bio
 import scalaz.zio.{ExitResult, IO, Retry}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.language.higherKinds
+import scala.language.{higherKinds, implicitConversions}
 
 trait MicroBIO[R[_, _]] {
   type Or[E, V] = R[E, V]
@@ -43,6 +43,8 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
 
   final val unit: R[Nothing, Unit] = now(())
 
+  @inline def void[E, A](r: R[E, A]): R[E, Unit]
+
   @inline def leftMap[E, A, E2](r: R[E, A])(f: E => E2): R[E2, A]
 
   @inline def bimap[E, A, E2, B](r: R[E, A])(f: E => E2, g: A => B): R[E2, B]
@@ -61,9 +63,13 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
 
 trait BIOSyntax {
 
-  implicit class BIOOps[R[+ _, + _] : BIO, +E, +A](val r: R[E, A]) {
-    val R: BIO[R] = implicitly
+  @inline implicit def ToBIOOps[R[+_, +_]: BIO, E, A](self: R[E, A]) = new BIOSyntax.BIOOps[R, E, A](self)
 
+}
+
+object BIOSyntax {
+
+  final class BIOOps[R[+_, + _], E, A](private val r: R[E, A])(implicit private val R: BIO[R]) {
     @inline def map[B](f: A => B): R[E, B] = R.map(r)(f)
 
     @inline def leftMap[E2](f: E => E2): R[E2, A] = R.leftMap(r)(f)
@@ -74,13 +80,18 @@ trait BIOSyntax {
 
     @inline def redeem[E2, B](err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B] = R.redeem[E, A, E2, B](r)(err, succ)
 
-    @inline final def redeemPure[E2, B](err: E => B, succ: A => B): R[E2, B] =
+    @inline def redeemPure[E2, B](err: E => B, succ: A => B): R[E2, B] =
       redeem(err.andThen(R.now), succ.andThen(R.now))
 
     @inline def sandboxWith[E2, B](f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B] = R.sandboxWith(r)(f)
 
     @inline def retryOrElse[A2 >: A, E2](duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2] = R.retryOrElse[A, E, A2, E2](r)(duration, orElse)
+
+    @inline def void: R[E, Unit] = R.void(r)
+
+    @inline def catchAll[E2, A2 >: A](h: E => R[E2, A2]): R[E2, A2] = R.redeem(r)(h, R.now)
   }
+
 }
 
 object BIO extends BIOSyntax {
@@ -102,6 +113,8 @@ object BIO extends BIOSyntax {
     @inline def fromEither[L, R](v: => Either[L, R]): IO[L, R] = IO.fromEither(v)
 
     @inline def point[R](v: => R): IO[Nothing, R] = IO.point(v)
+
+    @inline def void[E, A](r: IO[E, A]): IO[E, Unit] = r.void
 
     @inline def terminate[R](v: => Throwable): IO[Nothing, R] = IO.terminate(v)
 
