@@ -59,7 +59,7 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
   @inline def retryOrElse[A, E, A2 >: A, E2](r: R[E, A])(duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2]
 }
 
-trait BIOApi {
+trait BIOSyntax {
 
   implicit class BIOOps[R[+ _, + _] : BIO, +E, +A](val r: R[E, A]) {
     val R: BIO[R] = implicitly
@@ -83,7 +83,7 @@ trait BIOApi {
   }
 }
 
-object BIO extends BIOApi {
+object BIO extends BIOSyntax {
 
   def apply[R[+_, +_]: BIO]: BIO[R] = implicitly
 
