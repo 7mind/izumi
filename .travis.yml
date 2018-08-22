@@ -60,11 +60,11 @@ jobs:
         - ln -s .secrets/local.sbt local.sbt
         - bash docker.sh site
         - bash docker.sh publish
+    - stage: "Tests & Coverage"
+      script: bash docker.sh coverage
+    - stage: "SBT Tests"
+      script: bash docker.sh scripted
 
-#    - stage: "Tests & Coverage"
-#      script: bash docker.sh coverage
-#    - stage: "SBT Tests"
-#      script: bash docker.sh scripted
 #    - stage: "Publisn, Release, Site"
 #      script:
 #        - git config --global user.name "$USER"

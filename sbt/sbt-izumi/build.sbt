@@ -40,6 +40,9 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
 // https://github.com/laughedelic/sbt-publish-more // TODO: signed publishers: https://github.com/laughedelic/sbt-publish-more/issues/7
 addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 
+//// https://github.com/sbt/sbt-duplicates-finder
+//addSbtPlugin("org.scala-sbt" % "sbt-duplicates-finder" % "0.8.1")
+
 // https://github.com/sbt/sbt-bintray
 //addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.1")
 
