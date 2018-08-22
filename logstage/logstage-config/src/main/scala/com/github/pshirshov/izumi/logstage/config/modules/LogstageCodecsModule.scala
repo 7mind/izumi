@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.logstage.config.modules
 
-import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReaderCodecs.default
 import com.github.pshirshov.izumi.distage.config.codec.{ConfigReader, RuntimeConfigReaderCodecs}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
@@ -17,14 +16,14 @@ import scala.collection.JavaConverters._
 
 class LogstageCodecsModule(logstageConfigPath: String) extends ModuleDef {
 
-  many[RenderingPolicyMapper[_ <: RenderingPolicy]]
+  many[RenderingPolicyMapper[RenderingPolicy]]
 
-  many[LogSinkMapper[_ <: LogSink]]
+  many[LogSinkMapper[LogSink]]
 
   make[LogstageCodecs].from {
     (
-      policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy]]
-      , sinksMappers: Set[LogSinkMapper[_ <: LogSink]]
+      policyMappers: Set[RenderingPolicyMapper[RenderingPolicy]]
+      , sinksMappers: Set[LogSinkMapper[LogSink]]
       , appConfig: AppConfig
     ) =>
 

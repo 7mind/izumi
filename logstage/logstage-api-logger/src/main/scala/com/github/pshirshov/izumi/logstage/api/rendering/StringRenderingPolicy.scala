@@ -6,10 +6,8 @@ import java.util.regex.Pattern
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy.PolicyConfig
 import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy.{Constant, LogMessageItem, WithMargin}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.{LogUnit, Margin}
-import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.RenderingPolicyMapper
 
 import scala.collection.mutable.ListBuffer
 
@@ -212,11 +210,5 @@ object StringRenderingPolicy {
     override def perform(e: Log.Entry, withColor: Boolean): String = unit.renderUnit(e, withColor, margin)
 
     override val isSpace: Boolean = false
-  }
-
-  val configPolicyMapper: RenderingPolicyMapper[StringRenderingPolicy] = new RenderingPolicyMapper[StringRenderingPolicy] {
-    override def instantiate(policyConfig: PolicyConfig): StringRenderingPolicy = {
-      new StringRenderingPolicy(options = RenderingOptions(policyConfig.withColors, policyConfig.withExceptions), renderingLayout = policyConfig.renderingLayout)
-    }
   }
 }
