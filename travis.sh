@@ -53,6 +53,10 @@ function site {
   if [[ "$TRAVIS_BRANCH" == "develop" || "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
     echo "Publishing site from branch=$TRAVIS_BRANCH; tag=$TRAVIS_TAG"
     chown -R root:root ~/.ssh
+    chmod 600 .secrets/travis-deploy-key
+    eval "$(ssh-agent -s)"
+    ssh-add .secrets/travis-deploy-key
+    
     csbt ghpagesPushSite || exit 1
   else
     echo "Not publishing site, because $TRAVIS_BRANCH is not 'develop'"
