@@ -69,10 +69,13 @@ stages:
 jobs:
   include:
     - stage: test
+      name: "Tests & Coverage"
       script: bash docker.sh coverage
     - stage: sbttest
+      name: "SBT Tests"
       script: bash docker.sh scripted
     - stage: deploy
+      name: "Sonatype & Site"
       script:
         - git config --global user.name "$USER"
         - git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"
