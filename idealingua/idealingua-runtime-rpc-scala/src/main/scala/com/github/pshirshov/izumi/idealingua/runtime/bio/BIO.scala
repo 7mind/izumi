@@ -15,14 +15,14 @@ trait MicroBIO[R[_, _]] {
 
   @inline def fail[E](v: => E): R[E, Nothing]
 
-  @inline def terminate[V](v: => Throwable): R[Nothing, V]
+  @inline def terminate(v: => Throwable): R[Nothing, Nothing]
 
   @inline def redeem[E, A, E2, B](r: R[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
 
   @inline def maybe[V](v: => Either[Throwable, V]): R[Nothing, V] = {
     v match {
       case Left(f) =>
-        terminate(f)
+        terminate(f).asInstanceOf[R[Nothing, V]]
       case Right(r) =>
         point(r)
     }
@@ -116,7 +116,7 @@ object BIO extends BIOSyntax {
 
     @inline def void[E, A](r: IO[E, A]): IO[E, Unit] = r.void
 
-    @inline def terminate[R](v: => Throwable): IO[Nothing, R] = IO.terminate(v)
+    @inline def terminate(v: => Throwable): IO[Nothing, Nothing] = IO.terminate(v)
 
     @inline def fail[E](v: => E): IO[E, Nothing] = IO.fail(v)
 
