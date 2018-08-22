@@ -371,7 +371,7 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects)
-  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
+  .enablePlugins(/*ScalaUnidocPlugin, */ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
     sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
     , siteSubdirName in ScalaUnidoc := s"v${version.value}/api"
