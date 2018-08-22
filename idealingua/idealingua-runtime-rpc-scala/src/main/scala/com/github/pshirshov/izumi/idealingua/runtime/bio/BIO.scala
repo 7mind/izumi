@@ -63,7 +63,7 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
 
 trait BIOSyntax {
 
-  @inline final implicit def ToOps[R[_, _]: BIO, E, A](self: R[E, A]) = new BIOSyntax.BIOOps[R, E, A](self)
+  @inline implicit def ToOps[R[+_, +_]: BIO, E, A](self: R[E, A]) = new BIOSyntax.BIOOps[R, E, A](self)
 
 }
 
