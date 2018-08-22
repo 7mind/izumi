@@ -707,13 +707,17 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
         s"""case "${m.name}": {
            |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"const obj = this.marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"In${m.name.capitalize}" else "object"}>(data);"}
            |    return new Promise((resolve, reject) => {
-           |        this.$impl.${m.name}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${conv.safeName(f.name)}").mkString(", ")})
-           |            .then((res: ${renderServiceMethodOutputSignature(m)}) => {
-           |                resolve(this.marshaller.Marshal<${renderServiceMethodOutputSignature(m)}>(res));
-           |            })
-           |            .catch((err) => {
-           |                reject(err);
-           |            });
+           |        try {
+           |            this.$impl.${m.name}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${conv.safeName(f.name)}").mkString(", ")})
+           |                .then((res: ${renderServiceMethodOutputSignature(m)}) => {
+           |                    resolve(this.marshaller.Marshal<${renderServiceMethodOutputSignature(m)}>(res));
+           |                })
+           |                .catch((err) => {
+           |                    reject(err);
+           |                });
+           |        } catch (err) {
+           |            reject(err);
+           |        }
            |    });
            |}
          """.stripMargin
@@ -721,13 +725,17 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       s"""case "${m.name}": {
          |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"const obj = this.marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"In${m.name.capitalize}" else "object"}>(data);"}
          |    return new Promise((resolve, reject) => {
-         |        this.$impl.${m.name}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${conv.safeName(f.name)}").mkString(", ")})
-         |            .then(() => {
-         |                resolve(this.marshaller.Marshal<Void>(Void.instance));
-         |            })
-         |            .catch((err) => {
-         |                reject(err);
-         |            });
+         |        try {
+         |            this.$impl.${m.name}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${conv.safeName(f.name)}").mkString(", ")})
+         |                .then(() => {
+         |                    resolve(this.marshaller.Marshal<Void>(Void.instance));
+         |                })
+         |                .catch((err) => {
+         |                    reject(err);
+         |                });
+         |        } catch (err) {
+         |            reject(err);
+         |        }
          |    });
          |}
          """.stripMargin
