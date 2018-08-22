@@ -1,6 +1,9 @@
 package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+
+import scala.reflect.runtime.universe.typeOf
 import distage._
 import org.scalatest.WordSpec
 
@@ -116,16 +119,20 @@ class HigherKindsTest extends WordSpec with MkInjector {
     import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase2._
 
     class Definition[F[+_, +_]: TagKK: TestCovariantTC, G[_]: TagK, A: Tag] extends ModuleDef {
-      make[TestCovariantTC[F]].from(implicitly[TestCovariantTC[F]])
+      make[TestCovariantTC[F]]
+      make[TestCovariantTC[Either]]
+      final val t0 = Tag[TestCovariantTC[F]]
 
       make[TestClassFG[F, G]]
       make[TestClassFG[Either, G]]
       make[TestClassFG[F, Option]]
+      make[TestClassFG[Either, Option]]
       final val t1 = Tag[TestClassFG[F, G]]
 
       make[TestClassFA[F, A]]
       make[TestClassFA[Either, A]]
       make[TestClassFA[F, Int]]
+      make[TestClassFA[Either, Int]]
       final val t2 = Tag[TestClassFA[F, A]]
     }
 
@@ -133,10 +140,11 @@ class HigherKindsTest extends WordSpec with MkInjector {
 
     assert(Injector().produce(definition) != null)
 
-    System.err println(Tag[TestClassFG[Either, Option]])
+    assert(definition.t0.tag.tpe =:= typeOf[TestCovariantTC[Either]])
+    assert(definition.t1.tag.tpe =:= typeOf[TestClassFG[Either, Option]])
+    assert(definition.t2.tag.tpe =:= typeOf[TestClassFA[Either, Int]])
 
-    assert(definition.t1.tag.tpe =:= Tag[TestClassFG[Either, Option]].tag.tpe)
-    assert(definition.t2.tag.tpe =:= Tag[TestClassFA[Either, Int]].tag.tpe)
+
   }
 
 }
