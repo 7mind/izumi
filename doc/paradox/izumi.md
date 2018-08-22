@@ -47,8 +47,7 @@ libraryDependencies ++= Seq(
   // LogStage
   , Izumi.R.logstage_api_logger
   , Izumi.R.logstage_adapter_slf4j // Route Slf4J logs to logstage
-  , Izumi.R.logstage_rendering_json4s // dump structured log as JSON
-  , Izumi.R.logstage_sink_console 
+  , Izumi.R.logstage_rendering_circe // dump structured log as JSON
   , Izumi.R.logstage_sink_file // write to files with log rotation support
   , Izumi.R.logstage_sink_slf4j // write to slf4j
   
@@ -75,7 +74,7 @@ libraryDependencies ++= Seq(
   , "com.github.pshirshov.izumi.r2" %% "logstage-di " % "$izumi.version$"
   , "com.github.pshirshov.izumi.r2" %% "logstage-api-logger" % "$izumi.version$"
   , "com.github.pshirshov.izumi.r2" %% "logstage-adapter-slf4j " % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-rendering-json4s " % "$izumi.version$"
+  , "com.github.pshirshov.izumi.r2" %% "logstage-rendering-circe " % "$izumi.version$"
   , "com.github.pshirshov.izumi.r2" %% "logstage-sink-console " % "$izumi.version$"
   , "com.github.pshirshov.izumi.r2" %% "logstage-sink-file " % "$izumi.version$"
   , "com.github.pshirshov.izumi.r2" %% "logstage-sink-slf4j " % "$izumi.version$"

@@ -20,16 +20,16 @@ object IzumiDeps {
     val cats = "1.1.0" // 1.2.0 is 2.13+ but we are blocked by http4s
     val cats_effect = "1.0.0-RC2"
 
-    val circe = "0.10.0-M2" // 2.13+
+    val circe = "0.10.0-M1" // 2.13+ , "0.10.0-M2" pulls cats 1.2.0
     val circe_derivation = "0.9.0-M5"
 
     val http4s = "0.19.0-M1" // https://github.com/http4s/http4s/issues/1797
 
-    val scalameta = "3.7.4" // https://github.com/scalameta/scalameta/issues/1693
+    val scalameta = "4.0.0-M9" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
 
     val scalacheck = "1.14.0"
-    val scalacheck_shapeless = "1.1.6"
+    val scalacheck_shapeless = "1.2.0"
 
     val zio = "0.1.0-344913e"
 
@@ -45,7 +45,6 @@ object IzumiDeps {
     val typesafe_config = "1.3.3" // java
 
     // good to drop - scala
-    val json4s = "3.6.0" // 2.13+
     val scopt = "3.7.0" // 2.13+
 
     // good to drop - java
@@ -58,7 +57,7 @@ object IzumiDeps {
     val scala_reflect = "org.scala-lang" % "scala-reflect"
 
     val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck
-    val scalacheck_shapeless = "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % V.scalacheck_shapeless
+    val scalacheck_shapeless = "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % V.scalacheck_shapeless
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
@@ -89,10 +88,7 @@ object IzumiDeps {
     // TODO: It would be good to completely get rid of cglib and build our own proxy generator on top of scala-asm
     val fastparse = "com.lihaoyi" %% "fastparse" % V.fastparse % "shaded"
 
-
-    val json4s_native = "org.json4s" %% "json4s-native" % V.json4s
     val shapeless = "com.chuusai" %% "shapeless" % V.shapeless
-
 
     val circe: Seq[ModuleID] = Seq(
       "io.circe" %% "circe-core"

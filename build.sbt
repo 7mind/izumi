@@ -24,7 +24,7 @@ releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies, // : ReleaseStep
   inquireVersions, // : ReleaseStep
   runClean, // : ReleaseStep
-  //runTest, // : ReleaseStep
+  runTest, // : ReleaseStep
   setReleaseVersion, // : ReleaseStep
   commitReleaseVersion, // : ReleaseStep, performs the initial git checks
   tagRelease, // : ReleaseStep
@@ -93,7 +93,6 @@ val ShadingSettings = new SettingsGroup {
           "fastparse"
           , "sourcecode"
           //            , "net.sf.cglib"
-          //            , "org.json4s"
         )
       )
   ).flatten
@@ -213,7 +212,7 @@ lazy val distageApp = inDiStage.as.module
   .depends(distageCore, distagePlugins, distageConfig, logstageDi)
 
 lazy val distageRoles = inDiStage.as.module
-  .depends(distageApp, logstageApiLogger, logstageRenderingJson4s, logstageAdapterSlf4j)
+  .depends(distageApp, logstageApiLogger, logstageRenderingCirce, logstageAdapterSlf4j)
   .settings(
     libraryDependencies += R.scopt
   )
@@ -271,9 +270,9 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
     , compileOrder in Test := CompileOrder.Mixed
   )
 
-lazy val logstageRenderingJson4s = inLogStage.as.module
+lazy val logstageRenderingCirce = inLogStage.as.module
   .depends(logstageApiLogger)
-  .settings(libraryDependencies ++= Seq(R.json4s_native))
+  .settings(libraryDependencies ++= Seq(R.circe).flatten)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApiBase)
@@ -351,7 +350,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
   , logstageDi
   , logstageSinkSlf4j
   , logstageAdapterSlf4j
-  , logstageRenderingJson4s
+  , logstageRenderingCirce
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles
@@ -372,7 +371,7 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects)
-  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
+  .enablePlugins(/*ScalaUnidocPlugin, */ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
     sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
     , siteSubdirName in ScalaUnidoc := s"v${version.value}/api"
@@ -397,5 +396,5 @@ lazy val `izumi-r2` = inRoot.as
         }
       }
   )
-  .settings(addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
+//  .settings(addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))

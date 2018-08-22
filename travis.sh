@@ -52,6 +52,11 @@ function site {
   bopen
   if [[ "$TRAVIS_BRANCH" == "develop" || "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
     echo "Publishing site from branch=$TRAVIS_BRANCH; tag=$TRAVIS_TAG"
+    chown -R root:root ~/.ssh
+    chmod 600 .secrets/travis-deploy-key
+    eval "$(ssh-agent -s)"
+    ssh-add .secrets/travis-deploy-key
+
     csbt ghpagesPushSite || exit 1
   else
     echo "Not publishing site, because $TRAVIS_BRANCH is not 'develop'"
@@ -70,19 +75,13 @@ function publish {
   fi
 
   echo "PUBLISH..."
-  csbt clean publishSigned || exit 1
+  csbt clean test:compile publishSigned || exit 1
 
   if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
     csbt sonatypeRelease || exit 1
   fi
   bclose
 }
-
-function deploy {
-  publish
-  site
-}
-
 
 function info {
   bopen
@@ -115,8 +114,12 @@ case $i in
         scripted
     ;;
 
-    deploy)
-        deploy
+    publish)
+        publish
+    ;;
+
+    site)
+        site
     ;;
 
     *)

@@ -4,9 +4,9 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, ExampleService}
 import org.scalatest.WordSpec
 
-class LoggingJson4sTest extends WordSpec {
+class LogstageCirceRenderingTest extends WordSpec {
 
-  import LoggingJson4sTest._
+  import LogstageCirceRenderingTest._
 
   "Log macro" should {
     "support console sink with json output policy" in {
@@ -16,14 +16,13 @@ class LoggingJson4sTest extends WordSpec {
 }
 
 
-object LoggingJson4sTest {
+object LogstageCirceRenderingTest {
 
-  val jsonPolicy = new JsonRenderingPolicy(prettyPrint = true)
+  val jsonPolicy = new LogstageCirceRenderingPolicy(prettyPrint = true)
   val consoleSinkJson = new ConsoleSink(jsonPolicy)
 
   def setupJsonLogger(): IzLogger = {
     IzLogger.basic(IzLogger.Level.Trace, consoleSinkJson)
   }
-
 
 }

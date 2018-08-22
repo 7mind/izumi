@@ -25,8 +25,7 @@ trait ScoptRoleApp {
       }
 
   override protected def buildConfig(params: ScoptRoleApp#CommandlineConfig): AppConfig = {
-    val commonConfig = params.configFile.map(ConfigFactory.parseFile)
-      .getOrElse(ConfigFactory.defaultApplication())
+    val commonConfig = params.configFile.fold(ConfigFactory.defaultApplication())(ConfigFactory.parseFile)
 
     val appConfig = ConfigFactory.load(commonConfig)
     val rolesConfig = params.roles.flatMap(_.configFile).map(ConfigFactory.parseFile)

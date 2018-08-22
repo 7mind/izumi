@@ -40,7 +40,7 @@ namespace IRT.Transport.Client {
             }
         }
 
-        public int ActiveRequests { get; }
+        public int ActiveRequests { get; private set; }
         private int _timeout; // In Seconds
 
         public AsyncHttpTransportGeneric(string endpoint, IJsonMarshaller marshaller, int timeout = 60) {

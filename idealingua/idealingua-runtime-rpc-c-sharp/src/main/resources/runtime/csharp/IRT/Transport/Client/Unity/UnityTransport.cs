@@ -68,7 +68,7 @@ namespace IRT.Transport.Client.Unity {
 #else
         public UnityTransportGeneric(string endpoint, IJsonMarshaller marshaller, int timeout = 60) {
             Endpoint = endpoint;
-            _mMarshaller = marshaller;
+            _marshaller = marshaller;
             _timeout = timeout;
             ActiveRequests = 0;
         }

@@ -2,7 +2,7 @@
 
 export SOURCEDIR=$(pwd)
 export CNAME="izumi-build-$(date +%s)"
-export IMAGE="septimalmind/izumi-env:latest"
+export IMAGE="septimalmind/izumi-env:7c81ec8403e16fef66234822d42f56512389fbfc"
 export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
 export HOMEDIR="$( cd ~ ; pwd -P )"
 

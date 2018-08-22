@@ -1,14 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
+import _root_.io.circe.Json
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
+import com.github.pshirshov.izumi.idealingua.runtime.bio.MicroBIO
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.CogenServiceProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{runtime, _}
 
 import scala.meta._
-import _root_.io.circe.Json
-import com.github.pshirshov.izumi.idealingua.runtime.bio.{BIO, MicroBIO}
 
 class ServiceRenderer(ctx: STContext) {
 
