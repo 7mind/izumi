@@ -20,7 +20,7 @@ function bclose {
 }
 
 function csbt {
-    COMMAND="time sbt -jvm-opts ./.sbtopts.travis -v ++$TRAVIS_SCALA_VERSION $*"
+    COMMAND="time sbt -v ++$TRAVIS_SCALA_VERSION $*"
     eval $COMMAND
 }
 
@@ -82,6 +82,16 @@ function deploy {
   publish
   site
 }
+
+
+function info {
+  bopen
+  ls -la .
+  ls -la ~
+  bclose
+}
+
+info
 
 PARAMS=()
 SOFT=0
