@@ -26,10 +26,10 @@ before_install:
 #  - echo "Go `go version`"
 #  - echo "TS `tsc -version`"
 #  - echo "Java `java -version`"
+  - mkdir -p ~/.sbt/
   - mkdir -p ~/.sbt/1.0/plugins/
   - mkdir -p ~/.m2/
   - mkdir -p ~/.ivy2/
-  - mkdir -p ~/.sbt/
   - mkdir -p ~/.coursier/
   - mkdir -p ~/.cache/coursier
   - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M7")' > ~/.sbt/1.0/plugins/build.sbt
@@ -49,6 +49,7 @@ cache:
   - $HOME/.sbt
   - $HOME/.ivy2
   - $HOME/.coursier
+  - $HOME/.cache/coursier
   - $HOME/.m2
 
 before_cache:

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -xe
 
 export SOURCEDIR=$(pwd)
 export CNAME="izumi-build-$(date +%s)"
