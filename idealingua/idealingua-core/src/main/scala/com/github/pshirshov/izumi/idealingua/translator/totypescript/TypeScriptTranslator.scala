@@ -701,6 +701,21 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     case _ => true
   }
 
+  protected def renderServiceReturnSerialization(method: DefMethod.RPCMethod): String = method.signature.output match {
+    case a: Algebraic =>
+      s"""let adt: string = undefined;
+         |${a.alternatives.map(al => s"if (res instanceof ${conv.toNativeType(al.typeId, typespace)}) {\n    adt = '${al.name}';\n}" ).mkString("\n")}
+         |if (!adt) {
+         |    throw new Error('Unexpected type while serializing ADT: ' + res);
+         |}
+         |const adtSerialized = {
+         |    [adt]: res.serialize()
+         |};
+         |const serialized = this.marshaller.Marshal<object>(adtSerialized);
+       """.stripMargin
+    case _ => s"const serialized = this.marshaller.Marshal<${renderServiceMethodOutputSignature(method)}>(res);"
+  }
+
   protected def renderServiceDispatcherHandler(method: DefMethod, impl: String): String = method match {
     case m: DefMethod.RPCMethod =>
       if (isServiceMethodReturnExistent(m))
@@ -710,7 +725,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
            |        try {
            |            this.$impl.${m.name}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${conv.safeName(f.name)}").mkString(", ")})
            |                .then((res: ${renderServiceMethodOutputSignature(m)}) => {
-           |                    resolve(this.marshaller.Marshal<${renderServiceMethodOutputSignature(m)}>(res));
+           |${renderServiceReturnSerialization(m).shift(20)}
+           |                    resolve(serialized);
            |                })
            |                .catch((err) => {
            |                    reject(err);
