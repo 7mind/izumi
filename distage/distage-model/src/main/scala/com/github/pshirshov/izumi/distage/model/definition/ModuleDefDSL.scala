@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.DSLModuleDef._
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDefDSL._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
@@ -52,7 +52,8 @@ import scala.collection.mutable
   * @see [[com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK TagK]]
   * @see [[Id]]
   */
-trait DSLModuleDef extends ModuleBase {
+trait ModuleDefDSL {
+  this: ModuleBase =>
 
   final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = initialState
   final private[this] val mutableTags: mutable.Set[String] = initialTags
@@ -164,7 +165,7 @@ trait DSLModuleDef extends ModuleBase {
 
 }
 
-object DSLModuleDef {
+object ModuleDefDSL {
 
   sealed trait BindingRef
   final case class SingletonRef(var ref: Binding) extends BindingRef

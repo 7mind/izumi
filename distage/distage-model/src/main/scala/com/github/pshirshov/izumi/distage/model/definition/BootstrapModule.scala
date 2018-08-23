@@ -1,24 +1,16 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-trait BootstrapModule extends ModuleBase {
-
-}
+trait BootstrapModule extends ModuleBase
 
 object BootstrapModule {
-  def empty: BootstrapModule = new BootstrapModule {
-    override def bindings: Set[Binding] = Set.empty
-  }
+  def empty: BootstrapModule = make(Set.empty)
 
-  def simple(bindings: Set[Binding]): BootstrapModule = {
+  def make(bindings: Set[Binding]): BootstrapModule = {
     val b = bindings
     new BootstrapModule {
-      override def bindings: Set[Binding] = b
+      override val bindings: Set[Binding] = b
     }
   }
 
-  implicit object BootstrapModuleOps extends ModuleApi[BootstrapModule] {
-    override def empty: BootstrapModule = BootstrapModule.empty
-
-    override def simple(bindings: Set[Binding]): BootstrapModule = BootstrapModule.simple(bindings)
-  }
+  implicit val BootstrapModuleApi: ModuleMake[BootstrapModule] = BootstrapModule.make
 }

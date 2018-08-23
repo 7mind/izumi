@@ -1,47 +1,53 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-trait Module extends ModuleBase {
-
-}
-
-object Module {
-  def empty: Module = new Module {
-    override def bindings: Set[Binding] = Set.empty
-  }
-
-  def simple(bindings: Set[Binding]): Module = {
-    val b = bindings
-    new Module {
-      override def bindings: Set[Binding] = b
-    }
-  }
-
-  implicit object ModuleOps extends ModuleApi[Module] {
-    override def empty: Module = Module.empty
-
-    override def simple(bindings: Set[Binding]): Module = Module.simple(bindings)
-  }
-}
-
-trait ModuleDef extends DSLModuleDef with Module {
-
-}
+/**
+  * DSL for defining module Bindings.
+  *
+  * Example:
+  * {{{
+  * class Program[F: TagK: Monad] extends ModuleDef {
+  *   make[TaglessProgram[F]]
+  * }
+  *
+  * object TryInterpreters extends ModuleDef {
+  *   make[Validation.Handler[Try]].from(tryValidationHandler)
+  *   make[Interaction.Handler[Try]].from(tryInteractionHandler)
+  * }
+  *
+  * // Combine modules into a full program
+  * val TryProgram = new Program[Try] ++ TryInterpreters
+  * }}}
+  *
+  * Singleton bindings:
+  *   - `make[X]` = create X using its constructor
+  *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
+  *   - `make[X].from(myX)` = bind X to instance `myX`
+  *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet Provider]] function
+  *   - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
+  *
+  * Multibindings:
+  *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
+  *                                 Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
+  *     `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
+  *   - `many[X].add { y: Y => new X1(y).add { y: Y => X2(y) }` = add instances of X1 and X2 constructed by a given [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet Provider]] function
+  *   - `many[X].named("special").add[X1]` = create a named set of X, all the elements of it are added to this named set.
+  *   - `many[X].ref[XImpl]` = add a reference to an already **existing** binding of XImpl to a set of X's
+  *   - `many[X].ref[X]("special")` = add a reference to an **existing** named binding of X to a set of X's
+  *
+  * Tags:
+  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[RoleId]]
+  *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
+  *   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
+  *
+  * @see [[com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK TagK]]
+  * @see [[Id]]
+  * @see [[ModuleDefDSL]]
+  */
+trait ModuleDef extends Module with ModuleDefDSL
 
 object ModuleDef {
-  def empty: ModuleDef = new ModuleDef {
-    override def bindings: Set[Binding] = Set.empty
-  }
-
-  def simple(bindings: Set[Binding]): ModuleDef = {
-    val b = bindings
+  implicit val moduleDefApi: ModuleMake[ModuleDef] = b =>
     new ModuleDef {
-      override def bindings: Set[Binding] = b
+      override val bindings: Set[Binding] = b
     }
-  }
-
-  implicit object ModuleDefOps extends ModuleApi[ModuleDef] {
-    override def empty: ModuleDef = ModuleDef.empty
-
-    override def simple(bindings: Set[Binding]): ModuleDef = ModuleDef.simple(bindings)
-  }
 }

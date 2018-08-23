@@ -1,24 +1,18 @@
 package com.github.pshirshov.izumi.distage.plugins
 
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleApi, ModuleBase}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, Module, ModuleMake}
 
-trait PluginBase extends ModuleBase
+trait PluginBase extends Module
 
 object PluginBase {
-  def empty: PluginBase = new PluginBase {
-    override def bindings: Set[Binding] = Set.empty
-  }
+  def empty: PluginBase = make(Set.empty)
 
-  def simple(bindings: Set[Binding]): PluginBase = {
+  def make(bindings: Set[Binding]): PluginBase = {
     val b = bindings
     new PluginBase {
-      override def bindings: Set[Binding] = b
+      override val bindings: Set[Binding] = b
     }
   }
 
-  implicit object PluginBaseOps extends ModuleApi[PluginBase] {
-    override def empty: PluginBase = PluginBase.empty
-
-    override def simple(bindings: Set[Binding]): PluginBase = PluginBase.simple(bindings)
-  }
+  implicit val pluginBaseModuleApi: ModuleMake[PluginBase] = PluginBase.make
 }

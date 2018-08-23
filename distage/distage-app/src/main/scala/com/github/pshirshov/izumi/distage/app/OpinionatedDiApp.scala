@@ -119,7 +119,7 @@ abstract class OpinionatedDiApp {
       make[LogRouter].from(loggerRouter)
     }) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
 
-    val bsdef = BootstrapModule.simple((mergedBs.definition ++ bootstrapCustomDef).bindings)
+    val bsdef = bootstrapCustomDef ++ mergedBs.definition
     val appDef = mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge
 
     logger.trace(s"Have bootstrap definition\n$bsdef")
