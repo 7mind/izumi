@@ -39,7 +39,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
 
     val conflicts = findConflicts(all)
 
-    val sortedFields = conflicts.all.sortBy(f => (f.defn.distance, f.defn.definedBy.toString, - f.defn.definedWithIndex)).reverse
+    val sortedFields = conflicts.all.sortBy(f => (f.defn.distance, f.defn.definedBy.toString, -f.defn.definedWithIndex)).reverse
     val output = new Struct(defn.id, parts, conflicts.good, conflicts.soft, sortedFields)
     assert(output.all.groupBy(_.field.name).forall(_._2.size == 1), s"IDL Compiler Bug: contradictive structure for ${defn.id}: ${output.all.mkString("\n  ")}")
     output
@@ -163,6 +163,34 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
     cdef ++ mcdef
   }
 
+  def adtBranchScopes(adt: Adt): Map[TypeId, Set[TypeId]] = {
+    adt.alternatives
+      .filterNot(_.typeId.isInstanceOf[Builtin])
+      .map(v => ts.apply(v.typeId))
+      .map {
+        case a: Adt => (a.id, adtRecursiveMembers(a).toSet)
+        case o => (o.id, Set.empty[TypeId])
+      }
+      .toMap
+  }
+
+  def adtRecursiveMembers(adt: Adt): List[TypeId] = {
+    adtRecursiveMembers(adt)
+  }
+
+  protected def adtRecursiveMembers(adt: Adt, visited: mutable.HashSet[TypeId]): List[TypeId] = {
+    val sub = adt.alternatives
+      .filterNot(_.typeId.isInstanceOf[Builtin])
+      .filterNot(a => visited.contains(a.typeId))
+      .map(v => ts.apply(v.typeId))
+      .collect {
+        case a: Adt =>
+          adtRecursiveMembers(a, visited)
+      }
+
+    adt.alternatives.map(_.typeId) ++ sub.flatten
+  }
+
   protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
     val struct = structure(ts.resolver.get(id))
     val parentInstanceFields = struct.unambigious.map(_.field).toSet
@@ -213,7 +241,6 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
 
           val outerFields = localFields.toList.map(f => SigParam(f.name, SigParamSource(f.typeId, f.name), None)) ++
             childMixinFields.map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, ts.tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
-
 
 
           assert(
