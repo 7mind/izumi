@@ -54,6 +54,22 @@ export class HttpServerGeneric<C> {
     protected requestHandler(request: http.IncomingMessage, response: http.ServerResponse) {
         const { method, url, headers } = request;
 
+        let headers = {};
+        // IE8 does not allow domains to be specified, just the *
+        // headers["Access-Control-Allow-Origin"] = req.headers.origin;
+        headers['Access-Control-Allow-Origin'] = '*';
+
+        if (method === 'OPTIONS') {
+            headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT, DELETE, OPTIONS';
+            headers['Access-Control-Max-Age'] = '86400'; // 24 hours
+            headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept';
+            response.writeHead(200, headers);
+            response.end();
+            return;
+        }
+
+        headers['Content-Type'] = 'application/json';
+
         const endpointPos = url.indexOf(this._endpoint);
         if (endpointPos < 0) {
             const msg = 'Invalid endpoint hit: ' + url + '. Expected to use ' + this._endpoint;
@@ -98,8 +114,7 @@ export class HttpServerGeneric<C> {
                     this._dispatcher.dispatch(null, rpcService, rpcMethod, data)
                         .then((res) => {
                             this._logger.logf(LogLevel.Trace, 'Outgoing response:\n', res);
-                            response.statusCode = 200;
-                            response.setHeader('Content-Type', 'application/json');
+                            response.writeHead(200, headers);
                             response.write(res);
                             response.end();
                         })
