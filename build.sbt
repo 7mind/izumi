@@ -371,7 +371,7 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects)
-  .enablePlugins(/*ScalaUnidocPlugin, */ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
+  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
     sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
     , siteSubdirName in ScalaUnidoc := s"v${version.value}/api"
@@ -388,7 +388,7 @@ lazy val `izumi-r2` = inRoot.as
       new FileFilter {
         val v = ghpagesRepository.value.getCanonicalPath + "/v"
 
-        def accept(f: File): Boolean  = {
+        def accept(f: File): Boolean = {
           f.getCanonicalPath.startsWith(v) && f.getCanonicalPath.charAt(v.length).isDigit || // release
             (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
@@ -397,4 +397,7 @@ lazy val `izumi-r2` = inRoot.as
       }
   )
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
-//  .settings(addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc))
+  .settings(
+    addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
+    , unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps)
+  )
