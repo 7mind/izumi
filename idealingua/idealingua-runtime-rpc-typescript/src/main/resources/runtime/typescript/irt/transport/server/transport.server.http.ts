@@ -54,21 +54,21 @@ export class HttpServerGeneric<C> {
     protected requestHandler(request: http.IncomingMessage, response: http.ServerResponse) {
         const { method, url, headers } = request;
 
-        let headers = {};
+        let respHeaders = {};
         // IE8 does not allow domains to be specified, just the *
         // headers["Access-Control-Allow-Origin"] = req.headers.origin;
-        headers['Access-Control-Allow-Origin'] = '*';
+        respHeaders['Access-Control-Allow-Origin'] = '*';
 
         if (method === 'OPTIONS') {
-            headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT, DELETE, OPTIONS';
-            headers['Access-Control-Max-Age'] = '86400'; // 24 hours
-            headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept';
-            response.writeHead(200, headers);
+            respHeaders['Access-Control-Allow-Methods'] = 'POST, GET, PUT, DELETE, OPTIONS';
+            respHeaders['Access-Control-Max-Age'] = '86400'; // 24 hours
+            respHeaders['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept';
+            response.writeHead(200, respHeaders);
             response.end();
             return;
         }
 
-        headers['Content-Type'] = 'application/json';
+        respHeaders['Content-Type'] = 'application/json';
 
         const endpointPos = url.indexOf(this._endpoint);
         if (endpointPos < 0) {
@@ -114,7 +114,7 @@ export class HttpServerGeneric<C> {
                     this._dispatcher.dispatch(null, rpcService, rpcMethod, data)
                         .then((res) => {
                             this._logger.logf(LogLevel.Trace, 'Outgoing response:\n', res);
-                            response.writeHead(200, headers);
+                            response.writeHead(200, respHeaders);
                             response.write(res);
                             response.end();
                         })
