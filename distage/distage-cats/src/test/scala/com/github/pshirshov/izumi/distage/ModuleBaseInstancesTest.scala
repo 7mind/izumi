@@ -24,22 +24,22 @@ class ModuleBaseInstancesTest extends WordSpec {
         make[TestDependency1]
       }
 
-      val mod3_2 = SimpleModuleDef.empty
+      val mod3_2 = Module.empty
 
       val mod3 = (mod3_1 |+| mod3_2) :+ binding[NotInContext]
 
-      val mod4 = SimpleModuleDef(Set(
+      val mod4 = Module.make(Set(
         binding(TestInstanceBinding())
       ))
 
-      val moduleDef: ModuleBase = SimpleModuleDef.empty
+      val moduleDef: ModuleBase = Module.empty
       val mod5 = moduleDef :+ Bindings.binding[TestDependency0, TestImpl0]
 
       val combinedModules = Vector[ModuleBase](mod1, mod2, mod3, mod4, mod5).combineAll
 
       val plusModules = mod5 |+| mod4 |+| mod3 |+| mod2 |+| mod1
 
-      val complexModule = SimpleModuleDef(Set(
+      val complexModule = Module.make(Set(
         Bindings.binding[TestClass]
         , Bindings.binding[TestDependency0, TestImpl0]
         , Bindings.binding[TestCaseClass2]

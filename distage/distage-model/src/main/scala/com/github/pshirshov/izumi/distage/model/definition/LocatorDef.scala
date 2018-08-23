@@ -9,8 +9,8 @@ import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantia
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
@@ -37,7 +37,7 @@ trait LocatorDef extends AbstractLocator {
         ReferenceInstance(key, Instance(key.tpe, value), None)
     }.toVector
 
-    val moduleDef = SimpleModuleDef(
+    val moduleDef = Module.make(
       frozenInstances.map {
         case IdentifiedRef(key, value) =>
           Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value))

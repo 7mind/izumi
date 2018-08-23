@@ -1,13 +1,11 @@
 package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-
-import scala.reflect.runtime.universe.typeOf
 import distage._
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
+import scala.reflect.runtime.universe.typeOf
 
 class HigherKindsTest extends WordSpec with MkInjector {
 

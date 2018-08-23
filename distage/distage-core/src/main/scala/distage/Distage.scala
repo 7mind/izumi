@@ -1,7 +1,6 @@
 package distage
 
 import com.github.pshirshov.izumi.distage.model
-import com.github.pshirshov.izumi.distage.model.definition
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.language.higherKinds
@@ -26,6 +25,13 @@ trait Distage {
   type Injector = model.Injector
 
   type ModuleBase = model.definition.ModuleBase
+
+  type BootstrapModule = model.definition.BootstrapModule
+  val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
+
+  type BootstrapModuleDef = model.definition.BootstrapModuleDef
+  val BootstrapModuleDef: model.definition.BootstrapModuleDef.type = model.definition.BootstrapModuleDef
+
   type ModuleDef = model.definition.ModuleDef
 
   type Id = model.definition.Id
@@ -34,8 +40,4 @@ trait Distage {
   type Planner = model.Planner
   type Locator = model.Locator
   type Producer = model.Producer
-
-  type SimpleModuleDef = definition.SimpleModuleDef
-  val SimpleModuleDef: definition.SimpleModuleDef.type = definition.SimpleModuleDef
-
 }

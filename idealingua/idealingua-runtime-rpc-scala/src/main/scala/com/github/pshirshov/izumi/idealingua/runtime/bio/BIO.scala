@@ -63,7 +63,9 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
 
 trait BIOSyntax {
 
-  @inline implicit def ToOps[R[+_, +_]: BIO, E, A](self: R[E, A]) = new BIOSyntax.BIOOps[R, E, A](self)
+  @inline implicit def ToOps[R[+_, +_]: BIO, E, A](self: R[E, A]): BIOSyntax.BIOOps[R, E, A] = new BIOSyntax.BIOOps[R, E, A](self)
+
+  @inline implicit def ToFlattenOps[R[+_, +_]: BIO, E, A](self: R[E, R[E, A]]): BIOSyntax.BIOFlattenOps[R, E, A] = new BIOSyntax.BIOFlattenOps[R, E, A](self)
 
 }
 
@@ -90,6 +92,10 @@ object BIOSyntax {
     @inline def void: R[E, Unit] = R.void(r)
 
     @inline def catchAll[E2, A2 >: A](h: E => R[E2, A2]): R[E2, A2] = R.redeem(r)(h, R.now)
+  }
+
+  final class BIOFlattenOps[R[+_, + _], E, A](private val r: R[E, R[E, A]])(implicit private val R: BIO[R]) {
+    @inline def flatten: R[E, A] = R.flatMap(r)(a => a)
   }
 
 }

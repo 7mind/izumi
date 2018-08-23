@@ -18,64 +18,71 @@ trait ModuleBase {
 }
 
 object ModuleBase {
+  implicit val moduleBaseApi: ModuleMake[ModuleBase] = s => new ModuleBase {
+    override val bindings: Set[Binding] = s
+  }
 
-  implicit final class ModuleDefSeqExt(private val defs: Seq[ModuleBase]) extends AnyVal {
-    def merge: ModuleBase = {
-      defs.reduceLeftOption[ModuleBase](_ ++ _).getOrElse(SimpleModuleDef.empty)
+  implicit final class ModuleDefSeqExt[T <: ModuleBase](private val defs: Seq[T])(implicit T: ModuleMake[T]) {
+    def merge: T = {
+      defs.reduceLeftOption[T](_ ++ _).getOrElse(T.empty)
     }
 
-    def overrideLeft: ModuleBase = {
-      defs.reduceOption[ModuleBase](_ overridenBy _).getOrElse(SimpleModuleDef.empty)
+    def overrideLeft: T = {
+      defs.reduceOption[T](_ overridenBy _).getOrElse(T.empty)
     }
   }
 
-  implicit final class ModuleDefOps(private val moduleDef: ModuleBase) extends AnyVal {
-    def map(f: Binding => Binding): ModuleBase = {
-      SimpleModuleDef(moduleDef.bindings.map(f))
+  implicit final class ModuleDefOps[T <: ModuleBase](private val moduleDef: T)(implicit T: ModuleMake[T]) {
+    def map(f: Binding => Binding): T = {
+      T.make(moduleDef.bindings.map(f))
+    }
+
+    def morph[G <: ModuleBase: ModuleMake]: G = {
+      ModuleMake[G].make(moduleDef.bindings)
     }
   }
 
-  implicit final class ModuleDefCombine(private val moduleDef: ModuleBase) extends AnyVal {
-    def ++(that: ModuleBase): ModuleBase = {
+  implicit final class ModuleDefCombine[T <: ModuleBase](private val moduleDef: T)(implicit T: ModuleMake[T]) {
+    def ++(that: ModuleBase): T = {
       // FIXME: a hack to support tag merging
 
       // FIXME: this makes sense because Bindings equals/hashcode ignores `tags` field
       val theseBindings = moduleDef.bindings.toSeq
       val thoseBindings = that.bindings.toSeq
 
-      SimpleModuleDef(tagwiseMerge(theseBindings ++ thoseBindings))
+      T.make(tagwiseMerge(theseBindings ++ thoseBindings))
     }
 
-    def :+(binding: Binding): ModuleBase = {
-      moduleDef ++ SimpleModuleDef(Set(binding))
+    def :+(binding: Binding): T = {
+      moduleDef ++ T.make(Set(binding))
     }
 
-    def +:(binding: Binding): ModuleBase = {
-      SimpleModuleDef(Set(binding)) ++ moduleDef
+    def +:(binding: Binding): T = {
+      T.make(Set(binding)) ++ moduleDef
     }
 
-    def overridenBy(that: ModuleBase): ModuleBase = {
+    def overridenBy(that: ModuleBase): T = {
       // we replace existing items in-place and appending new at the end
       // set bindings should not be touched
 
       // FIXME: a hack to support tag merging
       def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] =
-        (SimpleModuleDef(a) ++ SimpleModuleDef(b)).bindings
+        (T.make(a) ++ T.make(b)).bindings
 
-      val existingSetElements = moduleDef.bindings.collect({case b: SetElementBinding[_] => b: Binding})
-      val newSetElements = that.bindings.collect({case b: SetElementBinding[_] => b: Binding})
+      val existingSetElements = moduleDef.bindings.collect({ case b: SetElementBinding[_] => b: Binding })
+      val newSetElements = that.bindings.collect({ case b: SetElementBinding[_] => b: Binding })
       val mergedSetElements = modulewiseMerge(existingSetElements, newSetElements)
 
-      val existingSets = moduleDef.bindings.collect({case b: EmptySetBinding[_] => b: Binding})
-      val newSets = that.bindings.collect({case b: EmptySetBinding[_] => b: Binding})
+      val existingSets = moduleDef.bindings.collect({ case b: EmptySetBinding[_] => b: Binding })
+      val newSets = that.bindings.collect({ case b: EmptySetBinding[_] => b: Binding })
       val mergedSets = modulewiseMerge(existingSets, newSets)
 
       val mergedSetOperations = mergedSets ++ mergedSetElements
 
       val setOps = mergedSetOperations.map(_.key)
 
-      val existingSingletons = moduleDef.bindings.collect({case b: SingletonBinding[_] => b: Binding})
-      val newSingletons = that.bindings.collect({case b: SingletonBinding[_] => b: Binding})
+      val existingSingletons = moduleDef.bindings.collect({ case b: SingletonBinding[_] => b: Binding })
+      val newSingletons = that.bindings.collect({ case b: SingletonBinding[_] => b: Binding })
 
       val existingIndex = existingSingletons.map(b => b.key -> b).toMultimap
       val newIndex = newSingletons.map(b => b.key -> b).toMultimap
@@ -101,14 +108,18 @@ object ModuleBase {
           }
       }
 
-      SimpleModuleDef(modulewiseMerge(mergedSingletons, mergedSetOperations))
+      T.make(modulewiseMerge(mergedSingletons, mergedSetOperations))
     }
   }
 
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] =
-    // Using lawless equals/hashcode
+  // Using lawless equals/hashcode
     bs.groupBy(identity).values.map {
       _.reduce(_ addTags _.tags)
     }.toSet
 
 }
+
+
+
+

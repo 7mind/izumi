@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.app
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
@@ -48,7 +48,7 @@ trait ApplicationBootstrapStrategy[CommandlineConfig] {
 
   def router(): LogRouter
 
-  def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase]
+  def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModule]
 
   def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase]
 
@@ -67,7 +67,7 @@ abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig]
     SimplePluginMergeStrategy
   }
 
-  def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
+  def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModule] = {
     Quirks.discard(bs, app)
     Seq.empty
   }
@@ -115,11 +115,11 @@ abstract class OpinionatedDiApp {
 
     validate(mergedBs, mergedApp)
 
-    val bootstrapCustomDef = (Seq(new ModuleDef {
+    val bootstrapCustomDef = (Seq(new BootstrapModuleDef {
       make[LogRouter].from(loggerRouter)
-    }: ModuleBase) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
+    }) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
 
-    val bsdef = mergedBs.definition ++ bootstrapCustomDef
+    val bsdef = bootstrapCustomDef ++ mergedBs.definition
     val appDef = mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge
 
     logger.trace(s"Have bootstrap definition\n$bsdef")
