@@ -306,39 +306,9 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       )
   }
 
-  protected def renderAdt(i: Adt)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
+  protected def renderAdt(i: Adt, onlyHelper: Boolean = false)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
-    val base =
-      s"""export type ${i.id.name} = ${i.alternatives.map(alt => conv.toNativeType(alt.typeId, typespace)).mkString(" | ")};
-         |
-         |export class ${i.id.name}Helpers {
-         |    public static serialize(adt: ${i.id.name}): {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
-        case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
-        case al: AliasId => typespace.dealias(al).name
-        case _ => alt.typeId.name
-      }) + "Serialized").mkString(" | ")}} {
-         |        let className = adt.getClassName();
-         |${i.alternatives.filter(al => al.memberName.isDefined).map(a => s"if (className == '${a.typeId.name}') {\n    className = '${a.memberName.get}'\n}").mkString("\n").shift(8)}
-         |        return {
-         |            [className]: adt.serialize()
-         |        };
-         |    }
-         |
-         |    public static deserialize(data: {[key: string]: ${i.alternatives.map(alt => (alt.typeId match {
-        case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name
-        case al: AliasId => typespace.dealias(al).name
-        case _ => alt.typeId.name
-      }) + "Serialized").mkString(" | ")}}): ${i.id.name} {
-         |        const id = Object.keys(data)[0];
-         |        const content = data[id];
-         |        switch (id) {
-         |${i.alternatives.map(a => "case '" + (if (a.memberName.isEmpty) a.typeId.name else a.memberName.get) + "': return " + conv.deserializeType("content", a.typeId, typespace, asAny = true) + ";").mkString("\n").shift(12)}
-         |            default:
-         |                throw new Error('Unknown type id ' + id + ' for ${i.id.name}');
-         |        }
-         |    }
-         |}
-       """.stripMargin
+    val base = renderAdtImpl(i.id.name, i.alternatives)
 
     ext.extend(i,
       AdtProduct(
@@ -346,6 +316,41 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
         imports.render(ts),
         s"// ${i.id.name} Algebraic Data Type"
       ), _.handleAdt)
+  }
+
+  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], export: Boolean = true): String = {
+    s"""${if (export) "export " else ""}type ${name} = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace)).mkString(" | ")};
+       |
+       |${if(export) "export " else ""}class ${name}Helpers {
+       |    public static serialize(adt: ${name}): {[key: string]: ${alternatives.map(alt => alt.typeId match {
+      case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name + "Serialized"
+      case al: AliasId => typespace.dealias(al).name + "Serialized"
+      case _: IdentifierId => "string"
+      case _ => alt.typeId.name + "Serialized"
+    }).mkString(" | ")}} {
+       |        let className = adt.getClassName();
+       |${alternatives.filter(al => al.memberName.isDefined).map(a => s"if (className == '${a.typeId.name}') {\n    className = '${a.memberName.get}'\n}").mkString("\n").shift(8)}
+       |        return {
+       |            [className]: adt.serialize()
+       |        };
+       |    }
+       |
+       |    public static deserialize(data: {[key: string]: ${alternatives.map(alt => alt.typeId match {
+      case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name + "Serialized"
+      case al: AliasId => typespace.dealias(al).name + "Serialized"
+      case _: IdentifierId => "string"
+      case _ => alt.typeId.name + "Serialized"
+    }).mkString(" | ")}}): ${name} {
+       |        const id = Object.keys(data)[0];
+       |        const content = data[id];
+       |        switch (id) {
+       |${alternatives.map(a => "case '" + (if (a.memberName.isEmpty) a.typeId.name else a.memberName.get) + "': return " + conv.deserializeType("content", a.typeId, typespace, asAny = true) + ";").mkString("\n").shift(12)}
+       |            default:
+       |                throw new Error('Unknown type id ' + id + ' for ${name}');
+       |        }
+       |    }
+       |}
+     """.stripMargin
   }
 
   protected def renderEnumeration(i: Enumeration)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
@@ -511,6 +516,10 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |    public static getRegisteredTypes(): string[] {
          |        return Object.keys($eid._knownPolymorphic);
          |    }
+         |
+         |    public static isRegisteredType(key: string): boolean {
+         |        return key in $eid._knownPolymorphic;
+         |    }
          |}
          |
          |${uniqueInterfaces.map(sc => sc.name + typespace.tools.implId(sc).name + s".register($eid.FullClassName, $eid);").mkString("\n")}
@@ -558,13 +567,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
            |        this._transport.send(${service}Client.ClassName, '${m.name}', __data)
            |            .then((data: any) => {
            |                try {
-           |                    const id = Object.keys(data)[0];
-           |                    const content = data[id];
-           |                    switch (id) {
-           |${al.alternatives.map(a => "case '" + (if (a.memberName.isEmpty) a.typeId.name else a.memberName.get) + "': resolve(" + conv.deserializeType("content", a.typeId, typespace, asAny = true) + "); break;").mkString("\n").shift(24)}
-           |                        default:
-           |                            throw new Error('Unknown type id ' + id + ' for ${m.name} output.');
-           |                    }
+           |                    resolve(Out${m.name.capitalize}Helpers.deserialize(data));
            |                } catch(err) {
            |                    reject(err);
            |                }
@@ -655,7 +658,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
   protected def renderServiceMethodOutModel(name: String, implements: String, out: DefMethod.Output): String = out match {
     case st: Struct => renderServiceMethodInModel(name, implements, st.struct, export = true)
-//    case al: Algebraic => renderAdt(al)
+    case al: Algebraic => renderAdtImpl(name, al.alternatives, export = false)
     case _ => ""
   }
 
@@ -702,17 +705,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   }
 
   protected def renderServiceReturnSerialization(method: DefMethod.RPCMethod): String = method.signature.output match {
-    case a: Algebraic =>
-      s"""let adt: string = undefined;
-         |${a.alternatives.map(al => s"if (res instanceof ${conv.toNativeType(al.typeId, typespace)}) {\n    adt = '${al.name}';\n}" ).mkString("\n")}
-         |if (!adt) {
-         |    throw new Error('Unexpected type while serializing ADT: ' + res);
-         |}
-         |const adtSerialized = {
-         |    [adt]: res.serialize()
-         |};
-         |const serialized = this.marshaller.Marshal<object>(adtSerialized);
-       """.stripMargin
+    case _: Algebraic =>
+      s"const serialized = this.marshaller.Marshal<object>(Out${method.name.capitalize}Helpers.serialize(res));"
     case _ => s"const serialized = this.marshaller.Marshal<${renderServiceMethodOutputSignature(method)}>(res);"
   }
 

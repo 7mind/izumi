@@ -118,7 +118,7 @@ class TypeScriptTypeConverter() {
     case i: InterfaceId => s"${i.name}Struct.create(${variable + (if (asAny) " as any" else "")})"
     case d: DTOId => s"new ${d.name}(${variable + (if (asAny) " as any" else "")})"
     case al: AliasId => deserializeType(variable, ts.dealias(al), ts, asAny)
-    case id: IdentifierId => s"new ${id.name}($variable)"
+    case id: IdentifierId => s"new ${id.name}(${variable + (if (asAny) " as any" else "")})"
     case en: EnumId => s"${en.name}[$variable]"
 
     case _ => s"'$variable: Error here! Not Implemented! ${target.name}'"
