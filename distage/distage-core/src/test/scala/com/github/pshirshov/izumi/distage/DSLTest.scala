@@ -81,7 +81,7 @@ class DSLTest extends WordSpec {
           .add[SetImpl3]
       }
 
-      assert(definition == Module.simple(
+      assert(definition == Module.make(
         Set(
           Bindings.emptySet[SetTrait]
           , Bindings.setElement[SetTrait, SetImpl1]
@@ -131,7 +131,7 @@ class DSLTest extends WordSpec {
 
       val mod3 = (mod3_1 ++ mod3_2) :+ Bindings.binding[NotInContext]
 
-      val mod4: ModuleBase = Module.simple {
+      val mod4: ModuleBase = Module.make {
         Set(
           Bindings.binding(TestInstanceBinding())
         )
@@ -144,7 +144,7 @@ class DSLTest extends WordSpec {
       val combinedModules = Seq(mod1, mod2, mod3, mod4, mod5)
         .foldLeft[ModuleBase](Module.empty)(_ ++ _)
 
-      val complexModule = Module.simple(Set(
+      val complexModule = Module.make(Set(
         Bindings.binding[TestClass]
         , Bindings.binding[TestDependency0, TestImpl0]
         , Bindings.binding[TestCaseClass2]

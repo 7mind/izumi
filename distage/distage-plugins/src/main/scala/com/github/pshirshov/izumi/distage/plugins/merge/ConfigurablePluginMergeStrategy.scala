@@ -21,7 +21,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       .toMultimap
       .flatMap(resolve)
 
-    JustPlugins(Module.simple(resolved.toSet))
+    JustPlugins(Module.make(resolved.toSet))
   }
 
   protected def resolve(kv: (reflection.universe.RuntimeDIUniverse.DIKey, Set[Binding])): Set[Binding] = {

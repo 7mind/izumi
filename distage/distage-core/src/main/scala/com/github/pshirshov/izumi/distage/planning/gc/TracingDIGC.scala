@@ -88,7 +88,7 @@ object TracingDIGC extends DIGarbageCollector {
     val collected = new TracingDIGC(plan, isRoot).gc(plan.steps)
 
     val oldDefn = plan.definition.bindings
-    val updatedDefn = Module.simple(oldDefn.filter(b => collected.reachable.contains(b.key)))
+    val updatedDefn = Module.make(oldDefn.filter(b => collected.reachable.contains(b.key)))
     SemiPlan(updatedDefn, collected.filtered)
   }
 }

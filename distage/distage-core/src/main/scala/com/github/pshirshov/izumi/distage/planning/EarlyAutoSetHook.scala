@@ -22,7 +22,7 @@ trait EarlyAutoSetHook extends PlanningHookDefaultImpl {
         None
     }
 
-    Module.simple(defn.bindings ++ autoSetsElements)
+    Module.make(defn.bindings ++ autoSetsElements)
   }
 }
 

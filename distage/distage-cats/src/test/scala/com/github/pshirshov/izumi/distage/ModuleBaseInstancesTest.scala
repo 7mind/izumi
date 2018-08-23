@@ -28,7 +28,7 @@ class ModuleBaseInstancesTest extends WordSpec {
 
       val mod3 = (mod3_1 |+| mod3_2) :+ binding[NotInContext]
 
-      val mod4 = Module.simple(Set(
+      val mod4 = Module.make(Set(
         binding(TestInstanceBinding())
       ))
 
@@ -39,7 +39,7 @@ class ModuleBaseInstancesTest extends WordSpec {
 
       val plusModules = mod5 |+| mod4 |+| mod3 |+| mod2 |+| mod1
 
-      val complexModule = Module.simple(Set(
+      val complexModule = Module.make(Set(
         Bindings.binding[TestClass]
         , Bindings.binding[TestDependency0, TestImpl0]
         , Bindings.binding[TestCaseClass2]

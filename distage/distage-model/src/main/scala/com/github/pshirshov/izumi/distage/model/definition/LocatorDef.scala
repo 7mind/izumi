@@ -37,7 +37,7 @@ trait LocatorDef extends AbstractLocator {
         ReferenceInstance(key, Instance(key.tpe, value), None)
     }.toVector
 
-    val moduleDef = Module.simple(
+    val moduleDef = Module.make(
       frozenInstances.map {
         case IdentifiedRef(key, value) =>
           Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value))

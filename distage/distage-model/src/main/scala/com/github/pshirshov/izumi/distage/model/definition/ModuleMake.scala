@@ -7,5 +7,5 @@ trait ModuleMake[T <: ModuleBase] {
 }
 
 object ModuleMake {
-  def apply[T: ModuleMake]: ModuleMake[T] = implicitly
+  def apply[T <: ModuleBase: ModuleMake]: ModuleMake[T] = implicitly
 }
