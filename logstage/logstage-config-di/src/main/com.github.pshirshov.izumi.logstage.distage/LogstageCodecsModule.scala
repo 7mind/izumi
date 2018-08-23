@@ -1,7 +1,5 @@
-package com.github.pshirshov.izumi.logstage.config.modules
-
-import com.github.pshirshov.izumi.distage.config.codec.{ConfigReader, RuntimeConfigReaderCodecs}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.config.typesafe.codec.{ConfigReader, RuntimeConfigReaderCodecs}
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import com.github.pshirshov.izumi.logstage.api.Log

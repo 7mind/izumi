@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.distage.config
 
 import com.github.pshirshov.izumi.distage.config.TranslationResult.TranslationFailure
 import com.github.pshirshov.izumi.distage.config.annotations._
-import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReader
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
+import com.github.pshirshov.izumi.distage.config.typesafe.codec.RuntimeConfigReader
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook

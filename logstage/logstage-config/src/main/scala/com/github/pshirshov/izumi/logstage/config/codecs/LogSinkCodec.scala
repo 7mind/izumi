@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.config.codecs
 
-import com.github.pshirshov.izumi.distage.config.codec.ConfigReader
+import com.github.pshirshov.izumi.distage.config.typesafe.codec.ConfigReader
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy

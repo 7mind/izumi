@@ -182,6 +182,14 @@ lazy val fundamentalsReflection = inFundamentals.as.module
     )
   )
 
+lazy val distageTypesafeConfig = inDiStage.as.module
+  .dependsOn(distageModel)
+  .settings(
+    libraryDependencies ++= Seq(
+      R.typesafe_config
+    )
+  )
+
 lazy val distageModel = inDiStage.as.module
   .depends(fundamentalsReflection)
 
@@ -201,7 +209,7 @@ lazy val distagePlugins = inDiStage.as.module
   )
 
 lazy val distageConfig = inDiStage.as.module
-  .depends(distageCore)
+  .depends(distageCore, distageTypesafeConfig)
   .settings(
     libraryDependencies ++= Seq(
       R.typesafe_config
@@ -253,7 +261,10 @@ lazy val logstageApiLogger = inLogStage.as.module
   .depends(logstageApiBaseMacro)
 
 lazy val logstageConfig = inLogStage.as.module
-  .depends(distageConfig, logstageApiLogger, logstageRenderingJson4s)
+  .depends(distageTypesafeConfig, logstageApiLogger, logstageRenderingCirce)
+
+lazy val logstageConfigDi = inLogStage.as.module
+  .depends(logstageConfig, distageConfig)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
@@ -355,6 +366,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
   , logstageAdapterSlf4j
   , logstageRenderingCirce
   , logstageConfig
+  , logstageConfigDi
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.config.codec
+package com.github.pshirshov.izumi.distage.config.typesafe.codec
 
 import java.io.File
 import java.math.{BigInteger, MathContext, BigDecimal => JavaBigDecimal}

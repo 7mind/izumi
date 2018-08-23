@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.config.codec
+package com.github.pshirshov.izumi.distage.config.typesafe.codec
 
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigReadException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
