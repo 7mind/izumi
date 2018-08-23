@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef.{BindDSLBase, SetDSLBase}
+import com.github.pshirshov.izumi.distage.model.definition.DSLModuleDef.{BindDSLBase, SetDSLBase}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
 import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
 

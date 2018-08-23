@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.planning.gc
 
-import com.github.pshirshov.izumi.distage.model.definition.SimpleModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.Module
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
@@ -88,7 +88,7 @@ object TracingDIGC extends DIGarbageCollector {
     val collected = new TracingDIGC(plan, isRoot).gc(plan.steps)
 
     val oldDefn = plan.definition.bindings
-    val updatedDefn = SimpleModuleDef(oldDefn.filter(b => collected.reachable.contains(b.key)))
+    val updatedDefn = Module.simple(oldDefn.filter(b => collected.reachable.contains(b.key)))
     SemiPlan(updatedDefn, collected.filtered)
   }
 }
