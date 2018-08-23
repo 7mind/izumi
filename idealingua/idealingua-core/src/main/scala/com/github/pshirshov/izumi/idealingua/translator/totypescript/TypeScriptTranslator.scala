@@ -720,7 +720,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     case m: DefMethod.RPCMethod =>
       if (isServiceMethodReturnExistent(m))
         s"""case "${m.name}": {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"const obj = this.marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"In${m.name.capitalize}" else "object"}>(data);"}
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"const obj = ${if (m.signature.input.fields.nonEmpty) s"new In${m.name.capitalize}(" else ""}this.marshaller.Unmarshal<${if (m.signature.input.fields.nonEmpty) s"In${m.name.capitalize}Serialized" else "object"}>(data)${if (m.signature.input.fields.nonEmpty) ")" else ""};"}
            |    return new Promise((resolve, reject) => {
            |        try {
            |            this.$impl.${m.name}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"obj.${conv.safeName(f.name)}").mkString(", ")})
