@@ -49,7 +49,7 @@ trait ScoptRoleApp {
 
   override protected def setupContext(params: CommandlineConfig, args: StrategyArgs, appConfig: AppConfig): Strategy = {
     val bsContext: BootstrapContext = BootstrapContextDefaultImpl(
-      params, bootstrapConfig, pluginConfig, appConfig
+      params, pluginConfig, appConfig
     )
 
     new RoleAppBootstrapStrategy[CommandlineConfig](args, bsContext)

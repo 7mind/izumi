@@ -10,13 +10,6 @@ abstract class RoleApp extends OpinionatedDiApp {
 
   type StrategyArgs
 
-  def bootstrapConfig: PluginConfig =
-    PluginConfig(
-        debug = false
-        , Seq.empty // there are no bootstrap plugins in Izumi, no need to scan
-        , Seq.empty
-      )
-
   override protected def commandlineSetup(args: Array[String]): Strategy = {
     val params = parseArgs(args)
     val strategyArgs = paramsToStrategyArgs(params)

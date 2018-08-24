@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.roles.launcher
+package com.github.pshirshov.izumi.distage.roles.roles
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzArtifact
-import distage.SafeType
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 
 case class RoleBinding(binding: Binding, tpe: SafeType, anno: Set[String], source: Option[IzArtifact])

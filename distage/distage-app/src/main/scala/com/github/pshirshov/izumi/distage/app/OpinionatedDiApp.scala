@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, Boo
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
+import com.github.pshirshov.izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl, PluginLoaderNullImpl}
 import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -23,8 +23,6 @@ import distage.Injector
 trait BootstrapContext[CommandlineConfig] {
   def cliConfig: CommandlineConfig
 
-  def bootstrapConfig: PluginConfig
-
   def pluginConfig: PluginConfig
 
   def appConfig: AppConfig
@@ -33,7 +31,6 @@ trait BootstrapContext[CommandlineConfig] {
 case class BootstrapContextDefaultImpl[CommandlineConfig]
 (
   cliConfig: CommandlineConfig
-  , bootstrapConfig: PluginConfig
   , pluginConfig: PluginConfig
   , appConfig: AppConfig
 ) extends BootstrapContext[CommandlineConfig]
@@ -77,7 +74,7 @@ abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig]
     Seq.empty
   }
 
-  def mkBootstrapLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.bootstrapConfig)
+  def mkBootstrapLoader(): PluginLoader = PluginLoaderNullImpl
 
   def mkLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.pluginConfig)
 }

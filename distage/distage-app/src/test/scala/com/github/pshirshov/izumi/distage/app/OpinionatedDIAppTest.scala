@@ -37,7 +37,6 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
   override protected def commandlineSetup(args: Array[String]): Strategy = {
     val bsContext: BootstrapContext = BootstrapContextDefaultImpl(
       EmptyCfg()
-      , bootstrapConfig
       , pluginConfig
       , AppConfig(ConfigFactory.load())
     )
@@ -90,13 +89,6 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
     , Seq(classOf[TestApp].getPackage.getName)
     , Seq.empty
   )
-
-  private val bootstrapConfig = {
-    PluginConfig(debug = false
-      , Seq("com.github.pshirshov.izumi")
-      , Seq.empty
-    )
-  }
 }
 
 
