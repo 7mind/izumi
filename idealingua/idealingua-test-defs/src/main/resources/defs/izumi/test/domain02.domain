@@ -59,6 +59,11 @@ data TestDataWithAlias {
   a: RTestEnum
 }
 
+id TestIDReturn {
+    a: i32
+}
+
+alias ImportedIDForDomain2 = izumi.test.domain01#IDForDomain2
 alias AliasedTestObject = izumi.test.domain01#TestObject
 alias AliasedGoAliasEnumTest = izumi.test.domain01#GoAliasEnumTest
 data AliasedUsageData {
@@ -79,10 +84,34 @@ service TestAliasServ {
     /** docstring
       */
     def ifaceMethod(va: AnyValTest2) => i32
+
+    def testADTIdReturn() => (TestIDReturn | DTO1)
+    def testADTIdImportedReturn() => (ImportedIDForDomain2 | DTO1)
 }
 
 
 adt SomeResp {
     ImportedBasicFailure
     DTO1
+}
+
+data Adt2 {
+    b: i32
+}
+
+data AdtA1 {
+    a: i32
+}
+
+data AdtA2 {
+    b: i32
+}
+
+adt AdtA {
+    AdtA1
+    AdtA2
+}
+
+service NestedAdtsService {
+    def adtNested() => (AdtA | Adt2)
 }

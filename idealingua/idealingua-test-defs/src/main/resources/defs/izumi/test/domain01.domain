@@ -203,3 +203,8 @@ mixin CommonFailure {
 data BasicFailure {
     &CommonFailure
 }
+
+id IDForDomain2 {
+    a: i32
+}
+

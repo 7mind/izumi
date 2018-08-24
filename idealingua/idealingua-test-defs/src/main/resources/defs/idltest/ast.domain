@@ -7,7 +7,7 @@ domain idltest.ast
 // untyped AST
 adt AST {
   IntNode
-  FloatNode
+  FloatNode as FloatRenamed
   BoolNode
   SymNode
   AppNode

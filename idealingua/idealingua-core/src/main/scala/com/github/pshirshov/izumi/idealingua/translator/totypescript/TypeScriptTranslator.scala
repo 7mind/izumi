@@ -319,16 +319,24 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   }
 
   protected def renderAdtImpl(name: String, alternatives: List[AdtMember], export: Boolean = true): String = {
-    s"""${if (export) "export " else ""}type ${name} = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace)).mkString(" | ")};
+    s"""${if (export) "export " else ""}type $name = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace)).mkString(" | ")};
+       |${if (export) "export " else ""}type ${name}Serialized = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace, forSerialized = true)).mkString(" | ")}
        |
        |${if(export) "export " else ""}class ${name}Helpers {
        |    public static serialize(adt: ${name}): {[key: string]: ${alternatives.map(alt => alt.typeId match {
-      case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name + "Serialized"
-      case al: AliasId => typespace.dealias(al).name + "Serialized"
+      case interfaceId: InterfaceId => alt.typeId.name + typespace.tools.implId(interfaceId).name + "Serialized"
+      case al: AliasId => {
+        val dealiased = typespace.dealias(al)
+        dealiased match {
+          case _: IdentifierId => "string"
+          case _ => dealiased.name + "Serialized"
+        }
+      }
       case _: IdentifierId => "string"
       case _ => alt.typeId.name + "Serialized"
     }).mkString(" | ")}} {
        |        let className = adt.getClassName();
+       |${alternatives.filter(al => al.typeId.isInstanceOf[InterfaceId]).map(al => al.typeId.asInstanceOf[InterfaceId]).map(interfaceId => s"if (${interfaceId.name}${typespace.tools.implId(interfaceId).name}.isRegisteredType(className)) {\n    className = '${interfaceId.name}';\n}").mkString(" else \n").shift(8)}
        |${alternatives.filter(al => al.memberName.isDefined).map(a => s"if (className == '${a.typeId.name}') {\n    className = '${a.memberName.get}'\n}").mkString("\n").shift(8)}
        |        return {
        |            [className]: adt.serialize()
@@ -336,8 +344,14 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |    }
        |
        |    public static deserialize(data: {[key: string]: ${alternatives.map(alt => alt.typeId match {
-      case interfaceId: InterfaceId => alt.name + typespace.tools.implId(interfaceId).name + "Serialized"
-      case al: AliasId => typespace.dealias(al).name + "Serialized"
+      case interfaceId: InterfaceId => alt.typeId.name + typespace.tools.implId(interfaceId).name + "Serialized"
+      case al: AliasId => {
+        val dealiased = typespace.dealias(al)
+        dealiased match {
+          case _: IdentifierId => "string"
+          case _ => dealiased.name + "Serialized"
+        }
+      }
       case _: IdentifierId => "string"
       case _ => alt.typeId.name + "Serialized"
     }).mkString(" | ")}}): ${name} {

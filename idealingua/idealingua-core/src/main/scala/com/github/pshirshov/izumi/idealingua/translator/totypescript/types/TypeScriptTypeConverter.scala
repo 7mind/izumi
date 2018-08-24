@@ -114,7 +114,7 @@ class TypeScriptTypeConverter() {
   }
 
   def deserializeCustomType(variable: String, target: TypeId, ts: Typespace, asAny: Boolean = false): String = target match {
-    case a: AdtId => s"${a.name}Helpers.deserialize($variable)"
+    case a: AdtId => s"${a.name}Helpers.deserialize(${variable + (if (asAny) " as any" else "")})"
     case i: InterfaceId => s"${i.name}Struct.create(${variable + (if (asAny) " as any" else "")})"
     case d: DTOId => s"new ${d.name}(${variable + (if (asAny) " as any" else "")})"
     case al: AliasId => deserializeType(variable, ts.dealias(al), ts, asAny)
