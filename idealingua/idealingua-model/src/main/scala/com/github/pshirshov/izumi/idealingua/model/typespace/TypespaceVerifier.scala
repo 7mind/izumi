@@ -7,7 +7,9 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, SimpleStructure, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.typespace.Issue.AmbigiousAdtMember
 
+import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 final case class FailedTypespace(id: DomainId, issues: List[Issue]) {
@@ -22,7 +24,11 @@ sealed trait Issue
 object Issue {
 
   final case class PrimitiveAdtMember(t: AdtId, members: List[AdtMember]) extends Issue {
-    override def toString: TypeName = s"ADT members can't be primitive (implementation limit): ${members.mkString(", ")}"
+    override def toString: TypeName = s"ADT members can't be primitive (TS implementation limit): ${members.mkString(", ")}"
+  }
+
+  final case class AmbigiousAdtMember(t: AdtId, types: List[TypeId]) extends Issue {
+    override def toString: TypeName = s"ADT hierarchy contains same members (TS implementation limit): ${types.mkString(", ")}"
   }
 
   final case class DuplicateEnumElements(t: EnumId, members: List[String]) extends Issue {
@@ -95,7 +101,8 @@ class TypespaceVerifier(ts: Typespace) {
     val basic = Seq(
       checkDuplicateMembers,
       checkPrimitiveAdtMembers,
-      checkNamingConventions
+      checkNamingConventions,
+      checkAdtIssues,
     ).flatten
 
     val cycles = checkCyclicInheritance
@@ -268,6 +275,42 @@ class TypespaceVerifier(ts: Typespace) {
       case d: Alias =>
         Seq(MissingDependency.DepAlias(d.id, d.target))
     }
+  }
+
+  private def checkAdtIssues: Seq[Issue] = ts.domain.types.flatMap(checkAdtConflicts)
+
+  private def checkAdtConflicts(definition: TypeDef): Seq[Issue] = {
+    definition match {
+      case d: Adt =>
+        val seen = mutable.HashMap.empty[TypeId, Int]
+        checkAdtConflicts(definition, mutable.HashSet.empty, seen)
+        val conflicts = seen.filter(_._2 > 1).keys
+
+        if (conflicts.isEmpty) {
+          Seq.empty
+        } else {
+          Seq(AmbigiousAdtMember(d.id, conflicts.toList))
+        }
+
+      case _ => Seq.empty
+    }
+  }
+
+  private def checkAdtConflicts(definition: TypeDef, visited: mutable.HashSet[TypeId], seen: mutable.HashMap[TypeId, Int]): Unit = definition match {
+    case d: Adt =>
+      d.alternatives.map(_.typeId).foreach {
+        id =>
+          seen.put(id, seen.getOrElseUpdate(id, 0) + 1)
+      }
+
+      visited.add(d.id)
+
+      d.alternatives.filterNot(a => visited.contains(a.typeId)).filterNot(_.typeId.isInstanceOf[Builtin]).map(v => ts.apply(v.typeId)).foreach {
+        defn =>
+        checkAdtConflicts(defn, visited, seen)
+      }
+
+    case _ =>
   }
 
 }

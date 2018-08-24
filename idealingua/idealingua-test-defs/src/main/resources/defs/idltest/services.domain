@@ -9,8 +9,16 @@ mixin SuccessData {
   greeting: str
 }
 
+data SuccessDataData {
+    &SuccessData
+}
+
 mixin ErrorData {
   message: str
+}
+
+data ErrorDataData {
+    &ErrorData
 }
 
 mixin Request {
@@ -75,12 +83,12 @@ service TestService {
     }
 
   // ADT
-  def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
+  def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessDataData | ErrorDataData )
 
   // ADT
   def greetAlgebraicMultilineSyntax(firstName: str, secondName: str) => (
-     SuccessData
-   | ErrorData
+     SuccessDataData
+   | ErrorDataData
   )
 
   // alternatives

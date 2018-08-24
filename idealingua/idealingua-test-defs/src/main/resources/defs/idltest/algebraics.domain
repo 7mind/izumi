@@ -27,3 +27,21 @@ adt AdtTester {
     ComplexAdt
     ComplexAdt2
 }
+
+//https://github.com/pshirshov/izumi-r2/issues/363
+/*
+adt Bad0 {
+    Success
+    Failure
+}
+
+adt Bad1 {
+    Success
+    Failure
+}
+
+adt Bad {
+    Bad0
+    Bad1
+}
+*/
