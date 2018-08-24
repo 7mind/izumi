@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.definition.{Bindings, SimpleModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Bindings, Module}
 import distage._
 import org.scalatest.WordSpec
 
@@ -81,7 +81,7 @@ class DSLTest extends WordSpec {
           .add[SetImpl3]
       }
 
-      assert(definition == SimpleModuleDef(
+      assert(definition == Module.make(
         Set(
           Bindings.emptySet[SetTrait]
           , Bindings.setElement[SetTrait, SetImpl1]
@@ -127,24 +127,24 @@ class DSLTest extends WordSpec {
         make[TestDependency1]
       }
 
-      val mod3_2 = SimpleModuleDef.empty
+      val mod3_2 = Module.empty
 
       val mod3 = (mod3_1 ++ mod3_2) :+ Bindings.binding[NotInContext]
 
-      val mod4: ModuleBase = SimpleModuleDef {
+      val mod4: ModuleBase = Module.make {
         Set(
           Bindings.binding(TestInstanceBinding())
         )
       }
 
-      val mod5: ModuleBase = (SimpleModuleDef.empty
+      val mod5: ModuleBase = (Module.empty
         :+ Bindings.binding[TestDependency0, TestImpl0]
         )
 
       val combinedModules = Seq(mod1, mod2, mod3, mod4, mod5)
-        .foldLeft[ModuleBase](SimpleModuleDef.empty)(_ ++ _)
+        .foldLeft[ModuleBase](Module.empty)(_ ++ _)
 
-      val complexModule = SimpleModuleDef(Set(
+      val complexModule = Module.make(Set(
         Bindings.binding[TestClass]
         , Bindings.binding[TestDependency0, TestImpl0]
         , Bindings.binding[TestCaseClass2]

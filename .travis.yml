@@ -44,8 +44,8 @@ before_cache:
   - du -h -d 2 $HOME/.m2/
   - du -h -d 2 $HOME/.coursier/
   - du -h -d 2 $HOME/.cache/coursier/
-  - find $HOME/.sbt -name "*.lock" -type f -delete
-  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+  - sudo find $HOME/.sbt -name "*.lock" -type f -delete
+  - sudo find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
   - sudo rm -rf ~/.ivy2/local
   - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
 

@@ -46,7 +46,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
   protected val roleInfo = new AtomicReference[RolesInfo]()
 
-  override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
+  override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModuleDef] = {
     Quirks.discard(bs)
 
     logger.info(s"Loaded ${app.definition.bindings.size -> "app bindings"} and ${bs.definition.bindings.size -> "bootstrap bindings"}...")
@@ -59,9 +59,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
     Seq(
       new ConfigModule(bsContext.appConfig)
-      , new ModuleDef {
-
-
+      , new BootstrapModuleDef {
         many[PlanningHook]
           .add(servicesHook)
           .add(closeablesHook)

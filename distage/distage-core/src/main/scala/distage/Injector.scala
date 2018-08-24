@@ -9,7 +9,7 @@ object Injector {
     bootstrap()
   }
 
-  def apply(overrides: ModuleBase*): Injector = {
+  def apply(overrides: BootstrapModule*): Injector = {
     bootstrap(overrides = overrides.merge)
   }
 
@@ -17,11 +17,15 @@ object Injector {
     bootstrap(DefaultBootstrapContext.noReflectionBootstrap)
   }
 
-  def noReflection(overrides: ModuleBase*): Injector = {
+  def noReflection(overrides: BootstrapModule*): Injector = {
     bootstrap(DefaultBootstrapContext.noReflectionBootstrap, overrides.merge)
   }
 
-  def bootstrap(bootstrapBase: ModuleBase = CglibBootstrap.cogenBootstrap, overrides: ModuleBase = SimpleModuleDef.empty, locatorExtensions: Seq[LocatorExtension] = Seq()): Injector = {
+  def bootstrap(
+                 bootstrapBase: BootstrapModule = CglibBootstrap.cogenBootstrap
+                 , overrides: BootstrapModule = BootstrapModule.empty
+                 , locatorExtensions: Seq[LocatorExtension] = Seq()
+               ): Injector = {
     val bootstrapDefinition = bootstrapBase.overridenBy(overrides)
     val bootstrapLocator = new DefaultBootstrapContext(bootstrapDefinition)
     create(bootstrapLocator, locatorExtensions: _*)

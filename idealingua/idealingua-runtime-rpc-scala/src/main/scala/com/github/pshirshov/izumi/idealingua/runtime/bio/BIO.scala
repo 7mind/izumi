@@ -63,7 +63,9 @@ trait BIO[R[+_, +_]] extends MicroBIO[R] {
 
 trait BIOSyntax {
 
-  @inline implicit def ToOps[R[+_, +_]: BIO, E, A](self: R[E, A]) = new BIOSyntax.BIOOps[R, E, A](self)
+  @inline implicit def ToOps[R[+_, +_]: BIO, E, A](self: R[E, A]): BIOSyntax.BIOOps[R, E, A] = new BIOSyntax.BIOOps[R, E, A](self)
+
+  @inline implicit def ToFlattenOps[R[+_, +_]: BIO, E, A](self: R[E, R[E, A]]): BIOSyntax.BIOFlattenOps[R, E, A] = new BIOSyntax.BIOFlattenOps[R, E, A](self)
 
 }
 
@@ -78,6 +80,8 @@ object BIOSyntax {
 
     @inline def flatMap[E1 >: E, B](f0: A => R[E1, B]): R[E1, B] = R.flatMap[E, A, E1, B](r)(f0)
 
+    @inline def *>[E1 >: E, B](f0: => R[E1, B]): R[E1, B] = R.flatMap[E, A, E1, B](r)(_ => f0)
+
     @inline def redeem[E2, B](err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B] = R.redeem[E, A, E2, B](r)(err, succ)
 
     @inline def redeemPure[E2, B](err: E => B, succ: A => B): R[E2, B] =
@@ -90,6 +94,10 @@ object BIOSyntax {
     @inline def void: R[E, Unit] = R.void(r)
 
     @inline def catchAll[E2, A2 >: A](h: E => R[E2, A2]): R[E2, A2] = R.redeem(r)(h, R.now)
+  }
+
+  final class BIOFlattenOps[R[+_, + _], E, A](private val r: R[E, R[E, A]])(implicit private val R: BIO[R]) {
+    @inline def flatten: R[E, A] = R.flatMap(r)(a => a)
   }
 
 }

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.app
 import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.AssignableFromEarlyAutoSetHook
@@ -22,7 +22,7 @@ import org.scalatest.WordSpec
 
 case class EmptyCfg()
 
-class CustomizationModule extends ModuleDef {
+class CustomizationModule extends BootstrapModuleDef {
   many[PlanningHook]
     .add(new AssignableFromEarlyAutoSetHook[Conflict])
 }
@@ -48,7 +48,7 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
         new ConfigurablePluginMergeStrategy(pluginMergeConfig)
       }
 
-      override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
+      override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModuleDef] = {
         Quirks.discard(bs, app)
         Seq(
           new ConfigModule(bsContext.appConfig)

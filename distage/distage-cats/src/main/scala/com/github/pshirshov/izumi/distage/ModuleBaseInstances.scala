@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.distage
 
 import cats.kernel.instances.set._
 import cats.kernel.{BoundedSemilattice, Hash, PartialOrder}
-import distage.{ModuleBase, SimpleModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.Module
+import distage.ModuleBase
 
 trait ModuleBaseInstances {
 
@@ -16,7 +17,7 @@ trait ModuleBaseInstances {
     Hash.fromUniversalHashCode
 
   class ModuleBaseSemilattice extends BoundedSemilattice[ModuleBase] {
-    def empty: ModuleBase = SimpleModuleDef(Set.empty)
+    def empty: ModuleBase = Module.empty
     def combine(x: ModuleBase, y: ModuleBase): ModuleBase = x ++ y
   }
 

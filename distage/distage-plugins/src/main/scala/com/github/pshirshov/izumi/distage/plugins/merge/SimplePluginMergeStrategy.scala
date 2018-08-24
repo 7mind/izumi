@@ -4,8 +4,10 @@ import com.github.pshirshov.izumi.distage.plugins.LoadedPlugins.JustPlugins
 import com.github.pshirshov.izumi.distage.plugins.{LoadedPlugins, PluginBase}
 
 object SimplePluginMergeStrategy extends PluginMergeStrategy[LoadedPlugins] {
-  override def merge[D <: PluginBase](defs: Seq[D]): LoadedPlugins = {
+
+  override def merge(defs: Seq[PluginBase]): LoadedPlugins = {
     val merged = defs.merge
     JustPlugins(merged)
   }
+
 }

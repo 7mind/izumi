@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.bootstrap
 
 import com.github.pshirshov.izumi.distage._
 import com.github.pshirshov.izumi.distage.model._
-import com.github.pshirshov.izumi.distage.model.definition._
+import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.provisioning._
@@ -16,7 +16,8 @@ import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
-class DefaultBootstrapContext(contextDefinition: ModuleBase) extends AbstractLocator {
+
+class DefaultBootstrapContext(contextDefinition: BootstrapModule) extends AbstractLocator {
 
   import DefaultBootstrapContext._
 
@@ -79,13 +80,13 @@ object DefaultBootstrapContext {
     )
   }
 
-  final lazy val noCogen: ModuleBase = new ModuleDef {
+  final lazy val noCogen: BootstrapModule = new BootstrapModuleDef {
     make[ProxyStrategy].from[ProxyStrategyFailingImpl]
     make[FactoryStrategy].from[FactoryStrategyFailingImpl]
     make[TraitStrategy].from[TraitStrategyFailingImpl]
   }
 
-  final lazy val defaultBootstrap: ModuleBase = new ModuleDef {
+  final lazy val defaultBootstrap: BootstrapModule = new BootstrapModuleDef {
     make[LookupInterceptor].from(NullLookupInterceptor)
     make[ReflectionProvider.Runtime].from[ReflectionProviderDefaultImpl.Runtime]
     make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
@@ -116,9 +117,9 @@ object DefaultBootstrapContext {
       .add[PlanningHookDefaultImpl]
   }
 
-  final lazy val noCogenBootstrap = defaultBootstrap ++ noCogen
+  final lazy val noCogenBootstrap: BootstrapModule = defaultBootstrap ++ noCogen
 
-  final lazy val noReflectionBootstrap: ModuleBase = noCogenBootstrap overridenBy new ModuleDef {
+  final lazy val noReflectionBootstrap: BootstrapModule = noCogenBootstrap overridenBy new BootstrapModuleDef {
     make[ClassStrategy].from[ClassStrategyFailingImpl]
   }
 }
