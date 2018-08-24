@@ -2,8 +2,10 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 
 import java.util.concurrent.atomic.AtomicReference
 
+import com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategyBaseImpl, BootstrapContext, OpinionatedDiApp}
 import com.github.pshirshov.izumi.distage.config.ConfigModule
+import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReaderDefaultImpl
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
@@ -11,8 +13,10 @@ import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
-import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService}
+import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import com.github.pshirshov.izumi.distage.roles.impl.{LogInstances, RoleAppBootstrapStrategyArgs}
+import com.github.pshirshov.izumi.distage.roles.roles
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RolesInfo}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
@@ -22,15 +26,17 @@ import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
-import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceStaticImpl}
+import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceStaticImpl, StaticLogRouter}
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success, Try}
 
 class RoleAppBootstrapStrategy[CommandlineConfig](
-                                roleAppBootstrapStrategyArgs: RoleAppBootstrapStrategyArgs
-                              , bsContext: BootstrapContext[CommandlineConfig]
-                              ) extends ApplicationBootstrapStrategyBaseImpl(bsContext) {
+                                                   roleAppBootstrapStrategyArgs: RoleAppBootstrapStrategyArgs
+                                                   , bsContext: BootstrapContext[CommandlineConfig]
+                                                 ) extends ApplicationBootstrapStrategyBaseImpl(bsContext) {
+
   import roleAppBootstrapStrategyArgs._
 
   private val logger = new IzLogger(router(), CustomContext.empty)
@@ -44,7 +50,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
     this
   }
 
-  protected val roleInfo = new AtomicReference[RolesInfo]()
+  protected val roleInfo = new AtomicReference[roles.RolesInfo]()
 
   override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModuleDef] = {
     Quirks.discard(bs)
@@ -65,7 +71,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
           .add(closeablesHook)
           .add(componentsHook)
 
-        make[RolesInfo].from(roles)
+        make[distage.roles.roles.RolesInfo].from(roles)
       }
       , new TracingGcModule(roles.requiredComponents)
     )
@@ -74,7 +80,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
   override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
     val bindings = app.flatMap(_.bindings)
     logger.info(s"Available ${app.size -> "app plugins"} and ${bs.size -> "bootstrap plugins"} and ${bindings.size -> "app bindings"}...")
-    val roles: RolesInfo = roleProvider.getInfo(bindings)
+    val roles: distage.roles.roles.RolesInfo = roleProvider.getInfo(bindings)
     roleInfo.set(roles) // TODO: mutable logic isn't so pretty. We need to maintain an immutable context somehow
     printRoleInfo(roles)
 
@@ -112,23 +118,57 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
     Seq(baseMod overridenBy addOverrides)
   }
 
-  private def makeLogRouter: LogRouter = {
-    val renderingPolicy = if (jsonLogging) {
+
+  // TODO: this is a temporary solution until we finish full-scale logger configuration support
+  private def makeLogRouter(params: RoleAppBootstrapStrategyArgs): LogRouter = {
+    import RoleAppBootstrapStrategy._
+    import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+
+    // TODO: copypaste from di boostrap, this MUST disappear
+    val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
+    val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
+      new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
+      , symbolIntrospector
+    )
+    val reader = new RuntimeConfigReaderDefaultImpl(reflectionProvider, symbolIntrospector)
+
+
+    val logconf = Try(bsContext.appConfig.config.getConfig("logger")) match {
+      case Failure(exception) =>
+        System.err.println(s"`logger` section isn't defined in the config, logger isn't going to be configured: ${exception.getMessage}")
+        SinksConfig(Map.empty, RenderingOptions(), json = false, None)
+
+      case Success(value) =>
+        reader.readConfig(value, SafeType.get[SinksConfig]).asInstanceOf[SinksConfig]
+    }
+
+    val renderingPolicy = if (logconf.json || params.jsonLogging) {
       new LogstageCirceRenderingPolicy()
     } else {
-      new StringRenderingPolicy(RenderingOptions(withExceptions = true, withColors = true))
+      new StringRenderingPolicy(logconf.options, logconf.layout)
     }
 
     val sinks = Seq(new ConsoleSink(renderingPolicy))
 
+    val levels = logconf.levels.flatMap {
+      case (stringLevel, pack) =>
+        val level = LogInstances.toLevel(stringLevel)
+        pack.map((_, LoggerConfig(level, sinks)))
+    }
+
     // TODO: here we may read log configuration from config file
-    new ConfigurableLogRouter(
-      new LogConfigServiceStaticImpl(Map.empty, LoggerConfig(rootLogLevel, sinks))
+    val result = new ConfigurableLogRouter(
+      new LogConfigServiceStaticImpl(
+        levels
+        , LoggerConfig(params.rootLogLevel, sinks)
+      )
     )
+    StaticLogRouter.instance.setup(result)
+    result
   }
 
   override def router(): LogRouter = {
-    makeLogRouter
+    makeLogRouter(roleAppBootstrapStrategyArgs)
   }
 
   // there are no bootstrap plugins in Izumi, no need to scan
@@ -143,5 +183,10 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 }
 
 object RoleAppBootstrapStrategy {
+
   final case class Using(libraryName: String, clazz: Class[_])
+
+  case class SinksConfig(levels: Map[String, List[String]], options: RenderingOptions, json: Boolean, layout: Option[String])
+
 }
+

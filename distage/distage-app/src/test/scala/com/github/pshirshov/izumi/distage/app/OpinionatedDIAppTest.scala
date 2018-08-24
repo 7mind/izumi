@@ -93,7 +93,7 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
 
   private val bootstrapConfig = {
     PluginConfig(debug = false
-      , Seq("com.github.pshirshov.izumi")
+      , Seq.empty
       , Seq.empty
     )
   }

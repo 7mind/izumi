@@ -5,7 +5,7 @@ import java.io.File
 import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleArgs
 import com.github.pshirshov.izumi.logstage.api.Log
-import scopt.{OptionParser, Read}
+import scopt.OptionParser
 
 case class ScoptLauncherArgs(
                            configFile: Option[File] = None
@@ -17,6 +17,7 @@ case class ScoptLauncherArgs(
                          )
 
 object ScoptLauncherArgs {
+  import LogInstances._
 
   case class WriteReference(asJson: Boolean = false
                             , targetDir: String = "config"
@@ -87,17 +88,22 @@ object ScoptLauncherArgs {
            },
        )
    }
+}
 
-   implicit lazy val logLevelRead: Read[Log.Level] = Read.reads[Log.Level] {
-     v =>
-       v.charAt(0).toLower match {
-         case 't' => Log.Level.Trace
-         case 'd' => Log.Level.Debug
-         case 'i' => Log.Level.Info
-         case 'w' => Log.Level.Warn
-         case 'e' => Log.Level.Error
-         case 'c' => Log.Level.Crit
-       }
-   }
+object LogInstances {
+  implicit lazy val logLevelRead: scopt.Read[Log.Level] = scopt.Read.reads[Log.Level] {
+    v =>
+      toLevel(v)
+  }
 
+  def toLevel(v: String): Log.Level = {
+    v.charAt(0).toLower match {
+      case 't' => Log.Level.Trace
+      case 'd' => Log.Level.Debug
+      case 'i' => Log.Level.Info
+      case 'w' => Log.Level.Warn
+      case 'e' => Log.Level.Error
+      case 'c' => Log.Level.Crit
+    }
+  }
 }
