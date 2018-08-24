@@ -6,7 +6,7 @@ import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 // TODO: this class is used by tests only
-object ExtratingStringInterpolator {
+object ExtractingStringInterpolator {
 
   implicit class LogSC(val sc: StringContext) {
     def m(args: Any*): Message = macro fetchArgsNames

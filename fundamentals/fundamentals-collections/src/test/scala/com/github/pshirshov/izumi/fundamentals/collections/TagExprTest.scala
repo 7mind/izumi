@@ -6,6 +6,28 @@ import org.scalatest.WordSpec
 class TagExprTest extends WordSpec {
 
   "Tag expression evaluator" should {
+    "support pretty-printing" in {
+      val xorExpr = TagExpr.Strings.one("a", "b")
+      val notXorExpr = TagExpr.Strings.Not(xorExpr)
+
+      val abExpr = TagExpr.Strings.And(Set(
+        notXorExpr,
+        TagExpr.Strings.all("a", "b"),
+      ))
+
+      val expr = TagExpr.Strings.And(Set(
+        notXorExpr,
+        TagExpr.Strings.all("a", "b"),
+        TagExpr.Strings.any("x", "y")
+      ))
+      assert(expr.toString == "(!(:a \\/ :b) && (:a && :b) && (:x || :y))")
+
+      assert(TagExpr.Strings.TagDNF.toDNF(xorExpr).toString == "((!:a && :b) || (!:b && :a))")
+      assert(TagExpr.Strings.TagDNF.toDNF(notXorExpr).toString == "((!:a && !:b) || (:a && :b))")
+      assert(TagExpr.Strings.TagDNF.toDNF(abExpr).toString == "(:a && :b)")
+      assert(TagExpr.Strings.TagDNF.toDNF(expr).toString == "((:a && :b && :x) || (:a && :b && :y))")
+    }
+
     "support boolean operations" in {
       assert(TagExpr.Strings.any("a", "b").evaluate(Set("a")))
       assert(TagExpr.Strings.any("a", "b").evaluate(Set("a", "b")))
@@ -27,6 +49,7 @@ class TagExprTest extends WordSpec {
       assert(!TagExpr.Strings.one("a", "b").evaluate(Set("d")))
       assert(TagExpr.Strings.Not(TagExpr.Strings.one("a", "b")).evaluate(Set("d")))
     }
+
   }
 
 
