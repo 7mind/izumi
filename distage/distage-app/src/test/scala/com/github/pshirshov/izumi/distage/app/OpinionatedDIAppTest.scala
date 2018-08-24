@@ -30,7 +30,7 @@ class CustomizationModule extends BootstrapModuleDef {
 class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]#Context) => Unit) extends OpinionatedDiApp {
   override type CommandlineConfig = EmptyCfg
 
-  override def handler: AppFailureHandler = NullHandler
+  override def handler: AppFailureHandler = AppFailureHandler.NullHandler
 
   val testSink = new TestSink()
 

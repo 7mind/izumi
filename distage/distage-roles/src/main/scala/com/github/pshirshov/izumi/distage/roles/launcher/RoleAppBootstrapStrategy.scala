@@ -83,8 +83,10 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
     roleInfo.set(roles) // TODO: mutable logic isn't so pretty. We need to maintain an immutable context somehow
     printRoleInfo(roles)
 
-    val allDisabledTags = TagExpr.Strings.Or(disabledTags, roles.unrequiredRoleNames.toSeq.map(TagExpr.Strings.Has.apply): _*)
-    logger.info(s"Disabled ${allDisabledTags -> "tags"}")
+    val unrequiredRoleTags = roles.unrequiredRoleNames.map(v => TagExpr.Strings.Has(v) : TagExpr.Strings.Expr)
+    val allDisabledTags = TagExpr.Strings.Or(Set(disabledTags) ++ unrequiredRoleTags)
+    logger.trace(s"Raw disabled tags ${allDisabledTags -> "expression"}")
+    logger.info(s"Disabled ${TagExpr.Strings.TagDNF.toDNF(allDisabledTags) -> "tags"}")
 
     new ConfigurablePluginMergeStrategy(PluginMergeConfig(
       allDisabledTags
@@ -132,13 +134,20 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
     val reader = new RuntimeConfigReaderDefaultImpl(reflectionProvider, symbolIntrospector)
 
 
-    val logconf = Try(bsContext.appConfig.config.getConfig("logger")) match {
+    val maybeConf = for {
+      section <- Try(bsContext.appConfig.config.getConfig("logger"))
+      config <- Try(reader.readConfig(section, SafeType.get[SinksConfig]).asInstanceOf[SinksConfig])
+    } yield  {
+      config
+    }
+
+    val logconf = maybeConf match {
       case Failure(exception) =>
-        System.err.println(s"`logger` section isn't defined in the config, logger isn't going to be configured: ${exception.getMessage}")
+        System.err.println(s"Failed to read `logging` config section, using defaults: ${exception.getMessage}")
         SinksConfig(Map.empty, RenderingOptions(), json = false, None)
 
       case Success(value) =>
-        reader.readConfig(value, SafeType.get[SinksConfig]).asInstanceOf[SinksConfig]
+        value
     }
 
     val renderingPolicy = if (logconf.json || params.jsonLogging) {
