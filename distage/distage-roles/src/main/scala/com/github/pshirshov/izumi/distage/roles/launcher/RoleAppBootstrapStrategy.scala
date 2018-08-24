@@ -10,7 +10,6 @@ import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
@@ -170,9 +169,6 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
   override def router(): LogRouter = {
     makeLogRouter(roleAppBootstrapStrategyArgs)
   }
-
-  // there are no bootstrap plugins in Izumi, no need to scan
-  override def mkBootstrapLoader(): PluginLoader = () => Seq.empty
 
   private def showDepData(logger: IzLogger, msg: String, clazz: Class[_]): Unit = {
     val mf = IzManifest.manifest()(ClassTag(clazz)).map(IzManifest.read)
