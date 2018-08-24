@@ -74,8 +74,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   // SymbolInfo
 
-  // TODO: Symbols may contain uninstantiated poly types, and are usually only included for debugging anyway, that's why
-  // weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
+  // Symbols may contain uninstantiated poly types, and are usually only included for debugging purposes anyway
+  // so weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info => q"""
     { $RuntimeDIUniverse.SymbolInfo.Static(${info.name}, ${liftableUnsafeWeakSafeType(info.finalResultType)}, ${info.annotations}, ${liftableUnsafeWeakSafeType(info.definingClass)}) }

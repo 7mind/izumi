@@ -33,6 +33,7 @@ trait WithDISafeType {
   }
 
   implicit final class Deannotate(typ: TypeNative) {
+    @inline
     def deannotate: TypeNative =
       typ match {
         case t: u.AnnotatedTypeApi =>
@@ -46,6 +47,10 @@ trait WithDISafeType {
     def get[T: Tag]: SafeType = SafeType(Tag[T].tag.tpe)
 
     def unsafeGetWeak[T: WeakTag]: SafeType = SafeType(WeakTag[T].tag.tpe)
+  }
+
+  implicit class TagSafeType(tag: Tag[_]) {
+    def tpe: SafeType = SafeType(tag.tag.tpe)
   }
 
 }
