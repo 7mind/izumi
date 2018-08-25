@@ -16,7 +16,8 @@ final case class TypeScriptImport(id: TypeId, pkg: String)
 
 final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest] = None) {
   private def renderTypeImports(id: TypeId, ts: Typespace): String = id match {
-    case adt: AdtId => s"${adt.name}, ${adt.name}Helpers"
+    case adt: AdtId => s"${adt.name}, ${adt.name}Serialized, ${adt.name}Helpers"
+    case i: IdentifierId => s"${i.name}"
     case i: InterfaceId => s"${i.name}, ${i.name + ts.tools.implId(i).name}, ${i.name + ts.tools.implId(i).name}Serialized"
     case d: DTOId => {
       val mirrorInterface = ts.tools.sourceId(d)
