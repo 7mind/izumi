@@ -46,6 +46,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     case _ => throw new Exception(s"Unwind type is not implemented for type $id")
   }
 
+  // TODO:MJSON
   private def unwindField(name: String, id: TypeId)(implicit ts: Typespace, conv: TypeScriptTypeConverter): String = {
     s"""{
        |    name: '$name',

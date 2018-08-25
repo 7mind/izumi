@@ -210,7 +210,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def renderDefaultValue(id: TypeId): Option[String] = id match {
     case g: Generic => g match {
       case _: Generic.TOption => None
-      case _: Generic.TMap => Some("{}")
+      case _: Generic.TMap => Some("{}") // TODO:MJSON
       case _: Generic.TList => Some("[]")
       case _: Generic.TSet => Some("[]")
     }
