@@ -5,7 +5,6 @@ import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
 
 import scala.annotation.tailrec
-import scala.collection.immutable.Nil
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 import scala.reflect.runtime.{universe => ru}
@@ -38,15 +37,11 @@ class TagMacroImpl(val c: blackbox.Context) {
       logger.log("AAAAAH! got full tag!!!")
     }
 
-    val tgt = weakTypeOf[T].dealias
+    val tgt = norm(weakTypeOf[T].dealias)
 
     // if type head is undefined or type is undefined and has no holes: print implicit not found (steal error messages from cats-effect)
 
-    val res = reify[TagMacro[T]] {
-      TagMacro[T](Tag[T](foundTypeTag.splice
-        .asInstanceOf[ru.TypeTag[T]]
-      ))
-    }
+    val res = findHoles[T](tgt, foundTypeTag)
 
     logger.log(s"Final code of Tag[${weakTypeOf[T]}]:\n ${showCode(res.tree)}")
 
@@ -55,44 +50,69 @@ class TagMacroImpl(val c: blackbox.Context) {
 
   // we need to handle four cases – type args, refined types, type bounds and bounded wildcards(? check existence)
   @inline
-  protected def findHoles[T: c.WeakTypeTag](tpe: c.Type): Any = { //List[c.Type] => c.Expr[TagMacro[T]] = {
-    val constructorHole = paramKind(tpe.typeConstructor)
-    val argHoles = tpe.typeArgs.map(t => paramKind(norm(t.dealias)))
+  protected def findHoles[T: c.WeakTypeTag](tpe: c.Type, ruTag: c.Expr[ru.WeakTypeTag[T]]): c.Expr[TagMacro[T]] = {
+    val ctor = tpe.typeConstructor
+    val constructorTag: c.Expr[ru.WeakTypeTag[_]] = paramKind(ctor) match {
+      case None => ruTag
+      case Some(hole) => summonCtor(tpe, hole)
+    }
+    val argTags0: List[c.Expr[Option[ru.TypeTag[_]]]] = tpe.typeArgs.map(t => summonMergeArg(t, paramKind(norm(t.dealias))))
 
-//    val ctor = defaiult(constructorHole)
-//    reify {
-//      Tag.appliedTag[T](constructorHole.splice, argHoles.splice)
-//    }
+    val argTags = c.Expr[List[Option[ru.TypeTag[_]]]](q"$argTags0")
+
+    reify {
+      TagMacro[T](Tag.mergeArgs[T](constructorTag.splice, argTags.splice))
+    }
     // TODO: compounds
   }
 
   @inline
-  def paramKind(tpe: c.Type): Option[Kind] =
+  protected def summonCtor(tpe: c.Type, kind: Kind): c.Expr[ru.WeakTypeTag[_]] = {
+    // TODO error message ???
+    val summon: ImplicitSummon[c.type, c.universe.type] = kindMap.lift(kind).getOrElse(c.abort(c.enclosingPosition, "TODO"))
+    val expr = summon.apply(tpe)
+    expr
+  }
+
+  @inline
+  protected def summonMergeArg(tpe: c.Type, hole: Option[Kind]): c.Expr[Option[ru.TypeTag[_]]] = hole match {
+    case Some(kind) =>
+      // TODO error message ???
+      val summon: ImplicitSummon[c.type, c.universe.type] = kindMap.lift(kind).getOrElse(c.abort(c.enclosingPosition, "TODO"))
+      reify[Option[ru.TypeTag[_]]](Some(summon.apply(tpe).splice))
+    case None =>
+      reify(None)
+  }
+
+  @inline
+  protected def paramKind(tpe: c.Type): Option[Kind] =
     if (tpe.typeSymbol.isParameter)
       Some(kindOf(tpe))
     else
       None
 
-  def kindOf(tpe: c.Type): Kind =
+  protected def kindOf(tpe: c.Type): Kind =
     Kind(tpe.typeParams.map(t => kindOf(t.typeSignature)))
 
   /** Mini `normalize`. We don't wanna do scary things such as beta-reduce. And AFAIK the only case that can make us
     * confuse a type-parameter for a non-parameter is an empty refinement `T {}`. So we just strip it when we get it. */
-  @inline
-  def norm(x: Type): Type = x match {
-    case RefinedType(t :: _, m) if m.isEmpty => t
+  @tailrec
+  final protected def norm(x: Type): Type = x match {
+    case RefinedType(t :: _, m) if m.isEmpty => norm(t)
+    case AnnotatedType(_, t) => norm(t)
     case _ => x
   }
 
-  protected val kindMap: PartialFunction[Kind, ImplicitSummon[c.universe.type]] = {
-    case Kind(Nil) => ImplicitSummon {
-      t => q"implicitly[${typeOf[Tag[Nothing]]}[$t]].tag"
+  // performance of creation?
+  protected val kindMap: PartialFunction[Kind, ImplicitSummon[c.type, c.universe.type]] = {
+    case Kind(Nil) => ImplicitSummon[c.type, c.universe.type] {
+      t => c.Expr[ru.TypeTag[_]](q"implicitly[${typeOf[Tag[Nothing]]}[$t]].tag")
     }
-    case Kind(Kind(Nil) :: Nil) => ImplicitSummon {
-      t => q"implicitly[${typeOf[TagK[Nothing]]}[$t]].tag"
+    case Kind(Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type] {
+      t => c.Expr[ru.TypeTag[_]](q"implicitly[${typeOf[TagK[Nothing]]}[$t]].tag")
     }
-    case Kind(Kind(Nil) :: Kind(Nil) :: Nil) => ImplicitSummon {
-      t => q"implicitly[${typeOf[TagKK[Nothing]]}[$t]].tag"
+    case Kind(Kind(Nil) :: Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type] {
+      t => c.Expr[ru.TypeTag[_]](q"implicitly[${typeOf[TagKK[Nothing]]}[$t]].tag")
     }
   }
 
@@ -107,7 +127,7 @@ object TagMacro extends TagMacroLowPriority {
     override def toString: String = s"_${if (args.isEmpty) "" else args.mkString("[", ", ", "]")}"
   }
 
-  final case class ImplicitSummon[U <: SingletonUniverse](f: U#Type => U#Tree) extends AnyVal
+  final case class ImplicitSummon[C <: blackbox.Context, U <: SingletonUniverse](apply: U#Type => C#Expr[ru.TypeTag[_]]) extends AnyVal
 
   def get[T: TagMacro]: Tag[T] = implicitly[TagMacro[T]].value
 

@@ -65,17 +65,17 @@ class TagTest extends WordSpec with X[String] {
       assert(testTag[String].tpe == safe[String])
     }
 
-//    "Work for any abstract type with available Tag" in {
-//      def testTag[T: Tag] = TagMacro.get[T]
-//
-//      assert(testTag[String].tpe == safe[String])
-//    }
-
-    "Work for any abstract type with available Tag when obscured by empty refinement" in {
-      def testTag[T: Tag] = TagMacro.get[T {}]
+    "Work for any abstract type with available Tag" in {
+      def testTag[T: Tag] = TagMacro.get[T]
 
       assert(testTag[String].tpe == safe[String])
     }
+
+//    "Work for any abstract type with available Tag when obscured by empty refinement" in {
+//      def testTag[T: Tag] = TagMacro.get[T {}]
+//
+//      assert(testTag[String].tpe == safe[String])
+//    }
 
     "handle function local type aliases" in {
       def testTag[T: Tag]= {
