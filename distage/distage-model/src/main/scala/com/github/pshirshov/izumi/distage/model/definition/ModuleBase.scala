@@ -44,9 +44,9 @@ object ModuleBase {
 
   implicit final class ModuleDefCombine[T <: ModuleBase](private val moduleDef: T)(implicit T: ModuleMake[T]) {
     def ++(that: ModuleBase): T = {
-      // FIXME: a hack to support tag merging
+      // TODO: a hack to support tag merging
 
-      // FIXME: this makes sense because Bindings equals/hashcode ignores `tags` field
+      // TODO: this makes sense because Bindings equals/hashcode ignores `tags` field
       val theseBindings = moduleDef.bindings.toSeq
       val thoseBindings = that.bindings.toSeq
 
@@ -65,7 +65,7 @@ object ModuleBase {
       // we replace existing items in-place and appending new at the end
       // set bindings should not be touched
 
-      // FIXME: a hack to support tag merging
+      // TODO: a hack to support tag merging
       def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] =
         (T.make(a) ++ T.make(b)).bindings
 

@@ -10,10 +10,6 @@ import scala.collection.immutable.ListSet
 import scala.collection.mutable
 
 class ConfigTest extends WordSpec {
-  def mkModule(): ConfigModule = {
-    mkModule(ConfigFactory.load())
-  }
-
   def mkModule(path: String): ConfigModule = {
     mkModule(ConfigFactory.load(path))
   }
@@ -25,7 +21,7 @@ class ConfigTest extends WordSpec {
 
   "Config resolver" should {
     "resolve config references" in {
-      val injector = Injector(mkModule())
+      val injector = Injector(mkModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.definition)
 
       val context = injector.produce(plan)
@@ -45,7 +41,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config references in set elements" in {
-      val injector = Injector(mkModule())
+      val injector = Injector(mkModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.setDefinition)
 
       val context = injector.produce(plan)

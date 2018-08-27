@@ -28,15 +28,16 @@ abstract class OpinionatedDiApp {
   protected def commandlineSetup(args: Array[String]): Strategy
 
   protected def doMain(strategy: Strategy): Unit = {
-    val loggerRouter = strategy.router()
-
-    val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
     val bootstrapLoader = strategy.mkBootstrapLoader()
     val appLoader = strategy.mkLoader()
 
     val bootstrapAutoDef = bootstrapLoader.load()
     val appAutoDef = appLoader.load()
     val mergeStrategy = strategy.mergeStrategy(bootstrapAutoDef, appAutoDef)
+
+    val loggerRouter = strategy.router()
+    val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
+    logger.info("Main logger initialized")
 
     val mergedBs = mergeStrategy.merge(bootstrapAutoDef)
     val mergedApp = mergeStrategy.merge(appAutoDef)

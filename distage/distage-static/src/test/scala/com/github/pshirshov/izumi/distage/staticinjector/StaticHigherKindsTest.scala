@@ -14,7 +14,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
     import HigherKindsCase1._
 
     case class Definition[F[_] : TagK : Pointed](getResult: Int) extends StaticModuleDef {
-      // FIXME: hmmm, what to do with this
+      // TODO: hmmm, what to do with this
       make[Pointed[F]].from(Pointed[F])
 
       make[TestTrait].stat[TestServiceClass[F]]
@@ -24,7 +24,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
       make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
       make[Either[String, Boolean]].from(Right(true))
 
-      //        FIXME: Nothing doesn't resolve properly yet when F is unknown...
+      //        TODO: Nothing doesn't resolve properly yet when F is unknown...
       //        make[F[Nothing]]
       //        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
       make[F[Any]].from(Pointed[F].point(1: Any))

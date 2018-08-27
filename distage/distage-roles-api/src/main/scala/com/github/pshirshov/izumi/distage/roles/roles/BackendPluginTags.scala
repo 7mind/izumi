@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles.roles
 
-// FIXME remove
+// TODO remove
 trait BackendPluginTags {
   final val Test = "test"
   final val Dummy = "dummy"

@@ -60,10 +60,25 @@ object IzLogger {
     new IzLogger(r, CustomContext.empty)
   }
 
+  final def simpleRouter(threshold: Log.Level, sinks: LogSink*): ConfigurableLogRouter = {
+    router(threshold, Map.empty, sinks :_*)
+  }
+
   final def router(threshold: Log.Level, levels: Map[String, Log.Level], sinks: LogSink*): ConfigurableLogRouter = {
     val levelConfigs = levels.mapValues(l => LoggerConfig(l, sinks))
     val configService = new LogConfigServiceStaticImpl(levelConfigs, LoggerConfig(threshold, sinks))
     val router = new ConfigurableLogRouter(configService)
     router
+  }
+
+  def parseLevel(v: String): Log.Level = {
+    v.charAt(0).toLower match {
+      case 't' => Log.Level.Trace
+      case 'd' => Log.Level.Debug
+      case 'i' => Log.Level.Info
+      case 'w' => Log.Level.Warn
+      case 'e' => Log.Level.Error
+      case 'c' => Log.Level.Crit
+    }
   }
 }

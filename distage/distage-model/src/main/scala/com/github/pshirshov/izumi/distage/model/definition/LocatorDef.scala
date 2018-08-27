@@ -16,7 +16,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
 
 import scala.collection.mutable
 
-// FIXME: shameless copypaste of [[ModuleDef]] for now; but we ARE able unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
+// TODO: shameless copypaste of [[ModuleDef]] for now; but we ARE able unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
 trait LocatorDef extends AbstractLocator {
 
   final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = initialState

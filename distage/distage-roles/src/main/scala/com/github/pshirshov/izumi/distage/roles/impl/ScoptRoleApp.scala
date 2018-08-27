@@ -1,14 +1,10 @@
 package com.github.pshirshov.izumi.distage.roles.impl
 
 import com.github.pshirshov.izumi.distage.app.BootstrapContextDefaultImpl
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleApp, RoleAppBootstrapStrategy}
-import com.typesafe.config.ConfigFactory
 
-import scala.collection.JavaConverters._
-
-// FIXME
+// TODO
 trait ScoptRoleApp {
   this: RoleApp =>
 
@@ -24,32 +20,14 @@ trait ScoptRoleApp {
         throw new IllegalArgumentException("Unexpected commandline parameters")
       }
 
-  override protected def buildConfig(params: ScoptRoleApp#CommandlineConfig): AppConfig = {
-    val commonConfig = params.configFile.fold(ConfigFactory.defaultApplication())(ConfigFactory.parseFile)
-
-    val appConfig = ConfigFactory.load(commonConfig)
-    val rolesConfig = params.roles.flatMap(_.configFile).map(ConfigFactory.parseFile)
-
-    val mainConfig = rolesConfig.foldLeft(appConfig) {
-      case (main, role) =>
-        val duplicateKeys = main.entrySet().asScala.map(_.getKey).intersect(role.entrySet().asScala.map(_.getKey))
-        if (duplicateKeys.nonEmpty) {
-          throw new IllegalArgumentException(s"Found duplicates keys in supplied configs: $duplicateKeys")
-        }
-        main.withFallback(role)
-    }
-
-    AppConfig(mainConfig)
-  }
-
   override protected def paramsToStrategyArgs(params: CommandlineConfig): StrategyArgs = {
     val args = ScoptRoleAppBootstrapArgs(params)
     args.copy(using = args.using ++ using)
   }
 
-  override protected def setupContext(params: CommandlineConfig, args: StrategyArgs, appConfig: AppConfig): Strategy = {
+  override protected def setupContext(params: CommandlineConfig, args: StrategyArgs): Strategy = {
     val bsContext: BootstrapContext = BootstrapContextDefaultImpl(
-      params, pluginConfig, appConfig
+      params, pluginConfig
     )
 
     new RoleAppBootstrapStrategy[CommandlineConfig](args, bsContext)

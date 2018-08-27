@@ -101,7 +101,7 @@ trait WithDITypeTags {
 
     implicit def tagFromTypeTagTKAAAAA[T[_[_], _, _, _, _, _], K[_], A0, A1, A2, A3, A4](implicit t: TypeTag[T[K, A0, A1, A2, A3, A4]]): Tag[T[K, A0, A1, A2, A3, A4]] = Tag(t)
 
-    // FIXME: wtf? Blasted thing creates a type lambda and chooses tagFromTypeTagTK instead of the most fitting kind! Lambda[A[_] => TestClassFG[Either, A]][Option]
+    // TODO: wtf? Blasted thing creates a type lambda and chooses tagFromTypeTagTK instead of the most fitting kind! Lambda[A[_] => TestClassFG[Either, A]][Option]
 //    implicit def tagFromTypeTagKK2K[K[_[_, _], _[_]], K2[+_, +_]: TagKK, K1[_]: TagK](implicit t: TypeTag[K[K2, K1]]): Tag[K[K2, K1]] = Tag(t)
 
     implicit def tagFromTypeTagKK2A[K[_[_, _], _], K2[_, _], A](implicit t: TypeTag[K[K2, A]]): Tag[K[K2, A]] = Tag(t)
