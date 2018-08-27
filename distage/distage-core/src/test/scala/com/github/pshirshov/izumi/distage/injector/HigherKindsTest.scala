@@ -13,7 +13,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     import HigherKindsCase1._
 
     case class Definition[F[_] : TagK : Pointed](getResult: Int) extends ModuleDef {
-      // FIXME: hmmm, what to do with this
+      // TODO: hmmm, what to do with this
       make[Pointed[F]].from(Pointed[F])
 
       make[TestTrait].from[TestServiceClass[F]]
@@ -23,7 +23,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
       make[F[String]].from { res: Int@Id("TestService") => Pointed[F].point(s"Hello $res!") }
       make[Either[String, Boolean]].from(Right(true))
 
-      //        FIXME: Nothing doesn't resolve properly yet when F is unknown...
+      //        TODO: Nothing doesn't resolve properly yet when F is unknown...
       //        make[F[Nothing]]
       //        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
       make[F[Any]].from(Pointed[F].point(1: Any))
@@ -73,7 +73,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     """)
   }
 
-  "FIXME: Support [A, F[_]] type shape" in {
+  "TODO: Support [A, F[_]] type shape" in {
     import HigherKindsCase1._
 
     abstract class Parent[C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
@@ -83,7 +83,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(new Parent[Int, List]{}.bindings.head.key.tpe == SafeType.get[TestProvider[Int, List]])
   }
 
-  "FIXME: Support [A, A, F[_]] type shape" in {
+  "TODO: Support [A, A, F[_]] type shape" in {
     import HigherKindsCase1._
 
     abstract class Parent[A: Tag, C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
@@ -93,7 +93,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(new Parent[Int, Boolean, List]{}.bindings.head.key.tpe == SafeType.get[TestProvider0[Int, Boolean, List]])
   }
 
-  "FIXME: support [A, F[_], G[_]] type shape" in {
+  "TODO: support [A, F[_], G[_]] type shape" in {
     import HigherKindsCase1._
 
     abstract class Parent[A: Tag, F[_]: TagK, R[_]: TagK: Pointed] extends ModuleDef {
@@ -103,7 +103,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(new Parent[Int, List, List]{}.bindings.head.key.tpe == SafeType.get[TestProvider1[Int, List, List]])
   }
 
-  "FIXME: support [F[_], G[_], A] type shape" in {
+  "TODO: support [F[_], G[_], A] type shape" in {
     import HigherKindsCase1._
 
     abstract class Parent[F[_]: TagK, R[_]: TagK: Pointed, A: Tag] extends ModuleDef {

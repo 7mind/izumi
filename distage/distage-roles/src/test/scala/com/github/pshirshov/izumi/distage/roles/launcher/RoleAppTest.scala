@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.roles.launcher
 
 import com.github.pshirshov.izumi.distage.app
+import com.github.pshirshov.izumi.distage.app.AppFailureHandler
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
@@ -15,6 +16,7 @@ class RoleAppTest extends WordSpec {
   "Role Launcher" should {
     "properly discover services to start" in {
       new RoleApp with ScoptRoleApp {
+        override def handler: AppFailureHandler = AppFailureHandler.NullHandler
 
         override final val using = Seq.empty
 
