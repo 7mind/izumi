@@ -46,7 +46,9 @@ object TypesCases {
       def dep: Dep
     }
 
-    trait Trait2 extends Trait1
+    trait Trait2 {
+      def dep2: Dep2
+    }
 
     trait Trait3[T <: Dep] extends Trait1 {
       def dep: T
@@ -56,6 +58,18 @@ object TypesCases {
 
     trait Trait5[T] extends Trait4 {
       def dep: T
+    }
+
+    trait Trait6 extends Trait2 with Trait1
+  }
+
+  object TypesCase4 {
+    class Dep
+    class Dep2
+
+    trait Trait1[A, B] {
+      def a: A
+      def b: B
     }
   }
 

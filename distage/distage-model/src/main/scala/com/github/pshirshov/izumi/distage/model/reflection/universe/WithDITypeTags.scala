@@ -21,7 +21,7 @@ trait WithDITypeTags {
   * {{{
   * class MyModule[F[_]: Monad: TagK] {
   *   make[MyService[F]]
-  *   make[F[Unit]].named("empty").from(Monad[F].pure())
+  *   make[F[Int]].named("lucky-number").from(Monad[F].pure(7))
   * }
   * }}}
   *
@@ -55,6 +55,22 @@ trait WithDITypeTags {
       val appliedTypeCreator = new TypeCreator {
         override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
           m.universe.appliedType(tag.migrate(m).tpe.typeConstructor, args.map(_.migrate(m).tpe))
+      }
+      Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
+    }
+
+    def mergeArgs[R](tag: WeakTypeTag[_], args: List[Option[TypeTag[_]]]): Tag[R] = {
+      val appliedTypeCreator = new TypeCreator {
+        override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
+          val tpe = tag.migrate(m).tpe
+
+          val mergedArgs = args.zipWithIndex.map {
+            case (Some(t), _) => t.migrate(m).tpe
+            case (None, i) => tpe.typeArgs(i)
+          }
+
+          m.universe.appliedType(tpe.typeConstructor, mergedArgs)
+        }
       }
       Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
     }
@@ -137,7 +153,7 @@ trait WithDITypeTags {
   trait TagInstances4  {
 
     implicit def tagFromTagKA[K[_]: TagK, A: Tag]: Tag[K[A]] =
-      TagK[K].apply[A]
+      Tag.appliedTag(TagK[K].tag, List(Tag[A].tag))
 
     implicit def tagFromTagKAA[K[_, _], A0: Tag, A1: Tag](implicit t: TypeTag[K[Nothing, Nothing]]): Tag[K[A0, A1]] =
       Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag))

@@ -82,7 +82,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val definition = new ModuleDef {
       make[Dep]
-      make[Trait2 with Trait1].from[Trait2]
+      make[Trait2 with Trait1].from[Trait6]
     }
 
     val injector = mkInjector()
@@ -101,7 +101,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
       make[Dep]
       make[Dep2]
       make[Trait1 { def dep: Dep2 }].from[Trait3[Dep2]]
-      make[{def dep: Dep}].from[Trait2]
+      make[{def dep: Dep}].from[Trait6]
     }
 
     val injector = mkInjector()
@@ -113,6 +113,29 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     assert(instantiated1.dep == context.get[Dep2])
     assert(instantiated2.dep == context.get[Dep])
+  }
+
+  "handle function local type aliases" in {
+    import TypesCase4._
+
+    class Definition[T: Tag] extends ModuleDef {
+      make[Dep]
+      make[Dep2]
+      x
+
+      def x: Unit = {
+        type X[A] = Trait1[Dep, A]
+        make[X[T]]
+      }
+    }
+    val injector = mkInjector()
+    val plan = injector.plan(new Definition[Dep2])
+    val context = injector.produce(plan)
+
+    val instantiated = context.get[Trait1[Dep, Dep2]]
+
+    assert(instantiated.a == context.get[Dep])
+    assert(instantiated.b == context.get[Dep2])
   }
 
   "progression test: can't handle abstract refinement types" in {
@@ -202,7 +225,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     """)
   }
 
-  "progression test: Support type lambdas in TagK when lambda closes on a generic: Tag parameter" in {
+  "progression test: Support type lambdas in TagK when part of lambda closes on a generic parameter with available Tag" in {
     assertTypeError("""
       def partialEitherTagK[A: Tag] = TagK[Either[A, ?]]
 

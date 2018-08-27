@@ -6,6 +6,8 @@ import com.github.pshirshov.izumi.distage.plugins.load
 trait DistagePlugins {
 
   type PluginBase = plugins.PluginBase
+  val PluginBase: plugins.PluginBase.type = plugins.PluginBase
+
   type PluginDef = plugins.PluginDef
 
   type PluginLoader = load.PluginLoader
