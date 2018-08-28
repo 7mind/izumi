@@ -147,6 +147,7 @@ func (t *WebSocketServerTransport) runConnectionReader(c *wsConnection) {
 						c.messages <- &processorRpcResponseMessage{
 							connection: c,
 							message: &WebSocketResponseMessage{
+								Kind: MessageKindRPCResponse,
 								Ref: msg.ID,
 							},
 						}
