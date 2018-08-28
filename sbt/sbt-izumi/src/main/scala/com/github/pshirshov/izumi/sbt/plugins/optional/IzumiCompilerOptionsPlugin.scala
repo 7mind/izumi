@@ -69,10 +69,11 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
   protected def scalacOptionsVersion(scalaOrganization: String, scalaVersion: String): Seq[String] = {
     val versionSettings = CrossVersion.partialVersion(scalaVersion) match {
       case Some((2, 12)) => Seq(
-        "-opt-warnings:_"
+        "-Ypartial-unification"
+        , "-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() / 2).toString
+        , "-opt-warnings:_"
         , "-Ywarn-extra-implicit"
         , "-Ywarn-unused:_"
-        , "-Ypartial-unification"
         , "-Yno-adapted-args"
         , "-explaintypes" // Explain type errors in more detail.
         , "-Xlint:adapted-args" // Warn if an argument list is modified to match the receiver.
