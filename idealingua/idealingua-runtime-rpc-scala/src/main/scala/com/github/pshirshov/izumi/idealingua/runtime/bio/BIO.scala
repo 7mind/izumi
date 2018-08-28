@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.bio
 
-import scalaz.zio.{ExitResult, IO, Retry}
+import scalaz.zio.{ExitResult, IO, Schedule}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.{higherKinds, implicitConversions}
@@ -142,7 +142,7 @@ object BIO extends BIOSyntax {
       r.sandboxWith(f)
 
     @inline def retryOrElse[A, E, A2 >: A, E2](r: IO[E, A])(duration: FiniteDuration, orElse: => IO[E2, A2]): IO[E2, A2] =
-      r.retryOrElse[A2, Any, Duration, E2](Retry.duration(duration), {
+      r.retryOrElse[A2, Any, Duration, E2](Schedule.duration(duration), {
         (_: Any, _: Any) =>
           orElse
       })
