@@ -1,11 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
-import scala.reflect.api.Universe
+import com.github.pshirshov.izumi.fundamentals.reflection.UniverseGeneric
 
-trait DIUniverseBase {
+trait DIUniverseBase extends UniverseGeneric {
   this: WithDISafeType =>
-
-  val u: Universe
 
   type TypeNative = u.Type
   type Symb = u.Symbol

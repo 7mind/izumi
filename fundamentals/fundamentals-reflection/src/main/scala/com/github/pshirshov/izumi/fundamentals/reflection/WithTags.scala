@@ -5,9 +5,7 @@ import scala.language.higherKinds
 import scala.reflect.api
 import scala.reflect.api.TypeCreator
 
-trait WithTags {
-
-  val u: SingletonUniverse
+trait WithTags extends UniverseGeneric { self =>
 
   import u._
 
@@ -79,7 +77,7 @@ trait WithTags {
   }
 
   trait LowPriorityTagInstances {
-    implicit def tagFromMacro[T]: Tag[T] = macro TagMacroImpl.impl[T]
+    implicit final def tagFromTagMaterializer[T]: Tag[T] = macro TagMacroImpl.impl[self.type, T]
   }
 
   /**

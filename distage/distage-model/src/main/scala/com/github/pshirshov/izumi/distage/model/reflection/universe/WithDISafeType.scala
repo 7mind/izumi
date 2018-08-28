@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.fundamentals.reflection.WithTags
+
 trait WithDISafeType {
-  this: DIUniverseBase with WithDITypeTags =>
+  this: DIUniverseBase with WithTags =>
 
   // TODO: hotspots, hashcode on keys is inefficient
   case class SafeType(tpe: TypeNative) {
