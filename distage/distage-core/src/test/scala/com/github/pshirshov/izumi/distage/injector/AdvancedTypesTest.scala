@@ -82,6 +82,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val definition = new ModuleDef {
       make[Dep]
+      make[Dep2]
       make[Trait2 with Trait1].from[Trait6]
     }
 

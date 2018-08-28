@@ -99,12 +99,10 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "Shouldn't work for any abstract type without available TypeTag or Tag or TagK" in {
-
+      assertTypeError("""
       def testTag[T] = TagMacro.get[T]
       def testTagK[F[_], T] = TagMacro.get[F[T]]
-
-      assert(testTag[String].tpe == safe[String])
-      assert(testTagK[Set, Int].tpe == safe[Set[Int]])
+         """)
     }
   }
 

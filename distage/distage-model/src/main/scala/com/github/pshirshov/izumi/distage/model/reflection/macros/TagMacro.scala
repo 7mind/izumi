@@ -17,15 +17,7 @@ class TagMacroImpl(val c: blackbox.Context) {
 
   protected val logger: TrivialLogger = TrivialMacroLogger[this.type](c)
 
-  private[this] def innerActualType(e: c.Expr[_]): Option[c.Type] =
-    e.tree match {
-      case Typed(t, _) =>
-        Option(t.tpe)
-      case _ =>
-        None
-    }
-
-  def impl[T: c.WeakTypeTag]: c.Expr[TagMacro[T]] = {
+  def impl[T: c.WeakTypeTag]: c.Tree = { //: c.Expr[Tag[T]] = {
     logger.log(s"Got compile tag: ${weakTypeOf[T].dealias}") // have to always dealias
     // ok we don't run implicit search for concrete embedded stuff, consistent with how typetag behaves
       // FIXME: experiment with abstract types as params and their weaktypetags
@@ -50,11 +42,13 @@ class TagMacroImpl(val c: blackbox.Context) {
     logger.log(s"Final code of Tag[${weakTypeOf[T]}]:\n ${showCode(res.tree)}")
 
     res
+
+    res.tree
   }
 
   // we need to handle four cases – type args, refined types, type bounds and bounded wildcards(? check existence)
   @inline
-  protected def findHoles[T: c.WeakTypeTag](tpe: c.Type): c.Expr[TagMacro[T]] = {
+  protected def findHoles[T: c.WeakTypeTag](tpe: c.Type): c.Expr[Tag[T]] = {
 
     val argHoles = tpe.typeArgs.map {
       t0 =>
@@ -84,7 +78,7 @@ class TagMacroImpl(val c: blackbox.Context) {
     val argTags = c.Expr[List[Option[ru.TypeTag[_]]]](q"${argHoles.map { case (t, h) => summonMergeArg(t, h) }}")
 
     reify {
-      new TagMacro[T](Tag.mergeArgs[T](constructorTag.splice, argTags.splice))
+      Tag.mergeArgs[T](constructorTag.splice, argTags.splice)
     }
     // TODO: compounds
   }
@@ -150,25 +144,13 @@ class TagMacroImpl(val c: blackbox.Context) {
 
 }
 
-case class TagMacro[T](value: Tag[T])
 
-
-
-object TagMacro extends TagMacroLowPriority {
+object TagMacro {
   final case class Kind(args: List[Kind]) {
     override def toString: String = s"_${if (args.isEmpty) "" else args.mkString("[", ", ", "]")}"
   }
 
   final case class ImplicitSummon[C <: blackbox.Context, U <: SingletonUniverse](apply: U#Type => C#Expr[ru.TypeTag[_]]) extends AnyVal
 
-  def get[T: TagMacro]: Tag[T] = implicitly[TagMacro[T]].value
-
-  implicit def typetagcase[T](implicit t: ru.TypeTag[T]): TagMacro[T] = TagMacro(Tag(t))
+  def get[T: Tag]: Tag[T] = implicitly[Tag[T]]
 }
-
-trait TagMacroLowPriority {
-  implicit def macrocase[T]: TagMacro[T] = macro TagMacroImpl.impl[T]
-}
-
-
-

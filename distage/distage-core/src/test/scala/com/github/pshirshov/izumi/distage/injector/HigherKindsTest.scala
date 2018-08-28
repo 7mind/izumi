@@ -133,7 +133,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
       make[TestClassFA[Either, Int]]
       final val t2 = Tag[TestClassFA[F, A]]
 
-//      make[F[String, Int]].from(v)
+      make[F[String, Int]].from(v)
     }
 
     val value: Either[String, Int] = Right(5)

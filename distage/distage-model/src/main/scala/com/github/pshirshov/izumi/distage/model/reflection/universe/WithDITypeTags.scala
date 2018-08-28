@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.distage.model.reflection.macros.TagMacroImpl
 import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
 
+import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.api
 import scala.reflect.api.TypeCreator
@@ -33,7 +35,7 @@ trait WithDITypeTags {
     override def toString: String = s"Tag[${tag.tpe}]"
   }
 
-  object Tag extends TagInstances0 {
+  object Tag extends LowPriorityTagInstances {
     def apply[T: Tag]: Tag[T] = implicitly
 
     def apply[T](t: TypeTag[T]): Tag[T] =
@@ -66,7 +68,7 @@ trait WithDITypeTags {
 
           val mergedArgs = args.zipWithIndex.map {
             case (Some(t), _) => t.migrate(m).tpe
-            case (None, i) => tpe.typeArgs(i)
+            case (None, i) => tpe.typeArgs.applyOrElse(i, (_: Int) => throw new RuntimeException(s"Aaaa, can't get param $i of $tpe in constr ${tpe.typeConstructor} in args: ${args}"))
           }
 
           m.universe.appliedType(tpe.typeConstructor, mergedArgs)
@@ -75,121 +77,11 @@ trait WithDITypeTags {
       Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
     }
 
+    implicit def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = Tag(t)
   }
 
-  trait TagInstances0 extends TagInstances1 {
-    // `Any` is apparently kind polymorphic (only inside the compiler, you can't use that ._.), which breaks other instances, so it's handled separately.
-    implicit val tagAny: Tag[Any] =
-      new Tag[Any] {
-        override val tag: TypeTag[Any] = typeTag[Any]
-      }
-
-    // hmm, it works, but not always...
-    implicit val tagNothing: Tag[Nothing] =
-      new Tag[Nothing] {
-        override val tag: TypeTag[Nothing] = typeTag[Nothing]
-      }
-  }
-
-  trait TagInstances1 extends TagInstances2 {
-
-    implicit def tagFromTypeTagA[A: TypeTag]: Tag[A] = Tag(typeTag[A])
-
-    implicit def tagFromTypeTagKA[K[_], A](implicit t: TypeTag[K[A]]): Tag[K[A]] = Tag(t)
-
-    implicit def tagFromTypeTagKAA[K[_, _], A0, A1](implicit t: TypeTag[K[A0, A1]]): Tag[K[A0, A1]] = Tag(t)
-
-    implicit def tagFromTypeTagKAAA[K[_, _, _], A0, A1, A2](implicit t: TypeTag[K[A0, A1, A2]]): Tag[K[A0, A1, A2]] = Tag(t)
-
-    implicit def tagFromTypeTagKAAAA[K[_, _, _, _], A0, A1, A2, A3](implicit t: TypeTag[K[A0, A1, A2, A3]]): Tag[K[A0, A1, A2, A3]] = Tag(t)
-
-    implicit def tagFromTypeTagKAAAAA[K[_, _, _, _, _], A0, A1, A2, A3, A4](implicit t: TypeTag[K[A0, A1, A2, A3, A4]]): Tag[K[A0, A1, A2, A3, A4]] = Tag(t)
-
-    implicit def tagFromTypeTagTK[T[_[_]], K[_]](implicit t: TypeTag[T[K]]): Tag[T[K]] = Tag(t)
-
-    implicit def tagFromTypeTagTKA[T[_[_], _], K[_], A](implicit t: TypeTag[T[K, A]]): Tag[T[K, A]] = Tag(t)
-
-    implicit def tagFromTypeTagTKAA[T[_[_], _, _], K[_], A0, A1](implicit t: TypeTag[T[K, A0, A1]]): Tag[T[K, A0, A1]] = Tag(t)
-
-    implicit def tagFromTypeTagTKAAA[T[_[_], _, _, _], K[_], A0, A1, A2](implicit t: TypeTag[T[K, A0, A1, A2]]): Tag[T[K, A0, A1, A2]] = Tag(t)
-
-    implicit def tagFromTypeTagTKAAAA[T[_[_], _, _, _, _], K[_], A0, A1, A2, A3](implicit t: TypeTag[T[K, A0, A1, A2, A3]]): Tag[T[K, A0, A1, A2, A3]] = Tag(t)
-
-    implicit def tagFromTypeTagTKAAAAA[T[_[_], _, _, _, _, _], K[_], A0, A1, A2, A3, A4](implicit t: TypeTag[T[K, A0, A1, A2, A3, A4]]): Tag[T[K, A0, A1, A2, A3, A4]] = Tag(t)
-
-    // TODO: wtf? Blasted thing creates a type lambda and chooses tagFromTypeTagTK instead of the most fitting kind! Lambda[A[_] => TestClassFG[Either, A]][Option]
-//    implicit def tagFromTypeTagKK2K[K[_[_, _], _[_]], K2[+_, +_]: TagKK, K1[_]: TagK](implicit t: TypeTag[K[K2, K1]]): Tag[K[K2, K1]] = Tag(t)
-
-    implicit def tagFromTypeTagKK2A[K[_[_, _], _], K2[_, _], A](implicit t: TypeTag[K[K2, A]]): Tag[K[K2, A]] = Tag(t)
-
-    implicit def tagFromTypeTagKK2[K[_[_, _]], K2[_, _]: TagKK](implicit t: TypeTag[K[K2]]): Tag[K[K2]] = Tag(t)
-
-  }
-
-  trait TagInstances2 extends TagInstances3 {
-
-    implicit def tagFromTagTAAK[T[_, _, _[_]], A0: Tag, A1: Tag, K[_]: TagK](implicit t: TypeTag[T[Nothing, Nothing, Nothing]]): Tag[T[A0, A1, K]] =
-      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, TagK[K].tag))
-
-  }
-
-  trait TagInstances3 extends TagInstances4 {
-
-    implicit def tagFromTagTAK[T[_, _[_]], A: Tag, K[_]: TagK](implicit t: TypeTag[T[Nothing, Nothing]]): Tag[T[A, K]] =
-      Tag.appliedTag(t, List(Tag[A].tag, TagK[K].tag))
-
-    //
-    implicit def tagFromTagKK2A[K[_[_, _], _], K2[_, _]: TagKK, A: Tag](implicit t: TypeTag[K[Nothing, Nothing]]): Tag[K[K2, A]] =
-      Tag.appliedTag(t, List(TagKK[K2].tag, Tag[A].tag))
-
-    implicit def tagFromTagKK2K[K[_[_, _], _[_]], K2[_, _]: TagKK, K1[_]: TagK](implicit t: TypeTag[K[Nothing, Nothing]]): Tag[K[K2, K1]] =
-      Tag.appliedTag(t, List(TagKK[K2].tag, TagK[K1].tag))
-
-    implicit def tagFromTagKK2[K[_[_, _]], K2[_, _]: TagKK](implicit t: TypeTag[K[Nothing]]): Tag[K[K2]] =
-      Tag.appliedTag(t, List(TagKK[K2].tag))
-
-  }
-
-  trait TagInstances4  {
-
-    implicit def tagFromTagKA[K[_]: TagK, A: Tag]: Tag[K[A]] =
-      Tag.appliedTag(TagK[K].tag, List(Tag[A].tag))
-
-    implicit def tagFromTagKAA[K[_, _], A0: Tag, A1: Tag](implicit t: TypeTag[K[Nothing, Nothing]]): Tag[K[A0, A1]] =
-      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag))
-
-    implicit def tagFromTagKAAA[K[_, _, _], A0: Tag, A1: Tag, A2: Tag](implicit t: TypeTag[K[Nothing, Nothing, Nothing]]): Tag[K[A0, A1, A2]] =
-      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag))
-
-    implicit def tagFromTagKAAAA[K[_, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: TypeTag[K[Nothing, Nothing, Nothing, Nothing]]): Tag[K[A0, A1, A2, A3]] =
-      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag))
-
-    implicit def tagFromTagKAAAAA[K[_, _, _, _, _], A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: TypeTag[K[Nothing, Nothing, Nothing, Nothing, Nothing]]): Tag[K[A0, A1, A2, A3, A4]] =
-      Tag.appliedTag(t, List(Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
-
-    implicit def tagFromTagTK[T[_[_]], K[_]: TagK](implicit t: TypeTag[T[Nothing]]): Tag[T[K]] =
-      Tag.appliedTag(t, List(TagK[K].tag))
-
-    implicit def tagFromTagTKA[T[_[_], _], K[_]: TagK, A: Tag](implicit t: TypeTag[T[Nothing, Nothing]]): Tag[T[K, A]] =
-      Tag.appliedTag(t, List(TagK[K].tag, Tag[A].tag))
-
-    implicit def tagFromTagTKAA[T[_[_], _, _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing]]): Tag[T[K, A0, A1]] =
-      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag))
-
-    implicit def tagFromTagTKAAA[T[_[_], _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing, Nothing]]): Tag[T[K, A0, A1, A2]] =
-      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag))
-
-    implicit def tagFromTagTKAAAA[T[_[_], _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing, Nothing, Nothing]]): Tag[T[K, A0, A1, A2, A3]] =
-      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag))
-
-    implicit def tagFromTagTKAAAAA[T[_[_], _, _, _, _, _], K[_]: TagK, A0: Tag, A1: Tag, A2: Tag, A3: Tag, A4: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]]): Tag[T[K, A0, A1, A2, A3, A4]] =
-      Tag.appliedTag(t, List(TagK[K].tag, Tag[A0].tag, Tag[A1].tag, Tag[A2].tag, Tag[A3].tag, Tag[A4].tag))
-
-    implicit def tagFromTagTKKA[T[_[_], _[_], _], K1[_]: TagK, K2[_]: TagK, A: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing]]): Tag[T[K1, K2, A]] =
-      Tag.appliedTag(t, List(TagK[K1].tag, TagK[K2].tag, Tag[A].tag))
-
-    implicit def tagFromTagTAKK[T[_, _[_], _[_]], A: Tag, K1[_]: TagK, K2[_]: TagK](implicit t: TypeTag[T[Nothing, Nothing, Nothing]]): Tag[T[A, K1, K2]] =
-      Tag.appliedTag(t, List(Tag[A].tag, TagK[K1].tag, TagK[K2].tag))
+  trait LowPriorityTagInstances {
+    implicit def tagFromMacro[T]: Tag[T] = macro TagMacroImpl.impl[T]
   }
 
   /**
