@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRende
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
 import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceStaticImpl, StaticLogRouter}
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
-import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
+import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, QueueingSink}
 import com.typesafe.config.Config
 
 import scala.util.{Failure, Success, Try}
@@ -34,7 +34,7 @@ class SimpleLoggerConfigurator(logger: IzLogger) {
       new StringRenderingPolicy(options, logconf.layout)
     }
 
-    val sinks = Seq(new ConsoleSink(renderingPolicy))
+    val sinks = Seq(new QueueingSink(new ConsoleSink(renderingPolicy)))
 
     val levels = logconf.levels.flatMap {
       case (stringLevel, pack) =>
