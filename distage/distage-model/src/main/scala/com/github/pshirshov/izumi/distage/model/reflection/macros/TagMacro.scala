@@ -25,24 +25,28 @@ class TagMacroImpl(val c: blackbox.Context) {
         None
     }
 
-  def impl[T: c.WeakTypeTag](foundTypeTag: c.Expr[ru.WeakTypeTag[T]]): c.Expr[TagMacro[T]] = {
-    logger.log(s"Got compile tag: ${weakTypeOf[T].typeArgs}")
-    logger.log(s"Got compile tag: ${weakTypeOf[T].dealias.typeArgs}") // have to always dealias
-    logger.log(s"Got runtime tag: ${showCode(foundTypeTag.tree)}")
+  def impl[T: c.WeakTypeTag]: c.Expr[TagMacro[T]] = {
+    logger.log(s"Got compile tag: ${weakTypeOf[T].dealias}") // have to always dealias
+    // ok we don't run implicit search for concrete embedded stuff, consistent with how typetag behaves
+      // FIXME: experiment with abstract types as params and their weaktypetags
+    // write tests for current tag
 
-    if (foundTypeTag.actualType =:= weakTypeOf[ru.TypeTag[T]] || innerActualType(foundTypeTag).fold(false)(_ =:= weakTypeOf[ru.TypeTag[T]])) {
       // unfortunately, WeakTypeTags of predefined primitives will not have inner type 'TypeTag'
       // one way around this is to match against a list of them...
       // Or put an implicit search guard first
-      logger.log("AAAAAH! got full tag!!!")
-    }
+
+//    logger.log(s"Got runtime tag: ${showCode(foundTypeTag.tree)}")
+//    if (foundTypeTag.actualType =:= weakTypeOf[ru.TypeTag[T]] || innerActualType(foundTypeTag).fold(false)(_ =:= weakTypeOf[ru.TypeTag[T]])) {
+//      logger.log("AAAAAH! got full tag!!!")
+//    }
 
     val tgt = norm(weakTypeOf[T].dealias)
 
     // if type head is undefined or type is undefined and has no holes: print implicit not found (steal error messages from cats-effect)
 
-    val res = findHoles[T](tgt, foundTypeTag)
+    val res = findHoles[T](tgt)
 
+    // closure allocation could be problematic
     logger.log(s"Final code of Tag[${weakTypeOf[T]}]:\n ${showCode(res.tree)}")
 
     res
@@ -50,20 +54,48 @@ class TagMacroImpl(val c: blackbox.Context) {
 
   // we need to handle four cases – type args, refined types, type bounds and bounded wildcards(? check existence)
   @inline
-  protected def findHoles[T: c.WeakTypeTag](tpe: c.Type, ruTag: c.Expr[ru.WeakTypeTag[T]]): c.Expr[TagMacro[T]] = {
-    val ctor = tpe.typeConstructor
-    val constructorTag: c.Expr[ru.WeakTypeTag[_]] = paramKind(ctor) match {
-      case None => ruTag
-      case Some(hole) => summonCtor(tpe, hole)
-    }
-    val argTags0: List[c.Expr[Option[ru.TypeTag[_]]]] = tpe.typeArgs.map(t => summonMergeArg(t, paramKind(norm(t.dealias))))
+  protected def findHoles[T: c.WeakTypeTag](tpe: c.Type): c.Expr[TagMacro[T]] = {
 
-    val argTags = c.Expr[List[Option[ru.TypeTag[_]]]](q"$argTags0")
+    val argHoles = tpe.typeArgs.map {
+      t0 =>
+        val t = norm(t0.dealias)
+        t -> paramKind(t)
+    }
+
+    val ctor = tpe.dealias.typeConstructor
+    val constructorTag: c.Expr[ru.WeakTypeTag[_]] = paramKind(ctor) match {
+      case None | Some(Kind(Nil)) =>
+        val tpeN = holesToNothing(tpe, argHoles)
+        c.Expr[ru.TypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[ru.TypeTag[Nothing]], tpeN)}]")
+//
+//      case Some(Kind(Nil)) =>
+//        // TODO ???
+//        c.abort(c.enclosingPosition, "TODO")
+        // can't determine abstract types... they may be valid non-parameter but without tags...
+
+        // FIXME: obviously if ctor is kind 0 and is found to be a parameter we should fail
+        // alternatively, we could drop the entire parameter check shit and just summon typetags
+        // this would generally be far more correct, robust and simple
+        // i.e. get benchmarks first before you commit to a more brittle solution
+        // Objection: it's not necessarily more valid, parameters may hide which do not have valid typetags, e.g X[Id, ?]
+      case Some(hole) => summonCtor(ctor, hole)
+    }
+
+    val argTags = c.Expr[List[Option[ru.TypeTag[_]]]](q"${argHoles.map { case (t, h) => summonMergeArg(t, h) }}")
 
     reify {
-      TagMacro[T](Tag.mergeArgs[T](constructorTag.splice, argTags.splice))
+      new TagMacro[T](Tag.mergeArgs[T](constructorTag.splice, argTags.splice))
     }
     // TODO: compounds
+  }
+
+  @inline
+  protected def holesToNothing(tpe: c.Type, args: List[(c.Type, Option[Kind])]): c.Type = {
+    val newArgs = args.map {
+      case (t, None) => t
+      case _ => definitions.NothingTpe
+    }
+    appliedType(tpe.typeConstructor, newArgs)
   }
 
   @inline
@@ -75,11 +107,11 @@ class TagMacroImpl(val c: blackbox.Context) {
   }
 
   @inline
-  protected def summonMergeArg(tpe: c.Type, hole: Option[Kind]): c.Expr[Option[ru.TypeTag[_]]] = hole match {
+  protected def summonMergeArg(ctor: c.Type, hole: Option[Kind]): c.Expr[Option[ru.TypeTag[_]]] = hole match {
     case Some(kind) =>
       // TODO error message ???
       val summon: ImplicitSummon[c.type, c.universe.type] = kindMap.lift(kind).getOrElse(c.abort(c.enclosingPosition, "TODO"))
-      reify[Option[ru.TypeTag[_]]](Some(summon.apply(tpe).splice))
+      reify[Option[ru.TypeTag[_]]](Some(summon.apply(ctor).splice))
     case None =>
       reify(None)
   }
@@ -106,13 +138,13 @@ class TagMacroImpl(val c: blackbox.Context) {
   // performance of creation?
   protected val kindMap: PartialFunction[Kind, ImplicitSummon[c.type, c.universe.type]] = {
     case Kind(Nil) => ImplicitSummon[c.type, c.universe.type] {
-      t => c.Expr[ru.TypeTag[_]](q"implicitly[${typeOf[Tag[Nothing]]}[$t]].tag")
+      t => c.Expr[ru.TypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[Tag[Nothing]], t)}].tag")
     }
     case Kind(Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type] {
-      t => c.Expr[ru.TypeTag[_]](q"implicitly[${typeOf[TagK[Nothing]]}[$t]].tag")
+      t => c.Expr[ru.TypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[TagK[Nothing]], t)}].tag")
     }
     case Kind(Kind(Nil) :: Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type] {
-      t => c.Expr[ru.TypeTag[_]](q"implicitly[${typeOf[TagKK[Nothing]]}[$t]].tag")
+      t => c.Expr[ru.TypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[TagKK[Nothing]], t)}].tag")
     }
   }
 
@@ -135,7 +167,7 @@ object TagMacro extends TagMacroLowPriority {
 }
 
 trait TagMacroLowPriority {
-  implicit def macrocase[T: ru.WeakTypeTag]: TagMacro[T] = macro TagMacroImpl.impl[T]
+  implicit def macrocase[T]: TagMacro[T] = macro TagMacroImpl.impl[T]
 }
 
 

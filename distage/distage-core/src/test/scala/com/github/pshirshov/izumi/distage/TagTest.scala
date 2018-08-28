@@ -65,50 +65,47 @@ class TagTest extends WordSpec with X[String] {
       assert(testTag[String].tpe == safe[String])
     }
 
-    "Work for any abstract type with available Tag" in {
-      def testTag[T: Tag] = TagMacro.get[T]
+    "Work for any abstract type with available Tag when obscured by empty refinement" in {
+      def testTag[T: Tag] = TagMacro.get[T {}]
 
       assert(testTag[String].tpe == safe[String])
     }
 
-//    "Work for any abstract type with available Tag when obscured by empty refinement" in {
-//      def testTag[T: Tag] = TagMacro.get[T {}]
-//
-//      assert(testTag[String].tpe == safe[String])
-//    }
-
     "handle function local type aliases" in {
       def testTag[T: Tag]= {
         type X[A] = Either[Int, A]
+
         TagMacro.get[X[T]]
       }
-
 
       assert(testTag[String].tpe == safe[Either[Int, String]])
     }
     // Work for dispositioned arguments [_A_A_]
 
-//    "Work for any abstract type with available TagK" in {
-//      def testTagK[F[_]: TagK, T: Tag] = TagMacro.get[F[T]]
-//      // TODO add strange shapes
-//
-//      assert(testTagK[Set, Int].tpe == safe[Set[Int]])
-//    }
-//
-    // "Work for any abstract type with available TagKK" in {
-//      def testTagK[F[_, _]: TagKK, T: Tag, G: Tag] = TagMacro.get[F[T, G]]
-//      // TODO add strange shapes
-//
-//      assert(testTagK[Set, Int, String].tpe == safe[Either[Int, String]])
-//    }
-//
-//    "Shouldn't work for any abstract type without available TypeTag or Tag or TagK" in {
-//      def testTag[T] = TagMacro.get[T]
-//      def testTagK[F[_], T] = TagMacro.get[F[T]]
-//
-//      assert(testTag[String].tpe == safe[String])
-//      assert(testTagK[Set, Int].tpe == safe[Set[Int]])
-//    }
+    // add test: how to do: [F[Int, ?, ?]: TagKK] = make[F[Int, A, B]
+
+    "Work for any abstract type with available TagK" in {
+      def testTagK[F[_]: TagK, T: Tag] = TagMacro.get[F[T]]
+      // TODO add strange shapes
+
+      assert(testTagK[Set, Int].tpe == safe[Set[Int]])
+    }
+
+     "Work for any abstract type with available TagKK" in {
+      def testTagKK[F[_, _]: TagKK, T: Tag, G: Tag] = TagMacro.get[F[T, G]]
+      // TODO add strange shapes
+
+      assert(testTagKK[Either, Int, String].tpe == safe[Either[Int, String]])
+    }
+
+    "Shouldn't work for any abstract type without available TypeTag or Tag or TagK" in {
+
+      def testTag[T] = TagMacro.get[T]
+      def testTagK[F[_], T] = TagMacro.get[F[T]]
+
+      assert(testTag[String].tpe == safe[String])
+      assert(testTagK[Set, Int].tpe == safe[Set[Int]])
+    }
   }
 
 
