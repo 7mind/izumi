@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
-import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.api
 import scala.reflect.api.TypeCreator

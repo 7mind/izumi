@@ -6,6 +6,8 @@ import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3._
 import distage.{ModuleBase, ModuleDef}
 import org.scalatest.WordSpec
 
+import scala.language.reflectiveCalls
+
 class AutoTraitsTest extends WordSpec with MkInjector {
 
   "support trait fields" in {

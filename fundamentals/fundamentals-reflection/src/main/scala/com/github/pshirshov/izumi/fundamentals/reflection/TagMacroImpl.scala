@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.fundamentals.reflection
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 import scala.annotation.tailrec
-import scala.language.experimental.macros
 import scala.reflect.ClassTag
 import scala.reflect.macros.blackbox
 
@@ -23,9 +22,6 @@ class TagMacroImpl(val c: blackbox.Context) {
 
   def impl[DIU <: WithTags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag]: c.Expr[TagMaterializer[DIU, T]] = {
 
-//    val universe = c.Expr[DIU](q"${c.weakTypeOf[DIU].asInstanceOf[c.universe.SingleType].sym.asTerm}")
-
-//    c.abort(c.enclosingPosition, s"GOT UNIVERSE: ${c.weakTypeOf[DIU]}")
     logger.log(s"GOT UNIVERSE: ${c.weakTypeOf[DIU]}")
 
     logger.log(s"Got compile tag: ${weakTypeOf[T].dealias}") // have to always dealias
@@ -33,14 +29,9 @@ class TagMacroImpl(val c: blackbox.Context) {
       // FIXME: experiment with abstract types as params and their weaktypetags
     // write tests for current tag
 
-      // unfortunately, WeakTypeTags of predefined primitives will not have inner type 'TypeTag'
-      // one way around this is to match against a list of them...
-      // Or put an implicit search guard first
-
-//    logger.log(s"Got runtime tag: ${showCode(foundTypeTag.tree)}")
-//    if (foundTypeTag.actualType =:= weakTypeOf[ru.TypeTag[T]] || innerActualType(foundTypeTag).fold(false)(_ =:= weakTypeOf[ru.TypeTag[T]])) {
-//      logger.log("AAAAAH! got full tag!!!")
-//    }
+    // unfortunately, WeakTypeTags of predefined primitives will not have inner type 'TypeTag'
+    // one way around this is to match against a list of them...
+    // Or put an implicit search guard first
 
     val tgt = norm(weakTypeOf[T].dealias)
 
@@ -52,8 +43,8 @@ class TagMacroImpl(val c: blackbox.Context) {
       { new TagMaterializer[DIU, T](tag.splice) }
     }
 
-    // closure allocation could be problematic
-    logger.log(s"Final code of TagMaterializer[${weakTypeOf[T]}]:\n ${showRaw(res.tree, printTypes = true, printIds = true, printOwners = true, printMirrors = true)}")
+    // log closure allocation could be problematic
+    logger.log(s"Final code of TagMaterializer[${weakTypeOf[T]}]:\n ${showCode(res.tree)}")
 
     res
   }
@@ -70,14 +61,13 @@ class TagMacroImpl(val c: blackbox.Context) {
 
     val ctor = tpe.dealias.typeConstructor
     val constructorTag: c.Expr[DIU#ScalaReflectTypeTag[_]] = paramKind(ctor) match {
-      case None | Some(Kind(Nil)) =>
+      case None =>
         val tpeN = holesToNothing(tpe, argHoles)
         c.Expr[DIU#ScalaReflectTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]], tpeN)}]")
-//        c.Expr[DIU#ScalaReflectTypeTag[_]](q"{ null : ${appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]], tpeN)} }")
-//
-//      case Some(Kind(Nil)) =>
-//        // TODO ???
-//        c.abort(c.enclosingPosition, "TODO")
+
+      case Some(Kind(Nil)) =>
+        // TODO ???
+        c.abort(c.enclosingPosition, "TODO")
         // can't determine abstract types... they may be valid non-parameter but without tags...
 
         // FIXME: obviously if ctor is kind 0 and is found to be a parameter we should fail
@@ -90,11 +80,14 @@ class TagMacroImpl(val c: blackbox.Context) {
 
     val argTags = c.Expr[List[Option[DIU#ScalaReflectTypeTag[_]]]](q"${argHoles.map { case (t, h) => summonMergeArg[DIU](t, h) }}")
 
-    val term = c.weakTypeOf[DIU].asInstanceOf[c.universe.SingleType].sym.asTerm
-    val universe = c.Expr[DIU](q"${term}")
-//    val universe = c.Expr[DIU](q"(null: ${weakTypeOf[DIU]})")
+    val term = c.weakTypeOf[DIU] match {
+      case u: SingleType => u.sym.asTerm
+      case u => c.abort(c.enclosingPosition,
+        s"""Got a non-singleton universe type - $u. Please instantiate universe as
+           | a val or an object and keep it somewhere in scope!""".stripMargin)
+    }
+    val universe = c.Expr[DIU](q"$term")
 
-//    c.abort(c.enclosingPosition, s"GOT UNIVERSE: ${showCode(universe.tree)}")
     logger.log(s"UNIVERSE TREEE: ${showCode(universe.tree)}, fc: ${term.fullName}")
 
     reify {
@@ -127,7 +120,9 @@ class TagMacroImpl(val c: blackbox.Context) {
       val summon: ImplicitSummon[c.type, c.universe.type, DIU] = kindMap[DIU].lift(kind).getOrElse(c.abort(c.enclosingPosition, "TODO"))
       reify[Option[DIU#ScalaReflectTypeTag[_]]](Some(summon.apply(ctor).splice))
     case None =>
-      reify(None)
+//      reify(None)
+      val summon: ImplicitSummon[c.type, c.universe.type, DIU] = kindMap[DIU].lift(kindOf(ctor)).getOrElse(c.abort(c.enclosingPosition, "TODO"))
+      reify[Option[DIU#ScalaReflectTypeTag[_]]](Some(summon.apply(ctor).splice))
   }
 
   @inline
@@ -152,7 +147,10 @@ class TagMacroImpl(val c: blackbox.Context) {
   // TODO: performance of creation? make val
   protected def kindMap[DIU <: WithTags with Singleton: c.WeakTypeTag]: PartialFunction[Kind, ImplicitSummon[c.type, c.universe.type, DIU]] = {
     case Kind(Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
-      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#Tag[Nothing]], t)}].tag")
+      t =>
+        val name = TermName(c.freshName())
+        c.Expr[DIU#ScalaReflectTypeTag[_]](q"""
+           { def $name(implicit ev: ${appliedType(weakTypeOf[DIU#Tag[Nothing]], t)}) = ev; $name.tag }""")
     }
     case Kind(Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
       t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#TagK[Nothing]], t)}].tag")
@@ -161,6 +159,18 @@ class TagMacroImpl(val c: blackbox.Context) {
       t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#TagKK[Nothing]], t)}].tag")
     }
   }
+
+//  protected def kindMap[DIU <: WithTags with Singleton: c.WeakTypeTag]: PartialFunction[Kind, ImplicitSummon[c.type, c.universe.type, DIU]] = {
+//    case Kind(Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
+//      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${c.inferImplicitValue(appliedType(weakTypeOf[DIU#Tag[Nothing]], t))}}.tag")
+//    }
+//    case Kind(Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
+//      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagK[Nothing]], t))}}.tag")
+//    }
+//    case Kind(Kind(Nil) :: Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
+//      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagKK[Nothing]], t))}}.tag")
+//    }
+//  }
 
 }
 
