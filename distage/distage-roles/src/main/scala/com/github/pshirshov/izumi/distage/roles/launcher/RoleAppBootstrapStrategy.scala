@@ -95,12 +95,18 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
       logger.error(s"Failed to load configs: ${failures.niceList() -> "failures"}")
     }
 
-    AppConfig(foldConfigs(ConfigFactory.defaultApplication(), good.collect({case (_, Success(c)) => c})))
+    val folded = foldConfigs(good.collect({ case (_, Success(c)) => c }))
+
+    val config = ConfigFactory.defaultOverrides()
+      .withFallback(folded)
+      .withFallback(ConfigFactory.defaultApplication())
+
+    AppConfig(config)
   }
 
-  protected def foldConfigs(appConfig: Config, roleConfigs: Seq[Config]): Config = {
-    roleConfigs.foldRight(appConfig) {
-      case (cfg, acc) =>
+  protected def foldConfigs(roleConfigs: Seq[Config]): Config = {
+    roleConfigs.foldLeft(ConfigFactory.empty()) {
+      case (acc, cfg) =>
         verifyConfigs(cfg, acc)
         acc.withFallback(cfg)
     }
