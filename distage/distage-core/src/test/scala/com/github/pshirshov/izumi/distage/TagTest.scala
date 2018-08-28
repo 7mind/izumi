@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.model.definition.With
-import com.github.pshirshov.izumi.distage.model.reflection.macros.TagMacro
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+import com.github.pshirshov.izumi.fundamentals.reflection.TagMacroImpl
 import distage.Tag
 import org.scalatest.WordSpec
 
@@ -14,6 +15,10 @@ trait X[Y] {
 }
 
 class TagTest extends WordSpec with X[String] {
+
+  object TagMacro {
+    def get[T: Tag]: RuntimeDIUniverse.Tag[T] = Tag[T]
+  }
 
   override final val tagZ = Tag[String]
   final val str = "str"

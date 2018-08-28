@@ -6,6 +6,4 @@ trait UniverseGeneric {
 
   val u: Universe
 
-  type UType = u.type
-
 }

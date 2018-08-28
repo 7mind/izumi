@@ -39,6 +39,8 @@ trait WithTags extends UniverseGeneric { self =>
         override val tag: TypeTag[T] = t
       }
 
+    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = Tag(t)
+
     /**
     * Helper for creating your own instances for type shapes that aren't supported by default instances
     * (most shapes in `cats` and `stdlib` are supported, but you may need this if you use `scalaz`)
@@ -73,11 +75,10 @@ trait WithTags extends UniverseGeneric { self =>
       Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
     }
 
-    implicit def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = Tag(t)
   }
 
   trait LowPriorityTagInstances {
-    implicit final def tagFromTagMaterializer[T]: Tag[T] = macro TagMacroImpl.impl[self.type, T]
+    implicit final def tagFromTagMaterializer[T](implicit t: TagMaterializer[self.type, T]): Tag[T] = t.value
   }
 
   /**
@@ -183,7 +184,7 @@ trait WithTags extends UniverseGeneric { self =>
       }
   }
 
-  implicit class WeakTypeTagMigrate[T](val weakTypeTag: WeakTypeTag[T]) {
+  implicit class WeakTypeTagMigrate[T](private val weakTypeTag: WeakTypeTag[T]) {
     def migrate[U <: SingletonUniverse](m: api.Mirror[U]): m.universe.WeakTypeTag[T] =
       weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
   }
@@ -215,24 +216,7 @@ trait WithTags extends UniverseGeneric { self =>
     implicit def weakTagFromWeakTypeTag[T](implicit t: WeakTypeTag[T]): WeakTag[T] = WeakTag(t)
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  // workaround for a strange (prefix?) equality issue when splicing calls to `implicitly[RuntimeDIUniverse.u.TypeTag[X[Y]]`
+  type ScalaReflectTypeTag[T] = u.TypeTag[T]
 
 }
-
