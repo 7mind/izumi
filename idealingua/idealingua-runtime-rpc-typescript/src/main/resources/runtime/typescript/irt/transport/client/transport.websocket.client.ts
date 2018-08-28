@@ -30,6 +30,8 @@ export function RandomMessageID(prefix: string = ''): string {
     });
 }
 
+const headersUpdatedPrefix = 'headersupdate-';
+
 export class WebSocketClientTransport<C> implements ClientSocketTransport<C, string> {
     private _supported: boolean;
     private _wsc: WSClient;
@@ -138,7 +140,7 @@ export class WebSocketClientTransport<C> implements ClientSocketTransport<C, str
     }
 
     private sendHeaders() {
-        this._headersUpdateID = RandomMessageID('headersupdate-');
+        this._headersUpdateID = RandomMessageID(headersUpdatedPrefix);
         const headers = {
             ...this._headers
         };
@@ -203,7 +205,11 @@ export class WebSocketClientTransport<C> implements ClientSocketTransport<C, str
     private onRpcResponseMessage(res: WebSocketResponseMessage) {
         if (!(res.ref in this._requests)) {
             if (!this.onHeadersUpdated(res)) {
-                console.warn('Unknown reference ID came back: ' + res.ref, res);
+                if (res.ref.indexOf(headersUpdatedPrefix) === 0) {
+                    this._logger.logf(LogLevel.Debug, 'Outdated headers update ID came back: ' + res.ref, res);
+                } else {
+                    this._logger.logf(LogLevel.Warning, 'Unknown reference ID came back: ' + res.ref, res);
+                }
             }
             return;
         }

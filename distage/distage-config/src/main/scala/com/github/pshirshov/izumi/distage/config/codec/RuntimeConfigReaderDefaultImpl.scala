@@ -8,12 +8,13 @@ import java.util.UUID
 import java.util.regex.Pattern
 
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigReadException
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
 import com.typesafe.config._
 
 import scala.collection.JavaConverters._
-import scala.collection.generic.GenMapFactory
+import scala.collection.generic.{GenMapFactory, GenericCompanion}
 import scala.collection.{GenMap, GenTraversable}
 import scala.reflect.ClassTag
 import scala.reflect.io.Path
@@ -112,11 +113,25 @@ class RuntimeConfigReaderDefaultImpl
   }
 
   def listReader(listType: TypeNative): ConfigReader[GenTraversable[_]] = {
-    case cl: ConfigList => Try {
+    case cl: ConfigList =>
+      configListReader(listType, cl)
+
+    case cl: ConfigObject if isList(cl) =>
+      val asList = ConfigValueFactory.fromIterable(cl.unwrapped().values())
+      configListReader(listType, asList)
+
+    case cv =>
+      Failure(new ConfigReadException(
+        s"""Can't read config value as a list $listType, config value is not a list.
+           | ConfigValue was: $cv""".stripMargin))
+  }
+
+  private def configListReader(listType: RuntimeDIUniverse.TypeNative, cl: ConfigList): Try[GenTraversable[_]] = {
+    Try {
       val tyParam = SafeType(listType.dealias.typeArgs.last)
 
       mirror.reflectModule(listType.dealias.companion.typeSymbol.asClass.module.asModule).instance match {
-        case companionFactory: scala.collection.generic.GenericCompanion[GenTraversable] @unchecked =>
+        case companionFactory: GenericCompanion[GenTraversable]@unchecked =>
           val values: Seq[_] = cl.asScala.map(anyReader(tyParam)(_).get)
           companionFactory(values: _*)
         case c =>
@@ -127,10 +142,10 @@ class RuntimeConfigReaderDefaultImpl
                | ConfigValue was: $cl""".stripMargin)
       }
     }
-    case cv =>
-      Failure(new ConfigReadException(
-        s"""Can't read config value as a list $listType, config value is not a list.
-           | ConfigValue was: $cv""".stripMargin))
+  }
+
+  def isList(configObject: ConfigObject): Boolean = {
+    configObject.unwrapped().keySet().asScala.forall(_.forall(_.isDigit))
   }
 
   def optionReader(optionType: TypeNative): ConfigReader[Option[_]] = {
