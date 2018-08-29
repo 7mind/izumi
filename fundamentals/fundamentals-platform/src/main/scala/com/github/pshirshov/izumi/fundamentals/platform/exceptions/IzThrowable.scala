@@ -58,9 +58,14 @@ class IzThrowable(t: Throwable, acceptedPackages: Set[String]) {
         !frame.isNativeMethod && acceptedPackages.exists(frame.getClassName.startsWith)
     }
   }
+
+  def addAllSuppressed(suppressed: Iterable[Throwable]): Throwable = {
+    suppressed.foreach(t.addSuppressed)
+    t
+  }
 }
 
 object IzThrowable {
-  implicit def toRich(throwable: Throwable): IzThrowable = new IzThrowable(throwable, Set.empty)
+  implicit def toRichThrowable(throwable: Throwable): IzThrowable = new IzThrowable(throwable, Set.empty)
 }
 

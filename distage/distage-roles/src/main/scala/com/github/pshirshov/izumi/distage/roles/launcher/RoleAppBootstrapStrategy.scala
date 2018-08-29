@@ -33,12 +33,15 @@ sealed trait ConfigSource {
 }
 
 object ConfigSource {
+
   final case class Resource(name: String) extends ConfigSource {
     override def toString: String = s"resource:$name"
   }
+
   final case class File(file: java.io.File) extends ConfigSource {
     override def toString: String = s"file:$file"
   }
+
 }
 
 class RoleAppBootstrapStrategy[CommandlineConfig](
@@ -65,11 +68,11 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
   protected def buildConfig(): AppConfig = {
     val commonConfigFile = params.primaryConfig
-      .fold(ConfigSource.Resource("common-reference.conf") : ConfigSource)(f => ConfigSource.File(f))
+      .fold(ConfigSource.Resource("common-reference.conf"): ConfigSource)(f => ConfigSource.File(f))
 
     val roleConfigFiles = params.roleSet.toList.map {
       roleName =>
-        params.roleConfigs.get(roleName).fold(ConfigSource.Resource(s"$roleName-reference.conf") : ConfigSource)(f => ConfigSource.File(f))
+        params.roleConfigs.get(roleName).fold(ConfigSource.Resource(s"$roleName-reference.conf"): ConfigSource)(f => ConfigSource.File(f))
     }
 
     val allConfigs = roleConfigFiles :+ commonConfigFile
@@ -100,6 +103,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
     val config = ConfigFactory.defaultOverrides()
       .withFallback(folded)
       .withFallback(ConfigFactory.defaultApplication())
+      .resolve()
 
     AppConfig(config)
   }

@@ -52,12 +52,14 @@ class RoleAppTest extends WordSpec {
           assert(services.size == 1)
           assert(services.exists(_.isInstanceOf[TestService]))
 
-          val conf = services.head.asInstanceOf[TestService].conf
+          val service = services.head.asInstanceOf[TestService]
+          val conf = service.conf
           assert(conf.intval == 123)
           assert(conf.strval == "xxx")
           assert(conf.overridenInt == 111)
           assert(conf.systemPropInt == 265)
           assert(conf.systemPropList == List(111, 222))
+          assert(service.dummies.isEmpty)
 
           super.start(context, bootstrapContext)
         }

@@ -7,8 +7,8 @@ import { JSONMarshaller } from '../../marshaller';
 import { AuthMethod } from '../auth';
 import { TransportHeaders } from '../transport';
 
-type handlerSuccess = (service: string, method: string, payload: string) => void;
-type handlerFailure = (service: string, method: string, error: string) => void;
+export type handlerSuccess = (service: string, method: string, payload: string) => void;
+export type handlerFailure = (service: string, method: string, error: string) => void;
 
 export class HybridClientTransportGeneric<C> implements ClientTransport {
     private _restTransport: HTTPClientTransport;

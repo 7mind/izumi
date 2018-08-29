@@ -58,8 +58,23 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val extendedModules = addRuntime(options, modules)
     if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
-      extendedModules.map(m => Module(ModuleId(Seq(manifest.get.scope, if(m.id.path.head == "irt") m.id.path.mkString("/")
-        else m.id.path.mkString("-")), m.id.name), m.content))
+      extendedModules.map(
+        m => Module(
+          ModuleId(
+            Seq(
+              manifest.get.scope,
+              if(m.id.path.head == "irt")
+                m.id.path.mkString("/")
+              else
+                (
+                  if(manifest.get.dropNameSpaceSegments.isDefined)
+                    m.id.path.drop(manifest.get.dropNameSpaceSegments.get)
+                  else
+                    m.id.path
+                ).mkString("-")
+            ),
+            m.id.name),
+          m.content))
     else
       extendedModules
   }
@@ -70,7 +85,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val peerDeps: List[ManifestDependency] = imports.flatMap(i => i.imports.filter(_.pkg.startsWith(manifest.get.scope)).map(im => ManifestDependency(im.pkg, manifest.get.version))).toList.distinct
 
-    val content = TypeScriptBuildManifest.generatePackage(manifest.get, "index", ts.domain.id.toPackage.mkString("-"), peerDeps)
+    val content = TypeScriptBuildManifest.generatePackage(manifest.get, "index", ts.domain.id.toPackage.toList, peerDeps)
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content)
   }
 
@@ -92,8 +107,9 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
         ManifestDependency("websocket", "^1.0.26")
       ),
       manifest.get.scope,
-      manifest.get.moduleSchema
-    ), "index", "irt")
+      manifest.get.moduleSchema,
+      None
+    ), "index", List("irt"))
 
     Module(ModuleId(Seq("irt"), "package.json"), content)
   }
