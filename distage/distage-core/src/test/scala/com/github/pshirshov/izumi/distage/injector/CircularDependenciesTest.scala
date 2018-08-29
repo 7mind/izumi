@@ -43,8 +43,8 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val exc = intercept[ProvisioningException] {
       injector.produce(plan)
     }
-    assert(exc.getCause.isInstanceOf[TraitInitializationFailedException])
-    assert(exc.getCause.getCause.isInstanceOf[RuntimeException])
+    assert(exc.getSuppressed.head.isInstanceOf[TraitInitializationFailedException])
+    assert(exc.getSuppressed.head.getCause.isInstanceOf[RuntimeException])
   }
 
   "support circular dependencies in providers" in {

@@ -29,9 +29,9 @@ class AdvancedBindingsTest extends WordSpec with MkInjector {
     val plan2 = injector.plan(def2)
     val plan3 = injector.plan(def3)
 
-    assert(Try(injector.produce(plan1)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
-    assert(Try(injector.produce(plan2)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
-    assert(Try(injector.produce(plan3)).toEither.left.exists(_.getCause.isInstanceOf[TODOBindingException]))
+    assert(Try(injector.produce(plan1)).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
+    assert(Try(injector.produce(plan2)).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
+    assert(Try(injector.produce(plan3)).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
   }
 
   "ModuleBuilder supports tags; same bindings with different tags are merged" in {
