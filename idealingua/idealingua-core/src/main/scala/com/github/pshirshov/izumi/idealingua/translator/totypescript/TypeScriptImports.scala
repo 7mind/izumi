@@ -63,7 +63,8 @@ object TypeScriptImports {
 
   protected def withImport(t: TypeId, fromPackage: Package, manifest: Option[TypeScriptBuildManifest]): Seq[String] = {
     var pathToRoot = ""
-    (1 to fromPackage.size).foreach(_ => pathToRoot += "../")
+    (1 to (if(manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN &&
+      manifest.get.dropNameSpaceSegments.isDefined) fromPackage.size - manifest.get.dropNameSpaceSegments.get else fromPackage.size)).foreach(_ => pathToRoot += "../")
 
     val scopeRoot = if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) manifest.get.scope + "/" else pathToRoot
 
@@ -117,7 +118,8 @@ object TypeScriptImports {
     var importFile = ""
 
     if (srcPkg.nonEmpty && manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
-      importOffset = manifest.get.scope + "/" + t.path.toPackage.mkString("-")
+      importOffset = manifest.get.scope + "/" +
+        (if (manifest.get.dropNameSpaceSegments.isDefined) t.path.toPackage.drop(manifest.get.dropNameSpaceSegments.get) else t.path.toPackage).mkString("-")
       importFile = importOffset
     } else {
       if (srcPkg.nonEmpty) {
