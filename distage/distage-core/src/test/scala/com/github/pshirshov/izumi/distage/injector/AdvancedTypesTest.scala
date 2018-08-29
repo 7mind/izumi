@@ -122,13 +122,12 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     class Definition[T: Tag] extends ModuleDef {
       make[Dep]
       make[Dep2]
-      x
-
-      def x: Unit = {
+      val _ = {
         type X[A] = Trait1[Dep, A]
         make[X[T]]
       }
     }
+
     val injector = mkInjector()
     val plan = injector.plan(new Definition[Dep2])
     val context = injector.produce(plan)
@@ -139,91 +138,109 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     assert(instantiated.b == context.get[Dep2])
   }
 
-  "progression test: can't handle abstract refinement types" in {
-    assertTypeError(
-      """
-      import TypesCase3._
+  "handle abstract structural refinement types" in {
+    import TypesCase3._
 
-      class Definition[T: Tag] extends ModuleDef {
-        make[Dep]
-        make[T { def dep: Dep }].from[T]
-      }
+    class Definition[T: Tag, G <: T { def dep: Dep }: Tag] extends ModuleDef {
+      make[Dep]
+      make[T { def dep: Dep }]/*({
+        import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+//            def assemble[V: TypeTag] = typeTag[V { def dep: Int }]
+        val t = {
+          val tp: TypeTag[T] =
+          { def $name(implicit ev: Tag[T]) = ev; $name.tag }
+          {
+            implicit val tpe: TypeTag[T] = tp
 
-      val definition = new Definition[Trait2]
+            assemble[T](tpe)
+          }
+        }
+        Tag(t)
+      }, implicitly)*/.from[G]
+    }
 
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+    val definition = new Definition[Trait1, Trait1]
 
-      val instantiated = context.get[Trait2 { def dep: Dep }]
+    assert(definition.bindings.last.key.tpe.tpe.typeSymbol.name.toString == SafeType.get[Trait1 { def dep: Dep }].tpe.typeSymbol.name.toString)
 
-      assert(instantiated.dep == context.get[Dep])
-    """)
+    System.err println definition.bindings.map(_.key.tpe).mkString("\n")
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    System.err println context.instances
+
+    val instantiated = context.get[Trait1 { def dep: Dep }]
+
+    assert(instantiated.dep == context.get[Dep])
   }
 
-  "progression test: handle abstract `with` types" in {
-    assertTypeError("""
-      import TypesCase3._
+  "handle abstract `with` types" in {
+    import TypesCase3._
 
-      class Definition[T: Tag] extends ModuleDef {
-        make[Dep]
-        make[T with Trait1].from[T]
-      }
+    class Definition[T: Tag, G <: T with Trait1: Tag] extends ModuleDef {
+      make[Dep]
+      make[T with Trait1].from[G]
+    }
 
-      val definition = new Definition[Trait2]
+    val definition = new Definition[Trait3[Dep], Trait3[Dep]]
 
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+    assert(definition.bindings.head.key.tpe.tpe.typeSymbol.toString == SafeType.get[Trait3[Dep] with Trait1].tpe.typeSymbol.toString)
 
-      val instantiated = context.get[Trait2 with Trait1]
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
 
-      assert(instantiated.dep == context.get[Dep])
-    """)
+    println(context.instances)
+
+    val instantiated = context.get[Trait3[Dep] with Trait1]
+
+    assert(instantiated.dep == context.get[Dep])
   }
 
   "progression test: can't handle generics in abstract `with` types" in {
-    assertTypeError("""
-      import TypesCase3._
+    import TypesCase3._
 
-      class Definition[T: Tag] extends ModuleDef {
-        make[T]
-        make[Trait5[T] with Trait4].from[Trait5[T]]
-      }
+    class Definition[T <: Dep: Tag] extends ModuleDef {
+      make[T]
+      make[Trait3[T] with Trait4].from[Trait5[T]]
+    }
 
-      val definition = new Definition[Dep]
+    val definition = new Definition[Dep]
 
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
 
-      val instantiated = context.get[Trait5[Dep]]
 
-      assert(instantiated.dep == context.get[Dep])
-    """)
+    println(definition)
+
+
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    val instantiated = context.get[Trait3[Dep] with Trait4]
+
+    assert(instantiated.dep == context.get[Dep])
   }
 
-  "progression test: can't handle constrained generics i.e. <: Dep in TagK" in {
-    assertTypeError("""
-      import TypesCase3._
+  "can handle constrained generics, i.e. T <: Dep in non-abstract type constructors" in {
+    import TypesCase3._
 
-      val tagK = TagK[Trait3]
+    class Definition[T <: Dep: Tag] extends ModuleDef {
+      make[T]
+      make[Trait3[T]].from[Trait3[T]]
+    }
 
-      class Definition[T <: Dep: Tag] extends ModuleDef {
-        make[T]
-        make[Trait3[T]].from[Trait3[T]]
-      }
+    val definition = new Definition[Dep2]
 
-      val definition = new Definition[Dep2]
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
 
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+    val instantiated = context.get[Trait3[Dep2]]
 
-      val instantiated = context.get[Trait3[Dep2]]
-
-      assert(instantiated.dep == context.get[Dep2])
-    """)
+    assert(instantiated.dep == context.get[Dep2])
   }
 
   "progression test: Support type lambdas in TagK when part of lambda closes on a generic parameter with available Tag" in {

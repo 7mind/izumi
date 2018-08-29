@@ -2,10 +2,9 @@ package com.github.pshirshov.izumi.fundamentals.reflection
 
 import java.lang.reflect.Method
 
-import scala.language.reflectiveCalls
-import scala.reflect.api.{Mirror, TypeCreator}
+import scala.reflect.api
+import scala.reflect.api.{Mirror, TypeCreator, Universe}
 import scala.reflect.internal.Symbols
-
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.{universe => u}
 
@@ -34,6 +33,11 @@ object ReflectionUtil {
     }
 
     u.TypeTag(mirror, creator)
+  }
+
+  implicit final class WeakTypeTagMigrate[T](private val weakTypeTag: Universe#WeakTypeTag[T]) extends AnyVal {
+    def migrate[V <: SingletonUniverse](m: api.Mirror[V]): m.universe.WeakTypeTag[T] =
+      weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
   }
 }
 

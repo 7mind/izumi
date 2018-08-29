@@ -80,7 +80,7 @@ class TagTest extends WordSpec with X[String] {
       def testTag[T: Tag]= {
         type X[A] = Either[Int, A]
 
-        TagMacro.get[X[T]]
+        TagMacro.get[X[T {}]]
       }
 
       assert(testTag[String].tpe == safe[Either[Int, String]])
@@ -89,8 +89,8 @@ class TagTest extends WordSpec with X[String] {
 
     // add test: how to do: [F[Int, ?, ?]: TagKK] = make[F[Int, A, B]
 
-    "Work for any abstract type with available TagK" in {
-      def testTagK[F[_]: TagK, T: Tag] = TagMacro.get[F[T]]
+    "Work for any abstract type with available TagK when obscured by empty refinement" in {
+      def testTagK[F[_]: TagK, T: Tag] = TagMacro.get[F[T {}] {}]
       // TODO add strange shapes
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
@@ -108,6 +108,13 @@ class TagTest extends WordSpec with X[String] {
       def testTag[T] = TagMacro.get[T]
       def testTagK[F[_], T] = TagMacro.get[F[T]]
          """)
+    }
+
+    "progression test: can't handle constrained generics i.e. <: Dep in TagK" in {
+      assertTypeError("""
+        import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3._
+        TagK[Trait3]
+      """)
     }
   }
 

@@ -40,6 +40,9 @@ object TypesCases {
   object TypesCase3 {
     class Dep
 
+    import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+        def assemble[V: TypeTag] = typeTag[V { def dep: Dep }]
+
     class Dep2 extends Dep
 
     trait Trait1 {
@@ -56,7 +59,7 @@ object TypesCases {
 
     trait Trait4
 
-    trait Trait5[T] extends Trait4 {
+    trait Trait5[T <: Dep] extends Trait3[T] with Trait4 {
       def dep: T
     }
 

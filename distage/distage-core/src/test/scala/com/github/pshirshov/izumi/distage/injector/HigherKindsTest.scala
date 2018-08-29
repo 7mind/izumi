@@ -24,16 +24,12 @@ class HigherKindsTest extends WordSpec with MkInjector {
       make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
       make[Either[String, Boolean]].from(Right(true))
 
-      make[F[F[F[F[String]]]]].from(Pointed[F].point(Pointed[F].point(Pointed[F].point(Pointed[F].point("aaa")))))
+      make[Either[F[String], F[F[F[F[String]]]]]].from(Right(Pointed[F].point(Pointed[F].point(Pointed[F].point(Pointed[F].point("aaa"))))))
 
       make[F[Nothing]].from(null.asInstanceOf[F[Nothing]])
       make[F[Any]].from(Pointed[F].point(1: Any))
-      implicit def x(implicit t1: Tag[String], t2: Tag[F[Int]]): RuntimeDIUniverse.Tag[Either[String, F[Int]]] = Tag.appliedTag[Either[String, F[Int]]](
-              RuntimeDIUniverse.u.typeTag[Either[Nothing, Nothing]], List(t1.tag, t2.tag)
-            )
-      make[Either[String, F[Int]]](implicitly[Tag[Either[String, F[Int]]]], implicitly)
 
-        //.from { fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]]) }
+      make[Either[String, F[Int]]].from { fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]]) }
       make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
     }
 
@@ -67,7 +63,8 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(eitherContext.get[TestServiceClass[Either[String, ?]]].get == Right(5))
     assert(eitherContext.get[TestServiceTrait[Either[String, ?]]].get == Right(10))
     assert(eitherContext.get[Either[String, String]] == Right("Hello 5!"))
-    assert(eitherContext.get[Either[String, Either[String, Either[String, Either[String, String]]]]] == Right(Right(Right(Right("Hello 5!")))))
+    assert(eitherContext.get[Either[Either[String, String], Either[String, Either[String, Either[String, Either[String, String]]]]]]
+      == Right(Right(Right(Right(Right("aaa"))))))
 
     val idInjector = mkInjector()
     val idPlan = idInjector.plan(Definition[id](5))

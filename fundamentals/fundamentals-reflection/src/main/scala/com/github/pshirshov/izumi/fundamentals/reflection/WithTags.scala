@@ -7,6 +7,7 @@ import scala.reflect.api.TypeCreator
 trait WithTags extends UniverseGeneric { self =>
 
   import u._
+  import ReflectionUtil._
 
   /**
   * Like [[scala.reflect.api.TypeTags#TypeTag]], but supports higher-kinded type tags via `TagK` type class.
@@ -52,10 +53,23 @@ trait WithTags extends UniverseGeneric { self =>
     **/
     def appliedTag[R](tag: WeakTypeTag[_], args: List[TypeTag[_]]): Tag[R] = {
       val appliedTypeCreator = new TypeCreator {
-        override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
+        override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
           m.universe.appliedType(tag.migrate(m).tpe.typeConstructor, args.map(_.migrate(m).tpe))
+        }
       }
       Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
+    }
+
+    def refinedTag[R](intersection: List[TypeTag[_]], structType: WeakTypeTag[_]): Tag[R] = {
+      val refinedTypeCreator = new TypeCreator {
+        override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
+          val parents = intersection.map(_.migrate(m).tpe)
+          val struct = structType.migrate(m).tpe
+          m.universe.internal.reificationSupport.setInfo(struct.typeSymbol, m.universe.internal.refinedType(parents, struct.decls))
+          m.universe.internal.refinedType(parents, struct.decls, struct.typeSymbol)
+        }
+      }
+      Tag(TypeTag[R](intersection.headOption.fold(rootMirror)(_.mirror), refinedTypeCreator))
     }
 
     def mergeArgs[R](tag: WeakTypeTag[_], args: List[Option[TypeTag[_]]]): Tag[R] = {
@@ -183,11 +197,6 @@ trait WithTags extends UniverseGeneric { self =>
       }
   }
 
-  implicit class WeakTypeTagMigrate[T](private val weakTypeTag: WeakTypeTag[T]) {
-    def migrate[U <: SingletonUniverse](m: api.Mirror[U]): m.universe.WeakTypeTag[T] =
-      weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
-  }
-
   // Workaround needed specifically to support generic methods in factories, see `GenericAssistedFactory` and related tests
   //
   // We need to construct a SafeType signature for a generic method, but generic parameters have no type tags
@@ -217,5 +226,6 @@ trait WithTags extends UniverseGeneric { self =>
 
   // workaround for a strange (prefix?) equality issue when splicing calls to `implicitly[RuntimeDIUniverse.u.TypeTag[X[Y]]`
   type ScalaReflectTypeTag[T] = u.TypeTag[T]
+  type ScalaReflectWeakTypeTag[T] = u.WeakTypeTag[T]
 
 }
