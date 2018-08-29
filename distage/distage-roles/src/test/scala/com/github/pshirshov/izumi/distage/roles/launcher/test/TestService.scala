@@ -4,6 +4,9 @@ import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.roles.roles.{RoleDescriptor, RoleId, RoleService, RoleTask}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
+trait Dummy
+
+
 case class TestServiceConf(
                             intval: Int
                             , strval: String
@@ -13,9 +16,17 @@ case class TestServiceConf(
                           )
 
 @RoleId(TestService.id)
-class TestService(@ConfPath("testservice") val conf: TestServiceConf, logger: IzLogger) extends RoleService with RoleTask {
+class TestService(
+                   @ConfPath("testservice") val conf: TestServiceConf
+                   , val dummies: Set[Dummy]
+                   , logger: IzLogger
+                 ) extends RoleService with RoleTask {
   override def start(): Unit = {
-    logger.info("Test service started!")
+    logger.info(s"Test service started, dummies: $dummies")
+  }
+
+  override def stop(): Unit = {
+    logger.info(s"Test service is going to stop")
   }
 }
 
