@@ -15,20 +15,20 @@ trait IzTime {
   final val EPOCH = ZonedDateTime.ofInstant(Instant.ofEpochSecond(0), TZ_UTC)
 
   // extended operators
-  implicit def toRich(timestamp: ZonedDateTime): IzZonedDateTime = new IzZonedDateTime(timestamp)
+  implicit def toRichZonedDateTime(timestamp: ZonedDateTime): IzZonedDateTime = new IzZonedDateTime(timestamp)
 
-  implicit def toRich(timestamp: OffsetDateTime): IzOffsetDateTime = new IzOffsetDateTime(timestamp)
+  implicit def toRichOffsetDateTime(timestamp: OffsetDateTime): IzOffsetDateTime = new IzOffsetDateTime(timestamp)
 
-  implicit def toRich(timestamp: LocalDateTime): IzLocalDateTime = new IzLocalDateTime(timestamp)
+  implicit def toRichLocalDateTime(timestamp: LocalDateTime): IzLocalDateTime = new IzLocalDateTime(timestamp)
 
-  implicit def toRich(value: Date): IzDate = new IzDate(value)
+  implicit def toRichDate(value: Date): IzDate = new IzDate(value)
 
   // parsers
-  implicit def toRich(value: Long): IzLongParsers = new IzLongParsers(value)
+  implicit def toRichLong(value: Long): IzLongParsers = new IzLongParsers(value)
 
-  implicit def toParseableTime(value: String): IzTimeParsers = new IzTimeParsers(value)
+  implicit def stringToParseableTime(value: String): IzTimeParsers = new IzTimeParsers(value)
 
-  implicit def toParseableTime(value: Option[String]): IzOptionalTimeParsers = new IzOptionalTimeParsers(value)
+  implicit def maybeStringToParseableTime(value: Option[String]): IzOptionalTimeParsers = new IzOptionalTimeParsers(value)
 
   // current time
   def utcNow: ZonedDateTime = ZonedDateTime.now(TZ_UTC)

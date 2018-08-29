@@ -91,7 +91,7 @@ class IzIterable[A](s: Iterable[A]) {
 }
 
 object IzString {
-  implicit def toRich(s: String): IzString = new IzString(s)
+  implicit def toRichString(s: String): IzString = new IzString(s)
 
-  implicit def toRich[A](s: Iterable[A]): IzIterable[A] = new IzIterable(s)
+  implicit def toRichIterable[A](s: Iterable[A]): IzIterable[A] = new IzIterable(s)
 }
