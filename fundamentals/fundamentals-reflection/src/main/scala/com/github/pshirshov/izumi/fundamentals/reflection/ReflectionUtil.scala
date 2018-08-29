@@ -8,6 +8,8 @@ import scala.reflect.internal.Symbols
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.{universe => u}
 
+import scala.language.reflectiveCalls
+
 object ReflectionUtil {
   def toJavaMethod(definingClass: u.Type, methodSymbol: u.Symbol): Method = {
     // https://stackoverflow.com/questions/16787163/get-a-java-lang-reflect-method-from-a-reflect-runtime-universe-methodsymbol
@@ -39,5 +41,14 @@ object ReflectionUtil {
     def migrate[V <: SingletonUniverse](m: api.Mirror[V]): m.universe.WeakTypeTag[T] =
       weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
   }
+
+
+  def deannotate[U <: Universe](typ: U#Type): U#Type =
+    typ match {
+      case t: U#AnnotatedTypeApi =>
+        t.underlying
+      case _ =>
+        typ
+    }
 }
 

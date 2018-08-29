@@ -20,6 +20,10 @@ class TagTest extends WordSpec with X[String] {
     def get[T: Tag]: RuntimeDIUniverse.Tag[T] = Tag[T]
   }
 
+  implicit class TagSafeType(tag: Tag[_]) {
+    def tpe: SafeType = SafeType(tag.tag.tpe)
+  }
+
   override final val tagZ = Tag[String]
   final val str = "str"
 
