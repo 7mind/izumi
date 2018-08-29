@@ -143,33 +143,14 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     class Definition[T: Tag, G <: T { def dep: Dep }: Tag] extends ModuleDef {
       make[Dep]
-      make[T { def dep: Dep }]/*({
-        import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
-//            def assemble[V: TypeTag] = typeTag[V { def dep: Int }]
-        val t = {
-          val tp: TypeTag[T] =
-          { def $name(implicit ev: Tag[T]) = ev; $name.tag }
-          {
-            implicit val tpe: TypeTag[T] = tp
-
-            assemble[T](tpe)
-          }
-        }
-        Tag(t)
-      }, implicitly)*/.from[G]
+      make[T { def dep: Dep }].from[G]
     }
 
     val definition = new Definition[Trait1, Trait1]
 
-    assert(definition.bindings.last.key.tpe.tpe.typeSymbol.name.toString == SafeType.get[Trait1 { def dep: Dep }].tpe.typeSymbol.name.toString)
-
-    System.err println definition.bindings.map(_.key.tpe).mkString("\n")
-
     val injector = mkInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan)
-
-    System.err println context.instances
 
     val instantiated = context.get[Trait1 { def dep: Dep }]
 
@@ -186,34 +167,24 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val definition = new Definition[Trait3[Dep], Trait3[Dep]]
 
-    assert(definition.bindings.head.key.tpe.tpe.typeSymbol.toString == SafeType.get[Trait3[Dep] with Trait1].tpe.typeSymbol.toString)
-
     val injector = mkInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan)
-
-    println(context.instances)
 
     val instantiated = context.get[Trait3[Dep] with Trait1]
 
     assert(instantiated.dep == context.get[Dep])
   }
 
-  "progression test: can't handle generics in abstract `with` types" in {
+  "handle generic parameters in abstract `with` types" in {
     import TypesCase3._
 
-    class Definition[T <: Dep: Tag] extends ModuleDef {
+    class Definition[T <: Dep: Tag, K >: Trait5[T]: Tag] extends ModuleDef {
       make[T]
-      make[Trait3[T] with Trait4].from[Trait5[T]]
+      make[Trait3[T] with K].from[Trait5[T]]
     }
 
-    val definition = new Definition[Dep]
-
-
-
-    println(definition)
-
-
+    val definition = new Definition[Dep, Trait4]
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -222,25 +193,6 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val instantiated = context.get[Trait3[Dep] with Trait4]
 
     assert(instantiated.dep == context.get[Dep])
-  }
-
-  "can handle constrained generics, i.e. T <: Dep in non-abstract type constructors" in {
-    import TypesCase3._
-
-    class Definition[T <: Dep: Tag] extends ModuleDef {
-      make[T]
-      make[Trait3[T]].from[Trait3[T]]
-    }
-
-    val definition = new Definition[Dep2]
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-    val context = injector.produce(plan)
-
-    val instantiated = context.get[Trait3[Dep2]]
-
-    assert(instantiated.dep == context.get[Dep2])
   }
 
   "progression test: Support type lambdas in TagK when part of lambda closes on a generic parameter with available Tag" in {

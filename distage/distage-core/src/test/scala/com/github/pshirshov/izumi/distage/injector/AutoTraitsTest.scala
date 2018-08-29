@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.TraitCases._
 import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3
-import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3._
 import distage.{ModuleBase, ModuleDef}
 import org.scalatest.WordSpec
 
@@ -64,22 +63,43 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     assert(instantiated.rd == Dep().toString)
   }
 
-  "instantiate `with` types" in {
-    import TypesCase3._
+  "progression test: can't instantiate traits with refinements" in {
+    intercept[ScalaReflectionException] {
+      import TraitCase5._
 
-    val definition = new ModuleDef {
-      make[Dep]
-      make[Trait2 with Trait1]
+      val definition = new ModuleDef {
+        make[TestTrait {def dep: Dep}]
+        make[Dep]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+      val instantiated = context.get[TestTrait]
+
+      assert(instantiated.rd == Dep().toString)
     }
+  }
 
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+  "progression test: can't instantiate `with` types" in {
+    intercept[ScalaReflectionException] {
+      import TypesCase3._
 
-    val instantiated = context.get[Trait2 with Trait1]
+      val definition = new ModuleDef {
+        make[Dep]
+        make[Trait2 with Trait1]
+      }
 
-    assert(instantiated.dep == context.get[Dep])
-    assert(instantiated.dep2 == context.get[Dep])
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      val instantiated = context.get[Trait2 with Trait1]
+
+      assert(instantiated.dep == context.get[Dep])
+      assert(instantiated.dep2 == context.get[Dep])
+    }
   }
 
   "handle refinement & structural types" in {

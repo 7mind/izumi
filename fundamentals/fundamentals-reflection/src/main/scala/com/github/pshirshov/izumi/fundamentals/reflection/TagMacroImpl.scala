@@ -128,23 +128,13 @@ class TagMacroImpl(val c: blackbox.Context) {
     // TODO: compounds
   }
 
+  @inline
   protected[this] def summonTypeTag[DIU <: WithTags with Singleton: c.WeakTypeTag](tpeN: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
     c.Expr[DIU#ScalaReflectTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]], tpeN)}]")
 
-  protected[this] def summonWeakTypeTag[DIU <: WithTags with Singleton: c.WeakTypeTag](i: c.Type, tpeN: c.Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] = {
-    c.Expr[DIU#ScalaReflectWeakTypeTag[_]] {
-      val name = TermName(c.freshName())
-//               val tp: ${appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]], i)} =
-//               { def $name(implicit ev: ${appliedType(weakTypeOf[DIU#Tag[Nothing]], i)}) = ev; $name.tag }
-//               implicit val tpe: ${appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]], i)} = tp
-           q"""{
-               {${c.inferImplicitValue(weakTypeOf[DIU#ScalaReflectTypeTag[MacroTrivialSink with Int { def t: String }]], silent = false)}}
-               {
-         _root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#ScalaReflectWeakTypeTag[Nothing]], tpeN)}]
-                }
-              }"""
-    }
-  }
+  @inline
+  protected[this] def summonWeakTypeTag[DIU <: WithTags with Singleton: c.WeakTypeTag](i: c.Type, tpeN: c.Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] =
+    c.Expr[DIU#ScalaReflectWeakTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#ScalaReflectWeakTypeTag[Nothing]], tpeN)}]")
 
   @inline
   protected[this] def holesToNothing(tpe: c.Type, args: List[(c.Type, Option[Kind])]): c.Type = {
@@ -237,18 +227,6 @@ class TagMacroImpl(val c: blackbox.Context) {
       t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#TagKK[Nothing]], t)}].tag")
     }
   }
-
-//  protected[this] def kindMap[DIU <: WithTags with Singleton: c.WeakTypeTag]: PartialFunction[Kind, ImplicitSummon[c.type, c.universe.type, DIU]] = {
-//    case Kind(Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
-//      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${c.inferImplicitValue(appliedType(weakTypeOf[DIU#Tag[Nothing]], t))}}.tag")
-//    }
-//    case Kind(Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
-//      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagK[Nothing]], t))}}.tag")
-//    }
-//    case Kind(Kind(Nil) :: Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
-//      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagKK[Nothing]], t))}}.tag")
-//    }
-//  }
 
 }
 

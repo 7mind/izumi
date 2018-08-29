@@ -46,7 +46,7 @@ class ImplicitInjectionTest extends WordSpec with MkInjector {
     assert(instantiated.dummyImplicit.asInstanceOf[MyDummyImplicit].imADummy)
   }
 
-  "Progression test: Implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
+  "Progression test: As of now, implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
     import ImplicitCase2._
 
     val definition: ModuleBase = new ModuleDef {
