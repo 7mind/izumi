@@ -26,15 +26,17 @@ class RoleStarter(services: Set[RoleService], components: Set[RoleComponent], cl
           service.start()
       }
 
+      setupShutdownHook()
+
       if (services.isEmpty) {
         logger.info("No roles to activate, exiting...")
       } else if (services.size > tasksCount) {
         logger.info("Startup finished, joining on main thread...")
-        setupShutdownHook()
         latch.await()
       } else {
         logger.info("No daemonic roles, exiting...")
       }
+
     } else {
       logger.info("App is already started")
     }

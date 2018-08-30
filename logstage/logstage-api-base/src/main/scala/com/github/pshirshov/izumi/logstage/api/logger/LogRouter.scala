@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.logstage.api.logger
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.logstage.api.Log
 
-trait LogRouter {
+trait LogRouter extends AutoCloseable {
   private val fallback: TrivialLogger = TrivialLogger.make[LogRouter](LogRouter.fallbackPropertyName, forceLog = true)
 
   def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean
@@ -18,6 +18,8 @@ trait LogRouter {
   }
 
   protected def doLog(entry: Log.Entry): Unit
+
+  override def close(): Unit = {}
 }
 
 object LogRouter {
