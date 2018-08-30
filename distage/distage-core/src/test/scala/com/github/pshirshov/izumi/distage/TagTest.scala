@@ -97,14 +97,12 @@ class TagTest extends WordSpec with X[String] {
 
     "Work for an abstract type with available TagK when obscured by empty refinement" in {
       def testTagK[F[_]: TagK, T: Tag] = Tag[F[T {}] {}]
-      // TODO add strange shapes
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
     }
 
     "Work for an abstract type with available TagK when TagK is requested through a type lambda" in {
       def testTagK[F[_], T: Tag](implicit ev: HKTag[{ type Arg[T1] = F[T1] }]) = Tag[F[T {}] {}]
-      // TODO add strange shapes
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
     }
@@ -134,8 +132,8 @@ class TagTest extends WordSpec with X[String] {
       def t2[A: Tag, dafg: Tag, adfg: Tag, LS: Tag, L[_]: TagK, SD: Tag, GG[A] <: L[A]: TagK, ZZZ[_, _]: TagKK, S: Tag, SDD: Tag, TG: Tag]: Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]] =
         Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]]
 
-      assert(t2[TagTest.this.Z, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z, X, TagTest.this.Z, Y, Either, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z].tpe
-        == safe[Test[String, String, String, String, X, String, Y, Either, String, String, String]])
+      assert(t2[TagTest.this.Z, TagTest.this.Z, T1[ZOB[String, Int, Byte], String, String, String, String, List], TagTest.this.Z, X, TagTest.this.Z, Y, Either, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z].tpe
+        == safe[Test[String, String, T1[Either[Int, Byte], String, String, String, String, List], String, X, String, Y, Either, String, String, String]])
     }
 
     "handle Swap type lambda" in {
@@ -156,6 +154,7 @@ class TagTest extends WordSpec with X[String] {
     // TODO: check errors on by commenting args in this
     "Assemble from higher than TagKK tags" in {
       def tag[T[_[_], _]: TagFK, F[_]: TagK, A: Tag] = Tag[T[F, A]]
+
 
       assert(tag[OptionT, Option, Int].tpe == safe[OptionT[Option, Int]])
     }
