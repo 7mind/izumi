@@ -7,7 +7,10 @@ import ReflectionUtil.{Kind, kindOf}
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
+import scala.reflect.api.{TypeCreator, Universe}
 import scala.reflect.macros.{TypecheckException, blackbox}
+
+class IxEitherT[F[_], A, B]
 
 // TODO: benchmark difference between running implicit search inside macro vs. return tree with recursive implicit macro expansion
 // TODO: benchmark difference between searching all arguments vs. merge strategy
@@ -15,8 +18,6 @@ import scala.reflect.macros.{TypecheckException, blackbox}
 class TagMacroImpl(val c: blackbox.Context) {
   import TagMacroImpl._
   import c.universe._
-
-  private[this] final var nested: Boolean = false
 
   protected[this] val defaultError: String = defaultTagImplicitError
 
@@ -33,10 +34,14 @@ class TagMacroImpl(val c: blackbox.Context) {
     logger.log(s"GOT UNIVERSE: ${c.weakTypeOf[DIU]}")
     logger.log(s"Got compile tag: ${weakTypeOf[T].dealias}")
 
-    if (getImplicitError[DIU]().endsWith(":")) // I know
+    var nested: Boolean = false
+
+    if (getImplicitError[DIU]().endsWith(":")) { // I know
+      logger.log(s"Got continuation implicit error: ${getImplicitError[DIU]()}")
       nested = true
-    else
+    } else {
       resetImplicitError[DIU]()
+    }
 
     val tgt = norm(weakTypeOf[T].dealias)
 
@@ -57,6 +62,12 @@ class TagMacroImpl(val c: blackbox.Context) {
     }
 
     logger.log(s"Final code of TagMaterializer[${weakTypeOf[T]}]:\n ${showCode(res.tree)}")
+
+    if (!nested) {
+      logger.log(s"Resetting implicit error was: ${getImplicitError[DIU]()}")
+      resetImplicitError[DIU]()
+      logger.log(s"Implicit error reset, now ${getImplicitError[DIU]()}")
+    }
 
     res
   }
@@ -144,14 +155,26 @@ class TagMacroImpl(val c: blackbox.Context) {
   protected[this] def summonTag[DIU <: WithTags with Singleton: c.WeakTypeTag](tpe: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
     summon[DIU](tpe, kindOf(tpe))
 
+  def newTypeParameter[A](u: Universe): u.Type = u.weakTypeOf[A]
+
+  def ktos(u: Universe)(owner: u.Symbol): Kind => u.Symbol = {
+    case Kind(Nil) =>
+      import u._
+      val m = u.rootMirror
+      val typeSymbol = u.internal.reificationSupport.newNestedSymbol(owner, u.internal.reificationSupport.freshTypeName("T"), u.NoPosition, u.internal.reificationSupport.FlagsRepr.apply(8208L), false)
+      u.internal.reificationSupport.setInfo(typeSymbol, u.internal.typeBounds(u.definitions.NothingTpe, u.definitions.AnyTpe))
+      typeSymbol
+    case Kind(l) =>
+      import u._
+      val m = u.rootMirror
+      val typeSymbol = u.internal.reificationSupport.newNestedSymbol(owner, u.internal.reificationSupport.freshTypeName("T"), u.NoPosition, u.internal.reificationSupport.FlagsRepr.apply(8208L), false)
+      u.internal.reificationSupport.setInfo(typeSymbol, u.internal.typeBounds(u.definitions.NothingTpe, u.definitions.AnyTpe))
+      val params = l.map(ktos(u)(typeSymbol))
+      u.internal.reificationSupport.setInfo(typeSymbol, u.internal.polyType(params, u.internal.typeBounds(u.definitions.NothingTpe, u.definitions.AnyTpe)))
+  }
+
   @inline
   protected[this] def summon[DIU <: WithTags with Singleton: c.WeakTypeTag](tpe: c.Type, kind: Kind): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
-
-    val nothingfulTpe = c.universe.appliedType(tpe, kind.args.map(_ =>
-
-      definitions.IntTpe
-
-    ))
 
     val summoned = try {
       if (kind == Kind(Nil)) {
@@ -162,18 +185,91 @@ class TagMacroImpl(val c: blackbox.Context) {
         c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagKK[Nothing]].typeConstructor, tpe), silent = false)
       } else {
 
-        val argsSizeType = {
-          val mutType = typeOf[{type x}]
-          internal.setName(mutType.decls.head, TypeName(s"${kind.args.size}"))
-          mutType
-        }
-        logger.log(s"Created args size handle: $argsSizeType")
 
+        val sp = typeOf[{type Arg[A[_], B, C] = IxEitherT[A, B, C]}]
+
+        logger.log(s"inferring $sp")
+
+        val tree = c.inferImplicitValue(appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]].typeConstructor, sp), silent = false)
+
+        logger.log(s"Got TYPETAG tree of $tree")
+
+
+        val tt =
+          ({
+            val $u: c.universe.type = c.universe
+            val $m: $u.Mirror = $u.rootMirror
+            $u.TypeTag.apply[AnyRef {type Arg[A[_], B, C] = com.github.pshirshov.izumi.fundamentals.reflection.IxEitherT[A, B, C]}]($m, {
+              final class $typecreator75 extends TypeCreator {
+
+                def apply[U <: scala.reflect.api.Universe with Singleton]($m$untyped: scala.reflect.api.Mirror[U]): U#Type = {
+                  val $u: U = $m$untyped.universe;
+                  val $m: $u.Mirror = $m$untyped.asInstanceOf[$u.Mirror];
+                  // top refinement tysym
+                  val lessrefinement: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol($m.staticClass("com.github.pshirshov.izumi.fundamentals.reflection.TagMacroImpl"), $u.TypeName.apply("<refinement>"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(0L), true);
+                  // contained arg
+                  val symdef$Arg11: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(lessrefinement, $u.TypeName.apply("Arg"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(0L), false);
+
+                  val symdef$A1: $u.Symbol = ktos($u)(symdef$Arg11)(Kind(Kind(Nil) :: Nil))
+                  val symdef$B1: $u.Symbol = ktos($u)(symdef$Arg11)(Kind(Nil))
+                  val symdef$C1: $u.Symbol = ktos($u)(symdef$Arg11)(Kind(Nil))
+
+                  val symbols = List(symdef$A1, symdef$B1, symdef$C1)
+
+                  $u.internal.reificationSupport.setInfo(symdef$Arg11
+                    , $u.internal.polyType(
+                      symbols
+                      , $u.appliedType($u.typeOf[IxEitherT[Nothing, Nothing, Nothing]].typeConstructor, symbols.map($u.internal.typeRef($u.NoPrefix, _, Nil)))
+                    )
+                  )
+                  //
+                  //                val symdef$A1: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(symdef$Arg11, $u.TypeName.apply("A"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(8208L), false);
+                  //                  val symdef$_2: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(symdef$A1, $u.TypeName.apply("_"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(8208L), false);
+                  //                val symdef$B1: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(symdef$Arg11, $u.TypeName.apply("B"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(8208L), false);
+                  //                val symdef$C1: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(symdef$Arg11, $u.TypeName.apply("C"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(8208L), false);
+
+//                                  $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$Arg11, $u.internal.reificationSupport.PolyType(
+//                                    scala.collection.immutable.List.apply[$u.Symbol](symdef$A1, symdef$B1, symdef$C1)
+//                                    , $u.internal.reificationSupport.TypeRef(
+//                                      $u.internal.reificationSupport.ThisType($m.staticPackage("com.github.pshirshov.izumi.fundamentals.reflection").asModule.moduleClass)
+//                                      , $m.staticClass("com.github.pshirshov.izumi.fundamentals.reflection.IxEitherT")
+//                                      , scala.collection.immutable.List.apply[$u.Type]
+//                                        ($u.internal.reificationSupport.TypeRef($u.NoPrefix, symdef$A1, scala.collection.immutable.Nil), $u.internal.reificationSupport.TypeRef($u.NoPrefix, symdef$B1, scala.collection.immutable.Nil), $u.internal.reificationSupport.TypeRef($u.NoPrefix, symdef$C1, scala.collection.immutable.Nil)
+//                                        )
+//                                    )
+//                                  ));
+                  //
+                  //                $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$A1, $u.internal.reificationSupport.PolyType(scala.collection.immutable.List.apply[$u.Symbol](symdef$_2), $u.internal.reificationSupport.TypeBounds($m.staticClass("scala.Nothing").asType.toTypeConstructor, $m.staticClass("scala.Any").asType.toTypeConstructor)));
+                  //
+                  //                $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$_2, $u.internal.reificationSupport.TypeBounds($m.staticClass("scala.Nothing").asType.toTypeConstructor, $m.staticClass("scala.Any").asType.toTypeConstructor));
+                  //                $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$B1, $u.internal.reificationSupport.TypeBounds($m.staticClass("scala.Nothing").asType.toTypeConstructor, $m.staticClass("scala.Any").asType.toTypeConstructor));
+                  //                $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$C1, $u.internal.reificationSupport.TypeBounds($m.staticClass("scala.Nothing").asType.toTypeConstructor, $m.staticClass("scala.Any").asType.toTypeConstructor));
+
+                  $u.internal.reificationSupport.setInfo[$u.Symbol](lessrefinement, $u.internal.reificationSupport.RefinedType(scala.collection.immutable.List.apply[$u.Type]($u.internal.reificationSupport.TypeRef($u.internal.reificationSupport.ThisType($m.staticPackage("scala").asModule.moduleClass), $u.internal.reificationSupport.selectType($m.staticPackage("scala").asModule.moduleClass, "AnyRef"), scala.collection.immutable.Nil)), $u.internal.reificationSupport.newScopeWith(symdef$Arg11), lessrefinement));
+                  // combined
+                  $u.internal.reificationSupport.RefinedType(scala.collection.immutable.List.apply[$u.Type](
+                    $u.internal.reificationSupport.TypeRef($u.internal.reificationSupport.ThisType($m.staticPackage("scala").asModule.moduleClass), $u.internal.reificationSupport.selectType($m.staticPackage("scala").asModule.moduleClass, "AnyRef"), scala.collection.immutable.Nil)
+                  )
+                    , $u.internal.reificationSupport.newScopeWith(symdef$Arg11)
+                    , lessrefinement)
+                }
+              };
+              new $typecreator75()
+            })
+          }: TypeTag[AnyRef {type Arg[A[_], B, C] = com.github.pshirshov.izumi.fundamentals.reflection.IxEitherT[A, B, C]}]).tpe
+
+        logger.log(s"GOT REAL TT of $tt: eq: ${sp =:= tt}")
+
+        val tre = c.inferImplicitValue(appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]].typeConstructor, tt), silent = false)
+
+        logger.log(s"Got DA REAL TYPETAG tree of $tre")
+
+        q"{ {$tre} ; null : ${weakTypeOf[DIU#Tag[Nothing]]} }"
+      }
 //        val t = TypeName(s"${kind.args.size}")
 //        val lambda = c.typecheck(tq"({ type l[K[${TypeName("_")}]] = ${weakTypeOf[DIU#HKTag[Nothing, Nothing]].typeConstructor}[{type $t} , K[${definitions.NothingTpe}]] })")
 //        logger.log(s"lambda tpe  tree ${showRaw(lambda)}\ncode ${showCode(lambda)}")
-        c.inferImplicitValue(appliedType(weakTypeOf[DIU#HKTag[Nothing, Nothing]].typeConstructor, argsSizeType, nothingfulTpe), silent = false)
-      }
+//        c.inferImplicitValue(appliedType(weakTypeOf[DIU#HKTag[Nothing, Nothing]].typeConstructor, argsSizeType, nothingfulTpe), silent = false)
     } catch {
       case e: TypecheckException =>
         setImplicitError(
@@ -297,36 +393,36 @@ class TagMacroImpl(val c: blackbox.Context) {
 //    }
 //  }
 
-
-  protected[this] def kindMap[DIU <: WithTags with Singleton: c.WeakTypeTag]: PartialFunction[Kind, ImplicitSummon[c.type, c.universe.type, DIU]] = {
-    case Kind(Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
-      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${          try {
-                  c.inferImplicitValue(appliedType(weakTypeOf[DIU#Tag[Nothing]].typeConstructor, t), silent = false)
-                } catch {
-                  case (e: Throwable) =>
-                    setImplicitError(s"NO TAG for $t")
-                    throw e
-                }}}.tag")
-    }
-    case Kind(Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
-      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${          try {
-                  c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagK[Nothing]].typeConstructor, t), silent = false)
-                } catch {
-                  case (e: Throwable) =>
-                    setImplicitError(s"NO TAGK for $t")
-                    throw e
-                }}}.tag")
-    }
-    case Kind(Kind(Nil) :: Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
-      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${          try {
-                  c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagKK[Nothing]].typeConstructor, t), silent = false)
-                } catch {
-                  case (e: Throwable) =>
-                    setImplicitError(s"NO TAGKK for $t")
-                    throw e
-                }}}.tag")
-    }
-  }
+//
+//  protected[this] def kindMap[DIU <: WithTags with Singleton: c.WeakTypeTag]: PartialFunction[Kind, ImplicitSummon[c.type, c.universe.type, DIU]] = {
+//    case Kind(Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
+//      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${          try {
+//                  c.inferImplicitValue(appliedType(weakTypeOf[DIU#Tag[Nothing]].typeConstructor, t), silent = false)
+//                } catch {
+//                  case (e: Throwable) =>
+//                    setImplicitError(s"NO TAG for $t")
+//                    throw e
+//                }}}.tag")
+//    }
+//    case Kind(Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
+//      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${          try {
+//                  c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagK[Nothing]].typeConstructor, t), silent = false)
+//                } catch {
+//                  case (e: Throwable) =>
+//                    setImplicitError(s"NO TAGK for $t")
+//                    throw e
+//                }}}.tag")
+//    }
+//    case Kind(Kind(Nil) :: Kind(Nil) :: Nil) => ImplicitSummon[c.type, c.universe.type, DIU] {
+//      t => c.Expr[DIU#ScalaReflectTypeTag[_]](q"{${          try {
+//                  c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagKK[Nothing]].typeConstructor, t), silent = false)
+//                } catch {
+//                  case (e: Throwable) =>
+//                    setImplicitError(s"NO TAGKK for $t")
+//                    throw e
+//                }}}.tag")
+//    }
+//  }
 
 }
 

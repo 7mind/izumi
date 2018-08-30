@@ -103,7 +103,7 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "Work for an abstract type with available TagK when TagK is requested through a type lambda" in {
-      def testTagK[F[_]: ({ type l[K[_]] = HKTag[{type `1`}, K[Int]]})#l, T: Tag] = Tag[F[T {}] {}]
+      def testTagK[F[_], T: Tag](implicit ev: HKTag[{ type Arg[T1] = F[T1] }]) = Tag[F[T {}] {}]
       // TODO add strange shapes
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
@@ -151,6 +151,14 @@ class TagTest extends WordSpec with X[String] {
     "handle Id1 type lambda" in {
 
       assert(TagFK[Id1].tag.tpe.toString.contains(".Id1"))
+    }
+
+    // TODO: check errors on by commenting args in this
+    "Assemble from higher than TagKK tags" in {
+      def tag[T[_[_], _]: TagFK, F[_]: TagK, A: Tag] = Tag[T[F, A]]
+
+
+      assert(tag[OptionT, Option, Int].tpe == safe[OptionT[Option, Int]])
     }
 
     "Handle abstract types instead of parameters" in {

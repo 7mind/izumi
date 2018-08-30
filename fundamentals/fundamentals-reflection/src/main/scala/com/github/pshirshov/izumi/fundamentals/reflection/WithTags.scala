@@ -123,7 +123,7 @@ trait WithTags extends UniverseGeneric { self =>
     *   type TagFGC[K[_[_, _], _[_], _[_[_], _, _, _]] = HKTag[{type `3`}, [Nothing, Nothing, Nothing]]
     * }}}
     */
-  trait HKTag[N, T] {
+  trait HKTag[T] {
 
     /**
      * Internal `TypeTag` holding the `typeConstructor` of type `T`
@@ -143,33 +143,17 @@ trait WithTags extends UniverseGeneric { self =>
 
   object HKTag {
 
-    implicit def unsafeFromTypeTag[N, T](implicit k: TypeTag[N], t: TypeTag[T]): HKTag[N, T] = {
-      new HKTag[N, T] {
-        override val tag: u.TypeTag[_] = {
+    implicit def unsafeFromTypeTag[T](implicit k: TypeTag[T]): HKTag[T] = {
+      new HKTag[T] {
+        override def tag: TypeTag[_] = {
           val ctorCreator = new TypeCreator {
             override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
-
-              val argSize = k.tpe.decls.head.name.toString.filter(_.isDigit).toInt
-
-              t.migrate(m).tpe match {
-                case r if r.typeArgs.size == argSize =>
-                  r.typeConstructor
-                case r =>
-                  // create a type lambda preserving embedded arguments
-                  // i.e. OptionT[List, ?] === [A => OptionT[List, A]]
-
-                  def newTypeParam[A]: m.universe.Type = m.universe.weakTypeOf[A]
-
-                  val tyParams = List.fill(argSize)(newTypeParam)
-
-                  val freshParam2 = newTypeParam
-                  val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(argSize) ++ tyParams)
-
-                  m.universe.internal.polyType(tyParams.map(_.typeSymbol), appliedRes)
-              }
+              val t = k.migrate(m).tpe.decls.head.info
+              t.typeConstructor
             }
           }
-          TypeTag(t.mirror, ctorCreator)
+
+          TypeTag(k.mirror, ctorCreator)
         }
       }
     }
@@ -186,15 +170,14 @@ trait WithTags extends UniverseGeneric { self =>
     * containerTypesEqual[Array, List] == false
     * }}}
     */
-  type TagK[K[_]] = HKTag[{type `1`}, K[Int]]
-  // TODO FIXME
-  type TagKK[K[_, _]] = HKTag[{type `2`}, K[Int, Int]]
-  type TagK3[K[_, _, _]] = HKTag[{type `3`}, K[Int, Int, Int]]
+  type TagK[K[_]] = HKTag[{ type Arg[T1] = K[T1] }]
+  type TagKK[K[_, _]] = HKTag[{ type Arg[T1, T2] = K[T1, T2] }]
+  type TagK3[K[_, _, _]] = HKTag[{ type Arg[T1, T2, T3] = K[T1, T2, T3]}]
 
-  type TagF[K[_[_]]] = HKTag[{type `1`}, K[Int]]
-  type TagFK[K[_[_], _]] = HKTag[{type `2`}, K[List, Nothing]]
-  type TagFKK[K[_[_], _, _]] = HKTag[{type `3`}, K[List, Nothing, Nothing]]
-  type TagFK3[K[_[_], _, _, _]] = HKTag[{type `4`}, K[List, Nothing, Nothing, Nothing]]
+  type TagF[K[_[_]]] = HKTag[{ type Arg[T1[_]] = K[T1]}]
+  type TagFK[K[_[_], _]] = HKTag[ { type Arg[T1[_], T2] = K[T1, T2] }]
+  type TagFKK[K[_[_], _, _]] = HKTag[ { type  Arg[T1[_], T2, T3] = K[T1, T2, T3] }]
+  type TagFK3[K[_[_], _, _, _]] = HKTag[ { type Arg[T1[_], T2, T3, T4] = K[T1, T2, T3, T4] } ]
 
   object TagK {
     /**
