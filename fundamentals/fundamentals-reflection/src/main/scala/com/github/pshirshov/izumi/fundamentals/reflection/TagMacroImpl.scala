@@ -154,6 +154,7 @@ class TagMacroImpl(val c: blackbox.Context) {
   protected[this] def summonTag[DIU <: WithTags with Singleton: c.WeakTypeTag](tpe: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
     summon[DIU](tpe, kindOf(tpe))
 
+  // TODO cleanup rename
   def ktos(u: Universe)(owner: u.Symbol): Kind => u.Symbol = {
     case Kind(Nil) =>
       import u._
@@ -246,7 +247,7 @@ class TagMacroImpl(val c: blackbox.Context) {
   @tailrec
   protected[this] final def norm(x: Type): Type = x match {
     case RefinedType(t :: Nil, m) if m.isEmpty =>
-      c.info(c.enclosingPosition, s"Stripped empty refinement of type $t. member scope $m, true)", true)
+      logger.log(s"Stripped empty refinement of type $t. member scope $m, true)")
       norm(t)
     case AnnotatedType(_, t) => norm(t)
     case _ => x

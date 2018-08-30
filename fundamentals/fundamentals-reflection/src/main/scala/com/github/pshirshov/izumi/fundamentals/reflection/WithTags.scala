@@ -174,10 +174,10 @@ trait WithTags extends UniverseGeneric { self =>
   type TagKK[K[_, _]] = HKTag[{ type Arg[T1, T2] = K[T1, T2] }]
   type TagK3[K[_, _, _]] = HKTag[{ type Arg[T1, T2, T3] = K[T1, T2, T3]}]
 
-  type TagF[K[_[_]]] = HKTag[{ type Arg[T1[_]] = K[T1]}]
-  type TagFK[K[_[_], _]] = HKTag[ { type Arg[T1[_], T2] = K[T1, T2] }]
-  type TagFKK[K[_[_], _, _]] = HKTag[ { type  Arg[T1[_], T2, T3] = K[T1, T2, T3] }]
-  type TagFK3[K[_[_], _, _, _]] = HKTag[ { type Arg[T1[_], T2, T3, T4] = K[T1, T2, T3, T4] } ]
+  type TagT[K[_[_]]] = HKTag[{ type Arg[T1[_]] = K[T1]}]
+  type TagTK[K[_[_], _]] = HKTag[ { type Arg[T1[_], T2] = K[T1, T2] }]
+  type TagTKK[K[_[_], _, _]] = HKTag[ { type  Arg[T1[_], T2, T3] = K[T1, T2, T3] }]
+  type TagTK3[K[_[_], _, _, _]] = HKTag[ { type Arg[T1[_], T2, T3, T4] = K[T1, T2, T3, T4] } ]
 
   object TagK {
     /**
@@ -199,20 +199,20 @@ trait WithTags extends UniverseGeneric { self =>
     def apply[K[_, _, _]: TagK3]: TagK3[K] = implicitly
   }
 
-  object TagF {
-    def apply[K[_[_]]: TagF]: TagF[K] = implicitly
+  object TagT {
+    def apply[K[_[_]]: TagT]: TagT[K] = implicitly
   }
 
-  object TagFK {
-    def apply[K[_[_], _]: TagFK]: TagFK[K] = implicitly
+  object TagTK {
+    def apply[K[_[_], _]: TagTK]: TagTK[K] = implicitly
   }
 
-  object TagFKK {
-    def apply[K[_[_], _, _]: TagFKK]: TagFKK[K] = implicitly
+  object TagTKK {
+    def apply[K[_[_], _, _]: TagTKK]: TagTKK[K] = implicitly
   }
 
-  object TagFK3 {
-    def apply[K[_[_], _, _, _]: TagFK3]: TagFK3[K] = implicitly
+  object TagTK3 {
+    def apply[K[_[_], _, _, _]: TagTK3]: TagTK3[K] = implicitly
   }
 
   // Workaround needed specifically to support generic methods in factories, see `GenericAssistedFactory` and related tests

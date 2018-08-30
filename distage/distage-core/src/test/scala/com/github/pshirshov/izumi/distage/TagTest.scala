@@ -148,12 +148,12 @@ class TagTest extends WordSpec with X[String] {
 
     "handle Id1 type lambda" in {
 
-      assert(TagFK[Id1].tag.tpe.toString.contains(".Id1"))
+      assert(TagTK[Id1].tag.tpe.toString.contains(".Id1"))
     }
 
     // TODO: check errors on by commenting args in this
     "Assemble from higher than TagKK tags" in {
-      def tag[T[_[_], _]: TagFK, F[_]: TagK, A: Tag] = Tag[T[F, A]]
+      def tag[T[_[_], _]: TagTK, F[_]: TagK, A: Tag] = Tag[T[F, A]]
 
 
       assert(tag[OptionT, Option, Int].tpe == safe[OptionT[Option, Int]])
