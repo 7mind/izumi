@@ -271,8 +271,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
         case DefMethod.Output.Struct(_) | DefMethod.Output.Void() | DefMethod.Output.Singular(_) =>
           val typespaceId: DTOId = DTOId(sp.basePath, typename)
           val struct = ctx.tools.mkStructure(typespaceId)
-          ctx.compositeRenderer.defns(struct, ClassSource.CsMethodInput(sp, ServiceMethodProduct.this)).render
-
+          ctx.compositeRenderer.defns(struct, ClassSource.CsMethodOutput(sp, ServiceMethodProduct.this)).render
 
         case DefMethod.Output.Algebraic(_) =>
           val typespaceId: AdtId = AdtId(sp.basePath, typename)

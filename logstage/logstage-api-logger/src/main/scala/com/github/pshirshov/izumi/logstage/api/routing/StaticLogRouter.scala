@@ -40,6 +40,10 @@ class StaticLogRouter extends LogRouter {
       case _ =>
     }
   }
+
+  override def close(): Unit = {
+    proxied.set(null)
+  }
 }
 
 object StaticLogRouter {

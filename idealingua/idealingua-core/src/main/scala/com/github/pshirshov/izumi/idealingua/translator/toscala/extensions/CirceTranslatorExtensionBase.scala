@@ -207,12 +207,12 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
             import _root_.io.circe._
             import _root_.io.circe.syntax._
 
-            implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = Encoder.instance {
+            implicit val ${Pat.Var(Term.Name(s"encodeUnwrapped$name"))}: Encoder[$tpe] = Encoder.instance {
               v =>
                 v.${Term.Name(singleField.name)}.asJson
             }
 
-            implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = Decoder.instance {
+            implicit val ${Pat.Var(Term.Name(s"decodeUnwrapped$name"))}: Decoder[$tpe] = Decoder.instance {
               v => v.as[${ftpe.typeFull}].map(d => ${stype.termName}(d))
             }
           }

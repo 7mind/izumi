@@ -34,7 +34,8 @@ class SimpleLoggerConfigurator(logger: IzLogger) {
       new StringRenderingPolicy(options, logconf.layout)
     }
 
-    val sinks = Seq(new QueueingSink(new ConsoleSink(renderingPolicy)))
+    val queueingSink = new QueueingSink(new ConsoleSink(renderingPolicy))
+    val sinks = Seq(queueingSink)
 
     val levels = logconf.levels.flatMap {
       case (stringLevel, pack) =>
@@ -49,6 +50,7 @@ class SimpleLoggerConfigurator(logger: IzLogger) {
         , LoggerConfig(root, sinks)
       )
     )
+    queueingSink.start()
     StaticLogRouter.instance.setup(result)
     result
   }

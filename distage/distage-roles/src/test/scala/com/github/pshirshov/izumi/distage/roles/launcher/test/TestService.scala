@@ -19,10 +19,12 @@ case class TestServiceConf(
 class TestService(
                    @ConfPath("testservice") val conf: TestServiceConf
                    , val dummies: Set[Dummy]
+                   , val closeables: Set[AutoCloseable]
                    , logger: IzLogger
+                   , notCloseable: NotCloseable
                  ) extends RoleService with RoleTask {
   override def start(): Unit = {
-    logger.info(s"Test service started, dummies: $dummies")
+    logger.info(s"Test service started; $dummies, $closeables")
   }
 
   override def stop(): Unit = {

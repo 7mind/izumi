@@ -26,7 +26,7 @@ class LogConfigServiceStaticImpl(
     }
   }
 
-  private def configFor(e: Log.LoggerId) = {
+  private def configFor(e: Log.LoggerId): Option[LoggerConfig] = {
     val parts = e.id.split('.')
     Stream
       .iterate(parts, parts.length)(_.init)
@@ -34,5 +34,9 @@ class LogConfigServiceStaticImpl(
       .map(id => loggerConfigs.get(id))
       .find(_.nonEmpty)
       .flatten
+  }
+
+  override def close(): Unit = {
+    (loggerConfigs.values.flatMap(_.sinks) ++ rootConfig.sinks).foreach(_.close())
   }
 }
