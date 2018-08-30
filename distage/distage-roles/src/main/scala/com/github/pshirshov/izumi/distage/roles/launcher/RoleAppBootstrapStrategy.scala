@@ -190,7 +190,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
       make[CustomContext].from(CustomContext.empty)
       make[IzLogger]
-      make[RoleStarter]
+      make[RoleStarter].from[RoleStarterImpl]
     }
     Seq(baseMod overridenBy addOverrides)
   }
