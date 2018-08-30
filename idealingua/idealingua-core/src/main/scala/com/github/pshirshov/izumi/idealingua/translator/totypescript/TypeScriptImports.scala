@@ -38,8 +38,8 @@ final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty,
 
     imports.filterNot(_.id.isInstanceOf[AliasId]).groupBy(_.pkg)
       .map(i => if (i._1.startsWith("import")) i._1 else
-              "import {" + (if (i._2.length > 1) "\n" else " ") + i._2.map(i2 => (if (i._2.length > 1) "    " else "") + renderTypeImports(i2.id, ts))
-            .mkString(if (i._2.length > 1) ",\n" else "") + (if (i._2.length > 1) "\n" else " ") + s"} from '${i._1}';")
+              "import {\n" + i._2.map(i2 => renderTypeImports(i2.id, ts)).mkString(",").split(",").map(i2 => i2.trim).distinct.map(i2 => "    "  + i2)
+            .mkString(",\n") + s"\n} from '${i._1}';")
       .mkString("\n")
   }
 
@@ -169,15 +169,19 @@ object TypeScriptImports {
       i.fields.flatMap(f => List(f.typeId) ++ collectTypes(ts, f.typeId))
     case i: Interface =>
       i.struct.superclasses.interfaces ++
-      ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id) ++
+      ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, if(f.defn.variance.nonEmpty) f.defn.variance.last.typeId else f.field.typeId)).filterNot(_ == definition.id) ++
       ts.inheritance.allParents(i.id).filterNot(i.struct.superclasses.interfaces.contains).filterNot(ff => ff == i.id).map(ifc => ts.tools.implId(ifc))
     case d: DTO =>
       d.struct.superclasses.interfaces ++
-      ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, f.field.typeId)).filterNot(_ == definition.id) ++
+      ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, if(f.defn.variance.nonEmpty) f.defn.variance.last.typeId else f.field.typeId)).filterNot(_ == definition.id) ++
       ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains).map(ifc => ts.tools.implId(ifc))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
   }
+
+  /*
+  val uniqueInterfaces = ts.inheritance.parentsInherited(i.id).groupBy(_.name).map(_._2.head)
+   */
 
   protected def fromDefinition(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
     val types = collectTypes(ts, definition)

@@ -276,8 +276,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |${distinctFields.map(f => s"${conv.deserializeName("this." + conv.safeName(f.name), f.typeId)} = ${conv.deserializeType("data." + f.name, f.typeId, typespace)};").mkString("\n").shift(8)}
          |    }
          |
-         |${i.struct.superclasses.interfaces.map(si => renderDtoInterfaceSerializer(si)).mkString("\n").shift(4)}
-         |${i.struct.superclasses.interfaces.map(si => renderDtoInterfaceLoader(si)).mkString("\n").shift(4)}
+         |${uniqueInterfaces.map(si => renderDtoInterfaceSerializer(si)).mkString("\n").shift(4)}
+         |${uniqueInterfaces.map(si => renderDtoInterfaceLoader(si)).mkString("\n").shift(4)}
          |    public serialize(): ${i.id.name}Serialized {
          |        return {
          |${renderSerializedObject(distinctFields.toList).shift(12)}
