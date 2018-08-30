@@ -29,11 +29,9 @@ class TagTest extends WordSpec with X[String] {
   trait Y[V] extends X[V]
   case class ZOBA[A, B, C](value: Either[B, C])
   type Swap[A, B] = Either[B, A]
+  type Id[A] = A
+  type Id1[F[_], A] = F[A]
 
-  object X {
-    type Id[A] = A
-  }
-  import X._
   "Tag" should {
 
     "Work for any concrete type" in {
@@ -105,7 +103,7 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "Work for an abstract type with available TagK when TagK is requested through a type lambda" in {
-      def testTagK[F[_]: ({ type l[K[_]] = HKTag[{type `1`}, K[Nothing]]})#l, T: Tag] = Tag[F[T {}] {}]
+      def testTagK[F[_]: ({ type l[K[_]] = HKTag[{type `1`}, K[Int]]})#l, T: Tag] = Tag[F[T {}] {}]
       // TODO add strange shapes
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
@@ -144,6 +142,15 @@ class TagTest extends WordSpec with X[String] {
       def t1[F[_, _]: TagKK, A: Tag, B: Tag] = Tag[F[A, B]]
 
       assert(t1[Swap, Int, String].tpe == safe[Either[String, Int]])
+    }
+
+    "handle Id type lambda" in {
+      assert(TagK[Id].tag.tpe.toString.contains(".Id"))
+    }
+
+    "handle Id1 type lambda" in {
+
+      assert(TagFK[Id1].tag.tpe.toString.contains(".Id1"))
     }
 
     "Handle abstract types instead of parameters" in {

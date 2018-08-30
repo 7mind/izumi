@@ -147,7 +147,11 @@ class TagMacroImpl(val c: blackbox.Context) {
   @inline
   protected[this] def summon[DIU <: WithTags with Singleton: c.WeakTypeTag](tpe: c.Type, kind: Kind): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
 
-    val nothingfulTpe = c.universe.appliedType(tpe, kind.args.map(_ => definitions.NothingTpe))
+    val nothingfulTpe = c.universe.appliedType(tpe, kind.args.map(_ =>
+
+      definitions.IntTpe
+
+    ))
 
     val summoned = try {
       if (kind == Kind(Nil)) {

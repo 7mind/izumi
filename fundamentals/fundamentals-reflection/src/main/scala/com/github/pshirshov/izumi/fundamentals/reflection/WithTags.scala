@@ -186,14 +186,15 @@ trait WithTags extends UniverseGeneric { self =>
     * containerTypesEqual[Array, List] == false
     * }}}
     */
-  type TagK[K[_]] = HKTag[{type `1`}, K[Nothing]]
-  type TagKK[K[_, _]] = HKTag[{type `2`}, K[Nothing, Nothing]]
-  type TagK3[K[_, _, _]] = HKTag[{type `3`}, K[Nothing, Nothing, Nothing]]
+  type TagK[K[_]] = HKTag[{type `1`}, K[Int]]
+  // TODO FIXME
+  type TagKK[K[_, _]] = HKTag[{type `2`}, K[Int, Int]]
+  type TagK3[K[_, _, _]] = HKTag[{type `3`}, K[Int, Int, Int]]
 
-  type TagF[K[_[_]]] = HKTag[{type `1`}, K[Nothing]]
-  type TagFK[K[_[_], _]] = HKTag[{type `2`}, K[Nothing, Nothing]]
-  type TagFKK[K[_[_], _, _]] = HKTag[{type `3`}, K[Nothing, Nothing, Nothing]]
-  type TagFK3[K[_[_], _, _, _]] = HKTag[{type `4`}, K[Nothing, Nothing, Nothing, Nothing]]
+  type TagF[K[_[_]]] = HKTag[{type `1`}, K[Int]]
+  type TagFK[K[_[_], _]] = HKTag[{type `2`}, K[List, Nothing]]
+  type TagFKK[K[_[_], _, _]] = HKTag[{type `3`}, K[List, Nothing, Nothing]]
+  type TagFK3[K[_[_], _, _, _]] = HKTag[{type `4`}, K[List, Nothing, Nothing, Nothing]]
 
   object TagK {
     /**
