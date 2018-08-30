@@ -215,11 +215,11 @@ object TryInterpreters extends ModuleDef {
 val TryProgram = new Program[Try] ++ TryInterpreters
 ```
 
-@scaladoc[TagK](com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK) is distage's analogue
-of `TypeTag` or `Typeable` but for higher-kinded types like `F[_]`.
-Don't forget to add a @scaladoc[TagK](com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK) when you need to create a module parameterized by an abstract `F[_]`!
+@scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) is distage's analogue
+of `TypeTag` or `Typeable`, but for higher-kinded types such as `F[_]`.
+Don't forget to add a @scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) when you need to create a module parameterized by an abstract `F[_]`!
 You don't need it however, when your module refers to concrete monads such as `Future` or `IO`. If you want
-to create a module that's generic in a non-higher kinded parameter, use @scaladoc[Tag](com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#Tag).
+to create a module that's generic in a non-higher kinded parameter, use @scaladoc[Tag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#Tag).
 
 The rest of the program:
 

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
+import scala.annotation.implicitNotFound
 import scala.language.higherKinds
 import scala.reflect.api
 import scala.reflect.api.TypeCreator
@@ -25,6 +26,7 @@ trait WithTags extends UniverseGeneric { self =>
   *
   * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]`
   */
+  @implicitNotFound(msg = WithTags.defaultTagImplicitError)
   trait Tag[T] {
     def tag: TypeTag[T]
 
@@ -42,8 +44,7 @@ trait WithTags extends UniverseGeneric { self =>
     implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = Tag(t)
 
     /**
-    * Helper for creating your own instances for type shapes that aren't supported by default instances
-    * (most shapes in `cats` and `stdlib` are supported, but you may need this if you use `scalaz`)
+    * Create a Tag of a type formed by applying the type in `tag` to `args`.
     *
     * Example:
     * {{{
@@ -60,6 +61,14 @@ trait WithTags extends UniverseGeneric { self =>
       Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
     }
 
+    /**
+    * Create a Tag of a type formed from an `intersection` of types (A with B) with a structural refinement taken from `structType`
+    *
+    * `structType` is assumed to be a weak type of final result type, i.e.
+    * {{{
+    * Tag[A with B {def abc: Unit}] == refinedTag(List(typeTag[A], typeTag[B]), weakTypeTag[A with B { def abc: Unit }])
+    * }}}
+    **/
     def refinedTag[R](intersection: List[TypeTag[_]], structType: WeakTypeTag[_]): Tag[R] = {
       val refinedTypeCreator = new TypeCreator {
         override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
@@ -79,7 +88,8 @@ trait WithTags extends UniverseGeneric { self =>
 
           val mergedArgs = args.zipWithIndex.map {
             case (Some(t), _) => t.migrate(m).tpe
-            case (None, i) => tpe.typeArgs.applyOrElse(i, (_: Int) => throw new RuntimeException(s"Aaaa, can't get param $i of $tpe in constr ${tpe.typeConstructor} in args: ${args}"))
+            case (None, i) => tpe.typeArgs.applyOrElse(i, (_: Int) =>
+              throw new RuntimeException(s"Aaaa, can't get param $i of $tpe in constr ${tpe.typeConstructor} in args: ${args}"))
           }
 
           m.universe.appliedType(tpe.typeConstructor, mergedArgs)
@@ -94,13 +104,62 @@ trait WithTags extends UniverseGeneric { self =>
     implicit final def tagFromTagMaterializer[T](implicit t: TagMaterializer[self.type, T]): Tag[T] = t.value
   }
 
+
+  class HKTag[T](val tag: TypeTag[_]) {
+    override def toString: String = {
+      val size = tag.tpe.typeParams.size
+      // naming scheme
+      size match {
+        case 1 => s"TagK[${tag.tpe}]"
+        case 2 => s"TagKK[${tag.tpe}]"
+        case _ => s"HKTag$size[${tag.tpe}]"
+      }
+    }
+  }
+
+  object HKTag {
+
+    final type Arg = Nothing { type Arg }
+    final val argTpe = typeTag[Arg]
+
+    implicit def unsafeFromTypeTag[T](implicit t: TypeTag[T]): HKTag[T] = {
+      new HKTag[T] ({
+        val ctorCreator = new TypeCreator {
+          override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
+            val isArg = argTpe.migrate(m).tpe
+
+            t.migrate(m).tpe match {
+              case r if r.typeArgs.forall(_ =:= isArg) =>
+                r.typeConstructor
+              case r =>
+                // create a type lambda preserving embedded arguments
+                // i.e. OptionT[List, ?] === [A => OptionT[List, A]]
+
+                def newTypeParam[A]: m.universe.Type = m.universe.weakTypeOf[A]
+
+                val tyParams = r.typeArgs.filter(_ =:= isArg).map(_ => newTypeParam)
+
+                val freshParam2 = newTypeParam
+                val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(tyParams.size) ++ tyParams)
+
+                m.universe.internal.polyType(tyParams.map(_.typeSymbol), appliedRes)
+            }
+          }
+        }
+        TypeTag(t.mirror, ctorCreator)
+      })
+    }
+  }
+
   /**
   * `TagK` is a [[scala.reflect.api.TypeTags#TypeTag]] for higher-kinded types.
   *
   * Example:
   * {{{
-  * def containerTypesEqual[F[_]: TagK, K[_]: TagK](containerF: F[_], containerK: K[_]): Boolean =
-  *   TagK[F].tag =:= TagK[K].tag
+  * def containerTypesEqual[F[_]: TagK, K[_]: TagK]): Boolean = TagK[F].tag.tpe =:= TagK[K].tag.tpe
+  *
+  * containerTypesEqual[Set, collection.immutable.Set] == true
+  * containerTypesEqual[Array, List] == false
   * }}}
   */
   trait TagK[K[_]] {
@@ -135,7 +194,7 @@ trait WithTags extends UniverseGeneric { self =>
     *     TagK[Option]
     * }}}
     **/
-    def apply[K[_] : TagK]: TagK[K] = implicitly
+    def apply[K[_]: TagK]: TagK[K] = implicitly
   }
 
   trait TagKInstances {
@@ -228,4 +287,9 @@ trait WithTags extends UniverseGeneric { self =>
   type ScalaReflectTypeTag[T] = u.TypeTag[T]
   type ScalaReflectWeakTypeTag[T] = u.WeakTypeTag[T]
 
+}
+
+object WithTags {
+  final val defaultTagImplicitError: String =
+    "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ..."
 }

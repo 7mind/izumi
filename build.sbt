@@ -44,7 +44,6 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
     )
     , sonatypeProfileName := "com.github.pshirshov"
     , addCompilerPlugin(R.kind_projector)
-//    , scalacOptions += "-Xlog-implicits"
   )
 }
 

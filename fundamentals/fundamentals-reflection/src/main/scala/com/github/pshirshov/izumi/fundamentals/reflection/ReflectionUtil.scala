@@ -42,7 +42,6 @@ object ReflectionUtil {
       weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
   }
 
-
   def deannotate[U <: Universe](typ: U#Type): U#Type =
     typ match {
       case t: U#AnnotatedTypeApi =>
