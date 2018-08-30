@@ -6,9 +6,7 @@ import com.github.pshirshov.izumi.distage.roles.roles.RoleService
 trait NotCloseable
 
 class InheritedCloseable extends NotCloseable with AutoCloseable {
-  override def close(): Unit = {
-    println("HI")
-  }
+  override def close(): Unit = {}
 }
 
 class TestPlugin extends PluginDef {

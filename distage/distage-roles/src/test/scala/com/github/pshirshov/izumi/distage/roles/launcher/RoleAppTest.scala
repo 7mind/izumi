@@ -60,6 +60,7 @@ class RoleAppTest extends WordSpec {
           assert(conf.systemPropInt == 265)
           assert(conf.systemPropList == List(111, 222))
           assert(service.dummies.isEmpty)
+          assert(service.closeables.size == 2)
 
           super.start(context, bootstrapContext)
         }
