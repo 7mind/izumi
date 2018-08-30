@@ -9,7 +9,6 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.util.Try
 
-// TODO: we need to rewrite this once we have WeakRefs
 class RoleStarter(services: Set[RoleService], components: Set[RoleComponent], closeables: Set[AutoCloseable], logger: IzLogger) {
   private val latch = new CountDownLatch(1)
 
@@ -26,15 +25,16 @@ class RoleStarter(services: Set[RoleService], components: Set[RoleComponent], cl
           service.start()
       }
 
-      setupShutdownHook()
-
-      if (services.isEmpty) {
-        logger.info("No roles to activate, exiting...")
-      } else if (services.size > tasksCount) {
+      if (services.size > tasksCount) {
         logger.info("Startup finished, joining on main thread...")
+        setupShutdownHook()
         latch.await()
+      } else if (services.isEmpty) {
+        logger.info("No roles to activate, exiting...")
+        doStop()
       } else {
         logger.info("No daemonic roles, exiting...")
+        doStop()
       }
 
     } else {
@@ -74,8 +74,9 @@ class RoleStarter(services: Set[RoleService], components: Set[RoleComponent], cl
           .partition(_._2.isSuccess)
         logger.info(s"Service shutdown: ${closed.size -> "closed"} ; ${failedToClose.size -> "failed to close"}")
 
+        contextRef.set(null)
       case None =>
-        logger.info("App isn't started yet")
+        logger.info("App didn't start yet")
     }
   }
 }
