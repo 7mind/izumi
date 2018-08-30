@@ -155,8 +155,6 @@ class TagMacroImpl(val c: blackbox.Context) {
   protected[this] def summonTag[DIU <: WithTags with Singleton: c.WeakTypeTag](tpe: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
     summon[DIU](tpe, kindOf(tpe))
 
-  def newTypeParameter[A](u: Universe): u.Type = u.weakTypeOf[A]
-
   def ktos(u: Universe)(owner: u.Symbol): Kind => u.Symbol = {
     case Kind(Nil) =>
       import u._
@@ -171,6 +169,41 @@ class TagMacroImpl(val c: blackbox.Context) {
       u.internal.reificationSupport.setInfo(typeSymbol, u.internal.typeBounds(u.definitions.NothingTpe, u.definitions.AnyTpe))
       val params = l.map(ktos(u)(typeSymbol))
       u.internal.reificationSupport.setInfo(typeSymbol, u.internal.polyType(params, u.internal.typeBounds(u.definitions.NothingTpe, u.definitions.AnyTpe)))
+  }
+
+  @inline
+  protected[this] def createHKTagArg(tpe: c.Type, kind: Kind): Any = {
+
+    val staticOwner = c.prefix.tree.symbol.owner
+
+    logger.log(s"staticOwner: $staticOwner")
+
+    val parents = scala.collection.immutable.List.apply[Type](definitions.AnyRefTpe)
+    val constructor = typeOf[IxEitherT[Nothing, Nothing, Nothing]].typeConstructor
+
+    // top refinement tysym
+    val refinementSymbol: Symbol = internal.reificationSupport.newNestedSymbol(staticOwner, TypeName.apply("<refinement>"), NoPosition, internal.reificationSupport.FlagsRepr.apply(0L), true);
+    // contained arg
+    val decl1: Symbol = internal.reificationSupport.newNestedSymbol(refinementSymbol, TypeName.apply("Arg"), NoPosition, internal.reificationSupport.FlagsRepr.apply(0L), false);
+      val symbols = kindOf(constructor).args.map(ktos(c.universe)(decl1))
+      internal.reificationSupport.setInfo(decl1
+        , internal.polyType(
+          symbols
+          , appliedType(typeOf[IxEitherT[Nothing, Nothing, Nothing]].typeConstructor, symbols.map(internal.typeRef(NoPrefix, _, Nil)))
+        )
+      )
+
+    val scope = internal.reificationSupport.newScopeWith(decl1)
+
+    internal.reificationSupport.setInfo[Symbol](refinementSymbol
+      , internal.reificationSupport.RefinedType(parents
+        , scope
+        , refinementSymbol));
+
+    // combined
+    internal.reificationSupport.RefinedType(parents
+      , scope
+      , refinementSymbol)
   }
 
   @inline
@@ -203,62 +236,46 @@ class TagMacroImpl(val c: blackbox.Context) {
               final class $typecreator75 extends TypeCreator {
 
                 def apply[U <: scala.reflect.api.Universe with Singleton]($m$untyped: scala.reflect.api.Mirror[U]): U#Type = {
-                  val $u: U = $m$untyped.universe;
-                  val $m: $u.Mirror = $m$untyped.asInstanceOf[$u.Mirror];
+                  val $u: U = $m$untyped.universe
+                  val $m: $u.Mirror = $m$untyped.asInstanceOf[$u.Mirror]
+
+                  val staticOwner = $m.staticClass("com.github.pshirshov.izumi.fundamentals.reflection.TagMacroImpl")
+                  val parents = scala.collection.immutable.List.apply[$u.Type]($u.definitions.AnyRefTpe)
+                  val constructor = typeOf[IxEitherT[Nothing, Nothing, Nothing]].typeConstructor
+
                   // top refinement tysym
-                  val lessrefinement: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol($m.staticClass("com.github.pshirshov.izumi.fundamentals.reflection.TagMacroImpl"), $u.TypeName.apply("<refinement>"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(0L), true);
+                  val refinementSymbol: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(staticOwner, $u.TypeName.apply("<refinement>"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(0L), true);
                   // contained arg
-                  val symdef$Arg11: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(lessrefinement, $u.TypeName.apply("Arg"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(0L), false);
-
-                  val symdef$A1: $u.Symbol = ktos($u)(symdef$Arg11)(Kind(Kind(Nil) :: Nil))
-                  val symdef$B1: $u.Symbol = ktos($u)(symdef$Arg11)(Kind(Nil))
-                  val symdef$C1: $u.Symbol = ktos($u)(symdef$Arg11)(Kind(Nil))
-
-                  val symbols = List(symdef$A1, symdef$B1, symdef$C1)
-
-                  $u.internal.reificationSupport.setInfo(symdef$Arg11
-                    , $u.internal.polyType(
-                      symbols
-                      , $u.appliedType($u.typeOf[IxEitherT[Nothing, Nothing, Nothing]].typeConstructor, symbols.map($u.internal.typeRef($u.NoPrefix, _, Nil)))
+                  val decl1: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol($u.NoSymbol, $u.TypeName.apply("Arg"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(0L), false);
+                    val symbols = kindOf(constructor).args.map(ktos($u)(decl1))
+                    $u.internal.reificationSupport.setInfo(decl1
+                      , $u.internal.polyType(
+                        symbols
+                        , $u.appliedType($u.typeOf[IxEitherT[Nothing, Nothing, Nothing]].typeConstructor, symbols.map($u.internal.typeRef($u.NoPrefix, _, Nil)))
+                      )
                     )
-                  )
-                  //
-                  //                val symdef$A1: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(symdef$Arg11, $u.TypeName.apply("A"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(8208L), false);
-                  //                  val symdef$_2: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(symdef$A1, $u.TypeName.apply("_"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(8208L), false);
-                  //                val symdef$B1: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(symdef$Arg11, $u.TypeName.apply("B"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(8208L), false);
-                  //                val symdef$C1: $u.Symbol = $u.internal.reificationSupport.newNestedSymbol(symdef$Arg11, $u.TypeName.apply("C"), $u.NoPosition, $u.internal.reificationSupport.FlagsRepr.apply(8208L), false);
+                  $u.internal.asInstanceOf[internal.type].setOwner(decl1.asInstanceOf[c.universe.Symbol], refinementSymbol.asInstanceOf[c.universe.Symbol])
 
-//                                  $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$Arg11, $u.internal.reificationSupport.PolyType(
-//                                    scala.collection.immutable.List.apply[$u.Symbol](symdef$A1, symdef$B1, symdef$C1)
-//                                    , $u.internal.reificationSupport.TypeRef(
-//                                      $u.internal.reificationSupport.ThisType($m.staticPackage("com.github.pshirshov.izumi.fundamentals.reflection").asModule.moduleClass)
-//                                      , $m.staticClass("com.github.pshirshov.izumi.fundamentals.reflection.IxEitherT")
-//                                      , scala.collection.immutable.List.apply[$u.Type]
-//                                        ($u.internal.reificationSupport.TypeRef($u.NoPrefix, symdef$A1, scala.collection.immutable.Nil), $u.internal.reificationSupport.TypeRef($u.NoPrefix, symdef$B1, scala.collection.immutable.Nil), $u.internal.reificationSupport.TypeRef($u.NoPrefix, symdef$C1, scala.collection.immutable.Nil)
-//                                        )
-//                                    )
-//                                  ));
-                  //
-                  //                $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$A1, $u.internal.reificationSupport.PolyType(scala.collection.immutable.List.apply[$u.Symbol](symdef$_2), $u.internal.reificationSupport.TypeBounds($m.staticClass("scala.Nothing").asType.toTypeConstructor, $m.staticClass("scala.Any").asType.toTypeConstructor)));
-                  //
-                  //                $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$_2, $u.internal.reificationSupport.TypeBounds($m.staticClass("scala.Nothing").asType.toTypeConstructor, $m.staticClass("scala.Any").asType.toTypeConstructor));
-                  //                $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$B1, $u.internal.reificationSupport.TypeBounds($m.staticClass("scala.Nothing").asType.toTypeConstructor, $m.staticClass("scala.Any").asType.toTypeConstructor));
-                  //                $u.internal.reificationSupport.setInfo[$u.Symbol](symdef$C1, $u.internal.reificationSupport.TypeBounds($m.staticClass("scala.Nothing").asType.toTypeConstructor, $m.staticClass("scala.Any").asType.toTypeConstructor));
+                  val scope = $u.internal.reificationSupport.newScopeWith(decl1)
 
-                  $u.internal.reificationSupport.setInfo[$u.Symbol](lessrefinement, $u.internal.reificationSupport.RefinedType(scala.collection.immutable.List.apply[$u.Type]($u.internal.reificationSupport.TypeRef($u.internal.reificationSupport.ThisType($m.staticPackage("scala").asModule.moduleClass), $u.internal.reificationSupport.selectType($m.staticPackage("scala").asModule.moduleClass, "AnyRef"), scala.collection.immutable.Nil)), $u.internal.reificationSupport.newScopeWith(symdef$Arg11), lessrefinement));
+                  $u.internal.reificationSupport.setInfo[$u.Symbol](refinementSymbol
+                    , $u.internal.reificationSupport.RefinedType(parents
+                      , scope
+                      , refinementSymbol));
+
                   // combined
-                  $u.internal.reificationSupport.RefinedType(scala.collection.immutable.List.apply[$u.Type](
-                    $u.internal.reificationSupport.TypeRef($u.internal.reificationSupport.ThisType($m.staticPackage("scala").asModule.moduleClass), $u.internal.reificationSupport.selectType($m.staticPackage("scala").asModule.moduleClass, "AnyRef"), scala.collection.immutable.Nil)
-                  )
-                    , $u.internal.reificationSupport.newScopeWith(symdef$Arg11)
-                    , lessrefinement)
+                  $u.internal.reificationSupport.RefinedType(parents
+                    , scope
+                    , refinementSymbol)
                 }
               };
               new $typecreator75()
             })
           }: TypeTag[AnyRef {type Arg[A[_], B, C] = com.github.pshirshov.izumi.fundamentals.reflection.IxEitherT[A, B, C]}]).tpe
 
-        logger.log(s"GOT REAL TT of $tt: eq: ${sp =:= tt}")
+        val bool = sp =:= tt
+        assert(bool)
+        logger.log(s"GOT REAL TT of $tt: eq: ${bool}")
 
         val tre = c.inferImplicitValue(appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]].typeConstructor, tt), silent = false)
 

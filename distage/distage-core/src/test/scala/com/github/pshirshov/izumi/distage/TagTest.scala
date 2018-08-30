@@ -157,7 +157,6 @@ class TagTest extends WordSpec with X[String] {
     "Assemble from higher than TagKK tags" in {
       def tag[T[_[_], _]: TagFK, F[_]: TagK, A: Tag] = Tag[T[F, A]]
 
-
       assert(tag[OptionT, Option, Int].tpe == safe[OptionT[Option, Int]])
     }
 
