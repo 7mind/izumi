@@ -1,0 +1,31 @@
+domain idltest.json
+
+adt JSON
+  = JObject
+  | JArray
+  | JString
+  | JNumber
+  | JBool
+  | JNull
+
+data JNull {}
+
+data JObject {
+  fields: map[str, JSON]
+}
+
+data JArray {
+  values: list[JSON]
+}
+
+id JString {
+  value: str
+}
+
+data JNumber {
+  value: f64
+}
+
+id JBool {
+  value: bit
+}

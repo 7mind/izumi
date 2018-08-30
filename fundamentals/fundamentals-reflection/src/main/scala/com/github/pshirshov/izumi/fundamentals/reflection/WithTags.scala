@@ -1,9 +1,11 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
+import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
+
 import scala.annotation.implicitNotFound
 import scala.language.higherKinds
 import scala.reflect.api
-import scala.reflect.api.TypeCreator
+import scala.reflect.api.{TypeCreator, Universe}
 
 trait WithTags extends UniverseGeneric { self =>
 
@@ -104,88 +106,96 @@ trait WithTags extends UniverseGeneric { self =>
     implicit final def tagFromTagMaterializer[T](implicit t: TagMaterializer[self.type, T]): Tag[T] = t.value
   }
 
+  /**
+    * Internal unsafe API representing a poly-kinded, higher-kinded type tag.
+    *
+    * To create a Tag* for an arbitrary kind use the following syntax:
+    *
+    * {{{
+    *   type TagK5[K[_, _, _, _, _]] = HKTag[{type `5`}, K[Nothing, Nothing, Nothing, Nothing, Nothing]]
+    * }}}
+    *
+    * You should fill all argument positions with `Nothing` and specify the number of arguments in the first argument via
+    * a structural type definition. Said structural type should contain only 1 type field with a name that is as a valid
+    * number of arguments in the supplied type. The kinds of arguments don't matter, so the following is correct:
+    *
+    * {{{
+    *   type TagFGC[K[_[_, _], _[_], _[_[_], _, _, _]] = HKTag[{type `3`}, [Nothing, Nothing, Nothing]]
+    * }}}
+    */
+  trait HKTag[N, T] {
 
-  class HKTag[T](val tag: TypeTag[_]) {
+    /**
+     * Internal `TypeTag` holding the `typeConstructor` of type `T`
+     **/
+    def tag: TypeTag[_]
+
     override def toString: String = {
       val size = tag.tpe.typeParams.size
       // naming scheme
       size match {
         case 1 => s"TagK[${tag.tpe}]"
         case 2 => s"TagKK[${tag.tpe}]"
-        case _ => s"HKTag$size[${tag.tpe}]"
+        case _ => s"Tag for ${tag.tpe} of kind ${kindOf(tag.tpe)}"
       }
     }
   }
 
   object HKTag {
 
-    final type Arg = Nothing { type Arg }
-    final val argTpe = typeTag[Arg]
+    implicit def unsafeFromTypeTag[N, T](implicit k: TypeTag[N], t: TypeTag[T]): HKTag[N, T] = {
+      new HKTag[N, T] {
+        override val tag: u.TypeTag[_] = {
+          val ctorCreator = new TypeCreator {
+            override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
 
-    implicit def unsafeFromTypeTag[T](implicit t: TypeTag[T]): HKTag[T] = {
-      new HKTag[T] ({
-        val ctorCreator = new TypeCreator {
-          override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
-            val isArg = argTpe.migrate(m).tpe
+              val argSize = k.tpe.decls.head.name.toString.filter(_.isDigit).toInt
 
-            t.migrate(m).tpe match {
-              case r if r.typeArgs.forall(_ =:= isArg) =>
-                r.typeConstructor
-              case r =>
-                // create a type lambda preserving embedded arguments
-                // i.e. OptionT[List, ?] === [A => OptionT[List, A]]
+              t.migrate(m).tpe match {
+                case r if r.typeArgs.size == argSize =>
+                  r.typeConstructor
+                case r =>
+                  // create a type lambda preserving embedded arguments
+                  // i.e. OptionT[List, ?] === [A => OptionT[List, A]]
 
-                def newTypeParam[A]: m.universe.Type = m.universe.weakTypeOf[A]
+                  def newTypeParam[A]: m.universe.Type = m.universe.weakTypeOf[A]
 
-                val tyParams = r.typeArgs.filter(_ =:= isArg).map(_ => newTypeParam)
+                  val tyParams = List.fill(argSize)(newTypeParam)
 
-                val freshParam2 = newTypeParam
-                val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(tyParams.size) ++ tyParams)
+                  val freshParam2 = newTypeParam
+                  val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(argSize) ++ tyParams)
 
-                m.universe.internal.polyType(tyParams.map(_.typeSymbol), appliedRes)
+                  m.universe.internal.polyType(tyParams.map(_.typeSymbol), appliedRes)
+              }
             }
           }
+          TypeTag(t.mirror, ctorCreator)
         }
-        TypeTag(t.mirror, ctorCreator)
-      })
+      }
     }
   }
 
   /**
-  * `TagK` is a [[scala.reflect.api.TypeTags#TypeTag]] for higher-kinded types.
-  *
-  * Example:
-  * {{{
-  * def containerTypesEqual[F[_]: TagK, K[_]: TagK]): Boolean = TagK[F].tag.tpe =:= TagK[K].tag.tpe
-  *
-  * containerTypesEqual[Set, collection.immutable.Set] == true
-  * containerTypesEqual[Array, List] == false
-  * }}}
-  */
-  trait TagK[K[_]] {
-
-    /**
-    * Internal `TypeTag` holding the `typeConstructor` of type `K`
-    *
-    * You probably want to use `apply` method to replace a `TypeTag` of T[F] with T[K] instead.
-    **/
-    def tag: TypeTag[_]
-
-    /**
-    * Create a [[scala.reflect.api.TypeTags#TypeTag]] for `K[T]` by applying `K[_]` to `T`
+    * `TagK` is a [[scala.reflect.api.TypeTags#TypeTag]] for higher-kinded types.
     *
     * Example:
     * {{{
-    *     TagK[List].apply[Int]
+    * def containerTypesEqual[F[_]: TagK, K[_]: TagK]): Boolean = TagK[F].tag.tpe =:= TagK[K].tag.tpe
+    *
+    * containerTypesEqual[Set, collection.immutable.Set] == true
+    * containerTypesEqual[Array, List] == false
     * }}}
     */
-    final def apply[T](implicit tag: Tag[T]): Tag[K[T]] =
-      Tag.appliedTag(this.tag, List(tag.tag))
+  type TagK[K[_]] = HKTag[{type `1`}, K[Nothing]]
+  type TagKK[K[_, _]] = HKTag[{type `2`}, K[Nothing, Nothing]]
+  type TagK3[K[_, _, _]] = HKTag[{type `3`}, K[Nothing, Nothing, Nothing]]
 
-    override final def toString: String = s"TagK[${tag.tpe}]"
-  }
+  type TagF[K[_[_]]] = HKTag[{type `1`}, K[Nothing]]
+  type TagFK[K[_[_], _]] = HKTag[{type `2`}, K[Nothing, Nothing]]
+  type TagFKK[K[_[_], _, _]] = HKTag[{type `3`}, K[Nothing, Nothing, Nothing]]
+  type TagFK3[K[_[_], _, _, _]] = HKTag[{type `4`}, K[Nothing, Nothing, Nothing, Nothing]]
 
-  object TagK extends TagKInstances {
+  object TagK {
     /**
     * Construct a type tag for a higher-kinded type `K`
     *
@@ -197,63 +207,28 @@ trait WithTags extends UniverseGeneric { self =>
     def apply[K[_]: TagK]: TagK[K] = implicitly
   }
 
-  trait TagKInstances {
-    implicit def tagKFromTypeTag[K[_]](implicit t: TypeTag[K[Nothing]]): TagK[K] =
-      new TagK[K] {
-        override val tag: TypeTag[_] = {
-          val ctorCreator = new TypeCreator {
-            override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
-              t.migrate(m).tpe match {
-                case r if r.typeArgs.length == 1 =>
-                  r.typeConstructor
-                case r =>
-                  // create a type lambda preserving embedded arguments
-                  // i.e. OptionT[List, ?] === [A => OptionT[List, A]]
-                  def newTypeParam[A]: m.universe.Type = m.universe.weakTypeOf[A]
-
-                  val freshParam = newTypeParam
-                  val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(1) ++ List(freshParam))
-
-                  m.universe.internal.polyType(List(freshParam.typeSymbol), appliedRes)
-              }
-          }
-          TypeTag(t.mirror, ctorCreator)
-        }
-      }
-  }
-
-  trait TagKK[F[_, _]] {
-    def tag: TypeTag[_]
-
-    override def toString: String = s"TagKK[${tag.tpe}]"
-  }
-
   object TagKK {
-    def apply[F[_, _]: TagKK]: TagKK[F] = implicitly
+    def apply[K[_, _]: TagKK]: TagKK[K] = implicitly
+  }
 
-    implicit def tagKKFromTypeTag[F[_, _]](implicit t: TypeTag[F[Nothing, Nothing]]): TagKK[F] =
-      new TagKK[F] {
-        override val tag: TypeTag[_] = {
-          val ctorCreator = new TypeCreator {
-            override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type =
-              t.migrate(m).tpe match {
-                case r if r.typeArgs.length == 2 =>
-                  r.typeConstructor
-                case r =>
-                  // create a type lambda preserving embedded arguments
-                  // i.e. OptionT[List, ?] === [A => OptionT[List, A]]
-                  def newTypeParam[A]: m.universe.Type = m.universe.weakTypeOf[A]
+  object TagK3 {
+    def apply[K[_, _, _]: TagK3]: TagK3[K] = implicitly
+  }
 
-                  val freshParam1 = newTypeParam
-                  val freshParam2 = newTypeParam
-                  val appliedRes = m.universe.appliedType(r, r.typeArgs.dropRight(2) ++ List(freshParam1, freshParam2))
+  object TagF {
+    def apply[K[_[_]]: TagF]: TagF[K] = implicitly
+  }
 
-                  m.universe.internal.polyType(List(freshParam1.typeSymbol, freshParam2.typeSymbol), appliedRes)
-              }
-          }
-          TypeTag(t.mirror, ctorCreator)
-        }
-      }
+  object TagFK {
+    def apply[K[_[_], _]: TagFK]: TagFK[K] = implicitly
+  }
+
+  object TagFKK {
+    def apply[K[_[_], _, _]: TagFKK]: TagFKK[K] = implicitly
+  }
+
+  object TagFK3 {
+    def apply[K[_[_], _, _, _]: TagFK3]: TagFK3[K] = implicitly
   }
 
   // Workaround needed specifically to support generic methods in factories, see `GenericAssistedFactory` and related tests
@@ -292,4 +267,22 @@ trait WithTags extends UniverseGeneric { self =>
 object WithTags {
   final val defaultTagImplicitError: String =
     "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ..."
+
+  def hktagFormatMap: Map[Kind, String] = Map(
+    Kind(Kind(Nil) :: Nil) -> s"TagK"
+    , Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagKK"
+    , Kind(Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagK3"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> s"TagF"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Nil) -> s"TagFK"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagFKK"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagFK3"
+  )
+
+  def hktagFormat(tpe: Universe#Type): String = {
+    val kind = kindOf(tpe)
+    hktagFormatMap.get(kind) match {
+      case Some(t) => s"$t[$tpe]"
+      case _ => s"Tag for $tpe of kind $kind"
+    }
+  }
 }

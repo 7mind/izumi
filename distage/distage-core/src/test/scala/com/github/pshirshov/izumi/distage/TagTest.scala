@@ -28,7 +28,12 @@ class TagTest extends WordSpec with X[String] {
   trait Test[A, dafg, adfg, LS, L[_], SD, GG[A] <: L[A], ZZZ[_, _], S, SDD, TG]
   trait Y[V] extends X[V]
   case class ZOBA[A, B, C](value: Either[B, C])
+  type Swap[A, B] = Either[B, A]
 
+  object X {
+    type Id[A] = A
+  }
+  import X._
   "Tag" should {
 
     "Work for any concrete type" in {
@@ -99,6 +104,13 @@ class TagTest extends WordSpec with X[String] {
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
     }
 
+    "Work for an abstract type with available TagK when TagK is requested through a type lambda" in {
+      def testTagK[F[_]: ({ type l[K[_]] = HKTag[{type `1`}, K[Nothing]]})#l, T: Tag] = Tag[F[T {}] {}]
+      // TODO add strange shapes
+
+      assert(testTagK[Set, Int].tpe == safe[Set[Int]])
+    }
+
     "Work for an abstract type with available TagKK" in {
       def t1[F[_, _]: TagKK, T: Tag, G: Tag] = Tag[F[T, G]]
 
@@ -128,6 +140,12 @@ class TagTest extends WordSpec with X[String] {
         == safe[Test[String, String, String, String, X, String, Y, Either, String, String, String]])
     }
 
+    "handle Swap type lambda" in {
+      def t1[F[_, _]: TagKK, A: Tag, B: Tag] = Tag[F[A, B]]
+
+      assert(t1[Swap, Int, String].tpe == safe[Either[String, Int]])
+    }
+
     "Handle abstract types instead of parameters" in {
       trait T1 {
         type F[G[_], A] = OptionT[G, A]
@@ -152,8 +170,6 @@ class TagTest extends WordSpec with X[String] {
 
         final val x: Tag[F[G, Either[A, B]]] = {
           implicit val g0: TagK[G] = g
-// paramKind
-//          Tag[OptionT[G, C[A, B]]]
           Tag[F[G, C[A, B]]]
         }
       }

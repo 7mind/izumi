@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import WithTags.defaultTagImplicitError
+import WithTags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
+import ReflectionUtil.{Kind, kindOf}
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
-import scala.reflect.macros.blackbox
+import scala.reflect.macros.{TypecheckException, blackbox}
 
 // TODO: benchmark difference between running implicit search inside macro vs. return tree with recursive implicit macro expansion
 // TODO: benchmark difference between searching all arguments vs. merge strategy
@@ -145,12 +146,48 @@ class TagMacroImpl(val c: blackbox.Context) {
 
   @inline
   protected[this] def summon[DIU <: WithTags with Singleton: c.WeakTypeTag](tpe: c.Type, kind: Kind): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
-    val summon: ImplicitSummon[c.type, c.universe.type, DIU] = kindMap[DIU].lift(kind)
-      .getOrElse {
-        val msg = "beeep"
-        c.abort(c.enclosingPosition, msg)
+
+    val nothingfulTpe = c.universe.appliedType(tpe, kind.args.map(_ => definitions.NothingTpe))
+
+    val summoned = try {
+      if (kind == Kind(Nil)) {
+        c.inferImplicitValue(appliedType(weakTypeOf[DIU#Tag[Nothing]].typeConstructor, tpe), silent = false)
+      } else if (kind == Kind(Kind(Nil) :: Nil)) {
+        c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagK[Nothing]].typeConstructor, tpe), silent = false)
+      } else if (kind == Kind(Kind(Nil) :: Kind(Nil) :: Nil)) {
+        c.inferImplicitValue(appliedType(weakTypeOf[DIU#TagKK[Nothing]].typeConstructor, tpe), silent = false)
+      } else {
+
+        val argsSizeType = {
+          val mutType = typeOf[{type x}]
+          internal.setName(mutType.decls.head, TypeName(s"${kind.args.size}"))
+          mutType
+        }
+        logger.log(s"Created args size handle: $argsSizeType")
+
+//        val t = TypeName(s"${kind.args.size}")
+//        val lambda = c.typecheck(tq"({ type l[K[${TypeName("_")}]] = ${weakTypeOf[DIU#HKTag[Nothing, Nothing]].typeConstructor}[{type $t} , K[${definitions.NothingTpe}]] })")
+//        logger.log(s"lambda tpe  tree ${showRaw(lambda)}\ncode ${showCode(lambda)}")
+        c.inferImplicitValue(appliedType(weakTypeOf[DIU#HKTag[Nothing, Nothing]].typeConstructor, argsSizeType, nothingfulTpe), silent = false)
       }
-    summon.apply(tpe)
+    } catch {
+      case e: TypecheckException =>
+        setImplicitError(
+          s"""could not find implicit value for ${hktagFormat(tpe)}.\n
+             |${hktagFormatMap.get(kind) match {
+            case Some(t) => s"Please ensure that $tpe has a $t implicit available in scope."
+            case None =>
+              s"""$tpe is of a kind $kind, which doesn't have a tag name. Please create a tag synonym as follows:\n\n
+                 |  type TagXXX[${kind.format("K")}] = HKTag[{ type `${kind.args.size}` }, K[${List.fill(kind.args.size)("Nothing").mkString(", ")}]]\n\n
+                 |And use it in your context bound, as in def x[$tpe: TagXXX] = ...
+               """.stripMargin
+          }
+          }
+           """.stripMargin)
+        throw e
+    }
+
+    c.Expr[DIU#ScalaReflectTypeTag[_]](q"{$summoned.tag}")
   }
 
   @inline
@@ -165,9 +202,6 @@ class TagMacroImpl(val c: blackbox.Context) {
       Some(kindOf(tpe))
     else
       None
-
-  protected[this] def kindOf(tpe: c.Type): Kind =
-    Kind(tpe.typeParams.map(t => kindOf(t.typeSignature)))
 
   /** Mini `normalize`. We don't wanna do scary things such as beta-reduce. And AFAIK the only case that can make us
     * confuse a type-parameter for a non-parameter is an empty refinement `T {}`. So we just strip it when we get it. */
@@ -293,10 +327,6 @@ class TagMacroImpl(val c: blackbox.Context) {
 }
 
 object TagMacroImpl {
-  final case class Kind(args: List[Kind]) {
-    override def toString: String = s"_${if (args.nonEmpty) args.mkString("[", ", ", "]") else ""}"
-  }
-
   final case class ImplicitSummon[C <: blackbox.Context with Singleton, U <: SingletonUniverse, DIU <: WithTags with Singleton](
     apply: U#Type => C#Expr[DIU#ScalaReflectTypeTag[_]]
   ) extends AnyVal

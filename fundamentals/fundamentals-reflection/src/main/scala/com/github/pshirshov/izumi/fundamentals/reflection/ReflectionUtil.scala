@@ -49,5 +49,15 @@ object ReflectionUtil {
       case _ =>
         typ
     }
+
+  def kindOf(tpe: Universe#Type): Kind =
+    Kind(tpe.typeParams.map(t => kindOf(t.typeSignature)))
+
+  final case class Kind(args: List[Kind]) {
+    override def toString: String = format("_")
+
+    def format(typeName: String) = s"$typeName${if (args.nonEmpty) args.mkString("[", ", ", "]") else ""}"
+  }
+
 }
 
