@@ -24,7 +24,9 @@ abstract class RoleApp extends OpinionatedDiApp {
   protected def setupContext(params: CommandlineConfig, args: StrategyArgs): Strategy
 
   override protected def start(context: Locator, bootstrapContext: app.BootstrapContext[CommandlineConfig]): Unit = {
-    context.get[RoleStarter].start(context)
+    val starter = context.get[RoleStarter]
+    starter.start()
+    starter.join()
   }
 
 }
