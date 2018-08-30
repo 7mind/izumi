@@ -1,7 +1,5 @@
-package com.github.pshirshov.izumi.distage.roles.launcher
+package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Tag, Wiring, mirror, u}
@@ -18,7 +16,7 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
 
     val newSteps = plan.steps.flatMap {
       op =>
-        val opTargetClass = toClass(op)
+        val opTargetClass = ExecutableOp.runtimeClass(op)
         if (setElementClass.isAssignableFrom(opTargetClass)) {
           val elementKey = DIKey.SetElementKey(op.target, plan.steps.size + newMembers.size, setKey.tpe)
           newMembers += elementKey
@@ -35,20 +33,5 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
     SemiPlan(plan.definition, newSteps :+ newSetOp)
   }
 
-  @scala.annotation.tailrec
-  private def toClass(op: ExecutableOp): Class[_] = {
-    op match {
-      case w: WiringOp =>
-        w.wiring match {
-          case u: Wiring.UnaryWiring =>
-            mirror.runtimeClass(u.instanceType.tpe)
-          case _ =>
-            mirror.runtimeClass(w.target.tpe.tpe)
-        }
-      case p: MakeProxy =>
-        toClass(p.op)
-      case o =>
-        mirror.runtimeClass(o.target.tpe.tpe)
-    }
-  }
+
 }

@@ -8,7 +8,6 @@ trait EarlyAutoSetHook extends PlanningHookDefaultImpl {
   def elementOf(b: Binding): Option[RuntimeDIUniverse.DIKey]
 
   override def hookDefinition(defn: ModuleBase): ModuleBase = {
-
     val autoSetsElements = defn.bindings.flatMap {
       case i: ImplBinding =>
         elementOf(i)
