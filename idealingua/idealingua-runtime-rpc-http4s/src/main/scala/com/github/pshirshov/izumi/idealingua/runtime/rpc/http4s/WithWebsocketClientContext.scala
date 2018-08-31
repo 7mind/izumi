@@ -79,21 +79,15 @@ trait WithWebsocketClientContext {
     protected[http4s] val queue: CatsIO[Queue[CatsIO, WebSocketFrame]] = async.unboundedQueue[CatsIO, WebSocketFrame]
 
     protected[http4s] val outStream: fs2.Stream[CatsIO, WebSocketFrame] =
-      fs2.Stream.awakeEvery[CatsIO](queuePollTimeout)
-        .flatMap {
-          d =>
-            val messages = (0 until queueBatchSize).map(_ => Option(sendQueue.poll())).collect {
-              case Some(m) => m
-            }
-            fs2.Stream.apply(messages: _*)
+      fs2.Stream.awakeEvery[CatsIO](queuePollTimeout) >> {
+        val messages = (0 until queueBatchSize).map(_ => Option(sendQueue.poll())).collect {
+          case Some(m) => m
         }
+        fs2.Stream(messages: _*)
+      }
 
     protected[http4s] val pingStream: fs2.Stream[CatsIO, WebSocketFrame] =
-      fs2.Stream.awakeEvery[CatsIO](pingTimeout)
-        .flatMap {
-          _ =>
-            fs2.Stream(Ping())
-        }
+      fs2.Stream.awakeEvery[CatsIO](pingTimeout) >> fs2.Stream(Ping())
 
     protected[http4s] def finish(): Unit = {
       Quirks.discard(sessions.remove(id))

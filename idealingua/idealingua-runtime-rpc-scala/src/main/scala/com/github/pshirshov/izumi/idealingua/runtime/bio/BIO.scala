@@ -74,6 +74,8 @@ object BIOSyntax {
   final class BIOOps[R[+_, + _], E, A](private val r: R[E, A])(implicit private val R: BIO[R]) {
     @inline def map[B](f: A => B): R[E, B] = R.map(r)(f)
 
+    @inline def as[B](b: B): R[E, B] = R.map(r)(_ => b)
+
     @inline def leftMap[E2](f: E => E2): R[E2, A] = R.leftMap(r)(f)
 
     @inline def bimap[E2, B](f: E => E2, g: A => B): R[E2, B] = R.bimap(r)(f, g)

@@ -17,6 +17,7 @@ class ProviderMagnetMacroGenerateUnsafeWeakSafeTypes(override val c: blackbox.Co
 * sbt -Dizumi.distage.debug.macro=true compile
 * }}}
 */
+// TODO: bench and optimize
 class ProviderMagnetMacro(val c: blackbox.Context) {
 
   protected def generateUnsafeWeakSafeTypes: Boolean = false

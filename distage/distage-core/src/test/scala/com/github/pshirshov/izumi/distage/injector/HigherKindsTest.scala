@@ -20,13 +20,14 @@ class HigherKindsTest extends WordSpec with MkInjector {
       make[TestServiceClass[F]]
       make[TestServiceTrait[F]]
       make[Int].named("TestService").from(getResult)
-      make[F[String]].from { res: Int@Id("TestService") => Pointed[F].point(s"Hello $res!") }
+      make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
       make[Either[String, Boolean]].from(Right(true))
 
-      //        TODO: Nothing doesn't resolve properly yet when F is unknown...
-      //        make[F[Nothing]]
-      //        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
+      make[Either[F[String], F[F[F[F[String]]]]]].from(Right(Pointed[F].point(Pointed[F].point(Pointed[F].point(Pointed[F].point("aaa"))))))
+
+      make[F[Nothing]].from(null.asInstanceOf[F[Nothing]])
       make[F[Any]].from(Pointed[F].point(1: Any))
+
       make[Either[String, F[Int]]].from { fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]]) }
       make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
     }
@@ -52,6 +53,17 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(optionTContext.get[TestServiceClass[OptionT[List, ?]]].get == OptionT(List(Option(5))))
     assert(optionTContext.get[TestServiceTrait[OptionT[List, ?]]].get == OptionT(List(Option(10))))
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
+
+    val eitherInjector = mkInjector()
+    val eitherPlan = eitherInjector.plan(Definition[Either[String, ?]](5))
+    val eitherContext = eitherInjector.produce(eitherPlan)
+
+    assert(eitherContext.get[TestTrait].get == Right(5))
+    assert(eitherContext.get[TestServiceClass[Either[String, ?]]].get == Right(5))
+    assert(eitherContext.get[TestServiceTrait[Either[String, ?]]].get == Right(10))
+    assert(eitherContext.get[Either[String, String]] == Right("Hello 5!"))
+    assert(eitherContext.get[Either[Either[String, String], Either[String, Either[String, Either[String, Either[String, String]]]]]]
+      == Right(Right(Right(Right(Right("aaa"))))))
 
     val idInjector = mkInjector()
     val idPlan = idInjector.plan(Definition[id](5))
@@ -116,7 +128,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
   "TagKK works sometimes" in {
     import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase2._
 
-    class Definition[F[+_, +_]: TagKK: TestCovariantTC, G[_]: TagK, A: Tag] extends ModuleDef {
+    class Definition[F[+_, +_]: TagKK: TestCovariantTC, G[_]: TagK, A: Tag](v: F[String, Int]) extends ModuleDef {
       make[TestCovariantTC[F]]
       make[TestCovariantTC[Either]]
       final val t0 = Tag[TestCovariantTC[F]]
@@ -132,17 +144,20 @@ class HigherKindsTest extends WordSpec with MkInjector {
       make[TestClassFA[F, Int]]
       make[TestClassFA[Either, Int]]
       final val t2 = Tag[TestClassFA[F, A]]
+
+      make[F[String, Int]].from(v)
     }
 
-    val definition = new Definition[Either, Option, Int]
+    val value: Either[String, Int] = Right(5)
+    val definition = new Definition[Either, Option, Int](value)
 
-    assert(Injector().produce(definition) != null)
+    val context = Injector().produce(definition)
+    assert(context != null)
 
     assert(definition.t0.tag.tpe =:= typeOf[TestCovariantTC[Either]])
     assert(definition.t1.tag.tpe =:= typeOf[TestClassFG[Either, Option]])
     assert(definition.t2.tag.tpe =:= typeOf[TestClassFA[Either, Int]])
-
-
+    assert(context.get[Either[String, Int]] == value)
   }
 
 }

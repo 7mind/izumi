@@ -208,7 +208,7 @@ trait WithHttp4sServer {
           }
 
         case RpcPacket(RPCPacketKind.BuzzResponse, data, _, id, _, _, _) =>
-          context.requestState.handleResponse(id, data).flatMap(_ => BIO.point(None))
+          context.requestState.handleResponse(id, data).as(None)
 
         case RpcPacket(RPCPacketKind.BuzzFailure, data, _, Some(id), _, _, _) =>
           context.requestState.respond(id, RawResponse.BadRawResponse())

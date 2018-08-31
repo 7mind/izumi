@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection.macros
 
+import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 import com.github.pshirshov.izumi.distage.model.reflection.universe._
 
 abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
@@ -74,8 +75,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   // SymbolInfo
 
-  // TODO: Symbols may contain uninstantiated poly types, and are usually only included for debugging anyway, that's why
-  // weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
+  // Symbols may contain uninstantiated poly types, and are usually only included for debugging purposes anyway
+  // so weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info => q"""
     { $RuntimeDIUniverse.SymbolInfo.Static(${info.name}, ${liftableUnsafeWeakSafeType(info.finalResultType)}, ${info.annotations}, ${liftableUnsafeWeakSafeType(info.definingClass)}) }
@@ -105,8 +106,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   }
 
   implicit val liftableAnnotation: Liftable[Annotation] = {
-    case Annotation(tpe, args, _) => q"""{
-    _root_.scala.reflect.runtime.universe.Annotation.apply(${SafeType(tpe)}.tpe, ${args.map(TreeLiteral)}, _root_.scala.collection.immutable.ListMap.empty)
+    ann => q"""{
+    ${symbolOf[ReflectionUtil.type].asClass.module}.runtimeAnnotation(${SafeType(ann.tree.tpe)}.tpe, ${ann.tree.children.tail.map(TreeLiteral)}, _root_.scala.collection.immutable.ListMap.empty)
     }"""
   }
 

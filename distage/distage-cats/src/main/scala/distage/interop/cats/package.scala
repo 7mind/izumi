@@ -13,7 +13,8 @@ import distage._
 
 import scala.language.higherKinds
 
-package object cats extends DistageInteropCats {
+package object cats
+  extends DistageInteropCats {
 
   implicit final class ProducerIOExts(private val producer: Producer) extends AnyVal {
     def produceIO[F[_]: Sync](plan: OrderedPlan): F[Locator] =

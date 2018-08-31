@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, Package, PackageTools}
 
-import scala.reflect._
+import scala.reflect.{ClassTag, classTag}
 
 final case class JavaType(pkg: Package, name: String) {
   def parent: JavaType = {
@@ -22,7 +22,7 @@ final case class JavaType(pkg: Package, name: String) {
 }
 
 object JavaType {
-  def get[T:ClassTag]: JavaType = {
+  def get[T: ClassTag]: JavaType = {
     val clazz = classTag[T].runtimeClass.getCanonicalName
 
     val parts = clazz.split('.').toSeq

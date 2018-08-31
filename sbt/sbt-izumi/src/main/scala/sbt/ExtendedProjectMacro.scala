@@ -2,7 +2,7 @@ package sbt
 
 import com.github.pshirshov.izumi.sbt.plugins.IzumiDslPlugin.autoImport.{In, WithBase}
 
-import scala.reflect.macros._
+import scala.reflect.macros.blackbox
 
 object ExtendedProjectMacro {
   def projectUnifiedDslMacro(c: blackbox.Context): c.Expr[WithBase] = {
