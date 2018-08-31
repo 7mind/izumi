@@ -28,8 +28,7 @@ including the following components:
    very complex domains and orchestrate deadly complex processes lot easier than you get used to,
 1. [distage](https://izumi.7mind.io/distage) – Generative and introspectable runtime DI framework, 
 2. [logstage](https://izumi.7mind.io/logstage) – Effortless structured logging framework,
-3. [idealingua](https://izumi.7mind.io/idealingua) – Staged Interface Definition and Data Modeling language, 
-   supporting many target languages including Go, Typescript and C#,
+3. [idealingua](https://izumi.7mind.io/idealingua) – API Definition and Data Modeling language with network RPC generator targeting multiple languages, including Go, Typescript, C# and Scala,
 4. [SBT plugins](https://izumi.7mind.io/sbt) allowing you to significantly 
    increase clarity of your builds and compactify build files.
 
