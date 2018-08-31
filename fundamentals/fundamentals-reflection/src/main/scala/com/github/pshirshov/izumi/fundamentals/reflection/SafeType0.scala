@@ -4,7 +4,7 @@ import scala.reflect.runtime.{universe => ru}
 import ReflectionUtil._
 
 // TODO: hotspots, hashcode on keys is inefficient
-class SafeType0[U <: SingletonUniverse](tpe: U#Type) {
+class SafeType0[U <: SingletonUniverse](val tpe: U#Type) {
   private final val dealiased: U#Type = {
     deannotate(tpe.dealias)
   }

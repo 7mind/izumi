@@ -174,8 +174,16 @@ lazy val WithFundamentals = new SettingsGroup {
 }
 // --------------------------------------------
 
+lazy val fundamentalsTypesafeConfig = inFundamentals.as.module
+  .depends(fundamentalsReflection)
+  .settings(
+    libraryDependencies ++= Seq(
+      R.typesafe_config
+    )
+  )
+
 lazy val fundamentalsReflection = inFundamentals.as.module
-  .dependsOn(fundamentalsPlatform)
+  .depends(fundamentalsPlatform)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect % scalaVersion.value
@@ -201,7 +209,7 @@ lazy val distagePlugins = inDiStage.as.module
   )
 
 lazy val distageConfig = inDiStage.as.module
-  .depends(distageCore)
+  .depends(distageCore, fundamentalsTypesafeConfig)
   .settings(
     libraryDependencies ++= Seq(
       R.typesafe_config
