@@ -520,6 +520,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       case Primitive.TInt16 => true
       case Primitive.TInt32 => true
       case Primitive.TInt64 => true
+      case Primitive.TBool => true
 
       case Primitive.TUInt8 => true
       case Primitive.TUInt16 => true

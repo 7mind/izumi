@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 class TypeScriptTypeConverter() {
   def parseTypeFromString(value: String, target: TypeId): String = {
     target match {
-      case Primitive.TBool => "(" + value + " === 'true)'"
+      case Primitive.TBool => "(" + value + " === 'true')"
       case Primitive.TString => value
 
       case Primitive.TInt8 => "parseInt(" + value + ", 10)"
@@ -41,7 +41,7 @@ class TypeScriptTypeConverter() {
 
   def emitTypeAsString(value: String, target: TypeId): String = {
     target match {
-      case Primitive.TBool => "(" + value + " ? 'true' : 'false')'"
+      case Primitive.TBool => "(" + value + " ? 'true' : 'false')"
       case Primitive.TString => value
 
       case Primitive.TInt8 => s"$value.toString()"
