@@ -1,6 +1,5 @@
-package com.github.pshirshov.izumi.distage.config.codec
+package com.github.pshirshov.izumi.fundamentals.typesafe.config
 
-import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigReadException
 import com.typesafe.config.ConfigValueType._
 import com.typesafe.config._
 

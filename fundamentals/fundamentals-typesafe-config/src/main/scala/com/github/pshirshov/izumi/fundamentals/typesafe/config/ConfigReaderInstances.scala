@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.config.codec
+package com.github.pshirshov.izumi.fundamentals.typesafe.config
 
 import java.io.File
 import java.math.{BigInteger, MathContext, BigDecimal => JavaBigDecimal}
@@ -8,7 +8,6 @@ import java.time.{Duration => JavaDuration, _}
 import java.util.UUID
 import java.util.regex.Pattern
 
-import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigReadException
 import com.typesafe.config.{Config, ConfigList, ConfigObject, ConfigValue}
 
 import scala.math.{BigDecimal, BigInt}
