@@ -26,11 +26,11 @@ including the following components:
 
 1. [Percept-plan-execute-repeat (PPER)](https://izumi.7mind.io//pper) toolchain, allowing you to model 
    very complex domains and orchestrate deadly complex processes lot easier than you get used to,
-1. Generative and introspectable runtime DI framework, [distage](https://izumi.7mind.io/distage), 
-2. Effortless structured logging framework, [logstage](https://izumi.7mind.io/logstage),
-3. Staged Interface Definition and Data Modeling language, [idealingua](https://izumi.7mind.io/idealingua) 
+1. [distage](https://izumi.7mind.io/distage) – Generative and introspectable runtime DI framework, 
+2. [logstage](https://izumi.7mind.io/logstage) – Effortless structured logging framework,
+3. [idealingua](https://izumi.7mind.io/idealingua) – Staged Interface Definition and Data Modeling language, 
    supporting many target languages including Go, Typescript and C#,
-4. A set of opinionated [SBT plugins](https://izumi.7mind.io/sbt) allowing you to significantly 
+4. [SBT plugins](https://izumi.7mind.io/sbt) allowing you to significantly 
    increase clarity of your builds and compactify build files.
 
 Documentation [https://izumi.7mind.io](https://izumi.7mind.io)
