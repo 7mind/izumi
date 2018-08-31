@@ -21,7 +21,7 @@ class SafeType0[U <: SingletonUniverse](tpe: U#Type) {
     dealiased.typeSymbol.name.toString.hashCode
   }
 
-  override final def equals(obj: scala.Any): Boolean = obj match {
+  override final def equals(obj: Any): Boolean = obj match {
     case other: SafeType0[U] @unchecked =>
       dealiased =:= other.dealiased
     case _ =>

@@ -268,14 +268,14 @@ object WithTags {
     "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ..."
 
   def hktagFormatMap: Map[Kind, String] = Map(
-    Kind(Nil) -> s"Tag"
-    , Kind(Kind(Nil) :: Nil) -> s"TagK"
-    , Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagKK"
-    , Kind(Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagK3"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> s"TagF"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Nil) -> s"TagFK"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagFKK"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagFK3"
+    Kind(Nil) -> "Tag"
+    , Kind(Kind(Nil) :: Nil) -> "TagK"
+    , Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> "TagKK"
+    , Kind(Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagK3"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> "TagF"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Nil) -> "TagFK"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagFKK"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagFK3"
   )
 
   def hktagFormat(tpe: Universe#Type): String = {
