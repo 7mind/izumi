@@ -19,7 +19,17 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
   private val stop = new AtomicBoolean(false)
 
   private val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, forceLog = true)
-  private val pollingThread = new Thread(new ThreadGroup("logstage"), poller(), "logstage-poll")
+
+  private val pollingThread = {
+    val threadGroup = new ThreadGroup("logstage")
+    threadGroup.setDaemon(true)
+    new Thread(threadGroup, poller(), "logstage-poll")
+  }
+
+  private val shutdownHook = new Thread(() => {
+    close()
+  }, "logstage-queueing-hook")
+
 
   private def poller(): Runnable = new Runnable {
     override def run(): Unit = {
@@ -46,6 +56,7 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
   import QueueingSink._
 
   def start(): Unit = {
+    Runtime.getRuntime.addShutdownHook(shutdownHook)
     pollingThread.start()
   }
 
