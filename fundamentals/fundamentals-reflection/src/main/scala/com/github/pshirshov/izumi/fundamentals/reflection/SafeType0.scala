@@ -35,5 +35,5 @@ class SafeType0[U <: SingletonUniverse](val tpe: U#Type) {
 object SafeType0 {
   def apply[U <: SingletonUniverse](tpe: U#Type): SafeType0[U] = new SafeType0(tpe)
 
-  def apply[T: ru.TypeTag]: SafeType0[ru.type] = new SafeType0(ru.typeOf[T])
+  def get[T: ru.TypeTag]: SafeType0[ru.type] = new SafeType0(ru.typeOf[T])
 }

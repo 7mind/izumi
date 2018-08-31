@@ -24,40 +24,40 @@ object RuntimeConfigReaderCodecs {
     import ConfigReaderInstances._
 
     val readerCodecs: Map[SafeType0[ru.type], ConfigReader[_]] = Map(
-        SafeType0[String] -> stringConfigReader
-      , SafeType0[Char] -> charConfigReader
-      , SafeType0[Boolean] -> booleanConfigReader
-      , SafeType0[Double] -> doubleConfigReader
-      , SafeType0[Float] -> floatConfigReader
-      , SafeType0[Int] -> intConfigReader
-      , SafeType0[Long] -> longConfigReader
-      , SafeType0[Short] -> shortConfigReader
+        SafeType0.get[String] -> stringConfigReader
+      , SafeType0.get[Char] -> charConfigReader
+      , SafeType0.get[Boolean] -> booleanConfigReader
+      , SafeType0.get[Double] -> doubleConfigReader
+      , SafeType0.get[Float] -> floatConfigReader
+      , SafeType0.get[Int] -> intConfigReader
+      , SafeType0.get[Long] -> longConfigReader
+      , SafeType0.get[Short] -> shortConfigReader
 
-      , SafeType0[BigInteger] -> javaBigIntegerReader
-      , SafeType0[java.math.BigDecimal] -> javaBigDecimalReader
-      , SafeType0[BigInt] -> scalaBigIntReader
-      , SafeType0[BigDecimal] -> scalaBigDecimalReader
+      , SafeType0.get[BigInteger] -> javaBigIntegerReader
+      , SafeType0.get[java.math.BigDecimal] -> javaBigDecimalReader
+      , SafeType0.get[BigInt] -> scalaBigIntReader
+      , SafeType0.get[BigDecimal] -> scalaBigDecimalReader
 
-      , SafeType0[Instant] -> instantConfigReader
-      , SafeType0[ZoneOffset] -> zoneOffsetConfigReader
-      , SafeType0[ZoneId] -> zoneIdConfigReader
-      , SafeType0[Period] -> periodConfigReader
-      , SafeType0[java.time.Duration] -> javaDurationConfigReader
-      , SafeType0[Year] -> yearConfigReader
+      , SafeType0.get[Instant] -> instantConfigReader
+      , SafeType0.get[ZoneOffset] -> zoneOffsetConfigReader
+      , SafeType0.get[ZoneId] -> zoneIdConfigReader
+      , SafeType0.get[Period] -> periodConfigReader
+      , SafeType0.get[java.time.Duration] -> javaDurationConfigReader
+      , SafeType0.get[Year] -> yearConfigReader
 
-      , SafeType0[URL] -> urlConfigReader
-      , SafeType0[URI] -> uriConfigReader
-      , SafeType0[UUID] -> uuidConfigReader
-      , SafeType0[Path] -> pathConfigReader
-      , SafeType0[File] -> fileConfigReader
+      , SafeType0.get[URL] -> urlConfigReader
+      , SafeType0.get[URI] -> uriConfigReader
+      , SafeType0.get[UUID] -> uuidConfigReader
+      , SafeType0.get[Path] -> pathConfigReader
+      , SafeType0.get[File] -> fileConfigReader
 
-      , SafeType0[Pattern] -> patternReader
-      , SafeType0[Regex] -> regexReader
+      , SafeType0.get[Pattern] -> patternReader
+      , SafeType0.get[Regex] -> regexReader
 
-      , SafeType0[Config] -> configConfigReader
-      , SafeType0[ConfigObject] -> configObjectConfigReader
-      , SafeType0[ConfigValue] -> configValueConfigReader
-      , SafeType0[ConfigList] -> configListConfigReader
+      , SafeType0.get[Config] -> configConfigReader
+      , SafeType0.get[ConfigObject] -> configObjectConfigReader
+      , SafeType0.get[ConfigValue] -> configValueConfigReader
+      , SafeType0.get[ConfigList] -> configListConfigReader
     )
   }
 

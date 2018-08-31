@@ -6,6 +6,6 @@ import com.typesafe.config.{Config, ConfigValue}
 import scala.reflect.runtime.{ universe => ru }
 
 trait RuntimeConfigReader {
-  def readConfig(config: Config, tpe: SafeType0[ru.type]): Any
+  def readConfigAsCaseClass(config: Config, tpe: SafeType0[ru.type]): Any
   def readValue(config: ConfigValue, tpe: SafeType0[ru.type]): Any
 }

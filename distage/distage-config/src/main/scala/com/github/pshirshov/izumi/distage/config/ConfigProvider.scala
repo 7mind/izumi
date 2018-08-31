@@ -63,7 +63,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
         try {
           val product = loadedValue match {
             case obj: ConfigObject =>
-              reader.readConfig(obj.toConfig, step.targetType)
+              reader.readConfigAsCaseClass(obj.toConfig, step.targetType)
             case o if injectorConfig.enableScalars =>
               reader.readValue(o, step.targetType)
             case o =>
