@@ -24,17 +24,16 @@ Izumi (*jap. 泉水, spring*) is a set of non-coupled tools allowing you to sign
  
 including the following components:
 
-1. [Percept-plan-execute-repeat (PPER)](https://izumi.7mind.io//pper) toolchain, allowing you to model 
+1. [Percept-plan-execute-repeat (PPER)](https://izumi.7mind.io/v0.6.0-SNAPSHOT/doc/pper/) toolchain, allowing you to model 
    very complex domains and orchestrate deadly complex processes lot easier than you get used to,
-1. Generative and introspectable runtime DI framework, [distage](https://izumi.7mind.io/distage), 
-2. Effortless structured logging framework, [logstage](https://izumi.7mind.io/logstage),
-3. Staged Interface Definition and Data Modeling language, [idealingua](https://izumi.7mind.io/idealingua) 
-   supporting many target languages including Go, Typescript and C#,
-4. A set of opinionated [SBT plugins](https://izumi.7mind.io/sbt) allowing you to significantly 
+1. [distage](https://izumi.7mind.io/v0.6.0-SNAPSHOT/doc/distage/) – Generative and introspectable runtime DI framework, 
+2. [logstage](https://izumi.7mind.io/v0.6.0-SNAPSHOT/doc/logstage/) – Effortless structured logging framework,
+3. [idealingua](https://izumi.7mind.io/v0.6.0-SNAPSHOT/doc/idealingua/) – API Definition and Data Modeling language with network RPC generator targeting multiple languages, including Go, Typescript, C# and Scala,
+4. [Opinionated SBT plugins](https://izumi.7mind.io/v0.6.0-SNAPSHOT/doc/sbt/) aimed to significantly 
    increase clarity of your builds and compactify build files.
 
-Documentation [https://izumi.7mind.io](https://izumi.7mind.io)
-Scaladoc [https://izumi.7mind.io/api](https://izumi.7mind.io/api)
+Documentation [https://izumi.7mind.io](https://izumi.7mind.io/v0.6.0-SNAPSHOT/doc/)
+Scaladoc [https://izumi.7mind.io/api](https://izumi.7mind.io/v0.6.0-SNAPSHOT/api/)
 
 Key goals 
 =========
@@ -65,8 +64,3 @@ See also
 
 - [Build notes](doc/md/build.md)
 - [Project flow](doc/md/flow.md)
-
-Legacy Framework
-----------------
-
-Just for those who uses old stuff: you still may find it [here](https://github.com/pshirshov/izumi-legacy).
