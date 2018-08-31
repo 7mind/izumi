@@ -27,6 +27,12 @@ trait WithTags extends UniverseGeneric { self =>
   * }}}
   *
   * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]`
+  *
+  * The implementation is not perfect, currently some limitations apply as to when a `Tag` will be correctly constructed:
+  *   * Parameters don't yet resolve when inside a structural refinement, i.e. {{{ Tag[{ def x: T}] }}}
+  *   * Parameters don't yet resolve in higher-kinded type lambdas, i.e. {{{ TagK[Either[T, ?]] }}}
+  *   * TagK* does not resolve for constructors with bound parameters, i.e. {{{ class Abc[S <: String]; TagK[Abc] }}}
+  *     (You can still have a bound in partial application: i.e. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
   */
   @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] {
