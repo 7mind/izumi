@@ -60,7 +60,7 @@ export class HTTPClientTransport implements ClientTransport {
         }
 
         if (this.headers) {
-            for (var key in this.headers) {
+            for (let key in this.headers) {
                 if (!this.headers.hasOwnProperty(key)) {
                     continue;
                 }
@@ -94,8 +94,8 @@ export class HTTPClientTransport implements ClientTransport {
         this.endpoint = this.sanitizeEndpoint(endpoint);
     }
 
-    public setHeaders(headers: TransportHeaders) {
-        this.headers = headers;
+    public setHeaders(headers: TransportHeaders | undefined) {
+        this.headers = headers || {};
     }
 
     public getHeaders(): TransportHeaders {
@@ -106,7 +106,7 @@ export class HTTPClientTransport implements ClientTransport {
         return this.auth ? this.auth.method : undefined;
     }
 
-    public setAuthorization(method: AuthMethod) {
+    public setAuthorization(method: AuthMethod | undefined) {
         if (!method) {
             this.auth = undefined;
             return;

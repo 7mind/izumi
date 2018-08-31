@@ -164,15 +164,15 @@ export class WebSocketClientTransport<C> implements ClientSocketTransport<C, str
         return this._headers;
     }
 
-    public setHeaders(headers: TransportHeaders) {
-        this._headers = headers;
+    public setHeaders(headers: TransportHeaders | undefined) {
+        this._headers = headers || {};
     }
 
     public getAuthorization(): AuthMethod | undefined {
         return this._auth ? this._auth.method : undefined;
     }
 
-    public setAuthorization(method: AuthMethod) {
+    public setAuthorization(method: AuthMethod | undefined) {
         if (!method) {
             this._auth = undefined;
         }
