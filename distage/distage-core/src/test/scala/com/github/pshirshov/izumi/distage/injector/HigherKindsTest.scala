@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import distage._
 import org.scalatest.WordSpec
 

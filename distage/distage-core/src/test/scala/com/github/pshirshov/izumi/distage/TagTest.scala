@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCa
 import com.github.pshirshov.izumi.distage.model.definition.With
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage.Tag
 import org.scalatest.WordSpec
 
@@ -103,7 +104,10 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "Work for an abstract type with available TagK when TagK is requested through an explicit implicit" in {
-      def testTagK[F[_], T: Tag](implicit ev: HKTag[{ type Arg[C] = F[C] }]) = Tag[F[T {}] {}]
+      def testTagK[F[_], T: Tag](implicit ev: HKTag[{ type Arg[C] = F[C] }]) = {
+        ev.discard
+        Tag[F[T {}] {}]
+      }
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
     }
@@ -140,8 +144,6 @@ class TagTest extends WordSpec with X[String] {
 
       def t2[A: Tag, dafg: Tag, adfg: Tag, LS: Tag, L[_]: TagK, SD: Tag, GG[A] <: L[A]: TagK, ZZZ[_, _]: TagKK, S: Tag, SDD: Tag, TG: Tag]: Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]] =
         Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]]
-
-      trait XY
 
       assert(t2[TagTest.this.Z, TagTest.this.Z, T1[ZOB[String, Int, Byte], String, String, String, String, List], TagTest.this.Z, X, TagTest.this.Z, Y, Either, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z].tpe
         == safe[Test[String, String, T1[Either[Int, Byte], String, String, String, String, List], String, X, String, Y, Either, String, String, String]])
@@ -194,6 +196,7 @@ class TagTest extends WordSpec with X[String] {
 
         final val x: Tag[F[G, Either[A, B]]] = {
           implicit val g0: TagK[G] = g
+          g0.discard
           Tag[F[G, C[A, B]]]
         }
       }

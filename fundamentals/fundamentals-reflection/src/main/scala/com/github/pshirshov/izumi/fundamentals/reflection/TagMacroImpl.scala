@@ -6,8 +6,6 @@ import ReflectionUtil.{Kind, kindOf}
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
-import scala.reflect.ClassTag
-import scala.reflect.api.{Universe}
 import scala.reflect.macros.{TypecheckException, blackbox}
 
 class IxEitherT[F[_], A, B]
@@ -20,13 +18,7 @@ class TagMacroImpl(val c: blackbox.Context) {
 
   protected[this] val defaultError: String = defaultTagImplicitError
 
-  @deprecated("")
-  object TrivialMacroLogger {
-    def apply[T: ClassTag](c: blackbox.Context): TrivialLogger =
-      TrivialLogger.make[T]("izumi.distage.debug.macro", sink = new MacroTrivialSink(c))
-  }
-
-  protected[this] val logger: TrivialLogger = TrivialMacroLogger[this.type](c)
+  protected[this] val logger: TrivialLogger = TrivialLogger.make[this.type]("izumi.distage.debug.macro", sink = new MacroTrivialSink(c))
 
   def impl[DIU <: WithTags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag]: c.Expr[TagMaterializer[DIU, T]] = {
 
@@ -139,18 +131,20 @@ class TagMacroImpl(val c: blackbox.Context) {
     c.universe.appliedType(tpe, tpe.typeArgs.map(_ => definitions.NothingTpe))
 
   // FIXME clean
-  def mkTypeParameter(u: Universe)(owner: u.Symbol): Kind => u.Symbol = {
-    case Kind(Nil) =>
-      import u._
-      val typeSymbol = u.internal.reificationSupport.newNestedSymbol(owner, u.internal.reificationSupport.freshTypeName(""), u.NoPosition, u.Flag.PARAM | u.Flag.DEFERRED , false)
-      u.internal.reificationSupport.setInfo(typeSymbol, u.internal.typeBounds(u.definitions.NothingTpe, u.definitions.AnyTpe))
-      typeSymbol
-    case Kind(l) =>
-      import u._
-      val typeSymbol = u.internal.reificationSupport.newNestedSymbol(owner, u.internal.reificationSupport.freshTypeName(""), u.NoPosition, u.Flag.PARAM | u.Flag.DEFERRED, false)
-      u.internal.reificationSupport.setInfo(typeSymbol, u.internal.typeBounds(u.definitions.NothingTpe, u.definitions.AnyTpe))
-      val params = l.map(mkTypeParameter(u)(typeSymbol))
-      u.internal.reificationSupport.setInfo(typeSymbol, u.internal.polyType(params, u.internal.typeBounds(u.definitions.NothingTpe, u.definitions.AnyTpe)))
+  def mkTypeParameter(owner: Symbol, kind: Kind): Symbol = {
+    import internal.{typeBounds, polyType}
+    import internal.reificationSupport._
+
+    val tpeSymbol = newNestedSymbol(owner, freshTypeName(""), NoPosition, Flag.PARAM | Flag.DEFERRED, isClass = false)
+    setInfo(tpeSymbol, typeBounds(definitions.NothingTpe, definitions.AnyTpe))
+
+    if (kind.args.nonEmpty) {
+      val params = kind.args.map(mkTypeParameter(tpeSymbol, _))
+
+      setInfo(tpeSymbol, polyType(params, typeBounds(definitions.NothingTpe, definitions.AnyTpe)))
+    }
+
+    tpeSymbol
   }
 
   @inline
@@ -168,7 +162,7 @@ class TagMacroImpl(val c: blackbox.Context) {
     val mutArg: Symbol = newNestedSymbol(mutRefinementSymbol, TypeName("Arg"), NoPosition, FlagsRepr(0L), isClass = false)
     val scope = newScopeWith(mutArg)
 
-    val params = kind.args.map(mkTypeParameter(c.universe)(mutArg))
+    val params = kind.args.map(mkTypeParameter(mutArg, _))
     val rhsParams = params.map(internal.typeRef(NoPrefix, _, Nil))
 
     setInfo(mutArg, internal.polyType(params, appliedType(tpe, rhsParams)))
@@ -211,7 +205,7 @@ class TagMacroImpl(val c: blackbox.Context) {
               val (args, params) = kind.args.zipWithIndex.map {
                 case (k, i) =>
                   val name = s"T${i+1}"
-                  kind.format(name) -> name
+                  k.format(name) -> name
               }.unzip
               s"""\n$tpe is of a kind $kind, which doesn't have a tag name. Please create a tag synonym as follows:\n\n
                  |  type TagXXX[${kind.format("K")}] = HKTag[ { type Arg[${args.mkString(", ")}] = K[${params.mkString(", ")}] } ]\n\n
