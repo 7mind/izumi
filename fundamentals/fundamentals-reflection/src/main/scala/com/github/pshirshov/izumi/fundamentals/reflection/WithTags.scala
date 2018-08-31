@@ -28,7 +28,7 @@ trait WithTags extends UniverseGeneric { self =>
   *
   * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]`
   */
-  @implicitNotFound(msg = WithTags.defaultTagImplicitError)
+  @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] {
     def tag: TypeTag[T]
 
@@ -109,18 +109,16 @@ trait WithTags extends UniverseGeneric { self =>
   /**
     * Internal unsafe API representing a poly-kinded, higher-kinded type tag.
     *
-    * To create a Tag* for an arbitrary kind use the following syntax:
+    * To create a Tag* implicit for an arbitrary kind use the following syntax:
     *
     * {{{
-    *   type TagK5[K[_, _, _, _, _]] = HKTag[{type `5`}, K[Nothing, Nothing, Nothing, Nothing, Nothing]]
+    *   type TagK5[K[_, _, _, _, _]] = HKTag[ { type Arg[A, B, C, D, E] = K[A, B, C, D, E] } ]
     * }}}
     *
-    * You should fill all argument positions with `Nothing` and specify the number of arguments in the first argument via
-    * a structural type definition. Said structural type should contain only 1 type field with a name that is as a valid
-    * number of arguments in the supplied type. The kinds of arguments don't matter, so the following is correct:
+    * As an argument to HKTag, you should supply a  specify the type variables your type will take and apply it to them.
     *
     * {{{
-    *   type TagFGC[K[_[_, _], _[_], _[_[_], _, _, _]] = HKTag[{type `3`}, [Nothing, Nothing, Nothing]]
+    *   type TagFGC[K[_[_, _], _[_], _[_[_], _, _, _]] = HKTag[ { type Arg[A[_, _], B[_], C[_[_], _, _, _]] = K[A, B, C] } ]
     * }}}
     */
   trait HKTag[T] {
@@ -170,14 +168,14 @@ trait WithTags extends UniverseGeneric { self =>
     * containerTypesEqual[Array, List] == false
     * }}}
     */
-  type TagK[K[_]] = HKTag[{ type Arg[T1] = K[T1] }]
-  type TagKK[K[_, _]] = HKTag[{ type Arg[T1, T2] = K[T1, T2] }]
-  type TagK3[K[_, _, _]] = HKTag[{ type Arg[T1, T2, T3] = K[T1, T2, T3]}]
+  type TagK[K[_]] = HKTag[{ type Arg[A] = K[A] }]
+  type TagKK[K[_, _]] = HKTag[{ type Arg[A, B] = K[A, B] }]
+  type TagK3[K[_, _, _]] = HKTag[{ type Arg[A, B, C] = K[A, B, C]}]
 
-  type TagT[K[_[_]]] = HKTag[{ type Arg[T1[_]] = K[T1]}]
-  type TagTK[K[_[_], _]] = HKTag[ { type Arg[T1[_], T2] = K[T1, T2] }]
-  type TagTKK[K[_[_], _, _]] = HKTag[ { type  Arg[T1[_], T2, T3] = K[T1, T2, T3] }]
-  type TagTK3[K[_[_], _, _, _]] = HKTag[ { type Arg[T1[_], T2, T3, T4] = K[T1, T2, T3, T4] } ]
+  type TagT[K[_[_]]] = HKTag[{ type Arg[A[_]] = K[A]}]
+  type TagTK[K[_[_], _]] = HKTag[ { type Arg[A[_], B] = K[A, B] }]
+  type TagTKK[K[_[_], _, _]] = HKTag[ { type  Arg[A[_], B, C] = K[A, B, C] }]
+  type TagTK3[K[_[_], _, _, _]] = HKTag[ { type Arg[A[_], B, C, D] = K[A, B, C, D] } ]
 
   object TagK {
     /**
@@ -253,7 +251,8 @@ object WithTags {
     "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ..."
 
   def hktagFormatMap: Map[Kind, String] = Map(
-    Kind(Kind(Nil) :: Nil) -> s"TagK"
+    Kind(Nil) -> s"Tag"
+    , Kind(Kind(Nil) :: Nil) -> s"TagK"
     , Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagKK"
     , Kind(Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> s"TagK3"
     , Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> s"TagF"

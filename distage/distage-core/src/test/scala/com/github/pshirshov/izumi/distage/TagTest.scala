@@ -25,6 +25,7 @@ class TagTest extends WordSpec with X[String] {
   final val str = "str"
 
   trait T1[A, B, C, D, E, F[_]]
+  trait T2[A, B, C[_[_], _], D[_], E]
   trait Test[A, dafg, adfg, LS, L[_], SD, GG[A] <: L[A], ZZZ[_, _], S, SDD, TG]
   trait Y[V] extends X[V]
   case class ZOBA[A, B, C](value: Either[B, C])
@@ -101,8 +102,8 @@ class TagTest extends WordSpec with X[String] {
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
     }
 
-    "Work for an abstract type with available TagK when TagK is requested through a type lambda" in {
-      def testTagK[F[_], T: Tag](implicit ev: HKTag[{ type Arg[T1] = F[T1] }]) = Tag[F[T {}] {}]
+    "Work for an abstract type with available TagK when TagK is requested through an explicit implicit" in {
+      def testTagK[F[_], T: Tag](implicit ev: HKTag[{ type Arg[C] = F[C] }]) = Tag[F[T {}] {}]
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
     }
@@ -111,6 +112,14 @@ class TagTest extends WordSpec with X[String] {
       def t1[F[_, _]: TagKK, T: Tag, G: Tag] = Tag[F[T, G]]
 
       assert(t1[ZOBA[Int, ?, ?], Int, String].tpe == safe[ZOBA[Int, Int, String]])
+    }
+
+    "Handle Tags outside of a predefined set" in {
+      type TagX[T[_, _, _[_[_], _], _[_], _]] = HKTag[ { type Arg[A, B, C[_[_], _], D[_], E] = T[A, B, C, D, E] } ]
+
+      def testTagX[F[_, _, _[_[_], _], _[_], _]: TagX, A: Tag, B: Tag, C[_[_], _]: TagTK, D[_]: TagK, E: Tag] = Tag[F[A, B, C, D, E]]
+
+      assert(testTagX[T2, Int, String, OptionT, List, Boolean].tpe == safe[T2[Int, String, OptionT, List, Boolean]])
     }
 
     "Shouldn't work for any abstract type without available TypeTag or Tag or TagK" in {
@@ -131,6 +140,8 @@ class TagTest extends WordSpec with X[String] {
 
       def t2[A: Tag, dafg: Tag, adfg: Tag, LS: Tag, L[_]: TagK, SD: Tag, GG[A] <: L[A]: TagK, ZZZ[_, _]: TagKK, S: Tag, SDD: Tag, TG: Tag]: Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]] =
         Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]]
+
+      trait XY
 
       assert(t2[TagTest.this.Z, TagTest.this.Z, T1[ZOB[String, Int, Byte], String, String, String, String, List], TagTest.this.Z, X, TagTest.this.Z, Y, Either, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z].tpe
         == safe[Test[String, String, T1[Either[Int, Byte], String, String, String, String, List], String, X, String, Y, Either, String, String, String]])
@@ -161,7 +172,7 @@ class TagTest extends WordSpec with X[String] {
 
     "Handle abstract types instead of parameters" in {
       trait T1 {
-        type F[G[_], A] = OptionT[G, A]
+        type F[F0[_], A0] = OptionT[F0, A0]
         type C[_, _]
         type G[_]
         type A
@@ -172,7 +183,7 @@ class TagTest extends WordSpec with X[String] {
 
       val t1 = new T1 {
         type G[T] = List[T]
-        type C[A, B] = Either[A, B]
+        type C[A0, B0] = Either[A0, B0]
         type A = Int
         type B = Byte
 
@@ -190,19 +201,19 @@ class TagTest extends WordSpec with X[String] {
       assert(t1.x.tpe == safe[OptionT[List, Either[Int, Byte]]])
     }
 
-    "progression test: can't handle parameters in structural types" in {
+    "Can create custom type tags to support bounded generics, i.e. <: Dep in TagK" in {
+      import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3._
+
+      type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ { type Arg[A <: Dep] = K[A] } ]
+
+      implicitly[`TagK<:Dep`[Trait3]].tag.tpe =:= typeOf[Trait3[Nothing]].typeConstructor
+    }
+
+    "progression test: can't handle parameters in structural types yet" in {
       assertTypeError("""
       def t[T: Tag]: Tag[{ type X = T }] = Tag[{ type X = T }]
 
       assert(t[Int].tpe == safe[{ type X = Int }])
-      """)
-    }
-
-    "progression test: can't handle constrained generics i.e. <: Dep in TagK" in {
-      assertTypeError("""
-      import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3._
-
-      TagK[Trait3]
       """)
     }
   }
