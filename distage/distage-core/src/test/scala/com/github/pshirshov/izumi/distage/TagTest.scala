@@ -87,6 +87,12 @@ class TagTest extends WordSpec with X[String] {
       assert(testTag[String].tpe == safe[String])
     }
 
+    "Work for any abstract type with available Tag while preserving additional refinement" in {
+      def testTag[T: Tag] = Tag[T { def x: Int }]
+
+      assert(testTag[String].tpe == safe[String { def x: Int }])
+    }
+
     "handle function local type aliases" in {
       def testTag[T: Tag]= {
         type X[A] = Either[Int, A]
@@ -123,7 +129,9 @@ class TagTest extends WordSpec with X[String] {
 
       def testTagX[F[_, _, _[_[_], _], _[_], _]: TagX, A: Tag, B: Tag, C[_[_], _]: TagTK, D[_]: TagK, E: Tag] = Tag[F[A, B, C, D, E]]
 
-      assert(testTagX[T2, Int, String, OptionT, List, Boolean].tpe == safe[T2[Int, String, OptionT, List, Boolean]])
+      val value = testTagX[T2, Int, String, OptionT, List, Boolean]
+      println(value)
+      assert(value.tpe == safe[T2[Int, String, OptionT, List, Boolean]])
     }
 
     "Shouldn't work for any abstract type without available TypeTag or Tag or TagK" in {
@@ -210,6 +218,20 @@ class TagTest extends WordSpec with X[String] {
       type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ { type Arg[A <: Dep] = K[A] } ]
 
       implicitly[`TagK<:Dep`[Trait3]].tag.tpe =:= typeOf[Trait3[Nothing]].typeConstructor
+    }
+
+    "progression test: type tags with bounds are not currently requested by the macro" in {
+      assertTypeError("""
+      import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3._
+
+      type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ { type Arg[A <: Dep] = K[A] } ]
+
+      def t[T[_ <: Dep]: `TagK<:Dep`, A: Tag] = Tag[T[A]]
+
+      assert(t[Trait3, Dep].tpe == safe[Trait3[Dep]])
+      """)
+      // def t1[U, T[_ <: U], A <: U: Tag](implicit ev: TagKUBound[U, T]) = Tag[T[A]]
+      // assert(t1[Dep, Trait3, Dep].tpe == safe[Trait3[Dep]])
     }
 
     "progression test: can't handle parameters in structural types yet" in {

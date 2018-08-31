@@ -213,6 +213,13 @@ trait WithTags extends UniverseGeneric { self =>
     def apply[K[_[_], _, _, _]: TagTK3]: TagTK3[K] = implicitly
   }
 
+// TODO
+//  type TagKUBound[U, K[_ <: U]] = HKTag[{ type Arg[A <: U] = K[A] }]
+//
+//  object TagKUBound {
+//    def apply[U, K[_ <: U]](implicit ev: TagKUBound[U, K]): TagKUBound[U, K] = implicitly
+//  }
+
   // Workaround needed specifically to support generic methods in factories, see `GenericAssistedFactory` and related tests
   //
   // We need to construct a SafeType signature for a generic method, but generic parameters have no type tags
@@ -246,6 +253,9 @@ trait WithTags extends UniverseGeneric { self =>
 
 }
 
+object t extends WithTags {
+  final val u: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
+}
 object WithTags {
   final val defaultTagImplicitError: String =
     "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ..."
