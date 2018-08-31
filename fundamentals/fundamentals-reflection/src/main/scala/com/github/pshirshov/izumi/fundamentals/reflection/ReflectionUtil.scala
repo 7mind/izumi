@@ -2,12 +2,12 @@ package com.github.pshirshov.izumi.fundamentals.reflection
 
 import java.lang.reflect.Method
 
+import scala.collection.immutable.ListMap
 import scala.reflect.api
 import scala.reflect.api.{Mirror, TypeCreator, Universe}
 import scala.reflect.internal.Symbols
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.{universe => u}
-
 import scala.language.reflectiveCalls
 
 object ReflectionUtil {
@@ -58,6 +58,15 @@ object ReflectionUtil {
 
     def format(typeName: String) = s"$typeName${if (args.nonEmpty) args.mkString("[", ", ", "]") else ""}"
   }
+
+  /**
+    * This is simply to hide a warning comming from Annotation.apply, lmao.
+    * Since c.reifyTree seems to have a bug whereby it injects empty TypeTrees when trying to reify an
+    * annotation recovered from a symbol with .annotations method, it doesn't seem possible to avoid
+    * calling this method.
+    */
+  def runtimeAnnotation(tpe: u.Type, scalaArgs: List[u.Tree], javaArgs: ListMap[u.Name, u.JavaArgument]): u.Annotation =
+    u.Annotation.apply(tpe, scalaArgs, javaArgs)
 
 }
 
