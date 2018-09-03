@@ -6,14 +6,23 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
-
+import scala.collection.mutable
 
 
 class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeResolver {
   lazy val types: TypeCollection = new TypeCollection(this)
 
   protected[typespace] lazy val referenced: Map[DomainId, Typespace] = {
-    domain.referenced.mapValues(d => new TypespaceImpl(d)).toMap // 2.13 compat
+    val allReferences = mutable.HashSet.empty[DomainDefinition]
+    collectReferenced(domain, allReferences)
+    allReferences.map(d => d.id -> new TypespaceImpl(d)).toMap // 2.13 compat
+  }
+
+  private def collectReferenced(d: DomainDefinition, all: mutable.HashSet[DomainDefinition]): Unit = {
+    val r = d.referenced.values.toSet
+    val newR = r.diff(all)
+    all ++= newR
+    newR.foreach(rd => collectReferenced(rd, all))
   }
 
   private lazy val index: CMap[TypeId, TypeDef] = types.index
@@ -27,11 +36,11 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
 
   override lazy val structure: StructuralQueries = new StructuralQueriesImpl(this)
 
-//  override def implId(id: InterfaceId): DTOId = tools.implId(id)
-//
-//  override def sourceId(id: DTOId): Option[InterfaceId] = tools.sourceId(id)
-//
-//  override def defnId(id: StructureId): InterfaceId = tools.defnId(id)
+  //  override def implId(id: InterfaceId): DTOId = tools.implId(id)
+  //
+  //  override def sourceId(id: DTOId): Option[InterfaceId] = tools.sourceId(id)
+  //
+  //  override def defnId(id: StructureId): InterfaceId = tools.defnId(id)
 
   def apply(id: ServiceId): Service = {
     types.services(id)

@@ -8,7 +8,18 @@ final case class DomainDefinition(
                                    , services: Seq[Service]
                                    , buzzers: Seq[Buzzer]
                                    , streams: Seq[Streams]
-                                   , referenced: Map[DomainId, DomainDefinition]
+                                   , referenced: Map[DomainId, DomainDefinition] // there may be a referential loop
                            ) {
   def nonEmpty: Boolean = types.nonEmpty || services.nonEmpty || buzzers.nonEmpty || streams.nonEmpty
+
+  override def hashCode(): Int = id.hashCode()
+
+  override def equals(obj: Any): Boolean =  {
+    obj match {
+      case d: DomainDefinition =>
+        id == d.id
+      case _ =>
+        false
+    }
+  }
 }
