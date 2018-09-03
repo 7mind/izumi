@@ -260,9 +260,6 @@ trait WithTags extends UniverseGeneric { self =>
 
 }
 
-object t extends WithTags {
-  final val u: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
-}
 object WithTags {
   final val defaultTagImplicitError: String =
     "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ..."
