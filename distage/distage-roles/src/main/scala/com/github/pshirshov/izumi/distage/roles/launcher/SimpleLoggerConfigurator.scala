@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.roles.launcher
 
 import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
-import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
+import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
@@ -39,14 +39,13 @@ class SimpleLoggerConfigurator(logger: IzLogger) {
     val levels = logconf.levels.flatMap {
       case (stringLevel, pack) =>
         val level = IzLogger.parseLevel(stringLevel)
-        pack.map((_, LoggerConfig(level, sinks)))
+        pack.map((_, LoggerPathConfig(level, sinks)))
     }
 
     // TODO: here we may read log configuration from config file
     val result = new ConfigurableLogRouter(
       new LogConfigServiceStaticImpl(
-        levels
-        , LoggerConfig(root, sinks)
+        LoggerConfig(LoggerPathConfig(root, sinks), levels)
       )
     )
     queueingSink.start()
