@@ -62,7 +62,7 @@ export class HttpServerGeneric<C> {
         if (method === 'OPTIONS') {
             respHeaders['Access-Control-Allow-Methods'] = 'POST, GET, PUT, DELETE, OPTIONS';
             respHeaders['Access-Control-Max-Age'] = '86400'; // 24 hours
-            respHeaders['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept';
+            respHeaders['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Authorization, X-Forwarded-For';
             response.writeHead(200, respHeaders);
             response.end();
             return;

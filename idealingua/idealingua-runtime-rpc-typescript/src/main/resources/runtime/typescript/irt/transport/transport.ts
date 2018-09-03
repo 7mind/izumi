@@ -11,9 +11,9 @@ export type TransportHeaders = {[key: string]: string};
 
 export interface ClientTransport {
     send(service: string, method: string, data: IncomingData): Promise<OutgoingData>
-    setAuthorization(method: AuthMethod): void
+    setAuthorization(method: AuthMethod | undefined): void
     getAuthorization(): AuthMethod | undefined
-    setHeaders(headers: TransportHeaders): void
+    setHeaders(headers: TransportHeaders | undefined): void
     getHeaders(): TransportHeaders
 }
 

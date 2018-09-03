@@ -32,7 +32,7 @@ object FactoryConstructorMacro {
     import macroUniverse._
 
     val liftableProductWiring: Liftable[Wiring.UnaryWiring.ProductWiring] = {
-      // FIXME: Macro call in liftable that substitutes for a different type (not just in a different universe...)
+      // TODO: Macro call in liftable that substitutes for a different type (not just in a different universe...)
       w: Wiring.UnaryWiring.ProductWiring =>
         q"""{
         val fun = ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[${w.instanceType.tpe}].provider.get
@@ -85,7 +85,7 @@ object FactoryConstructorMacro {
 
         val providedKeys = method.associationsFromContext.map(_.wireWith)
 
-        // FIXME: remove asInstanceOf[ProductWiring] by generating providers for classes too, so the only wiring allowed is Function
+        // TODO: remove asInstanceOf[ProductWiring] by generating providers for classes too, so the only wiring allowed is Function
         val methodInfo =q"""{
           val wiring = ${liftableProductWiring(productConstructor.asInstanceOf[Wiring.UnaryWiring.ProductWiring])}
 

@@ -50,7 +50,7 @@ object IzumiPublishingPlugin extends AutoPlugin {
     }
     , credentials ++= publishTargets.value.map(_.credentials)
     , publishResolvers ++= publishTargets.value.map(_.repo)
-    , resolvers in Global ++= {
+    , resolvers ++= {
       val releaseRepositories = releaseResolvers.value
       val snapshotRepositories = snapshotResolvers.value
 

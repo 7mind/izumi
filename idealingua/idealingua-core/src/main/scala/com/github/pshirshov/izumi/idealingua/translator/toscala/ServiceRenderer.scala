@@ -37,7 +37,7 @@ class ServiceRenderer(ctx: STContext) {
       q"""class ${c.svcWrappedClientTpe.typeName}[F[+_, +_] : IRTMicroBIO](_dispatcher: ${rt.IRTDispatcher.parameterize(List(c.F.t)).typeFull})
                extends ${c.svcClientTpe.parameterize(List(c.F.t)).init()} {
                final val _F: IRTMicroBIO[F] =  implicitly
-               private final val _M = ${c.svcMethods.termFull}
+               ${c.methodImport}
 
                ..${decls.map(_.defnClientWrapped)}
           }"""

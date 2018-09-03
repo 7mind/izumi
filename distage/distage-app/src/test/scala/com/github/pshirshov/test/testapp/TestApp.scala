@@ -9,9 +9,7 @@ class TestApp(
                val conflict: Conflict
                , @AutoConf val config: Config
                , val setTest: Set[Conflict]
-             ) {
-
-}
+             )
 
 class BadApp
 

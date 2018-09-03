@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import com.typesafe.config.ConfigValue
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
 sealed trait TranslationResult
 
@@ -42,11 +43,11 @@ object TranslationResult {
   }
 
   final case class ExtractionFailure(op: ExecutableOp, tpe: SafeType, path: String, config: ConfigValue, f: Throwable) extends TranslationFailure {
-    override def toString: String = s"$origin: cannot read $tpe out of $path ==> $config: ${f.getMessage}"
+    override def toString: String = s"$origin: cannot read $tpe out of $path ==> $config: ${f.stackTrace}"
   }
 
   final case class Failure(op: ExecutableOp, f: Throwable) extends TranslationFailure {
-    override def toString: String = s"$origin: unexpected exception: ${f.getMessage}"
+    override def toString: String = s"$origin: unexpected exception: ${f.stackTrace}"
   }
 
 }

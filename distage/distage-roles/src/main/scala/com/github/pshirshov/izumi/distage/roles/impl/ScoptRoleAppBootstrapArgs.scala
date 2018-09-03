@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrateg
 import com.github.pshirshov.izumi.distage.roles.roles.BackendPluginTags
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 
-// FIXME
+// TODO
 object ScoptRoleAppBootstrapArgs {
 
   def apply(params: ScoptLauncherArgs): RoleAppBootstrapStrategyArgs =
@@ -20,7 +20,7 @@ object ScoptRoleAppBootstrapArgs {
         }
       , roleSet =
           if (params.writeReference.isDefined) {
-            params.roles.map(_.name).toSet + "configwriter" // FIXME coupling
+            params.roles.map(_.name).toSet + "configwriter" // TODO coupling
           } else {
             params.roles.map(_.name).toSet
           }
@@ -30,6 +30,8 @@ object ScoptRoleAppBootstrapArgs {
       , addOverrides = new ModuleDef {
         make[WriteReference].from(params.writeReference.getOrElse(WriteReference()))
       }
+      , primaryConfig = params.configFile
+      , roleConfigs = params.roles.flatMap(r => r.configFile.map(c => r.name -> c).toSeq).toMap
     )
 
 }

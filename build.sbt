@@ -174,19 +174,19 @@ lazy val WithFundamentals = new SettingsGroup {
 }
 // --------------------------------------------
 
-lazy val fundamentalsReflection = inFundamentals.as.module
-  .dependsOn(fundamentalsPlatform)
-  .settings(
-    libraryDependencies ++= Seq(
-      R.scala_reflect % scalaVersion.value
-    )
-  )
-
-lazy val distageTypesafeConfig = inDiStage.as.module
-  .dependsOn(distageModel)
+lazy val fundamentalsTypesafeConfig = inFundamentals.as.module
+  .depends(fundamentalsReflection)
   .settings(
     libraryDependencies ++= Seq(
       R.typesafe_config
+    )
+  )
+
+lazy val fundamentalsReflection = inFundamentals.as.module
+  .depends(fundamentalsPlatform)
+  .settings(
+    libraryDependencies ++= Seq(
+      R.scala_reflect % scalaVersion.value
     )
   )
 
@@ -209,7 +209,7 @@ lazy val distagePlugins = inDiStage.as.module
   )
 
 lazy val distageConfig = inDiStage.as.module
-  .depends(distageCore, distageTypesafeConfig)
+  .depends(distageCore, fundamentalsTypesafeConfig)
   .settings(
     libraryDependencies ++= Seq(
       R.typesafe_config
@@ -219,8 +219,11 @@ lazy val distageConfig = inDiStage.as.module
 lazy val distageApp = inDiStage.as.module
   .depends(distageCore, distagePlugins, distageConfig, logstageDi)
 
+lazy val distageRolesApi = inDiStage.as.module
+  .depends(distageCore, distagePlugins)
+
 lazy val distageRoles = inDiStage.as.module
-  .depends(distageApp, logstageApiLogger, logstageRenderingCirce, logstageAdapterSlf4j)
+  .depends(distageRolesApi, distageApp, logstageApiLogger, logstageRenderingCirce, logstageAdapterSlf4j)
   .settings(
     libraryDependencies += R.scopt
   )
@@ -260,12 +263,6 @@ lazy val logstageApiBaseMacro = inLogStage.as.module
 lazy val logstageApiLogger = inLogStage.as.module
   .depends(logstageApiBaseMacro)
 
-lazy val logstageConfig = inLogStage.as.module
-  .depends(distageTypesafeConfig, logstageApiLogger, logstageRenderingCirce)
-
-lazy val logstageConfigDi = inLogStage.as.module
-  .depends(logstageConfig, distageConfig)
-
 lazy val logstageDi = inLogStage.as.module
   .depends(
     logstageApiLogger
@@ -274,6 +271,12 @@ lazy val logstageDi = inLogStage.as.module
   .dependsSeq(Seq(
     distageCore
   ).map(_.testOnlyRef))
+
+lazy val logstageConfig = inLogStage.as.module
+  .depends(fundamentalsTypesafeConfig, logstageApiLogger, logstageRenderingCirce)
+
+lazy val logstageConfigDi = inLogStage.as.module
+  .depends(logstageConfig, distageConfig)
 
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module

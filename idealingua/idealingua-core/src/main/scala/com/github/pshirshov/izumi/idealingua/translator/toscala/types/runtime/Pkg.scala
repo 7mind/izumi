@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaTypeConverter
 
-import scala.reflect._
+import scala.reflect.{ClassTag, classTag}
 
 
 final case class Pkg private(pkgParts: Seq[String]) {

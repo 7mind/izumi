@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.config
 
-import com.github.pshirshov.configapp._
+import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
+import com.github.pshirshov.configapp.{SealedTrait, _}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.typesafe.config._
 import distage.{Injector, ModuleDef}
@@ -10,10 +11,6 @@ import scala.collection.immutable.ListSet
 import scala.collection.mutable
 
 class ConfigTest extends WordSpec {
-  def mkModule(): ConfigModule = {
-    mkModule(ConfigFactory.load())
-  }
-
   def mkModule(path: String): ConfigModule = {
     mkModule(ConfigFactory.load(path))
   }
@@ -25,7 +22,7 @@ class ConfigTest extends WordSpec {
 
   "Config resolver" should {
     "resolve config references" in {
-      val injector = Injector(mkModule())
+      val injector = Injector(mkModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.definition)
 
       val context = injector.produce(plan)
@@ -45,7 +42,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config references in set elements" in {
-      val injector = Injector(mkModule())
+      val injector = Injector(mkModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.setDefinition)
 
       val context = injector.produce(plan)
@@ -89,6 +86,19 @@ class ConfigTest extends WordSpec {
       val context = injector.produce(plan)
 
       assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
+    }
+
+    "resolve config sealed traits" in {
+      val context1 =
+        Injector(mkModule("sealed-test1.conf"))
+          .produce(TestConfigReaders.sealedDefinition)
+
+      val context2 =
+        Injector(mkModule("sealed-test2.conf"))
+          .produce(TestConfigReaders.sealedDefinition)
+
+      assert(context1.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass1(1, "1", true, Yes)))
+      assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))
     }
 
     "Inject config works for trait methods" in {

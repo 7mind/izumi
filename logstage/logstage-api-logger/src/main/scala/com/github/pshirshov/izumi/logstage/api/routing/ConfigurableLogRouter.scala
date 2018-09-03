@@ -28,6 +28,10 @@ class ConfigurableLogRouter
   }
 
 
+  override def close(): Unit = {
+    logConfigService.close()
+  }
+
   override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = {
     logConfigService.threshold(id) <= messageLevel
   }

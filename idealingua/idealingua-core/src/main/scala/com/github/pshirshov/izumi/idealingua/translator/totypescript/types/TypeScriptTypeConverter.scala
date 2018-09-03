@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 class TypeScriptTypeConverter() {
   def parseTypeFromString(value: String, target: TypeId): String = {
     target match {
-      case Primitive.TBool => "(" + value + " === 'true)'"
+      case Primitive.TBool => "(" + value + " === 'true')"
       case Primitive.TString => value
 
       case Primitive.TInt8 => "parseInt(" + value + ", 10)"
@@ -41,7 +41,7 @@ class TypeScriptTypeConverter() {
 
   def emitTypeAsString(value: String, target: TypeId): String = {
     target match {
-      case Primitive.TBool => "(" + value + " ? 'true' : 'false')'"
+      case Primitive.TBool => "(" + value + " ? 'true' : 'false')"
       case Primitive.TString => value
 
       case Primitive.TInt8 => s"$value.toString()"
@@ -114,11 +114,11 @@ class TypeScriptTypeConverter() {
   }
 
   def deserializeCustomType(variable: String, target: TypeId, ts: Typespace, asAny: Boolean = false): String = target match {
-    case a: AdtId => s"${a.name}Helpers.deserialize($variable)"
+    case a: AdtId => s"${a.name}Helpers.deserialize(${variable + (if (asAny) " as any" else "")})"
     case i: InterfaceId => s"${i.name}Struct.create(${variable + (if (asAny) " as any" else "")})"
     case d: DTOId => s"new ${d.name}(${variable + (if (asAny) " as any" else "")})"
     case al: AliasId => deserializeType(variable, ts.dealias(al), ts, asAny)
-    case id: IdentifierId => s"new ${id.name}($variable)"
+    case id: IdentifierId => s"new ${id.name}(${variable + (if (asAny) " as any" else "")})"
     case en: EnumId => s"${en.name}[$variable]"
 
     case _ => s"'$variable: Error here! Not Implemented! ${target.name}'"

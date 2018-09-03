@@ -7,31 +7,21 @@ import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
+import com.github.pshirshov.izumi.logstage.sink.QueueingSink.CountingStep
 
 import scala.concurrent.duration._
 
 
-
-class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) extends LogSink with AutoCloseable {
+class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
+  extends LogSink with AutoCloseable {
   private val queue = new ConcurrentLinkedQueue[Log.Entry]()
   private val maxBatchSize = 100
   private val stop = new AtomicBoolean(false)
 
   private val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, forceLog = true)
+  private val pollingThread = new Thread(new ThreadGroup("logstage"), poller(), "logstage-poll")
 
-  import QueueingSink._
-
-  def start(): Unit = {
-    pollingThread.start()
-  }
-
-  override def close(): Unit = {
-    stop.set(true)
-    pollingThread.join()
-    finish()
-  }
-
-  private val poller = new Runnable {
+  private def poller(): Runnable = new Runnable {
     override def run(): Unit = {
       while (!stop.get()) {
         try {
@@ -53,14 +43,22 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
       finish()
     }
   }
+  import QueueingSink._
+
+  def start(): Unit = {
+    pollingThread.start()
+  }
+
+  override def close(): Unit = {
+    if (stop.compareAndSet(false, true)) {
+      pollingThread.join()
+      finish()
+    }
+  }
 
   private def finish(): Unit = {
     doFlush(NullStep).discard()
   }
-
-  private val pollingThread = new Thread(new ThreadGroup("logstage"), poller, "logstage-poll")
-
-  pollingThread.setDaemon(true)
 
   private def doFlush(step: Step): Log.Entry = {
     var entry = queue.poll()

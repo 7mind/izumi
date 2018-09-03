@@ -16,10 +16,10 @@ class IzSerializable(o: Serializable) {
 }
 
 object IzSerializable {
-  implicit def toRich(s: Serializable): IzSerializable = new IzSerializable(s)
+  implicit def toRichSerializable(s: Serializable): IzSerializable = new IzSerializable(s)
 
-  implicit def toRich(bytes: ByteBuffer): IzByteBuffer = new IzByteBuffer(bytes)
+  implicit def toRichByteBuffer(bytes: ByteBuffer): IzByteBuffer = new IzByteBuffer(bytes)
 
-  implicit def toRich(bytes: Array[Byte]): IzByteArray = new IzByteArray(bytes)
+  implicit def toRichByteArray(bytes: Array[Byte]): IzByteArray = new IzByteArray(bytes)
 
 }

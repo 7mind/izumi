@@ -1,86 +1,14 @@
 package com.github.pshirshov.izumi.distage.app
 
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
+import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.plugins._
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl}
-import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import distage.Injector
 
-// TODO: startables
-// TODO: config mapping/injection
-// TODO: cli parser?..
 // TODO: split into di-plugins and di-app
-
-
-trait BootstrapContext[CommandlineConfig] {
-  def cliConfig: CommandlineConfig
-
-  def bootstrapConfig: PluginConfig
-
-  def pluginConfig: PluginConfig
-
-  def appConfig: AppConfig
-}
-
-case class BootstrapContextDefaultImpl[CommandlineConfig]
-(
-  cliConfig: CommandlineConfig
-  , bootstrapConfig: PluginConfig
-  , pluginConfig: PluginConfig
-  , appConfig: AppConfig
-) extends BootstrapContext[CommandlineConfig]
-
-trait ApplicationBootstrapStrategy[CommandlineConfig] {
-
-  type Context = BootstrapContext[CommandlineConfig]
-
-  def context: Context
-
-  def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins]
-
-  def router(): LogRouter
-
-  def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase]
-
-  def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase]
-
-  def mkBootstrapLoader(): PluginLoader
-
-  def mkLoader(): PluginLoader
-}
-
-
-abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig]
-(
-  override val context: BootstrapContext[CommandlineConfig]
-) extends ApplicationBootstrapStrategy[CommandlineConfig] {
-  def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
-    Quirks.discard(bs, app)
-    SimplePluginMergeStrategy
-  }
-
-  def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
-    Quirks.discard(bs, app)
-    Seq.empty
-  }
-
-  def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
-    Quirks.discard(bs, app)
-    Seq.empty
-  }
-
-  def mkBootstrapLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.bootstrapConfig)
-
-  def mkLoader(): PluginLoader = new PluginLoaderDefaultImpl(context.pluginConfig)
-}
 
 abstract class OpinionatedDiApp {
   type CommandlineConfig
@@ -100,9 +28,6 @@ abstract class OpinionatedDiApp {
   protected def commandlineSetup(args: Array[String]): Strategy
 
   protected def doMain(strategy: Strategy): Unit = {
-    val loggerRouter = strategy.router()
-
-    val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
     val bootstrapLoader = strategy.mkBootstrapLoader()
     val appLoader = strategy.mkLoader()
 
@@ -110,16 +35,20 @@ abstract class OpinionatedDiApp {
     val appAutoDef = appLoader.load()
     val mergeStrategy = strategy.mergeStrategy(bootstrapAutoDef, appAutoDef)
 
+    val loggerRouter = strategy.router()
+    val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
+    logger.info("Main logger initialized")
+
     val mergedBs = mergeStrategy.merge(bootstrapAutoDef)
     val mergedApp = mergeStrategy.merge(appAutoDef)
 
     validate(mergedBs, mergedApp)
 
-    val bootstrapCustomDef = (Seq(new ModuleDef {
+    val bootstrapCustomDef = (Seq(new BootstrapModuleDef {
       make[LogRouter].from(loggerRouter)
-    }: ModuleBase) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
+    }) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
 
-    val bsdef = mergedBs.definition ++ bootstrapCustomDef
+    val bsdef = bootstrapCustomDef ++ mergedBs.definition
     val appDef = mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge
 
     logger.trace(s"Have bootstrap definition\n$bsdef")
@@ -146,7 +75,7 @@ abstract class OpinionatedDiApp {
 
   protected def start(context: Locator, bootstrapContext: Strategy#Context): Unit
 
-  def handler: AppFailureHandler = TerminatingHandler
+  def handler: AppFailureHandler = AppFailureHandler.TerminatingHandler
 }
 
-class DiAppBootstrapException(message: String) extends DIException(message, null)
+

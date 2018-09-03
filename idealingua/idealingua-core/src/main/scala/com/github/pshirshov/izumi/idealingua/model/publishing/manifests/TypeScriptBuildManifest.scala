@@ -22,12 +22,20 @@ case class TypeScriptBuildManifest(
                             dependencies: List[ManifestDependency],
                             scope: String,
                             moduleSchema: TypeScriptModuleSchema,
+                            // this one only works with scoped namespaces, this way you can
+                            // get rid of @scope/net-company-project and use @scope/project
+                            // by using dropnameSpaceSegments = Some(2)
+                            dropNameSpaceSegments: Option[Int],
                           ) extends BuildManifest
 
 object TypeScriptBuildManifest {
-  def generatePackage(manifest: TypeScriptBuildManifest, main: String, name: String, peerDependencies: List[ManifestDependency] = List.empty): String = {
+  def generatePackage(manifest: TypeScriptBuildManifest, main: String, name: List[String], peerDependencies: List[ManifestDependency] = List.empty): String = {
+    val finalName = if(manifest.moduleSchema != TypeScriptModuleSchema.PER_DOMAIN ||
+        manifest.scope.isEmpty || manifest.dropNameSpaceSegments.isEmpty)
+      name.mkString("-") else
+      name.drop(manifest.dropNameSpaceSegments.get).mkString("-")
     s"""{
-       |  "name": "${if (manifest.scope.isEmpty) name else manifest.scope + "/" + name}",
+       |  "name": "${if (manifest.scope.isEmpty) finalName else manifest.scope + "/" + finalName}",
        |  "version": "${manifest.version}",
        |  "description": "${manifest.description}",
        |  "main": "$main.js",

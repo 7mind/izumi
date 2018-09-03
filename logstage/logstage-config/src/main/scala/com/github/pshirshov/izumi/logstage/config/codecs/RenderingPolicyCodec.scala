@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.logstage.config.codecs
 
-import com.github.pshirshov.izumi.distage.config.typesafe.codec.ConfigReader
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u
+import com.github.pshirshov.izumi.fundamentals.typesafe.config.ConfigReader
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy.PolicyConfig
 import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.{NamedRenderingPolicy, RenderingPolicyMapper, _}
 import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 
+import scala.reflect.runtime.universe
 import scala.util.Try
 
 class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[RenderingPolicy]], policyConfig: ConfigReader[PolicyConfig]) extends ConfigReader[RenderingPolicy] {
@@ -82,8 +82,8 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[RenderingPol
 
 object RenderingPolicyCodec {
 
-  abstract class RenderingPolicyMapper[+T <: RenderingPolicy : u.TypeTag] {
-    def path: u.Type = u.typeOf[T]
+  abstract class RenderingPolicyMapper[+T <: RenderingPolicy : universe.TypeTag] {
+    def path: universe.Type = universe.typeOf[T]
 
     def instantiate(policyConfig: PolicyConfig): T
   }

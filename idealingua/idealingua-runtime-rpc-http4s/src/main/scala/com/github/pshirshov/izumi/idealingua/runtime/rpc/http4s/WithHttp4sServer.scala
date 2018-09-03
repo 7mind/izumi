@@ -208,7 +208,7 @@ trait WithHttp4sServer {
           }
 
         case RpcPacket(RPCPacketKind.BuzzResponse, data, _, id, _, _, _) =>
-          context.requestState.handleResponse(id, data).flatMap(_ => BIO.point(None))
+          context.requestState.handleResponse(id, data).as(None)
 
         case RpcPacket(RPCPacketKind.BuzzFailure, data, _, Some(id), _, _, _) =>
           context.requestState.respond(id, RawResponse.BadRawResponse())
@@ -241,18 +241,18 @@ trait WithHttp4sServer {
           logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
           dsl.BadRequest()
         case ExitResult.Terminated(causes) =>
-          handleError(context, causes, "termination")
+          handleError(context, method, causes, "termination")
       }
     }
 
-    protected def handleError(context: HttpRequestContext[Ctx], causes: List[Throwable], kind: String): CatsIO[Response[CatsIO]] = {
+    protected def handleError(context: HttpRequestContext[Ctx], method: IRTMethodId, causes: List[Throwable], kind: String): CatsIO[Response[CatsIO]] = {
       causes.headOption match {
         case Some(cause: IRTHttpFailureException) =>
-          logger.debug(s"${context -> null}: Request rejected, ${context.request}, $cause")
+          logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause")
           CIO.pure(Response(status = cause.status))
 
         case cause =>
-          logger.error(s"${context -> null}: Execution failed, $kind, ${context.request}, $cause")
+          logger.error(s"${context -> null}: Execution failed, $kind, $method, ${context.request}, $cause")
           dsl.InternalServerError()
       }
     }

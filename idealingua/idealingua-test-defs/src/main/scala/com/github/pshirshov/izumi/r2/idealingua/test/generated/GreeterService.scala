@@ -36,10 +36,11 @@ class GreeterServiceClientWrapped[R[+ _, + _] : MicroBIO](dispatcher: IRTDispatc
   extends GreeterServiceClient[R] {
 
   val R: MicroBIO[R] = implicitly
+  import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceMethods => _M}
 
   override def greet(name: String, surname: String): R.Just[String] = {
     R.redeem(dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id)))( { err => R.terminate(err) }, {
-      case IRTMuxResponse(IRTResBody(v: GreeterServiceMethods.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
+      case IRTMuxResponse(IRTResBody(v: _M.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
         R.point(v.value)
       case v =>
         R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))

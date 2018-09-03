@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependen
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.fundamentals.typesafe.config.RuntimeConfigReader
 import com.typesafe.config.{ConfigException, ConfigObject}
 
 import scala.util.Try
@@ -63,7 +64,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
         try {
           val product = loadedValue match {
             case obj: ConfigObject =>
-              reader.readConfig(obj.toConfig, step.targetType)
+              reader.readConfigAsCaseClass(obj.toConfig, step.targetType)
             case o if injectorConfig.enableScalars =>
               reader.readValue(o, step.targetType)
             case o =>

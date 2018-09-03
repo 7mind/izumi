@@ -6,14 +6,15 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, mirror}
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleService, RoleId}
+import com.github.pshirshov.izumi.distage.roles.roles
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleId, RoleService}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 import scala.reflect.ClassTag
 
 class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
-  def getInfo(bindings: Iterable[Binding]): RolesInfo = {
+  def getInfo(bindings: Iterable[Binding]): roles.RolesInfo = {
     val availableBindings = getRoles(bindings)
 
     val roles = availableRoleNames(availableBindings)
@@ -22,7 +23,7 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
       .filter(b => isEnabledRole(b.tpe))
 
 
-    RolesInfo(
+    distage.roles.roles.RolesInfo(
       Set(
         RuntimeDIUniverse.DIKey.get[RoleStarter]) ++ enabledRoles.map(_.binding.key)
       , enabledRoles
@@ -33,7 +34,7 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
     )
   }
 
-  private def availableRoleNames(bindings: Iterable[RoleBinding]): Seq[String] = {
+  private def availableRoleNames(bindings: Iterable[roles.RoleBinding]): Seq[String] = {
     bindings
       .map(_.tpe)
       .flatMap(r => getAnno(r).toSeq)
@@ -41,7 +42,7 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
       .distinct
   }
 
-  private def getRoles(bb: Iterable[Binding]): Seq[RoleBinding] = {
+  private def getRoles(bb: Iterable[Binding]): Seq[roles.RoleBinding] = {
 
     val availableBindings =
       bb
@@ -50,7 +51,7 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
           val runtimeClass = mirror.runtimeClass(rt.tpe)
 
           val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
-          RoleBinding(b, rt, getAnno(rt), src)
+          roles.RoleBinding(b, rt, getAnno(rt), src)
         }
 
     availableBindings.toSeq

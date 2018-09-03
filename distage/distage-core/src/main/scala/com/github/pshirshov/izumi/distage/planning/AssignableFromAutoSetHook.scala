@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.launcher
+package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
@@ -11,12 +11,12 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
 
   protected val setKey: DIKey = DIKey.get[Set[T]]
 
-  override def phase10PostFinalization(plan: SemiPlan): SemiPlan = {
+  override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
     val newMembers = scala.collection.mutable.ArrayBuffer[DIKey.SetElementKey]()
 
     val newSteps = plan.steps.flatMap {
       op =>
-        val opTargetClass = mirror.runtimeClass(op.target.tpe.tpe)
+        val opTargetClass = ExecutableOp.runtimeClass(op)
         if (setElementClass.isAssignableFrom(opTargetClass)) {
           val elementKey = DIKey.SetElementKey(op.target, plan.steps.size + newMembers.size, setKey.tpe)
           newMembers += elementKey
@@ -32,4 +32,6 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
     val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, None)
     SemiPlan(plan.definition, newSteps :+ newSetOp)
   }
+
+
 }

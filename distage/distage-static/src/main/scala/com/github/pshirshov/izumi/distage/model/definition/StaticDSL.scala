@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef.{BindDSLBase, SetDSLBase}
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDefDSL.{BindDSLBase, SetDSLBase}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
 import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
 
@@ -12,8 +12,8 @@ object StaticDSL {
       dsl.from[I](AnyConstructor[I].provider)
   }
 
-  // FIXME: add tests
-  // FIXME: modify cursor instead of adding new element
+  // TODO: add tests
+  // TODO: modify cursor instead of adding new element
   implicit final class MagicSetDSL[T, AfterAdd](private val dsl: SetDSLBase[T, AfterAdd]) extends AnyVal {
     def addStatic[I <: T: Tag: AnyConstructor]: AfterAdd =
       dsl.add[I](AnyConstructor[I].provider)

@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FormattingUt
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.{Locator, reflection}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
 import scala.util.Try
 
@@ -44,7 +45,7 @@ class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInter
     val repr = allFailures.map {
       case OperationFailed(op, f) =>
         val pos = FormattingUtils.formatBindingPosition(op.origin)
-        s"${op.target} $pos: ${f.getMessage}"
+        s"${op.target} $pos, ${f.getClass.getCanonicalName}: ${f.getMessage}"
     }
 
     val ccFailed = repr.size
@@ -52,7 +53,8 @@ class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInter
     val ccTotal = plan.steps.size
     val ccSkipped = ccTotal - ccDone - ccFailed
 
-    throw new ProvisioningException(s"Operations failed ($ccFailed failed, $ccDone done, $ccSkipped skipped, $ccTotal total): ${repr.niceList()}", allFailures.head.result)
+    throw new ProvisioningException(s"Operations failed ($ccFailed failed, $ccDone done, $ccSkipped skipped, $ccTotal total): ${repr.niceList()}", null)
+      .addAllSuppressed(failures.values.flatten)
   }
 
   override def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]] = PartialFunction.empty

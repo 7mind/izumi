@@ -92,13 +92,14 @@ object IDLTestTools {
         ManifestDependency("@types/websocket", "0.0.39")
       ),
       scope = "@TestScope",
-      moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED
+      moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED,
+      None
     )
 
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, true, if (scoped) Some(manifest) else None))
 
     val outputTspackagePath = out.targetDir.resolve("package.json")
-    Files.write(outputTspackagePath, TypeScriptBuildManifest.generatePackage(manifest, "index", "TestPackage", List.empty).getBytes)
+    Files.write(outputTspackagePath, TypeScriptBuildManifest.generatePackage(manifest, "index", List("TestPackage"), List.empty).getBytes)
     val npmCmd = Seq("npm", "install")
     if (run(out.absoluteTargetDir, npmCmd, Map.empty, "npm") != 0) {
       return false

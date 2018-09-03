@@ -311,7 +311,6 @@ class TypespaceVerifier(ts: Typespace) {
       }
 
     case _ =>
-
   }
 
 }

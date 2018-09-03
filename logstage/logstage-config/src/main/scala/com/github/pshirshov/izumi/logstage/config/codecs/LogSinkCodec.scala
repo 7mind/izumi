@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.logstage.config.codecs
 
-import com.github.pshirshov.izumi.distage.config.typesafe.codec.ConfigReader
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u
+import com.github.pshirshov.izumi.fundamentals.typesafe.config.ConfigReader
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.config.codecs.LogSinkCodec.{LogSinkMapper, NamedLogSink, _}
@@ -85,8 +84,10 @@ class LogSinkCodec(policyReader: RenderingPolicyCodec, mappers: Set[LogSinkMappe
 
 object LogSinkCodec {
 
-  abstract class LogSinkMapper[+T <: LogSink : u.TypeTag] {
-    def path: u.Type = u.typeOf[T]
+  import scala.reflect.runtime.universe
+
+  abstract class LogSinkMapper[+T <: LogSink : universe.TypeTag] {
+    def path: universe.Type = universe.typeOf[T]
     def instantiate(config: Config, renderingPolicy: RenderingPolicy): T
   }
 

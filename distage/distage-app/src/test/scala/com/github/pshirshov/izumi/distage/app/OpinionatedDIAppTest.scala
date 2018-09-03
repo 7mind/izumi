@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.app
 import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.AssignableFromEarlyAutoSetHook
@@ -22,24 +22,24 @@ import org.scalatest.WordSpec
 
 case class EmptyCfg()
 
-class CustomizationModule extends ModuleDef {
+class CustomizationModule extends BootstrapModuleDef {
   many[PlanningHook]
     .add(new AssignableFromEarlyAutoSetHook[Conflict])
 }
 
-class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]#Context) => Unit) extends OpinionatedDiApp {
+class TestAppLauncher(callback: (TestAppLauncher, Locator, ApplicationBootstrapStrategy[EmptyCfg]#Context) => Unit) extends OpinionatedDiApp {
   override type CommandlineConfig = EmptyCfg
 
-  override def handler: AppFailureHandler = NullHandler
+  override def handler: AppFailureHandler = AppFailureHandler.NullHandler
 
   val testSink = new TestSink()
+
+  val config = AppConfig(ConfigFactory.load())
 
   override protected def commandlineSetup(args: Array[String]): Strategy = {
     val bsContext: BootstrapContext = BootstrapContextDefaultImpl(
       EmptyCfg()
-      , bootstrapConfig
       , pluginConfig
-      , AppConfig(ConfigFactory.load())
     )
 
     new ApplicationBootstrapStrategyBaseImpl(bsContext) {
@@ -48,10 +48,10 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
         new ConfigurablePluginMergeStrategy(pluginMergeConfig)
       }
 
-      override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
+      override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModuleDef] = {
         Quirks.discard(bs, app)
         Seq(
-          new ConfigModule(bsContext.appConfig)
+          new ConfigModule(config)
           , new CustomizationModule
           , new TracingGcModule(Set(
             RuntimeDIUniverse.DIKey.get[TestApp],
@@ -72,7 +72,7 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
   }
 
   override protected def start(context: Locator, bootstrapContext: Strategy#Context): Unit = {
-    callback(context, bootstrapContext)
+    callback(this, context, bootstrapContext)
   }
 
   private val pluginMergeConfig = PluginMergeConfig(
@@ -90,13 +90,6 @@ class TestAppLauncher(callback: (Locator, ApplicationBootstrapStrategy[EmptyCfg]
     , Seq(classOf[TestApp].getPackage.getName)
     , Seq.empty
   )
-
-  private val bootstrapConfig = {
-    PluginConfig(debug = false
-      , Seq("com.github.pshirshov.izumi")
-      , Seq.empty
-    )
-  }
 }
 
 
@@ -107,7 +100,7 @@ class OpinionatedDIAppTest extends WordSpec {
 
 
       val app = new TestAppLauncher({
-        case (context, bsContext) =>
+        case (launcher, context, _) =>
           assert(context.find[TestApp].nonEmpty)
           assert(context.find[BadApp].isEmpty)
           assert(context.find[DisabledByGc].isEmpty)
@@ -120,7 +113,7 @@ class OpinionatedDIAppTest extends WordSpec {
 
           assert(context.find[Conflict].exists(_.isInstanceOf[ConflictB]))
 
-          assert(context.get[AppConfig] == bsContext.appConfig)
+          assert(context.get[AppConfig] == launcher.config)
 
           assert(context.get[TestApp].config.value == "test")
           assert(context.get[TestApp].setTest.size == 1)
