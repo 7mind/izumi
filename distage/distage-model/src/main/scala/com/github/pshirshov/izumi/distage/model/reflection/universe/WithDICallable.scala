@@ -3,11 +3,12 @@ package com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.{WithDIAssociation, WithDIWiring}
 import com.github.pshirshov.izumi.distage.model.references.{WithDIKey, WithDITypedRef}
+import com.github.pshirshov.izumi.fundamentals.reflection.WithTags
 
 trait WithDICallable {
   this: DIUniverseBase
     with WithDISafeType
-    with WithDITypeTags
+    with WithTags
     with WithDITypedRef
     with WithDIKey
     with WithDISymbolInfo

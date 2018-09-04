@@ -12,15 +12,15 @@ class ModuleBaseInstancesTest extends WordSpec {
     "allow monoidal operations between different types of binding dsls" in {
       import BasicCase1._
 
-      val mod1: ModuleBase = new ModuleDef {
+      val mod1: Module = new ModuleDef {
         make[TestClass]
       }
 
-      val mod2: ModuleBase = new ModuleDef {
+      val mod2: Module = new ModuleDef {
         make[TestCaseClass2]
       }
 
-      val mod3_1: ModuleBase = new ModuleDef {
+      val mod3_1: Module = new ModuleDef {
         make[TestDependency1]
       }
 
@@ -32,10 +32,10 @@ class ModuleBaseInstancesTest extends WordSpec {
         binding(TestInstanceBinding())
       ))
 
-      val moduleDef: ModuleBase = Module.empty
+      val moduleDef = Module.empty
       val mod5 = moduleDef :+ Bindings.binding[TestDependency0, TestImpl0]
 
-      val combinedModules = Vector[ModuleBase](mod1, mod2, mod3, mod4, mod5).combineAll
+      val combinedModules = Vector(mod1, mod2, mod3, mod4, mod5).combineAll
 
       val plusModules = mod5 |+| mod4 |+| mod3 |+| mod2 |+| mod1
 
@@ -44,10 +44,10 @@ class ModuleBaseInstancesTest extends WordSpec {
         , Bindings.binding[TestDependency0, TestImpl0]
         , Bindings.binding[TestCaseClass2]
         , Bindings.binding(TestInstanceBinding())
-      )) ++ mod3 // function pointer equality on magic trait providers
+      )) |+| mod3 // function pointer equality on magic trait providers
 
-      assert(combinedModules === complexModule)
-      assert(plusModules === complexModule)
+      assert(catsSyntaxEq(combinedModules) === complexModule)
+      assert(catsSyntaxEq(plusModules) === complexModule)
     }
   }
 }

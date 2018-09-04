@@ -28,6 +28,11 @@ object HigherKindCases {
           override def point[A](a: A): OptionT[F, A] = OptionT(Pointed[F].point(Some(a)))
         }
 
+      implicit final def pointedEither[E]: Pointed[Either[E, ?]] =
+        new Pointed[Either[E, ?]] {
+          override def point[A](a: A): Either[E, A] = Right(a)
+        }
+
       implicit final val pointedId: Pointed[id] =
         new Pointed[id] {
           override def point[A](a: A): id[A] = a
@@ -75,6 +80,10 @@ object HigherKindCases {
     }
 
     abstract class TestProvider2[G[_]: Pointed, F[_]: Pointed, A] {
+      def f(a: A): F[A]
+    }
+
+    abstract class TestProvider3[A, B, C, F[_]: Pointed] {
       def f(a: A): F[A]
     }
   }

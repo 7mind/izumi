@@ -8,8 +8,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
-//import scala.reflect.runtime.{currentMirror, universe}
-
 class ClassStrategyDefaultImpl
 (
   symbolIntrospector: SymbolIntrospector.Runtime

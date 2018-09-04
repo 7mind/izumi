@@ -125,7 +125,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
           case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[EnumId]) =>
             IdField.Enum(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[TypeId.EnumId]), f.name)
           case f =>
-            throw new IDLException(s"Unsupporeted ID field $f in $domainId. You may use primitive fields, enums or other IDs only")
+            throw new IDLException(s"[$domainId] Unsupporeted ID field $f while handling ${d.id} You may use primitive fields, enums or other IDs only")
         }
 
         typed.TypeDef.Identifier(id = fixSimpleId(d.id): TypeId.IdentifierId, fields = typedFields, meta = fixMeta(d.meta))
@@ -156,7 +156,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
               .asInstanceOf[typed.TypeDef.Interface]
             fixed.copy(id = fixed.id.copy(name = id.name), meta = fixMeta(c))
           case o =>
-            throw new IDLException(s"TODO: newtype isn't supported yet for $o")
+            throw new IDLException(s"[$domainId] TODO: newtype isn't supported yet for $o")
         }
     }
   }
@@ -170,7 +170,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
       case s: RawValScalar[_] =>
         s.value
       case o =>
-        throw new IDLException(s"Value isn't supported in annotations $o")
+        throw new IDLException(s"[$domainId] Value isn't supported in annotations $o")
     }
   }
 
@@ -304,7 +304,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
           case Some(t) =>
             t
           case None =>
-            throw new IDLException(s"[$domainId] Type $idefinite is missing from domain, tried $idefinite")
+            throw new IDLException(s"[$domainId] Type $idefinite is missing from domain")
         }
 
       case v if !contains(v) =>
@@ -313,7 +313,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
           case Some(typer) =>
             typer.makeDefinite(v)
           case None =>
-            throw new IDLException(s"[$domainId] Domain $referencedDomain is missing from context: ${defn.referenced.keySet.mkString("\n  ")}")
+            throw new IDLException(s"[$domainId] Type $id references domain $referencedDomain but that domain wasn't imported. Imported domains: ${defn.referenced.keySet.mkString("\n  ")}")
         }
 
     }
@@ -330,7 +330,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
 
       case o =>
         import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-        throw new IDLException(s"The $domainId: $o; Allowed types for identifier fields: ${Primitive.mappingId.values.map(_.name).niceList()}")
+        throw new IDLException(s"[$domainId] Non-primitive type $o but primitive expected. Allowed types for identifier fields: ${Primitive.mappingId.values.map(_.name).niceList()}")
     }
   }
 

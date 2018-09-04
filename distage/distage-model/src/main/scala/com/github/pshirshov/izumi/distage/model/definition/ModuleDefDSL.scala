@@ -49,7 +49,7 @@ import scala.collection.mutable
   *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
   *   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
   *
-  * @see [[com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK TagK]]
+  * @see [[com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK TagK]]
   * @see [[Id]]
   */
 trait ModuleDefDSL {

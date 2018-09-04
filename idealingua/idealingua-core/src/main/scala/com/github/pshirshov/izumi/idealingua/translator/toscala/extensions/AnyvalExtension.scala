@@ -79,9 +79,15 @@ object AnyvalExtension extends ScalaTranslatorExtension {
 
       case t: StructureId =>
         val struct = ctx.typespace.structure.structure(t)
-        struct.isComposite || (struct.isScalar && !struct.all
+        struct.isComposite
+
+        // this predicate doesn't work well across domains
+        /*
+        || (struct.isScalar && !struct.all
           .filterNot(v => seen.contains(v.field.typeId))
           .exists(v => canBeAnyValField(ctx, v.field.typeId, seen + v.field.typeId)))
+          */
+
       case t: IdentifierId =>
         val struct = ctx.typespace.structure.structure(t)
         struct.all.size > 1

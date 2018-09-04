@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles.launcher
 
-import com.github.pshirshov.izumi.distage.config.codec.RuntimeConfigReaderDefaultImpl
-import com.github.pshirshov.izumi.distage.reflection
+import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
 import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
@@ -58,17 +57,11 @@ class SimpleLoggerConfigurator(logger: IzLogger) {
   private def readConfig(config: Config) = {
     // TODO: copypaste from di boostrap, this MUST disappear
     import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-    val symbolIntrospector = new reflection.SymbolIntrospectorDefaultImpl.Runtime
-    val reflectionProvider = new reflection.ReflectionProviderDefaultImpl.Runtime(
-      new reflection.DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
-      , symbolIntrospector
-    )
-    val reader = new RuntimeConfigReaderDefaultImpl(reflectionProvider, symbolIntrospector)
-
+    val reader = new RuntimeConfigReaderDefaultImpl(RuntimeConfigReaderCodecs.default.readerCodecs)
 
     val maybeConf = for {
       section <- Try(config)
-      config <- Try(reader.readConfig(section, SafeType.get[SinksConfig]).asInstanceOf[SinksConfig])
+      config <- Try(reader.readConfigAsCaseClass(section, SafeType.get[SinksConfig]).asInstanceOf[SinksConfig])
     } yield {
       config
     }

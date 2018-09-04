@@ -13,7 +13,7 @@ export type handlerFailure = (service: string, method: string, error: string) =>
 export class HybridClientTransportGeneric<C> implements ClientTransport {
     private _restTransport: HTTPClientTransport;
     private _wsTransport: WebSocketClientTransport<C>;
-    private _authMethod: AuthMethod;
+    private _authMethod: AuthMethod | undefined;
     private _headers: TransportHeaders;
 
     public get onSend(): handlerSuccess {
@@ -50,7 +50,7 @@ export class HybridClientTransportGeneric<C> implements ClientTransport {
         return this._authMethod;
     }
 
-    public setAuthorization(method: AuthMethod) {
+    public setAuthorization(method: AuthMethod | undefined) {
         this._authMethod = method;
         this._restTransport.setAuthorization(method);
         this._wsTransport.setAuthorization(method);
@@ -60,8 +60,8 @@ export class HybridClientTransportGeneric<C> implements ClientTransport {
         return this._headers;
     }
 
-    public setHeaders(headers: TransportHeaders) {
-        this._headers = headers;
+    public setHeaders(headers: TransportHeaders | undefined) {
+        this._headers = headers || {};
         this._restTransport.setHeaders(headers);
         this._wsTransport.setHeaders(headers);
     }

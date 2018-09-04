@@ -4,8 +4,8 @@ out: index.html
 distage Staged Dependency Injection
 ============
 
-distage is a pragmatic module system for Scala that combines safety and clarity of pure FP with late binding, flexibility
-and malleability of runtime dependency injection frameworks such as Guice.
+distage is a pragmatic module system for Scala that combines safety and reliability of pure FP with late binding and flexibility
+of runtime dependency injection frameworks such as Guice.
 
 ### Hello World
 
@@ -46,11 +46,10 @@ object HelloModule extends ModuleDef {
 
 We define a *Module* for our application. A module specifies *what* classes to instantiate and *how* to instantiate them.
 
-In this case we are using the default instantiation strategy - just calling the constructor.
+Default instantiation strategy is to just call the constructor.
 
-If a constructor accepts arguments, distage will first instantiate the arguments, then call the constructor. 
-All the classes in distage are instantiated exactly once, even if multiple different classes depend on them, in other words
-they are `Singletons`.
+If a constructor accepts arguments, distage will first instantiate the dependencies, then call the constructor. 
+All the classes in distage are instantiated exactly once, even if multiple different classes depend on them, i.e. they're `Singletons`.
  
 Modules can be combined using `++` and `overridenBy` operators. For example we can join our `HelloModule` with a `ByeModule`:
 
@@ -80,11 +79,13 @@ object UppercaseHelloModule extends ModuleDef {
 val uppercaseHelloBye = helloBye overridenBy uppercaseHello 
 ```
 
-Combining modules with `++` is the main way to assemble your app together! But, if you don't want to list all your modules
-in one place, you can use [Plugins](#plugins) to automatically discover all the (marked) modules in your app.
+Combining modules with `++` is the main way to assemble your app together. But, if you don't want to list all your modules
+in one place, you can use [Plugins](#plugins) to automatically combine modules from the classpath.
 
-If you choose to combine modules explicitly, distage offers compile-time checks ensuring that your app will start.
-See [Static Configurations](#static-configurations) for details.
+If you combine modules explicitly, distage can check if your app is wired properly at compile-time.
+See [Static Configurations](#static-configurations) for more details.
+
+Let's go back to code:
 
 ```scala
 object Main extends App {
@@ -93,7 +94,7 @@ object Main extends App {
   val plan = injector.plan(HelloModule)
 ```
 
-We create an instantation `plan` from the module definition. distage is *staged*, so instead of instantiating our 
+Here we create an instantation `plan` from the module definition. distage is *staged*, so instead of instantiating our 
 definitions right away, distage first builds a pure representation of all the operations it will do and returns it back to us.
 
 This allows us to easily implement additional functionality on top of distage without modifying the library.
@@ -106,8 +107,8 @@ Features such as [Plugins](#plugins) and [Configurations](#config-files) are sep
   classes.get[Hello].helloWorld()
 ```
 
-After we execute the plan we're left a `Locator` that holds all of our app's classes.
-We can retrieve the instances by type using the `.get` method
+After we execute a plan we're left with a `Locator` which holds our app's classes.
+We can retrieve instances by type and call methods on them.
 
 ### Multibindings / Set Bindings
 
@@ -198,8 +199,10 @@ For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshir
 
 ### Tagless Final Style with distage
 
-distage has first-class support for tagless final style. Let's see what [freestyle tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
-looks like in distage:
+distage works well with tagless final style, for example, let's make [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
+easier, safer and more flexible, by making implicit instances explicit and confige them with distage.
+
+Fist, modules:
 
 ```scala
 class Program[F[_]: TagK: Monad] extends ModuleDef {
@@ -212,16 +215,14 @@ object TryInterpreters extends ModuleDef {
 }
 
 // Combine modules into a full program
-val TryProgram = new Program[Try] ++ TryInterpreters
+val TryProgram: Module = new Program[Try] ++ TryInterpreters
 ```
 
-@scaladoc[TagK](com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK) is distage's analogue
-of `TypeTag` or `Typeable` but for higher-kinded types like `F[_]`.
-Don't forget to add a @scaladoc[TagK](com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#TagK) when you need to create a module parameterized by an abstract `F[_]`!
-You don't need it however, when your module refers to concrete monads such as `Future` or `IO`. If you want
-to create a module that's generic in a non-higher kinded parameter, use @scaladoc[Tag](com.github.pshirshov.izumi.distage.model.reflection.universe.WithDITypeTags#Tag).
+@scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`.
+You'll need to add a @scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) to create a module parameterized by an abstract `F[_]`.
+Use @scaladoc[Tag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#Tag) to create modules parameterized by a non-HKT parameter.
 
-The rest of the program:
+Implementations:
 
 ```scala
 class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
@@ -232,38 +233,43 @@ class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Intera
   } yield ()
 }
 
-val validationHandler = new Validation.Handler[Try] {
+val tryValidationHandler = new Validation.Handler[Try] {
   override def minSize(s: String, n: Int): Try[Boolean] = Try(s.size >= n)
   override def hasNumber(s: String): Try[Boolean] = Try(s.exists(c => "0123456789".contains(c)))
 }
 
-val interactionHandler = new Interaction.Handler[Try] {
+val tryInteractionHandler = new Interaction.Handler[Try] {
   override def tell(s: String): Try[Unit] = Try(println(s))
   override def ask(s: String): Try[String] = Try("This could have been user input 1")
 }
 ```
 
-Notice how the program module stays completely polymorphic and abstracted from its eventual interpeter or the monad it
-will run in? Want a program in different Monad? No problem:
+The program module is polymorphic and abstracted from its eventual monad, we can easily implement it in a different monad:
 
 ```scala
 val IOProgram = new Program[IO] ++ IOInterpreters
 ```
 
-Want a program in the **same** Monad, but with different interpreters? No problem either:
+We can leave the implementations polymorphic as well: 
+
+```scala
+import cats.effect.Sync
+
+def SyncProgram[F[_]: Sync] = new Program[F] ++ SyncInterpreters[F]
+```
+
+Or choose different interpreters at runtime:
 
 ```scala
 val DifferentTryProgram = new Program[Try] ++ DifferentTryInterpreters
 ```
 
-distage makes tagless final style easier and safer by making your implicit instances explicit and configurable as
-first-class values. It even enforces typeclass coherence by disallowing multiple instances, so one wrong `import` can't
-ruin your day. distage doesn't make you choose between OO and FP, it lets you use both without losing neither ease of
-configuration and variability of a runtime DI framework, nor parametricity and equational reasoning of pure FP style.
+Since distage forbids multiple instances for the same type, all typeclasses that are managed by it are forced to be
+coherent,  so a wrong `import` can't ruin your day. 
 
 ### Config files
 
-We provide first-class integration with `typesafe-config`, rendering a lot of parsing boilerplate unnecessary.
+`distage-config` library can parse `typesafe-config` into arbitrary case classes or sealed traits and make them available to summon as a class dependency.
 
 To use it, add `distage-config` library:
 
@@ -392,7 +398,7 @@ val main: Future[Unit] = initializers.run {
 Await.result(main, Duration.Inf)
 ```
 
-### Auto-Factories & Auto-Traits
+### Auto-Traits & Auto-Factories
 
 ...
 
@@ -547,7 +553,7 @@ sbt -Dizumi.distage.debug.macro=true compile
 ```
 
 
-Macros power `distage-static` module, an alternative backend that doesn't use JVM runtime reflection.
+Macros power `distage-static` module, an alternative backend that doesn't use JVM runtime reflection to instantiate classes and auto-traits.
 
 ### Extensions and Plan Rewriting – writing a distage extension
 

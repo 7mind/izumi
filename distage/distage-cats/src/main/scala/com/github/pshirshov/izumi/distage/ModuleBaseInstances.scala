@@ -2,23 +2,23 @@ package com.github.pshirshov.izumi.distage
 
 import cats.kernel.instances.set._
 import cats.kernel.{BoundedSemilattice, Hash, PartialOrder}
-import com.github.pshirshov.izumi.distage.model.definition.Module
+import com.github.pshirshov.izumi.distage.model.definition.ModuleMake
 import distage.ModuleBase
 
 trait ModuleBaseInstances {
 
-  implicit val catsKernelStdPartialOrderForModuleBase: PartialOrder[ModuleBase] =
+  implicit def catsKernelStdPartialOrderForModuleBase[T <: ModuleBase]: PartialOrder[T] =
     PartialOrder.by(_.bindings)
 
-  implicit val catsKernelStdSemilatticeForModuleBase: BoundedSemilattice[ModuleBase] =
+  implicit def catsKernelStdSemilatticeForModuleBase[T <: ModuleBase: ModuleMake]: BoundedSemilattice[T] =
     new ModuleBaseSemilattice
 
-  implicit val catsKernelStdHashForModuleBase: Hash[ModuleBase] =
+  implicit def catsKernelStdHashForModuleBase[T <: ModuleBase]: Hash[ModuleBase] =
     Hash.fromUniversalHashCode
 
-  class ModuleBaseSemilattice extends BoundedSemilattice[ModuleBase] {
-    def empty: ModuleBase = Module.empty
-    def combine(x: ModuleBase, y: ModuleBase): ModuleBase = x ++ y
+  private class ModuleBaseSemilattice[T <: ModuleBase: ModuleMake] extends BoundedSemilattice[T] {
+    def empty: T = ModuleMake[T].empty
+    def combine(x: T, y: T): T= x ++ y
   }
 
 }

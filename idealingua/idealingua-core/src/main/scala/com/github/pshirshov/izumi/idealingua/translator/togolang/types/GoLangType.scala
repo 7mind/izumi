@@ -206,6 +206,8 @@ final case class GoLangType (
     case Primitive.TUInt16 => s"strconv.FormatUInt(uint64($name), 10)"
     case Primitive.TUInt32 => s"strconv.FormatUInt(int64($name), 10)"
     case Primitive.TUInt64 => s"strconv.FormatUInt($name, 10)"
+    case Primitive.TUInt64 => s"strconv.FormatUInt($name, 10)"
+    case Primitive.TBool => s"strconv.FormatBool($name)"
     case Primitive.TUUID => name
     case _: EnumId => s"$name.String()"
     case _: IdentifierId => s"$name.String()"
@@ -216,6 +218,7 @@ final case class GoLangType (
     if (unescape) {
       id match {
         case Primitive.TString => s"$dest, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}"
+        case Primitive.TBool => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseBool(${dest}Str)\nif err != nil {\n    return err\n}\n$dest := bool(${dest}64)"
         case Primitive.TInt8 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 8)\nif err != nil {\n    return err\n}\n$dest := int8(${dest}64)"
         case Primitive.TInt16 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 16)\nif err != nil {\n    return err\n}\n$dest := int16(${dest}64)"
         case Primitive.TInt32 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := int32(${dest}64)"

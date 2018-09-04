@@ -12,7 +12,16 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.DomainDefinitionParsed
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILImport
 
-protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], domain: ParsedDomain, domains: Map[DomainId, ParsedDomain], models: Map[Path, ParsedModel]) {
+import scala.collection.mutable
+
+protected[loader] class LocalDomainProcessor(
+                                              root: Path
+                                              , classpath: Seq[File]
+                                              , domain: ParsedDomain
+                                              , domains: Map[DomainId, ParsedDomain]
+                                              , models: Map[Path, ParsedModel]
+                                              , parsed: mutable.HashMap[DomainId, LocalDomainProcessor] = mutable.HashMap.empty
+                                            ) {
 
   import LocalModelLoader._
 
@@ -21,19 +30,23 @@ protected[loader] class LocalDomainProcessor(root: Path, classpath: Seq[File], d
     val domainResolver: (DomainId) => Option[ParsedDomain] = toDomainResolver(domains.get)
     val modelResolver: (Path) => Option[ParsedModel] = toModelResolver(models.get)
 
-    val imports = domain
+    val processors = domain
       .imports
       .map {
         p =>
-          domainResolver(p.id) match {
-            case Some(d) =>
-              d.did -> new LocalDomainProcessor(root, classpath, d, domains, models).postprocess()
+          p.id -> parsed.getOrElseUpdate(p.id, {
+            domainResolver(p.id) match {
+              case Some(d) =>
+                new LocalDomainProcessor(root, classpath, d, domains, models, parsed)
 
-            case None =>
-              throw new IDLException(s"Can't find reference $p in classpath nor filesystem while operating within $root")
-          }
+              case None =>
+                throw new IDLException(s"Can't find reference $p in classpath nor filesystem while operating within $root")
+            }
+          })
       }
       .toMap
+
+    val imports = processors.mapValues(_.postprocess())
 
     val importOps = domain.imports.flatMap {
       i =>
