@@ -20,5 +20,5 @@ class ConfigModule(config: AppConfig, configInjectorConfig: ConfigInjectorConfig
   many[RuntimeConfigReaderCodecs]
     .add(RuntimeConfigReaderCodecs.default)
   make[RuntimeConfigReader]
-    .from(RuntimeConfigReaderDefaultImpl(_))
+    .from(RuntimeConfigReaderDefaultImpl.apply _)
 }

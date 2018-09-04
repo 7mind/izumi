@@ -29,7 +29,6 @@ protected[loader] class LocalDomainProcessor(
   def postprocess(): DomainDefinitionParsed = {
     val domainResolver: (DomainId) => Option[ParsedDomain] = toDomainResolver(domains.get)
     val modelResolver: (Path) => Option[ParsedModel] = toModelResolver(models.get)
-    val references = domain.imports.map(i => i.id)
 
     val processors = domain
       .imports
