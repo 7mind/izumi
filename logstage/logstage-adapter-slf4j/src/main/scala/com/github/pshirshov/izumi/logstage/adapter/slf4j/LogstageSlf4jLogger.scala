@@ -10,19 +10,19 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
   override def getName: String = name
 
-  private def log(level: Level, message: String, args: Seq[Any]): Unit = {
+  private def log(level: Level, message: String, args: => Seq[Any]): Unit = {
     if (router.acceptable(id, level)) {
       router.log(mkEntry(level, message, args, None))
     }
   }
 
-  private def log(level: Level, message: String, args: Seq[Any], marker: Marker): Unit = {
+  private def log(level: Level, message: String, args: => Seq[Any], marker: => Marker): Unit = {
     if (router.acceptable(id, level)) {
       router.log(mkEntry(level, message, args, Option(marker)))
     }
   }
 
-  private def mkEntry(level: Level, message: String, args: Seq[Any], marker: Option[Marker]): Entry = {
+  @inline private[this] def mkEntry(level: Level, message: String, args: => Seq[Any], marker: => Option[Marker]): Entry = {
     val thread = Thread.currentThread()
     val threadData = ThreadData(thread.getName, thread.getId)
 
