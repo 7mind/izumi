@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.logstage.config.codecs
 import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0
 import com.github.pshirshov.izumi.fundamentals.typesafe.config.{ConfigReader, RuntimeConfigReader, RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy}
+import com.github.pshirshov.izumi.logstage.config.codecs.LogSinkCodec.ClassMapper
 import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.{RenderingPolicyMapper, _}
 import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 
@@ -26,20 +27,7 @@ class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: Renderi
 
 object RenderingPolicyCodec {
 
-  abstract class RenderingPolicyMapper[+T <: RenderingPolicy : universe.TypeTag, C : universe.TypeTag] {
-    def path: universe.Type = universe.typeOf[T]
-
-    def reader: RuntimeConfigReader = new RuntimeConfigReaderDefaultImpl(RuntimeConfigReaderCodecs.default.readerCodecs)
-
-    def apply(props: C) : T
-    def instantiate(config : Config) : Try[T] = {
-      withConfig(config).map(apply)
-    }
-
-    def withConfig(config: Config): Try[C] = {
-      Try(reader.readConfigAsCaseClass(config, SafeType0.get[C])).flatMap(any => Try(any.asInstanceOf[C]))
-    }
-  }
+  abstract class RenderingPolicyMapper[+T <: RenderingPolicy : universe.TypeTag, C : universe.TypeTag] extends ClassMapper[T, C]
 
   case class NamedRenderingPolicy(id: Symbol, policy: RenderingPolicy, config: Config)
 

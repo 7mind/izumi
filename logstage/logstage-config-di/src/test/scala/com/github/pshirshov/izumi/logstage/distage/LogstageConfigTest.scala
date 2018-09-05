@@ -3,19 +3,16 @@ package com.github.pshirshov.izumi.logstage.distage
 import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, ModuleDef}
-import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigReader, RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy, StringRenderingPolicy}
-import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.RenderingPolicyMapper
-import com.github.pshirshov.izumi.logstage.distage.U.StringPolicy
+import com.github.pshirshov.izumi.logstage.distage.U.{ConsoleSinkConstructor, StringPolicyConstructor}
+import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 import com.typesafe.config.ConfigFactory
 import distage.Injector
 import org.scalatest.WordSpec
 
-//
-case class Foo(print: List[RenderingPolicy])
-
-case class ConfigWrapper(@ConfPath("rendering") foo: Foo)
+case class ConfigWrapper(@ConfPath("logstage") loggerConfig: LoggerConfig)
 
 class LogstageConfigTest extends WordSpec {
   "Logging module for distage" should {
@@ -32,28 +29,34 @@ class LogstageConfigTest extends WordSpec {
       }
 
       val bootstrapModules = Seq(
-        new BootstrapModuleDef {
-          many[RenderingPolicyMapper[_ <: RenderingPolicy, _]].add {
-            new RenderingPolicyMapper[StringRenderingPolicy, StringPolicy] {
-              override def apply(props: StringPolicy): StringRenderingPolicy = {
-                new StringRenderingPolicy(props.options, props.renderingLayout)
-              }
-            }
+        new RenderingPolicyMapperModule[StringRenderingPolicy, StringPolicyConstructor] {
+          override def init(construnctor: StringPolicyConstructor): StringRenderingPolicy = {
+            new StringRenderingPolicy(construnctor.options, construnctor.renderingLayout)
           }
-        }, new LogstageCodecsModule(), configModule)
+        },
+        new LogSinkMapperModule[ConsoleSink, ConsoleSinkConstructor] {
+          override def initLogSink(props: ConsoleSinkConstructor): ConsoleSink = {
+            new ConsoleSink(props.policy)
+          }
+        },
+
+
+        new LogstageCodecsModule(), configModule)
 
 
       val injector = Injector(bootstrapModules: _*)
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
-      assert(context.get[ConfigWrapper].foo.print.size == 2)
+      val wrapper = context.get[ConfigWrapper].loggerConfig
+      println(wrapper)
     }
   }
 }
 
 object U {
 
-  case class StringPolicy(options: RenderingOptions, renderingLayout: Option[String])
+  case class ConsoleSinkConstructor(policy : RenderingPolicy)
+  case class StringPolicyConstructor(options: RenderingOptions, renderingLayout: Option[String])
 
 }
