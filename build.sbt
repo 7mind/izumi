@@ -277,6 +277,9 @@ lazy val logstageConfig = inLogStage.as.module
 
 lazy val logstageConfigDi = inLogStage.as.module
   .depends(logstageConfig, distageConfig)
+  .dependsSeq(Seq(
+    distageCore
+  ).map(_.testOnlyRef))
 
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module

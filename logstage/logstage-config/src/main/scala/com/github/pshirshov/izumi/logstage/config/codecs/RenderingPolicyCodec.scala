@@ -1,91 +1,44 @@
 package com.github.pshirshov.izumi.logstage.config.codecs
 
-import com.github.pshirshov.izumi.fundamentals.typesafe.config.ConfigReader
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy.PolicyConfig
-import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.{NamedRenderingPolicy, RenderingPolicyMapper, _}
+import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0
+import com.github.pshirshov.izumi.fundamentals.typesafe.config.{ConfigReader, RuntimeConfigReader, RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
+import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy}
+import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.{RenderingPolicyMapper, _}
 import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 
 import scala.reflect.runtime.universe
 import scala.util.Try
 
-class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[RenderingPolicy]], policyConfig: ConfigReader[PolicyConfig]) extends ConfigReader[RenderingPolicy] {
-  private val instancesMappers = scala.collection.mutable.HashMap.empty[String, NamedRenderingPolicy]
-  private val mappersMem = scala.collection.mutable.HashMap.empty[String, PolicyConfig => _ <: RenderingPolicy]
-
-  policyMappers.map { m => mappersMem.put(m.path.toString, m.instantiate) }
-
-  def fetchRenderingPolicy(id: String): Option[RenderingPolicy] = {
-    instancesMappers.get(id).map(_.policy)
+class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy, _]]) extends ConfigReader[RenderingPolicy] {
+  private val mappersMem : Map[String, Config => Try[_ <: RenderingPolicy]]= {
+     Map(policyMappers.map(m => (m.path.toString, m.instantiate _)).toSeq :_*)
   }
 
   override def apply(configValue: ConfigValue): Try[RenderingPolicy] = {
     val config = configValue.asInstanceOf[ConfigObject].toConfig
-    val policyIdMaybe = Try(config.getString(policyIdentity)).toOption
-    val result = policyIdMaybe match {
-      case Some(policyId) =>
-        Try(instancesMappers.getOrElseUpdate(policyId, {
-          val (path, cfg) = policyId match {
-            case id if id == defaultPolicyId =>
-              parseAsDefault(config)
-            case _ =>
-              parseAsNamed(config)
-          }
-          instantiatePathAndCfg(cfg, path, policyId).get
-        }))
-      case None =>
-        retrieveDefault
-    }
-    result.map(_.policy)
-  }
-
-  private def parseAsDefault(config: Config): (String, Config) = {
-    parse(config, renderingPolicyFallback, _.getOrElse(throw new IllegalArgumentException("missed params property for default rendering policy")))
-  }
-
-  private def parseAsNamed(config: Config): (String, Config) = {
-    parse(config, renderingPolicyFallback, {
-      paramsCfg =>
-        val curParams = paramsCfg.getOrElse(ConfigFactory.empty())
-        val defaultPolicy = instancesMappers(defaultPolicyId)
-        val cfg = curParams.withFallback(defaultPolicy.config).resolve()
-        cfg
-    })
-  }
-
-  private def parse(config: Config,
-                    fallBackOnPath: Try[String] => String,
-                    fallBackOnParams: Try[Config] => Config): (String, Config) = {
-    val path = fallBackOnPath(Try(config.getString(renderingPath)))
-    val params = fallBackOnParams(Try(config.getConfig(renderingParams)))
-    (path, params)
-  }
-
-  private val renderingPolicyFallback: Try[String] => String = _.getOrElse(throw new IllegalArgumentException("Rendering policy full name should be defined"))
-
-
-  private def instantiatePathAndCfg(config: Config, path: String, id: String): Try[NamedRenderingPolicy] = {
+    val path = Try(config.getString(renderingPath)).getOrElse(throw new IllegalArgumentException("from config to instance mapper not found. Maybe you forgot to add?"))
+    val params = Try(config.getConfig(renderingParams)).getOrElse(ConfigFactory.empty())
     val mapper = mappersMem.getOrElse(path, throw new IllegalArgumentException("from config to instance mapper not found. Maybe you forgot to add?"))
-    policyConfig.apply(config.root()).map {
-      cfg => instancesMappers.getOrElseUpdate(id, NamedRenderingPolicy(mapper(cfg), config))
-    }
+    mapper(params)
   }
 
-  private def retrieveDefault: Try[NamedRenderingPolicy] = {
-    Try {
-      instancesMappers
-        .getOrElse(defaultPolicyId,
-          throw new IllegalArgumentException("default rendering policy was not found"))
-    }
-  }
 }
 
 object RenderingPolicyCodec {
 
-  abstract class RenderingPolicyMapper[+T <: RenderingPolicy : universe.TypeTag] {
+  abstract class RenderingPolicyMapper[+T <: RenderingPolicy : universe.TypeTag, C : universe.TypeTag] {
     def path: universe.Type = universe.typeOf[T]
 
-    def instantiate(policyConfig: PolicyConfig): T
+    def reader: RuntimeConfigReader = new RuntimeConfigReaderDefaultImpl(RuntimeConfigReaderCodecs.default.readerCodecs)
+
+    def apply(props: C) : T
+    def instantiate(config : Config) : Try[T] = {
+      withConfig(config).map(apply)
+    }
+
+    def withConfig(config: Config): Try[C] = {
+      Try(reader.readConfigAsCaseClass(config, SafeType0.get[C])).flatMap(any => Try(any.asInstanceOf[C]))
+    }
   }
 
   case class NamedRenderingPolicy(id: Symbol, policy: RenderingPolicy, config: Config)
@@ -97,8 +50,6 @@ object RenderingPolicyCodec {
     }
   }
 
-  private final val defaultPolicyId = "default"
-  private final val policyIdentity = "id"
   private final val renderingPath = "path"
   private final val renderingParams = "params"
 }
