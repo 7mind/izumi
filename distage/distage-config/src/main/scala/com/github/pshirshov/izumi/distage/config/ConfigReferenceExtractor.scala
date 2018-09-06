@@ -9,6 +9,10 @@ import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
+/**
+  * Finds parameters of bindings with @Conf, @ConfPath or @AutoConf annotations and replaces their keys with Conf IdKeys
+  * To then be processed by `ConfigProvider` plan rewriter
+  */
 class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvider.Runtime) extends PlanningHook {
 
   import u._

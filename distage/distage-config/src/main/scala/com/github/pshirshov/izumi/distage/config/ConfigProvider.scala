@@ -27,7 +27,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
             translate(ci.imp, requirement)
           } catch {
             case NonFatal(t) =>
-              TranslationResult.Failure(ci.imp, t)
+              TranslationResult.Failure(ci.imp, config.config.origin, t)
           }
 
         case s =>
@@ -54,10 +54,6 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
 
     val loaded = results.collect({ case (path, scala.util.Success(value)) => (path, value) })
 
-    if (loaded.isEmpty) {
-
-    }
-
     loaded.headOption match {
       case Some((loadedPath, loadedValue)) =>
         try {
@@ -74,12 +70,12 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
           TranslationResult.Success(ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product), op.origin))
         } catch {
           case NonFatal(t) =>
-            TranslationResult.ExtractionFailure(op, step.targetType, loadedPath.toPath, loadedValue, t)
+            TranslationResult.ExtractionFailure(op, step.targetType, loadedPath.toPath, loadedValue, config.config.origin, t)
         }
 
       case None =>
         val failures = results.collect({ case (path, scala.util.Failure(f)) => (path, f) })
-        TranslationResult.MissingConfigValue(op, failures)
+        TranslationResult.MissingConfigValue(op, failures, config.config.origin)
     }
   }
 
