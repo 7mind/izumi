@@ -8,8 +8,6 @@ import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
 import scala.reflect.macros.{TypecheckException, blackbox}
 
-class IxEitherT[F[_], A, B]
-
 // TODO: benchmark difference between running implicit search inside macro vs. return tree with recursive implicit macro expansion
 // TODO: benchmark difference between searching all arguments vs. merge strategy
 // TODO: benchmark ProviderMagnet vs. identity macro vs. normal function

@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil.deannotate
 import com.github.pshirshov.izumi.fundamentals.reflection.{SafeType0, WithTags}
 
 trait WithDISafeType {
