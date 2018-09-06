@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.logstage.api.config.LoggerConfig
+import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy, StringRenderingPolicy}
 import com.github.pshirshov.izumi.logstage.distage.U.{ConsoleSinkConstructor, StringPolicyConstructor}
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
@@ -12,7 +13,8 @@ import com.typesafe.config.ConfigFactory
 import distage.Injector
 import org.scalatest.WordSpec
 
-case class ConfigWrapper(@ConfPath("logstage") loggerConfig: LoggerConfig)
+case class SinksList(sinks : Map[String, LogSink])
+case class ConfigWrapper(@ConfPath("logstage") sinksList: SinksList)
 
 class LogstageConfigTest extends WordSpec {
   "Logging module for distage" should {
@@ -45,10 +47,10 @@ class LogstageConfigTest extends WordSpec {
 
 
       val injector = Injector(bootstrapModules: _*)
-      val plan = injector.plan(definition)
+      val plan = injector.plan(Seq(definition, new LoggerConfigModule).overrideLeft)
       val context = injector.produce(plan)
 
-      val wrapper = context.get[ConfigWrapper].loggerConfig
+      val wrapper = context.get[ConfigWrapper].sinksList
       println(wrapper)
     }
   }
