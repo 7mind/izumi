@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigRea
 import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.config.codecs.LoggerPathConfigCodec
+import com.github.pshirshov.izumi.logstage.distage.LoggerConfigModule.Entries
 
 class LoggerConfigModule() extends ModuleDef {
   make[LoggerConfig].from {
@@ -20,4 +21,7 @@ class LoggerConfigModule() extends ModuleDef {
   }
 }
 
-case class Entries(sinks : Map[String, LogSink])
+object LoggerConfigModule {
+  case class Entries(sinks : Map[String, LogSink])
+}
+

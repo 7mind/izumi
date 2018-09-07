@@ -8,7 +8,7 @@ import scala.reflect.runtime.universe
 
 abstract class RenderingPolicyMapperModule[+T <: RenderingPolicy : universe.TypeTag, C : universe.TypeTag] extends BootstrapModuleDef {
 
-  def init(construnctor : C) : T
+  def init(constructor : C) : T
 
   many[RenderingPolicyMapper[_ <: RenderingPolicy, _]].add {
     new RenderingPolicyMapper[T, C] {

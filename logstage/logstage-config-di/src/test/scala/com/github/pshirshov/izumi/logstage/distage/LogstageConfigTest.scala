@@ -186,7 +186,7 @@ class LogstageConfigTest extends WordSpec {
           }
         },
         new LogSinkMapperModule[ConsoleSink, ConsoleSinkConstructor] {
-          override def initLogSink(props: ConsoleSinkConstructor): ConsoleSink = {
+          override def init(props: ConsoleSinkConstructor): ConsoleSink = {
             new ConsoleSink(props.policy)
           }
         }
@@ -283,7 +283,7 @@ class LogstageConfigTest extends WordSpec {
           }
         },
         new LogSinkMapperModule[ConsoleSink, ConsoleSinkConstructor] {
-          override def initLogSink(props: ConsoleSinkConstructor): ConsoleSink = {
+          override def init(props: ConsoleSinkConstructor): ConsoleSink = {
             new ConsoleSink(props.policy)
           }
         }

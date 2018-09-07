@@ -13,7 +13,7 @@ import scala.reflect.runtime.universe
 
 abstract class LogSinkMapperModule[T <: LogSink : universe.TypeTag, C: universe.TypeTag] extends BootstrapModuleDef {
 
-  def initLogSink(props: C): T
+  def init(constructor: C): T
 
   many[LogSinkMapper[_ <: LogSink, _]].add {
 
@@ -23,7 +23,7 @@ abstract class LogSinkMapperModule[T <: LogSink : universe.TypeTag, C: universe.
 
         new LogSinkMapper[T, C] {
 
-          override def apply(props: C): T = initLogSink(props)
+          override def apply(props: C): T = init(props)
 
           override def extraCodecs: Map[SafeType0[universe.type], ConfigReader[_]] = super.extraCodecs ++ Map(
             SafeType0.get[RenderingPolicy] -> policyCodec

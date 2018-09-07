@@ -273,14 +273,10 @@ lazy val logstageDi = inLogStage.as.module
   ).map(_.testOnlyRef))
 
 lazy val logstageConfig = inLogStage.as.module
-  .depends(fundamentalsTypesafeConfig, logstageApiLogger, logstageRenderingCirce)
+  .depends(fundamentalsTypesafeConfig, logstageApiLogger)
 
 lazy val logstageConfigDi = inLogStage.as.module
   .depends(logstageConfig, distageConfig)
-  .dependsSeq(Seq(
-    distageCore
-  ).map(_.testOnlyRef))
-
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
   .depends(logstageApiLogger)
