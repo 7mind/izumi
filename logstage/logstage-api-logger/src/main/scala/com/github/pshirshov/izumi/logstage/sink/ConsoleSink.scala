@@ -15,11 +15,11 @@ object ConsoleSink {
   final val ColoredConsoleSink = new ConsoleSink(coloringPolicy())
   final val SimpleConsoleSink = new ConsoleSink(simplePolicy())
 
-  protected[logstage] def coloringPolicy(renderingLayout : Option[String] = None): StringRenderingPolicy = {
+  protected[logstage] def coloringPolicy(renderingLayout: Option[String] = None): StringRenderingPolicy = {
     new StringRenderingPolicy(RenderingOptions(), renderingLayout)
   }
 
-  protected[logstage] def simplePolicy(renderingLayout : Option[String] = None): StringRenderingPolicy = {
+  protected[logstage] def simplePolicy(renderingLayout: Option[String] = None): StringRenderingPolicy = {
     new StringRenderingPolicy(RenderingOptions(withExceptions = false, withColors = false), renderingLayout)
   }
 }
