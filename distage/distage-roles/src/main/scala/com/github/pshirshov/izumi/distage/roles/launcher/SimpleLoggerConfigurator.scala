@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathC
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
-import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
+import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl, StaticLogRouter}
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, QueueingSink}
 import com.typesafe.config.Config
@@ -44,7 +44,7 @@ class SimpleLoggerConfigurator(logger: IzLogger) {
 
     // TODO: here we may read log configuration from config file
     val result = new ConfigurableLogRouter(
-      new LogConfigServiceStaticImpl(
+      new LogConfigServiceImpl(
         LoggerConfig(LoggerPathConfig(root, sinks), levels)
       )
     )
