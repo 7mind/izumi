@@ -10,8 +10,8 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 import scala.reflect.runtime.universe
 import scala.util.Try
 
-class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy, _]]) extends ConfigReader[RenderingPolicy] {
-  private val mappersMem : Map[String, Config => Try[_ <: RenderingPolicy]]= {
+class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[RenderingPolicy, _]]) extends ConfigReader[RenderingPolicy] {
+  private val mappersMem : Map[String, Config => Try[RenderingPolicy]]= {
      Map(policyMappers.map(m => (m.path.toString, m.instantiate _)).toSeq :_*)
   }
 

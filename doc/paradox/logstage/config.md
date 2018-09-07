@@ -228,7 +228,7 @@ logstage {
     4.2 Add `LoggerConfigModule` to app modules
     
     ```
-    val modules = Seq(..., new LoggerConfigModule())
+    val modules = Seq(..., new LoggerConfigModule ())
     ```
     
     4.2 Enjoy!

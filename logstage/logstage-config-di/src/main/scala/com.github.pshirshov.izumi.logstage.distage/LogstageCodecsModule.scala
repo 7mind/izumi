@@ -15,16 +15,16 @@ import scala.reflect.runtime.{universe => ru}
 
 trait LogstageCodecsModule extends BootstrapModuleDef {
 
-  many[RenderingPolicyMapper[_ <: RenderingPolicy, _]]
-  many[LogSinkMapper[_ <: LogSink, _]]
+  many[RenderingPolicyMapper[RenderingPolicy, _]]
+  many[LogSinkMapper[LogSink, _]]
 
   make[LogSinkCodec].from {
-    logsinkMappers: Set[LogSinkMapper[_ <: LogSink, _]] =>
+    logsinkMappers: Set[LogSinkMapper[LogSink, _]] =>
       new LogSinkCodec(logsinkMappers)
   }
 
   make[RenderingPolicyCodec].from {
-    policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy, _]] =>
+    policyMappers: Set[RenderingPolicyMapper[RenderingPolicy, _]] =>
       new RenderingPolicyCodec(policyMappers)
   }
 
@@ -45,8 +45,8 @@ trait LogstageCodecsModule extends BootstrapModuleDef {
   }
 
   def bindLogSinkMapper[T <: LogSink : ru.TypeTag, C: ru.TypeTag](f: C => T): Unit = {
-    many[LogSinkMapper[_ <: LogSink, _]].add {
-      policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy, _]] =>
+    many[LogSinkMapper[LogSink, _]].add {
+      policyMappers: Set[RenderingPolicyMapper[RenderingPolicy, _]] =>
         val policyCodec = new RenderingPolicyCodec(policyMappers)
         new LogSinkMapper[T, C] {
           override def apply(props: C): T = f(props)
@@ -59,7 +59,7 @@ trait LogstageCodecsModule extends BootstrapModuleDef {
   }
 
   def bindRenderingPolicyMapper[T <: RenderingPolicy : ru.TypeTag, C: ru.TypeTag](f: C => T): Unit = {
-    many[RenderingPolicyMapper[_ <: RenderingPolicy, _]].add {
+    many[RenderingPolicyMapper[RenderingPolicy, _]].add {
       new RenderingPolicyMapper[T, C] {
         override def apply(props: C): T = {
           f(props)
