@@ -36,7 +36,7 @@ class LogstageConfigTest extends WordSpec {
       val configModule = new ConfigModule(AppConfig(config))
 
       val bootstrapModules = Seq(
-        new LogstageCodecsModule(), configModule
+        new LogstageCodecsModule {}, configModule
       )
 
       val goodDef = new ModuleDef {
@@ -95,12 +95,11 @@ class LogstageConfigTest extends WordSpec {
       val configModule = new ConfigModule(AppConfig(config))
 
       val bootstrapModules = Seq(
-        new RenderingPolicyMapperModule[TestRenderingPolicy, TestRenderingPolicyConstructor] {
-          override def init(construnctor: TestRenderingPolicyConstructor): TestRenderingPolicy = {
-            new TestRenderingPolicy(construnctor.foo, construnctor.bar)
+        new LogstageCodecsModule {
+          bindRenderingPolicyMapper[TestRenderingPolicy, TestRenderingPolicyConstructor] {
+            c => new TestRenderingPolicy(c.foo, c.bar)
           }
-        },
-        new LogstageCodecsModule()
+        }
         , configModule
       )
 
@@ -179,19 +178,20 @@ class LogstageConfigTest extends WordSpec {
         make[ConfigWrapper]
       }
 
-      val bootstrapModules = Seq(
-        new RenderingPolicyMapperModule[StringRenderingPolicy, StringPolicyConstructor] {
-          override def init(construnctor: StringPolicyConstructor): StringRenderingPolicy = {
-            new StringRenderingPolicy(construnctor.options, construnctor.renderingLayout)
-          }
-        },
-        new LogSinkMapperModule[ConsoleSink, ConsoleSinkConstructor] {
-          override def init(props: ConsoleSinkConstructor): ConsoleSink = {
-            new ConsoleSink(props.policy)
-          }
+      val codecsModule = new LogstageCodecsModule {
+
+        bindRenderingPolicyMapper[StringRenderingPolicy, StringPolicyConstructor] {
+          c => new StringRenderingPolicy(c.options, c.renderingLayout)
         }
-        , new LogstageCodecsModule()
-        , configModule
+
+        bindLogSinkMapper[ConsoleSink, ConsoleSinkConstructor] {
+          c => new ConsoleSink(c.policy)
+        }
+
+      }
+
+      val bootstrapModules = Seq(
+        codecsModule, configModule
       )
 
       withCtx(bootstrapModules, definition, new LoggerConfigModule).asBad()
@@ -277,17 +277,14 @@ class LogstageConfigTest extends WordSpec {
       }
 
       val bootstrapModules = Seq(
-        new RenderingPolicyMapperModule[StringRenderingPolicy, StringPolicyConstructor] {
-          override def init(construnctor: StringPolicyConstructor): StringRenderingPolicy = {
-            new StringRenderingPolicy(construnctor.options, construnctor.renderingLayout)
+        new LogstageCodecsModule {
+          bindRenderingPolicyMapper[StringRenderingPolicy, StringPolicyConstructor] {
+            c => new StringRenderingPolicy(c.options, c.renderingLayout)
           }
-        },
-        new LogSinkMapperModule[ConsoleSink, ConsoleSinkConstructor] {
-          override def init(props: ConsoleSinkConstructor): ConsoleSink = {
-            new ConsoleSink(props.policy)
+          bindLogSinkMapper[ConsoleSink, ConsoleSinkConstructor] {
+            c => new ConsoleSink(c.policy)
           }
         }
-        , new LogstageCodecsModule()
         , configModule
       )
 

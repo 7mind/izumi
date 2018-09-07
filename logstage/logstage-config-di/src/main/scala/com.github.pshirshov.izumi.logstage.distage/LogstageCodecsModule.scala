@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.logstage.distage
 
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, ModuleDefDSL}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0
 import com.github.pshirshov.izumi.fundamentals.typesafe.config.{ConfigReader, RuntimeConfigReaderCodecs}
 import com.github.pshirshov.izumi.logstage.api.Log
@@ -12,7 +13,7 @@ import com.github.pshirshov.izumi.logstage.config.codecs.{LogSinkCodec, Logstage
 
 import scala.reflect.runtime.{universe => ru}
 
-class LogstageCodecsModule() extends BootstrapModuleDef {
+trait LogstageCodecsModule extends BootstrapModuleDef {
 
   many[RenderingPolicyMapper[_ <: RenderingPolicy, _]]
   many[LogSinkMapper[_ <: LogSink, _]]
@@ -41,6 +42,30 @@ class LogstageCodecsModule() extends BootstrapModuleDef {
           )
         }
       }
+  }
+
+  def bindLogSinkMapper[T <: LogSink : ru.TypeTag, C: ru.TypeTag](f: C => T): Unit = {
+    many[LogSinkMapper[_ <: LogSink, _]].add {
+      policyMappers: Set[RenderingPolicyMapper[_ <: RenderingPolicy, _]] =>
+        val policyCodec = new RenderingPolicyCodec(policyMappers)
+        new LogSinkMapper[T, C] {
+          override def apply(props: C): T = f(props)
+
+          override def extraCodecs: Map[SafeType0[ru.type], ConfigReader[_]] = super.extraCodecs ++ Map(
+            SafeType0.get[RenderingPolicy] -> policyCodec
+          )
+        }
+    }
+  }
+
+  def bindRenderingPolicyMapper[T <: RenderingPolicy : ru.TypeTag, C: ru.TypeTag](f: C => T): Unit = {
+    many[RenderingPolicyMapper[_ <: RenderingPolicy, _]].add {
+      new RenderingPolicyMapper[T, C] {
+        override def apply(props: C): T = {
+          f(props)
+        }
+      }
+    }
   }
 
 }
