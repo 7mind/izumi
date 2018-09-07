@@ -13,7 +13,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvide
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CglibProxyProvider
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
@@ -69,9 +68,11 @@ object DefaultBootstrapContext {
 
     new ProvisionerDefaultImpl(
       new SetStrategyDefaultImpl
+
       , new ProxyStrategyFailingImpl
       , new FactoryStrategyFailingImpl
       , new TraitStrategyFailingImpl
+
       , new FactoryProviderStrategyDefaultImpl(loggerHook)
       , new ProviderStrategyDefaultImpl
       , new ClassStrategyDefaultImpl(symbolIntrospector)

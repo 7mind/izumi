@@ -7,24 +7,24 @@ import com.github.pshirshov.izumi.fundamentals.typesafe.config.{ConfigReader, Ru
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
-import com.github.pshirshov.izumi.logstage.config.codecs.LogSinkCodec.LogSinkMapper
-import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.RenderingPolicyMapper
+import com.github.pshirshov.izumi.logstage.config.codecs.LogSinkCodec.{LogSinkMapper, LogSinkMapperImpl}
+import com.github.pshirshov.izumi.logstage.config.codecs.RenderingPolicyCodec.{RenderingPolicyMapper, RenderingPolicyMapperImpl}
 import com.github.pshirshov.izumi.logstage.config.codecs.{LogSinkCodec, LogstagePrimitiveCodecs, RenderingPolicyCodec}
 
 import scala.reflect.runtime.{universe => ru}
 
 trait LogstageCodecsModule extends BootstrapModuleDef {
 
-  many[RenderingPolicyMapper[RenderingPolicy, _]]
-  many[LogSinkMapper[LogSink, _]]
+  many[RenderingPolicyMapper[RenderingPolicy]]
+  many[LogSinkMapper[LogSink]]
 
   make[LogSinkCodec].from {
-    logsinkMappers: Set[LogSinkMapper[LogSink, _]] =>
+    logsinkMappers: Set[LogSinkMapper[LogSink]] =>
       new LogSinkCodec(logsinkMappers)
   }
 
   make[RenderingPolicyCodec].from {
-    policyMappers: Set[RenderingPolicyMapper[RenderingPolicy, _]] =>
+    policyMappers: Set[RenderingPolicyMapper[RenderingPolicy]] =>
       new RenderingPolicyCodec(policyMappers)
   }
 
@@ -45,10 +45,10 @@ trait LogstageCodecsModule extends BootstrapModuleDef {
   }
 
   def bindLogSinkMapper[T <: LogSink : ru.TypeTag, C: ru.TypeTag](f: C => T): Unit = {
-    many[LogSinkMapper[LogSink, _]].add {
-      policyMappers: Set[RenderingPolicyMapper[RenderingPolicy, _]] =>
+    many[LogSinkMapper[LogSink]].add {
+      policyMappers: Set[RenderingPolicyMapper[RenderingPolicy]] =>
         val policyCodec = new RenderingPolicyCodec(policyMappers)
-        new LogSinkMapper[T, C] {
+        new LogSinkMapperImpl[T, C] {
           override def apply(props: C): T = f(props)
 
           override def extraCodecs: Map[SafeType0[ru.type], ConfigReader[_]] = super.extraCodecs ++ Map(
@@ -59,8 +59,8 @@ trait LogstageCodecsModule extends BootstrapModuleDef {
   }
 
   def bindRenderingPolicyMapper[T <: RenderingPolicy : ru.TypeTag, C: ru.TypeTag](f: C => T): Unit = {
-    many[RenderingPolicyMapper[RenderingPolicy, _]].add {
-      new RenderingPolicyMapper[T, C] {
+    many[RenderingPolicyMapper[RenderingPolicy]].add {
+      new RenderingPolicyMapperImpl[T, C] {
         override def apply(props: C): T = {
           f(props)
         }
