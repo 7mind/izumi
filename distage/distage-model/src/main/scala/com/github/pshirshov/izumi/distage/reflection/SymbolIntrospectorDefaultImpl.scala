@@ -8,8 +8,19 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
   override def selectConstructor(symb: u.SafeType): SelectedConstructor = {
     val selectedConstructor = selectConstructorMethod(symb)
+    val originalParamListTypes = selectedConstructor.paramLists.map(_.map(_.typeSignature))
     val paramLists = selectedConstructor.typeSignatureIn(symb.tpe).paramLists
-    SelectedConstructor(selectedConstructor, paramLists)
+    // Hack due to .typeSignatureIn throwing out type annotations...
+    val paramsWithAnnos = originalParamListTypes.zip(paramLists).map {
+      case (origTypes, params) =>
+        origTypes.zip(params).map {
+          case (o: u.u.AnnotatedTypeApi, p) =>
+            u.SymbolInfo.Runtime(p, symb, o.annotations)
+          case (_, p) =>
+            u.SymbolInfo.Runtime(p, symb)
+        }
+    }
+    SelectedConstructor(selectedConstructor, paramsWithAnnos)
   }
 
   override def selectConstructorMethod(tpe: u.SafeType): u.MethodSymb = {

@@ -1,13 +1,14 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
 import com.github.pshirshov.izumi.distage.fixtures.ProviderCases.ProviderCase1
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u.TypeTag
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage._
 import org.scalatest.WordSpec
 
 import scala.language.higherKinds
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 class ProviderMagnetTest extends WordSpec {
   import ProviderCase1._
@@ -168,6 +169,13 @@ class ProviderMagnetTest extends WordSpec {
 
     "handle case class .apply references with type annotations" in {
       val fn = ProviderMagnet.apply(ClassTypeAnn.apply _).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
+      assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
+    }
+
+    "handle generic case class .apply references with type annotations" in {
+      val fn = ProviderMagnet.apply(ClassTypeAnnT.apply[String, Int] _).get
 
       assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))

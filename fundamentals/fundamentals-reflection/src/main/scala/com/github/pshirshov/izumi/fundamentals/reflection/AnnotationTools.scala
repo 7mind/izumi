@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.fundamentals.reflection
 
 import scala.reflect.api.Universe
 
-// TODO: collect method, better api
 object AnnotationTools {
   def find(u: Universe)(annType: u.Type, symb: u.Symbol): Option[u.Annotation] = (
     findSymbolAnnotation(u)(annType, symb)

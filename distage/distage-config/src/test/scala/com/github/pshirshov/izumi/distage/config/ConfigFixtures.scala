@@ -42,7 +42,7 @@ object ConfigFixtures {
     def make(): FullyAbstractGenericConfProduct[T]
   }
 
-  case class TestDependency(@AutoConf testConf: TestConf)
+  case class TestDependency(testConf: TestConf @AutoConf)
 
   trait TestTrait {
     def x: TestDependency

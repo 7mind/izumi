@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse,
 trait SymbolIntrospector {
   val u: DIUniverse
 
-  case class SelectedConstructor(constructorSymbol: u.MethodSymb, arguments: List[List[u.Symb]])
+  case class SelectedConstructor(constructorSymbol: u.MethodSymb, arguments: List[List[u.SymbolInfo]])
 
   def selectConstructorMethod(tpe: u.SafeType): u.MethodSymb
 
