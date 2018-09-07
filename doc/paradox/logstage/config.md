@@ -100,8 +100,13 @@ So, what you need to do to use logstage declarative config:
 2) defined next bootstrap modules :
     
     - `LogstageCodecsModule()` - it will bind rendering policy and logsinks mappers and all necessary logstage runtime codecs
-    - for each RenderingPolicy you must define `RenderingPolicyMapperModule()`. You need to implement function to instantiate RenderingPolicy instance from constructor case class
-    - for each LogSink you must define `LogSinkMapperModule()`. You need to implement function to instantiate LogSink instance from constructor case class
+    
+    Each `RenderingPolicy` and `LogSink` you may bind by calling follow commands inside LogstageCodecsModule:
+        
+        bindLogSinkMapper[T <: LogSink : ru.TypeTag, C: ru.TypeTag](f: C => T)
+        
+        bindRenderingPolicyMapper[T <: RenderingPolicy : ru.TypeTag, C: ru.TypeTag](f: C => T)
+    
 
 3) defined application modules: 
     
@@ -119,3 +124,124 @@ So, what you need to do to use logstage declarative config:
     final case class LoggerConfig(root : LoggerPathConfig, entries : Map[String, LoggerPathConfig])
     
     ```
+
+## Example 
+
+1. Let's define our sinks and policies
+
+    1.1 DummyLogSink
+    
+    ```
+    class DummyLogSink(policy: RenderingPolicy) extends LogSink {
+       override def flush(e: Log.Entry): Unit = {
+         // do smth
+       }
+    }
+    ```
+    
+    1.2 DummyRenderingPolicy
+    
+    ```
+    class DummyRenderingPolicy(foo: Int, bar: Option[String]) extends RenderingPolicy {
+      override def render(entry: Log.Entry): String = entry.toString
+    }
+    ```
+
+2. Let's define out logstage reference config 
+
+```
+logstage {
+
+   // include izumi sdk settings
+   include "logstage-reference.conf"
+
+   // custom overrides 
+   
+   sinks = [
+      "default" = {
+        path = "path.to.DummyLogSink"
+        params {
+          policy {
+            path = "path.to.DummyRenderingPolicy"
+            params {
+              foo = 1024
+              bar = "your_string_parameter"
+            }
+          }
+        }
+      }
+   ]
+   
+    root {
+       threshold = "info"
+       sinks = [
+         "default"
+       ]
+     }
+   
+     entries = {
+        "path.for.debug.only.*" = debug
+     }
+}
+
+```
+
+3. So, for now we need to specify case classes constructors for out DummyLogSink and DummyRenderingPolicy for automatic parsing
+
+    3.1 DummyRenderingPolicyConstructor
+    
+    ```
+    case class DummyRenderingPolicyConstructor(foo : Int, bar: Option[String])
+    ```
+    
+    3.2 DummyLogSinkConstructor
+        
+    ```
+    case class DummyLogSinkConstructor(policy : RenderingPolicy)
+    ```
+
+4. now we need to configure out DI for loggerConfigUsage
+
+    4.1 Define bootsrap module. Here you can bind all mappers for custom Policies and Logsinks:
+    
+    ```
+    val logstageBootstrapModule = new LogstageCodecsModule {
+        
+        // bind our rendering policy
+        
+        bindRenderingPolicyMapper[DummyRenderingPolicy, DummyRenderingPolicyConstructor]{
+          c => 
+            new DummyRenderingPolicy(c.foo, c.bar)
+        }
+        
+        // bind our logsink
+        
+        bindLogSinkMapper[DummyLogSink, DummyLogSinkConstructor] {
+          c =>  new DummyLogSink(c.policy)
+        }
+    }
+    
+    val bootstrapModules = Seq(..., logstageBootstrapModule)
+
+    ```
+    
+    4.2 Add `LoggerConfigModule` to app modules
+    
+    ```
+    val modules = Seq(..., new LoggerConfigModule())
+    ```
+    
+    4.2 Enjoy!
+    
+    ```
+    // Basic locator setup
+    
+    val injector = Injector(bootstapModules: _*)
+    val plan = injector.plan(modules.toList.overrideLeft)
+    val locator = injector.produce(plan)
+    
+    // retrieve binded config
+    val cfg = locator.get[LoggerConfig]
+    ```
+    
+
