@@ -1,16 +1,17 @@
 package izumi.distage.impl
 
 import distage.{SafeType, Tag}
-import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
+import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.{OptionT, id}
 import izumi.distage.model.definition.With
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.WordSpec
+import org.scalatest.exceptions.TestFailedException
 
 trait X[Y] {
-  type Z = Y
+  type Z = id[Y]
 
   implicit def tagZ: Tag[Z]
 }
@@ -20,7 +21,24 @@ trait ZY {
   val x: String = "5"
 
   object y
+}
 
+final case class testTag[T: Tag]() {
+  type X[A] = Either[Int, A]
+  type Y = T
+  val res = Tag[X[Y {}]]
+}
+
+// https://github.com/scala/bug/issues/11139
+final case class testTag2[T/*: Tag*/ ]() {
+  type X = List[T]
+  val res = Tag[X]
+}
+
+// https://github.com/scala/bug/issues/111397
+final case class testTag3[F[_]/* : TagK*/ ]() {
+  type X = OptionT[F, Int]
+  val res = SafeType.get[X]
 }
 
 class TagTest extends WordSpec with X[String] {
@@ -39,15 +57,10 @@ class TagTest extends WordSpec with X[String] {
   final val str = "str"
 
   trait T1[A, B, C, D, E, F[_]]
-
   trait T2[A, B, C[_[_], _], D[_], E]
-
   trait Test[A, dafg, adfg, LS, L[_], SD, GG[A] <: L[A], ZZZ[_, _], S, SDD, TG]
-
   trait Y[V] extends X[V]
-
   case class ZOBA[A, B, C](value: Either[B, C])
-
   type Swap[A, B] = Either[B, A]
   type Id[A] = A
   type Id1[F[_], A] = F[A]
@@ -144,6 +157,30 @@ class TagTest extends WordSpec with X[String] {
       }
 
       assert(testTag[String].toSafe == safe[Either[Int, String]])
+
+      def testTag2[T: Tag] = {
+        type X = List[T]
+
+        Tag[X]
+      }
+
+      assert(testTag2[String].toSafe == safe[List[String]])
+
+      def testTag3[F[_] : TagK] = {
+        type X = OptionT[F, Int]
+
+        Tag[X]
+      }
+
+      assert(testTag3[List].toSafe == safe[OptionT[List, Int]])
+    }
+
+    "progression test: Can't dealias transparent type members when a tag for them is summoned _inside_ the class due to a scala bug https://github.com/scala/bug/issues/11139" in {
+      intercept[TestFailedException] {
+        assert(testTag[String]().res.toSafe == safe[Either[Int, String]])
+        assert(testTag2[String]().res.toSafe == safe[List[String]])
+        assert(testTag3[List]().res == safe[OptionT[List, Int]])
+      }
     }
 
     "Work for an abstract type with available TagK when obscured by empty refinement" in {
@@ -159,10 +196,6 @@ class TagTest extends WordSpec with X[String] {
       }
 
       assert(testTagK[Set, Int].toSafe == safe[Set[Int]])
-    }
-
-    "xxx" in {
-
     }
 
     "Tag.auto.T kind inference macro works for known cases" in {
@@ -233,13 +266,11 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "handle Id1 type lambda" in {
-
       assert(TagTK[Id1].tpe.tpe.toString.contains(".Id1"))
     }
 
     "Assemble from higher than TagKK tags" in {
       def tag[T[_[_], _] : TagTK, F[_] : TagK, A: Tag] = Tag[T[F, A]]
-
 
       assert(tag[OptionT, Option, Int].toSafe == safe[OptionT[Option, Int]])
     }
@@ -257,11 +288,8 @@ class TagTest extends WordSpec with X[String] {
 
       val t1: T1 {
         type G[T] = List[T]
-
         type C[A0, B0] = Either[A0, B0]
-
         type A = Int
-
         type B = Byte
       } = new T1 {
         type G[T] = List[T]
