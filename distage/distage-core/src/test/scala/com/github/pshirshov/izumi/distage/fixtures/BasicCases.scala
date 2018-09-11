@@ -111,4 +111,12 @@ Forest fire, climbin' higher, real life, it can wait""")
     )
   }
 
+  object BasicCase4 {
+    trait Dependency
+
+    class TestClass(tyAnnDependency: Dependency @Id("special"))
+
+    case class ClassTypeAnnT[A, B](val x: A @Id("classtypeann1"), y: B @Id("classtypeann2"))
+  }
+
 }

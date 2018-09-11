@@ -68,13 +68,15 @@ object DefaultBootstrapContext {
 
     new ProvisionerDefaultImpl(
       new SetStrategyDefaultImpl
+
       , new ProxyStrategyFailingImpl
       , new FactoryStrategyFailingImpl
       , new TraitStrategyFailingImpl
+
       , new FactoryProviderStrategyDefaultImpl(loggerHook)
       , new ProviderStrategyDefaultImpl
       , new ClassStrategyDefaultImpl(symbolIntrospector)
-      , new ImportStrategyFailingImpl
+      , new ImportStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
       , new ProvisioningFailureInterceptorDefaultImpl
     )

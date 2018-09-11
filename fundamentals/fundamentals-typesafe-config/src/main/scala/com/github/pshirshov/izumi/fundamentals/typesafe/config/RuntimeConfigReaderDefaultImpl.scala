@@ -13,7 +13,7 @@ import scala.util.{Failure, Try}
 
 class RuntimeConfigReaderDefaultImpl
 (
-  val codecs: Map[SafeType0[ru.type], ConfigReader[_]]
+  override val codecs: Map[SafeType0[ru.type], ConfigReader[_]]
 ) extends RuntimeConfigReader {
 
   val mirror: ru.Mirror = currentMirror

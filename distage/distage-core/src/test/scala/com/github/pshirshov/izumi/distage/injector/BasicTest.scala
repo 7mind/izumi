@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBind
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, Id, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
+import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
 import distage._
 import org.scalatest.WordSpec
 
@@ -234,4 +235,29 @@ class BasicTest extends WordSpec with MkInjector {
     assert(context.get[TestCaseClass2].a.z == context.get[String]("verse"))
   }
 
+  "preserve type annotations" in {
+    import BasicCase4._
+
+    val definition = new ModuleDef {
+      make[Dependency].named("special")
+      make[TestClass]
+    }
+
+    val injector = mkInjector()
+
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    assert(context.get[TestClass] != null)
+  }
+
+  "handle reflected constructor references" in {
+    import BasicCase4._
+
+    val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
+    val safeType = SafeType.get[ClassTypeAnnT[String, Int]]
+    val constructor = symbolIntrospector.selectConstructor(safeType)
+
+    assert(constructor.arguments.flatten.map(_.annotations).forall(_.nonEmpty))
+  }
 }

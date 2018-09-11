@@ -23,7 +23,7 @@ object ProviderCases {
       { x: Long @Id("valsbtypeann3") => _ => x }
 
     case class ClassArgAnn(@Id("classargann1") x: String, @Id("classargann2") y: Int)
-    case class ClassTypeAnn(x: String @Id("classtypeann1"), y: Int @Id("classtypeann2"))
+    case class ClassTypeAnn(val x: String @Id("classtypeann1"), y: Int @Id("classtypeann2"))
 
     class TestProviderModule {
 

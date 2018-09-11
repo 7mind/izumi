@@ -1,8 +1,10 @@
 package com.github.pshirshov.izumi.distage
 
+import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
 import com.github.pshirshov.izumi.distage.fixtures.ProviderCases.ProviderCase1
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u.TypeTag
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage._
 import org.scalatest.WordSpec
 
@@ -11,29 +13,18 @@ import scala.language.higherKinds
 class ProviderMagnetTest extends WordSpec {
   import ProviderCase1._
 
-  def priv(@Id("locargann") x: Int): Unit = {val _ = x}
+  def priv(@Id("locargann") x: Int): Unit = x.discard
 
   val locargannfnval: Int @Id("loctypeann") => Unit = priv
   val locargannfnvalerased = priv _
 
   "Annotation extracting WrappedFunction" should {
-    "progression test: can't handle method reference vals, they lose annotation info" in {
+    "can't handle opaque function vals, that hide underlying method reference" in {
       val fn = ProviderMagnet(locargannfnvalerased).get
       assert(fn.diKeys.collect{case i: DIKey.IdKey[_] => i}.isEmpty)
 
       val fn2 = ProviderMagnet(testVal2).get
       assert(fn2.diKeys.collect{case i: DIKey.IdKey[_] => i}.isEmpty)
-    }
-
-    "progression test: can't handle curried function values" in {
-      val fn3 = ProviderMagnet(testVal3).get
-      assert(fn3.diKeys.contains(DIKey.get[Long].named("valsbtypeann1")))
-      assert(!fn3.diKeys.contains(DIKey.get[String].named("valsbtypeann2")))
-    }
-
-    "progression test: doesn't fail on conflicting annotations" in {
-      assertCompiles("ProviderMagnet.apply(defconfannfn _)")
-      assertCompiles("ProviderMagnet.apply(defconfannfn2 _)")
     }
 
     "produce correct DI keys for anonymous inline lambda" in {
@@ -83,6 +74,14 @@ class ProviderMagnetTest extends WordSpec {
       assert(fn2.diKeys contains DIKey.get[Int].named("valsigtypeann2"))
     }
 
+    "handle references with annotated type signatures, if a function value is curried, the result is the next function" in {
+      val fn = ProviderMagnet(testVal3).get
+
+      assert(fn.diKeys.contains(DIKey.get[Long].named("valsbtypeann1")))
+      assert(!fn.diKeys.contains(DIKey.get[String].named("valsbtypeann2")))
+      assert(fn.ret == SafeType.get[String @Id("valsbtypeann2") => Long])
+    }
+
     "ProviderMagnet can work with vals" in {
       def triggerConversion[R](x: ProviderMagnet[R]): Int = {val _ = x; return 5}
 
@@ -98,6 +97,13 @@ class ProviderMagnetTest extends WordSpec {
 
     "handle opaque references with argument annotations" in {
       val fn = ProviderMagnet.apply(defargannfn _).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("defargann"))
+      assert(fn.diKeys contains DIKey.get[Int].named("defargann2"))
+    }
+
+    "handle opaque references with argument annotations 2" in {
+      val fn = ProviderMagnet.apply(defargannfn(_, _)).get
 
       assert(fn.diKeys contains DIKey.get[String].named("defargann"))
       assert(fn.diKeys contains DIKey.get[Int].named("defargann2"))
@@ -161,15 +167,15 @@ class ProviderMagnetTest extends WordSpec {
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
     }
 
-    "progression test: FAILS to handle case class .apply references with argument annotations" in {
-      val fn = ProviderMagnet.apply(ClassArgAnn.apply _).get
-
-      assert(!fn.diKeys.contains(DIKey.get[String].named("classargann1")))
-      assert(!fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
-    }
-
     "handle case class .apply references with type annotations" in {
       val fn = ProviderMagnet.apply(ClassTypeAnn.apply _).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
+      assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
+    }
+
+    "handle generic case class .apply references with type annotations" in {
+      val fn = ProviderMagnet.apply(ClassTypeAnnT.apply[String, Int] _).get
 
       assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
@@ -200,6 +206,18 @@ class ProviderMagnetTest extends WordSpec {
       assertTypeError(
         """def fn[T]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get"""
       )
+    }
+
+    "progression test: FAILS to handle case class .apply references with argument annotations" in {
+      val fn = ProviderMagnet.apply(ClassArgAnn.apply _).get
+
+      assert(!fn.diKeys.contains(DIKey.get[String].named("classargann1")))
+      assert(!fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
+    }
+
+    "progression test: doesn't fail on multiple conflicting annotations on the same parameter" in {
+      assertCompiles("ProviderMagnet.apply(defconfannfn _)")
+      assertCompiles("ProviderMagnet.apply(defconfannfn2 _)")
     }
   }
 

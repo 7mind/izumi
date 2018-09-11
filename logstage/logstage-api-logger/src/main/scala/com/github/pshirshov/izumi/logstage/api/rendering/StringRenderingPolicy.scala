@@ -211,6 +211,4 @@ object StringRenderingPolicy {
 
     override val isSpace: Boolean = false
   }
-
-
 }
