@@ -50,6 +50,14 @@ trait WithTags extends UniverseGeneric { self =>
         override val tag: TypeTag[T] = t
       }
 
+    /** Resulting [Tag] will not have the ability to migrate into a different universe
+      * (which is not usually a problem, but still worth naming it 'unsafe')
+      */
+    def unsafeFromType[T](tpe: Type): Tag[T] =
+      new Tag[T] {
+        override val tag: u.TypeTag[T] = ReflectionUtil.typeToTypeTag[T](u: u.type)(tpe, u.rootMirror)
+      }
+
     implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = Tag(t)
 
     /**
