@@ -55,20 +55,20 @@ trait WithTags extends UniverseGeneric { self =>
       */
     def unsafeFromType[T](tpe: Type): Tag[T] =
       new Tag[T] {
-        override val tag: u.TypeTag[T] = ReflectionUtil.typeToTypeTag[T](u: u.type)(tpe, u.rootMirror)
+        override val tag: TypeTag[T] = ReflectionUtil.typeToTypeTag[T](u: u.type)(tpe, u.rootMirror)
       }
 
     implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = Tag(t)
 
     /**
-    * Create a Tag of a type formed by applying the type in `tag` to `args`.
-    *
-    * Example:
-    * {{{
-    * implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing]): Tag[T[A0, K, A1]] =
-    *   Tag.appliedTag(t, List(Tag[A0].tag, TagK[K].tag, Tag[A1].tag))
-    * }}}
-    **/
+      * Create a Tag of a type formed by applying the type in `tag` to `args`.
+      *
+      * Example:
+      * {{{
+      * implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing]): Tag[T[A0, K, A1]] =
+      *   Tag.appliedTag(t, List(Tag[A0].tag, TagK[K].tag, Tag[A1].tag))
+      * }}}
+      **/
     def appliedTag[R](tag: WeakTypeTag[_], args: List[TypeTag[_]]): Tag[R] = {
       val appliedTypeCreator = new TypeCreator {
         override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
@@ -79,13 +79,13 @@ trait WithTags extends UniverseGeneric { self =>
     }
 
     /**
-    * Create a Tag of a type formed from an `intersection` of types (A with B) with a structural refinement taken from `structType`
-    *
-    * `structType` is assumed to be a weak type of final result type, i.e.
-    * {{{
-    * Tag[A with B {def abc: Unit}] == refinedTag(List(typeTag[A], typeTag[B]), weakTypeTag[A with B { def abc: Unit }])
-    * }}}
-    **/
+      * Create a Tag of a type formed from an `intersection` of types (A with B) with a structural refinement taken from `structType`
+      *
+      * `structType` is assumed to be a weak type of final result type, i.e.
+      * {{{
+      * Tag[A with B {def abc: Unit}] == refinedTag(List(typeTag[A], typeTag[B]), weakTypeTag[A with B { def abc: Unit }])
+      * }}}
+      **/
     def refinedTag[R](intersection: List[TypeTag[_]], structType: WeakTypeTag[_]): Tag[R] = {
       val refinedTypeCreator = new TypeCreator {
         override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
@@ -96,23 +96,6 @@ trait WithTags extends UniverseGeneric { self =>
         }
       }
       Tag(TypeTag[R](intersection.headOption.fold(rootMirror)(_.mirror), refinedTypeCreator))
-    }
-
-    def mergeArgs[R](tag: WeakTypeTag[_], args: List[Option[TypeTag[_]]]): Tag[R] = {
-      val appliedTypeCreator = new TypeCreator {
-        override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
-          val tpe = tag.migrate(m).tpe
-
-          val mergedArgs = args.zipWithIndex.map {
-            case (Some(t), _) => t.migrate(m).tpe
-            case (None, i) => tpe.typeArgs.applyOrElse(i, (_: Int) =>
-              throw new RuntimeException(s"Aaaa, can't get param $i of $tpe in constr ${tpe.typeConstructor} in args: ${args}"))
-          }
-
-          m.universe.appliedType(tpe.typeConstructor, mergedArgs)
-        }
-      }
-      Tag(TypeTag[R](tag.mirror, appliedTypeCreator))
     }
 
   }
