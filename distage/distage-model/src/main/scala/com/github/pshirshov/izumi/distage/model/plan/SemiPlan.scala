@@ -30,7 +30,7 @@ sealed trait AbstractPlan {
   /** Get all imports (unresolved dependencies).
     *
     * Note, presence of imports doesn't automatically mean that a plan is invalid,
-    * Imports may be fulfilled by a `Locator`, they may also be materialized with a _custom_
+    * Imports may be fulfilled by a `Locator`, by BootstrapContext, or they may also be materialized by a custom
     * [[com.github.pshirshov.izumi.distage.model.provisioning.strategies.ImportStrategy]]
     **/
   def getImports: Seq[ImportDependency] =

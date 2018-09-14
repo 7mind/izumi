@@ -394,6 +394,21 @@ object ModuleDefDSL {
     final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
+    /***
+      * Bind by reference to another bound key
+      *
+      * Example:
+      * {{{
+      *   trait T
+      *   class T1 extends T
+      *
+      *   make[T1]
+      *   make[T].using[T1]
+      * }}}
+      *
+      * Here, only T1 will be created.
+      * A class that depends on `T` will receive an instance of T1
+      */
     final def using[I <: T : Tag]: AfterBind =
       bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
@@ -404,6 +419,21 @@ object ModuleDefDSL {
   }
 
   trait SetDSLBase[T, AfterAdd] {
+    /***
+      * Bind by reference to another bound key
+      *
+      * Example:
+      * {{{
+      *   trait T
+      *
+      *   make[T]
+      *   make[Set[T]].ref[T1]
+      * }}}
+      *
+      * Here, `T` will be created only once.
+      * A class that depends on `Set[T]` will receive a set containing the same `T` instance
+      * as in a class that depends on just `T`.
+      */
     final def ref[I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
