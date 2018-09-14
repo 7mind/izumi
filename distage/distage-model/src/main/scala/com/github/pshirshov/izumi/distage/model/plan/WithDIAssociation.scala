@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.references.WithDIKey
 import com.github.pshirshov.izumi.distage.model.reflection.universe._
-import com.github.pshirshov.izumi.distage.model.util.Formattable
+import com.github.pshirshov.izumi.distage.model.util.{Format, Formattable}
+import com.github.pshirshov.izumi.distage.model.util.Format._
 
 trait WithDIAssociation {
   this:  DIUniverseBase
@@ -21,11 +22,15 @@ trait WithDIAssociation {
 
   object Association {
     case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey) extends Association {
-      override def format: String = s"""par $name: $tpe = lookup($wireWith)"""
+      override def format: Format = {
+        Format("par %s: %s = lookup(%s)", name, tpe, wireWith)
+      }
     }
 
     case class AbstractMethod(context: DependencyContext.MethodContext, name: String, tpe: SafeType, wireWith: DIKey) extends Association {
-      override def format: String = s"""def $name: $tpe = lookup($wireWith)"""
+      override def format: Format = {
+        Format("def %s: %s = lookup($s)", name, tpe, wireWith)
+      }
     }
 
     implicit class ParameterWithWireWith(p: Association.Parameter) {
