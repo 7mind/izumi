@@ -27,6 +27,15 @@ sealed trait AbstractPlan {
     steps.foldLeft(z)(f)
   }
 
+  /** Get all imports (unresolved dependencies).
+    *
+    * Note, presence of imports doesn't automatically mean that a plan is invalid,
+    * Imports may be fulfilled by a `Locator`, they may also be materialized with a _custom_
+    * [[com.github.pshirshov.izumi.distage.model.provisioning.strategies.ImportStrategy]]
+    **/
+  def getImports: Seq[ImportDependency] =
+    steps.collect { case i: ImportDependency => i }
+
   def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan
 
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan

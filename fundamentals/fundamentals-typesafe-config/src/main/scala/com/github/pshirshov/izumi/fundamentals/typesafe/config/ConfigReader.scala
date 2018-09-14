@@ -18,8 +18,7 @@ object ConfigReader {
       Try(f(String.valueOf(cv.unwrapped)))
     case cv =>
       scala.util.Failure(new ConfigReadException(
-        s"""
-           |Encountered a non-String, Boolean or Number value when trying to deserialize ${implicitly[ClassTag[T]]}
+        s"""Encountered a non-String, Boolean or Number value when trying to deserialize as ${implicitly[ClassTag[T]]}
            | using a String codec. ConfigValue was: $cv""".stripMargin))
   }
 }

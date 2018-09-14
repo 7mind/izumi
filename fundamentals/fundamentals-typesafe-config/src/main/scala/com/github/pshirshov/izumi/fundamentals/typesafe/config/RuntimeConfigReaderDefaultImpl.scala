@@ -64,7 +64,7 @@ class RuntimeConfigReaderDefaultImpl
           val constructorSymbol = tpe.decl(ru.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
           val params = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.map {
             p =>
-              p.name.toTermName.toString -> p.typeSignatureIn(tpe).finalResultType
+              p.name.decodedName.toString -> p.typeSignatureIn(tpe).finalResultType
           }
 
           val parsedArgs: List[_] = params.map {

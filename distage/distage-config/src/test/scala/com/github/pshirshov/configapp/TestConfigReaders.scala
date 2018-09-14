@@ -12,6 +12,8 @@ case class ListCaseClass(mylist: IndexedSeq[ListSet[Wrapper[HostPort]]])
 
 case class OptionCaseClass(optInt: Option[Int])
 
+case class BackticksCaseClass(`boo-lean`: Boolean)
+
 case class SealedCaseClass(sealedTrait1: SealedTrait1)
 
 sealed trait SealedTrait1
@@ -40,6 +42,10 @@ object TestConfigReaders {
 
   final val optDefinition = new ModuleDef {
     make[Service[OptionCaseClass]]
+  }
+
+  final val backticksDefinition = new ModuleDef {
+    make[Service[BackticksCaseClass]]
   }
 
   final val sealedDefinition = new ModuleDef {
