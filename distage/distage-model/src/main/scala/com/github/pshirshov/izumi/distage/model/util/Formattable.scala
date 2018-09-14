@@ -15,7 +15,7 @@ sealed trait Arg[V] {
 case class DIKeyArg(value: DIKey) extends Arg[DIKey]
 case class ClassArg(value: Class[_]) extends Arg[Class[_]]
 case class FormatArg(value: Format) extends Arg[Format]
-case class FormatSeqArg(value: Seq[Format]) extends Arg[Format]
+case class FormatSeqArg(value: Seq[Format]) extends Arg[Seq[Format]]
 case class AnyArg(value: Any) extends Arg[Any]
 
 case class Format(format: String, args: Arg[_]*) {
@@ -29,5 +29,5 @@ object Format {
   implicit def toAnyArg(value: Any): Arg[Any] = AnyArg(value)
   implicit def toClassArg(value: Class[_]): Arg[Class[_]] = ClassArg(value)
   implicit def toFormatArg(value: Format): Arg[Format] = FormatArg(value)
-  implicit def toFormatSeqArg(value: Seq[Format]): Arg[Format] = FormatSeqArg(value)
+  implicit def toFormatSeqArg(value: Seq[Format]): Arg[Seq[Format]] = FormatSeqArg(value)
 }

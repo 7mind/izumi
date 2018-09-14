@@ -20,25 +20,24 @@ object FormattingUtils {
     origin.map(_.origin.toString) getOrElse "(<unknown>)"
   }
 
-  private def doFormat(deps: Wiring): Format = {
+  private def doFormat(deps: Wiring): String = {
     deps match {
       case Constructor(instanceType, associations) =>
-        doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'))
+        doFormat(instanceType.tpe.toString, associations.map(_.format).map(_.render()), "make", ('[', ']'), ('(', ')'))
 
       case AbstractSymbol(instanceType, associations) =>
-        doFormat(instanceType.tpe.toString, associations.map(_.format), "impl", ('[', ']'), ('{', '}'))
+        doFormat(instanceType.tpe.toString, associations.map(_.format).map(_.render()), "impl", ('[', ']'), ('{', '}'))
 
       case Function(instanceType, associations) =>
-        doFormat(instanceType.toString, associations.map(_.format), "call", ('(', ')'), ('{', '}'))
+        doFormat(instanceType.toString, associations.map(_.format).map(_.render()), "call", ('(', ')'), ('{', '}'))
 
       case FactoryMethod(factoryType, wireables, dependencies) =>
         val wirings = wireables.map {
           w =>
-            // shift
-            Format("%s: %s ~= %s", w.factoryMethod, w.factoryMethod.finalResultType, doFormat(w.wireWith))
+            s"${w.factoryMethod}: ${w.factoryMethod.finalResultType} ~= ${doFormat(w.wireWith)}".shift(2)
         }
 
-        val depsRepr = dependencies.map(_.format)
+        val depsRepr = dependencies.map(_.format).map(_.render())
 
         doFormat(
           factoryType.toString
@@ -49,11 +48,10 @@ object FormattingUtils {
       case FactoryFunction(factoryType, wireables, dependencies) =>
         val wirings = wireables.map {
           case (idx, w) =>
-            Format()
             s"${w.factoryMethod}[$idx]: ${w.factoryMethod.finalResultType} ~= ${doFormat(w.wireWith)}".shift(2)
         }.toSeq
 
-        val depsRepr = dependencies.map(_.format).map(_.toString)
+        val depsRepr = dependencies.map(_.format).map(_.render())
 
         doFormat(
           factoryType.toString
@@ -66,10 +64,9 @@ object FormattingUtils {
     }
   }
 
-  def doFormat(impl: String, depRepr: Seq[Format], opName: String, opFormat: (Char, Char), delim: (Char, Char)): Format = {
-    Format("%s%s%s%s $s $s", opName, opFormat._1, impl, opFormat._2, delim._1, depRepr)
+  def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
     val sb = new StringBuilder()
-//    sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}\n")
+    sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}\n")
     if (depRepr.nonEmpty) {
       sb.append(depRepr.mkString("\n").shift(2))
     }

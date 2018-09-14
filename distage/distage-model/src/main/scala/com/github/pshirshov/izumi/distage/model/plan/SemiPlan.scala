@@ -17,8 +17,8 @@ case class CompactPlanRenderer() extends PlanRenderer {
   override def render(strings: Seq[Format]): String = {
     val notUniqueClassNames = strings.flatMap(_.args)
       .collect {
-        case DIKeyArg(value) => value.tpe.getClass
-        case ClassArg(value) => value
+        case DIKeyArg(value) => value.tpe.toString
+        case ClassArg(value) => value.getClass.toString
       }
       .groupBy(simpleName)
       .map(p => (p._1, p._2.toSet))
@@ -27,15 +27,15 @@ case class CompactPlanRenderer() extends PlanRenderer {
     val result = strings.map { s =>
       val args = s.args.map {
         case DIKeyArg(v) =>
-          if (notUniqueClassNames.contains(simpleName(v.tpe.getClass)))
-            AnyArg(v.toString)
+          if (notUniqueClassNames.contains(simpleName(v.tpe.toString)))
+            AnyArg(v.tpe.toString)
           else
-            AnyArg(simpleName(v.tpe.getClass))
+            AnyArg(simpleName(v.tpe.toString))
         case ClassArg(v) =>
-          if (notUniqueClassNames.contains(simpleName(v)))
+          if (notUniqueClassNames.contains(simpleName(v.getName)))
             AnyArg(v.toString)
           else
-            AnyArg(simpleName(v))
+            AnyArg(simpleName(v.getName))
         case arg => arg
       }
 
@@ -45,8 +45,8 @@ case class CompactPlanRenderer() extends PlanRenderer {
     result.mkString("\n")
   }
 
-  private def simpleName(value: Class[_]) = {
-    value.getName.substring(value.getName.lastIndexOf('.') + 1)
+  private def simpleName(value: String) = {
+    value.substring(value.lastIndexOf('.') + 1)
   }
 }
 
