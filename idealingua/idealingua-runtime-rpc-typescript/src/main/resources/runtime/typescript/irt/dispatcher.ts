@@ -1,6 +1,6 @@
 
 export interface ServiceDispatcher<C, D> {
-    dispatch(context: C, method: string, data: D): Promise<D>;
+    dispatch(context: C, method: string, data: D | undefined): Promise<D>;
     getSupportedService(): string;
     getSupportedMethods(): string[];
 }
@@ -30,7 +30,7 @@ export class Dispatcher<C, D> {
         return true;
     }
 
-    public dispatch(ctx: C, service: string, method: string, data: D): Promise<D> {
+    public dispatch(ctx: C, service: string, method: string, data: D | undefined): Promise<D> {
         if (!(service in this.services)) {
             throw new Error(`Service '${service}' is not registered with the dispatcher.`);
         }

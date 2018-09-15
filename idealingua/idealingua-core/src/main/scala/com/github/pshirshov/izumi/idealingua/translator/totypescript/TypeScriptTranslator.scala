@@ -334,11 +334,32 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       ), _.handleAdt)
   }
 
+  protected def adtHasInterface(alternatives: List[AdtMember]): Boolean = {
+    alternatives.exists(al => al.typeId.isInstanceOf[InterfaceId])
+  }
+
+  protected def adtHasAdt(alternatives: List[AdtMember]): Boolean = {
+    alternatives.exists(al => al.typeId.isInstanceOf[AdtId])
+  }
+
+  protected def adtHasDto(alternatives: List[AdtMember]): Boolean = {
+    alternatives.exists(al => al.typeId.isInstanceOf[DTOId])
+  }
+
   protected def renderAdtImpl(name: String, alternatives: List[AdtMember], export: Boolean = true): String = {
+    val hasInterfaces = alternatives.count(al => al.typeId.isInstanceOf[InterfaceId]) > 0
     s"""${if (export) "export " else ""}type $name = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace)).mkString(" | ")};
        |${if (export) "export " else ""}type ${name}Serialized = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace, forSerialized = true)).mkString(" | ")}
        |
        |${if(export) "export " else ""}class ${name}Helpers {
+       |    public static isInstanceOf(o: any): boolean {
+       |        if (!o['getClassName'] || typeof o['getClassName'] !== 'function') {
+       |            return false;
+       |        }
+       |        ${if(hasInterfaces) "const className = o.getClassName();" else ""}
+       |        return ${alternatives.map(alt => if (alt.typeId.isInstanceOf[InterfaceId]) s"${alt.typeId.name}${typespace.tools.implId(alt.typeId.asInstanceOf[InterfaceId]).name}.isRegisteredType(className)" else if (alt.typeId.isInstanceOf[AdtId]) s"${alt.typeId.name}Helpers.isInstanceOf(o)" else "o instanceof " + conv.toNativeType(alt.typeId, typespace)).mkString(" || ")};
+       |    }
+       |
        |    public static serialize(adt: ${name}): {[key: string]: ${alternatives.map(alt => alt.typeId match {
       case interfaceId: InterfaceId => alt.typeId.name + typespace.tools.implId(interfaceId).name + "Serialized"
       case al: AliasId => {
@@ -352,10 +373,12 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       case _ => alt.typeId.name + "Serialized"
     }).mkString(" | ")}} {
        |        let className = adt.getClassName();
+       |        ${if(adtHasAdt(alternatives)) "let serialized: any = undefined;" else ""}
+       |${alternatives.filter(al => al.typeId.isInstanceOf[AdtId]).map(al => al.typeId.asInstanceOf[AdtId]).map(adtId => s"if (${adtId.name}Helpers.isInstanceOf(adt)) {\n    className = '${adtId.name}';\n    serialized = ${adtId.name}Helpers.serialize(adt as ${adtId.name});\n}").mkString(" else \n").shift(8)}
        |${alternatives.filter(al => al.typeId.isInstanceOf[InterfaceId]).map(al => al.typeId.asInstanceOf[InterfaceId]).map(interfaceId => s"if (${interfaceId.name}${typespace.tools.implId(interfaceId).name}.isRegisteredType(className)) {\n    className = '${interfaceId.name}';\n}").mkString(" else \n").shift(8)}
        |${alternatives.filter(al => al.memberName.isDefined).map(a => s"if (className == '${a.typeId.name}') {\n    className = '${a.memberName.get}'\n}").mkString("\n").shift(8)}
        |        return {
-       |            [className]: adt.serialize()
+       |            [className]: ${if(adtHasAdt(alternatives)) "serialized || " else ""}adt.serialize()
        |        };
        |    }
        |
@@ -805,7 +828,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |        return  ${i.id.name}Dispatcher.methods;
        |    }
        |
-       |    public dispatch(context: C, method: string, data: D): Promise<D> {
+       |    public dispatch(context: C, method: string, data: D | undefined): Promise<D> {
        |        switch (method) {
        |${i.methods.map(m => renderServiceDispatcherHandler(m, "server")).mkString("\n").shift(12)}
        |            default:
@@ -938,7 +961,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |        return  ${i.id.name}Dispatcher.methods;
        |    }
        |
-       |    public dispatch(context: C, method: string, data: D): Promise<D> {
+       |    public dispatch(context: C, method: string, data: D | undefined): Promise<D> {
        |        switch (method) {
        |${i.events.map(m => renderServiceDispatcherHandler(m, "handlers")).mkString("\n").shift(12)}
        |            default:
