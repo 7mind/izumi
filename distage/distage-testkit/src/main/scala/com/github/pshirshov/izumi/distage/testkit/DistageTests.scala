@@ -16,7 +16,10 @@ import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 import distage.{BootstrapModule, Injector, ModuleBase, Tag}
 
+
 trait DistageTests {
+  protected val resourceCollection: DistageResourceCollection = NullDistageResourceCollection
+
   protected def di[T: Tag](f: T => Any): Unit = {
     val providerMagnet: ProviderMagnet[Unit] = { x: T => f(x); () }
     di(providerMagnet)
@@ -37,20 +40,21 @@ trait DistageTests {
     val injector = makeInjector(roots)
     val primaryModule = makeBindings()
     val plan = makeContext(injector, primaryModule)
-    val finalPlan: OrderedPlan = refinePlan(injector, plan)
+    val finalPlan = refinePlan(injector, plan)
     val context = makeContext(injector, finalPlan)
+    resourceCollection.processContext(context)
     f(context)
   }
 
   protected def finalizeTest(context: Locator): Unit = {
     context.run {
       closeables: Set[AutoCloseable] =>
-        closeables.foreach(_.close())
+        closeables.foreach(resourceCollection.close)
     }
   }
 
   protected def refinePlan(injector: Injector, plan: OrderedPlan): OrderedPlan = {
-    val semi = plan.map(v => v)
+    val semi = plan.map(resourceCollection.transformPlanElement)
     val finalPlan = injector.finish(semi)
     finalPlan
   }
@@ -92,5 +96,3 @@ trait DistageTests {
 
   protected def makeConfig(): Option[AppConfig] = None
 }
-
-
