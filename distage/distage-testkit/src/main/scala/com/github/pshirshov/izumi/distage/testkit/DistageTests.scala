@@ -7,15 +7,14 @@ import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 import distage.{BootstrapModule, Injector, ModuleBase, Tag}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 trait DistageTests {
   protected def di[T: Tag](f: T => Any): Unit = {
@@ -29,10 +28,7 @@ trait DistageTests {
         try {
           context.run(f).discard()
         } finally {
-          context.run {
-            closeables: Set[AutoCloseable] =>
-              closeables.foreach(_.close())
-          }
+          finalizeTest(context)
         }
     }
   }
@@ -41,10 +37,23 @@ trait DistageTests {
     val injector = makeInjector(roots)
     val primaryModule = makeBindings()
     val plan = makeContext(injector, primaryModule)
-    val context = makeContext(injector, plan)
+    val finalPlan: OrderedPlan = refinePlan(injector, plan)
+    val context = makeContext(injector, finalPlan)
     f(context)
   }
 
+  protected def finalizeTest(context: Locator): Unit = {
+    context.run {
+      closeables: Set[AutoCloseable] =>
+        closeables.foreach(_.close())
+    }
+  }
+
+  protected def refinePlan(injector: Injector, plan: OrderedPlan): OrderedPlan = {
+    val semi = plan.map(v => v)
+    val finalPlan = injector.finish(semi)
+    finalPlan
+  }
 
   protected def makeContext(injector: Injector, plan: OrderedPlan): Locator = {
     injector.produce(plan)

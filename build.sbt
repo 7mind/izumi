@@ -380,6 +380,7 @@ lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles
   , distageCats
   , distageStatic
+  , distageTestkit
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore
