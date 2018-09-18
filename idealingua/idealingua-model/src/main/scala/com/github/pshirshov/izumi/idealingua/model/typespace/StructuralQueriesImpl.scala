@@ -97,7 +97,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
 
   def conversions(id: InterfaceId): List[ConverterDef] = {
     val implementors = ts.inheritance.compatibleDtos(id)
-    converters(implementors, id)
+    converters(id, implementors)
   }
 
 
@@ -191,7 +191,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
     adt.alternatives.map(_.typeId) ++ sub.flatten
   }
 
-  protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef] = {
+  protected def converters(id: InterfaceId, implementors: List[StructureId]): List[ConverterDef] = {
     val struct = structure(ts.resolver.get(id))
     val parentInstanceFields = struct.unambigious.map(_.field).toSet
 
@@ -208,7 +208,9 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
 
           val localNames = localFields.map(_.name)
 
-          val filteredParentFields = parentInstanceFields.filterNot(f => localNames.contains(f.name))
+          val filteredParentFields = parentInstanceFields
+            .filterNot(f => localNames.contains(f.name))
+            .intersect(all)
 
           val mixinInstanceFieldsCandidates = istruct
             .unambigiousInherited
@@ -235,26 +237,26 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
                |""".stripMargin
           )
 
-          val instanceFields = filteredParentFields.toList
-          val childMixinFields = mixinInstanceFields
-          val innerFields = instanceFields.map(f => SigParam(f.name, SigParamSource(id, "_value"), Some(f.name)))
+          val innerFields = filteredParentFields.map(f => SigParam(f.name, SigParamSource(id, "_value"), Some(f.name)))
 
           val outerFields = localFields.toList.map(f => SigParam(f.name, SigParamSource(f.typeId, f.name), None)) ++
-            childMixinFields.map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, ts.tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
+            mixinInstanceFields.map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, ts.tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
 
 
+          val fieldsToAssign = (innerFields.map(_.targetFieldName) ++ outerFields.map(_.targetFieldName)).toSet
           assert(
-            all.map(_.name) == (innerFields.map(_.targetFieldName) ++ outerFields.map(_.targetFieldName)).toSet,
+            all.map(_.name) == fieldsToAssign,
             s"""IDL Compiler bug: failed to build converter for $id -> $targetId:
                |All fields: ${all.niceList()}
+               |Instance fields (inner): ${filteredParentFields.niceList()}
+               |Local Fields (outer 1): ${localFields.niceList()}
+               |Child Mixin  (outer 2): ${mixinInstanceFields.niceList()}
                |Parent fields: ${parentInstanceFields.niceList()}
-               |Filtered PFs: ${filteredParentFields.niceList()}
                |Mixins CFs: ${mixinInstanceFields.niceList()}
-               |Local Fields: ${localFields.niceList()}
                |""".stripMargin
           )
 
-          mkConverter(innerFields, outerFields, targetId)
+          mkConverter(innerFields.toList, outerFields, targetId)
       }
   }
 
