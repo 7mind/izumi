@@ -88,6 +88,22 @@ class ConfigTest extends WordSpec {
       assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
     }
 
+    "resolve config options (missing field)" in {
+      val injector = Injector(mkModule("opt-test-missing.conf"))
+      val plan = injector.plan(TestConfigReaders.optDefinition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
+    }
+
+    "resolve backticks" in {
+      val context = Injector(mkModule("backticks-test.conf"))
+        .produce(TestConfigReaders.backticksDefinition)
+
+      assert(context.get[Service[BackticksCaseClass]].conf == BackticksCaseClass(true))
+    }
+
     "resolve config sealed traits" in {
       val context1 =
         Injector(mkModule("sealed-test1.conf"))

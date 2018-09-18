@@ -36,9 +36,11 @@ object ModuleBase {
     def map(f: Binding => Binding): T = {
       T.make(moduleDef.bindings.map(f))
     }
+  }
 
-    def morph[G <: ModuleBase: ModuleMake]: G = {
-      ModuleMake[G].make(moduleDef.bindings)
+  implicit final class ModuleDefMorph(private val moduleDef: ModuleBase) {
+    def morph[T <: ModuleBase: ModuleMake]: T = {
+      ModuleMake[T].make(moduleDef.bindings)
     }
   }
 

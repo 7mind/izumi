@@ -59,7 +59,7 @@ trait StructuralQueries {
 
   def sameSignature(tid: StructureId): List[DTO]
 
-  protected[typespace] def converters(implementors: List[StructureId], id: InterfaceId): List[ConverterDef]
+  protected def converters(id: InterfaceId, implementors: List[StructureId]): List[ConverterDef]
 }
 
 trait TypespaceTools {

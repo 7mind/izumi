@@ -2,7 +2,9 @@
 import * as http from 'http';
 import { Dispatcher, ServiceDispatcher } from '../../dispatcher';
 import { Logger, LogLevel } from '../../logger';
-import {TransportHandlers} from "./transport.server";
+import { TransportHandlers } from './transport.server';
+import { ConnectionContext } from './transport.context';
+import { SystemContext } from './transport.context.system';
 
 export class HttpServerGeneric<C> {
     private _port: number;
@@ -10,19 +12,20 @@ export class HttpServerGeneric<C> {
     private _server: http.Server;
     private _open: boolean;
     private _logger: Logger;
-    private _handlers: TransportHandlers<C>;
-    private _dispatcher: Dispatcher<C, string>;
+    private _handlers: TransportHandlers<C> | undefined;
+    private _dispatcher: Dispatcher<ConnectionContext<C>, string>;
 
     public get server() {
         return this._server;
     }
 
-    constructor(endpoint: string, port: number, services: ServiceDispatcher<C, string>[], logger: Logger, open: boolean = true,
-                dispatcher: Dispatcher<C, string> = undefined, handlers: TransportHandlers<C> = undefined) {
+    constructor(endpoint: string, port: number, services: ServiceDispatcher<ConnectionContext<C>, string>[],
+                logger: Logger, open: boolean = true, dispatcher: Dispatcher<ConnectionContext<C>, string> | undefined = undefined,
+                handlers: TransportHandlers<C> | undefined = undefined) {
         this._port = port;
         this._endpoint = endpoint;
         if (!dispatcher) {
-            this._dispatcher = new Dispatcher<C, string>();
+            this._dispatcher = new Dispatcher<ConnectionContext<C>, string>();
         } else {
             this._dispatcher = dispatcher;
         }
@@ -31,9 +34,9 @@ export class HttpServerGeneric<C> {
             this._dispatcher.register(s);
         });
 
+        this.requestHandler = this.requestHandler.bind(this);
         this._logger = logger;
         this._handlers = handlers;
-        this.requestHandler = this.requestHandler.bind(this);
         this._server = http.createServer(this.requestHandler);
     }
 
@@ -69,6 +72,23 @@ export class HttpServerGeneric<C> {
         }
 
         respHeaders['Content-Type'] = 'application/json';
+        const context = new ConnectionContext<C>();
+        context.system = new SystemContext();
+        if (this._handlers && this._handlers.onConnect) {
+            if (!this._handlers.onConnect(context, request)) {
+                response.writeHead(403);
+                response.end();
+            }
+        }
+        if (headers.authorization) {
+            context.system.auth.updateFromValue(headers.authorization);
+            if (this._handlers && this._handlers.onAuth) {
+                if (!this._handlers.onAuth(context)) {
+                    response.writeHead(403);
+                    response.end();
+                }
+            }
+        }
 
         const endpointPos = url.indexOf(this._endpoint);
         if (endpointPos < 0) {

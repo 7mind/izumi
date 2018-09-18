@@ -305,7 +305,7 @@ object ModuleDefDSL {
       nextState(newIdent)
     }
 
-    override protected def appendElement(newElement: ImplDef): SetElementDSL[T] = {
+    override protected def appendElement(newElement: ImplDef)(implicit pos: CodePositionMaterializer): SetElementDSL[T] = {
       val newBinding: Binding = SetElementBinding(identifier.key, newElement)
       val mutableCursor = SingletonRef(newBinding)
 
@@ -394,6 +394,21 @@ object ModuleDefDSL {
     final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
+    /***
+      * Bind by reference to another bound key
+      *
+      * Example:
+      * {{{
+      *   trait T
+      *   class T1 extends T
+      *
+      *   make[T1]
+      *   make[T].using[T1]
+      * }}}
+      *
+      * Here, only T1 will be created.
+      * A class that depends on `T` will receive an instance of T1
+      */
     final def using[I <: T : Tag]: AfterBind =
       bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
@@ -404,28 +419,43 @@ object ModuleDefDSL {
   }
 
   trait SetDSLBase[T, AfterAdd] {
-    final def ref[I <: T : Tag]: AfterAdd =
+    /***
+      * Bind by reference to another bound key
+      *
+      * Example:
+      * {{{
+      *   trait T
+      *
+      *   make[T]
+      *   make[Set[T]].ref[T1]
+      * }}}
+      *
+      * Here, `T` will be created only once.
+      * A class that depends on `Set[T]` will receive a set containing the same `T` instance
+      * as in a class that depends on just `T`.
+      */
+    final def ref[I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
-    final def ref[I <: T : Tag](name: String): AfterAdd =
+    final def ref[I <: T : Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
 
-    final def weak[I <: T : Tag]: AfterAdd =
+    final def weak[I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true))
 
-    final def weak[I <: T : Tag](name: String): AfterAdd =
+    final def weak[I <: T : Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true))
 
-    final def add[I <: T : Tag]: AfterAdd =
+    final def add[I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.TypeImpl(SafeType.get[I]))
 
-    final def add[I <: T : Tag](instance: I): AfterAdd =
+    final def add[I <: T : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
-    final def add[I <: T : Tag](f: ProviderMagnet[I]): AfterAdd =
+    final def add[I <: T : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ProviderImpl(f.get.ret, f.get))
 
-    protected def appendElement(newImpl: ImplDef): AfterAdd
+    protected def appendElement(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterAdd
   }
 }
 

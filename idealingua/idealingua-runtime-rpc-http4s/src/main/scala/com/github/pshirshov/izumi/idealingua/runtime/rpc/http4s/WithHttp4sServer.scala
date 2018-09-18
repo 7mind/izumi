@@ -4,16 +4,16 @@ import java.util.concurrent.{ConcurrentHashMap, TimeoutException}
 
 import _root_.io.circe.parser._
 import cats.implicits._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
+import io.circe.{DecodingFailure, ParsingFailure}
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebsocketBits.{Binary, Close, Text, WebSocketFrame}
-import scalaz.zio.ExitResult
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -140,15 +140,15 @@ trait WithHttp4sServer {
       case Text(msg, _) =>
         val ioresponse = makeResponse(context, msg)
 
-        BIORunner.unsafeRunSync0(ioresponse) match {
-          case ExitResult.Completed(v) =>
+        BIORunner.unsafeRunSyncAsEither(ioresponse) match {
+          case scala.util.Success(Right(v)) =>
             v.map(_.asJson).map(printer.pretty)
 
-          case ExitResult.Failed(error, _) =>
+          case scala.util.Success(Left(error)) =>
             Some(handleWsError(context, List(error), None, "failure"))
 
-          case ExitResult.Terminated(causes) =>
-            Some(handleWsError(context, causes, None, "termination"))
+          case scala.util.Failure(cause) =>
+            Some(handleWsError(context, List(cause), None, "termination"))
         }
 
       case v: Binary =>
@@ -234,14 +234,20 @@ trait WithHttp4sServer {
         }
       }
 
-      BIORunner.unsafeRunSync0(ioR) match {
-        case ExitResult.Completed(v) =>
+      BIORunner.unsafeRunSyncAsEither(ioR) match {
+        case scala.util.Success(Right(v)) =>
           v
-        case ExitResult.Failed(error, _) =>
+
+        case scala.util.Success(Left(error : io.circe.Error)) =>
           logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
           dsl.BadRequest()
-        case ExitResult.Terminated(causes) =>
-          handleError(context, method, causes, "termination")
+
+        case scala.util.Success(Left(error)) =>
+          logger.info(s"${context -> null}: Unexpected failure while handling $method: $error")
+          dsl.InternalServerError()
+
+        case scala.util.Failure(cause) =>
+          handleError(context, method, List(cause), "termination")
       }
     }
 

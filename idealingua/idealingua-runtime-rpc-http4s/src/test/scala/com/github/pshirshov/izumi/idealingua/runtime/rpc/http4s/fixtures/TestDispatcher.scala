@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
 
 import java.util.concurrent.atomic.AtomicReference
 
@@ -16,3 +16,9 @@ trait TestDispatcher {
     creds.set(Seq.empty)
   }
 }
+
+
+
+
+
+

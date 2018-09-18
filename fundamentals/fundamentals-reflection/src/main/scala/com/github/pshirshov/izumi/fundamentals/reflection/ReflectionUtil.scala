@@ -23,7 +23,7 @@ object ReflectionUtil {
     javaMethod
   }
 
-  def typeToTypeTag[T](
+  def typeToTypeTag[T](u: Universe)(
                         tpe: u.Type,
                         mirror: Mirror[u.type]
                       ): u.TypeTag[T] = {
@@ -60,9 +60,9 @@ object ReflectionUtil {
   }
 
   /**
-    * This is simply to hide a warning comming from Annotation.apply, lmao.
+    * This function is here to just just hide a warning comming from Annotation.apply.
     * Since c.reifyTree seems to have a bug whereby it injects empty TypeTrees when trying to reify an
-    * annotation recovered from a symbol with .annotations method, it doesn't seem possible to avoid
+    * annotation recovered from a symbol via the .annotations method, it doesn't seem possible to avoid
     * calling this method.
     */
   def runtimeAnnotation(tpe: u.Type, scalaArgs: List[u.Tree], javaArgs: ListMap[u.Name, u.JavaArgument]): u.Annotation =

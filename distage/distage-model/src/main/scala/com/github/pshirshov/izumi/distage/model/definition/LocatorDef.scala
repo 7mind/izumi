@@ -191,7 +191,7 @@ object LocatorDef {
       nextState(newIdent)
     }
 
-    override protected def appendElement(newElement: ImplDef): SetElementDSL[T] = {
+    override protected def appendElement(newElement: ImplDef)(implicit pos: CodePositionMaterializer): SetElementDSL[T] = {
       val newBinding: Binding = SetElementBinding(identifier.key, newElement)
       val mutableCursor = SingletonRef(newBinding)
 
@@ -209,10 +209,10 @@ object LocatorDef {
   }
 
   trait SetDSLBase[T, AfterAdd] {
-    final def add[I <: T : Tag](instance: I): AfterAdd =
+    final def add[I <: T : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
-    protected def appendElement(newImpl: ImplDef): AfterAdd
+    protected def appendElement(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterAdd
   }
 
 

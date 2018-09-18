@@ -236,6 +236,12 @@ lazy val distageCore = inDiStage.as.module
     )
   )
 
+lazy val distageTestkit = inDiStage.as.module
+  .depends(distageCore, distagePlugins, distageConfig, logstageDi)
+  .settings(
+    libraryDependencies ++= Seq(R.scalatest, R.scalacheck, R.scalacheck_shapeless)
+  )
+
 lazy val distageCats = inDiStage.as.module
   .depends(distageCore)
   .settings(
@@ -374,6 +380,7 @@ lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles
   , distageCats
   , distageStatic
+  , distageTestkit
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCore

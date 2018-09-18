@@ -32,6 +32,9 @@ trait Distage {
 
   type ModuleBase = model.definition.ModuleBase
 
+  type Module = model.definition.Module
+  val Module: model.definition.Module.type = model.definition.Module
+
   type BootstrapModule = model.definition.BootstrapModule
   val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
 

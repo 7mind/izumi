@@ -10,7 +10,6 @@ import io.circe.parser.parse
 import io.circe.syntax._
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
-import scalaz.zio.ExitResult
 
 case class PacketInfo(method: IRTMethodId, packetId: RpcPacketId)
 
@@ -56,16 +55,15 @@ trait WithHttp4sWsClient {
           v
         }
 
-        BIORunner.unsafeRunSync0(result) match {
-          case ExitResult.Completed(PacketInfo(packetId, method)) =>
+        BIORunner.unsafeRunSyncAsEither(result) match {
+          case scala.util.Success(Right(PacketInfo(packetId, method))) =>
             logger.debug(s"Processed incoming packet $method: $packetId")
 
-          case ExitResult.Failed(error, _) =>
+          case scala.util.Success(Left(error)) =>
             logger.error(s"Failed to process request: $error")
 
-
-          case ExitResult.Terminated(causes) =>
-            logger.error(s"Failed to process request, termination: $causes")
+          case scala.util.Failure(cause) =>
+            logger.error(s"Failed to process request, termination: $cause")
         }
       }
 

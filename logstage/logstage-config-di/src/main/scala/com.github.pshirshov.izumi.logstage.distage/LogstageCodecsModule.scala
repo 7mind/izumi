@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.distage
 
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, ModuleDefDSL}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0
 import com.github.pshirshov.izumi.fundamentals.typesafe.config.{ConfigReader, RuntimeConfigReaderCodecs}
 import com.github.pshirshov.izumi.logstage.api.Log
@@ -55,7 +55,7 @@ trait LogstageCodecsModule extends BootstrapModuleDef {
             SafeType0.get[RenderingPolicy] -> policyCodec
           )
         }
-    }
+    }.discard
   }
 
   def bindRenderingPolicyMapper[T <: RenderingPolicy : ru.TypeTag, C: ru.TypeTag](f: C => T): Unit = {
@@ -65,7 +65,7 @@ trait LogstageCodecsModule extends BootstrapModuleDef {
           f(props)
         }
       }
-    }
+    }.discard
   }
 
 }
