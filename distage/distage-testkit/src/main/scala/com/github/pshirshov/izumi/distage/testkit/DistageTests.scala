@@ -1,13 +1,21 @@
 package com.github.pshirshov.izumi.distage.testkit
 
+import com.github.pshirshov.izumi.distage.config.ConfigModule
+import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
+import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.{Locator, reflection}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 import distage.{BootstrapModule, Injector, ModuleBase, Tag}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 trait DistageTests {
   protected def di[T: Tag](f: T => Any): Unit = {
@@ -15,35 +23,65 @@ trait DistageTests {
     di(providerMagnet)
   }
 
-  protected def di(f: ProviderMagnet[Unit]): Unit = {
-    val injector = makeInjector(f)
+  protected def di(f: ProviderMagnet[Any]): Unit = {
+    ctx(f.get.diKeys.toSet) {
+      context =>
+        try {
+          context.run(f).discard()
+        } finally {
+          context.run {
+            closeables: Set[AutoCloseable] =>
+              closeables.foreach(_.close())
+          }
+        }
+    }
+  }
+
+  protected def ctx(roots: Set[DIKey])(f: Locator => Unit): Unit = {
+    val injector = makeInjector(roots)
     val primaryModule = makeBindings()
     val plan = makeContext(injector, primaryModule)
     val context = makeContext(injector, plan)
-    context.run(f)
+    f(context)
   }
 
-  protected def makeContext(injector: distage.Injector, plan: OrderedPlan): Locator = {
+
+  protected def makeContext(injector: Injector, plan: OrderedPlan): Locator = {
     injector.produce(plan)
   }
 
   protected def makeContext(injector: Injector, primaryModule: ModuleBase): OrderedPlan = {
-    val plan = injector.plan(
-      Seq(primaryModule,
-        new LogstageModule(IzLogger.simpleRouter(Log.Level.Debug, ConsoleSink.ColoredConsoleSink))
-      ).overrideLeft
-    )
+
+    val modules = Seq(
+      primaryModule,
+      new LogstageModule(IzLogger.simpleRouter(Log.Level.Debug, ConsoleSink.ColoredConsoleSink)),
+    ) ++
+      makeConfig().map(c => new ConfigModule(c)).toSeq
+
+    val plan = injector.plan(modules.overrideLeft)
     plan
   }
 
-  protected def makeInjector(f: ProviderMagnet[Unit]): distage.Injector = {
-    val roots: Set[reflection.universe.RuntimeDIUniverse.DIKey] = f.get.diKeys.toSet
-    val injector = Injector
-      .bootstrap(overrides = Seq[BootstrapModule](new TracingGcModule(roots)).merge)
+  protected def makeInjector(roots: Set[DIKey]): Injector = {
+    val allRoots = roots ++ Set(DIKey.get[Set[AutoCloseable]])
+    val closeablesHook = new AssignableFromAutoSetHook[AutoCloseable]()
+    val bootstrapModules = Seq[BootstrapModule](
+      new TracingGcModule(allRoots),
+      new BootstrapModuleDef {
+        many[AutoCloseable]
+        many[PlanningHook]
+          .add(closeablesHook)
+      },
+    ).merge
+
+    val injector = Injector.bootstrap(overrides = bootstrapModules)
+
     injector
   }
 
   protected def makeBindings(): ModuleBase
+
+  protected def makeConfig(): Option[AppConfig] = None
 }
 
 

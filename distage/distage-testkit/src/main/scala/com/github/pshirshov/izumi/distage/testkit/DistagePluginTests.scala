@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.P
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
-import org.scalatest.WordSpec
 
 trait DistagePluginTests extends DistageTests {
   protected def makeBindings(): ModuleBase = {
