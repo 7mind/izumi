@@ -8,7 +8,6 @@ import io.circe.parser.parse
 import org.http4s._
 import org.http4s.client._
 import org.http4s.client.blaze._
-import scalaz.zio.ExitResult
 
 trait WithHttp4sClient {
   this: Http4sContext =>
@@ -18,27 +17,29 @@ trait WithHttp4sClient {
   class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor[BiIO])
     extends IRTDispatcher[BiIO] {
 
-    private val client: CatsIO[Client[CatsIO]] = Http1Client[CatsIO]()
+    protected val client: CatsIO[Client[CatsIO]] = Http1Client[CatsIO]()
 
     def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Goint to perform $request")
+      val handler = handleResponse(request, _: Response[CatsIO])
       codec
         .encode(request)
         .flatMap {
           encoded =>
             val outBytes: Array[Byte] = printer.pretty(encoded).getBytes
-            val entityBody: EntityBody[CatsIO] = Stream.emits(outBytes).covary[CatsIO]
-            val req = buildRequest(baseUri, request, entityBody)
-
+            val req = buildRequest(baseUri, request, outBytes)
             logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
-
-            BIO.syncThrowable {
-              CIORunner.unsafeRunSync {
-                client
-                  .flatMap(_.fetch(req)(handleResponse(request, _)))
-              }
-            }
+            runRequest(handler, req)
         }
+    }
+
+    protected def runRequest[T](handler: Response[CatsIO] => CatsIO[T], req: Request[CatsIO]): BiIO[Throwable, T] = {
+      BIO.syncThrowable {
+        CIORunner.unsafeRunSync {
+          client
+            .flatMap(_.fetch(req)(handler))
+        }
+      }
     }
 
     protected def handleResponse(input: IRTMuxRequest, resp: Response[CatsIO]): CatsIO[IRTMuxResponse] = {
@@ -62,20 +63,24 @@ trait WithHttp4sClient {
               product
             }
 
-            BIORunner.unsafeRunSync0(decoded) match {
-              case ExitResult.Completed(v) =>
+            BIORunner.unsafeRunSyncAsEither(decoded) match {
+              case scala.util.Success(Right(v)) =>
                 CIO.pure(v)
 
-              case ExitResult.Failed(error, _) =>
+              case scala.util.Success(Left(error)) =>
                 logger.info(s"${input.method -> "method"}: decoder failed on $body: $error")
                 CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $error", Option(error)))
 
-              case ExitResult.Terminated(causes) =>
-                val f = causes.head
+              case scala.util.Failure(f) =>
                 logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
                 CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $f", Option(f)))
             }
         }
+    }
+
+    protected final def buildRequest(baseUri: Uri, input: IRTMuxRequest, body: Array[Byte]): Request[CatsIO] = {
+      val entityBody: EntityBody[CatsIO] = Stream.emits(body).covary[CatsIO]
+      buildRequest(baseUri, input, entityBody)
     }
 
     protected final def buildRequest(baseUri: Uri, input: IRTMuxRequest, body: EntityBody[CatsIO]): Request[CatsIO] = {

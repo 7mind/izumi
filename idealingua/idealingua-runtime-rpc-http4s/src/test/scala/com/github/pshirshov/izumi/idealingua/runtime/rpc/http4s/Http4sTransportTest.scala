@@ -11,16 +11,17 @@ import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
-import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceServerWrapped}
+import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceMethods, GreeterServiceServerWrapped}
 import com.github.pshirshov.izumi.r2.idealingua.test.impls._
 import org.http4s._
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
-import org.scalatest.WordSpec
+import org.scalatest.{Assertion, WordSpec}
 import scalaz.zio
 
 import scala.language.higherKinds
+import scala.util.{Failure, Success}
 
 class Http4sTransportTest extends WordSpec {
 
@@ -75,7 +76,7 @@ class Http4sTransportTest extends WordSpec {
   }
 
 
-  private def performTests(disp: IRTDispatcher[BiIO] with TestDispatcher): Unit = {
+  private def performTests(disp: IRTDispatcher[BiIO] with TestHttpDispatcher): Unit = {
     val greeterClient = new GreeterServiceClientWrapped(disp)
 
     disp.setupCredentials("user", "pass")
@@ -83,12 +84,17 @@ class Http4sTransportTest extends WordSpec {
     assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
     assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
+    checkBadBody("{}", disp)
+    checkBadBody("{unparseable", disp)
+
+
     disp.cancelCredentials()
     val forbidden = intercept[IRTUnexpectedHttpStatus] {
       BIOR.unsafeRun(greeterClient.alternative())
     }
     assert(forbidden.status == Status.Forbidden)
 
+    //
     disp.setupCredentials("user", "badpass")
     val unauthorized = intercept[IRTUnexpectedHttpStatus] {
       BIOR.unsafeRun(greeterClient.alternative())
@@ -96,6 +102,19 @@ class Http4sTransportTest extends WordSpec {
     assert(unauthorized.status == Status.Unauthorized)
     ()
 
+  }
+
+  def  checkBadBody(body: String, disp: IRTDispatcher[BiIO] with TestHttpDispatcher): Unit = {
+    val dummy = IRTMuxRequest(IRTReqBody((1, 2)), GreeterServiceMethods.greet.id)
+    val badJson = BIOR.unsafeRunSyncAsEither(disp.sendRaw(dummy, body.getBytes))
+    badJson match {
+      case Success(Left(value: IRTUnexpectedHttpStatus)) =>
+        assert(value.status == Status.BadRequest)
+      case Success(value) =>
+        fail(s"Unexpected success: $value")
+      case Failure(exception) =>
+        fail("Unexpected failure", exception)
+    }
   }
 }
 
@@ -136,6 +155,7 @@ object Http4sTransportTest {
   }
 
   class DemoContext[R[+ _, + _] : BIO, Ctx] {
+
     object Server {
       private val greeterService = new AbstractGreeterServer.Impl[R, Ctx]
       private val greeterDispatcher = new GreeterServiceServerWrapped(greeterService)
@@ -217,26 +237,36 @@ object Http4sTransportTest {
     final val ioService = new rt.HttpServer(demo.Server.multiplexor, demo.Server.codec, AuthMiddleware(authUser), wsContextProvider, rt.WsSessionListener.empty)
 
     //
-    final def clientDispatcher(): rt.ClientDispatcher with TestDispatcher = new rt.ClientDispatcher(baseUri, demo.Client.codec) with TestDispatcher {
-      override protected def transformRequest(request: Request[CIO]): Request[CIO] = {
-        request.withHeaders(Headers(creds.get(): _*))
+    final def clientDispatcher(): rt.ClientDispatcher with TestHttpDispatcher =
+      new rt.ClientDispatcher(baseUri, demo.Client.codec)
+        with TestHttpDispatcher {
+
+        override def sendRaw(request: IRTMuxRequest,  body: Array[Byte]): BiIO[Throwable, IRTMuxResponse] = {
+          val req = buildRequest(baseUri, request, body)
+          runRequest(handleResponse(request, _), req)
+        }
+
+        override protected def transformRequest(request: Request[CIO]): Request[CIO] = {
+          request.withHeaders(Headers(creds.get(): _*))
+        }
       }
-    }
 
     final val wsClientContextProvider = new WsClientContextProvider[Unit] {
       override def toContext(packet: RpcPacket): Unit = ()
     }
 
-    final def wsClientDispatcher(): rt.ClientWsDispatcher[Unit] with TestDispatcher = new rt.ClientWsDispatcher(wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider) with TestDispatcher {
-      override protected def transformRequest(request: RpcPacket): RpcPacket = {
-        Option(creds.get()) match {
-          case Some(value) =>
-            val update = value.map(h => (h.name.value, h.value)).toMap
-            request.copy(headers = request.headers ++ update)
-          case None => request
+    final def wsClientDispatcher(): rt.ClientWsDispatcher[Unit] with TestDispatcher =
+      new rt.ClientWsDispatcher(wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider)
+        with TestDispatcher {
+        override protected def transformRequest(request: RpcPacket): RpcPacket = {
+          Option(creds.get()) match {
+            case Some(value) =>
+              val update = value.map(h => (h.name.value, h.value)).toMap
+              request.copy(headers = request.headers ++ update)
+            case None => request
+          }
         }
       }
-    }
 
     final val greeterClient = new GreeterServiceClientWrapped(clientDispatcher)
   }

@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import io.circe.Json
 import BIO._
+import com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import scala.language.higherKinds
 
@@ -28,7 +29,20 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C](list: Set[IRTWrappedService[R, C]
 
   private def toM(parsedBody: Json, context: C, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C]): R[Throwable, Json] = {
     for {
-      decoded <- method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody))
+      decoded <- R.sandboxWith(method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody))) {
+        _.redeem(
+          {
+            case Left(exception :: _) =>
+              R.fail(Right(exception))
+            case Left(Nil) =>
+              R.terminate(new IllegalStateException())
+            case Right(v) =>
+              R.terminate(v) // impossible case, v is Nothing, exhaustive match check fails
+          }, {
+            succ => R.point(succ)
+          }
+        )
+      }
       casted <- R.syncThrowable(decoded.value.asInstanceOf[method.signature.Input])
       result <- R.syncThrowable(method.invoke(context, casted))
       safeResult <- result
