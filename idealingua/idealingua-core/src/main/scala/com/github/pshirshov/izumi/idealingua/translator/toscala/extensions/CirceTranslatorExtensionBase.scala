@@ -168,10 +168,13 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
       s"${id.name}Circe",
       q"""trait ${Type.Name(s"${id.name}Circe")} {
             import _root_.io.circe.{Encoder, Decoder, KeyEncoder, KeyDecoder}
+            import scala.util._
             implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = Encoder.encodeString.contramap(_.toString)
-            implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = Decoder.decodeString.map(${t.termFull}.parse)
+            implicit val ${Pat.Var(Term.Name(s"decode${id.name}"))}: Decoder[$tpe] = Decoder.decodeString.emapTry(v => Try(${t.termFull}.parse(v)))
             implicit val ${Pat.Var(Term.Name(s"encodeKey${id.name}"))}: KeyEncoder[$tpe] = KeyEncoder.encodeKeyString.contramap(_.toString)
-            implicit val ${Pat.Var(Term.Name(s"decodeKey${id.name}"))}: KeyDecoder[$tpe] = KeyDecoder.decodeKeyString.map(${t.termFull}.parse)
+            implicit val ${Pat.Var(Term.Name(s"decodeKey${id.name}"))}: KeyDecoder[$tpe] = new KeyDecoder[$tpe] {
+              final def apply(key: String): Option[$tpe] = Try(${t.termFull}.parse(key)).toOption
+            }
           }
       """)
   }
