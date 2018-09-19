@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import java.util.concurrent.ExecutorService
+
 import scalaz.zio.{ExitResult, IO, RTS}
 
 import scala.language.higherKinds
@@ -15,9 +17,11 @@ trait BIORunner[BIO[_, _]] {
 }
 
 object BIORunner {
-  def apply[BIO[_, _]: BIORunner]: BIORunner[BIO] = implicitly
+  def apply[BIO[_, _] : BIORunner]: BIORunner[BIO] = implicitly
 
-  implicit object ZIORunner extends BIORunner[IO] with RTS {
+  class ZIORunnerBase(override val threadPool: ExecutorService)
+    extends BIORunner[IO]
+      with RTS {
     override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = {
       _ => IO.sync(())
     }
@@ -31,5 +35,9 @@ object BIORunner {
       case ExitResult.Terminated(t) => Failure(t.head)
     }
   }
+
+  object DefaultRTS extends RTS
+
+  implicit object ZIORunner extends ZIORunnerBase(DefaultRTS.threadPool)
 
 }
