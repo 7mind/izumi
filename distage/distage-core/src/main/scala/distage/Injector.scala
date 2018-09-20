@@ -34,7 +34,7 @@ object Injector {
   /**
     * Create a new injector inheriting plugins, hooks and context from a previous Injector's run
     *
-    * Instances from parent will be available as imports in new Injector's [[com.github.pshirshov.izumi.distage.model.Injector#produce]]
+    * Instances from parent will be available as imports in the new Injector's [[com.github.pshirshov.izumi.distage.model.Producer#produce produce]]
     */
   def create(parent: Locator, locatorExtensions: LocatorExtension*): Injector = {
     new InjectorDefaultImpl(parent.extend(locatorExtensions: _*))
