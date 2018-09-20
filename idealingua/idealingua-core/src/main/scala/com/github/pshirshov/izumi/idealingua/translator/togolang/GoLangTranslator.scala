@@ -183,11 +183,17 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
         case _ => ""
       }
 
+      val testName = i.id.name + (i.target match {
+        case ii: InterfaceId => typespace.tools.implId(ii).name
+        case _ => ""
+      })
+
+
       AliasProduct(
         s"""// ${i.id.name} alias
            |type ${i.id.name} = ${goType.renderType(forAlias = true)}
            |$aliases
-           |func NewTest${i.id.name}() ${goType.renderType()} {
+           |func NewTest$testName() ${goType.renderType()} {
            |    return ${goType.testValue()}
            |}
          """.stripMargin,
