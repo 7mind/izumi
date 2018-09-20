@@ -74,7 +74,6 @@ class Http4sTransportTest extends WordSpec {
   }
 
   def withServer(f: => Unit): Unit = {
-    import scala.concurrent.ExecutionContext.Implicits.global
     val builder = BlazeBuilder[CIO]
       .bindHttp(port, host)
       .withWebSockets(true)

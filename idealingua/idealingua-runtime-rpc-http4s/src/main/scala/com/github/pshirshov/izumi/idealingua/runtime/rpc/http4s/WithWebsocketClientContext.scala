@@ -8,8 +8,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import fs2.async
-import fs2.async.mutable.Queue
+import fs2.concurrent.Queue
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.AuthedRequest
@@ -76,7 +75,7 @@ trait WithWebsocketClientContext {
 
     private val sendQueue = new ConcurrentLinkedDeque[WebSocketFrame]()
 
-    protected[http4s] val queue: CatsIO[Queue[CatsIO, WebSocketFrame]] = async.unboundedQueue[CatsIO, WebSocketFrame]
+    protected[http4s] val queue: CatsIO[Queue[CatsIO, WebSocketFrame]] = Queue.unbounded[CatsIO, WebSocketFrame]
 
     protected[http4s] val outStream: fs2.Stream[CatsIO, WebSocketFrame] =
       fs2.Stream.awakeEvery[CatsIO](queuePollTimeout) >> {
