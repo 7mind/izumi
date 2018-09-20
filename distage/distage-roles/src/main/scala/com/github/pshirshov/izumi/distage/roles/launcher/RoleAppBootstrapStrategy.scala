@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategyBaseImpl, BootstrapContext, OpinionatedDiApp}
-import com.github.pshirshov.izumi.distage.config.ConfigModule
+import com.github.pshirshov.izumi.distage.config.{ConfigModule, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook

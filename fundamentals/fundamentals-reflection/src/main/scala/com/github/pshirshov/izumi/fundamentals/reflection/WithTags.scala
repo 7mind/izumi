@@ -13,7 +13,7 @@ trait WithTags extends UniverseGeneric { self =>
   import ReflectionUtil._
 
   /**
-  * Like [[scala.reflect.api.TypeTags#TypeTag]], but supports higher-kinded type tags via `TagK` type class.
+  * Like [[scala.reflect.api.TypeTags.TypeTag]], but supports higher-kinded type tags via `TagK` type class.
   *
   * In context of DI this allows you to define a module parameterized by a generic higher-kinded type parameter.
   * This is especially helpful when coding in a [[https://www.beyondthelines.net/programming/introduction-to-tagless-final/ `tagless final` style]]
@@ -156,7 +156,7 @@ trait WithTags extends UniverseGeneric { self =>
   }
 
   /**
-    * `TagK` is a [[scala.reflect.api.TypeTags#TypeTag]] for higher-kinded types.
+    * `TagK` is a [[scala.reflect.api.TypeTags.TypeTag]] for higher-kinded types.
     *
     * Example:
     * {{{

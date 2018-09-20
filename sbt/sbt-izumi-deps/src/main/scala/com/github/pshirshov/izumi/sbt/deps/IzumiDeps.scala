@@ -7,9 +7,9 @@ object IzumiDeps {
   object V {
     // foundation
     val scala_212 = "2.12.6"
-    val scala_213 = "2.13.0-M4"
+    val scala_213 = "2.13.0-M5"
 
-    val collection_compat = "0.1.1"
+    val collection_compat = "0.2.0"
 
     val scala_java8_compat = "0.9.0" // 2.13+
     val kind_projector = "0.9.7" // 2.13+
@@ -17,15 +17,15 @@ object IzumiDeps {
 
     val shapeless = "2.3.3" // 2.13+
 
-    val cats = "1.1.0" // 1.2.0 is 2.13+ but we are blocked by http4s
-    val cats_effect = "1.0.0-RC2"
+    val cats = "1.4.0" // 1.2.0 is 2.13+ but we are blocked by http4s
+    val cats_effect = "1.0.0"
 
-    val circe = "0.10.0-M1" // 2.13+ , "0.10.0-M2" pulls cats 1.2.0
+    val circe = "0.10.0-M2" // 2.13+ , "0.10.0-M2" pulls cats 1.2.0
     val circe_derivation = "0.9.0-M5"
 
-    val http4s = "0.19.0-M1" // https://github.com/http4s/http4s/issues/1797
+    val http4s = "0.19.0-M2" // https://github.com/http4s/http4s/issues/1797
 
-    val scalameta = "4.0.0-M9" // https://github.com/scalameta/scalameta/issues/1693
+    val scalameta = "4.0.0" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
 
     val scalacheck = "1.14.0"
@@ -40,7 +40,7 @@ object IzumiDeps {
     val jaxb_impl = "2.3.0.1"
     val activation = "1.1.1"
 
-    val classgraph = "4.1.3" // java
+    val classgraph = "4.1.7" // java
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 
@@ -48,7 +48,7 @@ object IzumiDeps {
     val scopt = "3.7.0" // 2.13+
 
     // good to drop - java
-    val cglib_nodep = "3.2.7" // java
+    val cglib_nodep = "3.2.8" // java
   }
 
   object R {
@@ -90,13 +90,19 @@ object IzumiDeps {
 
     val shapeless = "com.chuusai" %% "shapeless" % V.shapeless
 
-    val circe: Seq[ModuleID] = Seq(
+    val circe: Seq[ModuleID] = (Seq(
       "io.circe" %% "circe-core"
       , "io.circe" %% "circe-generic"
       , "io.circe" %% "circe-generic-extras"
       , "io.circe" %% "circe-parser"
     ).map(_ % V.circe) ++ Seq(
-      "io.circe" %% "circe-derivation" % V.circe_derivation)
+      "io.circe" %% "circe-derivation" % V.circe_derivation exclude("io.circe", "circe-core"))
+      ).map(
+      _.exclude("org.typelevel", "cats-kernel")
+       .exclude("org.typelevel", "cats-core")
+    ) ++ Seq(
+      cats_core
+    )
 
     val http4s_client: Seq[ModuleID] = Seq(
       "org.http4s" %% "http4s-blaze-client"

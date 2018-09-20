@@ -10,9 +10,9 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.config.codecs.LoggerPathConfigCodec
 import com.github.pshirshov.izumi.logstage.distage.LoggerConfigModule.Entries
 
-class LoggerConfigModule() extends ModuleDef {
+class LoggerConfigModule extends ModuleDef {
   make[LoggerConfig].from {
-    (sinks : Entries @ConfPath("logstage"), appConfig: AppConfig, runtimeConfigReader: RuntimeConfigReader) =>
+    (sinks: Entries @ConfPath("logstage"), appConfig: AppConfig, runtimeConfigReader: RuntimeConfigReader) =>
       val reader = new RuntimeConfigReaderDefaultImpl(runtimeConfigReader.codecs ++ Map(
         SafeType0.get[LoggerPathConfig] -> new LoggerPathConfigCodec(sinks.sinks)
       ))
@@ -22,6 +22,5 @@ class LoggerConfigModule() extends ModuleDef {
 }
 
 object LoggerConfigModule {
-  case class Entries(sinks : Map[String, LogSink])
+  case class Entries(sinks: Map[String, LogSink])
 }
-

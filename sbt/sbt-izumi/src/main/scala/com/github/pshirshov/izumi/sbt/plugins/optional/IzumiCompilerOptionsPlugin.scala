@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.sbt.plugins.optional
 
+import coursier.core.Version
 import sbt.Keys.{isSnapshot, scalaOrganization, _}
 import sbt.{Def, _}
 
@@ -57,13 +58,19 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
 
   protected def releaseSettings(scalaVersion: String, isSnapshot: Boolean): Seq[String] = {
     CrossVersion.partialVersion(scalaVersion) match {
-      case Some((2, 12)) if !isSnapshot => Seq(
-        "-opt:l:inline"
-        , "-opt-inline-from"
-      )
+      case Some((2, 12)) if optimizerEnabled(scalaVersion, isSnapshot) =>
+        Seq(
+          "-opt:l:inline"
+          , "-opt-inline-from"
+        )
       case _ =>
         Seq()
     }
+  }
+
+  private def optimizerEnabled(scalaVersion: String, isSnapshot: Boolean) = {
+    val javaVersion = sys.props.get("java.version") getOrElse {sys.error("failed to get system property java.version")}
+    !isSnapshot && (Version(scalaVersion) >= Version("2.12.7") || javaVersion.startsWith("1.8"))
   }
 
   protected def scalacOptionsVersion(scalaOrganization: String, scalaVersion: String): Seq[String] = {

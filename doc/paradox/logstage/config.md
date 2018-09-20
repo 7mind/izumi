@@ -1,10 +1,8 @@
 # Logstage Config
 
-Meta definition of sinks and logentries hash
+## Sample
 
-## Sample logstage config
-
-```
+```hocon
 logstage {
  
   sinks = {
@@ -62,25 +60,27 @@ logstage {
 
 
 Section      |   Explanation |
-------------| ----------- |
-`sinks` |Defines list of log sinks for theirs further usage*. This section should contain `default` log sinks in case of ignore sinks list if you need to use only default sinks** |
-`root` |  Defines default settings for logging (i.e., sinks and log threshold) | 
-`entries` |Defines log entries settings (threshold and list of sinks |
+------------ | ------------- |
+`sinks`      | Defines list of log sinks for theirs further usage*. This section should contain `default` log sinks in case of ignore sinks list if you need to use only default sinks** |
+`root`       | Defines default settings for logging (i.e., sinks and log threshold) | 
+`entries`    | Defines log entries settings (threshold and list of sinks |
 
-### Please Note!
+Notes:
 
-`*` For each sink you need to provide rendering policy mapper. 
-    You need to specify case class constructor for defined logsink and implement function for it's instantiating.
+- For each sink you need to provide rendering policy mapper. 
+  You need to specify case class constructor for defined logsink and implement function for it's instantiating.
 
-`**` In `sinks` section you can define log sink with label `default` for it's further usage on logentries definition for simplify log entries definition. For example, if you need to define only threshold level but sink can be `default`, you only write next:
-```
+- In `sinks` section you can define log sink with label `default` for it's further usage on logentries definition for simplify log entries definition. For example, if you need to define only threshold level but sink can be `default`, you only write next:
+
+```hocon
 entries = {
     "target.path" = <your_level>
 }
 ```
+
 instead of common syntax:
 
-```
+```hocon
 entries = {
     "target.path" = {
        threshold = <your_level>
@@ -110,19 +110,18 @@ So, what you need to do to use logstage declarative config:
 
 3) defined application modules: 
     
-    - `LoggerConfigModule()` - it makes binding of LoggerConfig and you may inject it from locator using next commnad:
+    - `LoggerConfigModule()` - it makes binding of LoggerConfig and you may inject it from locator using next command:
     
-    ```
+    ```scala
     val logstageConfig = locator.get[LoggerConfig]
     ```
     
     LoggerConfig model is next:
     
-    ```
+    ```scala
     final case class LoggerPathConfig(threshold: Log.Level, sinks: Seq[LogSink])
     
     final case class LoggerConfig(root : LoggerPathConfig, entries : Map[String, LoggerPathConfig])
-    
     ```
 
 ## Example 
@@ -131,7 +130,7 @@ So, what you need to do to use logstage declarative config:
 
     1.1 DummyLogSink
     
-    ```
+    ```scala
     class DummyLogSink(policy: RenderingPolicy) extends LogSink {
        override def flush(e: Log.Entry): Unit = {
          // do smth
@@ -141,7 +140,7 @@ So, what you need to do to use logstage declarative config:
     
     1.2 DummyRenderingPolicy
     
-    ```
+    ```scala
     class DummyRenderingPolicy(foo: Int, bar: Option[String]) extends RenderingPolicy {
       override def render(entry: Log.Entry): String = entry.toString
     }
@@ -149,7 +148,7 @@ So, what you need to do to use logstage declarative config:
 
 2. Let's define out logstage reference config 
 
-```
+```hocon
 logstage {
 
    // include izumi sdk settings
@@ -190,13 +189,13 @@ logstage {
 
     3.1 DummyRenderingPolicyConstructor
     
-    ```
+    ```scala
     case class DummyRenderingPolicyConstructor(foo : Int, bar: Option[String])
     ```
     
     3.2 DummyLogSinkConstructor
         
-    ```
+    ```scala
     case class DummyLogSinkConstructor(policy : RenderingPolicy)
     ```
 
@@ -204,7 +203,7 @@ logstage {
 
     4.1 Define bootsrap module. Here you can bind all mappers for custom Policies and Logsinks:
     
-    ```
+    ```scala
     val logstageBootstrapModule = new LogstageCodecsModule {
         
         // bind our rendering policy
@@ -227,13 +226,13 @@ logstage {
     
     4.2 Add `LoggerConfigModule` to app modules
     
-    ```
+    ```scala
     val modules = Seq(..., new LoggerConfigModule ())
     ```
     
     4.2 Enjoy!
     
-    ```
+    ```scala
     // Basic locator setup
     
     val injector = Injector(bootstapModules: _*)
@@ -244,4 +243,3 @@ logstage {
     val cfg = locator.get[LoggerConfig]
     ```
     
-

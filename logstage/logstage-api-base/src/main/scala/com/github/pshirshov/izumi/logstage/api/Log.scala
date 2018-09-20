@@ -19,7 +19,7 @@ object Log {
 
     def parse(lvl:String): Level =
       labelMap.getOrElse(lvl.toLowerCase, {
-        throw new IllegalArgumentException(s"Unknwown requested log level $lvl")
+        throw new IllegalArgumentException(s"Unknown log level $lvl")
       })
 
     case object Trace extends Level {
