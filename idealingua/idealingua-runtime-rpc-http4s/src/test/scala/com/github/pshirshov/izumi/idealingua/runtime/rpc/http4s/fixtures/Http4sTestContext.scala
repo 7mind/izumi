@@ -4,7 +4,7 @@ import java.net.URI
 import java.util.concurrent.atomic.AtomicReference
 
 import cats.data.{Kleisli, OptionT}
-import cats.effect.IO
+import cats.effect.{ContextShift, IO, Timer}
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.{Http4sRuntime, WsClientContextProvider}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMuxRequest, IRTMuxResponse, RpcPacket}
@@ -29,7 +29,11 @@ object Http4sTestContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  final val rt = new Http4sRuntime[BiIO, CIO](makeLogger())
+  implicit val contextShift: ContextShift[CIO] = IO.contextShift(global)
+  implicit val timer: Timer[CIO] = IO.timer(global)
+  final val rt = {
+    new Http4sRuntime[BiIO, CIO](makeLogger())
+  }
 
   //
   final val authUser: Kleisli[OptionT[CIO, ?], Request[CIO], DummyRequestContext] =

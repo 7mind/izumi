@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import io.circe.Json
 import BIO._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import scala.language.higherKinds
 
