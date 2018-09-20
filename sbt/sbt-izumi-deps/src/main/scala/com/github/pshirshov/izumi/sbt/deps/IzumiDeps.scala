@@ -90,13 +90,19 @@ object IzumiDeps {
 
     val shapeless = "com.chuusai" %% "shapeless" % V.shapeless
 
-    val circe: Seq[ModuleID] = Seq(
+    val circe: Seq[ModuleID] = (Seq(
       "io.circe" %% "circe-core"
       , "io.circe" %% "circe-generic"
       , "io.circe" %% "circe-generic-extras"
       , "io.circe" %% "circe-parser"
     ).map(_ % V.circe) ++ Seq(
-      "io.circe" %% "circe-derivation" % V.circe_derivation)
+      "io.circe" %% "circe-derivation" % V.circe_derivation exclude("io.circe", "circe-core"))
+      ).map(
+      _.exclude("org.typelevel", "cats-kernel")
+       .exclude("org.typelevel", "cats-core")
+    ) ++ Seq(
+      cats_core
+    )
 
     val http4s_client: Seq[ModuleID] = Seq(
       "org.http4s" %% "http4s-blaze-client"
