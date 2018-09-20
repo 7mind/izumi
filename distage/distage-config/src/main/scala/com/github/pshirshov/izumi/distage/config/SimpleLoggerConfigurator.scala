@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.roles.launcher
+package com.github.pshirshov.izumi.distage.config
 
 import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
+import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
+import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl, StaticLogRouter}
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, QueueingSink}
 import com.typesafe.config.Config
 

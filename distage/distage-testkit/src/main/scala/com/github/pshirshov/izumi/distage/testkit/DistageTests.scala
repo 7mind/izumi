@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.config.ConfigModule
+import com.github.pshirshov.izumi.distage.config.{ConfigModule, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
@@ -11,14 +11,18 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 import distage.{BootstrapModule, Injector, ModuleBase, Tag}
 
+import scala.util.Try
+
 
 trait DistageTests {
   protected val resourceCollection: DistageResourceCollection = NullDistageResourceCollection
+  protected val baseRouter: LogRouter = IzLogger.simpleRouter(Log.Level.Info, ConsoleSink.ColoredConsoleSink)
 
   protected def di[T: Tag](f: T => Any): Unit = {
     val providerMagnet: ProviderMagnet[Unit] = { x: T => f(x); () }
@@ -63,16 +67,34 @@ trait DistageTests {
     injector.produce(plan)
   }
 
+  protected def makeLogRouter(config: Option[AppConfig]): LogRouter =   {
+    val maybeLoggerConfig = for {
+      appConfig <- config
+      loggerConfig <- Try(appConfig.config.getConfig("logger")).toOption
+    } yield  {
+      loggerConfig
+    }
+
+    maybeLoggerConfig  match {
+      case Some(value) =>
+        new SimpleLoggerConfigurator(new IzLogger(baseRouter, Log.CustomContext.empty))
+          .makeLogRouter(value, Log.Level.Info, json = false)
+
+      case None =>
+        baseRouter
+    }
+  }
+
   protected def makeContext(injector: Injector, primaryModule: ModuleBase): OrderedPlan = {
+    val maybeConfig = makeConfig()
 
     val modules = Seq(
       primaryModule,
-      new LogstageModule(IzLogger.simpleRouter(Log.Level.Debug, ConsoleSink.ColoredConsoleSink)),
+      new LogstageModule(makeLogRouter(maybeConfig)),
     ) ++
-      makeConfig().map(c => new ConfigModule(c)).toSeq
+      maybeConfig.map(c => new ConfigModule(c)).toSeq
 
-    val plan = injector.plan(modules.overrideLeft)
-    plan
+    injector.plan(modules.overrideLeft)
   }
 
   protected def makeInjector(roots: Set[DIKey]): Injector = {
