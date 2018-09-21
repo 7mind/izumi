@@ -70,7 +70,7 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
 
   private def optimizerEnabled(scalaVersion: String, isSnapshot: Boolean) = {
     val javaVersion = sys.props.get("java.version") getOrElse {sys.error("failed to get system property java.version")}
-    !isSnapshot && (Version(scalaVersion) >= Version("2.12.7") || javaVersion.startsWith("1.8"))
+    !isSnapshot && (Version(scalaVersion) > Version("2.12.6") || javaVersion.startsWith("1.8"))
   }
 
   protected def scalacOptionsVersion(scalaOrganization: String, scalaVersion: String): Seq[String] = {

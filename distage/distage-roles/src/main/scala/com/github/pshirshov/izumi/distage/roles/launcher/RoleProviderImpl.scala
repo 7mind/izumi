@@ -47,29 +47,26 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
     val availableBindings =
       bb
         .map(b => (b, bindingToType(b, isAvailableRoleType)))
-        .collect { case (b, Some(rt)) =>
-          val runtimeClass = mirror.runtimeClass(rt.tpe)
+        .collect {
+          case (b, Some(rt)) =>
+            val runtimeClass = mirror.runtimeClass(rt.tpe)
 
-          val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
-          roles.RoleBinding(b, rt, getAnno(rt), src)
+            val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
+            roles.RoleBinding(b, rt, getAnno(rt), src)
         }
 
     availableBindings.toSeq
   }
 
   private def isAvailableRoleType(tpe: SafeType): Boolean = {
-    import RuntimeDIUniverse._
-    val runtimeClass = mirror.runtimeClass(tpe.tpe)
-    classOf[RoleService].isAssignableFrom(runtimeClass)
-
+    tpe weak_<:< SafeType.get[RoleService]
   }
 
   private def isEnabledRole(tpe: distage.model.reflection.universe.RuntimeDIUniverse.SafeType): Boolean = {
-    val runtimeClass = mirror.runtimeClass(tpe.tpe)
-
     val anno: Set[String] = getAnno(tpe)
-    isAvailableRoleType(tpe) && (requiredRoles.contains(runtimeClass.getSimpleName.toLowerCase) || anno.intersect(requiredRoles).nonEmpty)
+    isAvailableRoleType(tpe) && (requiredRoles.contains(tpe.tpe.typeSymbol.name.decodedName.toString.toLowerCase) || anno.intersect(requiredRoles).nonEmpty)
   }
+
 
   private def bindingToType(b: Binding, pred: RuntimeDIUniverse.SafeType => Boolean): Option[RuntimeDIUniverse.SafeType] = {
     val impldef = b match {
@@ -79,7 +76,6 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
       case _ =>
         None
     }
-
 
     val implkey = impldef match {
       case Some(i: ImplDef.WithImplType) =>
@@ -91,18 +87,7 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
     implkey.filter(pred)
   }
 
-  private def getAnno(tpe: model.reflection.universe.RuntimeDIUniverse.SafeType) = {
-    import RuntimeDIUniverse._
-    import RuntimeDIUniverse.u._
-
-    def findArgument(ann: Annotation): Option[String] = {
-      AnnotationTools.findArgument(ann) {
-        case Literal(Constant(str: String)) =>
-          str
-      }
-    }
-
-    val anno = SymbolInfo(tpe.tpe.typeSymbol, tpe).findAnnotation(SafeType.get[RoleId]).flatMap(findArgument).toSet
-    anno
+  private def getAnno(tpe: model.reflection.universe.RuntimeDIUniverse.SafeType): Set[String] = {
+    AnnotationTools.collectFirstString[RoleId](RuntimeDIUniverse.u)(tpe.tpe.typeSymbol).toSet
   }
 }

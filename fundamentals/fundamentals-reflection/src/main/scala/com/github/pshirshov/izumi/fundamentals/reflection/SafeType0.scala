@@ -30,6 +30,9 @@ class SafeType0[U <: SingletonUniverse](val tpe: U#Type) {
 
   final def <:<(that: SafeType0[U]): Boolean =
     dealiased <:< that.dealiased
+
+  final def weak_<:<(that: SafeType0[U]): Boolean =
+    dealiased weak_<:< that.dealiased
 }
 
 object SafeType0 {
