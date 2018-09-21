@@ -33,7 +33,7 @@ object AnnotationTools {
 
   def collectFirstString[T: u.TypeTag](u: Universe)(symb: u.Symbol): Option[String] =
     collectFirstArgument[T, String](u)(symb, {
-      case u.Literal(u.Constant(str: String)) => str
+      case l: u.Literal @unchecked if l.value.value.isInstanceOf[String] => l.value.value.asInstanceOf[String] // avoid unchecked warning
     })
 
   def findArgument[R](ann: Universe#Annotation)(matcher: PartialFunction[Universe#Tree, R]): Option[R] =
