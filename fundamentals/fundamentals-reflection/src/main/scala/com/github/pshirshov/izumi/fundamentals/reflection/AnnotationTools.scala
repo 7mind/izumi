@@ -9,7 +9,7 @@ object AnnotationTools {
     )
 
   def findSymbolAnnotation(u: Universe)(annType: u.Type, symb: u.Symbol): Option[u.Annotation] =
-      symb.annotations.find(annotationTypeEq(u)(annType, _))
+    symb.annotations.find(annotationTypeEq(u)(annType, _))
 
   def findTypeAnnotation(u: Universe)(annType: u.Type, typ: u.Type): Option[u.Annotation] =
     getAllTypeAnnotations(u)(typ).find(annotationTypeEq(u)(annType, _))
@@ -28,8 +28,13 @@ object AnnotationTools {
   def annotationTypeEq(u: Universe)(tpe: u.Type, ann: u.Annotation): Boolean =
     ann.tree.tpe.erasure =:= tpe.erasure
 
-  def findMatchingBody[T: u.TypeTag, R](u: Universe)(symb: u.Symbol, matcher: PartialFunction[u.Tree, R]): Option[R] =
+  def collectFirstArgument[T: u.TypeTag, R](u: Universe)(symb: u.Symbol, matcher: PartialFunction[u.Tree, R]): Option[R] =
     find(u)(u.typeOf[T], symb).map(_.tree.children.tail).flatMap(_.collectFirst[R](matcher))
+
+  def collectFirstString[T: u.TypeTag](u: Universe)(symb: u.Symbol): Option[String] =
+    collectFirstArgument[T, String](u)(symb, {
+      case u.Literal(u.Constant(str: String)) => str
+    })
 
   def findArgument[R](ann: Universe#Annotation)(matcher: PartialFunction[Universe#Tree, R]): Option[R] =
     ann.tree.children.tail.collectFirst(matcher)

@@ -105,19 +105,19 @@ object ExecutableOp {
   }
 
   @scala.annotation.tailrec
-  def runtimeClass(op: ExecutableOp): Class[_] = {
+  def instanceType(op: ExecutableOp): SafeType = {
     op match {
       case w: WiringOp =>
         w.wiring match {
           case u: Wiring.UnaryWiring =>
-            mirror.runtimeClass(u.instanceType.tpe)
+            u.instanceType
           case _ =>
-            mirror.runtimeClass(w.target.tpe.tpe)
+            w.target.tpe
         }
       case p: MakeProxy =>
-        runtimeClass(p.op)
+        instanceType(p.op)
       case o =>
-        mirror.runtimeClass(o.target.tpe.tpe)
+        o.target.tpe
     }
   }
 }
