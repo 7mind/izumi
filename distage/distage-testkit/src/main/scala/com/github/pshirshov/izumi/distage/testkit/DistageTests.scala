@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.testkit
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.github.pshirshov.izumi.distage.config.{ConfigModule, SimpleLoggerConfigurator}
+import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
@@ -151,7 +151,7 @@ trait DistageTests {
       new LogstageModule(makeLogRouter(maybeConfig)),
       bsModule,
     ) ++
-      maybeConfig.map(c => new ConfigModule(c)).toSeq
+      maybeConfig.map(c => new ConfigModule(c, configOptions)).toSeq
 
     Injector.bootstrap(overrides = bootstrapModules.merge)
   }
@@ -159,4 +159,6 @@ trait DistageTests {
   protected def makeBindings(): ModuleBase
 
   protected def makeConfig(): Option[AppConfig] = None
+
+  protected def configOptions: ConfigInjectionOptions = ConfigInjectionOptions()
 }

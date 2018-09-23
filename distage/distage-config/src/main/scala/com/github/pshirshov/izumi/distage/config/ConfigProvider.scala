@@ -15,7 +15,7 @@ import scala.util.Try
 import scala.util.control.NonFatal
 
 
-class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorConfig: ConfigInjectorConfig)
+class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorConfig: ConfigInjectionOptions)
   extends PlanningHook {
 
   import ConfigProvider._

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.testkit
 
+import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 
 class TestService1 extends AutoCloseable {
@@ -7,7 +8,9 @@ class TestService1 extends AutoCloseable {
   }
 }
 
-class TestService2 {
+case class TestConfig(x: Int, y: Int)
+
+class TestService2(@ConfPath("test") val cfg: TestConfig) {
 }
 
 class TestPlugin extends PluginDef {
