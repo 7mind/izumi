@@ -31,6 +31,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   implicit val liftableIdKey: Liftable[DIKey.IdKey[_]] = {
     case idKey: DIKey.IdKey[_] =>
       import idKey._
+      // FIXME: will fail on config keys [Though ConfigModule is tied to RuntimeUniverse right now anyway]
       val lift = idContract.asInstanceOf[IdContractImpl[Any]].liftable
       q"""{ new $RuntimeDIUniverse.DIKey.IdKey($tpe, ${lift(id)}) }"""
   }

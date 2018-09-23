@@ -15,7 +15,7 @@ import scala.collection.mutable
   *
   * Example:
   * {{{
-  * class Program[F: TagK: Monad] extends ModuleDef {
+  * class Program[F[_]: TagK: Monad] extends ModuleDef {
   *   make[TaglessProgram[F]]
   * }
   *
@@ -234,7 +234,7 @@ object ModuleDefDSL {
 
   sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {
     protected def mutableState: SingletonRef
-    protected val binding: SingletonBinding[DIKey]
+    protected def binding: SingletonBinding[DIKey]
 
     //    trait Replace[A] {
     //      def apply[B, R](f: A => B)(cont: Replace[B] => R): R
@@ -307,7 +307,7 @@ object ModuleDefDSL {
   }
 
   sealed trait SetElementDSLMutBase[T] extends SetDSLMutBase[T] {
-    protected val mutableCursor: SingletonRef
+    protected def mutableCursor: SingletonRef
 
     protected def replaceCursor(newBindingCursor: Binding): SetElementDSL[T] = {
       mutableCursor.ref = newBindingCursor
