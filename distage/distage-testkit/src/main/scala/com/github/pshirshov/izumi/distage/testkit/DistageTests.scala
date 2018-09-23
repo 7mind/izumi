@@ -127,30 +127,33 @@ trait DistageTests {
   }
 
   protected def makeContext(injector: Injector, primaryModule: ModuleBase): OrderedPlan = {
-    val maybeConfig = makeConfig()
-
     val modules = Seq(
       primaryModule,
-      new LogstageModule(makeLogRouter(maybeConfig)),
-    ) ++
-      maybeConfig.map(c => new ConfigModule(c)).toSeq
+    )
 
     injector.plan(modules.overrideLeft)
   }
 
   protected def makeInjector(roots: Set[DIKey]): Injector = {
+    val maybeConfig = makeConfig()
+
+
     val allRoots = roots ++ Set(DIKey.get[Set[AutoCloseable]])
     val closeablesHook = new AssignableFromAutoSetHook[AutoCloseable]()
+    val bsModule = new BootstrapModuleDef {
+      many[AutoCloseable]
+      many[PlanningHook]
+        .add(closeablesHook)
+    }
+
     val bootstrapModules = Seq[BootstrapModule](
       new TracingGcModule(allRoots),
-      new BootstrapModuleDef {
-        many[AutoCloseable]
-        many[PlanningHook]
-          .add(closeablesHook)
-      },
-    ).merge
+      new LogstageModule(makeLogRouter(maybeConfig)),
+      bsModule,
+    ) ++
+      maybeConfig.map(c => new ConfigModule(c)).toSeq
 
-    Injector.bootstrap(overrides = bootstrapModules)
+    Injector.bootstrap(overrides = bootstrapModules.merge)
   }
 
   protected def makeBindings(): ModuleBase
