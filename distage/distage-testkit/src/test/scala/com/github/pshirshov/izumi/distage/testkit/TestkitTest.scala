@@ -10,7 +10,7 @@ class TestkitTest extends DistagePluginSpec {
         assert(locatorRef.get.instances.exists(_.value == service))
         assert(!locatorRef.get.instances.exists(_.value.isInstanceOf[TestService2]))
         assert(locatorRef.get.get[Set[AutoCloseable]].size == 1)
-        assert(locatorRef.get.parent.get.get[Set[AutoCloseable]].size == 0)
+        assert(locatorRef.get.parent.get.get[Set[AutoCloseable]].isEmpty)
     }
   }
 }
