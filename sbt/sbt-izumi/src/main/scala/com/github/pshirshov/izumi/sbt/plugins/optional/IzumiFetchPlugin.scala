@@ -14,7 +14,7 @@ import sbt.internal.util.ConsoleLogger
 import sbt.io.{CopyOptions, IO}
 import sbt.librarymanagement.ModuleID
 import sbt.librarymanagement.ivy.{DirectCredentials, FileCredentials}
-import sbt.{AutoPlugin, Def, TaskKey, settingKey, taskKey, librarymanagement => lm}
+import sbt.{AutoPlugin, Def, settingKey, taskKey, librarymanagement => lm}
 
 object IzumiFetchPlugin extends AutoPlugin {
 

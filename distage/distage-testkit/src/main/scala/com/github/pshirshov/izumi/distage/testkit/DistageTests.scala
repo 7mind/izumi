@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
@@ -16,6 +18,7 @@ import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 import distage.{BootstrapModule, Injector, ModuleBase, Tag}
+import org.scalatest.exceptions.TestCanceledException
 
 import scala.util.Try
 
@@ -30,14 +33,52 @@ trait DistageTests {
   }
 
   protected def di(f: ProviderMagnet[Any]): Unit = {
-    ctx(f.get.diKeys.toSet) {
+    ctx(f.get.diKeys.toSet ++ suiteRoots) {
       context =>
         try {
+          verifyTotalSuppression()
+          beforeRun(context)
+          verifyTotalSuppression()
+
           context.run(f).discard()
         } finally {
           finalizeTest(context)
         }
     }
+  }
+
+  private def verifyTotalSuppression(): Unit = {
+    if (suppressAll.get()) {
+      ignoreThisTest("The rest of this test suite has been suppressed")
+    }
+  }
+
+  protected def suiteRoots: Set[DIKey] = Set.empty
+
+  private val suppressAll = new AtomicBoolean(false)
+
+  protected def suppressTheRestOfTestSuite(): Unit = {
+    suppressAll.set(true)
+  }
+
+  protected def beforeRun(context: Locator): Unit = {
+    context.discard()
+  }
+
+  protected def ignoreThisTest(cause: Throwable): Nothing = {
+    ignoreThisTest(None, Some(cause))
+  }
+
+  protected def ignoreThisTest(message: String): Nothing = {
+    ignoreThisTest(Some(message), None)
+  }
+
+  protected def ignoreThisTest(message: String, cause: Throwable): Nothing = {
+    ignoreThisTest(Some(message), Some(cause))
+  }
+
+  protected def ignoreThisTest(message: Option[String] = None, cause: Option[Throwable] = None): Nothing = {
+    throw new TestCanceledException(message, cause, failedCodeStackDepth = 0)
   }
 
   protected def ctx(roots: Set[DIKey])(f: Locator => Unit): Unit = {
@@ -67,15 +108,15 @@ trait DistageTests {
     injector.produce(plan)
   }
 
-  protected def makeLogRouter(config: Option[AppConfig]): LogRouter =   {
+  protected def makeLogRouter(config: Option[AppConfig]): LogRouter = {
     val maybeLoggerConfig = for {
       appConfig <- config
       loggerConfig <- Try(appConfig.config.getConfig("logger")).toOption
-    } yield  {
+    } yield {
       loggerConfig
     }
 
-    maybeLoggerConfig  match {
+    maybeLoggerConfig match {
       case Some(value) =>
         new SimpleLoggerConfigurator(new IzLogger(baseRouter, Log.CustomContext.empty))
           .makeLogRouter(value, Log.Level.Info, json = false)
@@ -109,9 +150,7 @@ trait DistageTests {
       },
     ).merge
 
-    val injector = Injector.bootstrap(overrides = bootstrapModules)
-
-    injector
+    Injector.bootstrap(overrides = bootstrapModules)
   }
 
   protected def makeBindings(): ModuleBase
