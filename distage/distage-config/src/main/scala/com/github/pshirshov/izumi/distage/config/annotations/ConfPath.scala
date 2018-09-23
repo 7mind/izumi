@@ -39,4 +39,4 @@ package com.github.pshirshov.izumi.distage.config.annotations
   * Use this annotation if you are too lazy to learn how [[AutoConf]] or [[Conf]] work
   *
   */
-final class ConfPath(val path: String) extends scala.annotation.StaticAnnotation
+final class ConfPath(val path: String) extends ConfiguratorAnnotation

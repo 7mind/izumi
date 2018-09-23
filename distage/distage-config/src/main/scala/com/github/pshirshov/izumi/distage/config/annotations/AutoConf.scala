@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.config.annotations
 
+
 /**
   * Inject parameter from configuration.
   *
@@ -81,4 +82,4 @@ package com.github.pshirshov.izumi.distage.config.annotations
   * Use this annotation when you need to inject one config section into <i>one</i> component
   *
   */
-final class AutoConf extends scala.annotation.StaticAnnotation
+final class AutoConf extends ConfiguratorAnnotation
