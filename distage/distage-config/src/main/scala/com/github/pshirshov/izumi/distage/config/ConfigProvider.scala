@@ -9,12 +9,14 @@ import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.typesafe.config.RuntimeConfigReader
-import com.typesafe.config.{ConfigException, ConfigObject}
+import com.typesafe.config.{ConfigException, ConfigObject, ConfigValue}
 
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorConfig: ConfigInjectorConfig) extends PlanningHook {
+
+class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorConfig: ConfigInjectorConfig)
+  extends PlanningHook {
 
   import ConfigProvider._
 
@@ -24,7 +26,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
         case ConfigImport(ci) =>
           try {
             val requirement = toRequirement(ci)
-            translate(ci.imp, requirement)
+            translate(ci, requirement)
           } catch {
             case NonFatal(t) =>
               TranslationResult.Failure(ci.imp, config.config.origin, t)
@@ -46,7 +48,8 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
     newPlan
   }
 
-  private def translate(op: ExecutableOp, step: RequiredConfigEntry): TranslationResult = {
+  private def translate(ci: ConfigImport, step: RequiredConfigEntry): TranslationResult = {
+    val op = ci.imp
     val results = step.paths.map {
       p =>
         (p, Try(config.config.getValue(p.toPath)))
@@ -57,17 +60,14 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
     loaded.headOption match {
       case Some((loadedPath, loadedValue)) =>
         try {
-          val product = loadedValue match {
-            case obj: ConfigObject =>
-              reader.readConfigAsCaseClass(obj.toConfig, step.targetType)
-            case o if injectorConfig.enableScalars =>
-              reader.readValue(o, step.targetType)
-            case o =>
-              throw new ConfigException.WrongType(o.origin(), loadedPath.toPath, "Object", o.valueType().toString)
-          }
-
-
-          TranslationResult.Success(ExecutableOp.WiringOp.ReferenceInstance(step.target, Wiring.UnaryWiring.Instance(step.target.tpe, product), op.origin))
+          val loaded = toProduct(step, loadedPath, loadedValue)
+          val product = injectorConfig.transformer.transform.lift((ci, loaded)).getOrElse(loaded)
+          TranslationResult.Success(
+            ExecutableOp.WiringOp.ReferenceInstance(
+              step.target
+              , Wiring.UnaryWiring.Instance(step.target.tpe, product), op.origin
+            )
+          )
         } catch {
           case NonFatal(t) =>
             TranslationResult.ExtractionFailure(op, step.targetType, loadedPath.toPath, loadedValue, config.config.origin, t)
@@ -76,6 +76,17 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
       case None =>
         val failures = results.collect({ case (path, scala.util.Failure(f)) => (path, f) })
         TranslationResult.MissingConfigValue(op, failures, config.config.origin)
+    }
+  }
+
+  private def toProduct(step: RequiredConfigEntry, loadedPath: ConfigPath, loadedValue: ConfigValue): Any = {
+    loadedValue match {
+      case obj: ConfigObject =>
+        reader.readConfigAsCaseClass(obj.toConfig, step.targetType)
+      case o if injectorConfig.enableScalars =>
+        reader.readValue(o, step.targetType)
+      case o =>
+        throw new ConfigException.WrongType(o.origin(), loadedPath.toPath, "Object", o.valueType().toString)
     }
   }
 
@@ -192,7 +203,7 @@ object ConfigProvider {
     }
   }
 
-  private case class ConfigImport(id: AbstractConfId, imp: ImportDependency)
+  case class ConfigImport(id: AbstractConfId, imp: ImportDependency)
 
   private object ConfigImport {
     def unapply(op: ExecutableOp): Option[ConfigImport] = {

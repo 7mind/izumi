@@ -5,7 +5,10 @@ import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigReader, RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
 
-case class ConfigInjectorConfig(enableScalars: Boolean = false)
+case class ConfigInjectorConfig(
+                                 enableScalars: Boolean = false
+                                 , transformer: ConfigValueTransformer = ConfigValueTransformer.Null
+                               )
 
 class ConfigModule(config: AppConfig, configInjectorConfig: ConfigInjectorConfig = ConfigInjectorConfig()) extends BootstrapModuleDef {
 
