@@ -45,7 +45,7 @@ import scala.collection.mutable
   *   - `many[X].ref[X]("special")` = add a reference to an **existing** named binding of X to a set of X's
   *
   * Tags:
-  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[RoleId]]
+  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[com.github.pshirshov.izumi.distage.roles.roles.RoleId]]
   *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
   *   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
   *
@@ -55,24 +55,29 @@ import scala.collection.mutable
 trait ModuleDefDSL {
   this: ModuleBase =>
 
-  final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = initialState
-  final private[this] val mutableTags: mutable.Set[String] = initialTags
+  final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
+  final private[this] val mutableIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
+  final private[this] val mutableTags: mutable.Set[String] = _initialTags
 
-  protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
-  protected def initialTags: mutable.Set[String] = mutable.HashSet.empty
+  protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
+  protected def _initialIncludes: mutable.ArrayBuffer[Include] = mutable.ArrayBuffer.empty
+  protected def _initialTags: mutable.Set[String] = mutable.HashSet.empty
+
+  override def bindings: Set[Binding] = freeze
 
   final private[this] def freeze: Set[Binding] = {
     val frozenState = mutableState.flatMap {
       case SingletonRef(b) => Seq(b)
+      case IncludeApplyTags(bs) => bs
       case SetRef(_, all) => all.map(_.ref)
     }
+    val includes = mutableIncludes.flatMap(_.bindings)
     val frozenTags = mutableTags.toSet
 
     ModuleBase.tagwiseMerge(frozenState)
       .map(_.addTags(frozenTags))
+      .++(includes)
   }
-
-  override def bindings: Set[Binding] = freeze
 
   final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val binding = Bindings.binding[T]
@@ -86,8 +91,7 @@ trait ModuleDefDSL {
   /**
     * Multibindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
     *
-    * To define a multibinding use `.many` and `.add` methods in ModuleDef
-    * DSL:
+    * To define a multibinding use `.many` and `.add` methods in ModuleDef DSL:
     *
     * {{{
     * import cats.effect._, org.http4s._, org.http4s.dsl.io._, scala.concurrent.ExecutionContext.Implicits.global
@@ -158,9 +162,25 @@ trait ModuleDefDSL {
     mutableState += SingletonRef(binding)
   }
 
-  /** Add `tags` to each binding defined in this module **/
+  /** Add `tags` to all bindings in this module, except [[include included]] bindings */
   final protected def tag(tags: String*): Unit = discard {
     mutableTags ++= tags
+  }
+
+  /** Add all bindings in `that` module into `this` module
+    *
+    * WON'T add global tags from [[tag]] to included bindings.
+    **/
+  final protected def include(that: ModuleBase): Unit = discard {
+    mutableIncludes += Include(that.bindings)
+  }
+
+  /** Add all bindings in `that` module into `this` module
+    *
+    * WILL add global tags from [[tag]] to included bindings.
+    **/
+  final protected def includeApplyTags(that: ModuleBase): Unit = discard {
+    mutableState += IncludeApplyTags(that.bindings)
   }
 
 }
@@ -170,6 +190,9 @@ object ModuleDefDSL {
   sealed trait BindingRef
   final case class SingletonRef(var ref: Binding) extends BindingRef
   final case class SetRef(emptySetBinding: SingletonRef, all: mutable.ArrayBuffer[SingletonRef]) extends BindingRef
+  final case class IncludeApplyTags(bindings: Set[Binding]) extends BindingRef
+
+  final case class Include(bindings: Set[Binding])
 
   // DSL state machine
 
