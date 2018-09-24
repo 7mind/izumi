@@ -1,14 +1,15 @@
 package com.github.pshirshov.izumi.distage.app
 
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, ModuleBase}
+import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.plugins._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import distage.Injector
 
-// TODO: split into di-plugins and di-app
 
 abstract class OpinionatedDiApp {
   type CommandlineConfig
@@ -36,8 +37,7 @@ abstract class OpinionatedDiApp {
     val mergeStrategy = strategy.mergeStrategy(bootstrapAutoDef, appAutoDef)
 
     val loggerRouter = strategy.router()
-    val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
-    logger.info("Main logger initialized")
+    val logger: IzLogger = makeLogger(loggerRouter)
 
     val mergedBs = mergeStrategy.merge(bootstrapAutoDef)
     val mergedApp = mergeStrategy.merge(appAutoDef)
@@ -54,12 +54,34 @@ abstract class OpinionatedDiApp {
     logger.trace(s"Have bootstrap definition\n$bsdef")
     logger.trace(s"Have app definition\n$appDef")
 
-    val injector = Injector(bsdef)
+    val injector = makeInjector(logger, bsdef)
+    val plan = makePlan(logger, appDef, injector)
+    val context = makeContext(logger, injector, plan)
+
+    start(context, strategy.context)
+  }
+
+  protected def makeLogger(loggerRouter: LogRouter): IzLogger = {
+    val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
+    logger.info("Main logger initialized")
+    logger
+  }
+
+  protected def makeContext(logger: IzLogger, injector: distage.Injector, plan: OrderedPlan): Locator = {
+    val locator = injector.produce(plan)
+    logger.trace(s"Context produced with ${locator.instances.size -> "instances"}")
+    locator
+  }
+
+  protected def makePlan(logger: IzLogger, appDef: ModuleBase, injector: distage.Injector): OrderedPlan = {
     val plan = injector.plan(appDef)
     logger.trace(s"Planning completed\n$plan")
-    val context = injector.produce(plan)
-    logger.trace("Context produced")
-    start(context, strategy.context)
+    plan
+  }
+
+  protected def makeInjector(logger: IzLogger, bsdef: BootstrapModule): distage.Injector = {
+    logger.discard()
+    Injector(bsdef)
   }
 
   protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {

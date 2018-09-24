@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigProvider, ConfigValueTransformer}
+import com.github.pshirshov.izumi.distage.config.ConfigInjectionOptions
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.typesafe.config.ConfigFactory
