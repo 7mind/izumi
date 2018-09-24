@@ -72,6 +72,7 @@ object MemoizingDistageResourceCollection {
     }
 
     closeables.foreach(_.close())
+    memoizedInstances.clear()
   }, "distage-testkit-finalizer")
 
   private val initialized = new AtomicBoolean(false)

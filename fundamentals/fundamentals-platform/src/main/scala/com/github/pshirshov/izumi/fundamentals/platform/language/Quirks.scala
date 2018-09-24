@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.platform.language
 
 object Quirks {
-  def discard(t: Any*): Unit = {
+  @inline def discard(t: Any*): Unit = {
     t match {
       case _ =>
         ()
@@ -9,6 +9,6 @@ object Quirks {
   }
 
   implicit final class Discarder[T](private val t: T) extends AnyVal {
-    def discard(): Unit = Quirks.discard(t)
+    @inline def discard(): Unit = Quirks.discard(t)
   }
 }

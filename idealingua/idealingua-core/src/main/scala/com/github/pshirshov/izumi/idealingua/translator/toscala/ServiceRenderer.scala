@@ -23,20 +23,20 @@ class ServiceRenderer(ctx: STContext) {
 
     val qqServer =
       q"""trait ${c.svcServerTpe.typeName}[Or[+_, +_], ${c.Ctx.p}] {
-            type Just[T] = Or[Nothing, T]
+            type Just[+T] = Or[Nothing, T]
             ..${decls.map(_.defnServer)}
           }"""
 
     val qqClient =
       q"""trait ${c.svcClientTpe.typeName}[Or[+_, +_]] {
-            type Just[T] = Or[Nothing, T]
+            type Just[+T] = Or[Nothing, T]
             ..${decls.map(_.defnClient)}
           }"""
 
     val qqClientWrapped =
-      q"""class ${c.svcWrappedClientTpe.typeName}[F[+_, +_] : IRTMicroBIO](_dispatcher: ${rt.IRTDispatcher.parameterize(List(c.F.t)).typeFull})
+      q"""class ${c.svcWrappedClientTpe.typeName}[Or[+_, +_] : IRTMicroBIO](_dispatcher: ${rt.IRTDispatcher.parameterize(List(c.F.t)).typeFull})
                extends ${c.svcClientTpe.parameterize(List(c.F.t)).init()} {
-               final val _F: IRTMicroBIO[F] =  implicitly
+               final val _F: IRTMicroBIO[${c.F.t}] =  implicitly
                ${c.methodImport}
 
                ..${decls.map(_.defnClientWrapped)}
@@ -52,11 +52,11 @@ class ServiceRenderer(ctx: STContext) {
        """
 
     val qqServerWrapped =
-      q"""class ${c.svcWrappedServerTpe.typeName}[F[+_, +_] : IRTMicroBIO, ${c.Ctx.p}](
+      q"""class ${c.svcWrappedServerTpe.typeName}[Or[+_, +_] : IRTMicroBIO, ${c.Ctx.p}](
               _service: ${c.svcServerTpe.typeName}[${c.F.t}, ${c.Ctx.t}]
             )
                extends IRTWrappedService[${c.F.t}, ${c.Ctx.t}] {
-            final val _F: IRTMicroBIO[F] = implicitly
+            final val _F: IRTMicroBIO[${c.F.t}] = implicitly
 
             final val serviceId: ${rt.IRTServiceId.typeName} = ${c.svcMethods.termName}.serviceId
 

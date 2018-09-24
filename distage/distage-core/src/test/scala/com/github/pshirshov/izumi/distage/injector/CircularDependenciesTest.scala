@@ -110,6 +110,25 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     assert(instance eq instance.self)
   }
 
+  "Support self-referencing provider" in {
+    import CircularCase3._
+
+    val definition = new ModuleDef {
+      make[SelfReference].from {
+        self: SelfReference =>
+          new SelfReference(self)
+      }
+    }
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    val instance = context.get[SelfReference]
+
+    assert(instance eq instance.self)
+  }
+
   "Progression test: Does not yet support by-name self-referencing circulars" in {
     val fail = Try {
       import CircularCase3._

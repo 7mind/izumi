@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Singular, Struct, Void, Alternative}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
@@ -267,7 +267,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     }
   }
 
-  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], imports: GoLangImports, withTest: Boolean = true): String = {
+  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], imports: GoLangImports, withTest: Boolean = true, left: List[AdtMember] = List.empty): String = {
       val test =
         s"""
            |func NewTest$name() *$name {
@@ -287,6 +287,16 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 //      }
 //    }
 
+      val leftCheck = if (left.isEmpty) "" else
+        s"""func (v *$name) IsLeft() bool {
+           |    return ${left.map(l => s"""v.valueType == "${l.name}"""").mkString(" ||\n        ")}
+           |}
+           |
+           |func (v *$name) IsRight() bool {
+           |    return !v.IsLeft()
+           |}
+         """.stripMargin
+
       s"""type $name struct {
          |    value interface{}
          |    // valueType could be removed and optimized using .(type) or reflect package assertion,
@@ -299,6 +309,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |
          |${alternatives.map(al => renderAdtMember(name, al, imports)).mkString("\n")}
          |
+         |$leftCheck
          |${if (withTest) test else ""}
          |
          |func (v *$name) MarshalJSON() ([]byte, error) {
@@ -787,7 +798,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     case _: Algebraic => s"*${outName(svcOrBuzzer, method.name, public = true)}"
     case si: Singular => s"${GoLangType(si.typeId, imports, ts).renderType()}"
     case _: Void => ""
-    case _: Alternative => throw new Exception("Not implemented")
+    case _: Alternative => s"*${outName(svcOrBuzzer, method.name, public = true)}"
   }
 
   protected def renderRPCMethodOutputSignature(svcOrBuzzer: String, method: DefMethod.RPCMethod, imports: GoLangImports): String = {
@@ -797,13 +808,23 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       s"error"
   }
 
+  protected def getAvailName(name: String, fields: List[Field]): String = {
+    if (fields.exists(p => p.name == name))
+      this.getAvailName(name + name.charAt(0), fields)
+    else
+      name
+  }
+
   protected def renderRPCClientMethod(svcOrBuzzer: String, method: DefMethod, imports: GoLangImports): String = method match {
-    case m: DefMethod.RPCMethod => m.signature.output match {
-      case _: Struct | _: Algebraic =>
-        s"""func (c *${svcOrBuzzer}Client) ${renderRPCMethodSignature(svcOrBuzzer, method, imports, spread = true)} {
+    case m: DefMethod.RPCMethod => {
+      val an = getAvailName("c", m.signature.input.fields)
+      m.signature.output match {
+      case _: Struct | _: Algebraic | _: Alternative =>
+
+        s"""func ($an *${svcOrBuzzer}Client) ${renderRPCMethodSignature(svcOrBuzzer, method, imports, spread = true)} {
            |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(svcOrBuzzer, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
            |    outData := &${outName(svcOrBuzzer, m.name, public = true)}{}
-           |    err := c.transport.Send("${svcOrBuzzer}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
+           |    err := $an.transport.Send("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
            |    if err != nil {
            |        return ${renderServiceMethodDefaultResult(method, imports)}, err
            |    }
@@ -813,10 +834,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 
       case so: Singular =>
         val resType = GoLangType(so.typeId, imports, ts)
-        s"""func (c *${svcOrBuzzer}Client) ${renderRPCMethodSignature(svcOrBuzzer, method, imports, spread = true)} {
+        s"""func ($an *${svcOrBuzzer}Client) ${renderRPCMethodSignature(svcOrBuzzer, method, imports, spread = true)} {
            |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(svcOrBuzzer, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
            |    ${if (resType.isPrimitive(so.typeId)) s"var outData ${resType.renderType(forAlias = true)}" else s"outData := &${resType.renderType(forAlias = true)}{}"}
-           |    err := c.transport.Send("${svcOrBuzzer}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, ${if (resType.isPrimitive(so.typeId)) "&" else ""}outData)
+           |    err := $an.transport.Send("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, ${if (resType.isPrimitive(so.typeId)) "&" else ""}outData)
            |    if err != nil {
            |        return ${renderServiceMethodDefaultResult(method, imports)}, err
            |    }
@@ -825,13 +846,13 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        """.stripMargin
 
       case _: Void =>
-        s"""func (c *${svcOrBuzzer}Client) ${renderRPCMethodSignature(svcOrBuzzer, method, imports, spread = true)} {
+        s"""func ($an *${svcOrBuzzer}Client) ${renderRPCMethodSignature(svcOrBuzzer, method, imports, spread = true)} {
            |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(svcOrBuzzer, m.name, public = true)}(${m.signature.input.fields.map(ff => GoLangField(ff.name, GoLangType(ff.typeId, imports, ts), "").renderMemberName(capitalize = false)).mkString(", ")})" }
-           |    return c.transport.Send("${svcOrBuzzer}", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, nil)
+           |    return $an.transport.Send("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, nil)
            |}
        """.stripMargin
 
-      case _: Alternative => throw new Exception("Alternative is not implemented.")
+      }
     }
   }
 
@@ -984,7 +1005,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
         case _: Algebraic => "nil"
         case si: Singular => GoLangType(si.typeId, imports, ts).defaultValue()
         case _: Void => ""
-        case _: Alternative => throw new Exception("Not implemented")
+        case _: Alternative => "nil"
       }
     }
   }
@@ -1000,12 +1021,18 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
      """.stripMargin
   }
 
+  protected def outputToAdtMember(out: DefMethod.Output): List[AdtMember] = out match {
+    case si: Singular => List(AdtMember(si.typeId, None))
+    case al: Algebraic => al.alternatives
+    case _ => throw new Exception("Output type to TypeId is not supported for non singular or void types. " + out)
+  }
+
   protected def renderServiceMethodOutModel(i: Service, name: String, out: DefMethod.Output, imports: GoLangImports): String = out match {
     case st: Struct => renderServiceMethodInModel(i, name, st.struct, imports)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
     case si: Singular => s"// ${ si.typeId}"
     case _: Void => ""
-    case _: Alternative => throw new Exception("Not implemented")
+    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), imports, withTest = false, outputToAdtMember(at.failure))
   }
 
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure, imports: GoLangImports): String = {
@@ -1069,7 +1096,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
     case si: Singular => s"// ${ si.typeId}"
     case _: Void => ""
-    case _: Alternative => throw new Exception("Not implemented")
+    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), imports, withTest = false, outputToAdtMember(at.failure))
   }
 
   protected def renderBuzzerMethodInModel(i: Buzzer, name: String, structure: SimpleStructure, imports: GoLangImports): String = {

@@ -17,7 +17,7 @@ class ConfigTest extends WordSpec {
 
   def mkModule(config: Config): ConfigModule = {
     val appConfig = AppConfig(config)
-    new ConfigModule(appConfig, ConfigInjectorConfig(enableScalars = true))
+    new ConfigModule(appConfig, ConfigInjectionOptions(enableScalars = true))
   }
 
   "Config resolver" should {

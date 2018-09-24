@@ -44,6 +44,6 @@ package com.github.pshirshov.izumi.distage.config.annotations
   * Use this annotation when you want to share one config section between <i>several</i> components
   *
   */
-final class Conf(val name: String) extends scala.annotation.StaticAnnotation
+final class Conf(val name: String) extends ConfiguratorAnnotation
 
 

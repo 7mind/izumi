@@ -28,5 +28,5 @@ trait DistagePluginTests extends DistageTests {
     Seq(this.getClass.getPackage.getName)
   }
 
-  protected def disabledTags: TagExpr.Strings.Expr
+  protected def disabledTags: TagExpr.Strings.Expr = TagExpr.Strings.False
 }

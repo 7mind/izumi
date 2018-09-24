@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.distage.model.exceptions.AnnotationConflictException
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 trait WithDISymbolInfo {
@@ -14,6 +15,8 @@ trait WithDISymbolInfo {
 
     override def toString: String = name
   }
+
+  protected def typeOfDistageAnnotation: SafeType
 
   object SymbolInfo {
     /**
@@ -39,8 +42,21 @@ trait WithDISymbolInfo {
       Runtime(symb, definingClass)
 
     implicit final class SymbolInfoExtensions(symbolInfo: SymbolInfo) {
-      def findAnnotation(annType: SafeType): Option[u.Annotation] =
+      def findAnnotation(annType: SafeType): Option[u.Annotation] = {
         symbolInfo.annotations.find(AnnotationTools.annotationTypeEq(u)(annType.tpe, _))
+      }
+    }
+
+    implicit final class SymbolInfoExtensions1(symbolInfo: SymbolInfo) {
+      def findUniqueAnnotation(annType: SafeType): Option[u.Annotation] = {
+        val distageAnnos = symbolInfo.annotations.filter(t => SafeType(t.tree.tpe) <:< typeOfDistageAnnotation)
+
+        if (distageAnnos.size > 1) {
+          throw new AnnotationConflictException(s"Multiple DI annotations on symbol $symbolInfo: $distageAnnos")
+        }
+
+        symbolInfo.findAnnotation(annType)
+      }
     }
   }
 }
