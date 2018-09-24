@@ -212,6 +212,7 @@ data NestedGenerics2 {
     nested: opt[list[str]]
 }
 
+/*
 data NestedClass {
     c: opt[NestedClass]
 }
@@ -219,3 +220,4 @@ data NestedClass {
 service OptionalService {
     def optionalMethod(a: opt[NestedGenerics2], b: opt[i32], c: opt[NestedClass]) => i32
 }
+*/

@@ -9,8 +9,8 @@ class TypespaceToolsImpl(ts: Typespace) extends TypespaceTools {
   val methodOutputSuffix = "Output"
   val methodInputSuffix = "Input"
 
-  val goodAltBranchName = "MSuccess"
-  val badAltBranchName = "MFailure"
+  val goodAltBranchName = "Success"
+  val badAltBranchName = "Failure"
 
   val goodAltSuffix = "Success"
   val badAltSuffix = "Failure"
