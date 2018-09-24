@@ -22,8 +22,19 @@ class TestkitConfigTest extends DistagePluginSpec {
     }
   }
 
+  override protected def makeConfig(): Option[AppConfig] = {
+    // here we may override our config values on config level
+    Some(AppConfig(ConfigFactory.parseResources("distage-testkit-test.conf")))
+  }
+
+  override protected val configOptions: ConfigInjectionOptions = ConfigInjectionOptions.make {
+    // here we may patternmatch on config value context and rewrite it
+    case (ConfigProvider.ConfigImport(ConfPathId(_, _, _), _), c: TestConfig) =>
+      c.copy(y = 3)
+  }
 
   override protected def makeBindings(): ModuleBase = super.makeBindings() ++ new ModuleBase {
+    // here we may add a config value with an appropriate key into our context ahead of time
     override def bindings: Set[Binding] = Set(
       Binding.SingletonBinding(
         DIKey.get[TestConfig].named(ConfPathId(DIKey.get[TestService2], "<test-override>", "test1"))
@@ -34,13 +45,6 @@ class TestkitConfigTest extends DistagePluginSpec {
     )
   }
 
-  override protected def makeConfig(): Option[AppConfig] = {
-    Some(AppConfig(ConfigFactory.parseResources("distage-testkit-test.conf")))
-  }
 
-  override protected val configOptions: ConfigInjectionOptions = ConfigInjectionOptions.make {
-    case (ConfigProvider.ConfigImport(ConfPathId(_, _, _), _), c: TestConfig) =>
-      c.copy(y = 3)
-  }
 }
 
