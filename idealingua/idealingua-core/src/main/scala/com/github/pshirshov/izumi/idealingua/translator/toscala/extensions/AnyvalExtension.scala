@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
 import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId, IdentifierId}
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, Generic, StructureId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
@@ -56,8 +56,12 @@ object AnyvalExtension extends ScalaTranslatorExtension {
     canBeAnyValField(ctx, typeId, mutable.HashSet.empty)
   }
 
+  @scala.annotation.tailrec
   private def canBeAnyValField(ctx: STContext, typeId: TypeId, seen: mutable.HashSet[TypeId]): Boolean = {
     typeId match {
+      case _: Generic =>
+        false // https://github.com/scala/bug/issues/11170
+
       case _: Builtin =>
         true
 

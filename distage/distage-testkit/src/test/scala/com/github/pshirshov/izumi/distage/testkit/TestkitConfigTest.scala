@@ -27,3 +27,4 @@ class TestkitConfigTest extends DistagePluginSpec {
       c.copy(y = 3)
   }
 }
+
