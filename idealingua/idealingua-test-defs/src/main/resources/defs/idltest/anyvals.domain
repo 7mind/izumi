@@ -55,13 +55,19 @@ data Test02UserAnyVal {
   _: i08
 }
 
+// direct cyclic usage is disabled
 // https://github.com/pshirshov/izumi-r2/issues/334
 /*
+data Cyclic00 {
+  _: Cyclic00
+}
+
 data Cyclic01 {
-  _: Cyclic01
+  _: Cyclic02
 }
 
 mixin Cyclic02 {
-  _: Cyclic02
+  _: Cyclic01
 }
 */
+

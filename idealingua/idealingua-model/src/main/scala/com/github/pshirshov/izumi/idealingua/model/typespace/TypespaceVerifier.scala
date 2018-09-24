@@ -6,8 +6,8 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLCyclicInheritan
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, SimpleStructure, TypeDef}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Issue.AmbigiousAdtMember
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, Field, SimpleStructure, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.typespace.Issue.{AmbigiousAdtMember, CyclicUsage}
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -53,6 +53,10 @@ object Issue {
 
   final case class CyclicInheritance(t: TypeId) extends Issue {
     override def toString: TypeName = s"Type is involved into cyclic inheritance: $t"
+  }
+
+  final case class CyclicUsage(t: TypeId, cycles: Set[TypeId]) extends Issue {
+    override def toString: TypeName = s"Cyclic usage disabled due to serialization issues, use opt[T] to break the loop: $t. Cycle caused by: $cycles"
   }
 
   final case class MissingDependencies(deps: List[MissingDependency]) extends Issue {
@@ -102,6 +106,7 @@ class TypespaceVerifier(ts: Typespace) {
       checkDuplicateMembers,
       checkPrimitiveAdtMembers,
       checkNamingConventions,
+      checkCyclicUsage,
       checkAdtIssues,
     ).flatten
 
@@ -114,6 +119,62 @@ class TypespaceVerifier(ts: Typespace) {
     }
 
     basic ++ cycles ++ missing
+  }
+
+  private def checkCyclicUsage: Seq[Issue] = {
+    ts.domain.types.flatMap {
+      t =>
+        val (allFields, foundCycles) = allFieldsOf(t)
+
+        if (allFields.contains(t.id)) {
+          Seq(CyclicUsage(t.id, foundCycles))
+        } else {
+          Seq.empty
+        }
+    }
+  }
+
+  private def allFieldsOf(t: TypeDef): (Set[TypeId], Set[TypeId]) = {
+    val allFields = mutable.Set.empty[TypeId]
+    val foundCycles = mutable.Set.empty[TypeId]
+    extractAllFields(t, allFields, foundCycles)
+    (allFields.toSet, foundCycles.toSet)
+  }
+
+  private def extractAllFields(definition: TypeDef, deps: mutable.Set[TypeId], foundCycles: mutable.Set[TypeId]): Unit = {
+    def checkField(i: TypeId): Unit = {
+      val alreadyThere = deps.contains(i)
+      if (!alreadyThere) {
+        deps += i
+        extractAllFields(ts.apply(i), deps, foundCycles)
+      } else {
+        foundCycles += i
+      }
+    }
+
+    definition match {
+      case _: Enumeration =>
+        Seq.empty
+
+      case d: Interface =>
+        d.struct.fields.filterNot(_.typeId.isInstanceOf[Builtin]).map(_.typeId).foreach(checkField)
+        d.struct.superclasses.interfaces.foreach(i => extractAllFields(ts.apply(i), deps, foundCycles))
+        d.struct.superclasses.concepts.foreach(c => extractAllFields(ts.apply(c), deps, foundCycles))
+
+      case d: DTO =>
+        d.struct.fields.filterNot(_.typeId.isInstanceOf[Builtin]).map(_.typeId).foreach(checkField)
+        d.struct.superclasses.interfaces.foreach(i => extractAllFields(ts.apply(i), deps, foundCycles))
+        d.struct.superclasses.concepts.foreach(c => extractAllFields(ts.apply(c), deps, foundCycles))
+
+      case d: Identifier =>
+        d.fields.map(_.typeId).filterNot(_.isInstanceOf[Builtin]).foreach(checkField)
+
+      case d: Adt =>
+        d.alternatives.map(_.typeId).filterNot(_.isInstanceOf[Builtin]).foreach(checkField)
+
+      case d: Alias =>
+        Seq.empty
+    }
   }
 
 
@@ -307,7 +368,7 @@ class TypespaceVerifier(ts: Typespace) {
 
       d.alternatives.filterNot(a => visited.contains(a.typeId)).filterNot(_.typeId.isInstanceOf[Builtin]).map(v => ts.apply(v.typeId)).foreach {
         defn =>
-        checkAdtConflicts(defn, visited, seen)
+          checkAdtConflicts(defn, visited, seen)
       }
 
     case _ =>
