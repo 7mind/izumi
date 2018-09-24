@@ -134,7 +134,7 @@ class TypeScriptTypeConverter() {
 
   def toNativeTypeName(name: String, id: TypeId): String = id match {
     case t: Generic => t match {
-      case _: Generic.TOption => name + "?"
+      case _: Generic.TOption => name // + "?" // We moved this to the type itself, e.g. string | undefined
       case _ => name
     }
     case _ => name
@@ -186,7 +186,7 @@ class TypeScriptTypeConverter() {
       case _: Generic.TSet => toNativeType(typeId.asInstanceOf[TSet].valueType, ts, forSerialized) + "[]"
       case _: Generic.TMap => "{[key: " + toNativeType(typeId.asInstanceOf[TMap].keyType, ts, forSerialized, forMap = true) + "]: " + toNativeType(typeId.asInstanceOf[TMap].valueType, ts, forSerialized) + "}"
       case _: Generic.TList => toNativeType(typeId.asInstanceOf[TList].valueType, ts, forSerialized) + "[]"
-      case _: Generic.TOption => toNativeType(typeId.asInstanceOf[TOption].valueType, ts, forSerialized)
+      case o: Generic.TOption => toNativeType(o.valueType, ts, forSerialized) + " | undefined"
     }
   }
 
@@ -270,11 +270,11 @@ class TypeScriptTypeConverter() {
     case Primitive.TTsTz => toDateTimeField(name, local = false, optional)
     case Primitive.TTsU => toDateTimeField(name, local = false, optional, utc = true)
     case _ =>
-      s"""public get ${safeName(name)}(): ${toNativeType(id, ts)} {
+      s"""public get ${safeName(name)}(): ${toNativeType(id, ts)}${if (optional) " | undefined" else ""} {
          |    return this._$name;
          |}
          |
-         |public set ${safeName(name)}(value: ${toNativeType(id, ts)}) {
+         |public set ${safeName(name)}(value: ${toNativeType(id, ts)}${if (optional) " | undefined" else ""}) {
          |    if (typeof value === 'undefined' || value === null) {
          |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
          |    }
@@ -331,11 +331,11 @@ class TypeScriptTypeConverter() {
 
   def toIntField(name: String, min: BigInt = Int.MinValue, max: BigInt = Int.MaxValue, optional: Boolean = false): String = {
     var base =
-      s"""public get ${safeName(name)}(): number {
+      s"""public get ${safeName(name)}(): number${if (optional) " | undefined" else ""} {
          |    return this._$name;
          |}
          |
-         |public set ${safeName(name)}(value: number) {
+         |public set ${safeName(name)}(value: number${if (optional) " | undefined" else ""}) {
          |    if (typeof value === 'undefined' || value === null) {
          |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
          |    }
@@ -376,12 +376,12 @@ class TypeScriptTypeConverter() {
   }
 
   def toDoubleField(name: String, precision: Int = 64, optional: Boolean = false): String = {
-    s"""public get ${safeName(name)}(): number {
+    s"""public get ${safeName(name)}(): number${if (optional) " | undefined" else ""} {
        |    // Precision: $precision
        |    return this._$name;
        |}
        |
-       |public set ${safeName(name)}(value: number) {
+       |public set ${safeName(name)}(value: number${if (optional) " | undefined" else ""}) {
        |    // Precision: $precision
        |    if (typeof value === 'undefined' || value === null) {
        |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
@@ -397,11 +397,11 @@ class TypeScriptTypeConverter() {
   }
 
   def toBooleanField(name: String, optional: Boolean = false): String = {
-    s"""public get ${safeName(name)}(): boolean {
+    s"""public get ${safeName(name)}(): boolean${if (optional) " | undefined" else ""} {
        |    return this._$name;
        |}
        |
-       |public set ${safeName(name)}(value: boolean) {
+       |public set ${safeName(name)}(value: boolean${if (optional) " | undefined" else ""}) {
        |    if (typeof value === 'undefined' || value === null) {
        |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
        |    }
@@ -416,11 +416,11 @@ class TypeScriptTypeConverter() {
   }
 
   def toGuidField(name: String, optional: Boolean = false): String = {
-    s"""public get ${safeName(name)}(): string {
+    s"""public get ${safeName(name)}(): string${if (optional) " | undefined" else ""} {
        |    return this._$name;
        |}
        |
-       |public set ${safeName(name)}(value: string) {
+       |public set ${safeName(name)}(value: string${if (optional) " | undefined" else ""}) {
        |    if (typeof value === 'undefined' || value === null) {
        |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
        |    }
@@ -440,11 +440,11 @@ class TypeScriptTypeConverter() {
 
   def toStringField(name: String, max: Int = Int.MinValue, optional: Boolean = false): String = {
     var base =
-      s"""public get ${safeName(name)}(): string {
+      s"""public get ${safeName(name)}(): string${if (optional) " | undefined" else ""} {
          |    return this._$name;
          |}
          |
-         |public set ${safeName(name)}(value: string) {
+         |public set ${safeName(name)}(value: string${if (optional) " | undefined" else ""}) {
          |    if (typeof value === 'undefined' || value === null) {
          |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
          |    }
@@ -472,11 +472,11 @@ class TypeScriptTypeConverter() {
   }
 
   def toDateTimeField(name: String, local: Boolean, optional: Boolean = false, utc: Boolean = false): String = {
-    s"""public get ${safeName(name)}(): Date {
+    s"""public get ${safeName(name)}(): Date${if (optional) " | undefined" else ""} {
        |    return this._$name;
        |}
        |
-       |public set ${safeName(name)}(value: Date) {
+       |public set ${safeName(name)}(value: Date${if (optional) " | undefined" else ""}) {
        |    if (typeof value === 'undefined' || value === null) {
        |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
        |    }
@@ -487,12 +487,12 @@ class TypeScriptTypeConverter() {
        |    this._$name = value;
        |}
        |
-       |public get ${safeName(name)}AsString(): string {
+       |public get ${safeName(name)}AsString(): string${if (optional) " | undefined" else ""} {
        |    ${if(optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
        |    return Formatter.write${if(local) "Local" else if (utc) "UTC" else "Zone"}DateTime(this._$name);
        |}
        |
-       |public set ${safeName(name)}AsString(value: string) {
+       |public set ${safeName(name)}AsString(value: string${if (optional) " | undefined" else ""}) {
        |    if (typeof value !== 'string') {
        |        ${if(optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
        |    }
@@ -503,11 +503,11 @@ class TypeScriptTypeConverter() {
 
 
   def toDateField(name: String, optional: Boolean = false): String = {
-    s"""public get ${safeName(name)}(): Date {
+    s"""public get ${safeName(name)}(): Date${if (optional) " | undefined" else ""} {
        |    return this._$name;
        |}
        |
-       |public set ${safeName(name)}(value: Date) {
+       |public set ${safeName(name)}(value: Date${if (optional) " | undefined" else ""}) {
        |    if (typeof value === 'undefined' || value === null) {
        |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
        |    }
@@ -518,12 +518,12 @@ class TypeScriptTypeConverter() {
        |    this._$name = value;
        |}
        |
-       |public get ${safeName(name)}AsString(): string {
+       |public get ${safeName(name)}AsString(): string${if (optional) " | undefined" else ""} {
        |    ${if(optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
        |    return Formatter.writeDate(this._$name);
        |}
        |
-       |public set ${safeName(name)}AsString(value: string) {
+       |public set ${safeName(name)}AsString(value: string${if (optional) " | undefined" else ""}) {
        |    if (typeof value !== 'string') {
        |        ${if(optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
        |    }
@@ -533,11 +533,11 @@ class TypeScriptTypeConverter() {
   }
 
   def toTimeField(name: String, optional: Boolean = false): String = {
-    s"""public get ${safeName(name)}(): Date {
+    s"""public get ${safeName(name)}(): Date${if (optional) " | undefined" else ""} {
        |    return this._$name;
        |}
        |
-       |public set ${safeName(name)}(value: Date) {
+       |public set ${safeName(name)}(value: Date${if (optional) " | undefined" else ""}) {
        |    if (typeof value === 'undefined' || value === null) {
        |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
        |    }
@@ -549,12 +549,12 @@ class TypeScriptTypeConverter() {
        |    this._$name = value;
        |}
        |
-       |public get ${safeName(name)}AsString(): string {
+       |public get ${safeName(name)}AsString(): string${if (optional) " | undefined" else ""} {
        |    ${if(optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
        |    return Formatter.writeTime(this._$name);
        |}
        |
-       |public set ${safeName(name)}AsString(value: string) {
+       |public set ${safeName(name)}AsString(value: string${if (optional) " | undefined" else ""}) {
        |    if (typeof value !== 'string') {
        |        ${if(optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
        |    }

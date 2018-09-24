@@ -346,8 +346,19 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     alternatives.exists(al => al.typeId.isInstanceOf[DTOId])
   }
 
-  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], export: Boolean = true): String = {
+  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], export: Boolean = true, left: List[AdtMember] = List.empty): String = {
     val hasInterfaces = alternatives.count(al => al.typeId.isInstanceOf[InterfaceId]) > 0
+    val hasLeftInterfaces = left.count(al => al.typeId.isInstanceOf[InterfaceId]) > 0
+    val leftCheck = if (left.isEmpty) "" else
+      s"""    public static isInstanceOfLeft(o: any): boolean {
+         |        if (!o['getClassName'] || typeof o['getClassName'] !== 'function') {
+         |            return false;
+         |        }
+         |        ${if(hasLeftInterfaces) "const className = o.getClassName();" else ""}
+         |        return ${left.map(alt => if (alt.typeId.isInstanceOf[InterfaceId]) s"${alt.typeId.name}${typespace.tools.implId(alt.typeId.asInstanceOf[InterfaceId]).name}.isRegisteredType(className)" else if (alt.typeId.isInstanceOf[AdtId]) s"${alt.typeId.name}Helpers.isInstanceOf(o)" else "o instanceof " + conv.toNativeType(alt.typeId, typespace)).mkString(" || ")};
+         |    }
+       """.stripMargin
+
     s"""${if (export) "export " else ""}type $name = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace)).mkString(" | ")};
        |${if (export) "export " else ""}type ${name}Serialized = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace, forSerialized = true)).mkString(" | ")}
        |
@@ -360,6 +371,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |        return ${alternatives.map(alt => if (alt.typeId.isInstanceOf[InterfaceId]) s"${alt.typeId.name}${typespace.tools.implId(alt.typeId.asInstanceOf[InterfaceId]).name}.isRegisteredType(className)" else if (alt.typeId.isInstanceOf[AdtId]) s"${alt.typeId.name}Helpers.isInstanceOf(o)" else "o instanceof " + conv.toNativeType(alt.typeId, typespace)).mkString(" || ")};
        |    }
        |
+       |$leftCheck
        |    public static serialize(adt: ${name}): {[key: string]: ${alternatives.map(alt => alt.typeId match {
       case interfaceId: InterfaceId => alt.typeId.name + typespace.tools.implId(interfaceId).name + "Serialized"
       case al: AliasId => {
@@ -594,12 +606,16 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       }
   }
 
-  protected def renderServiceMethodOutputSignature(method: DefMethod.RPCMethod): String = method.signature.output match {
+  protected def renderServiceMethodOutputType(output: DefMethod.Output, method: DefMethod.RPCMethod): String = output match {
     case _: Struct => s"Out${method.name.capitalize}"
     case al: Algebraic => al.alternatives.map(alt => conv.toNativeType(alt.typeId, ts)).mkString(" | ")
     case si: Singular => conv.toNativeType(si.typeId, ts)
     case _: Void => "void"
-    case _: Alternative => throw new Exception("Not implemented")
+    case at: Alternative => s"Either<${renderServiceMethodOutputType(at.failure, method)}, ${renderServiceMethodOutputType(at.success, method)}>"
+  }
+
+  protected def renderServiceMethodOutputSignature(method: DefMethod.RPCMethod): String = {
+    renderServiceMethodOutputType(method.signature.output, method)
   }
 
   protected def renderRPCClientMethod(service: String, method: DefMethod): String = method match {
@@ -612,7 +628,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
            |}
        """.stripMargin
 
-      case al: Algebraic =>
+      case _: Algebraic =>
         s"""public ${renderRPCMethodSignature(method, spread = true)} {
            |    const __data = new In${m.name.capitalize}();
            |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
@@ -670,7 +686,29 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
            |}
          """.stripMargin
 
-      case _: Alternative => throw new Exception("Not implemented")
+      case _: Alternative =>
+        s"""public ${renderRPCMethodSignature(method, spread = true)} {
+           |    const __data = new In${m.name.capitalize}();
+           |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
+           |    return new Promise((resolve, reject) => {
+           |        this._transport.send(${service}Client.ClassName, '${m.name}', __data)
+           |            .then((data: any) => {
+           |                try {
+           |                    const __responseData = Out${m.name.capitalize}Helpers.deserialize(data);
+           |                    resolve(Out${m.name.capitalize}Helpers.isInstanceOfLeft(__responseData) ?
+           |                        new EitherLeft(__responseData as any):  // We can safely cast here
+           |                        new EitherRight(__responseData as any)  // as it was checked for Left already.
+           |                    );
+           |                } catch(err) {
+           |                    reject(err);
+           |                }
+           |             })
+           |            .catch((err: any) => {
+           |                reject(err);
+           |            });
+           |    });
+           |}
+         """.stripMargin
     }
   }
 
@@ -709,9 +747,16 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
+  protected def outputToAdtMember(out: DefMethod.Output): List[AdtMember] = out match {
+    case si: Singular => List(AdtMember(si.typeId, None))
+    case al: Algebraic => al.alternatives
+    case _ => throw new Exception("Output type to TypeId is not supported for non singular or void types. " + out)
+  }
+
   protected def renderServiceMethodOutModel(name: String, implements: String, out: DefMethod.Output): String = out match {
     case st: Struct => renderServiceMethodInModel(name, implements, st.struct, export = true)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, export = false)
+    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), export = false, outputToAdtMember(at.failure))
     case _ => ""
   }
 
@@ -760,6 +805,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def renderServiceReturnSerialization(method: DefMethod.RPCMethod): String = method.signature.output match {
     case _: Algebraic =>
       s"const serialized = this.marshaller.Marshal<object>(Out${method.name.capitalize}Helpers.serialize(res));"
+    case _: Alternative =>
+      s"const serialized = this.marshaller.Marshal<object>(Out${method.name.capitalize}Helpers.serialize(res.value));"
     case _ => s"const serialized = this.marshaller.Marshal<${renderServiceMethodOutputSignature(method)}>(res);"
   }
 
@@ -892,7 +939,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
       val header =
         s"""${imports.render(ts)}
-           |${importFromIRT(List("ServiceDispatcher", "Marshaller", "Void", "IncomingData", "OutgoingData", "ClientTransport"), i.id.domain.toPackage)}
+           |${importFromIRT(List("ServiceDispatcher", "Marshaller", "Void", "IncomingData", "OutgoingData", "ClientTransport", "Either", "Left as EitherLeft", "Right as EitherRight"), i.id.domain.toPackage)}
          """.stripMargin
 
     ServiceProduct(svc, header, s"// $typeName client")
@@ -1012,7 +1059,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
 
     val header =
       s"""${imports.render(ts)}
-         |${importFromIRT(List("ServiceDispatcher", "Marshaller", "Void", "IncomingData", "OutgoingData", "ServerSocketTransport"), i.id.domain.toPackage)}
+         |${importFromIRT(List("ServiceDispatcher", "Marshaller", "Void", "IncomingData", "OutgoingData", "ServerSocketTransport", "Either", "Left as EitherLeft", "Right as EitherRight"), i.id.domain.toPackage)}
          """.stripMargin
 
     BuzzerProduct(svc, header, s"// $typeName")

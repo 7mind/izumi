@@ -120,7 +120,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
     val operatorsDummy =
       s"""    // We would normally want to have an operator, but unfortunately if it is an interface,
-         |    // it will fail on "user-defined conversions to or from an interface are now allowed".
+         |    // it will fail on "user-defined conversions to or from an interface are not allowed".
          |    // public static explicit operator _${member.name}(${member.name} m) {
          |    //     return m.Value;
          |    // }
@@ -150,8 +150,17 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     s"using _${m.name} = ${CSharpType(m.typeId).renderType()};"
   }
 
-  protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true)(implicit im: CSharpImports, ts: Typespace): String = {
+  protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true, left: List[AdtMember] = List.empty)(implicit im: CSharpImports, ts: Typespace): String = {
     val adt = Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), adtName), members, NodeMeta.empty)
+    val matchLeft = if (left.isEmpty) "" else
+      s"""    public bool IsLeft(object o) {
+         |        return ${left.map(l => s"o is ${l.name}").mkString(" ||\n        ")};
+         |    }
+         |
+         |    public bool IsRight(object o) {
+         |        return !IsLeft(o);
+         |    }
+       """.stripMargin
     s"""${im.renderUsings()}
        |${if (renderUsings) members.map(m => renderAdtUsings(m)).mkString("\n") else ""}
        |
@@ -164,6 +173,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |    public abstract void Visit(I${adtName}Visitor visitor);
        |    private $adtName() {}
        |
+       |$matchLeft
        |${members.map(m => renderAdtMember(adtName, m)).mkString("\n").shift(4)}
        |}
        |${ext.postModelEmit(ctx, adt)}
@@ -327,7 +337,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     case _: Algebraic => s"$svcOrBuzzer.Out${method.name.capitalize}"
     case si: Singular => s"${CSharpType(si.typeId).renderType()}"
     case _: Void => "void"
-    case _: Alternative => throw new Exception("Alternative not implemented.")
+    case _: Alternative => s"$svcOrBuzzer.Out${method.name.capitalize}"
   }
 
   protected def renderRPCMethodOutputSignature(svcOrBuzzer: String, method: DefMethod.RPCMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
@@ -336,7 +346,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
   protected def renderRPCClientMethod(svcOrBuzzer: String, method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): String = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
-      case _: Struct | _: Algebraic =>
+      case _: Struct | _: Algebraic | _: Alternative =>
         s"""public ${renderRPCMethodSignature(svcOrBuzzer, method, forClient = true)} {
            |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrBuzzer.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"$svcOrBuzzer.In${m.name.capitalize}" else "object"}, ${renderRPCMethodOutputModel(svcOrBuzzer, m)}>("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
@@ -359,8 +369,6 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
            |        new ClientTransportCallback<IRT.Void>(_ => onSuccess(), onFailure, onAny), ctx);
            |}
        """.stripMargin
-
-      case _: Alternative => throw new Exception("Alternative not implemented.")
     }
   }
 
@@ -448,10 +456,9 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   protected def renderRPCDummyMethod(svcOrBuzzer: String, member: DefMethod, virtual: Boolean)(implicit imports: CSharpImports, ts: Typespace): String = {
     val retValue = member match {
       case m: DefMethod.RPCMethod => m.signature.output match {
-        case _: Struct | _: Algebraic => "return null;"
+        case _: Struct | _: Algebraic | _: Alternative => "return null;"
         case s: Singular => "return " + CSharpType(s.typeId).defaultValue + ";";
         case _: Void => "// Nothing to return"
-        case _: Alternative => throw new Exception("Alternative not implemented.")
       }
       case _ => throw new Exception("Unsupported renderServiceServerDummyMethod case.")
     }
@@ -473,12 +480,18 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
      """.stripMargin
   }
 
+  protected def outputToAdtMember(out: DefMethod.Output): List[AdtMember] = out match {
+    case si: Singular => List(AdtMember(si.typeId, None))
+    case al: Algebraic => al.alternatives
+    case _ => throw new Exception("Output type to TypeId is not supported for non singular or void types. " + out)
+  }
+
   protected def renderServiceMethodOutModel(i: Service, name: String, out: DefMethod.Output)(implicit imports: CSharpImports, ts: Typespace): String = out match {
     case st: Struct => renderServiceMethodInModel(i, name, st.struct)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
     case si: Singular => s"// ${si.typeId}"
     case _: Void => ""
-    case _: Alternative => throw new Exception("Alternative not implemented.")
+    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), renderUsings = false, outputToAdtMember(at.failure))
   }
 
   protected def renderBuzzerMethodOutModel(i: Buzzer, name: String, out: DefMethod.Output)(implicit imports: CSharpImports, ts: Typespace): String = out match {
@@ -486,7 +499,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
     case si: Singular => s"// ${si.typeId}"
     case _: Void => ""
-    case _: Alternative => throw new Exception("Alternative not implemented.")
+    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), renderUsings = false, outputToAdtMember(at.failure))
   }
 
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
@@ -516,6 +529,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   protected def renderServiceMethodAdtUsings(method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): List[String] = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
       case al: Algebraic => al.alternatives.map(adtm => renderAdtUsings(adtm))
+      case at: Alternative => (outputToAdtMember(at.failure) ++ outputToAdtMember(at.success)).map(adtm => renderAdtUsings(adtm))
       case _ => List.empty
     }
   }
@@ -554,7 +568,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
           case si: Singular => Seq(si.typeId)
           case st: Struct => st.struct.fields.map(_.typeId) ++ st.struct.concepts
           case _: Void => Seq.empty
-          case _: Alternative => throw new Exception("Alternative not implemented.")
+          case at: Alternative => (outputToAdtMember(at.success) ++ outputToAdtMember(at.failure)).map(am => am.typeId)
         }
 
         (sigTypes.filterNot(_.isInstanceOf[Builtin]).map(typespace.apply)
@@ -676,7 +690,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
           case si: Singular => Seq(si.typeId)
           case st: Struct => st.struct.fields.map(_.typeId) ++ st.struct.concepts
           case _: Void => Seq.empty
-          case _: Alternative => throw new Exception("Alternative not implemented.")
+          case at: Alternative => (outputToAdtMember(at.success) ++ outputToAdtMember(at.failure)).map(am => am.typeId)
         }
 
         (sigTypes.filterNot(_.isInstanceOf[Builtin]).map(typespace.apply)

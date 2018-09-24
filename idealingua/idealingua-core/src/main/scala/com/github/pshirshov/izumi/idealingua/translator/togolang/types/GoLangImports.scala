@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, DefMethod, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
@@ -149,15 +149,19 @@ object GoLangImports {
     fromTypes(types, fromPkg, extra)
   }
 
+  protected def fromRPCMethodOutput(output: DefMethod.Output): List[TypeId] = {
+    output match {
+      case st: Struct => st.struct.fields.map(ff => ff.typeId)
+      case ad: Algebraic => ad.alternatives.map(al => al.typeId)
+      case si: Singular => List(si.typeId)
+      case _: Void => List.empty
+      case al: Alternative => fromRPCMethodOutput(al.success) ++ fromRPCMethodOutput(al.failure)
+    }
+  }
+
   protected def fromService(svc: Service, fromPkg: Package, extra: List[GoLangImportRecord] = List.empty): List[GoLangImportRecord] = {
     val types = svc.methods.flatMap {
-      case m: RPCMethod => m.signature.input.fields.map(f => f.typeId) ++ (m.signature.output match {
-        case st: Struct => st.struct.fields.map(ff => ff.typeId)
-        case ad: Algebraic => ad.alternatives.map(al => al.typeId)
-        case si: Singular => List(si.typeId)
-        case _: Void => List.empty
-        case _: Alternative => throw new Exception("Alternative not implemented.")
-      })
+      case m: RPCMethod => m.signature.input.fields.map(f => f.typeId) ++ fromRPCMethodOutput(m.signature.output)
     }
 
     fromTypes(types, fromPkg, extra)
@@ -165,13 +169,7 @@ object GoLangImports {
 
   protected def fromBuzzer(i: Buzzer, fromPkg: Package, extra: List[GoLangImportRecord] = List.empty): List[GoLangImportRecord] = {
     val types = i.events.flatMap {
-      case m: RPCMethod => m.signature.input.fields.map(f => f.typeId) ++ (m.signature.output match {
-        case st: Struct => st.struct.fields.map(ff => ff.typeId)
-        case ad: Algebraic => ad.alternatives.map(al => al.typeId)
-        case si: Singular => List(si.typeId)
-        case _: Void => List.empty
-        case _: Alternative => throw new Exception("Alternative not implemented.")
-      })
+      case m: RPCMethod => m.signature.input.fields.map(f => f.typeId) ++ fromRPCMethodOutput(m.signature.output)
     }
 
     fromTypes(types, fromPkg, extra)

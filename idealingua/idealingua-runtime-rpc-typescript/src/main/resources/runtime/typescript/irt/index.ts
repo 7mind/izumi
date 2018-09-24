@@ -7,3 +7,4 @@ export * from './marshaller';
 export * from './transport';
 export * from './dispatcher';
 export * from './void';
+export * from './either';
