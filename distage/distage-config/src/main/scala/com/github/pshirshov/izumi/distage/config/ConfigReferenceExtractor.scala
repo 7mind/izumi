@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.config
 
 import com.github.pshirshov.izumi.distage.config.annotations._
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
-import com.github.pshirshov.izumi.distage.model.definition.Binding
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, DIStageAnnotation}
 import com.github.pshirshov.izumi.distage.model.exceptions.BadAnnotationException
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
@@ -17,19 +17,9 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
 
   import u._
 
-  override def hookWiring(binding: Binding.ImplBinding, wiring: Wiring): Wiring =
+  override def hookWiring(binding: Binding.ImplBinding, wiring: Wiring): Wiring = {
     wiring.replaceKeys(rewire(binding, _))
-
-  protected def findAnno[T: TypeTag](association: Association): Option[Annotation] =
-    association.context.symbol.findAnnotation(SafeType.get[T])
-
-  protected def findArgument(ann: Annotation): Option[String] =
-    AnnotationTools.findArgument(ann) {
-      case Literal(Constant(str: String)) =>
-        str
-      case o =>
-        throw new BadAnnotationException(ann.tree.tpe.toString, o)
-    }
+  }
 
   protected def rewire(binding: Binding.ImplBinding, association: Association): DIKey = {
     val confPathAnno = findAnno[ConfPath](association)
@@ -90,4 +80,16 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
     association.wireWith
   }
 
+  protected def findAnno[T: TypeTag](association: Association): Option[Annotation] = {
+    association.context.symbol.findUniqueAnnotation(SafeType.get[T])
+  }
+
+  protected def findArgument(ann: Annotation): Option[String] = {
+    AnnotationTools.findArgument(ann) {
+      case Literal(Constant(str: String)) =>
+        str
+      case o =>
+        throw new BadAnnotationException(ann.tree.tpe.toString, o)
+    }
+  }
 }

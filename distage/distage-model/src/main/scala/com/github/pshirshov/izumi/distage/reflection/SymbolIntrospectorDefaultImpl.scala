@@ -60,8 +60,9 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     }
   }
 
-  override def findSymbolAnnotation(annType: u.SafeType, symb: u.SymbolInfo): Option[u.u.Annotation] =
-    symb.findAnnotation(annType)
+  override def findSymbolAnnotation(annType: u.SafeType, symb: u.SymbolInfo): Option[u.u.Annotation] = {
+    symb.findUniqueAnnotation(annType)
+  }
 
   override def findTypeAnnotation(annType: u.SafeType, tpe: u.SafeType): Option[u.u.Annotation] = {
     val univ: u.u.type = u.u // intellij

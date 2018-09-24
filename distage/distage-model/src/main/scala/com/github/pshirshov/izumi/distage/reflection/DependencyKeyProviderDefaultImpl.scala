@@ -25,13 +25,14 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
     withOptionalName(methodSymbol, typeKey)
   }
 
-  override def resultOfFactoryMethod(context: u.DependencyContext.MethodParameterContext): u.SafeType =
-    context.factoryMethod.findAnnotation(typeOfWithAnnotation) match {
+  override def resultOfFactoryMethod(context: u.DependencyContext.MethodParameterContext): u.SafeType = {
+    context.factoryMethod.findUniqueAnnotation(typeOfWithAnnotation) match {
       case Some(With(tpe)) =>
         tpe
       case _ =>
         context.factoryMethod.finalResultType
     }
+  }
 
   private def withOptionalName(parameterSymbol: SymbolInfo, typeKey: DIKey.TypeKey) =
     symbolIntrospector.findSymbolAnnotation(typeOfIdAnnotation, parameterSymbol) match {
