@@ -138,9 +138,9 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
   private def structInfo(op: ConfigImport) = {
     val qualifier = op.id match {
       case id: AutoConfId =>
-        id.parameter.name
+        id.parameterName
       case id: ConfId =>
-        id.parameter.name
+        id.parameterName
       case _ =>
         throw new IllegalArgumentException(s"Unexpected op: $op")
     }
@@ -164,7 +164,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
 
     val usageKeyFqName = op.id match {
       case id: AutoConfId =>
-        id.binding.tpe.name
+        id.contextKey.tpe.name
       case id: ConfId =>
         id.nameOverride
       case _ =>
@@ -175,7 +175,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
 
     val usageKeyQualifier = op.id match {
       case id: AutoConfId =>
-        id.binding match {
+        id.contextKey match {
           case k: DIKey.IdKey[_] =>
             Some(k.idContract.repr(k.id))
 
@@ -205,7 +205,7 @@ object ConfigProvider {
 
   case class ConfigImport(id: AbstractConfId, imp: ImportDependency)
 
-  private object ConfigImport {
+  object ConfigImport {
     def unapply(op: ExecutableOp): Option[ConfigImport] = {
       op match {
         case i: ImportDependency =>

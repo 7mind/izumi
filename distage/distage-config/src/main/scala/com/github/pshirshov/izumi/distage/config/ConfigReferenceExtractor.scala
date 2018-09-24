@@ -42,7 +42,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
           case Some(path) =>
             association.wireWith match {
               case k: DIKey.TypeKey =>
-                return k.named(ConfPathId(binding.key, association, path))
+                return k.named(ConfPathId(binding.key, association.name, path))
 
               case o =>
                 throw new ConfigTranslationException(s"Cannot rewire @ConfPath parameter $association: unexpected binding $o", Seq())
@@ -61,7 +61,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
           case Some(name) =>
             association.wireWith match {
               case k: DIKey.TypeKey =>
-                return k.named(ConfId(binding.key, association, name))
+                return k.named(ConfId(binding.key, association.name, name))
 
               case o =>
                 throw new ConfigTranslationException(s"Cannot rewire @Conf parameter $association: unexpected binding $o", Seq())
@@ -78,7 +78,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
       case Some(_) =>
         association.wireWith match {
           case k: DIKey.TypeKey =>
-            return k.named(AutoConfId(binding.key, association))
+            return k.named(AutoConfId(binding.key, association.name))
 
           case o =>
             throw new ConfigTranslationException(s"Cannot rewire @AutoConf parameter $association: unexpected binding $o", Seq())
