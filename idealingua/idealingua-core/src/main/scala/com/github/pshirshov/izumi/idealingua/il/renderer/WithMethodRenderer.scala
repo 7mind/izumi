@@ -35,7 +35,7 @@ trait WithMethodRenderer
       case _: DefMethod.Output.Void =>
         None
       case o: DefMethod.Output.Alternative =>
-        Some(s"${render(o.success)} !! ${o.failure}")
+        Some(s"${render(o.success).getOrElse("()")} !! ${render(o.failure).getOrElse("()")}")
     }
   }
 }
