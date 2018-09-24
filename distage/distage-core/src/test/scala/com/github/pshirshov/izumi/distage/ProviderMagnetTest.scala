@@ -215,9 +215,9 @@ class ProviderMagnetTest extends WordSpec {
       assert(!fn.diKeys.contains(DIKey.get[Int].named("classargann2")))
     }
 
-    "progression test: doesn't fail on multiple conflicting annotations on the same parameter" in {
-      assertCompiles("ProviderMagnet.apply(defconfannfn _)")
-      assertCompiles("ProviderMagnet.apply(defconfannfn2 _)")
+    "fail on multiple conflicting annotations on the same parameter" in {
+      assertTypeError("ProviderMagnet.apply(defconfannfn _)")
+      assertTypeError("ProviderMagnet.apply(defconfannfn2 _)")
     }
   }
 

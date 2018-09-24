@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.distage.model.definition.DIStageAnnotation
 import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
 
 import scala.reflect.macros.blackbox
@@ -12,6 +13,7 @@ trait StaticDIUniverse extends DIUniverse {
 
     val liftable: u.Liftable[T] = implicitly
   }
+
 }
 
 object StaticDIUniverse {
@@ -20,6 +22,7 @@ object StaticDIUniverse {
   def apply(c: blackbox.Context): StaticDIUniverse.Aux[c.universe.type] = new StaticDIUniverse {
     override val u: c.universe.type = c.universe
 
+    override protected val typeOfDistageAnnotation: SafeType = SafeType.get[DIStageAnnotation]
     override implicit val stringIdContract: IdContract[String] = new IdContractImpl[String]
     override implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = new IdContractImpl[S]
   }

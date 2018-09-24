@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-import com.github.pshirshov.izumi.distage.model.definition.{Id, With}
+import com.github.pshirshov.izumi.distage.model.definition.{DIStageAnnotation, Id, With}
 import com.github.pshirshov.izumi.distage.model.exceptions.BadAnnotationException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.DIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, SymbolIntrospector}
