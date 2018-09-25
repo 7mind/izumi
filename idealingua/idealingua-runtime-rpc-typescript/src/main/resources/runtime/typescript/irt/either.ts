@@ -9,11 +9,15 @@ export class Left<L, A> {
         return this as any;
     }
 
-    public bimap<V, B>(f: (l: L) => V, g: (a: A) => B): Either<V, B> {
+    public bimap<V, B>(g: (a: A) => B, f: (l: L) => V): Either<V, B> {
         return new Left(f(this.value));
     }
 
-    public fold<B>(whenLeft: (l: L) => B, whenRight: (a: A) => B): B {
+    public fold<B>(whenRight: (a: A) => B, whenLeft: (l: L) => B): B {
+        return whenLeft(this.value);
+    }
+
+    public bifold<V, B>(whenRight: (a: A) => B, whenLeft: (l: L) => V): V | B {
         return whenLeft(this.value);
     }
 
@@ -36,6 +40,10 @@ export class Left<L, A> {
     public filterOrElse(p: (a: A) => boolean, zero: L): Either<L, A> {
         return this;
     }
+
+    public match(whenRight: (value: A) => void, whenLeft:  (value: L) => void): void {
+        whenLeft(this.value);
+    }
 }
 
 export class Right<L, A> {
@@ -48,13 +56,17 @@ export class Right<L, A> {
         );
     }
 
-    public bimap<V, B>(f: (l: L) => V, g: (a: A) => B): Either<V, B> {
+    public bimap<V, B>(g: (a: A) => B, f: (l: L) => V): Either<V, B> {
         return new Right<V, B>(
             g(this.value)
         );
     }
 
-    public fold<B>(whenLeft: (l: L) => B, whenRight: (a: A) => B): B {
+    public fold<B>( whenRight: (a: A) => B, whenLeft: (l: L) => B): B {
+        return whenRight(this.value);
+    }
+
+    public bifold<V, B>(whenRight: (a: A) => B, whenLeft: (l: L) => V): V | B {
         return whenRight(this.value);
     }
 
@@ -77,14 +89,18 @@ export class Right<L, A> {
     public filterOrElse(p: (a: A) => boolean, zero: L): Either<L, A> {
         return p(this.value) ? this : left(zero);
     }
+
+    public match(whenRight: (value: A) => void, whenLeft:  (value: L) => void): void {
+        whenRight(this.value);
+    }
 }
 
 const of = <L, A>(a: A): Either<L, A> => {
     return new Right<L, A>(a);
-}
+};
 
 export const left = <L, A>(l: L): Either<L, A> => {
     return new Left(l);
-}
+};
 
 export const right = of;

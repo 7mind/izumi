@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, _}
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
@@ -202,8 +202,12 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   }
 
   protected def renderAdtMember(structName: String, member: AdtMember, im: GoLangImports): String = {
-    val serializationName =  member.name
-    val typeName = GoLangType(member.typeId, im, ts).renderType()
+    renderAdtMember(structName, member.name, member.typeId, im)
+  }
+
+  protected def renderAdtMember(structName: String, memberName: String, memberType: TypeId, im: GoLangImports): String = {
+    val serializationName = memberName
+    val typeName = GoLangType(memberType, im, ts).renderType()
 
     s"""func (v *$structName) Is$serializationName() bool {
        |    return v.valueType == "$serializationName"
@@ -227,7 +231,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    v.valueType = "$serializationName"
        |}
        |
-       |func New${structName}From${member.typeId.name}(v $typeName) *$structName {
+       |func New${structName}From${memberType.name}(v $typeName) *$structName {
        |    res := &$structName{}
        |    res.Set$serializationName(v)
        |    return res
@@ -236,7 +240,11 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   }
 
   protected def renderAdtSerialization(member: AdtMember, imports: GoLangImports): String = {
-    val glt = GoLangType(member.typeId, imports, ts)
+    renderAdtSerialization(member.typeId, imports)
+  }
+
+  protected def renderAdtSerialization(member: TypeId, imports: GoLangImports): String = {
+    val glt = GoLangType(member, imports, ts)
     val glf = GoLangField("value", glt, "v", imports, ts)
     if (glt.isPolymorph(glt.id)) {
       s"""polyVar, ok := v.value.(${glt.renderType()})
@@ -267,7 +275,156 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     }
   }
 
-  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], imports: GoLangImports, withTest: Boolean = true, left: List[AdtMember] = List.empty): String = {
+  protected def renderServiceMethodAlternativeOutput(name: String, at: Alternative, success: Boolean, imports: GoLangImports, onlyType: Boolean = false): String = {
+    if (success)
+      at.success match {
+        case _: Algebraic => s"${if(!onlyType) "*" else ""}${name}Success" /*ts.tools.toNegativeBranchName(alternative.failure.)*/
+        case _: Struct => s"${if(!onlyType) "*" else ""}${name}Success"
+        case si: Singular => GoLangType(si.typeId, imports, ts).renderType()
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.success.toString)
+      }
+    else
+      at.failure match {
+        case _: Algebraic => s"${if(!onlyType) "*" else ""}${name}Failure" /*ts.tools.toNegativeBranchName(alternative.failure.)*/
+        case _: Struct => s"${if(!onlyType) "*" else ""}${name}Failure"
+        case si: Singular => GoLangType(si.typeId, imports, ts).renderType()
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.failure.toString)
+      }
+  }
+
+  protected def renderServiceMethodAlternativeOutputTypeId(typePath: TypePath, name: String, at: Alternative, success: Boolean, imports: GoLangImports): TypeId = {
+    if (success)
+      at.success match {
+        case _: Algebraic => new AdtId(TypePath(typePath.domain, Seq(s"${name}Success")), s"${name}Success")
+        case _: Struct => new DTOId(TypePath(typePath.domain, Seq(s"${name}Success")), s"${name}Success")
+        case si: Singular => si.typeId
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.success.toString)
+      }
+    else
+      at.failure match {
+        case _: Algebraic => new AdtId(TypePath(typePath.domain, Seq(s"${name}Failure")), s"${name}Failure")
+        case _: Struct => new DTOId(TypePath(typePath.domain, Seq(s"${name}Failure")), s"${name}Failure")
+        case si: Singular => si.typeId
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.failure.toString)
+      }
+  }
+
+  protected def renderAlternativeImpl(structId: DTOId, name: String, alternative: Alternative, imports: GoLangImports): String = {
+    val leftType = renderServiceMethodAlternativeOutput(name, alternative, success = false, imports)
+    val left = alternative.failure match {
+      case al: Algebraic => renderAdtImpl(renderServiceMethodAlternativeOutput(name, alternative, success = false, imports, onlyType = true), al.alternatives, imports)
+      case st: Struct => renderServiceMethodInModel(structId, name, st.struct, imports)
+      case _ => ""
+    }
+
+    val rightType = renderServiceMethodAlternativeOutput(name, alternative, success = true, imports)
+    val right = alternative.success match {
+      case al: Algebraic => renderAdtImpl(renderServiceMethodAlternativeOutput(name, alternative, success = true, imports, onlyType = true), al.alternatives, imports)
+      case st: Struct => renderServiceMethodInModel(structId, name, st.struct, imports)
+      case _ => ""
+    }
+
+    s"""$left
+       |$right
+       |
+       |type $name struct {
+       |    value interface{}
+       |    left bool
+       |}
+       |
+       |func (v *$name) IsLeft() bool {
+       |    return v.left
+       |}
+       |
+       |func (v *$name) IsRight() bool {
+       |    return !v.IsLeft()
+       |}
+       |
+       |func (v *$name) IsBottom() bool {
+       |    return v.value == nil
+       |}
+       |
+       |func (v *$name) GetLeft() $leftType {
+       |    return v.value.($leftType)
+       |}
+       |
+       |func (v *$name) GetRight() $rightType {
+       |    return v.value.($rightType)
+       |}
+       |
+       |func (v *$name) SetLeft(value $leftType) {
+       |    v.left = true
+       |    v.value = value
+       |}
+       |
+       |func (v *$name) SetRight(value $rightType) {
+       |    v.left = false
+       |    v.value = value
+       |}
+       |
+       |func (v *$name) Match(forLeft func(value $leftType), forRight func(value $rightType)) error {
+       |    if v.value == nil {
+       |        return fmt.Errorf("Tried to match a nil value.")
+       |    }
+       |    if v.left {
+       |        forLeft(v.value.($leftType))
+       |    } else {
+       |        forRight(v.value.($rightType))
+       |    }
+       |
+       |    return nil
+       |}
+       |
+       |func (v *$name) MarshalJSON() ([]byte, error) {
+       |    if v.value == nil {
+       |        return nil, fmt.Errorf("trying to serialize a non-initialized either $name")
+       |    }
+       |
+       |    serialized, err := json.Marshal(v.value)
+       |    if err != nil {
+       |        return nil, err
+       |    }
+       |
+       |    if v.left {
+       |        return json.Marshal(&map[string]json.RawMessage {
+       |            "Failure": serialized,
+       |        })
+       |    }
+       |
+       |    return json.Marshal(&map[string]json.RawMessage {
+       |        "Success": serialized,
+       |    })
+       |}
+       |
+       |func (v *$name) UnmarshalJSON(data []byte) error {
+       |    raw := map[string]json.RawMessage{}
+       |    if err := json.Unmarshal(data, &raw); err != nil {
+       |        return err
+       |    }
+       |
+       |    for eitherSide, content := range raw {
+       |        if eitherSide == "Success" {
+       |            v.left = true
+       |        } else
+       |        if eitherSide == "Failure" {
+       |            v.left = false
+       |        } else {
+       |            return fmt.Errorf("$name encountered an unknown either type '%s' during deserialization", eitherSide)
+       |        }
+       |
+       |        if v.left {
+       |${GoLangType(renderServiceMethodAlternativeOutputTypeId(structId.path, name, alternative, success = false, imports), imports, ts).renderUnmarshal("content", "v.value = ").shift(12) + "\n            return nil"}
+       |        }
+       |
+       |${GoLangType(renderServiceMethodAlternativeOutputTypeId(structId.path, name, alternative, success = true, imports), imports, ts).renderUnmarshal("content", "v.value = ").shift(8) + "\n        return nil"}
+       |    }
+       |
+       |    return fmt.Errorf("$name expects a root key to be present, empty object found")
+       |}
+       """.stripMargin
+  }
+
+  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], imports: GoLangImports, withTest: Boolean = true): String = {
       val test =
         s"""
            |func NewTest$name() *$name {
@@ -287,16 +444,6 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 //      }
 //    }
 
-      val leftCheck = if (left.isEmpty) "" else
-        s"""func (v *$name) IsLeft() bool {
-           |    return ${left.map(l => s"""v.valueType == "${l.name}"""").mkString(" ||\n        ")}
-           |}
-           |
-           |func (v *$name) IsRight() bool {
-           |    return !v.IsLeft()
-           |}
-         """.stripMargin
-
       s"""type $name struct {
          |    value interface{}
          |    // valueType could be removed and optimized using .(type) or reflect package assertion,
@@ -308,8 +455,6 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |}
          |
          |${alternatives.map(al => renderAdtMember(name, al, imports)).mkString("\n")}
-         |
-         |$leftCheck
          |${if (withTest) test else ""}
          |
          |func (v *$name) MarshalJSON() ([]byte, error) {
@@ -1032,17 +1177,11 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
     case si: Singular => s"// ${ si.typeId}"
     case _: Void => ""
-    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), imports, withTest = false, outputToAdtMember(at.failure))
+    case at: Alternative => renderAlternativeImpl(DTOId(i.id, name), name, at, imports)
   }
 
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure, imports: GoLangImports): String = {
-    val struct = GoLangStruct(name, DTOId(i.id, name), List.empty,
-      structure.fields.map(ef => GoLangField(ef.name, GoLangType(ef.typeId, imports, ts), name, imports, ts)),
-      imports, ts
-    )
-    s"""${struct.render(withTest = false)}
-       |${struct.renderSerialized()}
-     """.stripMargin
+    renderServiceMethodInModel(DTOId(i.id, name), name, structure, imports)
   }
 
   protected def renderServiceMethodModels(i: Service, method: DefMethod, imports: GoLangImports): String = method match {
@@ -1092,15 +1231,19 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   }
 
   protected def renderBuzzerMethodOutModel(i: Buzzer, name: String, out: DefMethod.Output, imports: GoLangImports): String = out match {
-    case st: Struct => renderBuzzerMethodInModel(i, name, st.struct, imports)
+    case st: Struct => renderServiceMethodInModel(DTOId(i.id, name), name, st.struct, imports)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, imports, withTest = false)
     case si: Singular => s"// ${ si.typeId}"
     case _: Void => ""
-    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), imports, withTest = false, outputToAdtMember(at.failure))
+    case at: Alternative => renderAlternativeImpl(DTOId(i.id, name), name, at, imports)
   }
 
   protected def renderBuzzerMethodInModel(i: Buzzer, name: String, structure: SimpleStructure, imports: GoLangImports): String = {
-    val struct = GoLangStruct(name, DTOId(i.id, name), List.empty,
+    renderServiceMethodInModel(DTOId(i.id, name), name, structure, imports)
+  }
+
+  protected def renderServiceMethodInModel(i: DTOId, name: String, structure: SimpleStructure, imports: GoLangImports): String = {
+    val struct = GoLangStruct(name, i, List.empty,
       structure.fields.map(ef => GoLangField(ef.name, GoLangType(ef.typeId, imports, ts), name, imports, ts)),
       imports, ts
     )
