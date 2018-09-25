@@ -346,18 +346,83 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     alternatives.exists(al => al.typeId.isInstanceOf[DTOId])
   }
 
-  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], export: Boolean = true, left: List[AdtMember] = List.empty): String = {
+  protected def renderAlternative(method: String, alternative: DefMethod.Output.Alternative, export: Boolean = true): String = {
+    val leftTypeName = renderServiceMethodAlternativeOutput(method, alternative, success = false)
+
+    val left = alternative.failure match {
+      case al: Algebraic => renderAdtImpl(leftTypeName, al.alternatives)
+      case st: Struct => renderServiceMethodInModel(leftTypeName, "OutgoingData", st.struct, export = true)
+      case _ => ""
+    }
+
+    val leftTypeSerialize = alternative.failure match {
+      case _: Algebraic => leftTypeName + "Helpers.serialize(either.value)"
+      case _: Void => "{}"
+      case _: Struct => "(either as any).value.serialize() /* TS will report an error value does not exist on type never, though this is not right. */"
+      case si: Singular => conv.serializeValue("either.value", si.typeId, typespace)
+    }
+
+    val leftTypeDeserialize = alternative.failure match {
+      case _: Algebraic => leftTypeName + "Helpers.deserialize(content)"
+      case _: Void => "{}"
+      case _: Struct => s"new $leftTypeName(content)"
+      case si: Singular => conv.deserializeType("content", si.typeId, typespace)
+    }
+
+    val rightTypeName = renderServiceMethodAlternativeOutput(method, alternative, success = true)
+
+    val right = alternative.success match {
+      case al: Algebraic => renderAdtImpl(rightTypeName, al.alternatives)
+      case st: Struct => renderServiceMethodInModel(rightTypeName, "OutgoingData", st.struct, export = true)
+      case _ => ""
+    }
+
+    val rightTypeSerialize = alternative.success match {
+      case _: Algebraic => rightTypeName + "Helpers.serialize(either.value)"
+      case _: Void => "{}"
+      case _: Struct => "either.value.serialize()"
+      case si: Singular => conv.serializeValue("either.value", si.typeId, typespace)
+    }
+
+    val rightTypeDeserialize = alternative.success match {
+      case _: Algebraic => rightTypeName + "Helpers.deserialize(content)"
+      case _: Void => "{}"
+      case _: Struct => s"new $rightTypeName(content)"
+      case si: Singular => conv.deserializeType("content", si.typeId, typespace)
+    }
+
+    val name = s"$method"
+
+    // TODO Replace any in Serialized type with the actual types
+    s"""$left
+       |$right
+       |${if (export) "export " else ""}type $name = Either<$leftTypeName, $rightTypeName>;
+       |${if (export) "export " else ""}type ${name}Serialized = {[key in 'Success' | 'Failure']?: any};
+       |
+       |${if (export) "export " else ""}class ${name}Helpers {
+       |    public static serialize(either: $name): ${name}Serialized {
+       |        return either.isRight() ? {
+       |            'Success': $rightTypeSerialize
+       |        } : {
+       |            'Failure': $leftTypeSerialize
+       |        };
+       |    }
+       |
+       |    public static deserialize(data: ${name}Serialized): $name {
+       |        const id = Object.keys(data)[0];
+       |        const content = data[id];
+       |        switch (id) {
+       |            case 'Success': return new EitherRight<$leftTypeName, $rightTypeName>($rightTypeDeserialize);
+       |            case 'Failure': return new EitherLeft<$leftTypeName, $rightTypeName>($leftTypeDeserialize);
+       |            default: throw new Error(`Unexpected key $${id} in either object.`);
+       |        }
+       |    }
+       |}
+     """.stripMargin
+  }
+
+  protected def renderAdtImpl(name: String, alternatives: List[AdtMember], export: Boolean = true): String = {
     val hasInterfaces = alternatives.count(al => al.typeId.isInstanceOf[InterfaceId]) > 0
-    val hasLeftInterfaces = left.count(al => al.typeId.isInstanceOf[InterfaceId]) > 0
-    val leftCheck = if (left.isEmpty) "" else
-      s"""    public static isInstanceOfLeft(o: any): boolean {
-         |        if (!o['getClassName'] || typeof o['getClassName'] !== 'function') {
-         |            return false;
-         |        }
-         |        ${if(hasLeftInterfaces) "const className = o.getClassName();" else ""}
-         |        return ${left.map(alt => if (alt.typeId.isInstanceOf[InterfaceId]) s"${alt.typeId.name}${typespace.tools.implId(alt.typeId.asInstanceOf[InterfaceId]).name}.isRegisteredType(className)" else if (alt.typeId.isInstanceOf[AdtId]) s"${alt.typeId.name}Helpers.isInstanceOf(o)" else "o instanceof " + conv.toNativeType(alt.typeId, typespace)).mkString(" || ")};
-         |    }
-       """.stripMargin
 
     s"""${if (export) "export " else ""}type $name = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace)).mkString(" | ")};
        |${if (export) "export " else ""}type ${name}Serialized = ${alternatives.map(alt => conv.toNativeType(alt.typeId, typespace, forSerialized = true)).mkString(" | ")}
@@ -371,8 +436,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |        return ${alternatives.map(alt => if (alt.typeId.isInstanceOf[InterfaceId]) s"${alt.typeId.name}${typespace.tools.implId(alt.typeId.asInstanceOf[InterfaceId]).name}.isRegisteredType(className)" else if (alt.typeId.isInstanceOf[AdtId]) s"${alt.typeId.name}Helpers.isInstanceOf(o)" else "o instanceof " + conv.toNativeType(alt.typeId, typespace)).mkString(" || ")};
        |    }
        |
-       |$leftCheck
-       |    public static serialize(adt: ${name}): {[key: string]: ${alternatives.map(alt => alt.typeId match {
+       |    public static serialize(adt: $name): {[key: string]: ${alternatives.map(alt => alt.typeId match {
       case interfaceId: InterfaceId => alt.typeId.name + typespace.tools.implId(interfaceId).name + "Serialized"
       case al: AliasId => {
         val dealiased = typespace.dealias(al)
@@ -606,12 +670,31 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       }
   }
 
+  protected def renderServiceMethodAlternativeOutput(method: String, at: Alternative, success: Boolean): String = {
+    if (success)
+      at.success match {
+        case _: Algebraic => method + "Success" /*ts.tools.toNegativeBranchName(alternative.failure.)*/
+        case _: Struct => method + "Success"
+        case si: Singular => conv.toNativeType(si.typeId, typespace)
+        case _: Void => "Void"
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.success.toString)
+      }
+    else
+      at.failure match {
+        case _: Algebraic => method + "Failure" /*ts.tools.toNegativeBranchName(alternative.failure.)*/
+        case _: Struct => method + "Failure"
+        case si: Singular => conv.toNativeType(si.typeId, typespace)
+        case _: Void => "Void"
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.failure.toString)
+      }
+  }
+
   protected def renderServiceMethodOutputType(output: DefMethod.Output, method: DefMethod.RPCMethod): String = output match {
     case _: Struct => s"Out${method.name.capitalize}"
     case al: Algebraic => al.alternatives.map(alt => conv.toNativeType(alt.typeId, ts)).mkString(" | ")
     case si: Singular => conv.toNativeType(si.typeId, ts)
     case _: Void => "void"
-    case at: Alternative => s"Either<${renderServiceMethodOutputType(at.failure, method)}, ${renderServiceMethodOutputType(at.success, method)}>"
+    case at: Alternative => s"Either<${renderServiceMethodAlternativeOutput("Out" + method.name.capitalize, at, success = false)}, ${renderServiceMethodAlternativeOutput("Out" + method.name.capitalize, at, success = true)}>"
   }
 
   protected def renderServiceMethodOutputSignature(method: DefMethod.RPCMethod): String = {
@@ -628,7 +711,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
            |}
        """.stripMargin
 
-      case _: Algebraic =>
+      case _: Algebraic | _: Alternative =>
         s"""public ${renderRPCMethodSignature(method, spread = true)} {
            |    const __data = new In${m.name.capitalize}();
            |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
@@ -685,30 +768,6 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
            |        });
            |}
          """.stripMargin
-
-      case _: Alternative =>
-        s"""public ${renderRPCMethodSignature(method, spread = true)} {
-           |    const __data = new In${m.name.capitalize}();
-           |${m.signature.input.fields.map(f => s"__data.${conv.safeName(f.name)} = ${conv.safeName(f.name)};").mkString("\n").shift(4)}
-           |    return new Promise((resolve, reject) => {
-           |        this._transport.send(${service}Client.ClassName, '${m.name}', __data)
-           |            .then((data: any) => {
-           |                try {
-           |                    const __responseData = Out${m.name.capitalize}Helpers.deserialize(data);
-           |                    resolve(Out${m.name.capitalize}Helpers.isInstanceOfLeft(__responseData) ?
-           |                        new EitherLeft(__responseData as any):  // We can safely cast here
-           |                        new EitherRight(__responseData as any)  // as it was checked for Left already.
-           |                    );
-           |                } catch(err) {
-           |                    reject(err);
-           |                }
-           |             })
-           |            .catch((err: any) => {
-           |                reject(err);
-           |            });
-           |    });
-           |}
-         """.stripMargin
     }
   }
 
@@ -756,7 +815,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def renderServiceMethodOutModel(name: String, implements: String, out: DefMethod.Output): String = out match {
     case st: Struct => renderServiceMethodInModel(name, implements, st.struct, export = true)
     case al: Algebraic => renderAdtImpl(name, al.alternatives, export = false)
-    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), export = false, outputToAdtMember(at.failure))
+    case at: Alternative => renderAlternative(name, at, export = false)
     case _ => ""
   }
 
@@ -803,10 +862,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   }
 
   protected def renderServiceReturnSerialization(method: DefMethod.RPCMethod): String = method.signature.output match {
-    case _: Algebraic =>
+    case _: Algebraic | _: Alternative =>
       s"const serialized = this.marshaller.Marshal<object>(Out${method.name.capitalize}Helpers.serialize(res));"
-    case _: Alternative =>
-      s"const serialized = this.marshaller.Marshal<object>(Out${method.name.capitalize}Helpers.serialize(res.value));"
     case _ => s"const serialized = this.marshaller.Marshal<${renderServiceMethodOutputSignature(method)}>(res);"
   }
 
