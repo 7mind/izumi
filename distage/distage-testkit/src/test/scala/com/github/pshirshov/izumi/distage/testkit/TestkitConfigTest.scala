@@ -12,7 +12,7 @@ import com.typesafe.config.ConfigFactory
 class TestkitConfigTest extends DistagePluginSpec {
   "testkit" must {
     "produce expected logger routers" in {
-      assert(makeLogRouter(makeConfig()).isInstanceOf[ConfigurableLogRouter])
+      assert(makeLogRouter(makeConfig).isInstanceOf[ConfigurableLogRouter])
     }
 
     "load config" in di {
@@ -22,7 +22,7 @@ class TestkitConfigTest extends DistagePluginSpec {
     }
   }
 
-  override protected def makeConfig(): Option[AppConfig] = {
+  override protected def makeConfig: Option[AppConfig] = {
     // here we may override our config values on config level
     Some(AppConfig(ConfigFactory.parseResources("distage-testkit-test.conf")))
   }

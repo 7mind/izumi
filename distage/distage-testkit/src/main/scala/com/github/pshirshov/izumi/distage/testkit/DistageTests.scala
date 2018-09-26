@@ -17,6 +17,7 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
+import com.typesafe.config.ConfigFactory
 import distage.{BootstrapModule, Injector, ModuleBase, Tag}
 import org.scalatest.exceptions.TestCanceledException
 
@@ -135,7 +136,7 @@ trait DistageTests {
   }
 
   protected def makeInjector(roots: Set[DIKey]): Injector = {
-    val maybeConfig = makeConfig()
+    val maybeConfig = makeConfig
 
 
     val allRoots = roots ++ Set(DIKey.get[Set[AutoCloseable]])
@@ -158,7 +159,9 @@ trait DistageTests {
 
   protected def makeBindings(): ModuleBase
 
-  protected def makeConfig(): Option[AppConfig] = None
+  protected def makeConfig: Option[AppConfig] = {
+    Some(AppConfig(ConfigFactory.parseResources("test-reference.conf").resolveWith(ConfigFactory.defaultOverrides())))
+  }
 
   protected def configOptions: ConfigInjectionOptions = ConfigInjectionOptions()
 }
