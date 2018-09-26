@@ -160,7 +160,16 @@ trait DistageTests {
   protected def makeBindings: ModuleBase
 
   protected def makeConfig: Option[AppConfig] = {
-    Some(AppConfig(ConfigFactory.parseResources("test-reference.conf").resolveWith(ConfigFactory.defaultOverrides())))
+    val pname = s"${this.getClass.getPackage.getName}"
+    val lastpart = pname.split('.').last
+    val name = s"test-$lastpart-reference.conf"
+    val resource = ConfigFactory.parseResources(name)
+
+    if (resource.isEmpty) {
+      None
+    } else {
+      Some(AppConfig(resource.resolveWith(ConfigFactory.defaultOverrides())))
+    }
   }
 
   protected def configOptions: ConfigInjectionOptions = ConfigInjectionOptions()
