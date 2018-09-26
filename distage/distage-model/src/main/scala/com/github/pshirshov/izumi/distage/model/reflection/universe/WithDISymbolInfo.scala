@@ -29,11 +29,13 @@ trait WithDISymbolInfo {
     }
 
     object Runtime {
-      def apply(underlying: Symb, definingClass: SafeType, annotations: List[u.Annotation]): Runtime =
-        new Runtime(underlying, definingClass, AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ annotations)
+      def apply(underlying: Symb, definingClass: SafeType, moreAnnotations: List[u.Annotation]): Runtime = {
+        new Runtime(underlying, definingClass, (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct)
+      }
 
-      def apply(underlying: Symb, definingClass: SafeType): Runtime =
-        new Runtime(underlying, definingClass, AnnotationTools.getAllAnnotations(u: u.type)(underlying))
+      def apply(underlying: Symb, definingClass: SafeType): Runtime = {
+        new Runtime(underlying, definingClass, AnnotationTools.getAllAnnotations(u: u.type)(underlying).distinct)
+      }
     }
 
     case class Static(name: String, finalResultType: SafeType, annotations: List[u.Annotation], definingClass: SafeType) extends SymbolInfo
