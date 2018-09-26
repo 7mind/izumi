@@ -7,12 +7,39 @@ namespace IRT {
         public abstract Either<LT, B> Map<B>(Func<RT, B> f);
         public abstract Either<V, B> BiMap<V, B>(Func<RT, B> g, Func<LT, V> f);
         public abstract B Fold<B>(Func<RT, B> whenRight, Func<LT, B> whenLeft);
+        public abstract LT GetOrElse(LT l);
+        public abstract LT GetLeft();
         public abstract RT GetOrElse(RT a);
+        public abstract RT GetRight();
         public abstract bool IsLeft();
         public abstract bool IsRight();
         public abstract Either<RT, LT> Swap();
         public abstract Either<LT, RT> FilterOrElse(Func<RT, bool> p, LT zero);
         public abstract void Match(Action<RT> whenRight, Action<LT> whenLeft);
+
+        public static explicit operator LT(Either<LT, RT> e) {
+            if (!e.IsLeft()) {
+                throw new InvalidCastException("Either is not in the Left state.");
+            }
+
+            return e.GetLeft();
+        }
+
+        public static explicit operator RT(Either<LT, RT> e) {
+            if (e.IsLeft()) {
+                throw new InvalidCastException("Either is not in the Right state.");
+            }
+
+            return e.GetRight();
+        }
+
+        public static implicit operator Either<LT, RT> (LT value) {
+            return new Left<LT, RT>(value);
+        }
+
+        public static implicit operator Either<LT, RT> (RT value) {
+            return new Right<LT, RT>(value);
+        }
 
         public sealed class Left<L, A>: Either<L, A> {
             private readonly L Value;
@@ -32,8 +59,20 @@ namespace IRT {
                 return whenLeft(Value);
             }
 
+            public override L GetOrElse(L l) {
+                return Value;
+            }
+
             public override A GetOrElse(A a) {
                 return a;
+            }
+
+            public override L GetLeft() {
+                return Value;
+            }
+
+            public override A GetRight() {
+                throw new InvalidCastException("Either is not in the Right state.");
             }
 
             public override bool IsLeft() {
@@ -75,7 +114,19 @@ namespace IRT {
                 return whenRight(Value);
             }
 
+            public override L GetOrElse(L l) {
+                return l;
+            }
+
             public override A GetOrElse(A a) {
+                return Value;
+            }
+
+            public override L GetLeft() {
+                throw new InvalidCastException("Either is not in the Left state.");
+            }
+
+            public override A GetRight() {
                 return Value;
             }
 
