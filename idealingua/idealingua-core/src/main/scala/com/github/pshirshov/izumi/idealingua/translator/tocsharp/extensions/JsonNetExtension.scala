@@ -4,8 +4,10 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId, TypePath}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpField, CSharpType}
@@ -379,7 +381,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         """.stripMargin
 
 
-      case _ => """serializer.Serialize(writer, v);"""
+      case _ => s"""serializer.Serialize(writer, $varName);"""
     }
   }
 
@@ -426,5 +428,69 @@ object JsonNetExtension extends CSharpTranslatorExtension {
   override def imports(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
     List("Newtonsoft.Json", "System.Linq", "Newtonsoft.Json.Linq", "IRT.Marshaller")
+  }
+
+  override def preModelEmit(ctx: CSTContext, name: String, alternative: Alternative)(implicit im: CSharpImports, ts: Typespace): String = {
+    discard(ctx)
+    s"[JsonConverter(typeof(${name}_JsonNetConverter))]"
+  }
+
+  private def renderSerializeOutput(output: DefMethod.Output, varName: String): String = output match {
+    case si: Singular => si.typeId match {
+      case inf: InterfaceId =>
+        s"""// Serializing polymorphic type ${inf.name}
+           |writer.WriteStartObject();
+           |writer.WritePropertyName($varName.GetFullClassName());
+           |serializer.Serialize(writer, $varName);
+           |writer.WriteEndObject();
+        """.stripMargin
+
+      case _ => s"""serializer.Serialize(writer, $varName);"""
+    }
+    case _ => s"""serializer.Serialize(writer, $varName);"""
+  }
+
+  override def postModelEmit(ctx: CSTContext, name: String, alternative: Alternative, leftType: TypeId, rightType: TypeId)(implicit im: CSharpImports, ts: Typespace): String = {
+    discard(ctx)
+
+    val left = CSharpType(leftType).renderType()
+    val right = CSharpType(rightType).renderType()
+    s"""public class ${name}_JsonNetConverter: JsonNetConverter<$name> {
+       |    public override void WriteJson(JsonWriter writer, $name al, JsonSerializer serializer) {
+       |        writer.WriteStartObject();
+       |
+       |        if (al.IsLeft()) {
+       |            writer.WritePropertyName("Failure");
+       |            var l = al.GetLeft();
+       |${renderSerializeOutput(alternative.failure, "l").shift(12)}
+       |        } else {
+       |            writer.WritePropertyName("Success");
+       |            var r = al.GetRight();
+       |${renderSerializeOutput(alternative.success, "r").shift(12)}
+       |        }
+       |
+       |        writer.WriteEndObject();
+       |    }
+       |
+       |    public override $name ReadJson(JsonReader reader, System.Type objectType, $name existingValue, bool hasExistingValue, JsonSerializer serializer) {
+       |        var json = JObject.Load(reader);
+       |        var kv = json.Properties().First();
+       |        switch (kv.Name) {
+       |            case "Success": {
+       |                var v = serializer.Deserialize<$right>(kv.Value.CreateReader());
+       |                return new Either<$left, $right>.Right(v);
+       |            }
+       |
+       |            case "Failure": {
+       |                var v = serializer.Deserialize<$left>(kv.Value.CreateReader());
+       |                return new Either<$left, $right>.Left(v);
+       |            }
+       |
+       |            default:
+       |                throw new System.Exception("Unknown either $name type: " + kv.Name);
+       |        }
+       |    }
+       |}
+     """.stripMargin
   }
 }

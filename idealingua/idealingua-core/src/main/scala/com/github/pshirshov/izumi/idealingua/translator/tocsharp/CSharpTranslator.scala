@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, DomainId, TypePath}
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, DomainId, TypeId, TypePath}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -150,17 +150,8 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     s"using _${m.name} = ${CSharpType(m.typeId).renderType()};"
   }
 
-  protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true, left: List[AdtMember] = List.empty)(implicit im: CSharpImports, ts: Typespace): String = {
+  protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true)(implicit im: CSharpImports, ts: Typespace): String = {
     val adt = Adt(AdtId(TypePath(DomainId.Undefined, Seq.empty), adtName), members, NodeMeta.empty)
-    val matchLeft = if (left.isEmpty) "" else
-      s"""    public bool IsLeft(object o) {
-         |        return ${left.map(l => s"o is ${l.name}").mkString(" ||\n        ")};
-         |    }
-         |
-         |    public bool IsRight(object o) {
-         |        return !IsLeft(o);
-         |    }
-       """.stripMargin
     s"""${im.renderUsings()}
        |${if (renderUsings) members.map(m => renderAdtUsings(m)).mkString("\n") else ""}
        |
@@ -173,10 +164,81 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |    public abstract void Visit(I${adtName}Visitor visitor);
        |    private $adtName() {}
        |
-       |$matchLeft
        |${members.map(m => renderAdtMember(adtName, m)).mkString("\n").shift(4)}
        |}
        |${ext.postModelEmit(ctx, adt)}
+     """.stripMargin
+  }
+
+  protected def renderServiceMethodAlternativeOutput(name: String, at: Alternative, success: Boolean)(implicit im: CSharpImports, ts: Typespace): String = {
+    if (success)
+      at.success match {
+        case _: Algebraic => s"${name}Success" /*ts.tools.toNegativeBranchName(alternative.failure.)*/
+        case _: Struct => s"${name}Success"
+        case si: Singular => CSharpType(si.typeId).renderType()
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.success.toString)
+      }
+    else
+      at.failure match {
+        case _: Algebraic => s"${name}Failure" /*ts.tools.toNegativeBranchName(alternative.failure.)*/
+        case _: Struct => s"${name}Failure"
+        case si: Singular => CSharpType(si.typeId).renderType()
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.failure.toString)
+      }
+  }
+
+  protected def renderServiceMethodAlternativeOutputTypeId(typePath: TypePath, name: String, at: Alternative, success: Boolean)(implicit im: CSharpImports, ts: Typespace): TypeId = {
+    if (success)
+      at.success match {
+        case _: Algebraic => new AdtId(TypePath(typePath.domain, Seq(s"${name}Success")), s"${name}Success")
+        case _: Struct => new DTOId(TypePath(typePath.domain, Seq(s"${name}Success")), s"${name}Success")
+        case si: Singular => si.typeId
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.success.toString)
+      }
+    else
+      at.failure match {
+        case _: Algebraic => new AdtId(TypePath(typePath.domain, Seq(s"${name}Failure")), s"${name}Failure")
+        case _: Struct => new DTOId(TypePath(typePath.domain, Seq(s"${name}Failure")), s"${name}Failure")
+        case si: Singular => si.typeId
+        case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.failure.toString)
+      }
+  }
+
+  protected def renderAlternativeType(name: String, alternative: Alternative)(implicit im: CSharpImports, ts: Typespace): String = {
+    val leftType = renderServiceMethodAlternativeOutput(name, alternative, success = false)
+    val rightType = renderServiceMethodAlternativeOutput(name, alternative, success = true)
+
+    s"Either<$leftType, $rightType> "
+  }
+
+  protected def renderAlternativeImpl(structId: DTOId, name: String, alternative: Alternative)(implicit im: CSharpImports, ts: Typespace): String = {
+    // val leftType = renderServiceMethodAlternativeOutput(name, alternative, success = false)
+    // val leftTypeId = renderServiceMethodAlternativeOutputTypeId(structId.path, name, alternative, success = false)
+    val left = alternative.failure match {
+      case al: Algebraic => renderAdtImpl(renderServiceMethodAlternativeOutput(name, alternative, success = false), al.alternatives, renderUsings = false)
+      case st: Struct => renderServiceMethodInModel(new DTOId(structId.path, structId.name + "Failure"), st.struct)
+      case _ => ""
+    }
+
+    // val rightType = renderServiceMethodAlternativeOutput(name, alternative, success = true)
+    // val rightTypeId = renderServiceMethodAlternativeOutputTypeId(structId.path, name, alternative, success = true)
+    val right = alternative.success match {
+      case al: Algebraic => renderAdtImpl(renderServiceMethodAlternativeOutput(name, alternative, success = true), al.alternatives, renderUsings = false)
+      case st: Struct => renderServiceMethodInModel(new DTOId(structId.path, structId.name + "Success"), st.struct)
+      case _ => ""
+    }
+
+    /* // This is last resort here where we would need to actually create an instance of a class
+    s"""$left
+       |$right
+       |${ext.preModelEmit(ctx, name, alternative)}
+       |type public abstract class $name: Either<$leftType, $rightType> {
+       |}
+       |${ext.postModelEmit(ctx, name, alternative, leftTypeId, rightTypeId)}
+     """.stripMargin
+    */
+    s"""$left
+       |$right
      """.stripMargin
   }
 
@@ -337,7 +399,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     case _: Algebraic => s"$svcOrBuzzer.Out${method.name.capitalize}"
     case si: Singular => s"${CSharpType(si.typeId).renderType()}"
     case _: Void => "void"
-    case _: Alternative => s"$svcOrBuzzer.Out${method.name.capitalize}"
+    case at: Alternative => renderAlternativeType(s"$svcOrBuzzer.Out${method.name.capitalize}", at)
   }
 
   protected def renderRPCMethodOutputSignature(svcOrBuzzer: String, method: DefMethod.RPCMethod)(implicit imports: CSharpImports, ts: Typespace): String = {
@@ -483,6 +545,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   protected def outputToAdtMember(out: DefMethod.Output): List[AdtMember] = out match {
     case si: Singular => List(AdtMember(si.typeId, None))
     case al: Algebraic => al.alternatives
+    case _: Struct => List.empty
     case _ => throw new Exception("Output type to TypeId is not supported for non singular or void types. " + out)
   }
 
@@ -491,7 +554,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
     case si: Singular => s"// ${si.typeId}"
     case _: Void => ""
-    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), renderUsings = false, outputToAdtMember(at.failure))
+    case at: Alternative => renderAlternativeImpl(DTOId(i.id, name), name, at)
   }
 
   protected def renderBuzzerMethodOutModel(i: Buzzer, name: String, out: DefMethod.Output)(implicit imports: CSharpImports, ts: Typespace): String = out match {
@@ -499,19 +562,19 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     case al: Algebraic => renderAdtImpl(name, al.alternatives, renderUsings = false)
     case si: Singular => s"// ${si.typeId}"
     case _: Void => ""
-    case at: Alternative => renderAdtImpl(name, outputToAdtMember(at.failure) ++ outputToAdtMember(at.success), renderUsings = false, outputToAdtMember(at.failure))
+    case at: Alternative => renderAlternativeImpl(DTOId(i.id, name), name, at)
   }
 
   protected def renderServiceMethodInModel(i: Service, name: String, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
-    val csClass = CSharpClass(DTOId(i.id, name), structure)
-
-    s"""${ext.preModelEmit(ctx, csClass.id.name, csClass)}
-       |${csClass.render(withWrapper = true, withSlices = false, withRTTI = true)}
-       |${ext.postModelEmit(ctx, csClass.id.name, csClass)}""".stripMargin
+    renderServiceMethodInModel(DTOId(i.id, name), structure)
   }
 
   protected def renderBuzzerMethodInModel(i: Buzzer, name: String, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
-    val csClass = CSharpClass(DTOId(i.id, name), structure)
+    renderServiceMethodInModel(DTOId(i.id, name), structure)
+  }
+
+  protected def renderServiceMethodInModel(i: DTOId, structure: SimpleStructure)(implicit imports: CSharpImports, ts: Typespace): String = {
+    val csClass = CSharpClass(i, structure)
 
     s"""${ext.preModelEmit(ctx, csClass.id.name, csClass)}
        |${csClass.render(withWrapper = true, withSlices = false, withRTTI = true)}

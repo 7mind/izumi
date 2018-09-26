@@ -45,4 +45,4 @@ func (m *BinaryMarshaller) Marshal(data interface{}) ([]byte, error) {
 
 func (m *BinaryMarshaller) Unmarshal(data []byte, model interface{}) error {
 	return fmt.Errorf("binary marshaller is not implemented")
-	}
+}

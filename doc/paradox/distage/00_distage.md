@@ -200,7 +200,7 @@ For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshir
 ### Tagless Final Style with distage
 
 distage works well with tagless final style, for example, let's make [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
-easier, safer and more flexible, by making implicit instances explicit and confige them with distage.
+easier, safer and more flexible, by making implicit instances explicit and configure them with distage.
 
 Fist, modules:
 
