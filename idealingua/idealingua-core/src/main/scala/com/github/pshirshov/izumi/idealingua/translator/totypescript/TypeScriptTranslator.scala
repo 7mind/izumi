@@ -359,7 +359,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       case _: Algebraic => leftTypeName + "Helpers.serialize(either.value)"
       case _: Void => "{}"
       case _: Struct => "(either as any).value.serialize() /* TS will report an error value does not exist on type never, though this is not right. */"
-      case si: Singular => conv.serializeValue("either.value", si.typeId, typespace)
+      case si: Singular => conv.serializeValue("(either as any).value", si.typeId, typespace)
     }
 
     val leftTypeDeserialize = alternative.failure match {

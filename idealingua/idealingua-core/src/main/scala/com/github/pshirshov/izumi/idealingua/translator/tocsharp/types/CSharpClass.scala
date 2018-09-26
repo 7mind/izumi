@@ -151,6 +151,6 @@ object CSharpClass {
             st: SimpleStructure)
            (implicit im: CSharpImports, ts: Typespace): CSharpClass =
     new CSharpClass(id, id.name, st.fields.map(f =>
-        CSharpField(f, f.name, Seq.empty)),
+        CSharpField(f, id.name, Seq.empty)),
         List.empty)
 }

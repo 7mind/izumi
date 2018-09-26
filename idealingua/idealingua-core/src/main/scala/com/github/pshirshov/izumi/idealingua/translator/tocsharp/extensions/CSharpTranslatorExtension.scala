@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.Alternative
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
@@ -123,6 +125,17 @@ trait CSharpTranslatorExtension extends TranslatorExtension {
     def postEmitModules(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
       discard(ctx, id, im, ts)
       List.empty
+    }
+
+    // Alternative
+    def preModelEmit(ctx: CSTContext, name: String, alternative: Alternative)(implicit im: CSharpImports, ts: Typespace): String = {
+      discard(ctx, id, im, ts)
+      ""
+    }
+
+    def postModelEmit(ctx: CSTContext, name: String, alternative: Alternative, leftType: TypeId, rightType: TypeId)(implicit im: CSharpImports, ts: Typespace): String = {
+      discard(ctx, id, im, ts)
+      ""
     }
 }
 

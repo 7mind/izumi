@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.common.Builtin
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.Alternative
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -24,6 +26,11 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
     extensions.map(ex => ex.preModelEmit(ctx, name, struct)).filterNot(_.isEmpty).mkString("\n")
   }
 
+  // This is complimentary to Alternative
+  def preModelEmit(ctx: CSTContext, name: String, alternative: Alternative)(implicit im: CSharpImports, ts: Typespace): String = {
+    extensions.map(ex => ex.preModelEmit(ctx, name, alternative)).filterNot(_.isEmpty).mkString("\n")
+  }
+
   def postModelEmit(ctx: CSTContext, id: TypeDef)(implicit im: CSharpImports, ts: Typespace): String = id match {
     case i: Identifier => extensions.map(ex => ex.postModelEmit(ctx, i)).filterNot(_.isEmpty).mkString("\n")
     case e: Enumeration => extensions.map(ex => ex.postModelEmit(ctx, e)).filterNot(_.isEmpty).mkString("\n")
@@ -37,6 +44,11 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
   // This is complimentary to DTO for structs in services responses
   def postModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
     extensions.map(ex => ex.postModelEmit(ctx, name, struct)).filterNot(_.isEmpty).mkString("\n")
+  }
+
+  // This is complimentary to Alternative services responses
+  def postModelEmit(ctx: CSTContext, name: String, alternative: Alternative, leftType: TypeId, rightType: TypeId)(implicit im: CSharpImports, ts: Typespace): String = {
+    extensions.map(ex => ex.postModelEmit(ctx, name, alternative, leftType, rightType)).filterNot(_.isEmpty).mkString("\n")
   }
 
   def imports(ctx: CSTContext, id: TypeDef)(implicit im: CSharpImports, ts: Typespace): Seq[String] = {

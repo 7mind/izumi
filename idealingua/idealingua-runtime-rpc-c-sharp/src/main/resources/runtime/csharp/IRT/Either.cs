@@ -1,23 +1,28 @@
 
 using System;
+// TODO Consider moving out of here the converter attribute
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Linq;
+using IRT.Marshaller;
 
 namespace IRT {
-    public abstract class Either<LT, RT> {
-        private Either() {}
-        public abstract Either<LT, B> Map<B>(Func<RT, B> f);
-        public abstract Either<V, B> BiMap<V, B>(Func<RT, B> g, Func<LT, V> f);
-        public abstract B Fold<B>(Func<RT, B> whenRight, Func<LT, B> whenLeft);
-        public abstract LT GetOrElse(LT l);
-        public abstract LT GetLeft();
-        public abstract RT GetOrElse(RT a);
-        public abstract RT GetRight();
+    [JsonConverter(typeof(Either_JsonNetConverter<,>))]
+    public abstract class Either<L, A> {
+        public abstract Either<L, B> Map<B>(Func<A, B> f);
+        public abstract Either<V, B> BiMap<V, B>(Func<A, B> g, Func<L, V> f);
+        public abstract B Fold<B>(Func<A, B> whenRight, Func<L, B> whenLeft);
+        public abstract L GetOrElse(L l);
+        public abstract L GetLeft();
+        public abstract A GetOrElse(A a);
+        public abstract A GetRight();
         public abstract bool IsLeft();
         public abstract bool IsRight();
-        public abstract Either<RT, LT> Swap();
-        public abstract Either<LT, RT> FilterOrElse(Func<RT, bool> p, LT zero);
-        public abstract void Match(Action<RT> whenRight, Action<LT> whenLeft);
+        public abstract Either<A, L> Swap();
+        public abstract Either<L, A> FilterOrElse(Func<A, bool> p, L zero);
+        public abstract void Match(Action<A> whenRight, Action<L> whenLeft);
 
-        public static explicit operator LT(Either<LT, RT> e) {
+        public static explicit operator L(Either<L, A> e) {
             if (!e.IsLeft()) {
                 throw new InvalidCastException("Either is not in the Left state.");
             }
@@ -25,7 +30,7 @@ namespace IRT {
             return e.GetLeft();
         }
 
-        public static explicit operator RT(Either<LT, RT> e) {
+        public static explicit operator A(Either<L, A> e) {
             if (e.IsLeft()) {
                 throw new InvalidCastException("Either is not in the Right state.");
             }
@@ -33,26 +38,29 @@ namespace IRT {
             return e.GetRight();
         }
 
-        public static implicit operator Either<LT, RT> (LT value) {
-            return new Left<LT, RT>(value);
+        // We support both sides to have equal type, for example if both
+        // success and failure hold a simple Message class. In that case
+        // same operator would fail, so we move it to the generated class.
+        public static implicit operator Either<L, A> (L value) {
+            return new Left(value);
         }
 
-        public static implicit operator Either<LT, RT> (RT value) {
-            return new Right<LT, RT>(value);
+        public static implicit operator Either<L, A> (A value) {
+            return new Right(value);
         }
 
-        public sealed class Left<L, A>: Either<L, A> {
+        public sealed class Left: Either<L, A> {
             private readonly L Value;
             public Left(L value) {
                 Value = value;
             }
 
             public override Either<L, B> Map<B>(Func<A, B> f) {
-                return new Left<L, B>(Value);
+                return new Either<L, B>.Left(Value);
             }
 
             public override Either<V, B> BiMap<V, B>(Func<A, B> g, Func<L, V> f) {
-                return new Left<V, B>(f(Value));
+                return new Either<V, B>.Left(f(Value));
             }
 
             public override B Fold<B>(Func<A, B> whenRight, Func<L, B> whenLeft) {
@@ -84,7 +92,7 @@ namespace IRT {
             }
 
             public override Either<A, L> Swap() {
-                return new Right<A, L>(Value);
+                return new Either<A, L>.Right(Value);
             }
 
             public override Either<L, A> FilterOrElse(Func<A, bool> p, L zero) {
@@ -96,18 +104,18 @@ namespace IRT {
             }
         }
 
-        public sealed class Right<L, A>: Either<L, A> {
+        public sealed class Right: Either<L, A> {
             private readonly A Value;
             public Right(A value) {
                 Value = value;
             }
 
             public override Either<L, B> Map<B>(Func<A, B> f) {
-                return new Right<L, B>(f(Value));
+                return new Either<L, B>.Right(f(Value));
             }
 
             public override Either<V, B> BiMap<V, B>(Func<A, B> g, Func<L, V> f) {
-                return new Right<V, B>(g(Value));
+                return new Either<V, B>.Right(g(Value));
             }
 
             public override B Fold<B>(Func<A, B> whenRight, Func<L, B> whenLeft) {
@@ -139,7 +147,7 @@ namespace IRT {
             }
 
             public override Either<A, L> Swap() {
-                return new Left<A, L>(Value);
+                return new Either<A, L>.Left(Value);
             }
 
             public override Either<L, A> FilterOrElse(Func<A, bool> p, L zero) {
@@ -147,11 +155,65 @@ namespace IRT {
                     return this;
                 }
 
-                return new Left<L, A>(zero);
+                return new Left(zero);
             }
 
             public override void Match(Action<A> whenRight, Action<L> whenLeft) {
                 whenRight(Value);
+            }
+        }
+    }
+
+    // TODO Consider moving out of here to the marshaller itself
+    public class Either_JsonNetConverter<L, R>: JsonNetConverter<Either<L, R>> {
+        public override void WriteJson(JsonWriter writer, Either<L, R> al, JsonSerializer serializer) {
+            writer.WriteStartObject();
+
+            if (al.IsLeft()) {
+                writer.WritePropertyName("Failure");
+                var l = al.GetLeft();
+                if (typeof(L).IsInterface) {
+                    // Serializing polymorphic type
+                    writer.WriteStartObject();
+                    writer.WritePropertyName((l as IRTTI).GetFullClassName());
+                    serializer.Serialize(writer, l);
+                    writer.WriteEndObject();
+                } else {
+                    serializer.Serialize(writer, l);
+                }
+            } else {
+                writer.WritePropertyName("Success");
+                var r = al.GetRight();
+                if (typeof(R).IsInterface) {
+                    // Serializing polymorphic type
+                    writer.WriteStartObject();
+                    writer.WritePropertyName((r as IRTTI).GetFullClassName());
+                    serializer.Serialize(writer, r);
+                    writer.WriteEndObject();
+                } else {
+                    serializer.Serialize(writer, r);
+                }
+            }
+
+            writer.WriteEndObject();
+        }
+
+        public override Either<L, R> ReadJson(JsonReader reader, System.Type objectType, Either<L, R> existingValue, bool hasExistingValue, JsonSerializer serializer) {
+            var json = JObject.Load(reader);
+            var kv = json.Properties().First();
+            switch (kv.Name) {
+                case "Success": {
+                    var v = serializer.Deserialize<R>(kv.Value.CreateReader());
+                    return new Either<L, R>.Right(v);
+                }
+
+                case "Failure": {
+                    var v = serializer.Deserialize<L>(kv.Value.CreateReader());
+                    return new Either<L, R>.Left(v);
+                }
+
+                default:
+                    throw new System.Exception("Unknown either Either<L, R> type: " + kv.Name);
             }
         }
     }

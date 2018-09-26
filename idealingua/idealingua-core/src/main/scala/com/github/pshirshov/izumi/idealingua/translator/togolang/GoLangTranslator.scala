@@ -313,14 +313,14 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     val leftType = renderServiceMethodAlternativeOutput(name, alternative, success = false, imports)
     val left = alternative.failure match {
       case al: Algebraic => renderAdtImpl(renderServiceMethodAlternativeOutput(name, alternative, success = false, imports, onlyType = true), al.alternatives, imports)
-      case st: Struct => renderServiceMethodInModel(structId, name, st.struct, imports)
+      case st: Struct => renderServiceMethodInModel(new DTOId(structId.path, structId.name + "Failure"), name + "Failure", st.struct, imports)
       case _ => ""
     }
 
     val rightType = renderServiceMethodAlternativeOutput(name, alternative, success = true, imports)
     val right = alternative.success match {
       case al: Algebraic => renderAdtImpl(renderServiceMethodAlternativeOutput(name, alternative, success = true, imports, onlyType = true), al.alternatives, imports)
-      case st: Struct => renderServiceMethodInModel(structId, name, st.struct, imports)
+      case st: Struct => renderServiceMethodInModel(new DTOId(structId.path, structId.name + "Success"), name + "Success", st.struct, imports)
       case _ => ""
     }
 
