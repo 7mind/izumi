@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeS
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 
 trait DistagePluginTests extends DistageTests {
-  protected def makeBindings(): ModuleBase = {
+  protected def makeBindings: ModuleBase = {
     val modules = new PluginLoaderDefaultImpl(
       PluginConfig(debug = false, pluginPackages, Seq.empty)
     ).load()

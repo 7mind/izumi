@@ -33,7 +33,7 @@ class TestkitConfigTest extends DistagePluginSpec {
       c.copy(y = 3)
   }
 
-  override protected def makeBindings(): ModuleBase = super.makeBindings() ++ new ModuleBase {
+  override protected def makeBindings: ModuleBase = super.makeBindings ++ new ModuleBase {
     // here we may add a config value with an appropriate key into our context ahead of time
     override def bindings: Set[Binding] = Set(
       Binding.SingletonBinding(

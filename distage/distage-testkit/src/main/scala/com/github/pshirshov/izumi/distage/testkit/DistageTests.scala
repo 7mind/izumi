@@ -84,7 +84,7 @@ trait DistageTests {
 
   protected def ctx(roots: Set[DIKey])(f: Locator => Unit): Unit = {
     val injector = makeInjector(roots)
-    val primaryModule = makeBindings()
+    val primaryModule = makeBindings
     val plan = makeContext(injector, primaryModule)
     val finalPlan = refinePlan(injector, plan)
     val context = makeContext(injector, finalPlan)
@@ -157,7 +157,7 @@ trait DistageTests {
     Injector.bootstrap(overrides = bootstrapModules.merge)
   }
 
-  protected def makeBindings(): ModuleBase
+  protected def makeBindings: ModuleBase
 
   protected def makeConfig: Option[AppConfig] = {
     Some(AppConfig(ConfigFactory.parseResources("test-reference.conf").resolveWith(ConfigFactory.defaultOverrides())))
