@@ -45,14 +45,13 @@ trait WithDISymbolInfo {
       def findAnnotation(annType: SafeType): Option[u.Annotation] = {
         symbolInfo.annotations.find(AnnotationTools.annotationTypeEq(u)(annType.tpe, _))
       }
-    }
 
-    implicit final class SymbolInfoExtensions1(symbolInfo: SymbolInfo) {
       def findUniqueAnnotation(annType: SafeType): Option[u.Annotation] = {
-        val distageAnnos = symbolInfo.annotations.filter(t => SafeType(t.tree.tpe) <:< typeOfDistageAnnotation)
+        val distageAnnos = symbolInfo.annotations.filter(t => SafeType(t.tree.tpe) <:< typeOfDistageAnnotation).toSet
 
         if (distageAnnos.size > 1) {
-          throw new AnnotationConflictException(s"Multiple DI annotations on symbol $symbolInfo: $distageAnnos")
+          import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+          throw new AnnotationConflictException(s"Multiple DI annotations on symbol `$symbolInfo` in ${symbolInfo.definingClass}: ${distageAnnos.niceList()}")
         }
 
         symbolInfo.findAnnotation(annType)
