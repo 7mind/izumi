@@ -30,7 +30,7 @@ addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-idealingua" % izumi_version)
 @@@
 
 
-You can use izumi's `BOM` definitions to import (from [`sbt-izumi-deps` plugin](sbt/00_sbt.md#bills-of-materials)). BOM will insert the correct version automatically:
+You can use izumi's `BOM` definitions to import (from @ref[`sbt-izumi-deps` plugin](sbt/00_sbt.md#bills-of-materials)). BOM will insert the correct version automatically:
 
 ```scala
 libraryDependencies ++= Seq(
@@ -87,9 +87,9 @@ libraryDependencies ++= Seq(
 ```
 @@@
 
-You may find ScalaDoc API docs @scaladoc[here](izumi.index)
+You can find ScalaDoc API docs @scaladoc[here](izumi.index)
 
-You may find Izumi on github [here](https://github.com/pshirshov/izumi-r2)
+You can find Izumi on github [here](https://github.com/pshirshov/izumi-r2)
 
 @@@ index
 

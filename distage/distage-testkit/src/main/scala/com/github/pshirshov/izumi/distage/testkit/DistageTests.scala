@@ -17,6 +17,7 @@ import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
+import com.typesafe.config.ConfigFactory
 import distage.{BootstrapModule, Injector, ModuleBase, Tag}
 import org.scalatest.exceptions.TestCanceledException
 
@@ -83,7 +84,7 @@ trait DistageTests {
 
   protected def ctx(roots: Set[DIKey])(f: Locator => Unit): Unit = {
     val injector = makeInjector(roots)
-    val primaryModule = makeBindings()
+    val primaryModule = makeBindings
     val plan = makeContext(injector, primaryModule)
     val finalPlan = refinePlan(injector, plan)
     val context = makeContext(injector, finalPlan)
@@ -135,7 +136,7 @@ trait DistageTests {
   }
 
   protected def makeInjector(roots: Set[DIKey]): Injector = {
-    val maybeConfig = makeConfig()
+    val maybeConfig = makeConfig
 
 
     val allRoots = roots ++ Set(DIKey.get[Set[AutoCloseable]])
@@ -156,9 +157,20 @@ trait DistageTests {
     Injector.bootstrap(overrides = bootstrapModules.merge)
   }
 
-  protected def makeBindings(): ModuleBase
+  protected def makeBindings: ModuleBase
 
-  protected def makeConfig(): Option[AppConfig] = None
+  protected def makeConfig: Option[AppConfig] = {
+    val pname = s"${this.getClass.getPackage.getName}"
+    val lastpart = pname.split('.').last
+    val name = s"test-$lastpart-reference.conf"
+    val resource = ConfigFactory.parseResources(name)
+
+    if (resource.isEmpty) {
+      None
+    } else {
+      Some(AppConfig(resource.resolveWith(ConfigFactory.defaultOverrides())))
+    }
+  }
 
   protected def configOptions: ConfigInjectionOptions = ConfigInjectionOptions()
 }

@@ -200,31 +200,22 @@ For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshir
 ### Tagless Final Style with distage
 
 distage works well with tagless final style, for example, let's make [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
-easier, safer and more flexible, by making implicit instances explicit and configure them with distage.
+more flexible, by making implicit instances explicit and configurable with distage.
 
-Fist, modules:
+Fist, the program we want to write:
 
 ```scala
+import cats.Monad
+import scala.util.Try
+
+import distage._
+
 class Program[F[_]: TagK: Monad] extends ModuleDef {
   make[TaglessProgram[F]]
+
+  make[Monad[F]].from(Monad[F])
 }
 
-object TryInterpreters extends ModuleDef {
-  make[Validation.Handler[Try]].from(tryValidationHandler)
-  make[Interaction.Handler[Try]].from(tryInteractionHandler)
-}
-
-// Combine modules into a full program
-val TryProgram: Module = new Program[Try] ++ TryInterpreters
-```
-
-@scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`.
-You'll need to add a @scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) to create a module parameterized by an abstract `F[_]`.
-Use @scaladoc[Tag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#Tag) to create modules parameterized by a non-HKT parameter.
-
-Implementations:
-
-```scala
 class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
   def program = for {
       userInput <- interaction.ask("Give me something with at least 3 chars and a number on it")
@@ -232,44 +223,83 @@ class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Intera
       _         <- if (valid) interaction.tell("awesomesauce!") else interaction.tell(s"$userInput is not valid")
   } yield ()
 }
+```
 
-val tryValidationHandler = new Validation.Handler[Try] {
-  override def minSize(s: String, n: Int): Try[Boolean] = Try(s.size >= n)
-  override def hasNumber(s: String): Try[Boolean] = Try(s.exists(c => "0123456789".contains(c)))
+@scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`,
+it allows preserving type-information at runtime for types that aren't yet known at definition.
+You'll need to add a @scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) context bound to create a module parameterized by an abstract `F[_]`.
+Use @scaladoc[Tag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#Tag) to create modules parameterized by non-higher-kineded types.
+
+Interpreters:
+
+```scala
+object TryInterpreters extends ModuleDef {
+  make[Validation.Handler[Try]].from(tryValidationHandler)
+  make[Interaction.Handler[Try]].from(tryInteractionHandler)
+  
+  def tryValidationHandler = new Validation.Handler[Try] {
+    override def minSize(s: String, n: Int): Try[Boolean] = Try(s.size >= n)
+    override def hasNumber(s: String): Try[Boolean] = Try(s.exists(c => "0123456789".contains(c)))
+  }
+  
+  def tryInteractionHandler = new Interaction.Handler[Try] {
+    override def tell(s: String): Try[Unit] = Try(println(s))
+    override def ask(s: String): Try[String] = Try("This could have been user input 1")
+  }
 }
 
-val tryInteractionHandler = new Interaction.Handler[Try] {
-  override def tell(s: String): Try[Unit] = Try(println(s))
-  override def ask(s: String): Try[String] = Try("This could have been user input 1")
+object App extends App {
+  import cats.instances.try_._
+  // Combine modules into a full program
+  val TryProgram: Module = new Program[Try] ++ TryInterpreters
+  // run
+  Injector().produce(TryProgram).get[TaglessProgram[Try]]
+    .program
 }
 ```
 
-The program module is polymorphic and abstracted from its eventual monad, we can easily implement it in a different monad:
+The program module is polymorphic and abstracted from its eventual monad, we can easily parameterize it with a different monad:
 
 ```scala
+import cats.effect.IO
+
+val IOInterpreters = ???
 val IOProgram = new Program[IO] ++ IOInterpreters
 ```
 
-We can leave the implementations polymorphic as well: 
+We can leave it polymorphic as well: 
 
 ```scala
 import cats.effect.Sync
 
+def SyncInterpreters[F[_]: Sync] = ???
 def SyncProgram[F[_]: Sync] = new Program[F] ++ SyncInterpreters[F]
 ```
 
 Or choose different interpreters at runtime:
 
 ```scala
-val DifferentTryProgram = new Program[Try] ++ DifferentTryInterpreters
+def chooseInterpreters(default: Boolean) = new Program[Try] ++ (if (default) TryInterpreters else DifferentTryInterpreters)
 ```
 
-Since distage forbids multiple instances for the same type, all typeclasses that are managed by it are forced to be
-coherent,  so a wrong `import` can't ruin your day. 
+Modules can be abstracted over arbitrary kinds – use `TagKK` to abstract over bifunctors:
+
+```scala
+class BIOModule[F[_, _]: TagKK] extends ModuleDef 
+```
+
+`TagTK` over monad transformers:
+
+```scala
+class TransModule[F[_[_], _]: TagTK] extends ModuleDef
+```
+
+Adding a `Tag` for more exotic type shapes is as easy as defining a type synonym,
+consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#HKTag) docs for description
 
 ### Config files
 
-`distage-config` library can parse `typesafe-config` into arbitrary case classes or sealed traits and make them available to summon as a class dependency.
+`distage-config` library parses `typesafe-config` into arbitrary case classes or sealed traits and makes them available for summoning as a class dependency.
 
 To use it, add `distage-config` library:
 
@@ -284,7 +314,7 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-config" % "$i
 ```
 @@@
 
-If you're not using [sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 Write a config in HOCON format:
 
@@ -297,7 +327,7 @@ program {
 }
 ```
 
-Add `ConfigModule` to your injector:
+Add `ConfigModule` into your injector:
 
 ```scala
 import distage.config._
@@ -321,7 +351,7 @@ class ConfiguredTaglessProgram[F](
     val program = if (config.different) differentProgram else primaryProgram
 }
 
-class ConfiguredTryProgram[F: TagK: Monad] extends ModuleDef {
+class ConfiguredTryProgram[F[_]: TagK: Monad] extends ModuleDef {
   make[ConfiguredProgram[F]]
   make[TaglessProgram[F]].named("primary")
   make[TaglessProgram[F]].named("different")
@@ -437,7 +467,7 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$
 ```
 @@@
 
-If you're not using [sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
@@ -586,7 +616,7 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-cats" % "$izu
 ```
 @@@
 
-If you're not using [sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 Usage:
 
