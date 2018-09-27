@@ -6,7 +6,7 @@ object IzumiDeps {
 
   object V {
     // foundation
-    val scala_212 = "2.12.6"
+    val scala_212 = "2.12.7"
     val scala_213 = "2.13.0-M5"
 
     val collection_compat = "0.2.0"
