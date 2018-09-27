@@ -113,7 +113,7 @@ trait WithTags extends UniverseGeneric { self =>
     *   type TagK5[K[_, _, _, _, _]] = HKTag[ { type Arg[A, B, C, D, E] = K[A, B, C, D, E] } ]
     * }}}
     *
-    * As an argument to HKTag, you should supply a  specify the type variables your type will take and apply it to them.
+    * As an argument to HKTag, you should specify the type variables your type parameter will take and apply them to it.
     *
     * {{{
     *   type TagFGC[K[_[_, _], _[_], _[_[_], _, _, _]] = HKTag[ { type Arg[A[_, _], B[_], C[_[_], _, _, _]] = K[A, B, C] } ]
