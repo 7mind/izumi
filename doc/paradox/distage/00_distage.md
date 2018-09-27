@@ -284,7 +284,7 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-config" % "$i
 ```
 @@@
 
-If you're not using [sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 Write a config in HOCON format:
 
@@ -437,7 +437,7 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$
 ```
 @@@
 
-If you're not using [sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
@@ -586,7 +586,7 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-cats" % "$izu
 ```
 @@@
 
-If you're not using [sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 Usage:
 

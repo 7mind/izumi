@@ -14,8 +14,3 @@ class TestkitTest extends DistagePluginSpec {
     }
   }
 }
-
-
-
-
-
