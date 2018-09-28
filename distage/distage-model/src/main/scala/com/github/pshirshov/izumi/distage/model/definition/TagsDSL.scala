@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
 import scala.collection.mutable
 
 trait TagsDSL {
-  protected[definition] final val mutableTags: mutable.Set[String] = _initialTags
+  private[this] final val mutableTags: mutable.Set[String] = _initialTags
 
   protected def _initialTags: mutable.Set[String] = mutable.HashSet.empty
 
@@ -13,4 +13,6 @@ trait TagsDSL {
   final protected def tag(tags: String*): Unit = discard {
     mutableTags ++= tags
   }
+
+  def frozenTags: Set[String] = mutableTags.toSet
 }

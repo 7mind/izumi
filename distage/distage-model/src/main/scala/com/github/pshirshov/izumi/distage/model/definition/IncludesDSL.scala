@@ -6,8 +6,8 @@ import scala.collection.mutable
 
 trait IncludesDSL {
   import IncludesDSL._
-  final protected[definition] val mutableTaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = _initialTaggedIncludes
-  final protected[definition] val mutableIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
+  final private[this] val mutableTaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = _initialTaggedIncludes
+  final private[this] val mutableIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
 
   final protected[definition] def asIsIncludes: List[Binding] = mutableTaggedIncludes.flatMap(_.bindings).toList
   final protected[definition] def retaggedIncludes: List[Binding] = mutableIncludes.flatMap(_.bindings).toList

@@ -58,14 +58,6 @@ trait ModuleDefDSL
   override def bindings: Set[Binding] = freeze
 
   protected[definition] final def freeze: Set[Binding] = {
-    val frozenState = mutableState.flatMap {
-      case SingletonRef(b) => Seq(b)
-      case SetRef(_, all) => all.map(_.ref)
-    }
-
-
-    val frozenTags = mutableTags.toSet
-
     ModuleBase.tagwiseMerge(frozenState ++ asIsIncludes)
       .map(_.addTags(frozenTags))
       .++(retaggedIncludes)
