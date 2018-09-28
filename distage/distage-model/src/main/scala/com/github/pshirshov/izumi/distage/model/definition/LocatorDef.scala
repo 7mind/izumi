@@ -27,7 +27,7 @@ trait LocatorDef
     frozenMap.get(key)
   }
 
-  override def instances: Seq[IdentifiedRef] = frozenInstances
+  override def instances: Seq[IdentifiedRef] = frozenInstances.toList
 
   override lazy val plan: OrderedPlan = {
     val topology = PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Required), DependencyGraph(Map.empty, DependencyKind.Depends))
@@ -52,7 +52,7 @@ trait LocatorDef
   private[this] final lazy val (frozenMap, frozenInstances): (Map[DIKey, Any], Seq[IdentifiedRef]) = {
     val map = new mutable.LinkedHashMap[DIKey, Any]
 
-    freeze.foreach {
+    frozenState.foreach {
       case SingletonBinding(key, InstanceImpl(_, instance), _, _) =>
         map += (key -> instance)
       case SetElementBinding(key, InstanceImpl(_, instance), _, _) =>
@@ -67,8 +67,6 @@ trait LocatorDef
 
     map.toMap -> map.toSeq.map(IdentifiedRef.tupled)
   }
-
-  private[this] final def freeze: Set[Binding] = frozenState
 }
 
 

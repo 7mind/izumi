@@ -4,6 +4,9 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBind
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
+import scala.collection.immutable.ListSet
+import scala.collection.mutable
+
 trait ModuleBase {
   def bindings: Set[Binding]
 
@@ -39,7 +42,7 @@ object ModuleBase {
   }
 
   implicit final class ModuleDefMorph(private val moduleDef: ModuleBase) {
-    def morph[T <: ModuleBase: ModuleMake]: T = {
+    def morph[T <: ModuleBase : ModuleMake]: T = {
       ModuleMake[T].make(moduleDef.bindings)
     }
   }
@@ -116,9 +119,12 @@ object ModuleBase {
 
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] =
   // Using lawless equals/hashcode
-    bs.groupBy(identity).values.map {
-      _.reduce(_ addTags _.tags)
-    }.toSet
+    bs
+      .groupBy(identity)
+      .values
+      .map {
+        _.reduce(_ addTags _.tags)
+      }.to[ListSet]
 
 }
 

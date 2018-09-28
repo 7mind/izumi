@@ -38,9 +38,7 @@ object BasicCases {
 
     case class TestCaseClass(a1: TestClass, a2: TestDependency3)
 
-    case class TestInstanceBinding(z: String =
-                                         """R-r-rollin' down the window, white widow, fuck fame
-Forest fire, climbin' higher, real life, it can wait""")
+    case class TestInstanceBinding(z: String = "TestValue")
 
     case class TestCaseClass2(a: TestInstanceBinding)
 
