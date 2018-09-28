@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.distage.AbstractLocator
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.ImplDef.InstanceImpl
-import com.github.pshirshov.izumi.distage.model.definition.LocatorDef._
 import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import com.github.pshirshov.izumi.distage.model.plan._
@@ -17,7 +16,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
 import scala.collection.mutable
 
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we ARE able unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
-trait LocatorDef extends AbstractLocator {
+trait LocatorDef extends AbstractLocator with AbstractModuleDefDSL {
 
   import AbstractModuleDefDSL._
 
@@ -76,31 +75,11 @@ trait LocatorDef extends AbstractLocator {
       case SetRef(_, all) => all.map(_.ref)
     }.toSet
   }
-
-  final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
-    val binding = Bindings.binding[T]
-    val ref = SingletonRef(binding)
-
-    mutableState += ref
-
-    new BindDSL(ref, binding)
-  }
-
-  final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
-    val binding = Bindings.emptySet[T]
-    val setRef = {
-      val ref = SingletonRef(binding)
-      SetRef(ref, mutable.ArrayBuffer(ref))
-    }
-
-    mutableState += setRef
-
-    new SetDSL(setRef, IdentSet(binding.key, binding.tags, binding.origin))
-  }
 }
 
 
 object LocatorDef {
+
   import AbstractModuleDefDSL._
 
   // DSL state machine
@@ -126,6 +105,7 @@ object LocatorDef {
 
   sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {
     protected def mutableState: SingletonRef
+
     protected val binding: SingletonBinding[DIKey]
 
     protected def replace[B <: Binding, S](newBinding: B)(newState: B => S): S = {
