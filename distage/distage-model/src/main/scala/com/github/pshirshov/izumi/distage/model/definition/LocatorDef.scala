@@ -19,7 +19,7 @@ import scala.collection.mutable
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we ARE able unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
 trait LocatorDef extends AbstractLocator {
 
-  final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = initialState
+  private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = initialState
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
@@ -49,7 +49,7 @@ trait LocatorDef extends AbstractLocator {
 
   override def parent: Option[Locator] = None
 
-  final private[this] lazy val (frozenMap, frozenInstances): (Map[DIKey, Any], Seq[IdentifiedRef]) = {
+  private[this] final lazy val (frozenMap, frozenInstances): (Map[DIKey, Any], Seq[IdentifiedRef]) = {
     val map = new mutable.LinkedHashMap[DIKey, Any]
 
     freeze.foreach {
@@ -68,7 +68,7 @@ trait LocatorDef extends AbstractLocator {
     map.toMap -> map.toSeq.map(IdentifiedRef.tupled)
   }
 
-  final private[this] def freeze: Set[Binding] = {
+  private[this] final def freeze: Set[Binding] = {
     mutableState.flatMap {
       case SingletonRef(b) => Seq(b)
       case SetRef(_, all) => all.map(_.ref)

@@ -37,8 +37,8 @@ import scala.collection.mutable
   *
   * Multibindings:
   *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
-  *                                 Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
-  *     `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
+  * Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
+  * `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
   *   - `many[X].add { y: Y => new X1(y).add { y: Y => X2(y) }` = add instances of X1 and X2 constructed by a given [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet Provider]] function
   *   - `many[X].named("special").add[X1]` = create a named set of X, all the elements of it are added to this named set.
   *   - `many[X].ref[XImpl]` = add a reference to an already **existing** binding of XImpl to a set of X's
@@ -52,31 +52,32 @@ import scala.collection.mutable
   * @see [[com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK TagK]]
   * @see [[Id]]
   */
-trait ModuleDefDSL {
+trait ModuleDefDSL extends IncludesDSL {
   this: ModuleBase =>
 
   final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
-  final private[this] val mutableIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
+
   final private[this] val mutableTags: mutable.Set[String] = _initialTags
 
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
-  protected def _initialIncludes: mutable.ArrayBuffer[Include] = mutable.ArrayBuffer.empty
+
   protected def _initialTags: mutable.Set[String] = mutable.HashSet.empty
+
 
   override def bindings: Set[Binding] = freeze
 
   final private[this] def freeze: Set[Binding] = {
     val frozenState = mutableState.flatMap {
       case SingletonRef(b) => Seq(b)
-      case IncludeApplyTags(bs) => bs
       case SetRef(_, all) => all.map(_.ref)
     }
-    val includes = mutableIncludes.flatMap(_.bindings)
+
+
     val frozenTags = mutableTags.toSet
 
-    ModuleBase.tagwiseMerge(frozenState)
+    ModuleBase.tagwiseMerge(frozenState ++ asIsIncludes)
       .map(_.addTags(frozenTags))
-      .++(includes)
+      .++(retaggedIncludes)
   }
 
   final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
@@ -167,32 +168,17 @@ trait ModuleDefDSL {
     mutableTags ++= tags
   }
 
-  /** Add all bindings in `that` module into `this` module
-    *
-    * WON'T add global tags from [[tag]] to included bindings.
-    **/
-  final protected def include(that: ModuleBase): Unit = discard {
-    mutableIncludes += Include(that.bindings)
-  }
-
-  /** Add all bindings in `that` module into `this` module
-    *
-    * WILL add global tags from [[tag]] to included bindings.
-    **/
-  final protected def includeApplyTags(that: ModuleBase): Unit = discard {
-    mutableState += IncludeApplyTags(that.bindings)
-  }
 
 }
 
 object ModuleDefDSL {
 
   sealed trait BindingRef
-  final case class SingletonRef(var ref: Binding) extends BindingRef
-  final case class SetRef(emptySetBinding: SingletonRef, all: mutable.ArrayBuffer[SingletonRef]) extends BindingRef
-  final case class IncludeApplyTags(bindings: Set[Binding]) extends BindingRef
 
-  final case class Include(bindings: Set[Binding])
+  final case class SingletonRef(var ref: Binding) extends BindingRef
+
+  final case class SetRef(emptySetBinding: SingletonRef, all: mutable.ArrayBuffer[SingletonRef]) extends BindingRef
+
 
   // DSL state machine
 
@@ -234,6 +220,7 @@ object ModuleDefDSL {
 
   sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {
     protected def mutableState: SingletonRef
+
     protected def binding: SingletonBinding[DIKey]
 
     //    trait Replace[A] {
@@ -386,38 +373,38 @@ object ModuleDefDSL {
       * When binding a case class to constructor, prefer passing `new X(_)` instead of `X.apply _` because `apply` will
       * not preserve parameter annotations from case class definitions:
       *
-      *   {{{
+      * {{{
       *   case class X(@Id("special") i: Int)
       *
       *   make[X].from(X.apply _) // summons regular Int
       *   make[X].from(new X(_)) // summons special Int
-      *   }}}
+      * }}}
       *
       * HOWEVER, if you annotate the types of parameters instead of their names, `apply` WILL work:
       *
-      *   {{{
+      * {{{
       *     case class X(i: Int @Id("special"))
       *
       *     make[X].from(X.apply _) // summons special Int
-      *   }}}
+      * }}}
       *
       * Using intermediate vals` will lose annotations when converting a method into a function value,
       * prefer using annotated method directly as method reference `(method _)`:
       *
-      *   {{{
+      * {{{
       *   def constructorMethod(@Id("special") i: Int): Unit = ()
       *
       *   val constructor = constructorMethod _
       *
       *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI context
-      *   }}}
+      * }}}
       *
       * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
       **/
     final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
-    /***
+    /** *
       * Bind by reference to another bound key
       *
       * Example:
@@ -442,7 +429,7 @@ object ModuleDefDSL {
   }
 
   trait SetDSLBase[T, AfterAdd] {
-    /***
+    /** *
       * Bind by reference to another bound key
       *
       * Example:
@@ -480,6 +467,7 @@ object ModuleDefDSL {
 
     protected def appendElement(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterAdd
   }
+
 }
 
 
