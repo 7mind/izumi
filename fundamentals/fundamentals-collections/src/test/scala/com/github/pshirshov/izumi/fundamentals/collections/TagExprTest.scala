@@ -50,6 +50,15 @@ class TagExprTest extends WordSpec {
       assert(TagExpr.Strings.Not(TagExpr.Strings.one("a", "b")).evaluate(Set("d")))
     }
 
+    "support expr dsl" in {
+      import TagExpr.Strings._
+      assert((False || True).evaluate(Set.empty))
+      assert(!(False && True).evaluate(Set.empty))
+      assert((False ^^ True).evaluate(Set.empty))
+      assert((!False).evaluate(Set.empty))
+      assert(!(!True).evaluate(Set.empty))
+      assert((t"a" && t"b").evaluate(Set("a", "b")))
+    }
   }
 
 
