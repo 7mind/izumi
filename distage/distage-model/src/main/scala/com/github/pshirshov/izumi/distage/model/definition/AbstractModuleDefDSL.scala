@@ -13,11 +13,7 @@ trait AbstractModuleDefDSL {
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
   protected[definition] def frozenState: Seq[Binding] =  {
-    mutableState
-      .flatMap {
-        case SingletonRef(b) => Seq(b)
-        case SetRef(_, all) => all.map(_.ref)
-      }
+    mutableState.flatMap(_.finish)
   }
 
   final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
@@ -84,7 +80,7 @@ trait AbstractModuleDefDSL {
     val binding = Bindings.emptySet[T]
     val setRef = {
       val ref = SingletonRef(binding)
-      SetRef(ref, mutable.ArrayBuffer(ref))
+      SetRef(mutable.ArrayBuffer(ref))
     }
 
     mutableState += setRef
@@ -97,10 +93,16 @@ trait AbstractModuleDefDSL {
 
 object AbstractModuleDefDSL {
 
-  sealed trait BindingRef
+  sealed trait BindingRef {
+    def finish: Seq[Binding]
+  }
 
-  final case class SingletonRef(var ref: Binding) extends BindingRef
+  final case class SingletonRef(var ref: Binding) extends BindingRef {
+    override def finish: Seq[Binding] = Seq(ref)
+  }
 
-  final case class SetRef(emptySetBinding: SingletonRef, all: mutable.ArrayBuffer[SingletonRef]) extends BindingRef
+  final case class SetRef(all: mutable.ArrayBuffer[SingletonRef]) extends BindingRef {
+    override def finish: Seq[Binding] = all.flatMap(_.finish)
+  }
 
 }

@@ -156,7 +156,6 @@ object LocatorDef {
     protected def identifier: IdentSet[DIKey]
 
     protected def replaceIdent[D <: IdentSet[DIKey], S](newIdent: D)(nextState: D => S): S = {
-      mutableState.emptySetBinding.ref = EmptySetBinding(newIdent.key, newIdent.tags, newIdent.pos)
       mutableState.all.foreach(r => r.ref = r.ref.withTarget(newIdent.key))
 
       nextState(newIdent)
