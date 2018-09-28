@@ -5,10 +5,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
 import scala.collection.mutable
 
 trait IncludesDSL {
-  sealed trait IncludeRef
-  final case class IncludeApplyTags(bindings: Set[Binding]) extends IncludeRef
-  final case class Include(bindings: Set[Binding])  extends IncludeRef
-
+  import IncludesDSL._
   final protected[definition] val mutableTaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = _initialTaggedIncludes
   final protected[definition] val mutableIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
 
@@ -20,7 +17,7 @@ trait IncludesDSL {
 
   /** Add all bindings in `that` module into `this` module
     *
-    * WON'T add global tags from [[tag]] to included bindings.
+    * WON'T add global tags from [[TagsDSL#tag]] to included bindings.
     **/
   final protected def include(that: ModuleBase): Unit = discard {
     mutableIncludes += Include(that.bindings)
@@ -28,9 +25,15 @@ trait IncludesDSL {
 
   /** Add all bindings in `that` module into `this` module
     *
-    * WILL add global tags from [[tag]] to included bindings.
+    * WILL add global tags from [[TagsDSL#tag]] to included bindings.
     **/
   final protected def includeApplyTags(that: ModuleBase): Unit = discard {
     mutableTaggedIncludes += IncludeApplyTags(that.bindings)
   }
+}
+
+object IncludesDSL {
+  sealed trait IncludeRef
+  final case class IncludeApplyTags(bindings: Set[Binding]) extends IncludeRef
+  final case class Include(bindings: Set[Binding])  extends IncludeRef
 }

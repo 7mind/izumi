@@ -52,23 +52,20 @@ import scala.collection.mutable
   * @see [[com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK TagK]]
   * @see [[Id]]
   */
-trait ModuleDefDSL extends IncludesDSL {
+trait ModuleDefDSL
+  extends IncludesDSL with TagsDSL {
   this: ModuleBase =>
 
   import AbstractModuleDefDSL._
 
-  final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
-
-  final private[this] val mutableTags: mutable.Set[String] = _initialTags
+  protected[definition] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
 
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
-
-  protected def _initialTags: mutable.Set[String] = mutable.HashSet.empty
 
 
   override def bindings: Set[Binding] = freeze
 
-  final private[this] def freeze: Set[Binding] = {
+  protected[definition] final def freeze: Set[Binding] = {
     val frozenState = mutableState.flatMap {
       case SingletonRef(b) => Seq(b)
       case SetRef(_, all) => all.map(_.ref)
@@ -165,19 +162,12 @@ trait ModuleDefDSL extends IncludesDSL {
     mutableState += SingletonRef(binding)
   }
 
-  /** Add `tags` to all bindings in this module, except [[include included]] bindings */
-  final protected def tag(tags: String*): Unit = discard {
-    mutableTags ++= tags
-  }
-
 
 }
 
 
-
-
-
 object ModuleDefDSL {
+
   import AbstractModuleDefDSL._
 
 
@@ -401,7 +391,7 @@ object ModuleDefDSL {
       * }}}
       *
       * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
-      */
+      **/
     final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
