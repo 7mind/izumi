@@ -291,6 +291,7 @@ class LogstageConfigTest extends WordSpec {
       withCtx(bootstrapModules, definition, new LoggerConfigModule).asGood {
         l =>
           val wrapper = l.get[ConfigWrapper].sinksList
+          Quirks.discard(wrapper)
       }
 
     }
@@ -325,6 +326,7 @@ object LogstageConfigTest {
   case class ThresholdWrapper(level: Log.Level)
 
   class TestRenderingPolicy(foo: Int, bar: Option[String]) extends RenderingPolicy {
+    Quirks.discard(foo, bar)
     override def render(entry: Log.Entry): String = entry.toString
   }
 
@@ -335,6 +337,8 @@ object LogstageConfigTest {
   }
 
   class TestSink(policy: RenderingPolicy) extends LogSink {
+    Quirks.discard(policy)
+
     override def flush(e: Log.Entry): Unit = {
       Quirks.discard(e)
     }
