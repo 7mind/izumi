@@ -68,7 +68,7 @@ trait LocatorDef
     map.toMap -> map.toSeq.map(IdentifiedRef.tupled)
   }
 
-  private[this] final def freeze: Set[Binding] = frozenState.toSet
+  private[this] final def freeze: Set[Binding] = frozenState
 }
 
 
