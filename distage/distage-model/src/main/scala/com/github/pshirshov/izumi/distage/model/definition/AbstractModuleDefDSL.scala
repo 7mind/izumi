@@ -12,13 +12,12 @@ trait AbstractModuleDefDSL {
 
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
-  protected[definition] def frozenState: Set[Binding] = {
-    mutableState
+  protected[definition] def frozenState: Set[Binding] =  {
+    ModuleBase.tagwiseMerge(mutableState
       .flatMap {
         case SingletonRef(b) => Seq(b)
         case SetRef(_, all) => all.map(_.ref)
-      }
-      .toSet
+      })
   }
 
   final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {

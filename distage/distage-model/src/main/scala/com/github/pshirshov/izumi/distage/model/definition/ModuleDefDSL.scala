@@ -58,7 +58,7 @@ trait ModuleDefDSL
   override def bindings: Set[Binding] = freeze
 
   protected[definition] final def freeze: Set[Binding] = {
-    ModuleBase.tagwiseMerge(frozenState ++ asIsIncludes)
+    ModuleBase.tagwiseMerge(asIsIncludes ++ frozenState)
       .map(_.addTags(frozenTags))
       .++(retaggedIncludes)
   }
