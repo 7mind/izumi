@@ -55,6 +55,8 @@ import scala.collection.mutable
 trait ModuleDefDSL extends IncludesDSL {
   this: ModuleBase =>
 
+  import AbstractModuleDefDSL._
+
   final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
 
   final private[this] val mutableTags: mutable.Set[String] = _initialTags
@@ -171,13 +173,12 @@ trait ModuleDefDSL extends IncludesDSL {
 
 }
 
+
+
+
+
 object ModuleDefDSL {
-
-  sealed trait BindingRef
-
-  final case class SingletonRef(var ref: Binding) extends BindingRef
-
-  final case class SetRef(emptySetBinding: SingletonRef, all: mutable.ArrayBuffer[SingletonRef]) extends BindingRef
+  import AbstractModuleDefDSL._
 
 
   // DSL state machine

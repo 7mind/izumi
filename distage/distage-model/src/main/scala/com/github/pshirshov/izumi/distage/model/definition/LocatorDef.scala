@@ -19,6 +19,8 @@ import scala.collection.mutable
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we ARE able unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
 trait LocatorDef extends AbstractLocator {
 
+  import AbstractModuleDefDSL._
+
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = initialState
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
@@ -99,10 +101,7 @@ trait LocatorDef extends AbstractLocator {
 
 
 object LocatorDef {
-
-  sealed trait BindingRef
-  final case class SingletonRef(var ref: Binding) extends BindingRef
-  final case class SetRef(emptySetBinding: SingletonRef, all: mutable.ArrayBuffer[SingletonRef]) extends BindingRef
+  import AbstractModuleDefDSL._
 
   // DSL state machine
 
