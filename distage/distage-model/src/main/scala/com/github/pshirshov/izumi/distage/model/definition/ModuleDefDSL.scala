@@ -400,11 +400,11 @@ object ModuleDefDSL {
       * }}}
       *
       * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
-      **/
+      */
     final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
-    /** *
+    /**
       * Bind by reference to another bound key
       *
       * Example:
@@ -429,7 +429,7 @@ object ModuleDefDSL {
   }
 
   trait SetDSLBase[T, AfterAdd] {
-    /** *
+    /**
       * Bind by reference to another bound key
       *
       * Example:
