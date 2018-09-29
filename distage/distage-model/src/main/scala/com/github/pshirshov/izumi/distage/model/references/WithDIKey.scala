@@ -36,8 +36,14 @@ trait WithDIKey {
       override def hashCode: Int = toString.hashCode()
     }
 
-    // todo: this disambiguating .index is kinda shitty
-    case class SetElementKey(set: DIKey, index: Int, tpe: SafeType) extends DIKey {
+    /**
+      *
+      * @param set Target set key. Must be of type `Set[T]`
+      * @param tpe Element type. Must be of type `T1 &lt: T`
+      * @param index Disambiguation value. Set elements are of the same type, index makes them different
+      * @todo Disambiguating by [[index]] is kinda shitty
+      */
+    case class SetElementKey(set: DIKey, tpe: SafeType, index: Int) extends DIKey {
       override def toString: String = s"$set##${tpe.toString}.$index"
 
       override def hashCode: Int = toString.hashCode()

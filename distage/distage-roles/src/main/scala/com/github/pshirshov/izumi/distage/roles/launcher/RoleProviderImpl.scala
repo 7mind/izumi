@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 
 import com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.model
+import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, mirror}
 import com.github.pshirshov.izumi.distage.roles.roles
