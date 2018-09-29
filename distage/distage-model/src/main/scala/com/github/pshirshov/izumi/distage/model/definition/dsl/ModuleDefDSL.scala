@@ -1,8 +1,10 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package com.github.pshirshov.izumi.distage.model.definition.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleDefDSL.SetElementInstruction.ElementAddTags
-import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
-import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleDefDSL.SingletonInstruction.{AddTags, SetId, SetImpl}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetImpl}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
+import com.github.pshirshov.izumi.distage.model.definition.{Id => _, _}
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
@@ -51,10 +53,10 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
   * @see [[Id]]
   */
 trait ModuleDefDSL
-  extends AbstractModuleDefDSL with IncludesDSL with TagsDSL {
+  extends AbstractBindingDefDSL with IncludesDSL with TagsDSL {
   this: ModuleBase =>
 
-  import AbstractModuleDefDSL._
+  import AbstractBindingDefDSL._
 
   override def bindings: Set[Binding] = freeze
 
@@ -63,6 +65,15 @@ trait ModuleDefDSL
       .map(_.addTags(frozenTags))
       .++(asIsIncludes)
   }
+
+  override type BindDSL[T] = ModuleDefDSL.BindDSL[T]
+  override type SetDSL[T] = ModuleDefDSL.SetDSL[T]
+
+  override protected def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T] =
+    new ModuleDefDSL.BindDSL[T](ref, ref.initial.key)
+
+  override protected def _setDSL[T: Tag](ref: SetRef): SetDSL[T] =
+    new ModuleDefDSL.SetDSL[T](ref)
 
   /**
     * Create a dummy binding that throws an exception with an error message when it's created.
@@ -78,9 +89,6 @@ trait ModuleDefDSL
 
 
 object ModuleDefDSL {
-
-  import AbstractModuleDefDSL._
-
 
   // DSL state machine
 

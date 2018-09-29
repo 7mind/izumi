@@ -1,5 +1,6 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package com.github.pshirshov.izumi.distage.model.definition.dsl
 
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
 
 import scala.collection.mutable

@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
+import com.github.pshirshov.izumi.distage.model.definition.dsl.ModuleDefDSL
+
 /**
   * DSL for defining module Bindings.
   *

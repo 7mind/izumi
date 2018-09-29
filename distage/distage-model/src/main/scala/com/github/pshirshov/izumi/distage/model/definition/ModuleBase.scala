@@ -24,19 +24,19 @@ object ModuleBase {
     override val bindings: Set[Binding] = s
   }
 
-  implicit final class ModuleDefSeqExt[T <: ModuleBase](private val defs: Seq[T])(implicit T: ModuleMake[T]) {
+  implicit final class ModuleDefSeqExt[T <: ModuleBase: ModuleMake](private val defs: Seq[T]) {
     def merge: T = {
-      defs.reduceLeftOption[T](_ ++ _).getOrElse(T.empty)
+      defs.reduceLeftOption[T](_ ++ _).getOrElse(ModuleMake[T].empty)
     }
 
     def overrideLeft: T = {
-      defs.reduceOption[T](_ overridenBy _).getOrElse(T.empty)
+      defs.reduceOption[T](_ overridenBy _).getOrElse(ModuleMake[T].empty)
     }
   }
 
-  implicit final class ModuleDefOps[T <: ModuleBase](private val moduleDef: T)(implicit T: ModuleMake[T]) {
+  implicit final class ModuleDefOps[T <: ModuleBase: ModuleMake](private val moduleDef: T) {
     def map(f: Binding => Binding): T = {
-      T.make(moduleDef.bindings.map(f))
+      ModuleMake[T].make(moduleDef.bindings.map(f))
     }
   }
 
@@ -118,8 +118,7 @@ object ModuleBase {
 
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] =
   // Using lawless equals/hashcode
-    bs
-      .groupBy(identity)
+    bs.groupBy(identity)
       .values
       .map {
         _.reduce(_ addTags _.tags)

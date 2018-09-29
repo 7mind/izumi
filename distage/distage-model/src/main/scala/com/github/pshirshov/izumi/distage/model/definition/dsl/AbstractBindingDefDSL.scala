@@ -1,18 +1,18 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package com.github.pshirshov.izumi.distage.model.definition.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleDefDSL.SetElementInstruction.ElementAddTags
-import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
-import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleDefDSL.SingletonInstruction.{AddTags, SetId, SetImpl}
-import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleDefDSL.{BindingRef, SetRef, SingletonRef}
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding}
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDefDSL.{BindDSL, SetDSL}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetImpl}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonRef}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, Bindings, ImplDef}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Tag, IdContract}
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable
 
-trait AbstractModuleDefDSL {
+trait AbstractBindingDefDSL {
   protected[definition] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
 
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
@@ -21,13 +21,18 @@ trait AbstractModuleDefDSL {
     mutableState.flatMap(_.interpret)
   }
 
+  type BindDSL[T]
+  type SetDSL[T]
+
+  protected def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T]
+  protected def _setDSL[T: Tag](ref: SetRef): SetDSL[T]
+
   final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
-    val binding = Bindings.binding[T]
-    val ref = SingletonRef(binding)
+    val ref = SingletonRef(Bindings.binding[T])
 
     mutableState += ref
 
-    new BindDSL(ref, binding.key)
+    _bindDSL[T](ref)
   }
 
   /**
@@ -82,26 +87,25 @@ trait AbstractModuleDefDSL {
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
     */
   final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
-    val binding = Bindings.emptySet[T]
-    val setRef = SetRef(binding)
+    val setRef = SetRef(Bindings.emptySet[T])
 
     mutableState += setRef
 
-    new SetDSL(setRef)
+    _setDSL(setRef)
   }
 
 
 }
 
-object AbstractModuleDefDSL {
+object AbstractBindingDefDSL {
 
   trait BindingRef {
     def interpret: Seq[Binding]
   }
 
-  final case class SingletonRef(initial: ImplBinding, ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
+  final case class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
     override def interpret: Seq[ImplBinding] = Seq(
-      ops.foldLeft(initial) {
+      ops.foldLeft(initial: ImplBinding) {
         (b, instr) => instr match {
           case SetImpl(implDef) => b.withImplDef(implDef)
           case AddTags(tags) => b.addTags(tags)
