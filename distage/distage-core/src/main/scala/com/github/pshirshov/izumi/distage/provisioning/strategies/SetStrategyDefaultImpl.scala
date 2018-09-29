@@ -39,7 +39,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
       .map(m => (m, context.fetchKey(m)))
 
     val newSet = fetched.flatMap {
-      case (m, Some(value)) if m.tpe weak_<:< op.tpe => // in case member type <:< set type we just add
+      case (m, Some(value)) if m.tpe == op.tpe => // in case member type == set type we just add
         value.asInstanceOf[collection.Set[Any]]
       case (_, Some(value)) =>
         Set(value)
