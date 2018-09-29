@@ -34,6 +34,15 @@ class LocatorDefTest extends WordSpec {
       assert(ctx.instances.map(_.value) == Seq(testDependency0, testDependency1, testInstanceBinding, testCaseClass2))
     }
 
+    "not have access to advanced operations" in {
+      assertTypeError(
+        """
+          import BasicCase1._
+
+          new LocatorDef { make[JustTrait].from[Impl0] }"""
+      )
+    }
+
     "die on undefined instance" in {
       import BasicCase1._
 

@@ -1,11 +1,13 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
+import com.github.pshirshov.izumi.distage.model.definition.dsl.ModuleDefDSL
+
 /**
   * DSL for defining module Bindings.
   *
   * Example:
   * {{{
-  * class Program[F: TagK: Monad] extends ModuleDef {
+  * class Program[F[_]: TagK: Monad] extends ModuleDef {
   *   make[TaglessProgram[F]]
   * }
   *
@@ -35,7 +37,7 @@ package com.github.pshirshov.izumi.distage.model.definition
   *   - `many[X].ref[X]("special")` = add a reference to an **existing** named binding of X to a set of X's
   *
   * Tags:
-  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[RoleId]]
+  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[com.github.pshirshov.izumi.distage.roles.roles.RoleId]]
   *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
   *   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
   *

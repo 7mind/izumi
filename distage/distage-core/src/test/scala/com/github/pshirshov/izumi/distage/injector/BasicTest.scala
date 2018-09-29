@@ -114,6 +114,8 @@ class BasicTest extends WordSpec with MkInjector {
         .from[TestImpl0Good]
       make[TestInstanceBinding].named("named.test")
         .from(TestInstanceBinding())
+      make[TestDependency0].namedByImpl
+        .from[TestImpl0Good]
     }
 
     val injector = mkInjector()
@@ -170,7 +172,7 @@ class BasicTest extends WordSpec with MkInjector {
     assert(instantiated.a.z.nonEmpty)
   }
 
-  "handle set bindings ordering" in {
+  "handle set bindings" in {
     import SetCase1._
 
     val definition = new ModuleDef {
@@ -211,7 +213,7 @@ class BasicTest extends WordSpec with MkInjector {
     assert(context.get[Service3].set.size == 3)
   }
 
-  "support providerImport and instanceImport" in {
+  "support Plan.providerImport and Plan.resolveImport" in {
     import BasicCase1._
 
     val definition = new ModuleDef {

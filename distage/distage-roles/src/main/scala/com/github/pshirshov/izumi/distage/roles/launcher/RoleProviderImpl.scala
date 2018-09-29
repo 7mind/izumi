@@ -77,14 +77,9 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
         None
     }
 
-    val implkey = impldef match {
-      case Some(i: ImplDef.WithImplType) =>
-        Some(i.implType)
-      case _ =>
-        None
-    }
-
-    implkey.filter(pred)
+    impldef
+      .map(_.implType)
+      .filter(pred)
   }
 
   private def getAnno(tpe: model.reflection.universe.RuntimeDIUniverse.SafeType): Set[String] = {

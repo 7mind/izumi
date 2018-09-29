@@ -75,7 +75,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(idContext.get[id[String]] == "Hello 5!")
   }
 
-  "Compilation fail when trying produce Tag when in T[F[_], A] `T` is a generic" in {
+  "Compilation should fail when trying to materialize a Tag when T has no Tag in T[F[_], A]" in {
     assertTypeError("""
       import HigherKindsCase1._
 
@@ -85,7 +85,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     """)
   }
 
-  "TODO: Support [A, F[_]] type shape" in {
+  "Support [A, F[_]] type shape" in {
     import HigherKindsCase1._
 
     abstract class Parent[C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
@@ -95,7 +95,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(new Parent[Int, List]{}.bindings.head.key.tpe == SafeType.get[TestProvider[Int, List]])
   }
 
-  "TODO: Support [A, A, F[_]] type shape" in {
+  "Support [A, A, F[_]] type shape" in {
     import HigherKindsCase1._
 
     abstract class Parent[A: Tag, C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
@@ -105,7 +105,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(new Parent[Int, Boolean, List]{}.bindings.head.key.tpe == SafeType.get[TestProvider0[Int, Boolean, List]])
   }
 
-  "TODO: support [A, F[_], G[_]] type shape" in {
+  "support [A, F[_], G[_]] type shape" in {
     import HigherKindsCase1._
 
     abstract class Parent[A: Tag, F[_]: TagK, R[_]: TagK: Pointed] extends ModuleDef {
@@ -115,7 +115,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(new Parent[Int, List, List]{}.bindings.head.key.tpe == SafeType.get[TestProvider1[Int, List, List]])
   }
 
-  "TODO: support [F[_], G[_], A] type shape" in {
+  "support [F[_], G[_], A] type shape" in {
     import HigherKindsCase1._
 
     abstract class Parent[F[_]: TagK, R[_]: TagK: Pointed, A: Tag] extends ModuleDef {
@@ -125,7 +125,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(new Parent[List, List, Int]{}.bindings.head.key.tpe == SafeType.get[TestProvider2[List, List, Int]])
   }
 
-  "TagKK works sometimes" in {
+  "TagKK works" in {
     import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase2._
 
     class Definition[F[+_, +_]: TagKK: TestCovariantTC, G[_]: TagK, A: Tag](v: F[String, Int]) extends ModuleDef {

@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package com.github.pshirshov.izumi.distage.model.definition.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDefDSL._
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetIdFromImplName, SetId, SetImpl}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
+import com.github.pshirshov.izumi.distage.model.definition.{Id => _, _}
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-
-import scala.collection.mutable
 
 /**
   * DSL for defining module Bindings.
@@ -37,8 +37,8 @@ import scala.collection.mutable
   *
   * Multibindings:
   *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
-  *                                 Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
-  *     `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
+  * Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
+  * `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
   *   - `many[X].add { y: Y => new X1(y).add { y: Y => X2(y) }` = add instances of X1 and X2 constructed by a given [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet Provider]] function
   *   - `many[X].named("special").add[X1]` = create a named set of X, all the elements of it are added to this named set.
   *   - `many[X].ref[XImpl]` = add a reference to an already **existing** binding of XImpl to a set of X's
@@ -52,104 +52,25 @@ import scala.collection.mutable
   * @see [[com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK TagK]]
   * @see [[Id]]
   */
-trait ModuleDefDSL {
+trait ModuleDefDSL
+  extends AbstractBindingDefDSL[ModuleDefDSL.BindDSL, ModuleDefDSL.SetDSL] with IncludesDSL with TagsDSL {
   this: ModuleBase =>
 
-  final private[this] val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
-  final private[this] val mutableIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
-  final private[this] val mutableTags: mutable.Set[String] = _initialTags
-
-  protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
-  protected def _initialIncludes: mutable.ArrayBuffer[Include] = mutable.ArrayBuffer.empty
-  protected def _initialTags: mutable.Set[String] = mutable.HashSet.empty
+  import AbstractBindingDefDSL._
 
   override def bindings: Set[Binding] = freeze
 
-  final private[this] def freeze: Set[Binding] = {
-    val frozenState = mutableState.flatMap {
-      case SingletonRef(b) => Seq(b)
-      case IncludeApplyTags(bs) => bs
-      case SetRef(_, all) => all.map(_.ref)
-    }
-    val includes = mutableIncludes.flatMap(_.bindings)
-    val frozenTags = mutableTags.toSet
-
-    ModuleBase.tagwiseMerge(frozenState)
+  private[this] final def freeze: Set[Binding] = {
+    ModuleBase.tagwiseMerge(retaggedIncludes ++ frozenState)
       .map(_.addTags(frozenTags))
-      .++(includes)
+      .++(asIsIncludes)
   }
 
-  final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
-    val binding = Bindings.binding[T]
-    val ref = SingletonRef(binding)
+  override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): ModuleDefDSL.BindDSL[T] =
+    new ModuleDefDSL.BindDSL[T](ref, ref.key)
 
-    mutableState += ref
-
-    new BindDSL(ref, binding)
-  }
-
-  /**
-    * Multibindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
-    *
-    * To define a multibinding use `.many` and `.add` methods in ModuleDef DSL:
-    *
-    * {{{
-    * import cats.effect._, org.http4s._, org.http4s.dsl.io._, scala.concurrent.ExecutionContext.Implicits.global
-    * import distage._
-    *
-    * object HomeRouteModule extends ModuleDef {
-    *   many[HttpRoutes[IO]].add {
-    *     HttpRoutes.of[IO] { case GET -> Root / "home" => Ok(s"Home page!") }
-    *   }
-    * }
-    * }}}
-    *
-    * Multibindings defined in different modules will be merged together into a single Set.
-    * You can summon a multibinding by type `Set[_]`:
-    *
-    * {{{
-    * import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.implicits._
-    *
-    * object BlogRouteModule extends ModuleDef {
-    *   many[HttpRoutes[IO]].add {
-    *     HttpRoutes.of[IO] { case GET -> Root / "blog" / post => Ok("Blog post ``$post''!") }
-    *   }
-    * }
-    *
-    * class HttpServer(routes: Set[HttpRoutes[IO]]) {
-    *   val router = routes.foldK
-    *
-    *   def serve = BlazeBuilder[IO]
-    *     .bindHttp(8080, "localhost")
-    *     .mountService(router, "/")
-    *     .start
-    * }
-    *
-    * val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
-    * val server = context.get[HttpServer]
-    *
-    * val testRouter = server.router.orNotFound
-    *
-    * testRouter.run(Request[IO](uri = uri("/home"))).flatMap(_.as[String]).unsafeRunSync
-    * // Home page!
-    *
-    * testRouter.run(Request[IO](uri = uri("/blog/1"))).flatMap(_.as[String]).unsafeRunSync
-    * // Blog post ``1''!
-    * }}}
-    *
-    * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
-    */
-  final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
-    val binding = Bindings.emptySet[T]
-    val setRef = {
-      val ref = SingletonRef(binding)
-      SetRef(ref, mutable.ArrayBuffer(ref))
-    }
-
-    mutableState += setRef
-
-    new SetDSL(setRef, IdentSet(binding.key, binding.tags, binding.origin))
-  }
+  override private[definition] def _setDSL[T: Tag](ref: SetRef): ModuleDefDSL.SetDSL[T] =
+    new ModuleDefDSL.SetDSL[T](ref)
 
   /**
     * Create a dummy binding that throws an exception with an error message when it's created.
@@ -157,184 +78,118 @@ trait ModuleDefDSL {
     * Useful for prototyping.
     */
   final protected def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
-    val binding = Bindings.todo(DIKey.get[T])(pos)
-
-    mutableState += SingletonRef(binding)
+    registered(SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
   }
-
-  /** Add `tags` to all bindings in this module, except [[include included]] bindings */
-  final protected def tag(tags: String*): Unit = discard {
-    mutableTags ++= tags
-  }
-
-  /** Add all bindings in `that` module into `this` module
-    *
-    * WON'T add global tags from [[tag]] to included bindings.
-    **/
-  final protected def include(that: ModuleBase): Unit = discard {
-    mutableIncludes += Include(that.bindings)
-  }
-
-  /** Add all bindings in `that` module into `this` module
-    *
-    * WILL add global tags from [[tag]] to included bindings.
-    **/
-  final protected def includeApplyTags(that: ModuleBase): Unit = discard {
-    mutableState += IncludeApplyTags(that.bindings)
-  }
-
 }
 
+
 object ModuleDefDSL {
-
-  sealed trait BindingRef
-  final case class SingletonRef(var ref: Binding) extends BindingRef
-  final case class SetRef(emptySetBinding: SingletonRef, all: mutable.ArrayBuffer[SingletonRef]) extends BindingRef
-  final case class IncludeApplyTags(bindings: Set[Binding]) extends BindingRef
-
-  final case class Include(bindings: Set[Binding])
 
   // DSL state machine
 
   final class BindDSL[T]
   (
     protected val mutableState: SingletonRef
-    , protected val binding: SingletonBinding[DIKey.TypeKey]
+    , protected val key: DIKey.TypeKey
   ) extends BindDSLMutBase[T] {
 
     def named(name: String): BindNamedDSL[T] =
-      replace(binding.copy(key = binding.key.named(name), tags = binding.tags)) {
-        new BindNamedDSL[T](mutableState, _)
-      }
+      addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
+
+    def namedByImpl: BindNamedDSL[T] =
+      addOp(SetIdFromImplName())(new BindNamedDSL[T](_, key.named(key.toString)))
 
     def tagged(tags: String*): BindDSL[T] =
-      replace(binding.copy(tags = binding.tags ++ tags)) {
-        new BindDSL[T](mutableState, _)
+      addOp(AddTags(Set(tags: _*))) {
+        new BindDSL[T](_, key)
       }
-
-    def todo(implicit pos: CodePositionMaterializer): Unit =
-      replace(Bindings.todo(binding.key)(pos))(_ => ())
 
   }
 
   final class BindNamedDSL[T]
   (
     protected val mutableState: SingletonRef
-    , protected val binding: Binding.SingletonBinding[DIKey]
+    , protected val key: DIKey.IdKey[_]
   ) extends BindDSLMutBase[T] {
 
     def tagged(tags: String*): BindNamedDSL[T] =
-      replace(binding.copy(tags = binding.tags ++ tags)) {
-        new BindNamedDSL[T](mutableState, _)
+      addOp(AddTags(Set(tags: _*))) {
+        new BindNamedDSL[T](_, key)
       }
 
-    def todo(implicit pos: CodePositionMaterializer): Unit =
-      replace(Bindings.todo(binding.key)(pos))(_ => ())
   }
 
   sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {
     protected def mutableState: SingletonRef
-    protected def binding: SingletonBinding[DIKey]
 
-    //    trait Replace[A] {
-    //      def apply[B, R](f: A => B)(cont: Replace[B] => R): R
-    //    }
-    //    object Replace {
-    //      def apply[A](elem: A): Replace[A] = new Replace[A] {
-    //        override def apply[B, R](f: A => B)(cont: Replace[B] => R): R =
-    //          cont(Replace(f(elem)))
-    //      }
-    //    }
-    //
-    //    val v: Replace[binding.type] = Replace(binding: binding.type)
-
-    protected def replace[B <: Binding, S](newBinding: B)(newState: B => S): S = {
-      mutableState.ref = newBinding
-      newState(newBinding)
-    }
+    protected def key: DIKey
 
     override protected def bind(impl: ImplDef): Unit =
-      replace(binding.withImpl(impl))(_ => ())
-  }
+      addOp(SetImpl(impl))(_ => ())
 
-  final case class IdentSet[+D <: DIKey](key: D, tags: Set[String], pos: SourceFilePosition) {
-    def sameIdent(binding: Binding): Boolean =
-      key == binding.key && tags == binding.tags
+    def todo(implicit pos: CodePositionMaterializer): Unit = {
+      val provider = ProviderMagnet.todoProvider(key)(pos).get
+      addOp(SetImpl(ImplDef.ProviderImpl(provider.ret, provider)))(_ => ())
+    }
+
+    protected def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
+      newState(mutableState.append(op))
+    }
   }
 
   final class SetDSL[T]
   (
     protected val mutableState: SetRef
-    , protected val identifier: IdentSet[DIKey.TypeKey]
   ) extends SetDSLMutBase[T] {
 
     def named(name: String): SetNamedDSL[T] =
-      replaceIdent(identifier.copy(key = identifier.key.named(name))) {
-        new SetNamedDSL(mutableState, _)
-      }
+      addOp(SetIdAll(name))(new SetNamedDSL[T](_))
 
-    /** tags only apply to EmptySet itself **/
+    /** These tags apply ONLY to EmptySet binding itself, not to set elements **/
     def tagged(tags: String*): SetDSL[T] =
-      replaceIdent(identifier.copy(tags = identifier.tags ++ tags)) {
-        new SetDSL[T](mutableState, _)
-      }
+      addOp(AddTagsAll(Set(tags: _*)))(new SetDSL[T](_))
 
   }
 
   final class SetNamedDSL[T]
   (
     protected val mutableState: SetRef
-    , protected val identifier: IdentSet[DIKey]
   ) extends SetDSLMutBase[T] {
 
     def tagged(tags: String*): SetNamedDSL[T] =
-      replaceIdent(identifier.copy(tags = identifier.tags ++ tags)) {
-        new SetNamedDSL[T](mutableState, _)
-      }
+      addOp(AddTagsAll(Set(tags: _*)))(new SetNamedDSL[T](_))
 
   }
 
   final class SetElementDSL[T]
   (
     protected val mutableState: SetRef
-    , protected val mutableCursor: SingletonRef
-    , protected val identifier: IdentSet[DIKey]
+    , protected val mutableCursor: SetElementRef
   ) extends SetElementDSLMutBase[T] {
 
     def tagged(tags: String*): SetElementDSL[T] =
-      replaceCursor(mutableCursor.ref.addTags(Set(tags: _*)))
+      addOp(ElementAddTags(Set(tags: _*)))
 
   }
 
   sealed trait SetElementDSLMutBase[T] extends SetDSLMutBase[T] {
-    protected def mutableCursor: SingletonRef
+    protected def mutableCursor: SetElementRef
 
-    protected def replaceCursor(newBindingCursor: Binding): SetElementDSL[T] = {
-      mutableCursor.ref = newBindingCursor
-
-      new SetElementDSL[T](mutableState, mutableCursor, identifier)
+    protected def addOp(op: SetElementInstruction): SetElementDSL[T] = {
+      new SetElementDSL[T](mutableState, mutableCursor.append(op))
     }
   }
 
   sealed trait SetDSLMutBase[T] extends SetDSLBase[T, SetElementDSL[T]] {
     protected def mutableState: SetRef
 
-    protected def identifier: IdentSet[DIKey]
-
-    protected def replaceIdent[D <: IdentSet[DIKey], S](newIdent: D)(nextState: D => S): S = {
-      mutableState.emptySetBinding.ref = EmptySetBinding(newIdent.key, newIdent.tags, newIdent.pos)
-      mutableState.all.foreach(r => r.ref = r.ref.withTarget(newIdent.key))
-
-      nextState(newIdent)
+    protected def addOp[R](op: SetInstruction)(nextState: SetRef => R): R = {
+      nextState(mutableState.appendOp(op))
     }
 
     override protected def appendElement(newElement: ImplDef)(implicit pos: CodePositionMaterializer): SetElementDSL[T] = {
-      val newBinding: Binding = SetElementBinding(identifier.key, newElement)
-      val mutableCursor = SingletonRef(newBinding)
-
-      mutableState.all += mutableCursor
-
-      new SetElementDSL[T](mutableState, mutableCursor, identifier)
+      val mutableCursor = SetElementRef(newElement, pos.get.position)
+      new SetElementDSL[T](mutableState.appendElem(mutableCursor), mutableCursor)
     }
   }
 
@@ -386,38 +241,38 @@ object ModuleDefDSL {
       * When binding a case class to constructor, prefer passing `new X(_)` instead of `X.apply _` because `apply` will
       * not preserve parameter annotations from case class definitions:
       *
-      *   {{{
+      * {{{
       *   case class X(@Id("special") i: Int)
       *
       *   make[X].from(X.apply _) // summons regular Int
       *   make[X].from(new X(_)) // summons special Int
-      *   }}}
+      * }}}
       *
       * HOWEVER, if you annotate the types of parameters instead of their names, `apply` WILL work:
       *
-      *   {{{
+      * {{{
       *     case class X(i: Int @Id("special"))
       *
       *     make[X].from(X.apply _) // summons special Int
-      *   }}}
+      * }}}
       *
       * Using intermediate vals` will lose annotations when converting a method into a function value,
       * prefer using annotated method directly as method reference `(method _)`:
       *
-      *   {{{
+      * {{{
       *   def constructorMethod(@Id("special") i: Int): Unit = ()
       *
       *   val constructor = constructorMethod _
       *
       *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI context
-      *   }}}
+      * }}}
       *
       * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
-      **/
+      */
     final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 
-    /***
+    /**
       * Bind by reference to another bound key
       *
       * Example:
@@ -442,7 +297,7 @@ object ModuleDefDSL {
   }
 
   trait SetDSLBase[T, AfterAdd] {
-    /***
+    /**
       * Bind by reference to another bound key
       *
       * Example:
@@ -480,6 +335,7 @@ object ModuleDefDSL {
 
     protected def appendElement(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterAdd
   }
+
 }
 
 

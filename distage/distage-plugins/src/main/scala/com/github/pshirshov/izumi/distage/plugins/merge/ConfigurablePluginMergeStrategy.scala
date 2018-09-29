@@ -69,7 +69,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
   }
 
   protected def isDisabled(binding: Binding): Boolean = {
-      config.disabledTags.evaluate(binding.tags) ||
+    config.disabledTags.evaluate(binding.tags) ||
       isDisabledName(keyClassName(binding.key), config.disabledKeyClassnames) ||
       implClassName(binding).exists(isDisabledName(_, config.disabledImplClassnames))
   }
@@ -86,10 +86,8 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       case _ =>
         None
     }).flatMap {
-      case i: ImplDef.WithImplType =>
+      i =>
         Option(typeName(i.implType))
-      case _ =>
-        None
     }
   }
 

@@ -171,7 +171,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     assert(instanceTypes == planTypes)
 
-    info("whitebox test: ensure that plan ops are in a non-lazy collection")
+    // whitebox test: ensure that plan ops are in a non-lazy collection
     assert(plan.steps.getClass == classOf[Vector[_]])
   }
 

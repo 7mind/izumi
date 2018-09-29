@@ -38,9 +38,7 @@ object BasicCases {
 
     case class TestCaseClass(a1: TestClass, a2: TestDependency3)
 
-    case class TestInstanceBinding(z: String =
-                                         """R-r-rollin' down the window, white widow, fuck fame
-Forest fire, climbin' higher, real life, it can wait""")
+    case class TestInstanceBinding(z: String = "TestValue")
 
     case class TestCaseClass2(a: TestInstanceBinding)
 
@@ -75,13 +73,14 @@ Forest fire, climbin' higher, real life, it can wait""")
     class TestClass
     (
       @Id("named.test.dependency.0") val fieldArgDependency: TestDependency0
+      , @Id("com.github.pshirshov.izumi.distage.fixtures.basiccases.basiccase2.testdependency0") val fieldArgDependencyAutoname: TestDependency0
       , @Id("named.test") argDependency: TestInstanceBinding
     ) {
       val x = argDependency
       val y = fieldArgDependency
 
       def correctWired(): Boolean = {
-        fieldArgDependency.boom() == 1
+        fieldArgDependency.boom() == 1 && fieldArgDependencyAutoname.boom() == 1 && (fieldArgDependency ne fieldArgDependencyAutoname)
       }
     }
 

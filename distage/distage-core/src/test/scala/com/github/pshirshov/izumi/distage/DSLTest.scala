@@ -30,6 +30,9 @@ class DSLTest extends WordSpec {
           .add(new Impl2())
         many[JustTrait].named("named.set")
           .add[Impl3]
+
+        make[TestDependency0].namedByImpl.from[TestImpl0]
+        make[TestDependency0].namedByImpl
       }
 
       assert(definition != null)
@@ -155,7 +158,19 @@ class DSLTest extends WordSpec {
       assert(combinedModules == complexModule)
     }
 
-    "support allTags in module def" in {
+    "progression test: currently can't allow operations between objects of ModuleDef" in {
+      import BasicCase1._
+      object mod1 extends ModuleDef {
+        make[TestClass]
+      }
+      object mod2 extends ModuleDef {
+        make[TestDependency0]
+      }
+
+      assertTypeError("mod1 ++ mod2")
+    }
+
+    "support allTags" in {
       import BasicCase1._
 
       val definition: ModuleBase = new ModuleDef {
@@ -169,6 +184,96 @@ class DSLTest extends WordSpec {
         Bindings.binding[TestClass].withTags("tag1", "tag2")
         , Bindings.binding[TestDependency0].withTags("tag1", "tag2", "sniv"))
       )
+    }
+
+    "ModuleBuilder supports tags; same bindings with different tags are merged" in {
+      import SetCase1._
+
+      val definition = new ModuleDef {
+        many[SetTrait].named("n1").tagged("A", "B")
+          .add[SetImpl1].tagged("A")
+          .add[SetImpl2].tagged("B")
+          .add[SetImpl3].tagged("A") // merge
+          .add[SetImpl3].tagged("B") // merge
+
+        make[Service1].tagged("CA").from[Service1] // merge
+        make[Service1].tagged("CB").from[Service1] // merge
+
+        make[Service2].tagged("CC")
+
+        many[SetTrait].tagged("A", "B")
+      }
+
+      assert(definition.bindings.size == 7)
+      assert(definition.bindings.count(_.tags == Set("A", "B")) == 3)
+      assert(definition.bindings.count(_.tags == Set("CA", "CB")) == 1)
+      assert(definition.bindings.count(_.tags == Set("CC")) == 1)
+      assert(definition.bindings.count(_.tags == Set("A")) == 1)
+      assert(definition.bindings.count(_.tags == Set("B")) == 1)
+    }
+
+    "Tags in different modules are merged" in {
+      import BasicCase1._
+
+      val def1 = new ModuleDef {
+        make[TestDependency0].tagged("a")
+        make[TestDependency0].tagged("b")
+
+        tag("1")
+      }
+
+      val def2 = new ModuleDef {
+        tag("2")
+
+        make[TestDependency0].tagged("x").tagged("y")
+      }
+
+      val definition = def1 ++ def2
+
+      assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
+    }
+
+    "Tags in different overriden modules are merged" in {
+      import BasicCase1._
+
+      val def1 = new ModuleDef {
+        make[TestDependency0].tagged("a").tagged("b")
+
+        tag("1")
+      }
+
+      val def2 = new ModuleDef {
+        tag("2")
+
+        make[TestDependency0].tagged("x").tagged("y")
+      }
+
+      val definition = def1 overridenBy def2
+
+      assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
+    }
+
+    "support includes" in {
+      import BasicCase1._
+
+      trait Def1 extends ModuleDef {
+        make[TestDependency0]
+        tag("tag2")
+      }
+
+      trait Def2 extends ModuleDef {
+        make[TestClass]
+        tag("tag1")
+      }
+
+      val definition1 = new Def2 {
+        include(new Def1 {})
+      }
+
+      val definition2 = new Def1 with Def2
+
+      assert(definition1.bindings.map(_.tags) == Set(Set("tag1"), Set("tag2")))
+      assert(definition2.bindings.map(_.tags) == Set(Set("tag1", "tag2")))
     }
   }
 
