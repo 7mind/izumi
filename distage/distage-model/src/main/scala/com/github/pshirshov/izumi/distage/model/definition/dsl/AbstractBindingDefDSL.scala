@@ -104,7 +104,7 @@ object AbstractBindingDefDSL {
     def interpret: Seq[Binding]
   }
 
-  final case class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
+  final class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction]) extends BindingRef {
     override def interpret: Seq[ImplBinding] = Seq(
       ops.foldLeft(initial: ImplBinding) {
         (b, instr) =>
@@ -115,9 +115,20 @@ object AbstractBindingDefDSL {
           }
       }
     )
+
+    def key: DIKey.TypeKey = initial.key
+
+    def append(op: SingletonInstruction): SingletonRef = {
+      ops += op
+      this
+    }
   }
 
-  final case class SetRef(initial: EmptySetBinding[DIKey.TypeKey], setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty, elems: mutable.Queue[SetElementRef] = mutable.Queue.empty) extends BindingRef {
+  object SingletonRef {
+    def apply(initial: SingletonBinding[DIKey.TypeKey]): SingletonRef = new SingletonRef(initial, mutable.Queue.empty)
+  }
+
+  final class SetRef(initial: EmptySetBinding[DIKey.TypeKey], setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty, elems: mutable.Queue[SetElementRef] = mutable.Queue.empty) extends BindingRef {
     override def interpret: Seq[Binding] = {
       val emptySetBinding = setOps.foldLeft(initial: EmptySetBinding[DIKey.BasicKey]) {
         (b, instr) =>
@@ -129,9 +140,24 @@ object AbstractBindingDefDSL {
 
       emptySetBinding +: elems.map(_.interpret(emptySetBinding.key))
     }
+
+    def appendElem(op: SetElementRef): SetRef = {
+      elems += op
+      this
+    }
+
+
+    def appendOp(op: SetInstruction): SetRef = {
+      setOps += op
+      this
+    }
   }
 
-  final case class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
+  object SetRef {
+    def apply(initial: EmptySetBinding[DIKey.TypeKey]): SetRef = new SetRef(initial, mutable.Queue.empty, mutable.Queue.empty)
+  }
+
+  final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding[DIKey.BasicKey] =
       ops.foldLeft(SetElementBinding(setKey, implDef, Set.empty, pos)) {
         (b, instr) =>
@@ -139,7 +165,18 @@ object AbstractBindingDefDSL {
             case ElementAddTags(tags) => b.addTags(tags)
           }
       }
+
+    def append(op: SetElementInstruction): SetElementRef = {
+      ops += op
+      this
+    }
   }
+
+  object SetElementRef {
+    def apply(implDef: ImplDef, pos: SourceFilePosition): SetElementRef = new SetElementRef(implDef, pos, ops = mutable.Queue.empty)
+  }
+
+
 
   sealed trait SingletonInstruction
 

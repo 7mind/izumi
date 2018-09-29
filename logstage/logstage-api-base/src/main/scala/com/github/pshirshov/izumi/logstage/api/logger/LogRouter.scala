@@ -17,7 +17,7 @@ trait LogRouter extends AutoCloseable {
     }
   }
 
-  protected def doLog(entry: Log.Entry): Unit
+  @inline protected def doLog(entry: Log.Entry): Unit
 
   override def close(): Unit = {}
 }

@@ -16,6 +16,8 @@ class IzLogger
 ) extends LoggingMacro
   with AbstractLogger {
 
+  final def log(entry: Log.Entry): Unit = receiver.log(entry)
+
   implicit def withCustomContext(newCustomContext: CustomContext): IzLogger = {
     new IzLogger(receiver, contextCustom + newCustomContext)
   }
@@ -52,16 +54,16 @@ object IzLogger {
   }
 
   final def basic(threshold: Log.Level, sink: LogSink, sinks: LogSink*): IzLogger = {
-    simple(threshold, Map.empty, sink, sinks :_*)
+    simple(threshold, Map.empty, sink, sinks: _*)
   }
 
   final def simple(threshold: Log.Level, levels: Map[String, Log.Level], sink: LogSink, sinks: LogSink*): IzLogger = {
-    val r = router(threshold, levels, sink +: sinks :_*)
+    val r = router(threshold, levels, sink +: sinks: _*)
     new IzLogger(r, CustomContext.empty)
   }
 
   final def simpleRouter(threshold: Log.Level, sinks: LogSink*): ConfigurableLogRouter = {
-    router(threshold, Map.empty, sinks :_*)
+    router(threshold, Map.empty, sinks: _*)
   }
 
   final def router(threshold: Log.Level, levels: Map[String, Log.Level], sinks: LogSink*): ConfigurableLogRouter = {

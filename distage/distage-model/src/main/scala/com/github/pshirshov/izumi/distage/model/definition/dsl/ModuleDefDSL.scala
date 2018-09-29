@@ -70,7 +70,7 @@ trait ModuleDefDSL
   override private[definition] type SetDSL[T] = ModuleDefDSL.SetDSL[T]
 
   override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T] =
-    new ModuleDefDSL.BindDSL[T](ref, ref.initial.key)
+    new ModuleDefDSL.BindDSL[T](ref, ref.key)
 
   override private[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T] =
     new ModuleDefDSL.SetDSL[T](ref)
@@ -93,7 +93,7 @@ object ModuleDefDSL {
   final class BindDSL[T]
   (
     protected val mutableState: SingletonRef
-  , protected val key: DIKey.TypeKey
+    , protected val key: DIKey.TypeKey
   ) extends BindDSLMutBase[T] {
 
     def named(name: String): BindNamedDSL[T] =
@@ -109,7 +109,7 @@ object ModuleDefDSL {
   final class BindNamedDSL[T]
   (
     protected val mutableState: SingletonRef
-  , protected val key: DIKey.IdKey[_]
+    , protected val key: DIKey.IdKey[_]
   ) extends BindDSLMutBase[T] {
 
     def tagged(tags: String*): BindNamedDSL[T] =
@@ -134,22 +134,8 @@ object ModuleDefDSL {
     }
 
     protected def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
-      mutableState.ops += op
-
-      newState(mutableState)
+      newState(mutableState.append(op))
     }
-
-    //    trait Replace[A] {
-    //      def apply[B, R](f: A => B)(cont: Replace[B] => R): R
-    //    }
-    //    object Replace {
-    //      def apply[A](elem: A): Replace[A] = new Replace[A] {
-    //        override def apply[B, R](f: A => B)(cont: Replace[B] => R): R =
-    //          cont(Replace(f(elem)))
-    //      }
-    //    }
-    //
-    //    val v: Replace[binding.type] = Replace(binding: binding.type)
   }
 
   final class SetDSL[T]
@@ -191,9 +177,7 @@ object ModuleDefDSL {
     protected def mutableCursor: SetElementRef
 
     protected def addOp(op: SetElementInstruction): SetElementDSL[T] = {
-      mutableCursor.ops += op
-
-      new SetElementDSL[T](mutableState, mutableCursor)
+      new SetElementDSL[T](mutableState, mutableCursor.append(op))
     }
   }
 
@@ -201,17 +185,12 @@ object ModuleDefDSL {
     protected def mutableState: SetRef
 
     protected def addOp[R](op: SetInstruction)(nextState: SetRef => R): R = {
-      mutableState.setOps += op
-
-      nextState(mutableState)
+      nextState(mutableState.appendOp(op))
     }
 
     override protected def appendElement(newElement: ImplDef)(implicit pos: CodePositionMaterializer): SetElementDSL[T] = {
       val mutableCursor = SetElementRef(newElement, pos.get.position)
-
-      mutableState.elems += mutableCursor
-
-      new SetElementDSL[T](mutableState, mutableCursor)
+      new SetElementDSL[T](mutableState.appendElem(mutableCursor), mutableCursor)
     }
   }
 

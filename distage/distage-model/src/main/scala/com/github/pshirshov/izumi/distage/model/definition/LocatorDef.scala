@@ -27,7 +27,7 @@ trait LocatorDef
   override private[definition] type SetDSL[T] = LocatorDef.SetDSL[T]
 
   override private[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): BindDSL[T] =
-    new definition.LocatorDef.BindDSL[T](ref, ref.initial.key)
+    new definition.LocatorDef.BindDSL[T](ref, ref.key)
 
   override private[definition] def _setDSL[T: RuntimeDIUniverse.Tag](ref: SetRef): SetDSL[T] =
     new definition.LocatorDef.SetDSL[T](ref)
@@ -101,9 +101,7 @@ object LocatorDef {
       addOp(SetImpl(impl))(_ => ())
 
     protected def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
-      mutableState.ops += op
-
-      newState(mutableState)
+      newState(mutableState.append(op))
     }
   }
 
@@ -120,17 +118,12 @@ object LocatorDef {
     protected def mutableState: SetRef
 
     protected def addOp[R](op: SetInstruction)(nextState: SetRef => R): R = {
-      mutableState.setOps += op
-
-      nextState(mutableState)
+      nextState(mutableState.appendOp(op))
     }
 
     override protected def appendElement(newElement: ImplDef)(implicit pos: CodePositionMaterializer): SetElementDSL[T] = {
       val mutableCursor = SetElementRef(newElement, pos.get.position)
-
-      mutableState.elems += mutableCursor
-
-      new SetElementDSL[T](mutableState)
+      new SetElementDSL[T](mutableState.appendElem(mutableCursor))
     }
   }
 

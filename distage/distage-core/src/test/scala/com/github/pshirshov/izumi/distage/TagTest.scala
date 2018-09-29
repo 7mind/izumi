@@ -130,7 +130,6 @@ class TagTest extends WordSpec with X[String] {
       def testTagX[F[_, _, _[_[_], _], _[_], _]: TagX, A: Tag, B: Tag, C[_[_], _]: TagTK, D[_]: TagK, E: Tag] = Tag[F[A, B, C, D, E]]
 
       val value = testTagX[T2, Int, String, OptionT, List, Boolean]
-      println(value)
       assert(value.tpe == safe[T2[Int, String, OptionT, List, Boolean]])
     }
 
