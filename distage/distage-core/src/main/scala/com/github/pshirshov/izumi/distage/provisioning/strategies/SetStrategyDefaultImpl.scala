@@ -21,19 +21,11 @@ class SetStrategyDefaultImpl extends SetStrategy {
 
     val keyType = op.tpe.tpe.typeArgs match {
       case head :: Nil =>
-        SafeType.apply(head)
+        SafeType(head)
       case _ =>
         throw new IncompatibleTypesException("Expected to be a set type but has no parameters", scalaCollectionSetType, op.tpe)
     }
-
-    val badKeys = op.members.filterNot {
-      key =>
-        (key.tpe weak_<:< keyType) || (key.tpe weak_<:< op.tpe)
-    }
-
-    if (badKeys.nonEmpty) {
-      throw new SanityCheckFailedException(s"Target set ${op.target} expects ${op.tpe} but got members $badKeys")
-    }
+    val runtimeKeyClass = mirror.runtimeClass(keyType.tpe)
 
     val fetched = op.members
       .map(m => (m, context.fetchKey(m)))
@@ -41,7 +33,15 @@ class SetStrategyDefaultImpl extends SetStrategy {
     val newSet = fetched.flatMap {
       case (m, Some(value)) if m.tpe == op.tpe => // in case member type == set type we just add
         value.asInstanceOf[collection.Set[Any]]
-      case (_, Some(value)) =>
+      case (m, Some(value)) =>
+        // Member key type may not conform to set parameter (valid case for autosets) while implementation is still valid
+        // so sanity check has to be done agains implementation type.
+        // Though at this point we have no accessible static descriptor of set member implementation type
+        // This check itself is kinda excessive but in case it fails it would be a very bad signal
+        if (!runtimeKeyClass.isAssignableFrom(value.getClass)) {
+          throw new IncompatibleTypesException(s"Set ${op.target} got member $m of unexpected type ${m.tpe}. Expected: $keyType", keyType, m.tpe)
+        }
+
         Set(value)
       case (m, None) =>
         throw new MissingRefException(s"Failed to fetch set element $m", Set(m), None)
