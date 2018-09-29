@@ -13,26 +13,30 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
 import scala.collection.mutable
 
 trait AbstractBindingDefDSL {
-  protected[definition] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
+  private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
+
+  protected[definition] type BindDSL[T]
+
+  protected[definition] type SetDSL[T]
 
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
-  protected[definition] def frozenState: Seq[Binding] =  {
+  protected[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T]
+
+  protected[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T]
+
+  protected[definition] def frozenState: Seq[Binding] = {
     mutableState.flatMap(_.interpret)
   }
 
-  type BindDSL[T]
-  type SetDSL[T]
-
-  protected def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T]
-  protected def _setDSL[T: Tag](ref: SetRef): SetDSL[T]
-
   final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
-    val ref = SingletonRef(Bindings.binding[T])
-
-    mutableState += ref
-
+    val ref = registered(SingletonRef(Bindings.binding[T]))
     _bindDSL[T](ref)
+  }
+
+  protected[definition] def registered[T <: BindingRef](bindingRef: T): T = {
+    mutableState += bindingRef
+    bindingRef
   }
 
   /**
@@ -106,11 +110,12 @@ object AbstractBindingDefDSL {
   final case class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
     override def interpret: Seq[ImplBinding] = Seq(
       ops.foldLeft(initial: ImplBinding) {
-        (b, instr) => instr match {
-          case SetImpl(implDef) => b.withImplDef(implDef)
-          case AddTags(tags) => b.addTags(tags)
-          case s: SetId[_] => b.withTarget(DIKey.IdKey(b.key.tpe, s.id)(s.idContract))
-        }
+        (b, instr) =>
+          instr match {
+            case SetImpl(implDef) => b.withImplDef(implDef)
+            case AddTags(tags) => b.addTags(tags)
+            case s: SetId[_] => b.withTarget(DIKey.IdKey(b.key.tpe, s.id)(s.idContract))
+          }
       }
     )
   }
@@ -118,10 +123,11 @@ object AbstractBindingDefDSL {
   final case class SetRef(initial: EmptySetBinding[DIKey.TypeKey], setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty, elems: mutable.Queue[SetElementRef] = mutable.Queue.empty) extends BindingRef {
     override def interpret: Seq[Binding] = {
       val emptySetBinding = setOps.foldLeft(initial: EmptySetBinding[DIKey.BasicKey]) {
-        (b, instr) => instr match {
-          case AddTagsAll(tags) => b.addTags(tags)
-          case s: SetIdAll[_] => b.withTarget(DIKey.IdKey(b.key.tpe, s.id)(s.idContract))
-        }
+        (b, instr) =>
+          instr match {
+            case AddTagsAll(tags) => b.addTags(tags)
+            case s: SetIdAll[_] => b.withTarget(DIKey.IdKey(b.key.tpe, s.id)(s.idContract))
+          }
       }
 
       emptySetBinding +: elems.map(_.interpret(emptySetBinding.key))
@@ -131,27 +137,41 @@ object AbstractBindingDefDSL {
   final case class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding[DIKey.BasicKey] =
       ops.foldLeft(SetElementBinding(setKey, implDef, Set.empty, pos)) {
-        (b, instr) => instr match {
-          case ElementAddTags(tags) => b.addTags(tags)
-        }
+        (b, instr) =>
+          instr match {
+            case ElementAddTags(tags) => b.addTags(tags)
+          }
       }
   }
 
   sealed trait SingletonInstruction
+
   object SingletonInstruction {
+
     final case class SetImpl(implDef: ImplDef) extends SingletonInstruction
+
     final case class AddTags(tags: Set[String]) extends SingletonInstruction
+
     final case class SetId[I](id: I)(implicit val idContract: IdContract[I]) extends SingletonInstruction
+
   }
 
   sealed trait SetInstruction
+
   object SetInstruction {
+
     final case class AddTagsAll(tags: Set[String]) extends SetInstruction
+
     final case class SetIdAll[I](id: I)(implicit val idContract: IdContract[I]) extends SetInstruction
+
   }
 
   sealed trait SetElementInstruction
+
   object SetElementInstruction {
+
     final case class ElementAddTags(tags: Set[String]) extends SetElementInstruction
+
   }
+
 }

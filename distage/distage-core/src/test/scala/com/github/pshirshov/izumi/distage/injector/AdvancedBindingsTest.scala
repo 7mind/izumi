@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1
-import com.github.pshirshov.izumi.distage.fixtures.SetCases.{SetCase1, SetCase2}
+import com.github.pshirshov.izumi.distage.fixtures.SetCases.SetCase2
 import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
 import distage.ModuleDef
 import org.scalatest.WordSpec

@@ -66,13 +66,13 @@ trait ModuleDefDSL
       .++(asIsIncludes)
   }
 
-  override type BindDSL[T] = ModuleDefDSL.BindDSL[T]
-  override type SetDSL[T] = ModuleDefDSL.SetDSL[T]
+  override protected[definition] type BindDSL[T] = ModuleDefDSL.BindDSL[T]
+  override protected[definition] type SetDSL[T] = ModuleDefDSL.SetDSL[T]
 
-  override protected def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T] =
+  override protected[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T] =
     new ModuleDefDSL.BindDSL[T](ref, ref.initial.key)
 
-  override protected def _setDSL[T: Tag](ref: SetRef): SetDSL[T] =
+  override protected[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T] =
     new ModuleDefDSL.SetDSL[T](ref)
 
   /**
@@ -81,9 +81,7 @@ trait ModuleDefDSL
     * Useful for prototyping.
     */
   final protected def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
-    val binding = Bindings.todo(DIKey.get[T])(pos)
-
-    mutableState += SingletonRef(binding)
+    registered(SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
   }
 }
 

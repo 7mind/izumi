@@ -23,13 +23,13 @@ import scala.collection.mutable
 trait LocatorDef
   extends AbstractLocator with AbstractBindingDefDSL {
 
-  override type BindDSL[T] = LocatorDef.BindDSL[T]
-  override type SetDSL[T] = LocatorDef.SetDSL[T]
+  override protected[definition] type BindDSL[T] = LocatorDef.BindDSL[T]
+  override protected[definition] type SetDSL[T] = LocatorDef.SetDSL[T]
 
-  override protected def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): BindDSL[T] =
+  override protected[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.initial.key)
 
-  override protected def _setDSL[T: RuntimeDIUniverse.Tag](ref: SetRef): SetDSL[T] =
+  override protected[definition] def _setDSL[T: RuntimeDIUniverse.Tag](ref: SetRef): SetDSL[T] =
     new definition.LocatorDef.SetDSL[T](ref)
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
