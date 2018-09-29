@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition.dsl
 
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetIdFromImplName, SetId, SetImpl}
@@ -78,7 +79,7 @@ trait ModuleDefDSL
     * Useful for prototyping.
     */
   final protected def todo[T: Tag](implicit pos: CodePositionMaterializer): Unit = discard {
-    registered(SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
+    registered(new SingletonRef(Bindings.todo(DIKey.get[T])(pos)))
   }
 }
 
@@ -164,23 +165,34 @@ object ModuleDefDSL {
   final class SetElementDSL[T]
   (
     protected val mutableState: SetRef
-    , protected val mutableCursor: SetElementRef
-  ) extends SetElementDSLMutBase[T] {
+  , protected val mutableCursor: SetElementRef
+  ) extends SetDSLMutBase[T] {
 
     def tagged(tags: String*): SetElementDSL[T] =
       addOp(ElementAddTags(Set(tags: _*)))
 
-  }
-
-  sealed trait SetElementDSLMutBase[T] extends SetDSLMutBase[T] {
-    protected def mutableCursor: SetElementRef
-
     protected def addOp(op: SetElementInstruction): SetElementDSL[T] = {
-      new SetElementDSL[T](mutableState, mutableCursor.append(op))
+      val newState = mutableCursor.append(op)
+      new SetElementDSL[T](mutableState, newState)
     }
   }
 
-  sealed trait SetDSLMutBase[T] extends SetDSLBase[T, SetElementDSL[T]] {
+  final class MultiSetElementDSL[T]
+  (
+    protected val mutableState: SetRef
+  , protected val mutableCursor: MultiSetElementRef
+  ) extends SetDSLMutBase[T] {
+
+    def tagged(tags: String*): MultiSetElementDSL[T] =
+      addOp(MultiAddTags(Set(tags: _*)))
+
+    protected def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
+      val newState = mutableCursor.append(op)
+      new MultiSetElementDSL[T](mutableState, newState)
+    }
+  }
+
+  sealed trait SetDSLMutBase[T] extends SetDSLBase[T, SetElementDSL[T], MultiSetElementDSL[T]] {
     protected def mutableState: SetRef
 
     protected def addOp[R](op: SetInstruction)(nextState: SetRef => R): R = {
@@ -188,8 +200,13 @@ object ModuleDefDSL {
     }
 
     override protected def appendElement(newElement: ImplDef)(implicit pos: CodePositionMaterializer): SetElementDSL[T] = {
-      val mutableCursor = SetElementRef(newElement, pos.get.position)
+      val mutableCursor = new SetElementRef(newElement, pos.get.position)
       new SetElementDSL[T](mutableState.appendElem(mutableCursor), mutableCursor)
+    }
+
+    override protected def multiSetAdd(newElements: ImplDef.WithImplType)(implicit pos: CodePositionMaterializer): MultiSetElementDSL[T] = {
+      val mutableCursor = new MultiSetElementRef(newElements, pos.get.position)
+      new MultiSetElementDSL[T](mutableState.appendMultiElem(mutableCursor), mutableCursor)
     }
   }
 
@@ -296,7 +313,7 @@ object ModuleDefDSL {
     protected def bind(impl: ImplDef): AfterBind
   }
 
-  trait SetDSLBase[T, AfterAdd] {
+  trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
     /**
       * Bind by reference to another bound key
       *
@@ -332,6 +349,26 @@ object ModuleDefDSL {
 
     final def add[I <: T : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ProviderImpl(f.get.ret, f.get))
+
+    final def ref[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
+
+    final def ref[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
+
+    final def weak[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true))
+
+    final def weak[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true))
+
+    final def add[I <: Set[_ <: T] : Tag](instance: I)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterMultiAdd =
+      multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance))
+
+    final def add[I <: Set[_ <: T] : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterMultiAdd =
+      multiSetAdd(ImplDef.ProviderImpl(f.get.ret, f.get))
+
+    protected def multiSetAdd(newImpl: ImplDef.WithImplType)(implicit pos: CodePositionMaterializer): AfterMultiAdd
 
     protected def appendElement(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterAdd
   }

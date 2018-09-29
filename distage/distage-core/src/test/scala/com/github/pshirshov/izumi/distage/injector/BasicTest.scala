@@ -262,4 +262,26 @@ class BasicTest extends WordSpec with MkInjector {
 
     assert(constructor.arguments.flatten.map(_.annotations).forall(_.nonEmpty))
   }
+
+  "handle set inclusions" in {
+    val definition = new ModuleDef {
+      make[Set[Int]].named("x").from(Set(1, 2, 3))
+      make[Set[Int]].named("y").from(Set(3, 4, 5))
+      many[Int].ref[Set[Int]]("x")
+      many[Int].ref[Set[Int]]("y")
+
+//      make[Set[None.type]].from(Set(None))
+//      many[Option[Int]].ref[Set[None.type]]
+    }
+
+    val context = Injector().produce(definition)
+
+    assert(context.get[Set[Int]] == Set(1, 2, 3, 4, 5, 6))
+    assert(context.get[Set[Option[Int]]] == Set(None))
+  }
+
+  "handle multiple set element binds" in {
+
+  }
+
 }

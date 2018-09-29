@@ -31,7 +31,7 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
   }
 
   final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
-    val ref = registered(SingletonRef(Bindings.binding[T]))
+    val ref = registered(new SingletonRef(Bindings.binding[T]))
     _bindDSL[T](ref)
   }
 
@@ -87,7 +87,7 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
     */
   final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
-    val setRef = registered(SetRef(Bindings.emptySet[T]))
+    val setRef = registered(new SetRef(Bindings.emptySet[T]))
     _setDSL(setRef)
   }
 
@@ -100,7 +100,7 @@ object AbstractBindingDefDSL {
     def interpret: Seq[Binding]
   }
 
-  final class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction]) extends BindingRef {
+  final class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
     override def interpret: Seq[ImplBinding] = Seq(
       ops.foldLeft(initial: ImplBinding) {
         (b, instr) =>
@@ -121,11 +121,17 @@ object AbstractBindingDefDSL {
     }
   }
 
-  object SingletonRef {
-    def apply(initial: SingletonBinding[DIKey.TypeKey]): SingletonRef = new SingletonRef(initial, mutable.Queue.empty)
+  private final class MultiSetHackId(private val long: Long) extends AnyVal {
+    override def toString: String = long.toString
   }
 
-  final class SetRef(initial: EmptySetBinding[DIKey.TypeKey], setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty, elems: mutable.Queue[SetElementRef] = mutable.Queue.empty) extends BindingRef {
+  final class SetRef
+  (
+    initial: EmptySetBinding[DIKey.TypeKey]
+    , setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty
+    , elems: mutable.Queue[SetElementRef] = mutable.Queue.empty
+    , multiElems: mutable.Queue[MultiSetElementRef] = mutable.Queue.empty
+  ) extends BindingRef {
     override def interpret: Seq[Binding] = {
       val emptySetBinding = setOps.foldLeft(initial: EmptySetBinding[DIKey.BasicKey]) {
         (b, instr) =>
@@ -135,7 +141,12 @@ object AbstractBindingDefDSL {
           }
       }
 
-      emptySetBinding +: elems.map(_.interpret(emptySetBinding.key))
+      val finalKey = emptySetBinding.key
+
+      val elemBindings = elems.map(_.interpret(finalKey))
+      val multiSetBindings = multiElems.flatMap(_.interpret(finalKey))
+
+      emptySetBinding +: elemBindings ++: multiSetBindings
     }
 
     def appendElem(op: SetElementRef): SetRef = {
@@ -143,15 +154,15 @@ object AbstractBindingDefDSL {
       this
     }
 
-
     def appendOp(op: SetInstruction): SetRef = {
       setOps += op
       this
     }
-  }
 
-  object SetRef {
-    def apply(initial: EmptySetBinding[DIKey.TypeKey]): SetRef = new SetRef(initial, mutable.Queue.empty, mutable.Queue.empty)
+    def appendMultiElem(op: MultiSetElementRef): SetRef = {
+      multiElems += op
+      this
+    }
   }
 
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
@@ -169,11 +180,29 @@ object AbstractBindingDefDSL {
     }
   }
 
-  object SetElementRef {
-    def apply(implDef: ImplDef, pos: SourceFilePosition): SetElementRef = new SetElementRef(implDef, pos, ops = mutable.Queue.empty)
+  final class MultiSetElementRef(implDef: ImplDef.WithImplType, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
+    def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
+      val hopefullyRandomId = this.hashCode().toLong + implDef.hashCode().toLong << 32
+
+      val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, Set.empty, pos)
+
+      val refBind0 = SetElementBinding(setKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), Set.empty, pos)
+
+      val refBind = ops.foldLeft(refBind0) {
+        (b, op) =>
+          op match {
+            case MultiSetElementInstruction.MultiAddTags(tags) => b.addTags(tags)
+          }
+      }
+
+      Seq(bind, refBind)
+    }
+
+    def append(op: MultiSetElementInstruction): MultiSetElementRef = {
+      ops += op
+      this
+    }
   }
-
-
 
   sealed trait SingletonInstruction
 
@@ -203,6 +232,14 @@ object AbstractBindingDefDSL {
   object SetElementInstruction {
 
     final case class ElementAddTags(tags: Set[String]) extends SetElementInstruction
+
+  }
+
+  sealed trait MultiSetElementInstruction
+
+  object MultiSetElementInstruction {
+
+    final case class MultiAddTags(tags: Set[String]) extends MultiSetElementInstruction
 
   }
 
