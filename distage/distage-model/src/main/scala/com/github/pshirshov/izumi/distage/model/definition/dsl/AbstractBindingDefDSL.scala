@@ -29,14 +29,14 @@ trait AbstractBindingDefDSL {
     mutableState.flatMap(_.interpret)
   }
 
-  final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
-    val ref = registered(SingletonRef(Bindings.binding[T]))
-    _bindDSL[T](ref)
-  }
-
   private[definition] def registered[T <: BindingRef](bindingRef: T): T = {
     mutableState += bindingRef
     bindingRef
+  }
+
+  final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
+    val ref = registered(SingletonRef(Bindings.binding[T]))
+    _bindDSL[T](ref)
   }
 
   /**
@@ -91,10 +91,7 @@ trait AbstractBindingDefDSL {
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
     */
   final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
-    val setRef = SetRef(Bindings.emptySet[T])
-
-    mutableState += setRef
-
+    val setRef = registered(SetRef(Bindings.emptySet[T]))
     _setDSL(setRef)
   }
 
