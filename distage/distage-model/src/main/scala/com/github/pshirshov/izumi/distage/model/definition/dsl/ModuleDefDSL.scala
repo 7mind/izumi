@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.model.definition.dsl
 
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetImpl}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetIdFromImplName, SetId, SetImpl}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import com.github.pshirshov.izumi.distage.model.definition.{Id => _, _}
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
@@ -53,7 +53,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
   * @see [[Id]]
   */
 trait ModuleDefDSL
-  extends AbstractBindingDefDSL with IncludesDSL with TagsDSL {
+  extends AbstractBindingDefDSL[ModuleDefDSL.BindDSL, ModuleDefDSL.SetDSL] with IncludesDSL with TagsDSL {
   this: ModuleBase =>
 
   import AbstractBindingDefDSL._
@@ -66,13 +66,10 @@ trait ModuleDefDSL
       .++(asIsIncludes)
   }
 
-  override private[definition] type BindDSL[T] = ModuleDefDSL.BindDSL[T]
-  override private[definition] type SetDSL[T] = ModuleDefDSL.SetDSL[T]
-
-  override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T] =
+  override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): ModuleDefDSL.BindDSL[T] =
     new ModuleDefDSL.BindDSL[T](ref, ref.key)
 
-  override private[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T] =
+  override private[definition] def _setDSL[T: Tag](ref: SetRef): ModuleDefDSL.SetDSL[T] =
     new ModuleDefDSL.SetDSL[T](ref)
 
   /**
@@ -98,6 +95,9 @@ object ModuleDefDSL {
 
     def named(name: String): BindNamedDSL[T] =
       addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
+
+    def namedByImpl: BindNamedDSL[T] =
+      addOp(SetIdFromImplName())(new BindNamedDSL[T](_, key.named(key.toString)))
 
     def tagged(tags: String*): BindDSL[T] =
       addOp(AddTags(Set(tags: _*))) {
@@ -129,7 +129,6 @@ object ModuleDefDSL {
 
     def todo(implicit pos: CodePositionMaterializer): Unit = {
       val provider = ProviderMagnet.todoProvider(key)(pos).get
-
       addOp(SetImpl(ImplDef.ProviderImpl(provider.ret, provider)))(_ => ())
     }
 
@@ -269,7 +268,7 @@ object ModuleDefDSL {
       * }}}
       *
       * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
-      **/
+      */
     final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
 

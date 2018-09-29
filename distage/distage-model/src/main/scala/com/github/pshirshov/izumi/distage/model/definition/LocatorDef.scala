@@ -1,13 +1,12 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.AbstractLocator
-import com.github.pshirshov.izumi.distage.model.{Locator, definition}
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.ImplDef.InstanceImpl
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.SetIdAll
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{SetId, SetImpl}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import com.github.pshirshov.izumi.distage.model.plan._
@@ -15,21 +14,19 @@ import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.model.{Locator, definition}
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable
 
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we ARE able to unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
 trait LocatorDef
-  extends AbstractLocator with AbstractBindingDefDSL {
+  extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.SetDSL] {
 
-  override private[definition] type BindDSL[T] = LocatorDef.BindDSL[T]
-  override private[definition] type SetDSL[T] = LocatorDef.SetDSL[T]
-
-  override private[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): BindDSL[T] =
+  override private[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)
 
-  override private[definition] def _setDSL[T: RuntimeDIUniverse.Tag](ref: SetRef): SetDSL[T] =
+  override private[definition] def _setDSL[T: RuntimeDIUniverse.Tag](ref: SetRef): LocatorDef.SetDSL[T] =
     new definition.LocatorDef.SetDSL[T](ref)
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty

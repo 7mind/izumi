@@ -3,21 +3,17 @@ package com.github.pshirshov.izumi.distage.model.definition.dsl
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetImpl}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonRef}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, Bindings, ImplDef}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Tag, IdContract}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable
 
-trait AbstractBindingDefDSL {
+trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
-
-  private[definition] type BindDSL[T]
-
-  private[definition] type SetDSL[T]
 
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
@@ -112,6 +108,7 @@ object AbstractBindingDefDSL {
             case SetImpl(implDef) => b.withImplDef(implDef)
             case AddTags(tags) => b.addTags(tags)
             case s: SetId[_] => b.withTarget(DIKey.IdKey(b.key.tpe, s.id)(s.idContract))
+            case _: SetIdFromImplName => b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tpe.toString.toLowerCase))
           }
       }
     )
@@ -188,6 +185,7 @@ object AbstractBindingDefDSL {
 
     final case class SetId[I](id: I)(implicit val idContract: IdContract[I]) extends SingletonInstruction
 
+    final case class SetIdFromImplName() extends SingletonInstruction
   }
 
   sealed trait SetInstruction

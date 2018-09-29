@@ -30,6 +30,9 @@ class DSLTest extends WordSpec {
           .add(new Impl2())
         many[JustTrait].named("named.set")
           .add[Impl3]
+
+        make[TestDependency0].namedByImpl.from[TestImpl0]
+        make[TestDependency0].namedByImpl
       }
 
       assert(definition != null)

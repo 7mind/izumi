@@ -73,13 +73,14 @@ object BasicCases {
     class TestClass
     (
       @Id("named.test.dependency.0") val fieldArgDependency: TestDependency0
+      , @Id("com.github.pshirshov.izumi.distage.fixtures.basiccases.basiccase2.testdependency0") val fieldArgDependencyAutoname: TestDependency0
       , @Id("named.test") argDependency: TestInstanceBinding
     ) {
       val x = argDependency
       val y = fieldArgDependency
 
       def correctWired(): Boolean = {
-        fieldArgDependency.boom() == 1
+        fieldArgDependency.boom() == 1 && fieldArgDependencyAutoname.boom() == 1 && (fieldArgDependency ne fieldArgDependencyAutoname)
       }
     }
 
