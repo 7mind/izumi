@@ -2,6 +2,8 @@ package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.AbstractLocator
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleDefDSL.SetInstruction.SetIdAll
+import com.github.pshirshov.izumi.distage.model.definition.AbstractModuleDefDSL.SingletonInstruction.{SetId, SetImpl}
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.ImplDef.InstanceImpl
 import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
@@ -10,7 +12,6 @@ import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable
@@ -76,98 +77,52 @@ object LocatorDef {
 
   // DSL state machine
 
-  final class BindDSL[T]
-  (
-    protected val mutableState: SingletonRef
-    , protected val binding: SingletonBinding[DIKey.TypeKey]
-  ) extends BindDSLMutBase[T] {
-
+  final class BindDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.TypeKey) extends BindDSLMutBase[T] {
     def named(name: String): BindNamedDSL[T] =
-      replace(binding.copy(key = binding.key.named(name), tags = binding.tags)) {
-        new BindNamedDSL[T](mutableState, _)
-      }
-
+      addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
   }
 
-  final class BindNamedDSL[T]
-  (
-    protected val mutableState: SingletonRef
-    , protected val binding: Binding.SingletonBinding[DIKey]
-  ) extends BindDSLMutBase[T]
+  final class BindNamedDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey) extends BindDSLMutBase[T]
 
   sealed trait BindDSLMutBase[T] extends BindDSLBase[T, Unit] {
     protected def mutableState: SingletonRef
 
-    protected val binding: SingletonBinding[DIKey]
-
-    protected def replace[B <: Binding, S](newBinding: B)(newState: B => S): S = {
-      mutableState.ref = newBinding
-      newState(newBinding)
-    }
+    protected def key: DIKey
 
     override protected def bind(impl: ImplDef): Unit =
-      replace(binding.withImpl(impl))(_ => ())
-  }
+      addOp(SetImpl(impl))(_ => ())
 
-  final case class IdentSet[+D <: DIKey](key: D, tags: Set[String], pos: SourceFilePosition) {
-    def sameIdent(binding: Binding): Boolean =
-      key == binding.key && tags == binding.tags
-  }
+    protected def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
+      mutableState.ops += op
 
-  final class SetDSL[T]
-  (
-    protected val mutableState: SetRef
-    , protected val identifier: IdentSet[DIKey.TypeKey]
-  ) extends SetDSLMutBase[T] {
-
-    def named(name: String): SetNamedDSL[T] =
-      replaceIdent(identifier.copy(key = identifier.key.named(name))) {
-        new SetNamedDSL(mutableState, _)
-      }
-
-  }
-
-  final class SetNamedDSL[T]
-  (
-    protected val mutableState: SetRef
-    , protected val identifier: IdentSet[DIKey]
-  ) extends SetDSLMutBase[T]
-
-  final class SetElementDSL[T]
-  (
-    protected val mutableState: SetRef
-    , protected val mutableCursor: SingletonRef
-    , protected val identifier: IdentSet[DIKey]
-  ) extends SetElementDSLMutBase[T]
-
-  sealed trait SetElementDSLMutBase[T] extends SetDSLMutBase[T] {
-    protected val mutableCursor: SingletonRef
-
-    protected def replaceCursor(newBindingCursor: Binding): SetElementDSL[T] = {
-      mutableCursor.ref = newBindingCursor
-
-      new SetElementDSL[T](mutableState, mutableCursor, identifier)
+      newState(mutableState)
     }
   }
+
+  final class SetDSL[T](protected val mutableState: SetRef) extends SetDSLMutBase[T] {
+    def named(name: String): SetNamedDSL[T] =
+      addOp(SetIdAll(name))(new SetNamedDSL(_))
+  }
+
+  final class SetNamedDSL[T](protected val mutableState: SetRef) extends SetDSLMutBase[T]
+
+  final class SetElementDSL[T](protected val mutableState: SetRef) extends SetDSLMutBase[T]
 
   sealed trait SetDSLMutBase[T] extends SetDSLBase[T, SetElementDSL[T]] {
     protected def mutableState: SetRef
 
-    protected def identifier: IdentSet[DIKey]
+    protected def addOp[R](op: SetInstruction)(nextState: SetRef => R): R = {
+      mutableState.setOps += op
 
-    protected def replaceIdent[D <: IdentSet[DIKey], S](newIdent: D)(nextState: D => S): S = {
-      mutableState.all.foreach(r => r.ref = r.ref.withTarget(newIdent.key))
-
-      nextState(newIdent)
+      nextState(mutableState)
     }
 
     override protected def appendElement(newElement: ImplDef)(implicit pos: CodePositionMaterializer): SetElementDSL[T] = {
-      val newBinding: Binding = SetElementBinding(identifier.key, newElement)
-      val mutableCursor = SingletonRef(newBinding)
+      val mutableCursor = SetElementRef(newElement, pos.get.position)
 
-      mutableState.all += mutableCursor
+      mutableState.elems += mutableCursor
 
-      new SetElementDSL[T](mutableState, mutableCursor, identifier)
+      new SetElementDSL[T](mutableState)
     }
   }
 

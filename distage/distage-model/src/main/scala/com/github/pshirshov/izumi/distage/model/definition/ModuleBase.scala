@@ -5,7 +5,6 @@ import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
 import scala.collection.immutable.ListSet
-import scala.collection.mutable
 
 trait ModuleBase {
   def bindings: Set[Binding]

@@ -172,7 +172,6 @@ class TagTest extends WordSpec with X[String] {
       assert(TagTK[Id1].tag.tpe.toString.contains(".Id1"))
     }
 
-    // TODO: check errors on by commenting args in this
     "Assemble from higher than TagKK tags" in {
       def tag[T[_[_], _]: TagTK, F[_]: TagK, A: Tag] = Tag[T[F, A]]
 

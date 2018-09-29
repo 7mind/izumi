@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.fundamentals.tags
 
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 object TagExpr {

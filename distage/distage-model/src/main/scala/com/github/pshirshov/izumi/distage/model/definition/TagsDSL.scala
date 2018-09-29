@@ -9,10 +9,11 @@ trait TagsDSL {
 
   protected def _initialTags: mutable.Set[String] = mutable.HashSet.empty
 
+  final protected[definition] def frozenTags: Set[String] = mutableTags.toSet
+
   /** Add `tags` to all bindings in this module, except [[IncludesDSL#include included]] bindings */
   final protected def tag(tags: String*): Unit = discard {
     mutableTags ++= tags
   }
 
-  def frozenTags: Set[String] = mutableTags.toSet
 }
