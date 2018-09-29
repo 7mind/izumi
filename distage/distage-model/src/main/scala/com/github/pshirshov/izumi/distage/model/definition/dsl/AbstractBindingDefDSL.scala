@@ -15,17 +15,17 @@ import scala.collection.mutable
 trait AbstractBindingDefDSL {
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
 
-  protected[definition] type BindDSL[T]
+  private[definition] type BindDSL[T]
 
-  protected[definition] type SetDSL[T]
+  private[definition] type SetDSL[T]
 
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
-  protected[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T]
+  private[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T]
 
-  protected[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T]
+  private[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T]
 
-  protected[definition] def frozenState: Seq[Binding] = {
+  private[definition] def frozenState: Seq[Binding] = {
     mutableState.flatMap(_.interpret)
   }
 
@@ -34,7 +34,7 @@ trait AbstractBindingDefDSL {
     _bindDSL[T](ref)
   }
 
-  protected[definition] def registered[T <: BindingRef](bindingRef: T): T = {
+  private[definition] def registered[T <: BindingRef](bindingRef: T): T = {
     mutableState += bindingRef
     bindingRef
   }

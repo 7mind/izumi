@@ -66,13 +66,13 @@ trait ModuleDefDSL
       .++(asIsIncludes)
   }
 
-  override protected[definition] type BindDSL[T] = ModuleDefDSL.BindDSL[T]
-  override protected[definition] type SetDSL[T] = ModuleDefDSL.SetDSL[T]
+  override private[definition] type BindDSL[T] = ModuleDefDSL.BindDSL[T]
+  override private[definition] type SetDSL[T] = ModuleDefDSL.SetDSL[T]
 
-  override protected[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T] =
+  override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T] =
     new ModuleDefDSL.BindDSL[T](ref, ref.initial.key)
 
-  override protected[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T] =
+  override private[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T] =
     new ModuleDefDSL.SetDSL[T](ref)
 
   /**

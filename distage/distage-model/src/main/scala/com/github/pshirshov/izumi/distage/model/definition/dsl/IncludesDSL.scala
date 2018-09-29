@@ -10,8 +10,8 @@ trait IncludesDSL {
   final private[this] val mutableRetaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = _initialTaggedIncludes
   final private[this] val mutableAsIsIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
 
-  final protected[definition] def retaggedIncludes: List[Binding] = mutableRetaggedIncludes.flatMap(_.bindings).toList
-  final protected[definition] def asIsIncludes: List[Binding] = mutableAsIsIncludes.flatMap(_.bindings).toList
+  final private[definition] def retaggedIncludes: List[Binding] = mutableRetaggedIncludes.flatMap(_.bindings).toList
+  final private[definition] def asIsIncludes: List[Binding] = mutableAsIsIncludes.flatMap(_.bindings).toList
 
   protected def _initialIncludes: mutable.ArrayBuffer[Include] = mutable.ArrayBuffer.empty
   protected def _initialTaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = mutable.ArrayBuffer.empty
