@@ -350,22 +350,22 @@ object ModuleDefDSL {
     final def add[I <: T : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ProviderImpl(f.get.ret, f.get))
 
-    final def ref[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
+    final def refSet[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
-    final def ref[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
+    final def refSet[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
 
-    final def weak[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
+    final def weakSet[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true))
 
-    final def weak[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
+    final def weakSet[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true))
 
-    final def add[I <: Set[_ <: T] : Tag](instance: I)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterMultiAdd =
+    final def addSet[I <: Set[_ <: T] : Tag](instance: I)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterMultiAdd =
       multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
-    final def add[I <: Set[_ <: T] : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterMultiAdd =
+    final def addSet[I <: Set[_ <: T] : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterMultiAdd =
       multiSetAdd(ImplDef.ProviderImpl(f.get.ret, f.get))
 
     protected def multiSetAdd(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterMultiAdd
