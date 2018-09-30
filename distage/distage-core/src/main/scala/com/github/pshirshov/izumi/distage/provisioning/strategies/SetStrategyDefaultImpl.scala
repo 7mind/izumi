@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{IncompatibleTypesException, MissingRefException, SanityCheckFailedException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{IncompatibleTypesException, MissingRefException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.SetStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}

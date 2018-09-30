@@ -204,7 +204,7 @@ object ModuleDefDSL {
       new SetElementDSL[T](mutableState.appendElem(mutableCursor), mutableCursor)
     }
 
-    override protected def multiSetAdd(newElements: ImplDef.WithImplType)(implicit pos: CodePositionMaterializer): MultiSetElementDSL[T] = {
+    override protected def multiSetAdd(newElements: ImplDef)(implicit pos: CodePositionMaterializer): MultiSetElementDSL[T] = {
       val mutableCursor = new MultiSetElementRef(newElements, pos.get.position)
       new MultiSetElementDSL[T](mutableState.appendMultiElem(mutableCursor), mutableCursor)
     }
@@ -368,14 +368,9 @@ object ModuleDefDSL {
     final def add[I <: Set[_ <: T] : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterMultiAdd =
       multiSetAdd(ImplDef.ProviderImpl(f.get.ret, f.get))
 
-    protected def multiSetAdd(newImpl: ImplDef.WithImplType)(implicit pos: CodePositionMaterializer): AfterMultiAdd
+    protected def multiSetAdd(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterMultiAdd
 
     protected def appendElement(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterAdd
   }
 
 }
-
-
-
-
-

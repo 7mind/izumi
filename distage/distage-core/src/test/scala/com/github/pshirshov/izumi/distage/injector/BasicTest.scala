@@ -266,12 +266,12 @@ class BasicTest extends WordSpec with MkInjector {
   "handle set inclusions" in {
     val definition = new ModuleDef {
       make[Set[Int]].named("x").from(Set(1, 2, 3))
-      make[Set[Int]].named("y").from(Set(3, 4, 5))
+      make[Set[Int]].named("y").from(Set(4, 5, 6))
       many[Int].ref[Set[Int]]("x")
       many[Int].ref[Set[Int]]("y")
 
-//      make[Set[None.type]].from(Set(None))
-//      many[Option[Int]].ref[Set[None.type]]
+      make[Set[None.type]].from(Set(None))
+      many[Option[Int]].ref[Set[None.type]]
     }
 
     val context = Injector().produce(definition)

@@ -180,7 +180,7 @@ object AbstractBindingDefDSL {
     }
   }
 
-  final class MultiSetElementRef(implDef: ImplDef.WithImplType, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
+  final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
       val hopefullyRandomId = this.hashCode().toLong + implDef.hashCode().toLong << 32
 
