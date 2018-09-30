@@ -272,12 +272,12 @@ lazy val logstageApiBaseMacro = inLogStage.as.module
     )
   )
 
-lazy val logstage = inLogStage.as.module
+lazy val logstageCore = inLogStage.as.module
   .depends(logstageApiBaseMacro)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
-    logstage
+    logstageCore
     , distageModel
   )
   .dependsSeq(Seq(
@@ -285,13 +285,13 @@ lazy val logstageDi = inLogStage.as.module
   ).map(_.testOnlyRef))
 
 lazy val logstageConfig = inLogStage.as.module
-  .depends(fundamentalsTypesafeConfig, logstage)
+  .depends(fundamentalsTypesafeConfig, logstageCore)
 
 lazy val logstageConfigDi = inLogStage.as.module
   .depends(logstageConfig, distageConfig)
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
-  .depends(logstage)
+  .depends(logstageCore)
   .settings(
     libraryDependencies += R.slf4j_api
     , compileOrder in Compile := CompileOrder.Mixed
@@ -299,13 +299,13 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
   )
 
 lazy val logstageRenderingCirce = inLogStage.as.module
-  .depends(logstage)
+  .depends(logstageCore)
   .settings(libraryDependencies ++= Seq(R.circe).flatten)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApiBase)
   .dependsSeq(Seq(
-    logstage
+    logstageCore
   ).map(_.testOnlyRef))
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 //-----------------------------------------------------------------------------
@@ -336,7 +336,7 @@ lazy val idealinguaCore = inIdealingua.as.module
   .settings(ShadingSettings)
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpcScala, logstage, logstageAdapterSlf4j)
+  .depends(idealinguaRuntimeRpcScala, logstageCore, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(libraryDependencies ++= R.http4s_all ++ R.java_websocket)
 
@@ -374,7 +374,7 @@ lazy val sbtTests = inSbt.as
   .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
-  logstage
+  logstageCore
   , logstageDi
   , logstageSinkSlf4j
   , logstageAdapterSlf4j
