@@ -46,10 +46,3 @@ import com.github.pshirshov.izumi.distage.model.definition.dsl.ModuleDefDSL
   * @see [[ModuleDefDSL]]
   */
 trait ModuleDef extends Module with ModuleDefDSL
-
-object ModuleDef {
-  implicit val moduleDefApi: ModuleMake[ModuleDef] = b =>
-    new ModuleDef {
-      override val bindings: Set[Binding] = b
-    }
-}

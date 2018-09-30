@@ -158,8 +158,9 @@ class DSLTest extends WordSpec {
       assert(combinedModules == complexModule)
     }
 
-    "progression test: currently can't allow operations between objects of ModuleDef" in {
+    "allow operations between objects of ModuleDef" in {
       import BasicCase1._
+
       object mod1 extends ModuleDef {
         make[TestClass]
       }
@@ -167,7 +168,20 @@ class DSLTest extends WordSpec {
         make[TestDependency0]
       }
 
-      assertTypeError("mod1 ++ mod2")
+      mod1 ++ mod2
+    }
+
+    "allow operations between subclasses of ModuleDef" in {
+      import BasicCase1._
+
+      class mod1 extends ModuleDef {
+        make[TestClass]
+      }
+      class mod2 extends ModuleDef {
+        make[TestDependency0]
+      }
+
+      val _: Module = new mod1 ++ new mod2
     }
 
     "support allTags" in {

@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLCyclicInheritan
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, Field, SimpleStructure, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, SimpleStructure, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Issue.{AmbigiousAdtMember, CyclicUsage}
 
 import scala.collection.mutable
@@ -172,7 +172,7 @@ class TypespaceVerifier(ts: Typespace) {
       case d: Adt =>
         d.alternatives.map(_.typeId).filterNot(_.isInstanceOf[Builtin]).foreach(checkField)
 
-      case d: Alias =>
+      case _: Alias =>
         Seq.empty
     }
   }

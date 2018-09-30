@@ -7,7 +7,6 @@ import cats.implicits._
 import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
-import io.circe.{DecodingFailure, ParsingFailure}
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
