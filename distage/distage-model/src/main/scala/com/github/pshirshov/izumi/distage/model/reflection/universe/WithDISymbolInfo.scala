@@ -9,9 +9,16 @@ trait WithDISymbolInfo {
 
   trait SymbolInfo {
     def name: String
+
     def finalResultType: SafeType
-    def annotations: List[u.Annotation]
+
     def definingClass: SafeType
+
+    def isByName: Boolean
+
+    def annotations: List[u.Annotation]
+
+    //def typeSignatureArgs: List[SymbolInfo]
 
     override def toString: String = name
   }
@@ -19,13 +26,18 @@ trait WithDISymbolInfo {
   protected def typeOfDistageAnnotation: SafeType
 
   object SymbolInfo {
+
     /**
-    * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
-    **/
+      * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
+      **/
     case class Runtime(underlying: Symb, definingClass: SafeType, annotations: List[u.Annotation]) extends SymbolInfo {
       override val name: String = underlying.name.toTermName.toString
 
       override val finalResultType: SafeType = SafeType(underlying.typeSignatureIn(definingClass.tpe).finalResultType)
+
+      override def isByName: Boolean = underlying.isTerm && underlying.asTerm.isByNameParam
+
+      //override def typeSignatureArgs: List[SymbolInfo] = underlying.typeSignature.typeArgs.map(_.typeSymbol).map(s => Runtime(s, definingClass))
     }
 
     object Runtime {
@@ -38,10 +50,15 @@ trait WithDISymbolInfo {
       }
     }
 
-    case class Static(name: String, finalResultType: SafeType, annotations: List[u.Annotation], definingClass: SafeType) extends SymbolInfo
+    case class Static(
+                       name: String
+                       , finalResultType: SafeType
+                       , annotations: List[u.Annotation]
+                       , definingClass: SafeType
+                       , isByName: Boolean
+                     ) extends SymbolInfo
 
-    def apply(symb: Symb, definingClass: SafeType): SymbolInfo =
-      Runtime(symb, definingClass)
+    def apply(symb: Symb, definingClass: SafeType): SymbolInfo = Runtime(symb, definingClass)
 
     implicit final class SymbolInfoExtensions(symbolInfo: SymbolInfo) {
       def findAnnotation(annType: SafeType): Option[u.Annotation] = {
@@ -59,5 +76,7 @@ trait WithDISymbolInfo {
         symbolInfo.findAnnotation(annType)
       }
     }
+
   }
+
 }

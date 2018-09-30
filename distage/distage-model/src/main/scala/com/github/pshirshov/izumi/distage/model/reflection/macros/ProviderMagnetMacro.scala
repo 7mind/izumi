@@ -159,6 +159,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
           , tpe
           , AnnotationTools.getAllTypeAnnotations(u)(tpe.tpe)
           , ret
+          , tpe.tpe.typeSymbol.isTerm && tpe.tpe.typeSymbol.asTerm.isByNameParam
         )
 
         keyProvider.associationFromParameter(symbol)
