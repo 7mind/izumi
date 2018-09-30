@@ -8,15 +8,13 @@ LogStage is a zero-cost structural logging framework.
 
 Key features:
 
-1. LogStage extracts structure out of your log messages. In compile time. For free.
-   So, you may write usual logging expressions but they may be automatically converted into meaningful JSON,
-2. LogStage uses macro code generation to extract logging context so it does not depend on reflection
-    and is cheaper than a typical framework in runtime,
+1. LogStage extracts structure from ordinary string interpolations in your log messages with zero changes to code.
+2. LogStage uses macros to extract log structure, its faster at runtime than typical reflective structural logging frameworks,
 3. Log contexts
-4. Console and File sinks included, File sink supports log rotation,
-5. Human-readable and JSON formatting included,
-6. Method-level logging granularity. You may configure `com.mycompany.Service.start` and `com.mycompany.Service.doSomething` independently,
-7. Slf4J adapters: you may stream all the logging made with Slf4J into LogStage router (as well you may route LogStage messages into slf4j but in a typical case you won't need it).
+4. Console, File and SLF4J sinks included, File sink supports log rotation,
+5. Human-readable output and JSON output included,
+6. Method-level logging granularity. Can configure methods `com.example.Service.start` and `com.example.Service.doSomething` independently,
+7. Slf4J adapters: route legacy Slf4J logs into LogStage router
 
 
 Overview
@@ -61,15 +59,15 @@ Dependencies
 ```scala
 val izumi_version = "$izumi.version$"
 // LogStage API, you need it to use the logger
-libraryDependencies += "com.github.pshirshov.izumi.r2" %% "logstage-api-logger" % izumi_version
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "logstage" % izumi_version
 
 // LogStage machinery
 libraryDependencies ++= Seq(
     // file sink
     "com.github.pshirshov.izumi.r2" %% "logstage-sink-file" % izumi_version
-    // json formatting
-    , "com.github.pshirshov.izumi.r2" %% "logstage-json-circe" % izumi_version
-    // adapter for Slf4J loggers
+    // json output
+    , "com.github.pshirshov.izumi.r2" %% "logstage-rendering-circe" % izumi_version
+    // router from Slf4j to LogStage
     , "com.github.pshirshov.izumi.r2" %% "logstage-adapter-slf4j" % izumi_version    
 )
 

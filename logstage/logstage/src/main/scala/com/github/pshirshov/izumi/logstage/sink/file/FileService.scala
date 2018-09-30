@@ -9,7 +9,8 @@ import com.github.pshirshov.izumi.logstage.sink.file.models.LogFile
 import scala.collection.JavaConverters._
 import scala.collection.concurrent
 import scala.util.Try
-trait FileService[File <:LogFile] {
+
+trait FileService[File <: LogFile] {
 
   val storage: concurrent.Map[FileIdentity, File] = new ConcurrentHashMap[FileIdentity, File]().asScala
 

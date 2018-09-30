@@ -199,10 +199,10 @@ For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshir
 
 ### Tagless Final Style with distage
 
-distage works well with tagless final style, for example, let's make [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
-more flexible, by making implicit instances explicit and configurable with distage.
+distage works well with tagless final style. As an example, let's take [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
+and make it safer and more flexible by replacing fragile wiring `import ._`'s with explicit modules.
 
-Fist, the program we want to write:
+First, the program we want to write:
 
 ```scala
 import cats.Monad
@@ -263,7 +263,7 @@ The program module is polymorphic and abstracted from its eventual monad, we can
 ```scala
 import cats.effect.IO
 
-val IOInterpreters = ???
+def IOInterpreters = ???
 val IOProgram = new Program[IO] ++ IOInterpreters
 ```
 
@@ -282,7 +282,7 @@ Or choose different interpreters at runtime:
 def chooseInterpreters(default: Boolean) = new Program[Try] ++ (if (default) TryInterpreters else DifferentTryInterpreters)
 ```
 
-Modules can be abstracted over arbitrary kinds – use `TagKK` to abstract over bifunctors:
+Modules can abstract over arbitrary kinds - use `TagKK` to abstract over bifunctors:
 
 ```scala
 class BIOModule[F[_, _]: TagKK] extends ModuleDef 
@@ -585,7 +585,7 @@ sbt -Dizumi.distage.debug.macro=true compile
 
 Macros power `distage-static` module, an alternative backend that doesn't use JVM runtime reflection to instantiate classes and auto-traits.
 
-### Extensions and Plan Rewriting – writing a distage extension
+### Extensions and Plan Rewriting - writing a distage extension
 
 ...
 
