@@ -4,14 +4,16 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import com.github.pshirshov.izumi.distage.model.util.Format
+import com.github.pshirshov.izumi.distage.model.util.Format._
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 object FormattingUtils {
 
-  def doFormat(target: DIKey, deps: Wiring, origin: Option[Binding]): String = {
+  def doFormat(target: DIKey, deps: Wiring, origin: Option[Binding]): Format = {
     val op = doFormat(deps)
     val pos = formatBindingPosition(origin)
-    s"$target $pos := $op"
+    Format("%s %s := %s", target, pos, op)
   }
 
   def formatBindingPosition(origin: Option[Binding]): String = {
@@ -21,13 +23,13 @@ object FormattingUtils {
   private def doFormat(deps: Wiring): String = {
     deps match {
       case Constructor(instanceType, associations) =>
-        doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'))
+        doFormat(instanceType.tpe.toString, associations.map(_.format).map(_.render()), "make", ('[', ']'), ('(', ')'))
 
       case AbstractSymbol(instanceType, associations) =>
-        doFormat(instanceType.tpe.toString, associations.map(_.format), "impl", ('[', ']'), ('{', '}'))
+        doFormat(instanceType.tpe.toString, associations.map(_.format).map(_.render()), "impl", ('[', ']'), ('{', '}'))
 
       case Function(instanceType, associations) =>
-        doFormat(instanceType.toString, associations.map(_.format), "call", ('(', ')'), ('{', '}'))
+        doFormat(instanceType.toString, associations.map(_.format).map(_.render()), "call", ('(', ')'), ('{', '}'))
 
       case FactoryMethod(factoryType, wireables, dependencies) =>
         val wirings = wireables.map {
@@ -35,7 +37,7 @@ object FormattingUtils {
             s"${w.factoryMethod}: ${w.factoryMethod.finalResultType} ~= ${doFormat(w.wireWith)}".shift(2)
         }
 
-        val depsRepr = dependencies.map(_.format)
+        val depsRepr = dependencies.map(_.format).map(_.render())
 
         doFormat(
           factoryType.toString
@@ -49,7 +51,7 @@ object FormattingUtils {
             s"${w.factoryMethod}[$idx]: ${w.factoryMethod.finalResultType} ~= ${doFormat(w.wireWith)}".shift(2)
         }.toSeq
 
-        val depsRepr = dependencies.map(_.format)
+        val depsRepr = dependencies.map(_.format).map(_.render())
 
         doFormat(
           factoryType.toString

@@ -8,6 +8,47 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
+import com.github.pshirshov.izumi.distage.model.util._
+
+trait PlanRenderer {
+  def render(strings: Seq[Format]): String
+}
+case class CompactPlanRenderer() extends PlanRenderer {
+  override def render(strings: Seq[Format]): String = {
+    val notUniqueClassNames = strings.flatMap(_.args)
+      .collect {
+        case DIKeyArg(value) => value.tpe.toString
+        case ClassArg(value) => value.getClass.toString
+      }
+      .groupBy(simpleName)
+      .map(p => (p._1, p._2.toSet))
+      .filter(_._2.size > 1).keys.toSet
+
+    val result = strings.map { s =>
+      val args = s.args.map {
+        case DIKeyArg(v) =>
+          if (notUniqueClassNames.contains(simpleName(v.tpe.toString)))
+            AnyArg(v.tpe.toString)
+          else
+            AnyArg(simpleName(v.tpe.toString))
+        case ClassArg(v) =>
+          if (notUniqueClassNames.contains(simpleName(v.getName)))
+            AnyArg(v.toString)
+          else
+            AnyArg(simpleName(v.getName))
+        case arg => arg
+      }
+
+      Format(s.format, args: _*)
+    }.map(_.render())
+
+    result.mkString("\n")
+  }
+
+  private def simpleName(value: String) = {
+    value.substring(value.lastIndexOf('.') + 1)
+  }
+}
 
 sealed trait AbstractPlan {
   def definition: ModuleBase
@@ -61,7 +102,9 @@ sealed trait AbstractPlan {
   }
 
   override def toString: String = {
-    steps.map(_.format).mkString("\n")
+    CompactPlanRenderer().render(steps.map(_.format))
+//    val result = steps.map(_.format).map(_.render())
+//    result.mkString("\n")
   }
 }
 
