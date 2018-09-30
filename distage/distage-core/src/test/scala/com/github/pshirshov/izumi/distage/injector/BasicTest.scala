@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, Id, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
@@ -289,7 +289,6 @@ class BasicTest extends WordSpec with MkInjector {
       many[Int].add(5)
 
       many[Int].add { i: Int => i - 1 }
-      many[Int].add { i: Int => i - 1 }
       many[Int].addSet {
         i: Int =>
           Set(i, i + 1, i + 2)
@@ -299,6 +298,20 @@ class BasicTest extends WordSpec with MkInjector {
     val context = Injector().produce(definition)
 
     assert(context.get[Set[Int]] == Set(1, 2, 3, 5, 6, 7, 8, 9))
+  }
+
+  "prserve tags in multi set bindings" in {
+
+    val definition = new ModuleDef {
+      many[Int].named("zzz")
+        .add(5).tagged("t3")
+        .addSet(Set(1, 2, 3)).tagged("t1", "t2")
+        .addSet(Set(1, 2, 3)).tagged("t3", "t4")
+    }
+
+    assert(definition.bindings.collectFirst {
+      case SetElementBinding(_, _, s, _) if s == Set("t1", "t2") => true
+    }.nonEmpty)
   }
 
 }
