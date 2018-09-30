@@ -7,9 +7,6 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.{OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-trait ProxyDispatcher {
-  def init(real: AnyRef): Unit
-}
 
 case class DeferredInit(dispatcher: ProxyDispatcher, proxy: AnyRef)
 

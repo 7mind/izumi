@@ -86,4 +86,9 @@ object CircularCases {
 
   }
 
+  object ByNameCycle {
+    class Circular1(arg: => Circular2)
+    class Circular2(arg: => Circular1)
+
+  }
 }

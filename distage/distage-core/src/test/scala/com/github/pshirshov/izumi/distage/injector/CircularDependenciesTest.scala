@@ -175,4 +175,21 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     assert(plan.steps.getClass == classOf[Vector[_]])
   }
 
+  "support by-name circular dependencies" in {
+    import ByNameCycle._
+
+    val definition: ModuleBase = new ModuleDef {
+      make[Circular2]
+      make[Circular1]
+    }
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    //println(plan)
+    val context = injector.produce(plan)
+
+    assert(context.get[Circular1] != null)
+    assert(context.get[Circular2] != null)
+  }
+
 }
