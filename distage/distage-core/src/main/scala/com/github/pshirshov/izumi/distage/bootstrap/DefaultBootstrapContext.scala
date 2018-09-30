@@ -13,6 +13,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvide
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
+import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CglibProxyProvider
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
@@ -83,9 +84,7 @@ object DefaultBootstrapContext {
   }
 
   final lazy val noCogen: BootstrapModule = new BootstrapModuleDef {
-    make[ProxyStrategy].from[ProxyStrategyFailingImpl]
-    make[FactoryStrategy].from[FactoryStrategyFailingImpl]
-    make[TraitStrategy].from[TraitStrategyFailingImpl]
+    make[ProxyProvider].from[ProxyProviderFailingImpl]
   }
 
   final lazy val defaultBootstrap: BootstrapModule = new BootstrapModuleDef {
@@ -96,10 +95,6 @@ object DefaultBootstrapContext {
 
     make[PlanningObserver].from[PlanningObserverDefaultImpl]
     make[LoggerHook].from[LoggerHookDefaultImpl]
-
-//    make[PlanningObserver].from[BootstrapPlanningObserver]
-//    make[LoggerHook].from[LoggerHookDebugImpl]
-//    make[TrivialLogger].from(new TrivialLoggerImpl(SystemOutStringTrivialSink))
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
@@ -117,11 +112,18 @@ object DefaultBootstrapContext {
     make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptorDefaultImpl]
     many[PlanningHook]
       .add[PlanningHookDefaultImpl]
+
+    make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
+    make[FactoryStrategy].from[FactoryStrategyDefaultImpl]
+    make[TraitStrategy].from[TraitStrategyDefaultImpl]
   }
 
   final lazy val noCogenBootstrap: BootstrapModule = defaultBootstrap ++ noCogen
 
   final lazy val noReflectionBootstrap: BootstrapModule = noCogenBootstrap overridenBy new BootstrapModuleDef {
     make[ClassStrategy].from[ClassStrategyFailingImpl]
+    make[ProxyStrategy].from[ProxyStrategyFailingImpl]
+    make[FactoryStrategy].from[FactoryStrategyFailingImpl]
+    make[TraitStrategy].from[TraitStrategyFailingImpl]
   }
 }

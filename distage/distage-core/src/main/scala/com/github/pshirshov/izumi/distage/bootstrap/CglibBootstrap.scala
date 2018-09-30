@@ -10,9 +10,6 @@ object CglibBootstrap {
 
   private final lazy val defaultCogen: ModuleBase = new ModuleDef {
     make[ProxyProvider].from[CglibProxyProvider.type]
-    make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
-    make[FactoryStrategy].from[FactoryStrategyDefaultImpl]
-    make[TraitStrategy].from[TraitStrategyDefaultImpl]
   }
 
 }

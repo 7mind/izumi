@@ -20,7 +20,7 @@ class ClassStrategyDefaultImpl
 
     val args = wiring.associations.map {
       key =>
-        context.fetchKey(key.wireWith) match {
+        context.fetchKey(key.wireWith, key.isByName) match {
           case Some(dep) =>
             dep
           case _ =>

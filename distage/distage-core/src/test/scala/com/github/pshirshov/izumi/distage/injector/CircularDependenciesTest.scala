@@ -8,8 +8,6 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDis
 import distage._
 import org.scalatest.WordSpec
 
-import scala.util.Try
-
 class CircularDependenciesTest extends WordSpec with MkInjector {
 
   "support circular dependencies" in {
@@ -43,6 +41,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val exc = intercept[ProvisioningException] {
       injector.produce(plan)
     }
+    exc.printStackTrace()
     assert(exc.getSuppressed.head.isInstanceOf[TraitInitializationFailedException])
     assert(exc.getSuppressed.head.getCause.isInstanceOf[RuntimeException])
   }
@@ -52,9 +51,10 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val definition: ModuleBase = new ModuleDef {
       make[Circular2].from { c: Circular1 => new Circular2(c) }
-      make[Circular1].from { c: Circular2 => new Circular1 {
-        override val arg: Circular2 = c
-      }
+      make[Circular1].from { c: Circular2 =>
+        new Circular1 {
+          override val arg: Circular2 = c
+        }
       }
     }
 
@@ -129,24 +129,21 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     assert(instance eq instance.self)
   }
 
-  "Progression test: Does not yet support by-name self-referencing circulars" in {
-    val fail = Try {
-      import CircularCase3._
+  "Support by-name self-referencing circulars" in {
+    import CircularCase3._
 
-      val definition = new ModuleDef {
-        make[ByNameSelfReference]
-      }
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produce(plan)
-
-      val instance = context.get[ByNameSelfReference]
-
-      assert(instance eq instance.self)
+    val definition = new ModuleDef {
+      make[ByNameSelfReference]
     }
 
-    assert(fail.isFailure)
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    println(plan)
+    val context = injector.produce(plan)
+
+    val instance = context.get[ByNameSelfReference]
+
+    assert(instance eq instance.self)
   }
 
   "Locator.instances returns instances in the order they were created in" in {
@@ -185,11 +182,18 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    //println(plan)
     val context = injector.produce(plan)
+
+    val x = new Circular1(null)
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)
+
+    assert(context.get[Circular1].isInstanceOf[Circular1])
+    assert(context.get[Circular2].isInstanceOf[Circular2])
+
+    assert(context.get[Circular1].test.isInstanceOf[Circular2])
+    assert(context.get[Circular2].test.isInstanceOf[Circular1])
   }
 
 }

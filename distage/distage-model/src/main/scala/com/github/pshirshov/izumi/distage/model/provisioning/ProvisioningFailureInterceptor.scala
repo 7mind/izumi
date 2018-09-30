@@ -51,9 +51,8 @@ class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInter
     val ccFailed = repr.size
     val ccDone = toImmutable.instances.size
     val ccTotal = plan.steps.size
-    val ccSkipped = ccTotal - ccDone - ccFailed
 
-    throw new ProvisioningException(s"Operations failed ($ccFailed failed, $ccDone done, $ccSkipped skipped, $ccTotal total): ${repr.niceList()}", null)
+    throw new ProvisioningException(s"Operations failed ($ccFailed failed, $ccTotal total, $ccDone instances produced): ${repr.niceList()}", null)
       .addAllSuppressed(failures.values.flatten)
   }
 

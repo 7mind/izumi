@@ -22,7 +22,7 @@ protected[distage] class CgLibTraitMethodInterceptor
     if (method.getParameterTypes.length == 0 && index.methods.contains(method)) {
       val wireWith = index.methods(method).wireWith
 
-      context.fetchKey(wireWith) match {
+      context.fetchKey(wireWith, byName = false) match {
         case Some(v) =>
           v.asInstanceOf[AnyRef]
 

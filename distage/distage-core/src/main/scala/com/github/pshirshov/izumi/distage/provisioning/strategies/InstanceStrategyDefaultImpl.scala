@@ -11,7 +11,7 @@ class InstanceStrategyDefaultImpl extends InstanceStrategy {
   }
 
   def getInstance(context: ProvisioningKeyProvider, op: WiringOp.ReferenceKey): Seq[OpResult] = {
-    context.fetchKey(op.wiring.key) match {
+    context.fetchKey(op.wiring.key, byName = false) match {
       case Some(value) =>
         Seq(OpResult.NewInstance(op.target, value))
 
