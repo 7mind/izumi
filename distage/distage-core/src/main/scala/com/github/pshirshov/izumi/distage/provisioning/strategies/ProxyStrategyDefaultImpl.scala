@@ -23,11 +23,10 @@ class ProxyStrategyDefaultImpl(
                               ) extends ProxyStrategy {
   def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(initProxy.target)
-    context.fetchKey(key, byName = true) match {
+    context.fetchUnsafe(key) match {
       case Some(adapter: ProxyDispatcher) =>
         executor.execute(context, initProxy.proxy.op).head match {
           case OpResult.NewInstance(_, instance) =>
-            println(s"Initializing $adapter @ ${adapter.getClass} with $instance")
             adapter.init(instance.asInstanceOf[AnyRef])
           case r =>
             throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r", Seq(r))
@@ -46,11 +45,9 @@ class ProxyStrategyDefaultImpl(
     val cogenNotRequired = allForwardRefsAreByName(makeProxy)
 
     val proxyInstance = if (cogenNotRequired) {
-      println(s"Cogen NOT required: $makeProxy")
       val proxy = new ByNameDispatcher(makeProxy.target)
       DeferredInit(proxy, proxy)
     } else {
-      println(s"Cogen required: $makeProxy")
       makeCogenProxy(context, tpe, makeProxy)
     }
 
@@ -81,13 +78,13 @@ class ProxyStrategyDefaultImpl(
               }
           }
 
-          val p = if (param.isByName) {
+          val parameterType = if (param.isByName) {
             import u._
             typeOf[() => Any]
           } else {
             param.wireWith.tpe.tpe
           }
-          (p, value)
+          (parameterType, value)
       }
 
       val argClasses = args.map(_._1).map(mirror.runtimeClass).toArray

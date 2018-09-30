@@ -3,11 +3,15 @@ package com.github.pshirshov.izumi.distage.provisioning
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ByNameDispatcher
 import com.github.pshirshov.izumi.distage.model.provisioning.{Provision, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 final case class LocatorContext(provision: Provision, locator: Locator) extends ProvisioningKeyProvider {
+
+  override def fetchUnsafe(key: universe.RuntimeDIUniverse.DIKey): Option[Any] = provision.get(key)
+
   override def fetchKey(key: RuntimeDIUniverse.DIKey, byName: Boolean): Option[Any] = {
-    provision.get(key).map {
+    fetchUnsafe(key).map {
       case dep: ByNameDispatcher if !byName =>
         dep.apply()
       case dep if !byName =>

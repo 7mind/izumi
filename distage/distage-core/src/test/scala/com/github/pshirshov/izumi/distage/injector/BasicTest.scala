@@ -32,7 +32,7 @@ class BasicTest extends WordSpec with MkInjector {
       injector.produce(plan)
     }
 
-    assert(exc.getMessage.startsWith("Operations failed (1 failed, 5 done, 3 skipped, 9 total)"))
+    assert(exc.getMessage.startsWith("Provisioner stopped after 5 instances, 1/9 operations failed"))
 
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}

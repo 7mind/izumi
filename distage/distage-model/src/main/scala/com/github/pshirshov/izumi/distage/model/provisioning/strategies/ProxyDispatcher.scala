@@ -24,7 +24,6 @@ class ByNameDispatcher(key: RuntimeDIUniverse.DIKey)
   override def apply(): Any = {
     Option(reference.get()) match {
       case Some(value) =>
-        println(s"Returning $value...")
         value
       case None =>
         throw new MissingRefException(s"By-Name proxy $key is not yet initialized", Set(key), None)

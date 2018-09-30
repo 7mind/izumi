@@ -7,3 +7,4 @@ trait ClassStrategy {
   def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[OpResult.NewInstance]
 
 }
+
