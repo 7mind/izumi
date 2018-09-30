@@ -12,7 +12,7 @@ object StaticDSL {
       dsl.from[I](AnyConstructor[I].provider)
   }
 
-  implicit final class MagicSetDSL[T, AfterAdd](private val dsl: SetDSLBase[T, AfterAdd]) extends AnyVal {
+  implicit final class MagicSetDSL[T, AfterAdd, AfterMultiAdd](private val dsl: SetDSLBase[T, AfterAdd, AfterMultiAdd]) extends AnyVal {
     def addStatic[I <: T: Tag: AnyConstructor]: AfterAdd =
       dsl.add[I](AnyConstructor[I].provider)
   }

@@ -119,7 +119,7 @@ object LocatorDef {
     }
 
     override protected def appendElement(newElement: ImplDef)(implicit pos: CodePositionMaterializer): SetElementDSL[T] = {
-      val mutableCursor = SetElementRef(newElement, pos.get.position)
+      val mutableCursor = new SetElementRef(newElement, pos.get.position)
       new SetElementDSL[T](mutableState.appendElem(mutableCursor))
     }
   }

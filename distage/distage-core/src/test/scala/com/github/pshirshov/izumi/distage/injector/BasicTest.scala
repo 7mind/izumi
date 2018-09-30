@@ -125,7 +125,6 @@ class BasicTest extends WordSpec with MkInjector {
     assert(context.get[TestClass]("named.test.class").correctWired())
   }
 
-
   "fail on unbindable" in {
     import BasicCase3._
 
@@ -262,4 +261,44 @@ class BasicTest extends WordSpec with MkInjector {
 
     assert(constructor.arguments.flatten.map(_.annotations).forall(_.nonEmpty))
   }
+
+  "handle set inclusions" in {
+    val definition = new ModuleDef {
+      make[Set[Int]].named("x").from(Set(1, 2, 3))
+      make[Set[Int]].named("y").from(Set(4, 5, 6))
+      many[Int].refSet[Set[Int]]("x")
+      many[Int].refSet[Set[Int]]("y")
+
+      make[Set[None.type]].from(Set(None))
+      make[Set[Some[Int]]].from(Set(Some(7)))
+      many[Option[Int]].refSet[Set[None.type]]
+      many[Option[Int]].refSet[Set[Some[Int]]]
+    }
+
+    val context = Injector().produce(definition)
+
+    assert(context.get[Set[Int]] == Set(1, 2, 3, 4, 5, 6))
+    assert(context.get[Set[Option[Int]]] == Set(None, Some(7)))
+  }
+
+  "handle multiple set element binds" in {
+    val definition = new ModuleDef {
+      make[Int].from(7)
+
+      many[Int].addSet(Set(1, 2, 3))
+      many[Int].add(5)
+
+      many[Int].add { i: Int => i - 1 }
+      many[Int].add { i: Int => i - 1 }
+      many[Int].addSet {
+        i: Int =>
+          Set(i, i + 1, i + 2)
+      }
+    }
+
+    val context = Injector().produce(definition)
+
+    assert(context.get[Set[Int]] == Set(1, 2, 3, 5, 6, 7, 8, 9))
+  }
+
 }
