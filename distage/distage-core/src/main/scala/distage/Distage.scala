@@ -8,7 +8,6 @@ import scala.language.higherKinds
 trait Distage {
 
   type ModuleDef = model.definition.ModuleDef
-
   type Injector = model.Injector
 
   type Tag[T] = RuntimeDIUniverse.Tag[T]
@@ -20,6 +19,12 @@ trait Distage {
   type Planner = model.Planner
   type Locator = model.Locator
   type Producer = model.Producer
+
+  type OrderedPlan = model.plan.OrderedPlan
+  val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
+  type SemiPlan = model.plan.SemiPlan
+  val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
+  type AbstractPlan = model.plan.AbstractPlan
 
   type Id = model.definition.Id
   type With[T] = model.definition.With[T]
@@ -39,6 +44,8 @@ trait Distage {
   val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
 
   type BootstrapModuleDef = model.definition.BootstrapModuleDef
+
+  type TracingGCModule = com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 
   type TagKK[T[_, _]] = RuntimeDIUniverse.TagKK[T]
   val TagKK: RuntimeDIUniverse.TagKK.type = RuntimeDIUniverse.TagKK
