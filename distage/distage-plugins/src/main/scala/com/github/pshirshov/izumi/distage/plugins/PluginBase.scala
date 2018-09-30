@@ -2,7 +2,9 @@ package com.github.pshirshov.izumi.distage.plugins
 
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, Module, ModuleMake}
 
-trait PluginBase extends Module
+trait PluginBase extends Module {
+  override type Self <: PluginBase
+}
 
 object PluginBase {
   def empty: PluginBase = make(Set.empty)

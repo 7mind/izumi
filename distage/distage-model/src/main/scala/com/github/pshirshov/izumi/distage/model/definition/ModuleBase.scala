@@ -9,6 +9,8 @@ import scala.collection.immutable.ListSet
 trait ModuleBase {
   def bindings: Set[Binding]
 
+  type Self <: ModuleBase
+
   override def equals(obj: scala.Any): Boolean = obj match {
     case that: ModuleBase => bindings == that.bindings
     case _ => false
@@ -20,21 +22,23 @@ trait ModuleBase {
 }
 
 object ModuleBase {
+  type Aux[S] = ModuleBase { type Self <: S }
+
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = s => new ModuleBase {
     override val bindings: Set[Binding] = s
   }
 
-  implicit final class ModuleDefSeqExt[T <: ModuleBase: ModuleMake](private val defs: Seq[T]) {
+  implicit final class ModuleDefSeqExt[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val defs: Seq[S])(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
     def merge: T = {
-      defs.reduceLeftOption[T](_ ++ _).getOrElse(ModuleMake[T].empty)
+      defs.foldLeft[T](T.empty)(_ ++ _)
     }
 
     def overrideLeft: T = {
-      defs.reduceOption[T](_ overridenBy _).getOrElse(ModuleMake[T].empty)
+      defs.foldLeft[T](T.empty)(_ overridenBy _)
     }
   }
 
-  implicit final class ModuleDefOps[T <: ModuleBase: ModuleMake](private val moduleDef: T) {
+  implicit final class ModuleDefOps[S <: ModuleBase, T <: ModuleBase.Aux[T]](val moduleDef: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
     def map(f: Binding => Binding): T = {
       ModuleMake[T].make(moduleDef.bindings.map(f))
     }
@@ -46,7 +50,8 @@ object ModuleBase {
     }
   }
 
-  implicit final class ModuleDefCombine[T <: ModuleBase](private val moduleDef: T)(implicit T: ModuleMake[T]) {
+  implicit final class ModuleDefCombine[S <: ModuleBase, T <: ModuleBase.Aux[T]](val moduleDef: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
+                                                                                                  // Order is important
     def ++(that: ModuleBase): T = {
       // TODO: a hack to support tag merging
 
@@ -114,6 +119,11 @@ object ModuleBase {
 
       T.make(modulewiseMerge(mergedSingletons, mergedSetOperations))
     }
+  }
+
+  private final class Lub[-A, -B, Out](private val dummy: Boolean = false) extends AnyVal
+  private object Lub {
+    implicit def lub[T]: Lub[T, T, T] = new Lub[T, T, T]
   }
 
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] =

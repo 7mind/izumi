@@ -35,8 +35,8 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C](list: Set[IRTWrappedService[R, C]
               R.fail(Right(exception))
             case Left(Nil) =>
               R.terminate(new IllegalStateException())
-            case Right(v) =>
-              R.terminate(v) // impossible case, v is Nothing, exhaustive match check fails
+            case Right(_) => // impossible case, v is Nothing, exhaustive match check fails
+              R.terminate(new IllegalStateException())
           }, {
             succ => R.point(succ)
           }

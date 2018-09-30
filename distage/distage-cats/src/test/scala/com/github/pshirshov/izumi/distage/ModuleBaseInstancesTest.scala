@@ -12,11 +12,11 @@ class ModuleBaseInstancesTest extends WordSpec {
     "allow monoidal operations between different types of binding dsls" in {
       import BasicCase1._
 
-      val mod1: Module = new ModuleDef {
+      val mod1 = new ModuleDef {
         make[TestClass]
       }
 
-      val mod2: Module = new ModuleDef {
+      val mod2 = new ModuleDef {
         make[TestCaseClass2]
       }
 

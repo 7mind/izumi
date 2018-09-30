@@ -3,6 +3,7 @@ package distage
 import com.github.pshirshov.izumi.distage.InjectorDefaultImpl
 import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, DefaultBootstrapContext}
 import com.github.pshirshov.izumi.distage.model.LocatorExtension
+import com.github.pshirshov.izumi.distage.model.definition.ModuleBase.ModuleDefSeqExt
 
 object Injector {
   def apply(): Injector = {
@@ -10,7 +11,7 @@ object Injector {
   }
 
   def apply(overrides: BootstrapModule*): Injector = {
-    bootstrap(overrides = overrides.merge)
+    bootstrap(overrides = new ModuleDefSeqExt[BootstrapModule, BootstrapModule](overrides).merge)
   }
 
   def noReflection: Injector = {

@@ -60,7 +60,7 @@ object ReflectionUtil {
   }
 
   /**
-    * This function is here to just just hide a warning comming from Annotation.apply.
+    * This function is here to just just hide a warning coming from Annotation.apply when macro is expanded.
     * Since c.reifyTree seems to have a bug whereby it injects empty TypeTrees when trying to reify an
     * annotation recovered from a symbol via the .annotations method, it doesn't seem possible to avoid
     * calling this method.
