@@ -42,11 +42,10 @@ class ClassStrategyDefaultImpl
     val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
     val refCtor = refClass.reflectConstructor(ctorSymbol)
 
-    val hasByName = ctorSymbol.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
-
     if (symbol.isModule) { // don't re-instantiate scala objects
       refUniverse.reflectModule(symbol.asModule).instance
     } else {
+      val hasByName = ctorSymbol.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
       if (hasByName) { // this is a dirty workaround for crappy logic in JavaTransformingMethodMirror
         mkJava(targetType, args)
       } else {
