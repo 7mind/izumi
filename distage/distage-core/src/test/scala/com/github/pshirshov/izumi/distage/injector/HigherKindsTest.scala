@@ -14,7 +14,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
 
     case class Definition[F[_] : TagK : Pointed](getResult: Int) extends ModuleDef {
       // TODO: hmmm, what to do with this
-      make[Pointed[F]].from(Pointed[F])
+      addImplicit[Pointed[F]]
 
       make[TestTrait].from[TestServiceClass[F]]
       make[TestServiceClass[F]]

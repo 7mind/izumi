@@ -15,6 +15,7 @@ import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMerge
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import com.github.pshirshov.test.testapp._
 import com.typesafe.config.ConfigFactory
@@ -66,7 +67,7 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator, ApplicationBootstrapS
       }
 
       override def router(): LogRouter = {
-        IzLogger.router(IzLogger.Level.Trace, Map.empty, testSink)
+        ConfigurableLogRouter(IzLogger.Level.Trace, testSink)
       }
     }
   }

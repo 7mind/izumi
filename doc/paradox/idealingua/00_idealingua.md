@@ -11,8 +11,6 @@ IdeaLingua is an RPC framework & Domain Modeling Language, it's purpose is to:
 * Abstract irrelevant details such as network protocol and serialization format.
 * Deliver our souls from REST and its brittle boilerplate.
 
-If that sounds like just what you need, check out our examples:
-
 ## User Service Example
 
 Example definition of a user database service:

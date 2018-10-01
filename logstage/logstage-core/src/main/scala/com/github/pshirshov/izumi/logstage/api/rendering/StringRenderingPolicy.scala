@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.logstage.api.rendering
 
-import java.awt.GraphicsEnvironment
 import java.util.regex.Pattern
 
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
@@ -17,7 +16,7 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
       options.withColors &&
         System.getProperty("izumi.logstage.rendering.colored").asBoolean(true)
       ) &&
-      !GraphicsEnvironment.isHeadless
+      !java.awt.GraphicsEnvironment.isHeadless // FIXME
   }
 
   private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse(StringRenderingPolicy.defaultMessageLayout))

@@ -10,7 +10,7 @@ class LoggingAsyncSinkTest extends WordSpec {
       val testSink = new TestSink()
       val asyncConsoleSinkJson = new QueueingSink(testSink)
       try {
-        new ExampleService(IzLogger.basic(IzLogger.Level.Trace, asyncConsoleSinkJson)).work()
+        new ExampleService(IzLogger(IzLogger.Level.Trace, asyncConsoleSinkJson)).work()
         assert(testSink.fetch().isEmpty)
         asyncConsoleSinkJson.start()
       } finally {

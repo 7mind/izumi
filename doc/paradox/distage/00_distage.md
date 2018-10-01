@@ -236,7 +236,7 @@ import distage._
 class Program[F[_]: TagK: Monad] extends ModuleDef {
   make[TaglessProgram[F]]
 
-  make[Monad[F]].from(Monad[F])
+  addImplicit[Monad[F]]
 }
 
 class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
@@ -392,7 +392,7 @@ example of explicitly splitting effectful and pure instantiations:
 ```scala
 import distage._
 import distage.config._
-import com.typesafe.config._
+import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
@@ -451,6 +451,75 @@ val main: Future[Unit] = initializers.run {
 Await.result(main, Duration.Inf)
 ```
 
+Effectful instantiation is not recommended in general. A rule of thumb is:
+if a class and its dependencies are stateless, and can be replaced by a global `object`, it's ok to inject them with  `distage`.
+
+### Inner Classes and Path-Dependent Types
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
+You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/221
+
+### Implicits Injection
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
+Implicits are not injected from lexical scope, they have to be declared inside a `Module` like any other class.
+
+```scala
+import cats.Monad
+import distage._
+import scalaz.zio.IO
+import scalaz.zio.interop.catz._
+
+object IOMonad extends ModuleDef {
+  addImplicit[Monad[IO[Throwable, ?]]]
+}
+```
+
+If they were, then any binding of a class that depends on an implicit instance, would have to import an *implementation*
+of that implicit instance:
+ 
+```
+import cats._
+import distage._
+
+class KVStore[F[_]: Monad, V] {
+  def fetch(key: String): F[V]
+}
+
+val kvstoreModule = new ModuleDef {
+  // We DON'T want this import to be necessary
+  // import cats.instances.either._
+
+  make[KVStore[Either[Error, ?]].from[KVStoreEitherImpl]
+}
+
+// Instead, specify implicits explicitly
+val eitherMonadModule = new ModuleDef {
+  // Ok to import here
+  import cats.instances.either._
+  
+  addImplicit[Monad[Either[Error, ?]]]
+}
+
+val all = kvstoreMOdule ++ eitherMonadModule
+```
+ 
+Depending on implementations is unmodular and directly contradicts the idea of using a dedicated module system
+in the first place. 
+
+Instead, `distage` opts for explicit management of implicits, as when they appear in application-level scope as module
+dependencies, they should be treated like any other module.
+
+Obviously, implicits obey the usual lexical scope in application code, provider bindings, derivations, etc, etc.
+
+You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/230
+
 ### Auto-Traits & Auto-Factories
 
 ...
@@ -461,10 +530,29 @@ Await.result(main, Duration.Inf)
 
 ...
 
-### Depending on future values with by-name parameters
+### Depending on Locator
 
-=> Locator
+Classes can depend on the Locator:
 
+```scala
+import distage._
+
+class A(all: LocatorRef) {
+  def c = all.get.get[C]
+}
+class B
+class C
+
+val module = new ModuleDef {
+  make[A]; make[B]; make[C]
+}
+
+val locator = Injector().produce(module)
+
+assert(locator.get[A].c eq locator.get[C]) 
+```
+
+It's recommended to avoid this if possible, doing so is often a sign of broken application design.
 
 ### Ensuring service boundaries using API modules
 
@@ -590,11 +678,11 @@ class Test extends DistageSpec {
 }
 ```
 
-### Fixtures and utilities
-
-...
-
 ### Static Configurations
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
 
 ...
 
@@ -652,10 +740,6 @@ If class `B` were to depend on `C` as in `case class B(c: C)`, it would've been 
 GC serves two important purposes:
 * it enables faster [tests](#test-kit) by omitting unneeded instantiations,
 * and it enables multiple separate applications, "[Roles](#roles)" to be hosted within a single `.jar`.
-
-### Implicits Injection
-
-...
 
 ### Compile-Time Checks
 
@@ -740,7 +824,7 @@ AutoSet @scaladoc[Planner](com.github.pshirshov.izumi.distage.model.Planner) Hoo
 Using Auto-Sets, one can, for example, collect all `AutoCloseable` classes and `.close()` them after the application has finished work.
 
 Note: it's not generally recommended to construct stateful, effectful or resource-allocating classes with `distage`, a general rule of thumb is:
-if a class and its dependencies can be replaced by a global `object`, it's ok to inject them through  `distage`. However, an example is given anyway,
+if a class and its dependencies are stateless and can be replaced by a global `object`, it's ok to inject them with  `distage`. However, an example is given anyway,
 as a lot of real applications depend on global resources, such as JDBC connections, `ExecutionContext` thread pools, Akka Systems, etc. that should 
 be closed properly at exit.
 

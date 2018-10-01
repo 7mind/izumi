@@ -14,6 +14,7 @@ import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
@@ -23,10 +24,9 @@ import org.scalatest.exceptions.TestCanceledException
 
 import scala.util.Try
 
-
 trait DistageTests {
   protected val resourceCollection: DistageResourceCollection = NullDistageResourceCollection
-  protected val baseRouter: LogRouter = IzLogger.simpleRouter(Log.Level.Info, ConsoleSink.ColoredConsoleSink)
+  protected val baseRouter: LogRouter = ConfigurableLogRouter(Log.Level.Info, ConsoleSink.ColoredConsoleSink)
 
   protected def di[T: Tag](f: T => Any): Unit = {
     val providerMagnet: ProviderMagnet[Unit] = { x: T => f(x); () }

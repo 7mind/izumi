@@ -49,7 +49,7 @@ class LoggingConsoleSinkTest extends WordSpec {
 object LoggingConsoleSinkTest {
 
   def setupConsoleLogger(template: Option[String]): IzLogger = {
-    IzLogger.basic(IzLogger.Level.Trace, new ConsoleSink(ConsoleSink.coloringPolicy(template)))
+    IzLogger(IzLogger.Level.Trace, new ConsoleSink(ConsoleSink.coloringPolicy(template)))
   }
 
 }

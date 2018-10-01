@@ -12,6 +12,10 @@ class ConsoleSink(policy: RenderingPolicy) extends LogSink {
 }
 
 object ConsoleSink {
+  def apply(policy: RenderingPolicy): ConsoleSink = new ConsoleSink(policy)
+
+  def apply(colored: Boolean = true): ConsoleSink = if (colored) ColoredConsoleSink else SimpleConsoleSink
+
   final val ColoredConsoleSink = new ConsoleSink(coloringPolicy())
   final val SimpleConsoleSink = new ConsoleSink(simplePolicy())
 

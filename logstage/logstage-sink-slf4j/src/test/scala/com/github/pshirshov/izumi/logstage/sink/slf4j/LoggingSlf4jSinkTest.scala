@@ -20,6 +20,6 @@ object LoggingSlf4jSinkTest {
 
 
   def setupSlf4jLogger(): IzLogger = {
-    IzLogger.basic(IzLogger.Level.Trace, sinkLegacySlf4jImpl)
+    IzLogger(IzLogger.Level.Trace, sinkLegacySlf4jImpl)
   }
 }

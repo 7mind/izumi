@@ -5,9 +5,10 @@ import java.util.function
 
 import com.github.pshirshov.izumi.logstage.api.Log
 
+import scala.compat.java8.FunctionConverters._
 
 trait LogConfigService extends AutoCloseable {
-  def loggerConfig : LoggerConfig
+  def loggerConfig: LoggerConfig
 
   def threshold(e: Log.LoggerId): Log.Level = {
     configFor(e).threshold
@@ -20,7 +21,6 @@ trait LogConfigService extends AutoCloseable {
   // this should be efficient but may take some memory. Most likely we should use prefix tree here
   private[this] val configCache = new ConcurrentHashMap[String, LoggerPathConfig](1024)
 
-  import scala.compat.java8.FunctionConverters._
 
   private[this] val findConfig: function.Function[String, LoggerPathConfig] = {
     id: String =>

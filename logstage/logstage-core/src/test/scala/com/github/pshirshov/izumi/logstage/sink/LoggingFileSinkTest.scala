@@ -253,7 +253,7 @@ object LoggingFileSinkTest {
 
   def withFileLogger[F <: LogFile](f: => FileSink[F])(f2: (FileSink[F], IzLogger) => Assertion): Unit = {
     val fileSink = f
-    val logger = IzLogger.basic(IzLogger.Level.Trace, fileSink)
+    val logger = IzLogger(IzLogger.Level.Trace, fileSink)
     try {
       Quirks.discard(f2(fileSink, logger))
     } finally {

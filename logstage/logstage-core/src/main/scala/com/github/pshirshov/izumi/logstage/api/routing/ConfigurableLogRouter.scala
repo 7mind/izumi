@@ -1,16 +1,16 @@
 package com.github.pshirshov.izumi.logstage.api.routing
 
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.logstage.api.config.LogConfigService
+import com.github.pshirshov.izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
 import com.github.pshirshov.izumi.logstage.sink.FallbackConsoleSink
 
 class ConfigurableLogRouter
 (
   logConfigService: LogConfigService
 ) extends LogRouter {
-  private val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, forceLog = true)
+  private final val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, forceLog = true)
 
   override protected def doLog(entry: Log.Entry): Unit = {
     logConfigService
@@ -37,4 +37,20 @@ class ConfigurableLogRouter
   }
 }
 
+object ConfigurableLogRouter {
+  final def apply(threshold: Log.Level, sink: LogSink, levels: Map[String, Log.Level] = Map.empty): ConfigurableLogRouter = {
+    apply(threshold, Seq(sink), levels)
+  }
 
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink]): ConfigurableLogRouter = {
+    apply(threshold, sinks, Map.empty[String, Log.Level])
+  }
+
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): ConfigurableLogRouter = {
+    val levelConfigs = levels.mapValues(lvl => LoggerPathConfig(lvl, sinks))
+    val rootConfig = LoggerPathConfig(threshold, sinks)
+    val configService = new LogConfigServiceImpl(LoggerConfig(rootConfig, levelConfigs))
+    val router = new ConfigurableLogRouter(configService)
+    router
+  }
+}

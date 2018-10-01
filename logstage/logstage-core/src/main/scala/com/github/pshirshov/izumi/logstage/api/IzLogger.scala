@@ -1,13 +1,11 @@
 package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, LogArg}
-import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
-import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl}
+import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
-
 
 class IzLogger
 (
@@ -37,7 +35,33 @@ object IzLogger {
   val Level: Log.Level.type = Log.Level
 
   /**
-    * Ingores all the log messages
+    * By default, a basic colored console logger with global [[Level.Trace]] threshold
+    */
+  final def apply(threshold: Log.Level = IzLogger.Level.Trace, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): IzLogger = {
+    val r = ConfigurableLogRouter(threshold, sink, levels)
+    new IzLogger(r, CustomContext.empty)
+  }
+
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink]): IzLogger = {
+    val r = ConfigurableLogRouter(threshold, sinks)
+    new IzLogger(r, CustomContext.empty)
+  }
+
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): IzLogger = {
+    val r = ConfigurableLogRouter(threshold, sinks, levels)
+    new IzLogger(r, CustomContext.empty)
+  }
+
+  final def apply(receiver: LogRouter): IzLogger = {
+    new IzLogger(receiver, CustomContext.empty)
+  }
+
+  final def apply(receiver: LogRouter, customContext: CustomContext): IzLogger = {
+    new IzLogger(receiver, customContext)
+  }
+
+  /**
+    * Ignores all log messages
     */
   final lazy val NullLogger = new IzLogger(LogRouter.nullRouter, CustomContext.empty)
 
@@ -45,34 +69,6 @@ object IzLogger {
     * Prints log messages as-is, suitable for logger debugging only
     */
   final lazy val DebugLogger = new IzLogger(LogRouter.debugRouter, CustomContext.empty)
-
-  /**
-    * Configures basic console logger with global level threshold
-    */
-  final def basic(threshold: Log.Level = IzLogger.Level.Trace, levels: Map[String, Log.Level] = Map.empty): IzLogger = {
-    simple(threshold, levels, ConsoleSink.ColoredConsoleSink)
-  }
-
-  final def basic(threshold: Log.Level, sink: LogSink, sinks: LogSink*): IzLogger = {
-    simple(threshold, Map.empty, sink, sinks: _*)
-  }
-
-  final def simple(threshold: Log.Level, levels: Map[String, Log.Level], sink: LogSink, sinks: LogSink*): IzLogger = {
-    val r = router(threshold, levels, sink +: sinks: _*)
-    new IzLogger(r, CustomContext.empty)
-  }
-
-  final def simpleRouter(threshold: Log.Level, sinks: LogSink*): ConfigurableLogRouter = {
-    router(threshold, Map.empty, sinks: _*)
-  }
-
-  final def router(threshold: Log.Level, levels: Map[String, Log.Level], sinks: LogSink*): ConfigurableLogRouter = {
-    val levelConfigs = levels.mapValues(lvl => LoggerPathConfig(lvl, sinks))
-    val rootConfig = LoggerPathConfig(threshold, sinks)
-    val configService = new LogConfigServiceImpl(LoggerConfig(rootConfig, levelConfigs))
-    val router = new ConfigurableLogRouter(configService)
-    router
-  }
 
   def parseLevel(v: String): Log.Level = {
     v.charAt(0).toLower match {

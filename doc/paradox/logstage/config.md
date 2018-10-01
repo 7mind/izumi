@@ -1,5 +1,9 @@
 # Logstage Config
 
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
 ## Sample
 
 ```hocon
@@ -61,9 +65,9 @@ logstage {
 
 Section      |   Explanation |
 ------------ | ------------- |
-`sinks`      | Defines list of log sinks for theirs further usage*. This section should contain `default` log sinks in case of ignore sinks list if you need to use only default sinks** |
+`sinks`      | Defines used log sinks*. This section should contain `default` log sinks in case of ignore sinks list if you need to use only default sinks** |
 `root`       | Defines default settings for logging (i.e., sinks and log threshold) | 
-`entries`    | Defines log entries settings (threshold and list of sinks |
+`entries`    | Defines log entries settings (threshold and list of sinks) |
 
 Notes:
 

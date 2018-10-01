@@ -42,6 +42,18 @@ class BasicLoggingTest extends WordSpec {
     }
   }
 
+  "logstage package" should {
+    "allow constructing Log.Message" in {
+      import logstage._
+
+      val i = 5
+      val s = "hi"
+      val msg = Message(s"begin $i $s end")
+
+      assert(msg == Message(StringContext("begin ", " ", " end"), Seq(LogArg(Seq("i"), 5, hidden = false), LogArg(Seq("s"), "hi", hidden = false))))
+    }
+  }
+
   private def render(p: StringRenderingPolicy, m: Message) = {
     p.render(Entry(m, Context(StaticExtendedContext(LoggerId("test"), SourceFilePosition("test.scala", 0)), DynamicContext(Level.Warn, ThreadData("test", 0), 0), CustomContext(Seq.empty))))
   }
