@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
+import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
 object Log {
 
@@ -54,7 +55,7 @@ object Log {
 
   }
 
-  case class LogArg(path: Seq[String], value: Any, hidden: Boolean) {
+  final case class LogArg(path: Seq[String], value: Any, hidden: Boolean) {
     def name: String = path.last
   }
 
@@ -65,7 +66,6 @@ object Log {
       CustomContext(values ++ that.values)
     }
   }
-
 
   object CustomContext {
     def empty: CustomContext = CustomContext(List.empty)
@@ -88,9 +88,6 @@ object Log {
   }
 
   final case class Message(template: StringContext, args: LogContext) {
-
-    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-
     def argsMap: Map[String, Set[Any]] = args.map(kv => (kv.name, kv.value)).toMultimap
   }
 

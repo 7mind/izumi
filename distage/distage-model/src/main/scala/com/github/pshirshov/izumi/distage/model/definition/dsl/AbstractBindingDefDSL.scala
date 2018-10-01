@@ -4,11 +4,12 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBind
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonRef}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, Bindings, ImplDef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
 
@@ -91,6 +92,15 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
     _setDSL(setRef)
   }
 
+  /** Same as `make[T].from(implicitly[T])` **/
+  final protected def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): Unit = {
+    registered(new SingletonRef(Bindings.binding(instance))).discard
+  }
+
+  /** Same as `make[T].named(name).from(implicitly[T])` **/
+  final protected def addImplicit[T: Tag](name: String)(implicit instance: T, pos: CodePositionMaterializer): Unit = {
+    registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name)))).discard
+  }
 
 }
 

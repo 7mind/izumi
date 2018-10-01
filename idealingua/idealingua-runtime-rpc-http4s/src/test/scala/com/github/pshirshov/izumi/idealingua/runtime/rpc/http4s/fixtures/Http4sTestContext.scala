@@ -111,7 +111,7 @@ object Http4sTestContext {
   final val greeterClient = new GreeterServiceClientWrapped(clientDispatcher())
 
   private def makeLogger(): IzLogger = {
-    val out = IzLogger.basic(Log.Level.Info, Map(
+    val out = IzLogger(Log.Level.Info, levels = Map(
       "org.http4s" -> Log.Level.Warn
       , "org.http4s.server.blaze" -> Log.Level.Error
       , "org.http4s.blaze.channel.nio1" -> Log.Level.Crit

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.logstage.distage
 
+import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import distage.{Injector, ModuleDef}
 import org.scalatest.WordSpec
@@ -22,7 +23,7 @@ class LoggerInjectionTest extends WordSpec {
   "Logging module for distage" should {
     "inject loggers" in {
       val testSink = new TestSink()
-      val router = IzLogger.router(IzLogger.Level.Trace, Map.empty, testSink)
+      val router = ConfigurableLogRouter(IzLogger.Level.Trace, testSink)
 
       val definition = new ModuleDef {
         make[ExampleService]

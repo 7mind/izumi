@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.logstage.api.Log
 
 trait LogRouter extends AutoCloseable {
-  private val fallback: TrivialLogger = TrivialLogger.make[LogRouter](LogRouter.fallbackPropertyName, forceLog = true)
+  private final val fallback: TrivialLogger = TrivialLogger.make[LogRouter](LogRouter.fallbackPropertyName, forceLog = true)
 
   def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean
 

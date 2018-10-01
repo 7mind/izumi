@@ -12,6 +12,7 @@ class LogstageCirceRenderingTest extends WordSpec {
     "support console sink with json output policy" in {
       new ExampleService(setupJsonLogger()).start()
     }
+
   }
 }
 
@@ -22,7 +23,7 @@ object LogstageCirceRenderingTest {
   val consoleSinkJson = new ConsoleSink(jsonPolicy)
 
   def setupJsonLogger(): IzLogger = {
-    IzLogger.basic(IzLogger.Level.Trace, consoleSinkJson)
+    IzLogger(IzLogger.Level.Trace, consoleSinkJson)
   }
 
 }
