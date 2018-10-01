@@ -25,8 +25,15 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     SelectedConstructor(selectedConstructor, paramsWithAnnos)
   }
 
+
+  override def hasConstructor(tpe: u.SafeType): Boolean = {
+    val constructor = findConstructor(tpe)
+    constructor.isConstructor
+  }
+
   override def selectConstructorMethod(tpe: u.SafeType): u.MethodSymb = {
-    tpe.tpe.decl(u.u.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
+    val constructor = findConstructor(tpe)
+    constructor.asTerm.alternatives.head.asMethod
   }
 
   override def selectNonImplicitParameters(symb: u.MethodSymb): List[List[u.Symb]] = {
@@ -69,6 +76,10 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
   override def findTypeAnnotation(annType: u.SafeType, tpe: u.SafeType): Option[u.u.Annotation] = {
     val univ: u.u.type = u.u // intellij
     AnnotationTools.findTypeAnnotation(univ)(annType.tpe, tpe.tpe)
+  }
+
+  private def findConstructor(tpe: u.SafeType): u.u.Symbol = {
+    tpe.tpe.decl(u.u.termNames.CONSTRUCTOR)
   }
 }
 

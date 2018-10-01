@@ -13,7 +13,7 @@ class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends Factory
 
     val args: Seq[TypedRef[_]] = op.wiring.providerArguments.map {
       key =>
-        context.fetchKey(key.wireWith) match {
+        context.fetchKey(key.wireWith, key.isByName) match {
           case Some(dep) =>
             TypedRef(dep, key.wireWith.tpe)
           case _ if key.wireWith == DIKey.get[FactoryExecutor] =>

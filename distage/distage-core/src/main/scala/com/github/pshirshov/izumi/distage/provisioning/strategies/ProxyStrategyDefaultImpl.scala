@@ -4,8 +4,9 @@ import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
+import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
 trait FakeSet[A] extends Set[A]
@@ -15,10 +16,14 @@ trait FakeSet[A] extends Set[A]
   * - Will not work for any class which performs any operations on forwarding refs within constructor
   * - Untested on constructors accepting primitive values, will fail most likely
   */
-class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, proxyProvider: ProxyProvider) extends ProxyStrategy {
+class ProxyStrategyDefaultImpl(
+                                reflectionProvider: ReflectionProvider.Runtime
+                                , symbolIntrospector: SymbolIntrospector.Runtime
+                                , proxyProvider: ProxyProvider
+                              ) extends ProxyStrategy {
   def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(initProxy.target)
-    context.fetchKey(key) match {
+    context.fetchUnsafe(key) match {
       case Some(adapter: ProxyDispatcher) =>
         executor.execute(context, initProxy.proxy.op).head match {
           case OpResult.NewInstance(_, instance) =>
@@ -35,7 +40,83 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
   }
 
   def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[OpResult] = {
-    val tpe = makeProxy.op match {
+    val tpe = proxyTargetType(makeProxy)
+
+    val cogenNotRequired = allForwardRefsAreByName(makeProxy)
+
+    val proxyInstance = if (cogenNotRequired) {
+      val proxy = new ByNameDispatcher(makeProxy.target)
+      DeferredInit(proxy, proxy)
+    } else {
+      makeCogenProxy(context, tpe, makeProxy)
+    }
+
+    Seq(
+      OpResult.NewInstance(makeProxy.target, proxyInstance.proxy)
+      , OpResult.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
+    )
+  }
+
+
+
+  protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, makeProxy: ProxyOp.MakeProxy): DeferredInit = {
+    val params = if (!hasNoDeps(tpe)) {
+      val params = reflectionProvider.constructorParameters(makeProxy.op.target.tpe)
+
+      val args = params.map {
+        param =>
+          val value = param match {
+            case p if makeProxy.forwardRefs.contains(p.wireWith) =>
+              null
+
+            case p =>
+              context.fetchKey(p.wireWith, p.isByName) match {
+                case Some(v) =>
+                  v.asInstanceOf[AnyRef]
+                case None =>
+                  throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${p.wireWith}", Set(p.wireWith), None)
+              }
+          }
+
+          val parameterType = if (param.isByName) {
+            import u._
+            typeOf[() => Any]
+          } else {
+            param.wireWith.tpe.tpe
+          }
+          (parameterType, value)
+      }
+
+      val argClasses = args.map(_._1).map(mirror.runtimeClass).toArray
+      val argValues = args.map(_._2).toArray
+      ProxyParams.Params(argClasses, argValues)
+    } else { // this shouldn't happen anymore
+      ProxyParams.Empty
+    }
+
+    val runtimeClass = mirror.runtimeClass(tpe.tpe)
+    val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
+
+    val proxyInstance = proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
+    proxyInstance
+  }
+
+  protected def hasNoDeps(tpe: RuntimeDIUniverse.SafeType): Boolean = {
+    val constructors = tpe.tpe.decls.filter(_.isConstructor)
+    val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
+    val hasNoDependencies = constructors.isEmpty || hasTrivial
+    hasNoDependencies
+  }
+
+  protected def allForwardRefsAreByName(makeProxy: ProxyOp.MakeProxy): Boolean = {
+    symbolIntrospector.hasConstructor(makeProxy.op.target.tpe) && {
+      val params = reflectionProvider.constructorParameters(makeProxy.op.target.tpe)
+      params.filter(p => makeProxy.forwardRefs.contains(p.wireWith)).forall(_.isByName)
+    }
+  }
+
+  protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
+    makeProxy.op match {
       case op: WiringOp.InstantiateTrait =>
         op.wiring.instanceType
       case op: WiringOp.InstantiateClass =>
@@ -48,8 +129,8 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
         op.wiring.provider.ret
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
-        RuntimeDIUniverse.SafeType.get[FakeSet[_]]
-        //op.target.symbol
+        SafeType.get[FakeSet[_]]
+      //op.target.symbol
       case op: WiringOp.ReferenceInstance =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
       case op: WiringOp.ReferenceKey =>
@@ -57,44 +138,10 @@ class ProxyStrategyDefaultImpl(reflectionProvider: ReflectionProvider.Runtime, p
       case op: ProxyOp.MakeProxy =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - can't make a proxy for proxy!: $op", op)
     }
-
-    val constructors = tpe.tpe.decls.filter(_.isConstructor)
-    val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
-    val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(tpe.tpe)
-
-    val params = if (constructors.isEmpty || hasTrivial) {
-      ProxyParams.Empty
-    } else {
-      val params = reflectionProvider.constructorParameters(makeProxy.op.target.tpe)
-
-      val args = params.map {
-        param =>
-          val value = param match {
-            case p if makeProxy.forwardRefs.contains(p.wireWith) =>
-              null
-
-            case p =>
-              context.fetchKey(p.wireWith).orNull.asInstanceOf[AnyRef]
-          }
-
-          RuntimeDIUniverse.mirror.runtimeClass(param.wireWith.tpe.tpe) -> value
-      }
-
-      ProxyParams.Params(args.map(_._1).toArray, args.map(_._2).toArray)
-    }
-
-    val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
-
-    val proxyInstance = proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
-
-    Seq(
-      OpResult.NewInstance(makeProxy.target, proxyInstance.proxy)
-      , OpResult.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
-    )
   }
 
-  private def proxyKey(m: RuntimeDIUniverse.DIKey) = {
-    RuntimeDIUniverse.DIKey.ProxyElementKey(m, RuntimeDIUniverse.SafeType.get[ProxyDispatcher])
+  protected def proxyKey(m: DIKey): DIKey = {
+    DIKey.ProxyElementKey(m, SafeType.get[ProxyDispatcher])
   }
 
 }

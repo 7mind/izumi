@@ -8,8 +8,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   import u._
   import u.u._
 
-  implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] =
-    { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
+  implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] = { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
 
   implicit def liftableSafeType: Liftable[SafeType]
 
@@ -50,12 +49,13 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   implicit val liftableDIKey: Liftable[DIKey] = {
     Liftable[DIKey] {
-      d => (d: @unchecked) match {
-        case t: DIKey.TypeKey => q"$t"
-        case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
-        case p: DIKey.ProxyElementKey => q"$p"
-        case s: DIKey.SetElementKey => q"$s"
-      }
+      d =>
+        (d: @unchecked) match {
+          case t: DIKey.TypeKey => q"$t"
+          case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
+          case p: DIKey.ProxyElementKey => q"$p"
+          case s: DIKey.SetElementKey => q"$s"
+        }
     }
   }
 
@@ -79,17 +79,25 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // Symbols may contain uninstantiated poly types, and are usually only included for debugging purposes anyway
   // so weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
-    info => q"""
-    { $RuntimeDIUniverse.SymbolInfo.Static(${info.name}, ${liftableUnsafeWeakSafeType(info.finalResultType)}, ${info.annotations}, ${liftableUnsafeWeakSafeType(info.definingClass)}) }
+    info =>
+      q"""
+    { $RuntimeDIUniverse.SymbolInfo.Static(
+      ${info.name}
+      , ${liftableUnsafeWeakSafeType(info.finalResultType)}
+      , ${info.annotations}
+      , ${liftableUnsafeWeakSafeType(info.definingClass)}
+      , ${info.isByName}
+      )
+    }
        """
   }
 
   // Associations
 
   implicit val liftableParameter: Liftable[Association.Parameter] = {
-    case Association.Parameter(context, name, tpe, wireWith) =>
-      q"{ new $RuntimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith)}"
-    }
+    case Association.Parameter(context, name, tpe, wireWith, isByName) =>
+      q"{ new $RuntimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith, $isByName)}"
+  }
 
   // Annotations
 
@@ -107,7 +115,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   }
 
   implicit val liftableAnnotation: Liftable[Annotation] = {
-    ann => q"""{
+    ann =>
+      q"""{
     ${symbolOf[ReflectionUtil.type].asClass.module}.runtimeAnnotation(${SafeType(ann.tree.tpe)}.tpe, ${ann.tree.children.tail.map(TreeLiteral)}, _root_.scala.collection.immutable.ListMap.empty)
     }"""
   }

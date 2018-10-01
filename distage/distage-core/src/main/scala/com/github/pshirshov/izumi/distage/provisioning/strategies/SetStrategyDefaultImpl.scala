@@ -27,7 +27,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
     }
 
     val fetched = op.members
-      .map(m => (m, context.fetchKey(m)))
+      .map(m => (m, context.fetchKey(m, byName = false)))
 
     val newSet = fetched.flatMap {
       case (m, Some(value)) if m.tpe == op.tpe => // in case member type == set type we just add

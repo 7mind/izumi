@@ -11,13 +11,25 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
   override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: SymbolInfo): DIKey = {
-    val typeKey = DIKey.TypeKey(parameterSymbol.finalResultType)
+    val typeKey = if (parameterSymbol.isByName) {
+      DIKey.TypeKey(SafeType(parameterSymbol.finalResultType.tpe.typeArgs.head.finalResultType))
+    } else {
+      DIKey.TypeKey(parameterSymbol.finalResultType)
+    }
+
     withOptionalName(parameterSymbol, typeKey)
   }
 
   override def associationFromParameter(parameterSymbol: u.SymbolInfo): u.Association.Parameter = {
     val context = DependencyContext.ConstructorParameterContext(parameterSymbol.definingClass, parameterSymbol)
-    Association.Parameter(context, parameterSymbol.name, parameterSymbol.finalResultType, keyFromParameter(context, parameterSymbol))
+
+    Association.Parameter(
+      context
+      , parameterSymbol.name
+      , parameterSymbol.finalResultType
+      , keyFromParameter(context, parameterSymbol)
+      , parameterSymbol.isByName
+    )
   }
 
   override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: SymbolInfo): DIKey = {
