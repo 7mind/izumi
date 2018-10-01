@@ -424,6 +424,7 @@ lazy val `izumi-r2` = inRoot.as
             (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
+            (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
             f.toPath.startsWith((ghpagesRepository.value / "media").toPath)
         }
       }
