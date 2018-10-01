@@ -97,7 +97,7 @@ import logstage._
 import logstage.circe._
 
 val jsonSink = ConsoleSink.json(prettyPrint = true)
-val textSink = ConsoleSink(colored = true)
+val textSink = ConsoleSink.text(colored = true)
 
 val sinks = List(jsonSink, textSink)
 
