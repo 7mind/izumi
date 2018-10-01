@@ -50,7 +50,6 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-println(plan)
     val context = injector.produce(plan)
 
     assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
