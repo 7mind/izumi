@@ -5,9 +5,9 @@ import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil._
 import scala.reflect.runtime.{universe => ru}
 
 // TODO: hotspots, hashcode on keys is inefficient
-class SafeType0[U <: SingletonUniverse](val tpe: U#Type) {
-
-  import SafeType0._
+class SafeType0[U <: SingletonUniverse](
+                                         private val u: U // Needed just for the corner case in TagText."work with odd type prefixes" ._.
+                                         , val tpe: U#Type) {
 
   private final val dealiased: U#Type = {
     deannotate(tpe.dealias)
@@ -17,76 +17,70 @@ class SafeType0[U <: SingletonUniverse](val tpe: U#Type) {
     dealiased.toString
   }
 
-//  private final val prefix: Option[NonUniqueSingleTypeWrapper[U]] = {
-//    if (dealiased.typeSymbol.isStatic || dealiased == scala.reflect.runtime.universe.NoPrefix) {
-//      None
-//    } else {
-//      dealiased
-//        .asInstanceOf[scala.reflect.runtime.universe.TypeRefApi]
-//        .pre.asInstanceOf[AnyRef] match {
-//        case u: scala.reflect.internal.Types#SingleType =>
-//          Some(NonUniqueSingleTypeWrapper[U](u.pre.asInstanceOf[U#Type], u.sym.asInstanceOf[U#Symbol]))
-//
-//        case _ =>
-//          None
-//      }
-//    }
-//  }
+  @inline private[this] final def freeTermPrefixTypeSuffixHeuristicEq(op: (U#Type, U#Type) => Boolean, t: U#Type, that: U#Type): Boolean =
+    t -> that match {
+      case (tRef: U#TypeRefApi, oRef: U#TypeRefApi) =>
+        singletonFreeTermHeuristicEq(tRef.pre, oRef.pre) && (
+          tRef.sym.isType && oRef.sym.isType && {
+            val t1 = (u: U).internal.typeRef(u.NoType, tRef.sym, tRef.args)
+            val t2 = (u: U).internal.typeRef(u.NoType, oRef.sym, oRef.args)
+
+            op(t1, t2)
+          }
+        || tRef.sym.isTerm && oRef.sym.isTerm && tRef.sym == oRef.sym
+      )
+      case (tRef: U#SingleTypeApi, oRef: U#SingleTypeApi) =>
+        singletonFreeTermHeuristicEq(tRef.pre, oRef.pre) && tRef.sym == oRef.sym
+      case _ => false
+    }
+
+  private[this] final def singletonFreeTermHeuristicEq(t: U#Type, that: U#Type): Boolean =
+    t.asInstanceOf[Any] -> that.asInstanceOf[Any] match {
+      case (tpe: scala.reflect.internal.Types#UniqueSingleType, other: scala.reflect.internal.Types#UniqueSingleType)
+        if tpe.sym.isFreeTerm && other.sym.isFreeTerm =>
+
+        val eq = new SafeType0(u, tpe.pre.asInstanceOf[U#Type]) == new SafeType0(u, other.pre.asInstanceOf[U#Type]) && tpe.sym.name.toString == other.sym.name.toString
+
+        System.err println ((tpe.pre, other.pre, tpe.sym, other.sym, eq))
+
+        eq
+      case _ => false
+  }
 
   /**
     * Workaround for Type's hashcode being unstable with sbt fork := false and version of scala other than 2.12.4
-    * (two different scala-reflect libraries end up on classpath and lead to undefined hashcode)
+    * (two different scala-reflect libraries end up on the classpath leading to undefined hashcode)
     **/
   override final val hashCode: Int = {
-//    if (prefix.isDefined) {
-//      prefix.hashCode()
-//    } else {
-      dealiased.typeSymbol.name.toString.hashCode
-
-//    }
+    dealiased.typeSymbol.name.toString.hashCode
   }
 
+  // Criteria for heuristic:
+  // Is a UniqueSingleType & .sym is FreeType
+  //  Or the same for .prefix
   override final def equals(obj: Any): Boolean = {
     obj match {
-      case other: SafeType0[U]@unchecked =>
-//        dealiased =:= other.dealiased
-        toString == other.toString
-//        val eq = (prefix.isDefined && prefix == other.prefix && toString == other.toString) || dealiased =:= other.dealiased
-//        println(s"$this <?> $obj == $eq; $prefix , ${other.prefix}")
-//        eq
+      case that: SafeType0[U] @unchecked =>
+        dealiased =:= that.dealiased ||
+          singletonFreeTermHeuristicEq(dealiased, that.dealiased) ||
+          freeTermPrefixTypeSuffixHeuristicEq(_ =:= _, dealiased, that.dealiased)
       case _ =>
         false
     }
   }
 
   final def <:<(that: SafeType0[U]): Boolean =
-    dealiased <:< that.dealiased
+    dealiased <:< that.dealiased || freeTermPrefixTypeSuffixHeuristicEq(_ <:< _, dealiased, that.dealiased)
 
   final def weak_<:<(that: SafeType0[U]): Boolean =
-    dealiased weak_<:< that.dealiased
+    (dealiased weak_<:< that.dealiased) || freeTermPrefixTypeSuffixHeuristicEq(_ weak_<:< _, dealiased, that.dealiased)
 }
 
 object SafeType0 {
 
-  case class NonUniqueSingleTypeWrapper[U <: SingletonUniverse](pre: U#Type, sym: U#Symbol) {
-    override def equals(obj: Any): Boolean = {
-      obj match {
-        case other: NonUniqueSingleTypeWrapper[U] =>
-          val eq = SafeType0(pre) == SafeType0(other.pre) && sym.toString == other.sym.toString
-          println((pre, other.pre, sym, other.sym, eq))
+  def apply[U <: SingletonUniverse](u: U, tpe: U#Type): SafeType0[U] = new SafeType0[U](u, tpe)
 
-          eq
-        case _ =>
-          false
-      }
-    }
+  def apply(tpe: ru.Type): SafeType0[ru.type] = new SafeType0[ru.type](ru, tpe)
 
-    override def hashCode(): Int = {
-      pre.toString.hashCode ^ sym.toString.hashCode
-    }
-  }
-
-  def apply[U <: SingletonUniverse](tpe: U#Type): SafeType0[U] = new SafeType0(tpe)
-
-  def get[T: ru.TypeTag]: SafeType0[ru.type] = new SafeType0(ru.typeOf[T])
+  def get[T: ru.TypeTag]: SafeType0[ru.type] = new SafeType0[ru.type](ru, ru.typeOf[T])
 }

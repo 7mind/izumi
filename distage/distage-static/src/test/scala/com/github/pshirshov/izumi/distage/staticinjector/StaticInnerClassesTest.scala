@@ -26,25 +26,22 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
     new InnerPathDepTest().testCase
   }
 
-  "progression test: macros can't handle function local path-dependent injections" in {
-    val fail = Try {
-      import InnerClassUnstablePathsCase._
+  "macros can handle function local path-dependent injections" in {
+    import InnerClassUnstablePathsCase._
 
-      val testModule = new TestModule
+    val testModule = new TestModule
 
-      val definition = new StaticModuleDef {
-        stat[testModule.TestClass]
-        stat[testModule.TestDependency]
-      }
+    val definition = new StaticModuleDef {
+      stat[testModule.TestClass]
+      stat[testModule.TestDependency]
+    }
 
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
 
-      val context = injector.produce(plan)
+    val context = injector.produce(plan)
 
-      assert(context.get[testModule.TestClass].a != null)
-    }.isFailure
-    assert(fail)
+    assert(context.get[testModule.TestClass].a != null)
   }
 
   "macros can instantiate inner classes from stable objects where the classes are inherited from a trait" in {
