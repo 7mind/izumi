@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
@@ -15,16 +16,16 @@ object FormattingUtils {
   }
 
   def formatBindingPosition(origin: Option[Binding]): String = {
-    origin.map(_.origin.toString) getOrElse "(<unknown>)"
+    origin.fold("(<unknown>)")(_.origin.toString)
   }
 
   private def doFormat(deps: Wiring): String = {
     deps match {
       case Constructor(instanceType, associations, prefix) =>
-        doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'), prefix.map(_.toString))
+        doFormat(instanceType.tpe.toString, formatPrefix(prefix) ++ associations.map(_.format), "make", ('[', ']'), ('(', ')'))
 
       case AbstractSymbol(instanceType, associations, prefix) =>
-        doFormat(instanceType.tpe.toString, associations.map(_.format), "impl", ('[', ']'), ('{', '}'), prefix.map(_.toString))
+        doFormat(instanceType.tpe.toString, formatPrefix(prefix) ++ associations.map(_.format), "impl", ('[', ']'), ('{', '}'))
 
       case Function(instanceType, associations) =>
         doFormat(instanceType.toString, associations.map(_.format), "call", ('(', ')'), ('{', '}'))
@@ -62,9 +63,13 @@ object FormattingUtils {
     }
   }
 
-  def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char), prefix: Option[String] = None): String = {
+  private def formatPrefix(prefix: Option[RuntimeDIUniverse.DIKey]) = {
+    prefix.toSeq.map(p => s".prefix = lookup($p)")
+  }
+
+  def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
     val sb = new StringBuilder()
-    sb.append(s"$opName${opFormat._1}${prefix.fold("")(s => s"<$s>")}$impl${opFormat._2} ${delim._1}\n")
+    sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}\n")
     if (depRepr.nonEmpty) {
       sb.append(depRepr.mkString("\n").shift(2))
     }
