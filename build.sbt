@@ -408,8 +408,8 @@ lazy val `izumi-r2` = inRoot.as
     , siteSubdirName in ScalaUnidoc := s"v${version.value}/api"
     , siteSubdirName in Paradox := s"v${version.value}/doc"
     , previewFixedPort := Some(9999)
-    , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/7mind"), "git@github.com:7mind/izumi-microsite.git"))
-    , git.remoteRepo := scmInfo.value.get.connection
+    //, scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/7mind"), ""))
+    , git.remoteRepo := "git@github.com:7mind/izumi-microsite.git"
     , paradoxProperties ++= Map(
       "scaladoc.izumi.base_url" -> s"/v${version.value}/api/com/github/pshirshov/",
       "scaladoc.base_url" -> s"/v${version.value}/api/",
@@ -422,6 +422,7 @@ lazy val `izumi-r2` = inRoot.as
         def accept(f: File): Boolean = {
           f.getCanonicalPath.startsWith(v) && f.getCanonicalPath.charAt(v.length).isDigit || // release
             (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
+            (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
             f.toPath.startsWith((ghpagesRepository.value / "media").toPath)
         }
