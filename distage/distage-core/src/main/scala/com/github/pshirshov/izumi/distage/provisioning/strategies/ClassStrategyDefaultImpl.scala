@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{InvalidPlanException, NoopProvisionerImplCalled, ProvisioningException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{InvalidPlanException, MissingRefException, NoopProvisionerImplCalled, ProvisioningException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection
-import com.github.pshirshov.izumi.distage.model.reflection.{SymbolIntrospector, universe}
+import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
 
@@ -31,20 +32,20 @@ class ClassStrategyDefaultImpl
         }
     }
 
-    val instance = mkScala(targetType, args)
+    val instance = mkScala(context,targetType, args)
     Seq(OpResult.NewInstance(target, instance))
   }
 
-  private def mkScala(targetType: reflection.universe.RuntimeDIUniverse.SafeType, args: Seq[Any]) = {
-    val refUniverse = RuntimeDIUniverse.mirror
+  private def mkScala(context: ProvisioningKeyProvider, targetType: SafeType, args: Seq[Any]) = {
     val symbol = targetType.tpe.typeSymbol
-    val refClass = refUniverse.reflectClass(symbol.asClass)
-    val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
-    val refCtor = refClass.reflectConstructor(ctorSymbol)
 
     if (symbol.isModule) { // don't re-instantiate scala objects
-      refUniverse.reflectModule(symbol.asModule).instance
+      mirror.reflectModule(symbol.asModule).instance
     } else {
+      val refClass = reflectClass(context, targetType, symbol)
+      val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
+      val refCtor = refClass.reflectConstructor(ctorSymbol)
+
       val hasByName = ctorSymbol.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
       if (hasByName) { // this is a dirty workaround for crappy logic in JavaTransformingMethodMirror
         mkJava(targetType, args)
@@ -54,7 +55,40 @@ class ClassStrategyDefaultImpl
     }
   }
 
-  private def mkJava(targetType: universe.RuntimeDIUniverse.SafeType, args: Seq[Any]) = {
+  private def reflectClass(context: ProvisioningKeyProvider, targetType: SafeType, symbol: Symbol): ClassMirror = {
+    if (!symbol.isStatic) {
+      val typeRef = toTypeRef(targetType.tpe)
+      val prefix = typeRef.pre
+
+      val module = if (prefix.termSymbol.isModule) {
+        mirror.reflectModule(prefix.termSymbol.asModule).instance
+      } else {
+        val required = SafeType.apply(prefix)
+        val key = DIKey.TypeKey(required)
+        context.fetchUnsafe(key) match {
+          case Some(value) =>
+            value
+          case None =>
+            throw new MissingRefException(s"Cannot get instance of prefix type $key while processing $targetType", Set(key), None)
+        }
+      }
+
+      mirror.reflect(module).reflectClass(symbol.asClass)
+    } else {
+      mirror.reflectClass(symbol.asClass)
+    }
+  }
+
+  def toTypeRef(tpe: TypeApi): TypeRefApi = {
+    tpe match {
+      case typeref: TypeRefApi =>
+        typeref
+      case o =>
+        throw new ProvisioningException(s"Expected TypeRefApi while processing $tpe, got $o", null)
+    }
+  }
+
+  private def mkJava(targetType: SafeType, args: Seq[Any]): Any = {
     val refUniverse = RuntimeDIUniverse.mirror
     val clazz = refUniverse
       .runtimeClass(targetType.tpe)

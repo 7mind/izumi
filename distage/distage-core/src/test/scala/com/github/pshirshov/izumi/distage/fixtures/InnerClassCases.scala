@@ -17,6 +17,7 @@ object InnerClassCases {
   object InnerClassCase2 {
 
     object StableObjectInheritingTrait extends TestTrait
+    object StableObjectInheritingTrait1 extends TestTrait
 
     trait TestTrait {
 
