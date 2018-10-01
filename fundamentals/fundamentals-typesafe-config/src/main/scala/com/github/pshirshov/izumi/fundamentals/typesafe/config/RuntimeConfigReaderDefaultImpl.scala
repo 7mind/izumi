@@ -78,7 +78,7 @@ class RuntimeConfigReaderDefaultImpl
                   , Right(_)
                 )
 
-                res.fold(msg => e.left.map(_ :+ msg), v => e.map(_ :+ v))
+                res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
             }
           }
 
@@ -191,7 +191,7 @@ class RuntimeConfigReaderDefaultImpl
                   , Right(_)
                 )
 
-                res.fold(msg => e.left.map(_ :+ msg), v => e.map(_ :+ (key -> v)))
+                res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ (key -> v)))
             }
           }
 
@@ -250,7 +250,7 @@ class RuntimeConfigReaderDefaultImpl
                   , Right(_)
                 )
 
-                res.fold(msg => e.left.map(_ :+ msg), v => e.map(_ :+ v))
+                res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
             }
           }
 
