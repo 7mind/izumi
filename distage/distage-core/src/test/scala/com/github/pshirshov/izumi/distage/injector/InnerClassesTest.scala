@@ -103,21 +103,18 @@ class InnerClassesTest extends WordSpec with MkInjector {
   }
 
   "progression test: classstrategy can't handle class local path-dependent injections (macros can)" in {
-    val fail = Try {
-      val definition = new ModuleDef {
-        make[TopLevelPathDepTest.TestClass]
-        make[TopLevelPathDepTest.TestDependency]
-      }
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produce(plan)
-
-      assert(context.get[TopLevelPathDepTest.TestClass].a != null)
+    val definition = new ModuleDef {
+      make[TopLevelPathDepTest.type].from[TopLevelPathDepTest.type](TopLevelPathDepTest: TopLevelPathDepTest.type)
+      make[TopLevelPathDepTest.TestClass]
+      make[TopLevelPathDepTest.TestDependency]
     }
-//    fail.get
-    assert(fail.isFailure)
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+
+    val context = injector.produce(plan)
+
+    assert(context.get[TopLevelPathDepTest.TestClass].a != null)
   }
 
   "progression test: can't handle factories inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't)" in {

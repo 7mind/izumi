@@ -96,7 +96,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       val typedRef = ReflectionUtil.toTypeRef(symb.tpe.asInstanceOf[reflect.runtime.universe.TypeApi])
       typedRef
         .map(_.pre)
-        .filterNot(_.termSymbol.isModule)
+        .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
         .map(v => DIKey.TypeKey(SafeType(v.asInstanceOf[u.TypeNative])))
     }
   }

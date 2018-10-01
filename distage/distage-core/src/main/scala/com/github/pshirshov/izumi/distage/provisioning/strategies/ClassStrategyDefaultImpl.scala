@@ -15,6 +15,7 @@ class ClassStrategyDefaultImpl
 (
   symbolIntrospector: SymbolIntrospector.Runtime
 ) extends ClassStrategy {
+
   import ClassStrategyDefaultImpl._
 
   def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[OpResult.NewInstance] = {
@@ -34,7 +35,7 @@ class ClassStrategyDefaultImpl
     Seq(OpResult.NewInstance(op.target, instance))
   }
 
-  private def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Any]) = {
+  protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Any]) = {
     val wiring = op.wiring
     val targetType = wiring.instanceType
     val symbol = targetType.tpe.typeSymbol
@@ -63,7 +64,7 @@ class ClassStrategyDefaultImpl
   }
 
 
-  private def reflectClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, symbol: Symbol): (ClassMirror, Option[Any]) = {
+  protected def reflectClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, symbol: Symbol): (ClassMirror, Option[Any]) = {
     val wiring = op.wiring
     val targetType = wiring.instanceType
     if (!symbol.isStatic) {
@@ -72,7 +73,7 @@ class ClassStrategyDefaultImpl
 
       val prefix = typeRef.pre
 
-      val module = if (prefix.termSymbol.isModule) {
+      val module = if (prefix.termSymbol.isModule && prefix.termSymbol.isStatic) {
         Module.Static(mirror.reflectModule(prefix.termSymbol.asModule).instance)
       } else {
         val key = op.wiring.prefix match {
@@ -97,8 +98,7 @@ class ClassStrategyDefaultImpl
     }
   }
 
-
-  private def mkJava(targetType: SafeType, args: Seq[Any]): Any = {
+  protected def mkJava(targetType: SafeType, args: Seq[Any]): Any = {
     val refUniverse = RuntimeDIUniverse.mirror
     val clazz = refUniverse
       .runtimeClass(targetType.tpe)
@@ -125,17 +125,23 @@ class ClassStrategyDefaultImpl
 }
 
 object ClassStrategyDefaultImpl {
+
   sealed trait Module {
     def toPrefix: Option[Any]
+
     def instance: Any
   }
+
   object Module {
+
     case class Static(instance: Any) extends Module {
       override def toPrefix: Option[Any] = None
     }
+
     case class Prefix(instance: Any) extends Module {
       override def toPrefix: Option[Any] = Some(instance)
     }
+
   }
 
 }
