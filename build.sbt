@@ -408,7 +408,7 @@ lazy val `izumi-r2` = inRoot.as
     , siteSubdirName in ScalaUnidoc := s"v${version.value}/api"
     , siteSubdirName in Paradox := s"v${version.value}/doc"
     , previewFixedPort := Some(9999)
-    , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
+    , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/7mind"), "git@github.com:7mind/izumi-microsite.git"))
     , git.remoteRepo := scmInfo.value.get.connection
     , paradoxProperties ++= Map(
       "scaladoc.izumi.base_url" -> s"/v${version.value}/api/com/github/pshirshov/",
