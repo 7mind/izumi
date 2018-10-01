@@ -301,6 +301,18 @@ class BasicTest extends WordSpec with MkInjector {
     assert(context.get[Set[Int]] == Set(1, 2, 3, 5, 6, 7, 8, 9))
   }
 
+  "support empty sets" in {
+    import Sets._
+    val definition = new ModuleDef {
+      many[Dependency]
+      make[Impl1]
+    }
+
+    val context = Injector().produce(definition)
+
+    assert(context.get[Impl1].justASet == Set.empty)
+  }
+
   "prserve tags in multi set bindings" in {
 
     val definition = new ModuleDef {
