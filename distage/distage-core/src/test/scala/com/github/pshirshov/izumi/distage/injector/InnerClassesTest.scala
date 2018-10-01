@@ -102,7 +102,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
     new InnerPathDepTest().testCase
   }
 
-  "progression test: classstrategy can't handle class local path-dependent injections (macros can)" in {
+  "can handle class local path-dependent injections (macros can)" in {
     val definition = new ModuleDef {
       make[TopLevelPathDepTest.type].from[TopLevelPathDepTest.type](TopLevelPathDepTest: TopLevelPathDepTest.type)
       make[TopLevelPathDepTest.TestClass]
