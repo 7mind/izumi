@@ -31,7 +31,7 @@ class RuntimeConfigReaderDefaultImpl
   }
 
   def anyReader(tpe: SafeType0[ru.type]): ConfigReader[_] = {
-    val key = SafeType0[ru.type](tpe.tpe.dealias.erasure)
+    val key = SafeType0(tpe.tpe.dealias.erasure)
 
     codecs.get(key) match {
       case Some(primitiveValueReader) =>
@@ -73,7 +73,7 @@ class RuntimeConfigReaderDefaultImpl
               case (name, typ) =>
                 val value = obj.get(name)
 
-                val res = anyReader(SafeType0[ru.type](typ))(value).fold(
+                val res = anyReader(SafeType0(typ))(value).fold(
                   exc => Left(s"Couldn't parse field `$name` because of exception: ${exc.getMessage}")
                   , Right(_)
                 )
@@ -154,7 +154,7 @@ class RuntimeConfigReaderDefaultImpl
                 case Some((typ, name)) =>
                   val value = obj.get(name)
 
-                  anyReader(SafeType0[ru.type](typ))(value).get
+                  anyReader(SafeType0(typ))(value).get
                 case None =>
                   throw new ConfigReadException(
                     s"""
@@ -176,7 +176,7 @@ class RuntimeConfigReaderDefaultImpl
 
   def objectMapReader(mapType: ru.Type): ConfigReader[GenMap[String, _]] = {
     case co: ConfigObject => Try {
-      val tyParam = SafeType0[ru.type](mapType.dealias.typeArgs.last)
+      val tyParam = SafeType0(mapType.dealias.typeArgs.last)
 
       mirror.reflectModule(mapType.dealias.companion.typeSymbol.asClass.module.asModule).instance match {
         case companionFactory: GenMapFactory[GenMap] @unchecked =>
@@ -236,7 +236,7 @@ class RuntimeConfigReaderDefaultImpl
 
   private def configListReader(listType: ru.Type, cl: ConfigList): Try[GenTraversable[_]] = {
     Try {
-      val tyParam = SafeType0[ru.type](listType.dealias.typeArgs.last)
+      val tyParam = SafeType0(listType.dealias.typeArgs.last)
 
       mirror.reflectModule(listType.dealias.companion.typeSymbol.asClass.module.asModule).instance match {
         case companionFactory: GenericCompanion[GenTraversable]@unchecked =>
@@ -284,7 +284,7 @@ class RuntimeConfigReaderDefaultImpl
       if (cv == null || cv.valueType == ConfigValueType.NULL) {
         None
       } else {
-        val tyParam = SafeType0[ru.type](optionType.typeArgs.head)
+        val tyParam = SafeType0(optionType.typeArgs.head)
         Option(anyReader(tyParam)(cv).get)
       }
     }

@@ -6,7 +6,7 @@ trait WithDISafeType {
   this: DIUniverseBase with WithTags =>
 
   // TODO: hotspots, hashcode on keys is inefficient
-  case class SafeType(override val tpe: TypeNative) extends SafeType0[u.type](tpe)
+  case class SafeType(override val tpe: TypeNative) extends SafeType0[u.type](u, tpe)
 
   object SafeType {
     def get[T: Tag]: SafeType = SafeType(Tag[T].tag.tpe)

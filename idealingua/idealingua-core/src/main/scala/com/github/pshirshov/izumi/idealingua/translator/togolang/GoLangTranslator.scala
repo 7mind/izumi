@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, _}
 import com.github.pshirshov.izumi.idealingua.model.common._
@@ -293,6 +294,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   }
 
   protected def renderServiceMethodAlternativeOutputTypeId(typePath: TypePath, name: String, at: Alternative, success: Boolean, imports: GoLangImports): TypeId = {
+    Quirks.discard(imports)
     if (success)
       at.success match {
         case _: Algebraic => new AdtId(TypePath(typePath.domain, Seq(s"${name}Success")), s"${name}Success")

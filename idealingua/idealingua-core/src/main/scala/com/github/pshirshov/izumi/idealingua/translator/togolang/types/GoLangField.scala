@@ -125,11 +125,15 @@ final case class GoLangField(
           if (GoLangType(null, im, ts).isPrimitive(vt.id))
             s"$dest := $src"
           else
+          // TODO: there was this thing in the for loop below
+          //
+          //if (vt.isInstanceOf[Generic])
+          //              renderPolymorphSerializedVar(vt.id, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
+          // but vt can't be a generic
+
             s"""$tempVal := make(${GoLangType(gm, im, ts).renderType(serialized = true)})
                |for ${tempVal}Key, ${tempVal}Val := range $src {
-               |${if (vt.isInstanceOf[Generic])
-              renderPolymorphSerializedVar(vt.id, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
-              (renderPolymorphSerialized(vt.id, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
+               |  ${(renderPolymorphSerialized(vt.id, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
                |}
                |$dest := $tempVal
                  """.stripMargin

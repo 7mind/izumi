@@ -129,12 +129,12 @@ trait CSharpTranslatorExtension extends TranslatorExtension {
 
     // Alternative
     def preModelEmit(ctx: CSTContext, name: String, alternative: Alternative)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id, im, ts)
+      discard(ctx, id, im, ts, name, alternative)
       ""
     }
 
     def postModelEmit(ctx: CSTContext, name: String, alternative: Alternative, leftType: TypeId, rightType: TypeId)(implicit im: CSharpImports, ts: Typespace): String = {
-      discard(ctx, id, im, ts)
+      discard(ctx, id, im, ts, name, alternative, leftType, rightType)
       ""
     }
 }
