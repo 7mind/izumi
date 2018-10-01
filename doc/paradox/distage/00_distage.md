@@ -694,7 +694,41 @@ Injector(DefaultBootstrapContext.noCogen)
 
 #### Manual Resolution with by-name parameters
 
-WIP
+Most cycles can also be resolved manually, when identified, using `by-name` parameters.
+
+Circular dependency in the following example are all resolved Scala's native `by-name`'s, without bytecode generation:
+
+```scala
+import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext.noCogen
+import distage._
+
+class A(b0: => B) {
+  def b: B = b0
+}
+
+class B(a0: => A) {
+  def a: A = a0
+}
+
+class C(self: => C) {
+  def c: C = self
+}
+
+val module = new ModuleDef {
+  make[A]
+  make[B]
+  make[C]
+}
+
+val locator = Injector(noCogen).produce(module)
+
+assert(locator.get[A].b eq locator.get[B])
+assert(locator.get[B].a eq locator.get[A])
+assert(locator.get[C].c eq locator.get[C])
+``` 
+
+The proxy generation via `cglib` is still enabled by default, because in scenarios with [extreme late-binding](#roles),
+cycles can be created unexpectedly and unobservably by the origin module.  
 
 ### Auto-Sets: Collecting Bindings By Predicate
 
