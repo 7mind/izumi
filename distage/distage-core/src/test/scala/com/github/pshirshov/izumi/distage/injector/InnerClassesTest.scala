@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.InnerClassCases.{InnerClassCase1, InnerClassCase2}
+import com.github.pshirshov.izumi.distage.fixtures.InnerClassCases._
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import org.scalatest.WordSpec
 
@@ -54,7 +54,24 @@ println(plan)
     val context = injector.produce(plan)
 
     assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
+  }
 
+  "support path-dependant by-name injections" in {
+    import InnerClassByNameCase._
+
+    val testProviderModule = new TestModule
+
+    val definition = new ModuleDef {
+      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+      make[testProviderModule.TestDependency]
+      make[testProviderModule.TestClass]
+    }
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    assert(context.get[testProviderModule.TestClass].aValue.isInstanceOf[testProviderModule.TestDependency])
   }
 
   "progression test: classstrategy can't handle class local path-dependent injections (macros can)" in {

@@ -15,6 +15,8 @@ class ClassStrategyDefaultImpl
 (
   symbolIntrospector: SymbolIntrospector.Runtime
 ) extends ClassStrategy {
+  import ClassStrategyDefaultImpl._
+
   def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[OpResult.NewInstance] = {
     val wiring = op.wiring
     val args = wiring.associations.map {
@@ -40,20 +42,28 @@ class ClassStrategyDefaultImpl
     if (symbol.isModule) { // don't re-instantiate scala objects
       mirror.reflectModule(symbol.asModule).instance
     } else {
-      val refClass = reflectClass(context, op, symbol)
+      val (refClass, prefixInstance) = reflectClass(context, op, symbol)
       val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
       val refCtor = refClass.reflectConstructor(ctorSymbol)
-
       val hasByName = ctorSymbol.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
-      if (hasByName) { // this is a dirty workaround for crappy logic in JavaTransformingMethodMirror
-        mkJava(targetType, args)
+
+      if (hasByName) {
+        // this is a dirty workaround for crappy logic in JavaTransformingMethodMirror
+        val fullArgs = prefixInstance match {
+          case Some(value) =>
+            value.asInstanceOf[AnyRef] +: args
+          case None =>
+            args
+        }
+        mkJava(targetType, fullArgs)
       } else {
         refCtor.apply(args: _*)
       }
     }
   }
 
-  private def reflectClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, symbol: Symbol): ClassMirror = {
+
+  private def reflectClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, symbol: Symbol): (ClassMirror, Option[Any]) = {
     val wiring = op.wiring
     val targetType = wiring.instanceType
     if (!symbol.isStatic) {
@@ -63,7 +73,7 @@ class ClassStrategyDefaultImpl
       val prefix = typeRef.pre
 
       val module = if (prefix.termSymbol.isModule) {
-        mirror.reflectModule(prefix.termSymbol.asModule).instance
+        Module.Static(mirror.reflectModule(prefix.termSymbol.asModule).instance)
       } else {
         val key = op.wiring.prefix match {
           case Some(value) =>
@@ -74,15 +84,16 @@ class ClassStrategyDefaultImpl
 
         context.fetchUnsafe(key) match {
           case Some(value) =>
-            value
+            Module.Prefix(value)
           case None =>
             throw new MissingRefException(s"Cannot get instance of prefix type $key while processing $op", Set(key), None)
         }
       }
 
-      mirror.reflect(module).reflectClass(symbol.asClass)
+
+      (mirror.reflect(module.instance).reflectClass(symbol.asClass), module.toPrefix)
     } else {
-      mirror.reflectClass(symbol.asClass)
+      (mirror.reflectClass(symbol.asClass), None)
     }
   }
 
@@ -112,6 +123,23 @@ class ClassStrategyDefaultImpl
 
 
 }
+
+object ClassStrategyDefaultImpl {
+  sealed trait Module {
+    def toPrefix: Option[Any]
+    def instance: Any
+  }
+  object Module {
+    case class Static(instance: Any) extends Module {
+      override def toPrefix: Option[Any] = None
+    }
+    case class Prefix(instance: Any) extends Module {
+      override def toPrefix: Option[Any] = Some(instance)
+    }
+  }
+
+}
+
 
 class ClassStrategyFailingImpl extends ClassStrategy {
   override def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[OpResult.NewInstance] = {

@@ -14,6 +14,18 @@ object InnerClassCases {
 
   }
 
+  object InnerClassByNameCase {
+
+    class TestModule {
+      class TestDependency
+      class TestClass(a:  => TestDependency) {
+        def aValue: TestDependency = a
+      }
+
+    }
+
+  }
+
   object InnerClassCase2 {
 
     object StableObjectInheritingTrait extends TestTrait
