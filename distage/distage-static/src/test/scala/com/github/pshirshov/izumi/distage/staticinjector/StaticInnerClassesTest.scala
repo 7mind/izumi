@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
-import com.github.pshirshov.izumi.distage.fixtures.InnerClassCases.{InnerClassCase1, InnerClassCase2}
+import com.github.pshirshov.izumi.distage.fixtures.InnerClassCases.{InnerClassUnstablePathsCase, InnerClassStablePathsCase}
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 
@@ -28,7 +28,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
 
   "progression test: macros can't handle function local path-dependent injections" in {
     val fail = Try {
-      import InnerClassCase1._
+      import InnerClassUnstablePathsCase._
 
       val testModule = new TestModule
 
@@ -48,7 +48,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
   }
 
   "macros can instantiate inner classes from stable objects where the classes are inherited from a trait" in {
-    import InnerClassCase2._
+    import InnerClassStablePathsCase._
     import StableObjectInheritingTrait._
 
     val definition = new StaticModuleDef {
@@ -61,7 +61,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
   }
 
   "macros can instantiate inner classes from stable objects where the classes are inherited from a trait and depend on types defined inside trait" in {
-    import InnerClassCase2._
+    import InnerClassStablePathsCase._
     import StableObjectInheritingTrait._
 
     val definition = new StaticModuleDef {
@@ -89,7 +89,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
       """)
   }
 
-  class InnerPathDepTest extends InnerClassCase1.TestModule {
+  class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {
     private val definition = new StaticModuleDef {
       stat[TestClass]
       stat[TestDependency]
@@ -105,5 +105,5 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
     }
   }
 
-  object TopLevelPathDepTest extends InnerClassCase1.TestModule
+  object TopLevelPathDepTest extends InnerClassUnstablePathsCase.TestModule
 }
