@@ -12,16 +12,16 @@ object IzumiDeps {
     val collection_compat = "0.2.0"
 
     val scala_java8_compat = "0.9.0" // 2.13+
-    val kind_projector = "0.9.7" // 2.13+
-    val scalatest = "3.0.6-SNAP2" // 2.13+
+    val kind_projector = "0.9.8" // 2.13+
+    val scalatest = "3.2.0-SNAP9" // snap10 is broken // 2.13+
 
     val shapeless = "2.3.3" // 2.13+
 
     val cats = "1.4.0" // 1.2.0 is 2.13+ but we are blocked by http4s
     val cats_effect = "1.0.0"
 
-    val circe = "0.10.0-M2" // 2.13+ , "0.10.0-M2" pulls cats 1.2.0
-    val circe_derivation = "0.9.0-M5"
+    val circe = "0.10.0" // 2.13+ , "0.10.0-M2" pulls cats 1.2.0
+    val circe_derivation = "0.10.0-M1"
 
     val http4s = "0.19.0-M2" // https://github.com/http4s/http4s/issues/1797
 
@@ -31,7 +31,7 @@ object IzumiDeps {
     val scalacheck = "1.14.0"
     val scalacheck_shapeless = "1.2.0"
 
-    val zio = "0.2.7"
+    val zio = "0.2.8"
 
     // TODO: we need to get rid of this
     val java_websocket = "1.3.9" // java, we need it bcs http4s ws client isn't ready yet
