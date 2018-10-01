@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -12,7 +13,7 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.CSharpTyp
 
 final case class CSharpImport(id: TypeId, namespace: Seq[String], usingName: String)
 
-final case class CSharpImports(imports: List[CSharpImport] = List.empty)(implicit ts: Typespace) {
+final case class CSharpImports(imports: List[CSharpImport] = List.empty) {
   protected def isAmbiguousName(name: String): Boolean = {
     val ambiguous = Seq("Type", "Environment")
     ambiguous.contains(name)
@@ -55,7 +56,7 @@ final case class CSharpImports(imports: List[CSharpImport] = List.empty)(implici
 }
 
 object CSharpImports {
-  def apply(imports: List[CSharpImport])(implicit ts: Typespace): CSharpImports =
+  def apply(imports: List[CSharpImport]): CSharpImports =
     new CSharpImports(imports)
 
   def apply(definition: TypeDef, fromPkg: Package, extra: List[CSharpImport] = List.empty)(implicit ts: Typespace): CSharpImports =
@@ -68,6 +69,7 @@ object CSharpImports {
     CSharpImports(fromBuzzer(ts, i, fromPkg, extra))
 
   protected def withImport(t: TypeId, fromPackage: Package, forTest: Boolean = false): Seq[String] = {
+    Quirks.discard(forTest)
     t match {
       case Primitive.TTime => return Seq("System")
       case Primitive.TTs => return Seq("System", "IRT", "System.Globalization")

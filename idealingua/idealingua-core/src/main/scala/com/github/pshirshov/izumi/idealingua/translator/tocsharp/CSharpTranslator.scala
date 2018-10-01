@@ -187,7 +187,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
       }
   }
 
-  protected def renderServiceMethodAlternativeOutputTypeId(typePath: TypePath, name: String, at: Alternative, success: Boolean)(implicit im: CSharpImports, ts: Typespace): TypeId = {
+  protected def renderServiceMethodAlternativeOutputTypeId(typePath: TypePath, name: String, at: Alternative, success: Boolean): TypeId = {
     if (success)
       at.success match {
         case _: Algebraic => new AdtId(TypePath(typePath.domain, Seq(s"${name}Success")), s"${name}Success")
