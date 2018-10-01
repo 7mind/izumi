@@ -534,6 +534,12 @@ Plugins also allow a program to dynamically extend itself by adding new Plugin c
 Sorry, this page is not ready yet
 @@@
 
+"Roles" are a pattern of multi-tenant applications, in which multiple separate microservices all reside within a single `.jar`.
+This strategy helps cut down development, maintenance and operations costs associated with maintaining fully separate code bases and binaries.
+The apps that should be launched are chosen by command-line parameters: `./launcher app1 app2 app3`. When launching less apps
+than are available in the launcher - `./launcher app1`, redundant components will be collected by the [garbage collector](#using-garbage-collector)
+and won't be started.
+
 Roles: a viable alternative to Microservices:
 
 https://github.com/7mind/slides/blob/master/02-roles/target/roles.pdf
@@ -589,11 +595,60 @@ class Test extends DistageSpec {
 
 ...
 
-### Using Garbage Collector to instantiate only classes required for the test
+### Using Garbage Collector
 
-...
+A garbage collector is included in `distage`, but has to be enabled explicitly:
 
-### Detailed Feature Overview
+```scala
+import distage._
+
+class Main
+
+// Designate `Main` class as the garbage collection root
+val roots = Seq(DIKey.get[Main])
+
+// Enable GC
+val gcModule = new TracingGCModule(roots)
+val injector = Injector(gcModule)
+```
+
+GC will remove all bindings that aren't transitive dependencies of the chosen `GC root` keys from the plan - they will never be instantiated.
+
+In the following example:
+
+```scala
+import distage._
+
+case class A(b: B)
+case class B()
+case class C() {
+  println("C!")
+}
+
+val module = new ModuleDef {
+  make[A]
+  make[B]
+  make[C]
+}
+
+val roots = Seq(DIKey.get[A])
+
+val locator = Injector(new TracingGCModule(roots)).produce(module)
+
+locator.find[A]
+// res0: Option[A] = Some(A(B()))
+locator.find[B]
+// res1: Option[B] = Some(B())
+locator.find[C]
+// res2: Option[C] = None
+```
+
+Class `C` is removed because it wasn't dependent on by classes `B` or `A`. It's not present in the `Locator` and the `"C!"` message was never printed.
+If class `B` were to depend on `C` as in `case class B(c: C)`, it would've been retained, because `A` which is the GC root, would've depended on `B` which in turns depends on `C`.
+
+GC serves two important purposes:
+* it enables faster [tests](#test-kit) by omitting unneeded instantiations,
+* and it enables multiple separate applications, "[Roles](#roles)" to be hosted within a single `.jar`.
 
 ### Implicits Injection
 
@@ -626,16 +681,73 @@ locator.get[B] eq locator.get[A].b
 
 #### Automatic Resolution with generated Proxies
 
+The above strategy depends on `distage-proxy-cglib` module which is brought in by default with `distage-core`.
+
+It's enabled by default. If you want to disable it, use `noCogen` bootstrap environment:
+
+```scala
+import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
+import distage._
+
+Injector(DefaultBootstrapContext.noCogen)
+```
+
 #### Manual Resolution with by-name parameters
+
+WIP
 
 ### Auto-Sets: Collecting Bindings By Predicate
 
-...
+AutoSet @scaladoc[Planner](com.github.pshirshov.izumi.distage.model.Planner) Hooks traverse the class graph and collect all classes matching a predicate.
+
+Using Auto-Sets, one can, for example, collect all `AutoCloseable` classes and `.close()` them after the application has finished work.
+
+Note: it's not generally recommended to construct stateful, effectful or resource-allocating classes with `distage`, a general rule of thumb is:
+if a class and its dependencies can be replaced by a global `object`, it's ok to inject them through  `distage`. However, an example is given anyway,
+as a lot of real applications depend on global resources, such as JDBC connections, `ExecutionContext` thread pools, Akka Systems, etc. that should 
+be closed properly at exit.
+
+```scala
+import java.util.concurrent.{ExecutorService, Executors}
+
+import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
+import distage._
+
+val threadPoolModule = new ModuleDef {
+  make[ExecutorService].from(Executors.newWorkStealingPool())
+  make[ExecutionContext].from {
+    es: ExecutorService =>
+      ExecutionContext.fromExecutorService(es)
+  }
+}
+
+// A hook that collects every instance of a subtype of a given type
+val collectAllExecutorServicesHook = new AssignableFromAutoSetHook[ExecutorService]
+
+val bootstrapModule = new BootstrapModuleDef {
+  many[PlanningHook]
+    .add(collectAllExecutorServicesHook)
+}
+
+val injector = Injector(bootstrapModule)
+
+val locator = injector.produce(threadPoolModule)
+
+try {
+  // run the app
+  ???
+} finally {
+  // when done, close thread pools
+  val allExecutors = locator.get[Set[ExecutorService]]
+  allExecutors.foreach(_.shutdownNow())
+}
+```
 
 #### Weak Sets
 
 Sets (aka [Multibindings](#multibindings--set-bindings)) can contain *weak* references. Elements designated as weak will not
-be retained by the [Garbage Collector](#using-garbage-collector-to-instantiate-only-classes-required-for-the-test) if they are not
+be retained by the [Garbage Collector](#using-garbage-collector) if they are not
 referenced outside of the set.
 
 Example:
