@@ -191,7 +191,7 @@ For further detail see [Guice wiki on Multibindings](https://github.com/google/g
 
 ### Provider Bindings
 
-To bind to a function instead of constructor use `.from` method in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef) DSL:
+To bind a function instead of constructor use `.from` method in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef) DSL:
 
 ```scala
 case class HostPort(host: String, port: Int)
@@ -200,7 +200,9 @@ class HttpServer(hostPort: HostPort)
 
 trait HttpServerModule extends ModuleDef {
   make[HttpServer].from {
-    hostPort: HostPort => new HttpServer(hostPort.host, hostPort + 1000)
+    hostPort: HostPort =>
+      val modifiedPort = hostPort.port + 1000
+      new HttpServer(hostPort.host, modifiedPort)
   }
 }
 ```
@@ -316,7 +318,7 @@ class TransModule[F[_[_], _]: TagTK] extends ModuleDef
 ```
 
 Adding a `Tag` for more exotic type shapes is as easy as defining a type synonym,
-consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#HKTag) docs for description
+consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for description
 
 ### Config files
 
@@ -461,7 +463,8 @@ Await.result(main, Duration.Inf)
 
 ### Depending on future values with by-name parameters
 
-...
+=> Locator
+
 
 ### Ensuring service boundaries using API modules
 
@@ -511,7 +514,7 @@ At your app entry point use a plugin loader to discover all `PluginDefs`:
 val pluginLoader = new PluginLoaderDefaultImpl(
   PluginConfig(
     debug = true
-    , packagesEnabled = Seq("com.example") // packages to scan
+    , packagesEnabled = Seq("com.example.petstore") // packages to scan
     , packagesDisabled = Seq.empty         // packages to ignore
   )
 )
@@ -526,7 +529,7 @@ Launch as normal with the loaded modules:
 Injector().produce(app).get[PetStoreController].run
 ```
 
-Plugins also allow a program to dynamically extend itself by adding new Plugin classes on the classpath at launch time with `java -cp`
+Plugins also allow a program to dynamically extend itself by adding new Plugin classes on the classpath at launch time via `java -cp`
 
 ### Roles 
 
