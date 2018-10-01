@@ -16,11 +16,7 @@ class ClassStrategyDefaultImpl
   symbolIntrospector: SymbolIntrospector.Runtime
 ) extends ClassStrategy {
   def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[OpResult.NewInstance] = {
-
-    import op._
-
-    val targetType = wiring.instanceType
-
+    val wiring = op.wiring
     val args = wiring.associations.map {
       key =>
         context.fetchKey(key.wireWith, key.isByName) match {
@@ -28,21 +24,23 @@ class ClassStrategyDefaultImpl
             dep
           case _ =>
             throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
-              s" but the dependency has not been initialized: dependency: ${key.wireWith} of class: $target")
+              s" but the dependency has not been initialized: dependency: ${key.wireWith} of class: $op")
         }
     }
 
-    val instance = mkScala(context, targetType, args)
-    Seq(OpResult.NewInstance(target, instance))
+    val instance = mkScala(context, op, args)
+    Seq(OpResult.NewInstance(op.target, instance))
   }
 
-  private def mkScala(context: ProvisioningKeyProvider, targetType: SafeType, args: Seq[Any]) = {
+  private def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Any]) = {
+    val wiring = op.wiring
+    val targetType = wiring.instanceType
     val symbol = targetType.tpe.typeSymbol
 
     if (symbol.isModule) { // don't re-instantiate scala objects
       mirror.reflectModule(symbol.asModule).instance
     } else {
-      val refClass = reflectClass(context, targetType, symbol)
+      val refClass = reflectClass(context, op, symbol)
       val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
       val refCtor = refClass.reflectConstructor(ctorSymbol)
 
@@ -55,7 +53,9 @@ class ClassStrategyDefaultImpl
     }
   }
 
-  private def reflectClass(context: ProvisioningKeyProvider, targetType: SafeType, symbol: Symbol): ClassMirror = {
+  private def reflectClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, symbol: Symbol): ClassMirror = {
+    val wiring = op.wiring
+    val targetType = wiring.instanceType
     if (!symbol.isStatic) {
       val typeRef = ReflectionUtil.toTypeRef(targetType.tpe)
         .getOrElse(throw new ProvisioningException(s"Expected TypeRefApi while processing $targetType, got ${targetType.tpe}", null))
@@ -65,13 +65,18 @@ class ClassStrategyDefaultImpl
       val module = if (prefix.termSymbol.isModule) {
         mirror.reflectModule(prefix.termSymbol.asModule).instance
       } else {
-        val required = SafeType.apply(prefix)
-        val key = DIKey.TypeKey(required)
+        val key = op.wiring.prefix match {
+          case Some(value) =>
+            value
+          case None =>
+            throw new MissingRefException(s"No prefix defined for key ${op.target} while processing $op", Set(op.target), None)
+        }
+
         context.fetchUnsafe(key) match {
           case Some(value) =>
             value
           case None =>
-            throw new MissingRefException(s"Cannot get instance of prefix type $key while processing $targetType", Set(key), None)
+            throw new MissingRefException(s"Cannot get instance of prefix type $key while processing $op", Set(key), None)
         }
       }
 

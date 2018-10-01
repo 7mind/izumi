@@ -17,38 +17,39 @@ class SafeType0[U <: SingletonUniverse](val tpe: U#Type) {
     dealiased.toString
   }
 
-  private final val prefix: Option[NonUniqueSingleTypeWrapper[U]] = {
-    if (dealiased.typeSymbol.isStatic || dealiased == scala.reflect.runtime.universe.NoPrefix) {
-      None
-    } else {
-      dealiased
-        .asInstanceOf[scala.reflect.runtime.universe.TypeRefApi]
-        .pre.asInstanceOf[AnyRef] match {
-        case u: scala.reflect.internal.Types#SingleType =>
-          Some(NonUniqueSingleTypeWrapper[U](u.pre.asInstanceOf[U#Type], u.sym.asInstanceOf[U#Symbol]))
-
-        case _ =>
-          None
-      }
-    }
-  }
+//  private final val prefix: Option[NonUniqueSingleTypeWrapper[U]] = {
+//    if (dealiased.typeSymbol.isStatic || dealiased == scala.reflect.runtime.universe.NoPrefix) {
+//      None
+//    } else {
+//      dealiased
+//        .asInstanceOf[scala.reflect.runtime.universe.TypeRefApi]
+//        .pre.asInstanceOf[AnyRef] match {
+//        case u: scala.reflect.internal.Types#SingleType =>
+//          Some(NonUniqueSingleTypeWrapper[U](u.pre.asInstanceOf[U#Type], u.sym.asInstanceOf[U#Symbol]))
+//
+//        case _ =>
+//          None
+//      }
+//    }
+//  }
 
   /**
     * Workaround for Type's hashcode being unstable with sbt fork := false and version of scala other than 2.12.4
     * (two different scala-reflect libraries end up on classpath and lead to undefined hashcode)
     **/
   override final val hashCode: Int = {
-    if (prefix.isDefined) {
-      prefix.hashCode()
-    } else {
+//    if (prefix.isDefined) {
+//      prefix.hashCode()
+//    } else {
       dealiased.typeSymbol.name.toString.hashCode
 
-    }
+//    }
   }
 
   override final def equals(obj: Any): Boolean = {
     obj match {
       case other: SafeType0[U]@unchecked =>
+//        dealiased =:= other.dealiased
         toString == other.toString
 //        val eq = (prefix.isDefined && prefix == other.prefix && toString == other.toString) || dealiased =:= other.dealiased
 //        println(s"$this <?> $obj == $eq; $prefix , ${other.prefix}")
