@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.distage.bootstrap
 
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{FactoryStrategy, ProxyProvider, ProxyStrategy, TraitStrategy}
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyProvider
 import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CglibProxyProvider
-import com.github.pshirshov.izumi.distage.provisioning.strategies.{FactoryStrategyDefaultImpl, ProxyStrategyDefaultImpl, TraitStrategyDefaultImpl}
 
 object CglibBootstrap {
   final lazy val cogenBootstrap = DefaultBootstrapContext.defaultBootstrap ++ defaultCogen

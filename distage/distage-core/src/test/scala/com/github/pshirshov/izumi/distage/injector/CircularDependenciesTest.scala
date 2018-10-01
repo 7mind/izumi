@@ -41,7 +41,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val exc = intercept[ProvisioningException] {
       injector.produce(plan)
     }
-    exc.printStackTrace()
+
     assert(exc.getSuppressed.head.isInstanceOf[TraitInitializationFailedException])
     assert(exc.getSuppressed.head.getCause.isInstanceOf[RuntimeException])
   }
@@ -177,14 +177,12 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val definition: ModuleBase = new ModuleDef {
       make[Circular2]
       make[Circular1]
+      make[Int].from(1)
     }
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan)
-
-    val x = new Circular1(null)
-    val y = context.get[Circular1]
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)

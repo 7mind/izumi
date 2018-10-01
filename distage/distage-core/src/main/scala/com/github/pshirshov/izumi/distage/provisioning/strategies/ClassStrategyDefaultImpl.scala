@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.distage.model.reflection
 import com.github.pshirshov.izumi.distage.model.reflection.{SymbolIntrospector, universe}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
 
 class ClassStrategyDefaultImpl
 (
@@ -56,9 +57,9 @@ class ClassStrategyDefaultImpl
 
   private def mkJava(targetType: universe.RuntimeDIUniverse.SafeType, args: Seq[Any]) = {
     val refUniverse = RuntimeDIUniverse.mirror
-    val argClasses = args.map(_.getClass)
     val clazz = refUniverse
       .runtimeClass(targetType.tpe)
+    val argValues = args.map(_.asInstanceOf[AnyRef])
 
     clazz
       .getDeclaredConstructors
@@ -66,16 +67,18 @@ class ClassStrategyDefaultImpl
       .filter(_.getParameterCount == args.size)
       .find {
         c =>
-          c.getParameterTypes.zip(argClasses).forall({ case (exp, impl) => exp.isAssignableFrom(impl) })
+          c.getParameterTypes.zip(argValues).forall({ case (exp, impl) => TypeUtil.isAssignableFrom(exp, impl) })
       } match {
       case Some(constructor) =>
         constructor.setAccessible(true)
-        constructor.newInstance(args.map(_.asInstanceOf[AnyRef]): _*)
+        constructor.newInstance(argValues: _*)
 
       case None =>
         throw new ProvisioningException(s"Can't find constructor for $targetType", null)
     }
   }
+
+
 }
 
 class ClassStrategyFailingImpl extends ClassStrategy {
