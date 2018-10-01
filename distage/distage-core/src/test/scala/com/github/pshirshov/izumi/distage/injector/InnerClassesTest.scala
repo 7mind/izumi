@@ -55,6 +55,29 @@ class InnerClassesTest extends WordSpec with MkInjector {
     assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
   }
 
+  "can handle function local path-dependent injections (macros can't)" in {
+    def someFunction(): Unit= {
+      import InnerClassCase1._
+
+      val testProviderModule = new TestModule
+
+      val definition = new ModuleDef {
+        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+        make[testProviderModule.TestClass]
+        make[testProviderModule.TestDependency]
+      }
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produce(plan)
+
+      assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
+    }
+    someFunction()
+  }
+
+
   "support path-dependant by-name injections" in {
     import InnerClassByNameCase._
 
@@ -87,6 +110,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       assert(context.get[TopLevelPathDepTest.TestClass].a != null)
     }
+    fail.get
     assert(fail.isFailure)
   }
 
@@ -97,26 +121,6 @@ class InnerClassesTest extends WordSpec with MkInjector {
     assert(fail.isFailure)
   }
 
-  "progression test: classstrategy can't handle function local path-dependent injections (macros can't)" in {
-    val fail = Try {
-      import InnerClassCase1._
-
-      val testProviderModule = new TestModule
-
-      val definition = new ModuleDef {
-        make[testProviderModule.TestClass]
-        make[testProviderModule.TestDependency]
-      }
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produce(plan)
-
-      assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
-    }
-    assert(fail.isFailure)
-  }
 
   "progression test: ReflectionProvider can't handle factories inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't)" in {
     val fail = Try {
