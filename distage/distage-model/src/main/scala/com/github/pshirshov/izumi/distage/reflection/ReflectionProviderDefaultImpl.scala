@@ -3,12 +3,15 @@ package com.github.pshirshov.izumi.distage.reflection
 import com.github.pshirshov.izumi.distage.model.exceptions.{UnsupportedDefinitionException, UnsupportedWiringException}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.DIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
+import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
+
   import u.Wiring._
   import u._
 
   protected def keyProvider: DependencyKeyProvider.Aux[u.type]
+
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
   def symbolToWiring(symbl: SafeType): Wiring = {
@@ -56,7 +59,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   override def providerToWiring(function: Provider): Wiring = {
     function match {
-      case factory: Provider.FactoryProvider @unchecked =>
+      case factory: Provider.FactoryProvider@unchecked =>
         Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
       case _ =>
         Wiring.UnaryWiring.Function(function, function.associations)
@@ -74,16 +77,28 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private def unarySymbolDeps(symbl: SafeType): UnaryWiring.ProductWiring = symbl match {
     case ConcreteSymbol(symb) =>
-      UnaryWiring.Constructor(symb, constructorParameters(symb))
+      UnaryWiring.Constructor(symb, constructorParameters(symb), getPrefix(symb))
 
     case AbstractSymbol(symb) =>
-      UnaryWiring.AbstractSymbol(symb, traitMethods(symb))
+      UnaryWiring.AbstractSymbol(symb, traitMethods(symb), getPrefix(symb))
 
     case FactorySymbol(_, _, _) =>
       throw new UnsupportedWiringException(s"Factory cannot produce factories, it's pointless: $symbl", symbl)
 
     case _ =>
       throw new UnsupportedWiringException(s"Wiring unsupported: $symbl", symbl)
+  }
+
+  private def getPrefix(symb: u.SafeType): Option[DIKey] = {
+    if (symb.tpe.typeSymbol.isStatic) {
+      None
+    } else {
+      val typedRef = ReflectionUtil.toTypeRef(symb.tpe.asInstanceOf[reflect.runtime.universe.TypeApi])
+      typedRef
+        .map(_.pre)
+        .filterNot(_.termSymbol.isModule)
+        .map(v => DIKey.TypeKey(SafeType(v.asInstanceOf[u.TypeNative])))
+    }
   }
 
   private def traitMethods(symb: SafeType): Seq[Association.AbstractMethod] = {
@@ -118,19 +133,20 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
           , f.tpe.members.filter(m => symbolIntrospector.isWireableMethod(f, m)).map(_.asMethod).toSeq
         ))
   }
+
 }
 
 object ReflectionProviderDefaultImpl {
 
   class Runtime(override val keyProvider: DependencyKeyProvider.Runtime
-              , override val symbolIntrospector: SymbolIntrospector.Runtime)
+                , override val symbolIntrospector: SymbolIntrospector.Runtime)
     extends ReflectionProvider.Runtime
       with ReflectionProviderDefaultImpl
 
   object Static {
     def apply(macroUniverse: DIUniverse)
-      (keyprovider: DependencyKeyProvider.Static[macroUniverse.type]
-       , symbolintrospector: SymbolIntrospector.Static[macroUniverse.type]): ReflectionProvider.Static[macroUniverse.type] =
+             (keyprovider: DependencyKeyProvider.Static[macroUniverse.type]
+              , symbolintrospector: SymbolIntrospector.Static[macroUniverse.type]): ReflectionProvider.Static[macroUniverse.type] =
       new ReflectionProviderDefaultImpl {
         override val u: macroUniverse.type = macroUniverse
         override val keyProvider: keyprovider.type = keyprovider

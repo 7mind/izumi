@@ -44,13 +44,13 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
     val definition = new ModuleDef {
       make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-      make[testProviderModule.TestClass]
       make[testProviderModule.TestDependency]
+      make[testProviderModule.TestClass]
     }
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-
+println(plan)
     val context = injector.produce(plan)
 
     assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])

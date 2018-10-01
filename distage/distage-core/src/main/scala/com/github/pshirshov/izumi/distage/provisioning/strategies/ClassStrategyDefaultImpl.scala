@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
+import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
 
 class ClassStrategyDefaultImpl
 (
@@ -32,7 +32,7 @@ class ClassStrategyDefaultImpl
         }
     }
 
-    val instance = mkScala(context,targetType, args)
+    val instance = mkScala(context, targetType, args)
     Seq(OpResult.NewInstance(target, instance))
   }
 
@@ -57,7 +57,9 @@ class ClassStrategyDefaultImpl
 
   private def reflectClass(context: ProvisioningKeyProvider, targetType: SafeType, symbol: Symbol): ClassMirror = {
     if (!symbol.isStatic) {
-      val typeRef = toTypeRef(targetType.tpe)
+      val typeRef = ReflectionUtil.toTypeRef(targetType.tpe)
+        .getOrElse(throw new ProvisioningException(s"Expected TypeRefApi while processing $targetType, got ${targetType.tpe}", null))
+
       val prefix = typeRef.pre
 
       val module = if (prefix.termSymbol.isModule) {
@@ -79,14 +81,6 @@ class ClassStrategyDefaultImpl
     }
   }
 
-  def toTypeRef(tpe: TypeApi): TypeRefApi = {
-    tpe match {
-      case typeref: TypeRefApi =>
-        typeref
-      case o =>
-        throw new ProvisioningException(s"Expected TypeRefApi while processing $tpe, got $o", null)
-    }
-  }
 
   private def mkJava(targetType: SafeType, args: Seq[Any]): Any = {
     val refUniverse = RuntimeDIUniverse.mirror

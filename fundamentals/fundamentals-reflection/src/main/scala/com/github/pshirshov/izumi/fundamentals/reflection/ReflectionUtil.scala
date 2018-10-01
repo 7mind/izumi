@@ -68,5 +68,15 @@ object ReflectionUtil {
   def runtimeAnnotation(tpe: u.Type, scalaArgs: List[u.Tree], javaArgs: ListMap[u.Name, u.JavaArgument]): u.Annotation =
     u.Annotation.apply(tpe, scalaArgs, javaArgs)
 
+
+
+  def toTypeRef(tpe: u.TypeApi): Option[u.TypeRefApi] = {
+    tpe match {
+      case typeref: u.TypeRefApi =>
+        Some(typeref)
+      case _ =>
+        None
+    }
+  }
 }
 

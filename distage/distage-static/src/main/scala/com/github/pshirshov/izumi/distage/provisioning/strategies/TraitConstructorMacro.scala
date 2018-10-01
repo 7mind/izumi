@@ -28,7 +28,7 @@ object TraitConstructorMacro {
 
     val targetType = weakTypeOf[T]
 
-    val UnaryWiring.AbstractSymbol(_, wireables) = reflectionProvider.symbolToWiring(SafeType(targetType))
+    val UnaryWiring.AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(SafeType(targetType))
 
     val (wireArgs, wireMethods) = wireables.map {
       case AbstractMethod(ctx, name, _, key) =>

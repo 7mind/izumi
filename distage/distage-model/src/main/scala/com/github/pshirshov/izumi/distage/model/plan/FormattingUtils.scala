@@ -20,11 +20,11 @@ object FormattingUtils {
 
   private def doFormat(deps: Wiring): String = {
     deps match {
-      case Constructor(instanceType, associations) =>
-        doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'))
+      case Constructor(instanceType, associations, prefix) =>
+        doFormat(instanceType.tpe.toString, associations.map(_.format), "make", ('[', ']'), ('(', ')'), prefix.map(_.toString))
 
-      case AbstractSymbol(instanceType, associations) =>
-        doFormat(instanceType.tpe.toString, associations.map(_.format), "impl", ('[', ']'), ('{', '}'))
+      case AbstractSymbol(instanceType, associations, prefix) =>
+        doFormat(instanceType.tpe.toString, associations.map(_.format), "impl", ('[', ']'), ('{', '}'), prefix.map(_.toString))
 
       case Function(instanceType, associations) =>
         doFormat(instanceType.toString, associations.map(_.format), "call", ('(', ')'), ('{', '}'))
@@ -62,9 +62,9 @@ object FormattingUtils {
     }
   }
 
-  def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
+  def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char), prefix: Option[String] = None): String = {
     val sb = new StringBuilder()
-    sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}\n")
+    sb.append(s"$opName${opFormat._1}${prefix.fold("")(s => s"<$s>")}$impl${opFormat._2} ${delim._1}\n")
     if (depRepr.nonEmpty) {
       sb.append(depRepr.mkString("\n").shift(2))
     }
