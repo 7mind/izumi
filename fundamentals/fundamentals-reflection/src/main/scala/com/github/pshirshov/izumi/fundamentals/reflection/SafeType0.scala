@@ -39,12 +39,9 @@ class SafeType0[U <: SingletonUniverse](
       case (tpe: scala.reflect.internal.Types#UniqueSingleType, other: scala.reflect.internal.Types#UniqueSingleType)
         if tpe.sym.isFreeTerm && other.sym.isFreeTerm =>
 
-        val eq = new SafeType0(u, tpe.pre.asInstanceOf[U#Type]) == new SafeType0(u, other.pre.asInstanceOf[U#Type]) && tpe.sym.name.toString == other.sym.name.toString
-
-        System.err println ((tpe.pre, other.pre, tpe.sym, other.sym, eq))
-
-        eq
-      case _ => false
+        new SafeType0(u, tpe.pre.asInstanceOf[U#Type]) == new SafeType0(u, other.pre.asInstanceOf[U#Type]) && tpe.sym.name.toString == other.sym.name.toString
+      case _ =>
+        false
   }
 
   /**
