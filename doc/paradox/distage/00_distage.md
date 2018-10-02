@@ -4,7 +4,7 @@ out: index.html
 distage Staged Dependency Injection
 ============
 
-`distage` (p: 'dee-stage') is a pragmatic module system for Scala that combines safety and reliability of pure FP with late binding and flexibility
+`distage` is a pragmatic module system for Scala that combines safety and reliability of pure FP with late binding and flexibility
 of runtime dependency injection frameworks such as Guice.
 
 ### Hello World
@@ -387,7 +387,7 @@ class ConfiguredTryProgram[F[_]: TagK: Monad] extends ModuleDef {
 Sorry, this page is not ready yet
 @@@
 
-example of explicitly splitting effectful and pure instantiations:
+Example of explicitly splitting effectful and pure instantiations:
 
 ```scala
 import distage._
@@ -451,8 +451,10 @@ val main: Future[Unit] = initializers.run {
 Await.result(main, Duration.Inf)
 ```
 
-Effectful instantiation is not recommended in general. A rule of thumb is:
+Effectful instantiation is not recommended in general – ideally, resources ought to be managed outside of `distage`. A rule of thumb is:
 if a class and its dependencies are stateless, and can be replaced by a global `object`, it's ok to inject them with  `distage`.
+
+See also: [Auto-Sets, closing all AutoCloseables](#auto-sets-collecting-bindings-by-predicate)
 
 ### Inner Classes and Path-Dependent Types
 
@@ -468,7 +470,7 @@ You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issue
 Sorry, this page is not ready yet
 @@@
 
-Implicits are not injected from lexical scope, they have to be declared inside a `Module` like any other class.
+Implicits are managed like any other class, declare them in a module to make them available for summoning:
 
 ```scala
 import cats.Monad
@@ -481,10 +483,13 @@ object IOMonad extends ModuleDef {
 }
 ```
 
-If they were, then any binding of a class that depends on an implicit instance, would have to import an *implementation*
-of that implicit instance:
+Implicits for wired classes are injected from DI context, not from surrounding lexical scope.
+If they were captured from lexical scope when the module is defined, then any binding of a class that depends on an
+implicit, would have to import an *implementation* of that implicit. 
+Depending on implementations is unmodular and directly contradicts the idea of using a dedicated module system
+in the first place:
  
-```
+```scala
 import cats._
 import distage._
 
@@ -509,24 +514,26 @@ val eitherMonadModule = new ModuleDef {
 
 val all = kvstoreMOdule ++ eitherMonadModule
 ```
- 
-Depending on implementations is unmodular and directly contradicts the idea of using a dedicated module system
-in the first place. 
 
-Instead, `distage` opts for explicit management of implicits, as when they appear in application-level scope as module
-dependencies, they should be treated like any other module.
-
-Obviously, implicits obey the usual lexical scope in application code, provider bindings, derivations, etc, etc.
+Implicits obey the usual lexical scope outside of modules managed by `distage`.
 
 You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/230
 
 ### Auto-Traits & Auto-Factories
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
 
 ...
 
 ### Patterns
 
 ### Import Materialization
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
 
 ...
 
@@ -544,7 +551,9 @@ class B
 class C
 
 val module = new ModuleDef {
-  make[A]; make[B]; make[C]
+  make[A]
+  make[B]
+  make[C]
 }
 
 val locator = Injector().produce(module)
@@ -743,6 +752,10 @@ GC serves two important purposes:
 
 ### Compile-Time Checks
 
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
 ...
 
 ### Circular Dependencies support
@@ -754,19 +767,23 @@ import distage._
 
 case class A(b: B)
 case class B(a: A) 
+case class C(c: C)
 
 val locator = Injector().produce(new ModuleDef {
   make[A]
   make[B]
+  make[C]
 })
 
 locator.get[A] eq locator.get[B].a
 // res0: Boolean = true
 locator.get[B] eq locator.get[A].b
 // res1: Boolean = true
+locator.get[C] eq locator.get[C].c
+// res2: Boolean = true
 ``` 
 
-#### Automatic Resolution with generated Proxies
+#### Automatic Resolution with generated proxies
 
 The above strategy depends on `distage-proxy-cglib` module which is brought in by default with `distage-core`.
 
@@ -781,9 +798,9 @@ Injector(DefaultBootstrapContext.noCogen)
 
 #### Manual Resolution with by-name parameters
 
-Most cycles can also be resolved manually, when identified, using `by-name` parameters.
+Most cycles can also be resolved manually when identified, using `by-name` parameters.
 
-Circular dependency in the following example are all resolved Scala's native `by-name`'s, without bytecode generation:
+Circular dependencies in the following example are all resolved via Scala's native `by-name`'s, without any proxy generation:
 
 ```scala
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext.noCogen
@@ -815,7 +832,7 @@ assert(locator.get[C].c eq locator.get[C])
 ``` 
 
 The proxy generation via `cglib` is still enabled by default, because in scenarios with [extreme late-binding](#roles),
-cycles can be created unexpectedly and unobservably by the origin module.  
+cycles can emerge unexpectedly, outside of control of the origin module.  
 
 ### Auto-Sets: Collecting Bindings By Predicate
 
