@@ -319,7 +319,7 @@ lazy val idealinguaModel = inIdealingua.as.module
   .settings()
 
 lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.circe, R.zio, R.cats_all).flatten)
+  .settings(libraryDependencies ++= Seq(R.circe, R.cats_all).flatten ++ Seq(R.zio_core))
 
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScala)
 

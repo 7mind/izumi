@@ -10,14 +10,15 @@ import scala.util.{Failure, Success, Try}
 trait BIORunner[BIO[_, _]] {
   def unsafeRun[E, A](io: BIO[E, A]): A
 
-  @deprecated("use unsafeRunSync1", "17/09/2018")
-  def unsafeRunSync0[E, A](io: BIO[E, A]): ExitResult[E, A]
-
   def unsafeRunSyncAsEither[E, A](io: BIO[E, A]): Try[Either[E, A]]
+
+  def unsafeRunAsyncAsEither[E, A](io: BIO[E, A])(callback: Try[Either[E, A]] => Unit): Unit
 }
 
 object BIORunner {
   def apply[BIO[_, _] : BIORunner]: BIORunner[BIO] = implicitly
+
+  def createZIO(threadPool: ExecutorService): BIORunner[IO] = new ZIORunnerBase(threadPool)
 
   class ZIORunnerBase(override val threadPool: ExecutorService)
     extends BIORunner[IO]
@@ -26,18 +27,21 @@ object BIORunner {
       _ => IO.sync(())
     }
 
-    @deprecated("use unsafeRunSyncAsEither", "17/09/2018")
-    override def unsafeRunSync0[E, A](io: IO[E, A]): ExitResult[E, A] = unsafeRunSync(io)
+    def unsafeRunAsyncAsEither[E, A](io: IO[E, A])(callback: Try[Either[E, A]] => Unit): Unit = {
+      unsafeRunAsync(io)(exitResult => callback(toEither(exitResult)))
+    }
 
-    override def unsafeRunSyncAsEither[E, A](io: IO[E, A]): Try[Either[E, A]] = unsafeRunSync(io) match {
+    override def unsafeRunSyncAsEither[E, A](io: IO[E, A]): Try[Either[E, A]] = {
+      val result = unsafeRunSync(io)
+      toEither(result)
+    }
+  }
+
+  private def toEither[A, E](result: ExitResult[E, A]) = {
+    result match {
       case ExitResult.Completed(v) => Success(Right(v))
       case ExitResult.Failed(e, _) => Success(Left(e))
       case ExitResult.Terminated(t) => Failure(t.head)
     }
   }
-
-  object DefaultRTS extends RTS
-
-  implicit object ZIORunner extends ZIORunnerBase(DefaultRTS.threadPool)
-
 }

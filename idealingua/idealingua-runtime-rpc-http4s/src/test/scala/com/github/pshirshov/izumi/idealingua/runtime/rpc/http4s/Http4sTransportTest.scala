@@ -13,9 +13,6 @@ import scala.util.{Failure, Success}
 class Http4sTransportTest extends WordSpec {
 
   import fixtures._
-
-  val BIOR: BIORunner[BiIO] = implicitly
-
   import Http4sTestContext._
 
   "Http4s transport" should {

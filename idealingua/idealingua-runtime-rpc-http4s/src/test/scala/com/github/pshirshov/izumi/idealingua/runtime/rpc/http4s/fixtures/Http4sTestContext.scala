@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
 
 import java.net.URI
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 import cats.data.{Kleisli, OptionT}
 import cats.effect.{ContextShift, IO, Timer}
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.{Http4sRuntime, WsClientContextProvider}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.{BIORunner, Http4sRuntime, WsClientContextProvider}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMuxRequest, IRTMuxResponse, RpcPacket}
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
@@ -31,6 +32,8 @@ object Http4sTestContext {
 
   implicit val contextShift: ContextShift[CIO] = IO.contextShift(global)
   implicit val timer: Timer[CIO] = IO.timer(global)
+  implicit val BIOR: BIORunner[BiIO] = BIORunner.createZIO(Executors.newWorkStealingPool())
+
   final val rt = {
     new Http4sRuntime[BiIO, CIO](makeLogger(), global)
   }
