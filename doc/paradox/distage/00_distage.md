@@ -4,7 +4,7 @@ out: index.html
 distage Staged Dependency Injection
 ============
 
-`distage` (p: 'dee-stage') is a pragmatic module system for Scala that combines safety and reliability of pure FP with late binding and flexibility
+`distage` is a pragmatic module system for Scala that combines safety and reliability of pure FP with late binding and flexibility
 of runtime dependency injection frameworks such as Guice.
 
 ### Hello World
