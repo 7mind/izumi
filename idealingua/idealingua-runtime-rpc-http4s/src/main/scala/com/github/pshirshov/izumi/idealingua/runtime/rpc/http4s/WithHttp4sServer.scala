@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import java.util.concurrent.{ConcurrentHashMap, TimeoutException}
+import java.util.concurrent.{ConcurrentHashMap, RejectedExecutionException, TimeoutException}
 
 import _root_.io.circe.parser._
 import cats.implicits._
@@ -266,22 +266,20 @@ trait WithHttp4sServer {
           logger.info(s"${context -> null}: Unexpected failure while handling $method: $error")
           dsl.InternalServerError()
 
-        case scala.util.Failure(cause) =>
-          handleError(context, method, List(cause), "termination")
-      }
-    }
-
-    protected def handleError(context: HttpRequestContext[Ctx], method: IRTMethodId, causes: List[Throwable], kind: String): CatsIO[Response[CatsIO]] = {
-      causes.headOption match {
-        case Some(cause: IRTHttpFailureException) =>
+        case scala.util.Failure(cause: IRTHttpFailureException) =>
           logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause")
           CIO.pure(Response(status = cause.status))
 
-        case cause =>
-          logger.error(s"${context -> null}: Execution failed, $kind, $method, ${context.request}, $cause")
+        case scala.util.Failure(cause : RejectedExecutionException) =>
+          logger.warn(s"${context -> null}: Not enough capacity to handle $method: $cause")
+          dsl.TooManyRequests()
+
+        case scala.util.Failure(cause) =>
+          logger.error(s"${context -> null}: Execution failed, termination, $method, ${context.request}, $cause")
           dsl.InternalServerError()
       }
     }
+
   }
 
 }
