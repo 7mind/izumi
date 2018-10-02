@@ -37,7 +37,9 @@ object ExecutableOp {
   }
 
   sealed trait WiringOp extends InstantiationOp {
+    def target: DIKey
     def wiring: Wiring
+    def origin: Option[Binding]
   }
 
   object WiringOp {

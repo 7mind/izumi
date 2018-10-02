@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.app
 
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
+import com.github.pshirshov.izumi.distage.model.plan.{OrderedPlan, PlanFormatter}
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -75,7 +75,8 @@ abstract class OpinionatedDiApp {
 
   protected def makePlan(logger: IzLogger, appDef: ModuleBase, injector: distage.Injector): OrderedPlan = {
     val plan = injector.plan(appDef)
-    logger.trace(s"Planning completed\n$plan")
+    val formatter = new PlanFormatter()
+    logger.trace(s"Planning completed\n${formatter.format(plan)}")
     plan
   }
 
