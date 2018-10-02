@@ -69,11 +69,14 @@ object FormattingUtils {
 
   def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
     val sb = new StringBuilder()
-    sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}\n")
+    sb.append(s"$opName${opFormat._1}$impl${opFormat._2} ${delim._1}")
     if (depRepr.nonEmpty) {
+      sb.append("\n")
       sb.append(depRepr.mkString("\n").shift(2))
+      sb.append(s"\n${delim._2}")
+    } else {
+      sb.append(delim._2)
     }
-    sb.append(s"\n${delim._2}")
 
     sb.toString()
   }

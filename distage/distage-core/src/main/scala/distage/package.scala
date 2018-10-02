@@ -1,5 +1,7 @@
 import com.github.pshirshov.izumi.distage.model
+import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.functional.Renderable
 
 package object distage extends Distage {
 
@@ -60,4 +62,6 @@ package object distage extends Distage {
 
   override type TagTK3[T[_[_], _, _, _]] = RuntimeDIUniverse.TagTK3[T]
   override val TagTK3: RuntimeDIUniverse.TagTK3.type = RuntimeDIUniverse.TagTK3
+
+  override implicit val orderedPlanFormatter: Renderable[OrderedPlan] = CompactPlanFormatter.OrderedPlanFormatter
 }

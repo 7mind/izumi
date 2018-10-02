@@ -1,7 +1,9 @@
 package distage
 
 import com.github.pshirshov.izumi.distage.model
+import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.functional.Renderable
 
 import scala.language.higherKinds
 
@@ -64,4 +66,6 @@ trait Distage {
 
   type TagTK3[T[_[_], _, _, _]] = RuntimeDIUniverse.TagTK3[T]
   val TagTK3: RuntimeDIUniverse.TagTK3.type = RuntimeDIUniverse.TagTK3
+
+  implicit val orderedPlanFormatter: Renderable[OrderedPlan] = CompactPlanFormatter.OrderedPlanFormatter
 }

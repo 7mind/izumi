@@ -5,10 +5,12 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, Im
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.functional.Renderable
 
-class PlanFormatter {
 
-  def format(plan: OrderedPlan): String = {
+
+trait CompactPlanFormatter extends Renderable[OrderedPlan] {
+  override def render(plan: OrderedPlan): String = {
     val uniqueClassNames = plan
       .steps
       .flatMap(stepTypes)
@@ -30,6 +32,7 @@ class PlanFormatter {
       )
       .mkString("\n")
   }
+
 
   private def stepTypes(op: ExecutableOp): Seq[SafeType] = op match {
     case ImportDependency(target, references, _) =>
@@ -73,4 +76,8 @@ class PlanFormatter {
     Seq(value.tpe.typeSymbol.name.toString -> value.tpe.typeSymbol.fullName) ++
       value.tpe.typeArgs.map(arg => arg.typeSymbol.name.toString -> arg.typeSymbol.fullName)
   }.toMap
+}
+
+object CompactPlanFormatter {
+  implicit object OrderedPlanFormatter extends CompactPlanFormatter
 }
