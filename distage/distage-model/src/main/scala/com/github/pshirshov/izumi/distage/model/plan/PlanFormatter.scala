@@ -53,16 +53,20 @@ class PlanFormatter {
         Seq(instanceType) ++ associations.map(_.tpe) ++ prefix.toSeq.map(_.tpe)
 
       case Function(instanceType, associations) =>
-        Seq(/*instanceType.tpe.toString*/) ++ associations.map(_.tpe)
+        providerDeps(instanceType) ++ associations.map(_.tpe)
 
       case FactoryMethod(factoryType, wireables, dependencies) =>
-        Seq() // TODO
+        Seq(factoryType) ++ wireables.flatMap(_.methodArguments).map(_.tpe) ++ dependencies.map(_.tpe)
 
       case FactoryFunction(factoryType, wireables, dependencies) =>
-        Seq() // TODO
+        providerDeps(factoryType) ++ wireables.values.toSeq.flatMap(_.methodArguments).map(_.tpe) ++ dependencies.map(_.tpe)
 
       case _ => Seq()
     }
+  }
+
+  private def providerDeps(provider: Provider): Seq[SafeType] = {
+    provider.associations.map(_.tpe) ++ provider.argTypes
   }
 
   private def simpleNames(value: SafeType): Map[String, String] = {
