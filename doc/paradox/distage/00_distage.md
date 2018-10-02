@@ -456,6 +456,8 @@ if a class and its dependencies are stateless, and can be replaced by a global `
 
 See also: [Auto-Sets, closing all AutoCloseables](#auto-sets-collecting-bindings-by-predicate)
 
+You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/331
+
 ### Inner Classes and Path-Dependent Types
 
 @@@ warning { title='TODO' }
