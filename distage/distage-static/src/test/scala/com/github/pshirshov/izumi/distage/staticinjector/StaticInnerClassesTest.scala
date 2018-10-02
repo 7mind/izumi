@@ -1,10 +1,8 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
-import com.github.pshirshov.izumi.distage.fixtures.InnerClassCases.{InnerClassUnstablePathsCase, InnerClassStablePathsCase}
+import com.github.pshirshov.izumi.distage.fixtures.InnerClassCases.{InnerClassStablePathsCase, InnerClassUnstablePathsCase}
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
-
-import scala.util.Try
 
 class StaticInnerClassesTest extends WordSpec with MkInjector {
 

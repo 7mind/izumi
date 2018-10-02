@@ -23,7 +23,7 @@ object IzumiDeps {
     val circe = "0.10.0" // 2.13+ , "0.10.0-M2" pulls cats 1.2.0
     val circe_derivation = "0.10.0-M1"
 
-    val http4s = "0.19.0-M2" // https://github.com/http4s/http4s/issues/1797
+    val http4s = "0.19.0-M3" // https://github.com/http4s/http4s/issues/1797
 
     val scalameta = "4.0.0" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188

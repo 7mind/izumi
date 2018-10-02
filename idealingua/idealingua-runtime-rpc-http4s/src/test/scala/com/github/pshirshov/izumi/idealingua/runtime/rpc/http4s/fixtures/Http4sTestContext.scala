@@ -32,7 +32,7 @@ object Http4sTestContext {
   implicit val contextShift: ContextShift[CIO] = IO.contextShift(global)
   implicit val timer: Timer[CIO] = IO.timer(global)
   final val rt = {
-    new Http4sRuntime[BiIO, CIO](makeLogger())
+    new Http4sRuntime[BiIO, CIO](makeLogger(), global)
   }
 
   //

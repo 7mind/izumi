@@ -6,12 +6,14 @@ import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s.dsl._
 
+import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 
 class Http4sRuntime[_BiIO[+ _, + _] : BIO : BIORunner, _CatsIO[+ _] : ConcurrentEffect : CIORunner : Timer]
 (
   override protected val logger: IzLogger
+  , override protected val clientExecutionContext: ExecutionContext
 )
   extends Http4sContext
     with WithHttp4sLoggingMiddleware
@@ -20,7 +22,6 @@ class Http4sRuntime[_BiIO[+ _, + _] : BIO : BIORunner, _CatsIO[+ _] : Concurrent
     with WithHttp4sHttpRequestContext
     with WithWebsocketClientContext
     with WithHttp4sServer {
-
 
   override type BiIO[+E, +V] = _BiIO[E, V]
 
