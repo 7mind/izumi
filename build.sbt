@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import IzumiConvenienceTasksPlugin.Keys._
 import IzumiPublishingPlugin.Keys._
 import ReleaseTransformations._
+import com.github.pshirshov.izumi.sbt.plugins.optional.CoursierFetch
 
 
 enablePlugins(IzumiGitEnvironmentPlugin)
@@ -399,25 +400,33 @@ lazy val izsbt: Seq[ProjectReference] = Seq(
 
 lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 
+
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects)
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
-    sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
-    , siteSubdirName in ScalaUnidoc := s"v${version.value}/api"
-    , siteSubdirName in Paradox := s"v${version.value}/doc"
+    DocKeys.prefix := {
+      if (isSnapshot.value) {
+        "latest/snapshot"
+      } else {
+        "latest/release"
+      }
+    }
+    , sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
+    , siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api"
+    , siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc"
     , previewFixedPort := Some(9999)
     //, scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/7mind"), ""))
     , git.remoteRepo := "git@github.com:7mind/izumi-microsite.git"
     , paradoxProperties ++= Map(
-      "scaladoc.izumi.base_url" -> s"/v${version.value}/api/com/github/pshirshov/",
-      "scaladoc.base_url" -> s"/v${version.value}/api/",
+      "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
+      "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
       "izumi.version" -> version.value,
     )
     , excludeFilter in ghpagesCleanSite :=
       new FileFilter {
-        val v = ghpagesRepository.value.getCanonicalPath + "/v"
+        val v = ghpagesRepository.value.getCanonicalPath + "/"
 
         def accept(f: File): Boolean = {
           f.getCanonicalPath.startsWith(v) && f.getCanonicalPath.charAt(v.length).isDigit || // release
