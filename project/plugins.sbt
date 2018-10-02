@@ -18,7 +18,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.6.2")
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.2")
 
 // https://jonas.github.io/paradox-material-theme/
-addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.4.0")
+addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.5.1")
 
 //
 libraryDependencies += {
