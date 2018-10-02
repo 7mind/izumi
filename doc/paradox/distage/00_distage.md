@@ -468,7 +468,7 @@ You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issue
 Sorry, this page is not ready yet
 @@@
 
-Implicits are not injected from lexical scope, they have to be declared inside a `Module` like any other class.
+Implicits are managed like any other class, declare them in a module to make them available for summoning:
 
 ```scala
 import cats.Monad
@@ -481,10 +481,13 @@ object IOMonad extends ModuleDef {
 }
 ```
 
-If they were, then any binding of a class that depends on an implicit instance, would have to import an *implementation*
-of that implicit instance:
+Implicits for wired classes are injected from DI context, not from surrounding lexical scope.
+If they were captured from lexical scope when the module is defined, then any binding of a class that depends on an
+implicit, would have to import an *implementation* of that implicit. 
+Depending on implementations is unmodular and directly contradicts the idea of using a dedicated module system
+in the first place:
  
-```
+```scala
 import cats._
 import distage._
 
@@ -509,14 +512,8 @@ val eitherMonadModule = new ModuleDef {
 
 val all = kvstoreMOdule ++ eitherMonadModule
 ```
- 
-Depending on implementations is unmodular and directly contradicts the idea of using a dedicated module system
-in the first place. 
 
-Instead, `distage` opts for explicit management of implicits, as when they appear in application-level scope as module
-dependencies, they should be treated like any other module.
-
-Obviously, implicits obey the usual lexical scope in application code, provider bindings, derivations, etc, etc.
+Implicits obey the usual lexical scope outside of modules managed by `distage`.
 
 You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/230
 
