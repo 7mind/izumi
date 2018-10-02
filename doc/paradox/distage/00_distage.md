@@ -387,7 +387,7 @@ class ConfiguredTryProgram[F[_]: TagK: Monad] extends ModuleDef {
 Sorry, this page is not ready yet
 @@@
 
-example of explicitly splitting effectful and pure instantiations:
+Example of explicitly splitting effectful and pure instantiations:
 
 ```scala
 import distage._
@@ -451,8 +451,10 @@ val main: Future[Unit] = initializers.run {
 Await.result(main, Duration.Inf)
 ```
 
-Effectful instantiation is not recommended in general. A rule of thumb is:
+Effectful instantiation is not recommended in general – ideally, resources ought to be managed outside of `distage`. A rule of thumb is:
 if a class and its dependencies are stateless, and can be replaced by a global `object`, it's ok to inject them with  `distage`.
+
+See also: [Auto-Sets, closing all AutoCloseables](#auto-sets-collecting-bindings-by-predicate)
 
 ### Inner Classes and Path-Dependent Types
 
@@ -519,11 +521,19 @@ You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issue
 
 ### Auto-Traits & Auto-Factories
 
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
 ...
 
 ### Patterns
 
 ### Import Materialization
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
 
 ...
 
@@ -541,7 +551,9 @@ class B
 class C
 
 val module = new ModuleDef {
-  make[A]; make[B]; make[C]
+  make[A]
+  make[B]
+  make[C]
 }
 
 val locator = Injector().produce(module)
@@ -740,6 +752,10 @@ GC serves two important purposes:
 
 ### Compile-Time Checks
 
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
 ...
 
 ### Circular Dependencies support
@@ -751,19 +767,23 @@ import distage._
 
 case class A(b: B)
 case class B(a: A) 
+case class C(c: C)
 
 val locator = Injector().produce(new ModuleDef {
   make[A]
   make[B]
+  make[C]
 })
 
 locator.get[A] eq locator.get[B].a
 // res0: Boolean = true
 locator.get[B] eq locator.get[A].b
 // res1: Boolean = true
+locator.get[C] eq locator.get[C].c
+// res2: Boolean = true
 ``` 
 
-#### Automatic Resolution with generated Proxies
+#### Automatic Resolution with generated proxies
 
 The above strategy depends on `distage-proxy-cglib` module which is brought in by default with `distage-core`.
 
@@ -778,9 +798,9 @@ Injector(DefaultBootstrapContext.noCogen)
 
 #### Manual Resolution with by-name parameters
 
-Most cycles can also be resolved manually, when identified, using `by-name` parameters.
+Most cycles can also be resolved manually when identified, using `by-name` parameters.
 
-Circular dependency in the following example are all resolved Scala's native `by-name`'s, without bytecode generation:
+Circular dependencies in the following example are all resolved via Scala's native `by-name`'s, without any proxy generation:
 
 ```scala
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext.noCogen
@@ -812,7 +832,7 @@ assert(locator.get[C].c eq locator.get[C])
 ``` 
 
 The proxy generation via `cglib` is still enabled by default, because in scenarios with [extreme late-binding](#roles),
-cycles can be created unexpectedly and unobservably by the origin module.  
+cycles can emerge unexpectedly, outside of control of the origin module.  
 
 ### Auto-Sets: Collecting Bindings By Predicate
 
