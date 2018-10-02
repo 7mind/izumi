@@ -14,7 +14,7 @@ class CompactPlanFormatterTest extends WordSpec with MkInjector {
     })
 
     val formatted = plan.render
-    assert(!formatted.contains(classOf[Impl1].getName) && formatted.contains(classOf[Impl1].getSimpleName))
+    assert(!formatted.contains(classOf[Impl1].getName) && formatted.contains("Impl1"))
   }
 }
 
