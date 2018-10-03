@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.injector
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, Id, ImplDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Id => _, Module => _, ModuleBase => _, ModuleDef => _, _}
 import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
@@ -39,6 +39,24 @@ class BasicTest extends WordSpec with MkInjector {
     }
     val locator = injector.produce(fixedPlan)
     assert(locator.get[LocatorDependent].ref.get == locator)
+  }
+
+  "correctly handle empty typed sets" in {
+    import SetCase1._
+
+    val definition = new ModuleDef {
+      make[TypedService[Int]].from[ServiceWithTypedSet]
+      many[ExampleTypedCaseClass[Int]]
+    }
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    val s = context.get[ServiceWithTypedSet]
+    val ss = context.get[Set[ExampleTypedCaseClass[Int]]]
+    assert(s.isInstanceOf[ServiceWithTypedSet])
+    assert(ss.isEmpty)
   }
 
 
