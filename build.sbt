@@ -426,10 +426,10 @@ lazy val `izumi-r2` = inRoot.as
     )
     , excludeFilter in ghpagesCleanSite :=
       new FileFilter {
-        val v = ghpagesRepository.value.getCanonicalPath + "/"
+        val v = ghpagesRepository.value.getCanonicalPath + "/latest/"
 
         def accept(f: File): Boolean = {
-          f.getCanonicalPath.startsWith(v) && f.getCanonicalPath.charAt(v.length).isDigit || // release
+          f.getCanonicalPath.startsWith(v) ||
             (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
