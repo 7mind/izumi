@@ -35,8 +35,8 @@ including the following components:
 Docs
 ----
 
-1. Documentation [https://izumi.7mind.io/latest/release/doc/](https://izumi.7mind.io/latest/release/doc/)
-2. Scaladoc [https://izumi.7mind.io/latest/release/api/](https://izumi.7mind.io/latest/release/api/)
+1. Documentation [Latest release](https://izumi.7mind.io/latest/release/doc/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/doc/)
+2. Scaladoc [Latest release](https://izumi.7mind.io/latest/release/api/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/api/)
 3. Slides: [https://github.com/7mind/slides](https://github.com/7mind/slides)
 
 
