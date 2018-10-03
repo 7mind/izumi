@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
+import com.github.pshirshov.izumi.distage.plugins.PluginBase
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy
@@ -8,11 +9,13 @@ import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeS
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 
 trait DistagePluginTests extends DistageTests {
-  protected def makeBindings: ModuleBase = {
-    val modules = new PluginLoaderDefaultImpl(
+  lazy val loadedPlugins: Seq[PluginBase] = {
+    new PluginLoaderDefaultImpl(
       PluginConfig(debug = false, pluginPackages, Seq.empty)
     ).load()
+  }
 
+  protected def makeBindings: ModuleBase = {
     val mergeStrategy = new ConfigurablePluginMergeStrategy(PluginMergeConfig(
       disabledTags
       , Set.empty
@@ -20,7 +23,7 @@ trait DistagePluginTests extends DistageTests {
       , Map.empty
     ))
 
-    val primaryModule = mergeStrategy.merge(modules).definition
+    val primaryModule = mergeStrategy.merge(loadedPlugins).definition
     primaryModule
   }
 

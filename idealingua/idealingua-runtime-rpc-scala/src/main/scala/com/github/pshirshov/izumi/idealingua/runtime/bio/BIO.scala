@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.bio
 
-import scalaz.zio.{ExitResult, IO, Schedule}
+import scalaz.zio.{IO, Schedule}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.{higherKinds, implicitConversions}
