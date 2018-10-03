@@ -4,8 +4,12 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBind
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
+import scala.collection.immutable.ListSet
+
 trait ModuleBase {
   def bindings: Set[Binding]
+
+  type Self <: ModuleBase
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case that: ModuleBase => bindings == that.bindings
@@ -18,33 +22,36 @@ trait ModuleBase {
 }
 
 object ModuleBase {
+  type Aux[S] = ModuleBase { type Self <: S }
+
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = s => new ModuleBase {
     override val bindings: Set[Binding] = s
   }
 
-  implicit final class ModuleDefSeqExt[T <: ModuleBase](private val defs: Seq[T])(implicit T: ModuleMake[T]) {
+  implicit final class ModuleDefSeqExt[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val defs: Seq[S])(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
     def merge: T = {
-      defs.reduceLeftOption[T](_ ++ _).getOrElse(T.empty)
+      defs.foldLeft[T](T.empty)(_ ++ _)
     }
 
     def overrideLeft: T = {
-      defs.reduceOption[T](_ overridenBy _).getOrElse(T.empty)
+      defs.foldLeft[T](T.empty)(_ overridenBy _)
     }
   }
 
-  implicit final class ModuleDefOps[T <: ModuleBase](private val moduleDef: T)(implicit T: ModuleMake[T]) {
+  implicit final class ModuleDefOps[S <: ModuleBase, T <: ModuleBase.Aux[T]](val moduleDef: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
     def map(f: Binding => Binding): T = {
-      T.make(moduleDef.bindings.map(f))
+      ModuleMake[T].make(moduleDef.bindings.map(f))
     }
   }
 
   implicit final class ModuleDefMorph(private val moduleDef: ModuleBase) {
-    def morph[T <: ModuleBase: ModuleMake]: T = {
+    def morph[T <: ModuleBase : ModuleMake]: T = {
       ModuleMake[T].make(moduleDef.bindings)
     }
   }
 
-  implicit final class ModuleDefCombine[T <: ModuleBase](private val moduleDef: T)(implicit T: ModuleMake[T]) {
+  implicit final class ModuleDefCombine[S <: ModuleBase, T <: ModuleBase.Aux[T]](val moduleDef: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
+                                                                                                  // Order is important
     def ++(that: ModuleBase): T = {
       // TODO: a hack to support tag merging
 
@@ -114,11 +121,18 @@ object ModuleBase {
     }
   }
 
+  private final class Lub[-A, -B, Out](private val dummy: Boolean = false) extends AnyVal
+  private object Lub {
+    implicit def lub[T]: Lub[T, T, T] = new Lub[T, T, T]
+  }
+
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] =
   // Using lawless equals/hashcode
-    bs.groupBy(identity).values.map {
-      _.reduce(_ addTags _.tags)
-    }.toSet
+    bs.groupBy(identity)
+      .values
+      .map {
+        _.reduce(_ addTags _.tags)
+      }.to[ListSet]
 
 }
 

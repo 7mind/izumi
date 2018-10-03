@@ -52,7 +52,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
   import params._
 
-  private val logger = IzLogger.basic(params.rootLogLevel)
+  private val logger = IzLogger(params.rootLogLevel)
 
   private val roleProvider: RoleProvider = new RoleProviderImpl(roleSet)
 

@@ -1,13 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import java.util.concurrent.{ConcurrentHashMap, TimeoutException}
+import java.util.concurrent.{ConcurrentHashMap, RejectedExecutionException, TimeoutException}
 
 import _root_.io.circe.parser._
 import cats.implicits._
 import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
-import io.circe.{DecodingFailure, ParsingFailure}
+import io.circe
+import io.circe.Json
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
@@ -17,6 +18,7 @@ import org.http4s.websocket.WebsocketBits.{Binary, Close, Text, WebSocketFrame}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
+import scala.util.Try
 
 trait WithHttp4sServer {
   this: Http4sContext with WithHttp4sLoggingMiddleware with WithHttp4sHttpRequestContext with WithWebsocketClientContext =>
@@ -75,7 +77,7 @@ trait WithHttp4sServer {
                                 logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
                                 codec.decode(value.data, value.method)
 
-                              case Some(value : RawResponse.BadRawResponse) =>
+                              case Some(value: RawResponse.BadRawResponse) =>
                                 logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
                                 BIO.terminate(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
@@ -115,8 +117,6 @@ trait WithHttp4sServer {
       context.start()
       logger.debug(s"${context -> null}: Websocket client connected")
 
-      val handler = handleWsMessage(context)
-
       context.queue.flatMap { q =>
         val d = q.dequeue.through {
           stream =>
@@ -128,7 +128,7 @@ trait WithHttp4sServer {
                   m
                 case m => m
               }
-              .collect(handler)
+              .evalMap(handleWsMessage(context))
               .collect({ case Some(v) => Text(v) })
         }
         val e = q.enqueue
@@ -136,23 +136,32 @@ trait WithHttp4sServer {
       }
     }
 
-    protected def handleWsMessage(context: WSC): PartialFunction[WebSocketFrame, Option[String]] = {
+    protected def handleWsMessage(context: WSC): WebSocketFrame => CatsIO[Option[String]] = {
       case Text(msg, _) =>
         val ioresponse = makeResponse(context, msg)
-
-        BIORunner.unsafeRunSyncAsEither(ioresponse) match {
-          case scala.util.Success(Right(v)) =>
-            v.map(_.asJson).map(printer.pretty)
-
-          case scala.util.Success(Left(error)) =>
-            Some(handleWsError(context, List(error), None, "failure"))
-
-          case scala.util.Failure(cause) =>
-            Some(handleWsError(context, List(cause), None, "termination"))
+        CIO.async {
+          cb =>
+            BIORunner.unsafeRunAsyncAsEither(ioresponse) {
+              result =>
+                cb(Right(handleResult(context, result)))
+            }
         }
 
       case v: Binary =>
-        Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe"))
+        CIO.point(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
+    }
+
+    protected def handleResult(context: WSC, result: Try[Either[Throwable, Option[RpcPacket]]]): Option[String] = {
+      result match {
+        case scala.util.Success(Right(v)) =>
+          v.map(_.asJson).map(printer.pretty)
+
+        case scala.util.Success(Left(error)) =>
+          Some(handleWsError(context, List(error), None, "failure"))
+
+        case scala.util.Failure(cause) =>
+          Some(handleWsError(context, List(cause), None, "termination"))
+      }
     }
 
     protected def makeResponse(context: WSC, message: String): BiIO[Throwable, Option[RpcPacket]] = {
@@ -225,20 +234,31 @@ trait WithHttp4sServer {
         parsed <- BIO.fromEither(parse(body))
         maybeResult <- muxer.doInvoke(parsed, context.context, method)
       } yield {
-        maybeResult match {
-          case Some(value) =>
-            dsl.Ok(printer.pretty(value))
-          case None =>
-            logger.warn(s"${context -> null}: No service handler for $method")
-            dsl.NotFound()
-        }
+        maybeResult
       }
 
-      BIORunner.unsafeRunSyncAsEither(ioR) match {
-        case scala.util.Success(Right(v)) =>
-          v
+      CIO.async[CatsIO[Response[CatsIO]]] {
+        cb =>
+          BIORunner.unsafeRunAsyncAsEither(ioR) {
+            result =>
+              cb(Right(handleResult(context, method, result)))
+          }
+      }
+        .flatten
+    }
 
-        case scala.util.Success(Left(error : io.circe.Error)) =>
+    private def handleResult(context: HttpRequestContext[Ctx], method: IRTMethodId, result: Try[Either[Throwable, Option[Json]]]): CatsIO[Response[CatsIO]] = {
+      result match {
+        case scala.util.Success(Right(v)) =>
+          v match {
+            case Some(value) =>
+              dsl.Ok(printer.pretty(value))
+            case None =>
+              logger.warn(s"${context -> null}: No service handler for $method")
+              dsl.NotFound()
+          }
+
+        case scala.util.Success(Left(error: circe.Error)) =>
           logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
           dsl.BadRequest()
 
@@ -246,22 +266,20 @@ trait WithHttp4sServer {
           logger.info(s"${context -> null}: Unexpected failure while handling $method: $error")
           dsl.InternalServerError()
 
-        case scala.util.Failure(cause) =>
-          handleError(context, method, List(cause), "termination")
-      }
-    }
-
-    protected def handleError(context: HttpRequestContext[Ctx], method: IRTMethodId, causes: List[Throwable], kind: String): CatsIO[Response[CatsIO]] = {
-      causes.headOption match {
-        case Some(cause: IRTHttpFailureException) =>
+        case scala.util.Failure(cause: IRTHttpFailureException) =>
           logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause")
           CIO.pure(Response(status = cause.status))
 
-        case cause =>
-          logger.error(s"${context -> null}: Execution failed, $kind, $method, ${context.request}, $cause")
+        case scala.util.Failure(cause : RejectedExecutionException) =>
+          logger.warn(s"${context -> null}: Not enough capacity to handle $method: $cause")
+          dsl.TooManyRequests()
+
+        case scala.util.Failure(cause) =>
+          logger.error(s"${context -> null}: Execution failed, termination, $method, ${context.request}, $cause")
           dsl.InternalServerError()
       }
     }
+
   }
 
 }

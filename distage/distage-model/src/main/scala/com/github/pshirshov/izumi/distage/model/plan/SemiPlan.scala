@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
+import com.github.pshirshov.izumi.functional.Renderable
 
 sealed trait AbstractPlan {
   def definition: ModuleBase
@@ -80,6 +81,7 @@ object AbstractPlan {
 
 /** Unordered plan. You can turn into an [[OrderedPlan]] by using [[com.github.pshirshov.izumi.distage.model.Planner#finish]] **/
 final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp]) extends AbstractPlan {
+
   def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
     copy(steps = steps.map(f))
   }
@@ -120,6 +122,8 @@ final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp]) e
 }
 
 final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp], topology: PlanTopology) extends AbstractPlan {
+  def render(implicit ev: Renderable[OrderedPlan]): String = ev.render(this)
+
   def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
     SemiPlan(definition, steps.map(f))
   }

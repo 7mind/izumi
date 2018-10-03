@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
 import IzumiConvenienceTasksPlugin.Keys._
 import IzumiPublishingPlugin.Keys._
 import ReleaseTransformations._
+import com.github.pshirshov.izumi.sbt.plugins.optional.CoursierFetch
 
 
 enablePlugins(IzumiGitEnvironmentPlugin)
@@ -272,12 +273,12 @@ lazy val logstageApiBaseMacro = inLogStage.as.module
     )
   )
 
-lazy val logstageApiLogger = inLogStage.as.module
+lazy val logstageCore = inLogStage.as.module
   .depends(logstageApiBaseMacro)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
-    logstageApiLogger
+    logstageCore
     , distageModel
   )
   .dependsSeq(Seq(
@@ -285,13 +286,13 @@ lazy val logstageDi = inLogStage.as.module
   ).map(_.testOnlyRef))
 
 lazy val logstageConfig = inLogStage.as.module
-  .depends(fundamentalsTypesafeConfig, logstageApiLogger)
+  .depends(fundamentalsTypesafeConfig, logstageCore)
 
 lazy val logstageConfigDi = inLogStage.as.module
   .depends(logstageConfig, distageConfig)
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
-  .depends(logstageApiLogger)
+  .depends(logstageCore)
   .settings(
     libraryDependencies += R.slf4j_api
     , compileOrder in Compile := CompileOrder.Mixed
@@ -299,13 +300,13 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
   )
 
 lazy val logstageRenderingCirce = inLogStage.as.module
-  .depends(logstageApiLogger)
+  .depends(logstageCore)
   .settings(libraryDependencies ++= Seq(R.circe).flatten)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(logstageApiBase)
   .dependsSeq(Seq(
-    logstageApiLogger
+    logstageCore
   ).map(_.testOnlyRef))
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 //-----------------------------------------------------------------------------
@@ -318,7 +319,7 @@ lazy val idealinguaModel = inIdealingua.as.module
   .settings()
 
 lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.circe, R.zio, R.cats_all).flatten)
+  .settings(libraryDependencies ++= Seq(R.circe, R.cats_all).flatten ++ Seq(R.zio_core))
 
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScala)
 
@@ -336,7 +337,7 @@ lazy val idealinguaCore = inIdealingua.as.module
   .settings(ShadingSettings)
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpcScala, logstageApiLogger, logstageAdapterSlf4j)
+  .depends(idealinguaRuntimeRpcScala, logstageCore, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
   .settings(libraryDependencies ++= R.http4s_all ++ R.java_websocket)
 
@@ -374,7 +375,7 @@ lazy val sbtTests = inSbt.as
   .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
-  logstageApiLogger
+  logstageCore
   , logstageDi
   , logstageSinkSlf4j
   , logstageAdapterSlf4j
@@ -399,30 +400,40 @@ lazy val izsbt: Seq[ProjectReference] = Seq(
 
 lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 
+
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects)
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
   .settings(
-    sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
-    , siteSubdirName in ScalaUnidoc := s"v${version.value}/api"
-    , siteSubdirName in Paradox := s"v${version.value}/doc"
+    DocKeys.prefix := {
+      if (isSnapshot.value) {
+        "latest/snapshot"
+      } else {
+        "latest/release"
+      }
+    }
+    , sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
+    , siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api"
+    , siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc"
     , previewFixedPort := Some(9999)
-    , scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/izumi-r2"), "git@github.com:pshirshov/izumi-r2.git"))
-    , git.remoteRepo := scmInfo.value.get.connection
+    //, scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/7mind"), ""))
+    , git.remoteRepo := "git@github.com:7mind/izumi-microsite.git"
     , paradoxProperties ++= Map(
-      "scaladoc.izumi.base_url" -> s"/v${version.value}/api/com/github/pshirshov/",
-      "scaladoc.base_url" -> s"/v${version.value}/api/",
+      "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
+      "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
       "izumi.version" -> version.value,
     )
     , excludeFilter in ghpagesCleanSite :=
       new FileFilter {
-        val v = ghpagesRepository.value.getCanonicalPath + "/v"
+        val v = ghpagesRepository.value.getCanonicalPath + "/"
 
         def accept(f: File): Boolean = {
           f.getCanonicalPath.startsWith(v) && f.getCanonicalPath.charAt(v.length).isDigit || // release
             (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
+            (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
+            (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
             f.toPath.startsWith((ghpagesRepository.value / "media").toPath)
         }
       }

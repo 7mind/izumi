@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
+import com.github.pshirshov.izumi.fundamentals.reflection.WithTags.hktagFormat
 
 import scala.annotation.implicitNotFound
 import scala.language.higherKinds
@@ -126,19 +127,14 @@ trait WithTags extends UniverseGeneric { self =>
      **/
     def tag: TypeTag[_]
 
-    override def toString: String = {
-      val size = tag.tpe.typeParams.size
-      // naming scheme
-      size match {
-        case 1 => s"TagK[${tag.tpe}]"
-        case 2 => s"TagKK[${tag.tpe}]"
-        case _ => s"Tag for ${tag.tpe} of kind ${kindOf(tag.tpe)}"
-      }
-    }
+    override def toString: String =
+      s"HKTag(${hktagFormat(tag.tpe)})"
   }
 
   object HKTag {
 
+    // TODO: use macro to add compile-time sanity check
+    // TODO: add Dynamics macro to construct arbitrary tags: Tag.`K[_[_], _, _]`.T
     implicit def unsafeFromTypeTag[T](implicit k: TypeTag[T]): HKTag[T] = {
       new HKTag[T] {
         override def tag: TypeTag[_] = {

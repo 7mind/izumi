@@ -206,7 +206,6 @@ final case class GoLangType (
     case Primitive.TUInt16 => s"strconv.FormatUInt(uint64($name), 10)"
     case Primitive.TUInt32 => s"strconv.FormatUInt(int64($name), 10)"
     case Primitive.TUInt64 => s"strconv.FormatUInt($name, 10)"
-    case Primitive.TUInt64 => s"strconv.FormatUInt($name, 10)"
     case Primitive.TBool => s"strconv.FormatBool($name)"
     case Primitive.TUUID => name
     case _: EnumId => s"$name.String()"

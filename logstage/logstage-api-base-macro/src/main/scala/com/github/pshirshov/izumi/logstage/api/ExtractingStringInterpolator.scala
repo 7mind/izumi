@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.logstage.api.Log.Message
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-// TODO: this class is used by tests only
+// TODO: this class is used in tests only
 object ExtractingStringInterpolator {
 
   implicit class LogSC(val sc: StringContext) {

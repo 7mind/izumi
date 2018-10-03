@@ -11,7 +11,7 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy  {
 
     val args: Seq[RuntimeDIUniverse.TypedRef[_]] = op.wiring.associations.map {
       key =>
-        context.fetchKey(key.wireWith) match {
+        context.fetchKey(key.wireWith, key.isByName) match {
           case Some(dep) =>
             RuntimeDIUniverse.TypedRef(dep, key.wireWith.tpe)
           case _ =>

@@ -6,18 +6,19 @@ import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.Stream
 import io.circe.parser.parse
 import org.http4s._
-import org.http4s.client._
 import org.http4s.client.blaze._
+
+import scala.concurrent.ExecutionContext
 
 trait WithHttp4sClient {
   this: Http4sContext =>
 
   def client(baseUri: Uri, codec: IRTClientMultiplexor[BiIO]): ClientDispatcher = new ClientDispatcher(baseUri, codec)
 
+  protected def clientExecutionContext: ExecutionContext
+
   class ClientDispatcher(baseUri: Uri, codec: IRTClientMultiplexor[BiIO])
     extends IRTDispatcher[BiIO] {
-
-    protected val client: CatsIO[Client[CatsIO]] = Http1Client[CatsIO]()
 
     def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
       logger.trace(s"${request.method -> "method"}: Goint to perform $request")
@@ -36,8 +37,10 @@ trait WithHttp4sClient {
     protected def runRequest[T](handler: Response[CatsIO] => CatsIO[T], req: Request[CatsIO]): BiIO[Throwable, T] = {
       BIO.syncThrowable {
         CIORunner.unsafeRunSync {
-          client
-            .flatMap(_.fetch(req)(handler))
+          BlazeClientBuilder[CatsIO](clientExecutionContext).resource.use {
+            client =>
+              client.fetch(req)(handler)
+          }
         }
       }
     }

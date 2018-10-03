@@ -7,6 +7,8 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
+import scala.collection.immutable.Queue
+
 /** Holds the object graph created by executing a `plan`
   *
   * @see [[Injector]]
@@ -87,6 +89,19 @@ object Locator {
         key =>
           locator.lookupInstanceOrThrow[Any](key)
       }).asInstanceOf[T]
+    }
+
+    def runOption[T](f: ProviderMagnet[T]): Option[T] = {
+      val fn = f.get
+      val args: Option[Queue[Any]] = fn.diKeys.foldLeft(Option(Queue.empty[Any])) {
+        (maybeQueue, key) =>
+          maybeQueue.flatMap {
+            q =>
+              locator.lookupInstance[Any](key)
+                .map(q :+ _)
+          }
+      }
+      args.map(fn.fun(_).asInstanceOf[T])
     }
   }
 

@@ -23,6 +23,7 @@ trait LoggingMacro {
   final def warn(message: String): Unit = macro scWarnMacro
   final def error(message: String): Unit = macro scErrorMacro
   final def crit(message: String): Unit = macro scCritMacro
+  final def entry(logLevel: Log.Level)(message: String): Log.Entry = macro scEntryMacro
 }
 
 object LoggingMacro {
@@ -56,10 +57,54 @@ object LoggingMacro {
     stringContextSupportMacro(c)(message, reify(Log.Level.Crit))
   }
 
+  def scEntryMacro(c: blackbox.Context)(logLevel: c.Expr[Log.Level])(message: c.Expr[String]): c.Expr[Log.Entry] = {
+    val (pos, loggerId) = mkPosLoggerId(c)
+    mkLogEntry(c)(mkLogMessage(c)(message), logLevel, pos, loggerId)
+  }
+
+  def logMessageMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Log.Message] = {
+    mkLogMessage(c)(message)
+  }
+
   private def stringContextSupportMacro(c: blackbox.Context)(message: c.Expr[String], logLevel: c.Expr[Log.Level]): c.Expr[Unit] = {
+    val messageTree = mkLogMessage(c)(message)
+
+    assert(3!=4)
+    logMacro(c)(messageTree, logLevel)
+  }
+
+  private def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]) = {
+    import c.universe._
+    reify {
+      Message(
+        c.Expr[StringContext](stringContext).splice
+        , namedArgs.splice
+      )
+    }
+  }
+
+  private def logMacro(c: blackbox.Context)(message: c.Expr[Message], logLevel: c.Expr[Log.Level]): c.Expr[Unit] = {
     import c.universe._
 
-    val messageTree = message.tree match {
+    val (pos, loggerId) = mkPosLoggerId(c)
+
+    val entry = mkLogEntry(c)(message, logLevel, pos, loggerId)
+
+    val receiver = reify(c.prefix.splice.asInstanceOf[LoggingMacro].receiver)
+
+    c.Expr[Unit] {
+      q"""{
+            if ($receiver.acceptable($loggerId, $logLevel)) {
+              $receiver.log($entry)
+            }
+          }"""
+    }
+  }
+
+  private def mkLogMessage(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Message] = {
+    import c.universe._
+
+    message.tree match {
       // qq causes a weird warning here
       //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
       case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
@@ -89,54 +134,28 @@ object LoggingMacro {
         val sc = q"StringContext($other)"
         reifyContext(c)(sc, emptyArgs)
     }
-
-    assert(3!=4)
-    logMacro(c)(messageTree, logLevel)
   }
 
-  private def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]) = {
-    import c.universe._
-    reify {
-      Message(
-        c.Expr[StringContext](stringContext).splice
-        , namedArgs.splice
-      )
-    }
-  }
-
-  private def logMacro(c: blackbox.Context)(message: c.Expr[Message], logLevel: c.Expr[Log.Level]): c.Expr[Unit] = {
-    import c.universe._
-
-    val receiver = reify(c.prefix.splice.asInstanceOf[LoggingMacro].receiver)
-
-    val pos = CodePositionMaterializer.getEnclosingPosition(c)
-
-    val loggerId = reify {
-      LoggerId(pos.splice.get.applicationPointId)
-    }
-
-    val entry = reify {
+  private def mkLogEntry(c: blackbox.Context)(message: c.Expr[Message], logLevel: c.Expr[Level], pos: c.Expr[CodePositionMaterializer], loggerId: c.universe.Expr[LoggerId]): c.Expr[Entry] = {
+    c.universe.reify {
       val self = c.prefix.splice.asInstanceOf[LoggingMacro]
       val thread = Thread.currentThread()
       val dynamicContext = Log.DynamicContext(logLevel.splice, ThreadData(thread.getName, thread.getId), System.currentTimeMillis())
       val extendedStaticContext = StaticExtendedContext(loggerId.splice, pos.splice.get.position)
       Log.Entry(message.splice, Log.Context(extendedStaticContext, dynamicContext, self.contextCustom))
     }
-
-    c.Expr[Unit] {
-      q"""{
-            if ($receiver.acceptable($loggerId, $logLevel)) {
-              $receiver.log($entry)
-            }
-          }"""
-    }
   }
 
-  //  def debugMacro(c: blackbox.Context)(message: c.Expr[Message]): c.Expr[Unit] = {
-  //    import c.universe._
-  //    logMacro(c)(message, c.Expr[Log.Level](q"Log.Level.Debug"))
-  //  }
-  //
+  private def mkPosLoggerId(c: blackbox.Context): (c.Expr[CodePositionMaterializer], c.Expr[LoggerId]) = {
+    val pos = CodePositionMaterializer.getEnclosingPosition(c)
+
+    val loggerId = c.universe.reify {
+      LoggerId(pos.splice.get.applicationPointId)
+    }
+
+    (pos, loggerId)
+  }
+
 }
 
 

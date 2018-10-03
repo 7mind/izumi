@@ -24,15 +24,23 @@ trait WithDIWiring {
       def instanceType: SafeType
 
       def associations: Seq[Association]
+
     }
+
 
     object UnaryWiring {
 
       sealed trait ProductWiring extends UnaryWiring
 
-      case class Constructor(instanceType: SafeType, associations: Seq[Association.Parameter]) extends ProductWiring
+      sealed trait InstantiationWiring extends ProductWiring {
+        def prefix: Option[DIKey]
 
-      case class AbstractSymbol(instanceType: SafeType, associations: Seq[Association.AbstractMethod]) extends ProductWiring
+        override def requiredKeys: Set[DIKey] = super.requiredKeys ++ prefix.toSet
+      }
+
+      case class Constructor(instanceType: SafeType, associations: Seq[Association.Parameter], prefix: Option[DIKey]) extends InstantiationWiring
+
+      case class AbstractSymbol(instanceType: SafeType, associations: Seq[Association.AbstractMethod], prefix: Option[DIKey]) extends InstantiationWiring
 
       case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends UnaryWiring {
         override def instanceType: SafeType = provider.ret

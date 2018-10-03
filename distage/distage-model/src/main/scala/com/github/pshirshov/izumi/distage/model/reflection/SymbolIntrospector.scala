@@ -7,6 +7,8 @@ trait SymbolIntrospector {
 
   case class SelectedConstructor(constructorSymbol: u.MethodSymb, arguments: List[List[u.SymbolInfo]])
 
+  def hasConstructor(tpe: u.SafeType): Boolean
+
   def selectConstructorMethod(tpe: u.SafeType): u.MethodSymb
 
   def selectConstructor(tpe: u.SafeType): SelectedConstructor
@@ -36,6 +38,6 @@ object SymbolIntrospector {
 
   type Static[U] = Aux[U]
 
-  type Aux[U] = SymbolIntrospector { val u: U }
+  type Aux[U] = SymbolIntrospector {val u: U}
 
 }

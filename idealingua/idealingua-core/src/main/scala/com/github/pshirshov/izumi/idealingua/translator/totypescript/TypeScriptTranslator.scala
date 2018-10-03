@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.totypescript
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
@@ -323,6 +324,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   }
 
   protected def renderAdt(i: Adt, onlyHelper: Boolean = false)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
+    Quirks.discard(onlyHelper)
     val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
     val base = renderAdtImpl(i.id.name, i.alternatives)
 

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, Id, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
@@ -32,7 +32,7 @@ class BasicTest extends WordSpec with MkInjector {
       injector.produce(plan)
     }
 
-    assert(exc.getMessage.startsWith("Operations failed (1 failed, 5 done, 3 skipped, 9 total)"))
+    assert(exc.getMessage.startsWith("Provisioner stopped after 5 instances, 1/9 operations failed"))
 
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}
@@ -114,6 +114,8 @@ class BasicTest extends WordSpec with MkInjector {
         .from[TestImpl0Good]
       make[TestInstanceBinding].named("named.test")
         .from(TestInstanceBinding())
+      make[TestDependency0].namedByImpl
+        .from[TestImpl0Good]
     }
 
     val injector = mkInjector()
@@ -122,7 +124,6 @@ class BasicTest extends WordSpec with MkInjector {
 
     assert(context.get[TestClass]("named.test.class").correctWired())
   }
-
 
   "fail on unbindable" in {
     import BasicCase3._
@@ -170,7 +171,7 @@ class BasicTest extends WordSpec with MkInjector {
     assert(instantiated.a.z.nonEmpty)
   }
 
-  "handle set bindings ordering" in {
+  "handle set bindings" in {
     import SetCase1._
 
     val definition = new ModuleDef {
@@ -211,7 +212,7 @@ class BasicTest extends WordSpec with MkInjector {
     assert(context.get[Service3].set.size == 3)
   }
 
-  "support providerImport and instanceImport" in {
+  "support Plan.providerImport and Plan.resolveImport" in {
     import BasicCase1._
 
     val definition = new ModuleDef {
@@ -258,6 +259,72 @@ class BasicTest extends WordSpec with MkInjector {
     val safeType = SafeType.get[ClassTypeAnnT[String, Int]]
     val constructor = symbolIntrospector.selectConstructor(safeType)
 
-    assert(constructor.arguments.flatten.map(_.annotations).forall(_.nonEmpty))
+    val allArgsHaveAnnotations = constructor.arguments.flatten.map(_.annotations).forall(_.nonEmpty)
+    assert(allArgsHaveAnnotations)
   }
+
+  "handle set inclusions" in {
+    val definition = new ModuleDef {
+      make[Set[Int]].named("x").from(Set(1, 2, 3))
+      make[Set[Int]].named("y").from(Set(4, 5, 6))
+      many[Int].refSet[Set[Int]]("x")
+      many[Int].refSet[Set[Int]]("y")
+
+      make[Set[None.type]].from(Set(None))
+      make[Set[Some[Int]]].from(Set(Some(7)))
+      many[Option[Int]].refSet[Set[None.type]]
+      many[Option[Int]].refSet[Set[Some[Int]]]
+    }
+
+    val context = Injector().produce(definition)
+
+    assert(context.get[Set[Int]] == Set(1, 2, 3, 4, 5, 6))
+    assert(context.get[Set[Option[Int]]] == Set(None, Some(7)))
+  }
+
+  "handle multiple set element binds" in {
+    val definition = new ModuleDef {
+      make[Int].from(7)
+
+      many[Int].addSet(Set(1, 2, 3))
+      many[Int].add(5)
+
+      many[Int].add { i: Int => i - 1 }
+      many[Int].addSet {
+        i: Int =>
+          Set(i, i + 1, i + 2)
+      }
+    }
+
+    val context = Injector().produce(definition)
+
+    assert(context.get[Set[Int]] == Set(1, 2, 3, 5, 6, 7, 8, 9))
+  }
+
+  "support empty sets" in {
+    import Sets._
+    val definition = new ModuleDef {
+      many[Dependency]
+      make[Impl1]
+    }
+
+    val context = Injector().produce(definition)
+
+    assert(context.get[Impl1].justASet == Set.empty)
+  }
+
+  "prserve tags in multi set bindings" in {
+
+    val definition = new ModuleDef {
+      many[Int].named("zzz")
+        .add(5).tagged("t3")
+        .addSet(Set(1, 2, 3)).tagged("t1", "t2")
+        .addSet(Set(1, 2, 3)).tagged("t3", "t4")
+    }
+
+    assert(definition.bindings.collectFirst {
+      case SetElementBinding(_, _, s, _) if s == Set("t1", "t2") => true
+    }.nonEmpty)
+  }
+
 }

@@ -10,9 +10,34 @@ object TagExpr {
       def evaluate(tags: Set[T]): Boolean = For.this.evaluate(tags, this)
     }
 
+
+    object Expr {
+
+      implicit class ExprOps(e: Expr) {
+        def &&[O <: Expr](o: O): And = {
+          And(Set(e, o))
+        }
+
+        def ||[O <: Expr](o: O): Or = {
+          Or(Set(e, o))
+        }
+
+        def ^^[O <: Expr](o: O): Xor = {
+          Xor(Set(e, o))
+        }
+
+        def unary_! : Not = {
+          Not(e)
+        }
+      }
+
+    }
+
     sealed trait Composite extends Expr {
       def all: Set[Expr]
+
       protected def mark: String
+
       override def toString: String = if (all.size == 1) {
         all.head.toString
       } else {
@@ -79,7 +104,7 @@ object TagExpr {
 
       def toDNF(e: Expr): Expr = {
         e match {
-          case v: Composite if v.all.size == 1=>
+          case v: Composite if v.all.size == 1 =>
             toDNF(v.all.head)
 
           case v@Not(_: Composite) =>
@@ -125,7 +150,7 @@ object TagExpr {
 
           (1 to v.all.size).map {
             idx =>
-              val (left, right) = asSeq .splitAt(idx)
+              val (left, right) = asSeq.splitAt(idx)
               (left.last, (left.init ++ right).toSet)
           }
         }
@@ -189,6 +214,10 @@ object TagExpr {
 
 
   object Strings extends For[String] {
+
+    implicit class C(val sc: StringContext) {
+      def t(args: Any*): Expr = Has(sc.s(args: _*))
+    }
 
   }
 

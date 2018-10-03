@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.reflection
 
-import com.github.pshirshov.izumi.distage.model.definition.{DIStageAnnotation, Id, With}
+import com.github.pshirshov.izumi.distage.model.definition.{Id, With}
 import com.github.pshirshov.izumi.distage.model.exceptions.BadAnnotationException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.DIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, SymbolIntrospector}
@@ -11,13 +11,25 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
   override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: SymbolInfo): DIKey = {
-    val typeKey = DIKey.TypeKey(parameterSymbol.finalResultType)
+    val typeKey = if (parameterSymbol.isByName) {
+      DIKey.TypeKey(SafeType(parameterSymbol.finalResultType.tpe.typeArgs.head.finalResultType))
+    } else {
+      DIKey.TypeKey(parameterSymbol.finalResultType)
+    }
+
     withOptionalName(parameterSymbol, typeKey)
   }
 
   override def associationFromParameter(parameterSymbol: u.SymbolInfo): u.Association.Parameter = {
     val context = DependencyContext.ConstructorParameterContext(parameterSymbol.definingClass, parameterSymbol)
-    Association.Parameter(context, parameterSymbol.name, parameterSymbol.finalResultType, keyFromParameter(context, parameterSymbol))
+
+    Association.Parameter(
+      context
+      , parameterSymbol.name
+      , parameterSymbol.finalResultType
+      , keyFromParameter(context, parameterSymbol)
+      , parameterSymbol.isByName
+    )
   }
 
   override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: SymbolInfo): DIKey = {

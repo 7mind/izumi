@@ -10,7 +10,7 @@ jdk:
   - openjdk10
 
 scala:
-  - 2.12.6
+  - 2.12.7
 
 before_install:
   - mkdir -p ~/.sbt/
@@ -57,7 +57,7 @@ jobs:
       script: bash docker.sh coverage
     - stage: "SBT Tests"
       script: bash docker.sh scripted
-    - stage: "Publisn"
+    - stage: "Publish"
       script:
       - openssl aes-256-cbc -K $encrypted_8eadf24ba628_key -iv $encrypted_8eadf24ba628_iv -in secrets.tar.enc -out secrets.tar -d
       - tar xvf secrets.tar

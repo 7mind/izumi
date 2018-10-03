@@ -14,7 +14,9 @@ trait Provision {
 
   def extend(values: Map[RuntimeDIUniverse.DIKey, Any]): Provision
 
-  final def get(key: RuntimeDIUniverse.DIKey): Option[Any] = instances.get(key).orElse(imports.get(key))
+  final def get(key: RuntimeDIUniverse.DIKey): Option[Any] = {
+    instances.get(key).orElse(imports.get(key))
+  }
 
   final def enumerate: Seq[IdentifiedRef] = instances.map(IdentifiedRef.tupled).toSeq
 }

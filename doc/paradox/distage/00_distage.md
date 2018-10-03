@@ -4,12 +4,12 @@ out: index.html
 distage Staged Dependency Injection
 ============
 
-distage is a pragmatic module system for Scala that combines safety and reliability of pure FP with late binding and flexibility
+`distage` is a pragmatic module system for Scala that combines safety and reliability of pure FP with late binding and flexibility
 of runtime dependency injection frameworks such as Guice.
 
 ### Hello World
 
-This is what Hello World looks like in distage:
+Let's start with a simple Hello app:
 
 ```scala
 import distage._
@@ -23,11 +23,9 @@ object HelloModule extends ModuleDef {
 }
 
 object Main extends App {
-  val injector = Injector()
-
-  val plan = injector.plan(HelloModule)
-
-  val classes: Locator = injector.produce(plan)
+  val injector: Injector = Injector()
+  val plan: OrderedPlan  = injector.plan(HelloModule)
+  val classes: Locator   = injector.produce(plan)
 
   println("What's your name?")
   val name = readLine()
@@ -36,7 +34,7 @@ object Main extends App {
 }
 ```
 
-Let's take a closer look:
+We'll break it down line-by-line:
 
 ```scala
 object HelloModule extends ModuleDef {
@@ -44,14 +42,15 @@ object HelloModule extends ModuleDef {
 }
 ```
 
-We define a *Module* for our application. A module specifies *what* classes to instantiate and *how* to instantiate them.
+Here we define a *Module* for our application. A module specifies *what* classes to instantiate and *how* to instantiate them.
 
-Default instantiation strategy is to just call the constructor.
+By default, `distage` will just call the constructor.
 
-If a constructor accepts arguments, distage will first instantiate the dependencies, then call the constructor. 
-All the classes in distage are instantiated exactly once, even if multiple different classes depend on them, i.e. they're `Singletons`.
+If a class's constructor requires arguments, distage will first instantiate the arguments, then call the constructor with its dependencies fulfilled. 
+All classes in distage are instantiated exactly once, even if multiple different classes depend on them, i.e. they're `Singletons`.
  
-Modules can be combined using `++` and `overridenBy` operators. For example we can join our `HelloModule` with a `ByeModule`:
+A module can be combined with another to produce a larger module via `++` and `overridenBy` operators. 
+We can create a `ByeModule` and join it with our `HelloModule`:
 
 ```scala
 object ByeModule extends ModuleDef {
@@ -62,36 +61,36 @@ class Bye {
   def bye(name: String) = println(s"Bye $name!")
 }
 
-val helloBye = HelloModule ++ ByeModule
+val helloBye: Module = HelloModule ++ ByeModule
 ```
 
-And override:
+We can override the implementation of `Hello` class by overriding our `HelloModule` with an alternative implementation:
 
 ```scala
-val uppercaseHello = new Hello { 
-  override def hello(name: String) = s"HELLO ${name.toUpperCase}"
-}
+val uppercaseHello: Hello = 
+  new Hello { 
+    def hello(name: String) = s"HELLO ${name.toUpperCase}"
+  }
 
 object UppercaseHelloModule extends ModuleDef {
   make[Hello].from(uppercaseHello)  
 }
 
-val uppercaseHelloBye = helloBye overridenBy uppercaseHello 
+val uppercaseHelloBye: Module = helloBye overridenBy uppercaseHello 
 ```
 
-Combining modules with `++` is the main way to assemble your app together. But, if you don't want to list all your modules
-in one place, you can use [Plugins](#plugins) to automatically combine modules from the classpath.
+Combining modules with `++` is the main way to assemble your app together. For scenarios requiring extreme late-binding across multiple modules,
+you can use the [Plugins](#plugins) mechanism to automatically discover modules from the classpath.
 
-If you combine modules explicitly, distage can check if your app is wired properly at compile-time.
-See [Static Configurations](#static-configurations) for more details.
+Whether you combine modules explicitly or through [Plugins], distage can check at compile-time if your app is wired correctly. 
+If the modules typecheck, the app is guaranteed to start. See [Static Configurations](#static-configurations) for more details.
 
-Let's go back to code:
+Let's go back to the code:
 
 ```scala
 object Main extends App {
-  val injector = Injector()
-  
-  val plan = injector.plan(HelloModule)
+  val injector: Injector = Injector()
+  val plan: OrderedPlan  = injector.plan(HelloModule)
 ```
 
 Here we create an instantation `plan` from the module definition. distage is *staged*, so instead of instantiating our 
@@ -102,13 +101,35 @@ Features such as [Plugins](#plugins) and [Configurations](#config-files) are sep
 [transforming modules and plans](#import-materialization)
 
 ```scala
-  val classes: Locator = injector.produce(plan)
+  val classes: Locator   = injector.produce(plan)
 
-  classes.get[Hello].helloWorld()
+  println("What's your name?")
+  val name = readLine()
+  
+  classes.get[Hello].hello(name)
 ```
 
-After we execute a plan we're left with a `Locator` which holds our app's classes.
-We can retrieve instances by type and call methods on them.
+Executing the plan yields us a `Locator`, that holds all the instantiated classes. This is where `distage` ends, and app's main logic begins.
+
+Given a `Locator` we can retrieve instances by type, call methods on them or summon them with a function:
+
+```scala
+import scala.util.Random
+
+classes.run {
+  (hello: Hello, bye: Bye) =>
+    val names = Array("Snow", "Marisa", "Shelby")
+    val rnd = Random.nextInt(3)
+    hello(names(rnd))
+    bye(names(rnd))
+}
+```
+
+```scala
+classes.runOption {
+  i: Int => i + 10
+}.fold(println("I thought I had Int!"))(println(_))
+```
 
 ### Multibindings / Set Bindings
 
@@ -170,7 +191,7 @@ For further detail see [Guice wiki on Multibindings](https://github.com/google/g
 
 ### Provider Bindings
 
-To bind to a function instead of constructor use `.from` method in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef) DSL:
+To bind a function instead of constructor use `.from` method in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef) DSL:
 
 ```scala
 case class HostPort(host: String, port: Int)
@@ -179,7 +200,9 @@ class HttpServer(hostPort: HostPort)
 
 trait HttpServerModule extends ModuleDef {
   make[HttpServer].from {
-    hostPort: HostPort => new HttpServer(hostPort.host, hostPort + 1000)
+    hostPort: HostPort =>
+      val modifiedPort = hostPort.port + 1000
+      new HttpServer(hostPort.host, modifiedPort)
   }
 }
 ```
@@ -199,10 +222,10 @@ For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshir
 
 ### Tagless Final Style with distage
 
-distage works well with tagless final style, for example, let's make [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
-more flexible, by making implicit instances explicit and configurable with distage.
+distage works well with tagless final style. As an example, let's take [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
+and make it safer and more flexible by replacing fragile wiring `import ._`'s with explicit modules.
 
-Fist, the program we want to write:
+First, the program we want to write:
 
 ```scala
 import cats.Monad
@@ -213,7 +236,7 @@ import distage._
 class Program[F[_]: TagK: Monad] extends ModuleDef {
   make[TaglessProgram[F]]
 
-  make[Monad[F]].from(Monad[F])
+  addImplicit[Monad[F]]
 }
 
 class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
@@ -263,7 +286,7 @@ The program module is polymorphic and abstracted from its eventual monad, we can
 ```scala
 import cats.effect.IO
 
-val IOInterpreters = ???
+def IOInterpreters = ???
 val IOProgram = new Program[IO] ++ IOInterpreters
 ```
 
@@ -282,7 +305,7 @@ Or choose different interpreters at runtime:
 def chooseInterpreters(default: Boolean) = new Program[Try] ++ (if (default) TryInterpreters else DifferentTryInterpreters)
 ```
 
-Modules can be abstracted over arbitrary kinds – use `TagKK` to abstract over bifunctors:
+Modules can abstract over arbitrary kinds - use `TagKK` to abstract over bifunctors:
 
 ```scala
 class BIOModule[F[_, _]: TagKK] extends ModuleDef 
@@ -295,7 +318,7 @@ class TransModule[F[_[_], _]: TagTK] extends ModuleDef
 ```
 
 Adding a `Tag` for more exotic type shapes is as easy as defining a type synonym,
-consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#HKTag) docs for description
+consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for description
 
 ### Config files
 
@@ -364,12 +387,12 @@ class ConfiguredTryProgram[F[_]: TagK: Monad] extends ModuleDef {
 Sorry, this page is not ready yet
 @@@
 
-example of explicitly splitting effectful and pure instantiations:
+Example of explicitly splitting effectful and pure instantiations:
 
 ```scala
 import distage._
 import distage.config._
-import com.typesafe.config._
+import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
@@ -428,7 +451,81 @@ val main: Future[Unit] = initializers.run {
 Await.result(main, Duration.Inf)
 ```
 
+Effectful instantiation is not recommended in general – ideally, resources ought to be managed outside of `distage`. A rule of thumb is:
+if a class and its dependencies are stateless, and can be replaced by a global `object`, it's ok to inject them with  `distage`.
+
+See also: [Auto-Sets, closing all AutoCloseables](#auto-sets-collecting-bindings-by-predicate)
+
+You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/331
+
+### Inner Classes and Path-Dependent Types
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
+You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/221
+
+### Implicits Injection
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
+Implicits are managed like any other class, declare them in a module to make them available for summoning:
+
+```scala
+import cats.Monad
+import distage._
+import scalaz.zio.IO
+import scalaz.zio.interop.catz._
+
+object IOMonad extends ModuleDef {
+  addImplicit[Monad[IO[Throwable, ?]]]
+}
+```
+
+Implicits for wired classes are injected from DI context, not from surrounding lexical scope.
+If they were captured from lexical scope when the module is defined, then any binding of a class that depends on an
+implicit, would have to import an *implementation* of that implicit. 
+Depending on implementations is unmodular and directly contradicts the idea of using a dedicated module system
+in the first place:
+ 
+```scala
+import cats._
+import distage._
+
+class KVStore[F[_]: Monad, V] {
+  def fetch(key: String): F[V]
+}
+
+val kvstoreModule = new ModuleDef {
+  // We DON'T want this import to be necessary
+  // import cats.instances.either._
+
+  make[KVStore[Either[Error, ?]].from[KVStoreEitherImpl]
+}
+
+// Instead, specify implicits explicitly
+val eitherMonadModule = new ModuleDef {
+  // Ok to import here
+  import cats.instances.either._
+  
+  addImplicit[Monad[Either[Error, ?]]]
+}
+
+val all = kvstoreMOdule ++ eitherMonadModule
+```
+
+Implicits obey the usual lexical scope outside of modules managed by `distage`.
+
+You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/230
+
 ### Auto-Traits & Auto-Factories
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
 
 ...
 
@@ -436,11 +533,37 @@ Await.result(main, Duration.Inf)
 
 ### Import Materialization
 
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
 ...
 
-### Depending on future values with by-name parameters
+### Depending on Locator
 
-...
+Classes can depend on the Locator:
+
+```scala
+import distage._
+
+class A(all: LocatorRef) {
+  def c = all.get.get[C]
+}
+class B
+class C
+
+val module = new ModuleDef {
+  make[A]
+  make[B]
+  make[C]
+}
+
+val locator = Injector().produce(module)
+
+assert(locator.get[A].c eq locator.get[C]) 
+```
+
+It's recommended to avoid this if possible, doing so is often a sign of broken application design.
 
 ### Ensuring service boundaries using API modules
 
@@ -490,7 +613,7 @@ At your app entry point use a plugin loader to discover all `PluginDefs`:
 val pluginLoader = new PluginLoaderDefaultImpl(
   PluginConfig(
     debug = true
-    , packagesEnabled = Seq("com.example") // packages to scan
+    , packagesEnabled = Seq("com.example.petstore") // packages to scan
     , packagesDisabled = Seq.empty         // packages to ignore
   )
 )
@@ -505,51 +628,319 @@ Launch as normal with the loaded modules:
 Injector().produce(app).get[PetStoreController].run
 ```
 
-Plugins also allow a program to dynamically extend itself by adding new Plugin classes on the classpath at launch time with `java -cp`
+Plugins also allow a program to dynamically extend itself by adding new Plugin classes on the classpath at launch time via `java -cp`
 
 ### Roles 
 
-...
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
+"Roles" are a pattern of multi-tenant applications, in which multiple separate microservices all reside within a single `.jar`.
+This strategy helps cut down development, maintenance and operations costs associated with maintaining fully separate code bases and binaries.
+The apps that should be launched are chosen by command-line parameters: `./launcher app1 app2 app3`. When launching less apps
+than are available in the launcher - `./launcher app1`, redundant components will be collected by the [garbage collector](#using-garbage-collector)
+and won't be started.
+
+Roles: a viable alternative to Microservices:
+
+https://github.com/7mind/slides/blob/master/02-roles/target/roles.pdf
 
 ### Test Kit
 
-### Fixtures and utilities
+`distage-testkit` module provides integration with `scalatest`:
 
-...
+```scala
+libraryDependencies += Izumi.R.distage_testkit
+```
+or
+
+@@@vars
+```scala
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$izumi.version$"
+```
+@@@
+
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+
+Example usage:
+
+```scala
+import distage._
+import com.github.pshirshov.izumi.distage.testkit.DistageSpec
+
+class TestClass {
+  def hello: String = "Hello World!"
+}
+
+class Test extends DistageSpec {
+  override protected def makeBindings: ModuleBase = new ModuleDef {
+    make[TestClass]
+  }
+
+  "TestClass" should {
+
+    "Say hello" in di {
+      testClass: TestClass =>
+        assert(testClass.hello == "Hello World!")
+    }
+
+  }
+}
+```
 
 ### Static Configurations
 
-...
-
-### Using Garbage Collector to instantiate only classes required for the test
-
-...
-
-### Detailed Feature Overview
-
-### Implicits Injection
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
 
 ...
 
-#### Typeclass Coherence Guarantees
+### Using Garbage Collector
+
+A garbage collector is included in `distage`, but has to be enabled explicitly:
+
+```scala
+import distage._
+
+class Main
+
+// Designate `Main` class as the garbage collection root
+val roots = Seq(DIKey.get[Main])
+
+// Enable GC
+val gcModule = new TracingGCModule(roots)
+val injector = Injector(gcModule)
+```
+
+GC will remove all bindings that aren't transitive dependencies of the chosen `GC root` keys from the plan - they will never be instantiated.
+
+In the following example:
+
+```scala
+import distage._
+
+case class A(b: B)
+case class B()
+case class C() {
+  println("C!")
+}
+
+val module = new ModuleDef {
+  make[A]
+  make[B]
+  make[C]
+}
+
+val roots = Seq(DIKey.get[A])
+
+val locator = Injector(new TracingGCModule(roots)).produce(module)
+
+locator.find[A]
+// res0: Option[A] = Some(A(B()))
+locator.find[B]
+// res1: Option[B] = Some(B())
+locator.find[C]
+// res2: Option[C] = None
+```
+
+Class `C` is removed because it wasn't dependent on by classes `B` or `A`. It's not present in the `Locator` and the `"C!"` message was never printed.
+If class `B` were to depend on `C` as in `case class B(c: C)`, it would've been retained, because `A` which is the GC root, would've depended on `B` which in turns depends on `C`.
+
+GC serves two important purposes:
+* it enables faster [tests](#test-kit) by omitting unneeded instantiations,
+* and it enables multiple separate applications, "[Roles](#roles)" to be hosted within a single `.jar`.
 
 ### Compile-Time Checks
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
 
 ...
 
 ### Circular Dependencies support
 
-...
+`distage` automatically resolves circular dependencies, including self-reference:
 
-#### Automatic Resolution with generated Proxies
+```scala
+import distage._
+
+case class A(b: B)
+case class B(a: A) 
+case class C(c: C)
+
+val locator = Injector().produce(new ModuleDef {
+  make[A]
+  make[B]
+  make[C]
+})
+
+locator.get[A] eq locator.get[B].a
+// res0: Boolean = true
+locator.get[B] eq locator.get[A].b
+// res1: Boolean = true
+locator.get[C] eq locator.get[C].c
+// res2: Boolean = true
+``` 
+
+#### Automatic Resolution with generated proxies
+
+The above strategy depends on `distage-proxy-cglib` module which is brought in by default with `distage-core`.
+
+It's enabled by default. If you want to disable it, use `noCogen` bootstrap environment:
+
+```scala
+import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
+import distage._
+
+Injector(DefaultBootstrapContext.noCogen)
+```
 
 #### Manual Resolution with by-name parameters
 
+Most cycles can also be resolved manually when identified, using `by-name` parameters.
+
+Circular dependencies in the following example are all resolved via Scala's native `by-name`'s, without any proxy generation:
+
+```scala
+import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext.noCogen
+import distage._
+
+class A(b0: => B) {
+  def b: B = b0
+}
+
+class B(a0: => A) {
+  def a: A = a0
+}
+
+class C(self: => C) {
+  def c: C = self
+}
+
+val module = new ModuleDef {
+  make[A]
+  make[B]
+  make[C]
+}
+
+val locator = Injector(noCogen).produce(module)
+
+assert(locator.get[A].b eq locator.get[B])
+assert(locator.get[B].a eq locator.get[A])
+assert(locator.get[C].c eq locator.get[C])
+``` 
+
+The proxy generation via `cglib` is still enabled by default, because in scenarios with [extreme late-binding](#roles),
+cycles can emerge unexpectedly, outside of control of the origin module.  
+
 ### Auto-Sets: Collecting Bindings By Predicate
 
-...
+AutoSet @scaladoc[Planner](com.github.pshirshov.izumi.distage.model.Planner) Hooks traverse the class graph and collect all classes matching a predicate.
+
+Using Auto-Sets, one can, for example, collect all `AutoCloseable` classes and `.close()` them after the application has finished work.
+
+Note: it's not generally recommended to construct stateful, effectful or resource-allocating classes with `distage`, a general rule of thumb is:
+if a class and its dependencies are stateless and can be replaced by a global `object`, it's ok to inject them with  `distage`. However, an example is given anyway,
+as a lot of real applications depend on global resources, such as JDBC connections, `ExecutionContext` thread pools, Akka Systems, etc. that should 
+be closed properly at exit.
+
+```scala
+import java.util.concurrent.{ExecutorService, Executors}
+
+import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
+import distage._
+
+val threadPoolModule = new ModuleDef {
+  make[ExecutorService].from(Executors.newWorkStealingPool())
+  make[ExecutionContext].from {
+    es: ExecutorService =>
+      ExecutionContext.fromExecutorService(es)
+  }
+}
+
+// A hook that collects every instance of a subtype of a given type
+val collectAllExecutorServicesHook = new AssignableFromAutoSetHook[ExecutorService]
+
+val bootstrapModule = new BootstrapModuleDef {
+  many[PlanningHook]
+    .add(collectAllExecutorServicesHook)
+}
+
+val injector = Injector(bootstrapModule)
+
+val locator = injector.produce(threadPoolModule)
+
+try {
+  // run the app
+  ???
+} finally {
+  // when done, close thread pools
+  val allExecutors = locator.get[Set[ExecutorService]]
+  allExecutors.foreach(_.shutdownNow())
+}
+```
 
 #### Weak Sets
+
+Sets (aka [Multibindings](#multibindings--set-bindings)) can contain *weak* references. Elements designated as weak will not
+be retained by the [Garbage Collector](#using-garbage-collector) if they are not
+referenced outside of the set.
+
+Example:
+
+```scala
+import distage._
+
+sealed trait SetElem
+
+final class Strong extends SetElem {
+  println("Strong constructed")
+}
+
+final class Weak extends SetElem {
+  println("Weak constructed")
+}
+
+val module = new ModuleDef {
+  make[Strong]
+  make[Weak]
+  
+  many[SetElem]
+    .ref[Strong]
+    .weak[Weak]
+}
+
+// Designate Set[SetElem] as the garbage collection root,
+// everything that Set[SetElem] does not strongly depend on will be garbage collected
+// and will not be constructed. 
+val roots = Seq(DIKey.get[Set[SetElem]])
+
+// Enable GC
+val gcModule = new TracingGCModule(roots)
+val injector = Injector(gcModule)
+
+val locator = injector.produce(roots)
+// Strong constructed!
+
+assert(locator.get[Set[SetElem]].size == 1) 
+```
+
+The `Weak` class was not required in any dependency of `Set[SetElem]`, so it was pruned.
+The `Strong` class remained, because the reference to it was **strong**, therefore it was counted as a dependency of `Set[SetElem]`
+
+Had we changed `Strong` to depend on the `Weak`, the `Weak` would be retained:
+
+```scala
+final class Strong(weak: Weak) {
+  println("Strong constructed")
+}
+
+assert(locator.get[Set[SetElem]].size == 2)
+```
 
 ### Debugging, Introspection, Diagnostics and Hooks
 
@@ -582,10 +973,9 @@ If you think they've gone awry, you can turn macro debug output during compilati
 sbt -Dizumi.distage.debug.macro=true compile
 ```
 
+Macros power `distage-static` module, an alternative backend that does not use JVM runtime reflection to instantiate classes and auto-traits.
 
-Macros power `distage-static` module, an alternative backend that doesn't use JVM runtime reflection to instantiate classes and auto-traits.
-
-### Extensions and Plan Rewriting – writing a distage extension
+### Extensions and Plan Rewriting - writing a distage extension
 
 ...
 
@@ -644,6 +1034,8 @@ object Main extends IOApp {
 ```
 
 ### Scalaz
+
+### ZIO
 
 ### Freestyle
 

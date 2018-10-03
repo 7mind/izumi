@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/pshirshov/izumi-r2.svg?branch=develop)](https://travis-ci.org/pshirshov/izumi-r2)
+[![Build Status](https://travis-ci.com/pshirshov/izumi-r2.svg?branch=develop)](https://travis-ci.com/pshirshov/izumi-r2)
 [![codecov](https://codecov.io/gh/pshirshov/izumi-r2/branch/develop/graph/badge.svg)](https://codecov.io/gh/pshirshov/izumi-r2)
 [![CodeFactor](https://www.codefactor.io/repository/github/pshirshov/izumi-r2/badge)](https://www.codefactor.io/repository/github/pshirshov/izumi-r2)
 [![Latest Release](https://img.shields.io/github/tag/pshirshov/izumi-r2.svg)](https://github.com/pshirshov/izumi-r2/releases)

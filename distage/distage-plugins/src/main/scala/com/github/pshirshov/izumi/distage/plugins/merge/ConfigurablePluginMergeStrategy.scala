@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.plugins.merge
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, Module}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, Module}
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.distage.model.reflection
 import com.github.pshirshov.izumi.distage.plugins.LoadedPlugins.JustPlugins
@@ -69,7 +69,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
   }
 
   protected def isDisabled(binding: Binding): Boolean = {
-      config.disabledTags.evaluate(binding.tags) ||
+    config.disabledTags.evaluate(binding.tags) ||
       isDisabledName(keyClassName(binding.key), config.disabledKeyClassnames) ||
       implClassName(binding).exists(isDisabledName(_, config.disabledImplClassnames))
   }
@@ -86,10 +86,8 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       case _ =>
         None
     }).flatMap {
-      case i: ImplDef.WithImplType =>
+      i =>
         Option(typeName(i.implType))
-      case _ =>
-        None
     }
   }
 

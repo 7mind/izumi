@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1
-import com.github.pshirshov.izumi.distage.model.definition.LocatorDef
+import com.github.pshirshov.izumi.distage.model.definition.{Id, LocatorDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
 import org.scalatest.WordSpec
 
@@ -32,6 +32,15 @@ class LocatorDefTest extends WordSpec {
       assert(ctx.find[TestCaseClass2].isEmpty)
 
       assert(ctx.instances.map(_.value) == Seq(testDependency0, testDependency1, testInstanceBinding, testCaseClass2))
+    }
+
+    "not have access to advanced operations" in {
+      assertTypeError(
+        """
+          import BasicCase1._
+
+          new LocatorDef { make[JustTrait].from[Impl0] }"""
+      )
     }
 
     "die on undefined instance" in {
@@ -75,6 +84,15 @@ class LocatorDefTest extends WordSpec {
       assert(ctx.instances.size == 2)
       assert(ctx.get[Set[TestInstanceBinding]]("r").size == 2)
       assert(ctx.get[Set[TestInstanceBinding]] == Set(TestInstanceBinding()))
+    }
+
+    ".run and .runOption works" in {
+      val ctx = new LocatorDef {
+        make[Int].from(5)
+      }
+
+      assert(ctx.run { i: Int => i + 5 } == 10)
+      assert(ctx.runOption { i: Int @Id("special") => i }.isEmpty)
     }
 
   }

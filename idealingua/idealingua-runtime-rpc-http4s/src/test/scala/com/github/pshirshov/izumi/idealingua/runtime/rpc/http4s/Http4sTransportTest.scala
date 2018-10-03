@@ -11,8 +11,8 @@ import org.scalatest.WordSpec
 import scala.util.{Failure, Success}
 
 class Http4sTransportTest extends WordSpec {
+
   import fixtures._
-  val BIOR: BIORunner[BiIO] = implicitly
   import Http4sTestContext._
 
   "Http4s transport" should {
@@ -78,6 +78,7 @@ class Http4sTransportTest extends WordSpec {
       .bindHttp(port, host)
       .withWebSockets(true)
       .mountService(ioService.service, "/")
+      .resource.use(_ => cats.effect.IO.never)
       .start
 
     builder.unsafeRunAsync {
@@ -85,7 +86,7 @@ class Http4sTransportTest extends WordSpec {
         try {
           f
         } finally {
-          server.shutdownNow()
+          server.cancel.unsafeRunSync()
         }
 
       case Left(error) =>

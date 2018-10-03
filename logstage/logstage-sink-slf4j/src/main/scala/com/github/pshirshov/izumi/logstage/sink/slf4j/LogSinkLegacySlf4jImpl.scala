@@ -11,7 +11,6 @@ import org.slf4j.helpers.BasicMarkerFactory
 
 import scala.compat.java8.FunctionConverters._
 
-
 class LogSinkLegacySlf4jImpl
 (
   policy: RenderingPolicy

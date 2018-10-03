@@ -110,7 +110,7 @@ object BIO extends BIOSyntax {
 
   implicit object BIOZio extends BIO[IO] {
     @inline def bracket0[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =
-      IO.bracket0(acquire)((v, _: ExitResult[E, B]) => release(v))(use)
+      IO.bracket(acquire)(v => release(v))(use)
 
     @inline def sleep(duration: Duration): IO[Nothing, Unit] = IO.sleep(duration)
 

@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.fixtures
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 @ExposedTestScope
 object BasicCases {
@@ -38,9 +39,7 @@ object BasicCases {
 
     case class TestCaseClass(a1: TestClass, a2: TestDependency3)
 
-    case class TestInstanceBinding(z: String =
-                                         """R-r-rollin' down the window, white widow, fuck fame
-Forest fire, climbin' higher, real life, it can wait""")
+    case class TestInstanceBinding(z: String = "TestValue")
 
     case class TestCaseClass2(a: TestInstanceBinding)
 
@@ -75,13 +74,14 @@ Forest fire, climbin' higher, real life, it can wait""")
     class TestClass
     (
       @Id("named.test.dependency.0") val fieldArgDependency: TestDependency0
-      , @Id("named.test") argDependency: TestInstanceBinding
+      , @Id("com.github.pshirshov.izumi.distage.fixtures.basiccases.basiccase2.testdependency0") val fieldArgDependencyAutoname: TestDependency0
+      , @Id("named.test") argDependency: => TestInstanceBinding
     ) {
       val x = argDependency
       val y = fieldArgDependency
 
       def correctWired(): Boolean = {
-        fieldArgDependency.boom() == 1
+        argDependency.z.nonEmpty && fieldArgDependency.boom() == 1 && fieldArgDependencyAutoname.boom() == 1 && (fieldArgDependency ne fieldArgDependencyAutoname)
       }
     }
 
@@ -114,9 +114,17 @@ Forest fire, climbin' higher, real life, it can wait""")
   object BasicCase4 {
     trait Dependency
 
-    class TestClass(tyAnnDependency: Dependency @Id("special"))
+    class TestClass(tyAnnDependency: Dependency @Id("special")) {
+      Quirks.discard(tyAnnDependency)
+    }
 
     case class ClassTypeAnnT[A, B](val x: A @Id("classtypeann1"), y: B @Id("classtypeann2"))
+  }
+
+  object Sets {
+    trait Dependency
+
+    class Impl1(val justASet: Set[Dependency])
   }
 
 }

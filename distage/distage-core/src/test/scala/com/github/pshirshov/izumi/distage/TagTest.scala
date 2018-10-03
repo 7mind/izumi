@@ -14,6 +14,12 @@ trait X[Y] {
   implicit def tagZ: Tag[Z]
 }
 
+trait ZY {
+  type T
+  val x: String = "5"
+  object y
+}
+
 class TagTest extends WordSpec with X[String] {
 
   def safe[T: TypeTag] = SafeType(typeOf[T])
@@ -59,10 +65,26 @@ class TagTest extends WordSpec with X[String] {
       assert(Tag[Int { def a: Int }].tpe == safe[Int { def a: Int} ])
 
       assert(Tag[str.type].tpe == safe[str.type])
-      assert(Tag[With[str.type] with ({ type T = str.type with Int})].tpe == safe[With[str.type] with ({ type T = str.type with Int})])
+      assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe == safe[With[str.type] with ({ type T = str.type with Int })])
       assert(Tag[this.Z].tpe == safe[this.Z])
       assert(Tag[this.Z].tpe.tpe == typeOf[this.Z])
       assert(Tag[TagTest#Z].tpe == safe[TagTest#Z])
+    }
+
+    "Work with odd type prefixes" in {
+      val zy = new ZY {}
+
+      assert(Tag[zy.T].tpe == safe[zy.T])
+      assert(Tag[zy.x.type].tpe == safe[zy.x.type])
+      assert(Tag[zy.y.type].tpe == safe[zy.y.type])
+    }
+
+    "Work with subtyping odd type prefixes" in {
+      val zy = new ZY {}
+
+      assert(Tag[zy.T].tpe weak_<:< safe[zy.T])
+      assert(Tag[zy.x.type].tpe weak_<:< safe[zy.x.type])
+      assert(Tag[zy.y.type].tpe weak_<:< safe[zy.y.type])
     }
 
     "Work for a concrete type with available TypeTag" in {
@@ -130,7 +152,6 @@ class TagTest extends WordSpec with X[String] {
       def testTagX[F[_, _, _[_[_], _], _[_], _]: TagX, A: Tag, B: Tag, C[_[_], _]: TagTK, D[_]: TagK, E: Tag] = Tag[F[A, B, C, D, E]]
 
       val value = testTagX[T2, Int, String, OptionT, List, Boolean]
-      println(value)
       assert(value.tpe == safe[T2[Int, String, OptionT, List, Boolean]])
     }
 
@@ -172,7 +193,6 @@ class TagTest extends WordSpec with X[String] {
       assert(TagTK[Id1].tag.tpe.toString.contains(".Id1"))
     }
 
-    // TODO: check errors on by commenting args in this
     "Assemble from higher than TagKK tags" in {
       def tag[T[_[_], _]: TagTK, F[_]: TagK, A: Tag] = Tag[T[F, A]]
 

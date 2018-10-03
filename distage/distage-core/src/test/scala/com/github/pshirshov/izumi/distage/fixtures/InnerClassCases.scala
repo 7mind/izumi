@@ -5,18 +5,35 @@ import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 @ExposedTestScope
 object InnerClassCases {
 
-  object InnerClassCase1 {
-
+  object InnerClassUnstablePathsCase {
     class TestModule {
-      class TestDependency
-      class TestClass(val a: TestDependency)
-    }
+      case class TestDependency()
 
+      case class TestClass(a: TestDependency)
+
+      trait TestFactory {
+        def mk(testDependency: TestDependency): TestClass
+      }
+
+      case class Circular1(circular2: Circular2)
+      case class Circular2(circular2: Circular1)
+    }
   }
 
-  object InnerClassCase2 {
+  object InnerClassByNameCase {
+    class TestModule {
+      class TestDependency
+
+      class TestClass(a:  => TestDependency) {
+        def aValue: TestDependency = a
+      }
+    }
+  }
+
+  object InnerClassStablePathsCase {
 
     object StableObjectInheritingTrait extends TestTrait
+    object StableObjectInheritingTrait1 extends TestTrait
 
     trait TestTrait {
 
@@ -28,6 +45,8 @@ object InnerClassCases {
         def mk(testDependency: TestDependency): TestClass
       }
 
+      case class Circular1(circular2: Circular2)
+      case class Circular2(circular2: Circular1)
     }
 
   }
