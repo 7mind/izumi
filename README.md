@@ -32,8 +32,13 @@ including the following components:
 4. [Opinionated SBT plugins](https://izumi.7mind.io/latest/release/doc/sbt/) aimed to significantly 
    increase clarity of your builds and compactify build files.
 
-Documentation [https://izumi.7mind.io](https://izumi.7mind.io/latest/release/doc/)
-Scaladoc [https://izumi.7mind.io/api](https://izumi.7mind.io/latest/release/api/)
+Docs
+----
+
+1. Documentation [https://izumi.7mind.io/latest/release/doc/](https://izumi.7mind.io/latest/release/doc/)
+2. Scaladoc [https://izumi.7mind.io/latest/release/api/](https://izumi.7mind.io/latest/release/api/)
+3. Slides: [https://github.com/7mind/slides](https://github.com/7mind/slides)
+
 
 Key goals 
 =========
