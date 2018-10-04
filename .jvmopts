@@ -7,4 +7,3 @@
 -XX:+OmitStackTraceInFastThrow
 -Dsun.io.useCanonCaches=false
 -XX:SoftRefLRUPolicyMSPerMB=50
--XX:+AggressiveOpts
