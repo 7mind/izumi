@@ -81,16 +81,11 @@ class Http4sTransportTest extends WordSpec {
       .resource.use(_ => cats.effect.IO.never)
       .start
 
-    builder.unsafeRunAsync {
-      case Right(server) =>
-        try {
-          f
-        } finally {
-          server.cancel.unsafeRunSync()
-        }
-
-      case Left(error) =>
-        throw error
+    val fiber = builder.unsafeRunSync()
+    try {
+      f
+    } finally {
+      fiber.cancel.unsafeRunSync()
     }
   }
 

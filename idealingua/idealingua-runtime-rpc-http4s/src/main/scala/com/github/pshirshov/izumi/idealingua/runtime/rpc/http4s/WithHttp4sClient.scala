@@ -66,17 +66,20 @@ trait WithHttp4sClient {
               product
             }
 
-            BIORunner.unsafeRunSyncAsEither(decoded) match {
-              case scala.util.Success(Right(v)) =>
-                CIO.pure(v)
+            CIO.async {
+              cb =>
+                BIORunner.unsafeRunAsyncAsEither(decoded) {
+                  case scala.util.Success(Right(v)) =>
+                    cb(Right(v))
 
-              case scala.util.Success(Left(error)) =>
-                logger.info(s"${input.method -> "method"}: decoder failed on $body: $error")
-                CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $error", Option(error)))
+                  case scala.util.Success(Left(error)) =>
+                    logger.info(s"${input.method -> "method"}: decoder failed on $body: $error")
+                    cb(Left(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $error", Option(error))))
 
-              case scala.util.Failure(f) =>
-                logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
-                CIO.raiseError(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $f", Option(f)))
+                  case scala.util.Failure(f) =>
+                    logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
+                    cb(Left(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $f", Option(f))))
+                }
             }
         }
     }
