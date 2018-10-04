@@ -24,16 +24,21 @@ Izumi (*jap. 泉水, spring*) is a set of non-coupled tools allowing you to sign
  
 including the following components:
 
-1. [Percept-plan-execute-repeat (PPER)](https://izumi.7mind.io/v0.5.50-SNAPSHOT/doc/pper/) toolchain, allowing you to model 
+1. [Percept-plan-execute-repeat (PPER)](https://izumi.7mind.io/latest/release/doc/pper/) toolchain, allowing you to model 
    very complex domains and orchestrate deadly complex processes lot easier than you get used to,
-1. [distage](https://izumi.7mind.io/v0.5.50-SNAPSHOT/doc/distage/) – Staged, transparent runtime Dependency Injection framework,
-2. [logstage](https://izumi.7mind.io/v0.5.50-SNAPSHOT/doc/logstage/) – Effortless Structured Logging framework,
-3. [idealingua](https://izumi.7mind.io/v0.5.50-SNAPSHOT/doc/idealingua/) – API Definition and Data Modeling language with network RPC generator targeting multiple languages, including Go, Typescript, C# and Scala,
-4. [Opinionated SBT plugins](https://izumi.7mind.io/v0.5.50-SNAPSHOT/doc/sbt/) aimed to significantly 
+1. [distage](https://izumi.7mind.io/latest/release/doc/distage/) – Staged, transparent runtime Dependency Injection framework,
+2. [logstage](https://izumi.7mind.io/latest/release/doc/logstage/) – Effortless Structured Logging framework,
+3. [idealingua](https://izumi.7mind.io/latest/release/doc/idealingua/) – API Definition and Data Modeling language with network RPC generator targeting multiple languages, including Go, Typescript, C# and Scala,
+4. [Opinionated SBT plugins](https://izumi.7mind.io/latest/release/doc/sbt/) aimed to significantly 
    increase clarity of your builds and compactify build files.
 
-Documentation [https://izumi.7mind.io](https://izumi.7mind.io/v0.5.50-SNAPSHOT/doc/)
-Scaladoc [https://izumi.7mind.io/api](https://izumi.7mind.io/v0.5.50-SNAPSHOT/api/)
+Docs
+----
+
+1. Documentation [Latest release](https://izumi.7mind.io/latest/release/doc/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/doc/)
+2. Scaladoc [Latest release](https://izumi.7mind.io/latest/release/api/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/api/)
+3. Slides: [https://github.com/7mind/slides](https://github.com/7mind/slides)
+
 
 Key goals 
 =========

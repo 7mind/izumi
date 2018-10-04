@@ -82,8 +82,8 @@ val uppercaseHelloBye: Module = helloBye overridenBy uppercaseHello
 Combining modules with `++` is the main way to assemble your app together. For scenarios requiring extreme late-binding across multiple modules,
 you can use the [Plugins](#plugins) mechanism to automatically discover modules from the classpath.
 
-Whether you combine modules explicitly or through [Plugins], distage can check at compile-time if your app is wired correctly. 
-If the modules typecheck, the app is guaranteed to start. See [Static Configurations](#static-configurations) for more details.
+`distage` can check at compile-time if your app is wired correctly, If the modules typecheck, the app is guaranteed to start.
+See [Compile-Time Checks](#compile-time-checks) for more details.
 
 Let's go back to the code:
 
@@ -460,11 +460,42 @@ You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issue
 
 ### Inner Classes and Path-Dependent Types
 
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
+To instantiate path-dependent types via constructor, their prefix type has to be present in DI context:
 
-You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/221
+```scala
+
+trait Path {
+  class A
+  class B
+}
+
+val path = new Path {}
+
+val module = new ModuleDef {
+  make[path.A]
+  make[path.type].from(path.type: path.type)
+}
+```
+
+The same applies to type projections:
+
+```scala
+val module1 = new ModuleDef {
+  make[Path#B]
+  make[Path].from(new Path {})
+}
+```
+
+Provider and instance bindings and also compile-time mode in `distage-static` module do not require the singleton type prefix to be present in DI context:
+
+```scala
+val module2 = new ModuleDef {
+  make[Path#B].from {
+    val path = new Path {}
+    new path.B
+  }
+}
+```
 
 ### Implicits Injection
 
@@ -472,7 +503,7 @@ You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issue
 Sorry, this page is not ready yet
 @@@
 
-Implicits are managed like any other class, declare them in a module to make them available for summoning:
+Implicits are managed like any other class, to make them available for summoning, declare them inside a module:
 
 ```scala
 import cats.Monad
@@ -482,6 +513,7 @@ import scalaz.zio.interop.catz._
 
 object IOMonad extends ModuleDef {
   addImplicit[Monad[IO[Throwable, ?]]]
+  // same as make[Monad[IO[Throwable, ?]]].from(implicitly[Monad[IO[Throwable, ?]]])
 }
 ```
 
@@ -574,8 +606,7 @@ It's recommended to avoid this if possible, doing so is often a sign of broken a
 When rapidly prototyping, the friction of adding new modules can become a burden.
 distage plugin extension can alleviate that by automatically picking up all the `Plugin` modules defined in the program.
 
-Note that auto plugins are incompatible with distage [static checks](#static-configurations). Our recommended workflow is 
-to start with plugins, then switch to static configurations after the program has been stabilized.
+Auto plugins are compatible with [compile-time checks](#compile-time-checks) as long as they are in a separate module.
 
 To define a plugin, first add distage-plugins library:
 
@@ -689,7 +720,15 @@ class Test extends DistageSpec {
 }
 ```
 
-### Static Configurations
+### Compile-Time Checks
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
+...
+
+### Compile-Time Instantiation
 
 @@@ warning { title='TODO' }
 Sorry, this page is not ready yet
@@ -751,14 +790,6 @@ If class `B` were to depend on `C` as in `case class B(c: C)`, it would've been 
 GC serves two important purposes:
 * it enables faster [tests](#test-kit) by omitting unneeded instantiations,
 * and it enables multiple separate applications, "[Roles](#roles)" to be hosted within a single `.jar`.
-
-### Compile-Time Checks
-
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
-
-...
 
 ### Circular Dependencies support
 

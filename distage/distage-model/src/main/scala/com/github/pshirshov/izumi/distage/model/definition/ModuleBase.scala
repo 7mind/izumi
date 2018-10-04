@@ -121,8 +121,8 @@ object ModuleBase {
     }
   }
 
-  private final class Lub[-A, -B, Out](private val dummy: Boolean = false) extends AnyVal
-  private object Lub {
+  final class Lub[-A, -B, Out](private val dummy: Boolean = false) extends AnyVal
+  object Lub {
     implicit def lub[T]: Lub[T, T, T] = new Lub[T, T, T]
   }
 

@@ -55,7 +55,7 @@ trait WithHttp4sWsClient {
           v
         }
 
-        BIORunner.unsafeRunSyncAsEither(result) match {
+        BIORunner.unsafeRunAsyncAsEither(result) {
           case scala.util.Success(Right(PacketInfo(packetId, method))) =>
             logger.debug(s"Processed incoming packet $method: $packetId")
 
@@ -64,6 +64,7 @@ trait WithHttp4sWsClient {
 
           case scala.util.Failure(cause) =>
             logger.error(s"Failed to process request, termination: $cause")
+
         }
       }
 
@@ -180,11 +181,11 @@ trait WithHttp4sWsClient {
                     id =>
                       requestState.poll(id, pollingInterval, timeout)
                         .flatMap {
-                          case Some(value : RawResponse.GoodRawResponse) =>
+                          case Some(value: RawResponse.GoodRawResponse) =>
                             logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
                             codec.decode(value.data, value.method)
 
-                          case Some(value : RawResponse.BadRawResponse) =>
+                          case Some(value: RawResponse.BadRawResponse) =>
                             logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
                             BIO.terminate(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 

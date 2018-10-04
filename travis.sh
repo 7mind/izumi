@@ -20,7 +20,7 @@ function bclose {
 }
 
 function csbt {
-    COMMAND="time sbt -v ++$TRAVIS_SCALA_VERSION $*"
+    COMMAND="time sbt -v $*"
     eval $COMMAND
 }
 
