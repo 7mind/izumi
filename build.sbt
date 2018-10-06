@@ -203,12 +203,6 @@ lazy val distageProxyCglib = inDiStage.as.module
     )
   )
 
-lazy val distagePlugins = inDiStage.as.module
-  .depends(distageCore)
-  .settings(
-    libraryDependencies ++= Seq(R.fast_classpath_scanner)
-  )
-
 lazy val distageConfig = inDiStage.as.module
   .depends(
     distageCore,
@@ -221,6 +215,12 @@ lazy val distageConfig = inDiStage.as.module
     libraryDependencies ++= Seq(
       R.typesafe_config
     )
+  )
+
+lazy val distagePlugins = inDiStage.as.module
+  .depends(distageCore, distageConfig.testOnlyRef)
+  .settings(
+    libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
 
 lazy val distageApp = inDiStage.as.module

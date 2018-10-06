@@ -131,6 +131,37 @@ classes.runOption {
 }.fold(println("I thought I had Int!"))(println(_))
 ```
 
+### Provider Bindings
+
+To bind a function instead of constructor use `.from` method in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef) DSL:
+
+```scala
+case class HostPort(host: String, port: Int)
+
+class HttpServer(hostPort: HostPort)
+
+trait HttpServerModule extends ModuleDef {
+  make[HttpServer].from {
+    hostPort: HostPort =>
+      val modifiedPort = hostPort.port + 1000
+      new HttpServer(hostPort.host, modifiedPort)
+  }
+}
+```
+
+To inject named instances or config values, add annotations to lambda arguments' types:
+
+```scala
+trait HostPortModule extends ModuleDef {
+  make[HostPort].from {
+    (configHost: String @ConfPath("http.host"), configPort: Int @ConfPath("http.port")) =>
+      HostPort(configHost, configPort)
+  }
+}
+```
+
+For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet)
+
 ### Multibindings / Set Bindings
 
 Multibindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
@@ -188,37 +219,6 @@ testRouter.run(Request[IO](uri = uri("/blog/1"))).flatMap(_.as[String]).unsafeRu
 ```
 
 For further detail see [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multibindings).
-
-### Provider Bindings
-
-To bind a function instead of constructor use `.from` method in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef) DSL:
-
-```scala
-case class HostPort(host: String, port: Int)
-
-class HttpServer(hostPort: HostPort)
-
-trait HttpServerModule extends ModuleDef {
-  make[HttpServer].from {
-    hostPort: HostPort =>
-      val modifiedPort = hostPort.port + 1000
-      new HttpServer(hostPort.host, modifiedPort)
-  }
-}
-```
-
-To inject named instances or config values, add annotations to lambda arguments' types:
-
-```scala
-trait HostPortModule extends ModuleDef {
-  make[HostPort].from {
-    (configHost: String @ConfPath("http.host"), configPort: Int @ConfPath("http.port")) =>
-      HostPort(configHost, configPort)
-  }
-}
-```
-
-For further details, see scaladoc for @scaladoc[ProviderMagnet](com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet)
 
 ### Tagless Final Style with distage
 
@@ -320,6 +320,87 @@ class TransModule[F[_[_], _]: TagTK] extends ModuleDef
 Adding a `Tag` for more exotic type shapes is as easy as defining a type synonym,
 consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for description
 
+### Plugins
+
+Plugins are a distage extension that allows you to automatically pick up all `Plugin` modules that are defined in specified package on the classpath.
+
+Plugins are especially useful in scenarios with [extreme late-binding](#roles), when the list of loaded application modules is not known ahead of time. 
+Plugins are compatible with [compile-time checks](#compile-time-checks) as long as they're defined in a separate module.
+
+To use plugins add `distage-plugins` library:
+
+```scala
+libraryDependencies += Izumi.R.distage_plugins
+```
+or
+
+@@@vars
+```scala
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$izumi.version$"
+```
+@@@
+
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+
+Create a module extending the `PluginDef` trait instead of `ModuleDef`:
+
+```scala
+package com.example.petstore
+
+import distage._
+import distage.plugins._
+
+trait PetStorePlugin extends PluginDef {
+  make[PetRepository]
+  make[PetStoreService]
+  make[PetStoreController]
+}
+```
+
+At your app entry point use a plugin loader to discover all `PluginDefs`:
+
+```scala
+val pluginLoader = new PluginLoaderDefaultImpl(
+  PluginConfig(
+    debug = true
+    , packagesEnabled = Seq("com.example.petstore") // packages to scan
+    , packagesDisabled = Seq.empty         // packages to ignore
+  )
+)
+
+val appModules: Seq[PluginBase] = pluginLoader.load()
+val app: ModuleBase = appModules.merge
+```
+
+Launch as normal with the loaded modules:
+
+```scala
+Injector().produce(app).get[PetStoreController].run
+```
+
+Plugins also allow a program to extend itself at runtime by adding new `Plugin` classes on the classpath via `java -cp`
+
+### Compile-Time Checks
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+
+Relevant ticket: https://github.com/pshirshov/izumi-r2/issues/51
+@@@
+
+
+
+You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/51
+
+### Compile-Time Instantiation
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
+...
+
+
 ### Config files
 
 `distage-config` library parses `typesafe-config` into arbitrary case classes or sealed traits and makes them available for summoning as a class dependency.
@@ -381,83 +462,6 @@ class ConfiguredTryProgram[F[_]: TagK: Monad] extends ModuleDef {
 }
 ```
 
-### Effectful instantiation
-
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
-
-Example of explicitly splitting effectful and pure instantiations:
-
-```scala
-import distage._
-import distage.config._
-import com.typesafe.config.ConfigFactory
-
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext.global
-
-case class DbConf()
-case class MsgQueueConf()
-case class RegistryConf()
-
-class DBService[F[_]]
-class MsgQueueService[F[_]]
-class RegistryService[F[_]]
-
-class DomainService[F[_]]
-( dbService: DBService[F]
-, msgQueueService: MsgQueueService[F]
-, registryService: RegistryService[F]
-) {
-  def run: F[Unit] = ???
-}
-
-class ExternalInitializers[F[_]: TagK] extends ModuleDef {
-  make[F[DBService[F]]].from { dbConf: DbConf @ConfPath("network-service.db") => ??? }
-  make[F[MsgQueueService[F]]].from { msgQueueConf: MsgQueueConf @ConfPath("network-service.msg-queue") => ??? }
-  make[F[RegistryService[F]]].from { registryConf: RegistryConf @ConfPath("network-service.registry") => ??? }
-}
-
-val injector = Injector(new ConfigModule(AppConfig(ConfigFactory.load())))
-val initializers = injector.produce(new ExternalInitializers[Future])
-
-class DomainServices[F[_]: TagK] extends ModuleDef {
-  make[DomainService[F]]
-}
-
-val main: Future[Unit] = initializers.run {
-  ( dbF: Future[DBService[Future]]
-  , msgF: Future[MsgQueueService[Future]]
-  , regF: Future[RegistryService[Future]]
-  ) => for {
-    db <- dbF
-    msg <- msgF
-    reg <- regF
-
-    externalServicesModule = new ModuleDef {
-      make[DBService[Future]].from(db)
-      make[MsgQueueService[Future]].from(msg)
-      make[RegistryService[Future]].from(reg)
-    }
-
-    allServices = injector.produce(externalServicesModule ++ new DomainServices[Future])
-
-    _ <- allServices.get[DomainService[Future]].run
-  } yield ()
-}
-
-Await.result(main, Duration.Inf)
-```
-
-Effectful instantiation is not recommended in general – ideally, resources ought to be managed outside of `distage`. A rule of thumb is:
-if a class and its dependencies are stateless, and can be replaced by a global `object`, it's ok to inject them with  `distage`.
-
-See also: [Auto-Sets, closing all AutoCloseables](#auto-sets-collecting-bindings-by-predicate)
-
-You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/331
-
 ### Inner Classes and Path-Dependent Types
 
 To instantiate path-dependent types via constructor, their prefix type has to be present in DI context:
@@ -501,6 +505,8 @@ val module2 = new ModuleDef {
 
 @@@ warning { title='TODO' }
 Sorry, this page is not ready yet
+
+Relevant ticket: https://github.com/pshirshov/izumi-r2/issues/230
 @@@
 
 Implicits are managed like any other class, to make them available for summoning, declare them inside a module:
@@ -551,7 +557,93 @@ val all = kvstoreMOdule ++ eitherMonadModule
 
 Implicits obey the usual lexical scope outside of modules managed by `distage`.
 
-You can participate in the ticket at https://github.com/pshirshov/izumi-r2/issues/230
+You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/230
+
+### Monadic effects instantiation
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+
+Relevant ticket: https://github.com/pshirshov/izumi-r2/issues/331
+@@@
+
+Example of explicitly splitting effectful and pure instantiations:
+
+```scala
+import cats._
+import cats.implicits._
+import distage._
+import distage.config._
+import com.typesafe.config.ConfigFactory
+
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.global
+
+case class DbConf()
+case class MsgQueueConf()
+case class RegistryConf()
+
+class DBService[F[_]]
+class MsgQueueService[F[_]]
+class RegistryService[F[_]]
+
+class DomainService[F[_]: Monad]
+( dbService: DBService[F]
+, msgQueueService: MsgQueueService[F]
+, registryService: RegistryService[F]
+) {
+  def run: F[Unit] = Monad[F].unit
+}
+
+class ExternalInitializers[F[_]: TagK: Monad] extends ModuleDef {
+  make[F[DBService[F]]].from { 
+    dbConf: DbConf @ConfPath("network-service.db") => new DBService[F]().pure[F] 
+  }
+  make[F[MsgQueueService[F]]].from { 
+    msgQueueConf: MsgQueueConf @ConfPath("network-service.msg-queue") => new MsgQueueService[F]().pure[F] 
+  }
+  make[F[RegistryService[F]]].from { 
+    registryConf: RegistryConf @ConfPath("network-service.registry") => new RegistryService[F]().pure[F]
+  }
+}
+
+val injector = Injector(new ConfigModule(AppConfig(ConfigFactory.load())))
+val monadicActionsLocator = injector.produce(new ExternalInitializers[Future])
+
+val main: Future[Unit] = monadicActionsLocator.run {
+  ( dbF: Future[DBService[Future]]
+  , msgF: Future[MsgQueueService[Future]]
+  , regF: Future[RegistryService[Future]]
+  ) => for {
+    db <- dbF
+    msg <- msgF
+    reg <- regF
+
+    externalServicesModule = new ModuleDef {
+      make[DBService[Future]].from(db)
+      make[MsgQueueService[Future]].from(msg)
+      make[RegistryService[Future]].from(reg)
+    }
+
+    domainServiceModule = new ModuleDef {
+      make[DomainService[Future]]
+    }
+
+    allServices = injector.produce(externalServicesModule ++ domainServiceModule)
+
+    _ <- allServices.get[DomainService[Future]].run
+  } yield ()
+}
+
+Await.result(main, Duration.Inf)
+```
+
+Side-effecting instantiation is not recommended in general – ideally, resources and lifetimes should be managed outside of `distage`. A rule of thumb is:
+if a class and its dependencies are stateless, and can be replaced by a global `object`, it's ok to inject them with  `distage`.
+However, `distage` does provide helpers to help manage lifecycle, see: [Auto-Sets, closing all AutoCloseables](#auto-sets-collecting-bindings-by-predicate)
+
+You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/331
 
 ### Auto-Traits & Auto-Factories
 
@@ -560,8 +652,6 @@ Sorry, this page is not ready yet
 @@@
 
 ...
-
-### Patterns
 
 ### Import Materialization
 
@@ -600,66 +690,6 @@ It's recommended to avoid this if possible, doing so is often a sign of broken a
 ### Ensuring service boundaries using API modules
 
 ...
-
-### Plugins
-
-When rapidly prototyping, the friction of adding new modules can become a burden.
-distage plugin extension can alleviate that by automatically picking up all the `Plugin` modules defined in the program.
-
-Auto plugins are compatible with [compile-time checks](#compile-time-checks) as long as they are in a separate module.
-
-To define a plugin, first add distage-plugins library:
-
-```scala
-libraryDependencies += Izumi.R.distage_plugins
-```
-or
-
-@@@vars
-```scala
-libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$izumi.version$"
-```
-@@@
-
-If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
-
-Create a module extending the `PluginDef` trait instead of `ModuleDef`:
-
-```scala
-package com.example.petstore
-
-import distage._
-import distage.plugins._
-
-trait PetStorePlugin extends PluginDef {
-  make[PetRepository]
-  make[PetStoreService]
-  make[PetStoreController]
-}
-```
-
-At your app entry point use a plugin loader to discover all `PluginDefs`:
-
-```scala
-val pluginLoader = new PluginLoaderDefaultImpl(
-  PluginConfig(
-    debug = true
-    , packagesEnabled = Seq("com.example.petstore") // packages to scan
-    , packagesDisabled = Seq.empty         // packages to ignore
-  )
-)
-
-val appModules: Seq[PluginBase] = pluginLoader.load()
-val app: ModuleBase = appModules.merge
-```
-
-Launch as normal with the loaded modules:
-
-```scala
-Injector().produce(app).get[PetStoreController].run
-```
-
-Plugins also allow a program to dynamically extend itself by adding new Plugin classes on the classpath at launch time via `java -cp`
 
 ### Roles 
 
@@ -719,22 +749,6 @@ class Test extends DistageSpec {
   }
 }
 ```
-
-### Compile-Time Checks
-
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
-
-...
-
-### Compile-Time Instantiation
-
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
-
-...
 
 ### Using Garbage Collector
 
