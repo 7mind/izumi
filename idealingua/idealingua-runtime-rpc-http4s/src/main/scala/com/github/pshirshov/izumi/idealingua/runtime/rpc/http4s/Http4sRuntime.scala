@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import _root_.io.circe.Printer
 import cats.effect.{ConcurrentEffect, Timer}
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIOAsync
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s.dsl._
 
@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 
-class Http4sRuntime[_BiIO[+ _, + _] : BIO : BIORunner, _CatsIO[+ _] : ConcurrentEffect : CIORunner : Timer]
+class Http4sRuntime[_BiIO[+ _, + _] : BIOAsync : BIORunner, _CatsIO[+ _] : ConcurrentEffect : CIORunner : Timer]
 (
   override protected val logger: IzLogger
   , override protected val clientExecutionContext: ExecutionContext
@@ -27,7 +27,7 @@ class Http4sRuntime[_BiIO[+ _, + _] : BIO : BIORunner, _CatsIO[+ _] : Concurrent
 
   override type CatsIO[+T] = _CatsIO[T]
 
-  override protected val BIO: BIO[BiIO] = implicitly
+  override protected val BIO: BIOAsync[BiIO] = implicitly
 
   override protected val CIO: ConcurrentEffect[CatsIO] = implicitly
 

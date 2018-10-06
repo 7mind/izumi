@@ -200,7 +200,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
           }"""
 
     def defnDecoder: Defn.Def =
-      q"""def decodeRequest[Or[+_, +_] : IRTMicroBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
+      q"""def decodeRequest[Or[+_, +_] : IRTBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
             case IRTJsonBody(m, packet) if m == id => this.decoded[Or, IRTReqBody](packet.as[Input].map(v => IRTReqBody(v)))
           }
        """
@@ -260,7 +260,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
     }
 
     def defnDecoder: Defn.Def = {
-      q"""def decodeResponse[Or[+_, +_] : IRTMicroBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
+      q"""def decodeResponse[Or[+_, +_] : IRTBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
             case IRTJsonBody(m, packet) if m == id =>
               decoded[Or, IRTResBody](packet.as[Output].map(v => IRTResBody(v)))
           }"""

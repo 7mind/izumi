@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import _root_.io.circe._
 import cats.effect.{ConcurrentEffect, Timer}
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
+import com.github.pshirshov.izumi.idealingua.runtime.bio.BIOAsync
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s._
 import org.http4s.dsl._
@@ -19,7 +19,7 @@ trait Http4sContext {
 
   type StreamDecoder = EntityDecoder[CatsIO, MaterializedStream]
 
-  protected implicit def BIO: BIO[BiIO]
+  protected implicit def BIO: BIOAsync[BiIO]
 
   protected implicit def CIO: ConcurrentEffect[CatsIO]
 
