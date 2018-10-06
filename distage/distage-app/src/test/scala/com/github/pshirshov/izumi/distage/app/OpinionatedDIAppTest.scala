@@ -99,7 +99,6 @@ class OpinionatedDIAppTest extends WordSpec {
   "DI app" should {
     "support dynamic app loading" in {
 
-
       val app = new TestAppLauncher({
         case (launcher, context, _) =>
           assert(context.find[TestApp].nonEmpty)

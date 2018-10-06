@@ -8,6 +8,10 @@ object SetCases {
 
   object SetCase1 {
 
+    trait TypedService[T]
+    class ServiceWithTypedSet(tt: Set[ExampleTypedCaseClass[Int]]) extends TypedService[Int]
+    case class ExampleTypedCaseClass[T](t: T)
+
     trait SetTrait
     class SetImpl1 extends SetTrait
     class SetImpl2 extends SetTrait

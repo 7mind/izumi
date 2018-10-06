@@ -3,11 +3,14 @@ package com.github.pshirshov.izumi.distage.model.definition
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
 import scala.collection.immutable.ListSet
 
 trait ModuleBase {
   def bindings: Set[Binding]
+
+  final def keys: Set[DIKey] = bindings.map(_.key)
 
   type Self <: ModuleBase
 
@@ -28,7 +31,7 @@ object ModuleBase {
     override val bindings: Set[Binding] = s
   }
 
-  implicit final class ModuleDefSeqExt[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val defs: Seq[S])(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
+  implicit final class ModuleDefSeqExt[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val defs: Iterable[S])(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
     def merge: T = {
       defs.foldLeft[T](T.empty)(_ ++ _)
     }

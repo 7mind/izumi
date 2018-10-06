@@ -14,7 +14,8 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder
-import org.http4s.websocket.WebsocketBits.{Binary, Close, Text, WebSocketFrame}
+import org.http4s.websocket.WebSocketFrame
+import org.http4s.websocket.WebSocketFrame.{Binary, Close, Text}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -129,7 +130,7 @@ trait WithHttp4sServer {
                 case m => m
               }
               .evalMap(handleWsMessage(context))
-              .collect({ case Some(v) => Text(v) })
+              .collect({ case Some(v) => WebSocketFrame.Text(v) })
         }
         val e = q.enqueue
         WebSocketBuilder[CatsIO].build(d.merge(context.outStream).merge(context.pingStream), e)

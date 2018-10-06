@@ -1,43 +1,39 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.{CallProvider, ReferenceInstance}
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
 import com.github.pshirshov.izumi.functional.Renderable
 
 sealed trait AbstractPlan {
+
   def definition: ModuleBase
   def steps: Seq[ExecutableOp]
 
-  lazy val index: Map[DIKey, ExecutableOp] = {
+  final lazy val index: Map[DIKey, ExecutableOp] = {
     steps.map(s => s.target -> s).toMap
-  }
-
-  def map(f: ExecutableOp => ExecutableOp): SemiPlan
-
-  def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan
-
-  def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan
-
-  def foldLeft[T](z: T, f: (T, ExecutableOp) => T): T = {
-    steps.foldLeft(z)(f)
   }
 
   /** Get all imports (unresolved dependencies).
     *
     * Note, presence of imports doesn't automatically mean that a plan is invalid,
-    * Imports may be fulfilled by a `Locator`, by BootstrapContext, or they may also be materialized by a custom
+    * Imports may be fulfilled by a `Locator`, by BootstrapContext, or they may be materialized by a custom
     * [[com.github.pshirshov.izumi.distage.model.provisioning.strategies.ImportStrategy]]
     **/
-  def getImports: Seq[ImportDependency] =
+  final def getImports: Seq[ImportDependency] =
     steps.collect { case i: ImportDependency => i }
 
-  def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan
+  final def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan = {
+    SemiPlan(definition, steps = AbstractPlan.resolveImports(f, steps.toVector))
+  }
 
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
 
@@ -47,18 +43,38 @@ sealed trait AbstractPlan {
 
   def locateImports(locator: Locator): AbstractPlan
 
-  def providerImport[T](f: ProviderMagnet[T]): SemiPlan = {
+  final def providerImport[T](f: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
       case i if i.target.tpe == f.get.ret =>
         Seq(CallProvider(i.target, UnaryWiring.Function(f.get, f.get.associations), i.origin))
     }
   }
 
-  def providerImport[T](id: String)(f: ProviderMagnet[T]): SemiPlan = {
+  final def providerImport[T](id: String)(f: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
       case i if i.target == DIKey.IdKey(f.get.ret, id) =>
         Seq(CallProvider(i.target, UnaryWiring.Function(f.get, f.get.associations), i.origin))
     }
+  }
+
+  final def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
+    SemiPlan(definition, steps.map(f).toVector)
+  }
+
+  final def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
+    SemiPlan(definition, steps.flatMap(f).toVector)
+  }
+
+  final def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
+    SemiPlan(definition, steps.collect(f).toVector)
+  }
+
+  final def ++(that: AbstractPlan): SemiPlan = {
+    SemiPlan(definition ++ that.definition, steps.toVector ++ that.steps)
+  }
+
+  final def foldLeft[T](z: T, f: (T, ExecutableOp) => T): T = {
+    steps.foldLeft(z)(f)
   }
 
   override def toString: String = {
@@ -82,82 +98,51 @@ object AbstractPlan {
 /** Unordered plan. You can turn into an [[OrderedPlan]] by using [[com.github.pshirshov.izumi.distage.model.Planner#finish]] **/
 final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp]) extends AbstractPlan {
 
-  def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
-    copy(steps = steps.map(f))
-  }
-
-  def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
-    copy(steps = steps.flatMap(f))
-  }
-
-  def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
-    copy(steps = steps.collect(f))
-  }
-
-  def resolveImport[T: Tag](instance: T): SemiPlan =
+  override def resolveImport[T: Tag](instance: T): SemiPlan =
     resolveImports {
       case i if i.target == DIKey.get[T] =>
         instance
     }
 
-  def resolveImport[T: Tag](id: String)(instance: T): SemiPlan = {
+  override def resolveImport[T: Tag](id: String)(instance: T): SemiPlan = {
     resolveImports {
       case i if i.target == DIKey.get[T].named(id) =>
         instance
     }
   }
 
-  def resolveImports(f: PartialFunction[ImportDependency, Any]): SemiPlan = {
+  override def resolveImports(f: PartialFunction[ImportDependency, Any]): SemiPlan = {
     copy(steps = AbstractPlan.resolveImports(AbstractPlan.importToInstances(f), steps))
   }
 
-  def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan = {
-    copy(steps = AbstractPlan.resolveImports(f, steps))
-  }
-
-  def locateImports(locator: Locator): SemiPlan = {
+  override def locateImports(locator: Locator): SemiPlan = {
     resolveImports(Function.unlift(i => locator.lookup[Any](i.target)))
   }
 
 }
 
 final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp], topology: PlanTopology) extends AbstractPlan {
+
   def render(implicit ev: Renderable[OrderedPlan]): String = ev.render(this)
 
-  def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
-    SemiPlan(definition, steps.map(f))
-  }
-
-  def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.flatMap(f))
-  }
-
-  def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.collect(f))
-  }
-
-  def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
+  override def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
     copy(steps = AbstractPlan.resolveImports(AbstractPlan.importToInstances(f), steps))
   }
 
-  def resolveImport[T: Tag](instance: T): OrderedPlan =
+  override def resolveImport[T: Tag](instance: T): OrderedPlan =
     resolveImports {
       case i if i.target == DIKey.get[T] =>
         instance
     }
 
-  def resolveImport[T: Tag](id: String)(instance: T): OrderedPlan = {
+  override def resolveImport[T: Tag](id: String)(instance: T): OrderedPlan = {
     resolveImports {
       case i if i.target == DIKey.get[T].named(id) =>
         instance
     }
   }
 
-  def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan = {
-    SemiPlan(definition, steps = AbstractPlan.resolveImports(f, steps))
-  }
-
-  def locateImports(locator: Locator): OrderedPlan = {
+  override def locateImports(locator: Locator): OrderedPlan = {
     resolveImports(Function.unlift(i => locator.lookup[Any](i.target)))
   }
 }

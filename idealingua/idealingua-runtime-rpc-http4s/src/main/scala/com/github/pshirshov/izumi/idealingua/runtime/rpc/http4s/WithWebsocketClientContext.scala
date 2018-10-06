@@ -12,7 +12,8 @@ import fs2.concurrent.Queue
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.AuthedRequest
-import org.http4s.websocket.WebsocketBits._
+import org.http4s.websocket.WebSocketFrame
+import org.http4s.websocket.WebSocketFrame.{Ping, Text}
 
 import scala.concurrent.duration._
 

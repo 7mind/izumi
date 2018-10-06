@@ -30,24 +30,24 @@ class ProvisionerDefaultImpl
   override def provision(plan: OrderedPlan, parentContext: Locator): ProvisionImmutable = {
     val excluded = mutable.Set[DIKey]()
 
-    val provisioingContext = ProvisionActive()
-    provisioingContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
+    val provisioningContext = ProvisionActive()
+    provisioningContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
 
     val failures = new mutable.HashMap[DIKey, mutable.Set[Throwable]] with mutable.MultiMap[DIKey, Throwable]
 
     plan.steps.foreach {
       case step if excluded.contains(step.target) =>
       case step =>
-        val failureContext = ProvisioningFailureContext(parentContext, provisioingContext, step)
+        val failureContext = ProvisioningFailureContext(parentContext, provisioningContext, step)
 
-        val maybeResult = Try(execute(LocatorContext(provisioingContext.toImmutable, parentContext), step))
+        val maybeResult = Try(execute(LocatorContext(provisioningContext.toImmutable, parentContext), step))
           .recoverWith(failureHandler.onExecutionFailed(failureContext))
 
         maybeResult match {
           case Success(s) =>
             s.foreach {
               r =>
-                val maybeSuccess = Try(interpretResult(provisioingContext, r))
+                val maybeSuccess = Try(interpretResult(provisioningContext, r))
                   .recoverWith(failureHandler.onBadResult(failureContext))
 
                 maybeSuccess match {
@@ -65,9 +65,9 @@ class ProvisionerDefaultImpl
     }
 
     if (failures.nonEmpty) {
-      failureHandler.onProvisioningFailed(provisioingContext.toImmutable, plan, parentContext, failures.mapValues(_.toSet).toMap)
+      failureHandler.onProvisioningFailed(provisioningContext.toImmutable, plan, parentContext, failures.mapValues(_.toSet).toMap)
     } else {
-      ProvisionImmutable(provisioingContext.instances, provisioingContext.imports)
+      ProvisionImmutable(provisioningContext.instances, provisioningContext.imports)
     }
   }
 
