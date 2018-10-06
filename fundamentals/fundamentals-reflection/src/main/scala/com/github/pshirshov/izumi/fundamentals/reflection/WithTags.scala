@@ -114,7 +114,7 @@ trait WithTags extends UniverseGeneric { self =>
     *   type TagK5[K[_, _, _, _, _]] = HKTag[ { type Arg[A, B, C, D, E] = K[A, B, C, D, E] } ]
     * }}}
     *
-    * As an argument to HKTag, you should specify the type variables your type parameter will take and apply them to it.
+    * As an argument to HKTag, you should specify the type variables your type parameter will take and apply them to it, in order.
     *
     * {{{
     *   type TagFGC[K[_[_, _], _[_], _[_[_], _, _, _]] = HKTag[ { type Arg[A[_, _], B[_], C[_[_], _, _, _]] = K[A, B, C] } ]
@@ -256,10 +256,10 @@ object WithTags {
     , Kind(Kind(Nil) :: Nil) -> "TagK"
     , Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> "TagKK"
     , Kind(Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagK3"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> "TagF"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Nil) -> "TagFK"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagFKK"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagFK3"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> "TagT"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Nil) -> "TagTK"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTKK"
+    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTK3"
   )
 
   def hktagFormat(tpe: Universe#Type): String = {

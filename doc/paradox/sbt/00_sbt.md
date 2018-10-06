@@ -12,7 +12,7 @@ To start using Izumi plugins add the following into your `project/plugins.sbt`:
 ```scala
 val izumi_version = "$izumi.version$"
 addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi" % izumi_version)
-// This is a Izumi's Bill of Materials, see below
+// This is Izumi's Bill of Materials, see below
 addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi-deps" % izumi_version)
 ```
 @@@
@@ -239,21 +239,22 @@ You can use it like this:
 
 ```scala
 libraryDependencies += Izumi.R.distage_core // Import an izumi library
-libraryDependencies += IzumiRootDeps.R.cats_effect // Import a dependency of izumi
+libraryDependencies += IzumiDeps.R.cats_effect // Import a dependency of izumi
+libraryDependencies += IzumiDeps.T.scalatest // Import a dependency of izumi in test scope
 ```
 
-R is for Runtime, D is for Dependencies, T is for Test artifacts
+R is for Runtime artifacts and T is for Test scope artifacts
 
 #### Create a BOM for your projects 
 
-`sbt-izumi-deps` also allows you to a BOM for your own projects. Just add just one line into your project settings:
+`sbt-izumi-deps` allows you to a create BOMs for your own projects. Just add the following snippet into your project settings:
 
 ```scala
 lazy val myProject = (project in file("my-project-bom"))
   .settings(withBuildInfo("com.mycompany.myproject", "MyProjectBOM"))
 ```
 
-In case you use Izumi DSL it would be something like:
+If you use Izumi SBT DSL, you can use the following syntax:
 
 ```scala
 lazy val inRoot = In(".")

@@ -86,7 +86,7 @@ abstract class OpinionatedDiApp {
   }
 
   protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {
-    val conflicts = bootstrapAutoDef.definition.bindings.map(_.key).intersect(appDef.definition.bindings.map(_.key))
+    val conflicts = bootstrapAutoDef.definition.keys.intersect(appDef.definition.keys)
     if (conflicts.nonEmpty) {
       throw new DiAppBootstrapException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...")
     }
