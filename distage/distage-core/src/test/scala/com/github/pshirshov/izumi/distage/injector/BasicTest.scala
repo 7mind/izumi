@@ -41,6 +41,24 @@ class BasicTest extends WordSpec with MkInjector {
     assert(locator.get[LocatorDependent].ref.get == locator)
   }
 
+  "correctly handle empty typed sets" in {
+    import SetCase1._
+
+    val definition = new ModuleDef {
+      make[TypedService[Int]].from[ServiceWithTypedSet]
+      many[ExampleTypedCaseClass[Int]]
+    }
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    val s = context.get[TypedService[Int]]
+    val ss = context.get[Set[ExampleTypedCaseClass[Int]]]
+    assert(s.isInstanceOf[TypedService[Int]])
+    assert(ss.isEmpty)
+  }
+
 
   "fails on wrong @Id annotation" in {
     import BadAnnotationsCase._
