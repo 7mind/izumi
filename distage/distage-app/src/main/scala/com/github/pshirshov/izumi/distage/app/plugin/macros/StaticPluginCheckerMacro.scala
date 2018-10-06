@@ -1,15 +1,14 @@
-package com.github.pshirshov.izumi.distage.app.macros
+package com.github.pshirshov.izumi.distage.app.plugin.macros
 
-
+import com.github.pshirshov.izumi.distage.app.ModuleRequirements
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.config.annotations.AbstractConfId
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.LoggerHook
 import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.planning.{PlanningHook, PlanningObserver}
+import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
@@ -18,15 +17,11 @@ import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.P
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.typesafe.config.ConfigFactory
 import distage.{BootstrapModuleDef, DIKey, Injector, Module, ModuleBase, OrderedPlan}
 import io.github.classgraph.ClassGraph
 
 import scala.collection.JavaConverters._
-import scala.language.experimental.macros
 import scala.reflect.ClassTag
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
@@ -215,28 +210,3 @@ object StaticPluginCheckerMacro {
   }
 
 }
-
-
-object StaticPluginChecker {
-
-  def check[GcRoot <: PluginBase, R <: ModuleRequirements](disableTags: String): Unit = macro StaticPluginCheckerMacro.implDefault[GcRoot, R]
-
-  def checkWithConfig[GcRoot <: PluginBase, R <: ModuleRequirements](disableTags: String, configFileRegex: String): Unit = macro StaticPluginCheckerMacro.implWithConfig[GcRoot, R]
-
-  def checkWithPlugins[GcRoot <: PluginBase, R <: ModuleRequirements](pluginPath: String, disableTags: String): Unit = macro StaticPluginCheckerMacro.implWithPlugin[GcRoot, R]
-
-  def checkWithPluginsConfig[GcRoot <: PluginBase, R <: ModuleRequirements](pluginPath: String, disableTags: String, configFileRegex: String): Unit = macro StaticPluginCheckerMacro.implWithPluginConfig[GcRoot, R]
-
-}
-
-class ModuleRequirements(val keys: Set[DIKey])
-
-class NoModuleRequirements extends ModuleRequirements(Set.empty)
-
-class LogstageModuleRequirements extends ModuleRequirements(Set(
-  DIKey.get[LogRouter]
-, DIKey.get[CustomContext]
-, DIKey.get[IzLogger]
-, DIKey.get[PlanningObserver]
-, DIKey.get[LoggerHook]
-))

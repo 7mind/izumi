@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.app
 
-import com.github.pshirshov.izumi.distage.app.macros.{LogstageModuleRequirements, StaticPluginChecker}
 import com.github.pshirshov.test.plugins.{DependingPlugin, StaticTestPlugin}
 import org.scalatest.WordSpec
 
