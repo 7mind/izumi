@@ -8,7 +8,7 @@ import scala.util.Try
 
 // copypasta from pureconfig.BasicReaders
 
-trait ConfigReader[+T] {
+trait ConfigReader[T] {
   def apply(configValue: ConfigValue): Try[T]
 }
 
