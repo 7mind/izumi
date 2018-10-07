@@ -129,9 +129,10 @@ val SbtScriptedSettings = new SettingsGroup {
 
 // --------------------------------------------
 
-lazy val inDoc = In("doc")
-
 lazy val inRoot = In(".")
+  .settings(GlobalSettings)
+
+lazy val inDoc = In("doc")
   .settings(GlobalSettings)
 
 lazy val base = Seq(GlobalSettings, LibSettings, WithoutBadPlugins)
@@ -408,7 +409,7 @@ lazy val izsbt: Seq[ProjectReference] = Seq(
   sbtIzumi, sbtIdealingua, sbtTests
 )
 
-lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
+lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt ++ Seq(microsite : ProjectReference)
 
 
 lazy val `izumi-r2` = inRoot.as
@@ -417,9 +418,17 @@ lazy val `izumi-r2` = inRoot.as
 
 
 lazy val microsite = inDoc.as.module
-  .dependsOn(distageRoles)
-  .enablePlugins(MicrositesPlugin)
+  .depends(distageRoles)
+  .enablePlugins(MicrositesPlugin, ScalaUnidocPlugin)
   .settings(
+    DocKeys.prefix := {
+      if (isSnapshot.value) {
+        "latest/snapshot"
+      } else {
+        "latest/release"
+      }
+    },
+    siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api",
     skip in publish := true,
     micrositeFooterText := Some(
       """
@@ -434,6 +443,19 @@ lazy val microsite = inDoc.as.module
     micrositeGitHostingUrl := "https://github.com/pshirshov/izumi-r2",
     micrositeGithubOwner := "7mind",
     micrositeGithubRepo := "izumi-microsite",
+    excludeFilter in ghpagesCleanSite :=
+          new FileFilter {
+            def accept(f: File): Boolean = {
+              f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
+                (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
+                (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
+                (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
+                (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
+                f.toPath.startsWith((ghpagesRepository.value / "media").toPath)
+            }
+          },
+    addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
+    unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps),
   )
 
 //  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
