@@ -121,10 +121,10 @@ Forest fire, climbin' higher, real life, it can wait""")
     case class ClassTypeAnnT[A, B](val x: A @Id("classtypeann1"), y: B @Id("classtypeann2"))
   }
 
-  object Sets {
-    trait Dependency
+  object BasicCase5 {
+    trait TestDependency
 
-    class Impl1(val justASet: Set[Dependency])
+    class TestImpl1(val justASet: Set[TestDependency])
   }
 
 }

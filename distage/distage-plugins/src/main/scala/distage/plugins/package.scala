@@ -1,6 +1,6 @@
 package distage
 
-import com.github.pshirshov.izumi.distage.plugins.load
+import com.github.pshirshov.izumi.distage.plugins.{load, merge}
 
 package object plugins extends DistagePlugins {
 
@@ -14,4 +14,12 @@ package object plugins extends DistagePlugins {
   override val PluginPluginLoaderDefaultImpl: load.PluginLoaderDefaultImpl.type = load.PluginLoaderDefaultImpl
   override type PluginLoaderPredefImpl = load.PluginLoaderPredefImpl
 
+  override type LoadedPlugins = com.github.pshirshov.izumi.distage.plugins.LoadedPlugins
+  override val LoadedPlugins: com.github.pshirshov.izumi.distage.plugins.LoadedPlugins.type = com.github.pshirshov.izumi.distage.plugins.LoadedPlugins
+  override type PluginMergeStrategy[T <: LoadedPlugins] = merge.PluginMergeStrategy[T]
+
+  override type ConfigurablePluginMergeStrategy = merge.ConfigurablePluginMergeStrategy
+  override val ConfigurablePluginMergeStrategy: merge.ConfigurablePluginMergeStrategy.type = merge.ConfigurablePluginMergeStrategy
+
+  override val SimplePluginMergeStrategy: merge.SimplePluginMergeStrategy.type = merge.SimplePluginMergeStrategy
 }
