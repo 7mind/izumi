@@ -129,6 +129,8 @@ val SbtScriptedSettings = new SettingsGroup {
 
 // --------------------------------------------
 
+lazy val inDoc = In("doc")
+
 lazy val inRoot = In(".")
   .settings(GlobalSettings)
 
@@ -412,40 +414,62 @@ lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects)
-  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
+
+
+lazy val microsite = inDoc.as.module
+  .dependsOn(distageRoles)
+  .enablePlugins(MicrositesPlugin)
   .settings(
-    DocKeys.prefix := {
-      if (isSnapshot.value) {
-        "latest/snapshot"
-      } else {
-        "latest/release"
-      }
-    }
-    , sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
-    , siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api"
-    , siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc"
-    , previewFixedPort := Some(9999)
-    //, scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/7mind"), ""))
-    , git.remoteRepo := "git@github.com:7mind/izumi-microsite.git"
-    , paradoxProperties ++= Map(
-      "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
-      "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
-      "izumi.version" -> version.value,
-    )
-    , excludeFilter in ghpagesCleanSite :=
-      new FileFilter {
-        def accept(f: File): Boolean = {
-          f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
-            (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
-            (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
-            (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
-            (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
-            f.toPath.startsWith((ghpagesRepository.value / "media").toPath)
-        }
-      }
+    skip in publish := true,
+    micrositeFooterText := Some(
+      """
+        |<p>&copy; 2018 <a href="https://7mind.io">Septimal Mind</a></p>
+        |""".stripMargin
+    ),
+    micrositeName := "Izumi Framework — Septimal Mind",
+    micrositeDescription := "Izumi Framework",
+    micrositeAuthor := "Septimal Mind",
+    micrositeOrganizationHomepage := "https://7mind.io",
+    micrositeGitterChannelUrl := "7mind/izumi",
+    micrositeGitHostingUrl := "https://github.com/pshirshov/izumi-r2",
+    micrositeGithubOwner := "7mind",
+    micrositeGithubRepo := "izumi-microsite",
   )
-  .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
-  .settings(
-    addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
-    , unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps)
-  )
+
+//  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
+//  .settings(
+//    DocKeys.prefix := {
+//      if (isSnapshot.value) {
+//        "latest/snapshot"
+//      } else {
+//        "latest/release"
+//      }
+//    }
+//    , sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
+//    , siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api"
+//    , siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc"
+//    , previewFixedPort := Some(9999)
+//    //, scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/7mind"), ""))
+//    , git.remoteRepo := "git@github.com:7mind/izumi-microsite.git"
+//    , paradoxProperties ++= Map(
+//      "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
+//      "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
+//      "izumi.version" -> version.value,
+//    )
+//    , excludeFilter in ghpagesCleanSite :=
+//      new FileFilter {
+//        def accept(f: File): Boolean = {
+//          f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
+//            (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
+//            (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
+//            (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
+//            (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
+//            f.toPath.startsWith((ghpagesRepository.value / "media").toPath)
+//        }
+//      }
+//  )
+//  .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
+//  .settings(
+//    addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
+//    , unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps)
+//  )
