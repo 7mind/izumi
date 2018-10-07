@@ -4,13 +4,6 @@ dist: trusty
 services:
 - docker
 
-#language: scala
-#
-#jdk:
-#  - openjdk11
-#scala:
-#  - 2.12.7
-
 before_install:
   - mkdir -p ~/.sbt/
   - mkdir -p ~/.sbt/1.0/plugins/
@@ -51,7 +44,7 @@ before_cache:
   - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
 
 env:
-  - IMAGE="septimalmind/izumi-env:jdk11"
+  - IMAGE="septimalmind/izumi-env:jdk11-1"
 
 jobs:
   include:
