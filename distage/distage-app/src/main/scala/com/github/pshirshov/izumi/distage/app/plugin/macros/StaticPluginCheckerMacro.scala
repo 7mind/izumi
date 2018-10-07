@@ -89,7 +89,14 @@ object StaticPluginCheckerMacro {
     val configModule = if (configRegex == "") {
       None
     } else {
-      val configUrls = new ClassGraph().scan().getResourcesMatchingPattern(configRegex.r.pattern).asScala.map(_.getURL)
+      val scanResult = new ClassGraph().scan()
+      val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
+      val configUrls = try {
+        resourceList.getURLs.asScala.toList
+      } finally {
+        resourceList.close()
+      }
+
       val referenceConfig = configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
 
       Some(new ConfigModule(AppConfig(referenceConfig)))
