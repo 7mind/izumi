@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import cats.implicits._
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.Stream
 import io.circe.parser.parse

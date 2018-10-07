@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
+import com.github.pshirshov.izumi.functional.bio.BIO
+import com.github.pshirshov.izumi.functional.bio.BIO._
 import io.circe.Json
-import BIO._
 
 import scala.language.higherKinds
 

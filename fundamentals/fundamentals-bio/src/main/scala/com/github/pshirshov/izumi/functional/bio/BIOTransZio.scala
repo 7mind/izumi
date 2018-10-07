@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.bio
+package com.github.pshirshov.izumi.functional.bio
 
 import cats.arrow.FunctionK
 import scalaz.zio._
@@ -12,6 +12,7 @@ trait BIOTransZio[R[_, _]] {
 }
 
 object BIOTransZio {
+  def apply[R[+_, +_]: BIOTransZio]: BIOTransZio[R] = implicitly
 
   implicit object IdTransZio extends BIOTransZio[IO]{
     @inline def toZio[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id

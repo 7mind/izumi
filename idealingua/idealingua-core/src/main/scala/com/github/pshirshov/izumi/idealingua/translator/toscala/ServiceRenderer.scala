@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import _root_.io.circe.Json
+import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
-import com.github.pshirshov.izumi.idealingua.runtime.bio.MicroBIO
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.CogenServiceProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{runtime, _}
@@ -34,9 +34,9 @@ class ServiceRenderer(ctx: STContext) {
           }"""
 
     val qqClientWrapped =
-      q"""class ${c.svcWrappedClientTpe.typeName}[Or[+_, +_] : IRTMicroBIO](_dispatcher: ${rt.IRTDispatcher.parameterize(List(c.F.t)).typeFull})
+      q"""class ${c.svcWrappedClientTpe.typeName}[Or[+_, +_] : IRTBIO](_dispatcher: ${rt.IRTDispatcher.parameterize(List(c.F.t)).typeFull})
                extends ${c.svcClientTpe.parameterize(List(c.F.t)).init()} {
-               final val _F: IRTMicroBIO[${c.F.t}] =  implicitly
+               final val _F: IRTBIO[${c.F.t}] =  implicitly
                ${c.methodImport}
 
                ..${decls.map(_.defnClientWrapped)}
@@ -52,11 +52,11 @@ class ServiceRenderer(ctx: STContext) {
        """
 
     val qqServerWrapped =
-      q"""class ${c.svcWrappedServerTpe.typeName}[Or[+_, +_] : IRTMicroBIO, ${c.Ctx.p}](
+      q"""class ${c.svcWrappedServerTpe.typeName}[Or[+_, +_] : IRTBIO, ${c.Ctx.p}](
               _service: ${c.svcServerTpe.typeName}[${c.F.t}, ${c.Ctx.t}]
             )
                extends IRTWrappedService[${c.F.t}, ${c.Ctx.t}] {
-            final val _F: IRTMicroBIO[${c.F.t}] = implicitly
+            final val _F: IRTBIO[${c.F.t}] = implicitly
 
             final val serviceId: ${rt.IRTServiceId.typeName} = ${c.svcMethods.termName}.serviceId
 
@@ -102,7 +102,7 @@ class ServiceRenderer(ctx: STContext) {
       , qqServiceCodecs
       , List(
         runtime.Import.from(runtime.Pkg.language, "higherKinds")
-        , runtime.Import[MicroBIO[Dummy]](Some("IRTMicroBIO"))
+        , runtime.Import[BIO[Dummy]](Some("IRTBIO"))
         , runtime.Import[Json](Some("IRTJson"))
         , runtime.Pkg.of[_root_.io.circe.syntax.EncoderOps[Nothing]].`import`
         , rt.services.`import`

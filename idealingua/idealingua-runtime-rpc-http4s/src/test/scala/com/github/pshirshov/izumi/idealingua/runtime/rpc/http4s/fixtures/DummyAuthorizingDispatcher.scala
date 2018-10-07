@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
 
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIO
+import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.{IRTBadCredentialsException, IRTNoCredentialsException}
 import org.http4s.{BasicCredentials, Status}

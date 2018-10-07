@@ -4,7 +4,7 @@ import java.util.concurrent.{ConcurrentHashMap, RejectedExecutionException, Time
 
 import _root_.io.circe.parser._
 import cats.implicits._
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
 import io.circe
@@ -64,7 +64,7 @@ trait WithHttp4sServer {
                   session <- BIO.point(sess)
                   json <- codec.encode(request)
                   id <- BIO.sync(session.enqueue(request.method, json))
-                  resp <- BIO.bracket0[Throwable, RpcPacketId, IRTMuxResponse](BIO.point(id)) {
+                  resp <- BIO.bracket[Throwable, RpcPacketId, IRTMuxResponse](BIO.point(id)) {
                     id =>
                       logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
                       BIO.sync(sess.requestState.forget(id))
