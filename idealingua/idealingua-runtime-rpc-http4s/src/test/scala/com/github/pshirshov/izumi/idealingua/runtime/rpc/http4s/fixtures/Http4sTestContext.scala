@@ -15,7 +15,7 @@ import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceCli
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIO._
 
 object Http4sTestContext {
   //

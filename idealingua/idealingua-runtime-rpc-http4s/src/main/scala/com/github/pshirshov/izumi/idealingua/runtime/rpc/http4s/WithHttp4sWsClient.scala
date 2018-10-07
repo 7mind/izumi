@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import java.net.URI
 import java.util.concurrent.TimeoutException
 
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.parser.parse
@@ -162,7 +162,7 @@ trait WithHttp4sWsClient {
             val wrapped = BIO.point(RpcPacket.rpcRequest(request.method, encoded))
 
 
-            BIO.bracket0[Throwable, RpcPacket, IRTMuxResponse](wrapped) {
+            BIO.bracket[Throwable, RpcPacket, IRTMuxResponse](wrapped) {
               id =>
                 logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
                 BIO.sync(requestState.forget(id.id.get))

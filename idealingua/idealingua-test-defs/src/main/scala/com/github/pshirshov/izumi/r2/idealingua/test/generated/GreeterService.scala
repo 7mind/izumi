@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.r2.idealingua.test.generated
 
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
+import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe._
 import io.circe.generic.semiauto._

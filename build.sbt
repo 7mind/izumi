@@ -166,6 +166,13 @@ lazy val fundamentalsCollections = inFundamentals.as.module
 lazy val fundamentalsPlatform = inFundamentals.as.module
 lazy val fundamentalsFunctional = inFundamentals.as.module
 
+lazy val fundamentalsBio = inFundamentals.as.module
+  .depends(fundamentalsFunctional)
+  .settings(
+    libraryDependencies ++= Seq(R.zio_core) ++ R.cats_all
+  )
+
+
 lazy val WithFundamentals = new SettingsGroup {
   override def sharedLibs: Seq[ProjectReferenceEx] = Seq(
     fundamentalsCollections
@@ -319,7 +326,8 @@ lazy val idealinguaModel = inIdealingua.as.module
   .settings()
 
 lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.circe, R.cats_all).flatten ++ Seq(R.zio_core))
+  .depends(fundamentalsBio)
+  .settings(libraryDependencies ++= Seq(R.circe).flatten)
 
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScala)
 
@@ -427,7 +435,7 @@ lazy val `izumi-r2` = inRoot.as
     , excludeFilter in ghpagesCleanSite :=
       new FileFilter {
         def accept(f: File): Boolean = {
-          f.toPath.startsWith( ghpagesRepository.value.toPath.resolve("latest") ) ||
+          f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
             (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||

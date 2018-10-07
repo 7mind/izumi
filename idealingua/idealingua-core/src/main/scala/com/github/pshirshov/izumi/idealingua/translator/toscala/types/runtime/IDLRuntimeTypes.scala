@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime
 
+import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.runtime.bio.{BIO, BIOTransZio}
 import com.github.pshirshov.izumi.idealingua.runtime.model._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMethodName, IRTMethodSignature, IRTWrappedService, _}
 import com.github.pshirshov.izumi.idealingua.runtime.{IRTCast, IRTConversions, IRTExtend}
@@ -29,7 +29,6 @@ object IDLRuntimeTypes {
 
   final val WithResult = services.conv.toScala[BIO[_2Arg]]
   final val IRTBio: ScalaType = services.conv.toScala[BIO[_2Arg]]
-  final val IRTTransZio = services.conv.toScala[BIOTransZio[_2Arg]]
   final val IRTMethodSignature = services.conv.toScala[IRTMethodSignature]
   final val IRTServiceId = services.conv.toScala[IRTServiceId]
   final val IRTMethodId = services.conv.toScala[IRTMethodId]

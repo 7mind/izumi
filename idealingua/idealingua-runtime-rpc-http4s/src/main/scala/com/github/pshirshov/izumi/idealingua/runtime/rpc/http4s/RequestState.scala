@@ -2,11 +2,11 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import java.util.concurrent.ConcurrentHashMap
 
+import com.github.pshirshov.izumi.functional.bio.BIOAsync
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIOAsync
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.Json
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIO._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds

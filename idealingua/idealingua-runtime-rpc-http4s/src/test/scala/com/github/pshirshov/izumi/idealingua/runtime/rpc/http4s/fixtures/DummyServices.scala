@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
 
-import com.github.pshirshov.izumi.idealingua.runtime.bio.BIO
+import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, IRTServerMultiplexor, IRTWrappedClient, IRTWrappedService}
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceServerWrapped}
 import com.github.pshirshov.izumi.r2.idealingua.test.impls.AbstractGreeterServer
