@@ -43,6 +43,11 @@ class TagTest extends WordSpec with X[String] {
   "Tag" should {
 
     "Work for any concrete type" in {
+
+      def x[T: Tag.abc.Arg]: Option[T] = implicitly[Option[T]]
+      assert(x(Some(5)) == Some(5))
+//      assert(Tag[Tag.`asdgasdfg`.Arg[Int]].tpe == safe[Option[Int]])
+
       assert(Tag[Int].tpe == safe[Int])
       assert(Tag[Set[String]].tpe == safe[Set[String]])
       assert(Tag[Map[Boolean, Double]].tpe == safe[Map[Boolean, Double]])

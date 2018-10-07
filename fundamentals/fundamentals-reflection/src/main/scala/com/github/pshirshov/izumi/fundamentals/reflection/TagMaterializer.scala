@@ -6,6 +6,6 @@ final case class TagMaterializer[DIU <: WithTags with Singleton, T](value: DIU#T
 
 object TagMaterializer {
 
-  implicit def materialize[DIU <: WithTags with Singleton, T]: TagMaterializer[DIU, T] = macro TagMacroImpl.impl[DIU, T]
+  implicit def materialize[DIU <: WithTags with Singleton, T]: TagMaterializer[DIU, T] = macro TagMacro.impl[DIU, T]
 
 }

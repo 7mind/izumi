@@ -6,12 +6,12 @@ import ReflectionUtil.{Kind, kindOf}
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
-import scala.reflect.macros.{TypecheckException, blackbox}
+import scala.reflect.macros.{TypecheckException, blackbox, whitebox}
 
 // TODO: benchmark difference between running implicit search inside macro vs. return tree with recursive implicit macro expansion
 // TODO: benchmark difference between searching all arguments vs. merge strategy
 // TODO: benchmark ProviderMagnet vs. identity macro vs. normal function
-class TagMacroImpl(val c: blackbox.Context) {
+class TagMacro(val c: blackbox.Context) {
   import c.universe._
 
   protected[this] val defaultError: String = defaultTagImplicitError
@@ -128,22 +128,27 @@ class TagMacroImpl(val c: blackbox.Context) {
   protected[this] def applyToNothings(tpe: c.Type): c.Type =
     c.universe.appliedType(tpe, tpe.typeArgs.map(_ => definitions.NothingTpe))
 
-  // FIXME clean
-  def mkTypeParameter(owner: Symbol, kind: Kind): Symbol = {
+  protected[this] def mkTypeParameter(owner: Symbol, kind: Kind): Symbol = {
     import internal.{typeBounds, polyType}
     import internal.reificationSupport._
 
     val tpeSymbol = newNestedSymbol(owner, freshTypeName(""), NoPosition, Flag.PARAM | Flag.DEFERRED, isClass = false)
-    setInfo(tpeSymbol, typeBounds(definitions.NothingTpe, definitions.AnyTpe))
 
-    if (kind.args.nonEmpty) {
+    val tpeTpe = if (kind.args.nonEmpty) {
       val params = kind.args.map(mkTypeParameter(tpeSymbol, _))
 
-      setInfo(tpeSymbol, polyType(params, typeBounds(definitions.NothingTpe, definitions.AnyTpe)))
+      polyType(params, typeBounds(definitions.NothingTpe, definitions.AnyTpe))
+    } else {
+      typeBounds(definitions.NothingTpe, definitions.AnyTpe)
     }
+
+    setInfo(tpeSymbol, tpeTpe)
 
     tpeSymbol
   }
+
+  @inline
+  protected[this] def mkRefinementWithInnerType
 
   @inline
   protected[this] def mkHKTagArg(tpe: c.Type, kind: Kind): Type = {
@@ -155,19 +160,24 @@ class TagMacroImpl(val c: blackbox.Context) {
     logger.log(s"staticOwner: $staticOwner")
 
     val parents = List(definitions.AnyRefTpe)
-
     val mutRefinementSymbol: Symbol = newNestedSymbol(staticOwner, TypeName("<refinement>"), NoPosition, FlagsRepr(0L), isClass = true)
+
     val mutArg: Symbol = newNestedSymbol(mutRefinementSymbol, TypeName("Arg"), NoPosition, FlagsRepr(0L), isClass = false)
-    val scope = newScopeWith(mutArg)
-
     val params = kind.args.map(mkTypeParameter(mutArg, _))
-    val rhsParams = params.map(internal.typeRef(NoPrefix, _, Nil))
+    setInfo(mutArg, mkPolyType(tpe, params))
 
-    setInfo(mutArg, internal.polyType(params, appliedType(tpe, rhsParams)))
+    val scope = newScopeWith(mutArg)
 
     setInfo[Symbol](mutRefinementSymbol, RefinedType(parents, scope, mutRefinementSymbol))
 
     RefinedType(parents, scope, mutRefinementSymbol)
+  }
+
+  @inline
+  protected[this] def mkPolyType(tpe: c.Type, params: List[c.Symbol]): Type = {
+    val rhsParams = params.map(internal.typeRef(NoPrefix, _, Nil))
+
+    internal.polyType(params, appliedType(tpe, rhsParams))
   }
 
   @inline
@@ -268,4 +278,34 @@ class TagMacroImpl(val c: blackbox.Context) {
 //           { def $name(implicit @_root_.scala.annotation.implicitNotFound($implicitMsg)
 //          $param: ${appliedType(weakTypeOf[DIU#Tag[Nothing]], t)}) = $param; $name.tag }""")
 
+}
+
+class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
+  import c.universe._
+  import c.universe.internal.decorators._
+
+  def lambdaImpl(kindSig: c.Expr[String]): c.Tree = {
+
+    val prefixTpe = c.prefix.actualType
+
+    if (!(prefixTpe <:< typeOf[WithTags#TagObject])) {
+      c.abort(c.enclosingPosition, s"Tag lambda should be called only as a member of WithTags#Tag companion object")
+    }
+
+    val q"${sigStr: String}" = kindSig.tree
+
+//    c.abort(c.enclosingPosition, s"Got kind $sigStr")
+
+    // need { type T[?] = prefix.HKTagType[{ type Arg[&] = ?[&] }] }
+
+    // gen ? parameter
+    // mk rhs typeref
+    // pass rhs typeref to mkHKTagArg
+    // profit
+
+    // 1st – extract making refinement with type member = need type member T
+
+    val x = mkHKTagArg(typeOf[Option[_]].typeConstructor, Kind(List(Kind(Nil))))
+    Literal(Constant(())).setType(x)
+  }
 }

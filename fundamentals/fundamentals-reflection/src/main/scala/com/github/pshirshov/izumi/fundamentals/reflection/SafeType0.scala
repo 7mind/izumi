@@ -53,8 +53,14 @@ class SafeType0[U <: SingletonUniverse](
   }
 
   // Criteria for heuristic:
-  // Is a UniqueSingleType & .sym is FreeType
+  // Is a UniqueSingleType & .sym is FreeTerm
   //  Or the same for .prefix
+  // Purpose of heuristic:
+  //  unify two different singleton values with the same name and type
+  //  and unify their children, even if they are local variables, not static objects.
+  //  We have to stoop down to string checks because scalac's `TypeTag` is not being
+  //  useful about local variable singleton's – it contains only the name of the variable
+  //  and considers it a "FreeTerm", even though it's not!
   override final def equals(obj: Any): Boolean = {
     obj match {
       case that: SafeType0[U] @unchecked =>

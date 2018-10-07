@@ -4,7 +4,8 @@ import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil.{Kind, 
 import com.github.pshirshov.izumi.fundamentals.reflection.WithTags.hktagFormat
 
 import scala.annotation.implicitNotFound
-import scala.language.higherKinds
+import scala.language.experimental.macros
+import scala.language.{dynamics, higherKinds}
 import scala.reflect.api
 import scala.reflect.api.{TypeCreator, Universe}
 
@@ -43,7 +44,10 @@ trait WithTags extends UniverseGeneric { self =>
     override def toString: String = s"Tag[${tag.tpe}]"
   }
 
-  object Tag extends LowPriorityTagInstances {
+  object Tag extends Dynamic with LowPriorityTagInstances {
+
+    def selectDynamic(kindSig: String): Any = macro TagLambdaMacro.lambdaImpl
+
     def apply[T: Tag]: Tag[T] = implicitly
 
     def apply[T](t: TypeTag[T]): Tag[T] =
@@ -245,6 +249,8 @@ trait WithTags extends UniverseGeneric { self =>
   type ScalaReflectTypeTag[T] = u.TypeTag[T]
   type ScalaReflectWeakTypeTag[T] = u.WeakTypeTag[T]
 
+  // workaround for being unable to refer to Tag object's type from a type projection (?)
+  type TagObject = Tag.type
 }
 
 object WithTags {
