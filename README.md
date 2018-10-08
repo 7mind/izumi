@@ -17,21 +17,19 @@
 ![:3](https://img.shields.io/badge/🦋-Extremely%20Lightweight-7799cc.svg)
 ![:3](https://img.shields.io/badge/🦄-Just%20Works-cc00cc.svg)
 
-
 What is it?
 ===========
 
-Izumi (*jap. 泉水, spring*) is a set of non-coupled tools allowing you to significantly increase productivity of your Scala development.
+Izumi (*jap. 泉水, spring*) is a set of independent libraries and frameworks allowing you to significantly increase productivity of your Scala development.
  
 including the following components:
 
-1. [Percept-plan-execute-repeat (PPER)](https://izumi.7mind.io/latest/release/doc/pper/) toolchain, allowing you to model 
-   very complex domains and orchestrate deadly complex processes lot easier than you get used to,
-1. [distage](https://izumi.7mind.io/latest/release/doc/distage/) – Staged, transparent runtime Dependency Injection framework,
-2. [logstage](https://izumi.7mind.io/latest/release/doc/logstage/) – Effortless Structured Logging framework,
-3. [idealingua](https://izumi.7mind.io/latest/release/doc/idealingua/) – API Definition and Data Modeling language with network RPC generator targeting multiple languages, including Go, Typescript, C# and Scala,
-4. [Opinionated SBT plugins](https://izumi.7mind.io/latest/release/doc/sbt/) aimed to significantly 
-   increase clarity of your builds and compactify build files.
+1. [distage](https://izumi.7mind.io/latest/release/doc/distage/) – Staged, transparent runtime & compile-time Dependency Injection Framework,
+2. [logstage](https://izumi.7mind.io/latest/release/doc/logstage/) – Automatic structural logs from Scala string interpolations,
+3. [idealingua](https://izumi.7mind.io/latest/release/doc/idealingua/) – API Definition, Data Modeling and RPC Language – think GraphQL, Swagger or gRPC, except it doesn't suck. Currently generates servers and clients for Go, TypeScript, C# and Scala,
+4. [Opinionated SBT plugins](https://izumi.7mind.io/latest/release/doc/sbt/) – Reduces verbosity of SBT builds and introduces new features – shared test scopes and BOMs (from Maven).
+5. [Percept-Plan-Execute-Repeat (PPER)](https://izumi.7mind.io/latest/release/doc/pper/) pattern, allowing you to model 
+   very complex domains and orchestrate deadly complex processes lot easier than you get used to.
 
 Docs
 ----
@@ -40,33 +38,33 @@ Docs
 2. Scaladoc [Latest release](https://izumi.7mind.io/latest/release/api/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/api/)
 3. Slides: [https://github.com/7mind/slides](https://github.com/7mind/slides)
 
-
 Key goals 
 =========
 
-We aim to provide tools which are:
+We aim to provide tools that:
 
-1. Boosting productivity while reducing code-bloat
-2. Non-invasive as it possible
-3. Introspectable
-4. Better than anything else :3
+1. Boost productivity and reduce code bloat
+2. Are as non-invasive as possible
+3. Are introspectable
+4. Are better than anything else out there :3
 
 Current state and future plans
 ==============================
 
 We are looking for early adopters, contributors and sponsors.
 
-The work is still in progress.
+This project is currently a work in progress.
 
-In the future we are going to (or just may) implement the following tools based on PPER approach:
+In the future we are going to (or may) implement more tools based on PPER approach:
 
 1. Best in the world build system
 2. Best in the world cluster orchestration tool
-3. Best in the world load testing/macrobenchmark tool
+3. Best in the world load testing/macro-benchmark tool
 
+Contributors
+============
 
-See also
-========
+See:
 
 - [Build notes](doc/md/build.md)
 - [Project flow](doc/md/flow.md)
