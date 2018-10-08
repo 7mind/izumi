@@ -132,6 +132,9 @@ val SbtScriptedSettings = new SettingsGroup {
 lazy val inRoot = In(".")
   .settings(GlobalSettings)
 
+lazy val inDoc = In("doc")
+  .settings(GlobalSettings)
+
 lazy val base = Seq(GlobalSettings, LibSettings, WithoutBadPlugins)
 
 lazy val fbase = base ++ Seq(WithFundamentals)
@@ -406,37 +409,33 @@ lazy val izsbt: Seq[ProjectReference] = Seq(
   sbtIzumi, sbtIdealingua, sbtTests
 )
 
-lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt
-
-
-lazy val `izumi-r2` = inRoot.as
-  .root
-  .transitiveAggregateSeq(allProjects)
-  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin)
+lazy val microsite = inDoc.as.module
+  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, TutPlugin)
   .settings(
-    DocKeys.prefix := {
+    skip in publish := true
+    , DocKeys.prefix := {
       if (isSnapshot.value) {
         "latest/snapshot"
       } else {
         "latest/release"
       }
     }
-    , sourceDirectory in Paradox := baseDirectory.value / "doc" / "paradox"
     , siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api"
     , siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc"
     , previewFixedPort := Some(9999)
-    //, scmInfo := Some(ScmInfo(url("https://github.com/pshirshov/7mind"), ""))
     , git.remoteRepo := "git@github.com:7mind/izumi-microsite.git"
     , paradoxProperties ++= Map(
       "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
       "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
       "izumi.version" -> version.value,
     )
+    , sourceDirectory in Paradox := tutTargetDirectory.value
+    , makeSite := makeSite.dependsOn(tut).value
     , version in Paradox := version.value
     , excludeFilter in ghpagesCleanSite :=
       new FileFilter {
         def accept(f: File): Boolean = {
-          f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
+          (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) && !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value)) ) ||
             (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
@@ -451,8 +450,16 @@ lazy val `izumi-r2` = inRoot.as
     paradoxMaterialTheme in Paradox ~= {
       _.withCopyright("7mind.io")
         .withRepository(uri("https://github.com/pshirshov/izumi-r2"))
-//        .withColor("222", "434343")
+        .with
+      //        .withColor("222", "434343")
     }
     , addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
     , unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps)
   )
+
+lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt ++ Seq(microsite : ProjectReference)
+
+
+lazy val `izumi-r2` = inRoot.as
+  .root
+  .transitiveAggregateSeq(allProjects)

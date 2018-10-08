@@ -15,6 +15,12 @@ Dependencies
 
 To use @ref[Izumi SBT Toolkit](sbt/00_sbt.md) add the follwing into `project/build.sbt`:
 
+Here is how you add numbers:
+
+```tut
+1 + 1
+```
+
 @@@vars
 ```scala
 val izumi_version = "$izumi.version$"
