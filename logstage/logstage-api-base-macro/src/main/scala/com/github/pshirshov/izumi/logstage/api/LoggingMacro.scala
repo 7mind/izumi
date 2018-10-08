@@ -118,9 +118,9 @@ object LoggingMacro {
 
       case other =>
         c.warning(c.enclosingPosition,
-          s"""Complex expression as an input for a logger: ${other.toString()}.
+          s"""Complex expression found as an input for a logger: ${other.toString()}.
              |
-             |Izumi logger expect you to apply string interpolations:
+             |But Logstage expects you to use string interpolations instead, such as:
              |1) Simple variable: logger.log(s"My message: $$argument")
              |2) Chain: logger.log(s"My message: $${call.method} $${access.value}")
              |3) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")

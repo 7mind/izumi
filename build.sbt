@@ -432,6 +432,7 @@ lazy val `izumi-r2` = inRoot.as
       "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
       "izumi.version" -> version.value,
     )
+    , version in Paradox := version.value
     , excludeFilter in ghpagesCleanSite :=
       new FileFilter {
         def accept(f: File): Boolean = {
@@ -440,12 +441,18 @@ lazy val `izumi-r2` = inRoot.as
             (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
-            f.toPath.startsWith((ghpagesRepository.value / "media").toPath)
+            f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
+            f.toPath.startsWith((ghpagesRepository.value / "v0.5.50-SNAPSHOT").toPath)
         }
       }
   )
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
   .settings(
-    addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
+    paradoxMaterialTheme in Paradox ~= {
+      _.withCopyright("7mind.io")
+        .withRepository(uri("https://github.com/pshirshov/izumi-r2"))
+//        .withColor("222", "434343")
+    }
+    , addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
     , unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps)
   )
