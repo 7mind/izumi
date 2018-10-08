@@ -450,7 +450,6 @@ lazy val microsite = inDoc.as.module
     paradoxMaterialTheme in Paradox ~= {
       _.withCopyright("7mind.io")
         .withRepository(uri("https://github.com/pshirshov/izumi-r2"))
-        .with
       //        .withColor("222", "434343")
     }
     , addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
