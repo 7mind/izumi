@@ -70,8 +70,8 @@ trait WithHttp4sClient {
                     cb(Right(v))
 
                   case scala.util.Success(Left(error)) =>
-                    logger.info(s"${input.method -> "method"}: decoder failed on $body: $error")
-                    cb(Left(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $error", Option(error))))
+                    logger.info(s"${input.method -> "method"}: decoder returned failure on $body: $error")
+                    cb(Left(new IRTUnparseableDataException(s"${input.method}: decoder returned failure on $body: $error", Option(error))))
 
                   case scala.util.Failure(f) =>
                     logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
