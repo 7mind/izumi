@@ -1,9 +1,7 @@
 package com.github.pshirshov.test.plugins
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase5
-import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import distage.Injector
 import distage.plugins.{ConfigurablePluginMergeStrategy, PluginDef}
 import org.scalatest.WordSpec
@@ -28,7 +26,7 @@ class PluginMergeStrategyTest extends WordSpec {
 
       val mergeStrategy = new ConfigurablePluginMergeStrategy(PluginMergeConfig(
         {
-          import TagExpr.Strings._
+          import com.github.pshirshov.izumi.distage.model.definition.BindingTag.Expressions._
           t"bad"
         }
       ))

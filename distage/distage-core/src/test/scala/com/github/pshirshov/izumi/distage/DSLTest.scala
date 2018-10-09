@@ -6,7 +6,10 @@ import com.github.pshirshov.izumi.distage.model.definition.{Bindings, Module}
 import distage._
 import org.scalatest.WordSpec
 
+
 class DSLTest extends WordSpec {
+
+  import TagOps._
 
   "Basic DSL" should {
     "allow to define contexts" in {
@@ -218,12 +221,13 @@ class DSLTest extends WordSpec {
         many[SetTrait].tagged("A", "B")
       }
 
+
       assert(definition.bindings.size == 7)
-      assert(definition.bindings.count(_.tags == Set("A", "B")) == 3)
-      assert(definition.bindings.count(_.tags == Set("CA", "CB")) == 1)
-      assert(definition.bindings.count(_.tags == Set("CC")) == 1)
-      assert(definition.bindings.count(_.tags == Set("A")) == 1)
-      assert(definition.bindings.count(_.tags == Set("B")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 3)
+      assert(definition.bindings.count(_.tags.strings == Set("CA", "CB")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("CC")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("A")) == 1)
+      assert(definition.bindings.count(_.tags.strings == Set("B")) == 1)
     }
 
     "Tags in different modules are merged" in {
@@ -244,7 +248,7 @@ class DSLTest extends WordSpec {
 
       val definition = def1 ++ def2
 
-      assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
+      assert(definition.bindings.head.tags.strings == Set("1", "2", "a", "b", "x", "y"))
     }
 
     "Tags in different overriden modules are merged" in {
@@ -264,7 +268,7 @@ class DSLTest extends WordSpec {
 
       val definition = def1 overridenBy def2
 
-      assert(definition.bindings.head.tags == Set("1", "2", "a", "b", "x", "y"))
+      assert(definition.bindings.head.tags.strings == Set("1", "2", "a", "b", "x", "y"))
     }
 
     "support includes" in {
@@ -286,8 +290,8 @@ class DSLTest extends WordSpec {
 
       val definition2 = new Def1 with Def2
 
-      assert(definition1.bindings.map(_.tags) == Set(Set("tag1"), Set("tag2")))
-      assert(definition2.bindings.map(_.tags) == Set(Set("tag1", "tag2")))
+      assert(definition1.bindings.map(_.tags.strings) == Set(Set("tag1"), Set("tag2")))
+      assert(definition2.bindings.map(_.tags.strings) == Set(Set("tag1", "tag2")))
     }
   }
 

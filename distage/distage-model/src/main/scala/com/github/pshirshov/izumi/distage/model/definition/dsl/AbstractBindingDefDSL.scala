@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.distage.model.definition.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding, untaggedTags}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, Bindings, ImplDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
@@ -177,7 +177,7 @@ object AbstractBindingDefDSL {
 
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding[DIKey.BasicKey] =
-      ops.foldLeft(SetElementBinding(setKey, implDef, untaggedTags, pos)) {
+      ops.foldLeft(SetElementBinding(setKey, implDef, BindingTag.untaggedTags, pos)) {
         (b, instr) =>
           instr match {
             case ElementAddTags(tags) => b.addTags(tags)
@@ -194,9 +194,9 @@ object AbstractBindingDefDSL {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
       val hopefullyRandomId = this.hashCode().toLong + implDef.hashCode().toLong << 32
 
-      val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, untaggedTags, pos)
+      val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, BindingTag.untaggedTags, pos)
 
-      val refBind0 = SetElementBinding(setKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), untaggedTags, pos)
+      val refBind0 = SetElementBinding(setKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), BindingTag.untaggedTags, pos)
 
       val refBind = ops.foldLeft(refBind0) {
         (b, op) =>
@@ -220,7 +220,7 @@ object AbstractBindingDefDSL {
 
     final case class SetImpl(implDef: ImplDef) extends SingletonInstruction
 
-    final case class AddTags(tags: Set[String]) extends SingletonInstruction
+    final case class AddTags(tags: Set[BindingTag]) extends SingletonInstruction
 
     final case class SetId[I](id: I)(implicit val idContract: IdContract[I]) extends SingletonInstruction
 
@@ -231,7 +231,7 @@ object AbstractBindingDefDSL {
 
   object SetInstruction {
 
-    final case class AddTagsAll(tags: Set[String]) extends SetInstruction
+    final case class AddTagsAll(tags: Set[BindingTag]) extends SetInstruction
 
     final case class SetIdAll[I](id: I)(implicit val idContract: IdContract[I]) extends SetInstruction
 
@@ -241,7 +241,7 @@ object AbstractBindingDefDSL {
 
   object SetElementInstruction {
 
-    final case class ElementAddTags(tags: Set[String]) extends SetElementInstruction
+    final case class ElementAddTags(tags: Set[BindingTag]) extends SetElementInstruction
 
   }
 
@@ -249,7 +249,7 @@ object AbstractBindingDefDSL {
 
   object MultiSetElementInstruction {
 
-    final case class MultiAddTags(tags: Set[String]) extends MultiSetElementInstruction
+    final case class MultiAddTags(tags: Set[BindingTag]) extends MultiSetElementInstruction
 
   }
 

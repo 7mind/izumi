@@ -4,8 +4,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategyBaseImpl, BootstrapContext, OpinionatedDiApp}
-import com.github.pshirshov.izumi.distage.config.{ConfigModule, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.config.{ConfigModule, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
@@ -18,12 +18,11 @@ import com.github.pshirshov.izumi.distage.roles.roles
 import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RolesInfo}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.typesafe.config.{Config, ConfigFactory}
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -160,10 +159,10 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
     roleInfo.set(roles) // TODO: mutable logic isn't so pretty. We need to maintain an immutable context somehow
     printRoleInfo(roles)
 
-    val unrequiredRoleTags = roles.unrequiredRoleNames.map(v => TagExpr.Strings.Has(v): TagExpr.Strings.Expr)
-    val allDisabledTags = TagExpr.Strings.Or(Set(disabledTags) ++ unrequiredRoleTags)
+    val unrequiredRoleTags = roles.unrequiredRoleNames.map(v => BindingTag.Expressions.Has(BindingTag(v)): BindingTag.Expressions.Expr)
+    val allDisabledTags = BindingTag.Expressions.Or(Set(disabledTags) ++ unrequiredRoleTags)
     logger.trace(s"Raw disabled tags ${allDisabledTags -> "expression"}")
-    logger.info(s"Disabled ${TagExpr.Strings.TagDNF.toDNF(allDisabledTags) -> "tags"}")
+    logger.info(s"Disabled ${BindingTag.Expressions.TagDNF.toDNF(allDisabledTags) -> "tags"}")
 
     new ConfigurablePluginMergeStrategy(PluginMergeConfig(
       allDisabledTags

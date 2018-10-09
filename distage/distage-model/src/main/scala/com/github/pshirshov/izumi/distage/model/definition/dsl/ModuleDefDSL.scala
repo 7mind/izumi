@@ -101,7 +101,7 @@ object ModuleDefDSL {
       addOp(SetIdFromImplName())(new BindNamedDSL[T](_, key.named(key.toString)))
 
     def tagged(tags: String*): BindDSL[T] =
-      addOp(AddTags(Set(tags: _*))) {
+      addOp(AddTags(BindingTag.fromSeq(tags))) {
         new BindDSL[T](_, key)
       }
 
@@ -114,7 +114,7 @@ object ModuleDefDSL {
   ) extends BindDSLMutBase[T] {
 
     def tagged(tags: String*): BindNamedDSL[T] =
-      addOp(AddTags(Set(tags: _*))) {
+      addOp(AddTags(BindingTag.fromSeq(tags))) {
         new BindNamedDSL[T](_, key)
       }
 
@@ -148,7 +148,7 @@ object ModuleDefDSL {
 
     /** These tags apply ONLY to EmptySet binding itself, not to set elements **/
     def tagged(tags: String*): SetDSL[T] =
-      addOp(AddTagsAll(Set(tags: _*)))(new SetDSL[T](_))
+      addOp(AddTagsAll(BindingTag.fromSeq(tags)))(new SetDSL[T](_))
 
   }
 
@@ -158,7 +158,7 @@ object ModuleDefDSL {
   ) extends SetDSLMutBase[T] {
 
     def tagged(tags: String*): SetNamedDSL[T] =
-      addOp(AddTagsAll(Set(tags: _*)))(new SetNamedDSL[T](_))
+      addOp(AddTagsAll(BindingTag.fromSeq(tags)))(new SetNamedDSL[T](_))
 
   }
 
@@ -169,7 +169,7 @@ object ModuleDefDSL {
   ) extends SetDSLMutBase[T] {
 
     def tagged(tags: String*): SetElementDSL[T] =
-      addOp(ElementAddTags(Set(tags: _*)))
+      addOp(ElementAddTags(BindingTag.fromSeq(tags)))
 
     protected def addOp(op: SetElementInstruction): SetElementDSL[T] = {
       val newState = mutableCursor.append(op)
@@ -184,7 +184,7 @@ object ModuleDefDSL {
   ) extends SetDSLMutBase[T] {
 
     def tagged(tags: String*): MultiSetElementDSL[T] =
-      addOp(MultiAddTags(Set(tags: _*)))
+      addOp(MultiAddTags(BindingTag.fromSeq(tags)))
 
     protected def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
       val newState = mutableCursor.append(op)

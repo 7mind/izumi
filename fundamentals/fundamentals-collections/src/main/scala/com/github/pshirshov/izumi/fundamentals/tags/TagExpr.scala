@@ -4,7 +4,7 @@ import scala.reflect.ClassTag
 
 object TagExpr {
 
-  sealed trait For[T] {
+  trait For[T] {
 
     sealed trait Expr {
       def evaluate(tags: Set[T]): Boolean = For.this.evaluate(tags, this)

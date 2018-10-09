@@ -3,13 +3,13 @@ package com.github.pshirshov.izumi.distage.testkit
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicReference
 
+import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 
 
 class TestkitMemoizationTest extends DistagePluginSpec {
-  override protected def disabledTags: TagExpr.Strings.Expr = TagExpr.Strings.False
+  override protected def disabledTags: BindingTag.Expressions.Expr = BindingTag.Expressions.False
 
   val r = new AtomicReference[WeakReference[TestService1]](null)
 

@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.config.annotations.AbstractConfId
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
+import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
@@ -135,7 +136,7 @@ object StaticPluginCheckerMacro {
            , abort: String => Unit
            ): Unit = {
 
-    val module = new ConfigurablePluginMergeStrategy(PluginMergeConfig(TagExpr.Strings.Or(disabledTags.map(TagExpr.Strings.Has))))
+    val module = new ConfigurablePluginMergeStrategy(PluginMergeConfig(BindingTag.Expressions.Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))))
       .merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
       .definition
 

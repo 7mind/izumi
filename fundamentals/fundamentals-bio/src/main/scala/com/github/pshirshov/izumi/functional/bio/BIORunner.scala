@@ -7,16 +7,16 @@ import scalaz.zio.{ExitResult, IO, RTS}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
-trait BIORunner[BIO[_, _]] {
-  def unsafeRun[E, A](io: BIO[E, A]): A
+trait BIORunner[F[_, _]] {
+  def unsafeRun[E, A](io: F[E, A]): A
 
-  def unsafeRunSyncAsEither[E, A](io: BIO[E, A]): Try[Either[E, A]]
+  def unsafeRunSyncAsEither[E, A](io: F[E, A]): Try[Either[E, A]]
 
-  def unsafeRunAsyncAsEither[E, A](io: BIO[E, A])(callback: Try[Either[E, A]] => Unit): Unit
+  def unsafeRunAsyncAsEither[E, A](io: F[E, A])(callback: Try[Either[E, A]] => Unit): Unit
 }
 
 object BIORunner {
-  def apply[BIO[_, _] : BIORunner]: BIORunner[BIO] = implicitly
+  def apply[F[_, _] : BIORunner]: BIORunner[F] = implicitly
 
   def createZIO(threadPool: ExecutorService): BIORunner[IO] = new ZIORunnerBase(threadPool)
 

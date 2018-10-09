@@ -1,11 +1,9 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, Id, ImplDef, LocatorDef}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
@@ -343,7 +341,7 @@ class BasicTest extends WordSpec with MkInjector {
     }
 
     assert(definition.bindings.collectFirst {
-      case SetElementBinding(_, _, s, _) if s == Set("t1", "t2") => true
+      case SetElementBinding(_, _, s, _) if Set(BindingTag("t1"), BindingTag("t2")).diff(s).isEmpty => true
     }.nonEmpty)
   }
 

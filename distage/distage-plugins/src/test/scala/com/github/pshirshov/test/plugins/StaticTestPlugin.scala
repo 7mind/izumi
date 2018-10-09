@@ -1,16 +1,9 @@
 package com.github.pshirshov.test.plugins
 
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase5
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase5.{TestDependency, TestImpl1}
-import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import distage.Injector
-import distage.plugins.{ConfigurablePluginMergeStrategy, PluginDef}
-import org.scalatest.WordSpec
+import distage.plugins.PluginDef
 
 @ExposedTestScope
 class StaticTestPlugin extends PluginDef {

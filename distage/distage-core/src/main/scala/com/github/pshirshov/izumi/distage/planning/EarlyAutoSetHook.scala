@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetElementBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, Module, ModuleBase}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Module, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 trait EarlyAutoSetHook extends PlanningHookDefaultImpl {
@@ -13,7 +13,7 @@ trait EarlyAutoSetHook extends PlanningHookDefaultImpl {
         elementOf(i)
           .flatMap {
             key =>
-              Some(SetElementBinding(key, i.implementation, Set("izumi.autoset")))
+              Some(SetElementBinding(key, i.implementation, BindingTag("izumi.autoset")))
           }
           .toSeq
 

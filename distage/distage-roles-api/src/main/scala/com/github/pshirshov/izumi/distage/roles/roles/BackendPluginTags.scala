@@ -1,17 +1,19 @@
 package com.github.pshirshov.izumi.distage.roles.roles
 
+import com.github.pshirshov.izumi.distage.model.definition.BindingTag
+
 // TODO remove
 trait BackendPluginTags {
-  final val Test = "test"
-  final val Dummy = "dummy"
-  final val Production = "production"
-  final val Storage = "storage"
-  final val ExternalApi = "external-api"
-  final val Common = "common"
-  final val Services = "services"
-  final val Repositories = "repositories"
-  final val Http = "http"
-  final val Implicits = "implicits"
+  final val Test = BindingTag("test")
+  final val Dummy = BindingTag("dummy")
+  final val Production = BindingTag("production")
+  final val Storage = BindingTag("storage")
+  final val ExternalApi = BindingTag("external-api")
+  final val Common = BindingTag("common")
+  final val Services = BindingTag("services")
+  final val Repositories = BindingTag("repositories")
+  final val Http = BindingTag("http")
+  final val Implicits = BindingTag("implicits")
 }
 
 object BackendPluginTags extends BackendPluginTags

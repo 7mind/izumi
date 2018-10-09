@@ -1,13 +1,12 @@
 package com.github.pshirshov.izumi.distage.plugins.merge
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, Module}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Module}
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.distage.model.reflection
 import com.github.pshirshov.izumi.distage.plugins.LoadedPlugins.JustPlugins
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.{LoadedPlugins, PluginBase}
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import distage.{DIKey, SafeType}
 
 class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginMergeStrategy[LoadedPlugins] {
@@ -48,7 +47,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
 
         p.tag match {
           case Some(tag) =>
-            choose(key, matchingName.filter(_.tags.contains(tag)))
+            choose(key, matchingName.filter(_.tags.contains(BindingTag(tag))))
           case None =>
             choose(key, matchingName)
         }
@@ -68,9 +67,9 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
     }
   }
 
-  protected def fullDisabledTagsExpr: TagExpr.Strings.Expr = {
-    import TagExpr.Strings._
-    config.disabledTags && !(Has(Binding.untagged) && Has(Binding.set))
+  protected def fullDisabledTagsExpr: BindingTag.Expressions.Expr = {
+    import BindingTag.Expressions._
+    config.disabledTags && !(Has(BindingTag.Untagged) && Has(BindingTag.TSet))
   }
 
   protected def isDisabled(binding: Binding): Boolean = {
@@ -112,7 +111,7 @@ object ConfigurablePluginMergeStrategy {
 
   case class PluginMergeConfig
   (
-    disabledTags: TagExpr.Strings.Expr
+    disabledTags: BindingTag.Expressions.Expr
     , disabledKeyClassnames: Set[String] = Set.empty
     , disabledImplClassnames: Set[String] = Set.empty
     , preferences: Map[String, BindingPreference] = Map.empty

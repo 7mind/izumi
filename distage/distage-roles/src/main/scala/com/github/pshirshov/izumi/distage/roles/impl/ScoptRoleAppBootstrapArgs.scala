@@ -1,11 +1,10 @@
 package com.github.pshirshov.izumi.distage.roles.impl
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, ModuleDef}
 import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleApp
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.distage.roles.roles.BackendPluginTags
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 
 // TODO
 object ScoptRoleAppBootstrapArgs {
@@ -14,9 +13,9 @@ object ScoptRoleAppBootstrapArgs {
     RoleAppBootstrapStrategyArgs(
       disabledTags =
         if (params.dummyStorage.contains(true)) {
-          TagExpr.Strings.all(BackendPluginTags.Production, BackendPluginTags.Storage)
+          BindingTag.Expressions.all(BackendPluginTags.Production, BackendPluginTags.Storage)
         } else {
-          TagExpr.Strings.any(BackendPluginTags.Test, BackendPluginTags.Dummy)
+          BindingTag.Expressions.any(BackendPluginTags.Test, BackendPluginTags.Dummy)
         }
       , roleSet =
           if (params.writeReference.isDefined) {

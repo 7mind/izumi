@@ -23,7 +23,7 @@ object Bindings {
     SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(f.get.ret, f.get))
 
   def emptySet[T: Tag](implicit pos: CodePositionMaterializer): EmptySetBinding[DIKey.TypeKey] =
-    EmptySetBinding(DIKey.get[Set[T]], untaggedTags, pos.get.position)
+    EmptySetBinding(DIKey.get[Set[T]], BindingTag.untaggedTags, pos.get.position)
 
   def setElement[T: Tag, I <: T: Tag](implicit pos: CodePositionMaterializer): SetElementBinding[DIKey.TypeKey] =
     SetElementBinding(DIKey.get[Set[T]], ImplDef.TypeImpl(SafeType.get[I]))

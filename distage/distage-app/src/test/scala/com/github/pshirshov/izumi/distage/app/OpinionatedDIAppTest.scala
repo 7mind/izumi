@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.app
 import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, BootstrapModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.AssignableFromEarlyAutoSetHook
@@ -13,7 +13,6 @@ import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.P
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.{BindingPreference, PluginMergeConfig}
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
@@ -77,7 +76,7 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator, ApplicationBootstrapS
   }
 
   private val pluginMergeConfig = PluginMergeConfig(
-    disabledTags = TagExpr.Strings.any("badtag")
+    disabledTags = BindingTag.Expressions.any(BindingTag("badtag"))
     , disabledKeyClassnames = Set(
       classOf[DisabledByKey].getName
     )

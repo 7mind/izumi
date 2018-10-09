@@ -1,12 +1,11 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
-import com.github.pshirshov.izumi.distage.plugins.{LoadedPlugins, PluginBase}
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, ModuleBase}
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
+import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
+import com.github.pshirshov.izumi.distage.plugins.{LoadedPlugins, PluginBase}
 
 trait DistagePluginTests extends DistageTests {
   protected lazy val loadedPlugins: Seq[PluginBase] = {
@@ -32,5 +31,5 @@ trait DistagePluginTests extends DistageTests {
     Seq(this.getClass.getPackage.getName)
   }
 
-  protected def disabledTags: TagExpr.Strings.Expr = TagExpr.Strings.False
+  protected def disabledTags: BindingTag.Expressions.Expr = BindingTag.Expressions.False
 }
