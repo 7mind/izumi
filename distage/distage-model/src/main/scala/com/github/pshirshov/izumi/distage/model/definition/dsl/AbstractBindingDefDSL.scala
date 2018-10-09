@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding, untaggedTags}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
@@ -177,7 +177,7 @@ object AbstractBindingDefDSL {
 
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding[DIKey.BasicKey] =
-      ops.foldLeft(SetElementBinding(setKey, implDef, Set.empty, pos)) {
+      ops.foldLeft(SetElementBinding(setKey, implDef, untaggedTags, pos)) {
         (b, instr) =>
           instr match {
             case ElementAddTags(tags) => b.addTags(tags)
@@ -194,9 +194,9 @@ object AbstractBindingDefDSL {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
       val hopefullyRandomId = this.hashCode().toLong + implDef.hashCode().toLong << 32
 
-      val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, Set.empty, pos)
+      val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, untaggedTags, pos)
 
-      val refBind0 = SetElementBinding(setKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), Set.empty, pos)
+      val refBind0 = SetElementBinding(setKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), untaggedTags, pos)
 
       val refBind = ops.foldLeft(refBind0) {
         (b, op) =>

@@ -8,8 +8,9 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
 
 sealed trait Binding {
   def key: DIKey
-  def tags: Set[String]
   def origin: SourceFilePosition
+
+  def tags: Set[String]
 
   def withTarget[K <: DIKey](key: K): Binding
   def withTags(tags: Set[String]): Binding
@@ -17,6 +18,12 @@ sealed trait Binding {
 }
 
 object Binding {
+  val untagged = ":untagged"
+  val singleton = ":singleton"
+  val set = ":set"
+  val setElement = ":element"
+
+  val untaggedTags = Set(untagged)
 
   sealed trait ImplBinding extends Binding {
     def implementation: ImplDef
@@ -29,7 +36,7 @@ object Binding {
 
   sealed trait SetBinding extends Binding
 
-  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[String], origin: SourceFilePosition) extends ImplBinding {
+  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, _tags: Set[String], origin: SourceFilePosition) extends ImplBinding {
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: SingletonBinding[_] =>
         key == that.key && implementation == that.implementation
@@ -39,18 +46,19 @@ object Binding {
 
     override val hashCode: Int = (0, key, implementation).hashCode()
 
+    override def tags: Set[String] = _tags + singleton
     override def withImplDef(implDef: ImplDef): SingletonBinding[K] = copy(implementation = implDef)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SingletonBinding[T] = copy(key = key)
-    override def withTags(tags: Set[String]): SingletonBinding[K] = copy(tags = tags)
-    override def addTags(tags: Set[String]): SingletonBinding[K] = withTags(this.tags ++ tags)
+    override def withTags(newTags: Set[String]): SingletonBinding[K] = copy(_tags = newTags)
+    override def addTags(moreTags: Set[String]): SingletonBinding[K] = withTags(this.tags ++ moreTags)
   }
 
   object SingletonBinding {
-    def apply[K <: DIKey](key: K, implementation: ImplDef, tags: Set[String] = Set.empty)(implicit pos: CodePositionMaterializer): SingletonBinding[K] =
+    def apply[K <: DIKey](key: K, implementation: ImplDef, tags: Set[String] = untaggedTags)(implicit pos: CodePositionMaterializer): SingletonBinding[K] =
       new SingletonBinding[K](key, implementation, tags, pos.get.position)
   }
 
-  final case class SetElementBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[String], origin: SourceFilePosition) extends ImplBinding with SetBinding {
+  final case class SetElementBinding[+K <: DIKey](key: K, implementation: ImplDef, _tags: Set[String], origin: SourceFilePosition) extends ImplBinding with SetBinding {
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: SetElementBinding[_] =>
         key == that.key && implementation == that.implementation
@@ -59,19 +67,19 @@ object Binding {
     }
 
     override val hashCode: Int = (1, key, implementation).hashCode()
-
+    override def tags: Set[String] = _tags + setElement
     override def withImplDef(implDef: ImplDef): SetElementBinding[K] = copy(implementation = implDef)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SetElementBinding[T] = copy(key = key)
-    override def withTags(tags: Set[String]): SetElementBinding[K] = copy(tags = tags)
-    override def addTags(tags: Set[String]): SetElementBinding[K] = withTags(this.tags ++ tags)
+    override def withTags(newTags: Set[String]): SetElementBinding[K] = copy(_tags = newTags)
+    override def addTags(moreTags: Set[String]): SetElementBinding[K] = withTags(this.tags ++ moreTags)
   }
 
   object SetElementBinding {
-    def apply[K <: DIKey](key: K, implementation: ImplDef, tags: Set[String] = Set.empty)(implicit pos: CodePositionMaterializer): SetElementBinding[K] =
+    def apply[K <: DIKey](key: K, implementation: ImplDef, tags: Set[String] = untaggedTags)(implicit pos: CodePositionMaterializer): SetElementBinding[K] =
       new SetElementBinding[K](key, implementation, tags, pos.get.position)
   }
 
-  final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[String], origin: SourceFilePosition) extends SetBinding {
+  final case class EmptySetBinding[+K <: DIKey](key: K, _tags: Set[String], origin: SourceFilePosition) extends SetBinding {
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: EmptySetBinding[_] =>
         key == that.key
@@ -80,14 +88,14 @@ object Binding {
     }
 
     override val hashCode: Int = (2, key).hashCode()
-
+    override def tags: Set[String] = _tags + set
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): EmptySetBinding[T] = copy(key = key)
-    override def withTags(tags: Set[String]): EmptySetBinding[K] = copy(tags = tags)
-    override def addTags(tags: Set[String]): EmptySetBinding[K] = withTags(this.tags ++ tags)
+    override def withTags(newTags: Set[String]): EmptySetBinding[K] = copy(_tags = newTags)
+    override def addTags(moreTags: Set[String]): EmptySetBinding[K] = withTags(this.tags ++ moreTags)
   }
 
   object EmptySetBinding {
-    def apply[K <: DIKey](key: K, tags: Set[String] = Set.empty)(implicit pos: CodePositionMaterializer): EmptySetBinding[K] =
+    def apply[K <: DIKey](key: K, tags: Set[String] = untaggedTags)(implicit pos: CodePositionMaterializer): EmptySetBinding[K] =
       new EmptySetBinding[K](key, tags, pos.get.position)
   }
 

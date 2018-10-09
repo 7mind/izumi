@@ -25,7 +25,7 @@ trait ModuleBase {
 }
 
 object ModuleBase {
-  type Aux[S] = ModuleBase { type Self <: S }
+  type Aux[S] = ModuleBase {type Self <: S}
 
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = s => new ModuleBase {
     override val bindings: Set[Binding] = s
@@ -54,7 +54,7 @@ object ModuleBase {
   }
 
   implicit final class ModuleDefCombine[S <: ModuleBase, T <: ModuleBase.Aux[T]](val moduleDef: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
-                                                                                                  // Order is important
+    // Order is important
     def ++(that: ModuleBase): T = {
       // TODO: a hack to support tag merging
 
@@ -125,17 +125,20 @@ object ModuleBase {
   }
 
   final class Lub[-A, -B, Out](private val dummy: Boolean = false) extends AnyVal
+
   object Lub {
     implicit def lub[T]: Lub[T, T, T] = new Lub[T, T, T]
   }
 
-  private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] =
-  // Using lawless equals/hashcode
+  private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
+    // Using lawless equals/hashcode
     bs.groupBy(identity)
       .values
       .map {
         _.reduce(_ addTags _.tags)
-      }.to[ListSet]
+      }
+      .to[ListSet]
+  }
 
 }
 

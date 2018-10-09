@@ -68,8 +68,13 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
     }
   }
 
+  protected def fullDisabledTagsExpr: TagExpr.Strings.Expr = {
+    import TagExpr.Strings._
+    config.disabledTags && !(Has(Binding.untagged) && Has(Binding.set))
+  }
+
   protected def isDisabled(binding: Binding): Boolean = {
-    config.disabledTags.evaluate(binding.tags) ||
+    fullDisabledTagsExpr.evaluate(binding.tags) ||
       isDisabledName(keyClassName(binding.key), config.disabledKeyClassnames) ||
       implClassName(binding).exists(isDisabledName(_, config.disabledImplClassnames))
   }
