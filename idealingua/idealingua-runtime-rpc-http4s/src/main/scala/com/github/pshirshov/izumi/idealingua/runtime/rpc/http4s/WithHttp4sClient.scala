@@ -35,14 +35,11 @@ trait WithHttp4sClient {
     }
 
     protected def runRequest[T](handler: Response[CatsIO] => CatsIO[T], req: Request[CatsIO]): BiIO[Throwable, T] = {
-      BIO.syncThrowable {
-        CIORunner.unsafeRunSync {
-          BlazeClientBuilder[CatsIO](clientExecutionContext).resource.use {
-            client =>
-              client.fetch(req)(handler)
-          }
-        }
+      val cio = BlazeClientBuilder[CatsIO](clientExecutionContext).resource.use {
+        client =>
+          client.fetch(req)(handler)
       }
+      BIO.async(CIORunner.unsafeRunAsync(cio))
     }
 
     protected def handleResponse(input: IRTMuxRequest, resp: Response[CatsIO]): CatsIO[IRTMuxResponse] = {

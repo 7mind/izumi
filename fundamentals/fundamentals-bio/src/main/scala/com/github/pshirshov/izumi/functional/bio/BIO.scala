@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import scalaz.zio.{IO, Schedule}
+import scalaz.zio.{ExitResult, IO, Schedule}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.higherKinds
@@ -98,6 +98,19 @@ object BIO extends BIOSyntax {
       })
 
     @inline override def widen[E, A, E1 >: E, A1 >: A](r: IO[E, A]): IO[E1, A1] = r
+
+    @inline override def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
+      IO.async[E, A] {
+        cb =>
+          register {
+            case Right(v) =>
+              cb(ExitResult.Completed(v))
+            case Left(t) =>
+              cb(ExitResult.Failed(t))
+          }
+
+      }
+    }
   }
 
 }

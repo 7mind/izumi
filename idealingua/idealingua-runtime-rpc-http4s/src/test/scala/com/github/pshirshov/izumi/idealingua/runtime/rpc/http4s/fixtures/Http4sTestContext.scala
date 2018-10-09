@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 import cats.data.{Kleisli, OptionT}
 import cats.effect.{ContextShift, IO, Timer}
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.{BIORunner, Http4sRuntime, WsClientContextProvider}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.{Http4sRuntime, WsClientContextProvider}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMuxRequest, IRTMuxResponse, RpcPacket}
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
@@ -16,6 +16,7 @@ import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
 import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIORunner
 
 object Http4sTestContext {
   //

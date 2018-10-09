@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+package com.github.pshirshov.izumi.functional.bio
 
 import java.util.concurrent.ExecutorService
 
