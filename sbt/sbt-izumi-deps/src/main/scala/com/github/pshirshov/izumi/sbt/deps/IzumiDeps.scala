@@ -32,6 +32,7 @@ object IzumiDeps {
     val scalacheck_shapeless = "1.2.0-1"
 
     val zio = "0.2.10"
+    val zio_interop = "0.2.9"
 
     // TODO: we need to get rid of this
     val java_websocket = "1.3.9" // java, we need it bcs http4s ws client isn't ready yet
@@ -62,7 +63,7 @@ object IzumiDeps {
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
     val zio_core: ModuleID = "org.scalaz" %% "scalaz-zio" % V.zio
-    val zio_interop: ModuleID = "org.scalaz" %% "scalaz-zio-interop" % V.zio
+    val zio_interop: ModuleID = "org.scalaz" %% "scalaz-zio-interop" % V.zio_interop
 
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % V.scala_java8_compat
     val essentials = Seq(scala_java8_compat, collection_compat)
