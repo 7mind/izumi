@@ -17,7 +17,6 @@ import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
 import com.typesafe.config.ConfigFactory
 import distage.{BootstrapModuleDef, DIKey, Injector, Module, ModuleBase, OrderedPlan}
 import io.github.classgraph.ClassGraph
@@ -28,7 +27,6 @@ import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 import scala.reflect.runtime.{currentMirror, universe => ru}
 
-// FIXME: slow
 object StaticPluginCheckerMacro {
 
   def implDefault[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(disableTags: c.Expr[String]): c.Expr[Unit] = {
