@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.roles.launcher.test
 
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.roles.RoleService
+import com.github.pshirshov.izumi.distage.roles.roles.{BackendPluginTags, RoleService}
 
 trait NotCloseable
 
@@ -10,6 +10,7 @@ class InheritedCloseable extends NotCloseable with AutoCloseable {
 }
 
 class TestPlugin extends PluginDef {
+  tag(BackendPluginTags.Production)
   make[RoleService].named("testservice").from[TestService]
   many[Dummy]
   make[NotCloseable].from[InheritedCloseable]

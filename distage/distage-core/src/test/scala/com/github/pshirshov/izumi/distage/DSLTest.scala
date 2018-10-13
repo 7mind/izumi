@@ -254,21 +254,23 @@ class DSLTest extends WordSpec {
     "Tags in different overriden modules are merged" in {
       import BasicCase1._
 
+      val tags12 = Seq("1", "2")
+
       val def1 = new ModuleDef {
         make[TestDependency0].tagged("a").tagged("b")
 
-        tag("1")
+        tag(tags12: _*)
       }
 
       val def2 = new ModuleDef {
-        tag("2")
+        tag("2", "3")
 
         make[TestDependency0].tagged("x").tagged("y")
       }
 
       val definition = def1 overridenBy def2
 
-      assert(definition.bindings.head.tags.strings == Set("1", "2", "a", "b", "x", "y"))
+      assert(definition.bindings.head.tags.strings == Set("1", "2", "3", "a", "b", "x", "y"))
     }
 
     "support includes" in {
