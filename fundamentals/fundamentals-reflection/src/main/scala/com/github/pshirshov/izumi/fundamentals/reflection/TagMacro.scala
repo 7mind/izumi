@@ -147,8 +147,27 @@ class TagMacro(val c: blackbox.Context) {
     tpeSymbol
   }
 
+  // TODO
   @inline
-  protected[this] def mkRefinementWithInnerType
+  protected[this] def mkRefinementWithInnerType = {
+//    val staticOwner = c.prefix.tree.symbol.owner
+//
+//    logger.log(s"staticOwner: $staticOwner")
+//
+//    val parents = List(definitions.AnyRefTpe)
+//    val mutRefinementSymbol: Symbol = newNestedSymbol(staticOwner, TypeName("<refinement>"), NoPosition, FlagsRepr(0L), isClass = true)
+//
+//    val mutArg: Symbol = newNestedSymbol(mutRefinementSymbol, TypeName("Arg"), NoPosition, FlagsRepr(0L), isClass = false)
+//    val params = kind.args.map(mkTypeParameter(mutArg, _))
+//    setInfo(mutArg, mkPolyType(tpe, params))
+//
+//    val scope = newScopeWith(mutArg)
+//
+//    setInfo[Symbol](mutRefinementSymbol, RefinedType(parents, scope, mutRefinementSymbol))
+//
+//    RefinedType(parents, scope, mutRefinementSymbol)
+  }
+
 
   @inline
   protected[this] def mkHKTagArg(tpe: c.Type, kind: Kind): Type = {
@@ -291,6 +310,12 @@ class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
     if (!(prefixTpe <:< typeOf[WithTags#TagObject])) {
       c.abort(c.enclosingPosition, s"Tag lambda should be called only as a member of WithTags#Tag companion object")
     }
+
+    val application = c.macroApplication
+    // get c.enclosingUnit + find c.macroApplication ?
+    // TODO: FIND subtree with same .pos ?
+
+    c.info(c.enclosingPosition, showCode(application), true)
 
     val q"${sigStr: String}" = kindSig.tree
 

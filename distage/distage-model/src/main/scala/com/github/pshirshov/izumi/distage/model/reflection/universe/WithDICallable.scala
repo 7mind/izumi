@@ -57,6 +57,7 @@ trait WithDICallable {
     def associations: Seq[Association.Parameter]
     def diKeys: Seq[DIKey] = associations.map(_.wireWith)
     def fun: Seq[Any] => Any
+    def unsafeMap(newRet: SafeType, f: Any => _): Provider
 
     override val argTypes: Seq[SafeType] = associations.map(_.wireWith.tpe)
 
@@ -75,6 +76,9 @@ trait WithDICallable {
 
       override def unsafeApply(refs: TypedRef[_]*): R =
         super.unsafeApply(refs: _*).asInstanceOf[R]
+
+      override def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
+        copy(ret = newRet, fun = xs => f.apply(fun(xs)))
     }
 
     object ProviderImpl {
@@ -91,6 +95,9 @@ trait WithDICallable {
         override def associations: Seq[Association.Parameter] = provider.associations
         override def ret: SafeType = provider.ret
         override def fun: Seq[Any] => Any = provider.fun
+
+        override def unsafeMap(newRet: SafeType, f: Any => _): FactoryProviderImpl =
+          copy(provider = provider.unsafeMap(newRet, f))
       }
     }
 
