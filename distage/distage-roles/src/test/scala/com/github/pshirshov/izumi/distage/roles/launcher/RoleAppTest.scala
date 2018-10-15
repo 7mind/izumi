@@ -68,8 +68,8 @@ class RoleAppTest extends WordSpec {
           val componentsInDepOrder = Seq(context.get[Resource6], context.get[Resource4], context.get[Resource3])
 
           assert(service.counter.startedCloseables == closeablesInDepOrder)
-          assert(service.counter.startedRoleComponents == componentsInDepOrder.reverse)
-          assert(service.counter.closedRole == componentsInDepOrder.reverse)
+          assert(service.counter.startedRoleComponents == componentsInDepOrder)
+          assert(service.counter.closedRoleComponents == componentsInDepOrder.reverse)
           assert(service.counter.closedCloseables == closeablesInDepOrder.reverse)
         }
       }.main(Array("testservice"))
