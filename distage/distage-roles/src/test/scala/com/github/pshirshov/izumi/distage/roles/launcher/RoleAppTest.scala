@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.roles.impl.{ScoptLauncherArgs, ScoptRoleApp}
-import com.github.pshirshov.izumi.distage.roles.launcher.test.TestService
+import com.github.pshirshov.izumi.distage.roles.launcher.test._
 import com.github.pshirshov.izumi.distage.roles.roles.RoleService
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 import com.typesafe.config.ConfigFactory
@@ -48,6 +48,8 @@ class RoleAppTest extends WordSpec {
         )
 
         override protected def start(context: Locator, bootstrapContext: app.BootstrapContext[ScoptLauncherArgs]): Unit = {
+          super.start(context, bootstrapContext)
+
           val services = context.instances.map(_.value).collect({ case t: RoleService => t }).toSet
           assert(services.size == 1)
           assert(services.exists(_.isInstanceOf[TestService]))
@@ -60,9 +62,15 @@ class RoleAppTest extends WordSpec {
           assert(conf.systemPropInt == 265)
           assert(conf.systemPropList == List(111, 222))
           assert(service.dummies.isEmpty)
-          assert(service.closeables.size == 2)
+          assert(service.closeables.size == (2 + 3))
 
-          super.start(context, bootstrapContext)
+          val closeablesInDepOrder = Seq(context.get[Resource5], context.get[Resource2], context.get[Resource1])
+          val componentsInDepOrder = Seq(context.get[Resource6], context.get[Resource4], context.get[Resource3])
+
+          assert(service.counter.startedCloseables == closeablesInDepOrder)
+          assert(service.counter.startedRoleComponents == componentsInDepOrder.reverse)
+          assert(service.counter.closedRole == componentsInDepOrder.reverse)
+          assert(service.counter.closedCloseables == closeablesInDepOrder.reverse)
         }
       }.main(Array("testservice"))
     }

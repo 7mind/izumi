@@ -4,6 +4,8 @@ import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag, Wiring}
 
+import scala.collection.immutable.ListSet
+
 class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
   protected val setElemetType: SafeType = SafeType.get[T]
 
@@ -26,7 +28,7 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
         }
     }
 
-    val newSetKeys: scala.collection.immutable.Set[DIKey] = newMembers.toSet
+    val newSetKeys: scala.collection.immutable.Set[DIKey] = ListSet(newMembers: _*) // newMembers.toSet
     val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, None)
     SemiPlan(plan.definition, newSteps :+ newSetOp)
   }

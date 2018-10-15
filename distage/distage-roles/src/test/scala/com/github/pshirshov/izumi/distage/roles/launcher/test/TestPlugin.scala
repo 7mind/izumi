@@ -15,3 +15,22 @@ class TestPlugin extends PluginDef {
   many[Dummy]
   make[NotCloseable].from[InheritedCloseable]
 }
+
+class ResourcesPlugin extends PluginDef {
+  make[InitCounter]
+
+  make[Resource1]
+  make[Resource2]
+  make[Resource3]
+  make[Resource4]
+  make[Resource5]
+  make[Resource6]
+
+  many[Resource]
+    .ref[Resource1]
+    .ref[Resource2]
+    .ref[Resource3]
+    .ref[Resource4]
+    .ref[Resource5]
+    .ref[Resource6]
+}
