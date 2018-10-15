@@ -434,8 +434,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |        if (!o['getClassName'] || typeof o['getClassName'] !== 'function') {
        |            return false;
        |        }
-       |        ${if(hasInterfaces) "const className = o.getClassName();" else ""}
-       |        return ${alternatives.map(alt => if (alt.typeId.isInstanceOf[InterfaceId]) s"${alt.typeId.name}${typespace.tools.implId(alt.typeId.asInstanceOf[InterfaceId]).name}.isRegisteredType(className)" else if (alt.typeId.isInstanceOf[AdtId]) s"${alt.typeId.name}Helpers.isInstanceOf(o)" else "o instanceof " + conv.toNativeType(alt.typeId, typespace)).mkString(" || ")};
+       |        ${if(hasInterfaces) "const fullClassName = o.getFullClassName();" else ""}
+       |        return ${alternatives.map(alt => if (alt.typeId.isInstanceOf[InterfaceId]) s"${alt.typeId.name}${typespace.tools.implId(alt.typeId.asInstanceOf[InterfaceId]).name}.isRegisteredType(fullClassName)" else if (alt.typeId.isInstanceOf[AdtId]) s"${alt.typeId.name}Helpers.isInstanceOf(o)" else "o instanceof " + conv.toNativeType(alt.typeId, typespace)).mkString(" || ")};
        |    }
        |
        |    public static serialize(adt: $name): {[key: string]: ${alternatives.map(alt => alt.typeId match {
@@ -451,12 +451,13 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       case _ => alt.typeId.name + "Serialized"
     }).mkString(" | ")}} {
        |        let className = adt.getClassName();
-       |        ${if(adtHasAdt(alternatives)) "let serialized: any = undefined;" else ""}
+       |        ${if(hasInterfaces) "const fullClassName = adt.getFullClassName();" else ""}
+       |        ${if(adtHasAdt(alternatives) || hasInterfaces) "let serialized: any = undefined;" else ""}
        |${alternatives.filter(al => al.typeId.isInstanceOf[AdtId]).map(al => al.typeId.asInstanceOf[AdtId]).map(adtId => s"if (${adtId.name}Helpers.isInstanceOf(adt)) {\n    className = '${adtId.name}';\n    serialized = ${adtId.name}Helpers.serialize(adt as ${adtId.name});\n}").mkString(" else \n").shift(8)}
-       |${alternatives.filter(al => al.typeId.isInstanceOf[InterfaceId]).map(al => al.typeId.asInstanceOf[InterfaceId]).map(interfaceId => s"if (${interfaceId.name}${typespace.tools.implId(interfaceId).name}.isRegisteredType(className)) {\n    className = '${interfaceId.name}';\n}").mkString(" else \n").shift(8)}
+       |${alternatives.filter(al => al.typeId.isInstanceOf[InterfaceId]).map(al => al.typeId.asInstanceOf[InterfaceId]).map(interfaceId => s"if (${interfaceId.name}${typespace.tools.implId(interfaceId).name}.isRegisteredType(fullClassName)) {\n    className = '${interfaceId.name}'; serialized = {[fullClassName]: adt.serialize()};\n}").mkString(" else \n").shift(8)}
        |${alternatives.filter(al => al.memberName.isDefined).map(a => s"if (className == '${a.typeId.name}') {\n    className = '${a.memberName.get}'\n}").mkString("\n").shift(8)}
        |        return {
-       |            [className]: ${if(adtHasAdt(alternatives)) "serialized || " else ""}adt.serialize()
+       |            [className]: ${if(adtHasAdt(alternatives) || hasInterfaces) "serialized || " else ""}adt.serialize()
        |        };
        |    }
        |
