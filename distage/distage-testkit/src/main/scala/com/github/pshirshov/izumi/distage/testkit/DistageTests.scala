@@ -95,7 +95,7 @@ trait DistageTests {
   protected def finalizeTest(context: Locator): Unit = {
     context.run {
       closeables: Set[AutoCloseable] =>
-        closeables.foreach(resourceCollection.close)
+        closeables.toList.reverse.foreach(resourceCollection.close)
     }
   }
 
