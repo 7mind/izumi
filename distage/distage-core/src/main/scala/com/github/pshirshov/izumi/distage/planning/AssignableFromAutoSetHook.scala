@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag, Wiring}
 
@@ -33,4 +33,19 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
     SemiPlan(plan.definition, newSteps :+ newSetOp)
   }
 
+  override def phase90AfterForwarding(plan: OrderedPlan): OrderedPlan = {
+    val allKeys = plan.steps.map(_.target).to[ListSet]
+
+    val withReorderedSetElements = plan.steps.map {
+      case op@ExecutableOp.CreateSet(`setKey`, _, newSetKeys, _) =>
+        // now reorderedKeys has exactly same elements as newSetKeys but in instantiation order
+        val reorderedKeys = allKeys.intersect(newSetKeys)
+        op.copy(members = reorderedKeys)
+
+      case op =>
+        op
+    }
+
+    plan.copy(steps = withReorderedSetElements)
+  }
 }
