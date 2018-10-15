@@ -82,11 +82,14 @@ class RoleStarterImpl(
     logger.info(s"Going to stop ${components.size -> "count" -> null} ${components.map(_.getClass).niceList() -> "components"}")
 
     val (stopped, failed) = components
+      .toList.reverse
       .map(s => s -> Try(s.stop()))
       .partition(_._2.isSuccess)
     logger.info(s"Service shutdown: ${stopped.size -> "stopped"} ; ${failed.size -> "failed to stop"}")
 
-    val toClose = closeables.filterNot(_.isInstanceOf[RoleComponent])
+    val toClose = closeables
+      .toList.reverse
+      .filterNot(_.isInstanceOf[RoleComponent])
     logger.info(s"Going to close ${toClose.size -> "count" -> null} ${toClose.map(_.getClass).niceList() -> "closeables"}")
 
     val (closed, failedToClose) = toClose
