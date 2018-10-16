@@ -6,6 +6,43 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.immutable.ListSet
 
+/**
+  * A hook that will collect all bindings to types {{{<: T}}} into a `Set[T]` available for injection as a dependency.
+  *
+  * Usage:
+  *
+  * {{{
+  *   val collectCloseables = new AssignableFromAutoSetHook[AutoCloseable]
+  *
+  *   val injector = Injector(new BootstrapModuleDef {
+  *     many[PlanningHook]
+  *       .add(collectCloseables)
+  *   })
+  * }}}
+  *
+  * Then, in any class created from `injector`:
+  *
+  * {{{
+  *   class App(allCloseables: Set[AutoCloseable]) {
+  *     ...
+  *   }
+  * }}}
+  *
+  * These Auto-Sets can be used to implement custom lifetimes:
+  *
+  * {{{
+  *   val locator = injector.produce(modules)
+  *
+  *   val closeables = locator.get[Set[AutoCloseable]]
+  *   try { locator.get[App].runMain() } finally {
+  *     // reverse closeables list, Auto-Sets preserve order, in the order of *initialization*
+  *     // Therefore resources should closed in the *opposite order*
+  *     // i.e. if C depends on B depends on A, create: A -> B -> C, close: C -> B -> A
+  *     closeables.reverse.foreach(_.close())
+  *   }
+  * }}}
+  *
+  * */
 class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
   protected val setElemetType: SafeType = SafeType.get[T]
 

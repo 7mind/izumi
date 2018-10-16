@@ -1015,8 +1015,9 @@ try {
 ```
 
 Auto-Sets preserve ordering, they use `ListSet` under the hood, unlike user-defined [Sets](#multibindings--set-bindings).
-Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependency, e.g.
-When you use auto-sets for finalization, you **must** `.reverse` the autoset.
+Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependencies:
+i.e. if C depends on B depends on A, autoset order is: `A, B, C`, to start: `A -> B -> C`, to close: `C -> B -> A`
+When you use auto-sets for finalization, you **must** `.reverse` the autoset
 
 ```scala
 trait PrintResource(name: String) {
@@ -1047,6 +1048,9 @@ resources.reverse.foreach(_.stop())
 // B stopped
 // A stopped
 ```
+
+NB: Auto-Sets are NOT subject to [Garbage Collection](#using-garbage-collector), they are assembled *after* garbage collection is done,
+as such they can't contain garbage by construction.
 
 #### Weak Sets
 

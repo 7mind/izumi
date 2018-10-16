@@ -2,10 +2,8 @@ package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
-import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
-
-import scala.collection.immutable.ListSet
+import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
 trait ModuleBase {
   def bindings: Set[Binding]
@@ -146,7 +144,7 @@ object ModuleBase {
       .map {
         _.reduce(_ addTags _.tags)
       }
-      .to[ListSet]
+      .toSet
   }
 
 }

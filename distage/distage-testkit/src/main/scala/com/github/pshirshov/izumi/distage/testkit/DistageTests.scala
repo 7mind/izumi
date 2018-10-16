@@ -5,9 +5,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, ImplDef, Module}
-import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
+import com.github.pshirshov.izumi.distage.model.plan.{CompactPlanFormatter, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -147,11 +148,14 @@ trait DistageTests {
 
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
-    Module.make(
-      roots.map {
+    val paramsModule = Module.make {
+      (roots - DIKey.get[LocatorRef]).map {
         key =>
           SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
-      }) overridenBy primaryModule
+      }
+    }
+
+    paramsModule overridenBy primaryModule
   }
 
   protected def makeRoleStarter(services: Set[RoleService]
@@ -181,7 +185,7 @@ trait DistageTests {
 
   protected def makePlan(injector: Injector, primaryModule: ModuleBase): OrderedPlan = {
     val modules = Seq(
-      primaryModule,
+      primaryModule
     )
 
     injector.plan(modules.overrideLeft)
@@ -194,11 +198,10 @@ trait DistageTests {
   protected def makeInjector(roots: Set[DIKey]): Injector = {
     val maybeConfig = makeConfig
 
-    val allRoots = roots ++ Set(DIKey.get[Set[AutoCloseable]])
     val roleStarterBootstrapModule = makeRoleStarterBootstrapModule
 
     val bootstrapModules = Seq[BootstrapModule](
-      new TracingGcModule(allRoots),
+      new TracingGcModule(roots),
       new LogstageModule(makeLogRouter(maybeConfig)),
       roleStarterBootstrapModule,
     ) ++
