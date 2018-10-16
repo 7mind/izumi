@@ -13,7 +13,7 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
 
   def load(): Seq[PluginBase] = {
     val base = classOf[PluginBase]
-    val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled :+ base.getPackage.getName)
+    val config = pluginConfig
     val configApplicator = new ConfigApplicator(config)
 
     val enabledPackages = config.packagesEnabled.filterNot(config.packagesDisabled.contains)
