@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, ImplDef, Module}
-import com.github.pshirshov.izumi.distage.model.plan.{CompactPlanFormatter, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
