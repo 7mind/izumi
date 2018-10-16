@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, mirror}
 import com.github.pshirshov.izumi.distage.roles.roles
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleId, RoleService}
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleId, RoleService, RoleStarter}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 

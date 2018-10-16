@@ -925,8 +925,45 @@ try {
 } finally {
   // when done, close thread pools
   val allExecutors = locator.get[Set[ExecutorService]]
-  allExecutors.foreach(_.shutdownNow())
+  // Auto-set return ordered Set, in order of dependency
+  // To start resources, execute actions in order
+  // To close resources, execute actions in *reverse* order
+  allExecutors.reverse.foreach(_.shutdownNow())
 }
+```
+
+Auto-Sets preserve ordering, they use `ListSet` under the hood, unlike user-defined [Sets](#multibindings--set-bindings).
+Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependency, e.g.
+When you use auto-sets for finalization, you **must** `.reverse` the autoset.
+
+```scala
+trait PrintResource(name: String) {
+  def start(): Unit = println(s"$name started")
+  def stop(): Unit = println(s"$name stopped")
+}
+class A extends Resource("A")
+class B(val a: A) extends Resource("B")
+class C(val b: B) extends Resource("C")
+
+val resources = Injector(new BootstraModuleDef {
+  many[PlanningHook]
+    .add(new AssignableFromAutoSetHook[Resource])
+}).produce(new ModuleDef {
+  make[C]
+  make[B]
+  make[A]
+}).get[Set[Resource]]
+
+resources.foreach(_.start())
+resources.reverse.foreach(_.stop())
+
+// Will print:
+// A started
+// B started
+// C started
+// C stopped
+// B stopped
+// A stopped
 ```
 
 #### Weak Sets

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RoleTask}
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RoleStarter, RoleTask}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.util.Try

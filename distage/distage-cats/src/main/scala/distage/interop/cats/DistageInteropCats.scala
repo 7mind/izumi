@@ -1,5 +1,7 @@
 package distage.interop.cats
 
-import com.github.pshirshov.izumi.distage.ModuleBaseInstances
+import com.github.pshirshov.izumi.distage.{ModuleBaseInstances, SemiPlanInstances}
 
-trait DistageInteropCats extends ModuleBaseInstances
+trait DistageInteropCats
+  extends ModuleBaseInstances
+    with SemiPlanInstances

@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.app
 import com.github.pshirshov.izumi.distage.app.OpinionatedDiApp
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
+import com.github.pshirshov.izumi.distage.roles.roles.RoleStarter
 
 abstract class RoleApp extends OpinionatedDiApp {
 

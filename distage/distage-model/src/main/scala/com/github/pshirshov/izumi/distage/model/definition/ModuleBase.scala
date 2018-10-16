@@ -31,6 +31,15 @@ object ModuleBase {
     override val bindings: Set[Binding] = s
   }
 
+  def empty: ModuleBase = make(Set.empty)
+
+  def make(bindings: Set[Binding]): ModuleBase = {
+    val b = bindings
+    new ModuleBase {
+      override val bindings: Set[Binding] = b
+    }
+  }
+
   implicit final class ModuleDefSeqExt[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val defs: Iterable[S])(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
     def merge: T = {
       defs.foldLeft[T](T.empty)(_ ++ _)
