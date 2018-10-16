@@ -12,10 +12,15 @@ import distage.{DIKey, SafeType}
 class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginMergeStrategy[LoadedPlugins] {
   override def merge(defs: Seq[PluginBase]): LoadedPlugins = {
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-    val allBindings = defs.merge.bindings
+    val allBindings = defs
+      .map { plugin =>
+        val filteredBindings = plugin.bindings.filterNot(isDisabled)
+        PluginBase.make(filteredBindings)
+      }
+      .merge
+      .bindings
 
     val resolved = allBindings
-      .filterNot(isDisabled)
       .map(d => d.key -> d)
       .toMultimap
       .flatMap(resolve)
