@@ -378,7 +378,7 @@ Launch as normal with the loaded modules:
 Injector().produce(app).get[PetStoreController].run
 ```
 
-Plugins also allow a program to extend itself at runtime by adding new `Plugin` classes on the classpath via `java -cp`
+Plugins also allow a program to extend itself at runtime by adding new `Plugin` classes to the classpath via `java -cp`
 
 ### Compile-Time Checks
 
@@ -388,7 +388,89 @@ Sorry, this page is not ready yet
 Relevant ticket: https://github.com/pshirshov/izumi-r2/issues/51
 @@@
 
+As of now, an experimental plugin-checking API is available in `distage-app` module.
 
+To use it add `distage-app` library:
+
+```scala
+libraryDependencies += Izumi.R.distage_app
+```
+or
+
+@@@vars
+```scala
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-app" % "$izumi.version$"
+```
+@@@
+
+You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/51
+
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+
+Only plugins defined in a different module can be checked at compile-time, `test` scope counts as a different module.
+
+##### Example:
+
+In main scope:
+
+```scala
+// src/main/scala/com/example/AppPlugin.scala
+package com.example
+import distage._
+import distage.plugins._
+import distage.config._
+import com.github.pshirshov.izumi.distage.app.ModuleRequirements
+
+final case class HostPort(host: String, port: Int)
+
+final case class Config(hostPort: HostPort)
+
+final class Service(conf: Config @ConfPath("config"), otherService: OtherService)
+
+// OtherService class is not defined here, even though Service depends on it
+final class AppPlugin extends PluginDef {
+  make[Service]
+}
+
+// Declare OtherService as an external dependency
+final class AppRequirements extends ModuleRequirements(
+  // If we remove this line, compilation will rightfully break
+  Set(DIKey.get[OtherService])
+)
+```
+
+In config:
+
+```scala
+// src/main/resources/application.conf
+// We are going to check if our starting configuration is correct as well.
+config {
+  // If we remove these, the compilation will rightfully break, as the `HostPort` case class won't deserialize from the config
+  host = localhost
+  port = 8080
+}
+```
+
+In test scope:
+
+```scala
+// src/test/scala/com/example/test/AppPluginTest.scala
+package com.example.test
+
+import com.example._
+import org.scalatest.WordSpec
+import com.github.pshirshov.izumi.distage.app.StaticPluginChecker
+
+final class AppPluginTest extends WordSpec {
+  
+  "App plugin will work (if OtherService will be provided later)" in {
+    StaticPluginChecker.checkWithConfig[AppPlugin, AppRequirements](disableTags = "", configFileRegex = "*.application.conf")   
+  }
+
+}
+```
+
+`checkWithConfig` will run at compile-time, every time that AppPluginTest is recompiled.
 
 You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/51
 
