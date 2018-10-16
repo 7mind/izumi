@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import cats.effect.IO
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
@@ -17,33 +18,33 @@ class Http4sTransportTest extends WordSpec {
 
   "Http4s transport" should {
     "support http" in {
-      withServer {
-        val disp = clientDispatcher()
-        val greeterClient = new GreeterServiceClientWrapped(disp)
+        withServer {
+          val disp = clientDispatcher()
+          val greeterClient = new GreeterServiceClientWrapped(disp)
 
-        disp.setupCredentials("user", "pass")
+          disp.setupCredentials("user", "pass")
 
-        assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
-        assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
+          assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
+          assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
-        checkBadBody("{}", disp)
-        checkBadBody("{unparseable", disp)
+          checkBadBody("{}", disp)
+          checkBadBody("{unparseable", disp)
 
 
-        disp.cancelCredentials()
-        val forbidden = intercept[IRTUnexpectedHttpStatus] {
-          BIOR.unsafeRun(greeterClient.alternative())
+          disp.cancelCredentials()
+          val forbidden = intercept[IRTUnexpectedHttpStatus] {
+            BIOR.unsafeRun(greeterClient.alternative())
+          }
+          assert(forbidden.status == Status.Forbidden)
+
+          //
+          disp.setupCredentials("user", "badpass")
+          val unauthorized = intercept[IRTUnexpectedHttpStatus] {
+            BIOR.unsafeRun(greeterClient.alternative())
+          }
+          assert(unauthorized.status == Status.Unauthorized)
+          ()
         }
-        assert(forbidden.status == Status.Forbidden)
-
-        //
-        disp.setupCredentials("user", "badpass")
-        val unauthorized = intercept[IRTUnexpectedHttpStatus] {
-          BIOR.unsafeRun(greeterClient.alternative())
-        }
-        assert(unauthorized.status == Status.Unauthorized)
-        ()
-      }
     }
 
     "support websockets" in {
@@ -74,19 +75,13 @@ class Http4sTransportTest extends WordSpec {
   }
 
   def withServer(f: => Unit): Unit = {
-    val builder = BlazeBuilder[CIO]
+    BlazeBuilder[CIO]
       .bindHttp(port, host)
       .withWebSockets(true)
       .mountService(ioService.service, "/")
-      .resource.use(_ => cats.effect.IO.never)
-      .start
-
-    val fiber = builder.unsafeRunSync()
-    try {
-      f
-    } finally {
-      fiber.cancel.unsafeRunSync()
-    }
+      .stream
+      .mapAsync(1)(_ => IO(f))
+      .compile.drain.unsafeRunSync()
   }
 
   def checkBadBody(body: String, disp: IRTDispatcher[BiIO] with TestHttpDispatcher): Unit = {

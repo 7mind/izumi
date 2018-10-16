@@ -45,3 +45,12 @@ adt Bad {
     Bad1
 }
 */
+
+mixin AFace {
+    a: i32
+}
+
+adt AdtWithInterface {
+    AFace
+    Success
+}

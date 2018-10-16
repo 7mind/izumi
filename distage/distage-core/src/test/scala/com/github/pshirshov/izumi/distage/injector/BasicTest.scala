@@ -331,7 +331,7 @@ class BasicTest extends WordSpec with MkInjector {
     assert(context.get[TestImpl1].justASet == Set.empty)
   }
 
-  "prserve tags in multi set bindings" in {
+  "preserve tags in multi set bindings" in {
 
     val definition = new ModuleDef {
       many[Int].named("zzz")
@@ -344,5 +344,4 @@ class BasicTest extends WordSpec with MkInjector {
       case SetElementBinding(_, _, s, _) if Set(BindingTag("t1"), BindingTag("t2")).diff(s).isEmpty => true
     }.nonEmpty)
   }
-
 }
