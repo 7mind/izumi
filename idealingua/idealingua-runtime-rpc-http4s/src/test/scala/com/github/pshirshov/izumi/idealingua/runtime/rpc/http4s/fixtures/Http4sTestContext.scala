@@ -48,8 +48,7 @@ object Http4sTestContext {
         OptionT.liftF(IO(context))
     }
 
-
-  final val wsContextProvider = new WsContextProvider[DummyRequestContext, String] {
+  final val wsContextProvider = new rt.WsContextProvider[DummyRequestContext, String] {
     val knownAuthorization = new AtomicReference[Credentials](null)
 
     override def toContext(initial: DummyRequestContext, packet: RpcPacket): DummyRequestContext = {
@@ -80,7 +79,7 @@ object Http4sTestContext {
   }
 
   final val ioService = new rt.HttpServer(demo.Server.multiplexor, demo.Server.codec, AuthMiddleware(authUser), wsContextProvider,
-    new WsSessionsStorage(logger, demo.Server.codec), Seq(WsSessionListener.empty[String]))
+    new rt.WsSessionsStorageImpl(logger, demo.Server.codec), Seq(WsSessionListener.empty[String]))
 
   final def clientDispatcher(): rt.ClientDispatcher with TestHttpDispatcher =
     new rt.ClientDispatcher(baseUri, demo.Client.codec)

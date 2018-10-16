@@ -20,6 +20,7 @@ class Http4sRuntime[_BiIO[+ _, + _] : BIOAsync : BIORunner, _CatsIO[+ _] : Concu
     with WithHttp4sClient
     with WithHttp4sWsClient
     with WithHttp4sHttpRequestContext
+    with WithWebsocketClientContext
     with WithHttp4sServer {
 
   override type BiIO[+E, +V] = _BiIO[E, V]
