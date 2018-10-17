@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.plugins.load
 
-import com.github.pshirshov.izumi.distage.plugins.PluginBase
+import com.github.pshirshov.izumi.distage.plugins.{PluginBase, PluginDef}
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.{ConfigApplicator, PluginConfig}
 import com.github.pshirshov.izumi.functional.Value
 import io.github.classgraph.{ClassGraph, ClassInfo}
@@ -13,7 +13,8 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
 
   def load(): Seq[PluginBase] = {
     val base = classOf[PluginBase]
-    val config = pluginConfig
+    // Add package with PluginDef & PluginBase so that classgraph will resolve them
+    val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled :+ base.getPackage.getName)
     val configApplicator = new ConfigApplicator(config)
 
     val enabledPackages = config.packagesEnabled.filterNot(config.packagesDisabled.contains)
