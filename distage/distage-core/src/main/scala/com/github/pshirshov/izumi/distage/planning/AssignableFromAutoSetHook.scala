@@ -42,6 +42,9 @@ import scala.collection.immutable.ListSet
   *   }
   * }}}
   *
+  * Auto-Sets are NOT subject to [[gc.TracingGcModule Garbage Collection]], they are assembled *after* garbage collection is done,
+  * as such they can't contain garbage by construction.
+  *
   * */
 class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
   protected val setElemetType: SafeType = SafeType.get[T]
