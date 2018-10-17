@@ -2,8 +2,9 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import java.time.ZonedDateTime
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit, TimeoutException}
 
+import com.github.pshirshov.izumi.functional.bio.BIOAsync
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
@@ -11,36 +12,144 @@ import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import fs2.concurrent.Queue
 import io.circe.Json
 import io.circe.syntax._
+import logstage.IzLogger
 import org.http4s.AuthedRequest
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.{Ping, Text}
 
+import scala.collection.JavaConverters._
 import scala.concurrent.duration._
+
+trait WebsocketClientContext[B[+_, +_], ClientId, Ctx] {
+  val requestState: RequestState[B]
+  def id: WsClientId[ClientId]
+  def enqueue(method: IRTMethodId, data: Json): RpcPacketId
+}
+
+trait WsSessionsStorage[B[+_, +_], ClientId, Ctx] {
+  def addClient(id: WsSessionId, ctx: WebsocketClientContext[B, ClientId, Ctx]): WebsocketClientContext[B, ClientId, Ctx]
+
+  def deleteClient(id: WsSessionId): WebsocketClientContext[B, ClientId, Ctx]
+
+  def allClients(): Seq[WebsocketClientContext[B, ClientId, Ctx]]
+
+  def buzzersFor(clientId: ClientId): Option[IRTDispatcher[B]]
+}
+
+trait WsSessionListener[ClientId] {
+  def onSessionOpened(context: WsClientId[ClientId]): Unit
+
+  def onClientIdUpdate(context: WsClientId[ClientId]): Unit
+
+  def onSessionClosed(context: WsClientId[ClientId]): Unit
+}
+
+object WsSessionListener {
+  def empty[ClientId]: WsSessionListener[ClientId] = new WsSessionListener[ClientId] {
+    override def onSessionOpened(context: WsClientId[ClientId]): Unit = {}
+
+    override def onSessionClosed(context: WsClientId[ClientId]): Unit = {}
+
+    override def onClientIdUpdate(context: WsClientId[ClientId]): Unit = {}
+  }
+}
 
 trait WithWebsocketClientContext {
   this: Http4sContext =>
 
-  trait WsSessionListener[Ctx, ClientId] {
-    def onSessionOpened(context: WebsocketClientContext[ClientId, Ctx]): Unit
+  trait WsContextProvider[Ctx, ClientId] {
+    def toContext(initial: Ctx, packet: RpcPacket): Ctx
 
-    def onSessionClosed(context: WebsocketClientContext[ClientId, Ctx]): Unit
+    def toId(initial: Ctx, packet: RpcPacket): Option[ClientId]
   }
 
-  object WsSessionListener {
-    def empty[Ctx, ClientId]: WsSessionListener[Ctx, ClientId] = new WsSessionListener[Ctx, ClientId] {
-      override def onSessionOpened(context: WebsocketClientContext[ClientId, Ctx]): Unit = {}
+  object WsContextProvider {
+    def id[Ctx, ClientId]: WsContextProvider[Ctx, ClientId] = new WsContextProvider[Ctx, ClientId] {
+      override def toContext(initial: Ctx, packet: RpcPacket): Ctx = {
+        Quirks.discard(packet)
+        initial
+      }
 
-      override def onSessionClosed(context: WebsocketClientContext[ClientId, Ctx]): Unit = {}
+      override def toId(initial: Ctx, packet: RpcPacket): Option[ClientId] = {
+        Quirks.discard(initial, packet)
+        None
+      }
     }
   }
 
-  class WebsocketClientContext[ClientId, Ctx]
+  class WsSessionsStorageImpl[ClientId, Ctx]
+  (logger: IzLogger, codec: IRTClientMultiplexor[BiIO]) extends WsSessionsStorage[BiIO, ClientId, Ctx] {
+
+    import com.github.pshirshov.izumi.functional.bio.BIO._
+
+    type WSC = WebsocketClientContext[BiIO, ClientId, Ctx]
+
+    protected val clients = new ConcurrentHashMap[WsSessionId, WSC]()
+    protected val timeout: FiniteDuration = 20.seconds
+    protected val pollingInterval: FiniteDuration = 50.millis
+
+    def addClient(id: WsSessionId, ctx: WSC): WSC = {
+      clients.put(id, ctx)
+    }
+
+    def deleteClient(id: WsSessionId): WSC = {
+      clients.remove(id)
+    }
+
+    def allClients(): Seq[WSC] = {
+      clients.values().asScala.toSeq
+    }
+
+    def buzzersFor(clientId: ClientId): Option[IRTDispatcher[BiIO]] = {
+      allClients()
+        .find(_.id.id.contains(clientId))
+        .map {
+          sess =>
+            new IRTDispatcher[BiIO] {
+              override def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
+                for {
+                  session <- BIO.point(sess)
+                  json <- codec.encode(request)
+                  id <- BIO.sync(session.enqueue(request.method, json))
+                  resp <- BIO.bracket[Throwable, RpcPacketId, IRTMuxResponse](BIO.point(id)) {
+                    id =>
+                      logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
+                      BIO.sync(sess.requestState.forget(id))
+                  } {
+                    w =>
+                      BIO.point(w).flatMap {
+                        id =>
+                          sess.requestState.poll(id, pollingInterval, timeout)
+                            .flatMap {
+                              case Some(value: RawResponse.GoodRawResponse) =>
+                                logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                                codec.decode(value.data, value.method)
+
+                              case Some(value: RawResponse.BadRawResponse) =>
+                                logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
+                                BIO.terminate(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
+
+                              case None =>
+                                BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                            }
+                      }
+                  }
+                } yield {
+                  resp
+                }
+              }
+            }
+        }
+    }
+  }
+
+  class WebsocketClientContextImpl[B[+_, +_] : BIOAsync, ClientId, Ctx]
   (
     val initialRequest: AuthedRequest[CatsIO, Ctx]
     , val initialContext: Ctx
-    , listener: WsSessionListener[Ctx, ClientId]
-    , sessions: ConcurrentHashMap[WsSessionId, WebsocketClientContext[ClientId, Ctx]]
-  ) {
+    , listeners: Seq[WsSessionListener[ClientId]]
+    , wsSessionStorage: WsSessionsStorage[B, ClientId, Ctx]
+  ) extends WebsocketClientContext[B, ClientId, Ctx] {
     private val sessionId = WsSessionId(UUIDGen.getTimeUUID)
 
     private val maybeId = new AtomicReference[ClientId]()
@@ -59,13 +168,18 @@ trait WithWebsocketClientContext {
     def enqueue(method: IRTMethodId, data: Json): RpcPacketId = {
       val request = RpcPacket.buzzerRequest(method, data)
       val id = request.id.get
-      sendQueue.add(Text(printer.pretty(request.asJson)))
+      sendQueue.add(Text(request.asJson.noSpaces))
       requestState.request(id, method)
       id
     }
 
     protected[http4s] def updateId(maybeNewId: Option[ClientId]): Unit = {
-      maybeNewId.foreach(maybeId.set)
+      maybeNewId.foreach { i =>
+        maybeId.set(i)
+        listeners.foreach { listener =>
+          listener.onClientIdUpdate(id)
+        }
+      }
     }
 
     private val pingTimeout: FiniteDuration = 25.seconds
@@ -90,41 +204,24 @@ trait WithWebsocketClientContext {
       fs2.Stream.awakeEvery[CatsIO](pingTimeout) >> fs2.Stream(Ping())
 
     protected[http4s] def finish(): Unit = {
-      Quirks.discard(sessions.remove(id))
-      listener.onSessionClosed(this)
+      Quirks.discard(wsSessionStorage.deleteClient(sessionId))
+      listeners.foreach { listener =>
+        listener.onSessionClosed(id)
+      }
       requestState.clear()
     }
 
     protected[http4s] def start(): Unit = {
-      Quirks.discard(sessions.put(sessionId, this))
-      listener.onSessionOpened(this)
+      Quirks.discard(wsSessionStorage.addClient(sessionId, this))
+      listeners.foreach { listener =>
+        listener.onSessionOpened(id)
+      }
     }
 
     val requestState = new RequestState()
 
     override def toString: String = s"[${id.toString}, ${duration().toSeconds}s]"
   }
-
-  trait WsContextProvider[Ctx, ClientId] {
-    def toContext(initial: Ctx, packet: RpcPacket): Ctx
-
-    def toId(initial: Ctx, packet: RpcPacket): Option[ClientId]
-  }
-
-  object WsContextProvider {
-    def id[Ctx, ClientId]: WsContextProvider[Ctx, ClientId] = new WsContextProvider[Ctx, ClientId] {
-      override def toContext(initial: Ctx, packet: RpcPacket): Ctx = {
-        Quirks.discard(packet)
-        initial
-      }
-
-      override def toId(initial: Ctx, packet: RpcPacket): Option[ClientId] = {
-        Quirks.discard(initial, packet)
-        None
-      }
-    }
-  }
-
 }
 
 sealed trait RawResponse
@@ -132,6 +229,6 @@ sealed trait RawResponse
 object RawResponse {
 
   case class GoodRawResponse(data: Json, method: IRTMethodId) extends RawResponse
-  case class BadRawResponse() extends RawResponse // This needs to be extended: https://github.com/pshirshov/izumi-r2/issues/355
 
+  case class BadRawResponse() extends RawResponse // This needs to be extended: https://github.com/pshirshov/izumi-r2/issues/355
 }
