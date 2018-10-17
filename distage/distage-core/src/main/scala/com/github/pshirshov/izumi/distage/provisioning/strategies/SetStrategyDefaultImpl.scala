@@ -6,6 +6,8 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies.SetStrat
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
+import scala.collection.immutable.ListSet
+
 class SetStrategyDefaultImpl extends SetStrategy {
   def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[OpResult.NewInstance] = {
     // target is guaranteed to be a Set
@@ -36,7 +38,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
       case (m, Some(value)) if m.tpe.tpe.baseClasses.contains(setErasure) && m.tpe.tpe.typeArgs.headOption.exists(SafeType(_) weak_<:< keyType) =>
         value.asInstanceOf[collection.Set[Any]]
       case (m, Some(value)) if m.tpe weak_<:< keyType =>
-        Set(value)
+        ListSet(value)
       case (m, Some(value)) =>
         // Member key type may not conform to set parameter (valid case for autosets) while implementation is still valid
         // so sanity check has to be done agains implementation type.
@@ -48,7 +50,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
           throw new IncompatibleTypesException(s"Set ${op.target} got member $m of unexpected type ${m.tpe}. Expected: $keyType", keyType, m.tpe)
         }
 
-        Set(value)
+        ListSet(value)
       case (m, None) =>
         throw new MissingRefException(s"Failed to fetch set element $m", Set(m), None)
     }

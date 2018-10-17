@@ -57,4 +57,21 @@ class ProvidersTest extends WordSpec with MkInjector {
 
     assert(instantiated.a == dependency)
   }
+
+  "progression test: provider equality doesn't work for defs/classes/traits (for vals and objects function pointers are equal)" in {
+    import ProviderCase3._
+
+    class Definition extends ModuleDef {
+      make[TestDependency].from {
+        () => new TestDependency
+      }
+    }
+
+    val definition = new Definition
+    val combinedDefinition = new Definition ++ new Definition
+    val valDefinition = definition ++ definition
+
+    assert(combinedDefinition != definition)
+    assert(valDefinition == definition)
+  }
 }

@@ -11,15 +11,15 @@ object Injector {
   }
 
   def apply(overrides: BootstrapModule*): Injector = {
-    bootstrap(overrides = new ModuleDefSeqExt[BootstrapModule, BootstrapModule](overrides).merge)
+    bootstrap(overrides = overrides.merge)
   }
 
   def noReflection: Injector = {
-    bootstrap(DefaultBootstrapContext.noReflectionBootstrap)
+    bootstrap(bootstrapBase = DefaultBootstrapContext.noReflectionBootstrap)
   }
 
   def noReflection(overrides: BootstrapModule*): Injector = {
-    bootstrap(DefaultBootstrapContext.noReflectionBootstrap, overrides.merge)
+    bootstrap(bootstrapBase = DefaultBootstrapContext.noReflectionBootstrap, overrides = overrides.merge)
   }
 
   def bootstrap(

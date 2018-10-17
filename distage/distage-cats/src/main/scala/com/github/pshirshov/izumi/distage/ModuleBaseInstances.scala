@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.distage
 
 import cats.kernel.instances.set._
-import cats.kernel.{BoundedSemilattice, Hash, PartialOrder}
+import cats.kernel.{BoundedSemilattice, Hash, Monoid, PartialOrder}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase, ModuleMake}
-import distage.ModuleBase
+import distage.{ModuleBase, SemiPlan}
 
 trait ModuleBaseInstances {
 
@@ -22,4 +22,20 @@ trait ModuleBaseInstances {
     def combine(x: T, y: T): T = x ++ y
   }
 
+}
+
+trait SemiPlanInstances {
+
+  implicit def catsKernelStdHashForSemiPlan: Hash[SemiPlan] =
+    new Hash[SemiPlan] {
+      override def hash(x: SemiPlan): Int = x.hashCode()
+      override def eqv(x: SemiPlan, y: SemiPlan): Boolean = x == y
+    }
+
+  implicit def catsKernelStdMonoidForSemiPlan: Monoid[SemiPlan] =
+    new Monoid[SemiPlan] {
+      override def empty: SemiPlan = SemiPlan(ModuleBase.empty, Vector.empty)
+
+      override def combine(x: SemiPlan, y: SemiPlan): SemiPlan = x ++ y
+    }
 }

@@ -9,7 +9,7 @@ object SetCases {
   object SetCase1 {
 
     trait TypedService[T]
-    class ServiceWithTypedSet(tt: Set[ExampleTypedCaseClass[Int]]) extends TypedService[Int]
+    class ServiceWithTypedSet(val tt: Set[ExampleTypedCaseClass[Int]]) extends TypedService[Int]
     case class ExampleTypedCaseClass[T](t: T)
 
     trait SetTrait
@@ -30,6 +30,33 @@ object SetCases {
   object SetCase2 {
     trait Service
     class Service1 extends Service
+  }
+
+  object SetCase3 {
+
+    trait Ordered {
+      def order: Int
+    }
+
+    case class ServiceA() extends Ordered {
+      override def toString = "A"
+      val order = 1
+    }
+
+    case class ServiceB(a: ServiceA) extends Ordered {
+      override def toString = "B"
+      val order = 2
+    }
+
+    case class ServiceC(a: ServiceA, b: ServiceB) extends Ordered {
+      override def toString = "C"
+      val order = 3
+    }
+
+    case class ServiceD(a: ServiceA, b: ServiceB, c: ServiceC) extends Ordered {
+      override def toString = "D"
+      val order = 4
+    }
   }
 
 }

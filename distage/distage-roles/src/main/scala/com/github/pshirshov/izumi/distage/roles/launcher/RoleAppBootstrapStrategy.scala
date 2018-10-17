@@ -15,8 +15,9 @@ import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeS
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
 import com.github.pshirshov.izumi.distage.roles.roles
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RoleStarter, RolesInfo}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -27,7 +28,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
-
 
 sealed trait ConfigSource {
 }
@@ -128,7 +128,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
   }
 
   override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModuleDef] = {
-    Quirks.discard(bs)
+    bs.discard
 
     logger.info(s"Loaded ${app.definition.bindings.size -> "app bindings"} and ${bs.definition.bindings.size -> "bootstrap bindings"}...")
 
@@ -182,7 +182,9 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
   }
 
   override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
-    Quirks.discard(bs, app)
+    bs.discard
+    app.discard
+
     val baseMod = new ModuleDef {
       many[RoleService]
       many[RoleComponent]

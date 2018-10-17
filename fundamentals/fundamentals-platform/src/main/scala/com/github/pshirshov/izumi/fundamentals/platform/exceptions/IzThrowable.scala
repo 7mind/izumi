@@ -22,13 +22,13 @@ class IzThrowable(t: Throwable, acceptedPackages: Set[String]) {
   def shortTrace: String = {
     val messages = t.allCauses.map {
       currentThrowable =>
-        val origin = t.stackTop match {
+        val origin = currentThrowable.stackTop match {
           case Some(frame) =>
             s"${frame.getFileName}:${frame.getLineNumber}"
           case _ =>
             "?"
         }
-        s"${t.getMessage}@${t.getClass.getSimpleName} $origin"
+        s"${currentThrowable.getMessage}@${currentThrowable.getClass.getSimpleName} $origin"
     }
 
     messages.mkString(", due ")

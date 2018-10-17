@@ -6,14 +6,14 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.plugins.PluginDef
 
 @ExposedTestScope
-class StaticTestPlugin extends PluginDef {
+class StaticTestPlugin extends PluginDef /*SneakyPlugin*/ {
   make[TestDep].tagged("x").from[TestDep1]
   make[TestDep].tagged("y").from[TestDep2]
   make[TestService]
 }
 
 @ExposedTestScope
-class DependingPlugin extends PluginDef {
+class DependingPlugin extends PluginDef /*SneakyPlugin*/ {
 //  make[Unit].from((_: TestDep, _: TestService) => ()) // FIXME: Provider equals prevents merge
   make[TestDepending]
 }

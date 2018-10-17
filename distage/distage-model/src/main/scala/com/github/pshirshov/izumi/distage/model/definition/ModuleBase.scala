@@ -2,10 +2,8 @@ package com.github.pshirshov.izumi.distage.model.definition
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
-import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
-
-import scala.collection.immutable.ListSet
+import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
 trait ModuleBase {
   def bindings: Set[Binding]
@@ -29,6 +27,15 @@ object ModuleBase {
 
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = s => new ModuleBase {
     override val bindings: Set[Binding] = s
+  }
+
+  def empty: ModuleBase = make(Set.empty)
+
+  def make(bindings: Set[Binding]): ModuleBase = {
+    val b = bindings
+    new ModuleBase {
+      override val bindings: Set[Binding] = b
+    }
   }
 
   implicit final class ModuleDefSeqExt[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val defs: Iterable[S])(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
@@ -137,7 +144,7 @@ object ModuleBase {
       .map {
         _.reduce(_ addTags _.tags)
       }
-      .to[ListSet]
+      .toSet
   }
 
 }
