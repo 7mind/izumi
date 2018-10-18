@@ -263,15 +263,14 @@ lazy val myProjectBom = inRoot.as.module
 
 ```
 
-Imagine, you have a sdk project and you want to inclide one of it's library artifacts (i.e. target_libraty).
-There are several options:
+If you want to include BOMs of you project, you can use the following syntax:
 
 ```scala
 libraryDependencies ++= Seq(
-  YourSdk.R.target_library,     // Runtime artifact
-  YourSdk.T.target_library,     // Runtime artifacts for test scope*
-  YourSdk.TSR.target_library,   // Test artifacts
-  YourSdk.TST.target_library,   // Test artifacts for test scope
+  YourSdk.R.my_project_bom,     // Runtime artifact
+  YourSdk.T.my_project_bom,     // Runtime artifacts for test scope*
+  YourSdk.TSR.my_project_bom,   // Test artifacts
+  YourSdk.TST.my_project_bom,   // Test artifacts for test scope
 )
 ```
 
