@@ -26,6 +26,7 @@ object IzumiImportsPlugin extends AutoPlugin {
     val IzumiExposedTestScopesPlugin = plugins.optional.IzumiExposedTestScopesPlugin
     val IzumiFetchPlugin = plugins.optional.IzumiFetchPlugin
     val IzumiPublishingPlugin =  plugins.optional.IzumiPublishingPlugin
+    val IzumiTestPublishingPlugin =  plugins.optional.IzumiTestPublishingPlugin
 
     type SettingsGroup = definitions.SettingsGroup
     type DefaultGlobalSettingsGroup = definitions.DefaultGlobalSettingsGroup
