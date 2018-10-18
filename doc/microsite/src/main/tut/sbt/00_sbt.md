@@ -263,6 +263,18 @@ lazy val myProjectBom = inRoot.as.module
 
 ```
 
+Imagine, you have a sdk project and you want to inclide one of it's library artifacts (i.e. target_libraty).
+There are several options:
+
+```scala
+libraryDependencies ++= Seq(
+  YourSdk.R.target_library,     // Runtime artifact
+  YourSdk.T.target_library,     // Runtime artifacts for test scope*
+  YourSdk.TSR.target_library,   // Test artifacts
+  YourSdk.TST.target_library,   // Test artifacts for test scope
+)
+```
+
 ### Build Manifest entries
 
 ### Git Manifest entries
@@ -352,47 +364,6 @@ You may activate this plugin with the following statement in root project:
 
 
 ### Transitive Artifact Downloader
-
-Working with dependecies cross projects
----------------------------------------
-
-Descriptor allows you to search for dependencies and testscopes of your project
-
-Imagine, you have a sdk project and you want to inclide one of it's library artifacts (i.e. target_libraty).
-There are several options
-
-
-### R
-
-Allows you to include *Runtime artifact* of target project
-
-```
-libraryDependencies += YourSdk.R.target_library
-```
-
-### T
-
-Allows you to include *Runtime artifacts for test scope* of target project
-
-```
-libraryDependencies += YourSdk.T.target_library
-```
-
-### TSR
-
-Allows you to include *Test artifacts* of target project
-
-```
-libraryDependencies += YourSdk.TSR.target_library
-```
-
-### TST
-
-Allows you to include *Test artifacts for test scope* of target project
-
-```
-libraryDependencies += YourSdk.TST.target_library
-```
 
 TODO
 
