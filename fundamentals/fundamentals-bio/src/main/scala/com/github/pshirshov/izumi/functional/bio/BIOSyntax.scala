@@ -35,6 +35,8 @@ object BIOSyntax {
 
     @inline def sandboxWith[E2, B](f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B] = R.sandboxWith(r)(f)
 
+    @inline def bracket[E1 >: E, B](release: A => R[Nothing, Unit])(use: A => R[E1, B]): R[E1, B] =
+      R.bracket(r: R[E1, A])(release)(use)
 
     @inline def void: R[E, Unit] = R.void(r)
 
