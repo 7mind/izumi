@@ -15,7 +15,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleStarterImpl
-import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationComponentFailure
+import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.roles.{IntegrationComponent, RoleComponent, RoleService, RoleStarter}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
@@ -102,8 +102,9 @@ trait DistageTests {
   /** You can override this to e.g. skip test on specific initialization failure (port unavailable, etc) **/
   protected def startTestResourcesExceptionHandler(throwable: Throwable): Unit = {
     throwable match {
-      case i: IntegrationComponentFailure =>
-        ignoreThisTest(Some(i.getMessage), i.cause)
+      case i: IntegrationCheckException =>
+        suppressTheRestOfTestSuite()
+        ignoreThisTest(Some(i.getMessage), Option(i.getCause))
       case _ => throw throwable
     }
   }
