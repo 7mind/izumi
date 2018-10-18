@@ -15,7 +15,7 @@ import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeS
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
 import com.github.pshirshov.izumi.distage.roles.roles
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RoleStarter, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
@@ -137,6 +137,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
     val servicesHook = new AssignableFromAutoSetHook[RoleService]()
     val closeablesHook = new AssignableFromAutoSetHook[AutoCloseable]()
     val componentsHook = new AssignableFromAutoSetHook[RoleComponent]()
+    val integrationsHook = new AssignableFromAutoSetHook[IntegrationComponent]()
 
     Seq(
       new ConfigModule(config)
@@ -145,6 +146,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
           .add(servicesHook)
           .add(closeablesHook)
           .add(componentsHook)
+          .add(integrationsHook)
 
         make[distage.roles.roles.RolesInfo].from(roles)
       }
@@ -186,10 +188,6 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
     app.discard
 
     val baseMod = new ModuleDef {
-      many[RoleService]
-      many[RoleComponent]
-      many[AutoCloseable]
-
       make[CustomContext].from(CustomContext.empty)
       make[IzLogger]
       make[RoleStarter].from[RoleStarterImpl]
