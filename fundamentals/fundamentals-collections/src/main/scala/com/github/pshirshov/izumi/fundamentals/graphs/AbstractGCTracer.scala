@@ -21,7 +21,10 @@ trait AbstractGCTracer[NodeId, Node] {
 
   @tailrec
   private def trace(index: Map[NodeId, Node], toTrace: Set[NodeId], reachable: mutable.HashSet[NodeId]): Unit = {
-    val newDeps = toTrace.map(index.apply).flatMap(extract(index, _))
+    val newDeps = toTrace
+      .map(index.apply)
+      .flatMap(extract(index, _))
+      .diff(reachable)
 
     if (newDeps.nonEmpty) {
       reachable ++= newDeps
