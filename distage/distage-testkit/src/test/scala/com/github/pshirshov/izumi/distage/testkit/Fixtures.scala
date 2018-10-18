@@ -41,7 +41,7 @@ class TestComponent3(val testComponent2: TestComponent2, counter: InitCounter) e
 
 class TestFailingIntegrationResource extends IntegrationComponent {
   override def resourcesAvailable(): ResourceCheck =
-    ResourceCheck.ResourceUnavailable("Fail!", None)
+    ResourceCheck.ResourceUnavailable("Fail!", Some(new RuntimeException("")))
 }
 
 case class TestConfig(x: Int, y: Int)
