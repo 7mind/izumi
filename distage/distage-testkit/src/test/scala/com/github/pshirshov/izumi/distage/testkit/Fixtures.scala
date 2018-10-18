@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.roles.RoleComponent
+import com.github.pshirshov.izumi.distage.roles.roles.{IntegrationComponent, ResourceCheck, RoleComponent}
 
 import scala.collection.mutable
 
@@ -37,6 +37,11 @@ class TestComponent2(val testComponent1: TestComponent1, counter: InitCounter) e
 class TestComponent3(val testComponent2: TestComponent2, counter: InitCounter) extends RoleComponent {
   override def start(): Unit = counter.startedRoleComponents += this
   override def stop(): Unit = counter.closedRoleComponents += this
+}
+
+class TestFailingIntegrationResource extends IntegrationComponent {
+  override def resourcesAvailable(): ResourceCheck =
+    ResourceCheck.ResourceUnavailable("Fail!", None)
 }
 
 case class TestConfig(x: Int, y: Int)

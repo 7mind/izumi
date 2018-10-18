@@ -3,7 +3,8 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RoleStarter, RoleTask}
+import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationComponentFailure
+import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.util.Try
@@ -13,12 +14,14 @@ class RoleStarterImpl(
                        services: Set[RoleService]
                        , components: Set[RoleComponent]
                        , closeables: Set[AutoCloseable]
+                       , integrations: Set[IntegrationComponent]
                        , logger: IzLogger
                      ) extends RoleStarter {
 
   private val tasksCount = services.count(_.isInstanceOf[RoleTask])
   private val componentsCount = components.size
   private val servicesCount = services.size
+  private val integrationsCount = integrations.size
 
   private val state = new AtomicReference[StarterState](StarterState.NotYetStarted)
   private val latch = new CountDownLatch(1)
@@ -27,9 +30,9 @@ class RoleStarterImpl(
     releaseThenStop()
   }, "role-hook")
 
-
   def start(): Unit = {
     if (state.compareAndSet(StarterState.NotYetStarted, StarterState.Starting)) {
+      checkIntegrations()
       logger.info(s"Going to start ${(servicesCount - tasksCount) -> "daemons"}, ${tasksCount -> "tasks"}, ${componentsCount -> "components"}")
       components.foreach {
         service =>
@@ -60,6 +63,20 @@ class RoleStarterImpl(
   def stop(): Unit = {
     Runtime.getRuntime.removeShutdownHook(shutdownHook)
     releaseThenStop()
+  }
+
+  private def checkIntegrations(): Unit = {
+    logger.info(s"Going to check availability of ${integrationsCount -> "resources"}")
+    integrations.foreach {
+      resource =>
+        logger.info(s"Checking $resource")
+        resource.resourcesAvailable() match {
+          case failure@ResourceCheck.ResourceUnavailable(description, cause) =>
+            logger.error(s"Integration check failed: Resource unavailable $description $cause $resource")
+            throw new IntegrationComponentFailure(s"Resource unavailable: $description", failure, cause)
+          case ResourceCheck.Success() =>
+        }
+    }
   }
 
   private def releaseThenStop(): Unit = {

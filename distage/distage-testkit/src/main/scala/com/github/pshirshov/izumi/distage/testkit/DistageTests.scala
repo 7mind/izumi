@@ -15,7 +15,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleStarterImpl
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RoleStarter}
+import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationComponentFailure
+import com.github.pshirshov.izumi.distage.roles.roles.{IntegrationComponent, RoleComponent, RoleService, RoleStarter}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
@@ -93,9 +94,18 @@ trait DistageTests {
     throw new TestCanceledException(message, cause, failedCodeStackDepth = 0)
   }
 
-  /** You can override this to e.g. skip test on specific initialization failure (port unavailable, etc) **/
+  /** You can override this to e.g. skip test on specific constructor failure (port unavailable, etc) **/
   protected def provisionExceptionHandler(throwable: Throwable): Locator = {
     throw throwable
+  }
+
+  /** You can override this to e.g. skip test on specific initialization failure (port unavailable, etc) **/
+  protected def startTestResourcesExceptionHandler(throwable: Throwable): Unit = {
+    throwable match {
+      case i: IntegrationComponentFailure =>
+        ignoreThisTest(Some(i.getMessage), i.cause)
+      case _ => throw throwable
+    }
   }
 
   protected def ctx(roots: Set[DIKey])(f: (Locator, RoleStarter) => Unit): Unit = {
@@ -116,6 +126,7 @@ trait DistageTests {
       context.find[Set[RoleService]].getOrElse(Set.empty)
       , context.find[Set[RoleComponent]].getOrElse(Set.empty)
       , context.find[Set[AutoCloseable]].getOrElse(Set.empty)
+      , context.find[Set[IntegrationComponent]].getOrElse(Set.empty)
       , context.find[IzLogger].getOrElse(IzLogger.NullLogger)
     )
 
@@ -127,7 +138,11 @@ trait DistageTests {
   protected def startTestResources(context: Locator, roleStarter: RoleStarter): Unit = {
     context.discard
 
-    roleStarter.start()
+    try {
+      roleStarter.start()
+    } catch {
+      case t: Throwable => startTestResourcesExceptionHandler(t)
+    }
   }
 
   protected def finalizeTest(context: Locator, roleStarter: RoleStarter): Unit = {
@@ -161,8 +176,9 @@ trait DistageTests {
   protected def makeRoleStarter(services: Set[RoleService]
                                 , components: Set[RoleComponent]
                                 , closeables: Set[AutoCloseable]
+                                , integrations: Set[IntegrationComponent]
                                 , logger: IzLogger): RoleStarter = {
-    new RoleStarterImpl(services, components, closeables, logger)
+    new RoleStarterImpl(services, components, closeables, integrations, logger)
   }
 
   protected def makeLogRouter(config: Option[AppConfig]): LogRouter = {
@@ -216,6 +232,7 @@ trait DistageTests {
     val servicesHook = new AssignableFromAutoSetHook[RoleService]
     val closeablesHook = new AssignableFromAutoSetHook[AutoCloseable]
     val componentsHook = new AssignableFromAutoSetHook[RoleComponent]
+    val integrationsHook = new AssignableFromAutoSetHook[IntegrationComponent]
 
     new BootstrapModuleDef {
       many[RoleService]
@@ -226,6 +243,7 @@ trait DistageTests {
         .add(servicesHook)
         .add(closeablesHook)
         .add(componentsHook)
+        .add(integrationsHook)
     }
   }
 
