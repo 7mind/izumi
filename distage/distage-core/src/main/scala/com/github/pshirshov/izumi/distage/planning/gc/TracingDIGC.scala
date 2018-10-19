@@ -45,6 +45,7 @@ class TracingDIGC(plan: SemiPlan, isRoot: GCRootPredicate) extends AbstractGCTra
 
   @inline
   override protected def prePrune(pruned: Pruned): Pruned = {
+    // this method removes unreachable weak set members
     val newTraced = new mutable.HashSet[DIKey]()
     newTraced ++= pruned.reachable
 
