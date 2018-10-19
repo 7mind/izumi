@@ -1,9 +1,9 @@
 package com.github.pshirshov.test.plugins
 
-import com.github.abc.SneakyPlugin
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.test.sneaky.SneakyPlugin
 import distage.ModuleDef
 
 @ExposedTestScope

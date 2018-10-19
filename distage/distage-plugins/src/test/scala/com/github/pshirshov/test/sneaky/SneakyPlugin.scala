@@ -1,4 +1,4 @@
-package com.github.abc
+package com.github.pshirshov.test.sneaky
 
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 
