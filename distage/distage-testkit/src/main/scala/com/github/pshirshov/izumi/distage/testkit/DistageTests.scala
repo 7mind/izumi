@@ -17,6 +17,7 @@ import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleStarterImpl
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.roles.{IntegrationComponent, RoleComponent, RoleService, RoleStarter}
+import com.github.pshirshov.izumi.distage.testkit
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
@@ -74,8 +75,8 @@ trait DistageTests {
 
   /** You can override this to e.g. skip test when certain external dependencies are not available **/
   protected def beforeRun(context: Locator, roleStarter: RoleStarter): Unit = {
-    context.discard
-    roleStarter.discard
+    context.discard()
+    roleStarter.discard()
   }
 
   protected def ignoreThisTest(cause: Throwable): Nothing = {
@@ -137,7 +138,7 @@ trait DistageTests {
   }
 
   protected def startTestResources(context: Locator, roleStarter: RoleStarter): Unit = {
-    context.discard
+    context.discard()
 
     try {
       roleStarter.start()
@@ -147,7 +148,7 @@ trait DistageTests {
   }
 
   protected def finalizeTest(context: Locator, roleStarter: RoleStarter): Unit = {
-    context.discard
+    context.discard()
 
     roleStarter.stop()
   }
@@ -263,5 +264,21 @@ trait DistageTests {
     }
   }
 
+  protected def resourceConfig(name: String): AppConfig ={
+    val resource = ConfigFactory.parseResources(name)
+    if (resource.isEmpty) {
+      throw new testkit.DistageTests.TestkitException(s"Can't parse config resource $name")
+    } else {
+      AppConfig(resource.resolveWith(ConfigFactory.defaultOverrides()))
+    }
+  }
+
   protected def configOptions: ConfigInjectionOptions = ConfigInjectionOptions()
+}
+
+object DistageTests {
+
+  class TestkitException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull)
+
+
 }
