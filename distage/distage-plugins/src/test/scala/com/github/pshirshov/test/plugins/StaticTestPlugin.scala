@@ -1,21 +1,29 @@
 package com.github.pshirshov.test.plugins
 
+import com.github.abc.SneakyPlugin
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import distage.plugins.PluginDef
+import distage.ModuleDef
 
 @ExposedTestScope
-class StaticTestPlugin extends PluginDef /*SneakyPlugin*/ {
+class StaticTestPlugin extends SneakyPlugin {
   make[TestDep].tagged("x").from[TestDep1]
   make[TestDep].tagged("y").from[TestDep2]
   make[TestService]
 }
 
 @ExposedTestScope
-class DependingPlugin extends PluginDef /*SneakyPlugin*/ {
-//  make[Unit].from((_: TestDep, _: TestService) => ()) // FIXME: Provider equals prevents merge
+class DependingPlugin extends SneakyPlugin {
+  include(DependingPlugin.module)
   make[TestDepending]
+}
+
+@ExposedTestScope
+object DependingPlugin {
+  val module: ModuleDef = new ModuleDef {
+    make[Unit].from((_: TestDep, _: TestService) => ()) // FIXME: Provider equals generates conflicting exception on merge
+  }
 }
 
 @ExposedTestScope

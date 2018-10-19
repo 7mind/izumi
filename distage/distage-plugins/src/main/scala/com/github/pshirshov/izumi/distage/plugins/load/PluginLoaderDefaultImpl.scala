@@ -13,6 +13,7 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
 
   def load(): Seq[PluginBase] = {
     val base = classOf[PluginBase]
+    val defClass = classOf[PluginDef]
     // Add package with PluginDef & PluginBase so that classgraph will resolve them
     val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled :+ base.getPackage.getName)
     val configApplicator = new ConfigApplicator(config)
@@ -22,6 +23,7 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
 
     val scanResult = Value(new ClassGraph())
       .map(_.whitelistPackages(enabledPackages: _*))
+      .map(_.whitelistClasses(base.getCanonicalName, defClass.getCanonicalName))
       .map(_.blacklistPackages(disabledPackages: _*))
       .map(_.enableMethodInfo())
       .map(configApplicator.debug)
