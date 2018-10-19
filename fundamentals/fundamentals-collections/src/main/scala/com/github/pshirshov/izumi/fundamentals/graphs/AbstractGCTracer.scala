@@ -4,19 +4,22 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 trait AbstractGCTracer[NodeId, Node] {
+  case class Pruned(nodes: Vector[Node], reachable: Set[NodeId]) {
+    @inline
+    def prune: Pruned = {
+      val filteredNodes = nodes.filter(s => reachable.contains(id(s)))
+      Pruned(filteredNodes, reachable)
+    }
+  }
 
-  case class Result(filtered: Vector[Node], reachable: Set[NodeId])
-  case class PreFltered(filtered: Vector[Node], moreReachables: Set[NodeId])
-
-  final def gc(elements: Vector[Node]): Result = {
+  final def gc(elements: Vector[Node]): Pruned = {
     val reachable = mutable.HashSet[NodeId]()
     val roots = elements.map(id).filter(isRoot).toSet
     reachable ++= roots
+
     trace(elements.map(e => id(e) -> e).toMap, roots, reachable)
 
-    val prefiltered = prefilter(reachable.toSet, elements)
-    val filtered = prefiltered.filtered.filter(s => prefiltered.moreReachables.contains(id(s)))
-    Result(filtered, prefiltered.moreReachables)
+    prePrune(Pruned(elements, reachable.toSet)).prune
   }
 
   @tailrec
@@ -32,7 +35,7 @@ trait AbstractGCTracer[NodeId, Node] {
     }
   }
 
-  protected def prefilter(traced: Set[NodeId], elements: Vector[Node]): PreFltered
+  protected def prePrune(pruned: Pruned): Pruned
 
   @inline
   protected def extract(index: Map[NodeId, Node], node: Node): Set[NodeId]
