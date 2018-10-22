@@ -128,7 +128,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
   }
 
   override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModuleDef] = {
-    bs.discard
+    bs.discard()
 
     logger.info(s"Loaded ${app.definition.bindings.size -> "app bindings"} and ${bs.definition.bindings.size -> "bootstrap bindings"}...")
 
@@ -184,8 +184,8 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
   }
 
   override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
-    bs.discard
-    app.discard
+    bs.discard()
+    app.discard()
 
     val baseMod = new ModuleDef {
       make[CustomContext].from(CustomContext.empty)

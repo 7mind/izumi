@@ -13,7 +13,7 @@ import scala.language.higherKinds
 class ProviderMagnetTest extends WordSpec {
   import ProviderCase1._
 
-  def priv(@Id("locargann") x: Int): Unit = x.discard
+  def priv(@Id("locargann") x: Int): Unit = x.discard()
 
   val locargannfnval: Int @Id("loctypeann") => Unit = priv
   val locargannfnvalerased = priv _

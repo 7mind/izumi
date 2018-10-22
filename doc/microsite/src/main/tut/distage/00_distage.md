@@ -228,8 +228,9 @@ and make it safer and more flexible by replacing fragile wiring `import ._`'s wi
 First, the program we want to write:
 
 ```scala
-import cats.Monad
-import scala.util.Try
+import cats._
+import cats.implicits._
+import cats.tagless._
 
 import distage._
 
@@ -239,11 +240,26 @@ class Program[F[_]: TagK: Monad] extends ModuleDef {
   addImplicit[Monad[F]]
 }
 
-class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
-  def program = for {
-      userInput <- interaction.ask("Give me something with at least 3 chars and a number on it")
-      valid     <- (validation.minSize(userInput, 3), validation.hasNumber(userInput)).mapN(_ && _)
-      _         <- if (valid) interaction.tell("awesomesauce!") else interaction.tell(s"$userInput is not valid")
+@finalAlg
+trait Validation[F[_]] {
+  def minSize(s: String, n: Int): F[Boolean]
+  def hasNumber(s: String): F[Boolean]
+}
+
+@finalAlg
+trait Interaction[F[_]] {
+  def tell(msg: String): F[Unit]
+  def ask(prompt: String): F[String]
+}
+
+class TaglessProgram[F[_]: Monad: Validation: Interaction] {
+  def program: F[Unit] = for {
+    userInput <- Interaction[F].ask("Give me something with at least 3 chars and a number on it")
+    valid     <- (Validation[F].minSize(userInput, 3), Validation[F].hasNumber(userInput)).mapN(_ && _)
+    _         <- if (valid) 
+                    Interaction[F].tell("awesomesauce!")
+                 else 
+                    Interaction[F].tell(s"$userInput is not valid")
   } yield ()
 }
 ```
@@ -256,6 +272,8 @@ Use @scaladoc[Tag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#T
 Interpreters:
 
 ```scala
+import scala.util.Try
+
 object TryInterpreters extends ModuleDef {
   make[Validation.Handler[Try]].from(tryValidationHandler)
   make[Interaction.Handler[Try]].from(tryInteractionHandler)
@@ -311,14 +329,21 @@ Modules can abstract over arbitrary kinds - use `TagKK` to abstract over bifunct
 class BIOModule[F[_, _]: TagKK] extends ModuleDef 
 ```
 
-`TagTK` over monad transformers:
+Use `Tag.auto.T` to abstract polymorphically over any kind:
 
 ```scala
-class TransModule[F[_[_], _]: TagTK] extends ModuleDef
+class MonadTransModule[F[_[_], _]: Tag.auto.T] extends ModuleDef
 ```
 
-Adding a `Tag` for more exotic type shapes is as easy as defining a type synonym,
-consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for description
+```scala
+class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
+```
+
+```scala
+class EldritchModule[F[_, _[_, _], _[_[_, _], _], _, _[_[_[_]]], _, _]: Tag.auto.T] extends ModuleDef
+```
+
+consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for more details
 
 ### Plugins
 

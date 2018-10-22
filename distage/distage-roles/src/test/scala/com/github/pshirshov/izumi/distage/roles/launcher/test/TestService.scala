@@ -28,7 +28,7 @@ class TestService(
                    , notCloseable: NotCloseable
                    , val resources: Set[Resource]
                  ) extends RoleService with RoleTask {
-  notCloseable.discard
+  notCloseable.discard()
 
   override def start(): Unit = {
     logger.info(s"Test service started; $dummies, $closeables")

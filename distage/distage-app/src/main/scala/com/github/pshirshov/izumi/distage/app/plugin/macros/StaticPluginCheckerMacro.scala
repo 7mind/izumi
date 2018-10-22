@@ -206,6 +206,8 @@ object StaticPluginCheckerMacro {
       */
     def unresolvedImports: Either[Seq[ImportDependency], OrderedPlan] = {
       val nonMagicImports = plan.getImports.filter {
+        // a hack to not account for distage-config *bootstrap module*
+        // fixme: better scheme
         case ImportDependency(DIKey.IdKey(_, _: AbstractConfId), _, _) => false
         case i if i.target == DIKey.get[FactoryExecutor] => false
         case i if i.target == DIKey.get[LocatorRef] => false

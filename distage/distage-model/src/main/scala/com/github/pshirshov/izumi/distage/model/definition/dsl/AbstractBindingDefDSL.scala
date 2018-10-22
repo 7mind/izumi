@@ -94,12 +94,12 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
 
   /** Same as `make[T].from(implicitly[T])` **/
   final protected def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): Unit = {
-    registered(new SingletonRef(Bindings.binding(instance))).discard
+    registered(new SingletonRef(Bindings.binding(instance))).discard()
   }
 
   /** Same as `make[T].named(name).from(implicitly[T])` **/
   final protected def addImplicit[T: Tag](name: String)(implicit instance: T, pos: CodePositionMaterializer): Unit = {
-    registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name)))).discard
+    registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name)))).discard()
   }
 
 }
