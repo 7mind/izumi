@@ -266,12 +266,19 @@ lazy val myProjectBom = inRoot.as.module
 If you want to include BOMs of you project, you can use the following syntax:
 
 ```scala
-libraryDependencies ++= Seq(
-  YourSdk.R.my_project_bom,     // Runtime artifact
-  YourSdk.T.my_project_bom,     // Runtime artifacts for test scope*
-  YourSdk.TSR.my_project_bom,   // Test artifacts
-  YourSdk.TST.my_project_bom,   // Test artifacts for test scope
-)
+
+import com.mycompany.myproject.MyProjectBOM
+
+lazy val myLib = In("lib").as.module
+  .settings(
+    libraryDependencies ++= Seq(
+      MyProjectBOM.R.my_project_bom,     // Runtime artifact
+      MyProjectBOM.T.my_project_bom,     // Runtime artifacts for test scope*
+      MyProjectBOM.TSR.my_project_bom,   // Test artifacts
+      MyProjectBOM.TST.my_project_bom,   // Test artifacts for test scope
+    )
+  )
+
 ```
 
 ### Build Manifest entries
