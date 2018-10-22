@@ -46,7 +46,7 @@ trait WithTags extends UniverseGeneric { self =>
 
   object Tag extends Dynamic with LowPriorityTagInstances {
 
-    def selectDynamic(kindSig: String): Any = macro TagLambdaMacro.lambdaImpl
+    def selectDynamic(auto: String): Any = macro TagLambdaMacro.lambdaImpl
 
     def apply[T: Tag]: Tag[T] = implicitly
 
@@ -103,6 +103,9 @@ trait WithTags extends UniverseGeneric { self =>
       Tag(TypeTag[R](intersection.headOption.fold(rootMirror)(_.mirror), refinedTypeCreator))
     }
 
+    /** For construction from [[TagLambdaMacro]] */
+    type HKTagRef[T] = HKTag[T]
+
   }
 
   trait LowPriorityTagInstances {
@@ -135,10 +138,8 @@ trait WithTags extends UniverseGeneric { self =>
       s"HKTag(${hktagFormat(tag.tpe)})"
   }
 
-  object HKTag {
-
-    // TODO: use macro to add compile-time sanity check
-    // TODO: add Dynamics macro to construct arbitrary tags: Tag.`K[_[_], _, _]`.T
+  object HKTag extends LowPriorityHKTagInstances {
+    // TODO: add macro with compile-time sanity check
     implicit def unsafeFromTypeTag[T](implicit k: TypeTag[T]): HKTag[T] = {
       new HKTag[T] {
         override def tag: TypeTag[_] = {
@@ -155,6 +156,10 @@ trait WithTags extends UniverseGeneric { self =>
     }
   }
 
+  trait LowPriorityHKTagInstances {
+    implicit def hktagFromHKTagMaterializer[T](implicit t: HKTagMaterializer[self.type, T]): HKTag[T] = t.value
+  }
+
   /**
     * `TagK` is a [[scala.reflect.api.TypeTags.TypeTag]] for higher-kinded types.
     *
@@ -166,7 +171,7 @@ trait WithTags extends UniverseGeneric { self =>
     * containerTypesEqual[Array, List] == false
     * }}}
     */
-  type TagK[K[_]] = HKTag[{ type Arg[A] = K[A] }]
+  type TagK[K[_]] = HKTag[Object { type Arg[A] = K[A] }]
   type TagKK[K[_, _]] = HKTag[{ type Arg[A, B] = K[A, B] }]
   type TagK3[K[_, _, _]] = HKTag[{ type Arg[A, B, C] = K[A, B, C]}]
 

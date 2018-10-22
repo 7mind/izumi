@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
 import com.github.pshirshov.izumi.distage.model.definition.With
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -43,11 +44,6 @@ class TagTest extends WordSpec with X[String] {
   "Tag" should {
 
     "Work for any concrete type" in {
-
-      def x[T: Tag.auto.Arg]: Option[T] = implicitly[Option[T]]
-      assert(x(Some(5)) == Some(5))
-//      assert(Tag[Tag.`asdgasdfg`.Arg[Int]].tpe == safe[Option[Int]])
-
       assert(Tag[Int].tpe == safe[Int])
       assert(Tag[Set[String]].tpe == safe[Set[String]])
       assert(Tag[Map[Boolean, Double]].tpe == safe[Map[Boolean, Double]])
@@ -59,7 +55,6 @@ class TagTest extends WordSpec with X[String] {
       assert(Tag[Nothing].tpe == safe[Nothing])
       assert(Tag[Any => Nothing].tpe == safe[Any => Nothing])
       assert(Tag[Nothing => Any].tpe == safe[Nothing => Any])
-
 
       assert(Tag[With[Any]].tpe == safe[With[Any]])
       assert(Tag[With[Nothing]].tpe == safe[With[Nothing]])
@@ -143,6 +138,24 @@ class TagTest extends WordSpec with X[String] {
       }
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
+    }
+
+    "scalac bug: can't find HKTag when obscured by type lambda" in {
+      assertCompiles("HKTag.unsafeFromTypeTag[{ type Arg[C] = Option[C] }]")
+      assertTypeError("HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
+//      Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
+//        HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
+    }
+
+    "Tag.auto.T kind inference macro works for known cases" in {
+      def x[T[_]: Tag.auto.T]: TagK[T] = implicitly[Tag.auto.T[T]]
+      def x2[T[_, _]: Tag.auto.T]: TagKK[T] = implicitly[Tag.auto.T[T]]
+      def x3[T[_, _, _[_[_], _], _[_], _]](implicit x: Tag.auto.T[T]): Tag.auto.T[T] = x
+
+      assert(x[Option].tag.tpe =:= TagK[Option].tag.tpe)
+      assert(x2[Either].tag.tpe =:= TagKK[Either].tag.tpe)
+      assert(implicitly[Tag.auto.T[OptionT]].tag.tpe =:= TagTK[OptionT].tag.tpe)
+      assert(x3[T2].tag.tpe.typeConstructor =:= safe[T2[Nothing, Nothing, Nothing, Nothing, Nothing]].tpe.typeConstructor)
     }
 
     "Work for an abstract type with available TagKK" in {
