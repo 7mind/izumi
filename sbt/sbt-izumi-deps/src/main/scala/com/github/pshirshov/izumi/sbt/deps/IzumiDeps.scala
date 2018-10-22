@@ -40,7 +40,7 @@ object IzumiDeps {
     val jaxb_impl = "2.3.0.1"
     val activation = "1.1.1"
 
-    val classgraph = "4.2.12" // java
+    val classgraph = "4.4.3" // java
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 

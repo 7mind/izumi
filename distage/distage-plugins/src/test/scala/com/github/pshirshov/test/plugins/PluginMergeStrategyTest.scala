@@ -23,7 +23,6 @@ class PluginMergeStrategyTest extends WordSpec {
           .add[TestDependency]
       }
 
-
       val mergeStrategy = new ConfigurablePluginMergeStrategy(PluginMergeConfig(
         {
           import com.github.pshirshov.izumi.distage.model.definition.BindingTag.Expressions._
