@@ -312,7 +312,7 @@ class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
     val prefixTpe = c.prefix.actualType
 
     if (!(prefixTpe <:< typeOf[WithTags#TagObject])) {
-      c.abort(c.enclosingPosition, s"Tag lambda should be called only as a member of WithTags#Tag companion object")
+      c.abort(c.enclosingPosition, "Tag lambda should be called only as a member of WithTags#Tag companion object")
     }
 
     auto.tree match {
