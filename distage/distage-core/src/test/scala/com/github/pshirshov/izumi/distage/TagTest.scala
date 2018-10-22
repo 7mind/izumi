@@ -133,7 +133,7 @@ class TagTest extends WordSpec with X[String] {
 
     "Work for an abstract type with available TagK when TagK is requested through an explicit implicit" in {
       def testTagK[F[_], T: Tag](implicit ev: HKTag[{ type Arg[C] = F[C] }]) = {
-        ev.discard
+        ev.discard()
         Tag[F[T {}] {}]
       }
 
@@ -235,7 +235,7 @@ class TagTest extends WordSpec with X[String] {
 
         final val x: Tag[F[G, Either[A, B]]] = {
           implicit val g0: TagK[G] = g
-          g0.discard
+          g0.discard()
           Tag[F[G, C[A, B]]]
         }
       }
