@@ -87,13 +87,13 @@ class TagTest extends WordSpec with X[String] {
       assert(Tag[zy.y.type].tpe weak_<:< safe[zy.y.type])
     }
 
-    "Work for a concrete type with available TypeTag" in {
+    "Use TypeTag instance when available" in {
       val t_ = typeTag[Unit]
 
       {
         implicit val t: TypeTag[Unit] =  t_
 
-        assert(Tag[Unit].tpe == safe[Unit])
+        assert(Tag[Unit].tag eq t)
       }
     }
 
@@ -138,13 +138,6 @@ class TagTest extends WordSpec with X[String] {
       }
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
-    }
-
-    "scalac bug: can't find HKTag when obscured by type lambda" in {
-      assertCompiles("HKTag.unsafeFromTypeTag[{ type Arg[C] = Option[C] }]")
-      assertTypeError("HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
-//      Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
-//        HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
     }
 
     "Tag.auto.T kind inference macro works for known cases" in {
@@ -256,6 +249,13 @@ class TagTest extends WordSpec with X[String] {
       type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ { type Arg[A <: Dep] = K[A] } ]
 
       implicitly[`TagK<:Dep`[Trait3]].tag.tpe =:= typeOf[Trait3[Nothing]].typeConstructor
+    }
+
+    "scalac bug: can't find HKTag when obscured by type lambda" in {
+      assertCompiles("HKTag.unsafeFromTypeTag[{ type Arg[C] = Option[C] }]")
+      assertTypeError("HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
+//      Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
+//        HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
     }
 
     "progression test: type tags with bounds are not currently requested by the macro" in {

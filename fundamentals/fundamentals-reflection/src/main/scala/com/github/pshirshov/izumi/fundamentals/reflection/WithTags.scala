@@ -31,11 +31,11 @@ trait WithTags extends UniverseGeneric { self =>
   * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]`
   *
   * The implementation is not perfect, currently some limitations apply as to when a `Tag` will be correctly constructed:
-  *   * Parameters don't yet resolve when inside a structural refinement, i.e. {{{ Tag[{ def x: T}] }}}
-  *   * Parameters don't yet resolve in higher-kinded type lambdas, i.e. {{{ TagK[Either[T, ?]] }}}
-  *   * TagK* does not resolve for constructors with bound parameters, i.e. {{{ class Abc[S <: String]; TagK[Abc] }}}
-  *     (You can still have a bound in partial application: i.e. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
-  *   * Details at [[https://github.com/pshirshov/izumi-r2/pull/369]]
+  *   * Type Parameters don't yet resolve when inside a structural refinement, e.g. {{{ Tag[{ def x: T}] }}}
+  *   * Type Parameters don't yet resolve inside higher-kinded type lambdas, e.g. {{{ TagK[Either[T, ?]] }}}
+  *   * TagK* does not resolve for constructors with bounded parameters, e.g. {{{ class Abc[S <: String]; TagK[Abc] }}}
+  *     (You can still have a bound in partial application: e.g. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
+  *   * More details at [[https://github.com/pshirshov/izumi-r2/pull/369]]
   */
   @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] {
@@ -46,6 +46,18 @@ trait WithTags extends UniverseGeneric { self =>
 
   object Tag extends Dynamic with LowPriorityTagInstances {
 
+    /**
+      * Use `Tag.auto.T[TYPE_PARAM]` syntax to summon a `Tag` for a type parameter of any kind:
+      *
+      * {{{
+      *   def y[K[_[_, _], _[_], _[_[_], _, _, _]](implicit ev: Tag.auto.T[K]): Tag.auto.T[K] = ev
+      * }}}
+      *
+      * {{{
+      *   def x[K[_[_, _], _[_], _[_[_], _, _, _]: Tag.auto.T]: Tag.auto.T[K] = implicitly[Tag.auto.T[K]]
+      * }}}
+      *
+      * */
     def selectDynamic(auto: String): Any = macro TagLambdaMacro.lambdaImpl
 
     def apply[T: Tag]: Tag[T] = implicitly
@@ -126,6 +138,13 @@ trait WithTags extends UniverseGeneric { self =>
     * {{{
     *   type TagFGC[K[_[_, _], _[_], _[_[_], _, _, _]] = HKTag[ { type Arg[A[_, _], B[_], C[_[_], _, _, _]] = K[A, B, C] } ]
     * }}}
+    *
+    * A convenience macro `Tag.auto.T` is available to automatically create a type lambda from a type of any kind:
+    *
+    * {{{
+    *   def x[K[_[_, _], _[_], _[_[_], _, _, _]: Tag.auto.T]: Tag.auto.T[K] = implicitly[Tag.auto.T[K]]
+    * }}}
+    *
     */
   trait HKTag[T] {
 
@@ -171,18 +190,18 @@ trait WithTags extends UniverseGeneric { self =>
     * containerTypesEqual[Array, List] == false
     * }}}
     */
-  type TagK[K[_]] = HKTag[Object { type Arg[A] = K[A] }]
+  type TagK[K[_]] = HKTag[{ type Arg[A] = K[A] }]
   type TagKK[K[_, _]] = HKTag[{ type Arg[A, B] = K[A, B] }]
   type TagK3[K[_, _, _]] = HKTag[{ type Arg[A, B, C] = K[A, B, C]}]
 
   type TagT[K[_[_]]] = HKTag[{ type Arg[A[_]] = K[A]}]
-  type TagTK[K[_[_], _]] = HKTag[ { type Arg[A[_], B] = K[A, B] }]
-  type TagTKK[K[_[_], _, _]] = HKTag[ { type  Arg[A[_], B, C] = K[A, B, C] }]
-  type TagTK3[K[_[_], _, _, _]] = HKTag[ { type Arg[A[_], B, C, D] = K[A, B, C, D] } ]
+  type TagTK[K[_[_], _]] = HKTag[{ type Arg[A[_], B] = K[A, B] }]
+  type TagTKK[K[_[_], _, _]] = HKTag[{ type  Arg[A[_], B, C] = K[A, B, C] }]
+  type TagTK3[K[_[_], _, _, _]] = HKTag[{ type Arg[A[_], B, C, D] = K[A, B, C, D] }]
 
   object TagK {
     /**
-    * Construct a type tag for a higher-kinded type `K`
+    * Construct a type tag for a higher-kinded type `K[_]`
     *
     * Example:
     * {{{

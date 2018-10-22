@@ -325,8 +325,9 @@ class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
     val pos = c.macroApplication.pos
 
     val targetTpe = c.enclosingUnit.body.collect {
-      case AppliedTypeTree(t, a) if t.exists(_.pos == pos) =>
-        c.typecheck(a.head, c.TYPEmode, c.universe.definitions.NothingTpe, false, true, true).tpe
+      case AppliedTypeTree(t, arg :: _) if t.exists(_.pos == pos) =>
+        c.typecheck(arg, c.TYPEmode, c.universe.definitions.NothingTpe, silent = false, withImplicitViewsDisabled = true, withMacrosDisabled = true)
+          .tpe
     }.headOption match {
       case None =>
         c.abort(c.enclosingPosition, "Couldn't find an the type that `Tag.auto.T` macro was applied to, please make sure you use the correct syntax, as in `def tagk[F[_]: Tag.auto.T]: TagK[T] = implicitly[Tag.auto.T[F]]`")

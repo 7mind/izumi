@@ -329,14 +329,21 @@ Modules can abstract over arbitrary kinds - use `TagKK` to abstract over bifunct
 class BIOModule[F[_, _]: TagKK] extends ModuleDef 
 ```
 
-`TagTK` over monad transformers:
+Use `Tag.auto.T` to abstract polymorphically over any kind:
 
 ```scala
-class TransModule[F[_[_], _]: TagTK] extends ModuleDef
+class MonadTransModule[F[_[_], _]: Tag.auto.T] extends ModuleDef
 ```
 
-Adding a `Tag` for more exotic type shapes is as easy as defining a type synonym,
-consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for description
+```scala
+class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
+```
+
+```scala
+class EldritchModule[F[_, _[_, _], _[_[_, _], _], _, _[_[_[_]]], _, _]: Tag.auto.T] extends ModuleDef
+```
+
+consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for more details
 
 ### Plugins
 
