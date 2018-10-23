@@ -343,7 +343,7 @@ class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
 class EldritchModule[F[_, _[_, _], _[_[_, _], _], _, _[_[_[_]]], _, _]: Tag.auto.T] extends ModuleDef
 ```
 
-consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for more details
+consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#HKTag) docs for more details
 
 ### Plugins
 
