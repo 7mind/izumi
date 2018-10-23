@@ -58,7 +58,7 @@ class Http4sTransportTest extends WordSpec {
         assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
         assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
-        ioService.buzzersFor("user").foreach {
+        ioService.wsSessionStorage.buzzersFor("user").foreach {
           buzzer =>
             val client = new GreeterServiceClientWrapped(buzzer)
             assert(BIOR.unsafeRun(client.greet("John", "Buzzer")) == "Hi, John Buzzer!")

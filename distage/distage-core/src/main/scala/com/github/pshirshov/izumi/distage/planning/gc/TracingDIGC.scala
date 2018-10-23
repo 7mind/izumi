@@ -44,13 +44,13 @@ class TracingDIGC(plan: SemiPlan, isRoot: GCRootPredicate) extends AbstractGCTra
   }
 
   @inline
-  override protected def prefilter(traced: Set[DIKey], elements: Vector[ExecutableOp]): PreFltered = {
+  override protected def prePrune(pruned: Pruned): Pruned = {
+    // this method removes unreachable weak set members
     val newTraced = new mutable.HashSet[DIKey]()
-    newTraced ++= traced
+    newTraced ++= pruned.reachable
 
-    val prefiltered = elements.map {
+    val prefiltered = pruned.nodes.map {
       case c: CreateSet =>
-
         val weakMembers = c.members
           .map(m => (m, plan.index(m)))
           .collect {
@@ -72,10 +72,12 @@ class TracingDIGC(plan: SemiPlan, isRoot: GCRootPredicate) extends AbstractGCTra
           .intersect(newTraced)
 
         c.copy(members = referencedMembers)
-      case o => o
+
+      case o =>
+        o
     }
 
-    PreFltered(prefiltered, newTraced.toSet)
+    Pruned(prefiltered, newTraced.toSet)
   }
 
   override protected def isRoot(node: DIKey): Boolean = isRoot.isRoot(node)
@@ -89,6 +91,6 @@ object TracingDIGC extends DIGarbageCollector {
 
     val oldDefn = plan.definition.bindings
     val updatedDefn = Module.make(oldDefn.filter(b => collected.reachable.contains(b.key)))
-    SemiPlan(updatedDefn, collected.filtered)
+    SemiPlan(updatedDefn, collected.nodes)
   }
 }

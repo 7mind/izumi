@@ -127,4 +127,23 @@ Forest fire, climbin' higher, real life, it can wait""")
     class TestImpl1(val justASet: Set[TestDependency])
   }
 
+  object AnimalModel {
+
+    class Cluster
+    trait UsersService
+    trait AccountingService
+    trait UserRepo
+    trait AccountsRepo
+
+    class UserRepoImpl(cluster: Cluster) extends UserRepo
+    class AccountsRepoImpl(cluster: Cluster) extends AccountsRepo
+
+    class UserServiceImpl(userRepo: UserRepo) extends UsersService
+    class AccountingServiceImpl(accountsRepo: AccountsRepo) extends AccountingService
+    // cyclic dependency
+    class UsersApiImpl(service: UsersService, accountsApi: AccountsApiImpl)
+    class AccountsApiImpl(service: AccountingService, usersApi: UsersApiImpl)
+    class App(uapi: UsersApiImpl, aapi: AccountsApiImpl)
+  }
+
 }

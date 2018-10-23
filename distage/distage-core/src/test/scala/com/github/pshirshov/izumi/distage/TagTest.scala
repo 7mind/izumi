@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
 import com.github.pshirshov.izumi.distage.model.definition.With
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -55,7 +56,6 @@ class TagTest extends WordSpec with X[String] {
       assert(Tag[Any => Nothing].tpe == safe[Any => Nothing])
       assert(Tag[Nothing => Any].tpe == safe[Nothing => Any])
 
-
       assert(Tag[With[Any]].tpe == safe[With[Any]])
       assert(Tag[With[Nothing]].tpe == safe[With[Nothing]])
       assert(Tag[With[_]].tpe == safe[With[_]])
@@ -87,13 +87,13 @@ class TagTest extends WordSpec with X[String] {
       assert(Tag[zy.y.type].tpe weak_<:< safe[zy.y.type])
     }
 
-    "Work for a concrete type with available TypeTag" in {
+    "Use TypeTag instance when available" in {
       val t_ = typeTag[Unit]
 
       {
         implicit val t: TypeTag[Unit] =  t_
 
-        assert(Tag[Unit].tpe == safe[Unit])
+        assert(Tag[Unit].tag eq t)
       }
     }
 
@@ -133,11 +133,22 @@ class TagTest extends WordSpec with X[String] {
 
     "Work for an abstract type with available TagK when TagK is requested through an explicit implicit" in {
       def testTagK[F[_], T: Tag](implicit ev: HKTag[{ type Arg[C] = F[C] }]) = {
-        ev.discard
+        ev.discard()
         Tag[F[T {}] {}]
       }
 
       assert(testTagK[Set, Int].tpe == safe[Set[Int]])
+    }
+
+    "Tag.auto.T kind inference macro works for known cases" in {
+      def x[T[_]: Tag.auto.T]: TagK[T] = implicitly[Tag.auto.T[T]]
+      def x2[T[_, _]: Tag.auto.T]: TagKK[T] = implicitly[Tag.auto.T[T]]
+      def x3[T[_, _, _[_[_], _], _[_], _]](implicit x: Tag.auto.T[T]): Tag.auto.T[T] = x
+
+      assert(x[Option].tag.tpe =:= TagK[Option].tag.tpe)
+      assert(x2[Either].tag.tpe =:= TagKK[Either].tag.tpe)
+      assert(implicitly[Tag.auto.T[OptionT]].tag.tpe =:= TagTK[OptionT].tag.tpe)
+      assert(x3[T2].tag.tpe.typeConstructor =:= safe[T2[Nothing, Nothing, Nothing, Nothing, Nothing]].tpe.typeConstructor)
     }
 
     "Work for an abstract type with available TagKK" in {
@@ -224,7 +235,7 @@ class TagTest extends WordSpec with X[String] {
 
         final val x: Tag[F[G, Either[A, B]]] = {
           implicit val g0: TagK[G] = g
-          g0.discard
+          g0.discard()
           Tag[F[G, C[A, B]]]
         }
       }
@@ -238,6 +249,13 @@ class TagTest extends WordSpec with X[String] {
       type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ { type Arg[A <: Dep] = K[A] } ]
 
       implicitly[`TagK<:Dep`[Trait3]].tag.tpe =:= typeOf[Trait3[Nothing]].typeConstructor
+    }
+
+    "scalac bug: can't find HKTag when obscured by type lambda" in {
+      assertCompiles("HKTag.unsafeFromTypeTag[{ type Arg[C] = Option[C] }]")
+      assertTypeError("HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
+//      Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
+//        HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
     }
 
     "progression test: type tags with bounds are not currently requested by the macro" in {

@@ -228,8 +228,9 @@ and make it safer and more flexible by replacing fragile wiring `import ._`'s wi
 First, the program we want to write:
 
 ```scala
-import cats.Monad
-import scala.util.Try
+import cats._
+import cats.implicits._
+import cats.tagless._
 
 import distage._
 
@@ -239,11 +240,26 @@ class Program[F[_]: TagK: Monad] extends ModuleDef {
   addImplicit[Monad[F]]
 }
 
-class TaglessProgram[F[_]: Monad](validation: Validation[F], interaction: Interaction[F]) {
-  def program = for {
-      userInput <- interaction.ask("Give me something with at least 3 chars and a number on it")
-      valid     <- (validation.minSize(userInput, 3), validation.hasNumber(userInput)).mapN(_ && _)
-      _         <- if (valid) interaction.tell("awesomesauce!") else interaction.tell(s"$userInput is not valid")
+@finalAlg
+trait Validation[F[_]] {
+  def minSize(s: String, n: Int): F[Boolean]
+  def hasNumber(s: String): F[Boolean]
+}
+
+@finalAlg
+trait Interaction[F[_]] {
+  def tell(msg: String): F[Unit]
+  def ask(prompt: String): F[String]
+}
+
+class TaglessProgram[F[_]: Monad: Validation: Interaction] {
+  def program: F[Unit] = for {
+    userInput <- Interaction[F].ask("Give me something with at least 3 chars and a number on it")
+    valid     <- (Validation[F].minSize(userInput, 3), Validation[F].hasNumber(userInput)).mapN(_ && _)
+    _         <- if (valid) 
+                    Interaction[F].tell("awesomesauce!")
+                 else 
+                    Interaction[F].tell(s"$userInput is not valid")
   } yield ()
 }
 ```
@@ -256,6 +272,8 @@ Use @scaladoc[Tag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#T
 Interpreters:
 
 ```scala
+import scala.util.Try
+
 object TryInterpreters extends ModuleDef {
   make[Validation.Handler[Try]].from(tryValidationHandler)
   make[Interaction.Handler[Try]].from(tryInteractionHandler)
@@ -311,14 +329,21 @@ Modules can abstract over arbitrary kinds - use `TagKK` to abstract over bifunct
 class BIOModule[F[_, _]: TagKK] extends ModuleDef 
 ```
 
-`TagTK` over monad transformers:
+Use `Tag.auto.T` to abstract polymorphically over any kind:
 
 ```scala
-class TransModule[F[_[_], _]: TagTK] extends ModuleDef
+class MonadTransModule[F[_[_], _]: Tag.auto.T] extends ModuleDef
 ```
 
-Adding a `Tag` for more exotic type shapes is as easy as defining a type synonym,
-consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for description
+```scala
+class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
+```
+
+```scala
+class EldritchModule[F[_, _[_, _], _[_[_, _], _], _, _[_[_[_]]], _, _]: Tag.auto.T] extends ModuleDef
+```
+
+consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags.HKTag) docs for more details
 
 ### Plugins
 
@@ -378,7 +403,7 @@ Launch as normal with the loaded modules:
 Injector().produce(app).get[PetStoreController].run
 ```
 
-Plugins also allow a program to extend itself at runtime by adding new `Plugin` classes on the classpath via `java -cp`
+Plugins also allow a program to extend itself at runtime by adding new `Plugin` classes to the classpath via `java -cp`
 
 ### Compile-Time Checks
 
@@ -388,7 +413,89 @@ Sorry, this page is not ready yet
 Relevant ticket: https://github.com/pshirshov/izumi-r2/issues/51
 @@@
 
+As of now, an experimental plugin-checking API is available in `distage-app` module.
 
+To use it add `distage-app` library:
+
+```scala
+libraryDependencies += Izumi.R.distage_app
+```
+or
+
+@@@vars
+```scala
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-app" % "$izumi.version$"
+```
+@@@
+
+You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/51
+
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+
+Only plugins defined in a different module can be checked at compile-time, `test` scope counts as a different module.
+
+##### Example:
+
+In main scope:
+
+```scala
+// src/main/scala/com/example/AppPlugin.scala
+package com.example
+import distage._
+import distage.plugins._
+import distage.config._
+import com.github.pshirshov.izumi.distage.app.ModuleRequirements
+
+final case class HostPort(host: String, port: Int)
+
+final case class Config(hostPort: HostPort)
+
+final class Service(conf: Config @ConfPath("config"), otherService: OtherService)
+
+// OtherService class is not defined here, even though Service depends on it
+final class AppPlugin extends PluginDef {
+  make[Service]
+}
+
+// Declare OtherService as an external dependency
+final class AppRequirements extends ModuleRequirements(
+  // If we remove this line, compilation will rightfully break
+  Set(DIKey.get[OtherService])
+)
+```
+
+In config:
+
+```scala
+// src/main/resources/application.conf
+// We are going to check if our starting configuration is correct as well.
+config {
+  // If we remove these, the compilation will rightfully break, as the `HostPort` case class won't deserialize from the config
+  host = localhost
+  port = 8080
+}
+```
+
+In test scope:
+
+```scala
+// src/test/scala/com/example/test/AppPluginTest.scala
+package com.example.test
+
+import com.example._
+import org.scalatest.WordSpec
+import com.github.pshirshov.izumi.distage.app.StaticPluginChecker
+
+final class AppPluginTest extends WordSpec {
+  
+  "App plugin will work (if OtherService will be provided later)" in {
+    StaticPluginChecker.checkWithConfig[AppPlugin, AppRequirements](disableTags = "", configFileRegex = "*.application.conf")   
+  }
+
+}
+```
+
+`checkWithConfig` will run at compile-time, every time that AppPluginTest is recompiled.
 
 You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/51
 
@@ -925,9 +1032,50 @@ try {
 } finally {
   // when done, close thread pools
   val allExecutors = locator.get[Set[ExecutorService]]
-  allExecutors.foreach(_.shutdownNow())
+  // Auto-set return ordered Set, in order of dependency
+  // To start resources, execute actions in order
+  // To close resources, execute actions in *reverse* order
+  allExecutors.reverse.foreach(_.shutdownNow())
 }
 ```
+
+Auto-Sets preserve ordering, they use `ListSet` under the hood, unlike user-defined [Sets](#multibindings--set-bindings).
+Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependencies:
+i.e. if C depends on B depends on A, autoset order is: `A, B, C`, to start: `A -> B -> C`, to close: `C -> B -> A`
+When you use auto-sets for finalization, you **must** `.reverse` the autoset
+
+```scala
+trait PrintResource(name: String) {
+  def start(): Unit = println(s"$name started")
+  def stop(): Unit = println(s"$name stopped")
+}
+class A extends Resource("A")
+class B(val a: A) extends Resource("B")
+class C(val b: B) extends Resource("C")
+
+val resources = Injector(new BootstraModuleDef {
+  many[PlanningHook]
+    .add(new AssignableFromAutoSetHook[Resource])
+}).produce(new ModuleDef {
+  make[C]
+  make[B]
+  make[A]
+}).get[Set[Resource]]
+
+resources.foreach(_.start())
+resources.reverse.foreach(_.stop())
+
+// Will print:
+// A started
+// B started
+// C started
+// C stopped
+// B stopped
+// A stopped
+```
+
+NB: Auto-Sets are NOT subject to [Garbage Collection](#using-garbage-collector), they are assembled *after* garbage collection is done,
+as such they can't contain garbage by construction.
 
 #### Weak Sets
 

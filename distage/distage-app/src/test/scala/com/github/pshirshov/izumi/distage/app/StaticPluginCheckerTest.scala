@@ -4,7 +4,6 @@ import com.github.pshirshov.test.plugins.{DependingPlugin, StaticTestPlugin}
 import org.scalatest.WordSpec
 
 class StaticPluginCheckerTest extends WordSpec {
-  val pkg = "com.github.pshirshov.test.testapp"
 
   "Check when config & requirements are valid" in {
     StaticPluginChecker.checkWithConfig[StaticTestPlugin, LogstageModuleRequirements]("x", ".*check-test-good.conf")

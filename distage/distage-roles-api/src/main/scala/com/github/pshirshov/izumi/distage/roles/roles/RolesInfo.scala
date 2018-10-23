@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage.roles.roles
 
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
-
 case class RolesInfo(
                       requiredComponents: Set[DIKey]
                       , requiredRoleBindings: Seq[RoleBinding]

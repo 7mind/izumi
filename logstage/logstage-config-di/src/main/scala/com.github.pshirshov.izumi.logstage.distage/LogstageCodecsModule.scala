@@ -55,7 +55,7 @@ trait LogstageCodecsModule extends BootstrapModuleDef {
             SafeType0.get[RenderingPolicy] -> policyCodec
           )
         }
-    }.discard
+    }.discard()
   }
 
   def bindRenderingPolicyMapper[T <: RenderingPolicy : ru.TypeTag, C: ru.TypeTag](f: C => T): Unit = {
@@ -65,7 +65,7 @@ trait LogstageCodecsModule extends BootstrapModuleDef {
           f(props)
         }
       }
-    }.discard
+    }.discard()
   }
 
 }

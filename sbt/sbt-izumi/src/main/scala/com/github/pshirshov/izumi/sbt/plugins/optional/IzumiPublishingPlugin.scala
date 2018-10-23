@@ -11,6 +11,7 @@ import sbt.librarymanagement.PublishConfiguration
 import sbt.sbtpgp.Compat.publishSignedConfigurationTask
 import sbt.{AutoPlugin, Credentials, MavenRepository, _}
 
+
 object IzumiPublishingPlugin extends AutoPlugin {
 
   override def requires = super.requires && PublishMore

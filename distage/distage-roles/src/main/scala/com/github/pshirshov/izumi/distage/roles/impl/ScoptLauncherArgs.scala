@@ -16,11 +16,15 @@ case class ScoptLauncherArgs(
                            , roles: List[RoleArgs] = List.empty
                          )
 
+// TODO: this stuff needs to be refactored, we can't keep WriteReference here
 object ScoptLauncherArgs {
 
-  case class WriteReference(asJson: Boolean = false
-                            , targetDir: String = "config"
-                            , includeCommon: Boolean = true)
+  case class WriteReference(
+                             asJson: Boolean = false,
+                             targetDir: String = "config",
+                             includeCommon: Boolean = true,
+                             useLauncherVersion: Boolean = true,
+                           )
 
   lazy val parser: OptionParser[ScoptLauncherArgs] = new OptionParser[ScoptLauncherArgs]("tg-launcher") {
      head("tg-launcher", "TODO: manifest version")
@@ -62,6 +66,9 @@ object ScoptLauncherArgs {
          opt[Boolean]("include-common").abbr("ic").action((b, c) =>
            c.copy(writeReference = Some(WriteReference(includeCommon = b)))
          ).text("include common part in role configs"),
+         opt[Boolean]("use-launcher-version").abbr("lv").action((b, c) =>
+           c.copy(writeReference = Some(WriteReference(useLauncherVersion = b)))
+         ).text("use launcher version instead of role version"),
          opt[String]("targetDir").abbr("d").action((dir, c) =>
            c.copy(writeReference = Some(WriteReference(targetDir = dir)))
          ).text("folder to store reference configs, ./config by default")

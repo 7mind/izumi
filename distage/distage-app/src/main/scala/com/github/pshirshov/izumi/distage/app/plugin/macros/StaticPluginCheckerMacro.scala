@@ -151,7 +151,7 @@ object StaticPluginCheckerMacro {
 
     val finalPlan = injector.plan(module).locateImports(bootstrap)
     val imports = finalPlan.unresolvedImports.left.getOrElse(Seq.empty).filter {
-      case i if moduleRequirements.fold(false)(_.keys contains i.target) => false
+      case i if moduleRequirements.fold(false)(_.requiredKeys contains i.target) => false
       case _ => true
     }
 
@@ -163,7 +163,7 @@ object StaticPluginCheckerMacro {
            |    ${imports.mkString("\n    ")}
            |
            |  Module requirements were:
-           |    ${moduleRequirements.fold(Set.empty[DIKey])(_.keys).mkString("\n    ")}
+           |    ${moduleRequirements.fold(Set.empty[DIKey])(_.requiredKeys).mkString("\n    ")}
            |
            |  Plan was:
            |${finalPlan.render(CompactPlanFormatter.OrderedPlanFormatter)}
@@ -206,6 +206,8 @@ object StaticPluginCheckerMacro {
       */
     def unresolvedImports: Either[Seq[ImportDependency], OrderedPlan] = {
       val nonMagicImports = plan.getImports.filter {
+        // a hack to not account for distage-config *bootstrap module*
+        // fixme: better scheme
         case ImportDependency(DIKey.IdKey(_, _: AbstractConfId), _, _) => false
         case i if i.target == DIKey.get[FactoryExecutor] => false
         case i if i.target == DIKey.get[LocatorRef] => false

@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import distage.DIKey
 
-class ModuleRequirements(val keys: Set[DIKey])
+class ModuleRequirements(val requiredKeys: Set[DIKey])
 
 class NoModuleRequirements extends ModuleRequirements(Set.empty)
 

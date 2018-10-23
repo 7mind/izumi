@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.plugins.load
 
-import com.github.pshirshov.izumi.distage.plugins.PluginBase
+import com.github.pshirshov.izumi.distage.plugins.{PluginBase, PluginDef}
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.{ConfigApplicator, PluginConfig}
 import com.github.pshirshov.izumi.functional.Value
 import io.github.classgraph.{ClassGraph, ClassInfo}
@@ -13,6 +13,8 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
 
   def load(): Seq[PluginBase] = {
     val base = classOf[PluginBase]
+    val defClass = classOf[PluginDef]
+    // Add package with PluginDef & PluginBase so that classgraph will resolve them
     val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled :+ base.getPackage.getName)
     val configApplicator = new ConfigApplicator(config)
 
@@ -21,6 +23,7 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
 
     val scanResult = Value(new ClassGraph())
       .map(_.whitelistPackages(enabledPackages: _*))
+      .map(_.whitelistClasses(base.getCanonicalName, defClass.getCanonicalName))
       .map(_.blacklistPackages(disabledPackages: _*))
       .map(_.enableMethodInfo())
       .map(configApplicator.debug)

@@ -3,22 +3,26 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleComponent, RoleService, RoleTask}
+import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
+import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.util.Try
+import scala.util.control.NonFatal
 
 
 class RoleStarterImpl(
                        services: Set[RoleService]
                        , components: Set[RoleComponent]
                        , closeables: Set[AutoCloseable]
+                       , integrations: Set[IntegrationComponent]
                        , logger: IzLogger
                      ) extends RoleStarter {
 
   private val tasksCount = services.count(_.isInstanceOf[RoleTask])
   private val componentsCount = components.size
   private val servicesCount = services.size
+  private val integrationsCount = integrations.size
 
   private val state = new AtomicReference[StarterState](StarterState.NotYetStarted)
   private val latch = new CountDownLatch(1)
@@ -27,9 +31,13 @@ class RoleStarterImpl(
     releaseThenStop()
   }, "role-hook")
 
-
   def start(): Unit = {
     if (state.compareAndSet(StarterState.NotYetStarted, StarterState.Starting)) {
+      val checks = checkIntegrations()
+      checks.fold(()) {
+        failures =>
+          throw new IntegrationCheckException(s"Integration check failed, failures were: ${failures}", failures)
+      }
       logger.info(s"Going to start ${(servicesCount - tasksCount) -> "daemons"}, ${tasksCount -> "tasks"}, ${componentsCount -> "components"}")
       components.foreach {
         service =>
@@ -62,6 +70,29 @@ class RoleStarterImpl(
     releaseThenStop()
   }
 
+  private def checkIntegrations(): Option[Seq[ResourceCheck.Failure]] = {
+    logger.info(s"Going to check availability of ${integrationsCount -> "resources"}")
+
+    val failures = integrations.toSeq.flatMap {
+      resource =>
+        logger.debug(s"Checking $resource")
+        try {
+          resource.resourcesAvailable() match {
+            case failure@ResourceCheck.ResourceUnavailable(description, cause) =>
+              logger.error(s"Integration check failed: Resource unavailable $description $cause $resource")
+              Some(failure)
+            case ResourceCheck.Success() =>
+              None
+          }
+        } catch {
+          case NonFatal(exception) =>
+            logger.error(s"Integration check for thrown $resource thrown $exception")
+            Some(ResourceCheck.ResourceUnavailable(exception.getMessage, Some(exception)))
+        }
+    }
+    Some(failures).filter(_.nonEmpty)
+  }
+
   private def releaseThenStop(): Unit = {
     if (state.compareAndSet(StarterState.Started, StarterState.Stopping)) {
       try {
@@ -82,11 +113,14 @@ class RoleStarterImpl(
     logger.info(s"Going to stop ${components.size -> "count" -> null} ${components.map(_.getClass).niceList() -> "components"}")
 
     val (stopped, failed) = components
+      .toList.reverse
       .map(s => s -> Try(s.stop()))
       .partition(_._2.isSuccess)
     logger.info(s"Service shutdown: ${stopped.size -> "stopped"} ; ${failed.size -> "failed to stop"}")
 
-    val toClose = closeables.filterNot(_.isInstanceOf[RoleComponent])
+    val toClose = closeables
+      .toList.reverse
+      .filterNot(_.isInstanceOf[RoleComponent])
     logger.info(s"Going to close ${toClose.size -> "count" -> null} ${toClose.map(_.getClass).niceList() -> "closeables"}")
 
     val (closed, failedToClose) = toClose

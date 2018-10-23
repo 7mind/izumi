@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.providers
 
 import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, Tag, SafeType}
 import com.github.pshirshov.izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
@@ -77,7 +77,11 @@ import scala.language.experimental.macros
   *
   * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
   **/
-case class ProviderMagnet[+R](get: Provider)
+case class ProviderMagnet[+R](get: Provider) {
+  def map[B: Tag](f: R => B): ProviderMagnet[B] = {
+    copy[B](get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[R])))
+  }
+}
 
 object ProviderMagnet {
   implicit def apply[R](fun: () => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]

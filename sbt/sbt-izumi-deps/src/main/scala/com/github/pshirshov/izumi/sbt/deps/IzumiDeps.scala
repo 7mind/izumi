@@ -31,7 +31,7 @@ object IzumiDeps {
     val scalacheck = "1.14.0"
     val scalacheck_shapeless = "1.2.0-1"
 
-    val zio = "0.2.11"
+    val zio = "0.3.1"
 
     // TODO: we need to get rid of this
     val java_websocket = "1.3.9" // java, we need it bcs http4s ws client isn't ready yet
@@ -40,7 +40,7 @@ object IzumiDeps {
     val jaxb_impl = "2.3.0.1"
     val activation = "1.1.1"
 
-    val classgraph = "4.2.12" // java
+    val classgraph = "4.4.3" // java
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 

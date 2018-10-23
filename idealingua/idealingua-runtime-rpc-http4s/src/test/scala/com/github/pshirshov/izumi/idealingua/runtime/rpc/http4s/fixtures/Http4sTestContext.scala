@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 import cats.data.{Kleisli, OptionT}
 import cats.effect.{ContextShift, IO, Timer}
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.{Http4sRuntime, WsClientContextProvider}
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMuxRequest, IRTMuxResponse, RpcPacket}
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
@@ -35,8 +35,9 @@ object Http4sTestContext {
   implicit val timer: Timer[CIO] = IO.timer(global)
   implicit val BIOR: BIORunner[BiIO] = BIORunner.createZIO(Executors.newWorkStealingPool())
 
+  final val logger = makeLogger()
   final val rt = {
-    new Http4sRuntime[BiIO, CIO](makeLogger(), global)
+    new Http4sRuntime[BiIO, CIO](logger, global)
   }
 
   //
@@ -46,7 +47,6 @@ object Http4sTestContext {
         val context = DummyRequestContext(request.remoteAddr.getOrElse("0.0.0.0"), request.headers.get(Authorization).map(_.credentials))
         OptionT.liftF(IO(context))
     }
-
 
   final val wsContextProvider = new rt.WsContextProvider[DummyRequestContext, String] {
     val knownAuthorization = new AtomicReference[Credentials](null)
@@ -78,9 +78,9 @@ object Http4sTestContext {
     }
   }
 
-  final val ioService = new rt.HttpServer(demo.Server.multiplexor, demo.Server.codec, AuthMiddleware(authUser), wsContextProvider, rt.WsSessionListener.empty)
+  final val ioService = new rt.HttpServer(demo.Server.multiplexor, demo.Server.codec, AuthMiddleware(authUser), wsContextProvider,
+    new rt.WsSessionsStorageImpl(logger, demo.Server.codec), Seq(WsSessionListener.empty[String]))
 
-  //
   final def clientDispatcher(): rt.ClientDispatcher with TestHttpDispatcher =
     new rt.ClientDispatcher(baseUri, demo.Client.codec)
       with TestHttpDispatcher {
