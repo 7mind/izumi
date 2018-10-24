@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
 import com.github.pshirshov.izumi.distage.model.definition.With
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -82,9 +81,13 @@ class TagTest extends WordSpec with X[String] {
     "Work with subtyping odd type prefixes" in {
       val zy = new ZY {}
 
-      assert(Tag[zy.T].tpe weak_<:< safe[zy.T])
-      assert(Tag[zy.x.type].tpe weak_<:< safe[zy.x.type])
-      assert(Tag[zy.y.type].tpe weak_<:< safe[zy.y.type])
+      val b1 = Tag[zy.T].tpe weak_<:< safe[zy.T]
+      val b2 = Tag[zy.x.type].tpe weak_<:< safe[zy.x.type]
+      val b3 = Tag[zy.y.type].tpe weak_<:< safe[zy.y.type]
+
+      assert(b1)
+      assert(b2)
+      assert(b3)
     }
 
     "Use TypeTag instance when available" in {
@@ -145,10 +148,15 @@ class TagTest extends WordSpec with X[String] {
       def x2[T[_, _]: Tag.auto.T]: TagKK[T] = implicitly[Tag.auto.T[T]]
       def x3[T[_, _, _[_[_], _], _[_], _]](implicit x: Tag.auto.T[T]): Tag.auto.T[T] = x
 
-      assert(x[Option].tag.tpe =:= TagK[Option].tag.tpe)
-      assert(x2[Either].tag.tpe =:= TagKK[Either].tag.tpe)
-      assert(implicitly[Tag.auto.T[OptionT]].tag.tpe =:= TagTK[OptionT].tag.tpe)
-      assert(x3[T2].tag.tpe.typeConstructor =:= safe[T2[Nothing, Nothing, Nothing, Nothing, Nothing]].tpe.typeConstructor)
+      val b1 = x[Option].tag.tpe =:= TagK[Option].tag.tpe
+      val b2 = x2[Either].tag.tpe =:= TagKK[Either].tag.tpe
+      val b3 = implicitly[Tag.auto.T[OptionT]].tag.tpe =:= TagTK[OptionT].tag.tpe
+      val b4 = x3[T2].tag.tpe.typeConstructor =:= safe[T2[Nothing, Nothing, Nothing, Nothing, Nothing]].tpe.typeConstructor
+
+      assert(b1)
+      assert(b2)
+      assert(b3)
+      assert(b4)
     }
 
     "Work for an abstract type with available TagKK" in {
