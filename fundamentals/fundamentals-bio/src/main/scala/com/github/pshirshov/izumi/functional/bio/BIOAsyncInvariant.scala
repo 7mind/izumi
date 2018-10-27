@@ -7,6 +7,8 @@ trait BIOAsyncInvariant[R[ _, _]] extends BIOInvariant[R] {
 
   @inline def sleep(duration: Duration): R[Nothing, Unit]
 
+  @inline def `yield`: R[Nothing, Unit]
+
   @inline def retryOrElse[A, E, A2 >: A, E2](r: R[E, A])(duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2]
 
   @inline def timeout[E, A](r: R[E, A])(duration: Duration): R[E, Option[A]]

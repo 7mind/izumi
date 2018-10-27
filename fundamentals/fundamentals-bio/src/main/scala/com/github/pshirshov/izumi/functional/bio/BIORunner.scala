@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.functional.bio
 
 import java.util.concurrent.ExecutorService
 
+import scalaz.zio.Errors.TerminatedFiber
 import scalaz.zio.{ExitResult, IO, RTS}
 
 import scala.language.higherKinds
@@ -37,11 +38,12 @@ object BIORunner {
     }
   }
 
-  private def toEither[A, E](result: ExitResult[E, A]) = {
+  private def toEither[A, E](result: ExitResult[E, A]): Try[Either[E, A]] = {
     result match {
-      case ExitResult.Completed(v) => Success(Right(v))
-      case ExitResult.Failed(e, _) => Success(Left(e))
-      case ExitResult.Terminated(t) => Failure(t.head)
+      case ExitResult.Completed(v)    => Success(Right(v))
+      case ExitResult.Failed(e, _)    => Success(Left(e))
+      case ExitResult.Terminated(Nil) => Failure(TerminatedFiber)
+      case ExitResult.Terminated(t)   => Failure(t.head)
     }
   }
 }
