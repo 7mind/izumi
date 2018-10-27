@@ -111,6 +111,14 @@ object BIO extends BIOSyntax {
 
       }
     }
+
+    override def timeout[E, A](r: IO[E, A])(duration: Duration): IO[E, Option[A]] = {
+      r.timeout(Option.empty[A])(Some(_))(duration)
+    }
+
+    override def race[E, A](r1: IO[E, A])(r2: IO[E, A]): IO[E, A] = {
+      r1.race(r2)
+    }
   }
 
 }

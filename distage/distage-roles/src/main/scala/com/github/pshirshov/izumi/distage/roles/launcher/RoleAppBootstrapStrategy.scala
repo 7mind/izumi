@@ -16,7 +16,6 @@ import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMerge
 import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
 import com.github.pshirshov.izumi.distage.roles.roles
 import com.github.pshirshov.izumi.distage.roles.roles._
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._

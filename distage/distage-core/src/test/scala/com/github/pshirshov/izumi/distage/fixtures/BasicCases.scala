@@ -135,15 +135,15 @@ Forest fire, climbin' higher, real life, it can wait""")
     trait UserRepo
     trait AccountsRepo
 
-    class UserRepoImpl(cluster: Cluster) extends UserRepo
-    class AccountsRepoImpl(cluster: Cluster) extends AccountsRepo
+    class UserRepoImpl(val cluster: Cluster) extends UserRepo
+    class AccountsRepoImpl(val cluster: Cluster) extends AccountsRepo
 
-    class UserServiceImpl(userRepo: UserRepo) extends UsersService
-    class AccountingServiceImpl(accountsRepo: AccountsRepo) extends AccountingService
+    class UserServiceImpl(val userRepo: UserRepo) extends UsersService
+    class AccountingServiceImpl(val accountsRepo: AccountsRepo) extends AccountingService
     // cyclic dependency
-    class UsersApiImpl(service: UsersService, accountsApi: AccountsApiImpl)
-    class AccountsApiImpl(service: AccountingService, usersApi: UsersApiImpl)
-    class App(uapi: UsersApiImpl, aapi: AccountsApiImpl)
+    class UsersApiImpl(val service: UsersService, val accountsApi: AccountsApiImpl)
+    class AccountsApiImpl(val service: AccountingService, val usersApi: UsersApiImpl)
+    class App(val uapi: UsersApiImpl, val aapi: AccountsApiImpl)
   }
 
 }

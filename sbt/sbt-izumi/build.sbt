@@ -38,7 +38,7 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2")
 addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 
 //https://github.com/aiyanbo/sbt-dependency-updates
-addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.1.9")
+addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.1.12")
 
 // https://github.com/rtimush/sbt-updates
 //addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
