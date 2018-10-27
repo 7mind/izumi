@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.il.parser.structure.{aggregates, kw
 import com.github.pshirshov.izumi.idealingua.model.common.StreamDirection
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILStreams
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawStream, Streams}
-import fastparse.all._
+import fastparse._
 
 trait DefStreams {
 
@@ -29,7 +29,7 @@ trait DefStreams {
   final val stream = downstream | upstream
 
   // other method kinds should be added here
-  final val streams: Parser[Seq[RawStream]] = P(stream.rep(sep = any))
+  final val streams: P[Seq[RawStream]] = P(stream.rep(sep = any))
 
   final val streamsBlock = aggregates.cblock(kw.streams, streams)
     .map {

@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import fastparse.all._
+import fastparse._
 
 trait Keywords extends Separators {
-  def kw(s: String): Parser[Unit] = P(s ~ inline)(sourcecode.Name(s"`$s`"))
+  def kw(s: String): P[Unit] = P(s ~ inline)(sourcecode.Name(s"`$s`"))
 
-  def kw(s: String, alt: String*): Parser[Unit] = {
+  def kw(s: String, alt: String*): P[Unit] = {
     val alts = alt.foldLeft(P(s)) { case (acc, v) => acc | v }
     P(alts ~ inline)(sourcecode.Name(s"`$s | $alt`"))
   }
@@ -31,7 +31,7 @@ trait Keywords extends Separators {
   final val upstream = kw("toserver", "up", "upstream")
   final val downstream = kw("toclient", "down", "downstream")
 
-  def apply[T](kw: Parser[Unit], defparser: Parser[T]): Parser[T] = {
+  def apply[T](kw: P[Unit], defparser: P[T]): P[T] = {
     P(kw ~/ defparser)
   }
 

@@ -1,24 +1,25 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import fastparse.all._
+import fastparse._
+import fastparse.NoWhitespace._
 
 trait Comments
   extends Symbols {
 
-  final lazy val DocComment = {
-    val Chunk = P(CharsWhile(c => c != '\n' && c != '\r').rep.!)
+  final def DocComment[_:P] = {
+    def Chunk = P(CharsWhile(c => c != '\n' && c != '\r').rep.!)
     P(!"/**/" ~ "/*" ~ (!"*/" ~ "*" ~ Chunk).rep(1, sep = NLC ~ sep.wss) ~ NLC ~ sep.wss ~ "*/").map {
       s => s.mkString("\n")
     }
   }
 
-  final lazy val MultilineComment: P0 = {
+  final def MultilineComment[_:P]: P0 = {
     val CommentChunk = P(CharsWhile(c => c != '/' && c != '*') | MultilineComment | !"*/" ~ AnyChar)
     P((!"/**" ~ "/*" ~ CommentChunk.rep ~ "*/") | "/**/").rep(1)
   }
 
-  final lazy val ShortComment = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r', min = 0) ~ NLC))
+  final def ShortComment[_:P] = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r', min = 0) ~ NLC))
 
-  final lazy val MaybeDoc = (DocComment ~ NLC ~ sep.inline).?
+  final def MaybeDoc[_:P] = (DocComment ~ NLC ~ sep.inline).?
 }
 

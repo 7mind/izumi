@@ -26,8 +26,8 @@ object IzumiDeps {
 
     val http4s = "0.20.0-M3" // https://github.com/http4s/http4s/issues/1797
 
-    val scalameta = "4.1.0" // https://github.com/scalameta/scalameta/issues/1693
-    val fastparse = "1.0.0" // https://github.com/lihaoyi/fastparse/issues/188
+    val scalameta = "4.0.0" // https://github.com/scalameta/scalameta/issues/1693
+    val fastparse = "2.0.5" // https://github.com/lihaoyi/fastparse/issues/188
 
     val scalacheck = "1.14.0"
     val scalacheck_shapeless = "1.2.0-1"

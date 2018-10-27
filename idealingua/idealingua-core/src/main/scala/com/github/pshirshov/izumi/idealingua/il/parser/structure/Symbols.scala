@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import fastparse.all._
+import fastparse._
+import fastparse.NoWhitespace._
 
 trait Symbols {
-  final val NLC = P("\r\n" | "\n" | "\r")
-  final val String = P("\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
+  final def NLC[_:P] = P("\r\n" | "\n" | "\r")
+  final def String[_:P] = P("\"" ~ CharsWhile(c => c != '"').rep().! ~ "\"")
 }
 
 

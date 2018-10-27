@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILDef, ILNewty
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{ParsedId, RawAdtMember, RawField, RawSimpleStructure}
 import com.github.pshirshov.izumi.idealingua.model.parser.{AlgebraicType, ParsedStruct, StructOp}
-import fastparse.all._
+import fastparse._
 
 trait DefStructure extends Separators {
   final val field = P((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric)
@@ -69,12 +69,12 @@ trait DefStructure extends Separators {
       ImportedId(tpe, alias)
   }
 
-  final def adt(sep: Parser[Unit]): Parser[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
+  final def adt(sep: P[Unit]): P[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
     .map(_.toList).map(AlgebraicType)
 
-  final def enum(sep: Parser[Unit]): Parser[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
+  final def enum(sep: P[Unit]): P[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
 
-  final def imports(sep: Parser[Unit]): Parser[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
+  final def imports(sep: P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
 
   final val mixinBlock = aggregates.cblock(kw.mixin, DefStructure.struct)
     .map {

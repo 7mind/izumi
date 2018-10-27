@@ -1,10 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
-
 import com.github.pshirshov.izumi.idealingua.model.parser
 import com.github.pshirshov.izumi.idealingua.model.parser.{ParsedDomain, ParsedModel}
-import fastparse.all._
-
+import fastparse._
 
 trait IDLParser {
 
