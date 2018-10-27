@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
 trait BIOSyntax {
@@ -45,6 +45,10 @@ object BIOSyntax {
 
   final class BIOAsyncOps[R[+ _, + _], E, A](private val r: R[E, A])(implicit private val R: BIOAsync[R]) {
     @inline def retryOrElse[A2 >: A, E2](duration: FiniteDuration, orElse: => R[E2, A2]): R[E2, A2] = R.retryOrElse[A, E, A2, E2](r)(duration, orElse)
+
+    @inline def timeout(duration: Duration): R[E, Option[A]] = R.timeout(r)(duration)
+
+    @inline def race[E1 >: E, A1 >: A](that: R[E1, A1]): R[E1, A1] = R.race[E1, A1](r)(that)
   }
 
   final class BIOFlattenOps[R[+ _, + _], E, A](private val r: R[E, R[E, A]])(implicit private val R: BIO[R]) {

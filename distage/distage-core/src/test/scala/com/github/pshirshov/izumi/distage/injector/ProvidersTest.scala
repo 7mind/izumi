@@ -10,7 +10,7 @@ class ProvidersTest extends WordSpec with MkInjector {
     import ProviderCase2._
 
     val definition = new ModuleDef {
-      make[TestClass].from((a: Dependency1) => new TestClass(null))
+      make[TestClass].from((_: Dependency1) => new TestClass(null))
       make[Dependency1].from(() => new Dependency1Sub {})
     }
 

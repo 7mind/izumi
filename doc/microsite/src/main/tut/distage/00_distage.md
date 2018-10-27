@@ -267,7 +267,7 @@ class TaglessProgram[F[_]: Monad: Validation: Interaction] {
 @scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`,
 it allows preserving type-information at runtime for types that aren't yet known at definition.
 You'll need to add a @scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) context bound to create a module parameterized by an abstract `F[_]`.
-Use @scaladoc[Tag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#Tag) to create modules parameterized by non-higher-kineded types.
+Use @scaladoc[Tag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#Tag) to create modules parameterized by non-higher-kinded types.
 
 Interpreters:
 
@@ -340,7 +340,7 @@ class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
 ```
 
 ```scala
-class EldritchModule[F[_, _[_, _], _[_[_, _], _], _, _[_[_[_]]], _, _]: Tag.auto.T] extends ModuleDef
+class EldritchModule[F[_, _[_, _], _[_[_, _], _], _, _[_[_[_]]]]: Tag.auto.T] extends ModuleDef
 ```
 
 consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#HKTag) docs for more details
@@ -427,8 +427,6 @@ or
 libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-app" % "$izumi.version$"
 ```
 @@@
-
-You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/51
 
 If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 

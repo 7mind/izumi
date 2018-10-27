@@ -73,6 +73,8 @@ class RoleAppTest extends WordSpec {
           assert(service.counter.closedRoleComponents == componentsInDepOrder.reverse)
           assert(service.counter.closedCloseables == closeablesInDepOrder.reverse)
           assert(service.counter.checkedResources == integrationsInDepOrder)
+
+          ()
         }
       }.main(Array("testservice"))
     }
