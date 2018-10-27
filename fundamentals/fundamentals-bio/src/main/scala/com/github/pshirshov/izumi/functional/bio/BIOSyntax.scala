@@ -54,7 +54,7 @@ object BIOSyntax {
   }
 
   final class BIOForkOps[R[_, _], E, A](private val r: R[E, A])(implicit private val R: BIOFork[R]) {
-    @inline def fork: R[Nothing, BIOFiber[R, E, A]] = R.fork
+    @inline def fork: R[Nothing, BIOFiber[R, E, A]] = R.fork(r)
   }
 
 }
