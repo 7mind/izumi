@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.sbt.plugins
 import com.github.pshirshov.izumi.sbt.definitions._
 import sbt.internal.util.ConsoleLogger
 import sbt.io.syntax.File
-import sbt.{AutoPlugin, Def, ExtendedProjectMacro, Plugins, Project, ProjectReference}
+import sbt.{AutoPlugin, Def, ExtendedProjectMacro, Plugins, Project, ProjectReference, settingKey}
 
 import scala.collection.mutable
 import scala.language.experimental.macros
@@ -13,6 +13,14 @@ object IzumiDslPlugin extends AutoPlugin {
 
   protected[izumi] val allProjects: mutable.HashSet[ProjectReference] = scala.collection.mutable.HashSet[ProjectReference]()
 
+  object Keys {
+    val failOnDanglingProject = settingKey[Boolean]("Fail on presence of not aggregated projects")
+  }
+
+
+  override def globalSettings: Seq[Def.Setting[_]] = Seq(
+    Keys.failOnDanglingProject := true
+  )
 
   override def requires: Plugins = super.requires && IzumiInheritedTestScopesPlugin
 
@@ -60,7 +68,12 @@ object IzumiDslPlugin extends AutoPlugin {
 
               if (notAggregated.nonEmpty) {
                 logger.warn("!!! WARNING !!! WARNING !!! WARNING !!! ")
-                logger.warn(s"The following projects are loaded but not aggregated by `${project.id}` project:\n${notAggregated.mkString("\n")}")
+                val error = s"The following projects are loaded but not aggregated by `${project.id}` project:\n${notAggregated.mkString("\n")}"
+                logger.warn(error)
+
+                if (Keys.failOnDanglingProject.value) {
+                  throw new IllegalStateException(error)
+                }
               }
 
 
