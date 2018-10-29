@@ -12,7 +12,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   def topology(ops: Seq[ExecutableOp]): PlanTopology = {
     computeTopology(
       ops
-      , (acc) => (key) => false
+      , (_) => (_) => false
       , _ => true
     )
   }

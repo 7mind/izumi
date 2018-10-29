@@ -59,7 +59,6 @@ class ProxyStrategyDefaultImpl(
   }
 
 
-
   protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, makeProxy: ProxyOp.MakeProxy): DeferredInit = {
     val params = if (hasDeps(tpe)) {
       val params = reflectionProvider.constructorParameters(tpe)
@@ -112,7 +111,8 @@ class ProxyStrategyDefaultImpl(
   protected def allForwardRefsAreByName(makeProxy: ProxyOp.MakeProxy): Boolean = {
     symbolIntrospector.hasConstructor(makeProxy.op.target.tpe) && {
       val params = reflectionProvider.constructorParameters(makeProxy.op.target.tpe)
-      params.filter(p => makeProxy.forwardRefs.contains(p.wireWith)).forall(_.isByName)
+      val forwardedParams = params.filter(p => makeProxy.forwardRefs.contains(p.wireWith))
+      forwardedParams.nonEmpty && forwardedParams.forall(_.isByName)
     }
   }
 
@@ -124,20 +124,18 @@ class ProxyStrategyDefaultImpl(
         op.wiring.instanceType
       case op: WiringOp.InstantiateFactory =>
         op.wiring.factoryType
-      case op: WiringOp.CallProvider =>
-        op.wiring.instanceType
-      case op: WiringOp.CallFactoryProvider =>
-        op.wiring.provider.ret
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
+        //op.target.symbol
         SafeType.get[FakeSet[_]]
-      //op.target.symbol
+      case op: WiringOp.CallProvider =>
+        op.target.tpe
+      case op: WiringOp.CallFactoryProvider =>
+        op.target.tpe
       case op: WiringOp.ReferenceInstance =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
       case op: WiringOp.ReferenceKey =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
-      case op: ProxyOp.MakeProxy =>
-        throw new UnsupportedOpException(s"Tried to execute nonsensical operation - can't make a proxy for proxy!: $op", op)
     }
   }
 

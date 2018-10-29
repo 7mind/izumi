@@ -48,8 +48,8 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
   override def isConcrete(symb: u.SafeType): Boolean = {
     symb.tpe match {
-      case u.u.RefinedType(types, _) =>
-        types.forall(t => t.typeSymbol.isClass && !t.typeSymbol.isAbstract)
+      case u.u.RefinedType(types, scope) =>
+        types.forall(t => t.typeSymbol.isClass && !t.typeSymbol.isAbstract) && !scope.forall(_.isAbstract)
       case _ =>
         symb.tpe.typeSymbol.isClass && !symb.tpe.typeSymbol.isAbstract
     }

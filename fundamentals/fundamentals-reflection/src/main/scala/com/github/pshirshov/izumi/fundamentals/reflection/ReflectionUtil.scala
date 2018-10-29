@@ -12,6 +12,8 @@ import scala.util.{Failure, Success, Try}
 
 abstract class ReflectionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 
+class RefinedTypeException(message: String, cause: Throwable = null) extends ReflectionException(message, cause)
+
 class MethodMirrorException(message: String, cause: Throwable = null) extends ReflectionException(message, cause)
 
 

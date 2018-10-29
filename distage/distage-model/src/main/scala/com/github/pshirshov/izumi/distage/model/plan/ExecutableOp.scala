@@ -42,6 +42,7 @@ object ExecutableOp {
     def origin: Option[Binding]
   }
 
+  sealed trait NewInstanceOp extends WiringOp {}
   object WiringOp {
 
     final case class InstantiateClass(target: DIKey, wiring: UnaryWiring.Constructor, origin: Option[Binding]) extends WiringOp {
@@ -85,7 +86,7 @@ object ExecutableOp {
 
   object ProxyOp {
 
-    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: Option[Binding]) extends ProxyOp with InstantiationOp {
+    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: Option[Binding]) extends ProxyOp {
       override def target: DIKey = op.target
 
       override def format: String = {

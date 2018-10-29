@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.UntranslatablePlanException
+import com.github.pshirshov.izumi.distage.model.exceptions.{UnsupportedOpException, UntranslatablePlanException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
@@ -68,8 +68,10 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
 
     val index = completedPlan.index
 
-    def break(keys: Map[DIKey, Set[DIKey]]): DIKey = {
-      val best = keys.keySet.toList.sortWith {
+    def break(keys: Set[DIKey]): DIKey = {
+      val loop = keys.toList
+
+      val best = loop.sortWith {
         case (fst, snd) =>
           val fsto = index(fst)
           val sndo = index(snd)
@@ -94,7 +96,17 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
           }
 
       }.head
-      best
+
+      index(best) match {
+        case op: ReferenceKey =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate is reference O_o: $keys", op)
+        case op: ImportDependency =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate is import O_o: $keys", op)
+        case op: ProxyOp =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate is proxy O_o: $keys", op)
+        case _: InstantiationOp =>
+          best
+      }
     }
 
     val sortedKeys = toposort.cycleBreaking(
@@ -107,7 +119,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
     OrderedPlan(completedPlan.definition, sortedOps.toVector, topology)
   }
 
-  private def hasByNameParameter(fsto: ExecutableOp) = {
+  private def hasByNameParameter(fsto: ExecutableOp): Boolean = {
     val fstoTpe = ExecutableOp.instanceType(fsto)
     val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
     val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
