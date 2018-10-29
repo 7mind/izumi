@@ -117,7 +117,7 @@ class BasicGcTests extends WordSpec with MkGcInjector {
         many[IntegrationComponent].add[S3Component]
       })
 
-      val plan2 = injector.finish(plan.map(op => op))
+      val plan2 = injector.finish(plan.toSemi.map(op => op))
       import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
       println(plan2.render)
       val result = injector.produce(plan2)
@@ -130,9 +130,11 @@ class BasicGcTests extends WordSpec with MkGcInjector {
       val plan = injector.plan(new ModuleDef {
         make[Circular1]
         make[Circular2]
+        make[Circular3]
+        make[Circular4]
       })
 
-      val plan2 = injector.finish(plan.map(op => op))
+      val plan2 = injector.finish(plan.toSemi.map(op => op))
       import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
       println(plan2.render)
       val result = injector.produce(plan2)

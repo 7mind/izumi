@@ -154,7 +154,7 @@ trait DistageTests {
   }
 
   protected def refinePlan(injector: Injector, plan: OrderedPlan): OrderedPlan = {
-    val semi = plan.map(resourceCollection.transformPlanElement)
+    val semi = plan.toSemi.map(resourceCollection.transformPlanElement)
     val finalPlan = injector.finish(semi)
     finalPlan
   }

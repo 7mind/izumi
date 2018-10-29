@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.model.plan
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.{CallProvider, ReferenceInstance}
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
@@ -10,9 +11,11 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.functional.Renderable
 
+// TODO: we need to parameterize plans with op types to avoid possibility of having proxy ops in semi
 sealed trait AbstractPlan {
 
   def definition: ModuleBase
+
   def steps: Seq[ExecutableOp]
 
   final lazy val index: Map[DIKey, ExecutableOp] = {
@@ -24,21 +27,13 @@ sealed trait AbstractPlan {
     * Note, presence of imports doesn't automatically mean that a plan is invalid,
     * Imports may be fulfilled by a `Locator`, by BootstrapContext, or they may be materialized by a custom
     * [[com.github.pshirshov.izumi.distage.model.provisioning.strategies.ImportStrategy]]
-    **/
+    * */
   final def getImports: Seq[ImportDependency] =
     steps.collect { case i: ImportDependency => i }
 
   final def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan = {
     SemiPlan(definition, steps = AbstractPlan.resolveImports(f, steps.toVector))
   }
-
-  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
-
-  def resolveImport[T: Tag](instance: T): AbstractPlan
-
-  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
-
-  def locateImports(locator: Locator): AbstractPlan
 
   final def providerImport[T](f: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
@@ -54,21 +49,24 @@ sealed trait AbstractPlan {
     }
   }
 
-  final def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
-    SemiPlan(definition, steps.map(f).toVector)
+  final def toSemi: SemiPlan = {
+    val safeSteps = steps.flatMap {
+      case i: InitProxy =>
+        Seq.empty
+      case i: MakeProxy=>
+        Seq(i.op)
+      case o => Seq(o)
+    }
+    SemiPlan(definition, safeSteps.toVector)
   }
 
-  final def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.flatMap(f).toVector)
-  }
+  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
 
-  final def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.collect(f).toVector)
-  }
+  def resolveImport[T: Tag](instance: T): AbstractPlan
 
-  final def ++(that: AbstractPlan): SemiPlan = {
-    SemiPlan(definition ++ that.definition, steps.toVector ++ that.steps)
-  }
+  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
+
+  def locateImports(locator: Locator): AbstractPlan
 
   final def foldLeft[T](z: T, f: (T, ExecutableOp) => T): T = {
     steps.foldLeft(z)(f)
@@ -94,6 +92,21 @@ object AbstractPlan {
 
 /** Unordered plan. You can turn into an [[OrderedPlan]] by using [[com.github.pshirshov.izumi.distage.model.Planner#finish]] **/
 final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp]) extends AbstractPlan {
+  def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
+    SemiPlan(definition, steps.map(f).toVector)
+  }
+
+  def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
+    SemiPlan(definition, steps.flatMap(f).toVector)
+  }
+
+  def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
+    SemiPlan(definition, steps.collect(f).toVector)
+  }
+
+  def ++(that: AbstractPlan): SemiPlan = {
+    SemiPlan(definition ++ that.definition, steps.toVector ++ that.steps)
+  }
 
   override def resolveImport[T: Tag](instance: T): SemiPlan =
     resolveImports {
