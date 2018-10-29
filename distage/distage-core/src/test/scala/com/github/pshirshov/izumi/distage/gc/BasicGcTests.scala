@@ -5,7 +5,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import distage.Injector
 import org.scalatest.WordSpec
-import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
 
 @ExposedTestScope
 object InjectorCases {
@@ -67,7 +66,6 @@ class BasicGcTests extends WordSpec with MkGcInjector {
         make[Circular4]
       })
 
-      println(plan.render)
       val result = injector.produce(plan)
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)
@@ -84,7 +82,6 @@ class BasicGcTests extends WordSpec with MkGcInjector {
         make[App]
       })
 
-      println(plan.render)
       val result = injector.produce(plan)
       assert(result.get[App] != null)
     }
@@ -154,7 +151,6 @@ class BasicGcTests extends WordSpec with MkGcInjector {
       })
 
       val plan2 = injector.finish(plan.toSemi.map(op => op))
-      println(plan2.render)
       val result = injector.produce(plan2)
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)
