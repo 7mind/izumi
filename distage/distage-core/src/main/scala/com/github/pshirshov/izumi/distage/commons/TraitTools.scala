@@ -42,9 +42,9 @@ object TraitTools {
       case Some(_) => // here we have an instance of scala MethodSymbol though we can't reflect it, so let's use java
         try {
           try {
-            runtimeClass
+            val initMethod = runtimeClass
               .getDeclaredMethod("$init$", runtimeClass)
-              .invoke(instance, instance)
+            initMethod.invoke(instance, instance)
             ()
           } catch {
             case e: InvocationTargetException =>

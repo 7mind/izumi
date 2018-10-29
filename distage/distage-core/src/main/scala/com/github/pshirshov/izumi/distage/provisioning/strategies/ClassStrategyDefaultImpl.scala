@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{InvalidPlanException, MissingRefException, NoopProvisionerImplCalled, ProvisioningException}
+import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
@@ -35,6 +35,7 @@ class ClassStrategyDefaultImpl
     Seq(OpResult.NewInstance(op.target, instance))
   }
 
+
   protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Any]) = {
     val wiring = op.wiring
     val targetType = wiring.instanceType
@@ -44,7 +45,10 @@ class ClassStrategyDefaultImpl
       mirror.reflectModule(symbol.asModule).instance
     } else {
       val (refClass, prefixInstance) = reflectClass(context, op, symbol)
-      val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
+      val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType).getOrElse(
+        throw new MissingConstructorException(s"Missing constructor in $targetType")
+      )
+
       val refCtor = refClass.reflectConstructor(ctorSymbol)
       val hasByName = ctorSymbol.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
 

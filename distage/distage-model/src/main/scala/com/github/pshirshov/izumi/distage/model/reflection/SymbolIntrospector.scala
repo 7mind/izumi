@@ -9,9 +9,9 @@ trait SymbolIntrospector {
 
   def hasConstructor(tpe: u.SafeType): Boolean
 
-  def selectConstructorMethod(tpe: u.SafeType): u.MethodSymb
+  def selectConstructorMethod(tpe: u.SafeType): Option[u.MethodSymb]
 
-  def selectConstructor(tpe: u.SafeType): SelectedConstructor
+  def selectConstructor(tpe: u.SafeType): Option[SelectedConstructor]
 
   def selectNonImplicitParameters(symb: u.MethodSymb): List[List[u.Symb]]
 

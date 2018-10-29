@@ -40,7 +40,17 @@ object CglibProxyProvider extends ProxyProvider {
   private def mkDynamic(dispatcher: Callback, proxyContext: ProxyContext): AnyRef = {
     import proxyContext._
     val enhancer = new Enhancer()
-    enhancer.setSuperclass(runtimeClass)
+
+    // Enhancer.setSuperclass is sideffectful, so we had to copypaste
+    if (runtimeClass != null && runtimeClass.isInterface) {
+      enhancer.setInterfaces(Array[Class[_]](runtimeClass, classOf[DistageProxy]))
+    } else if (runtimeClass != null && runtimeClass == classOf[Any]) {
+      enhancer.setInterfaces(Array(classOf[DistageProxy]))
+    } else {
+      enhancer.setSuperclass(runtimeClass)
+      enhancer.setInterfaces(Array(classOf[DistageProxy]))
+    }
+
     enhancer.setCallback(dispatcher)
 
     val result = params match {
@@ -76,4 +86,5 @@ object CglibProxyProvider extends ProxyProvider {
     methodHandles.get(null).asInstanceOf[MethodHandles.Lookup]
   }
 }
+
 

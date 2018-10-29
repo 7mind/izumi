@@ -82,7 +82,7 @@ object DefaultBootstrapContext {
     )
   }
 
-  final lazy val noCogen: BootstrapModule = new BootstrapModuleDef {
+  final lazy val noProxies: BootstrapModule = new BootstrapModuleDef {
     make[ProxyProvider].from[ProxyProviderFailingImpl]
   }
 
@@ -117,9 +117,9 @@ object DefaultBootstrapContext {
     make[TraitStrategy].from[TraitStrategyDefaultImpl]
   }
 
-  final lazy val noCogenBootstrap: BootstrapModule = defaultBootstrap ++ noCogen
+  final lazy val noProxiesBootstrap: BootstrapModule = defaultBootstrap ++ noProxies
 
-  final lazy val noReflectionBootstrap: BootstrapModule = noCogenBootstrap overridenBy new BootstrapModuleDef {
+  final lazy val noCogensBootstrap: BootstrapModule = noProxiesBootstrap overridenBy new BootstrapModuleDef {
     make[ClassStrategy].from[ClassStrategyFailingImpl]
     make[ProxyStrategy].from[ProxyStrategyFailingImpl]
     make[FactoryStrategy].from[FactoryStrategyFailingImpl]

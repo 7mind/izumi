@@ -277,7 +277,7 @@ class BasicTest extends WordSpec with MkInjector {
     val safeType = SafeType.get[ClassTypeAnnT[String, Int]]
     val constructor = symbolIntrospector.selectConstructor(safeType)
 
-    val allArgsHaveAnnotations = constructor.arguments.flatten.map(_.annotations).forall(_.nonEmpty)
+    val allArgsHaveAnnotations = constructor.map(_.arguments.flatten.map(_.annotations)).toSeq.flatten.forall(_.nonEmpty)
     assert(allArgsHaveAnnotations)
   }
 

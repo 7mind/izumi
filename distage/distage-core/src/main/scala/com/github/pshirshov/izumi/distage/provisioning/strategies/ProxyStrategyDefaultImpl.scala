@@ -60,8 +60,8 @@ class ProxyStrategyDefaultImpl(
 
 
   protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, makeProxy: ProxyOp.MakeProxy): DeferredInit = {
-    val params = if (!hasNoDeps(tpe)) {
-      val params = reflectionProvider.constructorParameters(makeProxy.op.target.tpe)
+    val params = if (hasDeps(tpe)) {
+      val params = reflectionProvider.constructorParameters(tpe)
 
       val args = params.map {
         param =>
@@ -101,11 +101,11 @@ class ProxyStrategyDefaultImpl(
     proxyInstance
   }
 
-  protected def hasNoDeps(tpe: RuntimeDIUniverse.SafeType): Boolean = {
+  protected def hasDeps(tpe: RuntimeDIUniverse.SafeType): Boolean = {
     val constructors = tpe.tpe.decls.filter(_.isConstructor)
     val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
     val hasNoDependencies = constructors.isEmpty || hasTrivial
-    hasNoDependencies
+    !hasNoDependencies
   }
 
   protected def allForwardRefsAreByName(makeProxy: ProxyOp.MakeProxy): Boolean = {
