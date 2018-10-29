@@ -60,7 +60,7 @@ object DefaultBootstrapContext {
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
       , bootstrapObserver
-      , new PlanMergingPolicyDefaultImpl(analyzer)
+      , new PlanMergingPolicyDefaultImpl(analyzer, symbolIntrospector)
       , Set(new PlanningHookDefaultImpl)
     )
   }

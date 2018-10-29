@@ -13,14 +13,9 @@ import com.github.pshirshov.izumi.functional.Renderable
 
 // TODO: we need to parameterize plans with op types to avoid possibility of having proxy ops in semi
 sealed trait AbstractPlan {
-
   def definition: ModuleBase
 
   def steps: Seq[ExecutableOp]
-
-  final lazy val index: Map[DIKey, ExecutableOp] = {
-    steps.map(s => s.target -> s).toMap
-  }
 
   /** Get all imports (unresolved dependencies).
     *
@@ -51,7 +46,7 @@ sealed trait AbstractPlan {
 
   final def toSemi: SemiPlan = {
     val safeSteps = steps.flatMap {
-      case i: InitProxy =>
+      case _: InitProxy =>
         Seq.empty
       case i: MakeProxy=>
         Seq(i.op)
@@ -92,6 +87,10 @@ object AbstractPlan {
 
 /** Unordered plan. You can turn into an [[OrderedPlan]] by using [[com.github.pshirshov.izumi.distage.model.Planner#finish]] **/
 final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp]) extends AbstractPlan {
+  lazy val index: Map[DIKey, ExecutableOp] = {
+    steps.map(s => s.target -> s).toMap
+  }
+
   def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
     SemiPlan(definition, steps.map(f).toVector)
   }

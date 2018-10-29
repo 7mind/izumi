@@ -12,7 +12,6 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
 
 
-
 class ClassStrategyDefaultImpl
 (
   symbolIntrospector: SymbolIntrospector.Runtime,
@@ -40,7 +39,7 @@ class ClassStrategyDefaultImpl
   }
 
 
-  protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Any]) = {
+  protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Any]): Any = {
     val wiring = op.wiring
     val targetType = wiring.instanceType
     val symbol = targetType.tpe.typeSymbol
@@ -48,13 +47,10 @@ class ClassStrategyDefaultImpl
     if (symbol.isModule) { // don't re-instantiate scala objects
       mirror.reflectModule(symbol.asModule).instance
     } else {
-      val (refClass, prefixInstance) = reflectClass(context, op, symbol)
-      val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType).getOrElse(
-        throw new MissingConstructorException(s"Missing constructor in $targetType")
-      )
+      val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
+      val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
 
-      val refCtor = refClass.reflectConstructor(ctorSymbol)
-      val hasByName = ctorSymbol.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
+      val (refClass, prefixInstance) = reflectClass(context, op, symbol)
 
       if (hasByName) {
         // this is a dirty workaround for crappy logic in JavaTransformingMethodMirror
@@ -66,6 +62,9 @@ class ClassStrategyDefaultImpl
         }
         mkJava(targetType, fullArgs)
       } else {
+        val refCtor = refClass.reflectConstructor(ctorSymbol.getOrElse(
+          throw new MissingConstructorException(s"Missing constructor in $targetType")
+        ))
         refCtor.apply(args: _*)
       }
     }

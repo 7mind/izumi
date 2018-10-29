@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.distage.gc
 
-import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import distage.Injector
 import org.scalatest.WordSpec
+import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
 
 @ExposedTestScope
 object InjectorCases {
@@ -20,7 +21,6 @@ object InjectorCases {
   object InjectorCase2 {
     trait MkS3Client
     class S3Component(client: => MkS3Client)
-
     class Impl(val c: S3Component) extends MkS3Client
     class App(val client: MkS3Client, val component: S3Component)
   }
@@ -42,16 +42,22 @@ object InjectorCases {
     class Ctx(val upload: S3Upload)
     class Initiator(val components: Set[IntegrationComponent])
   }
+
+  object InjectorCase5 {
+    trait T1
+    trait T2
+    class Circular1(val c1: T1, val c2: T2) extends T1
+    class Circular2(val c1: T1, val c2: T2) extends T2
+  }
 }
 
 trait MkGcInjector {
   def mkInjector(roots: RuntimeDIUniverse.DIKey*): Injector = Injector.gc(roots.toSet).apply()
-  def mkInjector0(roots: RuntimeDIUniverse.DIKey*): Injector = Injector.Standard()
 }
 
 class BasicGcTests extends WordSpec with MkGcInjector {
   "Garbage-collection injector" should {
-    "keep proxy instantiations" in {
+    "keep proxies alive in case of intersecting loops" in {
       import InjectorCases.InjectorCase1._
       val injector = mkInjector(distage.DIKey.get[Circular2])
       val plan = injector.plan(new ModuleDef {
@@ -61,7 +67,6 @@ class BasicGcTests extends WordSpec with MkGcInjector {
         make[Circular4]
       })
 
-      import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
       println(plan.render)
       val result = injector.produce(plan)
       assert(result.get[Circular1].c2 != null)
@@ -70,7 +75,7 @@ class BasicGcTests extends WordSpec with MkGcInjector {
       assert(result.get[Circular2].c1.isInstanceOf[Circular1])
     }
 
-    "keep proxy instantiations-2" in {
+    "keep by-name loops alive" in {
       import InjectorCases.InjectorCase2._
       val injector = mkInjector(distage.DIKey.get[App])
       val plan = injector.plan(new ModuleDef {
@@ -79,13 +84,12 @@ class BasicGcTests extends WordSpec with MkGcInjector {
         make[App]
       })
 
-      import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
       println(plan.render)
       val result = injector.produce(plan)
       assert(result.get[App] != null)
     }
 
-    "keep proxy instantiations-3" in {
+    "keep plans alive in case of complex loops" in {
       import InjectorCases.InjectorCase3._
       val injector = mkInjector(distage.DIKey.get[Ctx])
       val plan = injector.plan(new ModuleDef {
@@ -97,8 +101,6 @@ class BasicGcTests extends WordSpec with MkGcInjector {
         make[S3Component]
       })
 
-      import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
-      println(plan.render)
       val result = injector.produce(plan)
       assert(result.get[Ctx].upload.client != null)
       val c1 = result.get[MkS3Client]
@@ -106,7 +108,25 @@ class BasicGcTests extends WordSpec with MkGcInjector {
       assert(c1 == c2)
     }
 
-    "keep proxy instantiations-4" in {
+    "keep plans alive after conversion back to SemiPlan" in {
+      import InjectorCases.InjectorCase1._
+      val injector = mkInjector(distage.DIKey.get[Circular2])
+      val plan = injector.plan(new ModuleDef {
+        make[Circular1]
+        make[Circular2]
+        make[Circular3]
+        make[Circular4]
+      })
+
+      val plan2 = injector.finish(plan.toSemi.map(op => op))
+      val result = injector.produce(plan2)
+      assert(result.get[Circular1].c2 != null)
+      assert(result.get[Circular2].c1 != null)
+      assert(result.get[Circular1].c2.isInstanceOf[Circular2])
+      assert(result.get[Circular2].c1.isInstanceOf[Circular1])
+    }
+
+    "keep plans alive after conversion back to SemiPlan in case of complex loops" in {
       import InjectorCases.InjectorCase4._
       val injector = mkInjector(distage.DIKey.get[Ctx], distage.DIKey.get[Initiator])
       val plan = injector.plan(new ModuleDef {
@@ -118,24 +138,22 @@ class BasicGcTests extends WordSpec with MkGcInjector {
       })
 
       val plan2 = injector.finish(plan.toSemi.map(op => op))
-      import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
-      println(plan2.render)
       val result = injector.produce(plan2)
       assert(result.get[Ctx] != null)
     }
 
-    "keep proxy instantiations-5" in {
-      import InjectorCases.InjectorCase1._
+
+    "keep proxies alive in case of pathologically intersecting loops" in {
+      import InjectorCases.InjectorCase5._
       val injector = mkInjector(distage.DIKey.get[Circular2])
       val plan = injector.plan(new ModuleDef {
         make[Circular1]
         make[Circular2]
-        make[Circular3]
-        make[Circular4]
+        make[T1].using[Circular1]
+        make[T2].using[Circular2]
       })
 
       val plan2 = injector.finish(plan.toSemi.map(op => op))
-      import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
       println(plan2.render)
       val result = injector.produce(plan2)
       assert(result.get[Circular1].c2 != null)
