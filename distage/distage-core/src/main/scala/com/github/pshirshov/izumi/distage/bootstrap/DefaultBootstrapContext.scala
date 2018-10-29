@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
@@ -47,6 +47,8 @@ object DefaultBootstrapContext {
     , symbolIntrospector
   )
 
+  protected val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
+
   protected lazy val bootstrapPlanner: Planner = {
 
     val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap"))
@@ -67,7 +69,7 @@ object DefaultBootstrapContext {
     val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
 
     new ProvisionerDefaultImpl(
-      new SetStrategyDefaultImpl
+      new SetStrategyDefaultImpl(mirrorProvider)
 
       , new ProxyStrategyFailingImpl
       , new FactoryStrategyFailingImpl
@@ -75,7 +77,7 @@ object DefaultBootstrapContext {
 
       , new FactoryProviderStrategyDefaultImpl(loggerHook)
       , new ProviderStrategyDefaultImpl
-      , new ClassStrategyDefaultImpl(symbolIntrospector)
+      , new ClassStrategyDefaultImpl(symbolIntrospector, mirrorProvider)
       , new ImportStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
       , new ProvisioningFailureInterceptorDefaultImpl
@@ -94,6 +96,7 @@ object DefaultBootstrapContext {
 
     make[PlanningObserver].from[PlanningObserverDefaultImpl]
     make[LoggerHook].from[LoggerHookDefaultImpl]
+    make[MirrorProvider].from[MirrorProvider.Impl.type]
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]

@@ -5,17 +5,18 @@ import java.lang.reflect.Method
 
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import net.sf.cglib.proxy.{Callback, Enhancer}
 
 import scala.util.{Failure, Success, Try}
 
-object CglibProxyProvider extends ProxyProvider {
+class CglibProxyProvider(mirrorProvider: MirrorProvider) extends ProxyProvider {
   override def makeCycleProxy(cycleContext: CycleContext, proxyContext: ProxyContext): DeferredInit = {
     val nullDispatcher = new CglibNullMethodInterceptor(cycleContext.deferredKey)
-    val nullProxy = CglibProxyProvider.mkDynamic(nullDispatcher, proxyContext)
+    val nullProxy = mkDynamic(nullDispatcher, proxyContext)
     val dispatcher = new CglibRefDispatcher(nullProxy)
-    val proxy = CglibProxyProvider.mkDynamic(dispatcher, proxyContext)
+    val proxy = mkDynamic(dispatcher, proxyContext)
     strategies.DeferredInit(dispatcher, proxy)
   }
 
@@ -32,6 +33,7 @@ object CglibProxyProvider extends ProxyProvider {
       , narrowedContext
       , executor
       , op
+      , mirrorProvider
     )
 
     mkDynamic(dispatcher, proxyContext)
@@ -70,7 +72,9 @@ object CglibProxyProvider extends ProxyProvider {
           s"Failed to instantiate class $runtimeClass, params=$params with CGLib. Operation: $op", runtimeClass, params, op, f)
     }
   }
+}
 
+object CglibProxyProvider {
   protected[cglib] def invokeExistingMethod(o: Any, method: Method, objects: Array[AnyRef]): AnyRef = {
     CglibProxyProvider.TRUSTED_METHOD_HANDLES
       .in(method.getDeclaringClass)
@@ -79,12 +83,9 @@ object CglibProxyProvider extends ProxyProvider {
       .invokeWithArguments(objects: _*)
   }
 
-
   private final lazy val TRUSTED_METHOD_HANDLES = {
     val methodHandles = classOf[MethodHandles.Lookup].getDeclaredField("IMPL_LOOKUP")
     methodHandles.setAccessible(true)
     methodHandles.get(null).asInstanceOf[MethodHandles.Lookup]
   }
 }
-
-

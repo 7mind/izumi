@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExecutor, TraitIndex}
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
 import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.exceptions.CgLibCallException
@@ -21,6 +21,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
   , narrowedContext: ProvisioningKeyProvider
   , executor: OperationExecutor
   , op: WiringOp.InstantiateFactory
+  , mirror: MirrorProvider
 ) extends CgLibTraitMethodInterceptor(dependencyMethodIndex, narrowedContext) {
 
   override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
@@ -52,7 +53,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val unmatchedTypes = providedValues.filter {
       case (key, value) =>
-        val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(key.tpe.tpe.erasure)
+        val runtimeClass = mirror.runtimeClass(key.tpe.tpe.erasure)
         !TypeUtil.isAssignableFrom(runtimeClass, value)
     }
 

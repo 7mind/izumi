@@ -5,15 +5,19 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
 
+
+
 class ClassStrategyDefaultImpl
 (
-  symbolIntrospector: SymbolIntrospector.Runtime
+  symbolIntrospector: SymbolIntrospector.Runtime,
+  mw: MirrorProvider
+
 ) extends ClassStrategy {
 
   import ClassStrategyDefaultImpl._
@@ -103,9 +107,7 @@ class ClassStrategyDefaultImpl
   }
 
   protected def mkJava(targetType: SafeType, args: Seq[Any]): Any = {
-    val refUniverse = RuntimeDIUniverse.mirror
-    val clazz = refUniverse
-      .runtimeClass(targetType.tpe)
+    val clazz = mw.runtimeClass(targetType)
     val argValues = args.map(_.asInstanceOf[AnyRef])
 
     clazz

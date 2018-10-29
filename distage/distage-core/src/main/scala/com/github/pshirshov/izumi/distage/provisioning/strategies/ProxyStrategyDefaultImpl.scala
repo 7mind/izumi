@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, Pr
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
@@ -20,6 +20,7 @@ class ProxyStrategyDefaultImpl(
                                 reflectionProvider: ReflectionProvider.Runtime
                                 , symbolIntrospector: SymbolIntrospector.Runtime
                                 , proxyProvider: ProxyProvider
+                                , mirror: MirrorProvider
                               ) extends ProxyStrategy {
   def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(initProxy.target)
