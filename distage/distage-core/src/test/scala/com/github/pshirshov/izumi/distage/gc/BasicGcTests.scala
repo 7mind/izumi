@@ -78,7 +78,6 @@ object InjectorCases {
   }
 
   object InjectorCase6 {
-
     trait Circular1 {
       def nothing: Int
 
@@ -94,15 +93,6 @@ object InjectorCases {
 
       def c2: Circular2
     }
-
-    //    abstract class Circular1(val c1: Circular1, val c2: Circular2) {
-    //      def nothing: Int
-    //    }
-    //
-    //    abstract class Circular2(val c1: Circular1, val c2: Circular2) {
-    //      def nothing: Int
-    //    }
-
   }
 
 }
