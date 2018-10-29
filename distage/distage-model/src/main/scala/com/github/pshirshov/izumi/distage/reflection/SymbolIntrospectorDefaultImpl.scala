@@ -48,25 +48,33 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
   override def isConcrete(symb: u.SafeType): Boolean = {
     symb.tpe match {
-      case u.u.RefinedType(types, scope) =>
-        types.forall(t => t.typeSymbol.isClass && !t.typeSymbol.isAbstract) && !scope.forall(_.isAbstract)
+      case rt: u.u.RefinedType =>
+        rt.parents.forall(t => isConcrete(t)) && !rt.decls.forall(_.isAbstract)
+
       case _ =>
-        symb.tpe.typeSymbol.isClass && !symb.tpe.typeSymbol.isAbstract
+        val tpe = symb.tpe
+        isConcrete(tpe)
     }
+  }
+
+  protected def isConcrete(tpe: u.TypeNative): Boolean = {
+    tpe.typeSymbol.isClass && !tpe.typeSymbol.isAbstract
   }
 
   override def isWireableAbstract(symb: u.SafeType): Boolean = {
+    val tpe = symb.tpe
+    val abstractMembers = tpe.members.filter(_.isAbstract)
 
-    symb.tpe match {
-      case u.u.RefinedType(types, _) =>
-        types.forall(t => t.typeSymbol.isClass) && types.exists(t => t.typeSymbol.isAbstract) && symb.tpe.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
+    // no mistake here. Wireable astract is a abstract class or class with an abstract parent having all abstract members wireable
+    tpe match {
+      case rt: u.u.RefinedType =>
+        rt.parents.exists(_.typeSymbol.isAbstract) && abstractMembers.forall(m => isWireableMethod(symb, m))
 
-      case _ =>
-        symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && symb.tpe.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
+      case t =>
+        t.typeSymbol.isClass && t.typeSymbol.isAbstract && abstractMembers.forall(m => isWireableMethod(symb, m))
     }
-
-
   }
+
 
   override def isFactory(symb: u.SafeType): Boolean = {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && {
