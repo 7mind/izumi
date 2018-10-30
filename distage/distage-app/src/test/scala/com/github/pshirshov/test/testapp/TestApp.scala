@@ -12,7 +12,7 @@ class TestApp(
                , val setTest: Set[Conflict]
                , app: => TestApp
              ) {
-  Quirks.Lazy.discard(app)
+  Quirks.discard(app)
 }
 
 class BadApp
