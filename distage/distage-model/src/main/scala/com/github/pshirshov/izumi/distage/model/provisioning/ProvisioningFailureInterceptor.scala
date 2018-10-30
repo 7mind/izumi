@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.provisioning
 
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.exceptions.ProvisioningException
+import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FormattingUtils, OrderedPlan}
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -35,7 +35,11 @@ class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInter
     val repr = failures.map {
       case ProvisioningFailure(op, f) =>
         val pos = FormattingUtils.formatBindingPosition(op.origin)
-        s"${op.target} $pos, ${f.getClass.getCanonicalName}: ${f.getMessage}"
+        val name = f match {
+          case di: DIException => di.getClass.getSimpleName
+          case o => o.getClass.getCanonicalName
+        }
+        s"${op.target} $pos, $name: ${f.getMessage}"
     }
 
     val ccFailed = repr.size

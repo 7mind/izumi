@@ -86,13 +86,19 @@ object ExecutableOp {
 
   object ProxyOp {
 
-    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: Option[Binding]) extends ProxyOp {
+    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: Option[Binding], byNameAllowed: Boolean) extends ProxyOp {
       override def target: DIKey = op.target
 
       override def format: String = {
         import IzString._
         val pos = FormattingUtils.formatBindingPosition(origin)
-        s"""$target $pos := proxy(${forwardRefs.mkString(", ")}) {
+        val kind = if (byNameAllowed) {
+          "proxy.light"
+        } else {
+          "proxy.cogen"
+        }
+
+        s"""$target $pos := $kind(${forwardRefs.map(s => s"$s: deferred").mkString(", ")}) {
            |${op.toString.shift(2)}
            |}""".stripMargin
       }

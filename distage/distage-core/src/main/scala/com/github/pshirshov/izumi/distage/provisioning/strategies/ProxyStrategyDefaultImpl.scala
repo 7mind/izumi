@@ -4,9 +4,9 @@ import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
 trait FakeSet[A] extends Set[A]
@@ -18,7 +18,6 @@ trait FakeSet[A] extends Set[A]
   */
 class ProxyStrategyDefaultImpl(
                                 reflectionProvider: ReflectionProvider.Runtime
-                                , symbolIntrospector: SymbolIntrospector.Runtime
                                 , proxyProvider: ProxyProvider
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
@@ -43,7 +42,7 @@ class ProxyStrategyDefaultImpl(
   def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[OpResult] = {
     val tpe = proxyTargetType(makeProxy)
 
-    val cogenNotRequired = allForwardRefsAreByName(makeProxy)
+    val cogenNotRequired = makeProxy.byNameAllowed
 
     val proxyInstance = if (cogenNotRequired) {
       val proxy = new ByNameDispatcher(makeProxy.target)
@@ -108,13 +107,7 @@ class ProxyStrategyDefaultImpl(
     !hasNoDependencies
   }
 
-  protected def allForwardRefsAreByName(makeProxy: ProxyOp.MakeProxy): Boolean = {
-    symbolIntrospector.hasConstructor(makeProxy.op.target.tpe) && {
-      val params = reflectionProvider.constructorParameters(makeProxy.op.target.tpe)
-      val forwardedParams = params.filter(p => makeProxy.forwardRefs.contains(p.wireWith))
-      forwardedParams.nonEmpty && forwardedParams.forall(_.isByName)
-    }
-  }
+
 
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
     makeProxy.op match {

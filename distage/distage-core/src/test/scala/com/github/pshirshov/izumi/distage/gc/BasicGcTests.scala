@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.gc
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage.Injector
 import org.scalatest.WordSpec
 
@@ -27,7 +27,9 @@ object InjectorCases {
     trait MkS3Client
 
     class S3Component(client: => MkS3Client) {
-      Quirks.discard(client)
+      def nothing(): Unit = {
+        client.discard()
+      }
     }
 
     class Impl(val c: S3Component) extends MkS3Client
@@ -99,12 +101,18 @@ object InjectorCases {
   }
 
   object InjectorCase7 {
-    class Circular1(bnc1: => Circular1, bnc2: => Circular2, val c1: Circular1) {
-      Quirks.discard(bnc1)
-      Quirks.discard(bnc2)
+    class Circular1(bnc1: => Circular1, bnc2: => Circular2, val c1: Circular1, val c2: Circular2) {
+      def nothing(): Unit = {
+        bnc1.discard()
+        bnc2.discard()
+      }
     }
-
-    class Circular2(bnc1: => Circular1, bnc2: => Circular2)
+    class Circular2(bnc1: => Circular1, bnc2: => Circular2) {
+      def nothing(): Unit = {
+        bnc1.discard()
+        bnc2.discard()
+      }
+    }
   }
 
 }
@@ -258,14 +266,10 @@ class BasicGcTests extends WordSpec with MkGcInjector {
         make[Circular2]
       })
 
-      import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
-      println(plan.render)
       val result = injector.produce(plan)
 
-//      assert(result.get[Circular1].c2 != null)
-//      assert(result.get[Circular2].c1 != null)
-//      assert(result.get[Circular1].c2.isInstanceOf[Circular2])
-//      assert(result.get[Circular2].c1.isInstanceOf[Circular1])
+      assert(result.get[Circular1].c2 != null)
+      assert(result.get[Circular1].c2.isInstanceOf[Circular2])
     }
   }
 }

@@ -69,7 +69,7 @@ class CglibProxyProvider(mirrorProvider: MirrorProvider) extends ProxyProvider {
 
       case Failure(f) =>
         throw new CgLibInstantiationOpException(
-          s"Failed to instantiate class $runtimeClass, params=$params with CGLib. Operation: $op", runtimeClass, params, op, f)
+          s"Failed to instantiate class with CGLib, make sure you don't use proxied parameters in constructors: class=$runtimeClass, params=$params ", runtimeClass, params, op, f)
     }
   }
 }
