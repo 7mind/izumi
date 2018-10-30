@@ -8,14 +8,14 @@ class QuirksTest extends WordSpec {
 
   "Discarder" should {
     "discard values effectlessly" in {
-      import Quirks._
+      import Quirks.Lazy._
       boom.discard()
       discard(boom)
       discard(boom, boom)
     }
 
     "discard values effectlessly when only discard method imported" in {
-      import Quirks.discard
+      import Quirks.Lazy.discard
       discard(boom)
       discard(boom, boom)
     }
