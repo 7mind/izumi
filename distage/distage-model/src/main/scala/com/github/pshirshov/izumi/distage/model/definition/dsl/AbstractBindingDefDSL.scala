@@ -192,7 +192,8 @@ object AbstractBindingDefDSL {
 
   final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
-      val hopefullyRandomId = ((System.identityHashCode(implDef).toLong << 63) ^ (this.hashCode().toLong << 32)) >>> 1
+      // always positive: 0[32-bits of impldef hashcode][31 bit of this hashcode]
+      val hopefullyRandomId = ((System.identityHashCode(implDef) & 0xffffffffL) << 31) | ((this.hashCode() & 0xffffffffL) >> 1)
 
       val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, BindingTag.untaggedTags, pos)
 
