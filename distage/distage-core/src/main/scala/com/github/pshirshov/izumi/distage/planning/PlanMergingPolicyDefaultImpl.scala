@@ -1,11 +1,14 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.UntranslatablePlanException
+import com.github.pshirshov.izumi.distage.model.exceptions.{UnsupportedOpException, UntranslatablePlanException}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
 import com.github.pshirshov.izumi.fundamentals.graphs._
+import distage.DIKey
 
 import scala.collection.mutable
 
@@ -19,7 +22,7 @@ object ConflictResolution {
 
 }
 
-class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPolicy {
+class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: SymbolIntrospector.Runtime) extends PlanMergingPolicy {
 
   override def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
     (currentOp.provisions ++ currentOp.sets.values).foreach {
@@ -37,8 +40,10 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
     val issues = resolved.collect({ case (k, ConflictResolution.Failed(ops)) => (k, ops) }).toMap
 
     if (issues.nonEmpty) {
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
       // TODO: issues == slots, we may apply slot logic here
-      throw new UntranslatablePlanException(s"Unresolved operation conflicts:\n${issues.mkString("\n")}", issues)
+      val issueRepr = issues.map({case (k, ops) => s"$k: ${ops.niceList().shift(2)}"})
+      throw new UntranslatablePlanException(s"Unresolved operation conflicts: ${issueRepr.niceList()}", issues)
     }
 
     // it's not neccessary to sort the plan at this stage, it's gonna happen after GC
@@ -61,15 +66,66 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer) extends PlanMergingPo
   }
 
   override def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
-    val index = completedPlan.index
     val topology = analyzer.topology(completedPlan.steps)
+
+    val index = completedPlan.index
+
+    def break(keys: Set[DIKey]): DIKey = {
+      val loop = keys.toList
+
+      val best = loop.sortWith {
+        case (fst, snd) =>
+          val fsto = index(fst)
+          val sndo = index(snd)
+
+          if (fsto.isInstanceOf[ReferenceKey] && !sndo.isInstanceOf[ReferenceKey]) {
+            false
+          } else if (!fsto.isInstanceOf[ReferenceKey] && sndo.isInstanceOf[ReferenceKey]) {
+            true
+          } else if (fsto.isInstanceOf[ReferenceKey] && sndo.isInstanceOf[ReferenceKey]) {
+            false
+          } else {
+            val fstHasByName: Boolean = hasByNameParameter(fsto)
+            val sndHasByName: Boolean = hasByNameParameter(sndo)
+
+            if (fstHasByName && !sndHasByName) {
+              false
+            } else if (!fstHasByName && sndHasByName) {
+              true
+            } else {
+              analyzer.requirements(fsto).size > analyzer.requirements(sndo).size
+            }
+          }
+
+      }.head
+
+      index(best) match {
+        case op: ReferenceKey =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate is reference O_o: $keys", op)
+        case op: ImportDependency =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate is import O_o: $keys", op)
+        case op: ProxyOp =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate is proxy O_o: $keys", op)
+        case _: InstantiationOp =>
+          best
+      }
+    }
+
     val sortedKeys = toposort.cycleBreaking(
       topology.dependencies.graph
       , Seq.empty
+      , break
     )
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
     OrderedPlan(completedPlan.definition, sortedOps.toVector, topology)
+  }
+
+  private def hasByNameParameter(fsto: ExecutableOp): Boolean = {
+    val fstoTpe = ExecutableOp.instanceType(fsto)
+    val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
+    val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
+    hasByName
   }
 
   protected def resolve(operations: mutable.Set[InstantiationOp]): ConflictResolution = {

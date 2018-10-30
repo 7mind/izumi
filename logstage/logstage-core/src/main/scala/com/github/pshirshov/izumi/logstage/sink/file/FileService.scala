@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.logstage.sink.file
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.Discarder
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.sink.file.FileSink.FileIdentity
 import com.github.pshirshov.izumi.logstage.sink.file.models.LogFile
 

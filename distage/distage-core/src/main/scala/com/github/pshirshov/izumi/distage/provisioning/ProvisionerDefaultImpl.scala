@@ -33,7 +33,7 @@ class ProvisionerDefaultImpl
     val provisioningContext = ProvisionActive()
     provisioningContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
 
-    val failures = new mutable.HashMap[DIKey, mutable.Set[Throwable]] with mutable.MultiMap[DIKey, Throwable]
+    val failures = new mutable.ArrayBuffer[ProvisioningFailure]
 
     plan.steps.foreach {
       case step if excluded.contains(step.target) =>
@@ -54,18 +54,18 @@ class ProvisionerDefaultImpl
                   case Success(_) =>
                   case Failure(f) =>
                     excluded ++= plan.topology.transitiveDependees(step.target)
-                    failures.addBinding(step.target, f)
+                    failures += ProvisioningFailure(step, f)
                 }
             }
 
           case Failure(f) =>
             excluded ++= plan.topology.transitiveDependees(step.target)
-            failures.addBinding(step.target, f)
+            failures += ProvisioningFailure(step, f)
         }
     }
 
     if (failures.nonEmpty) {
-      failureHandler.onProvisioningFailed(provisioningContext.toImmutable, plan, parentContext, failures.mapValues(_.toSet).toMap)
+      failureHandler.onProvisioningFailed(provisioningContext.toImmutable, plan, parentContext, failures.toVector)
     } else {
       ProvisionImmutable(provisioningContext.instances, provisioningContext.imports)
     }

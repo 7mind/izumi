@@ -1,15 +1,39 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.AtomicProxyDispatcher
-import net.sf.cglib.proxy.Dispatcher
+import java.lang.reflect.Method
+
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{AtomicProxyDispatcher, DistageProxy}
+import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 // dynamic dispatching is not optimal, uhu
-protected[distage] class CglibRefDispatcher(nullProxy: Any)
-  extends AtomicProxyDispatcher with Dispatcher {
+protected[distage] class CglibRefDispatcher(nullProxy: AnyRef)
+  extends AtomicProxyDispatcher
+    with MethodInterceptor {
 
-  override def loadObject(): AnyRef = {
-    Option(reference.get())
-      .getOrElse(nullProxy)
-      .asInstanceOf[AnyRef]
+
+  override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
+    val methodName = method.getName
+    if (methodName == "equals" && (method.getParameterTypes sameElements Array(classOf[AnyRef]))) {
+      objects.headOption match {
+        case Some(r: DistageProxy) =>
+          Boolean.box(getRef == r._distageProxyReference)
+
+        case _ =>
+          method.invoke(getRef, objects: _*)
+      }
+    } else if (methodName == "_distageProxyReference" && method.getParameterCount == 0) {
+      getRef
+    } else {
+      method.invoke(getRef, objects: _*)
+    }
+  }
+
+  @inline def getRef: AnyRef = {
+    val value: AnyRef = reference.get()
+    if (value != null) {
+      value
+    } else {
+      nullProxy
+    }
   }
 }

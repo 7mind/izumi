@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage.dsl
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._

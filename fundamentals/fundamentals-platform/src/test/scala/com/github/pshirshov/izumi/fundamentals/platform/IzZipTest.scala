@@ -17,3 +17,5 @@ class IzZipTest extends WordSpec {
 
 
 }
+
+

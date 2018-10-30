@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.planning
 
+import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag, Wiring}
@@ -45,7 +46,7 @@ import scala.collection.immutable.ListSet
   * Auto-Sets are NOT subject to [[gc.TracingGcModule Garbage Collection]], they are assembled *after* garbage collection is done,
   * as such they can't contain garbage by construction.
   *
-  * */
+  **/
 class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
   protected val setElemetType: SafeType = SafeType.get[T]
 
@@ -56,19 +57,26 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
 
     val newSteps = plan.steps.flatMap {
       op =>
-        val opTargetType = ExecutableOp.instanceType(op)
-        if (opTargetType weak_<:< setElemetType) {
-          val elementKey = DIKey.SetElementKey(setKey, op.target.tpe, plan.steps.size + newMembers.size)
-          newMembers += elementKey
-          Seq(op, ExecutableOp.WiringOp.ReferenceKey(elementKey, Wiring.UnaryWiring.Reference(op.target.tpe, op.target, weak = true), op.origin))
-        } else if (op.target == setKey) {
-          Seq.empty
-        } else {
-          Seq(op)
+        op.target match {
+          // we should throw out all existing elements of the set
+          case `setKey` =>
+            Seq.empty
+
+          // and we should throw out existing set definition
+          case s: DIKey.SetElementKey if s.set == setKey =>
+            Seq.empty
+
+          case o if ExecutableOp.instanceType(op) weak_<:< setElemetType =>
+            val elementKey = DIKey.SetElementKey(setKey, op.target)
+            newMembers += elementKey
+            Seq(op, ExecutableOp.WiringOp.ReferenceKey(elementKey, Wiring.UnaryWiring.Reference(op.target.tpe, op.target, weak = true), op.origin))
+
+          case o =>
+            Seq(op)
         }
     }
 
-    val newSetKeys: scala.collection.immutable.Set[DIKey] = ListSet(newMembers: _*) // newMembers.toSet
+    val newSetKeys: scala.collection.immutable.Set[DIKey] = ListSet(newMembers: _*)
     val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, None)
     SemiPlan(plan.definition, newSteps :+ newSetOp)
   }
@@ -88,4 +96,16 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
 
     plan.copy(steps = withReorderedSetElements)
   }
+}
+
+class AutoSetModule() extends BootstrapModuleDef {
+  def register[T: Tag]: AutoSetModule = {
+    many[T]
+    many[PlanningHook].add(new AssignableFromAutoSetHook[T])
+    this
+  }
+}
+
+object AutoSetModule {
+  def apply(): AutoSetModule = new AutoSetModule()
 }

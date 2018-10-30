@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage.dsl
 
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 

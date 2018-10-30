@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.typesafe.config
 
 import java.io.File
 import java.math.{BigInteger, MathContext, BigDecimal => JavaBigDecimal}
-import java.net.{URI, URL}
+import java.net.{InetAddress, URI, URL}
 import java.nio.file.{Path, Paths}
 import java.time.{Duration => JavaDuration, _}
 import java.util.UUID
@@ -10,6 +10,7 @@ import java.util.regex.Pattern
 
 import com.typesafe.config.{Config, ConfigList, ConfigObject, ConfigValue}
 
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.math.{BigDecimal, BigInt}
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
@@ -17,7 +18,7 @@ import scala.util.{Success, Try}
 
 // copypasta from pureconfig.BasicReaders
 
-object ConfigReaderInstances {
+trait ConfigReaderInstances {
 
   implicit final val stringConfigReader: ConfigReader[String] = ConfigReader.fromString[String](s => s)
   implicit final val charConfigReader: ConfigReader[Char] = ConfigReader.fromString[Char](s =>
@@ -25,16 +26,16 @@ object ConfigReaderInstances {
       case 1 => s.charAt(0)
       case len => throw new ConfigReadException(s"Expected a single Char, but string `$s` is $len character long")
     })
-  implicit final val booleanConfigReader: ConfigReader[Boolean] = ConfigReader.fromString[Boolean]{
+  implicit final val booleanConfigReader: ConfigReader[Boolean] = ConfigReader.fromString[Boolean] {
     case "yes" | "on" => true
     case "no" | "off" => false
     case other => other.toBoolean
   }
-  implicit final val doubleConfigReader: ConfigReader[Double] = ConfigReader.fromString[Double]{
+  implicit final val doubleConfigReader: ConfigReader[Double] = ConfigReader.fromString[Double] {
     case v if v.last == '%' => v.dropRight(1).toDouble / 100d
     case v => v.toDouble
   }
-  implicit final val floatConfigReader: ConfigReader[Float] = ConfigReader.fromString[Float]{
+  implicit final val floatConfigReader: ConfigReader[Float] = ConfigReader.fromString[Float] {
     case v if v.last == '%' => v.dropRight(1).toFloat / 100f
     case v => v.toFloat
   }
@@ -48,6 +49,19 @@ object ConfigReaderInstances {
       Enum.valueOf(enumClass, s)
     }
 
+  implicit final val durationConfigReader: ConfigReader[Duration] = ConfigReader.fromString[Duration](Duration.apply)
+
+  implicit final val finiteDurationConfigReader: ConfigReader[FiniteDuration] = ConfigReader.fromString[FiniteDuration] {
+    s =>
+      val parsed = Duration(s)
+      val maybeFinite = Some(parsed).collect { case d: FiniteDuration => d }
+      maybeFinite match {
+        case Some(f) => f
+        case None => throw new ConfigReadException(s"Duration is not finite: $parsed")
+      }
+  }
+
+  implicit final val inetAddressConfigReader: ConfigReader[InetAddress] = ConfigReader.fromString[InetAddress](InetAddress.getByName)
   implicit final val urlConfigReader: ConfigReader[URL] = ConfigReader.fromString[URL](new URL(_))
   implicit final val uuidConfigReader: ConfigReader[UUID] = ConfigReader.fromString[UUID](UUID.fromString)
   implicit final val pathConfigReader: ConfigReader[Path] = ConfigReader.fromString[Path](Paths.get(_))
@@ -111,3 +125,5 @@ object ConfigReaderInstances {
     cv => Try(cv.asInstanceOf[ConfigList])
 
 }
+
+object ConfigReaderInstances extends ConfigReaderInstances

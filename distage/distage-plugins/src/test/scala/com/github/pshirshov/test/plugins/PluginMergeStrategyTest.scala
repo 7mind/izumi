@@ -31,7 +31,7 @@ class PluginMergeStrategyTest extends WordSpec {
       ))
 
       val definition = mergeStrategy.merge(Seq(plugin1, plugin2)).definition
-      assert(Injector().produce(definition).get[TestImpl1].justASet == Set.empty)
+      assert(Injector.Standard().produce(definition).get[TestImpl1].justASet == Set.empty)
     }
 
     "Preserve identical binding from multiple plugins when one of the plugins was filtered out by tag" in {
@@ -55,7 +55,7 @@ class PluginMergeStrategyTest extends WordSpec {
       ))
 
       val definition = mergeStrategy.merge(Seq(plugin1, plugin2)).definition
-      assert(Injector().produce(definition).get[TestDependency] != null)
+      assert(Injector.Standard().produce(definition).get[TestDependency] != null)
     }
   }
 }

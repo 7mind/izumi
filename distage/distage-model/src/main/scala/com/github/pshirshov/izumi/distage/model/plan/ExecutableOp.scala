@@ -4,13 +4,13 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.util.Formattable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString
 
 // TODO: typeclass?..
-sealed trait ExecutableOp extends Formattable {
+sealed trait ExecutableOp {
   def target: DIKey
   def origin: Option[Binding]
+  def format: String
 
   override def toString: String = format
 }
@@ -42,6 +42,7 @@ object ExecutableOp {
     def origin: Option[Binding]
   }
 
+  sealed trait NewInstanceOp extends WiringOp {}
   object WiringOp {
 
     final case class InstantiateClass(target: DIKey, wiring: UnaryWiring.Constructor, origin: Option[Binding]) extends WiringOp {
@@ -85,13 +86,19 @@ object ExecutableOp {
 
   object ProxyOp {
 
-    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: Option[Binding]) extends ProxyOp with InstantiationOp {
+    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: Option[Binding], byNameAllowed: Boolean) extends ProxyOp {
       override def target: DIKey = op.target
 
       override def format: String = {
         import IzString._
         val pos = FormattingUtils.formatBindingPosition(origin)
-        s"""$target $pos := proxy(${forwardRefs.mkString(", ")}) {
+        val kind = if (byNameAllowed) {
+          "proxy.light"
+        } else {
+          "proxy.cogen"
+        }
+
+        s"""$target $pos := $kind(${forwardRefs.map(s => s"$s: deferred").mkString(", ")}) {
            |${op.toString.shift(2)}
            |}""".stripMargin
       }

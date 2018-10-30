@@ -20,7 +20,7 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
         make[SelfReference]
       }
 
-      val injector = Injector()
+      val injector = Injector.Standard()
       val plan = injector.plan(definition1)
 
       Then("imports should be empty")

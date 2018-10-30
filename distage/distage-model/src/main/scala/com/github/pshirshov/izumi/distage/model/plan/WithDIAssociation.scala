@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.references.WithDIKey
 import com.github.pshirshov.izumi.distage.model.reflection.universe._
-import com.github.pshirshov.izumi.distage.model.util.Formattable
 
 trait WithDIAssociation {
   this:  DIUniverseBase
@@ -13,10 +12,11 @@ trait WithDIAssociation {
     with WithDISymbolInfo
   =>
 
-  sealed trait Association extends Formattable {
+  sealed trait Association {
     def name: String
     def wireWith: DIKey
     def context: DependencyContext
+    def format: String
   }
 
   object Association {

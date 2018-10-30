@@ -151,7 +151,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     val value: Either[String, Int] = Right(5)
     val definition = new Definition[Either, Option, Int](value)
 
-    val context = Injector().produce(definition)
+    val context = Injector.Standard().produce(definition)
     assert(context != null)
 
     assert(definition.t0.tag.tpe =:= typeOf[TestCovariantTC[Either]])

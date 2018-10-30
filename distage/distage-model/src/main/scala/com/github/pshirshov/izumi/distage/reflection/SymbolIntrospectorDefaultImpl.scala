@@ -6,23 +6,25 @@ import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
-  override def selectConstructor(symb: u.SafeType): SelectedConstructor = {
-    val selectedConstructor = selectConstructorMethod(symb)
-    val originalParamListTypes = selectedConstructor.paramLists.map(_.map(_.typeSignature))
-    val paramLists = selectedConstructor.typeSignatureIn(symb.tpe).paramLists
-    // Hack due to .typeSignatureIn throwing out type annotations...
-    val paramsWithAnnos = originalParamListTypes
-      .zip(paramLists)
-      .map {
-        case (origTypes, params) =>
-          origTypes.zip(params).map {
-            case (o: u.u.AnnotatedTypeApi, p) =>
-              u.SymbolInfo.Runtime(p, symb, o.annotations)
-            case (_, p) =>
-              u.SymbolInfo.Runtime(p, symb)
+  override def selectConstructor(symb: u.SafeType): Option[SelectedConstructor] = {
+    selectConstructorMethod(symb).map {
+      selectedConstructor =>
+        val originalParamListTypes = selectedConstructor.paramLists.map(_.map(_.typeSignature))
+        val paramLists = selectedConstructor.typeSignatureIn(symb.tpe).paramLists
+        // Hack due to .typeSignatureIn throwing out type annotations...
+        val paramsWithAnnos = originalParamListTypes
+          .zip(paramLists)
+          .map {
+            case (origTypes, params) =>
+              origTypes.zip(params).map {
+                case (o: u.u.AnnotatedTypeApi, p) =>
+                  u.SymbolInfo.Runtime(p, symb, o.annotations)
+                case (_, p) =>
+                  u.SymbolInfo.Runtime(p, symb)
+              }
           }
-      }
-    SelectedConstructor(selectedConstructor, paramsWithAnnos)
+        SelectedConstructor(selectedConstructor, paramsWithAnnos)
+    }
   }
 
 
@@ -31,9 +33,13 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     constructor.isConstructor
   }
 
-  override def selectConstructorMethod(tpe: u.SafeType): u.MethodSymb = {
+  override def selectConstructorMethod(tpe: u.SafeType): Option[u.MethodSymb] = {
     val constructor = findConstructor(tpe)
-    constructor.asTerm.alternatives.head.asMethod
+    if (!constructor.isTerm) {
+      None
+    } else {
+      Some(constructor.asTerm.alternatives.head.asMethod)
+    }
   }
 
   override def selectNonImplicitParameters(symb: u.MethodSymb): List[List[u.Symb]] = {
@@ -41,12 +47,34 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
   }
 
   override def isConcrete(symb: u.SafeType): Boolean = {
-    symb.tpe.typeSymbol.isClass && !symb.tpe.typeSymbol.isAbstract
+    symb.tpe match {
+      case rt: u.u.RefinedType =>
+        rt.parents.forall(t => isConcrete(t)) && !rt.decls.forall(_.isAbstract)
+
+      case _ =>
+        val tpe = symb.tpe
+        isConcrete(tpe)
+    }
+  }
+
+  protected def isConcrete(tpe: u.TypeNative): Boolean = {
+    tpe.typeSymbol.isClass && !tpe.typeSymbol.isAbstract
   }
 
   override def isWireableAbstract(symb: u.SafeType): Boolean = {
-    symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && symb.tpe.members.filter(_.isAbstract).forall(m => isWireableMethod(symb, m))
+    val tpe = symb.tpe
+    val abstractMembers = tpe.members.filter(_.isAbstract)
+
+    // no mistake here. Wireable astract is a abstract class or class with an abstract parent having all abstract members wireable
+    tpe match {
+      case rt: u.u.RefinedType =>
+        rt.parents.exists(_.typeSymbol.isAbstract) && abstractMembers.forall(m => isWireableMethod(symb, m))
+
+      case t =>
+        t.typeSymbol.isClass && t.typeSymbol.isAbstract && abstractMembers.forall(m => isWireableMethod(symb, m))
+    }
   }
+
 
   override def isFactory(symb: u.SafeType): Boolean = {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && {

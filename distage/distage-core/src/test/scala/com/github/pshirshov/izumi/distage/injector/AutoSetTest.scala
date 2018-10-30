@@ -18,7 +18,7 @@ class AutoSetTest extends WordSpec with MkInjector {
       make[ServiceD]
     }
 
-    val injector = Injector(new BootstrapModuleDef {
+    val injector = Injector.Standard(new BootstrapModuleDef {
       many[AutoCloseable]
       many[PlanningHook]
         .add(new AssignableFromAutoSetHook[Ordered])

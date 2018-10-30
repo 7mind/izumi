@@ -70,7 +70,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     constructorParameterLists(symbl).flatten
 
   override def constructorParameterLists(symbl: SafeType): List[List[Association.Parameter]] = {
-    val argLists: List[List[u.SymbolInfo]] = symbolIntrospector.selectConstructor(symbl).arguments
+    val argLists: List[List[u.SymbolInfo]] = symbolIntrospector.selectConstructor(symbl).map(_.arguments).toList.flatten
 
     argLists.map(_.map(keyProvider.associationFromParameter))
   }

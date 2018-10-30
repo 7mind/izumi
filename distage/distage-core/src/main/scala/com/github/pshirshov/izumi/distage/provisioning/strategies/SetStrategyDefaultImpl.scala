@@ -4,11 +4,12 @@ import com.github.pshirshov.izumi.distage.model.exceptions.{IncompatibleTypesExc
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.SetStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.immutable.ListSet
 
-class SetStrategyDefaultImpl extends SetStrategy {
+class SetStrategyDefaultImpl(mirror: MirrorProvider) extends SetStrategy {
   def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[OpResult.NewInstance] = {
     // target is guaranteed to be a Set
     val scalaCollectionSetType = SafeType.get[collection.Set[_]]

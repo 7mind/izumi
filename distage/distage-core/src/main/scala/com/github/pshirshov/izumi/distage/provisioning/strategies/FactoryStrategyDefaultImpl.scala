@@ -5,11 +5,11 @@ import com.github.pshirshov.izumi.distage.model.exceptions.NoopProvisionerImplCa
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
-class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider) extends FactoryStrategy {
+class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider, mirror: MirrorProvider) extends FactoryStrategy {
   def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
     // at this point we definitely have all the dependencies instantiated
     val narrowedContext = context.narrow(op.wiring.requiredKeys)
@@ -18,7 +18,7 @@ class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider) extends FactorySt
     val traitIndex = TraitTools.traitIndex(op.wiring.factoryType, op.wiring.fieldDependencies)
 
     val instanceType = op.wiring.factoryType
-    val runtimeClass = RuntimeDIUniverse.mirror.runtimeClass(instanceType.tpe)
+    val runtimeClass = mirror.runtimeClass(instanceType)
 
     val factoryContext = FactoryContext(
       factoryMethodIndex
