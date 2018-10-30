@@ -304,8 +304,10 @@ class BasicTest extends WordSpec with MkInjector {
     val definition = new ModuleDef {
       make[Int].from(7)
 
-      many[Int].addSet(Set(1, 2, 3))
       many[Int].add(5)
+      many[Int].add(0)
+
+      many[Int].addSet(Set(1, 2, 3))
 
       many[Int].add { i: Int => i - 1 }
       many[Int].addSet {
@@ -316,7 +318,7 @@ class BasicTest extends WordSpec with MkInjector {
 
     val context = Injector.Standard().produce(definition)
 
-    assert(context.get[Set[Int]] == Set(1, 2, 3, 5, 6, 7, 8, 9))
+    assert(context.get[Set[Int]] == Set(0, 1, 2, 3, 5, 6, 7, 8, 9))
   }
 
   "support empty sets" in {

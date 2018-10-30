@@ -19,7 +19,7 @@ trait WithDIKey {
     sealed trait BasicKey extends DIKey
 
     case class TypeKey(tpe: SafeType) extends BasicKey {
-      override def toString: String = tpe.toString
+      override def toString: String = s"{type.${tpe.toString}}"
 
       def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id)
     }
@@ -27,11 +27,11 @@ trait WithDIKey {
     case class IdKey[I: IdContract](tpe: SafeType, id: I) extends BasicKey {
       val idContract: IdContract[I] = implicitly
 
-      override def toString: String = s"${tpe.toString}#${idContract.repr(id)}"
+      override def toString: String = s"{type.${tpe.toString}.${idContract.repr(id)}}"
     }
 
     case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {
-      override def toString: String = s"Proxy[${proxied.toString}]"
+      override def toString: String = s"{proxy.${proxied.toString}}"
 
       override def hashCode: Int = toString.hashCode()
     }
@@ -39,23 +39,25 @@ trait WithDIKey {
     /**
       *
       * @param set Target set key. Must be of type `Set[T]`
-      * @param tpe Element type. Must be of type `T1 &lt: T`
-      * @param index Disambiguation value. Set elements are of the same type, index makes them different
-      * @todo Disambiguating by [[index]] is kinda shitty
       */
-    case class SetElementKey(set: DIKey, tpe: SafeType, index: Int) extends DIKey {
-      override def toString: String = s"$set##${tpe.toString}.$index"
+    case class SetElementKey(set: DIKey, reference: DIKey) extends DIKey {
+      override def tpe: SafeType = reference.tpe
+
+      override def toString: String = {
+        s"{set.$set/${reference.toString}}"
+
+      }
 
       override def hashCode: Int = toString.hashCode()
     }
 
     implicit class WithTpe(key: DIKey) {
-      def withTpe(tpe: SafeType) = {
+      def withTpe(tpe: SafeType): DIKey = {
         key match {
           case k: TypeKey => k.copy(tpe = tpe)
           case k: IdKey[_] => k.copy(tpe = tpe)(k.idContract)
           case k: ProxyElementKey => k.copy(tpe = tpe)
-          case k: SetElementKey => k.copy(tpe = tpe)
+          case k: SetElementKey => ???
         }
       }
     }

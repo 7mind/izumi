@@ -122,18 +122,22 @@ class GcIdempotenceTests extends WordSpec with MkGcInjector {
         assert(result.get[Circular2].c1.nothing == 1)
       }
 
-      "keep proxies alive in case of pathologically intersecting loops with by-name edges" in {
-        import GcCases.InjectorCase7._
-        val injector = mkInjector(distage.DIKey.get[Circular2])
+      "work with autosets" in {
+        import GcCases.InjectorCase8._
+        val injector = mkInjector(distage.DIKey.get[App])
         val plan = injector.plan(new ModuleDef {
-          make[Circular1]
-          make[Circular2]
+          many[Component]
+            .add[TestComponent]
+
+          make[App]
         })
 
-        val result = injector.fproduce(plan)
+        val updated = injector.finish(plan.toSemi)
+        val result = injector.produce(updated)
+        assert(updated.steps.size == plan.steps.size)
 
-        assert(result.get[Circular1].c2 != null)
-        assert(result.get[Circular1].c2.isInstanceOf[Circular2])
+        assert(result.get[App].components.size == 1)
+        assert(result.get[App].closeables.size == 1)
       }
     }
 

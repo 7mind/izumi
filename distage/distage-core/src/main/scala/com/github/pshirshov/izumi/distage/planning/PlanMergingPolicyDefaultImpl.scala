@@ -40,8 +40,10 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
     val issues = resolved.collect({ case (k, ConflictResolution.Failed(ops)) => (k, ops) }).toMap
 
     if (issues.nonEmpty) {
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
       // TODO: issues == slots, we may apply slot logic here
-      throw new UntranslatablePlanException(s"Unresolved operation conflicts:\n${issues.mkString("\n")}", issues)
+      val issueRepr = issues.map({case (k, ops) => s"$k: ${ops.niceList().shift(2)}"})
+      throw new UntranslatablePlanException(s"Unresolved operation conflicts: ${issueRepr.niceList()}", issues)
     }
 
     // it's not neccessary to sort the plan at this stage, it's gonna happen after GC

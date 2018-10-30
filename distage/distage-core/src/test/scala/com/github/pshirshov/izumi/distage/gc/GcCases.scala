@@ -111,4 +111,12 @@ object GcCases {
     }
   }
 
+
+  object InjectorCase8 {
+    trait Component
+    class TestComponent() extends Component with AutoCloseable {
+      override def close(): Unit = {}
+    }
+    class App(val components: Set[Component], val closeables: Set[AutoCloseable])
+  }
 }
