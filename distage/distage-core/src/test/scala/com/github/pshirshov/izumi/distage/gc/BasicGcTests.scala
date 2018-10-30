@@ -99,7 +99,7 @@ object InjectorCases {
   }
 
   object InjectorCase7 {
-    class Circular1(bnc1: => Circular1, bnc2: => Circular2) {
+    class Circular1(bnc1: => Circular1, bnc2: => Circular2, val c1: Circular1) {
       Quirks.discard(bnc1)
       Quirks.discard(bnc2)
     }
