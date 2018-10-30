@@ -2,7 +2,6 @@ package distage
 
 import com.github.pshirshov.izumi.distage.InjectorDefaultImpl
 import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, DefaultBootstrapContext}
-import com.github.pshirshov.izumi.distage.model.LocatorExtension
 import com.github.pshirshov.izumi.distage.model.definition.ModuleBase.ModuleDefSeqExt
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -78,13 +77,12 @@ object Injector {
   }
 
   def bootstrap(
-                 bootstrapBase: BootstrapModule = CglibBootstrap.cogenBootstrap
-                 , overrides: BootstrapModule = BootstrapModule.empty
-                 , locatorExtensions: Seq[LocatorExtension] = Seq()
+                 bootstrapBase: BootstrapModule = CglibBootstrap.cogenBootstrap,
+                 overrides: BootstrapModule = BootstrapModule.empty,
                ): Injector = {
     val bootstrapDefinition = bootstrapBase.overridenBy(overrides)
     val bootstrapLocator = new DefaultBootstrapContext(bootstrapDefinition)
-    create(bootstrapLocator, locatorExtensions: _*)
+    create(bootstrapLocator)
   }
 
   /**
@@ -92,7 +90,7 @@ object Injector {
     *
     * Instances from parent will be available as imports in the new Injector's [[com.github.pshirshov.izumi.distage.model.Producer#produce produce]]
     */
-  def create(parent: Locator, locatorExtensions: LocatorExtension*): Injector = {
-    new InjectorDefaultImpl(parent.extend(locatorExtensions: _*))
+  def create(parent: Locator): Injector = {
+    new InjectorDefaultImpl(parent)
   }
 }

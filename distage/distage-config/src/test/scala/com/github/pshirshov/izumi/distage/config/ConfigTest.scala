@@ -41,6 +41,27 @@ class ConfigTest extends WordSpec {
       assert(context.get[Set[TestAppService]].size == 9)
     }
 
+    "be idempotent under Injector.finish" in {
+      val injector = Injector.Standard(mkModule("distage-config-test.conf"))
+      val plan = injector.plan(TestConfigApp.definition)
+
+      val plan2 = injector.finish(plan.toSemi)
+      val context = injector.produce(plan2)
+
+      assert(context.get[HttpServer1].listenOn.port == 8081)
+      assert(context.get[HttpServer2].listenOn.port == 8082)
+      assert(context.get[HttpServer3].listenOn.port == 8083)
+
+      assert(context.get[DataPuller1].target.port == 9001)
+      assert(context.get[DataPuller2].target.port == 9002)
+      assert(context.get[DataPuller3].target.port == 9003)
+
+      assert(context.get[TestAppService]("puller4").asInstanceOf[DataPuller1].target.port == 10010)
+      assert(context.get[TestAppService]("puller5").asInstanceOf[DataPuller2].target.port == 10020)
+      assert(context.get[TestAppService]("puller6").asInstanceOf[DataPuller3].target.port == 9003)
+      assert(context.get[Set[TestAppService]].size == 9)
+    }
+
     "resolve config references in set elements" in {
       val injector = Injector.Standard(mkModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.setDefinition)
