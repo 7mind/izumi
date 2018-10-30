@@ -140,8 +140,6 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
-    println(plan.render)
     val context = injector.produce(plan)
 
     val instance = context.get[ByNameSelfReference]

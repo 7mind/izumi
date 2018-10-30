@@ -155,3 +155,7 @@ final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp]
     resolveImports(Function.unlift(i => locator.lookup[Any](i.target)))
   }
 }
+
+object OrderedPlan {
+  implicit val defaultFormatter: CompactPlanFormatter.OrderedPlanFormatter.type = CompactPlanFormatter.OrderedPlanFormatter
+}
