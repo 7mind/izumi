@@ -7,14 +7,13 @@ import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, Config
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, ImplDef, Module}
+import com.github.pshirshov.izumi.distage.model.definition.{ImplDef, Module}
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
+import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
-import com.github.pshirshov.izumi.distage.roles.launcher.RoleStarterImpl
+import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.roles.{IntegrationComponent, RoleComponent, RoleService, RoleStarter}
 import com.github.pshirshov.izumi.distage.testkit
@@ -231,22 +230,7 @@ trait DistageTests {
   }
 
   protected def makeRoleStarterBootstrapModule: BootstrapModule = {
-    val servicesHook = new AssignableFromAutoSetHook[RoleService]
-    val closeablesHook = new AssignableFromAutoSetHook[AutoCloseable]
-    val componentsHook = new AssignableFromAutoSetHook[RoleComponent]
-    val integrationsHook = new AssignableFromAutoSetHook[IntegrationComponent]
-
-    new BootstrapModuleDef {
-      many[RoleService]
-      many[AutoCloseable]
-      many[RoleComponent]
-
-      many[PlanningHook]
-        .add(servicesHook)
-        .add(closeablesHook)
-        .add(componentsHook)
-        .add(integrationsHook)
-    }
+    RoleAppBootstrapStrategy.roleAutoSetModule
   }
 
   protected def makeBindings: ModuleBase

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.planning
 
+import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag, Wiring}
@@ -88,4 +89,16 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
 
     plan.copy(steps = withReorderedSetElements)
   }
+}
+
+class AutoSetModule() extends BootstrapModuleDef {
+  def register[T:Tag]: AutoSetModule = {
+    many[T]
+    many[PlanningHook].add(new AssignableFromAutoSetHook[T])
+    this
+  }
+}
+
+object AutoSetModule {
+  def apply(): AutoSetModule = new AutoSetModule()
 }

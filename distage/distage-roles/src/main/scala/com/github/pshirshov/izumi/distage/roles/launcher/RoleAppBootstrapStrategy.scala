@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.distage.config.{ConfigModule, SimpleLoggerConf
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
-import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
+import com.github.pshirshov.izumi.distage.planning.{AssignableFromAutoSetHook, AutoSetModule}
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
@@ -135,23 +135,22 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
     val roles = roleInfo.get()
 
-    val servicesHook = new AssignableFromAutoSetHook[RoleService]()
-    val closeablesHook = new AssignableFromAutoSetHook[AutoCloseable]()
-    val componentsHook = new AssignableFromAutoSetHook[RoleComponent]()
-    val integrationsHook = new AssignableFromAutoSetHook[IntegrationComponent]()
+    val gcModule = new TracingGcModule(roles.requiredComponents)
+
+    val rolesModule = new BootstrapModuleDef {
+      make[distage.roles.roles.RolesInfo].from(roles)
+    }
+
+    val autosetModule = RoleAppBootstrapStrategy.roleAutoSetModule
+
+    val configModule = new ConfigModule(config)
+
 
     Seq(
-      new ConfigModule(config)
-      , new BootstrapModuleDef {
-        many[PlanningHook]
-          .add(servicesHook)
-          .add(closeablesHook)
-          .add(componentsHook)
-          .add(integrationsHook)
-
-        make[distage.roles.roles.RolesInfo].from(roles)
-      }
-      , new TracingGcModule(roles.requiredComponents)
+      configModule,
+      autosetModule,
+      gcModule,
+      rolesModule,
     )
   }
 
@@ -219,7 +218,11 @@ object RoleAppBootstrapStrategy {
 
   final case class Using(libraryName: String, clazz: Class[_])
 
-
+  final val roleAutoSetModule = AutoSetModule()
+    .register[RoleService]
+    .register[AutoCloseable]
+    .register[RoleComponent]
+    .register[IntegrationComponent]
 }
 
 
