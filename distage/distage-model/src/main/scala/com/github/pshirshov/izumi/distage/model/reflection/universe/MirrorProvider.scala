@@ -1,24 +1,25 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.distage.model.reflection
-import com.github.pshirshov.izumi.distage.model.reflection.universe
+import com.github.pshirshov.izumi.distage.model
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.reflection.RefinedTypeException
 
 trait MirrorProvider {
-  def runtimeClass(tpe: RuntimeDIUniverse.SafeType): Class[_]
-  def runtimeClass(tpe: RuntimeDIUniverse.TypeNative): Class[_]
-
+  def runtimeClass(tpe: SafeType): Class[_]
+  def runtimeClass(tpe: TypeNative): Class[_]
+  def mirror: u.Mirror
 }
 
 object MirrorProvider {
   object Impl extends MirrorProvider {
-    private val mirror = RuntimeDIUniverse.mirror
 
-    override def runtimeClass(tpe: universe.RuntimeDIUniverse.SafeType): Class[_] = {
+    override val mirror: model.reflection.universe.RuntimeDIUniverse.u.Mirror = scala.reflect.runtime.currentMirror
+
+    override def runtimeClass(tpe: SafeType): Class[_] = {
       runtimeClass(tpe.tpe)
     }
 
-    override def runtimeClass(tpe: reflection.universe.RuntimeDIUniverse.TypeNative): Class[_] = {
+    override def runtimeClass(tpe: TypeNative): Class[_] = {
       import RuntimeDIUniverse.u._
       tpe match {
         case RefinedType(types, scope) =>

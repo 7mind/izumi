@@ -4,8 +4,8 @@ import com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.model
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, mirror}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import com.github.pshirshov.izumi.distage.roles.roles
 import com.github.pshirshov.izumi.distage.roles.roles.{RoleId, RoleService, RoleStarter}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
@@ -13,7 +13,11 @@ import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 
 import scala.reflect.ClassTag
 
-class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
+class RoleProviderImpl(
+                        requiredRoles: Set[String],
+                        mirrorProvider: MirrorProvider,
+                      ) extends RoleProvider {
+
   def getInfo(bindings: Iterable[Binding]): roles.RolesInfo = {
     val availableBindings = getRoles(bindings)
 
@@ -49,7 +53,7 @@ class RoleProviderImpl(requiredRoles: Set[String]) extends RoleProvider {
         .map(b => (b, bindingToType(b, isAvailableRoleType)))
         .collect {
           case (b, Some(rt)) =>
-            val runtimeClass = mirror.runtimeClass(rt.tpe)
+            val runtimeClass = mirrorProvider.mirror.runtimeClass(rt.tpe)
 
             val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
             roles.RoleBinding(b, rt, getAnno(rt), src)

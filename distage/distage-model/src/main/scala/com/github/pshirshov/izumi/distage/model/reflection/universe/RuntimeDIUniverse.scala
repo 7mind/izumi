@@ -5,8 +5,6 @@ import com.github.pshirshov.izumi.distage.model.definition.DIStageAnnotation
 trait RuntimeDIUniverse extends DIUniverse {
   override final val u: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
 
-  val mirror: u.Mirror = scala.reflect.runtime.currentMirror
-
   class IdContractImpl[T] extends IdContract[T] {
     override def repr(value: T): String = value.toString
   }

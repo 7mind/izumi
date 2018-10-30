@@ -15,8 +15,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeU
 class ClassStrategyDefaultImpl
 (
   symbolIntrospector: SymbolIntrospector.Runtime,
-  mw: MirrorProvider
-
+  mirrorProvider: MirrorProvider,
 ) extends ClassStrategy {
 
   import ClassStrategyDefaultImpl._
@@ -45,7 +44,7 @@ class ClassStrategyDefaultImpl
     val symbol = targetType.tpe.typeSymbol
 
     if (symbol.isModule) { // don't re-instantiate scala objects
-      mirror.reflectModule(symbol.asModule).instance
+      mirrorProvider.mirror.reflectModule(symbol.asModule).instance
     } else {
       val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
       val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
@@ -81,7 +80,7 @@ class ClassStrategyDefaultImpl
       val prefix = typeRef.pre
 
       val module = if (prefix.termSymbol.isModule && prefix.termSymbol.isStatic) {
-        Module.Static(mirror.reflectModule(prefix.termSymbol.asModule).instance)
+        Module.Static(mirrorProvider.mirror.reflectModule(prefix.termSymbol.asModule).instance)
       } else {
         val key = op.wiring.prefix match {
           case Some(value) =>
@@ -99,14 +98,14 @@ class ClassStrategyDefaultImpl
       }
 
 
-      (mirror.reflect(module.instance).reflectClass(symbol.asClass), module.toPrefix)
+      (mirrorProvider.mirror.reflect(module.instance).reflectClass(symbol.asClass), module.toPrefix)
     } else {
-      (mirror.reflectClass(symbol.asClass), None)
+      (mirrorProvider.mirror.reflectClass(symbol.asClass), None)
     }
   }
 
   protected def mkJava(targetType: SafeType, args: Seq[Any]): Any = {
-    val clazz = mw.runtimeClass(targetType)
+    val clazz = mirrorProvider.runtimeClass(targetType)
     val argValues = args.map(_.asInstanceOf[AnyRef])
 
     clazz

@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
@@ -51,8 +52,9 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
   import params._
 
   private val logger = IzLogger(params.rootLogLevel)
+  private val mp = MirrorProvider.Impl
 
-  private val roleProvider: RoleProvider = new RoleProviderImpl(roleSet)
+  private val roleProvider: RoleProvider = new RoleProviderImpl(roleSet, mp)
 
   def init(): RoleAppBootstrapStrategy[CommandlineConfig] = {
     showDepData(logger, "Application is about to start", this.getClass)
