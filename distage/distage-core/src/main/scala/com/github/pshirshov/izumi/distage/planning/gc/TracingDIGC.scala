@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.planning.gc
 
 import com.github.pshirshov.izumi.distage.model.definition.Module
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, WiringOp}
+import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpException
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{DIGarbageCollector, GCRootPredicate}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -15,31 +15,29 @@ class TracingDIGC(plan: SemiPlan, isRoot: GCRootPredicate) extends AbstractGCTra
   @inline
   override protected def extract(index: Map[DIKey, ExecutableOp], node: ExecutableOp): Set[DIKey] = {
     node match {
-      case w: WiringOp =>
-        w.wiring.requiredKeys
-      case c: CreateSet =>
-        c.members.filterNot {
-          key =>
-            index.get(key)
-              .collect {
-                case o: ExecutableOp.WiringOp =>
-                  o.wiring
-              }
-              .collect {
-                case r: Wiring.UnaryWiring.Reference =>
-                  r
-              }
-              .exists(_.weak == true)
+      case op: ExecutableOp.InstantiationOp =>
+        op match {
+          case w: WiringOp =>
+            w.wiring.requiredKeys
+          case c: CreateSet =>
+            c.members.filterNot {
+              key =>
+                index.get(key)
+                  .collect {
+                    case o: ExecutableOp.WiringOp =>
+                      o.wiring
+                  }
+                  .collect {
+                    case r: Wiring.UnaryWiring.Reference =>
+                      r
+                  }
+                  .exists(_.weak == true)
+            }
         }
-
-      case p: InitProxy =>
-        p.dependencies
-      case _: MakeProxy =>
-        Set.empty
       case _: ImportDependency =>
         Set.empty
-      case _ =>
-        Set.empty
+      case p: ProxyOp =>
+        throw new UnsupportedOpException(s"Garbage collector didn't expect a proxy operation", p)
     }
   }
 

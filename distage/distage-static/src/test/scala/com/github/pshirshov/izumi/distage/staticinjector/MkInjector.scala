@@ -5,8 +5,8 @@ import distage.{Injector, BootstrapModule}
 
 trait MkInjector {
 
-  def mkInjector(overrides: BootstrapModule*): Injector = Injector.noReflection(overrides: _*)
+  def mkInjector(overrides: BootstrapModule*): Injector = Injector.NoCogen(overrides: _*)
 
-  def mkInjectorWithProxy(): Injector = Injector()
+  def mkInjectorWithProxy(): Injector = Injector.Standard()
 
 }

@@ -11,6 +11,8 @@ trait BIOSyntax {
 
   @inline implicit def ToFlattenOps[R[+ _, + _] : BIO, E, A](self: R[E, R[E, A]]): BIOSyntax.BIOFlattenOps[R, E, A] = new BIOSyntax.BIOFlattenOps[R, E, A](self)
 
+  @inline implicit def ToForkOps[R[_, _] : BIOFork, E, A](self: R[E, A]): BIOSyntax.BIOForkOps[R, E, A] = new BIOSyntax.BIOForkOps[R, E, A](self)
+
 }
 
 object BIOSyntax {
@@ -53,6 +55,10 @@ object BIOSyntax {
 
   final class BIOFlattenOps[R[+ _, + _], E, A](private val r: R[E, R[E, A]])(implicit private val R: BIO[R]) {
     @inline def flatten: R[E, A] = R.flatMap(r)(a => a)
+  }
+
+  final class BIOForkOps[R[_, _], E, A](private val r: R[E, A])(implicit private val R: BIOFork[R]) {
+    @inline def fork: R[Nothing, BIOFiber[R, E, A]] = R.fork(r)
   }
 
 }

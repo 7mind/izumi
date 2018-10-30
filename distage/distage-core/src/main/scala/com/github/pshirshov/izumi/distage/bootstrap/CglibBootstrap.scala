@@ -8,7 +8,7 @@ object CglibBootstrap {
   final lazy val cogenBootstrap = DefaultBootstrapContext.defaultBootstrap ++ defaultCogen
 
   private final lazy val defaultCogen: ModuleBase = new ModuleDef {
-    make[ProxyProvider].from[CglibProxyProvider.type]
+    make[ProxyProvider].from[CglibProxyProvider]
   }
 
 }

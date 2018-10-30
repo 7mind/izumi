@@ -4,9 +4,9 @@ import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
 trait FakeSet[A] extends Set[A]
@@ -18,8 +18,8 @@ trait FakeSet[A] extends Set[A]
   */
 class ProxyStrategyDefaultImpl(
                                 reflectionProvider: ReflectionProvider.Runtime
-                                , symbolIntrospector: SymbolIntrospector.Runtime
                                 , proxyProvider: ProxyProvider
+                                , mirror: MirrorProvider
                               ) extends ProxyStrategy {
   def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
     val key = proxyKey(initProxy.target)
@@ -42,7 +42,7 @@ class ProxyStrategyDefaultImpl(
   def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[OpResult] = {
     val tpe = proxyTargetType(makeProxy)
 
-    val cogenNotRequired = allForwardRefsAreByName(makeProxy)
+    val cogenNotRequired = makeProxy.byNameAllowed
 
     val proxyInstance = if (cogenNotRequired) {
       val proxy = new ByNameDispatcher(makeProxy.target)
@@ -58,10 +58,9 @@ class ProxyStrategyDefaultImpl(
   }
 
 
-
   protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, makeProxy: ProxyOp.MakeProxy): DeferredInit = {
-    val params = if (!hasNoDeps(tpe)) {
-      val params = reflectionProvider.constructorParameters(makeProxy.op.target.tpe)
+    val params = if (hasDeps(tpe)) {
+      val params = reflectionProvider.constructorParameters(tpe)
 
       val args = params.map {
         param =>
@@ -101,19 +100,14 @@ class ProxyStrategyDefaultImpl(
     proxyInstance
   }
 
-  protected def hasNoDeps(tpe: RuntimeDIUniverse.SafeType): Boolean = {
+  protected def hasDeps(tpe: RuntimeDIUniverse.SafeType): Boolean = {
     val constructors = tpe.tpe.decls.filter(_.isConstructor)
     val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
     val hasNoDependencies = constructors.isEmpty || hasTrivial
-    hasNoDependencies
+    !hasNoDependencies
   }
 
-  protected def allForwardRefsAreByName(makeProxy: ProxyOp.MakeProxy): Boolean = {
-    symbolIntrospector.hasConstructor(makeProxy.op.target.tpe) && {
-      val params = reflectionProvider.constructorParameters(makeProxy.op.target.tpe)
-      params.filter(p => makeProxy.forwardRefs.contains(p.wireWith)).forall(_.isByName)
-    }
-  }
+
 
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
     makeProxy.op match {
@@ -123,20 +117,18 @@ class ProxyStrategyDefaultImpl(
         op.wiring.instanceType
       case op: WiringOp.InstantiateFactory =>
         op.wiring.factoryType
-      case op: WiringOp.CallProvider =>
-        op.wiring.instanceType
-      case op: WiringOp.CallFactoryProvider =>
-        op.wiring.provider.ret
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
+        //op.target.symbol
         SafeType.get[FakeSet[_]]
-      //op.target.symbol
+      case op: WiringOp.CallProvider =>
+        op.target.tpe
+      case op: WiringOp.CallFactoryProvider =>
+        op.target.tpe
       case op: WiringOp.ReferenceInstance =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
       case op: WiringOp.ReferenceKey =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
-      case op: ProxyOp.MakeProxy =>
-        throw new UnsupportedOpException(s"Tried to execute nonsensical operation - can't make a proxy for proxy!: $op", op)
     }
   }
 

@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.fixtures.CircularCases._
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.InstantiationOp
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher
 import distage._
 import org.scalatest.WordSpec
@@ -52,9 +53,10 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val definition: ModuleBase = new ModuleDef {
       make[Circular2].from { c: Circular1 => new Circular2(c) }
       make[Circular1].from { c: Circular2 =>
-        new Circular1 {
+        val a = new Circular1 {
           override val arg: Circular2 = c
         }
+        a
       }
     }
 
@@ -160,7 +162,12 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val plan = injector.plan(definition)
     val context = injector.produce(plan)
 
-    val planTypes: Seq[SafeType] = plan.steps.collect { case i: InstantiationOp => i }.map(_.target.tpe)
+    val planTypes: Seq[SafeType] = plan.steps
+      .collect {
+        case i: InstantiationOp => i
+        case i: MakeProxy => i
+      }
+      .map(_.target.tpe)
     val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
     val instanceTypes: Seq[SafeType] = context.instances.map(_.key.tpe)
       .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref

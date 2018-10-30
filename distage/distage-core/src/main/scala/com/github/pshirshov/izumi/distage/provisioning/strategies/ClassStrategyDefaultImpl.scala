@@ -1,19 +1,21 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{InvalidPlanException, MissingRefException, NoopProvisionerImplCalled, ProvisioningException}
+import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
 
+
 class ClassStrategyDefaultImpl
 (
-  symbolIntrospector: SymbolIntrospector.Runtime
+  symbolIntrospector: SymbolIntrospector.Runtime,
+  mirrorProvider: MirrorProvider,
 ) extends ClassStrategy {
 
   import ClassStrategyDefaultImpl._
@@ -35,18 +37,19 @@ class ClassStrategyDefaultImpl
     Seq(OpResult.NewInstance(op.target, instance))
   }
 
-  protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Any]) = {
+
+  protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Any]): Any = {
     val wiring = op.wiring
     val targetType = wiring.instanceType
     val symbol = targetType.tpe.typeSymbol
 
     if (symbol.isModule) { // don't re-instantiate scala objects
-      mirror.reflectModule(symbol.asModule).instance
+      mirrorProvider.mirror.reflectModule(symbol.asModule).instance
     } else {
-      val (refClass, prefixInstance) = reflectClass(context, op, symbol)
       val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
-      val refCtor = refClass.reflectConstructor(ctorSymbol)
-      val hasByName = ctorSymbol.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
+      val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
+
+      val (refClass, prefixInstance) = reflectClass(context, op, symbol)
 
       if (hasByName) {
         // this is a dirty workaround for crappy logic in JavaTransformingMethodMirror
@@ -58,6 +61,9 @@ class ClassStrategyDefaultImpl
         }
         mkJava(targetType, fullArgs)
       } else {
+        val refCtor = refClass.reflectConstructor(ctorSymbol.getOrElse(
+          throw new MissingConstructorException(s"Missing constructor in $targetType")
+        ))
         refCtor.apply(args: _*)
       }
     }
@@ -74,7 +80,7 @@ class ClassStrategyDefaultImpl
       val prefix = typeRef.pre
 
       val module = if (prefix.termSymbol.isModule && prefix.termSymbol.isStatic) {
-        Module.Static(mirror.reflectModule(prefix.termSymbol.asModule).instance)
+        Module.Static(mirrorProvider.mirror.reflectModule(prefix.termSymbol.asModule).instance)
       } else {
         val key = op.wiring.prefix match {
           case Some(value) =>
@@ -92,16 +98,14 @@ class ClassStrategyDefaultImpl
       }
 
 
-      (mirror.reflect(module.instance).reflectClass(symbol.asClass), module.toPrefix)
+      (mirrorProvider.mirror.reflect(module.instance).reflectClass(symbol.asClass), module.toPrefix)
     } else {
-      (mirror.reflectClass(symbol.asClass), None)
+      (mirrorProvider.mirror.reflectClass(symbol.asClass), None)
     }
   }
 
   protected def mkJava(targetType: SafeType, args: Seq[Any]): Any = {
-    val refUniverse = RuntimeDIUniverse.mirror
-    val clazz = refUniverse
-      .runtimeClass(targetType.tpe)
+    val clazz = mirrorProvider.runtimeClass(targetType)
     val argValues = args.map(_.asInstanceOf[AnyRef])
 
     clazz

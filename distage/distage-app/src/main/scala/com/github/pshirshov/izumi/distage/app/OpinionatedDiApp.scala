@@ -82,7 +82,7 @@ abstract class OpinionatedDiApp {
 
   protected def makeInjector(logger: IzLogger, bsdef: BootstrapModule): distage.Injector = {
     logger.discard()
-    Injector(bsdef)
+    Injector.Standard(bsdef)
   }
 
   protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {

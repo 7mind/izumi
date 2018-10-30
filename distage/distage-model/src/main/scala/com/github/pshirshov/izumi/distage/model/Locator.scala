@@ -67,14 +67,6 @@ object Locator {
     def get: Locator = ref.get()
   }
 
-  implicit final class LocatorExt(private val locator: Locator) extends AnyVal {
-    def extend(extensions: LocatorExtension*): Locator =
-      extensions.foldLeft(locator) {
-        case (acc, ext) =>
-          ext.extend(acc)
-      }
-  }
-
   implicit final class LocatorRun(private val locator: Locator) extends AnyVal {
     /**
       * Run function `f` filling all the arguments from locator contents.

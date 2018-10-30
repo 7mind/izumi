@@ -277,7 +277,7 @@ class BasicTest extends WordSpec with MkInjector {
     val safeType = SafeType.get[ClassTypeAnnT[String, Int]]
     val constructor = symbolIntrospector.selectConstructor(safeType)
 
-    val allArgsHaveAnnotations = constructor.arguments.flatten.map(_.annotations).forall(_.nonEmpty)
+    val allArgsHaveAnnotations = constructor.map(_.arguments.flatten.map(_.annotations)).toSeq.flatten.forall(_.nonEmpty)
     assert(allArgsHaveAnnotations)
   }
 
@@ -294,7 +294,7 @@ class BasicTest extends WordSpec with MkInjector {
       many[Option[Int]].refSet[Set[Some[Int]]]
     }
 
-    val context = Injector().produce(definition)
+    val context = Injector.Standard().produce(definition)
 
     assert(context.get[Set[Int]] == Set(1, 2, 3, 4, 5, 6))
     assert(context.get[Set[Option[Int]]] == Set(None, Some(7)))
@@ -304,8 +304,10 @@ class BasicTest extends WordSpec with MkInjector {
     val definition = new ModuleDef {
       make[Int].from(7)
 
-      many[Int].addSet(Set(1, 2, 3))
       many[Int].add(5)
+      many[Int].add(0)
+
+      many[Int].addSet(Set(1, 2, 3))
 
       many[Int].add { i: Int => i - 1 }
       many[Int].addSet {
@@ -314,9 +316,9 @@ class BasicTest extends WordSpec with MkInjector {
       }
     }
 
-    val context = Injector().produce(definition)
+    val context = Injector.Standard().produce(definition)
 
-    assert(context.get[Set[Int]] == Set(1, 2, 3, 5, 6, 7, 8, 9))
+    assert(context.get[Set[Int]] == Set(0, 1, 2, 3, 5, 6, 7, 8, 9))
   }
 
   "support empty sets" in {
@@ -326,7 +328,7 @@ class BasicTest extends WordSpec with MkInjector {
       make[TestImpl1]
     }
 
-    val context = Injector().produce(definition)
+    val context = Injector.Standard().produce(definition)
 
     assert(context.get[TestImpl1].justASet == Set.empty)
   }

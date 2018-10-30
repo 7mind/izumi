@@ -62,6 +62,8 @@ object BIO extends BIOSyntax {
 
     @inline override def sleep(duration: Duration): IO[Nothing, Unit] = IO.sleep(duration)
 
+    @inline override def `yield`: IO[Nothing, Unit] = IO.sleep(Duration.Zero)
+
     @inline override def sync[A](effect: => A): IO[Nothing, A] = IO.sync(effect)
 
     @inline override def now[A](a: A): IO[Nothing, A] = IO.now(a)

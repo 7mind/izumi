@@ -86,7 +86,7 @@ class RoleStarterImpl(
           }
         } catch {
           case NonFatal(exception) =>
-            logger.error(s"Integration check for thrown $resource thrown $exception")
+            logger.error(s"Integration check for $resource threw $exception")
             Some(ResourceCheck.ResourceUnavailable(exception.getMessage, Some(exception)))
         }
     }

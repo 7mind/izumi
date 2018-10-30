@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage.impl
 
 import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
 import distage._

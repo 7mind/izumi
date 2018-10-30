@@ -84,7 +84,8 @@ class PlannerDefaultImpl
 
       case s: SetElementBinding[_] =>
         val target = s.key
-        val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, setElementKeySymbol(s.implementation), currentPlan.operations.size)
+        val discriminator = setElementDiscriminatorKey(s, currentPlan)
+        val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, discriminator)
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation, s.tags, s.origin))
         val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.tpe, Set.empty, Some(binding)))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
@@ -146,16 +147,21 @@ class PlannerDefaultImpl
     }
   }
 
-  private def setElementKeySymbol(impl: ImplDef): RuntimeDIUniverse.SafeType = {
-    impl match {
+  private def setElementDiscriminatorKey(b: SetElementBinding[RuntimeDIUniverse.DIKey], currentPlan: DodgyPlan): RuntimeDIUniverse.DIKey = {
+    val goodIdx = currentPlan.operations.size.toString
+
+    val tpe = b.implementation match {
       case i: ImplDef.TypeImpl =>
-        i.implType
-      case i: ImplDef.InstanceImpl =>
-        i.implType
-      case p: ImplDef.ProviderImpl =>
-        p.implType
+        RuntimeDIUniverse.DIKey.TypeKey(i.implType)
       case r: ImplDef.ReferenceImpl =>
-        r.implType
+        r.key
+      case i: ImplDef.InstanceImpl =>
+        RuntimeDIUniverse.DIKey.TypeKey(i.implType).named(s"provider:$goodIdx")
+      case p: ImplDef.ProviderImpl =>
+        RuntimeDIUniverse.DIKey.TypeKey(p.implType).named(s"instance:$goodIdx")
+
     }
+
+    tpe
   }
 }
