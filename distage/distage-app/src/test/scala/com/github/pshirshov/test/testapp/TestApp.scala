@@ -2,6 +2,7 @@ package com.github.pshirshov.test.testapp
 
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 case class Config(value: String)
 
@@ -10,7 +11,9 @@ class TestApp(
                , @AutoConf val config: Config
                , val setTest: Set[Conflict]
                , app: => TestApp
-             )
+             ) {
+  Quirks.Lazy.discard(app)
+}
 
 class BadApp
 

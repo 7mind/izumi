@@ -22,7 +22,7 @@ class ConfigTest extends WordSpec {
 
   "Config resolver" should {
     "resolve config references" in {
-      val injector = Injector(mkModule("distage-config-test.conf"))
+      val injector = Injector.Standard(mkModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.definition)
 
       val context = injector.produce(plan)
@@ -42,7 +42,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config references in set elements" in {
-      val injector = Injector(mkModule("distage-config-test.conf"))
+      val injector = Injector.Standard(mkModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.setDefinition)
 
       val context = injector.produce(plan)
@@ -52,7 +52,7 @@ class ConfigTest extends WordSpec {
 
     "resolve config maps" in {
       val config = AppConfig(ConfigFactory.load("map-test.conf"))
-      val injector = Injector(new ConfigModule(config))
+      val injector = Injector.Standard(new ConfigModule(config))
       val plan = injector.plan(TestConfigReaders.mapDefinition)
 
       val context = injector.produce(plan)
@@ -63,7 +63,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config lists" in {
-      val injector = Injector(mkModule("list-test.conf"))
+      val injector = Injector.Standard(mkModule("list-test.conf"))
       val plan = injector.plan(TestConfigReaders.listDefinition)
 
       val context = injector.produce(plan)
@@ -80,7 +80,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config options" in {
-      val injector = Injector(mkModule("opt-test.conf"))
+      val injector = Injector.Standard(mkModule("opt-test.conf"))
       val plan = injector.plan(TestConfigReaders.optDefinition)
 
       val context = injector.produce(plan)
@@ -89,7 +89,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config options (missing field)" in {
-      val injector = Injector(mkModule("opt-test-missing.conf"))
+      val injector = Injector.Standard(mkModule("opt-test-missing.conf"))
       val plan = injector.plan(TestConfigReaders.optDefinition)
 
       val context = injector.produce(plan)
@@ -98,7 +98,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve backticks" in {
-      val context = Injector(mkModule("backticks-test.conf"))
+      val context = Injector.Standard(mkModule("backticks-test.conf"))
         .produce(TestConfigReaders.backticksDefinition)
 
       assert(context.get[Service[BackticksCaseClass]].conf == BackticksCaseClass(true))
@@ -106,11 +106,11 @@ class ConfigTest extends WordSpec {
 
     "resolve config sealed traits" in {
       val context1 =
-        Injector(mkModule("sealed-test1.conf"))
+        Injector.Standard(mkModule("sealed-test1.conf"))
           .produce(TestConfigReaders.sealedDefinition)
 
       val context2 =
-        Injector(mkModule("sealed-test2.conf"))
+        Injector.Standard(mkModule("sealed-test2.conf"))
           .produce(TestConfigReaders.sealedDefinition)
 
       assert(context1.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass1(1, "1", true, Yes)))
@@ -120,7 +120,7 @@ class ConfigTest extends WordSpec {
     "Inject config works for trait methods" in {
       import ConfigFixtures._
 
-      val injector = Injector(mkModule("fixtures-test.conf"))
+      val injector = Injector.Standard(mkModule("fixtures-test.conf"))
 
       val definition = new ModuleDef {
         make[TestDependency]
@@ -137,7 +137,7 @@ class ConfigTest extends WordSpec {
     "Inject config works for concrete and abstract factory products and factory methods" in {
       import ConfigFixtures._
 
-      val injector = Injector(mkModule("fixtures-test.conf"))
+      val injector = Injector.Standard(mkModule("fixtures-test.conf"))
 
       val definition = new ModuleDef {
         make[TestDependency]

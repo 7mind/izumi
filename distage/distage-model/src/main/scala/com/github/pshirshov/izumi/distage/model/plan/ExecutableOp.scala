@@ -4,13 +4,13 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.util.Formattable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString
 
 // TODO: typeclass?..
-sealed trait ExecutableOp extends Formattable {
+sealed trait ExecutableOp {
   def target: DIKey
   def origin: Option[Binding]
+  def format: String
 
   override def toString: String = format
 }

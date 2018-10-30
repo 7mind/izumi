@@ -68,7 +68,7 @@ class ForwardingRefResolverDefaultImpl
             }
           case _: ImportDependency =>
             Seq.empty
-          case op: ProxyOp =>
+          case _: ProxyOp =>
             Seq.empty // shouldn't happen
         }
     }

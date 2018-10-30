@@ -41,7 +41,7 @@ trait CompactPlanFormatter extends Renderable[OrderedPlan] {
       Seq(target.tpe, tpe) ++ members.map(_.tpe)
     case v: WiringOp =>
       Seq(v.target.tpe) ++ wiringDeps(v.wiring)
-    case MakeProxy(o, forwardRefs, _) =>
+    case MakeProxy(o, forwardRefs, _, _) =>
       stepTypes(o) ++ forwardRefs.map(_.tpe)
     case InitProxy(target, deps, proxy, _) =>
       Seq(target.tpe) ++ deps.map(_.tpe) ++ stepTypes(proxy)

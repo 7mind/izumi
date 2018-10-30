@@ -19,7 +19,7 @@ class AnimalModel extends WordSpec with MkInjector {
         make[App]
       }
 
-      val injector = Injector()
+      val injector = Injector.Standard()
       val plan = injector.plan(definition)
       //    import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
       //    println()

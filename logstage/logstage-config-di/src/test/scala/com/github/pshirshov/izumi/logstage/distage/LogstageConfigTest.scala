@@ -310,7 +310,7 @@ class LogstageConfigTest extends WordSpec {
   }
 
   private def withCtx(bootstapModules: Seq[BootstrapModuleDef], modules: ModuleDef*): LocatorWrapper = {
-    val injector = Injector(bootstapModules: _*)
+    val injector = Injector.Standard(bootstapModules: _*)
 
     val goodCtx = Try {
       val plan = injector.plan(modules.toList.overrideLeft)
