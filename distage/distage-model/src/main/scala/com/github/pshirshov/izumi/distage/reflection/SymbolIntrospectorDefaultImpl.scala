@@ -48,7 +48,7 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
   override def isConcrete(symb: u.SafeType): Boolean = {
     symb.tpe match {
-      case rt: u.u.RefinedType =>
+      case rt: u.u.RefinedTypeApi =>
         rt.parents.forall(t => isConcrete(t)) && !rt.decls.forall(_.isAbstract)
 
       case _ =>
@@ -67,7 +67,7 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
     // no mistake here. Wireable astract is a abstract class or class with an abstract parent having all abstract members wireable
     tpe match {
-      case rt: u.u.RefinedType =>
+      case rt: u.u.RefinedTypeApi =>
         rt.parents.exists(_.typeSymbol.isAbstract) && abstractMembers.forall(m => isWireableMethod(symb, m))
 
       case t =>

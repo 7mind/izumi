@@ -24,8 +24,9 @@ object ReflectionUtil {
     // https://stackoverflow.com/questions/16787163/get-a-java-lang-reflect-method-from-a-reflect-runtime-universe-methodsymbol
     val method = methodSymbol.asMethod
     definingClass match {
-      case u.RefinedType(types, scope) =>
-        throw new MethodMirrorException(s"Failed to reflect method: Reflection requires runtime codegeneration for refined type $definingClass with parents $types and scope $scope")
+      case r: u.RefinedTypeApi =>
+        throw new MethodMirrorException(
+          s"Failed to reflect method: That would require runtime code generation for refined type $definingClass with parents ${r.parents} and scope ${r.decls}")
 
       case o =>
         toJavaMethod(mm.runtimeClass(o), method) match {

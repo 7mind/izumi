@@ -147,7 +147,7 @@ object StaticPluginCheckerMacro {
     val bootstrapOverrides = (config :: gc.toList).merge
 
     val bootstrap = new DefaultBootstrapContext(DefaultBootstrapContext.noCogensBootstrap overridenBy bootstrapOverrides)
-    val injector = Injector.create(bootstrap)
+    val injector = Injector.inherit(bootstrap)
 
     val finalPlan = injector.plan(module).locateImports(bootstrap)
     val imports = finalPlan.unresolvedImports.left.getOrElse(Seq.empty).filter {
