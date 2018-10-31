@@ -108,12 +108,11 @@ object ArgumentNameExtractionMacro {
             c.warning(c.enclosingPosition,
               s"""Expression as a logger argument: $v
                  |
-                 |Izumi logger expect you to apply string interpolations:
+                 |But Logstage expects you to use string interpolations instead, such as:
                  |1) Simple variable: logger.log(s"My message: $$argument")
                  |2) Chain: logger.log(s"My message: $${call.method} $${access.value}")
                  |3) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
                  |4) Hidden arg expression: logger.log(s"My message: $${Some.expression -> "argname" -> null}")
-                 |5) Hidden arg expression: logger.log(s"My message: $${Some.expression -> null}")
                  |
                  |Tree: ${c.universe.showRaw(v)}
                """.stripMargin)

@@ -197,17 +197,17 @@ object GcCases {
   object InjectorCase13 {
 
     class T1()
-    class Quant[A](private val a: A) extends AnyVal {
+    class Box[A](private val a: A) extends AnyVal {
 
     }
-    class Circular1(c1: => Circular1, c2: => Circular2, q: Quant[T1]) {
+    class Circular1(c1: => Circular1, c2: => Circular2, private val q: Box[T1]) {
       def nothing(): Unit = {
         c1.discard()
         c2.discard()
       }
     }
 
-    class Circular2(c1: => Circular1, c2: => Circular2, q: Quant[T1]) {
+    class Circular2(c1: => Circular1, c2: => Circular2, private val q: Box[T1]) {
       def nothing(): Unit = {
         c1.discard()
         c2.discard()

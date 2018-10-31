@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import cats.kernel.instances.set._
 import cats.kernel.{BoundedSemilattice, Hash, Monoid, PartialOrder}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase, ModuleMake}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleMake}
 import distage.{ModuleBase, SemiPlan}
 
 trait ModuleBaseInstances {

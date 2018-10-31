@@ -8,7 +8,7 @@ import distage.Injector
 
 trait MkGcInjector {
   def mkInjector(roots: RuntimeDIUniverse.DIKey*): Injector = {
-    Injector.gc(roots.toSet, AutoSetModule().register[AutoCloseable])
+    Injector(roots.toSet, AutoSetModule().register[AutoCloseable])
   }
 
   implicit class InjectorExt(private val injector: Injector) {

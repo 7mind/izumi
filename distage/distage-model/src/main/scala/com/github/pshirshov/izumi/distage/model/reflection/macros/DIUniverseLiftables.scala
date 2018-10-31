@@ -61,7 +61,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
     Liftable[DIKey] {
       d =>
         (d: @unchecked) match {
-          case t: DIKey.BasicKey=> q"$t"
+          case t: DIKey.TypeKey=> q"$t"
+          case t: DIKey.IdKey[_] => q"${t: DIKey.BasicKey}"
           case p: DIKey.ProxyElementKey => q"$p"
           case s: DIKey.SetElementKey => q"$s"
         }
