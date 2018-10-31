@@ -14,9 +14,11 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular2]
         make[Circular3]
         make[Circular4]
+        make[Trash]
       })
 
       val result = injector.produce(plan)
+      assert(result.find[Trash].isEmpty)
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
@@ -86,6 +88,20 @@ class GcBasicTests extends WordSpec with MkGcInjector {
       assert(result.get[Circular2].c1 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
       assert(result.get[Circular2].c1.isInstanceOf[Circular1])
+    }
+
+    "keep proxies alive in case of pathologically intersecting loops with final classes" in {
+      import GcCases.InjectorCase9._
+      val injector = mkInjector(distage.DIKey.get[T1])
+      val plan = injector.plan(new ModuleDef {
+        make[T1].from[Circular1]
+        make[T2].from[Circular2]
+      })
+
+      println(plan.render)
+      val result = injector.produce(plan)
+      assert(result.get[T1] != null)
+      assert(result.get[T2] != null)
     }
 
     "keep proxies alive in case of pathologically intersecting provider loops" in {

@@ -16,6 +16,8 @@ object GcCases {
 
     class Circular4(val c3: Circular3)
 
+    class Trash()
+
   }
 
   object InjectorCase2 {
@@ -118,5 +120,17 @@ object GcCases {
       override def close(): Unit = {}
     }
     class App(val components: Set[Component], val closeables: Set[AutoCloseable])
+  }
+
+  object InjectorCase9 {
+
+    trait T1
+
+    trait T2
+
+    final class Circular1(val c1: T1, val c2: T2) extends T1
+
+    final class Circular2(val c1: T1, val c2: T2) extends T2
+
   }
 }

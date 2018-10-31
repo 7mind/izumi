@@ -26,7 +26,7 @@ object FactoryConstructorMacro {
     // so we have to resort to WeakTypeTags and thread this ugly fucking `if` everywhere ;_;
     val tools = DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
 
-    import tools.{liftableRuntimeUniverse, liftableSymbolInfo, liftableDIKey}
+    import tools.{liftableRuntimeUniverse, liftableSymbolInfo, liftableBasicDIKey}
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._

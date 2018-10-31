@@ -40,7 +40,6 @@ class ProxyStrategyDefaultImpl(
   }
 
   def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[OpResult] = {
-    val tpe = proxyTargetType(makeProxy)
 
     val cogenNotRequired = makeProxy.byNameAllowed
 
@@ -48,6 +47,10 @@ class ProxyStrategyDefaultImpl(
       val proxy = new ByNameDispatcher(makeProxy.target)
       DeferredInit(proxy, proxy)
     } else {
+      val tpe = proxyTargetType(makeProxy)
+      if (tpe.tpe.typeSymbol.isFinal) {
+        throw new UnsupportedOpException(s"Tried to make proxy of final $tpe", makeProxy)
+      }
       makeCogenProxy(context, tpe, makeProxy)
     }
 
@@ -112,11 +115,11 @@ class ProxyStrategyDefaultImpl(
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
     makeProxy.op match {
       case op: WiringOp.InstantiateTrait =>
-        op.wiring.instanceType
+        op.target.tpe
       case op: WiringOp.InstantiateClass =>
-        op.wiring.instanceType
+        op.target.tpe
       case op: WiringOp.InstantiateFactory =>
-        op.wiring.factoryType
+        op.target.tpe
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
         //op.target.symbol
