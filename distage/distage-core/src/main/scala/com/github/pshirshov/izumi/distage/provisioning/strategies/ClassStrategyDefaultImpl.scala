@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
+import java.lang.reflect.Method
+
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
@@ -11,6 +13,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
 
+case class Dep(key: DIKey, value: Any)
 
 class ClassStrategyDefaultImpl
 (
@@ -26,7 +29,7 @@ class ClassStrategyDefaultImpl
       key =>
         context.fetchKey(key.wireWith, key.isByName) match {
           case Some(dep) =>
-            dep
+            Dep(key.wireWith, dep)
           case _ =>
             throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
               s" but the dependency has not been initialized: dependency: ${key.wireWith} of class: $op")
@@ -38,7 +41,7 @@ class ClassStrategyDefaultImpl
   }
 
 
-  protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Any]): Any = {
+  protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Dep]): Any = {
     val wiring = op.wiring
     val targetType = wiring.instanceType
     val symbol = targetType.tpe.typeSymbol
@@ -53,18 +56,13 @@ class ClassStrategyDefaultImpl
 
       if (hasByName) {
         // this is a dirty workaround for crappy logic in JavaTransformingMethodMirror
-        val fullArgs = prefixInstance match {
-          case Some(value) =>
-            value.asInstanceOf[AnyRef] +: args
-          case None =>
-            args
-        }
-        mkJava(targetType, fullArgs)
+        mkJava(targetType, prefixInstance, args)
       } else {
         val refCtor = refClass.reflectConstructor(ctorSymbol.getOrElse(
           throw new MissingConstructorException(s"Missing constructor in $targetType")
         ))
-        refCtor.apply(args: _*)
+        val values = args.map(_.value)
+        refCtor.apply(values: _*)
       }
     }
   }
@@ -104,19 +102,25 @@ class ClassStrategyDefaultImpl
     }
   }
 
-  protected def mkJava(targetType: SafeType, args: Seq[Any]): Any = {
+  protected def mkJava(targetType: SafeType, prefix: Option[Any], args: Seq[Dep]): Any = {
     val clazz = mirrorProvider.runtimeClass(targetType)
-    val argValues = args.map(_.asInstanceOf[AnyRef])
+    val argValues = prefix.map(_.asInstanceOf[AnyRef]).toSeq ++ args
+      .map {
+        case Dep(key, value) =>
+          unbox(key, value)
+      }
 
     val allConstructors = clazz
       .getDeclaredConstructors
       .toList
 
-    val matchingConstructors = allConstructors
-      .filter(_.getParameterCount == args.size)
+    val sameArityConstructors = allConstructors
+      .filter(_.getParameterCount == argValues.size)
+
+    val matchingConstructors = sameArityConstructors
       .find {
         c =>
-          c.getParameterTypes.zip(argValues).forall({ case (exp, impl) => TypeUtil.isAssignableFrom(exp, impl) })
+          c.getParameterTypes.toList.zip(argValues).forall({ case (exp, impl) => TypeUtil.isAssignableFrom(exp, impl) })
       }
 
     matchingConstructors match {
@@ -126,11 +130,38 @@ class ClassStrategyDefaultImpl
 
       case None =>
         import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-        throw new ProvisioningException(s"Can't find constructor for $targetType, signature: ${argValues.map(_.getClass)}, constructors: ${allConstructors.niceList()}", null)
+
+        val discrepancies = sameArityConstructors
+          .map {
+            c =>
+              val repr = c.getParameterTypes.toList.zip(argValues).map({ case (exp, impl) => s"expected: $exp, have: ${impl.getClass}, matches: ${TypeUtil.isAssignableFrom(exp, impl)}" }).niceList().shift(2)
+
+              s"$c: $repr"
+          }
+
+        throw new ProvisioningException(
+          s"""Can't find constructor for $targetType, signature: ${argValues.map(_.getClass)}
+             |issues: ${discrepancies.niceList().shift(2)}
+           """.stripMargin, null)
     }
   }
 
+  protected def unbox(info: DIKey, value: Any): AnyRef = {
+    val tpe = info.tpe.tpe
+    if (tpe.typeSymbol.isClass && tpe.typeSymbol.asClass.isDerivedValueClass) {
+      val u = getUnboxMethod(tpe)
+      u.invoke(value)
+    } else {
+      value.asInstanceOf[AnyRef]
+    }
+  }
 
+  protected def getUnboxMethod(info: Type): Method = {
+    val symbol = info.typeSymbol.asType
+    val fields@(field :: _) = symbol.toType.decls.collect { case ts: TermSymbol if ts.isParamAccessor && ts.isMethod => ts }.toList
+    assert(fields.length == 1, s"$symbol: $fields")
+    mirrorProvider.mirror.runtimeClass(symbol.asClass).getDeclaredMethod(field.name.toString)
+  }
 }
 
 object ClassStrategyDefaultImpl {

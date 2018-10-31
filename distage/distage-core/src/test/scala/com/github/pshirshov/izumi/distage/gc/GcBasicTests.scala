@@ -204,7 +204,22 @@ class GcBasicTests extends WordSpec with MkGcInjector {
           .ref[Circular2]
       })
 
-      println(plan.render)
+      val result = injector.produce(plan)
+
+      assert(result.get[Circular1] != null)
+      assert(result.get[Circular2] != null)
+    }
+
+    "handle by-name circular dependencies with sets through refs/2" in {
+      import GcCases.InjectorCase13._
+      val injector = mkInjector(distage.DIKey.get[Circular1], distage.DIKey.get[Circular2], distage.DIKey.get[Set[T1]])
+      val plan = injector.plan(new ModuleDef {
+        make[Circular1]
+        make[Circular2]
+        make[T1]
+        make[Quant[T1]].from(new Quant(new T1))
+      })
+
       val result = injector.produce(plan)
 
       assert(result.get[Circular1] != null)
