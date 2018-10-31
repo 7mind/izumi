@@ -145,4 +145,24 @@ object GcCases {
 
     final class Circular2(val c1: Circular1)
   }
+
+  object InjectorCase12 {
+    trait T1 extends AutoCloseable {
+      override def close(): Unit = {}
+    }
+
+    class Circular1(c1:  => Circular1, c2: => Circular2) extends T1 {
+      def nothing(): Unit = {
+        c1.discard()
+        c2.discard()
+      }
+    }
+
+    class Circular2(c1:  => Circular1, c2: => Circular2) extends T1 {
+      def nothing(): Unit = {
+        c1.discard()
+        c2.discard()
+      }
+    }
+  }
 }

@@ -56,7 +56,7 @@ object DefaultBootstrapContext {
     val analyzer = new PlanAnalyzerDefaultImpl
 
     new PlannerDefaultImpl(
-      new ForwardingRefResolverDefaultImpl(analyzer, symbolIntrospector, reflectionProvider)
+      new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
       , bootstrapObserver

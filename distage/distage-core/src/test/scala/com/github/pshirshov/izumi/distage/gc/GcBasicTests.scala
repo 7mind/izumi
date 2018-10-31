@@ -51,6 +51,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[S3Component]
       })
 
+      println(plan.render)
       val result = injector.produce(plan)
       assert(result.get[Ctx].upload.client != null)
       val c1 = result.get[MkS3Client]
@@ -175,6 +176,21 @@ class GcBasicTests extends WordSpec with MkGcInjector {
 
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
+    }
+
+    "handle by-name circular dependencies with sets" in {
+      import GcCases.InjectorCase12._
+      val injector = mkInjector(distage.DIKey.get[Circular2], distage.DIKey.get[Set[AutoCloseable]])
+      val plan = injector.plan(new ModuleDef {
+        make[Circular1]
+        make[Circular2]
+      })
+
+      println(plan.render)
+      val result = injector.produce(plan)
+
+      assert(result.get[Circular1] != null)
+      assert(result.get[Circular2] != null)
     }
   }
 }

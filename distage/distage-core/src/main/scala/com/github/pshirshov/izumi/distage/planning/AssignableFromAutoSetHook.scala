@@ -53,7 +53,7 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
   protected val setKey: DIKey = DIKey.get[Set[T]]
 
   override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
-    val newMembers = scala.collection.mutable.ArrayBuffer[DIKey.SetElementKey]()
+    val newMembers = scala.collection.mutable.ArrayBuffer[DIKey]()
 
     val newSteps = plan.steps.flatMap {
       op =>
@@ -67,9 +67,13 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
             Seq.empty
 
           case o if ExecutableOp.instanceType(op) weak_<:< setElemetType =>
-            val elementKey = DIKey.SetElementKey(setKey, op.target)
-            newMembers += elementKey
-            Seq(op, ExecutableOp.WiringOp.ReferenceKey(elementKey, Wiring.UnaryWiring.Reference(op.target.tpe, op.target, weak = true), op.origin))
+//            val elementKey = DIKey.SetElementKey(setKey, op.target)
+//            val newWiring = Wiring.UnaryWiring.Reference(op.target.tpe, op.target, weak = true)
+//            val newOp = ExecutableOp.WiringOp.ReferenceKey(elementKey, newWiring, op.origin)
+//            newMembers += elementKey
+//            Seq(op, newOp)
+            newMembers += op.target
+            Seq(op) //, newOp)
 
           case o =>
             Seq(op)
