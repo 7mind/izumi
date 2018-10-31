@@ -67,13 +67,8 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
             Seq.empty
 
           case o if ExecutableOp.instanceType(op) weak_<:< setElemetType =>
-//            val elementKey = DIKey.SetElementKey(setKey, op.target)
-//            val newWiring = Wiring.UnaryWiring.Reference(op.target.tpe, op.target, weak = true)
-//            val newOp = ExecutableOp.WiringOp.ReferenceKey(elementKey, newWiring, op.origin)
-//            newMembers += elementKey
-//            Seq(op, newOp)
             newMembers += op.target
-            Seq(op) //, newOp)
+            Seq(op)
 
           case o =>
             Seq(op)

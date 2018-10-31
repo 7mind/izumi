@@ -108,20 +108,25 @@ class ClassStrategyDefaultImpl
     val clazz = mirrorProvider.runtimeClass(targetType)
     val argValues = args.map(_.asInstanceOf[AnyRef])
 
-    clazz
+    val allConstructors = clazz
       .getDeclaredConstructors
       .toList
+
+    val matchingConstructors = allConstructors
       .filter(_.getParameterCount == args.size)
       .find {
         c =>
           c.getParameterTypes.zip(argValues).forall({ case (exp, impl) => TypeUtil.isAssignableFrom(exp, impl) })
-      } match {
+      }
+
+    matchingConstructors match {
       case Some(constructor) =>
         constructor.setAccessible(true)
         constructor.newInstance(argValues: _*)
 
       case None =>
-        throw new ProvisioningException(s"Can't find constructor for $targetType", null)
+        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        throw new ProvisioningException(s"Can't find constructor for $targetType, signature: ${argValues.map(_.getClass)}, constructors: ${allConstructors.niceList()}", null)
     }
   }
 

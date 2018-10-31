@@ -81,6 +81,7 @@ object GcCases {
   }
 
   object InjectorCase6 {
+
     trait Circular1 {
       def nothing: Int
 
@@ -96,30 +97,38 @@ object GcCases {
 
       def c2: Circular2
     }
+
   }
 
   object InjectorCase7 {
+
     class Circular1(bnc1: => Circular1, bnc2: => Circular2, val c1: Circular1, val c2: Circular2) {
       def nothing(): Unit = {
         bnc1.discard()
         bnc2.discard()
       }
     }
+
     class Circular2(bnc1: => Circular1, bnc2: => Circular2) {
       def nothing(): Unit = {
         bnc1.discard()
         bnc2.discard()
       }
     }
+
   }
 
 
   object InjectorCase8 {
+
     trait Component
+
     class TestComponent() extends Component with AutoCloseable {
       override def close(): Unit = {}
     }
+
     class App(val components: Set[Component], val closeables: Set[AutoCloseable])
+
   }
 
   object InjectorCase9 {
@@ -135,34 +144,54 @@ object GcCases {
   }
 
   object InjectorCase10 {
+
     final class Circular1(val c1: Circular1, val c2: Circular2)
 
     final class Circular2(val c1: Circular1, val c2: Circular2)
+
   }
 
   object InjectorCase11 {
+
     class Circular1(val c1: Circular1, val c2: Circular2)
 
     final class Circular2(val c1: Circular1)
+
   }
 
   object InjectorCase12 {
+
     trait T1 extends AutoCloseable {
       override def close(): Unit = {}
     }
 
-    class Circular1(c1:  => Circular1, c2: => Circular2) extends T1 {
+    class Circular1(c1: => Circular1, c2: => Circular2) extends T1 {
       def nothing(): Unit = {
         c1.discard()
         c2.discard()
       }
     }
 
-    class Circular2(c1:  => Circular1, c2: => Circular2) extends T1 {
+    class Circular2(c1: => Circular1, c2: => Circular2) extends T1 {
       def nothing(): Unit = {
         c1.discard()
         c2.discard()
       }
     }
+
+    class Circular3(c1: => Circular1, val c2: Circular2) {
+      def nothing(): Unit = {
+        c1.discard()
+      }
+    }
+
+    class Circular4(c1: => Circular1) {
+      def nothing(): Unit = {
+        c1.discard()
+      }
+    }
+
+
   }
+
 }
