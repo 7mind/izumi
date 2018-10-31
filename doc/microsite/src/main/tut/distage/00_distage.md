@@ -857,7 +857,7 @@ class Test extends DistageSpec {
 
 ### Using Garbage Collector
 
-A garbage collector is included in `distage`, but has to be enabled explicitly:
+A garbage collector is included in `distage` by default, to use it parameterize the injector with garbage collection roots:
 
 ```scala
 import distage._
@@ -868,8 +868,7 @@ class Main
 val roots = Seq(DIKey.get[Main])
 
 // Enable GC
-val gcModule = new TracingGCModule(roots)
-val injector = Injector(gcModule)
+val injector = Injector(roots)
 ```
 
 GC will remove all bindings that aren't transitive dependencies of the chosen `GC root` keys from the plan - they will never be instantiated.
@@ -893,7 +892,7 @@ val module = new ModuleDef {
 
 val roots = Seq(DIKey.get[A])
 
-val locator = Injector(new TracingGCModule(roots)).produce(module)
+val locator = Injector(roots).produce(module)
 
 locator.find[A]
 // res0: Option[A] = Some(A(B()))
@@ -903,12 +902,13 @@ locator.find[C]
 // res2: Option[C] = None
 ```
 
-Class `C` is removed because it wasn't dependent on by classes `B` or `A`. It's not present in the `Locator` and the `"C!"` message was never printed.
-If class `B` were to depend on `C` as in `case class B(c: C)`, it would've been retained, because `A` which is the GC root, would've depended on `B` which in turns depends on `C`.
+Class `C` was removed because it neither `B` nor `A` depended on it. It's not present in the `Locator` and the `"C!"` message was never printed.
+But, if class `B` were to depend on `C` as in `case class B(c: C)`, it would've been retained, because `A` - the GC root, would depend on `B` which in turns depends on `C`.
 
 GC serves two important purposes:
-* it enables faster [tests](#test-kit) by omitting unneeded instantiations,
-* and it enables multiple separate applications, "[Roles](#roles)" to be hosted within a single `.jar`.
+
+* It enables faster [tests](#test-kit) by omitting unrequired instantiations and initialization of potentially heavy resources,
+* It enables multiple separate applications, aka "[Roles](#roles)" to be hosted within a single `.jar`.
 
 ### Circular Dependencies support
 
@@ -984,7 +984,10 @@ assert(locator.get[C].c eq locator.get[C])
 ``` 
 
 The proxy generation via `cglib` is still enabled by default, because in scenarios with [extreme late-binding](#roles),
-cycles can emerge unexpectedly, outside of control of the origin module.  
+cycles can emerge unexpectedly, outside of control of the origin module.
+
+NB: Currently a limitation applies to by-names - ALL dependencies on a class engaged in a by-name circular dependency have to be by-name,
+otherwise distage will transparently revert to generating proxies.
 
 ### Auto-Sets: Collecting Bindings By Predicate
 

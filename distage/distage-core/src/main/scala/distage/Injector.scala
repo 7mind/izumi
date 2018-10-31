@@ -3,9 +3,6 @@ package distage
 import com.github.pshirshov.izumi.distage.InjectorDefaultImpl
 import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, DefaultBootstrapContext}
 import com.github.pshirshov.izumi.distage.model.definition.BootstrapContextModule
-import com.github.pshirshov.izumi.distage.model.definition.ModuleBase.ModuleDefSeqExt
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-
 
 object Injector {
 
@@ -24,7 +21,12 @@ object Injector {
     apply(gcRoots, CglibBootstrap.cogenBootstrap, overrides:_ *)
   }
 
-  def apply(gcRoots: Set[RuntimeDIUniverse.DIKey], bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
+  /**
+    * Create a new Injector with a different [[BootstrapContextModule]]
+    *
+    * @see [[DefaultBootstrapContext]] and [[CglibBootstrap]] for a list available bootstraps
+    */
+  def apply(gcRoots: Set[DIKey], bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
     new Gc(gcRoots, bootstrapBase)(overrides: _*)
   }
 
@@ -33,6 +35,10 @@ object Injector {
     * */
   def apply(overrides: BootstrapModule*): Injector = {
     bootstrap(overrides = overrides.merge)
+  }
+
+  def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
+    bootstrap(bootstrapBase, overrides.overrideLeft)
   }
 
   def bootstrap(
@@ -104,7 +110,7 @@ object Injector {
     }
   }
 
-  class Gc(roots: Set[RuntimeDIUniverse.DIKey], bootstrapBase: BootstrapContextModule) extends InjectorBootstrap {
+  class Gc(roots: Set[DIKey], bootstrapBase: BootstrapContextModule) extends InjectorBootstrap {
     val gcModule = new TracingGCModule(roots)
 
     def apply(): Injector = {
