@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.gc
 
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpException
 import org.scalatest.WordSpec
 
 
@@ -14,9 +15,11 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular2]
         make[Circular3]
         make[Circular4]
+        make[Trash]
       })
 
       val result = injector.produce(plan)
+      assert(result.find[Trash].isEmpty)
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
@@ -88,6 +91,19 @@ class GcBasicTests extends WordSpec with MkGcInjector {
       assert(result.get[Circular2].c1.isInstanceOf[Circular1])
     }
 
+    "keep proxies alive in case of pathologically intersecting loops with final classes" in {
+      import GcCases.InjectorCase9._
+      val injector = mkInjector(distage.DIKey.get[T1])
+      val plan = injector.plan(new ModuleDef {
+        make[T1].from[Circular1]
+        make[T2].from[Circular2]
+      })
+
+      val result = injector.produce(plan)
+      assert(result.get[T1] != null)
+      assert(result.get[T2] != null)
+    }
+
     "keep proxies alive in case of pathologically intersecting provider loops" in {
       import GcCases.InjectorCase6._
       val injector = mkInjector(distage.DIKey.get[Circular2])
@@ -132,7 +148,82 @@ class GcBasicTests extends WordSpec with MkGcInjector {
       val result = injector.produce(plan)
 
       assert(result.get[Circular1].c2 != null)
+      assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
+    }
+
+    "fail on totally final loops" in {
+      import GcCases.InjectorCase10._
+      val injector = mkInjector(distage.DIKey.get[Circular2])
+      intercept[UnsupportedOpException] {
+        injector.plan(new ModuleDef {
+          make[Circular1]
+          make[Circular2]
+        })
+      }
+    }
+
+    "prefer non-final loop break" in {
+      import GcCases.InjectorCase11._
+      val injector = mkInjector(distage.DIKey.get[Circular2])
+      val plan = injector.plan(new ModuleDef {
+        make[Circular1]
+        make[Circular2]
+      })
+
+      val result = injector.produce(plan)
+
+      assert(result.get[Circular1].c2 != null)
+      assert(result.get[Circular1].c2.isInstanceOf[Circular2])
+    }
+
+    "handle by-name circular dependencies with sets" in {
+      import GcCases.InjectorCase12._
+      val injector = mkInjector(distage.DIKey.get[Circular2], distage.DIKey.get[Set[AutoCloseable]])
+      val plan = injector.plan(new ModuleDef {
+        make[Circular1]
+        make[Circular2]
+      })
+
+      val result = injector.produce(plan)
+
+      assert(result.get[Circular1] != null)
+      assert(result.get[Circular2] != null)
+    }
+
+    "handle by-name circular dependencies with sets through refs" in {
+      import GcCases.InjectorCase12._
+      val injector = mkInjector(distage.DIKey.get[Circular4], distage.DIKey.get[Set[T1]], distage.DIKey.get[Circular3])
+      val plan = injector.plan(new ModuleDef {
+        make[Circular1]
+        make[Circular2]
+        make[Circular3]
+        make[Circular4]
+        many[T1]
+          .ref[Circular1]
+          .ref[Circular2]
+      })
+
+      val result = injector.produce(plan)
+
+      assert(result.get[Circular1] != null)
+      assert(result.get[Circular2] != null)
+    }
+
+    "handle by-name circular dependencies with sets through refs/2" in {
+      import GcCases.InjectorCase13._
+      val injector = mkInjector(distage.DIKey.get[Circular1], distage.DIKey.get[Circular2], distage.DIKey.get[Set[T1]])
+      val plan = injector.plan(new ModuleDef {
+        make[Circular1]
+        make[Circular2]
+        make[T1]
+        make[Box[T1]].from(new Box(new T1))
+      })
+
+      val result = injector.produce(plan)
+
+      assert(result.get[Circular1] != null)
+      assert(result.get[Circular2] != null)
     }
   }
 }

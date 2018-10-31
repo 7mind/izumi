@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
+import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 
@@ -18,6 +18,7 @@ trait FakeSet[A] extends Set[A]
   */
 class ProxyStrategyDefaultImpl(
                                 reflectionProvider: ReflectionProvider.Runtime
+                                , introspector: SymbolIntrospector.Runtime
                                 , proxyProvider: ProxyProvider
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
@@ -40,7 +41,6 @@ class ProxyStrategyDefaultImpl(
   }
 
   def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[OpResult] = {
-    val tpe = proxyTargetType(makeProxy)
 
     val cogenNotRequired = makeProxy.byNameAllowed
 
@@ -48,6 +48,10 @@ class ProxyStrategyDefaultImpl(
       val proxy = new ByNameDispatcher(makeProxy.target)
       DeferredInit(proxy, proxy)
     } else {
+      val tpe = proxyTargetType(makeProxy)
+      if (!introspector.canBeProxied(tpe)) {
+        throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", makeProxy)
+      }
       makeCogenProxy(context, tpe, makeProxy)
     }
 
@@ -112,11 +116,11 @@ class ProxyStrategyDefaultImpl(
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
     makeProxy.op match {
       case op: WiringOp.InstantiateTrait =>
-        op.wiring.instanceType
+        op.target.tpe
       case op: WiringOp.InstantiateClass =>
-        op.wiring.instanceType
+        op.target.tpe
       case op: WiringOp.InstantiateFactory =>
-        op.wiring.factoryType
+        op.target.tpe
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
         //op.target.symbol

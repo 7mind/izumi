@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag, Wiring}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag}
 
 import scala.collection.immutable.ListSet
 
@@ -53,7 +52,7 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
   protected val setKey: DIKey = DIKey.get[Set[T]]
 
   override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
-    val newMembers = scala.collection.mutable.ArrayBuffer[DIKey.SetElementKey]()
+    val newMembers = scala.collection.mutable.ArrayBuffer[DIKey]()
 
     val newSteps = plan.steps.flatMap {
       op =>
@@ -66,12 +65,11 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
           case s: DIKey.SetElementKey if s.set == setKey =>
             Seq.empty
 
-          case o if ExecutableOp.instanceType(op) weak_<:< setElemetType =>
-            val elementKey = DIKey.SetElementKey(setKey, op.target)
-            newMembers += elementKey
-            Seq(op, ExecutableOp.WiringOp.ReferenceKey(elementKey, Wiring.UnaryWiring.Reference(op.target.tpe, op.target, weak = true), op.origin))
+          case _ if ExecutableOp.instanceType(op) weak_<:< setElemetType =>
+            newMembers += op.target
+            Seq(op)
 
-          case o =>
+          case _ =>
             Seq(op)
         }
     }
@@ -96,16 +94,4 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
 
     plan.copy(steps = withReorderedSetElements)
   }
-}
-
-class AutoSetModule() extends BootstrapModuleDef {
-  def register[T: Tag]: AutoSetModule = {
-    many[T]
-    many[PlanningHook].add(new AssignableFromAutoSetHook[T])
-    this
-  }
-}
-
-object AutoSetModule {
-  def apply(): AutoSetModule = new AutoSetModule()
 }

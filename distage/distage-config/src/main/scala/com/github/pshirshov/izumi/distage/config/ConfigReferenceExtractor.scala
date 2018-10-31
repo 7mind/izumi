@@ -21,7 +21,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
     wiring.replaceKeys(rewire(binding, _))
   }
 
-  protected def rewire(binding: Binding.ImplBinding, association: Association): DIKey = {
+  protected def rewire(binding: Binding.ImplBinding, association: Association): DIKey.BasicKey = {
     val confPathAnno = findAnno[ConfPath](association)
     val confAnno = findAnno[Conf](association)
     val autoConfAnno = findAnno[AutoConf](association)

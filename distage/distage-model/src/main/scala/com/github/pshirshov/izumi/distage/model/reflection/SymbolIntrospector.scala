@@ -11,10 +11,6 @@ trait SymbolIntrospector {
 
   def selectConstructorMethod(tpe: u.SafeType): Option[u.MethodSymb]
 
-  def hasByNameParameter(sym: u.MethodSymb): Boolean = {
-   sym.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
-  }
-
   def selectConstructor(tpe: u.SafeType): Option[SelectedConstructor]
 
   def selectNonImplicitParameters(symb: u.MethodSymb): List[List[u.Symb]]
@@ -32,6 +28,14 @@ trait SymbolIntrospector {
   def findSymbolAnnotation(annType: u.SafeType, symb: u.SymbolInfo): Option[u.u.Annotation]
 
   def findTypeAnnotation(annType: u.SafeType, tpe: u.SafeType): Option[u.u.Annotation]
+
+  def canBeProxied(tpe: u.SafeType): Boolean = {
+    !tpe.tpe.typeSymbol.isFinal
+  }
+
+  def hasByNameParameter(sym: u.MethodSymb): Boolean = {
+    sym.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
+  }
 }
 
 object SymbolIntrospector {

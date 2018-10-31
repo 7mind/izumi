@@ -61,12 +61,8 @@ object CodePositionMaterializer {
       }
     }
 
-    val ownerName = c.internal.enclosingOwner.fullName
-
     val st = mutable.ArrayBuffer[c.Symbol]()
     rec(c.internal.enclosingOwner, st)
-
-    //val normalizedName = ownerName.split('.').takeWhile(s => !s.contains('$') && !s.contains('<')).mkString(".")
 
     val normalizedName = st
       .tail

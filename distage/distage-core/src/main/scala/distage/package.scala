@@ -1,7 +1,5 @@
-import com.github.pshirshov.izumi.distage.model
-import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.functional.Renderable
+import com.github.pshirshov.izumi.distage.{model, planning}
 
 package object distage extends Distage {
 
@@ -34,6 +32,7 @@ package object distage extends Distage {
   override val SafeType: RuntimeDIUniverse.SafeType.type = RuntimeDIUniverse.SafeType
 
   override type ModuleBase = model.definition.ModuleBase
+  override val ModuleBase: model.definition.ModuleBase.type = model.definition.ModuleBase
 
   override type Module = model.definition.Module
   override val Module: model.definition.Module.type = model.definition.Module
@@ -44,6 +43,9 @@ package object distage extends Distage {
   override type BootstrapModuleDef = model.definition.BootstrapModuleDef
 
   override type TracingGCModule = com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+
+  override type AutoSetModule = planning.AutoSetModule
+  override val AutoSetModule: planning.AutoSetModule.type = planning.AutoSetModule
 
   override type TagKK[T[_, _]] = RuntimeDIUniverse.TagKK[T]
   override val TagKK: RuntimeDIUniverse.TagKK.type = RuntimeDIUniverse.TagKK
@@ -62,6 +64,4 @@ package object distage extends Distage {
 
   override type TagTK3[T[_[_], _, _, _]] = RuntimeDIUniverse.TagTK3[T]
   override val TagTK3: RuntimeDIUniverse.TagTK3.type = RuntimeDIUniverse.TagTK3
-
-  override implicit val orderedPlanFormatter: Renderable[OrderedPlan] = CompactPlanFormatter.OrderedPlanFormatter
 }

@@ -10,7 +10,7 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
 
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
-  override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: SymbolInfo): DIKey = {
+  override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: SymbolInfo): DIKey.BasicKey = {
     val typeKey = if (parameterSymbol.isByName) {
       DIKey.TypeKey(SafeType(parameterSymbol.finalResultType.tpe.typeArgs.head.finalResultType))
     } else {
@@ -32,7 +32,7 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
     )
   }
 
-  override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: SymbolInfo): DIKey = {
+  override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: SymbolInfo): DIKey.BasicKey = {
     val typeKey = DIKey.TypeKey(methodSymbol.finalResultType)
     withOptionalName(methodSymbol, typeKey)
   }

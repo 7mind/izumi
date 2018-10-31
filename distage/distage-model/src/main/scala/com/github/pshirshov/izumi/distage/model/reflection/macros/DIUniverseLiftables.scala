@@ -47,17 +47,28 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
       """
   }
 
-  implicit val liftableDIKey: Liftable[DIKey] = {
-    Liftable[DIKey] {
+  implicit val liftableBasicDIKey: Liftable[DIKey.BasicKey] = {
+    Liftable[DIKey.BasicKey] {
       d =>
         (d: @unchecked) match {
           case t: DIKey.TypeKey => q"$t"
           case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
+        }
+    }
+  }
+
+  implicit val liftableDIKey: Liftable[DIKey] = {
+    Liftable[DIKey] {
+      d =>
+        (d: @unchecked) match {
+          case t: DIKey.TypeKey=> q"$t"
+          case t: DIKey.IdKey[_] => q"${t: DIKey.BasicKey}"
           case p: DIKey.ProxyElementKey => q"$p"
           case s: DIKey.SetElementKey => q"$s"
         }
     }
   }
+
 
   // ParameterContext
 

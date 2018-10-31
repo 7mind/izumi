@@ -77,21 +77,25 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
         case (fst, snd) =>
           val fsto = index(fst)
           val sndo = index(snd)
+          val fstp = symbolIntrospector.canBeProxied(fsto.target.tpe)
+          val sndp = symbolIntrospector.canBeProxied(sndo.target.tpe)
 
-          if (fsto.isInstanceOf[ReferenceKey] && !sndo.isInstanceOf[ReferenceKey]) {
+          if (fstp && !sndp) {
+            true
+          } else if (!fstp) {
             false
           } else if (!fsto.isInstanceOf[ReferenceKey] && sndo.isInstanceOf[ReferenceKey]) {
             true
-          } else if (fsto.isInstanceOf[ReferenceKey] && sndo.isInstanceOf[ReferenceKey]) {
+          } else if (fsto.isInstanceOf[ReferenceKey]) {
             false
           } else {
             val fstHasByName: Boolean = hasByNameParameter(fsto)
             val sndHasByName: Boolean = hasByNameParameter(sndo)
 
-            if (fstHasByName && !sndHasByName) {
-              false
-            } else if (!fstHasByName && sndHasByName) {
+            if (!fstHasByName && sndHasByName) {
               true
+            } else if (fstHasByName && !sndHasByName) {
+              false
             } else {
               analyzer.requirements(fsto).size > analyzer.requirements(sndo).size
             }
@@ -101,11 +105,13 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
 
       index(best) match {
         case op: ReferenceKey =>
-          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate is reference O_o: $keys", op)
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
         case op: ImportDependency =>
-          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate is import O_o: $keys", op)
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
         case op: ProxyOp =>
-          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate is proxy O_o: $keys", op)
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is proxy O_o: $keys", op)
+        case op: InstantiationOp if !symbolIntrospector.canBeProxied(op.target.tpe) =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
         case _: InstantiationOp =>
           best
       }
@@ -120,6 +126,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
     OrderedPlan(completedPlan.definition, sortedOps.toVector, topology)
   }
+
 
   private def hasByNameParameter(fsto: ExecutableOp): Boolean = {
     val fstoTpe = ExecutableOp.instanceType(fsto)
