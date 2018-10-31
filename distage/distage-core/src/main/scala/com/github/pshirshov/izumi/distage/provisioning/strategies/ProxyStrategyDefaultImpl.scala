@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
+import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 
@@ -18,6 +18,7 @@ trait FakeSet[A] extends Set[A]
   */
 class ProxyStrategyDefaultImpl(
                                 reflectionProvider: ReflectionProvider.Runtime
+                                , introspector: SymbolIntrospector.Runtime
                                 , proxyProvider: ProxyProvider
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
@@ -48,8 +49,8 @@ class ProxyStrategyDefaultImpl(
       DeferredInit(proxy, proxy)
     } else {
       val tpe = proxyTargetType(makeProxy)
-      if (tpe.tpe.typeSymbol.isFinal) {
-        throw new UnsupportedOpException(s"Tried to make proxy of final $tpe", makeProxy)
+      if (!introspector.canBeProxied(tpe)) {
+        throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", makeProxy)
       }
       makeCogenProxy(context, tpe, makeProxy)
     }

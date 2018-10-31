@@ -133,4 +133,16 @@ object GcCases {
     final class Circular2(val c1: T1, val c2: T2) extends T2
 
   }
+
+  object InjectorCase10 {
+    final class Circular1(val c1: Circular1, val c2: Circular2)
+
+    final class Circular2(val c1: Circular1, val c2: Circular2)
+  }
+
+  object InjectorCase11 {
+    class Circular1(val c1: Circular1, val c2: Circular2)
+
+    final class Circular2(val c1: Circular1)
+  }
 }

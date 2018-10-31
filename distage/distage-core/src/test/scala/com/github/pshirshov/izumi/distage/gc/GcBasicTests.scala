@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.gc
 
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpException
 import org.scalatest.WordSpec
 
 
@@ -98,7 +99,6 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[T2].from[Circular2]
       })
 
-      println(plan.render)
       val result = injector.produce(plan)
       assert(result.get[T1] != null)
       assert(result.get[T2] != null)
@@ -139,6 +139,32 @@ class GcBasicTests extends WordSpec with MkGcInjector {
 
     "keep proxies alive in case of pathologically intersecting loops with by-name edges" in {
       import GcCases.InjectorCase7._
+      val injector = mkInjector(distage.DIKey.get[Circular2])
+      val plan = injector.plan(new ModuleDef {
+        make[Circular1]
+        make[Circular2]
+      })
+
+      val result = injector.produce(plan)
+
+      assert(result.get[Circular1].c2 != null)
+      assert(result.get[Circular1].c2 != null)
+      assert(result.get[Circular1].c2.isInstanceOf[Circular2])
+    }
+
+    "fail on totally final loops" in {
+      import GcCases.InjectorCase10._
+      val injector = mkInjector(distage.DIKey.get[Circular2])
+      intercept[UnsupportedOpException] {
+        injector.plan(new ModuleDef {
+          make[Circular1]
+          make[Circular2]
+        })
+      }
+    }
+
+    "prefer non-final loop break" in {
+      import GcCases.InjectorCase11._
       val injector = mkInjector(distage.DIKey.get[Circular2])
       val plan = injector.plan(new ModuleDef {
         make[Circular1]
