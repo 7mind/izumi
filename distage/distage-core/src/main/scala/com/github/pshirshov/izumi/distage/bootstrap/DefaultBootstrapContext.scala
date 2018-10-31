@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.bootstrap
 
 import com.github.pshirshov.izumi.distage._
 import com.github.pshirshov.izumi.distage.model._
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.provisioning._
@@ -17,7 +17,7 @@ import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
-class DefaultBootstrapContext(contextDefinition: BootstrapModule) extends AbstractLocator {
+class DefaultBootstrapContext(contextDefinition: BootstrapContextModule) extends AbstractLocator {
 
   import DefaultBootstrapContext._
 
@@ -84,11 +84,11 @@ object DefaultBootstrapContext {
     )
   }
 
-  final lazy val noProxies: BootstrapModule = new BootstrapModuleDef {
+  final lazy val noProxies: BootstrapContextModule = new BootstrapContextModuleDef {
     make[ProxyProvider].from[ProxyProviderFailingImpl]
   }
 
-  final lazy val defaultBootstrap: BootstrapModule = new BootstrapModuleDef {
+  final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
     make[LookupInterceptor].from(NullLookupInterceptor)
     make[ReflectionProvider.Runtime].from[ReflectionProviderDefaultImpl.Runtime]
     make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
@@ -120,9 +120,9 @@ object DefaultBootstrapContext {
     make[TraitStrategy].from[TraitStrategyDefaultImpl]
   }
 
-  final lazy val noProxiesBootstrap: BootstrapModule = defaultBootstrap ++ noProxies
+  final lazy val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
 
-  final lazy val noCogensBootstrap: BootstrapModule = noProxiesBootstrap overridenBy new BootstrapModuleDef {
+  final lazy val noCogensBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
     make[ClassStrategy].from[ClassStrategyFailingImpl]
     make[ProxyStrategy].from[ProxyStrategyFailingImpl]
     make[FactoryStrategy].from[FactoryStrategyFailingImpl]

@@ -114,7 +114,7 @@ class BasicTest extends WordSpec with MkInjector {
     val plan = injector.plan(definition)
     val context = injector.produce(plan)
 
-    val sub = Injector.create(context)
+    val sub = Injector.inherit(context)
     val subplan = sub.plan(definition)
     val subcontext = injector.produce(subplan)
 

@@ -217,7 +217,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular1]
         make[Circular2]
         make[T1]
-        make[Quant[T1]].from(new Quant(new T1))
+        make[Box[T1]].from(new Box(new T1))
       })
 
       val result = injector.produce(plan)

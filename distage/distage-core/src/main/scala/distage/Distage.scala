@@ -1,9 +1,8 @@
 package distage
 
 import com.github.pshirshov.izumi.distage.model
-import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter
+import com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.functional.Renderable
 
 import scala.language.higherKinds
 
@@ -38,6 +37,7 @@ trait Distage {
   val SafeType: RuntimeDIUniverse.SafeType.type = RuntimeDIUniverse.SafeType
 
   type ModuleBase = model.definition.ModuleBase
+  val ModuleBase: model.definition.ModuleBase.type = model.definition.ModuleBase
 
   type Module = model.definition.Module
   val Module: model.definition.Module.type = model.definition.Module
@@ -48,6 +48,9 @@ trait Distage {
   type BootstrapModuleDef = model.definition.BootstrapModuleDef
 
   type TracingGCModule = com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+
+  type AutoSetModule = planning.AutoSetModule
+  val AutoSetModule: planning.AutoSetModule.type = planning.AutoSetModule
 
   type TagKK[T[_, _]] = RuntimeDIUniverse.TagKK[T]
   val TagKK: RuntimeDIUniverse.TagKK.type = RuntimeDIUniverse.TagKK
@@ -67,5 +70,4 @@ trait Distage {
   type TagTK3[T[_[_], _, _, _]] = RuntimeDIUniverse.TagTK3[T]
   val TagTK3: RuntimeDIUniverse.TagTK3.type = RuntimeDIUniverse.TagTK3
 
-  implicit val orderedPlanFormatter: Renderable[OrderedPlan] = CompactPlanFormatter.OrderedPlanFormatter
 }
