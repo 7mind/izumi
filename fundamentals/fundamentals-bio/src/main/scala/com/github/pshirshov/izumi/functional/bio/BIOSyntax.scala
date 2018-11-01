@@ -40,6 +40,9 @@ object BIOSyntax {
     @inline def bracket[E1 >: E, B](release: A => R[Nothing, Unit])(use: A => R[E1, B]): R[E1, B] =
       R.bracket(r: R[E1, A])(release)(use)
 
+    @inline def bracketAuto[E1 >: E, B](use: A => R[E1, B])(implicit ev: A <:< AutoCloseable): R[E1, B] =
+      bracket[E1, B](c => R.sync(c.close()))(use)
+
     @inline def void: R[E, Unit] = R.void(r)
 
     @inline def catchAll[E2, A2 >: A](h: E => R[E2, A2]): R[E2, A2] = R.redeem(r)(h, R.now)
