@@ -69,8 +69,8 @@ object Http4sTestContext {
     }
   }
 
-  final val storage = new WsSessionsStorageImpl[rt.type, String, DummyRequestContext](rt.self, logger, demo.Server.codec)
-  final val ioService = new HttpServer[rt.type, DummyRequestContext, String](
+  final val storage = new WsSessionsStorageImpl[rt.type](rt.self, logger, demo.Server.codec)
+  final val ioService = new HttpServer[rt.type](
     rt.self,
     demo.Server.multiplexor,
     demo.Server.codec,
@@ -98,8 +98,8 @@ object Http4sTestContext {
     override def toContext(packet: RpcPacket): Unit = ()
   }
 
-  final def wsClientDispatcher(): ClientWsDispatcher[rt.type, Unit] with TestDispatcher =
-    new ClientWsDispatcher[rt.type, Unit](rt.self, wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider)
+  final def wsClientDispatcher(): ClientWsDispatcher[rt.type] with TestDispatcher =
+    new ClientWsDispatcher[rt.type](rt.self, wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider)
       with TestDispatcher {
       override protected def transformRequest(request: RpcPacket): RpcPacket = {
         Option(creds.get()) match {

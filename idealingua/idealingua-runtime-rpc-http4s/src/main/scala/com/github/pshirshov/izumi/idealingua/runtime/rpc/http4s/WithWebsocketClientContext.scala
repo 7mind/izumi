@@ -76,14 +76,14 @@ object WsContextProvider {
   }
 }
 
-class WsSessionsStorageImpl[C <: Http4sContext, ClientId, Ctx]
-(val c: C#IMPL[C], logger: IzLogger, codec: IRTClientMultiplexor[C#BiIO]) extends WsSessionsStorage[C#BiIO, ClientId, Ctx] {
+class WsSessionsStorageImpl[C <: Http4sContext]
+(val c: C#IMPL[C], logger: IzLogger, codec: IRTClientMultiplexor[C#BiIO]) extends WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
 
   import com.github.pshirshov.izumi.functional.bio.BIO._
 
-  type WSC = WebsocketClientContext[BiIO, ClientId, Ctx]
+  type WSC = WebsocketClientContext[BiIO, ClientId, RequestContext]
 
   protected val clients = new ConcurrentHashMap[WsSessionId, WSC]()
   protected val timeout: FiniteDuration = 20.seconds
@@ -144,14 +144,14 @@ class WsSessionsStorageImpl[C <: Http4sContext, ClientId, Ctx]
   }
 }
 
-class WebsocketClientContextImpl[C <: Http4sContext, B[+ _, + _] : BIOAsync, ClientId, Ctx]
+class WebsocketClientContextImpl[C <: Http4sContext, B[+ _, + _] : BIOAsync]
 (
   val c: C#IMPL[C],
-  val initialRequest: AuthedRequest[C#CatsIO, Ctx]
-  , val initialContext: Ctx
-  , listeners: Seq[WsSessionListener[ClientId]]
-  , wsSessionStorage: WsSessionsStorage[B, ClientId, Ctx]
-) extends WebsocketClientContext[B, ClientId, Ctx] {
+  val initialRequest: AuthedRequest[C#CatsIO, C#RequestContext]
+  , val initialContext: C#RequestContext
+  , listeners: Seq[WsSessionListener[C#ClientId]]
+  , wsSessionStorage: WsSessionsStorage[B, C#ClientId, C#RequestContext]
+) extends WebsocketClientContext[B, C#ClientId, C#RequestContext] {
 
   import c._
 

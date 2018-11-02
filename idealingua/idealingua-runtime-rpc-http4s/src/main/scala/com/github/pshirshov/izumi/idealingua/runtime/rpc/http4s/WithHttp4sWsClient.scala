@@ -20,13 +20,14 @@ trait WsClientContextProvider[Ctx] {
 /**
   * TODO: this is a naive client implementation, good for testing purposes but not mature enough for production usage
   */
-class ClientWsDispatcher[C <: Http4sContext, Ctx](
-                                                   val c: C#IMPL[C],
-                                                   protected val baseUri: URI
-                                                   , protected val codec: IRTClientMultiplexor[C#BiIO]
-                                                   , protected val buzzerMuxer: IRTServerMultiplexor[C#BiIO, Ctx]
-                                                   , protected val wsClientContextProvider: WsClientContextProvider[Ctx]
-                                                 )
+class ClientWsDispatcher[C <: Http4sContext]
+(
+  val c: C#IMPL[C],
+  protected val baseUri: URI,
+  protected val codec: IRTClientMultiplexor[C#BiIO],
+  protected val buzzerMuxer: IRTServerMultiplexor[C#BiIO, C#ClientContext],
+  protected val wsClientContextProvider: WsClientContextProvider[C#ClientContext],
+)
   extends IRTDispatcher[C#BiIO] with AutoCloseable {
 
   import c._

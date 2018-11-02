@@ -20,13 +20,13 @@ import org.http4s.websocket.WebSocketFrame.{Binary, Close, Text}
 import scala.util.Try
 
 
-class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
-                                                    val muxer: IRTServerMultiplexor[C#BiIO, Ctx]
+class HttpServer[C <: Http4sContext](val c: C#IMPL[C],
+                                                    val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext]
                                                     , val codec: IRTClientMultiplexor[C#BiIO]
-                                                    , val contextProvider: AuthMiddleware[C#CatsIO, Ctx]
-                                                    , val wsContextProvider: WsContextProvider[Ctx, ClientId]
-                                                    , val wsSessionStorage: WsSessionsStorage[C#BiIO, ClientId, Ctx]
-                                                    , val listeners: Seq[WsSessionListener[ClientId]]
+                                                    , val contextProvider: AuthMiddleware[C#CatsIO, C#RequestContext]
+                                                    , val wsContextProvider: WsContextProvider[C#RequestContext, C#ClientId]
+                                                    , val wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
+                                                    , val listeners: Seq[WsSessionListener[C#ClientId]]
                                                    ) {
   import c._
   protected val dsl: Http4sDsl[CatsIO] = c.dsl
@@ -59,7 +59,7 @@ class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
     loggingMiddle(aservice)
   }
 
-  protected def handler(): PartialFunction[AuthedRequest[CatsIO, Ctx], CatsIO[Response[CatsIO]]] = {
+  protected def handler(): PartialFunction[AuthedRequest[CatsIO, RequestContext], CatsIO[Response[CatsIO]]] = {
     case request@GET -> Root / "ws" as ctx =>
       setupWs(request, ctx)
 
@@ -76,8 +76,8 @@ class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
   }
 
 
-  protected def setupWs(request: AuthedRequest[CatsIO, Ctx], initialContext: Ctx): CatsIO[Response[CatsIO]] = {
-    val context = new WebsocketClientContextImpl[C, BiIO, ClientId, Ctx](c, request, initialContext, listeners, wsSessionStorage)
+  protected def setupWs(request: AuthedRequest[CatsIO, RequestContext], initialContext: RequestContext): CatsIO[Response[CatsIO]] = {
+    val context = new WebsocketClientContextImpl[C, BiIO](c, request, initialContext, listeners, wsSessionStorage)
     context.start()
     logger.debug(s"${context -> null}: Websocket client connected")
 
@@ -100,7 +100,7 @@ class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
     }
   }
 
-  protected def handleWsMessage(context: WebsocketClientContextImpl[C, BiIO, ClientId, Ctx]): WebSocketFrame => CatsIO[Option[String]] = {
+  protected def handleWsMessage(context: WebsocketClientContextImpl[C, BiIO]): WebSocketFrame => CatsIO[Option[String]] = {
     case Text(msg, _) =>
       val ioresponse = makeResponse(context, msg)
       CIO.async {
@@ -115,7 +115,7 @@ class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
       CIO.point(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
   }
 
-  protected def handleResult(context: WebsocketClientContextImpl[C, BiIO, ClientId, Ctx], result: Try[Either[Throwable, Option[RpcPacket]]]): Option[String] = {
+  protected def handleResult(context: WebsocketClientContextImpl[C, BiIO], result: Try[Either[Throwable, Option[RpcPacket]]]): Option[String] = {
     result match {
       case scala.util.Success(Right(v)) =>
         v.map(_.asJson).map(printer.pretty)
@@ -128,7 +128,7 @@ class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
     }
   }
 
-  protected def makeResponse(context: WebsocketClientContextImpl[C, BiIO, ClientId, Ctx], message: String): BiIO[Throwable, Option[RpcPacket]] = {
+  protected def makeResponse(context: WebsocketClientContextImpl[C, BiIO], message: String): BiIO[Throwable, Option[RpcPacket]] = {
     for {
       parsed <- BIO.fromEither(parse(message))
       unmarshalled <- BIO.fromEither(parsed.as[RpcPacket])
@@ -157,7 +157,7 @@ class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
     }
   }
 
-  protected def handleWsError(context: WebsocketClientContextImpl[C, BiIO, ClientId, Ctx], causes: List[Throwable], data: Option[String], kind: String): String = {
+  protected def handleWsError(context: WebsocketClientContextImpl[C, BiIO], causes: List[Throwable], data: Option[String], kind: String): String = {
     causes.headOption match {
       case Some(cause) =>
         logger.error(s"${context -> null}: WS Execution failed, $kind, $data, $cause")
@@ -169,7 +169,7 @@ class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
     }
   }
 
-  protected def respond(context: WebsocketClientContextImpl[C, BiIO, ClientId, Ctx], userContext: Ctx, input: RpcPacket): BiIO[Throwable, Option[RpcPacket]] = {
+  protected def respond(context: WebsocketClientContextImpl[C, BiIO], userContext: RequestContext, input: RpcPacket): BiIO[Throwable, Option[RpcPacket]] = {
     input match {
       case RpcPacket(RPCPacketKind.RpcRequest, data, Some(id), _, Some(service), Some(method), _) =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
@@ -193,7 +193,7 @@ class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
   }
 
 
-  protected def run(context: HttpRequestContext[CatsIO, Ctx], body: String, method: IRTMethodId): CatsIO[Response[CatsIO]] = {
+  protected def run(context: HttpRequestContext[CatsIO, RequestContext], body: String, method: IRTMethodId): CatsIO[Response[CatsIO]] = {
     val ioR = for {
       parsed <- BIO.fromEither(parse(body))
       maybeResult <- muxer.doInvoke(parsed, context.context, method)
@@ -211,7 +211,7 @@ class HttpServer[C <: Http4sContext, Ctx, ClientId](val c: C#IMPL[C],
       .flatten
   }
 
-  private def handleResult(context: HttpRequestContext[CatsIO, Ctx], method: IRTMethodId, result: Try[Either[Throwable, Option[Json]]]): CatsIO[Response[CatsIO]] = {
+  private def handleResult(context: HttpRequestContext[CatsIO, RequestContext], method: IRTMethodId, result: Try[Either[Throwable, Option[Json]]]): CatsIO[Response[CatsIO]] = {
     result match {
       case scala.util.Success(Right(v)) =>
         v match {

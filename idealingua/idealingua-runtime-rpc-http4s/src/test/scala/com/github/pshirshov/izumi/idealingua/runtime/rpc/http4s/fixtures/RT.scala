@@ -17,7 +17,7 @@ object RT {
   implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(Executors.newWorkStealingPool())
   final val logger = makeLogger()
 
-  final val rt = new Http4sRuntime[zio.IO, cats.effect.IO](logger, global)
+  final val rt = new Http4sRuntime[zio.IO, cats.effect.IO, DummyRequestContext, String, Unit](logger, global)
 
   private def makeLogger(): IzLogger = {
     val out = IzLogger(Log.Level.Info, levels = Map(

@@ -9,7 +9,13 @@ import org.http4s.dsl._
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-class Http4sRuntime[_BiIO[+ _, + _] : BIOAsync : BIORunner, _CatsIO[+ _] : ConcurrentEffect : CIORunner : Timer]
+class Http4sRuntime[
+  _BiIO[+ _, + _] : BIOAsync : BIORunner
+  , _CatsIO[+ _] : ConcurrentEffect : CIORunner : Timer
+  , _RequestContext
+  , _ClientId
+  , _ClientContext
+]
 (
   override val logger: IzLogger
   , override val clientExecutionContext: ExecutionContext
@@ -19,6 +25,12 @@ class Http4sRuntime[_BiIO[+ _, + _] : BIOAsync : BIORunner, _CatsIO[+ _] : Concu
   override type BiIO[+E, +V] = _BiIO[E, V]
 
   override type CatsIO[+T] = _CatsIO[T]
+
+  override type RequestContext = _RequestContext
+
+  override type ClientId = _ClientId
+
+  override type ClientContext = _ClientContext
 
   override val BIO: BIOAsync[BiIO] = implicitly
 
@@ -33,5 +45,4 @@ class Http4sRuntime[_BiIO[+ _, + _] : BIOAsync : BIORunner, _CatsIO[+ _] : Concu
   override val dsl: Http4sDsl[CatsIO] = Http4sDsl.apply[CatsIO]
 
   override def printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
-
 }

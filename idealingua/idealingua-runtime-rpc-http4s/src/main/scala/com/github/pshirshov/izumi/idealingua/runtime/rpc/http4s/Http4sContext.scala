@@ -18,6 +18,12 @@ trait Http4sContext {
 
   type MaterializedStream = String
 
+  type RequestContext
+
+  type ClientContext
+
+  type ClientId
+
   type StreamDecoder = EntityDecoder[CatsIO, MaterializedStream]
 
   implicit def BIO: BIOAsync[BiIO]
@@ -38,42 +44,42 @@ trait Http4sContext {
 
   def clientExecutionContext: ExecutionContext
 
-  sealed trait Aux[_BiIO[+_, +_], _CatsIO[+_]] extends Http4sContext {
-    override type BiIO[+E, +V] = _BiIO[E, V]
-
-    override type CatsIO[+T] = _CatsIO[T]
-  }
-
-  sealed trait IMPL[C <: Http4sContext] extends Aux[C#BiIO, C#CatsIO] {
-
-  }
-
   final type DECL = this.type
 
   def self: IMPL[DECL] = IMPL.apply[DECL]
 
+  sealed trait Aux[_BiIO[+_, +_], _CatsIO[+_], _RequestContext, _ClientId, _ClientContext] extends Http4sContext {
+    override final type BiIO[+E, +V] = _BiIO[E, V]
+
+    override final type CatsIO[+T] = _CatsIO[T]
+
+    override final type RequestContext = _RequestContext
+    override final type ClientContext = _ClientContext
+    override final type ClientId = _ClientId
+  }
+
+  final class IMPL[C <: Http4sContext] extends Aux[C#BiIO, C#CatsIO, C#RequestContext, C#ClientId, C#ClientContext] {
+    override def BIORunner: BIORunner[C#BiIO] = Http4sContext.this.BIORunner.asInstanceOf[BIORunner[C#BiIO]]
+
+    override implicit def BIO: BIOAsync[C#BiIO] = Http4sContext.this.BIO.asInstanceOf[BIOAsync[C#BiIO]]
+
+    override def CIORunner: CIORunner[C#CatsIO] = Http4sContext.this.CIORunner.asInstanceOf[CIORunner[C#CatsIO]]
+
+    override def dsl: Http4sDsl[C#CatsIO] = Http4sContext.this.dsl.asInstanceOf[Http4sDsl[C#CatsIO]]
+
+    override implicit def CIO: ConcurrentEffect[C#CatsIO] = Http4sContext.this.CIO.asInstanceOf[ConcurrentEffect[C#CatsIO]]
+
+    override implicit def CIOT: Timer[C#CatsIO] = Http4sContext.this.CIOT.asInstanceOf[Timer[C#CatsIO]]
+
+    override def logger: IzLogger = Http4sContext.this.logger
+
+    override def printer: Printer = Http4sContext.this.printer
+
+    override def clientExecutionContext: ExecutionContext = Http4sContext.this.clientExecutionContext
+  }
+
   object IMPL {
-    def apply[C <: Http4sContext]: IMPL[C] = new IMPL[C] {
-      override def BIORunner: BIORunner[C#BiIO] = Http4sContext.this.BIORunner.asInstanceOf[BIORunner[C#BiIO]]
-
-      override implicit def BIO: BIOAsync[C#BiIO] = Http4sContext.this.BIO.asInstanceOf[BIOAsync[C#BiIO]]
-
-      override def CIORunner: CIORunner[C#CatsIO] = Http4sContext.this.CIORunner.asInstanceOf[CIORunner[C#CatsIO]]
-
-      override def dsl: Http4sDsl[C#CatsIO] = Http4sContext.this.dsl.asInstanceOf[Http4sDsl[C#CatsIO]]
-
-      override implicit def CIO: ConcurrentEffect[C#CatsIO] = Http4sContext.this.CIO.asInstanceOf[ConcurrentEffect[C#CatsIO]]
-
-      override implicit def CIOT: Timer[C#CatsIO] = Http4sContext.this.CIOT.asInstanceOf[Timer[C#CatsIO]]
-
-
-      override def logger: IzLogger = Http4sContext.this.logger
-
-      override def printer: Printer = Http4sContext.this.printer
-
-      override def clientExecutionContext: ExecutionContext = Http4sContext.this.clientExecutionContext
-    }
-
+    def apply[C <: Http4sContext]: IMPL[C] = new IMPL[C]
   }
 
 }
