@@ -4,7 +4,6 @@ import java.time.ZonedDateTime
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit, TimeoutException}
 
-import com.github.pshirshov.izumi.functional.bio.BIOAsync
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
@@ -80,7 +79,6 @@ class WsSessionsStorageImpl[C <: Http4sContext]
 (val c: C#IMPL[C], logger: IzLogger, codec: IRTClientMultiplexor[C#BiIO]) extends WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
-
   import com.github.pshirshov.izumi.functional.bio.BIO._
 
   type WSC = WebsocketClientContext[BiIO, ClientId, RequestContext]
@@ -144,14 +142,14 @@ class WsSessionsStorageImpl[C <: Http4sContext]
   }
 }
 
-class WebsocketClientContextImpl[C <: Http4sContext, B[+ _, + _] : BIOAsync]
+class WebsocketClientContextImpl[C <: Http4sContext]
 (
   val c: C#IMPL[C],
   val initialRequest: AuthedRequest[C#CatsIO, C#RequestContext]
   , val initialContext: C#RequestContext
   , listeners: Seq[WsSessionListener[C#ClientId]]
-  , wsSessionStorage: WsSessionsStorage[B, C#ClientId, C#RequestContext]
-) extends WebsocketClientContext[B, C#ClientId, C#RequestContext] {
+  , wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
+) extends WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
 
