@@ -15,6 +15,7 @@ class Http4sTransportTest extends WordSpec {
 
   import fixtures._
   import Http4sTestContext._
+  import RT._
 
   "Http4s transport" should {
     "support http" in {
@@ -75,7 +76,7 @@ class Http4sTransportTest extends WordSpec {
   }
 
   def withServer(f: => Unit): Unit = {
-    BlazeBuilder[CIO]
+    BlazeBuilder[rt.CatsIO]
       .bindHttp(port, host)
       .withWebSockets(true)
       .mountService(ioService.service, "/")
@@ -84,7 +85,7 @@ class Http4sTransportTest extends WordSpec {
       .compile.drain.unsafeRunSync()
   }
 
-  def checkBadBody(body: String, disp: IRTDispatcher[BiIO] with TestHttpDispatcher): Unit = {
+  def checkBadBody(body: String, disp: IRTDispatcher[rt.BiIO] with TestHttpDispatcher): Unit = {
     val dummy = IRTMuxRequest(IRTReqBody((1, 2)), GreeterServiceMethods.greet.id)
     val badJson = BIOR.unsafeRunSyncAsEither(disp.sendRaw(dummy, body.getBytes))
     badJson match {

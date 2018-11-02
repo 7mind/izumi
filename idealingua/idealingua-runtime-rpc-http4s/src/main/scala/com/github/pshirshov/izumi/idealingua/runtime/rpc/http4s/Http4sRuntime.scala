@@ -9,35 +9,29 @@ import org.http4s.dsl._
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-
 class Http4sRuntime[_BiIO[+ _, + _] : BIOAsync : BIORunner, _CatsIO[+ _] : ConcurrentEffect : CIORunner : Timer]
 (
-  override protected val logger: IzLogger
-  , override protected val clientExecutionContext: ExecutionContext
+  override val logger: IzLogger
+  , override val clientExecutionContext: ExecutionContext
 )
-  extends Http4sContext
-    with WithHttp4sLoggingMiddleware
-    with WithHttp4sClient
-    with WithHttp4sWsClient
-    with WithHttp4sHttpRequestContext
-    with WithWebsocketClientContext
-    with WithHttp4sServer {
+  extends Http4sContext {
 
   override type BiIO[+E, +V] = _BiIO[E, V]
 
   override type CatsIO[+T] = _CatsIO[T]
 
-  override protected val BIO: BIOAsync[BiIO] = implicitly
+  override val BIO: BIOAsync[BiIO] = implicitly
 
-  override protected val CIO: ConcurrentEffect[CatsIO] = implicitly
+  override val CIO: ConcurrentEffect[CatsIO] = implicitly
 
-  override protected val CIOT: Timer[CatsIO] = implicitly
+  override val CIOT: Timer[CatsIO] = implicitly
 
-  override protected val CIORunner: CIORunner[_CatsIO] = implicitly
+  override val CIORunner: CIORunner[_CatsIO] = implicitly
 
-  override protected val BIORunner: BIORunner[BiIO] = implicitly
+  override val BIORunner: BIORunner[BiIO] = implicitly
 
-  override protected val dsl: Http4sDsl[CatsIO] = Http4sDsl.apply[CatsIO]
+  override val dsl: Http4sDsl[CatsIO] = Http4sDsl.apply[CatsIO]
 
-  override protected def printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
+  override def printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
+
 }
