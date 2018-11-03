@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.functional.bio.BIORunner
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.Http4sRuntime
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
+import io.circe.Printer
 import scalaz.zio
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,8 +17,9 @@ object RT {
   implicit val timer: Timer[cats.effect.IO] = IO.timer(global)
   implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(Executors.newWorkStealingPool())
   final val logger = makeLogger()
-
-  final val rt = new Http4sRuntime[zio.IO, cats.effect.IO, DummyRequestContext, String, Unit](logger, global)
+  final val printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
+  
+  final val rt = new Http4sRuntime[zio.IO, cats.effect.IO, DummyRequestContext, String, Unit](global)
 
   private def makeLogger(): IzLogger = {
     val out = IzLogger(Log.Level.Info, levels = Map(

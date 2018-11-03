@@ -1,9 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import _root_.io.circe._
 import cats.effect.{ConcurrentEffect, Timer}
 import com.github.pshirshov.izumi.functional.bio.{BIOAsync, BIORunner, CIORunner}
-import com.github.pshirshov.izumi.logstage.api.IzLogger
 import org.http4s._
 import org.http4s.dsl._
 
@@ -38,10 +36,6 @@ trait Http4sContext {
 
   def dsl: Http4sDsl[CatsIO]
 
-  def logger: IzLogger
-
-  def printer: Printer
-
   def clientExecutionContext: ExecutionContext
 
   final type DECL = this.type
@@ -70,10 +64,6 @@ trait Http4sContext {
     override implicit def CIO: ConcurrentEffect[C#CatsIO] = Http4sContext.this.CIO.asInstanceOf[ConcurrentEffect[C#CatsIO]]
 
     override implicit def CIOT: Timer[C#CatsIO] = Http4sContext.this.CIOT.asInstanceOf[Timer[C#CatsIO]]
-
-    override def logger: IzLogger = Http4sContext.this.logger
-
-    override def printer: Printer = Http4sContext.this.printer
 
     override def clientExecutionContext: ExecutionContext = Http4sContext.this.clientExecutionContext
   }

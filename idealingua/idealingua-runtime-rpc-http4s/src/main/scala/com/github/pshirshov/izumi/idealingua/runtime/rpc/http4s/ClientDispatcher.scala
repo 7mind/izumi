@@ -5,11 +5,12 @@ import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import fs2.Stream
+import io.circe.Printer
 import io.circe.parser.parse
 import org.http4s._
 import org.http4s.client.blaze._
 
-class ClientDispatcher[C <: Http4sContext](val c: C#IMPL[C], logger: IzLogger, baseUri: Uri, codec: IRTClientMultiplexor[C#BiIO])
+class ClientDispatcher[C <: Http4sContext](val c: C#IMPL[C], logger: IzLogger, printer: Printer, baseUri: Uri, codec: IRTClientMultiplexor[C#BiIO])
   extends IRTDispatcher[C#BiIO] {
   import c._
 
@@ -20,7 +21,7 @@ class ClientDispatcher[C <: Http4sContext](val c: C#IMPL[C], logger: IzLogger, b
       .encode(request)
       .flatMap {
         encoded =>
-          val outBytes: Array[Byte] = c.printer.pretty(encoded).getBytes
+          val outBytes: Array[Byte] = printer.pretty(encoded).getBytes
           val req = buildRequest(baseUri, request, outBytes)
           logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
           runRequest(handler, req)

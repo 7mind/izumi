@@ -6,6 +6,8 @@ import java.util.concurrent.TimeoutException
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
+import com.github.pshirshov.izumi.logstage.api.IzLogger
+import io.circe.Printer
 import io.circe.parser.parse
 import io.circe.syntax._
 import org.java_websocket.client.WebSocketClient
@@ -27,6 +29,8 @@ class ClientWsDispatcher[C <: Http4sContext]
   protected val codec: IRTClientMultiplexor[C#BiIO],
   protected val buzzerMuxer: IRTServerMultiplexor[C#BiIO, C#ClientContext],
   protected val wsClientContextProvider: WsClientContextProvider[C#ClientContext],
+  logger: IzLogger,
+  printer: Printer,
 )
   extends IRTDispatcher[C#BiIO] with AutoCloseable {
 

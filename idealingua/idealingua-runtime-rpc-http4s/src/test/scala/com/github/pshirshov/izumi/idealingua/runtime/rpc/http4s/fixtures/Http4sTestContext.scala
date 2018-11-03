@@ -69,7 +69,7 @@ object Http4sTestContext {
     }
   }
 
-  final val storage = new WsSessionsStorageImpl[rt.type](rt.self, logger, demo.Server.codec)
+  final val storage = new WsSessionsStorageImpl[rt.type](rt.self, RT.logger, demo.Server.codec)
   final val ioService = new HttpServer[rt.type](
     rt.self,
     demo.Server.multiplexor,
@@ -78,10 +78,12 @@ object Http4sTestContext {
     wsContextProvider,
     storage,
     Seq(WsSessionListener.empty[String])
+    , RT.logger
+    , RT.printer
   )
 
   final def clientDispatcher(): ClientDispatcher[rt.type] with TestHttpDispatcher =
-    new ClientDispatcher[rt.DECL](rt.self, rt.logger, baseUri, demo.Client.codec)
+    new ClientDispatcher[rt.DECL](rt.self, RT.logger, RT.printer, baseUri, demo.Client.codec)
       with TestHttpDispatcher {
 
       override def sendRaw(request: IRTMuxRequest, body: Array[Byte]): BiIO[Throwable, IRTMuxResponse] = {
@@ -99,7 +101,7 @@ object Http4sTestContext {
   }
 
   final def wsClientDispatcher(): ClientWsDispatcher[rt.type] with TestDispatcher =
-    new ClientWsDispatcher[rt.type](rt.self, wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider)
+    new ClientWsDispatcher[rt.type](rt.self, wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider, RT.logger, RT.printer)
       with TestDispatcher {
       override protected def transformRequest(request: RpcPacket): RpcPacket = {
         Option(creds.get()) match {

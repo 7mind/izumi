@@ -7,8 +7,9 @@ import cats.implicits._
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
+import com.github.pshirshov.izumi.logstage.api.IzLogger
 import io.circe
-import io.circe.Json
+import io.circe.{Json, Printer}
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
@@ -27,6 +28,8 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C],
                                                     , val wsContextProvider: WsContextProvider[C#RequestContext, C#ClientId]
                                                     , val wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
                                                     , val listeners: Seq[WsSessionListener[C#ClientId]]
+                                                    , logger: IzLogger
+                                                    , printer: Printer
                                                    ) {
   import c._
   protected val dsl: Http4sDsl[CatsIO] = c.dsl
