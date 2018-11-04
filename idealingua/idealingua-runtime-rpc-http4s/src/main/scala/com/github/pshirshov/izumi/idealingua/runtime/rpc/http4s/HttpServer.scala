@@ -20,17 +20,16 @@ import org.http4s.websocket.WebSocketFrame.{Binary, Close, Text}
 
 import scala.util.Try
 
-
-class HttpServer[C <: Http4sContext](val c: C#IMPL[C],
-                                                    val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext]
-                                                    , val codec: IRTClientMultiplexor[C#BiIO]
-                                                    , val contextProvider: AuthMiddleware[C#CatsIO, C#RequestContext]
-                                                    , val wsContextProvider: WsContextProvider[C#RequestContext, C#ClientId]
-                                                    , val wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
-                                                    , val listeners: Seq[WsSessionListener[C#ClientId]]
-                                                    , logger: IzLogger
-                                                    , printer: Printer
-                                                   ) {
+class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
+                                     , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext]
+                                     , val codec: IRTClientMultiplexor[C#BiIO]
+                                     , val contextProvider: AuthMiddleware[C#CatsIO, C#RequestContext]
+                                     , val wsContextProvider: WsContextProvider[C#RequestContext, C#ClientId]
+                                     , val wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
+                                     , val listeners: Seq[WsSessionListener[C#ClientId]]
+                                     , logger: IzLogger
+                                     , printer: Printer
+                                    ) {
   import c._
   protected val dsl: Http4sDsl[CatsIO] = c.dsl
 

@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 trait WebsocketClientContext[B[+ _, + _], ClientId, Ctx] {
-  val requestState: RequestState[B]
+  def requestState: RequestState[B]
 
   def id: WsClientId[ClientId]
 
@@ -76,7 +76,11 @@ object WsContextProvider {
 }
 
 class WsSessionsStorageImpl[C <: Http4sContext]
-(val c: C#IMPL[C], logger: IzLogger, codec: IRTClientMultiplexor[C#BiIO]) extends WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext] {
+(
+  val c: C#IMPL[C]
+  , logger: IzLogger
+  , codec: IRTClientMultiplexor[C#BiIO]
+) extends WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
   import com.github.pshirshov.izumi.functional.bio.BIO._
@@ -144,8 +148,8 @@ class WsSessionsStorageImpl[C <: Http4sContext]
 
 class WebsocketClientContextImpl[C <: Http4sContext]
 (
-  val c: C#IMPL[C],
-  val initialRequest: AuthedRequest[C#CatsIO, C#RequestContext]
+  val c: C#IMPL[C]
+  , val initialRequest: AuthedRequest[C#CatsIO, C#RequestContext]
   , val initialContext: C#RequestContext
   , listeners: Seq[WsSessionListener[C#ClientId]]
   , wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]

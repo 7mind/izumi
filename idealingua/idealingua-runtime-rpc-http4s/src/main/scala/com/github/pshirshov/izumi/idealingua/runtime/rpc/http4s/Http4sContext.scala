@@ -6,10 +6,8 @@ import org.http4s._
 import org.http4s.dsl._
 
 import scala.concurrent.ExecutionContext
-import scala.language.higherKinds
 
-
-trait Http4sContext {
+trait Http4sContext { outer =>
   type BiIO[+E, +V]
 
   type CatsIO[+T]
@@ -40,7 +38,7 @@ trait Http4sContext {
 
   final type DECL = this.type
 
-  def self: IMPL[DECL] = IMPL.apply[DECL]
+  final def self: IMPL[DECL] = new IMPL[DECL]
 
   sealed trait Aux[_BiIO[+_, +_], _CatsIO[+_], _RequestContext, _ClientId, _ClientContext] extends Http4sContext {
     override final type BiIO[+E, +V] = _BiIO[E, V]
@@ -52,24 +50,20 @@ trait Http4sContext {
     override final type ClientId = _ClientId
   }
 
+  // Mainly here for highlighting in Intellij, type alias works too
   final class IMPL[C <: Http4sContext] extends Aux[C#BiIO, C#CatsIO, C#RequestContext, C#ClientId, C#ClientContext] {
-    override def BIORunner: BIORunner[C#BiIO] = Http4sContext.this.BIORunner.asInstanceOf[BIORunner[C#BiIO]]
+    override val BIORunner: BIORunner[C#BiIO] = outer.BIORunner.asInstanceOf[BIORunner[C#BiIO]]
 
-    override implicit def BIO: BIOAsync[C#BiIO] = Http4sContext.this.BIO.asInstanceOf[BIOAsync[C#BiIO]]
+    override implicit val BIO: BIOAsync[C#BiIO] = outer.BIO.asInstanceOf[BIOAsync[C#BiIO]]
 
-    override def CIORunner: CIORunner[C#CatsIO] = Http4sContext.this.CIORunner.asInstanceOf[CIORunner[C#CatsIO]]
+    override val CIORunner: CIORunner[C#CatsIO] = outer.CIORunner.asInstanceOf[CIORunner[C#CatsIO]]
 
-    override def dsl: Http4sDsl[C#CatsIO] = Http4sContext.this.dsl.asInstanceOf[Http4sDsl[C#CatsIO]]
+    override val dsl: Http4sDsl[C#CatsIO] = outer.dsl.asInstanceOf[Http4sDsl[C#CatsIO]]
 
-    override implicit def CIO: ConcurrentEffect[C#CatsIO] = Http4sContext.this.CIO.asInstanceOf[ConcurrentEffect[C#CatsIO]]
+    override implicit val CIO: ConcurrentEffect[C#CatsIO] = outer.CIO.asInstanceOf[ConcurrentEffect[C#CatsIO]]
 
-    override implicit def CIOT: Timer[C#CatsIO] = Http4sContext.this.CIOT.asInstanceOf[Timer[C#CatsIO]]
+    override implicit val CIOT: Timer[C#CatsIO] = outer.CIOT.asInstanceOf[Timer[C#CatsIO]]
 
-    override def clientExecutionContext: ExecutionContext = Http4sContext.this.clientExecutionContext
+    override val clientExecutionContext: ExecutionContext = outer.clientExecutionContext
   }
-
-  object IMPL {
-    def apply[C <: Http4sContext]: IMPL[C] = new IMPL[C]
-  }
-
 }
