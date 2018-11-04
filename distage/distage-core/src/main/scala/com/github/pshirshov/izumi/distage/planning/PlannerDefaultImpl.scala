@@ -62,6 +62,7 @@ class PlannerDefaultImpl
 
   private def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
+      .map(hook.phase45PreForwardingCleanup)
       .map(hook.phase50PreForwarding)
       .eff(planningObserver.onPhase50PreForwarding)
       .map(planMergingPolicy.reorderOperations)

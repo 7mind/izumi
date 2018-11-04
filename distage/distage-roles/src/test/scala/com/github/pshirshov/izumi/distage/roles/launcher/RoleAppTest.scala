@@ -62,7 +62,7 @@ class RoleAppTest extends WordSpec {
           assert(conf.systemPropInt == 265)
           assert(conf.systemPropList == List(111, 222))
           assert(service.dummies.isEmpty)
-          assert(service.closeables.size == (2 + 3))
+          assert(service.closeables.size == 5)
 
           val closeablesInDepOrder = Seq(context.get[Resource5], context.get[Resource2], context.get[Resource1])
           val componentsInDepOrder = Seq(context.get[Resource6], context.get[Resource4], context.get[Resource3])

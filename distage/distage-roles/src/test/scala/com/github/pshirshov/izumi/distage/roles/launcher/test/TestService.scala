@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.roles.launcher.test
 
+import java.util.concurrent.ExecutorService
+
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
@@ -28,6 +30,7 @@ class TestService(
                    , logger: IzLogger
                    , notCloseable: NotCloseable
                    , val resources: Set[Resource]
+                   , val es: ExecutorService
                  ) extends RoleService with RoleTask {
   notCloseable.discard()
 
@@ -53,6 +56,7 @@ class InitCounter {
 }
 
 trait Resource
+
 class Resource1(val closeable: Resource2, counter: InitCounter) extends Resource with AutoCloseable with IntegrationComponent {
   counter.startedCloseables += this
 
@@ -63,6 +67,7 @@ class Resource1(val closeable: Resource2, counter: InitCounter) extends Resource
     ResourceCheck.Success()
   }
 }
+
 class Resource2(val roleComponent: Resource3, counter: InitCounter) extends Resource with AutoCloseable with IntegrationComponent {
   counter.startedCloseables += this
 
@@ -73,21 +78,25 @@ class Resource2(val roleComponent: Resource3, counter: InitCounter) extends Reso
     ResourceCheck.Success()
   }
 }
+
 class Resource3(val roleComponent: Resource4, counter: InitCounter) extends Resource with RoleComponent {
   override def start(): Unit = counter.startedRoleComponents += this
 
   override def stop(): Unit = counter.closedRoleComponents += this
 }
+
 class Resource4(val closeable: Resource5, counter: InitCounter) extends Resource with RoleComponent {
   override def start(): Unit = counter.startedRoleComponents += this
 
   override def stop(): Unit = counter.closedRoleComponents += this
 }
+
 class Resource5(val roleComponent: Resource6, counter: InitCounter) extends Resource with AutoCloseable {
   counter.startedCloseables += this
 
   override def close(): Unit = counter.closedCloseables += this
 }
+
 class Resource6(counter: InitCounter) extends Resource with RoleComponent {
   override def start(): Unit = counter.startedRoleComponents += this
 

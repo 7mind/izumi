@@ -24,6 +24,8 @@ trait PlanningHook {
 
   def phase20Customization(plan: SemiPlan): SemiPlan = plan
 
+  def phase45PreForwardingCleanup(plan: SemiPlan): SemiPlan = plan
+
   def phase50PreForwarding(plan: SemiPlan): SemiPlan = plan
 
   def phase90AfterForwarding(plan: OrderedPlan): OrderedPlan = plan

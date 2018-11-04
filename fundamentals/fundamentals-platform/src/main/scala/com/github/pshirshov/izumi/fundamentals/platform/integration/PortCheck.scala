@@ -2,6 +2,12 @@ package com.github.pshirshov.izumi.fundamentals.platform.integration
 
 import java.net.{InetSocketAddress, Socket, URI, URL}
 
+/**
+  * This class is intended to be always present in the DI context and injected
+  * into each resource which needs a port availability check.
+  *
+  * The timeout is intended to be defined just once per app.
+  */
 class PortCheck(timeout: Int) {
   def checkUrl(uri: URL, clue: String, defaultPort: Int): ResourceCheck = {
     checkUrl(uri, Some(clue), Some(defaultPort))
@@ -11,8 +17,8 @@ class PortCheck(timeout: Int) {
     checkUrl(uri, Some(clue), None)
   }
 
-  def checkUri(uri: URI, clue: String): ResourceCheck = {
-    checkUri(uri, Some(clue))
+  def checkUri(uri: URI, defaultPort: Int, clue: String): ResourceCheck = {
+    checkUri(uri, defaultPort, Some(clue))
   }
 
   def checkPort(host: String, port: Int, clue: String): ResourceCheck = {
@@ -20,17 +26,13 @@ class PortCheck(timeout: Int) {
   }
 
   def checkUrl(uri: URL, clue: Option[String] = None, defaultPort: Option[Int] = None): ResourceCheck = {
-    val port = uri.getPort match {
-      case -1 =>
-        defaultPort.getOrElse(uri.getDefaultPort)
-      case v =>
-        v
-    }
-    checkPort(uri.getHost, port, clue)
+    val portOrDefault: Int = portFor(uri.getDefaultPort, defaultPort, uri.getPort)
+    checkPort(uri.getHost, portOrDefault, clue)
   }
 
-  def checkUri(uri: URI, clue: Option[String] = None): ResourceCheck = {
-    checkPort(uri.getHost, uri.getPort, clue)
+  def checkUri(uri: URI, defaultPort: Int, clue: Option[String] = None): ResourceCheck = {
+    val portOrDefault: Int = portFor(defaultPort, Some(defaultPort), uri.getPort)
+    checkPort(uri.getHost, portOrDefault, clue)
   }
 
   def checkPort(host: String, port: Int, clue: Option[String] = None): ResourceCheck = {
@@ -53,6 +55,16 @@ class PortCheck(timeout: Int) {
 
         ResourceCheck.ResourceUnavailable(message, Some(t))
     }
+  }
+
+  private def portFor(uriPort: => Int, defaultPort: Option[Int], port: Int) = {
+    val portOrDefault = port match {
+      case -1 =>
+        defaultPort.getOrElse(uriPort)
+      case v =>
+        v
+    }
+    portOrDefault
   }
 
 }

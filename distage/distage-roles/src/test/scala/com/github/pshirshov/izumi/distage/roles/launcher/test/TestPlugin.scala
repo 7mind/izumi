@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.roles.launcher.test
 
+import java.util.concurrent.{ExecutorService, Executors}
+
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.roles.{BackendPluginTags, RoleService}
 
@@ -19,6 +21,7 @@ class TestPlugin extends PluginDef {
 class ResourcesPlugin extends PluginDef {
   make[InitCounter]
 
+  make[ExecutorService].from(Executors.newCachedThreadPool())
   make[Resource1]
   make[Resource2]
   make[Resource3]

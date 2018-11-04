@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.testkit
 
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
@@ -125,6 +126,7 @@ trait DistageTests {
       context.find[Set[RoleService]].getOrElse(Set.empty)
       , context.find[Set[RoleComponent]].getOrElse(Set.empty)
       , context.find[Set[AutoCloseable]].getOrElse(Set.empty)
+      , context.find[Set[ExecutorService]].getOrElse(Set.empty)
       , context.find[Set[IntegrationComponent]].getOrElse(Set.empty)
       , context.find[IzLogger].getOrElse(IzLogger.NullLogger)
     )
@@ -175,9 +177,11 @@ trait DistageTests {
   protected def makeRoleStarter(services: Set[RoleService]
                                 , components: Set[RoleComponent]
                                 , closeables: Set[AutoCloseable]
+                                , executors: Set[ExecutorService]
                                 , integrations: Set[IntegrationComponent]
-                                , logger: IzLogger): RoleStarter = {
-    new RoleStarterImpl(services, components, closeables, integrations, logger)
+                                , logger: IzLogger
+                               ): RoleStarter = {
+    new RoleStarterImpl(services, components, closeables, executors, integrations, logger)
   }
 
   protected def makeLogRouter(config: Option[AppConfig]): LogRouter = {
