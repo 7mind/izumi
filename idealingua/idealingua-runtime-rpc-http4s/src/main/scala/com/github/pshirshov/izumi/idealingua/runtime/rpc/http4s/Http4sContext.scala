@@ -50,7 +50,11 @@ trait Http4sContext { outer =>
     override final type ClientId = _ClientId
   }
 
-  // Mainly here for highlighting in Intellij, type alias works too
+  /**
+    * Mainly here for highlighting in Intellij, type alias works too
+    *
+    * @see https://youtrack.jetbrains.net/issue/SCL-14533
+    */
   final class IMPL[C <: Http4sContext] private[Http4sContext] () extends Aux[C#BiIO, C#CatsIO, C#RequestContext, C#ClientId, C#ClientContext] {
     override val BIORunner: BIORunner[C#BiIO] = outer.BIORunner.asInstanceOf[BIORunner[C#BiIO]]
 
