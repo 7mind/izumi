@@ -51,7 +51,6 @@ trait DistageTests {
 
           context.run(f).discard()
         } finally {
-          roleStarter.stop()
           finalizeTest(context, roleStarter)
         }
     }

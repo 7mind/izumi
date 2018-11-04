@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.roles._
+import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.util.Try
@@ -36,7 +37,7 @@ class RoleStarterImpl(
       val checks = checkIntegrations()
       checks.fold(()) {
         failures =>
-          throw new IntegrationCheckException(s"Integration check failed, failures were: ${failures}", failures)
+          throw new IntegrationCheckException(s"Integration check failed, failures were: $failures", failures)
       }
       logger.info(s"Going to start ${(servicesCount - tasksCount) -> "daemons"}, ${tasksCount -> "tasks"}, ${componentsCount -> "components"}")
       components.foreach {
@@ -79,7 +80,7 @@ class RoleStarterImpl(
         try {
           resource.resourcesAvailable() match {
             case failure@ResourceCheck.ResourceUnavailable(description, cause) =>
-              logger.error(s"Integration check failed: Resource unavailable $description $cause $resource")
+              logger.error(s"Integration check failed: Resource unavailable $description, $resource, $cause")
               Some(failure)
             case ResourceCheck.Success() =>
               None
@@ -94,7 +95,7 @@ class RoleStarterImpl(
   }
 
   private def releaseThenStop(): Unit = {
-    if (state.compareAndSet(StarterState.Started, StarterState.Stopping)) {
+    if (state.compareAndSet(StarterState.Started, StarterState.Stopping) || state.compareAndSet(StarterState.Starting, StarterState.Stopping)) {
       try {
         finalizeApp()
       } finally {

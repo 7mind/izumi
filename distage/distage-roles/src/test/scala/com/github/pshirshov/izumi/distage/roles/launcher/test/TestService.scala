@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.roles.launcher.test
 
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.roles.roles._
+import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
