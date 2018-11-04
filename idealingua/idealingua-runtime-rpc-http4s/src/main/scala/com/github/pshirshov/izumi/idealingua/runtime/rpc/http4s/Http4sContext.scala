@@ -51,7 +51,7 @@ trait Http4sContext { outer =>
   }
 
   // Mainly here for highlighting in Intellij, type alias works too
-  final class IMPL[C <: Http4sContext] extends Aux[C#BiIO, C#CatsIO, C#RequestContext, C#ClientId, C#ClientContext] {
+  final class IMPL[C <: Http4sContext] private[Http4sContext] () extends Aux[C#BiIO, C#CatsIO, C#RequestContext, C#ClientId, C#ClientContext] {
     override val BIORunner: BIORunner[C#BiIO] = outer.BIORunner.asInstanceOf[BIORunner[C#BiIO]]
 
     override implicit val BIO: BIOAsync[C#BiIO] = outer.BIO.asInstanceOf[BIOAsync[C#BiIO]]
