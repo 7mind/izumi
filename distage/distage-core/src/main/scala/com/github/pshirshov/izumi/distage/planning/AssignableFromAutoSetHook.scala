@@ -13,7 +13,7 @@ import scala.collection.immutable.ListSet
   * Usage:
   *
   * {{{
-  *   val collectCloseables = new AssignableFromAutoSetHook[AutoCloseable]
+  *   val collectCloseables = new AssignableFromAutoSetHook[AutoCloseable, AutoCloseable](identity)
   *
   *   val injector = Injector(new BootstrapModuleDef {
   *     many[PlanningHook]

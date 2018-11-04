@@ -29,6 +29,7 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
       , parameterSymbol.finalResultType
       , keyFromParameter(context, parameterSymbol)
       , parameterSymbol.isByName
+      , parameterSymbol.wasGeneric
     )
   }
 

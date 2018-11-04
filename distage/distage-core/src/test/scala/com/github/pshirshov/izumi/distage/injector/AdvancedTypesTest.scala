@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.TraitCases._
 import com.github.pshirshov.izumi.distage.fixtures.TypesCases._
+import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import distage._
 import org.scalatest.WordSpec
 
@@ -195,13 +196,34 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     assert(instantiated.dep == context.get[Dep])
   }
 
-  "progression test: Can't materialize TagK for type lambdas that close on a generic parameter with available Tag" in {
-    assertTypeError("""
-      def partialEitherTagK[A: Tag] = TagK[Either[A, ?]]
+  "structural types are unsupported in class strategy" in {
+    intercept[UnsupportedWiringException] {
+      val definition = new ModuleDef {
+        make[{def a: Int}]
+        make[Int].from(5)
+      }
 
-      print(partialEitherTagK[Int])
-      assert(partialEitherTagK[Int] != null)
-    """)
+      val injector = mkInjector()
+      val context = injector.produce(definition)
+
+      val instantiated = context.get[{def a: Int}]
+      assert(instantiated.a == context.get[Int])
+    }
+  }
+
+  "refinements are unsupported in class strategy" in {
+    intercept[UnsupportedWiringException] {
+      import TypesCase4._
+
+      val definition = new ModuleDef {
+        make[Dep {}]
+      }
+
+      val injector = mkInjector()
+      val context = injector.produce(definition)
+
+      assert(context.get[Dep {}] != null)
+    }
   }
 
 }

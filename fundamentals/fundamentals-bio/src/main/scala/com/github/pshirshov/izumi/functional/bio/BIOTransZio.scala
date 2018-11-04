@@ -12,7 +12,7 @@ trait BIOTransZio[R[_, _]] {
 }
 
 object BIOTransZio {
-  def apply[R[+_, +_]: BIOTransZio]: BIOTransZio[R] = implicitly
+  def apply[R[_, _]: BIOTransZio]: BIOTransZio[R] = implicitly
 
   implicit object IdTransZio extends BIOTransZio[IO]{
     @inline def toZio[E]: FunctionK[IO[E, ?], IO[E, ?]] = FunctionK.id
