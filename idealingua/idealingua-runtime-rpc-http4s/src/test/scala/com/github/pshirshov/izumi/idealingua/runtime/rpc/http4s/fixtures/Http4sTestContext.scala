@@ -1,22 +1,19 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
 
 import java.net.URI
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 import cats.data.{Kleisli, OptionT}
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
+import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMuxRequest, IRTMuxResponse, RpcPacket}
-import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceClientWrapped
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
-import com.github.pshirshov.izumi.functional.bio.BIO._
-import com.github.pshirshov.izumi.functional.bio.BIORunner
+
 
 object Http4sTestContext {
   //
@@ -27,28 +24,22 @@ object Http4sTestContext {
   final val wsUri = new URI("ws", null, host, port, "/ws", null, null)
 
   //
-  final val demo = new DummyServices[BiIO, DummyRequestContext]()
 
-  import scala.concurrent.ExecutionContext.Implicits.global
+  import RT.rt
+  import rt._
 
-  implicit val contextShift: ContextShift[CIO] = IO.contextShift(global)
-  implicit val timer: Timer[CIO] = IO.timer(global)
-  implicit val BIOR: BIORunner[BiIO] = BIORunner.createZIO(Executors.newWorkStealingPool())
+  final val demo = new DummyServices[rt.type#BiIO, DummyRequestContext]()
 
-  final val logger = makeLogger()
-  final val rt = {
-    new Http4sRuntime[BiIO, CIO](logger, global)
-  }
 
   //
-  final val authUser: Kleisli[OptionT[CIO, ?], Request[CIO], DummyRequestContext] =
+  final val authUser: Kleisli[OptionT[CatsIO, ?], Request[CatsIO], DummyRequestContext] =
     Kleisli {
-      request: Request[CIO] =>
+      request: Request[CatsIO] =>
         val context = DummyRequestContext(request.remoteAddr.getOrElse("0.0.0.0"), request.headers.get(Authorization).map(_.credentials))
         OptionT.liftF(IO(context))
     }
 
-  final val wsContextProvider = new rt.WsContextProvider[DummyRequestContext, String] {
+  final val wsContextProvider = new WsContextProvider[DummyRequestContext, String] {
     val knownAuthorization = new AtomicReference[Credentials](null)
 
     override def toContext(initial: DummyRequestContext, packet: RpcPacket): DummyRequestContext = {
@@ -78,11 +69,21 @@ object Http4sTestContext {
     }
   }
 
-  final val ioService = new rt.HttpServer(demo.Server.multiplexor, demo.Server.codec, AuthMiddleware(authUser), wsContextProvider,
-    new rt.WsSessionsStorageImpl(logger, demo.Server.codec), Seq(WsSessionListener.empty[String]))
+  final val storage = new WsSessionsStorageImpl[rt.type](rt.self, RT.logger, demo.Server.codec)
+  final val ioService = new HttpServer[rt.type](
+    rt.self,
+    demo.Server.multiplexor,
+    demo.Server.codec,
+    AuthMiddleware(authUser),
+    wsContextProvider,
+    storage,
+    Seq(WsSessionListener.empty[String])
+    , RT.logger
+    , RT.printer
+  )
 
-  final def clientDispatcher(): rt.ClientDispatcher with TestHttpDispatcher =
-    new rt.ClientDispatcher(baseUri, demo.Client.codec)
+  final def clientDispatcher(): ClientDispatcher[rt.type] with TestHttpDispatcher =
+    new ClientDispatcher[rt.DECL](rt.self, RT.logger, RT.printer, baseUri, demo.Client.codec)
       with TestHttpDispatcher {
 
       override def sendRaw(request: IRTMuxRequest, body: Array[Byte]): BiIO[Throwable, IRTMuxResponse] = {
@@ -90,7 +91,7 @@ object Http4sTestContext {
         runRequest(handleResponse(request, _), req)
       }
 
-      override protected def transformRequest(request: Request[CIO]): Request[CIO] = {
+      override protected def transformRequest(request: Request[CatsIO]): Request[CatsIO] = {
         request.withHeaders(Headers(creds.get(): _*))
       }
     }
@@ -99,8 +100,8 @@ object Http4sTestContext {
     override def toContext(packet: RpcPacket): Unit = ()
   }
 
-  final def wsClientDispatcher(): rt.ClientWsDispatcher[Unit] with TestDispatcher =
-    new rt.ClientWsDispatcher(wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider)
+  final def wsClientDispatcher(): ClientWsDispatcher[rt.type] with TestDispatcher =
+    new ClientWsDispatcher[rt.type](rt.self, wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider, RT.logger, RT.printer)
       with TestDispatcher {
       override protected def transformRequest(request: RpcPacket): RpcPacket = {
         Option(creds.get()) match {
@@ -114,14 +115,4 @@ object Http4sTestContext {
 
   final val greeterClient = new GreeterServiceClientWrapped(clientDispatcher())
 
-  private def makeLogger(): IzLogger = {
-    val out = IzLogger(Log.Level.Info, levels = Map(
-      "org.http4s" -> Log.Level.Warn
-      , "org.http4s.server.blaze" -> Log.Level.Error
-      , "org.http4s.blaze.channel.nio1" -> Log.Level.Crit
-      , "com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s" -> Log.Level.Trace
-    ))
-    StaticLogRouter.instance.setup(out.receiver)
-    out
-  }
 }
