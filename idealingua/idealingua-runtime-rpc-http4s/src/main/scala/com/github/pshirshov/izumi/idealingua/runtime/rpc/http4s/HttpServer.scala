@@ -228,6 +228,10 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
         logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
         dsl.BadRequest()
 
+      case scala.util.Success(Left(error: IRTDecodingException)) =>
+        logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
+        dsl.BadRequest()
+
       case scala.util.Success(Left(error)) =>
         logger.info(s"${context -> null}: Unexpected failure while handling $method: $error")
         dsl.InternalServerError()
