@@ -74,6 +74,9 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
 
   override def flush(e: Log.Entry): Unit = {
     queue.add(e).discard()
+    if (stop.get()) {
+      finish()
+    }
   }
 
 }

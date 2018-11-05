@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.roles.impl
 
 import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, ModuleDef}
-import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.WriteReference
+import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleApp
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.distage.roles.roles.BackendPluginTags

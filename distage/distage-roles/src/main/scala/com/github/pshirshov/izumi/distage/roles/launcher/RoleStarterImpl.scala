@@ -128,19 +128,22 @@ class RoleStarterImpl
   }
 
   private def shutdownExecutors(): Unit = {
-    executors
+    val toClose = executors
       .toList.reverse
       .filterNot(es => es.isShutdown || es.isTerminated)
-      .foreach {
-        es =>
-          logger.info(s"Going to close executor $es")
-          es.shutdown()
-          if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
-            val dropped = es.shutdownNow()
-            logger.warn(s"Executor $es didn't finish in time, ${dropped.size()} tasks were dropped")
-          }
 
-      }
+    logger.info(s"Going to shutdown ${toClose.size -> "count" -> null} ${toClose.map(_.getClass).niceList() -> "executors"}")
+
+    toClose.foreach {
+      es =>
+        logger.info(s"Going to close executor $es")
+        es.shutdown()
+        if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
+          val dropped = es.shutdownNow()
+          logger.warn(s"Executor $es didn't finish in time, ${dropped.size()} tasks were dropped")
+        }
+
+    }
   }
 
   private def closeCloseables(ignore: Set[RoleComponent]): Unit = {

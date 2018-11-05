@@ -40,6 +40,7 @@ object Http4sTestContext {
     }
 
   final val wsContextProvider = new WsContextProvider[DummyRequestContext, String] {
+    // DON'T DO THIS IN PRODUCTION CODE !!!
     val knownAuthorization = new AtomicReference[Credentials](null)
 
     override def toContext(initial: DummyRequestContext, packet: RpcPacket): DummyRequestContext = {
