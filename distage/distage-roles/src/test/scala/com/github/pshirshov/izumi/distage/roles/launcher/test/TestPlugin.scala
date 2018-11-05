@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.roles.launcher.test
 
 import java.util.concurrent.{ExecutorService, Executors}
 
+import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.launcher.{AbstractConfigWriter, ConfigWriter}
@@ -22,7 +23,8 @@ class TestConfigWriter(
                         launcherVersion: ArtifactVersion@Id("launcher-version"),
                         roleInfo: RolesInfo,
                         config: WriteReference,
-                      ) extends AbstractConfigWriter[TestPlugin](logger, launcherVersion, roleInfo, config)
+                        locatorRef: LocatorRef
+                      ) extends AbstractConfigWriter[TestPlugin](logger, launcherVersion, roleInfo, config, locatorRef)
 
 class TestPlugin extends PluginDef {
   tag(BackendPluginTags.Production)

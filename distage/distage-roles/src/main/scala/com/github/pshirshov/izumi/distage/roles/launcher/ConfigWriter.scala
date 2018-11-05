@@ -3,13 +3,19 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
+import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
+import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Id
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
+import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.{ArtifactVersion, IzManifest}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import com.github.pshirshov.izumi.distage.roles.roles._
+import distage.Injector
 
 import scala.reflect.ClassTag
 import scala.util._
@@ -36,9 +42,11 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
   launcherVersion: ArtifactVersion@Id("launcher-version"),
   roleInfo: RolesInfo,
   config: WriteReference,
+  locatorRef: LocatorRef,
 )
   extends RoleService
     with RoleTask {
+
   override def start(): Unit = {
     writeReferenceConfig()
   }
@@ -56,7 +64,7 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
     val commonComponent = ConfigurableComponent("common", maybeVersion)
     val commonConfig = buildConfig(ConfigurableComponent("common", maybeVersion))
     if (!config.includeCommon) {
-      writeConfig(commonComponent, commonConfig)
+      writeConfig(commonComponent, None, commonConfig)
     }
 
     val (good, bad) = roleInfo.availableRoleBindings.partition(_.anno.nonEmpty)
@@ -71,13 +79,44 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
       component = ConfigurableComponent(binding.anno.head, binding.source.map(_.version))
       cfg = buildConfig(component.copy(parent = Some(commonConfig)))
     } yield {
-      val version = if (config.useLauncherVersion)
+      val version = if (config.useLauncherVersion) {
         Some(ArtifactVersion(launcherVersion.version))
-      else
+      } else {
         component.version
+      }
+      val versionedComponent = component.copy(version = version)
 
-      writeConfig(component.copy(version = version), cfg)
+      writeConfig(versionedComponent, None, cfg)
+
+      minimizeConfig(binding, cfg).foreach {
+        cfg =>
+          writeConfig(versionedComponent, Some("minimized"), cfg)
+      }
     })
+  }
+
+  private def minimizeConfig(binding: RoleBinding, cfg: Config): Option[Config] = {
+    val locator = locatorRef.get
+
+
+    val rcKey = RuntimeDIUniverse.DIKey.get[ResolvedConfig]
+    val newRoots = Set(binding.binding.key, rcKey)
+
+    val newInjector = Injector.apply(newRoots, Seq(
+      new ConfigModule(AppConfig(cfg))
+    ).merge)
+
+    val newPlan = newInjector.plan(locator.plan.definition)
+
+    newPlan.filter[ResolvedConfig]
+      .collect {
+        case op: WiringOp.ReferenceInstance =>
+          op.wiring.instance
+      }
+      .collectFirst {
+        case r: ResolvedConfig =>
+          r.minimized()
+      }
   }
 
   private def buildConfig(cmp: ConfigurableComponent): Config = {
@@ -105,8 +144,8 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
     filtered
   }
 
-  private def writeConfig(cmp: ConfigurableComponent, typesafeConfig: Config) = {
-    val fileName = referenceFileName(cmp.componentId, cmp.version, config.asJson)
+  private def writeConfig(cmp: ConfigurableComponent, suffix: Option[String], typesafeConfig: Config) = {
+    val fileName = referenceFileName(cmp.componentId, cmp.version, config.asJson, suffix)
     val target = Paths.get(config.targetDir, fileName)
 
     Try {
@@ -129,7 +168,7 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
     cfg.root().render(configRenderOptions.setJson(asJson))
   }
 
-  private def referenceFileName(service: String, version: Option[ArtifactVersion], asJson: Boolean): String = {
+  private def referenceFileName(service: String, version: Option[ArtifactVersion], asJson: Boolean, suffix: Option[String]): String = {
     val extension = if (asJson) {
       "json"
     } else {
@@ -137,7 +176,13 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
     }
 
     val vstr = version.map(_.version).getOrElse("0.0.0-UNKNOWN")
-    s"$service-$vstr.$extension"
+    suffix match {
+      case Some(value) =>
+        s"$service-$value-$vstr.$extension"
+      case None =>
+        s"$service-$vstr.$extension"
+
+    }
   }
 
   private val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
