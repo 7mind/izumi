@@ -6,9 +6,10 @@ import java.nio.file.{Files, Paths}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.definition.Id
+import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, Id}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
 import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
@@ -98,13 +99,12 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
   private def minimizeConfig(binding: RoleBinding, cfg: Config): Option[Config] = {
     val locator = locatorRef.get
 
-
     val rcKey = RuntimeDIUniverse.DIKey.get[ResolvedConfig]
     val newRoots = Set(binding.binding.key, rcKey)
 
-    val newInjector = Injector.apply(newRoots, Seq(
-      new ConfigModule(AppConfig(cfg))
-    ).merge)
+    val bootstrap = locator.get[BootstrapModule]
+    val withNewRoots = bootstrap.overridenBy(new ConfigModule(AppConfig(cfg))).overridenBy(new TracingGcModule(newRoots))
+    val newInjector = Injector.Standard(withNewRoots)
 
     val newPlan = newInjector.plan(locator.plan.definition)
 
@@ -150,8 +150,9 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
 
     Try {
       val cfg = render(typesafeConfig, config.asJson)
-      Files.write(target, cfg.getBytes(StandardCharsets.UTF_8))
-      logger.info(s"[${cmp.componentId}] Reference config saved -> $target")
+      val bytes = cfg.getBytes(StandardCharsets.UTF_8)
+      Files.write(target, bytes)
+      logger.info(s"[${cmp.componentId}] Reference config saved -> $target (${bytes.size} bytes)")
     }.recover {
       case e: Throwable => logger.error(s"[${cmp.componentId -> "component id" -> null}] Can't write reference config to $target, ${e.getMessage -> "message"}")
     }
