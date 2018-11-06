@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag}
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.immutable.ListSet
 
@@ -46,15 +47,14 @@ import scala.collection.immutable.ListSet
   * as such they can't contain garbage by construction.
   *
   **/
-class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
-  protected val setElemetType: SafeType = SafeType.get[T]
+class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BINDING) extends PlanningHook {
+  protected val instanceType: SafeType = SafeType.get[INSTANCE]
+  protected val setElemetType: SafeType = SafeType.get[BINDING]
+  protected val setKey: DIKey = DIKey.get[Set[BINDING]]
 
-  protected val setKey: DIKey = DIKey.get[Set[T]]
 
-  override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
-    val newMembers = scala.collection.mutable.ArrayBuffer[DIKey]()
-
-    val newSteps = plan.steps.flatMap {
+  override def phase45PreForwardingCleanup(plan: SemiPlan): SemiPlan = {
+    val cleaned = plan.steps.flatMap {
       op =>
         op.target match {
           // we should throw out all existing elements of the set
@@ -65,9 +65,43 @@ class AssignableFromAutoSetHook[T: Tag] extends PlanningHook {
           case s: DIKey.SetElementKey if s.set == setKey =>
             Seq.empty
 
-          case _ if ExecutableOp.instanceType(op) weak_<:< setElemetType =>
-            newMembers += op.target
+          case _ =>
             Seq(op)
+        }
+    }
+
+    SemiPlan(plan.definition, cleaned)
+  }
+
+  override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
+    val newMembers = scala.collection.mutable.ArrayBuffer[DIKey]()
+
+    val newSteps = plan.steps.flatMap {
+      op =>
+        op.target match {
+          case `setKey` =>
+            op match {
+              case op: ExecutableOp.CreateSet =>
+                newMembers ++= op.members
+                Seq.empty
+              case _ =>
+                Seq.empty
+            }
+
+          case s: DIKey.SetElementKey if s.set == setKey =>
+            Seq(op)
+
+          case _ if ExecutableOp.instanceType(op) weak_<:< instanceType =>
+            if (instanceType == setElemetType) {
+              newMembers += op.target
+              Seq(op)
+            } else {
+              val newKey = DIKey.SetElementKey(setKey, op.target)
+              val provider = ProviderMagnet(wrap).get
+              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.UnaryWiring.Function(provider, provider.associations), op.origin)
+              newMembers += newKey
+              Seq(op, newOp)
+            }
 
           case _ =>
             Seq(op)

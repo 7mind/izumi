@@ -1,5 +1,6 @@
 package com.github.pshirshov.configapp
 
+import com.github.pshirshov.izumi.distage.config.ResolvedConfig
 import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, Conf, ConfPath}
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
@@ -7,7 +8,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 // application
 trait TestAppService
 
-class TestConfigApp(val services: Set[TestAppService])
+class TestConfigApp(val services: Set[TestAppService], val usedConfig: ResolvedConfig)
 
 // config structures
 case class HostPort(port: Int, host: String)

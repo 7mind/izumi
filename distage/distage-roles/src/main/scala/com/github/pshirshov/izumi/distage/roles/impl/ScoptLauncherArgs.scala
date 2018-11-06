@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.roles.impl
 
 import java.io.File
 
-import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.WriteReference
+import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleArgs
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import scopt.OptionParser
@@ -18,13 +18,6 @@ case class ScoptLauncherArgs(
 
 // TODO: this stuff needs to be refactored, we can't keep WriteReference here
 object ScoptLauncherArgs {
-
-  case class WriteReference(
-                             asJson: Boolean = false,
-                             targetDir: String = "config",
-                             includeCommon: Boolean = true,
-                             useLauncherVersion: Boolean = true,
-                           )
 
   lazy val parser: OptionParser[ScoptLauncherArgs] = new OptionParser[ScoptLauncherArgs]("tg-launcher") {
      head("tg-launcher", "TODO: manifest version")

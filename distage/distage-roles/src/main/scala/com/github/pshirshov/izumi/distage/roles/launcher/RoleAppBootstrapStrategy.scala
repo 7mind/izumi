@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles.launcher
 
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage
@@ -222,6 +223,7 @@ object RoleAppBootstrapStrategy {
     .register[AutoCloseable]
     .register[RoleComponent]
     .register[IntegrationComponent]
+    .register[ExecutorService]
 }
 
 

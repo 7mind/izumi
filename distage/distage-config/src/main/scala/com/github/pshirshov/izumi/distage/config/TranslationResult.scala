@@ -25,7 +25,9 @@ object TranslationResult {
     }
   }
 
-  final case class Success(op: ExecutableOp) extends TranslationResult
+  final case class Success(op: ExecutableOp, path: ConfigPath) extends TranslationResult
+
+  final case class Passthrough(op: ExecutableOp) extends TranslationResult
 
   final case class MissingConfigValue(op: ExecutableOp, paths: Seq[(ConfigPath, Throwable)], configOrigin: ConfigOrigin) extends TranslationFailure {
     override def toString: String = {

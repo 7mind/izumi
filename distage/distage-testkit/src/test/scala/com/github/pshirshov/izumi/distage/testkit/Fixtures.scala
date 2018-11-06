@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.roles.{IntegrationComponent, ResourceCheck, RoleComponent}
+import com.github.pshirshov.izumi.distage.roles.roles.{IntegrationComponent, RoleComponent}
+import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 
 import scala.collection.mutable
 

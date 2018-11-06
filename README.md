@@ -26,8 +26,8 @@ including the following components:
 
 1. [distage](https://izumi.7mind.io/latest/release/doc/distage/) – Staged, transparent runtime & compile-time Dependency Injection Framework,
 2. [logstage](https://izumi.7mind.io/latest/release/doc/logstage/) – Automatic structural logs from Scala string interpolations,
-3. [idealingua](https://izumi.7mind.io/latest/release/doc/idealingua/) – API Definition, Data Modeling and RPC Language – think GraphQL, Swagger or gRPC, except it doesn't suck. Currently generates servers and clients for Go, TypeScript, C# and Scala,
-4. [Opinionated SBT plugins](https://izumi.7mind.io/latest/release/doc/sbt/) – Reduces verbosity of SBT builds and introduces new features – shared test scopes and BOMs (from Maven).
+3. [idealingua](https://izumi.7mind.io/latest/release/doc/idealingua/) – API Definition, Data Modeling and RPC Language, optimized for fast prototyping – like gRPC, but with a human face. Currently generates servers and clients for Go, TypeScript, C# and Scala,
+4. [Opinionated SBT plugins](https://izumi.7mind.io/latest/release/doc/sbt/) – Reduces verbosity of SBT builds and introduces new features – inter-project shared test scopes and BOM plugins (from Maven),
 5. [Percept-Plan-Execute-Repeat (PPER)](https://izumi.7mind.io/latest/release/doc/pper/) pattern, allowing you to model 
    very complex domains and orchestrate deadly complex processes lot easier than you get used to.
 

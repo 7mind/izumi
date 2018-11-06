@@ -51,10 +51,10 @@ class RoleAppTest extends WordSpec {
           super.start(context, bootstrapContext)
 
           val services = context.instances.map(_.value).collect({ case t: RoleService => t }).toSet
-          assert(services.size == 1)
+          assert(services.size == 2)
           assert(services.exists(_.isInstanceOf[TestService]))
 
-          val service = services.head.asInstanceOf[TestService]
+          val service = services.collect({case t: TestService => t}).head
           val conf = service.conf
           assert(conf.intval == 123)
           assert(conf.strval == "xxx")
@@ -62,7 +62,7 @@ class RoleAppTest extends WordSpec {
           assert(conf.systemPropInt == 265)
           assert(conf.systemPropList == List(111, 222))
           assert(service.dummies.isEmpty)
-          assert(service.closeables.size == (2 + 3))
+          assert(service.closeables.size == 5)
 
           val closeablesInDepOrder = Seq(context.get[Resource5], context.get[Resource2], context.get[Resource1])
           val componentsInDepOrder = Seq(context.get[Resource6], context.get[Resource4], context.get[Resource3])
@@ -75,7 +75,7 @@ class RoleAppTest extends WordSpec {
           assert(service.counter.checkedResources == integrationsInDepOrder)
           ()
         }
-      }.main(Array("testservice"))
+      }.main(Array("-wr", "-d", "target/config-dump", "testservice", "configwriter"))
     }
   }
 

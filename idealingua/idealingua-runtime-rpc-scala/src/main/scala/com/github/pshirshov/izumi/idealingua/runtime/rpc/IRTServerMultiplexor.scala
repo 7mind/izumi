@@ -20,21 +20,19 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C](list: Set[IRTWrappedService[R, C]
       method
     }) match {
       case Some(value) =>
-        toM(parsedBody, context, toInvoke, value).map(Some.apply)
+        invoke(context, toInvoke, value, parsedBody).map(Some.apply)
       case None =>
         R.point(None)
     }
   }
 
-  private def toM(parsedBody: Json, context: C, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C]): R[Throwable, Json] = {
+  @inline private[this] def invoke(context: C, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C], parsedBody: Json): R[Throwable, Json] = {
     for {
       decoded <- R.sandboxWith(method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody))) {
         _.redeem(
           {
-            case Left(exception :: _) =>
-              R.fail(Right(exception))
-            case Left(Nil) =>
-              R.terminate(new IllegalStateException())
+            case Left(exceptions) =>
+              R.fail(Right(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", exceptions.headOption)))
             case Right(_) => // impossible case, v is Nothing, exhaustive match check fails
               R.terminate(new IllegalStateException())
           }, {
