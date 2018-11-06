@@ -57,7 +57,7 @@ object Locator {
     * Reference is being initialized after all the provisioning process finishes,
     * so you cannot dereference it a constructor.
     *
-    * Locator reference injection is definitely an anti-pattern signalign
+    * Locator reference injection is definitely an anti-pattern signaling
     * about serious design problems.
     *
     * Though sometimes it may be convenient.

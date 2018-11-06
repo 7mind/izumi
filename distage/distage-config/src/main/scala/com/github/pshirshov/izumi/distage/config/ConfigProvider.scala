@@ -4,16 +4,16 @@ import com.github.pshirshov.izumi.distage.config.TranslationResult.TranslationFa
 import com.github.pshirshov.izumi.distage.config.annotations._
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.typesafe.config.RuntimeConfigReader
 import com.typesafe.config.{ConfigException, ConfigObject, ConfigValue}
 
 import scala.util.Try
 import scala.util.control.NonFatal
-
 
 class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorConfig: ConfigInjectionOptions)
   extends PlanningHook {
@@ -33,19 +33,38 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
           }
 
         case s =>
-          TranslationResult.Success(s)
+          TranslationResult.Passthrough(s)
       }
 
     val errors = updatedSteps.collect({ case t: TranslationFailure => t })
 
     if (errors.nonEmpty) {
       // TODO: instead of throwing exception we may just print a warning and leave import in place. It would fail on provisioning anyway
-      throw new ConfigTranslationException(s"Cannot resolve config due to errors:\n - ${errors.mkString("\n - ")}", errors)
+      throw new ConfigTranslationException(s"Cannot resolve config due to errors: ${errors.niceList()}", errors)
     }
 
-    val ops = updatedSteps.collect({ case TranslationResult.Success(op) => op })
-    val newPlan = SemiPlan(plan.definition, ops)
+    val usedConfigOp = resolvedConfigOp(config, updatedSteps)
+
+    val ops = updatedSteps.collect {
+      case TranslationResult.Passthrough(op) => op
+      case TranslationResult.Success(op, _) => op
+    }
+
+    val newPlan = SemiPlan(plan.definition, ops :+ usedConfigOp)
     newPlan
+  }
+
+  private def resolvedConfigOp(config: AppConfig, updatedSteps: Vector[TranslationResult]): WiringOp.ReferenceInstance = {
+    val paths = updatedSteps.collect {
+      case TranslationResult.Success(_, path) => path
+
+    }
+    val resolvedConfig = ResolvedConfig(config, paths.toSet)
+    val target = DIKey.get[ResolvedConfig]
+    ExecutableOp.WiringOp.ReferenceInstance(
+      target
+      , Wiring.UnaryWiring.Instance(target.tpe, resolvedConfig), None
+    )
   }
 
   private def translate(ci: ConfigImport, step: RequiredConfigEntry): TranslationResult = {
@@ -66,7 +85,8 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
             ExecutableOp.WiringOp.ReferenceInstance(
               step.target
               , Wiring.UnaryWiring.Instance(step.target.tpe, product), op.origin
-            )
+            ),
+            loadedPath
           )
         } catch {
           case NonFatal(t) =>

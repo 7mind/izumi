@@ -28,9 +28,10 @@ class ComponentsLifecycleManager(
   }
 
   def stopComponents(): Set[RoleComponent] = {
-    logger.info(s"Going to stop ${components.size -> "count" -> null} ${components.map(_.getClass).niceList() -> "components"}")
+    val toStop = started.toList
+    logger.info(s"Going to stop ${components.size -> "count" -> null} ${toStop.niceList() -> "components"}")
 
-    val (stopped, failed) = started.toList
+    val (stopped, failed) = toStop
       .map {
         case ComponentLifecycle.Starting(c) =>
           c -> Failure(new LifecycleException(s"Component hasn't been started properly, skipping: $c"))

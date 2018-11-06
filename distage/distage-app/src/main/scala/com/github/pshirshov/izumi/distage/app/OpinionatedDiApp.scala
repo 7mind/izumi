@@ -44,9 +44,14 @@ abstract class OpinionatedDiApp {
 
     validate(mergedBs, mergedApp)
 
-    val bootstrapCustomDef = (Seq(new BootstrapModuleDef {
+    val bsLoggerDef = new BootstrapModuleDef {
       make[LogRouter].from(loggerRouter)
-    }) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
+    }
+    val bsModules = (Seq(bsLoggerDef) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
+    val accessibleBs = new BootstrapModuleDef {
+      make[BootstrapModule].from(bsModules)
+    }
+    val bootstrapCustomDef = bsModules ++ accessibleBs
 
     val bsdef = bootstrapCustomDef ++ mergedBs.definition
     val appDef = mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge

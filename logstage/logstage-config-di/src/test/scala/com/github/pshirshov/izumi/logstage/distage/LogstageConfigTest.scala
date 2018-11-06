@@ -16,7 +16,7 @@ import com.typesafe.config.ConfigFactory
 import distage.Injector
 import org.scalatest.{Assertion, WordSpec}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 class LogstageConfigTest extends WordSpec {
 
@@ -304,8 +304,12 @@ class LogstageConfigTest extends WordSpec {
     }
 
     def asGood[T](f: Locator => T): T = {
-      assert(locator.isSuccess)
-      f(locator.get)
+      locator match {
+        case Failure(exception) =>
+          fail(exception)
+        case Success(value) =>
+          f(value)
+      }
     }
   }
 

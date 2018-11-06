@@ -20,10 +20,23 @@ class RuntimeConfigReaderDefaultImpl
   val mirror: ru.Mirror = currentMirror
 
   /**
-    * Will work ONLY for case classes. Not for sealed traits or other types.
+    * Opinionated on purpose: Will work ONLY for case classes. Not for sealed traits or other types.
     */
   override def readConfigAsCaseClass(config: Config, tpe: SafeType0[ru.type]): Any = {
-    deriveCaseClassReader(tpe)(config.root()).get
+    val typesafeConfigRawTypes = Set(
+      SafeType0.get[Config]
+    , SafeType0.get[ConfigValue]
+    , SafeType0.get[ConfigObject]
+    , SafeType0.get[ConfigList]
+    )
+    val maybeReader = if (typesafeConfigRawTypes contains tpe)
+      codecs.get(tpe)
+    else
+      None
+
+    val reader = maybeReader getOrElse deriveCaseClassReader(tpe)
+
+    reader(config.root()).get
   }
 
   override def readValue(config: ConfigValue, tpe: SafeType0[ru.type]): Any = {

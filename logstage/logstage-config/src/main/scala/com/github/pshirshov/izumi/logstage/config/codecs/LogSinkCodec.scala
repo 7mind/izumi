@@ -8,6 +8,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 import scala.reflect.runtime.universe
 import scala.util.Try
 
+@deprecated("Needs to be reworked, resources shouldn't be handled outside of DI", "2018-11-05")
 class LogSinkCodec(policyMappers: Set[LogSinkMapper[LogSink]]) extends ConfigReader[LogSink] {
   private val mappersMem : Map[String, Config => Try[LogSink]] = {
     policyMappers.map(m => (m.path, m.instantiate _)).toMap

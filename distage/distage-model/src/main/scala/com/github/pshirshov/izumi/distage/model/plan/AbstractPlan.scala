@@ -59,6 +59,10 @@ sealed trait AbstractPlan {
 
   def resolveImport[T: Tag](instance: T): AbstractPlan
 
+  def filter[T: Tag]: Seq[ExecutableOp] = {
+    steps.filter(_.target == DIKey.get[T])
+  }
+
   def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
 
   def locateImports(locator: Locator): AbstractPlan
