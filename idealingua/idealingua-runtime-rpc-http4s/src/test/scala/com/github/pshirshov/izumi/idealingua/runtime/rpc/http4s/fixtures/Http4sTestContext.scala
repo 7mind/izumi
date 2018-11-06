@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicReference
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
 import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMuxRequest, IRTMuxResponse, RpcPacket}
@@ -43,7 +44,9 @@ object Http4sTestContext {
     // DON'T DO THIS IN PRODUCTION CODE !!!
     val knownAuthorization = new AtomicReference[Credentials](null)
 
-    override def toContext(initial: DummyRequestContext, packet: RpcPacket): DummyRequestContext = {
+    override def toContext(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): DummyRequestContext = {
+      Quirks.discard(id)
+
       initial.credentials match {
         case Some(value) =>
           knownAuthorization.compareAndSet(null, value)

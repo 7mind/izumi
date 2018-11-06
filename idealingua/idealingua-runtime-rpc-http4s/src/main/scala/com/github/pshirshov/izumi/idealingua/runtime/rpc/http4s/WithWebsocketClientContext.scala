@@ -56,15 +56,15 @@ object WsSessionListener {
 }
 
 trait WsContextProvider[Ctx, ClientId] {
-  def toContext(initial: Ctx, packet: RpcPacket): Ctx
+  def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): Ctx
 
   def toId(initial: Ctx, packet: RpcPacket): Option[ClientId]
 }
 
 object WsContextProvider {
   def id[Ctx, ClientId]: WsContextProvider[Ctx, ClientId] = new WsContextProvider[Ctx, ClientId] {
-    override def toContext(initial: Ctx, packet: RpcPacket): Ctx = {
-      Quirks.discard(packet)
+    override def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): Ctx = {
+      Quirks.discard(packet, id)
       initial
     }
 

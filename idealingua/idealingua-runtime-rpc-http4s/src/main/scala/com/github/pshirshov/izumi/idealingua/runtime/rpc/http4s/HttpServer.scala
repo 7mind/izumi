@@ -135,7 +135,7 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       parsed <- BIO.fromEither(parse(message))
       unmarshalled <- BIO.fromEither(parsed.as[RpcPacket])
       id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, unmarshalled))
-      userCtx <- BIO.syncThrowable(wsContextProvider.toContext(context.initialContext, unmarshalled))
+      userCtx <- BIO.syncThrowable(wsContextProvider.toContext(context.id, context.initialContext, unmarshalled))
       _ <- BIO.syncThrowable(context.updateId(id))
       _ <- BIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
       response <- respond(context, userCtx, unmarshalled).sandboxWith {
