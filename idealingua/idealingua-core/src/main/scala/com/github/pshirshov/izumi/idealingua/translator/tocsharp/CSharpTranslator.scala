@@ -249,6 +249,8 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
   protected def renderEnumeration(i: Enumeration)(implicit im: CSharpImports, ts: Typespace): RenderableCogenProduct = {
     val name = i.id.name
+    // Alternative way using reflection for From method:
+    // return ($name)Enum.Parse(typeof($name), value);
     val decl =
       s"""// $name Enumeration
          |public enum $name {
@@ -257,7 +259,11 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
          |
          |public static class ${name}Helpers {
          |    public static $name From(string value) {
-         |        return ($name)Enum.Parse(typeof($name), value);
+         |        switch (value) {
+         |${i.members.map(m => s"""case \"$m\": return $name.$m;""").mkString("\n").shift(12)}
+         |            default:
+         |                throw new ArgumentOutOfRangeException();
+         |        }
          |    }
          |
          |    public static bool IsValid(string value) {
@@ -368,7 +374,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
          |${ext.postModelEmit(ctx, dto)}
        """.stripMargin
 
-    InterfaceProduct(iface, companion, im.renderImports(List("IRT", "System", "System.Collections", "System.Collections.Generic") ++ ext.imports(ctx, i).toList))
+    InterfaceProduct(iface, companion, im.renderImports(List("IRT", "System", "System.Collections", "System.Collections.Generic", "System.Reflection") ++ ext.imports(ctx, i).toList))
   }
 
   protected def isServiceMethodReturnExistent(method: DefMethod.RPCMethod): Boolean = method.signature.output match {

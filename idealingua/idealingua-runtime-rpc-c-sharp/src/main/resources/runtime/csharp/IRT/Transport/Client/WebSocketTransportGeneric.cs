@@ -5,6 +5,7 @@ using System.Timers;
 using IRT.Marshaller;
 using IRT.Transport.Authorization;
 using WebSocketSharp;
+using IRT.Transport;
 
 namespace IRT.Transport.Client {
     public enum WebSocketTransportState {
@@ -313,13 +314,15 @@ namespace IRT.Transport.Client {
                 _requests.Add(req.ID, record);
                 record.Timer = new Timer();
                 record.Success = msg => {
+                    O data;
                     try {
-                        var data =_marshaller.Unmarshal<O>(msg.Data);
-                        callback.Success(data);
+                        data =_marshaller.Unmarshal<O>(msg.Data);
                     }
                     catch (Exception ex) {
-                        callback.Failure(new TransportException("Unexpected exception occured during unmarshalling.", ex));
+                        callback.Failure(new TransportMarshallingException("Unexpected exception occured during unmarshalling.", ex));
+                        return;
                     }
+                    callback.Success(data);
                 };
 
                 record.Failure = (ex) => {

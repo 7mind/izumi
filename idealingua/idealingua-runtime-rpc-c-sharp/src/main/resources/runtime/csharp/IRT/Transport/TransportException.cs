@@ -12,4 +12,15 @@ namespace IRT.Transport {
         public TransportException(string message, Exception inner): base(message, inner) {
         }
     }
+
+    public class TransportMarshallingException: TransportException {
+        public TransportMarshallingException() {
+        }
+
+        public TransportMarshallingException(string message): base(message) {
+        }
+
+        public TransportMarshallingException(string message, Exception inner): base(message, inner) {
+        }
+    }
 }
