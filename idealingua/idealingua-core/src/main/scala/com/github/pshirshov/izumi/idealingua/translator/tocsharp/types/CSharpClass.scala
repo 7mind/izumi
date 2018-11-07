@@ -42,30 +42,30 @@ final case class CSharpClass (
       val ctors = if (withCTORs.isEmpty) "" else
         s"""private static Dictionary<string, Func<object>> __ctors = new Dictionary<string, Func<object>>();
            |public static void Register(string id, System.Func<object> ctor) {
-           |    if ($name.__ctors.ContainsKey(id)) {
-           |        $name.__ctors[id] = ctor;
-           |    } else {
-           |        $name.__ctors.Add(id, ctor);
-           |    }
+           |    $name.__ctors[id] = ctor;
            |}
            |
            |public static void Unregister(string id) {
-           |    if ($name.__ctors.ContainsKey(id)) {
-           |        $name.__ctors.Remove(id);
-           |    }
+           |    $name.__ctors.Remove(id);
            |}
            |
            |public static object CreateInstance(string id) {
-           |    if (!$name.__ctors.ContainsKey(id)) {
+           |    Func<object> ctor;
+           |    if (!$name.__ctors.TryGetValue(id, out ctor)) {
            |        throw new Exception("Unknown class name: " + id + " for interface ${withCTORs.get}.");
            |    }
            |
-           |    return $name.__ctors[id]();
+           |    return ctor();
            |}
            |
            |static $name() {
            |    var type = typeof(${withCTORs.get});
-           |    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()) {
+           |    #if IRT_SCAN_ALL_ASSEMBLIES
+           |        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+           |    #else
+           |        var assemblies = new[] {Assembly.GetExecutingAssembly()};
+           |    #endif
+           |    foreach (var assembly in assemblies) {
            |        System.Type[] types = null;
            |        try {
            |            types = assembly.GetTypes();
