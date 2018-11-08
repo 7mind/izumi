@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.fixtures
 
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import distage.Id
 
 import scala.util.Random
 
@@ -86,6 +87,29 @@ object CircularCases {
 
   }
 
+  object CircularCase4 {
+
+    class IdTypeCircular(val dep: Dependency[IdTypeCircular] @Id("special"))
+    class IdParamCircular(@Id("special") val dep: Dependency[IdParamCircular])
+    class Dependency[T](val dep: T)
+  }
+
+  object CircularCase5 {
+    class GenericCircular[T](val dep: T)
+    class Dependency(val dep: GenericCircular[Dependency])
+
+    class ErasedCircular[T](val dep: PhantomDependency[T])
+    class PhantomDependency[T]()
+  }
+
+  object CircularCase6 {
+    class RefinedCircular(val dep: Dependency { def dep: RefinedCircular })
+    trait Dependency {
+      def dep: Any
+    }
+    class RealDependency(val dep: RefinedCircular) extends Dependency
+  }
+
   object ByNameCycle {
     class Circular1(arg: => Circular2) {
       def test: Object = arg
@@ -96,4 +120,5 @@ object CircularCases {
       def testInt: Int = int
     }
   }
+
 }

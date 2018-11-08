@@ -16,6 +16,8 @@ trait WithDISymbolInfo {
 
     def isByName: Boolean
 
+    def wasGeneric: Boolean
+
     def annotations: List[u.Annotation]
 
     //def typeSignatureArgs: List[SymbolInfo]
@@ -30,7 +32,7 @@ trait WithDISymbolInfo {
     /**
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
       **/
-    case class Runtime(underlying: Symb, definingClass: SafeType, annotations: List[u.Annotation]) extends SymbolInfo {
+    case class Runtime private (underlying: Symb, definingClass: SafeType, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
       override val name: String = underlying.name.toTermName.toString
 
       override val finalResultType: SafeType = SafeType(underlying.typeSignatureIn(definingClass.tpe).finalResultType)
@@ -41,12 +43,12 @@ trait WithDISymbolInfo {
     }
 
     object Runtime {
-      def apply(underlying: Symb, definingClass: SafeType, moreAnnotations: List[u.Annotation]): Runtime = {
-        new Runtime(underlying, definingClass, (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct)
+      def apply(underlying: Symb, definingClass: SafeType, wasGeneric: Boolean, moreAnnotations: List[u.Annotation]): Runtime = {
+        new Runtime(underlying, definingClass, wasGeneric, (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct)
       }
 
-      def apply(underlying: Symb, definingClass: SafeType): Runtime = {
-        new Runtime(underlying, definingClass, AnnotationTools.getAllAnnotations(u: u.type)(underlying).distinct)
+      def apply(underlying: Symb, definingClass: SafeType, wasGeneric: Boolean): Runtime = {
+        new Runtime(underlying, definingClass, wasGeneric, AnnotationTools.getAllAnnotations(u: u.type)(underlying).distinct)
       }
     }
 
@@ -56,9 +58,10 @@ trait WithDISymbolInfo {
                        , annotations: List[u.Annotation]
                        , definingClass: SafeType
                        , isByName: Boolean
+                       , wasGeneric: Boolean
                      ) extends SymbolInfo
 
-    def apply(symb: Symb, definingClass: SafeType): SymbolInfo = Runtime(symb, definingClass)
+    def apply(symb: Symb, definingClass: SafeType, wasGeneric: Boolean): SymbolInfo = Runtime(symb, definingClass, wasGeneric)
 
     implicit final class SymbolInfoExtensions(symbolInfo: SymbolInfo) {
       def findAnnotation(annType: SafeType): Option[u.Annotation] = {

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
+import com.github.pshirshov.izumi.distage.fixtures.CircularCases.CircularCase4.{IdParamCircular, IdTypeCircular}
 import com.github.pshirshov.izumi.distage.fixtures.CircularCases._
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
@@ -199,6 +200,81 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     assert(context.get[Circular1].test.isInstanceOf[Circular2])
     assert(context.get[Circular2].test.isInstanceOf[Circular1])
+  }
+
+  "support generic circular dependencies when generics are erased by type-erasure" in {
+    import CircularCase5._
+
+    val definition: ModuleBase = new ModuleDef {
+      make[ErasedCircular[Dependency]]
+      make[PhantomDependency[Dependency]]
+    }
+
+    val injector = mkInjector()
+    val context = injector.produce(definition)
+
+    assert(context.get[ErasedCircular[Dependency]] != null)
+    assert(context.get[PhantomDependency[Dependency]] != null)
+
+    assert(context.get[ErasedCircular[Dependency]].dep eq context.get[PhantomDependency[Dependency]])
+    assert(context.get[PhantomDependency[Dependency]] eq context.get[ErasedCircular[Dependency]].dep)
+  }
+
+  "support fully generic circular dependencies" in {
+    import CircularCase5._
+
+    val definition: ModuleBase = new ModuleDef {
+      make[GenericCircular[Dependency]]
+      make[Dependency]
+    }
+
+    val injector = mkInjector()
+    val context = injector.produce(definition)
+
+    assert(context.get[Dependency] != null)
+    assert(context.get[GenericCircular[Dependency]] != null)
+
+    assert(context.get[Dependency] eq context.get[GenericCircular[Dependency]].dep)
+    assert(context.get[GenericCircular[Dependency]] eq context.get[Dependency].dep)
+  }
+
+  "support named circular dependencies" in {
+    import CircularCase4._
+
+    val definition: ModuleBase = new ModuleDef {
+      make[IdTypeCircular]
+      make[IdParamCircular]
+      make[Dependency[IdTypeCircular]].named("special")
+      make[Dependency[IdParamCircular]].named("special")
+    }
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    assert(context.get[IdTypeCircular] != null)
+    assert(context.get[IdParamCircular] != null)
+
+    assert(context.get[IdParamCircular] eq context.get[Dependency[IdParamCircular]]("special").dep)
+    assert(context.get[IdTypeCircular] eq context.get[Dependency[IdTypeCircular]]("special").dep)
+  }
+
+  "support type refinements in circular dependencies" in {
+    import CircularCase6._
+
+    val definition: ModuleBase = new ModuleDef {
+      make[Dependency { def dep: RefinedCircular }].from[RealDependency]
+      make[RefinedCircular]
+    }
+
+    val injector = mkInjector()
+    val context = injector.produce(definition)
+
+    assert(context.get[Dependency { def dep: RefinedCircular }] != null)
+    assert(context.get[RefinedCircular] != null)
+
+    assert(context.get[RefinedCircular] eq context.get[Dependency { def dep: RefinedCircular }].dep)
+    assert(context.get[Dependency { def dep: RefinedCircular }] eq context.get[RefinedCircular].dep)
   }
 
 }

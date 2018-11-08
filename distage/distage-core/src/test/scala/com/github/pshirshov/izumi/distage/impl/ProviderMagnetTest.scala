@@ -109,6 +109,25 @@ class ProviderMagnetTest extends WordSpec {
       assert(fn.diKeys contains DIKey.get[Int].named("defargann2"))
     }
 
+    "handle polymorphic functions" in {
+      val fn1 = ProviderMagnet.apply(poly[List] _).get
+
+      assert(fn1.diKeys.headOption contains DIKey.get[List[Int]])
+      assert(fn1.ret == SafeType.get[List[Unit] => Poly[List]])
+
+      val fn2 = ProviderMagnet.apply(poly[List](List(1))(_)).get
+
+      assert(fn2.diKeys.headOption contains DIKey.get[List[Unit]])
+      assert(fn2.ret == SafeType.get[Poly[List]])
+    }
+
+    "handle polymorphic function returns" in {
+      val fn = ProviderMagnet.apply(poly[List](List(1))).get
+
+      assert(fn.diKeys.headOption contains DIKey.get[List[Unit]])
+      assert(fn.ret == SafeType.get[Poly[List]])
+    }
+
     "handle opaque local references in traits" in {
       val testProviderModule = new TestProviderModule {}
       assert(ProviderMagnet(testProviderModule.implArg _).get.ret <:< SafeType.get[TestProviderModule#TestClass])

@@ -287,6 +287,16 @@ class TagTest extends WordSpec with X[String] {
       assert(t[Int].tpe == safe[{ type X = Int }])
       """)
     }
+
+    "progression test: Can't materialize TagK for type lambdas that close on a generic parameter with available Tag" in {
+      assertTypeError("""
+        def partialEitherTagK[A: Tag] = TagK[Either[A, ?]]
+
+        print(partialEitherTagK[Int])
+        assert(partialEitherTagK[Int] != null)
+      """)
+    }
+
   }
 
 }

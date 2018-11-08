@@ -307,19 +307,11 @@ class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
   import c.universe._
   import c.universe.internal.decorators._
 
-  def lambdaImpl(auto: c.Expr[String]): c.Tree = {
-
+  def lambdaImpl: c.Tree = {
     val prefixTpe = c.prefix.actualType
 
     if (!(prefixTpe <:< typeOf[WithTags#TagObject])) {
       c.abort(c.enclosingPosition, "Tag lambda should be called only as a member of WithTags#Tag companion object")
-    }
-
-    auto.tree match {
-      case Literal(Constant(autoStr: String)) =>
-        if (autoStr != "auto") {
-          c.abort(c.enclosingPosition, s"Unknown method $autoStr. To use auto kind-inference for Tags, call `auto` method, as in `def tagk[F[_]: Tag.auto.T]: TagK[T] = implicitly[Tag.auto.T[F]]`")
-        }
     }
 
     val pos = c.macroApplication.pos

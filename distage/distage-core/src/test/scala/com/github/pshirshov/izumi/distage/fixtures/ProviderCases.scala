@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.fixtures
 
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 @ExposedTestScope
 object ProviderCases {
@@ -24,6 +25,10 @@ object ProviderCases {
 
     case class ClassArgAnn(@Id("classargann1") x: String, @Id("classargann2") y: Int)
     case class ClassTypeAnn(val x: String @Id("classtypeann1"), y: Int @Id("classtypeann2"))
+
+    class Poly[F[_]]
+
+    def poly[F[_]](f: F[Int]): F[Unit] => Poly[F] = _ => { f.discard() ; new Poly[F] }
 
     class TestProviderModule {
 

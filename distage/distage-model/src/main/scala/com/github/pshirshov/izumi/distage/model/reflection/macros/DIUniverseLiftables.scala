@@ -98,6 +98,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
       , ${info.annotations}
       , ${liftableUnsafeWeakSafeType(info.definingClass)}
       , ${info.isByName}
+      , ${info.wasGeneric}
       )
     }
        """
@@ -106,8 +107,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // Associations
 
   implicit val liftableParameter: Liftable[Association.Parameter] = {
-    case Association.Parameter(context, name, tpe, wireWith, isByName) =>
-      q"{ new $RuntimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith, $isByName)}"
+    case Association.Parameter(context, name, tpe, wireWith, isByName, wasGeneric) =>
+      q"{ new $RuntimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith, $isByName, $wasGeneric)}"
   }
 
   // Annotations
