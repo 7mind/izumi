@@ -19,7 +19,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
           factoryMethod =>
-            val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, symbl)
+            val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, symbl, wasGeneric = false)
 
             val context = DependencyContext.MethodParameterContext(symbl, factoryMethodSymb)
 
@@ -28,7 +28,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             val alreadyInSignature = symbolIntrospector
               .selectNonImplicitParameters(factoryMethod)
               .flatten
-              .map(p => keyProvider.keyFromParameter(context, SymbolInfo(p, symbl)))
+              .map(p => keyProvider.keyFromParameter(context, SymbolInfo(p, symbl, wasGeneric = false)))
 
             //val symbolsAlreadyInSignature = alreadyInSignature.map(_.symbol).toSet
 
@@ -45,7 +45,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
         val materials = dependencyMethods.map {
           method =>
-            val methodSymb = SymbolInfo.Runtime(method, symbl)
+            val methodSymb = SymbolInfo.Runtime(method, symbl, wasGeneric = false)
             val context = DependencyContext.MethodContext(symbl, methodSymb)
             Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyProvider.keyFromMethod(context, methodSymb))
         }
@@ -93,11 +93,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     if (symb.tpe.typeSymbol.isStatic) {
       None
     } else {
-      val typedRef = ReflectionUtil.toTypeRef(symb.tpe.asInstanceOf[reflect.runtime.universe.TypeApi])
-      typedRef
+      val typeRef = ReflectionUtil.toTypeRef[u.u.type](symb.tpe)
+      typeRef
         .map(_.pre)
         .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
-        .map(v => DIKey.TypeKey(SafeType(v.asInstanceOf[u.TypeNative])))
+        .map(v => DIKey.TypeKey(SafeType(v)))
     }
   }
 
@@ -109,7 +109,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       .map(_.asMethod)
     declaredAbstractMethods.map {
       method =>
-        val methodSymb = SymbolInfo.Runtime(method, symb)
+        val methodSymb = SymbolInfo.Runtime(method, symb, wasGeneric = false)
         val context = DependencyContext.MethodContext(symb, methodSymb)
         Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyProvider.keyFromMethod(context, methodSymb))
     }

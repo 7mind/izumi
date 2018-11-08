@@ -68,7 +68,7 @@ object ReflectionUtil {
       weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
   }
 
-  def deannotate[U <: Universe](typ: U#Type): U#Type =
+  def deannotate[U <: SingletonUniverse](typ: U#Type): U#Type =
     typ match {
       case t: U#AnnotatedTypeApi =>
         t.underlying
@@ -76,13 +76,13 @@ object ReflectionUtil {
         typ
     }
 
-  def kindOf(tpe: Universe#Type): Kind =
-    Kind(tpe.typeParams.map(t => kindOf(t.typeSignature)))
-
-  final case class Kind(args: List[Kind]) {
-    override def toString: String = format("_")
-
-    def format(typeName: String) = s"$typeName${if (args.nonEmpty) args.mkString("[", ", ", "]") else ""}"
+  def toTypeRef[U <: SingletonUniverse](tpe: U#TypeApi): Option[U#TypeRefApi] = {
+    tpe match {
+      case typeRef: U#TypeRefApi =>
+        Some(typeRef)
+      case _ =>
+        None
+    }
   }
 
   /**
@@ -94,14 +94,13 @@ object ReflectionUtil {
   def runtimeAnnotation(tpe: u.Type, scalaArgs: List[u.Tree], javaArgs: ListMap[u.Name, u.JavaArgument]): u.Annotation =
     u.Annotation.apply(tpe, scalaArgs, javaArgs)
 
+  def kindOf(tpe: Universe#Type): Kind =
+    Kind(tpe.typeParams.map(t => kindOf(t.typeSignature)))
 
-  def toTypeRef(tpe: u.TypeApi): Option[u.TypeRefApi] = {
-    tpe match {
-      case typeref: u.TypeRefApi =>
-        Some(typeref)
-      case _ =>
-        None
-    }
+  final case class Kind(args: List[Kind]) {
+    override def toString: String = format("_")
+
+    def format(typeName: String) = s"$typeName${if (args.nonEmpty) args.mkString("[", ", ", "]") else ""}"
   }
 }
 

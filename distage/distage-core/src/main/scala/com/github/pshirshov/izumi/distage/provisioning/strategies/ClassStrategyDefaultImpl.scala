@@ -72,7 +72,7 @@ class ClassStrategyDefaultImpl
     val wiring = op.wiring
     val targetType = wiring.instanceType
     if (!symbol.isStatic) {
-      val typeRef = ReflectionUtil.toTypeRef(targetType.tpe)
+      val typeRef = ReflectionUtil.toTypeRef[u.type](targetType.tpe)
         .getOrElse(throw new ProvisioningException(s"Expected TypeRefApi while processing $targetType, got ${targetType.tpe}", null))
 
       val prefix = typeRef.pre

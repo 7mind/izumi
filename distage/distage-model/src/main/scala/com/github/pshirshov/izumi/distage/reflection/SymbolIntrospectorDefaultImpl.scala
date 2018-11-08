@@ -18,9 +18,9 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
             case (origTypes, params) =>
               origTypes.zip(params).map {
                 case (o: u.u.AnnotatedTypeApi, p) =>
-                  u.SymbolInfo.Runtime(p, symb, o.annotations)
-                case (_, p) =>
-                  u.SymbolInfo.Runtime(p, symb)
+                  u.SymbolInfo.Runtime(p, symb, o.underlying.typeSymbol.isParameter, o.annotations)
+                case (o, p) =>
+                  u.SymbolInfo.Runtime(p, symb, o.typeSymbol.isParameter)
               }
           }
         SelectedConstructor(selectedConstructor, paramsWithAnnos)
@@ -47,12 +47,15 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
   }
 
   override def isConcrete(symb: u.SafeType): Boolean = {
-    symb.tpe match {
-      case rt: u.u.RefinedTypeApi =>
-        rt.parents.forall(t => isConcrete(t)) && !rt.decls.forall(_.isAbstract)
+    val tpe = symb.tpe
+    tpe match {
+      case _: u.u.RefinedTypeApi =>
+        // 1. refinements never have a valid constructor unless they are tautological and can be substituted by a class
+        // 2. ignoring non-runtime refinements (type members, covariant overrides) leads to unsoundness
+        // rt.parents.size == 1 && !rt.decls.exists(_.isAbstract)
+        false
 
       case _ =>
-        val tpe = symb.tpe
         isConcrete(tpe)
     }
   }

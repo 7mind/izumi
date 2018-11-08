@@ -94,7 +94,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     case Function(args, body) =>
       analyzeMethodRef(args.map(_.symbol), body, ret)
     case _ if Option(tree.symbol).exists(_.isMethod) =>
-      analyzeValRef(tree.symbol, ret)
+      analyzeValRef(tree.tpe, ret)
     case _ =>
       c.abort(c.enclosingPosition
         ,
@@ -108,7 +108,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
   }
 
   private def association(ret: SafeType)(p: Symb): Association.Parameter =
-    keyProvider.associationFromParameter(SymbolInfo(p, ret))
+    keyProvider.associationFromParameter(SymbolInfo(p, ret, p.typeSignature.typeSymbol.isParameter))
 
   def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ret: SafeType): ExtractedInfo = {
     val lambdaKeys: List[Association.Parameter] =
@@ -149,9 +149,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     ExtractedInfo(keys, isValReference = false)
   }
 
-  def analyzeValRef(valRef: Symbol, ret: SafeType): ExtractedInfo = {
-    val sig = valRef.typeSignature.finalResultType
-
+  def analyzeValRef(sig: Type, ret: SafeType): ExtractedInfo = {
     val associations = sig.typeArgs.init.map(SafeType(_)).map {
       tpe =>
         val symbol = SymbolInfo.Static(
@@ -160,6 +158,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
           , AnnotationTools.getAllTypeAnnotations(u)(tpe.tpe)
           , ret
           , tpe.tpe.typeSymbol.isTerm && tpe.tpe.typeSymbol.asTerm.isByNameParam
+          , tpe.tpe.typeSymbol.isParameter
         )
 
         keyProvider.associationFromParameter(symbol)

@@ -5,7 +5,6 @@ import com.github.pshirshov.izumi.fundamentals.reflection.WithTags.hktagFormat
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
-import scala.language.{dynamics, higherKinds}
 import scala.reflect.api
 import scala.reflect.api.{TypeCreator, Universe}
 
@@ -44,10 +43,20 @@ trait WithTags extends UniverseGeneric { self =>
     override def toString: String = s"Tag[${tag.tpe}]"
   }
 
-  object Tag extends Dynamic with LowPriorityTagInstances {
+  object Tag extends LowPriorityTagInstances {
 
     /**
       * Use `Tag.auto.T[TYPE_PARAM]` syntax to summon a `Tag` for a type parameter of any kind:
+      *
+      * {{{
+      *   def module1[F[_]: Tag.auto.T] = new ModuleDef {
+      *     ...
+      *   }
+      *
+      *   def module2[F[_, _]: Tag.auto.T] = new ModuleDef {
+      *     ...
+      *   }
+      * }}}
       *
       * {{{
       *   def y[K[_[_, _], _[_], _[_[_], _, _, _]](implicit ev: Tag.auto.T[K]): Tag.auto.T[K] = ev
@@ -58,7 +67,7 @@ trait WithTags extends UniverseGeneric { self =>
       * }}}
       *
       * */
-    def selectDynamic(auto: String): Any = macro TagLambdaMacro.lambdaImpl
+    def auto: Any = macro TagLambdaMacro.lambdaImpl
 
     def apply[T: Tag]: Tag[T] = implicitly
 

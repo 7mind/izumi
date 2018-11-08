@@ -20,7 +20,7 @@ trait WithDIAssociation {
   }
 
   object Association {
-    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey, isByName: Boolean) extends Association {
+    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey, isByName: Boolean, wasGeneric: Boolean) extends Association {
       override def format: String = s"""par $name: $tpe = lookup($wireWith)"""
     }
 

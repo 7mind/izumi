@@ -7,6 +7,7 @@ using System.Text;
 using System.Collections.Specialized;
 using IRT.Marshaller;
 using IRT.Transport.Authorization;
+using IRT.Transport;
 
 namespace IRT.Transport.Client {
     public class AsyncHttpTransportGeneric<C>: IClientTransport<C> where C: class, IClientTransportContext {
@@ -133,7 +134,16 @@ namespace IRT.Transport.Client {
                                 throw new TransportException("Empty Response");
                             }
 
-                            var data = _marshaller.Unmarshal<O>(jsonString);
+                            O data;
+                            try {
+                                data = _marshaller.Unmarshal<O>(jsonString);
+                            } catch (Exception ex) {
+                                state.Callback.Failure(
+                                    new TransportMarshallingException("Unexpected exception occuted while unmarshalling response.", ex)
+                                );
+                                return;
+                            }
+
                             state.Response = data;
                             state.Callback.Success(state.Response);
                         }

@@ -1,13 +1,14 @@
 
 using System;
+using IRT.Transport;
 
 namespace IRT.Transport.Client {
     public class ClientTransportCallback<T> : IClientTransportCallback {
-        public Action<Exception> OnFailureHandler;
+        public Action<TransportException> OnFailureHandler;
         public Action<T> OnSuccessHandler;
         public Action FinalHandler;
 
-        public ClientTransportCallback(Action<T> onSuccess, Action<Exception> onFailure, Action final = null) {
+        public ClientTransportCallback(Action<T> onSuccess, Action<TransportException> onFailure, Action final = null) {
             OnSuccessHandler = onSuccess;
             OnFailureHandler = onFailure;
             FinalHandler = final;
@@ -23,7 +24,7 @@ namespace IRT.Transport.Client {
             }
         }
 
-        public void Failure(Exception exception) {
+        public void Failure(TransportException exception) {
             if (OnFailureHandler != null) {
                 OnFailureHandler(exception);
             }

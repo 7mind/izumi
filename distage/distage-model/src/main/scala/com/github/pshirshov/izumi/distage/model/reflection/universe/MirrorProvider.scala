@@ -20,14 +20,7 @@ object MirrorProvider {
     }
 
     override def runtimeClass(tpe: TypeNative): Class[_] = {
-      import RuntimeDIUniverse.u._
-      tpe match {
-        case RefinedType(types, scope) =>
-          throw new RefinedTypeException(s"Failed to reflect class: Reflection requires runtime codegeneration for refined type $tpe with parents $types and scope $scope")
-
-        case o =>
-          mirror.runtimeClass(o)
-      }
+      mirror.runtimeClass(tpe.erasure)
     }
   }
 
