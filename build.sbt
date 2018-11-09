@@ -653,7 +653,10 @@ lazy val allProjects = fundamentalsJvm ++
 
 lazy val unidocExcludes = izsbt ++ allJsProjects ++ idealinguaV1
 
+lazy val allProjectsExceptMicrosite = distage ++ logstage ++ idealingua ++ izsb
+
 lazy val microsite = inDoc.as.module
+  .dependsOn(allProjectsExceptMicrosite.map(x => x: ClasspathDep[ProjectReference]): _*)
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, TutPlugin)
   .settings(
     skip in publish := true
@@ -664,6 +667,7 @@ lazy val microsite = inDoc.as.module
         "latest/release"
       }
     }
+    , scalacOptions in Tut += "-nowarn"
     , siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api"
     , siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc"
     , previewFixedPort := Some(9999)
