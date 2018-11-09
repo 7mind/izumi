@@ -277,7 +277,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
           val ot = CSharpType(o.valueType)
           Some(
             s"""${i.renderType()} $dst = null;
-               |if ($src != null) {
+               |if ($src != null && $src.Type != JTokenType.Null) {
                |${(if (propertyNeedsPrepare(o.valueType)) prepareReadPropertyValue(src, dst, ot, createDst = false).get else s"$dst = ${readPropertyValue(src, ot)};").shift(4)}
                |}
              """.stripMargin)
