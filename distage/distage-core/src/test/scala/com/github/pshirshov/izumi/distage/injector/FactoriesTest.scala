@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.FactoryCases._
+import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
 import com.github.pshirshov.izumi.distage.model.PlannerInput
 import distage.ModuleDef
 import org.scalatest.WordSpec
@@ -90,7 +91,7 @@ class FactoriesTest extends WordSpec with MkInjector {
   }
 
   "cglib factory cannot produce factories" in {
-    val fail = Try {
+    intercept[UnsupportedWiringException] {
       import FactoryCase1._
 
       val definition = PlannerInput(new ModuleDef {
@@ -105,8 +106,7 @@ class FactoriesTest extends WordSpec with MkInjector {
       val instantiated = context.get[FactoryProducingFactory]
 
       assert(instantiated.x().x().b == context.get[Dependency])
-    }.isFailure
-    assert(fail)
+    }
   }
 
   "cglib factory always produces new instances" in {

@@ -47,6 +47,13 @@ object InnerClassCases {
 
       case class Circular1(circular2: Circular2)
       case class Circular2(circular2: Circular1)
+
+      class ByNameCircular1(circular20: => ByNameCircular2) {
+        def circular2: ByNameCircular2 = circular20
+      }
+      class ByNameCircular2(circular20: => ByNameCircular1) {
+        def circular2: ByNameCircular1 = circular20
+      }
     }
 
   }

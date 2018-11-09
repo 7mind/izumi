@@ -3,9 +3,8 @@ package com.github.pshirshov.izumi.distage.injector
 import com.github.pshirshov.izumi.distage.fixtures.InnerClassCases._
 import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
 import org.scalatest.WordSpec
-
-import scala.util.Try
 
 class InnerClassesTest extends WordSpec with MkInjector {
   "can instantiate inner classes from stable objects where the classes are inherited from a trait" in {
@@ -119,7 +118,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
   }
 
   "progression test: can't handle factories inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't)" in {
-    val fail = Try {
+    intercept[UnsupportedDefinitionException] {
       import InnerClassStablePathsCase._
       import StableObjectInheritingTrait._
 
@@ -131,11 +130,10 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       assert(context.get[TestFactory].mk(TestDependency()) == TestClass(TestDependency()))
     }
-    assert(fail.isFailure)
   }
 
-  "progression test: can't handle circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't?)" in {
-    val fail = Try {
+  "progression test: can't find proper constructor for circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
+    intercept[ProvisioningException] {
       import InnerClassStablePathsCase._
       import StableObjectInheritingTrait._
 
@@ -146,13 +144,30 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       val context = mkInjector().produce(definition)
 
-      assert(context.get[TestFactory].mk(TestDependency()) == TestClass(TestDependency()))
+      assert(context.get[Circular1] != null)
+      assert(context.get[Circular1].circular2 != context.get[Circular2])
     }
-    assert(fail.isFailure)
   }
 
-  "progression test: runtime cogen can't handle path-dependant factories (macros can't?)" in {
-    val fail = Try {
+  "progression test: can't find proper constructor for by-name circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
+    intercept[ProvisioningException] {
+      import InnerClassStablePathsCase._
+      import StableObjectInheritingTrait._
+
+      val definition = new ModuleDef {
+        make[ByNameCircular1]
+        make[ByNameCircular2]
+      }
+
+      val context = mkInjector().produce(definition)
+
+      assert(context.get[ByNameCircular1] != null)
+      assert(context.get[ByNameCircular1].circular2 != context.get[ByNameCircular2])
+    }
+  }
+
+  "progression test: runtime cogen can't handle path-dependent factories (macros can't?)" in {
+    intercept[UnsupportedDefinitionException] {
       import InnerClassUnstablePathsCase._
       val testProviderModule = new TestModule
 
@@ -165,11 +180,10 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
     }
-    assert(fail.isFailure)
   }
 
-  "progression test: runtime cogen can't circular path-dependant dependencies (macros can't?)" in {
-    val fail = Try {
+  "progression test: runtime cogen can't circular path-dependent dependencies (macros can't?)" in {
+    intercept[ProvisioningException] {
       import InnerClassUnstablePathsCase._
       val testProviderModule = new TestModule
 
@@ -183,9 +197,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
     }
-    assert(fail.isFailure)
   }
-
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {
     private val definition  = PlannerInput(new ModuleDef {

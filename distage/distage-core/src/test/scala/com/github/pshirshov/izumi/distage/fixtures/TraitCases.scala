@@ -96,4 +96,14 @@ object TraitCases {
     }
   }
 
+  object TraitCase6 {
+    final case class Dep()
+
+    final case class AnyValDep(d: Dep) extends AnyVal
+
+    trait TestTrait {
+      def anyValDep: AnyValDep
+    }
+  }
+
 }
