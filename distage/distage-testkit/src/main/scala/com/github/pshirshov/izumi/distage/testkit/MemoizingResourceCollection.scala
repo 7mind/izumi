@@ -1,18 +1,18 @@
 package com.github.pshirshov.izumi.distage.testkit
 
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{ConcurrentHashMap, ExecutorService, TimeUnit}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.roles.launcher.ComponentsLifecycleManager
-import com.github.pshirshov.izumi.distage.roles.roles.{ResourceCollection, RoleComponent}
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.distage.roles.launcher.ComponentLifecycle
+import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.LifecycleException
+import com.github.pshirshov.izumi.distage.roles.roles.RoleComponent
 
 import scala.collection.JavaConverters._
-
+import scala.util.{Failure, Try}
 
 /**
   * Dangerous sideeffectful thing. Use only in case you know what you do.
@@ -26,15 +26,8 @@ abstract class MemoizingResourceCollection extends ResourceCollection {
 
   init() // this way we would start shutdown hook only in case we use memoizer
 
-  override def startMemoizedComponents(): Unit = {
-    Option(MemoizingResourceCollection.memoizedComponentsLifecycleManager.get()) match {
-      case None =>
-        val components = getComponents
-        val componentsLifecycleManager = new ComponentsLifecycleManager(components, IzLogger.NullLogger)
-        MemoizingResourceCollection.memoizedComponentsLifecycleManager.set(componentsLifecycleManager)
-        componentsLifecycleManager.startComponents()
-      case _ => ()
-    }
+  override def isMemoized(resource: Any): Boolean = {
+    memoizedInstances.containsValue(resource)
   }
 
   override def transformPlanElement(op: ExecutableOp): ExecutableOp = {
@@ -56,19 +49,6 @@ abstract class MemoizingResourceCollection extends ResourceCollection {
   }
 
   def memoize(ref: IdentifiedRef): Boolean
-
-  override def close(closeable: AutoCloseable): Unit = {
-    val memoized = memoizedInstances.values().asScala.toSet
-    if (!memoized.contains(closeable)) {
-      closeable.close()
-    }
-  }
-
-  override def getCloseables: Set[AutoCloseable] = MemoizingResourceCollection.getCloseables
-
-  override def getComponents: Set[RoleComponent] = MemoizingResourceCollection.getComponents
-
-  override def getExecutors: Set[ExecutorService] = MemoizingResourceCollection.getExecutors
 }
 
 object MemoizingResourceCollection {
@@ -79,18 +59,11 @@ object MemoizingResourceCollection {
     */
   val memoizedInstances = new ConcurrentHashMap[DIKey, Any]()
 
-  private val memoizedComponentsLifecycleManager = new AtomicReference[ComponentsLifecycleManager](null)
   private val initialized = new AtomicBoolean(false)
 
   private def getCloseables: Set[AutoCloseable] = {
     memoizedInstances.values().asScala.collect {
       case ac: AutoCloseable => ac
-    }.toSet
-  }
-
-  private def getComponents: Set[RoleComponent] = {
-    memoizedInstances.values().asScala.collect {
-      case rc: RoleComponent => rc
     }.toSet
   }
 
@@ -113,18 +86,28 @@ object MemoizingResourceCollection {
   }
 
   private def shutdownCloseables(ignore: Set[RoleComponent]): Unit = {
-    val closeables = getCloseables
+    val closeables = getCloseables.filter {
+      case rc: RoleComponent if ignore.contains(rc) =>
+        false
+      case _ => true
+    }.toList.reverse
     closeables.foreach(_.close())
   }
 
   private def shutdownComponents(): Set[RoleComponent] = {
-    Option(memoizedComponentsLifecycleManager.get()) match {
-      case Some(clm) => clm.stopComponents()
-      case _ => Set.empty
-    }
+    val toStop = TestComponentsLifecycleManager.memoizedComponentsLifecycle.asScala.toList.reverse
+    val (stopped, _) = toStop
+      .map {
+        case ComponentLifecycle.Starting(c) =>
+          c -> Failure(new LifecycleException(s"Component hasn't been started properly, skipping: $c"))
+        case ComponentLifecycle.Started(c) =>
+          c -> Try(c.stop())
+      }
+      .partition(_._2.isSuccess)
+    stopped.map(_._1).toSet
   }
 
-  private val shutdownHook = new Thread(() => {
+  private def shutdownHook = new Thread(() => {
     val ignore = shutdownComponents()
     shutdownCloseables(ignore)
     shutdownExecutors()

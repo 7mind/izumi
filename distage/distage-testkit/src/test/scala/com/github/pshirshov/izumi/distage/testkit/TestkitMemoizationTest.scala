@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicReference
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.roles.roles.ResourceCollection
 import com.github.pshirshov.izumi.distage.testkit.TestkitMemoizationTest.Ctx
 
 object TestkitMemoizationTest {

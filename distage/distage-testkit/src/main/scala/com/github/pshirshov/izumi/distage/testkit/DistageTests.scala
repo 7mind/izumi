@@ -14,7 +14,7 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
-import com.github.pshirshov.izumi.distage.roles.launcher.{NullResourceCollection, RoleAppBootstrapStrategy, RoleStarterImpl}
+import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
 import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.distage.testkit
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -124,19 +124,27 @@ trait DistageTests {
 
     resourceCollection.processContext(context)
 
+    val logger = context.find[IzLogger].getOrElse(IzLogger.NullLogger)
+    val componentsLifecycleManager = new TestComponentsLifecycleManager(
+      context.find[Set[RoleComponent]].getOrElse(Set.empty),
+      logger,
+      resourceCollection
+    )
     val roleStarter = makeRoleStarter(
       context.find[Set[RoleService]].getOrElse(Set.empty)
-      , context.find[Set[RoleComponent]].getOrElse(Set.empty)
-      , context.find[Set[AutoCloseable]].getOrElse(Set.empty)
-      , context.find[Set[ExecutorService]].getOrElse(Set.empty)
+      , context.find[Set[AutoCloseable]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
+      , context.find[Set[ExecutorService]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
       , context.find[Set[IntegrationComponent]].getOrElse(Set.empty)
-      , context.find[IzLogger].getOrElse(IzLogger.NullLogger)
+      , logger
+      , componentsLifecycleManager
     )
 
-    f(context, roleStarter)
+    synchronized {
+      f(context, roleStarter)
+    }
   }
 
-  protected def startTestResources(context: Locator, roleStarter: RoleStarter): Unit = {
+  protected def startTestResources(context: Locator, roleStarter: RoleStarter): Unit = synchronized {
     context.discard()
 
     try {
@@ -175,13 +183,13 @@ trait DistageTests {
   }
 
   protected def makeRoleStarter(services: Set[RoleService]
-                                , components: Set[RoleComponent]
                                 , closeables: Set[AutoCloseable]
                                 , executors: Set[ExecutorService]
                                 , integrations: Set[IntegrationComponent]
                                 , logger: IzLogger
+                                , componentsLifecycleManager: ComponentsLifecycleManager
                                ): RoleStarter = {
-    new RoleStarterImpl(services, components, closeables, executors, integrations, logger, resourceCollection)
+    new RoleStarterImpl(services, closeables, executors, integrations, logger, componentsLifecycleManager)
   }
 
   protected def makeLogRouter(config: Option[AppConfig]): LogRouter = {
