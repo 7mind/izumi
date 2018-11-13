@@ -17,13 +17,15 @@ class ComponentsLifecycleManager(
   private val started = new mutable.ArrayStack[ComponentLifecycle]()
 
   def startComponents(): Unit = {
-    components.foreach {
-      service =>
-        logger.info(s"Starting component $service...")
-        started.push(ComponentLifecycle.Starting(service))
-        service.start()
-        started.pop().discard()
-        started.push(ComponentLifecycle.Started(service))
+    if (started.isEmpty) {
+      components.foreach {
+        service =>
+          logger.info(s"Starting component $service...")
+          started.push(ComponentLifecycle.Starting(service))
+          service.start()
+          started.pop().discard()
+          started.push(ComponentLifecycle.Started(service))
+      }
     }
   }
 

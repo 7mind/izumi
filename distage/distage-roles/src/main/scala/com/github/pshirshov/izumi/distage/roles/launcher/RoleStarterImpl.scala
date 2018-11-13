@@ -21,16 +21,22 @@ class RoleStarterImpl
   executors: Set[ExecutorService],
   integrations: Set[IntegrationComponent],
   logger: IzLogger,
+  resourceCollection: ResourceCollection = new NullResourceCollection
 ) extends RoleStarter {
 
+  private val memoizedComponents = resourceCollection.getComponents
+  private val memoizedCloseables = resourceCollection.getCloseables
+  private val memoizedExecutors = resourceCollection.getExecutors
+  private val oneTimeComponents = components.filter(!memoizedComponents.contains(_))
+
   private val tasksCount = services.count(_.isInstanceOf[RoleTask])
-  private val componentsCount = components.size
+  private val componentsCount = oneTimeComponents.size
   private val servicesCount = services.size
   private val integrationsCount = integrations.size
 
   private val state = new AtomicReference[StarterState](StarterState.NotYetStarted)
   private val latch = new CountDownLatch(1)
-  private val lifecycleManager = new ComponentsLifecycleManager(components, logger)
+  private val lifecycleManager = new ComponentsLifecycleManager(oneTimeComponents, logger)
 
   private val shutdownHook = new Thread(() => {
     releaseThenStop()
@@ -39,6 +45,7 @@ class RoleStarterImpl
   def start(): Unit = synchronized {
     if (state.compareAndSet(StarterState.NotYetStarted, StarterState.Starting)) {
       checkIntegrations()
+      resourceCollection.startMemoizedComponents()
       startComponents()
       state.set(StarterState.Started)
     } else {
@@ -130,6 +137,7 @@ class RoleStarterImpl
   private def shutdownExecutors(): Unit = {
     val toClose = executors
       .toList.reverse
+      .filter(!memoizedExecutors.contains(_))
       .filterNot(es => es.isShutdown || es.isTerminated)
 
     logger.info(s"Going to shutdown ${toClose.size -> "count" -> null} ${toClose.map(_.getClass).niceList() -> "executors"}")
@@ -149,6 +157,7 @@ class RoleStarterImpl
   private def closeCloseables(ignore: Set[RoleComponent]): Unit = {
     val toClose = closeables
       .toList.reverse
+      .filter(!(memoizedCloseables ++ memoizedComponents).contains(_))
       .filter {
         case rc: RoleComponent if ignore.contains(rc) =>
           false

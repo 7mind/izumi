@@ -14,8 +14,8 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
-import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
-import com.github.pshirshov.izumi.distage.roles.roles.{IntegrationComponent, RoleComponent, RoleService, RoleStarter}
+import com.github.pshirshov.izumi.distage.roles.launcher.{NullResourceCollection, RoleAppBootstrapStrategy, RoleStarterImpl}
+import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.distage.testkit
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
@@ -30,7 +30,7 @@ import org.scalatest.exceptions.TestCanceledException
 import scala.util.Try
 
 trait DistageTests {
-  protected val resourceCollection: DistageResourceCollection = NullDistageResourceCollection
+  protected val resourceCollection: ResourceCollection = new NullResourceCollection
   protected val baseRouter: LogRouter = ConfigurableLogRouter(Log.Level.Info, ConsoleSink.ColoredConsoleSink)
 
   protected def di[T: Tag](f: T => Any): Unit = {
@@ -122,6 +122,8 @@ trait DistageTests {
         provisionExceptionHandler(t)
     }
 
+    resourceCollection.processContext(context)
+
     val roleStarter = makeRoleStarter(
       context.find[Set[RoleService]].getOrElse(Set.empty)
       , context.find[Set[RoleComponent]].getOrElse(Set.empty)
@@ -130,8 +132,6 @@ trait DistageTests {
       , context.find[Set[IntegrationComponent]].getOrElse(Set.empty)
       , context.find[IzLogger].getOrElse(IzLogger.NullLogger)
     )
-
-    resourceCollection.processContext(context)
 
     f(context, roleStarter)
   }
@@ -181,7 +181,7 @@ trait DistageTests {
                                 , integrations: Set[IntegrationComponent]
                                 , logger: IzLogger
                                ): RoleStarter = {
-    new RoleStarterImpl(services, components, closeables, executors, integrations, logger)
+    new RoleStarterImpl(services, components, closeables, executors, integrations, logger, resourceCollection)
   }
 
   protected def makeLogRouter(config: Option[AppConfig]): LogRouter = {
@@ -250,7 +250,7 @@ trait DistageTests {
     }
   }
 
-  protected def resourceConfig(name: String): AppConfig ={
+  protected def resourceConfig(name: String): AppConfig = {
     val resource = ConfigFactory.parseResources(name)
     if (resource.isEmpty) {
       throw new testkit.DistageTests.TestkitException(s"Can't parse config resource $name")

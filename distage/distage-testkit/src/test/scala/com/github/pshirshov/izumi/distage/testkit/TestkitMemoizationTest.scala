@@ -6,34 +6,56 @@ import java.util.concurrent.atomic.AtomicReference
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.roles.roles.ResourceCollection
+import com.github.pshirshov.izumi.distage.testkit.TestkitMemoizationTest.Ctx
+
+object TestkitMemoizationTest {
+
+  case class Ctx(
+                  testService1: TestService1,
+                  initCounter: InitCounter
+                )
+
+}
 
 
 class TestkitMemoizationTest extends DistagePluginSpec {
   override protected def disabledTags: BindingTag.Expressions.Expr = BindingTag.Expressions.False
 
-  val r = new AtomicReference[WeakReference[TestService1]](null)
+  val r = new AtomicReference[WeakReference[Ctx]](null)
 
   "testkit" must {
     "memoize values" in di {
-      service: TestService1 =>
-        assert(r.get().get() == service)
-        assert(MemoizingDistageResourceCollection.memoizedInstances.size() == 1)
-        assert(MemoizingDistageResourceCollection.memoizedInstances.values().contains(service))
+      ctx: Ctx =>
+        assert(r.get().get() == ctx)
+        assert(ctx.initCounter.startedRoleComponents.size == 3)
+        assert(MemoizingResourceCollection.memoizedInstances.size() == 7)
+        assert(MemoizingResourceCollection.memoizedInstances.values().contains(ctx))
+        assert(ctx.initCounter.closedCloseables.isEmpty)
     }
 
     "retrieve memoized values" in di {
-      service: TestService1 =>
-        assert(r.get().get() == service)
-        assert(MemoizingDistageResourceCollection.memoizedInstances.size() == 1)
-        assert(MemoizingDistageResourceCollection.memoizedInstances.values().contains(service))
+      ctx: Ctx =>
+        assert(r.get().get() == ctx)
+        assert(ctx.initCounter.startedRoleComponents.size == 3)
+        assert(MemoizingResourceCollection.memoizedInstances.size() == 7)
+        assert(MemoizingResourceCollection.memoizedInstances.values().contains(ctx))
+        assert(ctx.initCounter.closedCloseables.isEmpty)
     }
-
   }
 
-  override protected val resourceCollection: DistageResourceCollection = new MemoizingDistageResourceCollection {
+  override protected val resourceCollection: ResourceCollection = new MemoizingResourceCollection {
     override def memoize(ref: IdentifiedRef): Boolean = {
-      if (ref.key == DIKey.get[TestService1]) {
-        r.set(new WeakReference(ref.value.asInstanceOf[TestService1]))
+      if (ref.key == DIKey.get[Ctx]) {
+        r.set(new WeakReference(ref.value.asInstanceOf[Ctx]))
+        true
+      } else if (ref.key == DIKey.get[TestResource1] ||
+        ref.key == DIKey.get[TestResource2] ||
+        ref.key == DIKey.get[TestService1] ||
+        ref.key == DIKey.get[TestComponent1] ||
+        ref.key == DIKey.get[TestComponent2] ||
+        ref.key == DIKey.get[TestComponent3]
+      ) {
         true
       } else {
         false
