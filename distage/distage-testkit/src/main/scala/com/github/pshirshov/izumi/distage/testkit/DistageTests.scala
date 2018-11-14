@@ -17,6 +17,7 @@ import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationC
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
 import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.distage.testkit
+import com.github.pshirshov.izumi.distage.testkit.DistageTests.SynchronizedObject
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
@@ -30,7 +31,7 @@ import org.scalatest.exceptions.TestCanceledException
 import scala.util.Try
 
 trait DistageTests {
-  protected val resourceCollection: ResourceCollection = new NullResourceCollection
+  protected val resourceCollection: DistageResourceCollection = NullDistageResourceCollection
   protected val baseRouter: LogRouter = ConfigurableLogRouter(Log.Level.Info, ConsoleSink.ColoredConsoleSink)
 
   protected def di[T: Tag](f: T => Any): Unit = {
@@ -38,7 +39,7 @@ trait DistageTests {
     di(providerMagnet)
   }
 
-  protected def di(f: ProviderMagnet[Any]): Unit = {
+  protected def di(f: ProviderMagnet[Any]): Unit = synchronized {
     ctx(f.get.diKeys.toSet ++ suiteRoots) {
       (context, roleStarter) =>
         try {
@@ -108,21 +109,25 @@ trait DistageTests {
     }
   }
 
-  protected def ctx(roots: Set[DIKey])(f: (Locator, RoleStarter) => Unit): Unit = {
+  /** Synchronization over this section needed for parallel tests to avoid race over the resourceCollection instances **/
+  private def createContextLocator(roots: Set[DIKey]): Locator = SynchronizedObject.synchronized {
     val injector = makeInjector(roots)
     val primaryModule = makeBindings
     val finalModule = refineBindings(roots, primaryModule)
     val plan = makePlan(injector, finalModule)
     val finalPlan = refinePlan(injector, plan)
-
     val context = try {
       makeContext(injector, finalPlan)
     } catch {
       case t: Throwable =>
         provisionExceptionHandler(t)
     }
-
     resourceCollection.processContext(context)
+    context
+  }
+
+  protected def ctx(roots: Set[DIKey])(f: (Locator, RoleStarter) => Unit): Unit = {
+    val context = createContextLocator(roots)
 
     val logger = context.find[IzLogger].getOrElse(IzLogger.NullLogger)
     val componentsLifecycleManager = new TestComponentsLifecycleManager(
@@ -135,16 +140,14 @@ trait DistageTests {
       , context.find[Set[AutoCloseable]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
       , context.find[Set[ExecutorService]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
       , context.find[Set[IntegrationComponent]].getOrElse(Set.empty)
-      , logger
       , componentsLifecycleManager
+      , logger
     )
 
-    synchronized {
-      f(context, roleStarter)
-    }
+    f(context, roleStarter)
   }
 
-  protected def startTestResources(context: Locator, roleStarter: RoleStarter): Unit = synchronized {
+  protected def startTestResources(context: Locator, roleStarter: RoleStarter): Unit = {
     context.discard()
 
     try {
@@ -186,10 +189,10 @@ trait DistageTests {
                                 , closeables: Set[AutoCloseable]
                                 , executors: Set[ExecutorService]
                                 , integrations: Set[IntegrationComponent]
-                                , logger: IzLogger
                                 , componentsLifecycleManager: ComponentsLifecycleManager
+                                , logger: IzLogger
                                ): RoleStarter = {
-    new RoleStarterImpl(services, closeables, executors, integrations, logger, componentsLifecycleManager)
+    new RoleStarterImpl(services, closeables, executors, integrations, componentsLifecycleManager, logger)
   }
 
   protected def makeLogRouter(config: Option[AppConfig]): LogRouter = {
@@ -272,7 +275,8 @@ trait DistageTests {
 
 object DistageTests {
 
-  class TestkitException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull)
+  private object SynchronizedObject
 
+  class TestkitException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull)
 
 }

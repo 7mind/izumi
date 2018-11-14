@@ -28,8 +28,8 @@ class TestkitMemoizationTest extends DistagePluginSpec {
       ctx: Ctx =>
         assert(r.get().get() == ctx)
         assert(ctx.initCounter.startedRoleComponents.size == 3)
-        assert(MemoizingResourceCollection.memoizedInstances.size() == 7)
-        assert(MemoizingResourceCollection.memoizedInstances.values().contains(ctx))
+        assert(MemoizingDistageResourceCollection.memoizedInstances.size() == 7)
+        assert(MemoizingDistageResourceCollection.memoizedInstances.values().contains(ctx))
         assert(ctx.initCounter.closedCloseables.isEmpty)
     }
 
@@ -37,13 +37,13 @@ class TestkitMemoizationTest extends DistagePluginSpec {
       ctx: Ctx =>
         assert(r.get().get() == ctx)
         assert(ctx.initCounter.startedRoleComponents.size == 3)
-        assert(MemoizingResourceCollection.memoizedInstances.size() == 7)
-        assert(MemoizingResourceCollection.memoizedInstances.values().contains(ctx))
+        assert(MemoizingDistageResourceCollection.memoizedInstances.size() == 7)
+        assert(MemoizingDistageResourceCollection.memoizedInstances.values().contains(ctx))
         assert(ctx.initCounter.closedCloseables.isEmpty)
     }
   }
 
-  override protected val resourceCollection: ResourceCollection = new MemoizingResourceCollection {
+  override protected val resourceCollection: DistageResourceCollection = new MemoizingDistageResourceCollection {
     override def memoize(ref: IdentifiedRef): Boolean = {
       if (ref.key == DIKey.get[Ctx]) {
         r.set(new WeakReference(ref.value.asInstanceOf[Ctx]))

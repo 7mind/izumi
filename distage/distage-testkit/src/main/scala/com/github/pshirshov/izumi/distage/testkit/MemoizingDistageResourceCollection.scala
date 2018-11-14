@@ -20,9 +20,9 @@ import scala.util.{Failure, Try}
   * Allows you to remember instances produced during your tests by a predicate
   * then reuse these instances in other tests within the same classloader.
   */
-abstract class MemoizingResourceCollection extends ResourceCollection {
+abstract class MemoizingDistageResourceCollection extends DistageResourceCollection {
 
-  import MemoizingResourceCollection._
+  import MemoizingDistageResourceCollection._
 
   init() // this way we would start shutdown hook only in case we use memoizer
 
@@ -30,7 +30,7 @@ abstract class MemoizingResourceCollection extends ResourceCollection {
     memoizedInstances.containsValue(resource)
   }
 
-  override def transformPlanElement(op: ExecutableOp): ExecutableOp = {
+  override def transformPlanElement(op: ExecutableOp): ExecutableOp = synchronized {
     Option(memoizedInstances.get(op.target)) match {
       case Some(value) =>
         ExecutableOp.WiringOp.ReferenceInstance(op.target, Wiring.UnaryWiring.Instance(op.target.tpe, value), op.origin)
@@ -51,7 +51,7 @@ abstract class MemoizingResourceCollection extends ResourceCollection {
   def memoize(ref: IdentifiedRef): Boolean
 }
 
-object MemoizingResourceCollection {
+object MemoizingDistageResourceCollection {
   /**
     * All the memoized instances available in current classloader.
     *
@@ -61,20 +61,20 @@ object MemoizingResourceCollection {
 
   private val initialized = new AtomicBoolean(false)
 
-  private def getCloseables: Set[AutoCloseable] = {
+  private def getCloseables: List[AutoCloseable] = {
     memoizedInstances.values().asScala.collect {
       case ac: AutoCloseable => ac
-    }.toSet
+    }.toList.reverse
   }
 
-  private def getExecutors: Set[ExecutorService] = {
+  private def getExecutors: List[ExecutorService] = {
     memoizedInstances.values().asScala.collect {
       case ec: ExecutorService => ec
-    }.toSet
+    }.toList.reverse
   }
 
   private def shutdownExecutors(): Unit = {
-    val toClose = getExecutors.toList.reverse
+    val toClose = getExecutors
       .filterNot(es => es.isShutdown || es.isTerminated)
 
     toClose.foreach { es =>
@@ -87,10 +87,9 @@ object MemoizingResourceCollection {
 
   private def shutdownCloseables(ignore: Set[RoleComponent]): Unit = {
     val closeables = getCloseables.filter {
-      case rc: RoleComponent if ignore.contains(rc) =>
-        false
+      case rc: RoleComponent if ignore.contains(rc) => false
       case _ => true
-    }.toList.reverse
+    }
     closeables.foreach(_.close())
   }
 
@@ -107,7 +106,7 @@ object MemoizingResourceCollection {
     stopped.map(_._1).toSet
   }
 
-  private def shutdownHook = new Thread(() => {
+  private val shutdownHook = new Thread(() => {
     val ignore = shutdownComponents()
     shutdownCloseables(ignore)
     shutdownExecutors()

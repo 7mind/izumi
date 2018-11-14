@@ -19,8 +19,8 @@ class RoleStarterImpl
   closeables: Set[AutoCloseable],
   executors: Set[ExecutorService],
   integrations: Set[IntegrationComponent],
-  logger: IzLogger,
-  lifecycleManager: ComponentsLifecycleManager
+  lifecycleManager: ComponentsLifecycleManager,
+  logger: IzLogger
 ) extends RoleStarter {
 
   private val tasksCount = services.count(_.isInstanceOf[RoleTask])

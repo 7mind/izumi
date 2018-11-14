@@ -19,17 +19,18 @@ class ComponentsLifecycleManagerImpl(
   override val componentsNumber: Int = components.size
 
   override def startComponents(): Unit = {
-    components.foreach { service =>
-      logger.info(s"Starting component $service...")
-      started.push(ComponentLifecycle.Starting(service))
-      service.start()
-      started.pop().discard()
+    components.foreach {
+      service =>
+        logger.info(s"Starting component $service...")
+        started.push(ComponentLifecycle.Starting(service))
+        service.start()
+        started.pop().discard()
+        started.push(ComponentLifecycle.Started(service))
     }
   }
 
   override def stopComponents(): Set[RoleComponent] = {
     val toStop = started.toList
-
     logger.info(s"Going to stop ${components.size -> "count" -> null} ${toStop.niceList() -> "components"}")
 
     val (stopped, failed) = toStop

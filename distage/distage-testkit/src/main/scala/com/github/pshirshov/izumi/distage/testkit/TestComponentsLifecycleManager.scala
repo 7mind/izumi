@@ -16,7 +16,7 @@ import scala.util.{Failure, Try}
 class TestComponentsLifecycleManager(
                                       components: Set[RoleComponent],
                                       logger: IzLogger,
-                                      resourceCollection: ResourceCollection
+                                      resourceCollection: DistageResourceCollection
                                     ) extends ComponentsLifecycleManager {
   private val started = new ConcurrentLinkedDeque[ComponentLifecycle]()
 
@@ -49,7 +49,6 @@ class TestComponentsLifecycleManager(
 
   override def stopComponents(): Set[RoleComponent] = {
     val toStop = started.asScala.toList
-
     logger.info(s"Going to stop ${components.size -> "count" -> null} ${toStop.niceList() -> "components"}")
 
     val (stopped, failed) = toStop
@@ -62,12 +61,14 @@ class TestComponentsLifecycleManager(
       .partition(_._2.isSuccess)
 
     logger.info(s"Service shutdown: ${stopped.size -> "stopped"} ; ${failed.size -> "failed to stop"}")
-
     stopped.map(_._1).toSet
   }
 }
 
 object TestComponentsLifecycleManager {
+  /**
+    * Contains all lifecycle states of memoized [[com.github.pshirshov.izumi.distage.roles.roles.RoleComponent]]
+    */
   val memoizedComponentsLifecycle = new ConcurrentLinkedDeque[ComponentLifecycle]()
 
   private def isMemoizedComponentStarted(component: RoleComponent) = {
