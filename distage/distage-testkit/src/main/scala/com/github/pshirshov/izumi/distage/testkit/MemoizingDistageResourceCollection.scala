@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit
 
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{ConcurrentHashMap, ExecutorService, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, ExecutorService, TimeUnit}
 
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
@@ -59,6 +59,11 @@ object MemoizingDistageResourceCollection {
     */
   val memoizedInstances = new ConcurrentHashMap[DIKey, Any]()
 
+  /**
+    * Contains all lifecycle states of memoized [[com.github.pshirshov.izumi.distage.roles.roles.RoleComponent]]
+    */
+  val memoizedComponentsLifecycle = new ConcurrentLinkedDeque[ComponentLifecycle]()
+
   private val initialized = new AtomicBoolean(false)
 
   private def getCloseables: List[AutoCloseable] = {
@@ -94,7 +99,7 @@ object MemoizingDistageResourceCollection {
   }
 
   private def shutdownComponents(): Set[RoleComponent] = {
-    val toStop = TestComponentsLifecycleManager.memoizedComponentsLifecycle.asScala.toList.reverse
+    val toStop = memoizedComponentsLifecycle.asScala.toList.reverse
     val (stopped, _) = toStop
       .map {
         case ComponentLifecycle.Starting(c) =>
