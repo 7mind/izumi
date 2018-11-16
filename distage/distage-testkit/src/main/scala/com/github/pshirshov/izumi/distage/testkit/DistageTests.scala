@@ -39,7 +39,7 @@ trait DistageTests {
     di(providerMagnet)
   }
 
-  protected def di(f: ProviderMagnet[Any]): Unit = synchronized {
+  protected def di(f: ProviderMagnet[Any]): Unit = {
     ctx(f.get.diKeys.toSet ++ suiteRoots) {
       (context, roleStarter) =>
         try {
