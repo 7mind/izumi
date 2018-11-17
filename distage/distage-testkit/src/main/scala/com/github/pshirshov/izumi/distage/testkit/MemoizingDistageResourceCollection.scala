@@ -10,6 +10,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.roles.launcher.ComponentLifecycle
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.LifecycleException
 import com.github.pshirshov.izumi.distage.roles.roles.RoleComponent
+import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
@@ -25,6 +27,23 @@ abstract class MemoizingDistageResourceCollection extends DistageResourceCollect
   import MemoizingDistageResourceCollection._
 
   init() // this way we would start shutdown hook only in case we use memoizer
+
+  override def startMemoizedComponents(components: Set[RoleComponent])(implicit logger: IzLogger): Unit = {
+    components.foreach{
+      component =>
+        component.synchronized {
+          if (!isMemoizedComponentStarted(component)) {
+            logger.info(s"Starting memoized component $component...")
+            memoizedComponentsLifecycle.push(ComponentLifecycle.Starting(component))
+            component.start()
+            memoizedComponentsLifecycle.pop().discard()
+            memoizedComponentsLifecycle.push(ComponentLifecycle.Started(component))
+          } else {
+            logger.info(s"Memoized component already started $component.")
+          }
+        }
+    }
+  }
 
   override def isMemoized(resource: Any): Boolean = {
     memoizedInstances.containsValue(resource)
@@ -48,6 +67,11 @@ abstract class MemoizingDistageResourceCollection extends DistageResourceCollect
     }
   }
 
+  private def isMemoizedComponentStarted(component: RoleComponent): Boolean = {
+    memoizedComponentsLifecycle.contains(ComponentLifecycle.Started(component)) ||
+      memoizedComponentsLifecycle.contains(ComponentLifecycle.Starting(component))
+  }
+
   def memoize(ref: IdentifiedRef): Boolean
 }
 
@@ -62,7 +86,7 @@ object MemoizingDistageResourceCollection {
   /**
     * Contains all lifecycle states of memoized [[com.github.pshirshov.izumi.distage.roles.roles.RoleComponent]]
     */
-  val memoizedComponentsLifecycle = new ConcurrentLinkedDeque[ComponentLifecycle]()
+  private val memoizedComponentsLifecycle = new ConcurrentLinkedDeque[ComponentLifecycle]()
 
   private val initialized = new AtomicBoolean(false)
 
