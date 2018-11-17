@@ -46,6 +46,34 @@ trait Locator {
   def get[T: Tag](id: String): T
 
   protected[distage] def lookup[T: Tag](key: DIKey): Option[TypedRef[T]]
+
+  /**
+    * Run function `f` filling all the arguments from locator contents.
+    *
+    * Works similarly to provider bindings.
+    *
+    * @see [[ProviderMagnet]]
+    */
+  final def run[T](f: ProviderMagnet[T]): T = {
+    val fn = f.get
+    fn.fun(fn.diKeys.map {
+      key =>
+        lookupInstanceOrThrow[Any](key)
+    }).asInstanceOf[T]
+  }
+
+  final def runOption[T](f: ProviderMagnet[T]): Option[T] = {
+    val fn = f.get
+    val args: Option[Queue[Any]] = fn.diKeys.foldLeft(Option(Queue.empty[Any])) {
+      (maybeQueue, key) =>
+        maybeQueue.flatMap {
+          q =>
+            lookupInstance[Any](key)
+              .map(q :+ _)
+        }
+    }
+    args.map(fn.fun(_).asInstanceOf[T])
+  }
 }
 
 object Locator {
@@ -65,36 +93,6 @@ object Locator {
   class LocatorRef() {
     protected[distage] val ref: AtomicReference[Locator] = new AtomicReference[Locator]()
     def get: Locator = ref.get()
-  }
-
-  implicit final class LocatorRun(private val locator: Locator) extends AnyVal {
-    /**
-      * Run function `f` filling all the arguments from locator contents.
-      *
-      * Works similarly to provider bindings.
-      *
-      * @see [[ProviderMagnet]]
-      */
-    def run[T](f: ProviderMagnet[T]): T = {
-      val fn = f.get
-      fn.fun(fn.diKeys.map {
-        key =>
-          locator.lookupInstanceOrThrow[Any](key)
-      }).asInstanceOf[T]
-    }
-
-    def runOption[T](f: ProviderMagnet[T]): Option[T] = {
-      val fn = f.get
-      val args: Option[Queue[Any]] = fn.diKeys.foldLeft(Option(Queue.empty[Any])) {
-        (maybeQueue, key) =>
-          maybeQueue.flatMap {
-            q =>
-              locator.lookupInstance[Any](key)
-                .map(q :+ _)
-          }
-      }
-      args.map(fn.fun(_).asInstanceOf[T])
-    }
   }
 
 }
