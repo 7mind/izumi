@@ -15,8 +15,9 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
-import com.github.pshirshov.izumi.distage.roles.roles.{IntegrationComponent, RoleComponent, RoleService, RoleStarter}
+import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.distage.testkit
+import com.github.pshirshov.izumi.distage.testkit.DistageTests.SynchronizedObject
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
@@ -108,30 +109,40 @@ trait DistageTests {
     }
   }
 
-  protected def ctx(roots: Set[DIKey])(f: (Locator, RoleStarter) => Unit): Unit = {
+  /** Synchronization over this section needed for parallel tests to avoid race over the resourceCollection instances **/
+  private def createContextLocator(roots: Set[DIKey]): Locator = SynchronizedObject.synchronized {
     val injector = makeInjector(roots)
     val primaryModule = makeBindings
     val finalModule = refineBindings(roots, primaryModule)
     val plan = makePlan(injector, finalModule)
     val finalPlan = refinePlan(injector, plan)
-
     val context = try {
       makeContext(injector, finalPlan)
     } catch {
       case t: Throwable =>
         provisionExceptionHandler(t)
     }
+    resourceCollection.processContext(context)
+    context
+  }
 
+  protected def ctx(roots: Set[DIKey])(f: (Locator, RoleStarter) => Unit): Unit = {
+    val context = createContextLocator(roots)
+
+    val logger = context.find[IzLogger].getOrElse(IzLogger.NullLogger)
+    val componentsLifecycleManager = new TestComponentsLifecycleManager(
+      context.find[Set[RoleComponent]].getOrElse(Set.empty),
+      logger,
+      resourceCollection
+    )
     val roleStarter = makeRoleStarter(
       context.find[Set[RoleService]].getOrElse(Set.empty)
-      , context.find[Set[RoleComponent]].getOrElse(Set.empty)
-      , context.find[Set[AutoCloseable]].getOrElse(Set.empty)
-      , context.find[Set[ExecutorService]].getOrElse(Set.empty)
+      , context.find[Set[AutoCloseable]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
+      , context.find[Set[ExecutorService]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
       , context.find[Set[IntegrationComponent]].getOrElse(Set.empty)
-      , context.find[IzLogger].getOrElse(IzLogger.NullLogger)
+      , componentsLifecycleManager
+      , logger
     )
-
-    resourceCollection.processContext(context)
 
     f(context, roleStarter)
   }
@@ -175,13 +186,13 @@ trait DistageTests {
   }
 
   protected def makeRoleStarter(services: Set[RoleService]
-                                , components: Set[RoleComponent]
                                 , closeables: Set[AutoCloseable]
                                 , executors: Set[ExecutorService]
                                 , integrations: Set[IntegrationComponent]
+                                , componentsLifecycleManager: ComponentsLifecycleManager
                                 , logger: IzLogger
                                ): RoleStarter = {
-    new RoleStarterImpl(services, components, closeables, executors, integrations, logger)
+    new RoleStarterImpl(services, closeables, executors, integrations, componentsLifecycleManager, logger)
   }
 
   protected def makeLogRouter(config: Option[AppConfig]): LogRouter = {
@@ -250,7 +261,7 @@ trait DistageTests {
     }
   }
 
-  protected def resourceConfig(name: String): AppConfig ={
+  protected def resourceConfig(name: String): AppConfig = {
     val resource = ConfigFactory.parseResources(name)
     if (resource.isEmpty) {
       throw new testkit.DistageTests.TestkitException(s"Can't parse config resource $name")
@@ -264,7 +275,8 @@ trait DistageTests {
 
 object DistageTests {
 
-  class TestkitException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull)
+  private object SynchronizedObject
 
+  class TestkitException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull)
 
 }

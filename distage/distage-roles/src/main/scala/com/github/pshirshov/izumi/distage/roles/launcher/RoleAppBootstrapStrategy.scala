@@ -190,6 +190,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
     val baseMod = new ModuleDef {
       make[CustomContext].from(CustomContext.empty)
       make[IzLogger]
+      make[ComponentsLifecycleManager].from[ComponentsLifecycleManagerImpl]
       make[RoleStarter].from[RoleStarterImpl]
     }
     Seq(baseMod overridenBy addOverrides)
