@@ -16,21 +16,20 @@ import scala.util.control.NonFatal
 class RoleStarterImpl
 (
   services: Set[RoleService],
-  components: Set[RoleComponent],
   closeables: Set[AutoCloseable],
   executors: Set[ExecutorService],
   integrations: Set[IntegrationComponent],
-  logger: IzLogger,
+  lifecycleManager: ComponentsLifecycleManager,
+  logger: IzLogger
 ) extends RoleStarter {
 
   private val tasksCount = services.count(_.isInstanceOf[RoleTask])
-  private val componentsCount = components.size
+  private val componentsCount = lifecycleManager.componentsNumber
   private val servicesCount = services.size
   private val integrationsCount = integrations.size
 
   private val state = new AtomicReference[StarterState](StarterState.NotYetStarted)
   private val latch = new CountDownLatch(1)
-  private val lifecycleManager = new ComponentsLifecycleManager(components, logger)
 
   private val shutdownHook = new Thread(() => {
     releaseThenStop()
