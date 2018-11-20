@@ -28,7 +28,8 @@ abstract class MemoizingDistageResourceCollection extends DistageResourceCollect
 
   init() // this way we would start shutdown hook only in case we use memoizer
 
-  override def startMemoizedComponents(components: Set[RoleComponent])(implicit logger: IzLogger): Unit = {
+  // synchronization needed to avoid race between memoized components start
+  override def startMemoizedComponents(components: Set[RoleComponent])(implicit logger: IzLogger): Unit = memoizedComponentsLifecycle.synchronized {
     components.foreach{
       component =>
         component.synchronized {
