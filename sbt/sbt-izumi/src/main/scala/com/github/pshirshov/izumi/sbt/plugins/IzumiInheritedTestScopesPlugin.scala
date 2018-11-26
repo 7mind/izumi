@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.sbt.plugins
 
-import com.github.pshirshov.izumi.sbt.plugins.IzumiInheritedTestScopesPlugin.ProjectReferenceEx
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.syntax
 import sbt.{AutoPlugin, ClasspathDep, Project, ProjectReference}
@@ -63,6 +62,9 @@ object IzumiInheritedTestScopesPlugin extends AutoPlugin {
 
           case DefaultProjectRef(ref) =>
             (ref: ProjectReference): ClasspathDep[ProjectReference]
+
+          case o =>
+            throw new IllegalArgumentException(s"non-CrossProject $project cannot depend on CrossProject $o")
         }
 
         logger.debug(s""" * ${project.id} <-- ${refinedDeps.map(d =>  s"[ ${d.project} ${d.configuration.getOrElse("_")} ]").mkString(", ")}""")

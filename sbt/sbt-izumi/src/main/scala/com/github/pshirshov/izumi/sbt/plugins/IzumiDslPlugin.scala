@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.sbt.definitions._
 import sbt.internal.util.ConsoleLogger
 import sbt.io.syntax.File
 import sbt.{AutoPlugin, Def, ExtendedProjectMacro, Plugins, Project, ProjectReference, settingKey}
-import sbtcrossproject.{CrossProject, CrossType, JVMPlatform, Platform}
+import sbtcrossproject.{CrossProject, CrossType, Platform}
 
 import scala.collection.mutable
 import scala.language.experimental.macros
