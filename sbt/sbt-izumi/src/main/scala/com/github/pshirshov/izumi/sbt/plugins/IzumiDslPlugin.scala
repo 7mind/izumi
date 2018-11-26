@@ -85,9 +85,9 @@ object IzumiDslPlugin extends AutoPlugin {
                 val error = s"The following projects are loaded but not aggregated by `${project.id}` project:\n${notAggregated.mkString("\n")}"
                 logger.warn(error)
 
-//                if (Keys.failOnDanglingProject.value) {
-//                  throw new IllegalStateException(error)
-//                }
+                if (Keys.failOnDanglingProject.value) {
+                  throw new IllegalStateException(error)
+                }
               }
 
 

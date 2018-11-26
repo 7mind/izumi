@@ -5,6 +5,7 @@ import IzumiConvenienceTasksPlugin.Keys._
 import IzumiPublishingPlugin.Keys._
 import ReleaseTransformations._
 import com.github.pshirshov.izumi.sbt.plugins.optional.CoursierFetch
+import org.portablescala.sbtplatformdeps.PlatformDepsGroupID
 
 
 enablePlugins(IzumiGitEnvironmentPlugin)
@@ -86,29 +87,6 @@ val SbtSettings = new SettingsGroup {
   ).flatten
 }
 
-val ShadingSettings = new SettingsGroup {
-  override val id = SettingsGroupId("ShadingSettings")
-
-  override val plugins: Set[Plugins] = Set(ShadingPlugin)
-
-  override val settings: Seq[sbt.Setting[_]] = Seq(
-    inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ IzumiPublishingPlugin.projectSettings) ++
-      _root_.coursier.ShadingPlugin.projectSettings ++
-      Seq(
-        publish := publish.in(Shading).value
-        , publishLocal := publishLocal.in(Shading).value
-        , PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value
-        , PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
-        , shadingNamespace := "izumi.shaded"
-        , shadeNamespaces ++= Set(
-          "fastparse"
-          , "sourcecode"
-          //            , "net.sf.cglib"
-        )
-      )
-  ).flatten
-}
-
 val WithoutBadPlugins = new SettingsGroup {
   override val id = SettingsGroupId("WithoutBadPlugins")
 
@@ -156,9 +134,6 @@ lazy val base = Seq(GlobalSettings, LibSettings, WithoutBadPlugins)
 lazy val inFundamentals = In("fundamentals")
   .settingsSeq(base)
 
-lazy val inShade = In("shade")
-  .settingsSeq(base)
-
 lazy val inSbt = In("sbt")
   .settings(GlobalSettings, WithoutBadPluginsSbt)
   .settings(SbtSettings, SbtScriptedSettings)
@@ -177,8 +152,6 @@ lazy val inIdealinguaBase = In("idealingua")
 lazy val inIdealinguaBaseX = In("idealingua")
   .settings(GlobalSettings, WithFundamentalsX)
 
-lazy val fbasex = base ++ Seq(WithFundamentalsX)
-
 lazy val inIdealingua = inIdealinguaBase
   .settingsSeq(base)
   .settings(WithFundamentals)
@@ -192,16 +165,16 @@ val platforms = Seq(JVMPlatform, JSPlatform)
 // --------------------------------------------
 
 lazy val fundamentalsCollections = inFundamentals.as.cross(platforms)
-lazy val fundamentalsCollectionsJvm = fundamentalsCollections.jvm
-lazy val fundamentalsCollectionsJs = fundamentalsCollections.js
+lazy val fundamentalsCollectionsJvm = fundamentalsCollections.jvm.remember
+lazy val fundamentalsCollectionsJs = fundamentalsCollections.js.remember
 
 lazy val fundamentalsPlatform = inFundamentals.as.cross(platforms)
-lazy val fundamentalsPlatformJvm = fundamentalsPlatform.jvm
-lazy val fundamentalsPlatformJs = fundamentalsPlatform.js
+lazy val fundamentalsPlatformJvm = fundamentalsPlatform.jvm.remember
+lazy val fundamentalsPlatformJs = fundamentalsPlatform.js.remember
 
 lazy val fundamentalsFunctional = inFundamentals.as.cross(platforms)
-lazy val fundamentalsFunctionalJvm = fundamentalsFunctional.jvm
-lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js
+lazy val fundamentalsFunctionalJvm = fundamentalsFunctional.jvm.remember
+lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js.remember
 
 lazy val fundamentalsBio = inFundamentals.as.module
   .depends(fundamentalsFunctionalJvm)
@@ -367,13 +340,17 @@ lazy val logstageSinkSlf4j = inLogStage.as.module
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 //-----------------------------------------------------------------------------
 
-lazy val fastparseShaded = inShade.as.module
-  .settings(libraryDependencies ++= Seq(R.fastparse))
-  .settings(ShadingSettings)
 
 lazy val idealinguaModel = inIdealinguaX.as.cross(platforms)
-lazy val idealinguaModelJvm = idealinguaModel.jvm
-lazy val idealinguaModelJs = idealinguaModel.js
+lazy val idealinguaModelJvm = idealinguaModel.jvm.remember
+lazy val idealinguaModelJs = idealinguaModel.js.remember
+
+lazy val idealinguaCore = inIdealinguaX.as.cross(platforms)
+  .settings(libraryDependencies ++= Seq(R.fastparse.cross(PlatformDepsGroupID.platformDepsCrossVersion.value)))
+  .depends(idealinguaModel)
+
+lazy val idealinguaCoreJvm = idealinguaCore.jvm.remember
+lazy val idealinguaCoreJs = idealinguaCore.js.remember
 
 lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
   .depends(fundamentalsBio)
@@ -381,18 +358,16 @@ lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
 
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScala)
 
-lazy val idealinguaCore = inIdealingua.as.module
+lazy val idealinguaTranspilers = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect % scalaVersion.value, R.scalameta) ++ Seq(R.scala_compiler % scalaVersion.value % "test"))
   .depends(
-    idealinguaModelJvm
-    , fastparseShaded
-    , idealinguaRuntimeRpcScala
-    , idealinguaRuntimeRpcTypescript
-    , idealinguaRuntimeRpcGo
-    , idealinguaRuntimeRpcCSharp
+    idealinguaCoreJvm,
+    idealinguaRuntimeRpcScala,
+    idealinguaRuntimeRpcTypescript,
+    idealinguaRuntimeRpcGo,
+    idealinguaRuntimeRpcCSharp,
   )
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
-  .settings(ShadingSettings)
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcScala, logstageCore, logstageAdapterSlf4j)
@@ -407,7 +382,7 @@ lazy val idealinguaRuntimeRpcGo = inIdealingua.as.module
 
 
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
-  .depends(idealinguaCore)
+  .depends(idealinguaTranspilers)
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
@@ -426,7 +401,7 @@ lazy val sbtIzumiDeps = inSbt.as
 
 lazy val sbtIdealingua = inSbt.as
   .module
-  .depends(idealinguaCore)
+  .depends(idealinguaTranspilers)
 
 lazy val sbtTests = inSbt.as
   .module
@@ -448,10 +423,24 @@ lazy val distage: Seq[ProjectReference] = Seq(
   , distageTestkit
 )
 lazy val idealingua: Seq[ProjectReference] = Seq(
-  idealinguaCore
-  , idealinguaRuntimeRpcHttp4s
-  , idealinguaCompiler
+  idealinguaModelJvm,
+  idealinguaCoreJvm,
+  idealinguaTranspilers,
+  idealinguaRuntimeRpcHttp4s,
+  idealinguaCompiler,
 )
+
+lazy val idealinguaJs: Seq[ProjectReference] = Seq(
+  idealinguaModelJs,
+  idealinguaCoreJs,
+)
+
+lazy val fundamentalsJs: Seq[ProjectReference] = Seq(
+  fundamentalsFunctionalJs,
+  fundamentalsCollectionsJs,
+  fundamentalsPlatformJs,
+)
+
 lazy val izsbt: Seq[ProjectReference] = Seq(
   sbtIzumi, sbtIdealingua, sbtTests
 )
@@ -503,9 +492,16 @@ lazy val microsite = inDoc.as.module
     , unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps)
   )
 
-lazy val allProjects = distage ++ logstage ++ idealingua ++ izsbt ++ Seq(microsite : ProjectReference)
+lazy val allJsProjects = fundamentalsJs ++
+  idealinguaJs
+
+lazy val allProjects = distage ++
+  logstage ++
+  idealingua ++
+  izsbt ++
+  Seq(microsite : ProjectReference)
 
 
 lazy val `izumi-r2` = inRoot.as
   .root
-  .transitiveAggregateSeq(allProjects)
+  .transitiveAggregateSeq(allProjects ++ allJsProjects)
