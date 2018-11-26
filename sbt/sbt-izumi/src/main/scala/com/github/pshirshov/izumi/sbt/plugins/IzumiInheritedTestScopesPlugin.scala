@@ -1,16 +1,25 @@
 package com.github.pshirshov.izumi.sbt.plugins
 
+import com.github.pshirshov.izumi.sbt.plugins.IzumiInheritedTestScopesPlugin.ProjectReferenceEx
 import sbt.internal.util.ConsoleLogger
 import sbt.librarymanagement.syntax
 import sbt.{AutoPlugin, ClasspathDep, Project, ProjectReference}
+import sbtcrossproject._
 
 import scala.language.implicitConversions
 
 object IzumiInheritedTestScopesPlugin extends AutoPlugin {
   sealed trait ProjectReferenceEx
+
   final case class ClasspathRef(ref: ClasspathDep[ProjectReference]) extends ProjectReferenceEx
   final case class ImprovedProjectRef(ref: Project) extends ProjectReferenceEx
   final case class DefaultProjectRef(ref: Project) extends ProjectReferenceEx
+
+  final case class DefaultProjectXRef(ref: CrossProject) extends ProjectReferenceEx
+  final case class ClasspathXRef(ref: CrossClasspathDependency) extends ProjectReferenceEx
+
+  private val logger: ConsoleLogger = ConsoleLogger()
+
 
   //noinspection TypeAnnotation
   object autoImport {
@@ -19,7 +28,7 @@ object IzumiInheritedTestScopesPlugin extends AutoPlugin {
     implicit def toClasspathRef(ref: ClasspathDep[ProjectReference]): ClasspathRef = ClasspathRef(ref)
     implicit def toImprovedProjectRef(ref: Project): ImprovedProjectRef = ImprovedProjectRef(ref)
 
-    private val logger: ConsoleLogger = ConsoleLogger()
+
 
     implicit class ProjectReferenceExtensions(project: Project) {
       private val haveIntegrationTests = project.configurations.contains(syntax.IntegrationTest)
@@ -64,5 +73,33 @@ object IzumiInheritedTestScopesPlugin extends AutoPlugin {
         dependsSeq(deps)
       }
     }
+
+
+    implicit class XProjectReferenceExtensions(project: CrossProject) {
+      def defaultRef: DefaultProjectXRef = DefaultProjectXRef(project)
+
+      private def extractCrossDeps(refs: Seq[ProjectReferenceEx]): Seq[CrossClasspathDependency] = {
+        import sbtcrossproject.CrossPlugin.autoImport._
+
+        refs.collect {
+          case d: ClasspathXRef => d.ref
+          case d: DefaultProjectXRef => d.ref : CrossClasspathDependency
+          case o =>
+            throw new IllegalArgumentException(s"CrossProject $project cannot depend on non CrossProject $o")
+        }
+      }
+
+      def dependsSeq(deps: Seq[ProjectReferenceEx]): CrossProject = {
+        val refinedDeps: Seq[CrossClasspathDependency] = extractCrossDeps(deps)
+        project.dependsOn(refinedDeps: _*)
+      }
+
+      def depends(deps: ProjectReferenceEx*): CrossProject = {
+        dependsSeq(deps)
+      }
+    }
+
   }
+
+
 }

@@ -40,6 +40,9 @@ addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 //https://github.com/aiyanbo/sbt-dependency-updates
 addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.1.12")
 
+// https://github.com/portable-scala/sbt-crossproject
+addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "0.6.0")
+
 // https://github.com/rtimush/sbt-updates
 //addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
 
