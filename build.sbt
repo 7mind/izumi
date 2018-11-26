@@ -38,6 +38,8 @@ releaseProcess := Seq[ReleaseStep](
 publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTarget.value.root)
 
 val GlobalSettings = new DefaultGlobalSettingsGroup {
+  override val id = SettingsGroupId("GlobalSettings")
+
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
       V.scala_212,
@@ -49,12 +51,16 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
 }
 
 val AppSettings = new SettingsGroup {
+  override val id = SettingsGroupId("AppSettings")
+
   override val disabledPlugins: Set[AutoPlugin] = Set(SitePlugin)
   override val plugins = Set(AssemblyPlugin)
 }
 
 
 val LibSettings = new SettingsGroup {
+  override val id = SettingsGroupId("LibSettings")
+
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
       libraryDependencies ++= R.essentials
@@ -64,6 +70,8 @@ val LibSettings = new SettingsGroup {
 }
 
 val SbtSettings = new SettingsGroup {
+  override val id = SettingsGroupId("SbtSettings")
+
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
       target ~= { t => t.toPath.resolve("primary").toFile }
@@ -79,6 +87,8 @@ val SbtSettings = new SettingsGroup {
 }
 
 val ShadingSettings = new SettingsGroup {
+  override val id = SettingsGroupId("ShadingSettings")
+
   override val plugins: Set[Plugins] = Set(ShadingPlugin)
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
@@ -100,17 +110,23 @@ val ShadingSettings = new SettingsGroup {
 }
 
 val WithoutBadPlugins = new SettingsGroup {
+  override val id = SettingsGroupId("WithoutBadPlugins")
+
   override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin, ScriptedPlugin)
 
 }
 
 val WithoutBadPluginsSbt = new SettingsGroup {
+  override val id = SettingsGroupId("WithoutBadPluginsSbt")
+
   override val disabledPlugins: Set[AutoPlugin] = Set(AssemblyPlugin, SitePlugin)
 
 }
 
 
 val SbtScriptedSettings = new SettingsGroup {
+  override val id = SettingsGroupId("SbtScriptedSettings")
+
   override val plugins: Set[Plugins] = Set(ScriptedPlugin)
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
@@ -137,8 +153,6 @@ lazy val inDoc = In("doc")
 
 lazy val base = Seq(GlobalSettings, LibSettings, WithoutBadPlugins)
 
-lazy val fbase = base ++ Seq(WithFundamentals)
-
 lazy val inFundamentals = In("fundamentals")
   .settingsSeq(base)
 
@@ -150,33 +164,65 @@ lazy val inSbt = In("sbt")
   .settings(SbtSettings, SbtScriptedSettings)
 
 lazy val inDiStage = In("distage")
-  .settingsSeq(fbase)
+  .settingsSeq(base)
+  .settings(WithFundamentals)
 
 lazy val inLogStage = In("logstage")
-  .settingsSeq(fbase)
+  .settingsSeq(base)
+  .settings(WithFundamentals)
 
 lazy val inIdealinguaBase = In("idealingua")
   .settings(GlobalSettings, WithFundamentals)
 
+lazy val inIdealinguaBaseX = In("idealingua")
+  .settings(GlobalSettings, WithFundamentalsX)
+
+lazy val fbasex = base ++ Seq(WithFundamentalsX)
+
 lazy val inIdealingua = inIdealinguaBase
-  .settingsSeq(fbase)
+  .settingsSeq(base)
+  .settings(WithFundamentals)
 
+lazy val inIdealinguaX = inIdealinguaBaseX
+  .settingsSeq(base)
+  .settings(WithFundamentalsX)
 
+val platforms = Seq(JVMPlatform, JSPlatform)
 
 // --------------------------------------------
 
-lazy val fundamentalsCollections = inFundamentals.as.module
-lazy val fundamentalsPlatform = inFundamentals.as.module
-lazy val fundamentalsFunctional = inFundamentals.as.module
+lazy val fundamentalsCollections = inFundamentals.as.cross(platforms)
+lazy val fundamentalsCollectionsJvm = fundamentalsCollections.jvm
+lazy val fundamentalsCollectionsJs = fundamentalsCollections.js
+
+lazy val fundamentalsPlatform = inFundamentals.as.cross(platforms)
+lazy val fundamentalsPlatformJvm = fundamentalsPlatform.jvm
+lazy val fundamentalsPlatformJs = fundamentalsPlatform.js
+
+lazy val fundamentalsFunctional = inFundamentals.as.cross(platforms)
+lazy val fundamentalsFunctionalJvm = fundamentalsFunctional.jvm
+lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js
 
 lazy val fundamentalsBio = inFundamentals.as.module
-  .depends(fundamentalsFunctional)
+  .depends(fundamentalsFunctionalJvm)
   .settings(
     libraryDependencies ++= Seq(R.zio_core) ++ R.cats_all
   )
 
 
 lazy val WithFundamentals = new SettingsGroup {
+  override val id = SettingsGroupId("WithFundamentals")
+
+  override def sharedLibs: Seq[ProjectReferenceEx] = Seq(
+    fundamentalsCollectionsJvm
+    , fundamentalsPlatformJvm
+    , fundamentalsFunctionalJvm
+  )
+}
+
+lazy val WithFundamentalsX = new SettingsGroup {
+  override val id = SettingsGroupId("WithFundamentalsX")
+
   override def sharedLibs: Seq[ProjectReferenceEx] = Seq(
     fundamentalsCollections
     , fundamentalsPlatform
@@ -194,7 +240,7 @@ lazy val fundamentalsTypesafeConfig = inFundamentals.as.module
   )
 
 lazy val fundamentalsReflection = inFundamentals.as.module
-  .depends(fundamentalsPlatform)
+  .depends(fundamentalsPlatformJvm)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect % scalaVersion.value
@@ -246,7 +292,7 @@ lazy val distageRoles = inDiStage.as.module
   )
 
 lazy val distageCore = inDiStage.as.module
-  .depends(fundamentalsFunctional, distageModel, distageProxyCglib)
+  .depends(fundamentalsFunctionalJvm, distageModel, distageProxyCglib)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect % scalaVersion.value
@@ -325,8 +371,9 @@ lazy val fastparseShaded = inShade.as.module
   .settings(libraryDependencies ++= Seq(R.fastparse))
   .settings(ShadingSettings)
 
-lazy val idealinguaModel = inIdealingua.as.module
-  .settings()
+lazy val idealinguaModel = inIdealinguaX.as.cross(platforms)
+lazy val idealinguaModelJvm = idealinguaModel.jvm
+lazy val idealinguaModelJs = idealinguaModel.js
 
 lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
   .depends(fundamentalsBio)
@@ -337,7 +384,7 @@ lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntime
 lazy val idealinguaCore = inIdealingua.as.module
   .settings(libraryDependencies ++= Seq(R.scala_reflect % scalaVersion.value, R.scalameta) ++ Seq(R.scala_compiler % scalaVersion.value % "test"))
   .depends(
-    idealinguaModel
+    idealinguaModelJvm
     , fastparseShaded
     , idealinguaRuntimeRpcScala
     , idealinguaRuntimeRpcTypescript

@@ -27,6 +27,7 @@ object IzumiInheritedTestScopesPlugin extends AutoPlugin {
 
     implicit def toClasspathRef(ref: ClasspathDep[ProjectReference]): ClasspathRef = ClasspathRef(ref)
     implicit def toImprovedProjectRef(ref: Project): ImprovedProjectRef = ImprovedProjectRef(ref)
+    implicit def toImprovedProjectXRef(ref: CrossProject): DefaultProjectXRef = DefaultProjectXRef(ref)
 
 
 
@@ -85,13 +86,17 @@ object IzumiInheritedTestScopesPlugin extends AutoPlugin {
           case d: ClasspathXRef => d.ref
           case d: DefaultProjectXRef => d.ref : CrossClasspathDependency
           case o =>
-            throw new IllegalArgumentException(s"CrossProject $project cannot depend on non CrossProject $o")
+            throw new IllegalArgumentException(s"CrossProject $project cannot depend on non-CrossProject $o")
         }
       }
 
       def dependsSeq(deps: Seq[ProjectReferenceEx]): CrossProject = {
         val refinedDeps: Seq[CrossClasspathDependency] = extractCrossDeps(deps)
-        project.dependsOn(refinedDeps: _*)
+        if (deps.isEmpty) { // CrossProject fails on empty list
+          project
+        } else {
+          project.dependsOn(refinedDeps: _*)
+        }
       }
 
       def depends(deps: ProjectReferenceEx*): CrossProject = {
