@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.sbt.definitions._
 import sbt.internal.util.ConsoleLogger
 import sbt.io.syntax.File
 import sbt.{AutoPlugin, Def, ExtendedProjectMacro, Plugins, Project, ProjectReference, settingKey}
+import sbtcrossproject.{CrossProject, CrossType, Platform}
 
 import scala.collection.mutable
 import scala.language.experimental.macros
@@ -27,13 +28,21 @@ object IzumiDslPlugin extends AutoPlugin {
   //noinspection TypeAnnotation
   object autoImport {
 
-    implicit class ProjectExtensions(project: Project) {
-      def remember: Project = {
-        allProjects += project
-        project
+    implicit class ProjectXExtensions(project: CrossProject) {
+      def settingsSeq(groups: Seq[AbstractSettingsGroup]): CrossProject = {
+        groups.distinct.foldLeft(project) {
+          case (acc, g) =>
+            g.applyTo(acc)
+        }
       }
 
-      def settingsSeq(groups: Seq[AbstractSettingsGroup]) = {
+      def settings(groups: AbstractSettingsGroup*): CrossProject = {
+        settingsSeq(groups)
+      }
+    }
+
+    implicit class ProjectExtensions(project: Project) {
+      def settingsSeq(groups: Seq[AbstractSettingsGroup]): Project = {
         groups.distinct.foldLeft(project) {
           case (acc, g) =>
             g.applyTo(acc)
@@ -42,6 +51,11 @@ object IzumiDslPlugin extends AutoPlugin {
 
       def settings(groups: AbstractSettingsGroup*): Project = {
         settingsSeq(groups)
+      }
+
+      def remember: Project = {
+        allProjects += project
+        project
       }
 
       def transitiveAggregateSeq(refs: Seq[ProjectReference]): Project = {
@@ -108,6 +122,15 @@ object IzumiDslPlugin extends AutoPlugin {
       def module: Project = {
         new ProjectExtensions(moduleProject).settings(settingsGroups.distinct: _*).remember
       }
+
+      def cross(platforms: Seq[Platform]): CrossProject = {
+        val xproj = CrossProject(name, new File(s"$base/$name"))(platforms:_*)
+          .withoutSuffixFor(platforms.head)
+          .crossType(CrossType.Pure)
+
+        new ProjectXExtensions(xproj).settings(settingsGroups.distinct: _*)
+      }
+
     }
 
     class In(val directory: String, val settingsGroups: Seq[AbstractSettingsGroup]) {

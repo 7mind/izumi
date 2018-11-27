@@ -80,12 +80,12 @@ object IzumiDeps {
       , cats_effect
     )
 
+    // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
     val scalameta = "org.scalameta" %% "scalameta" % V.scalameta
 
-    // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
-    val cglib_nodep = "cglib" % "cglib-nodep" % V.cglib_nodep
     // TODO: It would be good to completely get rid of cglib and build our own proxy generator on top of scala-asm
-    val fastparse = "com.lihaoyi" %% "fastparse" % V.fastparse % "shaded"
+    val cglib_nodep = "cglib" % "cglib-nodep" % V.cglib_nodep
+    val fastparse = "com.lihaoyi" %% "fastparse" % V.fastparse
 
     val shapeless = "com.chuusai" %% "shapeless" % V.shapeless
 

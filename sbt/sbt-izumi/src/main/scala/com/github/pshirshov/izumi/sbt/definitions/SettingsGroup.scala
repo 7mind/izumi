@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.sbt.plugins.optional.{IzumiCompilerOptionsPlug
 import sbt.Keys._
 import sbt.librarymanagement.{InclExclRule, ModuleID}
 import sbt.{AutoPlugin, Plugins, Project}
+import sbtcrossproject.CrossProject
 
 trait SettingsGroupId {
   def name: String
@@ -50,6 +51,18 @@ trait AbstractSettingsGroup {
       .settings(settings: _*)
   }
 
+  def applyTo(p: CrossProject): CrossProject = {
+    p
+      .enablePlugins(plugins.toSeq: _*)
+      .disablePlugins(disabledPlugins.toSeq: _*)
+      .dependsSeq(sharedLibs)
+      .settings(
+        libraryDependencies ++= sharedDeps.toSeq
+        , excludeDependencies ++= exclusions.toSeq
+      )
+      .settings(settings: _*)
+  }
+
   def toImpl: SettingsGroupImpl = SettingsGroupImpl(
     id = id
     , settings = settings
@@ -81,5 +94,5 @@ trait SettingsGroup extends AbstractSettingsGroup {
 }
 
 trait DefaultGlobalSettingsGroup extends SettingsGroup {
-  override def plugins: Set[Plugins] =  Set(IzumiCompilerOptionsPlugin, IzumiPublishingPlugin, IzumiExposedTestScopesPlugin)
+  override def plugins: Set[Plugins] = Set(IzumiCompilerOptionsPlugin, IzumiPublishingPlugin, IzumiExposedTestScopesPlugin)
 }
