@@ -5,13 +5,14 @@ import java.nio.file.Path
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
+import com.github.pshirshov.izumi.idealingua.il.loader.model.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler._
 
-class IDLCompiler(toCompile: Seq[Typespace]) {
+class IDLCompiler(toCompile: Seq[LoadedDomain.Success]) {
   def compile(relTarget: Path, options: UntypedCompilerOptions): IDLCompiler.Result = {
     val target = relTarget.toAbsolutePath
     IzFiles.recreateDir(target)
@@ -30,8 +31,8 @@ class IDLCompiler(toCompile: Seq[Typespace]) {
     }
 
     val result = toCompile.map {
-      typespace =>
-        typespace.domain.id -> invokeCompiler(target, withRt, typespace)
+      loaded =>
+        loaded.typespace.domain.id -> invokeCompiler(target, withRt, loaded.typespace)
     }
 
     val success = result.collect({ case (id, success: IDLSuccess) => id -> success })

@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
-import com.github.pshirshov.izumi.idealingua.il.loader.model.LoadedModel
+import com.github.pshirshov.izumi.idealingua.il.loader.model.{FSPath, LoadedModel}
 import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
@@ -18,17 +18,17 @@ protected[loader] class LocalDomainProcessor(
                                               root: Path
                                               , classpath: Seq[File]
                                               , domain: ParsedDomain
-                                              , domains: Map[DomainId, ParsedDomain]
-                                              , models: Map[Path, ParsedModel]
+                                              , domains: ParsedDomains
+                                              , models: ParsedModels
+                                              , parser: ModelParser
+                                              , domainExt: String
                                               , parsed: mutable.HashMap[DomainId, LocalDomainProcessor] = mutable.HashMap.empty
                                             ) {
 
-  import LocalModelLoader._
-
 
   def postprocess(): DomainDefinitionParsed = {
-    val domainResolver: (DomainId) => Option[ParsedDomain] = toDomainResolver(domains.get)
-    val modelResolver: (Path) => Option[ParsedModel] = toModelResolver(models.get)
+    val domainResolver: (DomainId) => Option[ParsedDomain] = toDomainResolver
+    val modelResolver: (Path) => Option[ParsedModel] = toModelResolver
 
     val processors = domain
       .imports
@@ -37,7 +37,7 @@ protected[loader] class LocalDomainProcessor(
           p.id -> parsed.getOrElseUpdate(p.id, {
             domainResolver(p.id) match {
               case Some(d) =>
-                new LocalDomainProcessor(root, classpath, d, domains, models, parsed)
+                new LocalDomainProcessor(root, classpath, d, domains, models, parser, domainExt, parsed)
 
               case None =>
                 throw new IDLException(s"Can't find reference $p in classpath nor filesystem while operating within $root")
@@ -77,37 +77,65 @@ protected[loader] class LocalDomainProcessor(
   }
 
   // TODO: decopypaste?
-  private def toModelResolver(primary: Path => Option[ParsedModel])(incPath: Path): Option[ParsedModel] = {
-    primary(incPath)
+  private def toModelResolver(incPath: Path): Option[ParsedModel] = {
+    val fpath = FSPath(incPath)
+    models.results.find(_.path == fpath)
       .orElse {
-        val fallback = resolveFromCP(incPath, Some("idealingua"))
-          .orElse(resolveFromCP(incPath, None))
-          .orElse(resolveFromJavaCP(incPath))
-          .orElse(resolveFromJars(incPath))
-
-        fallback.map {
-          src =>
-            parseModels(Map(incPath -> src))(incPath)
-        }
+        searchClasspath(incPath)
+          .flatMap {
+            src =>
+              val parsed = parser.parseModels(Map(FSPath(incPath) -> src))
+              parsed.results.find(_.path == fpath)
+          }
       }
+      .map(get)
+
   }
 
-  private def toDomainResolver(primary: DomainId => Option[ParsedDomain])(incPath: DomainId): Option[ParsedDomain] = {
+  def get(r: ModelParsingResult): ParsedModel = {
+    r match {
+      case ModelParsingResult.Success(_, model) =>
+        model
+      case ModelParsingResult.Failure(path, message) =>
+        ???
+    }
+  }
+
+  def get(r: DomainParsingResult): ParsedDomain = {
+    r match {
+      case DomainParsingResult.Success(_, d) =>
+        d
+      case DomainParsingResult.Failure(path, message) =>
+        ???
+    }
+  }
+
+  private def searchClasspath(incPath: Path) = {
+    val fallback = resolveFromCP(incPath, Some("idealingua"))
+      .orElse(resolveFromCP(incPath, None))
+      .orElse(resolveFromJavaCP(incPath))
+      .orElse(resolveFromJars(incPath))
+    fallback
+  }
+
+  private def toPath(id: DomainId): Path = {
+    val p = Paths.get(id.toPackage.mkString("/"))
+    p.getParent.resolve(s"${p.getFileName.toString}$domainExt")
+  }
+
+
+  private def toDomainResolver(incPath: DomainId): Option[ParsedDomain] = {
     val asPath = toPath(incPath)
+    val fpath = FSPath(asPath)
 
-    primary(incPath)
+    domains.results.find(_.path == fpath)
       .orElse {
-        val fallback = resolveFromCP(asPath, Some("idealingua"))
-          .orElse(resolveFromCP(asPath, None))
-          .orElse(resolveFromJars(asPath))
-          .orElse(resolveFromJavaCP(asPath))
-
-        fallback.map {
+        searchClasspath(asPath).flatMap {
           src =>
-            val parsed = parseDomains(Map(asPath -> src))
-            parsed(incPath)
+            val parsed = parser.parseDomains(Map(fpath -> src))
+            parsed.results.find(_.path == asPath)
         }
-      }
+      }.map(get)
   }
 
   private def resolveFromCP(incPath: Path, prefix: Option[String]): Option[String] = {

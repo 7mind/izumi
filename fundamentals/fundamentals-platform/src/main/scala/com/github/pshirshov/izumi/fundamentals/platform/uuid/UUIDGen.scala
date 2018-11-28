@@ -25,8 +25,6 @@ import java.util.{Collection, Collections, Enumeration, HashSet, Random, Set, UU
 
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen._
 
-//remove if not needed
-import scala.collection.JavaConversions._
 
 object UUIDGen {
 
@@ -79,9 +77,9 @@ object UUIDGen {
     * parameter is unique across calls (otherwise the returned UUID won't be unique accross calls).
     *
     * @param whenInMicros a unix time in microseconds.
-    * @return a new UUID {@code id} such that {@code microsTimestamp(id) == whenInMicros}. Please not that
-    * multiple calls to this method with the same value of {@code whenInMicros} will return the <b>same</b>
-    * UUID.
+    * @return a new UUID { @code id} such that { @code microsTimestamp(id) == whenInMicros}. Please not that
+    *                            multiple calls to this method with the same value of { @code whenInMicros} will return the <b>same</b>
+    *                            UUID.
     */
   def getTimeUUIDFromMicros(whenInMicros: Long): UUID = {
     val whenInMillis: Long = whenInMicros / 1000
@@ -98,8 +96,8 @@ object UUIDGen {
     * through randomization.
     *
     * @param whenInMicros a unix time in microseconds.
-    * @return a new UUID {@code id} such that {@code microsTimestamp(id) == whenInMicros}. The UUID returned
-    * by different calls will be unique even if {@code whenInMicros} is not.
+    * @return a new UUID { @code id} such that { @code microsTimestamp(id) == whenInMicros}. The UUID returned
+    *                            by different calls will be unique even if { @code whenInMicros} is not.
     */
   def getRandomTimeUUIDFromMicros(whenInMicros: Long): UUID = {
     val whenInMillis: Long = whenInMicros / 1000
@@ -115,13 +113,13 @@ object UUIDGen {
     new UUID(createTime(fromUnixTimestamp(when, nanos)), clockSeqAndNode)
 
   /**
-  creates a type 1 uuid from raw bytes.
+    * creates a type 1 uuid from raw bytes.
     */
   def getUUID(raw: ByteBuffer): UUID =
     new UUID(raw.getLong(raw.position()), raw.getLong(raw.position() + 8))
 
   /**
-  decomposes a uuid into raw bytes.
+    * decomposes a uuid into raw bytes.
     */
   def decompose(uuid: UUID): Array[Byte] = {
     val most: Long = uuid.getMostSignificantBits
@@ -163,6 +161,7 @@ object UUIDGen {
     val uuidTstamp: Long = fromUnixTimestamp(timestamp + 1) - 1
     new UUID(createTime(uuidTstamp), MAX_CLOCK_SEQ_AND_NODE)
   }
+
   // unix timestamp are milliseconds precision, uuid timestamp are 100's
   // nanoseconds precision. If we ask for the biggest uuid have unix
   // timestamp 1ms, then we should not extend 100's nanoseconds
@@ -311,12 +310,14 @@ object UUIDGen {
     // bit (least significant bit of the first octet of the node ID) must be 1.
     node | 0x0000010000000000L
   }
+
   // Since we don't use the mac address, the spec says that multicast
   // Since we don't use the mac address, the spec says that multicast
 
   private def doHash(data: Collection[InetAddress]): Array[Byte] = {
+    import scala.collection.JavaConverters._
     val messageDigest: MessageDigest = MessageDigest.getInstance("MD5")
-    for (addr <- data) messageDigest.update(addr.getAddress)
+    for (addr <- data.asScala) messageDigest.update(addr.getAddress)
     messageDigest.digest()
   }
 
@@ -325,7 +326,7 @@ object UUIDGen {
 /**
   * The goods are here: www.ietf.org/rfc/rfc4122.txt.
   */
-class UUIDGen protected () {
+class UUIDGen protected() {
 
   private var lastNanos: Long = _
 
@@ -346,7 +347,7 @@ class UUIDGen protected () {
   }
 
   /**
-  @param when time in milliseconds
+    * @param when time in milliseconds
     */
   private def createTimeUnsafe(when: Long): Long = createTimeUnsafe(when, 0)
 
