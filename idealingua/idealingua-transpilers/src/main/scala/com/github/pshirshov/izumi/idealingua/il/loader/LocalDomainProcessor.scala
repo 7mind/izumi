@@ -26,9 +26,6 @@ protected[loader] class LocalDomainProcessor(
 
 
   def postprocess(): DomainDefinitionParsed = {
-    val domainResolver: (DomainId) => Option[ParsedDomain] = toDomainResolver
-    val modelResolver: (Path) => Option[ParsedModel] = toModelResolver
-
     val processors = domain
       .imports
       .map {
@@ -75,7 +72,7 @@ protected[loader] class LocalDomainProcessor(
     }
   }
 
-  private def toModelResolver(incPath: Path): Option[ParsedModel] = {
+  private def modelResolver(incPath: Path): Option[ParsedModel] = {
     val fpath = FSPath(incPath)
     models.results.find(_.path == fpath)
       .orElse {
@@ -90,7 +87,7 @@ protected[loader] class LocalDomainProcessor(
       .map(get)
   }
 
-  private def toDomainResolver(incPath: DomainId): Option[ParsedDomain] = {
+  private def domainResolver(incPath: DomainId): Option[ParsedDomain] = {
     val asPath = toPath(incPath)
     val fpath = FSPath(asPath)
 
