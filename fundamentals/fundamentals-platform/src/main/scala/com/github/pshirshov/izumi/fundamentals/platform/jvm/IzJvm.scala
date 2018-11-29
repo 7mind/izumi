@@ -63,6 +63,8 @@ trait IzJvm {
   }
 
   def safeClasspath(): String = safeClasspath(baseClassloader)
+
+  def safeClasspathSeq(): Seq[String] = safeClasspathSeq(baseClassloader)
 }
 
 object IzJvm extends IzJvm {

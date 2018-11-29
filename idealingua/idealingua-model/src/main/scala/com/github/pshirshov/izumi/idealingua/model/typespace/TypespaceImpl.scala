@@ -9,13 +9,13 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import scala.collection.mutable
 
 
-class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeResolver {
+case class TypespaceImpl(domain: DomainDefinition) extends Typespace with TypeResolver {
   lazy val types: TypeCollection = new TypeCollection(this)
 
   protected[typespace] lazy val referenced: Map[DomainId, Typespace] = {
     val allReferences = mutable.HashSet.empty[DomainDefinition]
     collectReferenced(domain, allReferences)
-    allReferences.map(d => d.id -> new TypespaceImpl(d)).toMap // 2.13 compat
+    allReferences.map(d => d.id -> TypespaceImpl(d)).toMap // 2.13 compat
   }
 
   private def collectReferenced(d: DomainDefinition, all: mutable.HashSet[DomainDefinition]): Unit = {

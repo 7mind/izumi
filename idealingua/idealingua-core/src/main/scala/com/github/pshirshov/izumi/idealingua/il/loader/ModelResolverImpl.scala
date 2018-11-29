@@ -34,7 +34,7 @@ class ModelResolverImpl(domainExt: String) extends ModelResolver {
 
   private def runTyper(d: CompletelyLoadedDomain): TypespaceImpl = {
     val domain = new IDLTyper(d).perform()
-    val ts = new TypespaceImpl(domain)
+    val ts = TypespaceImpl(domain)
     ts
   }
 }
