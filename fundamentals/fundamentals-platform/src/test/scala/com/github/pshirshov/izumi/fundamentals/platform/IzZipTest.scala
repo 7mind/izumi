@@ -11,7 +11,6 @@ class IzZipTest extends WordSpec {
   "zip tools" should {
     "be able to find files in jars" in {
       val files = IzJvm.safeClasspathSeq().map(p => Paths.get(p).toFile)
-      println(files)
       val maybeObjContent = IzZip.findInZips(files, {
         p =>
           p.toString == Paths.get("/scala/Predef.class").toString
