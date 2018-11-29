@@ -34,15 +34,20 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
       imprt =>
         val imported = findDomain(domains, imprt.id)
           .getOrElse(throw new IDLException(s"${parsed.did}: can't find import ${imprt.id}. Available: ${domains.domains.results.map {
-          case DomainParsingResult.Success(path, _) =>
-            s"$path: OK"
+          case DomainParsingResult.Success(path, domain) =>
+            s"OK: ${domain.did} at $path"
 
           case DomainParsingResult.Failure(path, message) =>
-            s"$path: KO=$message"
+            s"KO: $path, problem: $message"
 
         }.niceList()}"))
 
-        resolveReferences(imported)
+        resolveReferences(imported) match {
+          case Left(value) =>
+            throw new IDLException(s"${parsed.did}: can't resolve import ${imprt.id}, problem: $value")
+
+          case Right(_) =>
+        }
     }
 
     Right(loaded)
@@ -65,9 +70,9 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
       }
       .getOrElse(throw new IDLException(s"$forDomain: can't find inclusion $includePath, inclusion chain: $forDomain->${stack.mkString("->")}. Available: ${domains.models.results.map {
         case ModelParsingResult.Success(path, _) =>
-          s"$path: OK"
+          s"OK: $path"
         case ModelParsingResult.Failure(path, message) =>
-          s"$path: KO=$message"
+          s"KO: $path, problem: $message"
       }.niceList()}"))
   }
 
