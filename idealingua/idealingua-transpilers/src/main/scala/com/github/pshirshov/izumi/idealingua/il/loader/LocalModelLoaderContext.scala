@@ -4,10 +4,7 @@ import java.io.File
 import java.nio.file.Path
 
 
-
-
-
 class LocalModelLoaderContext(src: Path, cp: Seq[File]) extends ModelLoaderContextImpl {
-  val enumerator = new LocalFilesystemEnumerator(src, Set(modelExt, domainExt))
-  val resolver = new LocalModelResolver(src, cp, parser, domainExt)
+  val enumerator = new LocalFilesystemEnumerator(src, cp, Set(modelExt, domainExt))
+  val resolver = new LocalModelResolver(domainExt)
 }

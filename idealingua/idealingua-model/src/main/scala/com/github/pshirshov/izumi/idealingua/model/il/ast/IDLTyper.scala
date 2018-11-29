@@ -13,14 +13,14 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, 
 
 import scala.reflect._
 
-class IDLTyper(defn: DomainDefinitionParsed) {
+class IDLTyper(defn: CompletelyLoadedDomain) {
   def perform(): typed.DomainDefinition = {
     new IDLPostTyper(new IDLPretyper(defn).perform()).perform()
   }
 }
 
 
-class IDLPretyper(defn: DomainDefinitionParsed) {
+class IDLPretyper(defn: CompletelyLoadedDomain) {
   def perform(): DomainDefinitionInterpreted = {
     val types = defn.members.collect {
       case d: ILDef => d.v
