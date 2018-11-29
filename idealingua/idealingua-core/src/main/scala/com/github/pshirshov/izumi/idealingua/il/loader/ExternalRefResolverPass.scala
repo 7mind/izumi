@@ -24,16 +24,25 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
     }
   }
 
-  private def handleSuccess(path: FSPath, parsed: ParsedDomain): Either[Nothing, CompletelyLoadedDomain] = {
+  private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[Nothing, CompletelyLoadedDomain] = {
     val withIncludes = resolveIncludes(parsed)
-    val loaded = new CompletelyLoadedDomainMutable(parsed.did, withIncludes, path, processed, parsed.imports.map(_.id).toSet)
+    val loaded = new CompletelyLoadedDomainMutable(parsed.did, withIncludes, domainPath, processed, parsed.imports.map(_.id).toSet)
 
     processed.update(parsed.did, loaded)
 
     parsed.imports.filterNot(i => processed.contains(i.id)).foreach {
       imprt =>
-        val d = findDomain(domains, toPath(imprt.id))
-        resolveReferences(d.get)
+        val imported = findDomain(domains, imprt.id)
+          .getOrElse(throw new IDLException(s"${parsed.did}: can't find import ${imprt.id}. Available: ${domains.domains.results.map {
+          case DomainParsingResult.Success(path, _) =>
+            s"$path: OK"
+
+          case DomainParsingResult.Failure(path, message) =>
+            s"$path: KO=$message"
+
+        }.niceList()}"))
+
+        resolveReferences(imported)
     }
 
     Right(loaded)
@@ -65,7 +74,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
   private def resolveIncludes(parsed: ParsedDomain): Seq[IL.Val] = {
     val m = parsed.model
     val allIncludes = m.includes
-      .map(i => loadModel(parsed.did, i, Seq.empty))
+      .map(i => loadModel(parsed.did, i, Seq(i)))
       .fold(LoadedModel(parsed.model.definitions))(_ ++ _)
 
     val importOps = parsed.imports.flatMap {
@@ -77,20 +86,22 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
     withIncludes
   }
 
-  private def toPath(id: DomainId): FSPath = {
-    val pkg = id.toPackage
-    FSPath(pkg.init :+ s"${pkg.last}$domainExt")
-  }
-
   private def findModel(forDomain: DomainId, domains: UnresolvedDomains, includePath: String): Option[ModelParsingResult] = {
     val absolute = FSPath(includePath)
-    val relative = FSPath(forDomain.toPackage.init ++ includePath.split("/"))
-    println(s"? $absolute, $relative")
-    domains.models.results.find(f => f.path == absolute || f.path == relative)
+    val prefixed = FSPath("idealingua" +: includePath.split("/"))
+    val relativeToDomain = FSPath(forDomain.toPackage.init ++ includePath.split("/"))
+
+    val candidates = Set(absolute, prefixed, relativeToDomain)
+    domains.models.results.find(f => candidates.contains(f.path))
   }
 
-  private def findDomain(domains: UnresolvedDomains, includePath: FSPath): Option[DomainParsingResult] = {
-    domains.domains.results.find(_.path == includePath)
-  }
+  private def findDomain(domains: UnresolvedDomains, include: DomainId): Option[DomainParsingResult] = {
+    val pkg = include.toPackage
 
+    val candidates = Set(
+      FSPath(pkg.init :+ s"${pkg.last}$domainExt"),
+      FSPath("idealingua" +: pkg.init :+ s"${pkg.last}$domainExt"),
+    )
+    domains.domains.results.find(f => candidates.contains(f.path))
+  }
 }
