@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
+
+import com.github.pshirshov.izumi.idealingua.model.parser
+import com.github.pshirshov.izumi.idealingua.model.parser.{ParsedDomain, ParsedModel}
 import fastparse.all._
 
 
@@ -19,7 +21,7 @@ trait IDLParser {
 
   protected[parser] final val fullDomainDef = P(any ~ DefDomain.decl ~ modelDef).map {
     case (did, imports, defs) =>
-      ParsedDomain(did, imports, defs)
+      parser.ParsedDomain(did, imports, defs)
   }
 
 }

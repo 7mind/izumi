@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.il.loader.model
+package com.github.pshirshov.izumi.idealingua.model.loader
 
 import java.nio.file.Path
 

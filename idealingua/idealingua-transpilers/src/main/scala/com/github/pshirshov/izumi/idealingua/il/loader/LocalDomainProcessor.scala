@@ -3,13 +3,13 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 import java.io.File
 import java.nio.file.{Path, Paths}
 
-import com.github.pshirshov.izumi.idealingua.il.loader.model.{FSPath, LoadedModel}
-import com.github.pshirshov.izumi.idealingua.il.parser.model.{ParsedDomain, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.DomainDefinitionParsed
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILImport
+import com.github.pshirshov.izumi.idealingua.model.loader._
+import com.github.pshirshov.izumi.idealingua.model.parser.{ParsedDomain, ParsedModel}
 
 import scala.collection.mutable
 
@@ -17,15 +17,14 @@ protected[loader] class LocalDomainProcessor(
                                               root: Path
                                               , classpath: Seq[File]
                                               , domain: ParsedDomain
-                                              , domains: ParsedDomains
-                                              , models: ParsedModels
+                                              , unresolved: UnresolvedDomains
                                               , parser: ModelParser
                                               , domainExt: String
                                               , parsed: mutable.HashMap[DomainId, LocalDomainProcessor] = mutable.HashMap.empty
                                             ) {
 
 
-  def postprocess(): DomainDefinitionParsed = {
+  def postprocess(path: FSPath): DomainDefinitionParsed = {
     val processors = domain
       .imports
       .map {
@@ -33,7 +32,7 @@ protected[loader] class LocalDomainProcessor(
           p.id -> parsed.getOrElseUpdate(p.id, {
             domainResolver(p.id) match {
               case Some(d) =>
-                new LocalDomainProcessor(root, classpath, d, domains, models, parser, domainExt, parsed)
+                new LocalDomainProcessor(root, classpath, d, unresolved, parser, domainExt, parsed)
 
               case None =>
                 throw new IDLException(s"Can't find reference $p in classpath nor filesystem while operating within $root")
@@ -42,7 +41,7 @@ protected[loader] class LocalDomainProcessor(
       }
       .toMap
 
-    val imports = processors.mapValues(_.postprocess())
+    val imports = processors.mapValues(_.postprocess(path))
 
     val importOps = domain.imports.flatMap {
       i =>
@@ -53,7 +52,7 @@ protected[loader] class LocalDomainProcessor(
       .map(loadModel(modelResolver, _))
       .fold(LoadedModel(domain.model.definitions))(_ ++ _)
 
-    raw.DomainDefinitionParsed(domain.did, allIncludes.definitions ++ importOps, imports)
+    raw.DomainDefinitionParsed(domain.did, allIncludes.definitions ++ importOps, imports, path)
   }
 
   private def loadModel(modelResolver: Path => Option[ParsedModel], toInclude: String): LoadedModel = {
@@ -74,7 +73,7 @@ protected[loader] class LocalDomainProcessor(
 
   private def modelResolver(incPath: Path): Option[ParsedModel] = {
     val fpath = FSPath(incPath)
-    models.results.find(_.path == fpath)
+    unresolved.models.results.find(_.path == fpath)
       .orElse {
         searchClasspath(incPath)
           .flatMap {
@@ -91,7 +90,7 @@ protected[loader] class LocalDomainProcessor(
     val asPath = toPath(incPath)
     val fpath = FSPath(asPath)
 
-    domains.results.find(_.path == fpath)
+    unresolved.domains.results.find(_.path == fpath)
       .orElse {
         searchClasspath(asPath)
           .flatMap {

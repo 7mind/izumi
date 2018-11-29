@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua
 
-import com.github.pshirshov.izumi.idealingua.il.loader.model.UnresolvedDomains
 import com.github.pshirshov.izumi.idealingua.il.renderer.IDLRenderer
+import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import org.scalatest.WordSpec
 
 

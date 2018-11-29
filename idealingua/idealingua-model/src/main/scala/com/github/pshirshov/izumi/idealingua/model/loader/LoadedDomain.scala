@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.il.loader.model
+package com.github.pshirshov.izumi.idealingua.model.loader
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.typespace.{Issue, Typespace}

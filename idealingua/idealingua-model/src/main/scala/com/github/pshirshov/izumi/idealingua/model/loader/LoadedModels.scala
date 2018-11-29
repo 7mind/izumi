@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.il.loader.model
+package com.github.pshirshov.izumi.idealingua.model.loader
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 case class LoadedModels(loaded: Seq[LoadedDomain]) {
 
