@@ -25,8 +25,8 @@ class LocalFilesystemEnumerator(root: Path, cp: Seq[File], expectedExtensions: S
       }
       .toMap
 
-    import IzString._
-    println(s"Loaded: ${loaded.map(_._1).niceList()}")
+//    import IzString._
+//    println(s"Loaded: ${loaded.keys.niceList()}")
 
     loaded
   }
@@ -52,7 +52,7 @@ class LocalFilesystemEnumerator(root: Path, cp: Seq[File], expectedExtensions: S
       .toSeq
   }
 
-  private def hasExpectedExt(path: Path) = {
-    expectedExtensions.exists(ext => path.getFileName.toString.endsWith(ext))
+  private def hasExpectedExt(path: Path): Boolean = {
+    expectedExtensions.exists(ext => Option(path.getFileName).exists(_.toString.endsWith(ext)))
   }
 }

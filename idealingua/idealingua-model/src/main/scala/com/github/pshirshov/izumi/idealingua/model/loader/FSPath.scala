@@ -22,4 +22,15 @@ object FSPath {
     }
   }
 
+  def apply(pkg: Seq[String]): FSPath = {
+    if (pkg.init.nonEmpty) {
+      FSPath.Full(pkg.init.mkString("/"), pkg.last)
+    } else {
+      FSPath.Name(pkg.last)
+    }
+  }
+
+  def apply(path: String): FSPath = {
+    apply(path.split('/'))
+  }
 }

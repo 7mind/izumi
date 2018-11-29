@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.loader._
 import com.github.pshirshov.izumi.idealingua.model.typespace.{TypespaceImpl, TypespaceVerifier}
 
 
-class LocalModelResolver(domainExt: String) extends ModelResolver {
+class ModelResolverImpl(domainExt: String) extends ModelResolver {
 
   override def resolve(domains: UnresolvedDomains): LoadedModels = LoadedModels {
     val importResolver = new ExternalRefResolver(domains, domainExt)
@@ -17,7 +17,7 @@ class LocalModelResolver(domainExt: String) extends ModelResolver {
   }
 
 
-  private def makeTyped(f: Either[LoadedDomain.ParsingFailed, CompletelyLoadedDomain]): LoadedDomain = {
+  private def makeTyped(f: Either[LoadedDomain.Failure, CompletelyLoadedDomain]): LoadedDomain = {
     f.map(performTyping).fold(identity, identity)
   }
 

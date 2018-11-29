@@ -9,4 +9,5 @@ abstract class ModelLoaderContextImpl extends ModelLoaderContext {
 
   lazy val loader = new ModelLoaderImpl(enumerator, parser, resolver, modelExt, domainExt)
 
+  lazy val resolver = new ModelResolverImpl(domainExt)
 }

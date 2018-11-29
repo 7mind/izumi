@@ -63,7 +63,7 @@ object IDLTestTools {
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions))
-    val classpath: String = IzJvm.safeClasspath(IzJvm.baseClassloader)
+    val classpath: String = IzJvm.safeClasspath()
 
     val cmd = Seq(
       "scalac"
