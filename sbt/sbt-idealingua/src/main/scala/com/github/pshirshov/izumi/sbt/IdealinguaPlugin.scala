@@ -5,14 +5,14 @@ import java.security.MessageDigest
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
-import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
+import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoaderContext
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.UntypedCompilerOptions
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
+import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
@@ -242,9 +242,11 @@ object IdealinguaPlugin extends AutoPlugin {
 
     if (isNew.exists({ case (src, tgt) => src.isAfter(tgt) }) || isNew.isEmpty) {
       // TODO: maybe it's unsafe to destroy the whole directory?..
-      val toCompile = new LocalModelLoader(scope.source, cp).load()
+      val context = new LocalModelLoaderContext(scope.source, cp)
+      val toCompile = context.loader.load().throwIfFailed().successful
+
       if (toCompile.nonEmpty) {
-        logger.info(s"""$projectId: Going to compile the following models: ${toCompile.map(_.domain.id).mkString(",")} into ${invokation.options.language}""")
+        logger.info(s"""$projectId: Going to compile the following models: ${toCompile.map(_.typespace.domain.id).mkString(",")} into ${invokation.options.language}""")
       } else {
         logger.info(s"""$projectId: Nothing to compile at ${scope.source}""")
       }

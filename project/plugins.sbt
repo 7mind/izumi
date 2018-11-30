@@ -5,6 +5,11 @@ lazy val izumiDepsPlugin = RootProject(file("../sbt/sbt-izumi-deps"))
 lazy val izumiPlugin = RootProject(file("../sbt/sbt-izumi"))
 lazy val root = project.in(file(".")).dependsOn(izumiDepsPlugin, izumiPlugin)
 
+//
+libraryDependencies += {
+  "org.scala-sbt" %% "scripted-plugin" % sbtVersion.value
+}
+
 // https://github.com/sbt/sbt-assembly
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.7")
 
@@ -23,9 +28,11 @@ addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.5.1")
 // https://github.com/tpolecat/tut
 addSbtPlugin("org.tpolecat" % "tut-plugin" % "0.6.7")
 
-//
-libraryDependencies += {
-  "org.scala-sbt" %% "scripted-plugin" % sbtVersion.value
-}
+// https://www.scala-js.org/
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
+
+// https://github.com/portable-scala/sbt-crossproject
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")
+
 
 

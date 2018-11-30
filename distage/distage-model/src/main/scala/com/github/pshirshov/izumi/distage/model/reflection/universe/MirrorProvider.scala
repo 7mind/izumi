@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage.model.reflection.universe
 
 import com.github.pshirshov.izumi.distage.model
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.reflection.RefinedTypeException
 
 trait MirrorProvider {
   def runtimeClass(tpe: SafeType): Class[_]

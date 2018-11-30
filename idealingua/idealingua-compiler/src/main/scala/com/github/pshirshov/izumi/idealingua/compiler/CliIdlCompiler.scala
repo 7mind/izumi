@@ -6,7 +6,7 @@ import java.nio.file._
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
-import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
+import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoaderContext
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.model.publishing.{ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler._
@@ -129,7 +129,8 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
 
     println(s"Loading definitions from `$path`...")
     val toCompile = Timed {
-      new LocalModelLoader(path, Seq.empty).load()
+      val context = new LocalModelLoaderContext(path, Seq.empty)
+      context.loader.load().throwIfFailed().successful
     }
     println(s"Done: ${toCompile.size} in ${toCompile.duration.toMillis}ms")
     println()
@@ -188,8 +189,8 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
 trait Codecs {
 
   import _root_.io.circe._
-  import _root_.io.circe.generic.semiauto._
   import _root_.io.circe.generic.extras.semiauto
+  import _root_.io.circe.generic.semiauto._
 
   implicit def decMdep: Decoder[ManifestDependency] = deriveDecoder
 

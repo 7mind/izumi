@@ -18,17 +18,88 @@ class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
   }
 }
 
-class TypeCollection(ts: Typespace) {
+trait TypeCollectionData {
+  def all: Seq[TypeDef]
+
+
+  def structures: Seq[WithStructure]
+
+
+  def interfaceEphemerals: Seq[DTO]
+
+  def interfaceEphemeralIndex: Map[InterfaceId, DTO]
+
+  def interfaceEphemeralsReversed: Map[DTOId, InterfaceId]
+
+
+  def dtoEphemerals: Seq[Interface]
+
+  def dtoEphemeralIndex: Map[DTOId, Interface]
+
+
+  def services: Map[ServiceId, Service]
+
+  def serviceEphemerals: Seq[TypeDef]
+
+
+  def buzzers: Map[BuzzerId, Buzzer]
+
+  def buzzerEphemerals: Seq[TypeDef]
+}
+
+class TypeCollection(ts: Typespace) extends TypeCollectionData {
   val services: Map[ServiceId, Service] = ts.domain.services.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
   val buzzers: Map[BuzzerId, Buzzer] = ts.domain.buzzers.groupBy(_.id).mapValues(_.head).toMap // 2.13 compat
 
   val serviceEphemerals: Seq[TypeDef] = {
-    makeServiceEphemerals(services.values )
+    makeServiceEphemerals(services.values)
   }
 
   val buzzerEphemerals: Seq[TypeDef] = {
     makeServiceEphemerals(buzzers.values.map(_.asService))
   }
+
+  val interfaceEphemeralIndex: Map[InterfaceId, DTO] = {
+    ts.domain.types
+      .collect {
+        case i: Interface =>
+          val iid = DTOId(i.id, ts.tools.toDtoName(i.id))
+          i.id -> DTO(iid, Structure.interfaces(List(i.id)), NodeMeta.empty)
+      }.toMap
+  }
+
+  val interfaceEphemeralsReversed: Map[DTOId, InterfaceId] = {
+    interfaceEphemeralIndex.map(kv => kv._2.id -> kv._1)
+  }
+
+  val dtoEphemeralIndex: Map[DTOId, Interface] = {
+    (ts.domain.types ++ serviceEphemerals ++ buzzerEphemerals)
+      .collect {
+        case i: DTO =>
+          val iid = InterfaceId(i.id, ts.tools.toInterfaceName(i.id))
+          i.id -> Interface(iid, i.struct, NodeMeta.empty)
+      }.toMap
+
+  }
+
+  val interfaceEphemerals: Seq[DTO] = interfaceEphemeralIndex.values.toSeq
+
+  val dtoEphemerals: Seq[Interface] = dtoEphemeralIndex.values.toSeq
+
+  val all: Seq[TypeDef] = {
+    val definitions = Seq(
+      ts.domain.types
+      , serviceEphemerals
+      , buzzerEphemerals
+      , interfaceEphemerals
+      , dtoEphemerals
+    ).flatten
+
+    verified(definitions)
+  }
+
+  val structures: Seq[WithStructure] = all.collect { case t: WithStructure => t }
+
 
   private def makeServiceEphemerals(src: Iterable[Service]): Seq[TypeDef] = {
     (for {
@@ -82,55 +153,15 @@ class TypeCollection(ts: Typespace) {
         val adtId = AdtId(serviceId, s"$baseName$suffix")
         val altAdt = Output.Algebraic(List(
           AdtMember(successId, Some(ts.tools.toPositiveBranchName(adtId)))
-            , AdtMember(failureId, Some(ts.tools.toNegativeBranchName(adtId)))
+          , AdtMember(failureId, Some(ts.tools.toNegativeBranchName(adtId)))
         ))
         val alt = outputEphemeral(serviceId, baseName, suffix, altAdt)
         success ++ failure ++ alt
     }
   }
 
-  val interfaceEphemeralIndex: Map[InterfaceId, DTO] = {
-    ts.domain.types
-      .collect {
-        case i: Interface =>
-          val iid = DTOId(i.id, ts.tools.toDtoName(i.id))
-          i.id -> DTO(iid, Structure.interfaces(List(i.id)), NodeMeta.empty)
-      }.toMap
-  }
-
-  val interfaceEphemeralsReversed: Map[DTOId, InterfaceId] = {
-    interfaceEphemeralIndex.map(kv => kv._2.id -> kv._1)
-  }
-
   def isInterfaceEphemeral(dto: DTOId): Boolean = interfaceEphemeralsReversed.contains(dto)
 
-  val dtoEphemeralIndex: Map[DTOId, Interface] = {
-    (ts.domain.types ++ serviceEphemerals ++ buzzerEphemerals)
-      .collect {
-        case i: DTO =>
-          val iid = InterfaceId(i.id, ts.tools.toInterfaceName(i.id))
-          i.id -> Interface(iid, i.struct, NodeMeta.empty)
-      }.toMap
-
-  }
-
-  val interfaceEphemerals: Seq[DTO] = interfaceEphemeralIndex.values.toSeq
-
-  val dtoEphemerals: Seq[Interface] = dtoEphemeralIndex.values.toSeq
-
-  val all: Seq[TypeDef] = {
-    val definitions = Seq(
-      ts.domain.types
-      , serviceEphemerals
-      , buzzerEphemerals
-      , interfaceEphemerals
-      , dtoEphemerals
-    ).flatten
-
-    verified(definitions)
-  }
-
-  val structures: Seq[WithStructure] = all.collect { case t: WithStructure => t }
 
   def domainIndex: Map[TypeId, TypeDef] = {
     ts.domain.types.map(t => (t.id, t)).toMap

@@ -1,7 +1,17 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.model.loader.LoadedModels
+
 
 trait ModelLoader {
-  def load(): Seq[Typespace]
+  def load(): LoadedModels
 }
+
+
+
+
+
+
+
+
+

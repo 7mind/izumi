@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.files
 
 import java.io.File
 import java.net.URI
-import java.nio.file.{FileSystems, Path, Paths}
+import java.nio.file.{FileSystems, Path}
 import java.util.Collections
 
 import scala.util.Try
@@ -36,7 +36,7 @@ object IzZip {
     zip.close()
   }
 
-  def findInZips(incPath: Path, zips: Seq[File]): Option[String] = {
+  def findInZips(zips: Seq[File], predicate: Path => Boolean): Iterable[(Path, String)] = {
     zips
       .filter(f => f.exists() && f.isFile && (f.getName.endsWith(".jar") || f.getName.endsWith(".zip")))
       .flatMap {
@@ -44,7 +44,6 @@ object IzZip {
           import scala.collection.JavaConverters._
           val uri = f.toURI
           val jarUri = URI.create(s"jar:${uri.toString}")
-          val toFind = Paths.get("/").resolve(incPath)
 
           val maybeFs = Try(FileSystems.getFileSystem(jarUri))
             .recover {
@@ -62,13 +61,9 @@ object IzZip {
                 Files.walk(root)
                   .iterator()
                   .asScala
-                  .filter {
-                    path =>
-                      path.toString == toFind.toString
-                  }
+                  .filter(predicate)
             }
       }
-      .map(path => IzFiles.readString(path))
-      .headOption
+      .map(path => path -> IzFiles.readString(path))
   }
 }

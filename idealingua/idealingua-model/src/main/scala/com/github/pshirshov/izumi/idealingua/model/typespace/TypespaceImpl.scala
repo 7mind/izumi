@@ -27,7 +27,6 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
 
   private lazy val index: CMap[TypeId, TypeDef] = types.index
 
-
   override val resolver: TypeResolver = this
 
   override lazy val tools: TypespaceTools = new TypespaceToolsImpl(this)
@@ -35,12 +34,6 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
   override lazy val inheritance: InheritanceQueries = new InheritanceQueriesImpl(this)
 
   override lazy val structure: StructuralQueries = new StructuralQueriesImpl(this)
-
-  //  override def implId(id: InterfaceId): DTOId = tools.implId(id)
-  //
-  //  override def sourceId(id: DTOId): Option[InterfaceId] = tools.sourceId(id)
-  //
-  //  override def defnId(id: StructureId): InterfaceId = tools.defnId(id)
 
   def apply(id: ServiceId): Service = {
     types.services(id)

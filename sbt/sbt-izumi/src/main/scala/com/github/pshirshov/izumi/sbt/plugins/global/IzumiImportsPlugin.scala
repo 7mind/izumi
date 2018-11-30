@@ -29,6 +29,9 @@ object IzumiImportsPlugin extends AutoPlugin {
     val IzumiTestPublishingPlugin =  plugins.optional.IzumiTestPublishingPlugin
 
     type SettingsGroup = definitions.SettingsGroup
+    type SettingsGroupId = definitions.SettingsGroupId
+    val SettingsGroupId =  definitions.SettingsGroupId
+
     type DefaultGlobalSettingsGroup = definitions.DefaultGlobalSettingsGroup
   }
 

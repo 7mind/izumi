@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.il.parser.model.{AlgebraicType, ParsedStruct, StructOp}
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILDef, ILNewtype, ImportedId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{ParsedId, RawAdtMember, RawField, RawSimpleStructure}
+import com.github.pshirshov.izumi.idealingua.model.parser.{AlgebraicType, ParsedStruct, StructOp}
 import fastparse.all._
 
 trait DefStructure extends Separators {

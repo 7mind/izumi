@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathC
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
 import com.github.pshirshov.izumi.logstage.config.codecs.LoggerPathConfigCodec
 import com.github.pshirshov.izumi.logstage.distage.LoggerConfigModule.Entries
-import com.typesafe.config.{Config, ConfigObject}
+import com.typesafe.config.ConfigObject
 
 @deprecated("Needs to be reworked, resources shouldn't be handled outside of DI", "2018-11-05")
 class LoggerConfigModule extends ModuleDef {

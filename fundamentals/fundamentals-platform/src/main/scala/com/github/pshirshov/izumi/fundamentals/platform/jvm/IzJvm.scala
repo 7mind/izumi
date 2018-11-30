@@ -62,6 +62,9 @@ trait IzJvm {
       .mkString(System.getProperty("path.separator"))
   }
 
+  def safeClasspath(): String = safeClasspath(baseClassloader)
+
+  def safeClasspathSeq(): Seq[String] = safeClasspathSeq(baseClassloader)
 }
 
 object IzJvm extends IzJvm {
