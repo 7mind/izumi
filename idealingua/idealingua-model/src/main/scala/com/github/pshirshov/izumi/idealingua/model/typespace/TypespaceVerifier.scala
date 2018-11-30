@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.typespace
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, DomainId, TypeId, TypeName}
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId, TypeName}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLCyclicInheritanceException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
@@ -11,13 +11,6 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.Issue.{AmbigiousAdt
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
-
-final case class FailedTypespace(id: DomainId, issues: List[Issue]) {
-
-  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-
-  override def toString: TypeName = s"Typespace $id has failed verification:\n${issues.mkString("\n").shift(2)}"
-}
 
 sealed trait Issue
 

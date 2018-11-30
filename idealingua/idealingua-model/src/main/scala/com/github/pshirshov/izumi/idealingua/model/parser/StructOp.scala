@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.il.parser.model
+package com.github.pshirshov.izumi.idealingua.model.parser
 
 import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteMixin, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawField

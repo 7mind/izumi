@@ -10,12 +10,12 @@ import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
-import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoader
+import com.github.pshirshov.izumi.idealingua.il.loader._
 import com.github.pshirshov.izumi.idealingua.il.renderer.IDLRenderer
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
+import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, UntypedCompilerOptions}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
@@ -43,25 +43,27 @@ final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
 
 @ExposedTestScope
 object IDLTestTools {
-  def makeLoader(): LocalModelLoader = {
+  def makeLoader(): LocalModelLoaderContext = {
     val src = new File(getClass.getResource("/defs").toURI).toPath
-    new LocalModelLoader(src, Seq.empty)
+    val context = new LocalModelLoaderContext(src, Seq.empty)
+    context
   }
 
-  def loadDefs(): Seq[Typespace] = loadDefs(makeLoader())
+  def loadDefs(): Seq[LoadedDomain.Success] = loadDefs(makeLoader())
 
-  def loadDefs(loader: LocalModelLoader): Seq[Typespace] = {
-    val loaded = loader.load()
+  def loadDefs(context: LocalModelLoaderContext): Seq[LoadedDomain.Success] = {
+    val loaded = context.loader.load()
+      .throwIfFailed()
 
-    val loadableCount = loader.enumerate().count(_._1.toString.endsWith(LocalModelLoader.domainExt))
-    assert(loaded.size == loadableCount, s"expected $loadableCount domains")
+    val loadableCount = context.enumerator.enumerate().count(_._1.name.endsWith(context.domainExt))
+    assert(loaded.successful.size == loadableCount, s"expected $loadableCount domains")
 
-    loaded
+    loaded.successful
   }
 
-  def compilesScala(id: String, domains: Seq[Typespace], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
+  def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions))
-    val classpath: String = IzJvm.safeClasspath(IzJvm.baseClassloader)
+    val classpath: String = IzJvm.safeClasspath()
 
     val cmd = Seq(
       "scalac"
@@ -75,7 +77,7 @@ object IDLTestTools {
     exitCode == 0
   }
 
-  def compilesTypeScript(id: String, domains: Seq[Typespace], extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
+  def compilesTypeScript(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
     val manifest = new TypeScriptBuildManifest(
       name = "TestBuild",
       tags = "",
@@ -116,7 +118,7 @@ object IDLTestTools {
     exitCode == 0
   }
 
-  def compilesCSharp(id: String, domains: Seq[Typespace], extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
+  def compilesCSharp(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
     val lang = IDLLanguage.CSharp
     val out = compiles(id, domains, CompilerOptions(lang, extensions))
     val refsDir = out.absoluteTargetDir.resolve("refs")
@@ -140,7 +142,7 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  def compilesGolang(id: String, domains: Seq[Typespace], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, scoped: Boolean): Boolean = {
+  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, scoped: Boolean): Boolean = {
     val manifest = new GoLangBuildManifest(
       name = "TestBuild",
       tags = "",
@@ -182,7 +184,7 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  private def compiles[E <: TranslatorExtension, M <: BuildManifest](id: String, domains: Seq[Typespace], options: CompilerOptions[E, M]): CompilerOutput = {
+  private def compiles[E <: TranslatorExtension, M <: BuildManifest](id: String, domains: Seq[LoadedDomain.Success], options: CompilerOptions[E, M]): CompilerOutput = {
     val targetDir = Paths.get("target")
     val tmpdir = targetDir.resolve("idl-output")
 
@@ -220,11 +222,11 @@ object IDLTestTools {
   }
 
 
-  private def rerenderDomains(domainsDir: Path, domains: Seq[Typespace]): Unit = {
+  private def rerenderDomains(domainsDir: Path, domains: Seq[LoadedDomain.Success]): Unit = {
     domains.foreach {
       d =>
-        val rendered = new IDLRenderer(d.domain).render()
-        Files.write(domainsDir.resolve(s"${d.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
+        val rendered = new IDLRenderer(d.typespace.domain).render()
+        Files.write(domainsDir.resolve(s"${d.typespace.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
     }
   }
 

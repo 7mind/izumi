@@ -38,7 +38,7 @@ final case class CSharpType (
       case Primitive.TUInt64 => false
       case Primitive.TFloat => false
       case Primitive.TDouble => false
-      case Primitive.TUUID => true
+      case Primitive.TUUID => false
       case Primitive.TTime => false
       case Primitive.TDate => false
       case Primitive.TTs => false
