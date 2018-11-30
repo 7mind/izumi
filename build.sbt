@@ -462,6 +462,10 @@ lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaCompiler,
 )
 
+lazy val izsbt: Seq[ProjectReference] = Seq(
+  sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps
+)
+
 lazy val idealinguaJs: Seq[ProjectReference] = Seq(
   idealinguaModelJs,
   idealinguaCoreJs,
@@ -473,9 +477,16 @@ lazy val fundamentalsJs: Seq[ProjectReference] = Seq(
   fundamentalsPlatformJs,
 )
 
-lazy val izsbt: Seq[ProjectReference] = Seq(
-  sbtIzumi, sbtIdealingua, sbtTests
-)
+lazy val allJsProjects = fundamentalsJs ++
+  idealinguaJs
+
+lazy val allProjects = distage ++
+  logstage ++
+  idealingua ++
+  izsbt ++
+  Seq(microsite: ProjectReference)
+
+lazy val unidocExcludes = izsbt ++ allJsProjects
 
 lazy val microsite = inDoc.as.module
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, TutPlugin)
@@ -503,7 +514,7 @@ lazy val microsite = inDoc.as.module
     , excludeFilter in ghpagesCleanSite :=
       new FileFilter {
         def accept(f: File): Boolean = {
-          (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) && !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value)) ) ||
+          (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) && !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value))) ||
             (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
             (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
@@ -521,17 +532,8 @@ lazy val microsite = inDoc.as.module
       //        .withColor("222", "434343")
     }
     , addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
-    , unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps)
+    , unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)
   )
-
-lazy val allJsProjects = fundamentalsJs ++
-  idealinguaJs
-
-lazy val allProjects = distage ++
-  logstage ++
-  idealingua ++
-  izsbt ++
-  Seq(microsite : ProjectReference)
 
 
 lazy val `izumi-r2` = inRoot.as

@@ -1,3 +1,0 @@
-package com.github.pshirshov.izumi.idealingua.model.output
-
-final case class Module(id: ModuleId, content: String)
