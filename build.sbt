@@ -389,16 +389,19 @@ lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScala)
 
 lazy val idealinguaTranspilers = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.scala_reflect % scalaVersion.value, R.scalameta) ++ Seq(R.scala_compiler % scalaVersion.value % "test"))
+  .settings(libraryDependencies ++= Seq(R.scalameta) ++ Seq(R.scala_compiler % scalaVersion.value % "test"))
+  .settings(libraryDependencies ++= Seq(R.scala_compiler % scalaVersion.value % "test"))
+  .settings(ShadingSettings)
   .depends(
     idealinguaCoreJvm,
     idealinguaRuntimeRpcScala,
+  )
+  .dependsSeq(Seq(
+    idealinguaTestDefs,
     idealinguaRuntimeRpcTypescript,
     idealinguaRuntimeRpcGo,
     idealinguaRuntimeRpcCSharp,
-  )
-  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
-  .settings(ShadingSettings)
+  ).map(_.testOnlyRef))
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcScala, logstageCore, logstageAdapterSlf4j)
@@ -411,9 +414,16 @@ lazy val idealinguaRuntimeRpcCSharp = inIdealingua.as.module
 
 lazy val idealinguaRuntimeRpcGo = inIdealingua.as.module
 
+lazy val idealinguaCompilerDeps = Seq[ProjectReferenceEx](
+  idealinguaTranspilers,
+  idealinguaRuntimeRpcScala,
+  idealinguaRuntimeRpcTypescript,
+  idealinguaRuntimeRpcGo,
+  idealinguaRuntimeRpcCSharp,
+)
 
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
-  .depends(idealinguaTranspilers)
+  .depends(idealinguaCompilerDeps: _*)
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
@@ -432,7 +442,7 @@ lazy val sbtIzumiDeps = inSbt.as
 
 lazy val sbtIdealingua = inSbt.as
   .module
-  .depends(idealinguaTranspilers)
+  .depends(idealinguaCompilerDeps: _*)
 
 lazy val sbtTests = inSbt.as
   .module
