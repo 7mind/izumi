@@ -98,8 +98,15 @@ trait TypespaceTools {
   def toInterfaceName(id: TypeId): String
 }
 
-trait Typespace {
+trait TypespaceData {
   def domain: DomainDefinition
+
+  def types: TypeCollectionData
+}
+
+trait Typespace extends TypespaceData {
+
+  override def types: TypeCollection
 
   def inheritance: InheritanceQueries
 
@@ -107,7 +114,6 @@ trait Typespace {
 
   def tools: TypespaceTools
 
-  def types: TypeCollection
 
   def resolver: TypeResolver
 
