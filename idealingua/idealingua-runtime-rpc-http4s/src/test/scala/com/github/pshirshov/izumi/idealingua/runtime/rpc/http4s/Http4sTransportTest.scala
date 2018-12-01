@@ -40,10 +40,13 @@ class Http4sTransportTest extends WordSpec {
 
           //
           disp.setupCredentials("user", "badpass")
-          val unauthorized = intercept[IRTUnexpectedHttpStatus] {
-            BIOR.unsafeRun(greeterClient.alternative())
+          BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
+            case Failure(exception: IRTUnexpectedHttpStatus) =>
+              assert(exception.status == Status.Unauthorized)
+            case o =>
+              fail(s"Expected IRTGenericFailure but got $o")
           }
-          assert(unauthorized.status == Status.Unauthorized)
+
           ()
         }
     }
@@ -68,7 +71,8 @@ class Http4sTransportTest extends WordSpec {
         disp.setupCredentials("user", "badpass")
         BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
           case Failure(exception: IRTGenericFailure) =>
-          case o => fail(s"Expected IRTGenericFailure but got $o")
+          case o =>
+            fail(s"Expected IRTGenericFailure but got $o")
         }
 
         disp.close()
