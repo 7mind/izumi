@@ -58,7 +58,6 @@ object IDLTestTools {
     val loadable = context.enumerator.enumerate().filter(_._1.name.endsWith(context.domainExt)).keySet
     val good = loaded.successful.map(_.path).toSet
     val failed = loadable.diff(good)
-    println(s"failures: ${loaded.failures}")
     assert(failed.isEmpty, s"domains were not loaded: $failed")
 
     loaded.successful

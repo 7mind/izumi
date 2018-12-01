@@ -35,8 +35,8 @@ class LoaderTest extends WordSpec {
           val updated = files.updated(original.path, rendered)
 
           // TODO: ModelLoaderImpl
-          val domains = loader.parser.parseDomains(updated)
-          val models = loader.parser.parseModels(updated)
+          val domains = loader.parser.parseDomains(updated.filter(_._1.name.endsWith(loader.domainExt)))
+          val models = loader.parser.parseModels(updated.filter(_._1.name.endsWith(loader.modelExt)))
           val unresolved = UnresolvedDomains(domains, models)
           val typespaces = loader.resolver.resolve(unresolved).throwIfFailed().successful
           val restoredTypespace = typespaces.find(_.typespace.domain.id == domainId).get.typespace

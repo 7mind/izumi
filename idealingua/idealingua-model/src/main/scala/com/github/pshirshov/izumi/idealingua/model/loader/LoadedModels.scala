@@ -18,7 +18,7 @@ case class LoadedModels(loaded: Seq[LoadedDomain]) {
     loaded.collect({case f: Failure => f})
       .map {
         case ParsingFailed(path, message) =>
-          s"Domain fail $path didn't parse: $message"
+          s"$path failed to parse: $message"
         case f: TypingFailed =>
           s"Typespace ${f.domain} has failed verification (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
       }

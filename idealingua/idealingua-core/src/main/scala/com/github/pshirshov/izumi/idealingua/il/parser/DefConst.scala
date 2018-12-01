@@ -22,6 +22,8 @@ object Agg {
 }
 
 trait DefConst extends Identifiers {
+  def value[_:P]: P[Agg] = P(literal | objdef | listdef)
+
   def literal[_:P]: P[Agg.Just] = {
     import Literals.Literals._
     NoCut(P(
@@ -38,17 +40,15 @@ trait DefConst extends Identifiers {
     )).map(Agg.Just)
   }
 
-
-
   def objdef[_:P]: P[Agg.ObjAgg] = enclosedConsts.map {
     v =>
       Agg.ObjAgg(RawVal.CMap(v.map(rc => rc.id.name -> rc.const).toMap))
   }
 
-  def listMember[_:P]: P[Seq[Agg]] = P((literal | objdef /*| listdef*/).rep(sep = sep.sepStruct))
+  def listElements[_:P]: P[Seq[Agg]] = P(literal | objdef | listdef).rep(sep = sep.sepStruct)
 
   def listdef[_:P]: P[Agg.ListAgg] = {
-    structure.aggregates.enclosedB(listMember)
+    structure.aggregates.enclosedB(listElements)
       .map {
         v =>
           val elements = v.map {
@@ -64,9 +64,8 @@ trait DefConst extends Identifiers {
       }
   }
 
-  def value[_:P]: P[Agg] = literal | objdef | listdef
 
-  def const[_:P]: P[RawConst] = (MaybeDoc ~ idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value).map {
+  def const[_:P]: P[RawConst] = P(MaybeDoc ~ idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value).map {
     case (doc, name, None, value: Agg.ObjAgg) =>
       RawConst(name.toConstId, value.value, doc)
 
@@ -96,7 +95,7 @@ trait DefConst extends Identifiers {
       v => ILConst(Constants(v.toList))
     }
 
-  def simpleConst[_:P]: P[(String, RawVal[_])] = (idShort ~ inline ~ "=" ~ inline ~ value).map {
+  def simpleConst[_:P]: P[(String, RawVal[_])] = P(idShort ~ inline ~ "=" ~ inline ~ value).map {
     case (k, v) =>
       k.name -> v.value
   }
