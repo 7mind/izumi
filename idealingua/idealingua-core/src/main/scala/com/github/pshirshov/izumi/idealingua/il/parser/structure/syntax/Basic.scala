@@ -10,8 +10,9 @@ object Basic {
   //Numbers and digits
 
   final val digits  = "0123456789"
+  final val hexDigits = "0123456789abcdefABCDEF"
+
   def Digit[_: P]: P[Unit] = P(CharIn(digits))
-  final val hexDigits = digits + "abcdefABCDEF"
   def HexDigit[_: P]: P[Unit] = P(CharIn(hexDigits))
   def HexNum[_: P]: P[Unit] = P("0x" ~ CharsWhileIn(hexDigits))
   def DecNum[_: P]: P[Unit] = P(CharsWhileIn(digits))
