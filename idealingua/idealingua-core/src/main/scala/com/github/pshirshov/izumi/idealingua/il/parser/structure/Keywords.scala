@@ -25,7 +25,7 @@ trait Keywords extends Separators {
   def service[_:P]: P[Unit] = kw("service", "server")
   def buzzer[_:P]: P[Unit] = kw("buzzer", "sender")
   def streams[_:P]: P[Unit] = kw("streams", "tunnel", "pump")
-  def consts[_:P]: P[Unit] = kw("const", "defues")
+  def consts[_:P]: P[Unit] = kw("const", "values")
 
   def defm[_:P]: P[Unit] = kw("def", "fn", "fun", "func")
   def defe[_:P]: P[Unit] = kw("line", "event")
