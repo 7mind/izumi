@@ -30,7 +30,7 @@ object Backend {
     val filePath = graphVizDotML.save(fileName, directory)
     val rendered = doRender(engine, format, filePath)
     if (cleanUp) new File(filePath).delete
-    if (view) view(rendered, format)
+    if (view) doView(rendered)
     rendered
   }
 
@@ -139,7 +139,7 @@ object Backend {
     * For know only support linux.
     */
   @throws(classOf[RuntimeException])
-  def view(filePath: String): Unit = {
+  def doView(filePath: String): Unit = {
     val command = IzOs.osType match {
       case OsType.Mac =>
         s"open $filePath"

@@ -1,9 +1,12 @@
 package com.github.pshirshov.izumi.functional.bio
 
+import scalaz.zio.ExitResult.Cause
+import scalaz.zio.ExitResult.Cause._
 import scalaz.zio.{ExitResult, IO, Schedule}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.higherKinds
+import scala.util.{Failure, Success, Try}
 
 trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
   override type Or[+E, +V] = R[E, V]
@@ -90,8 +93,7 @@ object BIO extends BIOSyntax {
 
     @inline override def redeem[E, A, E2, B](r: IO[E, A])(err: E => IO[E2, B], succ: A => IO[E2, B]): IO[E2, B] = r.redeem(err, succ)
 
-    @inline override def sandboxWith[E, A, E2, B](r: IO[E, A])(f: IO[Either[List[Throwable], E], A] => IO[Either[List[Throwable], E2], B]): IO[E2, B] =
-      r.sandboxWith(f)
+    @inline override def widen[E, A, E1 >: E, A1 >: A](r: IO[E, A]): IO[E1, A1] = r
 
     @inline override def retryOrElse[A, E, A2 >: A, E2](r: IO[E, A])(duration: FiniteDuration, orElse: => IO[E2, A2]): IO[E2, A2] =
       r.retryOrElse[A2, Any, Duration, E2](Schedule.duration(duration), {
@@ -99,28 +101,66 @@ object BIO extends BIOSyntax {
           orElse
       })
 
-    @inline override def widen[E, A, E1 >: E, A1 >: A](r: IO[E, A]): IO[E1, A1] = r
+    @inline override def timeout[E, A](r: IO[E, A])(duration: Duration): IO[E, Option[A]] = r.timeout(duration)
+
+    @inline override def race[E, A](r1: IO[E, A])(r2: IO[E, A]): IO[E, A] = r1.race(r2)
+
+    case class ComplexFailureEithers[E](failures: List[Either[List[Throwable], E]]) extends RuntimeException
+
+    def toTry[E, A](result: ExitResult[E, A]): Try[Either[E, A]] = result match {
+      case ExitResult.Succeeded(v) => Success(Right(v))
+      case ExitResult.Failed(Checked(cause)) => Success(Left(cause))
+      case ExitResult.Failed(Unchecked(cause)) => Failure(cause)
+      case ExitResult.Failed(Interruption) => Failure(new InterruptedException())
+      case ExitResult.Failed(c@Then(_, _)) => Failure(ComplexFailureEithers(c.flatten.map(toEither).toList))
+      case ExitResult.Failed(c@Both(_, _)) => Failure(ComplexFailureEithers(c.flatten.map(toEither).toList))
+    }
+
+    def toEither[E, A](result: ExitResult.Cause[E]): Either[List[Throwable], E] = result match {
+      case Checked(value) => Right(value)
+      case Unchecked(value) => Left(List(value))
+      case Interruption => Left(List(new InterruptedException()))
+      case c@Both(_, _) => Left(List(ComplexFailureEithers(c.flatten.map(toEither).toList)))
+      case c@Then(_, _) => Left(List(ComplexFailureEithers(c.flatten.map(toEither).toList)))
+    }
+
+
+    @inline override def sandboxWith[E, A, E2, B](r: IO[E, A])(f: IO[Either[List[Throwable], E], A] => IO[Either[List[Throwable], E2], B]): IO[E2, B] = {
+      r.sandboxWith {
+        r =>
+          val x: IO[Either[List[Throwable], E2], B] = f(r.leftMap(cause => toEither[E, A](cause)))
+          x.leftMap {
+            case Right(value) =>
+              ExitResult.Cause.Checked(value)
+            case Left((_: InterruptedException) :: Nil) =>
+              ExitResult.Cause.Interruption
+            case Left(Nil) =>
+              ExitResult.Cause.Unchecked(new IllegalArgumentException(s"Unexpected empty cause list for $r returned by $f"))
+            case Left(value :: Nil) =>
+              ExitResult.Cause.Unchecked(value)
+            case Left(head :: tail) =>
+              tail.foldLeft(Cause.Unchecked(head): Cause[E2]) {
+                case (acc, t) =>
+                  Cause.Both(acc, Cause.Unchecked(t))
+              }
+          }
+      }
+    }
 
     @inline override def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
       IO.async[E, A] {
         cb =>
           register {
             case Right(v) =>
-              cb(ExitResult.Completed(v))
+              cb(ExitResult.Succeeded(v))
             case Left(t) =>
-              cb(ExitResult.Failed(t))
+              cb(ExitResult.Failed(ExitResult.Cause.Checked(t)))
           }
 
       }
     }
 
-    override def timeout[E, A](r: IO[E, A])(duration: Duration): IO[E, Option[A]] = {
-      r.timeout(Option.empty[A])(Some(_))(duration)
-    }
 
-    override def race[E, A](r1: IO[E, A])(r2: IO[E, A]): IO[E, A] = {
-      r1.race(r2)
-    }
   }
 
 }
