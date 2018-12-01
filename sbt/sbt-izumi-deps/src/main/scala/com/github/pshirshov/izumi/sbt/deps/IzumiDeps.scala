@@ -115,6 +115,7 @@ object IzumiDeps {
 
     val http4s_all: Seq[ModuleID] = http4s_server ++ http4s_client
 
+    @deprecated("we must throw this out once http4s implements client-side websockets", "2018-12-01")
     val java_websocket = Seq(
       "org.java-websocket" % "Java-WebSocket" % V.java_websocket
       , "javax.xml.bind" % "jaxb-api" % V.jaxb_api
