@@ -141,9 +141,6 @@ val SbtScriptedSettings = new SettingsGroup {
   ).flatten
 }
 
-
-
-
 // --------------------------------------------
 
 lazy val inRoot = In(".")
@@ -195,7 +192,7 @@ lazy val fundamentalsCollections = inFundamentals.as.cross(platforms)
 lazy val fundamentalsCollectionsJvm = fundamentalsCollections.jvm.remember
 lazy val fundamentalsCollectionsJs = fundamentalsCollections.js.remember
 
-lazy val fundamentalsPlatform = inFundamentals.as.cross(platforms)
+lazy val fundamentalsPlatform = inFundamentals.as.cross(platforms).dependsOn(fundamentalsCollections)
 lazy val fundamentalsPlatformJvm = fundamentalsPlatform.jvm.remember
 lazy val fundamentalsPlatformJs = fundamentalsPlatform.js.remember
 
@@ -389,7 +386,7 @@ lazy val idealinguaRuntimeRpcScala = inIdealingua.as.module
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScala)
 
 lazy val idealinguaTranspilers = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.scalameta) ++ Seq(R.scala_compiler % scalaVersion.value % "test"))
+  .settings(libraryDependencies ++= Seq(R.scalameta))
   .settings(libraryDependencies ++= Seq(R.scala_compiler % scalaVersion.value % "test"))
   .settings(ShadingSettings)
   .depends(
