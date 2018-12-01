@@ -5,12 +5,13 @@ import com.github.pshirshov.izumi.idealingua.model.common.StreamDirection
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILStreams
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawStream, Streams}
 import fastparse._
+import fastparse.NoWhitespace._
 
 trait DefStreams {
 
   import sep._
 
-  final val downstream = DefSignature.baseSignature(kw.downstream).map {
+  final def downstream[_:P]: P[RawStream.Directed] = DefSignature.baseSignature(kw.downstream).map {
     case (c, id, in) =>
       RawStream.Directed(id, StreamDirection.ToClient, in, c)
 
@@ -18,7 +19,7 @@ trait DefStreams {
       throw new IllegalStateException(s"Impossible case: $f")
   }
 
-  final val upstream = DefSignature.baseSignature(kw.upstream).map {
+  final def upstream[_:P]: P[RawStream.Directed] = DefSignature.baseSignature(kw.upstream).map {
     case (c, id, in) =>
       RawStream.Directed(id, StreamDirection.ToServer, in, c)
 
@@ -26,12 +27,12 @@ trait DefStreams {
       throw new IllegalStateException(s"Impossible case: $f")
   }
 
-  final val stream = downstream | upstream
+  final def stream[_:P]: P[RawStream.Directed] = downstream | upstream
 
   // other method kinds should be added here
-  final val streams: P[Seq[RawStream]] = P(stream.rep(sep = any))
+  final def streams[_:P]: P[Seq[RawStream]] = P(stream.rep(sep = any))
 
-  final val streamsBlock = aggregates.cblock(kw.streams, streams)
+  final def streamsBlock[_:P]: P[ILStreams] = aggregates.cblock(kw.streams, streams)
     .map {
       case (c, i, v) => ILStreams(Streams(i.toStreamsId, v.toList, c))
     }

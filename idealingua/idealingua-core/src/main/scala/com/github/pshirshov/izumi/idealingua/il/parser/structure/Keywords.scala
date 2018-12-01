@@ -1,37 +1,38 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import fastparse._
+import fastparse._, NoWhitespace._
+
 
 trait Keywords extends Separators {
-  def kw(s: String): P[Unit] = P(s ~ inline)(sourcecode.Name(s"`$s`"))
+  def kw[_:P](s: String): P[Unit] = P(s ~ inline) //(sourcecode.Name(s"`$s`"))
 
-  def kw(s: String, alt: String*): P[Unit] = {
-    val alts = alt.foldLeft(P(s)) { case (acc, v) => acc | v }
-    P(alts ~ inline)(sourcecode.Name(s"`$s | $alt`"))
+  def kw[_:P](s: String, alt: String*): P[Unit] = {
+    def alts = alt.foldLeft(P(s)) { case (acc, v) => acc | v }
+    P(alts ~ inline) //(sourcecode.Name(s"`$s | $alt`"))
   }
 
-  final val domain = kw("domain", "package", "namespace")
-  final val include = kw("include")
-  final val `import` = kw("import")
+  final def domain[_:P]: P[Unit] = kw("domain", "package", "namespace")
+  final def include[_:P]: P[Unit] = kw("include")
+  final def `import`[_:P]: P[Unit] = kw("import")
 
-  final val enum = kw("enum")
-  final val adt = kw("adt", "choice")
-  final val alias = kw("alias", "type", "using")
-  final val newtype = kw("clone", "newtype", "copy")
-  final val id = kw("id")
-  final val mixin = kw("mixin", "interface")
-  final val data = kw("data", "dto", "struct")
-  final val service = kw("service", "server")
-  final val buzzer = kw("buzzer", "sender")
-  final val streams = kw("streams", "tunnel", "pump")
-  final val consts = kw("const", "values")
+  final def enum[_:P]: P[Unit] = kw("enum")
+  final def adt[_:P]: P[Unit] = kw("adt", "choice")
+  final def alias[_:P]: P[Unit] = kw("alias", "type", "using")
+  final def newtype[_:P]: P[Unit] = kw("clone", "newtype", "copy")
+  final def id[_:P]: P[Unit] = kw("id")
+  final def mixin[_:P]: P[Unit] = kw("mixin", "interface")
+  final def data[_:P]: P[Unit] = kw("data", "dto", "struct")
+  final def service[_:P]: P[Unit] = kw("service", "server")
+  final def buzzer[_:P]: P[Unit] = kw("buzzer", "sender")
+  final def streams[_:P]: P[Unit] = kw("streams", "tunnel", "pump")
+  final def consts[_:P]: P[Unit] = kw("const", "defues")
 
-  final val defm = kw("def", "fn", "fun", "func")
-  final val defe = kw("line", "event")
-  final val upstream = kw("toserver", "up", "upstream")
-  final val downstream = kw("toclient", "down", "downstream")
+  final def defm[_:P]: P[Unit] = kw("def", "fn", "fun", "func")
+  final def defe[_:P]: P[Unit] = kw("line", "event")
+  final def upstream[_:P]: P[Unit] = kw("toserver", "up", "upstream")
+  final def downstream[_:P]: P[Unit] = kw("toclient", "down", "downstream")
 
-  def apply[T](kw: P[Unit], defparser: P[T]): P[T] = {
+  def apply[T](kw: P[Unit], defparser: P[T])(implicit v: P[_]): P[T] = {
     P(kw ~/ defparser)
   }
 

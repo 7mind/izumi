@@ -6,14 +6,11 @@ import fastparse._
 
 
 trait DefMember extends Aggregates {
-  final val inclusion = kw(kw.include, sym.String)
+  final def inclusion[_:P]: P[ILInclude] = kw(kw.include, sym.String)
     .map(v => ILInclude(v))
 
 
-
-
-
-  final val anyMember: P[Val] = DefStructure.enumBlock |
+  final def anyMember[_:P]: P[Val] = DefStructure.enumBlock |
     DefStructure.adtBlock |
     DefStructure.aliasBlock |
     DefStructure.cloneBlock |

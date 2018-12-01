@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua
 
-import java.nio.file.{FileSystems, Paths}
+import java.nio.file.Paths
 
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalFilesystemEnumerator

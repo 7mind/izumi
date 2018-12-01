@@ -6,7 +6,7 @@ import fastparse.NoWhitespace._
 trait Comments
   extends Symbols {
 
-  final def DocComment[_:P] = {
+  final def DocComment[_:P]: P[String] = {
     def Chunk = P(CharsWhile(c => c != '\n' && c != '\r').rep.!)
     P(!"/**/" ~ "/*" ~ (!"*/" ~ "*" ~ Chunk).rep(1, sep = NLC ~ sep.wss) ~ NLC ~ sep.wss ~ "*/").map {
       s => s.mkString("\n")
@@ -18,8 +18,8 @@ trait Comments
     P((!"/**" ~ "/*" ~ CommentChunk.rep ~ "*/") | "/**/").rep(1)
   }
 
-  final def ShortComment[_:P] = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r', min = 0) ~ NLC))
+  final def ShortComment[_:P]: P[Unit] = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r', min = 0) ~ NLC))
 
-  final def MaybeDoc[_:P] = (DocComment ~ NLC ~ sep.inline).?
+  final def MaybeDoc[_:P]: P[Option[String]] = (DocComment ~ NLC ~ sep.inline).?
 }
 

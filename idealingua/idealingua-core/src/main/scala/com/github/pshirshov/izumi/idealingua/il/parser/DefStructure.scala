@@ -7,9 +7,10 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{ParsedId, RawAdtMember, RawField, RawSimpleStructure}
 import com.github.pshirshov.izumi.idealingua.model.parser.{AlgebraicType, ParsedStruct, StructOp}
 import fastparse._
+import fastparse.NoWhitespace._
 
 trait DefStructure extends Separators {
-  final val field = P((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric)
+  final def field[_:P]: P[RawField] = P((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric)
     .map {
       case (name, tpe) if name.isEmpty =>
         RawField(tpe, tpe.name.uncapitalize)
@@ -19,7 +20,7 @@ trait DefStructure extends Separators {
     }
 
 
-  final val struct = {
+  final def struct[_:P]: P[ParsedStruct] = {
     val sepEntry = sepStruct
     val sepInline = inline
 
@@ -40,7 +41,7 @@ trait DefStructure extends Separators {
   }
 
 
-  final val simpleStruct = {
+  final def simpleStruct[_:P]: P[RawSimpleStructure] = {
     val sepInline = any
     val sepInlineStruct = any ~ ",".? ~ any
 
@@ -52,57 +53,57 @@ trait DefStructure extends Separators {
       .map(ParsedStruct.apply).map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
   }
 
-  final val inlineStruct = aggregates.enclosed(DefStructure.simpleStruct)
+  final def inlineStruct[_:P]: P[RawSimpleStructure] = aggregates.enclosed(DefStructure.simpleStruct)
 
-  final val adtOut = aggregates.enclosed(DefStructure.adt(sepAdt))
+  final def adtOut[_:P]: P[AlgebraicType] = aggregates.enclosed(DefStructure.adt(sepAdt))
 
-  final val aggregate = P((inline ~ field ~ inline)
+  final def aggregate[_:P]: P[Seq[RawField]] = P((inline ~ field ~ inline)
     .rep(sep = sepStruct))
 
-  final val adtMember = P(ids.identifier ~ (inline ~ "as" ~/ inline ~ ids.symbol).?).map {
+  final def adtMember[_:P]: P[RawAdtMember] = P(ids.identifier ~ (inline ~ "as" ~/ inline ~ ids.symbol).?).map {
     case (tpe, alias) =>
       RawAdtMember(tpe.toTypeId, alias)
   }
 
-  final val importMember = P(ids.symbol ~ (inline ~ "as" ~/ inline ~ ids.symbol).?).map {
+  final def importMember[_:P]: P[ImportedId] = P(ids.symbol ~ (inline ~ "as" ~/ inline ~ ids.symbol).?).map {
     case (tpe, alias) =>
       ImportedId(tpe, alias)
   }
 
-  final def adt(sep: P[Unit]): P[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
+  final def adt(sep: P[Unit])(implicit p: P[_]): P[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
     .map(_.toList).map(AlgebraicType)
 
-  final def enum(sep: P[Unit]): P[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
+  final def enum(sep: P[Unit])(implicit p: P[_]): P[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
 
-  final def imports(sep: P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
+  final def imports(sep: P[Unit])(implicit p: P[_]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
 
-  final val mixinBlock = aggregates.cblock(kw.mixin, DefStructure.struct)
+  final def mixinBlock[_:P]: P[ILDef] = aggregates.cblock(kw.mixin, DefStructure.struct)
     .map {
       case (c, i, v)  => ILDef(v.toInterface(i.toInterfaceId, c))
     }
 
-  final val dtoBlock = aggregates.cblock(kw.data, DefStructure.struct)
+  final def dtoBlock[_:P]: P[ILDef] = aggregates.cblock(kw.data, DefStructure.struct)
     .map {
       case (c, i, v)  => ILDef(v.toDto(i.toDataId, c))
     }
 
-  final val idBlock = aggregates.cblock(kw.id, DefStructure.aggregate)
+  final def idBlock[_:P]: P[ILDef] = aggregates.cblock(kw.id, DefStructure.aggregate)
     .map {
       case (c, i, v)  => ILDef(Identifier(i.toIdId, v.toList, c))
     }
 
-  final val aliasBlock = aggregates.cstarting(kw.alias, "=" ~/ inline ~ ids.identifier)
+  final def aliasBlock[_:P]: P[ILDef] = aggregates.cstarting(kw.alias, "=" ~/ inline ~ ids.identifier)
     .map {
       case (c, i, v)  => ILDef(Alias(i.toAliasId, v.toTypeId, c))
     }
 
-  final val cloneBlock = aggregates.cstarting(kw.newtype, "into" ~/ inline ~ ids.idShort ~ inline ~ aggregates.enclosed(DefStructure.struct).?)
+  final def cloneBlock[_:P]: P[ILNewtype] = aggregates.cstarting(kw.newtype, "into" ~/ inline ~ ids.idShort ~ inline ~ aggregates.enclosed(DefStructure.struct).?)
     .map {
       case (c, src, (target, struct))  =>
         ILNewtype(NewType(target, src.toTypeId, struct.map(_.structure), c))
     }
 
-  final val adtBlock = aggregates.cstarting(kw.adt,
+  final def adtBlock[_:P]: P[ILDef] = aggregates.cstarting(kw.adt,
     aggregates.enclosed(DefStructure.adt(sepAdt))
       | (any ~ "=" ~/ sepAdt ~ DefStructure.adt(sepAdt))
   )
@@ -111,7 +112,7 @@ trait DefStructure extends Separators {
         ILDef(Adt(i.toAdtId, v.alternatives, c))
     }
 
-  final val enumBlock = aggregates.cstarting(kw.enum
+  final def enumBlock[_:P]: P[ILDef] = aggregates.cstarting(kw.enum
     , aggregates.enclosed(DefStructure.enum(sepEnum)) |
       (any ~ "=" ~/ sepEnum ~ DefStructure.enum(sepEnum))
   )

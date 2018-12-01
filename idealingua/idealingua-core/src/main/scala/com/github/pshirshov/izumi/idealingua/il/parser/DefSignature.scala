@@ -4,34 +4,35 @@ import com.github.pshirshov.izumi.idealingua.il.parser.structure.{ids, sep}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawMethod.Output
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawMethod, RawNodeMeta, RawSimpleStructure}
 import fastparse._
+import fastparse.NoWhitespace._
 
 trait DefSignature {
 
   import sep._
 
-  final val sigSep = P("=>" | "->" | ":" | "⇒")
-  final val errSep = P("!!" | "?!" | "⥃" | "↬")
+  final def sigSep[_:P]: P[Unit] = P("=>" | "->" | ":" | "⇒")
+  final def errSep[_:P]: P[Unit] = P("!!" | "?!" | "⥃" | "↬")
 
-  final val meta = (MaybeDoc ~ DefConst.defAnnos)
+  final def meta[_:P]: P[RawNodeMeta] = (MaybeDoc ~ DefConst.defAnnos)
     .map {
       case (d, a) => RawNodeMeta(d, a)
     }
 
-  final def baseSignature(keyword: P[Unit]): P[(RawNodeMeta, String, RawSimpleStructure)] = P(
+  final def baseSignature(keyword: P[Unit])(implicit p: P[_]): P[(RawNodeMeta, String, RawSimpleStructure)] = P(
     meta ~
       keyword ~ inline ~
       ids.symbol ~ any ~
       DefStructure.inlineStruct
   )
 
-  final def void: P[Output.Void] = P( "(" ~ inline ~")" ).map(_ => RawMethod.Output.Void())
-  final def adt: P[Output.Algebraic] = DefStructure.adtOut.map(v => RawMethod.Output.Algebraic(v.alternatives))
-  final def struct: P[Output.Struct] = DefStructure.inlineStruct.map(v => RawMethod.Output.Struct(v))
-  final def singular: P[Output.Singular] = ids.idGeneric.map(v => RawMethod.Output.Singular(v))
+  final def void[_:P]: P[Output.Void] = P( "(" ~ inline ~")" ).map(_ => RawMethod.Output.Void())
+  final def adt[_:P]: P[Output.Algebraic] = DefStructure.adtOut.map(v => RawMethod.Output.Algebraic(v.alternatives))
+  final def struct[_:P]: P[Output.Struct] = DefStructure.inlineStruct.map(v => RawMethod.Output.Struct(v))
+  final def singular[_:P]: P[Output.Singular] = ids.idGeneric.map(v => RawMethod.Output.Singular(v))
 
-  final def output: P[Output.NonAlternativeOutput] = adt | struct | singular | void
+  final def output[_:P]: P[Output.NonAlternativeOutput] = adt | struct | singular | void
 
-  final def signature(keyword: P[Unit]): P[(RawNodeMeta, String, RawSimpleStructure, Option[(Output.NonAlternativeOutput, Option[Output.NonAlternativeOutput])])] = P(
+  final def signature(keyword: P[Unit])(implicit p: P[_]): P[(RawNodeMeta, String, RawSimpleStructure, Option[(Output.NonAlternativeOutput, Option[Output.NonAlternativeOutput])])] = P(
     baseSignature(keyword) ~
       (any ~ sigSep ~ any ~ output ~ (any ~ errSep ~ any ~ output ).?).?
   )

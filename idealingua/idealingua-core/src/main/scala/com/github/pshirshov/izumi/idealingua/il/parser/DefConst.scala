@@ -22,7 +22,7 @@ object Agg {
 }
 
 trait DefConst extends Identifiers {
-  final def literal[_:P] = {
+  final def literal[_:P]: P[Agg.Just] = {
     import Literals.Literals._
     NoCut(P(
       ("-".? ~ Float).!.map(_.toDouble).map(RawVal.CFloat) |
@@ -91,19 +91,19 @@ trait DefConst extends Identifiers {
 
   final def enclosedConsts[_:P]: P[Seq[RawConst]] = structure.aggregates.enclosed(consts)
 
-  final def constBlock[_:P] = kw(kw.consts, inline ~ enclosedConsts)
+  final def constBlock[_:P]: P[ILConst] = kw(kw.consts, inline ~ enclosedConsts)
     .map {
       v => ILConst(Constants(v.toList))
     }
 
-  final def simpleConst[_:P] = (idShort ~ inline ~ "=" ~ inline ~ value).map {
+  final def simpleConst[_:P]: P[(String, RawVal[_])] = (idShort ~ inline ~ "=" ~ inline ~ value).map {
     case (k, v) =>
       k.name -> v.value
   }
-  final def simpleConsts[_:P] = simpleConst.rep(min = 0, sep = sepStruct)
+  final def simpleConsts[_:P]: P[RawVal.CMap] = simpleConst.rep(min = 0, sep = sepStruct)
     .map(v => RawVal.CMap(v.toMap))
 
-  final def defAnno[_:P] = P("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~")")
+  final def defAnno[_:P]: P[RawAnno] = P("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~")")
     .map {
       case (id, v) => RawAnno(id.name, v)
     }

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 
 import com.github.pshirshov.izumi.idealingua.il.parser.IDLParser
 import com.github.pshirshov.izumi.idealingua.model.loader._
-import fastparse.core.Parsed
+import fastparse._
 
 
 class ModelParserImpl() extends ModelParser {

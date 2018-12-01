@@ -1,15 +1,17 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
+import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.Import
 import fastparse._
+import fastparse.NoWhitespace._
 
 trait DefDomain
   extends Identifiers
     with Aggregates {
-  final val domainBlock = P(kw.domain ~/ domainId)
+  final def domainBlock[_:P]: P[DomainId] = P(kw.domain ~/ domainId)
 
-  final val importBlock = kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(DefStructure.imports(sep.sepStruct))).?).map {
+  final def importBlock[_:P]: P[Import] = kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(DefStructure.imports(sep.sepStruct))).?).map {
     case (id, names) =>
       names match {
         case Some(nn) =>
@@ -19,7 +21,7 @@ trait DefDomain
       }
   }
 
-  final val decl = P(domainBlock ~ any ~ importBlock.rep(sep = any))
+  final def decl[_:P]: P[(DomainId, Seq[Import])] = P(domainBlock ~ any ~ importBlock.rep(sep = any))
 }
 
 
