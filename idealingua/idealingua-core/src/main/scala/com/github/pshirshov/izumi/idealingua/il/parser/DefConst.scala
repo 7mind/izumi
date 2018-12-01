@@ -22,7 +22,7 @@ object Agg {
 }
 
 trait DefConst extends Identifiers {
-  final def literal[_:P]: P[Agg.Just] = {
+  def literal[_:P]: P[Agg.Just] = {
     import Literals.Literals._
     NoCut(P(
       ("-".? ~ Float).!.map(_.toDouble).map(RawVal.CFloat) |
@@ -40,15 +40,15 @@ trait DefConst extends Identifiers {
 
 
 
-  final def objdef[_:P]: P[Agg.ObjAgg] = enclosedConsts.map {
+  def objdef[_:P]: P[Agg.ObjAgg] = enclosedConsts.map {
     v =>
       Agg.ObjAgg(RawVal.CMap(v.map(rc => rc.id.name -> rc.const).toMap))
   }
 
-  final def listdef[_:P]: P[Agg.ListAgg] = {
-    val t = P(literal | objdef | listdef).rep(sep = sep.sepStruct)
+  def listMember[_:P]: P[Seq[Agg]] = P((literal | objdef /*| listdef*/).rep(sep = sep.sepStruct))
 
-    structure.aggregates.enclosedB(t)
+  def listdef[_:P]: P[Agg.ListAgg] = {
+    structure.aggregates.enclosedB(listMember)
       .map {
         v =>
           val elements = v.map {
@@ -64,9 +64,9 @@ trait DefConst extends Identifiers {
       }
   }
 
-  final def value[_:P]: P[Agg] = literal | objdef | listdef
+  def value[_:P]: P[Agg] = literal | objdef | listdef
 
-  final def const[_:P]: P[RawConst] = (MaybeDoc ~ idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value).map {
+  def const[_:P]: P[RawConst] = (MaybeDoc ~ idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value).map {
     case (doc, name, None, value: Agg.ObjAgg) =>
       RawConst(name.toConstId, value.value, doc)
 
@@ -87,28 +87,28 @@ trait DefConst extends Identifiers {
   }
 
   // other method kinds should be added here
-  final def consts[_:P]: P[Seq[RawConst]] = P(const.rep(sep = sepStruct))
+  def consts[_:P]: P[Seq[RawConst]] = P(const.rep(sep = sepStruct))
 
-  final def enclosedConsts[_:P]: P[Seq[RawConst]] = structure.aggregates.enclosed(consts)
+  def enclosedConsts[_:P]: P[Seq[RawConst]] = structure.aggregates.enclosed(consts)
 
-  final def constBlock[_:P]: P[ILConst] = kw(kw.consts, inline ~ enclosedConsts)
+  def constBlock[_:P]: P[ILConst] = kw(kw.consts, inline ~ enclosedConsts)
     .map {
       v => ILConst(Constants(v.toList))
     }
 
-  final def simpleConst[_:P]: P[(String, RawVal[_])] = (idShort ~ inline ~ "=" ~ inline ~ value).map {
+  def simpleConst[_:P]: P[(String, RawVal[_])] = (idShort ~ inline ~ "=" ~ inline ~ value).map {
     case (k, v) =>
       k.name -> v.value
   }
-  final def simpleConsts[_:P]: P[RawVal.CMap] = simpleConst.rep(min = 0, sep = sepStruct)
+  def simpleConsts[_:P]: P[RawVal.CMap] = simpleConst.rep(min = 0, sep = sepStruct)
     .map(v => RawVal.CMap(v.toMap))
 
-  final def defAnno[_:P]: P[RawAnno] = P("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~")")
+  def defAnno[_:P]: P[RawAnno] = P("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~")")
     .map {
       case (id, v) => RawAnno(id.name, v)
     }
 
-  final def defAnnos[_:P]: P[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
+  def defAnnos[_:P]: P[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
 }
 
 object DefConst extends DefConst {

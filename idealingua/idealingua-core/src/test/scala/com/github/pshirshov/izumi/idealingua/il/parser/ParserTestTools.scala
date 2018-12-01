@@ -27,7 +27,7 @@ trait ParserTestTools {
         assert(index == str.length, s"Seems like value wasn't parsed completely: $v")
         v
       case Parsed.Failure(lp, idx, e) =>
-        throw new IllegalStateException(s"Parsing failed: $lp, $idx, $e, ${e.traced}, ${e.traced.trace}")
+        throw new IllegalStateException(s"Parsing failed: $lp, $idx, $e, ${e.trace()}, ${e.trace().msg}")
     }
 
   }

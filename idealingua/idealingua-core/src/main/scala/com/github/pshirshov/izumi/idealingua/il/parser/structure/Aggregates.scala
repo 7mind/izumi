@@ -11,30 +11,30 @@ trait Aggregates
 
 
 
-  def enclosed[T](defparser: P[T])(implicit v: P[_]): P[T] = {
+  def enclosed[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
     P(("{" ~ any ~ defparser ~ any ~ "}") | "(" ~ any ~ defparser ~ any ~ ")")
   }
 
-  def enclosedB[T](defparser: P[T])(implicit v: P[_]): P[T] = {
+  def enclosedB[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
     P("[" ~ any ~ defparser ~ any ~ "]")
   }
 
 
-  def starting[T](keyword: P[Unit], defparser: P[T])(implicit v: P[_]): P[(ParsedId, T)] = {
+  def starting[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(ParsedId, T)] = {
     kw(keyword, idShort ~ inline ~ defparser)
   }
 
-  def block[T](keyword: P[Unit], defparser: P[T])(implicit v: P[_]): P[(ParsedId, T)] = {
+  def block[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(ParsedId, T)] = {
     starting(keyword, enclosed(defparser))
   }
 
-  def cstarting[T](keyword: P[Unit], defparser: P[T])(implicit v: P[_]): P[(RawNodeMeta, ParsedId, T)] = {
+  def cstarting[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, ParsedId, T)] = {
     (DefSignature.meta ~ starting(keyword, defparser)).map {
       case (m, (i, t)) => (m, i, t)
     }
   }
 
-  def cblock[T](keyword: P[Unit], defparser: P[T])(implicit v: P[_]): P[(RawNodeMeta, ParsedId, T)] = {
+  def cblock[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, ParsedId, T)] = {
     (DefSignature.meta ~ block(keyword, defparser)).map {
       case (m, (i, t)) => (m, i, t)
     }

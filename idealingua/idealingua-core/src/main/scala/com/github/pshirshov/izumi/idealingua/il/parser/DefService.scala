@@ -10,12 +10,12 @@ trait DefService {
 
   import sep._
 
-  final def method[_:P]: P[RawMethod.RPCMethod] = DefSignature.signature(kw.defm).map(DefSignature.toSignature)
+  def method[_:P]: P[RawMethod.RPCMethod] = DefSignature.signature(kw.defm).map(DefSignature.toSignature)
 
   // other method kinds should be added here
-  final def methods[_:P]: P[Seq[RawMethod]] = P(method.rep(sep = any))
+  def methods[_:P]: P[Seq[RawMethod]] = P(method.rep(sep = any))
 
-  final def serviceBlock[_:P]: P[ILService] = aggregates.cblock(kw.service, methods)
+  def serviceBlock[_:P]: P[ILService] = aggregates.cblock(kw.service, methods)
     .map {
       case (c, i, v) => ILService(Service(i.toServiceId, v.toList, c))
     }

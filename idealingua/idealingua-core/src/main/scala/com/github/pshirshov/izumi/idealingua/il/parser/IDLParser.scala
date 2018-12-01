@@ -13,12 +13,12 @@ trait IDLParser {
 
   def parseModel(input: String): Parsed[ParsedModel] = parse(input, modelDef(_))
 
-  protected[parser] final def modelDef[_:P]: P[ParsedModel] = P(any ~ DefMember.anyMember.rep(sep = any) ~ any ~ End).map {
+  protected[parser] def modelDef[_:P]: P[ParsedModel] = P(any ~ DefMember.anyMember.rep(sep = any) ~ any ~ End).map {
     defs =>
       ParsedModel(defs)
   }
 
-  protected[parser] final def fullDomainDef[_:P]: P[ParsedDomain] = P(any ~ DefDomain.decl ~ modelDef).map {
+  protected[parser] def fullDomainDef[_:P]: P[ParsedDomain] = P(any ~ DefDomain.decl ~ modelDef).map {
     case (did, imports, defs) =>
       parser.ParsedDomain(did, imports, defs)
   }

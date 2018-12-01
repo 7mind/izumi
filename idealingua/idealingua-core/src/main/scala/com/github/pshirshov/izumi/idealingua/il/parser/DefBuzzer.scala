@@ -10,12 +10,12 @@ trait DefBuzzer {
 
   import sep._
 
-  final def method[_:P]: P[RawMethod.RPCMethod] = DefSignature.signature(kw.defe).map(DefSignature.toSignature)
+  def method[_:P]: P[RawMethod.RPCMethod] = DefSignature.signature(kw.defe).map(DefSignature.toSignature)
 
   // other method kinds should be added here
-  final def methods[_:P]: P[Seq[RawMethod]] = P(method.rep(sep = any))
+  def methods[_:P]: P[Seq[RawMethod]] = P(method.rep(sep = any))
 
-  final def buzzerBlock[_:P]: P[ILBuzzer] = aggregates.cblock(kw.buzzer, methods)
+  def buzzerBlock[_:P]: P[ILBuzzer] = aggregates.cblock(kw.buzzer, methods)
     .map {
       case (c, i, v) => ILBuzzer(Buzzer(i.toBuzzerId, v.toList, c))
     }

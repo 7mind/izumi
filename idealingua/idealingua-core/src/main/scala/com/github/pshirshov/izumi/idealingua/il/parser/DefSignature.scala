@@ -10,29 +10,29 @@ trait DefSignature {
 
   import sep._
 
-  final def sigSep[_:P]: P[Unit] = P("=>" | "->" | ":" | "⇒")
-  final def errSep[_:P]: P[Unit] = P("!!" | "?!" | "⥃" | "↬")
+  def sigSep[_:P]: P[Unit] = P("=>" | "->" | ":" | "⇒")
+  def errSep[_:P]: P[Unit] = P("!!" | "?!" | "⥃" | "↬")
 
-  final def meta[_:P]: P[RawNodeMeta] = (MaybeDoc ~ DefConst.defAnnos)
+  def meta[_:P]: P[RawNodeMeta] = (MaybeDoc ~ DefConst.defAnnos)
     .map {
       case (d, a) => RawNodeMeta(d, a)
     }
 
-  final def baseSignature(keyword: P[Unit])(implicit p: P[_]): P[(RawNodeMeta, String, RawSimpleStructure)] = P(
+  def baseSignature[_:P](keyword: => P[Unit]): P[(RawNodeMeta, String, RawSimpleStructure)] = P(
     meta ~
       keyword ~ inline ~
       ids.symbol ~ any ~
       DefStructure.inlineStruct
   )
 
-  final def void[_:P]: P[Output.Void] = P( "(" ~ inline ~")" ).map(_ => RawMethod.Output.Void())
-  final def adt[_:P]: P[Output.Algebraic] = DefStructure.adtOut.map(v => RawMethod.Output.Algebraic(v.alternatives))
-  final def struct[_:P]: P[Output.Struct] = DefStructure.inlineStruct.map(v => RawMethod.Output.Struct(v))
-  final def singular[_:P]: P[Output.Singular] = ids.idGeneric.map(v => RawMethod.Output.Singular(v))
+  def void[_:P]: P[Output.Void] = P( "(" ~ inline ~")" ).map(_ => RawMethod.Output.Void())
+  def adt[_:P]: P[Output.Algebraic] = DefStructure.adtOut.map(v => RawMethod.Output.Algebraic(v.alternatives))
+  def struct[_:P]: P[Output.Struct] = DefStructure.inlineStruct.map(v => RawMethod.Output.Struct(v))
+  def singular[_:P]: P[Output.Singular] = ids.idGeneric.map(v => RawMethod.Output.Singular(v))
 
-  final def output[_:P]: P[Output.NonAlternativeOutput] = adt | struct | singular | void
+  def output[_:P]: P[Output.NonAlternativeOutput] = adt | struct | singular | void
 
-  final def signature(keyword: P[Unit])(implicit p: P[_]): P[(RawNodeMeta, String, RawSimpleStructure, Option[(Output.NonAlternativeOutput, Option[Output.NonAlternativeOutput])])] = P(
+  def signature[_:P](keyword: => P[Unit]): P[(RawNodeMeta, String, RawSimpleStructure, Option[(Output.NonAlternativeOutput, Option[Output.NonAlternativeOutput])])] = P(
     baseSignature(keyword) ~
       (any ~ sigSep ~ any ~ output ~ (any ~ errSep ~ any ~ output ).?).?
   )

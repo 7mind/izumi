@@ -9,9 +9,9 @@ import fastparse.NoWhitespace._
 trait DefDomain
   extends Identifiers
     with Aggregates {
-  final def domainBlock[_:P]: P[DomainId] = P(kw.domain ~/ domainId)
+  def domainBlock[_:P]: P[DomainId] = P(kw.domain ~/ domainId)
 
-  final def importBlock[_:P]: P[Import] = kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(DefStructure.imports(sep.sepStruct))).?).map {
+  def importBlock[_:P]: P[Import] = kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(DefStructure.imports(sep.sepStruct))).?).map {
     case (id, names) =>
       names match {
         case Some(nn) =>
@@ -21,7 +21,7 @@ trait DefDomain
       }
   }
 
-  final def decl[_:P]: P[(DomainId, Seq[Import])] = P(domainBlock ~ any ~ importBlock.rep(sep = any))
+  def decl[_:P]: P[(DomainId, Seq[Import])] = P(domainBlock ~ any ~ importBlock.rep(sep = any))
 }
 
 
