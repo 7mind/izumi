@@ -80,9 +80,9 @@ trait DefStructure extends Separators {
   def adt[_: P](sep: => P[Unit]): P[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
     .map(_.toList).map(AlgebraicType)
 
-  def enum[_: P](sep: P[Unit]): P[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
+  def enum[_: P](sep: => P[Unit]): P[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
 
-  def imports[_: P](sep: P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
+  def imports[_: P](sep: => P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
 
   def mixinBlock[_: P]: P[ILDef] = aggregates.cblock(kw.mixin, DefStructure.Struct.struct)
     .map {
