@@ -8,6 +8,8 @@ import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLa
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 
+import scala.reflect.ClassTag
+
 case class ProvidedRuntime(modules: Seq[Module])
 
 sealed trait AbstractCompilerOptions[E <: TranslatorExtension, M <: BuildManifest] {
@@ -37,6 +39,18 @@ object CompilerOptions {
   type GoTranslatorOptions = CompilerOptions[GoLangTranslatorExtension, GoLangBuildManifest]
   type CSharpTranslatorOptions = CompilerOptions[CSharpTranslatorExtension, CSharpBuildManifest]
   type ScalaTranslatorOptions = CompilerOptions[ScalaTranslatorExtension, ScalaBuildManifest]
+
+  def from[E <: TranslatorExtension : ClassTag, M <: BuildManifest : ClassTag](options: UntypedCompilerOptions): CompilerOptions[E, M] = {
+    val extensions = options.extensions.collect {
+      case e: E => e
+    }
+
+    val manifest = options.manifest.collect {
+      case m: M => m
+    }
+
+    CompilerOptions(options.language, extensions, options.withRuntime, manifest, options.providedRuntime)
+  }
 }
 
 final case class UntypedCompilerOptions

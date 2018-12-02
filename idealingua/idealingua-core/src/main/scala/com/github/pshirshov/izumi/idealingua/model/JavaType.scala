@@ -23,12 +23,10 @@ final case class JavaType(pkg: Package, name: String) {
 
 object JavaType {
   def get[T: ClassTag]: JavaType = {
-    val clazz = classTag[T].runtimeClass.getCanonicalName
-
+    val clazz = classTag[T].runtimeClass.getName
+    assert(clazz.nonEmpty)
     val parts = clazz.split('.').toSeq
-    val nameParts = parts.last.split('$').toSeq
-    val pkg = parts.init ++ nameParts.init
-    model.JavaType(pkg, nameParts.last)
+    model.JavaType(parts.init, parts.last)
   }
 
   def apply(typeId: DomainId): JavaType = new JavaType(typeId.pkg, typeId.id)

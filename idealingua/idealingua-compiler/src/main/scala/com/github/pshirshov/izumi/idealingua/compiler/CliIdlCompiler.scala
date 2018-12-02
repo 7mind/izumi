@@ -77,12 +77,7 @@ object IDLCArgs {
 object CliIdlCompiler extends ScalacheckShapeless with Codecs {
   implicit val sgen: Arbitrary[String] = Arbitrary(Gen.alphaLowerStr)
 
-  private def extensions: Map[IDLLanguage, Seq[TranslatorExtension]] = Map(
-    IDLLanguage.Scala -> ScalaTranslator.defaultExtensions
-    , IDLLanguage.Typescript -> TypeScriptTranslator.defaultExtensions
-    , IDLLanguage.Go -> GoLangTranslator.defaultExtensions
-    , IDLLanguage.CSharp -> CSharpTranslator.defaultExtensions
-  )
+
 
 
   def main(args: Array[String]): Unit = {
@@ -179,7 +174,7 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
   }
 
   private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {
-    val all = extensions(lang)
+    val all = TypespaceTranslatorFacade.extensions(lang)
     val negative = filter.filter(_.startsWith("-")).map(_.substring(1)).map(ExtensionId).toSet
     all.filterNot(e => negative.contains(e.id))
   }
