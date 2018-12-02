@@ -393,20 +393,21 @@ lazy val idealinguaRuntimeRpcScalaJs = idealinguaRuntimeRpcScala.js.remember
 
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScalaJvm)
 
-lazy val idealinguaTranspilers = inIdealingua.as.module
-  .settings(libraryDependencies ++= Seq(R.scalameta))
-  .settings(libraryDependencies ++= Seq(R.scala_compiler % scalaVersion.value % "test"))
-  .settings(ShadingSettings)
+lazy val idealinguaTranspilers = inIdealinguaX.as.cross(platforms)
+  .settings(libraryDependencies ++= Seq(R.scalameta).map(_.cross(platformDepsCrossVersion.value)))
   .depends(
-    idealinguaCoreJvm,
-    idealinguaRuntimeRpcScalaJvm,
+    idealinguaCore,
+    idealinguaRuntimeRpcScala,
   )
+lazy val idealinguaTranspilersJvm = idealinguaTranspilers.jvm.remember
+  .settings(ShadingSettings)
   .dependsSeq(Seq(
     idealinguaTestDefs,
     idealinguaRuntimeRpcTypescript,
     idealinguaRuntimeRpcGo,
     idealinguaRuntimeRpcCSharp,
   ).map(_.testOnlyRef))
+lazy val idealinguaTranspilersJs = idealinguaTranspilers.js.remember
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
@@ -420,7 +421,7 @@ lazy val idealinguaRuntimeRpcCSharp = inIdealingua.as.module
 lazy val idealinguaRuntimeRpcGo = inIdealingua.as.module
 
 lazy val idealinguaCompilerDeps = Seq[ProjectReferenceEx](
-  idealinguaTranspilers,
+  idealinguaTranspilersJvm,
   idealinguaRuntimeRpcScalaJvm,
   idealinguaRuntimeRpcTypescript,
   idealinguaRuntimeRpcGo,
@@ -472,7 +473,7 @@ lazy val idealingua: Seq[ProjectReference] = Seq(
   fastparseShaded,
   idealinguaModelJvm,
   idealinguaCoreJvm,
-  idealinguaTranspilers,
+  idealinguaTranspilersJvm,
   idealinguaRuntimeRpcScalaJvm,
   idealinguaRuntimeRpcHttp4s,
   idealinguaCompiler,
@@ -493,6 +494,7 @@ lazy val idealinguaJs: Seq[ProjectReference] = Seq(
   idealinguaModelJs,
   idealinguaCoreJs,
   idealinguaRuntimeRpcScalaJs,
+  idealinguaTranspilersJs,
 )
 
 lazy val fundamentalsJs: Seq[ProjectReference] = Seq(
