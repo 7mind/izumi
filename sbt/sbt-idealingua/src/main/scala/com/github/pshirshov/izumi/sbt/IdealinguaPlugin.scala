@@ -6,7 +6,6 @@ import java.security.MessageDigest
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoaderContext
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.UntypedCompilerOptions
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -15,7 +14,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage}
+import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, UntypedCompilerOptions}
 import sbt.Keys.{sourceGenerators, watchSources, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger

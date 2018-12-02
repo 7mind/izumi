@@ -16,7 +16,6 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.{CompilerOptions, UntypedCompilerOptions}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -25,7 +24,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, TranslatorExtension, TypespaceCompiler}
+import com.github.pshirshov.izumi.idealingua.translator._
 
 import scala.sys.process._
 
@@ -232,7 +231,7 @@ object IDLTestTools {
     }
   }
 
-  private def saveDebugLayout(layoutDir: Path, products: Map[DomainId, TypespaceCompiler.IDLSuccess]): Unit = {
+  private def saveDebugLayout(layoutDir: Path, products: Map[DomainId, IDLCompilationResult.Success]): Unit = {
     products.foreach {
       case (did, s) =>
         val mapped = s.paths.map {

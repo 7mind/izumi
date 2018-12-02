@@ -9,7 +9,6 @@ import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoaderContext
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.model.publishing.{ManifestDependency, Publisher}
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler._
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator

@@ -10,7 +10,6 @@ import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler._
 
 class IDLCompiler(toCompile: Seq[LoadedDomain.Success]) {
   def compile(relTarget: Path, options: UntypedCompilerOptions): IDLCompiler.Result = {
@@ -35,8 +34,8 @@ class IDLCompiler(toCompile: Seq[LoadedDomain.Success]) {
         loaded.typespace.domain.id -> invokeCompiler(target, withRt, loaded.typespace)
     }
 
-    val success = result.collect({ case (id, success: IDLSuccess) => id -> success })
-    val failure = result.collect({ case (id, failure: IDLFailure) => s"$id: $failure" })
+    val success = result.collect({ case (id, success: IDLCompilationResult.Success) => id -> success })
+    val failure = result.collect({ case (id, failure: IDLCompilationResult.Failure) => s"$id: $failure" })
 
     if (failure.nonEmpty) {
       throw new IllegalStateException(s"Cannot compile models: ${failure.mkString("\n  ")}")
@@ -79,7 +78,7 @@ class IDLCompiler(toCompile: Seq[LoadedDomain.Success]) {
     IDLCompiler.Result(success.toMap, ztarget)
   }
 
-  protected def invokeCompiler(target: Path, options: UntypedCompilerOptions, typespace: Typespace): IDLResult = {
+  protected def invokeCompiler(target: Path, options: UntypedCompilerOptions, typespace: Typespace): IDLCompilationResult = {
     val compiler = new TypespaceCompiler(typespace)
     compiler.compile(target, options)
   }
@@ -88,7 +87,7 @@ class IDLCompiler(toCompile: Seq[LoadedDomain.Success]) {
 object IDLCompiler {
 
   case class Result(
-                     compilationProducts: Map[DomainId, IDLSuccess]
+                     compilationProducts: Map[DomainId, IDLCompilationResult.Success]
                      , zippedOutput: Path
                    )
 
