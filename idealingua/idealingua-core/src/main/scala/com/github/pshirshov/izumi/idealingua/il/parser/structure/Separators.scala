@@ -1,26 +1,27 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import fastparse.all._
+import fastparse.NoWhitespace._
+import fastparse._
 
 trait Separators extends Comments {
-  private val ws = P(" " | "\t")(sourcecode.Name("WS"))
-  final val wss = P(ws.rep)
+  private def ws[_:P] = P(" " | "\t")(sourcecode.Name("WS"), implicitly)
+  def wss[_:P]: P[Unit] = P(ws.rep)
 
-  private val WsComment = wss ~ MultilineComment ~ wss
-  private val SepLineBase = P(NLC | (WsComment ~ NLC | (wss ~ ShortComment)))
+  private def WsComment[_:P] = wss ~ MultilineComment ~ wss
+  private def SepLineBase[_:P] = P(NLC | (WsComment ~ NLC | (wss ~ ShortComment)))
 
-  final val inline = P(WsComment | wss)
-  final val any = P(wss ~ (WsComment | SepLineBase).rep ~ wss)
+  def inline[_:P]: P[Unit] = P(WsComment | wss)
+  def any[_:P]: P[Unit] = P(wss ~ (WsComment | SepLineBase).rep ~ wss)
 
-  final val sepStruct = P(";" | "," | SepLineBase | ws).rep(min = 1)
+  def sepStruct[_:P]: P[Unit] = P((";" | "," | SepLineBase | ws)).rep(1)
 
-  final val sepAdt = P(
+  def sepAdt[_:P]: P[Unit] = P(
     (wss ~ (WsComment | SepLineBase).rep(min = 0, max = 1) ~ wss ~ ("|" | ";" | ",") ~ wss ~ (WsComment | SepLineBase).rep(min = 0, max = 1) ~ wss) |
       ((wss | WsComment) ~ SepLineBase ~ (wss | WsComment)) |
-      ws.rep(min = 1)
+      ws.rep(1)
   )
 
-  final val sepEnum = sepAdt
+  def sepEnum[_:P]: P[Unit] = sepAdt
 
 }
 

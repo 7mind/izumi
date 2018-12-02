@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.graphs.dotml
 import java.io.File
 
 import com.github.pshirshov.izumi.fundamentals.graphs.dotml.GraphVizDotML
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.os.{IzOs, OsType}
 
 import scala.language.postfixOps
@@ -155,7 +156,7 @@ object Backend {
 
     import sys.process._
     try {
-      command !
+      Quirks.discard(command !)
     } catch { case _ : Throwable =>
       val errorMsg = s"failed to execute $command"
       throw new RuntimeException(errorMsg)

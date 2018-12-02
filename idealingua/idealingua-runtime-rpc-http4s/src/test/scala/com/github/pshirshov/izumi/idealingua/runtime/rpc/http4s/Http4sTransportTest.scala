@@ -72,7 +72,7 @@ class Http4sTransportTest extends WordSpec {
 
         disp.setupCredentials("user", "badpass")
         BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
-          case Failure(exception: IRTGenericFailure) =>
+          case Failure(_: IRTGenericFailure) =>
           case o =>
             fail(s"Expected IRTGenericFailure but got $o")
         }

@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object RT {
   final val logger = makeLogger()
   final val printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
-  final val handler = BIORunner.DefaultHandler.Custom(message => logger.info(s"Fiber failed: $message"))
+  final val handler = BIORunner.DefaultHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
 
   implicit val contextShift: ContextShift[cats.effect.IO] = IO.contextShift(global)
   implicit val timer: Timer[cats.effect.IO] = IO.timer(global)

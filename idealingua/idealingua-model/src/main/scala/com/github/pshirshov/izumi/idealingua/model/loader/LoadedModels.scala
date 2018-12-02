@@ -15,10 +15,13 @@ case class LoadedModels(loaded: Seq[LoadedDomain]) {
   }
 
   def failures: Seq[String] = {
-    loaded.collect {
-      case f: TypingFailed =>
-        s"Typespace ${f.domain} has failed verification (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
-    }
+    loaded.collect({case f: Failure => f})
+      .map {
+        case ParsingFailed(path, message) =>
+          s"$path failed to parse: $message"
+        case f: TypingFailed =>
+          s"Typespace ${f.domain} has failed verification (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+      }
   }
 
   def throwIfFailed(): LoadedModels = {

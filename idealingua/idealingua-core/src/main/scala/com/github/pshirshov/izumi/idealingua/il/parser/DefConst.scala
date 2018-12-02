@@ -4,7 +4,8 @@ import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Identifiers, kw, sep}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILConst
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{Constants, RawAnno, RawConst, RawVal}
-import fastparse.all._
+import fastparse._
+import fastparse.NoWhitespace._
 
 sealed trait Agg {
   def value: RawVal[_]
@@ -21,7 +22,9 @@ object Agg {
 }
 
 trait DefConst extends Identifiers {
-  final val literal = {
+  def value[_:P]: P[Agg] = P(literal | objdef | listdef)
+
+  def literal[_:P]: P[Agg.Just] = {
     import Literals.Literals._
     NoCut(P(
       ("-".? ~ Float).!.map(_.toDouble).map(RawVal.CFloat) |
@@ -37,17 +40,15 @@ trait DefConst extends Identifiers {
     )).map(Agg.Just)
   }
 
-
-
-  final def objdef: Parser[Agg.ObjAgg] = enclosedConsts.map {
+  def objdef[_:P]: P[Agg.ObjAgg] = enclosedConsts.map {
     v =>
       Agg.ObjAgg(RawVal.CMap(v.map(rc => rc.id.name -> rc.const).toMap))
   }
 
-  final def listdef: Parser[Agg.ListAgg] = {
-    val t = P(literal | objdef | listdef).rep(sep = sep.sepStruct)
+  def listElements[_:P]: P[Seq[Agg]] = P(literal | objdef | listdef).rep(sep = sep.sepStruct)
 
-    structure.aggregates.enclosedB(t)
+  def listdef[_:P]: P[Agg.ListAgg] = {
+    structure.aggregates.enclosedB(listElements)
       .map {
         v =>
           val elements = v.map {
@@ -63,9 +64,8 @@ trait DefConst extends Identifiers {
       }
   }
 
-  final def value: Parser[Agg] = literal | objdef | listdef
 
-  final def const: Parser[RawConst] = (MaybeDoc ~ idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value).map {
+  def const[_:P]: P[RawConst] = P(MaybeDoc ~ idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value).map {
     case (doc, name, None, value: Agg.ObjAgg) =>
       RawConst(name.toConstId, value.value, doc)
 
@@ -86,28 +86,28 @@ trait DefConst extends Identifiers {
   }
 
   // other method kinds should be added here
-  final val consts: Parser[Seq[RawConst]] = P(const.rep(sep = sepStruct))
+  def consts[_:P]: P[Seq[RawConst]] = P(const.rep(sep = sepStruct))
 
-  final def enclosedConsts: Parser[Seq[RawConst]] = structure.aggregates.enclosed(consts)
+  def enclosedConsts[_:P]: P[Seq[RawConst]] = structure.aggregates.enclosed(consts)
 
-  final val constBlock = kw(kw.consts, inline ~ enclosedConsts)
+  def constBlock[_:P]: P[ILConst] = kw(kw.consts, inline ~ enclosedConsts)
     .map {
       v => ILConst(Constants(v.toList))
     }
 
-  final val simpleConst = (idShort ~ inline ~ "=" ~ inline ~ value).map {
+  def simpleConst[_:P]: P[(String, RawVal[_])] = P(idShort ~ inline ~ "=" ~ inline ~ value).map {
     case (k, v) =>
       k.name -> v.value
   }
-  final val simpleConsts = simpleConst.rep(min = 0, sep = sepStruct)
+  def simpleConsts[_:P]: P[RawVal.CMap] = simpleConst.rep(min = 0, sep = sepStruct)
     .map(v => RawVal.CMap(v.toMap))
 
-  final val defAnno = P("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~")")
+  def defAnno[_:P]: P[RawAnno] = P("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~")")
     .map {
       case (id, v) => RawAnno(id.name, v)
     }
 
-  final val defAnnos: Parser[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
+  def defAnnos[_:P]: P[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
 }
 
 object DefConst extends DefConst {

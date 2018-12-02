@@ -4,7 +4,6 @@ import java.io.File
 import java.nio.file.{Files, Path}
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 
 class LocalFilesystemEnumerator(root: Path, cp: Seq[File], expectedExtensions: Set[String]) extends FilesystemEnumerator {

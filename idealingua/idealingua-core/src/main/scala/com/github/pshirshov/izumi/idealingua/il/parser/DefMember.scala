@@ -2,18 +2,15 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
-import fastparse.all._
+import fastparse._
 
 
 trait DefMember extends Aggregates {
-  final val inclusion = kw(kw.include, sym.String)
+  def inclusion[_:P]: P[ILInclude] = kw(kw.include, sym.String)
     .map(v => ILInclude(v))
 
 
-
-
-
-  final val anyMember: Parser[Val] = DefStructure.enumBlock |
+  def anyMember[_:P]: P[Val] = DefStructure.enumBlock |
     DefStructure.adtBlock |
     DefStructure.aliasBlock |
     DefStructure.cloneBlock |
