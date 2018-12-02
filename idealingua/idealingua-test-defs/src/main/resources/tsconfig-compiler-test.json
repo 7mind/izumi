@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "outDir": "../phase3-compiler-output",
+    "module": "commonjs",
+    "target": "es5",
+    "lib": ["es6", "dom"],
+    "sourceMap": true,
+    "allowJs": false,
+    "moduleResolution": "node",
+    "rootDirs": [
+      "."
+    ],
+    "declaration": true,
+    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "strictNullChecks": false,
+    "suppressImplicitAnyIndexErrors": true,
+    "experimentalDecorators": true,
+    "removeComments": true,
+    "preserveConstEnums": true
+  },
+  "compileOnSave": false
+}
