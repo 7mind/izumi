@@ -11,7 +11,7 @@ libraryDependencies += {
 }
 
 // https://github.com/sbt/sbt-assembly
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.9")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.7")
 
 // https://github.com/sbt/sbt-unidoc
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.2")
