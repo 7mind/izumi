@@ -2,15 +2,16 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 
 
 case class Anno(name: String, values: Map[String, Any])
 
 
-case class NodeMeta(doc: Option[String], annos: Seq[Anno])
+case class NodeMeta(doc: Option[String], annos: Seq[Anno], pos: InputPosition)
 
 object NodeMeta {
-  final val empty: NodeMeta = NodeMeta(None, Seq.empty)
+  final val empty: NodeMeta = NodeMeta(None, Seq.empty, InputPosition.Undefined)
 }
 
 sealed trait TypeDef {

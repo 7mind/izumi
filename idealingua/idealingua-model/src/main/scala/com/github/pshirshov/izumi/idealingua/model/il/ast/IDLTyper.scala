@@ -13,6 +13,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, 
 
 import scala.reflect._
 
+
 class IDLTyper(defn: CompletelyLoadedDomain) {
   def perform(): typed.DomainDefinition = {
     new IDLPostTyper(new IDLPretyper(defn).perform()).perform()
@@ -179,7 +180,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def fixMeta(meta: RawNodeMeta): NodeMeta = {
-    NodeMeta(meta.doc, meta.annos.map(fixAnno))
+    NodeMeta(meta.doc, meta.annos.map(fixAnno), meta.position)
   }
 
   protected def toMember(member: raw.RawAdtMember): typed.AdtMember = {

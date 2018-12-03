@@ -2,14 +2,17 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILDef, ILNewtype, ImportedId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILNewtype, ImportedId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{ParsedId, RawAdtMember, RawField, RawSimpleStructure}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.parser.{AlgebraicType, ParsedStruct, StructOp}
-import fastparse._
 import fastparse.NoWhitespace._
+import fastparse._
 
 trait DefStructure extends Separators {
+
+  import Positions._
+
   def field[_: P]: P[RawField] = P((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric)
     .map {
       case (name, tpe) if name.isEmpty =>
@@ -84,53 +87,73 @@ trait DefStructure extends Separators {
 
   def imports[_: P](sep: => P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
 
-  def mixinBlock[_: P]: P[ILDef] = aggregates.cblock(kw.mixin, DefStructure.Struct.struct)
+  def mixinBlock[_: P]: P[Interface] = P(IP(aggregates.cblock(kw.mixin, DefStructure.Struct.struct)
     .map {
-      case (c, i, v) => ILDef(v.toInterface(i.toInterfaceId, c))
-    }
+      case (c, i, v) => v.toInterface(i.toInterfaceId, c)
+    }))
 
-  def dtoBlock[_: P]: P[ILDef] = aggregates.cblock(kw.data, DefStructure.Struct.struct)
+  def dtoBlock[_: P]: P[DTO] = P(IP(aggregates.cblock(kw.data, DefStructure.Struct.struct)
     .map {
-      case (c, i, v) => ILDef(v.toDto(i.toDataId, c))
-    }
+      case (c, i, v) => v.toDto(i.toDataId, c)
+    }))
 
-  def idBlock[_: P]: P[ILDef] = aggregates.cblock(kw.id, DefStructure.aggregate)
+  def idBlock[_: P]: P[Identifier] = P(IP(aggregates.cblock(kw.id, DefStructure.aggregate)
     .map {
-      case (c, i, v) => ILDef(Identifier(i.toIdId, v.toList, c))
-    }
+      case (c, i, v) => Identifier(i.toIdId, v.toList, c)
+    }))
 
-  def aliasBlock[_: P]: P[ILDef] = aggregates.cstarting(kw.alias, "=" ~/ (inline ~ ids.identifier))
+  def aliasBlock[_: P]: P[Alias] = P(IP(aggregates.cstarting(kw.alias, "=" ~/ (inline ~ ids.identifier))
     .map {
-      case (c, i, v) => ILDef(Alias(i.toAliasId, v.toTypeId, c))
-    }
+      case (c, i, v) => Alias(i.toAliasId, v.toTypeId, c)
+    }))
 
-  def cloneBlock[_: P]: P[ILNewtype] = aggregates.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(DefStructure.Struct.struct).?))
+  def cloneBlock[_: P]: P[ILNewtype] = P(IP(aggregates.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(DefStructure.Struct.struct).?))
     .map {
       case (c, src, (target, struct)) =>
-        ILNewtype(NewType(target, src.toTypeId, struct.map(_.structure), c))
-    }
+        NewType(target, src.toTypeId, struct.map(_.structure), c)
+    }))
+    .map(ILNewtype)
 
   def adtFreeForm[_: P]: P[AlgebraicType] = P(any ~ "=" ~/ any ~ sepAdtFreeForm.? ~ any ~ DefStructure.adt(sepAdtFreeForm))
 
   def adtEnclosed[_: P]: P[AlgebraicType] = P(NoCut(aggregates.enclosed(DefStructure.adt(sepAdt))) | aggregates.enclosed(DefStructure.adt(sepAdtFreeForm)))
 
-  def adtBlock[_: P]: P[ILDef] = aggregates.cstarting(kw.adt, adtEnclosed | adtFreeForm)
+  def adtBlock[_: P]: P[Adt] = P(IP(aggregates.cstarting(kw.adt, adtEnclosed | adtFreeForm)
     .map {
       case (c, i, v) =>
-        ILDef(Adt(i.toAdtId, v.alternatives, c))
-    }
+        Adt(i.toAdtId, v.alternatives, c)
+    }))
 
   def enumFreeForm[_: P]: P[Seq[String]] = P(any ~ "=" ~/ any ~ sepEnumFreeForm.? ~ any ~ DefStructure.enum(sepEnumFreeForm))
 
   def enumEnclosed[_: P]: P[Seq[String]] = P(NoCut(aggregates.enclosed(DefStructure.enum(sepEnum))) | aggregates.enclosed(DefStructure.enum(sepEnumFreeForm)))
 
-  def enumBlock[_: P]: P[ILDef] = P(aggregates.cstarting(kw.enum, enumEnclosed | enumFreeForm))
+
+  def enumBlock[_: P]: P[Enumeration] = P(IP(aggregates.cstarting(kw.enum, enumEnclosed | enumFreeForm)
     .map {
       case (c, i, v) =>
-        ILDef(Enumeration(i.toEnumId, v.toList, c))
-    }
-
+        Enumeration(i.toEnumId, v.toList, c)
+    }))
 }
 
 object DefStructure extends DefStructure {
+}
+
+object Positions {
+
+  case class Indexed[T](value: T, start: Int, stop: Int)
+
+  def indexed[T](defparser: => P[T])(implicit v: P[_]): P[Indexed[T]] = {
+    (Index ~ defparser ~ Index).map {
+      case (start, value, stop) =>
+        Indexed(value, start, stop)
+    }
+  }
+
+  def IP[T <: RawPositioned](defparser: => P[T])(implicit v: P[_]): P[T] = {
+    indexed(defparser).map {
+      i =>
+        i.value.updatePosition(i.start, i.stop).asInstanceOf[T]
+    }
+  }
 }

@@ -6,22 +6,26 @@ import fastparse._
 
 
 trait DefMember extends Aggregates {
-  def inclusion[_:P]: P[ILInclude] = kw(kw.include, sym.String)
+  def inclusion[_: P]: P[ILInclude] = kw(kw.include, sym.String)
     .map(v => ILInclude(v))
 
-
-  def anyMember[_:P]: P[Val] = DefStructure.enumBlock |
+  def typeMember[_: P]: P[ILDef] = (DefStructure.enumBlock |
     DefStructure.adtBlock |
     DefStructure.aliasBlock |
-    DefStructure.cloneBlock |
     DefStructure.idBlock |
     DefStructure.mixinBlock |
-    DefStructure.dtoBlock |
-    DefService.serviceBlock |
-    DefBuzzer.buzzerBlock |
-    DefStreams.streamsBlock |
-    DefConst.constBlock |
-    inclusion
+    DefStructure.dtoBlock
+    )
+    .map(ILDef)
+
+  def anyMember[_: P]: P[Val] = typeMember | (
+    DefStructure.cloneBlock |
+      DefService.serviceBlock |
+      DefBuzzer.buzzerBlock |
+      DefStreams.streamsBlock |
+      DefConst.constBlock |
+      inclusion
+    )
 
 }
 

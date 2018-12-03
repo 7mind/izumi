@@ -5,7 +5,9 @@ import java.nio.file.Paths
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalFilesystemEnumerator
 import com.github.pshirshov.izumi.idealingua.il.renderer.IDLRenderer
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
+import org.scalactic.Equality
 import org.scalatest.WordSpec
 
 
@@ -41,6 +43,7 @@ class LoaderTest extends WordSpec {
           val typespaces = loader.resolver.resolve(unresolved).throwIfFailed().successful
           val restoredTypespace = typespaces.find(_.typespace.domain.id == domainId).get.typespace
 
+          // TODO: custom equality check ignoring meta
           assert(restoredTypespace.domain.types.toSet == ts.domain.types.toSet, domainId)
           assert(restoredTypespace.domain.services.toSet == ts.domain.services.toSet, domainId)
           assert(restoredTypespace.domain.buzzers.toSet == ts.domain.buzzers.toSet, domainId)
