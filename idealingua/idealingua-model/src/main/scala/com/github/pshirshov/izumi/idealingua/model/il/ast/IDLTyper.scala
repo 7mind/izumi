@@ -300,23 +300,31 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
         toGeneric(g)
 
       case v if contains(v) =>
-        val idefinite = toIndefinite(v)
-        mapping.get(idefinite) match {
-          case Some(t) =>
-            t
-          case None =>
-            throw new IDLException(s"[$domainId] Type $idefinite is missing from domain")
-        }
+        lookupLocal(v)
 
       case v if !contains(v) =>
-        val referencedDomain = domainId(v.pkg)
-        refs.get(referencedDomain) match {
-          case Some(typer) =>
-            typer.makeDefinite(v)
-          case None =>
-            throw new IDLException(s"[$domainId] Type $id references domain $referencedDomain but that domain wasn't imported. Imported domains: ${defn.referenced.keySet.mkString("\n  ")}")
-        }
+        lookupAnother(v)
+    }
+  }
 
+  private def lookupLocal(v: AbstractIndefiniteId) = {
+    val idefinite = toIndefinite(v)
+    mapping.get(idefinite) match {
+      case Some(t) =>
+        t
+
+      case None =>
+        throw new IDLException(s"[$domainId] Type $idefinite is missing from this domain")
+    }
+  }
+
+  private def lookupAnother(v: AbstractIndefiniteId) = {
+    val referencedDomain = domainId(v.pkg)
+    refs.get(referencedDomain) match {
+      case Some(typer) =>
+        typer.makeDefinite(v)
+      case None =>
+        throw new IDLException(s"[$domainId] Type $v references domain $referencedDomain but that domain wasn't imported. Imported domains: ${defn.referenced.keySet.mkString("\n  ")}")
     }
   }
 
@@ -374,7 +382,8 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     if (typeId.pkg.isEmpty) {
       true
     } else {
-      domainId.toPackage.zip(typeId.pkg).forall(ab => ab._1 == ab._2)
+      //domainId.toPackage.zip(typeId.pkg).forall(ab => ab._1 == ab._2)
+      domainId.toPackage == typeId.pkg
     }
   }
 

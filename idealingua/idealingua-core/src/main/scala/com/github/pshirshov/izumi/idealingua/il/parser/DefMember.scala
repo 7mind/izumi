@@ -9,7 +9,8 @@ trait DefMember extends Aggregates {
   def inclusion[_: P]: P[ILInclude] = kw(kw.include, sym.String)
     .map(v => ILInclude(v))
 
-  def typeMember[_: P]: P[ILDef] = (DefStructure.enumBlock |
+  def typeMember[_: P]: P[ILDef] = (
+    DefStructure.enumBlock |
     DefStructure.adtBlock |
     DefStructure.aliasBlock |
     DefStructure.idBlock |
