@@ -6,7 +6,7 @@ import fastparse.CharPredicates.{isDigit, isLetter}
 import fastparse._, NoWhitespace._
 
 trait Identifiers extends Separators {
-  def symbol[_:P]: P[String] = P(CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c) | c == '_').rep).!
+  def symbol[_:P]: P[String] = P((CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c) | c == '_').rep).!)
 
   def idPkg[_:P]: P[Seq[String]] = P(symbol.rep(sep = "."))
   def domainId[_:P]: P[DomainId] = P(idPkg)

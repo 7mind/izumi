@@ -47,9 +47,9 @@ trait DefStructure extends Separators {
 
     def plusField[_: P]: P[StructOp.AddField] = field.map(StructOp.AddField)
 
-    def anyPart [_: P]: P[StructOp] = P(plusField | embed)
+    def anyPart[_: P]: P[StructOp] = P(plusField | embed)
 
-    def sepInlineStruct [_: P]: P[Unit] = any ~ ",".? ~ any
+    def sepInlineStruct[_: P]: P[Unit] = any ~ ",".? ~ any
 
     def simpleStruct[_: P]: P[RawSimpleStructure] = {
 
@@ -62,7 +62,7 @@ trait DefStructure extends Separators {
 
   def inlineStruct[_: P]: P[RawSimpleStructure] = aggregates.enclosed(DefStructure.SimpleStruct.simpleStruct)
 
-  def adtOut[_: P]: P[AlgebraicType] = aggregates.enclosed(DefStructure.adt(sepAdt))
+  def adtOut[_: P]: P[AlgebraicType] = aggregates.enclosed(DefStructure.adt(sepAdtFreeForm))
 
   def aggregate[_: P]: P[Seq[RawField]] = P((inline ~ field ~ inline)
     .rep(sep = sepStruct))
@@ -110,16 +110,21 @@ trait DefStructure extends Separators {
         ILNewtype(NewType(target, src.toTypeId, struct.map(_.structure), c))
     }
 
-  def adtBlock[_: P]: P[ILDef] = aggregates.cstarting(kw.adt, P(aggregates.enclosed(DefStructure.adt(sepAdt)) | (any ~ "=" ~/ (sepAdt ~ DefStructure.adt(sepAdt)))))
+  def adtFreeForm[_: P]: P[AlgebraicType] = P(any ~ "=" ~/ any ~ sepAdtFreeForm.? ~ any ~ DefStructure.adt(sepAdtFreeForm))
+
+  def adtEnclosed[_: P]: P[AlgebraicType] = P(NoCut(aggregates.enclosed(DefStructure.adt(sepAdt))) | aggregates.enclosed(DefStructure.adt(sepAdtFreeForm)))
+
+  def adtBlock[_: P]: P[ILDef] = aggregates.cstarting(kw.adt, adtEnclosed | adtFreeForm)
     .map {
       case (c, i, v) =>
         ILDef(Adt(i.toAdtId, v.alternatives, c))
     }
 
-  def enumBlock[_: P]: P[ILDef] = aggregates.cstarting(kw.enum
-    , aggregates.enclosed(DefStructure.enum(sepEnum)) |
-      (any ~ "=" ~/ sepEnum ~ DefStructure.enum(sepEnum))
-  )
+  def enumFreeForm[_: P]: P[Seq[String]] = P(any ~ "=" ~/ any ~ sepEnumFreeForm.? ~ any ~ DefStructure.enum(sepEnumFreeForm))
+
+  def enumEnclosed[_: P]: P[Seq[String]] = P(NoCut(aggregates.enclosed(DefStructure.enum(sepEnum))) | aggregates.enclosed(DefStructure.enum(sepEnumFreeForm)))
+
+  def enumBlock[_: P]: P[ILDef] = P(aggregates.cstarting(kw.enum, enumEnclosed | enumFreeForm))
     .map {
       case (c, i, v) =>
         ILDef(Enumeration(i.toEnumId, v.toList, c))

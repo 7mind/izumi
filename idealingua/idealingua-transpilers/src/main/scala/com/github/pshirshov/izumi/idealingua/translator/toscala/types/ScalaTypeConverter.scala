@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 
-import scala.language.higherKinds
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 

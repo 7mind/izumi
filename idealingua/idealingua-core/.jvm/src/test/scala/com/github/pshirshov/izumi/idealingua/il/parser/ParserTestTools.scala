@@ -13,12 +13,13 @@ trait ParserTestTools {
     assertParseable(p, str)
   }
 
+  protected def ended[T](pp: P[_], p: P[_] => P[T]): P[T] = {
+    implicit val ppp: P[_] = pp
+    P(p(pp) ~ End)
+  }
+
   def assertParseableCompletely[T](p: P[_] => P[T], str: String): T = {
-    def ended(pp: P[_]) = {
-      implicit val ppp: P[_] = pp
-      P(p(pp) ~ End)
-    }
-    assertParseable(ended, str)
+    assertParseable(ended(_, p), str)
   }
 
   def assertParseable[T](p: P[_] => P[T], str: String): T = {
@@ -27,7 +28,15 @@ trait ParserTestTools {
         assert(index == str.length, s"Seems like value wasn't parsed completely: $v")
         v
       case Parsed.Failure(lp, idx, e) =>
-        throw new IllegalStateException(s"Parsing failed: $lp, $idx, $e, ${e.trace()}, ${e.trace().msg}")
+        throw new IllegalStateException(
+          s"""Parsing failed at ${e.startIndex}..$idx:
+             |  label  : $lp
+             |  message: ${e.trace().msg}
+             |  trace  : ${e.trace()}
+             |  stack  : ${e.stack}
+             |  input  : ${e.input}
+             |  parser : ${e.originalParser}
+             |  """.stripMargin)
     }
 
   }

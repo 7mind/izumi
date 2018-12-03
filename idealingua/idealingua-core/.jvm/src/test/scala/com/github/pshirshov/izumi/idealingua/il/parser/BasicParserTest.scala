@@ -17,45 +17,15 @@ class BasicParserTest
 
       assertParses(DefConst.defAnno(_),
         """@TestAnno(a=1, b="xxx",c=true,d=false,e=[1,2,"x"],f={a=1,b="str"})""".stripMargin)
-    }
-    "parse docstrings" in {
-      assertParses(comments.DocComment(_),
-        """/** docstring
-          | */""".stripMargin)
 
-      assertParses(comments.DocComment(_),
-        """/** docstring
-          |  * docstring
-          |  */""".stripMargin)
-
-      assertParses(comments.DocComment(_),
-        """/** docstring
-          |* docstring
-          |*/""".stripMargin)
-
-      assertParses(comments.DocComment(_),
-        """/**
-          |* docstring
-          |*/""".stripMargin)
-
-      assertParses(comments.DocComment(_),
-        """/**
-          |* docstring
-          |*
-          |*/""".stripMargin)
-
-      assertParsesInto(comments.DocComment(_),
-        """/** docstring
-          |  * with *stars*
-          |  */""".stripMargin,
-        """ docstring
-          | with *stars*""".stripMargin
-      )
+      assertParses(DefConst.defAnno(_),
+        """@TestAnno(a=1, /*comment*/ b="xxx")""".stripMargin)
     }
 
     "parse imports" in {
       assertParses(DefDomain.importBlock(_), "import a.b.c")
       assertParses(DefDomain.importBlock(_), "import     a.b.c")
+      assertParses(DefDomain.importBlock(_), "import a.b.{c, d}")
       assertParses(DefDomain.importBlock(_), "import a")
     }
 
@@ -67,7 +37,7 @@ class BasicParserTest
       assertParses(DefStructure.aliasBlock(_), "alias x = y")
     }
 
-    "parse enums" in {
+    "parse enclosed enums" in {
       assertParses(DefStructure.enumBlock(_), "enum MyEnum {X Y Zz}")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum { X Y Z }")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum {  X  Y  Z  }")
@@ -77,12 +47,37 @@ class BasicParserTest
           | Y
           |Z
           |}""".stripMargin)
+      assertParses(DefStructure.enumBlock(_),
+        """enum MyEnum {
+          |  ELEMENT1
+          |  // comment
+          |  ELEMENT2
+          |}""".stripMargin)
+
+      assertParses(DefStructure.enumBlock(_),
+        """enum MyEnum {
+          |  ELEMENT1
+          |  // comment
+          |  /* comment 2*/
+          |  ELEMENT2
+          |}""".stripMargin)
+      assertParses(DefStructure.enumBlock(_),
+        """enum MyEnum {
+          |  ELEMENT1 // comment 3
+          |  // comment
+          |  /* comment 2*/
+          |  ELEMENT2
+          |}""".stripMargin)
       assertParses(DefStructure.enumBlock(_), "enum MyEnum {X,Y,Z}")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum {X|Y|Z}")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum { X|Y|Z }")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum {X | Y | Z}")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum { X | Y | Z }")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum { X , Y , Z }")
+
+    }
+
+    "parse free-form enums" in {
       assertParses(DefStructure.enumBlock(_), "enum MyEnum = X | Y | Z")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum = X | /**/ Y | Z")
       assertParses(DefStructure.enumBlock(_),
@@ -94,6 +89,8 @@ class BasicParserTest
           || X
           | | Y
           || Z""".stripMargin)
+
+
     }
 
     "parse empty blocks" in {
@@ -128,7 +125,15 @@ class BasicParserTest
       assertParses(comments.ShortComment(_), "//\n")
       assertParses(sep.any(_), "//\n")
       assertParses(sep.any(_), "// test\n")
+    }
 
+    "parse complex comments -2" in {
+      assertParses(DefStructure.sepEnum(_), " ")
+      assertParses(DefStructure.sepEnum(_), "//comment\n")
+      assertParses(DefStructure.sepEnum(_), " //comment\n")
+      assertParses(DefStructure.sepEnum(_), "  //comment\n  ")
+      assertParses(DefStructure.sepEnum(_), "  //comment0\n  //comment1\n  ")
+      assertParses(DefStructure.sepEnum(_), "  //comment0\n  //comment1\n")
     }
 
     "parse service defintions" in {

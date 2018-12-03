@@ -13,7 +13,7 @@ trait DefSignature {
   def sigSep[_:P]: P[Unit] = P("=>" | "->" | ":" | "⇒")
   def errSep[_:P]: P[Unit] = P("!!" | "?!" | "⥃" | "↬")
 
-  def meta[_:P]: P[RawNodeMeta] = (MaybeDoc ~ DefConst.defAnnos)
+  def meta[_:P]: P[RawNodeMeta] = P(MaybeDoc ~ DefConst.defAnnos)
     .map {
       case (d, a) => RawNodeMeta(d, a)
     }
@@ -30,7 +30,7 @@ trait DefSignature {
   def struct[_:P]: P[Output.Struct] = DefStructure.inlineStruct.map(v => RawMethod.Output.Struct(v))
   def singular[_:P]: P[Output.Singular] = ids.idGeneric.map(v => RawMethod.Output.Singular(v))
 
-  def output[_:P]: P[Output.NonAlternativeOutput] = adt | struct | singular | void
+  def output[_:P]: P[Output.NonAlternativeOutput] = P(adt | struct | singular | void)
 
   def signature[_:P](keyword: => P[Unit]): P[(RawNodeMeta, String, RawSimpleStructure, Option[(Output.NonAlternativeOutput, Option[Output.NonAlternativeOutput])])] = P(
     baseSignature(keyword) ~
