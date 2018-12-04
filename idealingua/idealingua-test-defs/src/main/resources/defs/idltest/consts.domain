@@ -46,4 +46,28 @@ const {
       value = 265
     }
   ]
+
+  typedlist1: lst[TestPair] = lst[TestPair]([
+    {
+      name = "test"
+      value = 265
+    },
+    {
+      name = "test"
+      value = 265
+    }
+  ])
+
+  insanelist: lst[lst[TestPair]] = lst[lst[TestPair]]([
+    lst[TestPair]([
+      {
+        name = "test"
+        value = 265
+      },
+      {
+        name = "test"
+        value = 265
+      }
+    ])
+  ])
 }

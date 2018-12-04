@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 
-import scala.language.higherKinds
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 
@@ -68,12 +67,9 @@ class ScalaTypeConverter(domain: DomainId) {
     toScala(classTag[T].runtimeClass)
   }
 
-  def toScala1[T[_]](implicit ev: ClassTag[T[_]]): ScalaType = {
-    toScala(ev.runtimeClass)
-  }
-
   def toScala(clazz: Class[_]): ScalaType = {
-    val javaType = JavaType(clazz.getPackage.getName.split('.'), clazz.getSimpleName)
+    val parts = clazz.getName.split('.')
+    val javaType = JavaType(parts.init, parts.last)
     toScala(javaType)
   }
 

@@ -13,12 +13,15 @@ import scalaz.zio
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object RT {
-  implicit val contextShift: ContextShift[cats.effect.IO] = IO.contextShift(global)
-  implicit val timer: Timer[cats.effect.IO] = IO.timer(global)
-  implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(Executors.newWorkStealingPool())
   final val logger = makeLogger()
   final val printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
-  
+  final val handler = BIORunner.DefaultHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
+
+  implicit val contextShift: ContextShift[cats.effect.IO] = IO.contextShift(global)
+  implicit val timer: Timer[cats.effect.IO] = IO.timer(global)
+  implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(Executors.newWorkStealingPool(), handler)
+
+
   final val rt = new Http4sRuntime[zio.IO, cats.effect.IO, DummyRequestContext, String, Unit](global)
 
   private def makeLogger(): IzLogger = {

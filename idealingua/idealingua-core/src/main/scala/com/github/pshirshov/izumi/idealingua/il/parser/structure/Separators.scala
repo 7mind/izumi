@@ -1,26 +1,30 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import fastparse.all._
+import fastparse.NoWhitespace._
+import fastparse._
 
 trait Separators extends Comments {
-  private val ws = P(" " | "\t")(sourcecode.Name("WS"))
-  final val wss = P(ws.rep)
+  private def ws[_: P]: P[Unit] = P(" " | "\t")
 
-  private val WsComment = wss ~ MultilineComment ~ wss
-  private val SepLineBase = P(NLC | (WsComment ~ NLC | (wss ~ ShortComment)))
+  def wss[_: P]: P[Unit] = P(ws.rep)
 
-  final val inline = P(WsComment | wss)
-  final val any = P(wss ~ (WsComment | SepLineBase).rep ~ wss)
+  private def WsComment[_: P]: P[Unit] = P(wss ~ MultilineComment ~ wss)
 
-  final val sepStruct = P(";" | "," | SepLineBase | ws).rep(min = 1)
+  private def SepLineBase[_: P]: P[Unit] = P(NLC | (WsComment ~ NLC | (wss ~ ShortComment)))
 
-  final val sepAdt = P(
-    (wss ~ (WsComment | SepLineBase).rep(min = 0, max = 1) ~ wss ~ ("|" | ";" | ",") ~ wss ~ (WsComment | SepLineBase).rep(min = 0, max = 1) ~ wss) |
-      ((wss | WsComment) ~ SepLineBase ~ (wss | WsComment)) |
-      ws.rep(min = 1)
-  )
+  def inline[_: P]: P[Unit] = P(WsComment | wss)
 
-  final val sepEnum = sepAdt
+  def any[_: P]: P[Unit] = P(wss ~ (WsComment | SepLineBase).rep ~ wss)
+
+  def sepStruct[_: P]: P[Unit] = P(any ~ (";" | "," | SepLineBase | any) ~ any)
+
+  def sepEnum[_: P]: P[Unit] = P((ws.rep(1) | NLC | WsComment | (wss ~ ShortComment)).rep(1))
+
+  def sepAdt[_: P]: P[Unit] = P(sepEnum)
+
+  def sepEnumFreeForm[_: P]: P[Unit] = P(any ~ ("|" | ";" | ",") ~ any)
+
+  def sepAdtFreeForm[_: P]: P[Unit] = P(sepEnumFreeForm)
 
 }
 

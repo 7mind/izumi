@@ -8,82 +8,18 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoaderContext
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
-import com.github.pshirshov.izumi.idealingua.model.publishing.{ManifestDependency, Publisher}
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler._
 import com.github.pshirshov.izumi.idealingua.translator._
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
-import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
-import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import io.circe.{Decoder, Encoder}
 import org.scalacheck._
 import org.scalacheck.rng.Seed
-import scopt.OptionParser
 
 import scala.reflect._
 import scala.util.{Failure, Success, Try}
 
-case class LanguageOpts(id: String, withRuntime: Boolean, manifest: Option[File], extensions: List[String])
 
-case class IDLCArgs(source: Path, target: Path, languages: List[LanguageOpts])
-
-object IDLCArgs {
-  val parser: OptionParser[IDLCArgs] = new scopt.OptionParser[IDLCArgs]("idlc") {
-    head("idlc")
-    help("help")
-
-    opt[File]('s', "source").required().valueName("<dir>")
-      .action((a, c) => c.copy(source = a.toPath))
-      .text("source directory")
-
-    opt[File]('t', "target").required().valueName("<dir>")
-      .action((a, c) => c.copy(target = a.toPath))
-      .text("target directory")
-
-    arg[String]("language-id")
-      .text("{scala|typescript|go|csharp}")
-      .action {
-        (a, c) =>
-          c.copy(languages = c.languages :+ LanguageOpts(a, withRuntime = true, None, List.empty))
-      }
-      .optional()
-      .unbounded()
-      .children(
-        opt[File]("manifest").abbr("m")
-          .optional()
-          .text("manifest file to parse to the language-specific compiler module compiler")
-          .action {
-            (a, c) =>
-              c.copy(languages = c.languages.init :+ c.languages.last.copy(manifest = Some(a)))
-          },
-        opt[Unit]("no-runtime").abbr("nrt")
-          .optional()
-          .text("don't include runtime into compiler output")
-          .action {
-            (_, c) =>
-              c.copy(languages = c.languages.init :+ c.languages.last.copy(withRuntime = false))
-          },
-        opt[String]("extensions").abbr("e")
-          .optional()
-          .text("extensions spec, like -AnyvalExtension;-CirceDerivationTranslatorExtension or *")
-          .action {
-            (a, c) =>
-              c.copy(languages = c.languages.init :+ c.languages.last.copy(extensions = a.split(',').toList))
-          },
-      )
-  }
-
-}
 
 object CliIdlCompiler extends ScalacheckShapeless with Codecs {
   implicit val sgen: Arbitrary[String] = Arbitrary(Gen.alphaLowerStr)
-
-  private def extensions: Map[IDLLanguage, Seq[TranslatorExtension]] = Map(
-    IDLLanguage.Scala -> ScalaTranslator.defaultExtensions
-    , IDLLanguage.Typescript -> TypeScriptTranslator.defaultExtensions
-    , IDLLanguage.Go -> GoLangTranslator.defaultExtensions
-    , IDLLanguage.CSharp -> CSharpTranslator.defaultExtensions
-  )
 
 
   def main(args: Array[String]): Unit = {
@@ -155,7 +91,7 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
     }
   }
 
-  def readManifest[T : Arbitrary : ClassTag : Decoder : Encoder](path: File): T = {
+  def readManifest[T: Arbitrary : ClassTag : Decoder : Encoder](path: File): T = {
     import _root_.io.circe.parser._
     import _root_.io.circe.syntax._
     Try(parse(IzFiles.readString(path)).flatMap(_.as[T])) match {
@@ -180,45 +116,11 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
   }
 
   private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {
-    val all = extensions(lang)
+    val all = TypespaceTranslatorFacade.extensions(lang)
     val negative = filter.filter(_.startsWith("-")).map(_.substring(1)).map(ExtensionId).toSet
     all.filterNot(e => negative.contains(e.id))
   }
 }
 
-trait Codecs {
 
-  import _root_.io.circe._
-  import _root_.io.circe.generic.extras.semiauto
-  import _root_.io.circe.generic.semiauto._
-
-  implicit def decMdep: Decoder[ManifestDependency] = deriveDecoder
-
-  implicit def decPublisher: Decoder[Publisher] = deriveDecoder
-
-  implicit def decTsModuleSchema: Decoder[TypeScriptModuleSchema] = semiauto.deriveEnumerationDecoder
-
-  implicit def decScala: Decoder[ScalaBuildManifest] = deriveDecoder
-
-  implicit def decTs: Decoder[TypeScriptBuildManifest] = deriveDecoder
-
-  implicit def decGo: Decoder[GoLangBuildManifest] = deriveDecoder
-
-  implicit def decCs: Decoder[CSharpBuildManifest] = deriveDecoder
-
-
-  implicit def encMdep: Encoder[ManifestDependency] = deriveEncoder
-
-  implicit def encPublisher: Encoder[Publisher] = deriveEncoder
-
-  implicit def encTsModuleSchema: Encoder[TypeScriptModuleSchema] = semiauto.deriveEnumerationEncoder
-
-  implicit def encScala: Encoder[ScalaBuildManifest] = deriveEncoder
-
-  implicit def encTs: Encoder[TypeScriptBuildManifest] = deriveEncoder
-
-  implicit def encGo: Encoder[GoLangBuildManifest] = deriveEncoder
-
-  implicit def encCs: Encoder[CSharpBuildManifest] = deriveEncoder
-}
 

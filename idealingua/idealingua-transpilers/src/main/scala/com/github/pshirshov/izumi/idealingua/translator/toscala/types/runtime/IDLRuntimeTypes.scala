@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaType
 
 object IDLRuntimeTypes {
 
-  val model: Pkg = Pkg.parentOf[TypeId]
+  val model: Pkg = Pkg.of[TypeId]
   val services: Pkg = Pkg.of[IRTServerMultiplexor[_2Arg, _0Arg]]
 
   type _2Arg[+X, +Y] = Nothing

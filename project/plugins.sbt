@@ -1,4 +1,4 @@
-scalaVersion := "2.12.7"
+scalaVersion := "2.12.8"
 
 // bootstrap
 lazy val izumiDepsPlugin = RootProject(file("../sbt/sbt-izumi-deps"))
@@ -29,7 +29,7 @@ addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.5.1")
 addSbtPlugin("org.tpolecat" % "tut-plugin" % "0.6.7")
 
 // https://www.scala-js.org/
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.26")
 
 // https://github.com/portable-scala/sbt-crossproject
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")

@@ -13,7 +13,7 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.ManifestDependency
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.Translator
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompiler.TypescriptTranslatorOptions
+import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct

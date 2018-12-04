@@ -23,9 +23,7 @@ object GreeterRunnerExample {
     val invoked1 = multiplexor.doInvoke(json1, (), greeter.greet.signature.id)
     val invoked2 = multiplexor.doInvoke(json1, (), greeter.alternative.signature.id)
 
-    object io extends RTS {
-      override def defaultHandler: List[Throwable] => IO[Nothing, Unit] = _ => IO.sync(())
-    }
+    object io extends RTS
 
     println(io.unsafeRunSync(invoked1))
     println(io.unsafeRunSync(invoked2))

@@ -9,9 +9,10 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, NodeMeta}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, NodeMeta, Value}
 
 import scala.reflect._
+
 
 class IDLTyper(defn: CompletelyLoadedDomain) {
   def perform(): typed.DomainDefinition = {
@@ -161,16 +162,42 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     }
   }
 
-  protected def translateValue(v: RawVal[Any]): Any = {
+  protected def translateValue(v: RawVal): Value = {
     v match {
+      case s: RawValScalar =>
+        s match {
+          case RawVal.CInt(value) =>
+            Value.CInt(value)
+          case RawVal.CLong(value) =>
+            Value.CLong(value)
+          case RawVal.CFloat(value) =>
+            Value.CFloat(value)
+          case RawVal.CString(value) =>
+            Value.CString(value)
+          case RawVal.CBool(value) =>
+            Value.CBool(value)
+        }
       case RawVal.CMap(value) =>
-        value.mapValues(translateValue)
+        Value.CMap(value.mapValues(translateValue))
+
       case RawVal.CList(value) =>
-        value.map(translateValue)
-      case s: RawValScalar[_] =>
-        s.value
-      case o =>
-        throw new IDLException(s"[$domainId] Value isn't supported in annotations $o")
+        Value.CList(value.map(translateValue))
+
+      case RawVal.CTypedList(typeId, value) =>
+        val tpe = makeDefinite(typeId)
+        val list = Value.CList(value.map(translateValue))
+        // TODO: verify structure
+        Value.CTypedList(tpe, list)
+      case RawVal.CTyped(typeId, value) =>
+        val tpe = makeDefinite(typeId)
+        val typedValue = translateValue(value)
+        // TODO: verify structure
+        Value.CTyped(tpe, typedValue)
+      case RawVal.CTypedObject(typeId, value) =>
+        val tpe = makeDefinite(typeId)
+        val obj = Value.CMap(value.mapValues(translateValue))
+        // TODO: verify structure
+        Value.CTypedObject(tpe, obj)
     }
   }
 
@@ -179,7 +206,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def fixMeta(meta: RawNodeMeta): NodeMeta = {
-    NodeMeta(meta.doc, meta.annos.map(fixAnno))
+    NodeMeta(meta.doc, meta.annos.map(fixAnno), meta.position)
   }
 
   protected def toMember(member: raw.RawAdtMember): typed.AdtMember = {
@@ -299,23 +326,31 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
         toGeneric(g)
 
       case v if contains(v) =>
-        val idefinite = toIndefinite(v)
-        mapping.get(idefinite) match {
-          case Some(t) =>
-            t
-          case None =>
-            throw new IDLException(s"[$domainId] Type $idefinite is missing from domain")
-        }
+        lookupLocal(v)
 
       case v if !contains(v) =>
-        val referencedDomain = domainId(v.pkg)
-        refs.get(referencedDomain) match {
-          case Some(typer) =>
-            typer.makeDefinite(v)
-          case None =>
-            throw new IDLException(s"[$domainId] Type $id references domain $referencedDomain but that domain wasn't imported. Imported domains: ${defn.referenced.keySet.mkString("\n  ")}")
-        }
+        lookupAnother(v)
+    }
+  }
 
+  private def lookupLocal(v: AbstractIndefiniteId) = {
+    val idefinite = toIndefinite(v)
+    mapping.get(idefinite) match {
+      case Some(t) =>
+        t
+
+      case None =>
+        throw new IDLException(s"[$domainId] Type $idefinite is missing from this domain")
+    }
+  }
+
+  private def lookupAnother(v: AbstractIndefiniteId) = {
+    val referencedDomain = domainId(v.pkg)
+    refs.get(referencedDomain) match {
+      case Some(typer) =>
+        typer.makeDefinite(v)
+      case None =>
+        throw new IDLException(s"[$domainId] Type $v references domain $referencedDomain but that domain wasn't imported. Imported domains: ${defn.referenced.keySet.mkString("\n  ")}")
     }
   }
 
@@ -373,7 +408,8 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     if (typeId.pkg.isEmpty) {
       true
     } else {
-      domainId.toPackage.zip(typeId.pkg).forall(ab => ab._1 == ab._2)
+      //domainId.toPackage.zip(typeId.pkg).forall(ab => ab._1 == ab._2)
+      domainId.toPackage == typeId.pkg
     }
   }
 

@@ -1,31 +1,44 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
-
+import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 import com.github.pshirshov.izumi.idealingua.model.parser
 import com.github.pshirshov.izumi.idealingua.model.parser.{ParsedDomain, ParsedModel}
-import fastparse.all._
+import fastparse.NoWhitespace._
+import fastparse._
 
+case class IDLParserContext(
+                           file: FSPath
+                           )
 
-trait IDLParser {
-
+class IDLParserDefs(context: IDLParserContext) {
   import com.github.pshirshov.izumi.idealingua.il.parser.structure.sep._
 
-  def parseDomain(input: String): Parsed[ParsedDomain] = fullDomainDef.parse(input)
+  protected[parser] val defMember = new DefMember(context)
+  protected[parser] val defDomain = new DefDomain(context)
 
-  def parseModel(input: String): Parsed[ParsedModel] = modelDef.parse(input)
-
-  protected[parser] final val modelDef = P(any ~ DefMember.anyMember.rep(sep = any) ~ any ~ End).map {
+  protected[parser] def modelDef[_:P]: P[ParsedModel] = P(any ~ defMember.anyMember.rep(sep = any) ~ any ~ End).map {
     defs =>
       ParsedModel(defs)
   }
 
-  protected[parser] final val fullDomainDef = P(any ~ DefDomain.decl ~ modelDef).map {
+  protected[parser] def fullDomainDef[_:P]: P[ParsedDomain] = P(any ~ defDomain.decl ~ modelDef).map {
     case (did, imports, defs) =>
       parser.ParsedDomain(did, imports, defs)
   }
 
 }
 
-object IDLParser extends IDLParser {
+class IDLParser(context: IDLParserContext) {
+  def parseDomain(input: String): Parsed[ParsedDomain] = {
+    val defs = new IDLParserDefs(context)
+    parse(input, defs.fullDomainDef(_))
+  }
+
+  def parseModel(input: String): Parsed[ParsedModel] = {
+    val defs = new IDLParserDefs(context)
+
+    parse(input, defs.modelDef(_))
+  }
+
 
 }

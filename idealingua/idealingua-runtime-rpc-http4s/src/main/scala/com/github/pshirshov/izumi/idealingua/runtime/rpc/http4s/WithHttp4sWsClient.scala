@@ -77,10 +77,10 @@ class ClientWsDispatcher[C <: Http4sContext]
 
   protected def routeResponse(decoded: RpcPacket): BiIO[Throwable, PacketInfo] = {
     decoded match {
-      case RpcPacket(RPCPacketKind.RpcResponse, data, _, ref, _, _, _) =>
+      case RpcPacket(RPCPacketKind.RpcResponse, Some(data), _, ref, _, _, _) =>
         requestState.handleResponse(ref, data)
 
-      case p@RpcPacket(RPCPacketKind.BuzzRequest, data, Some(id), _, Some(service), Some(method), _) =>
+      case p@RpcPacket(RPCPacketKind.BuzzRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         val packetInfo = PacketInfo(methodId, id)
 

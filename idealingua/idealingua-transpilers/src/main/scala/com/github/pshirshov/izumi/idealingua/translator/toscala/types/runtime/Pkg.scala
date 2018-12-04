@@ -15,15 +15,10 @@ final case class Pkg private(pkgParts: Seq[String]) {
 }
 
 object Pkg {
-  def parentOf[T: ClassTag]: Pkg = {
-    val classPkg = classTag[T].runtimeClass.getPackage.getName
-    val classPkgParts = classPkg.split('.').toSeq
-    Pkg(classPkgParts)
-  }
 
   def of[T: ClassTag]: Pkg = {
-    val classPkg = classTag[T].runtimeClass.getPackage.getName
-    val classPkgParts = classPkg.split('.')
+    val className = classTag[T].runtimeClass.getName
+    val classPkgParts = className.split('.').init
     Pkg(classPkgParts)
   }
 

@@ -55,23 +55,31 @@ object WsSessionListener {
   }
 }
 
-trait WsContextProvider[Ctx, ClientId] {
+trait WsContextProvider[B[+ _, + _], Ctx, ClientId] {
   def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): Ctx
 
   def toId(initial: Ctx, packet: RpcPacket): Option[ClientId]
+
+  // TODO: we use this to mangle with authorization but it's dirty
+  def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): B[Throwable, Option[RpcPacket]]
 }
 
-object WsContextProvider {
-  def id[Ctx, ClientId]: WsContextProvider[Ctx, ClientId] = new WsContextProvider[Ctx, ClientId] {
-    override def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): Ctx = {
-      Quirks.discard(packet, id)
-      initial
-    }
+class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextProvider[C#BiIO, C#RequestContext, C#ClientId] {
+  import c._
 
-    override def toId(initial: Ctx, packet: RpcPacket): Option[ClientId] = {
-      Quirks.discard(initial, packet)
-      None
-    }
+  override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial:  C#RequestContext, packet: RpcPacket): C#BiIO[Throwable, Option[RpcPacket]] = {
+    Quirks.discard(id, initial, packet)
+    BIO.point(None)
+  }
+
+  override def toContext(id: WsClientId[C#ClientId], initial: C#RequestContext, packet: RpcPacket): C#RequestContext = {
+    Quirks.discard(packet, id)
+    initial
+  }
+
+  override def toId(initial: C#RequestContext, packet: RpcPacket): Option[C#ClientId] = {
+    Quirks.discard(initial, packet)
+    None
   }
 }
 
