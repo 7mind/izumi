@@ -6,7 +6,7 @@ object IzumiDeps {
 
   object V {
     // foundation
-    val scala_212 = "2.12.7"
+    val scala_212 = "2.12.8"
     val scala_213 = "2.13.0-M5"
 
     val collection_compat = "0.2.1"
@@ -19,7 +19,7 @@ object IzumiDeps {
 
     val cats = "1.5.0" // 1.2.0 is 2.13+ but we are blocked by http4s
     val cats_effect = "1.1.0-M1"
-    val zio = "0.4.1"
+    val zio = "0.5.0"
 
     val circe = "0.10.1" // 2.13+ , "0.10.0-M2" pulls cats 1.2.0
     val circe_derivation = "0.10.0-M1"
