@@ -24,13 +24,15 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
                                      , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext]
                                      , val codec: IRTClientMultiplexor[C#BiIO]
                                      , val contextProvider: AuthMiddleware[C#CatsIO, C#RequestContext]
-                                     , val wsContextProvider: WsContextProvider[C#RequestContext, C#ClientId]
+                                     , val wsContextProvider: WsContextProvider[C#BiIO, C#RequestContext, C#ClientId]
                                      , val wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
                                      , val listeners: Seq[WsSessionListener[C#ClientId]]
                                      , logger: IzLogger
                                      , printer: Printer
                                     ) {
+
   import c._
+
   protected val dsl: Http4sDsl[CatsIO] = c.dsl
 
   import dsl._
@@ -135,10 +137,8 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       parsed <- BIO.fromEither(parse(message))
       unmarshalled <- BIO.fromEither(parsed.as[RpcPacket])
       id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, unmarshalled))
-      userCtx <- BIO.syncThrowable(wsContextProvider.toContext(context.id, context.initialContext, unmarshalled))
       _ <- BIO.syncThrowable(context.updateId(id))
-      _ <- BIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
-      response <- respond(context, userCtx, unmarshalled).sandboxWith {
+      response <- respond(context, unmarshalled).sandboxWith {
         _.redeem(
           {
             case Left(exception :: otherIssues) =>
@@ -159,6 +159,39 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
     }
   }
 
+  protected def respond(context: WebsocketClientContextImpl[C], input: RpcPacket): BiIO[Throwable, Option[RpcPacket]] = {
+    input match {
+      case RpcPacket(RPCPacketKind.RpcRequest, None, _, _, _, _, _) =>
+        wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input)
+
+      case RpcPacket(RPCPacketKind.RpcRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
+        val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
+        for {
+          userCtx <- BIO.syncThrowable(wsContextProvider.toContext(context.id, context.initialContext, input))
+          _ <- BIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
+          result <- muxer.doInvoke(data, userCtx, methodId)
+          asBio <- result match {
+            case None =>
+              BIO.fail(new IRTMissingHandlerException(s"${context -> null}: No rpc handler for $methodId", input))
+            case Some(resp) =>
+              BIO.point(Some(rpc.RpcPacket.rpcResponse(id, resp)))
+          }
+        } yield {
+          asBio
+        }
+
+      case RpcPacket(RPCPacketKind.BuzzResponse, Some(data), _, id, _, _, _) =>
+        context.requestState.handleResponse(id, data).as(None)
+
+      case RpcPacket(RPCPacketKind.BuzzFailure, Some(data), _, Some(id), _, _, _) =>
+        context.requestState.respond(id, RawResponse.BadRawResponse())
+        BIO.fail(new IRTGenericFailure(s"Buzzer has returned failure: $data"))
+
+      case k =>
+        BIO.fail(new IRTMissingHandlerException(s"Can't handle $k", k))
+    }
+  }
+
   protected def handleWsError(context: WebsocketClientContextImpl[C], causes: List[Throwable], data: Option[String], kind: String): String = {
     causes.headOption match {
       case Some(cause) =>
@@ -168,29 +201,6 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       case None =>
         logger.error(s"${context -> null}: WS Execution failed, $kind, $data")
         printer.pretty(rpc.RpcPacket.rpcCritical("?", kind).asJson)
-    }
-  }
-
-  protected def respond(context: WebsocketClientContextImpl[C], userContext: RequestContext, input: RpcPacket): BiIO[Throwable, Option[RpcPacket]] = {
-    input match {
-      case RpcPacket(RPCPacketKind.RpcRequest, data, Some(id), _, Some(service), Some(method), _) =>
-        val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
-        muxer.doInvoke(data, userContext, methodId).flatMap {
-          case None =>
-            BIO.fail(new IRTMissingHandlerException(s"${context -> null}: No rpc handler for $methodId", input))
-          case Some(resp) =>
-            BIO.point(Some(rpc.RpcPacket.rpcResponse(id, resp)))
-        }
-
-      case RpcPacket(RPCPacketKind.BuzzResponse, data, _, id, _, _, _) =>
-        context.requestState.handleResponse(id, data).as(None)
-
-      case RpcPacket(RPCPacketKind.BuzzFailure, data, _, Some(id), _, _, _) =>
-        context.requestState.respond(id, RawResponse.BadRawResponse())
-        BIO.fail(new IRTGenericFailure(s"Buzzer has returned failure: $data"))
-
-      case k =>
-        BIO.fail(new IRTMissingHandlerException(s"Can't handle $k", k))
     }
   }
 
@@ -240,7 +250,7 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
         logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause")
         CIO.pure(Response(status = cause.status))
 
-      case scala.util.Failure(cause : RejectedExecutionException) =>
+      case scala.util.Failure(cause: RejectedExecutionException) =>
         logger.warn(s"${context -> null}: Not enough capacity to handle $method: $cause")
         dsl.TooManyRequests()
 

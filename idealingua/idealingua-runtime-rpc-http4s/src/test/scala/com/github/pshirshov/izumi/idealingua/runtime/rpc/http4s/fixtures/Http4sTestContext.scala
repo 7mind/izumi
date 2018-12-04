@@ -11,9 +11,11 @@ import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMuxRequest, IRTMuxResponse, RpcPacket}
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceClientWrapped
+import io.circe.Json
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
+import scalaz.zio
 
 
 object Http4sTestContext {
@@ -40,7 +42,7 @@ object Http4sTestContext {
         OptionT.liftF(IO(context))
     }
 
-  final val wsContextProvider = new WsContextProvider[DummyRequestContext, String] {
+  final val wsContextProvider = new WsContextProvider[BiIO, DummyRequestContext, String] {
     // DON'T DO THIS IN PRODUCTION CODE !!!
     val knownAuthorization = new AtomicReference[Credentials](null)
 
@@ -70,6 +72,32 @@ object Http4sTestContext {
         .collect {
           case Authorization(BasicCredentials((user, _))) => user
         }
+    }
+
+    override def handleEmptyBodyPacket(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): zio.IO[Throwable, Option[RpcPacket]] = {
+      Quirks.discard(id, initial)
+
+      packet.headers.get("Authorization") match {
+        case Some(value) if value.isEmpty =>
+          // here we may clear internal state
+          BIO.point(None)
+
+        case Some(_) =>
+          toId(initial, packet) match {
+            case Some(_) =>
+              // here we may set internal state
+              BIO.point(packet.ref.map {
+                ref =>
+                  RpcPacket.rpcResponse(ref, Json.obj())
+              })
+
+            case None =>
+              BIO.point(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed")))
+          }
+
+        case None =>
+          BIO.point(None)
+      }
     }
   }
 
