@@ -37,14 +37,21 @@ class RValue()(
 
       // TODO: incorrect cases atm
       case Value.CTypedList(typeId, value) =>
-        value.value.map(render).mkString("[", ", ", "]")
+        typed(typeId, value.value.map(render).mkString("[", ", ", "]"))
 
       case Value.CTypedObject(typeId, value) =>
-        value.value.mapValues(render).mkString("[", ",", "]")
+        typed(typeId, value.value.mapValues(render).mkString("[", ",", "]"))
+
 
       case Value.CTyped(typeId, value) =>
-        render(value)
+        typed(typeId, render(value))
+        evTypeId.render(typeId) + "(" + render(value) + ")"
     }
+
+  }
+
+  private def typed(typeId: TypeId, value: String) = {
+    s"${evTypeId.render(typeId)}($value)"
 
   }
 }

@@ -12,14 +12,14 @@ trait Identifiers extends Separators {
   def domainId[_:P]: P[DomainId] = P(idPkg)
     .map(v => DomainId(v.init, v.last))
 
-  def idFull[_:P]: P[ParsedId] = P(idPkg ~ "#" ~/ symbol).map(v => ParsedId(v._1, v._2))
+  def idFull[_:P]: P[ParsedId] = P(idPkg ~ "#" ~ symbol).map(v => ParsedId(v._1, v._2))
   def idShort[_:P]: P[ParsedId] = P(symbol).map(v => ParsedId(v))
   def identifier[_:P]: P[ParsedId] = P(idFull | idShort)
 
   def idGeneric[_:P]: P[AbstractIndefiniteId] = P(inline ~ identifier ~ inline ~ generic.rep(min = 0, max = 1) ~ inline)
     .map(tp => tp._1.toGeneric(tp._2))
 
-  def generic[_:P]: P[Seq[AbstractIndefiniteId]] = P("[" ~/ inline ~ idGeneric.rep(sep = ",") ~ inline ~ "]")
+  def generic[_:P]: P[Seq[AbstractIndefiniteId]] = P("[" ~ inline ~ idGeneric.rep(sep = ",") ~ inline ~ "]")
 
 }
 

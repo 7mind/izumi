@@ -31,7 +31,6 @@ class LoaderTest extends WordSpec {
           val ts = original.typespace
           val domainId = ts.domain.id
           val rendered = new IDLRenderer(ts.domain).render()
-
           val updated = files.updated(original.path, rendered)
 
           // TODO: ModelLoaderImpl
