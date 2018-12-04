@@ -55,9 +55,7 @@ trait DefStructure extends Separators {
     def sepInlineStruct[_: P]: P[Unit] = any ~ ",".? ~ any
 
     def simpleStruct[_: P]: P[RawSimpleStructure] = {
-
-
-      P((any ~ anyPart ~ any).rep(sep = sepInlineStruct))
+      P((any ~ anyPart ~ any).rep(sep = sepInlineStruct) ~ sepInlineStruct.?)
         .map(ParsedStruct.apply).map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
     }
 
@@ -116,7 +114,7 @@ trait DefStructure extends Separators {
 
   def adtFreeForm[_: P]: P[AlgebraicType] = P(any ~ "=" ~/ any ~ sepAdtFreeForm.? ~ any ~ DefStructure.adt(sepAdtFreeForm))
 
-  def adtEnclosed[_: P]: P[AlgebraicType] = P(NoCut(aggregates.enclosed(DefStructure.adt(sepAdt))) | aggregates.enclosed(DefStructure.adt(sepAdtFreeForm)))
+  def adtEnclosed[_: P]: P[AlgebraicType] = P(NoCut(aggregates.enclosed(DefStructure.adt(sepAdt) ~ sepAdt.?)) | aggregates.enclosed(DefStructure.adt(sepAdtFreeForm)))
 
   def adtBlock[_: P]: P[Adt] = P(IP(aggregates.cstarting(kw.adt, adtEnclosed | adtFreeForm)
     .map {
@@ -126,7 +124,7 @@ trait DefStructure extends Separators {
 
   def enumFreeForm[_: P]: P[Seq[String]] = P(any ~ "=" ~/ any ~ sepEnumFreeForm.? ~ any ~ DefStructure.enum(sepEnumFreeForm))
 
-  def enumEnclosed[_: P]: P[Seq[String]] = P(NoCut(aggregates.enclosed(DefStructure.enum(sepEnum))) | aggregates.enclosed(DefStructure.enum(sepEnumFreeForm)))
+  def enumEnclosed[_: P]: P[Seq[String]] = P(NoCut(aggregates.enclosed(DefStructure.enum(sepEnum) ~ sepEnum.?)) | aggregates.enclosed(DefStructure.enum(sepEnumFreeForm)))
 
 
   def enumBlock[_: P]: P[Enumeration] = P(IP(aggregates.cstarting(kw.enum, enumEnclosed | enumFreeForm)

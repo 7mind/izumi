@@ -11,7 +11,7 @@ trait DefDomain
     with Aggregates {
   def domainBlock[_:P]: P[DomainId] = P(kw.domain ~/ domainId)
 
-  def importBlock[_:P]: P[Import] = kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(DefStructure.imports(sep.sepStruct))).?).map {
+  def importBlock[_:P]: P[Import] = kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(DefStructure.imports(sep.sepStruct) ~ sepStruct.? )).?).map {
     case (id, names) =>
       names match {
         case Some(nn) =>

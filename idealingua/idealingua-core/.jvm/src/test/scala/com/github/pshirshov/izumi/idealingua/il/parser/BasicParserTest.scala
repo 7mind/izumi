@@ -16,7 +16,7 @@ class BasicParserTest
         """@TestAnno(a=1)""".stripMargin)
 
       assertParses(DefConst.defAnno(_),
-        """@TestAnno(a=1, b="xxx",c=true,d=false,e=[1,2,"x"],f={a=1,b="str"})""".stripMargin)
+        """@TestAnno(a=1, b="xxx",c=true,d=false,e=[1,2,"x",],f={a=1,b="str"} ,)""".stripMargin)
 
       assertParses(DefConst.defAnno(_),
         """@TestAnno(a=1, /*comment*/ b="xxx")""".stripMargin)
@@ -26,6 +26,8 @@ class BasicParserTest
       assertParses(DefDomain.importBlock(_), "import a.b.c")
       assertParses(DefDomain.importBlock(_), "import     a.b.c")
       assertParses(DefDomain.importBlock(_), "import a.b.{c, d}")
+      assertParses(DefDomain.importBlock(_), "import a.b.{c, d,}")
+      assertParses(DefDomain.importBlock(_), "import a.b.{c, d ,}")
       assertParses(DefDomain.importBlock(_), "import a")
     }
 
@@ -74,6 +76,7 @@ class BasicParserTest
       assertParses(DefStructure.enumBlock(_), "enum MyEnum {X | Y | Z}")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum { X | Y | Z }")
       assertParses(DefStructure.enumBlock(_), "enum MyEnum { X , Y , Z }")
+      assertParses(DefStructure.enumBlock(_), "enum MyEnum { X , Y , Z , F }")
 
     }
 

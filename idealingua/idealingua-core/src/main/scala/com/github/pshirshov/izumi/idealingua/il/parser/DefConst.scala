@@ -45,7 +45,7 @@ trait DefConst extends Identifiers {
       Agg.ObjAgg(RawVal.CMap(v.map(rc => rc.id.name -> rc.const).toMap))
   }
 
-  def listElements[_:P]: P[Seq[Agg]] = P(literal | objdef | listdef).rep(sep = sep.sepStruct)
+  def listElements[_:P]: P[Seq[Agg]] = P((literal | objdef | listdef).rep(sep = sep.sepStruct) ~ sep.sepStruct.?)
 
   def listdef[_:P]: P[Agg.ListAgg] = {
     structure.aggregates.enclosedB(listElements)
@@ -86,7 +86,7 @@ trait DefConst extends Identifiers {
   }
 
   // other method kinds should be added here
-  def consts[_:P]: P[Seq[RawConst]] = P(const.rep(sep = sepStruct))
+  def consts[_:P]: P[Seq[RawConst]] = P(const.rep(sep = sepStruct) ~ sepStruct.?)
 
   def enclosedConsts[_:P]: P[Seq[RawConst]] = structure.aggregates.enclosed(consts)
 
@@ -99,7 +99,7 @@ trait DefConst extends Identifiers {
     case (k, v) =>
       k.name -> v.value
   }
-  def simpleConsts[_:P]: P[RawVal.CMap] = simpleConst.rep(min = 0, sep = sepStruct)
+  def simpleConsts[_:P]: P[RawVal.CMap] = P(simpleConst.rep(min = 0, sep = sepStruct) ~ sepStruct.?)
     .map(v => RawVal.CMap(v.toMap))
 
   def defAnno[_:P]: P[RawAnno] = P("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~")")
