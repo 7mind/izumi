@@ -8,12 +8,12 @@ import fastparse._
 import fastparse.NoWhitespace._
 
 sealed trait Agg {
-  def value: RawVal[_]
+  def value: RawVal
 }
 
 object Agg {
 
-  final case class Just(value: RawVal[Any]) extends Agg
+  final case class Just(value: RawVal) extends Agg
 
   final case class ListAgg(value: RawVal.CList) extends Agg
 
@@ -82,7 +82,7 @@ trait DefConst extends Identifiers {
       RawConst(name.toConstId, rv, doc)
 
     case (doc, name, Some(typename), Agg.Just(rv)) =>
-      RawConst(name.toConstId, RawVal.CTyped(typename, rv.value), doc)
+      RawConst(name.toConstId, RawVal.CTyped(typename, rv), doc)
   }
 
   // other method kinds should be added here
@@ -95,7 +95,7 @@ trait DefConst extends Identifiers {
       v => ILConst(Constants(v.toList))
     }
 
-  def simpleConst[_:P]: P[(String, RawVal[_])] = P(idShort ~ inline ~ "=" ~ inline ~ value).map {
+  def simpleConst[_:P]: P[(String, RawVal)] = P(idShort ~ inline ~ "=" ~ inline ~ value).map {
     case (k, v) =>
       k.name -> v.value
   }

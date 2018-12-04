@@ -5,9 +5,7 @@ import java.nio.file.Paths
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalFilesystemEnumerator
 import com.github.pshirshov.izumi.idealingua.il.renderer.IDLRenderer
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
-import org.scalactic.Equality
 import org.scalatest.WordSpec
 
 

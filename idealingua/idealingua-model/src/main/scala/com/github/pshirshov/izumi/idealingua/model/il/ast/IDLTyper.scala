@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, NodeMeta}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, NodeMeta, Value}
 
 import scala.reflect._
 
@@ -162,16 +162,42 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     }
   }
 
-  protected def translateValue(v: RawVal[Any]): Any = {
+  protected def translateValue(v: RawVal): Value = {
     v match {
+      case s: RawValScalar =>
+        s match {
+          case RawVal.CInt(value) =>
+            Value.CInt(value)
+          case RawVal.CLong(value) =>
+            Value.CLong(value)
+          case RawVal.CFloat(value) =>
+            Value.CFloat(value)
+          case RawVal.CString(value) =>
+            Value.CString(value)
+          case RawVal.CBool(value) =>
+            Value.CBool(value)
+        }
       case RawVal.CMap(value) =>
-        value.mapValues(translateValue)
+        Value.CMap(value.mapValues(translateValue))
+
       case RawVal.CList(value) =>
-        value.map(translateValue)
-      case s: RawValScalar[_] =>
-        s.value
-      case o =>
-        throw new IDLException(s"[$domainId] Value isn't supported in annotations $o")
+        Value.CList(value.map(translateValue))
+
+      case RawVal.CTypedList(typeId, value) =>
+        val tpe = makeDefinite(typeId)
+        val list = Value.CList(value.map(translateValue))
+        // TODO: verify structure
+        Value.CTypedList(tpe, list)
+      case RawVal.CTyped(typeId, value) =>
+        val tpe = makeDefinite(typeId)
+        val typedValue = translateValue(value)
+        // TODO: verify structure
+        Value.CTyped(tpe, typedValue)
+      case RawVal.CTypedObject(typeId, value) =>
+        val tpe = makeDefinite(typeId)
+        val obj = Value.CMap(value.mapValues(translateValue))
+        // TODO: verify structure
+        Value.CTypedObject(tpe, obj)
     }
   }
 
