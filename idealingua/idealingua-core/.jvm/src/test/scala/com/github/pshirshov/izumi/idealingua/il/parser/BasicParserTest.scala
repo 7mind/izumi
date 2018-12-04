@@ -26,16 +26,18 @@ class BasicParserTest
     }
 
     "parse imports" in {
-      assertParses(DefDomain.importBlock(_), "import a.b.c")
-      assertParses(DefDomain.importBlock(_), "import     a.b.c")
-      assertParses(DefDomain.importBlock(_), "import a.b.{c, d}")
-      assertParses(DefDomain.importBlock(_), "import a.b.{c, d,}")
-      assertParses(DefDomain.importBlock(_), "import a.b.{c, d ,}")
-      assertParses(DefDomain.importBlock(_), "import a")
+      import defs.defDomain._
+      assertParses(importBlock(_), "import a.b.c")
+      assertParses(importBlock(_), "import     a.b.c")
+      assertParses(importBlock(_), "import a.b.{c, d}")
+      assertParses(importBlock(_), "import a.b.{c, d,}")
+      assertParses(importBlock(_), "import a.b.{c, d ,}")
+      assertParses(importBlock(_), "import a")
     }
 
     "parse domain declaration" in {
-      assertParses(DefDomain.domainBlock(_), "domain x.y.z")
+      import defs.defDomain._
+      assertParses(domainBlock(_), "domain x.y.z")
     }
 
     "parse aliases" in {

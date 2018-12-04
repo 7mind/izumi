@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
 import fastparse._
 
 
-trait DefMember extends Aggregates {
+class DefMember(context: IDLParserContext) extends Aggregates {
   def inclusion[_: P]: P[ILInclude] = kw(kw.include, sym.String)
     .map(v => ILInclude(v))
 
@@ -30,5 +30,3 @@ trait DefMember extends Aggregates {
 
 }
 
-object DefMember extends DefMember {
-}

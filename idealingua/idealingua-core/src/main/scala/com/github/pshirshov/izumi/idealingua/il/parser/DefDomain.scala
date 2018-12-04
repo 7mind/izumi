@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.Import
 import fastparse._
 import fastparse.NoWhitespace._
 
-trait DefDomain
+class DefDomain(context: IDLParserContext)
   extends Identifiers
     with Aggregates {
   def domainBlock[_:P]: P[DomainId] = P(kw.domain ~/ domainId)
@@ -25,6 +25,3 @@ trait DefDomain
 }
 
 
-object DefDomain extends DefDomain {
-
-}
