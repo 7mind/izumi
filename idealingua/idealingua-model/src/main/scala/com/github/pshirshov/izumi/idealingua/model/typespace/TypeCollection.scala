@@ -172,10 +172,17 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
   }
 
   protected def verified(types: Seq[TypeDef]): Seq[TypeDef] = {
-    val conflictingTypes = types.groupBy(id => (id.id.path, id.id.name)).filter(_._2.lengthCompare(1) > 0)
+    val conflictingTypes = types.groupBy(tpe => (tpe.id.path, tpe.id.name)).filter(_._2.size > 1)
 
     if (conflictingTypes.nonEmpty) {
-      throw new IDLException(s"Conflicting types in: $conflictingTypes")
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+
+      val formatted = conflictingTypes.map {
+        case (tpe, conflicts) =>
+          s"${tpe._1}${tpe._2}: ${conflicts.niceList().shift(2)}"
+      }
+
+      throw new IDLException(s"Conflicting types: ${formatted.niceList()}")
     }
 
     types
