@@ -44,10 +44,15 @@ object IzZip {
         f =>
           val uri = f.toURI
           val jarUri = URI.create(s"jar:${uri.toString}")
-          val maybeFs = getFs(jarUri)
-          maybeFs.map(fs => enumerate(predicate, fs)).get
+          val fs = getFs(jarUri).get
+
+          try {
+            enumerate(predicate, fs)
+              .map(path => path -> IzFiles.readString(path))
+          } finally {
+            fs.close()
+          }
       }
-      .map(path => path -> IzFiles.readString(path))
   }
 
   private def getFs(uri: URI): Try[FileSystem] = synchronized {
@@ -61,20 +66,17 @@ object IzZip {
   private def enumerate(predicate: Path => Boolean, fs: FileSystem): Iterable[Path] = {
     import scala.collection.JavaConverters._
 
-    try {
-      fs
-        .getRootDirectories
-        .asScala
-        .flatMap {
-          root =>
-            import java.nio.file.Files
-            Files.walk(root)
-              .iterator()
-              .asScala
-              .filter(predicate)
-        }
-    } finally {
-      fs.close()
-    }
+    fs
+      .getRootDirectories
+      .asScala
+      .flatMap {
+        root =>
+          import java.nio.file.Files
+          Files.walk(root)
+            .iterator()
+            .asScala
+            .filter(predicate)
+      }
+
   }
 }
