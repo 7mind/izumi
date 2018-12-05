@@ -228,6 +228,9 @@ data NestedClass {
 }
 
 service OptionalService {
-    def optionalMethod(a: opt[NestedGenerics2], b: opt[i32], c: opt[NestedClass]) => i32
+  /** method doc
+    */
+  @MethodMemberAnno(a=1)
+  def optionalMethod(a: opt[NestedGenerics2], b: opt[i32], c: opt[NestedClass]) => i32
 }
 
