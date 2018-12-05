@@ -107,11 +107,19 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
   private def findDomain(domains: UnresolvedDomains, include: DomainId): Option[DomainParsingResult.Success] = {
     val pkg = include.toPackage
 
-    domains.domains
+    // TODO: we need to check for duplicates here
+    val matching = domains.domains
       .results
       .collect {
         case s: DomainParsingResult.Success =>
           s
-      }.find(_.domain.did == include)
+      }.filter(_.domain.did == include)
+
+    if (matching.size > 1) {
+      throw new IDLException(s"$include: multiple domains have the same identifier: ${matching.map(_.path).niceList()}")
+
+    }
+
+    matching.headOption
   }
 }
