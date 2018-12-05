@@ -202,7 +202,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def fixAnno(v: RawAnno): Anno = {
-    Anno(v.name, v.values.value.mapValues(translateValue))
+    Anno(v.name, v.values.value.mapValues(translateValue), v.position)
   }
 
   protected def fixMeta(meta: RawNodeMeta): NodeMeta = {
@@ -267,7 +267,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def fixFields(fields: raw.RawTuple): typed.Tuple = {
-    fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId)))
+    fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId), position = f.position))
   }
 
   protected def fixMethod(method: raw.RawMethod): typed.DefMethod = {

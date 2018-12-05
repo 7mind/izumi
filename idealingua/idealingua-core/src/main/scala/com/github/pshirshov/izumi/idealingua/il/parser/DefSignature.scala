@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il.parser.structure.{aggregates, ids, sep}
+import com.github.pshirshov.izumi.idealingua.il.parser.structure.{ids, sep}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawMethod.Output
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawMethod, RawNodeMeta, RawSimpleStructure}
-import fastparse._
 import fastparse.NoWhitespace._
+import fastparse._
 
 class DefSignature(context: IDLParserContext) {
   import context._
@@ -15,7 +15,7 @@ class DefSignature(context: IDLParserContext) {
 
 
   def baseSignature[_:P](keyword: => P[Unit]): P[(RawNodeMeta, String, RawSimpleStructure)] = P(
-    aggregates.meta ~
+    metaAgg.meta ~
       keyword ~ inline ~
       ids.symbol ~ any ~
       defStructure.inlineStruct

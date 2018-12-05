@@ -2,8 +2,9 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, IdentifierId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.common.{PrimitiveId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 
-final case class Field(typeId: TypeId, name: String) {
+final case class Field(typeId: TypeId, name: String, position: InputPosition = InputPosition.Undefined) {
   override def toString: String = s"$name:$typeId"
 }
 

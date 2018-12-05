@@ -15,7 +15,7 @@ class DefService(context: IDLParserContext) {
   // other method kinds should be added here
   def methods[_:P]: P[Seq[RawMethod]] = P(method.rep(sep = any))
 
-  def serviceBlock[_:P]: P[ILService] = aggregates.cblock(kw.service, methods)
+  def serviceBlock[_:P]: P[ILService] = metaAgg.cblock(kw.service, methods)
     .map {
       case (c, i, v) => ILService(Service(i.toServiceId, v.toList, c))
     }

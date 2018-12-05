@@ -11,15 +11,16 @@ import fastparse._
 
 class DefStructure(context: IDLParserContext) extends Separators {
   import context.defPositions._
+  import context._
 
-  def field[_: P]: P[RawField] = P((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric)
+  def field[_: P]: P[RawField] = P(IP( ((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric)
     .map {
       case (name, tpe) if name.isEmpty =>
         RawField(tpe, tpe.name.uncapitalize)
 
       case (name, tpe) =>
         RawField(tpe, name)
-    }
+    }))
 
   object Struct {
     def plus[_: P]: P[StructOp.Extend] = P(("&" ~ "&&".?) ~/ (inline ~ ids.identifier)).map(_.toParentId).map(StructOp.Extend)
@@ -84,27 +85,27 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def imports[_: P](sep: => P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
 
-  def mixinBlock[_: P]: P[Interface] = P(IP(aggregates.cblock(kw.mixin, Struct.struct)
+  def mixinBlock[_: P]: P[Interface] = P(IP(metaAgg.cblock(kw.mixin, Struct.struct)
     .map {
       case (c, i, v) => v.toInterface(i.toInterfaceId, c)
     }))
 
-  def dtoBlock[_: P]: P[DTO] = P(IP(aggregates.cblock(kw.data, Struct.struct)
+  def dtoBlock[_: P]: P[DTO] = P(IP(metaAgg.cblock(kw.data, Struct.struct)
     .map {
       case (c, i, v) => v.toDto(i.toDataId, c)
     }))
 
-  def idBlock[_: P]: P[Identifier] = P(IP(aggregates.cblock(kw.id, aggregate)
+  def idBlock[_: P]: P[Identifier] = P(IP(metaAgg.cblock(kw.id, aggregate)
     .map {
       case (c, i, v) => Identifier(i.toIdId, v.toList, c)
     }))
 
-  def aliasBlock[_: P]: P[Alias] = P(IP(aggregates.cstarting(kw.alias, "=" ~/ (inline ~ ids.identifier))
+  def aliasBlock[_: P]: P[Alias] = P(IP(metaAgg.cstarting(kw.alias, "=" ~/ (inline ~ ids.identifier))
     .map {
       case (c, i, v) => Alias(i.toAliasId, v.toTypeId, c)
     }))
 
-  def cloneBlock[_: P]: P[ILNewtype] = P(IP(aggregates.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(Struct.struct).?))
+  def cloneBlock[_: P]: P[ILNewtype] = P(IP(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(Struct.struct).?))
     .map {
       case (c, src, (target, struct)) =>
         NewType(target, src.toTypeId, struct.map(_.structure), c)
@@ -115,7 +116,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def adtEnclosed[_: P]: P[AlgebraicType] = P(NoCut(aggregates.enclosed(adt(sepAdt) ~ sepAdt.?)) | aggregates.enclosed(adt(sepAdtFreeForm)))
 
-  def adtBlock[_: P]: P[Adt] = P(IP(aggregates.cstarting(kw.adt, adtEnclosed | adtFreeForm)
+  def adtBlock[_: P]: P[Adt] = P(IP(metaAgg.cstarting(kw.adt, adtEnclosed | adtFreeForm)
     .map {
       case (c, i, v) =>
         Adt(i.toAdtId, v.alternatives, c)
@@ -126,7 +127,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def enumEnclosed[_: P]: P[Seq[String]] = P(NoCut(aggregates.enclosed(enum(sepEnum) ~ sepEnum.?)) | aggregates.enclosed(enum(sepEnumFreeForm)))
 
 
-  def enumBlock[_: P]: P[Enumeration] = P(IP(aggregates.cstarting(kw.enum, enumEnclosed | enumFreeForm)
+  def enumBlock[_: P]: P[Enumeration] = P(IP(metaAgg.cstarting(kw.enum, enumEnclosed | enumFreeForm)
     .map {
       case (c, i, v) =>
         Enumeration(i.toEnumId, v.toList, c)

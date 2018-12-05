@@ -9,20 +9,20 @@ class BasicParserTest
 
   "IL parser" should {
     "parse annos" in {
-      assertParses(DefConst.defAnno(_),
+      assertParses(defConst.defAnno(_),
         """@TestAnno()""".stripMargin)
 
-      assertParses(DefConst.defAnno(_),
+      assertParses(defConst.defAnno(_),
         """@TestAnno(a=1)""".stripMargin)
 
-      assertParses(DefConst.defAnno(_),
+      assertParses(defConst.defAnno(_),
         """@TestAnno(a=1, b="xxx",c=true,d=false,e=[1,2,"x",],f={a=1,b="str"} ,)""".stripMargin)
-      assertParses(DefConst.defAnno(_),
+      assertParses(defConst.defAnno(_),
         """@TestAnno(e=[1,2,"x",],f = ( lst[str]([1,2,3]) ) )""".stripMargin)
-      assertParses(DefConst.defAnno(_),
+      assertParses(defConst.defAnno(_),
         """@AnotherAnno(a=1, b="str", c=[1,2,3], d={x=true, y=1}, e=lst[str]([1,2,3]))""".stripMargin)
 
-      assertParses(DefConst.defAnno(_),
+      assertParses(defConst.defAnno(_),
         """@TestAnno(a=1, /*comment*/ b="xxx")""".stripMargin)
     }
 

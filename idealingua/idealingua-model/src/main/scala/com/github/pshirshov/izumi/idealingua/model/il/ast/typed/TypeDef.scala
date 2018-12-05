@@ -26,7 +26,7 @@ object Value {
 
 }
 
-case class Anno(name: String, values: Map[String, Value])
+case class Anno(name: String, values: Map[String, Value], position: InputPosition)
 
 
 case class NodeMeta(doc: Option[String], annos: Seq[Anno], pos: InputPosition)

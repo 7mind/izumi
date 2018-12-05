@@ -26,7 +26,7 @@ class DefMember(context: IDLParserContext) extends Aggregates {
       defService.serviceBlock |
       defBuzzer.buzzerBlock |
       defStreams.streamsBlock |
-      DefConst.constBlock |
+      defConst.constBlock |
       inclusion
     )
 
