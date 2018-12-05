@@ -21,7 +21,7 @@ trait IDLRenderers {
   protected implicit lazy val typedStream: Renderable[TypedStream] = new RTypedStream()
   protected implicit lazy val streams: Renderable[Streams] = new RStreams()
   protected implicit lazy val anno: Renderable[Anno] = new RAnno()
-  protected implicit lazy val value: Renderable[Value] = new RValue()
+  protected implicit lazy val value: Renderable[ConstValue] = new RValue()
 
   protected implicit def typeid[T <: TypeId]: Renderable[T]
 }

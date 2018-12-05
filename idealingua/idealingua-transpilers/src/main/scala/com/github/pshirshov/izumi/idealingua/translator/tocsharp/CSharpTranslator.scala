@@ -549,7 +549,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   }
 
   protected def outputToAdtMember(out: DefMethod.Output): List[AdtMember] = out match {
-    case si: Singular => List(AdtMember(si.typeId, None))
+    case si: Singular => List(AdtMember(si.typeId, None, NodeMeta.empty))
     case al: Algebraic => al.alternatives
     case _: Struct => List.empty
     case _ => throw new Exception("Output type to TypeId is not supported for non singular or void types. " + out)

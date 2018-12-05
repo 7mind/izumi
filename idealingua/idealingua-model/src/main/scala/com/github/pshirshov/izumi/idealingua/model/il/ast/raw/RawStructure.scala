@@ -1,11 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
 import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 
 
-final case class RawField(typeId: AbstractIndefiniteId, name: String, position: InputPosition = InputPosition.Undefined) extends RawPositioned {
-  override def updatePosition(position: ParserPosition[_]): RawPositioned = this.copy(position = position.toInputPos)
+final case class RawField(typeId: AbstractIndefiniteId, name: String, meta: RawNodeMeta) extends RawWithMeta {
+
+  override def updateMeta(f: RawNodeMeta => RawNodeMeta): RawWithMeta = this.copy(meta = f(meta))
+
 }
 
 

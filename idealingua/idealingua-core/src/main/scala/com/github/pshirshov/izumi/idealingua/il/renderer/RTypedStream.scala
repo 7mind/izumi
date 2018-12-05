@@ -8,12 +8,12 @@ class RTypedStream()(
   implicit ev: Renderable[StreamDirection]
   , ev1: Renderable[SimpleStructure]
   , protected val evAnno: Renderable[Anno]
-) extends Renderable[TypedStream] with WithComment {
+) extends Renderable[TypedStream] with WithMeta {
   override def render(ts: TypedStream): String = {
     ts match {
       case m: TypedStream.Directed =>
         val out = s"${m.direction.render()} ${m.name}(${m.signature.render()})"
-        withComment(m.meta, out)
+        withMeta(m.meta, out)
     }
   }
 }

@@ -263,9 +263,9 @@ class TypespaceVerifier(ts: Typespace) {
     ts.domain.types.flatMap {
       case t: Adt =>
         val builtins = t.alternatives.collect {
-          case m@AdtMember(_: Builtin, _) =>
+          case m@AdtMember(_: Builtin, _, _) =>
             m
-          case m@AdtMember(a: AliasId, _) if ts.dealias(a).isInstanceOf[Builtin] =>
+          case m@AdtMember(a: AliasId, _, _) if ts.dealias(a).isInstanceOf[Builtin] =>
             m
         }
         if (builtins.nonEmpty) {

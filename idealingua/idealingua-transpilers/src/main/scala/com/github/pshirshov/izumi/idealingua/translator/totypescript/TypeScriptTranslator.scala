@@ -810,7 +810,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   }
 
   protected def outputToAdtMember(out: DefMethod.Output): List[AdtMember] = out match {
-    case si: Singular => List(AdtMember(si.typeId, None))
+    case si: Singular => List(AdtMember(si.typeId, None, NodeMeta.empty))
     case al: Algebraic => al.alternatives
     case _ => throw new Exception("Output type to TypeId is not supported for non singular or void types. " + out)
   }

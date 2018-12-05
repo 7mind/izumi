@@ -12,7 +12,7 @@ class RTypeDef()(
   , ev3: Renderable[Structure]
   , ev4: Renderable[IdField]
   , protected val evAnno: Renderable[Anno]
-) extends Renderable[TypeDef] with WithComment {
+) extends Renderable[TypeDef] with WithMeta {
   override def render(tpe: TypeDef): String = {
     val struct = tpe match {
       case d: Adt =>
@@ -52,7 +52,7 @@ class RTypeDef()(
            |}
          """.stripMargin
     }
-    withComment(tpe.meta, struct)
+    withMeta(tpe.meta, struct)
   }
 
   private def renderPrimitiveAggregate(aggregate: IdTuple): String = {

@@ -12,6 +12,9 @@ id TestValIdentifier {
 /** docstring
   */
 id TestIdentifier {
+  /** field doc
+    */
+  @FieldAnno(a=1)
   userId: str
   context: str
   userType: i08
@@ -98,7 +101,15 @@ mixin AllTypes {
   */
 adt AnAdt {
   AllTypes
+  /** adt member doc
+    */
+  @AdtMemberAnno(a=1)
   TestObject
+
+  /** adt member doc
+    */
+  @AdtMemberAnno(a=1)
+  AnyValTest as AnotherMember
 }
 
 /** docstring

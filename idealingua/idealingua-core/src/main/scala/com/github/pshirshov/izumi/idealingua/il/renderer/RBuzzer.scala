@@ -21,6 +21,6 @@ class RBuzzer()(
          |${buzzer.events.map(renderMethod).mkString("\n").shift(2)}
          |}
      """.stripMargin
-    withComment(buzzer.doc, out)
+    withMeta(buzzer.meta, out)
   }
 }

@@ -7,13 +7,13 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 class RStreams()(
   implicit ev: Renderable[TypedStream]
   , protected val evAnno: Renderable[Anno]
-) extends Renderable[Streams] with WithComment {
+) extends Renderable[Streams] with WithMeta {
   override def render(streams: Streams): String = {
     val out =
       s"""streams ${streams.id.name} {
          |${streams.streams.map(_.render()).mkString("\n").shift(2)}
          |}
      """.stripMargin
-    withComment(streams.doc, out)
+    withMeta(streams.meta, out)
   }
 }

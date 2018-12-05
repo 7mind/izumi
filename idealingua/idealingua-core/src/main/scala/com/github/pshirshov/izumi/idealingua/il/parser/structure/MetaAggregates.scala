@@ -12,15 +12,18 @@ class MetaAggregates(context: IDLParserContext) {
       case (d, a) => RawNodeMeta(d, a)
     }
 
+  def withMeta[T](defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, T)] = {
+    meta ~ defparser
+  }
 
   def cstarting[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, ParsedId, T)] = {
-    (meta ~ starting(keyword, defparser)).map {
+    withMeta(starting(keyword, defparser)).map {
       case (m, (i, t)) => (m, i, t)
     }
   }
 
   def cblock[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, ParsedId, T)] = {
-    (meta ~ block(keyword, defparser)).map {
+    withMeta(block(keyword, defparser)).map {
       case (m, (i, t)) => (m, i, t)
     }
   }

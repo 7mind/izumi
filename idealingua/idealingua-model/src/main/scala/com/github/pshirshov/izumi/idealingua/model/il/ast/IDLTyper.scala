@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, NodeMeta, Value}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, NodeMeta, ConstValue}
 
 import scala.reflect._
 
@@ -120,11 +120,11 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
       case d: RawTypeDef.Identifier =>
         val typedFields = d.fields.map {
           case f if isIdPrimitive(f.typeId) =>
-            IdField.PrimitiveField(toIdPrimitive(f.typeId), f.name)
+            IdField.PrimitiveField(toIdPrimitive(f.typeId), f.name, fixMeta(f.meta))
           case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[IdentifierId]) =>
-            IdField.SubId(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[IdentifierId]), f.name)
+            IdField.SubId(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[IdentifierId]), f.name, fixMeta(f.meta))
           case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[EnumId]) =>
-            IdField.Enum(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[TypeId.EnumId]), f.name)
+            IdField.Enum(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[TypeId.EnumId]), f.name, fixMeta(f.meta))
           case f =>
             throw new IDLException(s"[$domainId] Unsupporeted ID field $f while handling ${d.id} You may use primitive fields, enums or other IDs only")
         }
@@ -162,42 +162,42 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     }
   }
 
-  protected def translateValue(v: RawVal): Value = {
+  protected def translateValue(v: RawVal): ConstValue = {
     v match {
       case s: RawValScalar =>
         s match {
           case RawVal.CInt(value) =>
-            Value.CInt(value)
+            ConstValue.CInt(value)
           case RawVal.CLong(value) =>
-            Value.CLong(value)
+            ConstValue.CLong(value)
           case RawVal.CFloat(value) =>
-            Value.CFloat(value)
+            ConstValue.CFloat(value)
           case RawVal.CString(value) =>
-            Value.CString(value)
+            ConstValue.CString(value)
           case RawVal.CBool(value) =>
-            Value.CBool(value)
+            ConstValue.CBool(value)
         }
       case RawVal.CMap(value) =>
-        Value.CMap(value.mapValues(translateValue))
+        ConstValue.CMap(value.mapValues(translateValue))
 
       case RawVal.CList(value) =>
-        Value.CList(value.map(translateValue))
+        ConstValue.CList(value.map(translateValue))
 
       case RawVal.CTypedList(typeId, value) =>
         val tpe = makeDefinite(typeId)
-        val list = Value.CList(value.map(translateValue))
+        val list = ConstValue.CList(value.map(translateValue))
         // TODO: verify structure
-        Value.CTypedList(tpe, list)
+        ConstValue.CTypedList(tpe, list)
       case RawVal.CTyped(typeId, value) =>
         val tpe = makeDefinite(typeId)
         val typedValue = translateValue(value)
         // TODO: verify structure
-        Value.CTyped(tpe, typedValue)
+        ConstValue.CTyped(tpe, typedValue)
       case RawVal.CTypedObject(typeId, value) =>
         val tpe = makeDefinite(typeId)
-        val obj = Value.CMap(value.mapValues(translateValue))
+        val obj = ConstValue.CMap(value.mapValues(translateValue))
         // TODO: verify structure
-        Value.CTypedObject(tpe, obj)
+        ConstValue.CTypedObject(tpe, obj)
     }
   }
 
@@ -210,7 +210,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def toMember(member: raw.RawAdtMember): typed.AdtMember = {
-    typed.AdtMember(fixId(member.typeId): TypeId, member.memberName)
+    typed.AdtMember(fixId(member.typeId): TypeId, member.memberName, fixMeta(member.meta))
   }
 
   protected def toStruct(struct: raw.RawStructure): typed.Structure = {
@@ -226,15 +226,15 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def fixService(defn: raw.Service): typed.Service = {
-    typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod), doc = fixMeta(defn.meta))
+    typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod), meta = fixMeta(defn.meta))
   }
 
   protected def fixBuzzer(defn: raw.Buzzer): typed.Buzzer = {
-    typed.Buzzer(id = fixBuzzerId(defn.id), events = defn.events.map(fixMethod), doc = fixMeta(defn.meta))
+    typed.Buzzer(id = fixBuzzerId(defn.id), events = defn.events.map(fixMethod), meta = fixMeta(defn.meta))
   }
 
   protected def fixStreams(defn: raw.Streams): typed.Streams = {
-    typed.Streams(id = fixStreamsId(defn.id), streams = defn.streams.map(fixStream), doc = fixMeta(defn.meta))
+    typed.Streams(id = fixStreamsId(defn.id), streams = defn.streams.map(fixStream), meta = fixMeta(defn.meta))
   }
 
   protected def fixId[T <: AbstractIndefiniteId, R <: TypeId](t: T): R = {
@@ -267,7 +267,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def fixFields(fields: raw.RawTuple): typed.Tuple = {
-    fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId), position = f.position))
+    fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId), meta = fixMeta(f.meta)))
   }
 
   protected def fixMethod(method: raw.RawMethod): typed.DefMethod = {

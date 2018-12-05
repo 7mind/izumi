@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMet
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, DefMethod, SimpleStructure}
 
 trait WithMethodRenderer
-  extends WithComment {
+  extends WithMeta {
   def kw: String
 
   protected implicit def evSimpleStructure: Renderable[SimpleStructure]
@@ -20,7 +20,7 @@ trait WithMethodRenderer
       case m: RPCMethod =>
         val resultRepr = render(m.signature.output).fold("")(s => s": $s")
         val out = s"$kw ${m.name}(${m.signature.input.render()})$resultRepr"
-        withComment(m.meta, out)
+        withMeta(m.meta, out)
     }
   }
 

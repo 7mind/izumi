@@ -10,16 +10,17 @@ import fastparse.NoWhitespace._
 import fastparse._
 
 class DefStructure(context: IDLParserContext) extends Separators {
+
   import context.defPositions._
   import context._
 
-  def field[_: P]: P[RawField] = P(IP( ((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric)
+  def field[_: P]: P[RawField] = P(IP(metaAgg.withMeta((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric)
     .map {
-      case (name, tpe) if name.isEmpty =>
-        RawField(tpe, tpe.name.uncapitalize)
+      case (meta, (name, tpe)) if name.isEmpty =>
+        RawField(tpe, tpe.name.uncapitalize, meta)
 
-      case (name, tpe) =>
-        RawField(tpe, name)
+      case (meta, (name, tpe)) =>
+        RawField(tpe, name, meta)
     }))
 
   object Struct {
@@ -68,9 +69,9 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def aggregate[_: P]: P[Seq[RawField]] = P((inline ~ field ~ inline)
     .rep(sep = sepStruct))
 
-  def adtMember[_: P]: P[RawAdtMember] = P(ids.identifier ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?).map {
-    case (tpe, alias) =>
-      RawAdtMember(tpe.toTypeId, alias)
+  def adtMember[_: P]: P[RawAdtMember] = P(metaAgg.withMeta(ids.identifier ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?)).map {
+    case (meta, (tpe, alias)) =>
+      RawAdtMember(tpe.toTypeId, alias, meta)
   }
 
   def importMember[_: P]: P[ImportedId] = P(ids.symbol ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?).map {

@@ -20,6 +20,6 @@ class RService()(
          |${service.methods.map(renderMethod).mkString("\n").shift(2)}
          |}
      """.stripMargin
-    withComment(service.doc, out)
+    withMeta(service.meta, out)
   }
 }
