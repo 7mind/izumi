@@ -105,9 +105,6 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
   }
 
   private def findDomain(domains: UnresolvedDomains, include: DomainId): Option[DomainParsingResult.Success] = {
-    val pkg = include.toPackage
-
-    // TODO: we need to check for duplicates here
     val matching = domains.domains
       .results
       .collect {
