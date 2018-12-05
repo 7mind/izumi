@@ -123,8 +123,8 @@ object ArgumentNameExtractionMacro {
           case HiddenArrowArg(expr, name) => // ${x -> "name" -> null }
             reifiedExtractedHidden(c)(expr, name)
 
-          case v@c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
-            c.warning(v.pos,
+          case t@c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
+            c.warning(t.pos,
               s"""Constant expression as a logger argument: $v, this makes no sense.""".stripMargin)
 
             reifiedPrefixed(c)(param, "UNNAMED")
