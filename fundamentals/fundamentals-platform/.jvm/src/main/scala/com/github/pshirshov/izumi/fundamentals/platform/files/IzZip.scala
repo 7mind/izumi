@@ -37,7 +37,8 @@ object IzZip {
   }
 
 
-  def findInZips(zips: Seq[File], predicate: Path => Boolean): Iterable[(Path, String)] = {
+  // zip filesystem isn't thread safe
+  def findInZips(zips: Seq[File], predicate: Path => Boolean): Iterable[(Path, String)] = synchronized {
     zips
       .filter(f => f.exists() && f.isFile && (f.getName.endsWith(".jar") || f.getName.endsWith(".zip")))
       .flatMap {
@@ -55,7 +56,7 @@ object IzZip {
       }
   }
 
-  private def getFs(uri: URI): Try[FileSystem] = synchronized {
+  private def getFs(uri: URI): Try[FileSystem] = {
     Try(FileSystems.getFileSystem(uri))
       .recover {
         case _ =>
