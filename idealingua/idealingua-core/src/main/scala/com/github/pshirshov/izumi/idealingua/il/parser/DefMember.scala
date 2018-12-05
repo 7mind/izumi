@@ -6,24 +6,26 @@ import fastparse._
 
 
 class DefMember(context: IDLParserContext) extends Aggregates {
+  import context._
+
   def inclusion[_: P]: P[ILInclude] = kw(kw.include, sym.String)
     .map(v => ILInclude(v))
 
   def typeMember[_: P]: P[ILDef] = (
-    DefStructure.enumBlock |
-    DefStructure.adtBlock |
-    DefStructure.aliasBlock |
-    DefStructure.idBlock |
-    DefStructure.mixinBlock |
-    DefStructure.dtoBlock
+    defStructure.enumBlock |
+    defStructure.adtBlock |
+    defStructure.aliasBlock |
+    defStructure.idBlock |
+    defStructure.mixinBlock |
+    defStructure.dtoBlock
     )
     .map(ILDef)
 
   def anyMember[_: P]: P[Val] = typeMember | (
-    DefStructure.cloneBlock |
-      DefService.serviceBlock |
-      DefBuzzer.buzzerBlock |
-      DefStreams.streamsBlock |
+    defStructure.cloneBlock |
+      defService.serviceBlock |
+      defBuzzer.buzzerBlock |
+      defStreams.streamsBlock |
       DefConst.constBlock |
       inclusion
     )

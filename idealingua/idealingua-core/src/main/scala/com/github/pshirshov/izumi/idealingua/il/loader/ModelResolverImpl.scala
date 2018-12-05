@@ -6,10 +6,10 @@ import com.github.pshirshov.izumi.idealingua.model.loader._
 import com.github.pshirshov.izumi.idealingua.model.typespace.{TypespaceImpl, TypespaceVerifier}
 
 
-class ModelResolverImpl(domainExt: String) extends ModelResolver {
+class ModelResolverImpl() extends ModelResolver {
 
   override def resolve(domains: UnresolvedDomains): LoadedModels = LoadedModels {
-    val importResolver = new ExternalRefResolver(domains, domainExt)
+    val importResolver = new ExternalRefResolver(domains)
 
     domains.domains.results
       .map(importResolver.resolveReferences)

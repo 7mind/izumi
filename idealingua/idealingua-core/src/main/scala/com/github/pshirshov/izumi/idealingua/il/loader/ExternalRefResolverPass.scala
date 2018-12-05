@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.collection.mutable
 
-private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domainExt: String) {
+private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   // we need mutable state to handle cyclic references (even though they aren't supported by go we still handle them)
   private val processed = mutable.HashMap[DomainId, CompletelyLoadedDomain]()
 

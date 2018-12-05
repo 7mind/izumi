@@ -6,11 +6,11 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawMethod, Servic
 import fastparse._, NoWhitespace._
 
 
-trait DefService {
-
+class DefService(context: IDLParserContext) {
+  import context._
   import sep._
 
-  def method[_:P]: P[RawMethod.RPCMethod] = DefSignature.signature(kw.defm).map(DefSignature.toSignature)
+  def method[_:P]: P[RawMethod.RPCMethod] = defSignature.signature(kw.defm).map(defSignature.toSignature)
 
   // other method kinds should be added here
   def methods[_:P]: P[Seq[RawMethod]] = P(method.rep(sep = any))
@@ -20,7 +20,4 @@ trait DefService {
       case (c, i, v) => ILService(Service(i.toServiceId, v.toList, c))
     }
 
-}
-
-object DefService extends DefService {
 }

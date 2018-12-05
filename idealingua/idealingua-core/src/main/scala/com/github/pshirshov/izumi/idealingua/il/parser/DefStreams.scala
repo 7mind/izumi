@@ -7,11 +7,11 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawStream, Stream
 import fastparse._
 import fastparse.NoWhitespace._
 
-trait DefStreams {
-
+class DefStreams(context: IDLParserContext) {
+  import context._
   import sep._
 
-  def downstream[_:P]: P[RawStream.Directed] = DefSignature.baseSignature(kw.downstream).map {
+  def downstream[_:P]: P[RawStream.Directed] = defSignature.baseSignature(kw.downstream).map {
     case (c, id, in) =>
       RawStream.Directed(id, StreamDirection.ToClient, in, c)
 
@@ -19,7 +19,7 @@ trait DefStreams {
       throw new IllegalStateException(s"Impossible case: $f")
   }
 
-  def upstream[_:P]: P[RawStream.Directed] = DefSignature.baseSignature(kw.upstream).map {
+  def upstream[_:P]: P[RawStream.Directed] = defSignature.baseSignature(kw.upstream).map {
     case (c, id, in) =>
       RawStream.Directed(id, StreamDirection.ToServer, in, c)
 
@@ -37,11 +37,3 @@ trait DefStreams {
       case (c, i, v) => ILStreams(Streams(i.toStreamsId, v.toList, c))
     }
 }
-
-object DefStreams extends DefStreams {
-}
-
-
-
-
-

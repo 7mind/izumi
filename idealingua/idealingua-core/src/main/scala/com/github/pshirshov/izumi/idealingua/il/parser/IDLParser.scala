@@ -1,43 +1,35 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
-import com.github.pshirshov.izumi.idealingua.model.parser
 import com.github.pshirshov.izumi.idealingua.model.parser.{ParsedDomain, ParsedModel}
-import fastparse.NoWhitespace._
 import fastparse._
 
 case class IDLParserContext(
-                           file: FSPath
-                           )
-
-class IDLParserDefs(context: IDLParserContext) {
-  import com.github.pshirshov.izumi.idealingua.il.parser.structure.sep._
-
-  protected[parser] val defMember = new DefMember(context)
-  protected[parser] val defDomain = new DefDomain(context)
-
-  protected[parser] def modelDef[_:P]: P[ParsedModel] = P(any ~ defMember.anyMember.rep(sep = any) ~ any ~ End).map {
-    defs =>
-      ParsedModel(defs)
-  }
-
-  protected[parser] def fullDomainDef[_:P]: P[ParsedDomain] = P(any ~ defDomain.decl ~ modelDef).map {
-    case (did, imports, defs) =>
-      parser.ParsedDomain(did, imports, defs)
-  }
+                             file: FSPath
+                           ) {
+  protected[parser] val defMember = new DefMember(this)
+  protected[parser] val defDomain = new DefDomain(this)
+  protected[parser] val defSignature = new DefSignature(this)
+  protected[parser] val defStructure = new DefStructure(this)
+  protected[parser] val defService = new DefService(this)
+  protected[parser] val defBuzzer = new DefBuzzer(this)
+  protected[parser] val defStreams = new DefStreams(this)
+  protected[parser] val defParsers = new DefParsers(this)
+  protected[parser] val defPositions = new Positions(this)
 
 }
 
+
 class IDLParser(context: IDLParserContext) {
+
+  import context._
+
   def parseDomain(input: String): Parsed[ParsedDomain] = {
-    val defs = new IDLParserDefs(context)
-    parse(input, defs.fullDomainDef(_))
+    parse(input, defParsers.fullDomainDef(_))
   }
 
   def parseModel(input: String): Parsed[ParsedModel] = {
-    val defs = new IDLParserDefs(context)
-
-    parse(input, defs.modelDef(_))
+    parse(input, defParsers.modelDef(_))
   }
 
 

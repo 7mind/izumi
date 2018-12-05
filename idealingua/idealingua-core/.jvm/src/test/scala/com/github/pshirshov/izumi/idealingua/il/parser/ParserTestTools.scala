@@ -5,7 +5,7 @@ import NoWhitespace._
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 
 trait ParserTestTools {
-  val defs = new IDLParserDefs(IDLParserContext(FSPath.Name("ParserTestTools.domain")))
+  val ctx = IDLParserContext(FSPath.Name("ParserTestTools.domain"))
 
   def assertParsesInto[T](p: P[_] => P[T], src: String, expected: T): Unit = {
     assert(assertParses(p, src) == expected)
@@ -46,7 +46,7 @@ trait ParserTestTools {
 
 
   def assertDomainParses(str: String): Unit = {
-    val parsed = assertParseable(defs.fullDomainDef(_), str)
+    val parsed = assertParseable(ctx.defParsers.fullDomainDef(_), str)
     assert(parsed.model.definitions.nonEmpty)
     ()
   }

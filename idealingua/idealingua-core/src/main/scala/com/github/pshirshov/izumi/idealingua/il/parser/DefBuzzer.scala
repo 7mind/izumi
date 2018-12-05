@@ -6,11 +6,11 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import fastparse.NoWhitespace._
 import fastparse._
 
-trait DefBuzzer {
-
+class DefBuzzer(context: IDLParserContext) {
   import sep._
+  import context._
 
-  def method[_:P]: P[RawMethod.RPCMethod] = DefSignature.signature(kw.defe).map(DefSignature.toSignature)
+  def method[_:P]: P[RawMethod.RPCMethod] = defSignature.signature(kw.defe).map(defSignature.toSignature)
 
   // other method kinds should be added here
   def methods[_:P]: P[Seq[RawMethod]] = P(method.rep(sep = any))
@@ -21,10 +21,5 @@ trait DefBuzzer {
     }
 
 }
-
-object DefBuzzer extends DefBuzzer {
-}
-
-
 
 
