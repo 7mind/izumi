@@ -33,14 +33,16 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
     parsed.imports.filterNot(i => processed.contains(i.id)).foreach {
       imprt =>
         val imported = findDomain(domains, imprt.id)
-          .getOrElse(throw new IDLException(s"${parsed.did}: can't find import ${imprt.id}. Available: ${domains.domains.results.map {
-          case DomainParsingResult.Success(path, domain) =>
-            s"OK: ${domain.did} at $path"
+          .getOrElse(throw new IDLException(s"${parsed.did}: can't find import ${imprt.id}. Available: ${
+            domains.domains.results.map {
+              case DomainParsingResult.Success(path, domain) =>
+                s"OK: ${domain.did} at $path"
 
-          case DomainParsingResult.Failure(path, message) =>
-            s"KO: $path, problem: $message"
+              case DomainParsingResult.Failure(path, message) =>
+                s"KO: $path, problem: $message"
 
-        }.niceList()}"))
+            }.niceList()
+          }"))
 
         resolveReferences(imported) match {
           case Left(value) =>
@@ -68,12 +70,14 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
           throw new IDLException(s"$forDomain: can't parse inclusion $path, inclusion chain: $forDomain->${stack.mkString("->")}. Message: $message")
 
       }
-      .getOrElse(throw new IDLException(s"$forDomain: can't find inclusion $includePath, inclusion chain: $forDomain->${stack.mkString("->")}. Available: ${domains.models.results.map {
-        case ModelParsingResult.Success(path, _) =>
-          s"OK: $path"
-        case ModelParsingResult.Failure(path, message) =>
-          s"KO: $path, problem: $message"
-      }.niceList()}"))
+      .getOrElse(throw new IDLException(s"$forDomain: can't find inclusion $includePath, inclusion chain: $forDomain->${stack.mkString("->")}. Available: ${
+        domains.models.results.map {
+          case ModelParsingResult.Success(path, _) =>
+            s"OK: $path"
+          case ModelParsingResult.Failure(path, message) =>
+            s"KO: $path, problem: $message"
+        }.niceList()
+      }"))
   }
 
   private def resolveIncludes(parsed: ParsedDomain): Seq[IL.Val] = {
@@ -100,13 +104,14 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
     domains.models.results.find(f => candidates.contains(f.path))
   }
 
-  private def findDomain(domains: UnresolvedDomains, include: DomainId): Option[DomainParsingResult] = {
+  private def findDomain(domains: UnresolvedDomains, include: DomainId): Option[DomainParsingResult.Success] = {
     val pkg = include.toPackage
 
-    val candidates = Set(
-      FSPath(pkg.init :+ s"${pkg.last}$domainExt"),
-      FSPath("idealingua" +: pkg.init :+ s"${pkg.last}$domainExt"),
-    )
-    domains.domains.results.find(f => candidates.contains(f.path))
+    domains.domains
+      .results
+      .collect {
+        case s: DomainParsingResult.Success =>
+          s
+      }.find(_.domain.did == include)
   }
 }
