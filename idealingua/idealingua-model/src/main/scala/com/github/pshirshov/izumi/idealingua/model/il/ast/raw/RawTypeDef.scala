@@ -15,6 +15,9 @@ sealed trait IdentifiedRawTypeDef extends RawTypeDef {
   def id: TypeId
 }
 
+case class RawEnumMember(value: String, meta: RawNodeMeta) {
+  override def toString: String = value
+}
 
 case class RawNodeMeta(doc: Option[String], annos: Seq[RawAnno], position: InputPosition = InputPosition.Undefined)
 
@@ -28,7 +31,7 @@ object RawTypeDef {
     override def updateMeta(f: RawNodeMeta => RawNodeMeta): DTO = this.copy(meta = f(meta))
   }
 
-  final case class Enumeration(id: EnumId, members: List[String], meta: RawNodeMeta) extends IdentifiedRawTypeDef {
+  final case class Enumeration(id: EnumId, members: List[RawEnumMember], meta: RawNodeMeta) extends IdentifiedRawTypeDef {
     override def updateMeta(f: RawNodeMeta => RawNodeMeta): Enumeration = this.copy(meta = f(meta))
   }
 

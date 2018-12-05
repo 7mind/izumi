@@ -283,7 +283,7 @@ class TypespaceVerifier(ts: Typespace) {
       case t: Enumeration =>
         val duplicates = t.members.groupBy(v => v).filter(_._2.lengthCompare(1) > 0)
         if (duplicates.nonEmpty) {
-          Seq(Issue.DuplicateEnumElements(t.id, duplicates.keys.toList))
+          Seq(Issue.DuplicateEnumElements(t.id, duplicates.keys.map(_.value).toList))
         } else {
           Seq.empty
         }

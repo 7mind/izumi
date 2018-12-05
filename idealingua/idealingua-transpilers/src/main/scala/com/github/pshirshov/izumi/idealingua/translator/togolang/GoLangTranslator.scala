@@ -544,19 +544,19 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |type $name ${if (i.members.length <= 255) "uint8" else "uint16"}
        |
        |const (
-       |${i.members.map(m => s"// $m enum value\n" + (if (m == i.members.head) s"${name + m} $name = iota" else (name + m))).mkString("\n").shift(4)}
+       |${i.members.map(_.value).map(m => s"// $m enum value\n" + (if (m == i.members.head.value) s"${name + m} $name = iota" else (name + m))).mkString("\n").shift(4)}
        |)
        |
        |var map${name}ToString = map[$name]string{
-       |${i.members.map(m => s"${name + m}: " + "\"" + m + "\",").mkString("\n").shift(4)}
+       |${i.members.map(_.value).map(m => s"${name + m}: " + "\"" + m + "\",").mkString("\n").shift(4)}
        |}
        |
        |var allOf$name = []$name{
-       |${i.members.map(m => name + m + ",").mkString("\n").shift(4)}
+       |${i.members.map(_.value).map(m => name + m + ",").mkString("\n").shift(4)}
        |}
        |
        |var mapStringTo$name = map[string]$name{
-       |${i.members.map(m => "\"" + m + "\": " + s"${name + m},").mkString("\n").shift(4)}
+       |${i.members.map(_.value).map(m => "\"" + m + "\": " + s"${name + m},").mkString("\n").shift(4)}
        |}
        |
        |// String converts an enum to a string
@@ -574,7 +574,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |}
        |
        |func NewTest$name() $name {
-       |    return mapStringTo$name["${i.members.head}"]
+       |    return mapStringTo$name["${i.members.head.value}"]
        |}
        |
        |// IsValid$name checks if the string value can be converted to an enum
@@ -613,35 +613,35 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |)
          |
          |func Test${name}Creation(t *testing.T) {
-         |    if IsValid${name}("${i.members.head}Invalid") {
+         |    if IsValid$name("${i.members.head.value}Invalid") {
          |        t.Errorf("type '%s' IsValid function should correctly identify invalid string enums", "$name")
          |    }
          |
-         |    if !IsValid${name}("${i.members.head}") {
+         |    if !IsValid$name("${i.members.head.value}") {
          |        t.Errorf("type '%s' IsValid function should correctly identify valid string enums", "$name")
          |    }
          |
-         |    v1 := New${name}("${i.members.head}")
-         |    if !IsValid${name}(v1.String()) {
-         |        t.Errorf("type '%s' should be possible to create via New method with '%s' value", "$name", "${name + i.members.head}")
+         |    v1 := New$name("${i.members.head.value}")
+         |    if !IsValid$name(v1.String()) {
+         |        t.Errorf("type '%s' should be possible to create via New method with '%s' value", "$name", "${name + i.members.head.value}")
          |    }
          |
-         |    v2 := ${name + i.members.head}
+         |    v2 := ${name + i.members.head.value}
          |    if v1 != v2 {
          |        t.Errorf("type '%s' created from enum const and a corresponding string must return the same value. Got '%+v' and '%+v'", "$name", v1, v2)
          |    }
          |}
          |
          |func Test${name}StringSerialization(t *testing.T) {
-         |    v1 := New${name}("${i.members.head}")
-         |    v2 := New${name}(v1.String())
+         |    v1 := New$name("${i.members.head.value}")
+         |    v2 := New$name(v1.String())
          |    if v1 != v2 {
          |        t.Errorf("type '%s' to string and new from that string must return the same enum value. Got '%+v' and '%+v'", "$name", v1, v2)
          |    }
          |}
          |
          |func Test${name}JSONSerialization(t *testing.T) {
-         |    v1 := New${name}("${i.members.head}")
+         |    v1 := New$name("${i.members.head.value}")
          |    serialized, err := json.Marshal(v1)
          |    if err != nil {
          |        t.Fatalf("type '%s' should serialize into JSON using Marshal. %s", "$name", err.Error())
@@ -827,12 +827,12 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |
          |type ${i.id.name}Constructor func() ${i.id.name}
          |
-         |func ctor${eid}() ${i.id.name} {
-         |    return &${eid}{}
+         |func ctor$eid() ${i.id.name} {
+         |    return &$eid{}
          |}
          |
          |var known${i.id.name}Polymorphic = map[string]${i.id.name}Constructor {
-         |    rtti${eid}FullClassName: ctor${eid},
+         |    rtti${eid}FullClassName: ctor$eid,
          |}
          |
          |// Register${i.id.name} registers a new constructor for a polymorphic type ${i.id.name}
@@ -1137,7 +1137,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    }
        |}
        |
-       |func New${name}(server ${i.id.name}Server, marshaller irt.Marshaller) *$name{
+       |func New$name(server ${i.id.name}Server, marshaller irt.Marshaller) *$name{
        |    res := &$name{}
        |    res.SetServer(server)
        |    res.SetMarshaller(marshaller)
@@ -1328,7 +1328,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    }
        |}
        |
-       |func New${name}(handlers ${i.id.name}BuzzerHandlers, marshaller irt.Marshaller) *$name{
+       |func New$name(handlers ${i.id.name}BuzzerHandlers, marshaller irt.Marshaller) *$name{
        |    res := &$name{}
        |    res.SetHandlers(handlers)
        |    res.SetMarshaller(marshaller)

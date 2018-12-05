@@ -167,6 +167,9 @@ data AnotherTestObject {
 /** docstring
   */
 enum RTestEnum {
+  /** enum member doc
+    */
+  @EnumMemberAnno(a=1)
   A
 }
 

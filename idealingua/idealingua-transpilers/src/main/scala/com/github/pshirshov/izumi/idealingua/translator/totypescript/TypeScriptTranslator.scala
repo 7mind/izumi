@@ -486,7 +486,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   }
 
   protected def renderEnumeration(i: Enumeration)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
-    val it = i.members.iterator
+    val it = i.members.map(_.value).iterator
     val members = it.map { m =>
       s"$m = '$m'" + (if (it.hasNext) "," else "")
     }.mkString("\n")

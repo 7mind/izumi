@@ -61,7 +61,7 @@ class RTypeDef()(
       .mkString("\n")
   }
 
-  private def renderEnumMember(s: String): String = {
-    s
+  private def renderEnumMember(s: EnumMember): String = {
+    withMeta(s.meta, s.value)
   }
 }

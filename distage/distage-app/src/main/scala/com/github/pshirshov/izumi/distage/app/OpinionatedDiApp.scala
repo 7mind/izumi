@@ -81,7 +81,7 @@ abstract class OpinionatedDiApp {
   protected def makePlan(logger: IzLogger, appDef: ModuleBase, injector: distage.Injector): OrderedPlan = {
     val plan = injector.plan(appDef)
     import CompactPlanFormatter._
-    logger.trace(s"Planning completed\n${plan.render}")
+    logger.trace(s"Planning completed\n${plan.render -> "plan"}")
     plan
   }
 

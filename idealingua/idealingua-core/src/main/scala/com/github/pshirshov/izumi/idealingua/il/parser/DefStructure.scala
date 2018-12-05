@@ -82,7 +82,12 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def adt[_: P](sep: => P[Unit]): P[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
     .map(_.toList).map(AlgebraicType)
 
-  def enum[_: P](sep: => P[Unit]): P[Seq[String]] = P(ids.symbol.rep(min = 1, sep = sep))
+  def enumMember[_: P]: P[RawEnumMember] = P(metaAgg.withMeta(ids.symbol)).map {
+    case (meta, name) =>
+      RawEnumMember(name, meta)
+  }
+
+  def enum[_: P](sep: => P[Unit]): P[Seq[RawEnumMember]] = P(enumMember.rep(min = 1, sep = sep))
 
   def imports[_: P](sep: => P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
 
@@ -123,9 +128,9 @@ class DefStructure(context: IDLParserContext) extends Separators {
         Adt(i.toAdtId, v.alternatives, c)
     }))
 
-  def enumFreeForm[_: P]: P[Seq[String]] = P(any ~ "=" ~/ any ~ sepEnumFreeForm.? ~ any ~ enum(sepEnumFreeForm))
+  def enumFreeForm[_: P]: P[Seq[RawEnumMember]] = P(any ~ "=" ~/ any ~ sepEnumFreeForm.? ~ any ~ enum(sepEnumFreeForm))
 
-  def enumEnclosed[_: P]: P[Seq[String]] = P(NoCut(aggregates.enclosed(enum(sepEnum) ~ sepEnum.?)) | aggregates.enclosed(enum(sepEnumFreeForm)))
+  def enumEnclosed[_: P]: P[Seq[RawEnumMember]] = P(NoCut(aggregates.enclosed(enum(sepEnum) ~ sepEnum.?)) | aggregates.enclosed(enum(sepEnumFreeForm)))
 
 
   def enumBlock[_: P]: P[Enumeration] = P(IP(metaAgg.cstarting(kw.enum, enumEnclosed | enumFreeForm)

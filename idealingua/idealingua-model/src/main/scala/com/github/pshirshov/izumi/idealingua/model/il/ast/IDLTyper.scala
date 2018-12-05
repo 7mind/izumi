@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, IdField, NodeMeta, ConstValue}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
 import scala.reflect._
 
@@ -109,10 +109,14 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     )
   }
 
+  protected def fixEnumMember(defn: RawEnumMember): typed.EnumMember= {
+    EnumMember(defn.value, fixMeta(defn.meta))
+  }
+
   protected def fixType(defn: RawTypeDef): typed.TypeDef = {
     defn match {
       case d: RawTypeDef.Enumeration =>
-        typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.members, meta = fixMeta(d.meta))
+        typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.members.map(fixEnumMember), meta = fixMeta(d.meta))
 
       case d: RawTypeDef.Alias =>
         typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId, meta = fixMeta(d.meta))

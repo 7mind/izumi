@@ -120,7 +120,7 @@ final case class CSharpType (
       case Primitive.TTsU => "0"
     }
     case _ => id match {
-      case e: EnumId => s"${e.name}.${ts(e).asInstanceOf[Enumeration].members.head}"
+      case e: EnumId => s"${e.name}.${ts(e).asInstanceOf[Enumeration].members.head.value}"
       case _: InterfaceId => "null"
       case _: IdentifierId => "null"
       case _: AdtId | _: DTOId => "null"
@@ -198,7 +198,7 @@ final case class CSharpType (
       case _ => id match {
         case e: EnumId => {
           val enu = ts(e).asInstanceOf[Enumeration]
-          s"${e.path.toPackage.map(p => p.capitalize).mkString(".") + "." + e.name}.${enu.members(rnd.nextInt(enu.members.length))}"
+          s"${e.path.toPackage.map(p => p.capitalize).mkString(".") + "." + e.name}.${enu.members.map(_.value).apply(rnd.nextInt(enu.members.length))}"
         }
         case i: InterfaceId => if (depth <= 0) "null" else randomInterface(i, depth)
         case i: IdentifierId => randomIdentifier(i, depth)

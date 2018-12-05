@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScri
 
 object EnumHelpersExtension extends TypeScriptTranslatorExtension {
   override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct)(implicit manifest: Option[TypeScriptBuildManifest]): EnumProduct = {
-    val it = enum.members.iterator
+    val it = enum.members.map(_.value).iterator
     val values = it.map { m =>
       s"${enum.id.name}.$m" + (if (it.hasNext) "," else "")
     }.mkString("\n")

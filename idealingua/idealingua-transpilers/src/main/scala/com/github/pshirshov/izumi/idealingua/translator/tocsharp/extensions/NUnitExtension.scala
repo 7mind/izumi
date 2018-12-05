@@ -12,11 +12,11 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CS
 object NUnitExtension extends CSharpTranslatorExtension {
   override def postEmitModules(ctx: CSTContext, id: Enumeration)(implicit im: CSharpImports, ts: Typespace): Seq[Module] = {
     val name = id.id.name
-    val testMember = id.members.head
+    val testMember = id.members.head.value
     val code =
         s"""public static class ${name}TestHelper {
-           |    public static ${name} Create() {
-           |        return ${name}.${testMember};
+           |    public static $name Create() {
+           |        return $name.$testMember;
            |    }
            |}
            |
@@ -30,21 +30,21 @@ object NUnitExtension extends CSharpTranslatorExtension {
            |    [Test]
            |    public void Serialize() {
            |        var v = ${name}TestHelper.Create();
-           |        var json = marshaller.Marshal<${name}>(v);
-           |        Assert.AreEqual("\\"${testMember}\\"", json);
+           |        var json = marshaller.Marshal<$name>(v);
+           |        Assert.AreEqual("\\"$testMember\\"", json);
            |    }
            |
            |    [Test]
            |    public void Deserialize() {
-           |        var v = marshaller.Unmarshal<${name}>("\\"${testMember}\\"");
-           |        Assert.AreEqual(v, ${name}.${testMember});
+           |        var v = marshaller.Unmarshal<$name>("\\"$testMember\\"");
+           |        Assert.AreEqual(v, $name.$testMember);
            |    }
            |
            |    [Test]
            |    public void SerializeDeserialize() {
            |        var v1 = ${name}TestHelper.Create();
-           |        var json = marshaller.Marshal<${name}>(v1);
-           |        var v2 = marshaller.Unmarshal<${name}>(json);
+           |        var json = marshaller.Marshal<$name>(v1);
+           |        var v2 = marshaller.Unmarshal<$name>(json);
            |        Assert.AreEqual(v1, v2);
            |    }
            |}
@@ -63,8 +63,8 @@ object NUnitExtension extends CSharpTranslatorExtension {
     val name = id.id.name
     val code =
       s"""public static class ${name}TestHelper {
-         |    public static ${name} Create() {
-         |        return new ${name}(${id.fields.map(f => CSharpType(f.typeId).getRandomValue(0)).mkString(", ")});
+         |    public static $name Create() {
+         |        return new $name(${id.fields.map(f => CSharpType(f.typeId).getRandomValue(0)).mkString(", ")});
          |    }
          |}
          |

@@ -262,7 +262,7 @@ final case class GoLangType (
       case _: Generic.TOption => "nil"
     }
     case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).defaultValue()
-    case e: EnumId => ts(e).asInstanceOf[Enumeration].members.head
+    case e: EnumId => ts(e).asInstanceOf[Enumeration].members.head.value
     case _: IdentifierId | _: DTOId => "nil"
     case _: InterfaceId => "nil"
     case _ => "nil"

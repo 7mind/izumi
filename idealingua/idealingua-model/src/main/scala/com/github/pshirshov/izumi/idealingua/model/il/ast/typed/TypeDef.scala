@@ -10,12 +10,13 @@ sealed trait TypeDef {
   def meta: NodeMeta
 }
 
+case class EnumMember(value: String, meta: NodeMeta)
 
 object TypeDef {
 
   final case class Alias(id: AliasId, target: TypeId, meta: NodeMeta) extends TypeDef
 
-  final case class Enumeration(id: EnumId, members: List[String], meta: NodeMeta) extends TypeDef
+  final case class Enumeration(id: EnumId, members: List[EnumMember], meta: NodeMeta) extends TypeDef
 
   final case class Adt(id: AdtId, alternatives: List[AdtMember], meta: NodeMeta) extends TypeDef
 
