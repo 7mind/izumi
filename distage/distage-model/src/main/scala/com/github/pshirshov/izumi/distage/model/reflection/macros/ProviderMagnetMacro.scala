@@ -96,7 +96,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     case _ if Option(tree.symbol).exists(_.isMethod) =>
       analyzeValRef(tree.tpe, ret)
     case _ =>
-      c.abort(c.enclosingPosition
+      c.abort(tree.pos
         ,
         s"""
            | Can handle only method references of form (method _) or lambda bodies of form (args => body).\n

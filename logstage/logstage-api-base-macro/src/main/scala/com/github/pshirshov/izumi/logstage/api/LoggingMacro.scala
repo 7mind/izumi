@@ -115,7 +115,7 @@ object LoggingMacro {
         reifyContext(c)(sc, emptyArgs)
 
       case other =>
-        c.warning(c.enclosingPosition,
+        c.warning(other.pos,
           s"""Complex expression found as an input for a logger: ${other.toString()}.
              |
              |But Logstage expects you to use string interpolations instead, such as:

@@ -65,19 +65,35 @@ object ArgumentNameExtractionMacro {
         extract(arg, Seq.empty)
       }
 
+      val debug = false
+
+      def debug(arg: c.universe.Tree, s: => String): Unit = {
+        if (debug) {
+          c.warning(arg.pos, s)
+        }
+      }
+
       @tailrec
       private def extract(arg: c.universe.Tree, acc: Seq[String]): Option[Seq[String]] = {
         arg match {
+          case c.universe.Select(Ident(TermName("scala")), TermName("Predef")) =>
+            debug(arg, s"END-PREDEF")
+            Some(acc)
+
           case c.universe.Select(e, TermName(s)) => // ${x.value}
-//            c.warning(c.enclosingPosition, s"B1: $e, '$s'")
+            debug(arg, s"B1: arg=${c.universe.showRaw(arg)} e=${c.universe.showRaw(e)}, s='$s', acc=$acc")
             extract(e, s +: acc)
 
           case Apply(c.universe.Select(e, TermName(s)), List()) => // ${x.getSomething}
-//            c.warning(c.enclosingPosition, s"B2: $e, '$s'")
+            debug(arg, s"B2: arg=${c.universe.showRaw(arg)} e=${c.universe.showRaw(e)}, s='$s', acc=$acc")
+            extract(e, s +: acc)
+
+          case Apply(c.universe.Select(e, _), Ident(TermName(s)) :: Nil) => // ${Predef.ops(x).getSomething}
+            debug(arg, s"B2-1: arg=${c.universe.showRaw(arg)} e=${c.universe.showRaw(e)}, s='$s', acc=$acc")
             extract(e, s +: acc)
 
           case c.universe.This(TypeName(s)) =>
-//            c.warning(c.enclosingPosition, s"B3: '$s'")
+            debug(arg, s"END-THIS: arg=${c.universe.showRaw(arg)} s='$s', acc=$acc")
             if (s.isEmpty) {
               Some("this" +: acc)
             } else {
@@ -85,10 +101,11 @@ object ArgumentNameExtractionMacro {
             }
 
           case c.universe.Ident(TermName(s)) =>
-//            c.warning(c.enclosingPosition, s"B4: '$s'")
+            debug(arg, s"END-NAME: arg=${c.universe.showRaw(arg)} s='$s', acc=$acc")
             Some(s +: acc)
 
           case _ =>
+            debug(arg, s"END-NONE, arg=${c.universe.showRaw(arg)}, acc=$acc")
             None
         }
       }
@@ -106,14 +123,14 @@ object ArgumentNameExtractionMacro {
           case HiddenArrowArg(expr, name) => // ${x -> "name" -> null }
             reifiedExtractedHidden(c)(expr, name)
 
-          case c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
-            c.warning(c.enclosingPosition,
+          case v@c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
+            c.warning(v.pos,
               s"""Constant expression as a logger argument: $v, this makes no sense.""".stripMargin)
 
             reifiedPrefixed(c)(param, "UNNAMED")
 
           case v =>
-            c.warning(c.enclosingPosition,
+            c.warning(v.pos,
               s"""Expression as a logger argument: $v
                  |
                  |But Logstage expects you to use string interpolations instead, such as:
