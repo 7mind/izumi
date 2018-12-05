@@ -69,15 +69,23 @@ object ArgumentNameExtractionMacro {
       private def extract(arg: c.universe.Tree, acc: Seq[String]): Option[Seq[String]] = {
         arg match {
           case c.universe.Select(e, TermName(s)) => // ${x.value}
+//            c.warning(c.enclosingPosition, s"B1: $e, '$s'")
             extract(e, s +: acc)
 
           case Apply(c.universe.Select(e, TermName(s)), List()) => // ${x.getSomething}
+//            c.warning(c.enclosingPosition, s"B2: $e, '$s'")
             extract(e, s +: acc)
 
           case c.universe.This(TypeName(s)) =>
-            Some(s +: acc)
+//            c.warning(c.enclosingPosition, s"B3: '$s'")
+            if (s.isEmpty) {
+              Some("this" +: acc)
+            } else {
+              Some(s +: acc)
+            }
 
           case c.universe.Ident(TermName(s)) =>
+//            c.warning(c.enclosingPosition, s"B4: '$s'")
             Some(s +: acc)
 
           case _ =>

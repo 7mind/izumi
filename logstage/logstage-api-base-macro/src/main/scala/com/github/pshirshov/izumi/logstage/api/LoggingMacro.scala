@@ -68,8 +68,6 @@ object LoggingMacro {
 
   private def stringContextSupportMacro(c: blackbox.Context)(message: c.Expr[String], logLevel: c.Expr[Log.Level]): c.Expr[Unit] = {
     val messageTree = mkLogMessage(c)(message)
-
-    assert(3!=4)
     logMacro(c)(messageTree, logLevel)
   }
 
