@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.files
 
 import java.io.File
 import java.net.URI
-import java.nio.file.{FileSystems, Path}
+import java.nio.file.{FileSystem, FileSystems, Path}
 import java.util.Collections
 
 import scala.util.Try
@@ -36,34 +36,48 @@ object IzZip {
     zip.close()
   }
 
-  def findInZips(zips: Seq[File], predicate: Path => Boolean): Iterable[(Path, String)] = {
+
+  // zip filesystem isn't thread safe
+  def findInZips(zips: Seq[File], predicate: Path => Boolean): Iterable[(Path, String)] = synchronized {
     zips
       .filter(f => f.exists() && f.isFile && (f.getName.endsWith(".jar") || f.getName.endsWith(".zip")))
       .flatMap {
         f =>
-          import scala.collection.JavaConverters._
           val uri = f.toURI
           val jarUri = URI.create(s"jar:${uri.toString}")
+          val fs = getFs(jarUri).get
 
-          val maybeFs = Try(FileSystems.getFileSystem(jarUri))
-            .recover {
-              case _ =>
-                FileSystems.newFileSystem(jarUri, Collections.emptyMap[String, Any]())
-            }
-
-          maybeFs
-            .get
-            .getRootDirectories
-            .asScala
-            .flatMap {
-              root =>
-                import java.nio.file.Files
-                Files.walk(root)
-                  .iterator()
-                  .asScala
-                  .filter(predicate)
-            }
+          try {
+            enumerate(predicate, fs)
+              .map(path => path -> IzFiles.readString(path))
+          } finally {
+            fs.close()
+          }
       }
-      .map(path => path -> IzFiles.readString(path))
+  }
+
+  private def getFs(uri: URI): Try[FileSystem] = {
+    Try(FileSystems.getFileSystem(uri))
+      .recover {
+        case _ =>
+          FileSystems.newFileSystem(uri, Collections.emptyMap[String, Any]())
+      }
+  }
+
+  private def enumerate(predicate: Path => Boolean, fs: FileSystem): Iterable[Path] = {
+    import scala.collection.JavaConverters._
+
+    fs
+      .getRootDirectories
+      .asScala
+      .flatMap {
+        root =>
+          import java.nio.file.Files
+          Files.walk(root)
+            .iterator()
+            .asScala
+            .filter(predicate)
+      }
+
   }
 }
