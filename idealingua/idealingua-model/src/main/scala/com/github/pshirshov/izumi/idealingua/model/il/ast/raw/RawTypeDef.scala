@@ -19,7 +19,7 @@ case class RawEnumMember(value: String, meta: RawNodeMeta) {
   override def toString: String = value
 }
 
-case class RawNodeMeta(doc: Option[String], annos: Seq[RawAnno], position: InputPosition = InputPosition.Undefined)
+case class RawNodeMeta(doc: Option[String], annos: Seq[RawAnno], position: InputPosition)
 
 object RawTypeDef {
 

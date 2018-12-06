@@ -28,7 +28,9 @@ object RawMethod {
 
   final case class Signature(input: RawSimpleStructure, output: Output)
 
-  final case class RPCMethod(name: String, signature: Signature, meta: RawNodeMeta) extends RawMethod
+  final case class RPCMethod(name: String, signature: Signature, meta: RawNodeMeta) extends RawMethod with RawWithMeta {
+    override def updateMeta(f: RawNodeMeta => RawNodeMeta): RawWithMeta = this.copy(meta = f(meta))
+  }
 
 }
 

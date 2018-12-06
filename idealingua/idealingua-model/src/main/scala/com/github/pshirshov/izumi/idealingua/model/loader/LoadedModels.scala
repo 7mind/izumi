@@ -27,7 +27,7 @@ case class LoadedModels(loaded: Seq[LoadedDomain]) {
   def throwIfFailed(): LoadedModels = {
     val f = failures
     if (f.nonEmpty) {
-      throw new IDLException(s"Verification failed:\n${f.niceList()}")
+      throw new IDLException(s"Verification failed: ${f.niceList()}")
     }
 
     val duplicates = successful.map(s => s.typespace.domain.id -> s.path).groupBy(_._1).filter(_._2.size > 1)

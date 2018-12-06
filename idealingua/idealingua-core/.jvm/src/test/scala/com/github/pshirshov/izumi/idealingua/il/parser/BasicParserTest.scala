@@ -1,10 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawMethod
 import org.scalatest.WordSpec
+import fastparse._
 
 class BasicParserTest
   extends WordSpec with ParserTestTools {
+
   import ctx._
 
   "IL parser" should {
@@ -194,7 +197,9 @@ class BasicParserTest
     }
 
     "parse service definition" in {
-      assertParses(defService.method(_), "def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )")
+      def defm[_: P]: P[RawMethod.RPCMethod] = defSignature.method(kw.defm)
+
+      assertParses(defm(_), "def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )")
       assertParseableCompletely(defService.methods(_),
         """def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )
           |def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessData | ErrorData )""".stripMargin)

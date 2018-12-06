@@ -7,15 +7,15 @@ import fastparse._, NoWhitespace._
 
 
 class DefService(context: IDLParserContext) {
+
   import context._
   import sep._
 
-  def method[_:P]: P[RawMethod.RPCMethod] = defSignature.signature(kw.defm).map(defSignature.toSignature)
 
   // other method kinds should be added here
-  def methods[_:P]: P[Seq[RawMethod]] = P(method.rep(sep = any))
+  def methods[_: P]: P[Seq[RawMethod]] = P(defSignature.method(kw.defm).rep(sep = any))
 
-  def serviceBlock[_:P]: P[ILService] = metaAgg.cblock(kw.service, methods)
+  def serviceBlock[_: P]: P[ILService] = metaAgg.cblock(kw.service, methods)
     .map {
       case (c, i, v) => ILService(Service(i.toServiceId, v.toList, c))
     }
