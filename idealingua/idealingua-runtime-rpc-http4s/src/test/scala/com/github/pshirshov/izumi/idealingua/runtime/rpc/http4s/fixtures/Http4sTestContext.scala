@@ -139,8 +139,9 @@ object Http4sTestContext {
         Option(creds.get()) match {
           case Some(value) =>
             val update = value.map(h => (h.name.value, h.value)).toMap
-            request.copy(headers = request.headers.map(_ ++ update))
-          case None => request
+            request.copy(headers = Some(request.headers.getOrElse(Map.empty) ++ update))
+          case None =>
+            request
         }
       }
     }
