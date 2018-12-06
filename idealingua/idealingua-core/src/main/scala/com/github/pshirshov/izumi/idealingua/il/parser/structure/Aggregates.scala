@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import com.github.pshirshov.izumi.idealingua.il.parser.DefSignature
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{ParsedId, RawNodeMeta}
-import fastparse._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ParsedId
 import fastparse.NoWhitespace._
+import fastparse._
 
 trait Aggregates
   extends Separators
@@ -28,17 +27,7 @@ trait Aggregates
     starting(keyword, enclosed(defparser))
   }
 
-  def cstarting[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, ParsedId, T)] = {
-    (DefSignature.meta ~ starting(keyword, defparser)).map {
-      case (m, (i, t)) => (m, i, t)
-    }
-  }
-
-  def cblock[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, ParsedId, T)] = {
-    (DefSignature.meta ~ block(keyword, defparser)).map {
-      case (m, (i, t)) => (m, i, t)
-    }
-  }
 
 }
+
 

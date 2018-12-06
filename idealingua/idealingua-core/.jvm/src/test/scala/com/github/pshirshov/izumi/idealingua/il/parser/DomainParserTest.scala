@@ -43,6 +43,20 @@ class DomainParserTest
           | c: x#Y
           |}
           |
+          |foreign JavaTime {
+          |  "scala": "java.time.LocalDateTime"
+          |}
+          |
+          |foreign JavaMap[A, B] {
+          |  "scala": "java.util.Map"
+          |}
+          |
+          |foreign JavaMap[A, B] {
+          |  "scala"
+          |  : "java.util.Map"
+          |}
+          |
+          |
           |data Data {
           |// test
           |+ Mixin//test

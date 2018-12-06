@@ -127,7 +127,7 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
   private def outputEphemeral(serviceId: ServiceId, baseName: String, suffix: String, out: Output): Seq[TypeDef] = {
     out match {
       case o: Output.Singular =>
-        val outStructure = Structure.apply(List(Field(o.typeId, "value")), List.empty, Super.empty)
+        val outStructure = Structure.apply(List(Field(o.typeId, "value", NodeMeta.empty)), List.empty, Super.empty)
         val outId = DTOId(serviceId, s"$baseName$suffix")
         Seq(DTO(outId, outStructure, NodeMeta.empty))
 
@@ -152,8 +152,8 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
         val failureId = failure.head.id
         val adtId = AdtId(serviceId, s"$baseName$suffix")
         val altAdt = Output.Algebraic(List(
-          AdtMember(successId, Some(ts.tools.toPositiveBranchName(adtId)))
-          , AdtMember(failureId, Some(ts.tools.toNegativeBranchName(adtId)))
+          AdtMember(successId, Some(ts.tools.toPositiveBranchName(adtId)), NodeMeta.empty)
+          , AdtMember(failureId, Some(ts.tools.toNegativeBranchName(adtId)), NodeMeta.empty)
         ))
         val alt = outputEphemeral(serviceId, baseName, suffix, altAdt)
         success ++ failure ++ alt

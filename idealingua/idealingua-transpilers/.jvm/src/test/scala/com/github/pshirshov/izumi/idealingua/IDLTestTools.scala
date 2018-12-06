@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader._
-import com.github.pshirshov.izumi.idealingua.il.renderer.IDLRenderer
+import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
@@ -226,7 +226,7 @@ object IDLTestTools {
   private def rerenderDomains(domainsDir: Path, domains: Seq[LoadedDomain.Success]): Unit = {
     domains.foreach {
       d =>
-        val rendered = new IDLRenderer(d.typespace.domain).render()
+        val rendered = new IDLRenderer(d.typespace.domain, IDLRenderingOptions(expandIncludes = false)).render()
         Files.write(domainsDir.resolve(s"${d.typespace.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
     }
   }

@@ -3,55 +3,54 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{ids, sep}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawMethod.Output
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{RawMethod, RawNodeMeta, RawSimpleStructure}
-import fastparse._
 import fastparse.NoWhitespace._
+import fastparse._
 
-trait DefSignature {
+class DefSignature(context: IDLParserContext) {
 
+  import context._
   import sep._
 
-  def sigSep[_:P]: P[Unit] = P("=>" | "->" | ":" | "⇒")
-  def errSep[_:P]: P[Unit] = P("!!" | "?!" | "⥃" | "↬")
+  def sigSep[_: P]: P[Unit] = P("=>" | "->" | ":" | "⇒")
 
-  def meta[_:P]: P[RawNodeMeta] = P(MaybeDoc ~ DefConst.defAnnos)
-    .map {
-      case (d, a) => RawNodeMeta(d, a)
-    }
+  def errSep[_: P]: P[Unit] = P("!!" | "?!" | "⥃" | "↬")
 
-  def baseSignature[_:P](keyword: => P[Unit]): P[(RawNodeMeta, String, RawSimpleStructure)] = P(
-    meta ~
-      keyword ~ inline ~
+
+  def baseSignature[_: P](keyword: => P[Unit]): P[(String, RawSimpleStructure)] = P(
+    keyword ~ inline ~
       ids.symbol ~ any ~
-      DefStructure.inlineStruct
+      defStructure.inlineStruct
   )
 
-  def void[_:P]: P[Output.Void] = P( "(" ~ inline ~")" ).map(_ => RawMethod.Output.Void())
-  def adt[_:P]: P[Output.Algebraic] = DefStructure.adtOut.map(v => RawMethod.Output.Algebraic(v.alternatives))
-  def struct[_:P]: P[Output.Struct] = DefStructure.inlineStruct.map(v => RawMethod.Output.Struct(v))
-  def singular[_:P]: P[Output.Singular] = ids.idGeneric.map(v => RawMethod.Output.Singular(v))
+  def void[_: P]: P[Output.Void] = P("(" ~ inline ~ ")").map(_ => RawMethod.Output.Void())
 
-  def output[_:P]: P[Output.NonAlternativeOutput] = P(adt | struct | singular | void)
+  def adt[_: P]: P[Output.Algebraic] = defStructure.adtOut.map(v => RawMethod.Output.Algebraic(v.alternatives))
 
-  def signature[_:P](keyword: => P[Unit]): P[(RawNodeMeta, String, RawSimpleStructure, Option[(Output.NonAlternativeOutput, Option[Output.NonAlternativeOutput])])] = P(
-    baseSignature(keyword) ~
-      (any ~ sigSep ~ any ~ output ~ (any ~ errSep ~ any ~ output ).?).?
-  )
+  def struct[_: P]: P[Output.Struct] = defStructure.inlineStruct.map(v => RawMethod.Output.Struct(v))
 
-  def toSignature(out: (RawNodeMeta, String, RawSimpleStructure, Option[(Output.NonAlternativeOutput, Option[Output.NonAlternativeOutput])])): RawMethod.RPCMethod = out match {
-    case (c, id, in, None) =>
-      RawMethod.RPCMethod(id, RawMethod.Signature(in, RawMethod.Output.Void()), c)
+  def singular[_: P]: P[Output.Singular] = ids.idGeneric.map(v => RawMethod.Output.Singular(v))
 
-    case (c, id, in, Some((outGood, None))) =>
-      RawMethod.RPCMethod(id, RawMethod.Signature(in, outGood), c)
+  def output[_: P]: P[Output.NonAlternativeOutput] = P(adt | struct | singular | void)
 
-    case (c, id, in, Some((outGood, Some(outBad)))) =>
-      RawMethod.RPCMethod(id, RawMethod.Signature(in, RawMethod.Output.Alternative(outGood, outBad)), c)
-
-    case f =>
-      throw new IllegalStateException(s"Impossible case: $f")
+  def allOutputs[_: P]: P[Output] = P((any ~ sigSep ~ any ~ output ~ (any ~ errSep ~ any ~ output).?).?).map {
+    case None =>
+      RawMethod.Output.Void()
+    case Some((outGood, None)) =>
+      outGood
+    case Some((outGood, Some(outBad))) =>
+      RawMethod.Output.Alternative(outGood, outBad)
   }
-}
 
-object DefSignature extends DefSignature {
+  def signature[_: P](keyword: => P[Unit]): P[(RawNodeMeta, String, RawSimpleStructure, Output)] = P(
+    metaAgg.withMeta(baseSignature(keyword) ~ allOutputs).map {
+      case (meta, (id, input, output)) =>
+        (meta, id, input, output)
+    }
+  )
+
+  def method[_: P](keyword: => P[Unit]): P[RawMethod.RPCMethod] = P(defSignature.signature(keyword)).map {
+    case (meta, id, in, out) =>
+      RawMethod.RPCMethod(id, RawMethod.Signature(in, out), meta)
+  }
 
 }

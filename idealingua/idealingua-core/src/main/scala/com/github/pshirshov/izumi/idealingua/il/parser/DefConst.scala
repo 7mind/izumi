@@ -27,7 +27,9 @@ object Agg {
 
 }
 
-trait DefConst extends Identifiers {
+class DefConst(context: IDLParserContext) extends Identifiers {
+  import context._
+  import defPositions._
   def justValue[_: P]: P[Agg] = P(literal | objdef | listdef)
 
   def typedValue[_: P]: P[Agg] = (idGeneric ~ inline ~ "(" ~ inline ~ justValue ~ inline ~ ")").map {
@@ -99,9 +101,10 @@ trait DefConst extends Identifiers {
   def simpleConsts[_: P]: P[RawVal.CMap] = P(simpleConst.rep(min = 0, sep = sepStruct) ~ sepStruct.?)
     .map(v => RawVal.CMap(v.map(c => (c.id.name, c.const)).toMap))
 
-  def defAnno[_: P]: P[RawAnno] = P("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~ ")")
+  def defAnno[_: P]: P[RawAnno] = P(positioned("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~ ")"))
     .map {
-      case (id, v) => RawAnno(id.name, v)
+      case (pos, (id, value)) =>
+        RawAnno(id.name, value, pos)
     }
 
   def defAnnos[_: P]: P[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
@@ -166,7 +169,4 @@ trait DefConst extends Identifiers {
       constVal.copy(doc = doc)
   }
 
-}
-
-object DefConst extends DefConst {
 }

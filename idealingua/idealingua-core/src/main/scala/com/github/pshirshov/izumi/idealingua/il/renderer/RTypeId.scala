@@ -4,7 +4,8 @@ import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common._
 
-class RTypeId(domainId: DomainId) extends Renderable[TypeId] {
+class RTypeId(context: IDLRenderingContext) extends Renderable[TypeId] {
+
   override def render(value: TypeId): String = {
     value match {
       case g: Generic =>
@@ -30,7 +31,7 @@ class RTypeId(domainId: DomainId) extends Renderable[TypeId] {
   }
 
   private def minimize(value: common.Package): common.Package = {
-    val domainPkg = domainId.toPackage
+    val domainPkg = context.domain.id.toPackage
     if (value == domainPkg) {
       Seq.empty
     } else if (value.nonEmpty && domainPkg.last == value.head) {

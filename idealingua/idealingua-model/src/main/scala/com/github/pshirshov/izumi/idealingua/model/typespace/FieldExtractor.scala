@@ -54,7 +54,7 @@ private class FieldExtractor(resolver: TypeResolver, user: TypeId) {
   protected def toExtendedPrimitiveFields(nextDepth: Int, fields: IdTuple, id: TypeId): List[ExtendedField] = {
     fields.zipWithIndex.map {
       case (f, idx) =>
-        ExtendedField(Field(f.typeId, f.name), FieldDef(id, idx, user, nextDepth - 1))
+        ExtendedField(Field(f.typeId, f.name, f.meta), FieldDef(id, idx, user, nextDepth - 1))
     }
   }
 

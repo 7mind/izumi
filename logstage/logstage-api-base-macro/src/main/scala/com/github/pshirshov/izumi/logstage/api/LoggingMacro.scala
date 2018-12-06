@@ -68,8 +68,6 @@ object LoggingMacro {
 
   private def stringContextSupportMacro(c: blackbox.Context)(message: c.Expr[String], logLevel: c.Expr[Log.Level]): c.Expr[Unit] = {
     val messageTree = mkLogMessage(c)(message)
-
-    assert(3!=4)
     logMacro(c)(messageTree, logLevel)
   }
 
@@ -117,7 +115,7 @@ object LoggingMacro {
         reifyContext(c)(sc, emptyArgs)
 
       case other =>
-        c.warning(c.enclosingPosition,
+        c.warning(other.pos,
           s"""Complex expression found as an input for a logger: ${other.toString()}.
              |
              |But Logstage expects you to use string interpolations instead, such as:

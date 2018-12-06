@@ -4,7 +4,7 @@ import java.nio.file.Paths
 
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.idealingua.il.loader.LocalFilesystemEnumerator
-import com.github.pshirshov.izumi.idealingua.il.renderer.IDLRenderer
+import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
 import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import org.scalatest.WordSpec
 
@@ -30,7 +30,7 @@ class LoaderTest extends WordSpec {
         original =>
           val ts = original.typespace
           val domainId = ts.domain.id
-          val rendered = new IDLRenderer(ts.domain).render()
+          val rendered = new IDLRenderer(ts.domain, IDLRenderingOptions(expandIncludes = false)).render()
           val updated = files.updated(original.path, rendered)
 
           // TODO: ModelLoaderImpl

@@ -2,56 +2,55 @@ package com.github.pshirshov.izumi.idealingua.il.renderer
 
 import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Value
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.ConstValue
 
-class RValue()(
-  implicit protected val evTypeId: Renderable[TypeId]
-) extends Renderable[Value] {
+class RValue(context: IDLRenderingContext) extends Renderable[ConstValue] {
+  import context._
 
-  override def render(v: Value): String = {
+  override def render(v: ConstValue): String = {
     v match {
-      case Value.CInt(value) =>
+      case ConstValue.CInt(value) =>
         value.toString
-      case Value.CLong(value) =>
+      case ConstValue.CLong(value) =>
         value.toString
-      case Value.CFloat(value) =>
+      case ConstValue.CFloat(value) =>
         value.toString
-      case Value.CBool(value) =>
+      case ConstValue.CBool(value) =>
         value.toString
-      case Value.CString(s) =>
+      case ConstValue.CString(s) =>
         if (s.contains("\"")) {
           "\"\"\"" + s + "\"\"\""
         } else {
           "\"" + s + "\""
         }
-      case Value.CMap(value) =>
+      case ConstValue.CMap(value) =>
         value.map {
-          case (name, v1: Value.Typed) =>
-            s"$name: ${evTypeId.render(v1.typeId)} = ${render(v1)}"
+          case (name, v1: ConstValue.Typed) =>
+            s"$name: ${v1.typeId.render()} = ${render(v1)}"
           case (name, v1) =>
             s"$name = ${render(v1)}"
         }.mkString("{", ", ", "}")
 
-      case Value.CList(value) =>
+      case ConstValue.CList(value) =>
         value.map(render).mkString("[", ", ", "]")
 
       // TODO: incorrect cases atm
-      case Value.CTypedList(typeId, value) =>
+      case ConstValue.CTypedList(typeId, value) =>
         typed(typeId, value.value.map(render).mkString("[", ", ", "]"))
 
-      case Value.CTypedObject(typeId, value) =>
+      case ConstValue.CTypedObject(typeId, value) =>
         typed(typeId, value.value.mapValues(render).mkString("[", ",", "]"))
 
 
-      case Value.CTyped(typeId, value) =>
+      case ConstValue.CTyped(typeId, value) =>
         typed(typeId, render(value))
-        evTypeId.render(typeId) + "(" + render(value) + ")"
+        typeId.render() + "(" + render(value) + ")"
     }
 
   }
 
   private def typed(typeId: TypeId, value: String) = {
-    s"${evTypeId.render(typeId)}($value)"
+    s"${typeId.render()}($value)"
 
   }
 }

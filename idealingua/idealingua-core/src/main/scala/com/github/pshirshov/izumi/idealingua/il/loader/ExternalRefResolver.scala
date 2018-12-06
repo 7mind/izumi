@@ -4,10 +4,10 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.CompletelyLoadedDo
 import com.github.pshirshov.izumi.idealingua.model.loader._
 
 
-private[loader] class ExternalRefResolver(domains: UnresolvedDomains, domainExt: String) {
+private[loader] class ExternalRefResolver(domains: UnresolvedDomains) {
 
   def resolveReferences(domain: DomainParsingResult): Either[LoadedDomain.Failure, CompletelyLoadedDomain] = {
-    new ExternalRefResolverPass(domains, domainExt).resolveReferences(domain)
+    new ExternalRefResolverPass(domains).resolveReferences(domain)
   }
 
 }

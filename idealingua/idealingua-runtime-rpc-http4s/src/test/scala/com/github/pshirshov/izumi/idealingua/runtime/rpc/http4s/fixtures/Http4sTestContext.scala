@@ -55,7 +55,7 @@ object Http4sTestContext {
         case None =>
       }
 
-      val maybeAuth = packet.headers.get("Authorization")
+      val maybeAuth = packet.headers.getOrElse(Map.empty).get("Authorization")
 
       maybeAuth.map(Authorization.parse).flatMap(_.toOption) match {
         case Some(value) =>
@@ -66,7 +66,7 @@ object Http4sTestContext {
     }
 
     override def toId(initial: DummyRequestContext, packet: RpcPacket): Option[String] = {
-      packet.headers.get("Authorization")
+      packet.headers.getOrElse(Map.empty).get("Authorization")
         .map(Authorization.parse)
         .flatMap(_.toOption)
         .collect {
@@ -77,7 +77,7 @@ object Http4sTestContext {
     override def handleEmptyBodyPacket(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): zio.IO[Throwable, Option[RpcPacket]] = {
       Quirks.discard(id, initial)
 
-      packet.headers.get("Authorization") match {
+      packet.headers.getOrElse(Map.empty).get("Authorization") match {
         case Some(value) if value.isEmpty =>
           // here we may clear internal state
           BIO.point(None)
@@ -139,8 +139,9 @@ object Http4sTestContext {
         Option(creds.get()) match {
           case Some(value) =>
             val update = value.map(h => (h.name.value, h.value)).toMap
-            request.copy(headers = request.headers ++ update)
-          case None => request
+            request.copy(headers = Some(request.headers.getOrElse(Map.empty) ++ update))
+          case None =>
+            request
         }
       }
     }

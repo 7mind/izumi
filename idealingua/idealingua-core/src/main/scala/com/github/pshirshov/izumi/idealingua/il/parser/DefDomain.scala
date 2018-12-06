@@ -9,9 +9,11 @@ import fastparse.NoWhitespace._
 class DefDomain(context: IDLParserContext)
   extends Identifiers
     with Aggregates {
+  import context._
+
   def domainBlock[_:P]: P[DomainId] = P(kw.domain ~/ domainId)
 
-  def importBlock[_:P]: P[Import] = kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(DefStructure.imports(sep.sepStruct) ~ sepStruct.? )).?).map {
+  def importBlock[_:P]: P[Import] = kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(defStructure.imports(sep.sepStruct) ~ sepStruct.? )).?).map {
     case (id, names) =>
       names match {
         case Some(nn) =>

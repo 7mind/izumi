@@ -1,16 +1,15 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILImport
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{CompletelyLoadedDomain, IL}
 import com.github.pshirshov.izumi.idealingua.model.loader._
-import com.github.pshirshov.izumi.idealingua.model.parser.ParsedDomain
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.idealingua.model.parser.{ParsedDomain, ParsedModel}
 
 import scala.collection.mutable
 
-private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domainExt: String) {
+
+private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   // we need mutable state to handle cyclic references (even though they aren't supported by go we still handle them)
   private val processed = mutable.HashMap[DomainId, CompletelyLoadedDomain]()
 
@@ -18,81 +17,122 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
     domain match {
       case DomainParsingResult.Success(path, parsed) =>
         handleSuccess(path, parsed)
+          .fold(issues => Left(LoadedDomain.ResolutionFailed(path, parsed.did, issues)), d => Right(d))
 
       case DomainParsingResult.Failure(path, message) =>
         Left(LoadedDomain.ParsingFailed(path, message))
     }
   }
 
-  private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[Nothing, CompletelyLoadedDomain] = {
-    val withIncludes = resolveIncludes(parsed)
-    val loaded = new CompletelyLoadedDomainMutable(parsed.did, withIncludes, domainPath, processed, parsed.imports.map(_.id).toSet)
+  private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[List[RefResolverIssue], CompletelyLoadedDomainMutable] = {
+    (for {
+      withIncludes <- resolveIncludes(parsed)
+      loaded = new CompletelyLoadedDomainMutable(parsed.did, withIncludes, domainPath, parsed.model.includes, processed, parsed.imports.map(_.id).toSet)
+    } yield {
+      processed.update(parsed.did, loaded)
 
-    processed.update(parsed.did, loaded)
+      val allImportIssues = parsed.imports
+        .filterNot(i => processed.contains(i.id))
+        .map {
+          imprt =>
 
-    parsed.imports.filterNot(i => processed.contains(i.id)).foreach {
-      imprt =>
-        val imported = findDomain(domains, imprt.id)
-          .getOrElse(throw new IDLException(s"${parsed.did}: can't find import ${imprt.id}. Available: ${
-            domains.domains.results.map {
-              case DomainParsingResult.Success(path, domain) =>
-                s"OK: ${domain.did} at $path"
+            for {
+              imported <- findDomain(domains, imprt.id)
+            } yield {
+              imported match {
+                case Some(value) =>
+                  resolveReferences(value) match {
+                    case Left(v) =>
+                      Left(List(RefResolverIssue.UnresolvableImport(parsed.did, imprt.id, v)))
+                    case Right(v) =>
+                      Right(v)
+                  }
 
-              case DomainParsingResult.Failure(path, message) =>
-                s"KO: $path, problem: $message"
+                case None =>
+                  val diagnostics = domains.domains.results.map {
+                    case DomainParsingResult.Success(path, domain) =>
+                      s"OK: ${domain.did} at $path"
 
-            }.niceList()
-          }"))
+                    case DomainParsingResult.Failure(path, message) =>
+                      s"KO: $path, problem: $message"
 
-        resolveReferences(imported) match {
-          case Left(value) =>
-            throw new IDLException(s"${parsed.did}: can't resolve import ${imprt.id}, problem: $value")
+                  }
+                  Left(List(RefResolverIssue.MissingImport(parsed.did, imprt.id, diagnostics.toList)))
+              }
+            }
 
-          case Right(_) =>
         }
-    }
+        .map {
+          out =>
+            out.fold(issue => Left(List(issue)), right => right.fold(issues => Left(issues), good => Right(good)))
+        }
+        .collect({ case Left(issues) => issues })
+        .flatten
+        .toList
 
-    Right(loaded)
+      if (allImportIssues.isEmpty) {
+        Right(loaded)
+      } else {
+        Left(allImportIssues)
+      }
+
+    })
+      .fold(issues => Left(issues), result => result.fold(issues => Left(issues), domain => Right(domain)))
   }
 
-  private def loadModel(forDomain: DomainId, includePath: String, stack: Seq[String]): LoadedModel = {
+  private def resolveIncludes(parsed: ParsedDomain): Either[List[RefResolverIssue], List[IL.Val]] = {
+    val m = parsed.model
+    val allIncludes = m.includes
+      .map(i => loadModel(parsed.did, i, Seq(i)))
+
+    for {
+      model <- merge(m, allIncludes)
+      importOps = parsed.imports.flatMap {
+        i =>
+          i.identifiers.map(ILImport(i.id, _))
+      }
+    } yield {
+      val withIncludes = model.definitions ++ importOps
+      withIncludes.toList
+    }
+  }
+
+  private def loadModel(forDomain: DomainId, includePath: String, stack: Seq[String]): Either[List[RefResolverIssue], LoadedModel] = {
     findModel(forDomain, domains, includePath)
       .map {
         case ModelParsingResult.Success(_, model) =>
-
-          model.includes
+          val subincludes = model.includes
             .map(i => loadModel(forDomain, i, stack :+ i))
-            .fold(LoadedModel(model.definitions)) {
-              case (acc, m) => acc ++ m
-            }
 
-        case ModelParsingResult.Failure(path, message) =>
-          throw new IDLException(s"$forDomain: can't parse inclusion $path, inclusion chain: $forDomain->${stack.mkString("->")}. Message: $message")
+          merge(model, subincludes)
+
+        case f: ModelParsingResult.Failure =>
+          Left(List(RefResolverIssue.UnparseableInclusion(forDomain, stack.toList, f)))
 
       }
-      .getOrElse(throw new IDLException(s"$forDomain: can't find inclusion $includePath, inclusion chain: $forDomain->${stack.mkString("->")}. Available: ${
-        domains.models.results.map {
+      .getOrElse {
+        val diagnostic = domains.models.results.map {
           case ModelParsingResult.Success(path, _) =>
             s"OK: $path"
           case ModelParsingResult.Failure(path, message) =>
             s"KO: $path, problem: $message"
-        }.niceList()
-      }"))
+        }
+        Left(List(RefResolverIssue.MissingInclusion(forDomain, stack.toList, includePath, diagnostic.toList)))
+      }
   }
 
-  private def resolveIncludes(parsed: ParsedDomain): Seq[IL.Val] = {
-    val m = parsed.model
-    val allIncludes = m.includes
-      .map(i => loadModel(parsed.did, i, Seq(i)))
-      .fold(LoadedModel(parsed.model.definitions))(_ ++ _)
+  private def merge(model: ParsedModel, subincludes: Seq[Either[List[RefResolverIssue], LoadedModel]]): Either[List[RefResolverIssue], LoadedModel] = {
+    val issues = subincludes.collect({ case Left(subissues) => subissues }).flatten.toList
 
-    val importOps = parsed.imports.flatMap {
-      i =>
-        i.identifiers.map(ILImport(i.id, _))
+    if (issues.nonEmpty) {
+      Left(issues)
+    } else {
+      val submodels = subincludes.collect({ case Right(m) => m })
+      val folded = submodels.fold(LoadedModel(model.definitions)) {
+        case (acc, m) => acc ++ m
+      }
+      Right(folded)
     }
-
-    val withIncludes = allIncludes.definitions ++ importOps
-    withIncludes
   }
 
   private def findModel(forDomain: DomainId, domains: UnresolvedDomains, includePath: String): Option[ModelParsingResult] = {
@@ -104,7 +144,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
     domains.models.results.find(f => candidates.contains(f.path))
   }
 
-  private def findDomain(domains: UnresolvedDomains, include: DomainId): Option[DomainParsingResult.Success] = {
+  private def findDomain(domains: UnresolvedDomains, include: DomainId): Either[RefResolverIssue, Option[DomainParsingResult.Success]] = {
     val matching = domains.domains
       .results
       .collect {
@@ -113,10 +153,10 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains, domain
       }.filter(_.domain.did == include)
 
     if (matching.size > 1) {
-      throw new IDLException(s"$include: multiple domains have the same identifier: ${matching.map(_.path).niceList()}")
-
+      Left(RefResolverIssue.DuplicatedDomains(include, matching.map(_.path).toList))
+    } else {
+      Right(matching.headOption)
     }
 
-    matching.headOption
   }
 }

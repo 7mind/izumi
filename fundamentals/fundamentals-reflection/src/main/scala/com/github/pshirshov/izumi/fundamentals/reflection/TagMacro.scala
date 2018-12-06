@@ -107,7 +107,7 @@ class TagMacro(val c: blackbox.Context) {
         val msg = s"  Encountered a type parameter ${s.info} as a part of structural refinement of $struct: It's not yet supported to summon a Tag for ${s.info} in that position!"
 
         addImplicitError(msg)
-        c.abort(c.enclosingPosition, msg)
+        c.abort(s.pos, msg)
     }
 
     // TODO: replace types of members with Nothing, in runtime replace types to types from tags searching by TermName("")

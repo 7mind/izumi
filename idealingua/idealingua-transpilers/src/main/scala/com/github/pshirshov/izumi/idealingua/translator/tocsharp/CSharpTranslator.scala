@@ -254,13 +254,13 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     val decl =
       s"""// $name Enumeration
          |public enum $name {
-         |${i.members.map(m => s"$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(4)}
+         |${i.members.map(_.value).map(m => s"$m${if (m == i.members.last.value) "" else ","}").mkString("\n").shift(4)}
          |}
          |
          |public static class ${name}Helpers {
          |    public static $name From(string value) {
          |        switch (value) {
-         |${i.members.map(m => s"""case \"$m\": return $name.$m;""").mkString("\n").shift(12)}
+         |${i.members.map(_.value).map(m => s"""case \"$m\": return $name.$m;""").mkString("\n").shift(12)}
          |            default:
          |                throw new ArgumentOutOfRangeException();
          |        }
@@ -272,7 +272,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
          |
          |    // The elements in the array are still changeable, please use with care.
          |    private static readonly $name[] all = new $name[] {
-         |${i.members.map(m => s"$name.$m${if (m == i.members.last) "" else ","}").mkString("\n").shift(8)}
+         |${i.members.map(_.value).map(m => s"$name.$m${if (m == i.members.last.value) "" else ","}").mkString("\n").shift(8)}
          |    };
          |
          |    public static $name[] GetAll() {
@@ -549,7 +549,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   }
 
   protected def outputToAdtMember(out: DefMethod.Output): List[AdtMember] = out match {
-    case si: Singular => List(AdtMember(si.typeId, None))
+    case si: Singular => List(AdtMember(si.typeId, None, NodeMeta.empty))
     case al: Algebraic => al.alternatives
     case _: Struct => List.empty
     case _ => throw new Exception("Output type to TypeId is not supported for non singular or void types. " + out)

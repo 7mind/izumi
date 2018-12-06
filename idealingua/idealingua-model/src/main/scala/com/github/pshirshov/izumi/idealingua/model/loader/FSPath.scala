@@ -7,8 +7,14 @@ sealed trait FSPath {
 }
 
 object FSPath {
-  final case class Full(location: String, name: String) extends FSPath
-  final case class Name(name: String) extends FSPath
+
+  final case class Full(location: String, name: String) extends FSPath {
+    override def toString: String = s"/$location/$name"
+  }
+
+  final case class Name(name: String) extends FSPath {
+    override def toString: String = s"?/$name"
+  }
 
   def apply(path: Path): FSPath = {
     val name = path.getFileName.toString

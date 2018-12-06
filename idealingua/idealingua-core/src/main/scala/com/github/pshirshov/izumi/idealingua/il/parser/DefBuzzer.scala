@@ -6,25 +6,20 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import fastparse.NoWhitespace._
 import fastparse._
 
-trait DefBuzzer {
+class DefBuzzer(context: IDLParserContext) {
 
+  import context._
   import sep._
 
-  def method[_:P]: P[RawMethod.RPCMethod] = DefSignature.signature(kw.defe).map(DefSignature.toSignature)
-
   // other method kinds should be added here
-  def methods[_:P]: P[Seq[RawMethod]] = P(method.rep(sep = any))
+  def methods[_: P]: P[Seq[RawMethod]] = P(defSignature.method(kw.defe).rep(sep = any))
 
-  def buzzerBlock[_:P]: P[ILBuzzer] = aggregates.cblock(kw.buzzer, methods)
+  def buzzerBlock[_: P]: P[ILBuzzer] = P(metaAgg.cblock(kw.buzzer, methods))
     .map {
-      case (c, i, v) => ILBuzzer(Buzzer(i.toBuzzerId, v.toList, c))
+      case (c, i, v) => Buzzer(i.toBuzzerId, v.toList, c)
     }
+    .map(ILBuzzer)
 
 }
-
-object DefBuzzer extends DefBuzzer {
-}
-
-
 
 

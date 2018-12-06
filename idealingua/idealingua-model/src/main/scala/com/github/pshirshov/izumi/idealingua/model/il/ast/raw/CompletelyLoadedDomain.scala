@@ -8,4 +8,5 @@ trait CompletelyLoadedDomain {
   def members: Seq[IL.Val]
   def referenced: Map[DomainId, CompletelyLoadedDomain]
   def origin: FSPath
+  def directInclusions: Seq[String]
 }

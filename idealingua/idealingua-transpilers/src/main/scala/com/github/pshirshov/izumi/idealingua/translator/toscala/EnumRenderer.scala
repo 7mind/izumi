@@ -15,10 +15,10 @@ class EnumRenderer(ctx: STContext) {
 
     val members = i.members.map {
       m =>
-        val mt = t.within(m)
+        val mt = t.within(m.value)
         val element =
           q"""final case object ${mt.termName} extends ${t.init()} {
-              override def toString: String = ${Lit.String(m)}
+              override def toString: String = ${Lit.String(m.value)}
             }"""
 
         mt.termName -> element

@@ -22,6 +22,7 @@ trait Keywords extends Separators {
   def id[_:P]: P[Unit] = kw("id")
   def mixin[_:P]: P[Unit] = kw("mixin", "interface")
   def data[_:P]: P[Unit] = kw("data", "dto", "struct")
+  def foreign[_:P]: P[Unit] = kw("foreign")
   def service[_:P]: P[Unit] = kw("service", "server")
   def buzzer[_:P]: P[Unit] = kw("buzzer", "sender")
   def streams[_:P]: P[Unit] = kw("streams", "tunnel", "pump")

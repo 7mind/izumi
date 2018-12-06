@@ -5,22 +5,21 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, DefMethod, SimpleStructure}
 
-trait WithMethodRenderer
-  extends WithComment {
-  def kw: String
+class MethodRenderer(context: IDLRenderingContext)(
+  implicit evSimpleStructure: Renderable[SimpleStructure],
 
-  protected implicit def evSimpleStructure: Renderable[SimpleStructure]
+  evTypeId: Renderable[TypeId],
 
-  protected implicit def evTypeId: Renderable[TypeId]
+  evAdtMember: Renderable[AdtMember],
+) {
 
-  protected implicit def evAdtMember: Renderable[AdtMember]
 
-  protected def renderMethod(tpe: DefMethod): String = {
+  def renderMethod(kw: String, tpe: DefMethod): String = {
     tpe match {
       case m: RPCMethod =>
         val resultRepr = render(m.signature.output).fold("")(s => s": $s")
         val out = s"$kw ${m.name}(${m.signature.input.render()})$resultRepr"
-        withComment(m.meta, out)
+        context.meta.withMeta(m.meta, out)
     }
   }
 

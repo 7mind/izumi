@@ -19,7 +19,11 @@ case class LoadedModels(loaded: Seq[LoadedDomain]) {
       .map {
         case ParsingFailed(path, message) =>
           s"$path failed to parse: $message"
-        case f: TypingFailed =>
+        case f: ResolutionFailed =>
+          s"Domain ${f.domain} failed to resolve external references (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+        case f: TyperFailed =>
+          s"Typer failed on ${f.domain} (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+        case f: VerificationFailed =>
           s"Typespace ${f.domain} has failed verification (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
       }
   }
@@ -27,7 +31,7 @@ case class LoadedModels(loaded: Seq[LoadedDomain]) {
   def throwIfFailed(): LoadedModels = {
     val f = failures
     if (f.nonEmpty) {
-      throw new IDLException(s"Verification failed:\n${f.niceList()}")
+      throw new IDLException(s"Verification failed: ${f.niceList()}")
     }
 
     val duplicates = successful.map(s => s.typespace.domain.id -> s.path).groupBy(_._1).filter(_._2.size > 1)
