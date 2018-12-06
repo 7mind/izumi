@@ -11,7 +11,6 @@ class DefStreams(context: IDLParserContext) {
 
   import context._
   import sep._
-  import defPositions._
 
   def downstream[_: P]: P[RawStream.Directed] = metaAgg.withMeta(defSignature.baseSignature(kw.downstream)).map {
     case (meta, (id, in)) =>
@@ -28,9 +27,9 @@ class DefStreams(context: IDLParserContext) {
   // other method kinds should be added here
   def streams[_: P]: P[Seq[RawStream]] = P(stream.rep(sep = any))
 
-  def streamsBlock[_: P]: P[ILStreams] = P(IP(metaAgg.cblock(kw.streams, streams)
+  def streamsBlock[_: P]: P[ILStreams] = P(metaAgg.cblock(kw.streams, streams))
     .map {
       case (c, i, v) => Streams(i.toStreamsId, v.toList, c)
-    }))
+    }
     .map(ILStreams)
 }

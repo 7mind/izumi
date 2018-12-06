@@ -9,7 +9,6 @@ import fastparse._
 class DefSignature(context: IDLParserContext) {
 
   import context._
-  import context.defPositions._
   import sep._
 
   def sigSep[_: P]: P[Unit] = P("=>" | "->" | ":" | "⇒")
@@ -49,9 +48,9 @@ class DefSignature(context: IDLParserContext) {
     }
   )
 
-  def method[_: P](keyword: => P[Unit]): P[RawMethod.RPCMethod] = P(IP(defSignature.signature(keyword).map {
+  def method[_: P](keyword: => P[Unit]): P[RawMethod.RPCMethod] = P(defSignature.signature(keyword)).map {
     case (meta, id, in, out) =>
       RawMethod.RPCMethod(id, RawMethod.Signature(in, out), meta)
-  }))
+  }
 
 }
