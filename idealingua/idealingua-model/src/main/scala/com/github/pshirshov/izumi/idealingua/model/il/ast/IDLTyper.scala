@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast
 
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
@@ -10,13 +11,20 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
+import com.github.pshirshov.izumi.idealingua.model.loader.TyperIssue
 
 import scala.reflect._
 
 
 class IDLTyper(defn: CompletelyLoadedDomain) {
-  def perform(): typed.DomainDefinition = {
-    new IDLPostTyper(new IDLPretyper(defn).perform()).perform()
+  def perform(): Either[List[TyperIssue], typed.DomainDefinition] = {
+    try {
+      Right(new IDLPostTyper(new IDLPretyper(defn).perform()).perform())
+    } catch {
+      case t: Throwable =>
+        import IzThrowable._
+        Left(List(TyperIssue.TyperException(t.stackTrace)))
+    }
   }
 }
 

@@ -93,7 +93,7 @@ protected[typespace] class InheritanceQueriesImpl(ts: Typespace) extends Inherit
   protected def checkCycles(excluded: Set[TypeId], self: StructureId, parents: Structures): Set[TypeId] = {
     val cycles = parents.toSet[TypeId].intersect(excluded)
     if (cycles.nonEmpty) {
-      throw new IDLCyclicInheritanceException(s"Cyclic inheritance detected, cycle elements: ${cycles.mkString("[", ",", "]")}", cycles)
+      throw IDLCyclicInheritanceException(s"Cyclic inheritance detected, cycle elements: ${cycles.mkString("[", ",", "]")}", cycles)
     }
     excluded ++ parents.toSet ++ Set(self)
   }

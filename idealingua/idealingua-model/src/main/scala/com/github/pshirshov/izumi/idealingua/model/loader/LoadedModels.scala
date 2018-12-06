@@ -21,7 +21,9 @@ case class LoadedModels(loaded: Seq[LoadedDomain]) {
           s"$path failed to parse: $message"
         case f: ResolutionFailed =>
           s"Domain ${f.domain} failed to resolve external references (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
-        case f: TypingFailed =>
+        case f: TyperFailed =>
+          s"Typer failed on ${f.domain} (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+        case f: VerificationFailed =>
           s"Typespace ${f.domain} has failed verification (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
       }
   }
