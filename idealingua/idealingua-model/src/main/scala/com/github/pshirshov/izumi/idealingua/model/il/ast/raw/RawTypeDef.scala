@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, IndefiniteGeneric, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 
 
@@ -33,6 +33,7 @@ object RawTypeDef {
 
   final case class NewType(id: ParsedId, source: AbstractIndefiniteId, modifiers: Option[RawStructure], meta: RawNodeMeta) extends RawTypeDef
 
+  final case class ForeignType(id: AbstractIndefiniteId, mapping: Map[String, String], meta: RawNodeMeta) extends RawTypeDef
 }
 
 

@@ -32,6 +32,8 @@ object TypeDef {
 
   final case class DTO(id: DTOId, struct: Structure, meta: NodeMeta) extends WithStructure
 
+  //final case class ForeignType(id: IndefiniteId, mapping: Map[String, String], meta: NodeMeta) extends TypeDef
+
 }
 
 

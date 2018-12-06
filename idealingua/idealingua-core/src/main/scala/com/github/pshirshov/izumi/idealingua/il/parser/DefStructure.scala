@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILNewtype, ImportedId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILForeignType, ILNewtype, ImportedId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.parser.{AlgebraicType, ParsedStruct, StructOp}
@@ -98,6 +99,17 @@ class DefStructure(context: IDLParserContext) extends Separators {
     .map {
       case (c, i, v) => v.toDto(i.toDataId, c)
     }
+
+  def stringPair[_:P]: P[(String, String)] = P(Literals.Literals.Str ~ any ~ ":" ~ any ~ Literals.Literals.Str)
+
+  def foreignLinks[_: P]: P[Map[String, String]] = P(aggregates.enclosed(stringPair.rep(min = 1, sep = sepEnum))).map(_.toMap)
+
+  def foreignBlock[_: P]: P[ILForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.idGeneric ~ inline ~ foreignLinks)))
+    .map {
+      case (meta, (i, v)) =>
+        ForeignType(i, v, meta)
+    }
+    .map(ILForeignType)
 
   def idBlock[_: P]: P[Identifier] = P(metaAgg.cblock(kw.id, aggregate))
     .map {

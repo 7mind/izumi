@@ -36,6 +36,8 @@ class RDomain(context: IDLRenderingContext) extends Renderable[DomainDefinition]
 
     // TODO: render constants
 
+    // TODO: render foreign types
+
     sb.toString
 
   }

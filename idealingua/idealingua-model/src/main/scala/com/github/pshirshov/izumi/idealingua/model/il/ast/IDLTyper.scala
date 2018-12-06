@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, _}
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.NewType
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.{ForeignType, NewType}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
@@ -99,6 +99,8 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
         (toIndefinite(d.id), d)
       case d: NewType =>
         (toIndefinite(d.id.toTypeId), d)
+      case d: ForeignType =>
+        (toIndefinite(d.id), d)
     }.toMap
   }
 
@@ -173,6 +175,9 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
           case o =>
             throw new IDLException(s"[$domainId] TODO: newtype isn't supported yet for $o")
         }
+
+      case RawTypeDef.ForeignType(id, _, _) =>
+        throw new IDLException(s"[$domainId] TODO: foreign type isn't supported yet for $id")
     }
   }
 
