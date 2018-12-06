@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.il.renderer
 
 import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
+import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
@@ -49,7 +50,7 @@ class RDomain(context: IDLRenderingContext) extends Renderable[DomainDefinition]
         case InputPosition.Defined(_, _, file) =>
           file == domain.meta.origin
         case InputPosition.Undefined =>
-          ???
+          throw new IDLException(s"Unexpected empty meta")
       }
     }
   }
